@@ -3,6 +3,13 @@
 # OpenMDAO
 openmdao_log.txt
 
+# Sphinx
+_build
+generated
+
+# XCode
+*.xcodeproj
+
 # C extensions
 *.so
 
