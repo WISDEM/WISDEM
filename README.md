@@ -1,2 +1,6 @@
-NREL_WISDEM
+NREL WISDEM
 ===========
+
+WISDEM: Wind Integrated System Design & Engineering Model
+
+
