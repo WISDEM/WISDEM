@@ -25,11 +25,15 @@ def fixit(path):
 
     for line in oldfile:
 
-        if FLAG1 in line or FLAG2 in line:
-            line = line.replace('5in', '4in')
+        # ---------- Your Custom Replacements Go Here ------------------
 
-        if FLAG3 in line:
-            line = line.replace('citep', 'cite')
+        # if FLAG1 in line or FLAG2 in line:
+        #     line = line.replace('5in', '4in')
+
+        # if FLAG3 in line:
+        #     line = line.replace('citep', 'cite')
+
+        # --------------------------------------------------------------
 
         newfile.write(line)
 
