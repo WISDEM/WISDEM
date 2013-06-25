@@ -1,11 +1,12 @@
 import unittest
 import numpy as np
 from os import path
+import math
 
 try:
-    from ccblade_beta import CCAirfoil, CCBlade
+    from ccblade_sa import CCAirfoil, CCBlade
 except ImportError:
-    from wisdem.rotor.ccblade_beta import CCAirfoil, CCBlade
+    from wisdem.rotor.ccblade_sa import CCAirfoil, CCBlade
 
 
 
@@ -32,7 +33,7 @@ class TestNREL5MW(unittest.TestCase):
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
 
-        basepath = path.join(path.dirname(__file__), '5MW_AFFiles')
+        basepath = path.join(path.pardir, '5MW_files', '5MW_AFFiles')
 
 
         # load all airfoils
@@ -54,7 +55,7 @@ class TestNREL5MW(unittest.TestCase):
             af[i] = airfoil_types[af_idx[i]]
 
 
-        tilt = 5.0
+        tilt = -5.0
         precone = 2.5
         yaw = 0.0
 
@@ -89,9 +90,12 @@ class TestNREL5MW(unittest.TestCase):
                          3881.3, 4180.1, 4180.1, 4180.1, 4180.1, 4180.1, 4180.1, 4180.1,
                          4180.1, 4180.1, 4180.1, 4180.1, 4180.1, 4180.1, 4180.1])
 
-        P, T, Q = self.rotor.evaluate(Uinf, Omega, pitch)
-        T += 100e3  # not sure what's going on here
+        m_rotor = 110.0  # kg
+        g = 9.81
+        tilt = 5*math.pi/180.0
+        Tref -= m_rotor*g*math.sin(tilt)  # remove weight of rotor that is included in reported results
 
+        P, T, Q = self.rotor.evaluate(Uinf, Omega, pitch)
 
         # import matplotlib.pyplot as plt
         # plt.plot(Uinf, P/1e6)
@@ -101,10 +105,11 @@ class TestNREL5MW(unittest.TestCase):
         # plt.plot(Uinf, Tref/1e3)
         # plt.show()
 
+
         idx = (Uinf < 15)
-        np.testing.assert_allclose(Q[idx]/1e6, Qref[idx]/1e3, atol=0.12)
-        np.testing.assert_allclose(P[idx]/1e6, Pref[idx]/1e3, atol=0.12)  # within 0.12 of 1MW
-        np.testing.assert_allclose(T[idx]/1e6, Tref[idx]/1e3, atol=0.12)
+        np.testing.assert_allclose(Q[idx]/1e6, Qref[idx]/1e3, atol=0.15)
+        np.testing.assert_allclose(P[idx]/1e6, Pref[idx]/1e3, atol=0.15)  # within 0.15 of 1MW
+        np.testing.assert_allclose(T[idx]/1e6, Tref[idx]/1e3, atol=0.15)
 
 
 
