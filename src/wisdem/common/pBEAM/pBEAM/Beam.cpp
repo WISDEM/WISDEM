@@ -170,6 +170,8 @@ void Beam::translateFromGlobalToFEACoordinateSystem(){
     // however moments of inertia are defined differently (Ixx = int(x^2 dA) as opposed to standard Ixx = int(y^2 dA))
     // moments are also defined differently. positive in FEA is positive bending direction for 2D beam.
     // where as global system uses positive about 3D axis directions.
+    // Mx_local = My_global
+    // My_local = -Mx_global
 
     PolyVec tempP;
     Vector tempV;

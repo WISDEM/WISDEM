@@ -14,9 +14,9 @@ from math import log10
 from openmdao.main.datatypes.api import Array, Float, List, Str
 
 from components import RotorStrucBase
-from twister.rotor import RotorStruc, PreComp, Orthotropic2DMaterial, \
+from wisdem.rotor import RotorStruc, PreComp, Orthotropic2DMaterial, \
     CompositeSection, Profile
-from twister.common import _akima
+from wisdem.common import _akima
 
 
 
@@ -200,12 +200,12 @@ if __name__ == '__main__':
     rotor.execute()
 
     print rotor.mass_properties.mass
-    print rotor.f1, rotor.f2, rotor.f3
-    print rotor.dtip
+    print rotor.f1, rotor.f2
+    print rotor.tip_deflection
 
     import matplotlib.pyplot as plt
-    plt.plot(rotor.r, rotor.strainU)
-    plt.plot(rotor.r, rotor.strainL)
-    plt.plot(rotor.r, rotor.strainBuckling)
+    plt.plot(rotor.r, rotor.strain_upper)
+    plt.plot(rotor.r, rotor.strain_lower)
+    plt.plot(rotor.r, rotor.strain_buckling)
     plt.ylim([-5e-3, 5e-3])
     plt.show()

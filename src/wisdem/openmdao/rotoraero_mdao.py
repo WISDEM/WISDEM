@@ -13,7 +13,7 @@ import os
 from openmdao.main.datatypes.api import Array, Float, Int, List, Str, Enum
 
 from components import RotorAeroBase
-from twister.rotor import RotorAero, CCBlade, WTPerf, Airfoil, NRELCSMDrivetrain
+from wisdem.rotor import RotorAero, CCBlade, WTPerf, Airfoil, NRELCSMDrivetrain
 
 
 

@@ -10,7 +10,7 @@ Copyright (c) NREL. All rights reserved.
 from openmdao.main.datatypes.api import Array, Float
 
 from components import TowerAeroBase
-from twister.tower import MonopileAero, WindWithPowerProfile, \
+from wisdem.tower import MonopileAero, WindWithPowerProfile, \
     WindWithLogProfile, LinearWaves
 
 # TODO: add log profile option

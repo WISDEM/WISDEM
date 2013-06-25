@@ -13,9 +13,23 @@ import numpy as np
 
 
 def exe_path(defaultPath, exeName, searchPath):
-    """if defaultPath exists and is not None then it is used,
-    otherwise an executable named 'name' (case-insensitive) is looked
-    for in the same path as the searchPath"""
+    """find path to an executable
+
+    Parameters
+    ----------
+    defaultPath : str
+        path where executable should be located by default (may be None if no default exists)
+    exeName : str
+        name of the executable without extension (not case sensitive)
+    searchPath : str
+        path to look for executable in
+
+    Returns
+    -------
+    exe_path : str
+        full path to the executable
+
+    """
 
     found = False
 
@@ -38,7 +52,9 @@ def exe_path(defaultPath, exeName, searchPath):
     return foundPath
 
 
+
 def mkdir(dirname):
+    """create a working directory at location dirname"""
 
     # create working directory
     try:
@@ -50,16 +66,19 @@ def mkdir(dirname):
 
 
 def rmdir(dirname):
+    """remove working directory dirname"""
 
     shutil.rmtree(dirname)
 
 
 def cosd(value):
+    """cosine of value where value is given in degrees"""
 
     return np.cos(np.radians(value))
 
 
 def sind(value):
+    """sine of value where value is given in degrees"""
 
     return np.sin(np.radians(value))
 

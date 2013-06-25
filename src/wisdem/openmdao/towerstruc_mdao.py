@@ -12,7 +12,7 @@ from openmdao.main.datatypes.api import Array, VarTree, Float
 
 from components import TowerStrucBase
 from vartrees import SoilProperties
-from twister.tower import MonopileStruc, SoilModelCylindricalFoundation
+from wisdem.tower import MonopileStruc, SoilModelCylindricalFoundation
 
 
 

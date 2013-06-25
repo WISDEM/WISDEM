@@ -14,7 +14,7 @@ from openmdao.main.datatypes.api import Array, Float, VarTree, Int
 
 from vartrees import BladeDistributedLoads, Forces, MassProperties, \
     WindWaveDistributedLoads, ConditionsAtRated, Atmosphere
-from twister.common import DirectionVector
+from wisdem.common import DirectionVector
 
 
 # class SiteBase(Component):

@@ -10,7 +10,7 @@ Copyright (c) 2012 NREL. All rights reserved.
 from math import pi, cos, atan2, sqrt
 import numpy as np
 
-from twister.common import _pBEAM
+from wisdem.common import _pBEAM
 
 
 class MonopileStruc(object):
@@ -839,7 +839,7 @@ if __name__ == '__main__':
     # --------------- wind --------------------------
     alpha = 1.0/7          # power law exponent
 
-    wind = WindWithPowerProfile(alpha)
+    wind = WindWithPowerProfile(alpha, beta=20)
     # -----------------------------------------------
 
     # tower aerodynamics
@@ -884,9 +884,10 @@ if __name__ == '__main__':
 
     yaw = 0.0
     rp, Px, Py, Pz, q_dyn = toweraero.distributedLoads(Uref, Uc, yaw)
+
     Ftop = np.array([750000.0, 0.0, 0.0])
     Mtop = np.array([0.0, 0.0, 0.0])
-    loads = (rp, 0*Px, 0*Py, Pz, Ftop, Mtop)
+    loads = (rp, Px, Py, Pz, Ftop, Mtop)
 
     tower = MonopileStruc(z, d, t, n, tip, soil)
 

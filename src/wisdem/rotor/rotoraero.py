@@ -12,7 +12,7 @@ from math import pi, sqrt
 from scipy import interpolate, optimize
 from zope.interface import Interface, Attribute, implements
 
-from twister.common import DirectionVector, _akima
+from wisdem.common import DirectionVector, _akima
 
 
 RPM2RS = pi/30.0
@@ -1355,8 +1355,8 @@ if __name__ == '__main__':
     # nose.main(defaultTest="tests/test_rotoraero.py", config=config)
 
     from airfoilprep import Airfoil
-    from ccblade_wrapper import CCBlade
-    from wtperf_wrapper import WTPerf
+    from ccblade import CCBlade
+    from wtperf import WTPerf
     from CSMdt import NRELCSMDrivetrain
 
 
@@ -1376,7 +1376,7 @@ if __name__ == '__main__':
     mu = 1.81206e-5
 
     import os
-    basepath = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', '5MW_files', '5MW_AFFiles')
+    basepath = os.path.join('5MW_files', '5MW_AFFiles')
 
     # load all airfoils
     airfoil_types = [0]*8
@@ -1398,8 +1398,8 @@ if __name__ == '__main__':
 
 
     # create CCBlade object
-    # aeroanalysis = CCBlade(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu)
-    aeroanalysis = WTPerf(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu, precone=20, tilt=20, yaw=20)
+    aeroanalysis = CCBlade(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu, precone=20, tilt=20, yaw=20)
+    # aeroanalysis = WTPerf(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu, precone=20, tilt=20, yaw=20)
 
 
     # set conditions

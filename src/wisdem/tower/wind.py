@@ -81,7 +81,7 @@ class WindWithPowerProfile(object):
             density of air (kg/m**3)
         mu : float, optional
             dynamic viscosity of air (kg/(m*s))
-        beta : float, optional
+        beta : float, optional (deg)
             directionality of air.  see inertial and wind-aligned coordinate system.
 
         """

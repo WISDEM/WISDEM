@@ -11,7 +11,7 @@ import numpy as np
 import math
 from zope.interface import Interface, Attribute
 
-from twister.common import DirectionVector, _pBEAM
+from wisdem.common import DirectionVector, _pBEAM
 
 
 # ------------------
@@ -526,7 +526,7 @@ class RotorStruc:
 
 if __name__ == '__main__':
 
-    from precomp_wrapper import Orthotropic2DMaterial, CompositeSection, Profile, PreComp
+    from precomp import Orthotropic2DMaterial, CompositeSection, Profile, PreComp
 
     # geometry
     r_str = [1.5, 1.80135, 1.89975, 1.99815, 2.1027, 2.2011, 2.2995, 2.87145, 3.0006, 3.099, 5.60205, 6.9981, 8.33265, 10.49745, 11.75205, 13.49865, 15.84795, 18.4986, 19.95, 21.99795, 24.05205, 26.1, 28.14795, 32.25, 33.49845, 36.35205, 38.4984, 40.44795, 42.50205, 43.49835, 44.55, 46.49955, 48.65205, 52.74795, 56.16735, 58.89795, 61.62855, 63.]
@@ -537,7 +537,7 @@ if __name__ == '__main__':
 
     # -------- materials and composite layup  -----------------
     import os
-    basepath = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', 'wese', 'aning', 'twister', 'src', 'twister', 'examples', '5MW_PrecompFiles')
+    basepath = os.path.join('5MW_files', '5MW_PrecompFiles')
 
     materials = Orthotropic2DMaterial.initFromPreCompFile(os.path.join(basepath, 'materials.inp'))
 
@@ -581,7 +581,7 @@ if __name__ == '__main__':
     plt.plot(r_str, dy)
     plt.plot(r_str, dz)
 
-    strainU, strainL = rotor.axialStrainAlongBlade(rloads, Px, Py, Pz)
+    strainU, strainL = rotor.axialStrainAlongBlade(rloads, 2*Px, 2*Py, 2*Pz)
     plt.figure()
     plt.plot(r_str, strainU)
     plt.plot(r_str, strainL)
@@ -592,7 +592,7 @@ if __name__ == '__main__':
     sector_idx_array = [2]*len(r_str)
     strain_buckling = rotor.panelBucklingStrain(sector_idx_array)
     plt.plot(r_str, strain_buckling)
-    plt.ylim([-2e-3, 2e-3])
+    plt.ylim([-5e-3, 5e-3])
 
     rstr, Pxw, Pyw, Pzw = rotor.weightLoads(tilt=0.0, azimuth=0.0, precone=0.0, pitch=0.0)
     plt.figure()
@@ -601,4 +601,3 @@ if __name__ == '__main__':
     plt.plot(r_str, Pzw)
     plt.show()
 
-    precomp.cleanup()

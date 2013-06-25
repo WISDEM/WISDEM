@@ -16,7 +16,7 @@ import numpy as np
 import math
 
 from rotorstruc import SectionStrucInterface
-from twister.common.utilities import exe_path, mkdir, rmdir
+from wisdem.common.utilities import exe_path, mkdir, rmdir
 
 
 isWindows = (platform.system() == 'Windows')
@@ -1242,7 +1242,7 @@ if __name__ == '__main__':
     nweb_str = [0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0]
 
     # -------- materials and composite layup  -----------------
-    basepath = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', 'wese', 'aning', 'twister', 'src', 'twister', 'examples', '5MW_PrecompFiles')
+    basepath = os.path.join('5MW_files', '5MW_PrecompFiles')
 
     materials = Orthotropic2DMaterial.initFromPreCompFile(os.path.join(basepath, 'materials.inp'))
 
@@ -1267,10 +1267,8 @@ if __name__ == '__main__':
     precomp = PreComp(r_str, chord_str, theta_str, profile, compSec, le_str, materials)
 
     # evalute section properties
-    r_str, EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str, x_ec_nose, y_ec_nose = precomp.sectionProperties()
+    r_str, EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str = precomp.sectionProperties()
 
-    # cleanup
-    precomp.cleanup()
 
     # plot
     r_str = np.array(r_str)

@@ -532,7 +532,7 @@ if __name__ == '__main__':
     mu = 1.81206e-5
 
     import os
-    basepath = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', '5MW_files', '5MW_AFFiles') + os.path.sep
+    basepath = os.path.join('5MW_files', '5MW_AFFiles') + os.path.sep
 
     # load all airfoils
     afinit = CCAirfoil.initFromAerodynFile

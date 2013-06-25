@@ -36,13 +36,13 @@ class RotorAssembly(Assembly):
         self.create_passthrough('raero.V')
         self.create_passthrough('raero.P')
         self.create_passthrough('raero.AEP')
-        self.create_passthrough('rstruc.mass')
-        self.create_passthrough('rstruc.Ixx')
-        self.create_passthrough('rstruc.Iyy')
-        self.create_passthrough('rstruc.Izz')
-        self.create_passthrough('rstruc.Ixy')
-        self.create_passthrough('rstruc.Ixz')
-        self.create_passthrough('rstruc.Iyz')
+        self.create_passthrough('rstruc.mass_properties')
+        # self.create_passthrough('rstruc.Ixx')
+        # self.create_passthrough('rstruc.Iyy')
+        # self.create_passthrough('rstruc.Izz')
+        # self.create_passthrough('rstruc.Ixy')
+        # self.create_passthrough('rstruc.Ixz')
+        # self.create_passthrough('rstruc.Iyz')
 
         # TODO: passthrough everything that isn't already connected
 
@@ -54,10 +54,10 @@ class RotorTWISTER(RotorAssembly):
 
         if name == 'rstruc':
             self.create_passthrough('rstruc.f1')
-            self.create_passthrough('rstruc.dtip')
-            self.create_passthrough('rstruc.strainU')
-            self.create_passthrough('rstruc.strainL')
-            self.create_passthrough('rstruc.strainBuckling')
+            self.create_passthrough('rstruc.tip_deflection')
+            self.create_passthrough('rstruc.strain_upper')
+            self.create_passthrough('rstruc.strain_lower')
+            self.create_passthrough('rstruc.strain_buckling')
 
 
 
@@ -100,7 +100,8 @@ if __name__ == '__main__':
     raero.mu = 1.81206e-5
 
 
-    raero.af_path = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', '5MW_files', '5MW_AFFiles')
+    raero.af_path = os.path.join(os.pardir, 'rotor', '5MW_files', '5MW_AFFiles')
+
 
     # load all airfoils
     airfoil_types = [0]*8
@@ -155,7 +156,7 @@ if __name__ == '__main__':
 
     # -------- materials and composite layup  -----------------
 
-    rstruc.base_path = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', '5MW_files', '5MW_PrecompFiles')
+    rstruc.base_path = os.path.join(os.pardir, 'rotor', '5MW_files', '5MW_PrecompFiles')
 
     rstruc.materials = 'materials.inp'
 
@@ -192,21 +193,20 @@ if __name__ == '__main__':
     rotor.replace('rstruc', rstruc)
     rotor.run()
 
-    print rotor.mass
+    print rotor.mass_properties.mass
     print rotor.AEP
 
     import matplotlib.pyplot as plt
     plt.plot(rotor.V, rotor.P)
     plt.show()
 
-    print rotor.mass
     print rotor.f1
-    print rotor.dtip
+    print rotor.tip_deflection
 
     import matplotlib.pyplot as plt
-    plt.plot(r_grid_struc, rotor.strainU)
-    plt.plot(r_grid_struc, rotor.strainL)
-    plt.plot(r_grid_struc, rotor.strainBuckling)
+    plt.plot(r_grid_struc, rotor.strain_upper)
+    plt.plot(r_grid_struc, rotor.strain_lower)
+    plt.plot(r_grid_struc, rotor.strain_buckling)
     plt.ylim([-5e-3, 5e-3])
     plt.show()
 

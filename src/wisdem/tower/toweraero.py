@@ -10,7 +10,7 @@ Copyright (c) NREL. All rights reserved.
 import numpy as np
 from math import pi
 
-from twister.common import _akima, DirectionVector
+from wisdem.common import _akima, DirectionVector
 
 # TODO: rethink the modularity.  especialy wave with cm.
 
@@ -30,7 +30,7 @@ class MonopileAero(object):
         self.wave = wave
 
 
-    def distributedLoads(self, Uhub, Uc, yaw):
+    def distributedLoads(self, Uhub, Uc, yaw=0.0):
         """return in yaw-aligned coordinate system"""
 
         z, Px_wind, Py_wind, Pz_wind, q_wind = self.__distributedWindLoads(Uhub)
@@ -224,7 +224,7 @@ class MonopileAero(object):
 
 if __name__ == '__main__':
 
-    from twister.tower.wind import WindWithPowerProfile
+    from wind import WindWithPowerProfile
     from wave import LinearWaves
 
 
@@ -274,7 +274,7 @@ if __name__ == '__main__':
     # Px, Py, Pz, q = tower.distributedWindLoads(z)
 
     # z = np.linspace(0, 40.0, 100)
-    z, Px, Py, Pz, q = tower.distributedLoads(Uref, zref, uc)
+    z, Px, Py, Pz, q = tower.distributedLoads(Uref, uc)
 
     import matplotlib.pyplot as plt
     plt.plot(Px, z)

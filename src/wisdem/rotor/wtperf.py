@@ -14,7 +14,7 @@ from math import pi
 
 from airfoilprep import Airfoil
 from rotoraero import RotorAeroAnalysisBase
-from twister.common.utilities import exe_path, mkdir, rmdir
+from wisdem.common.utilities import exe_path, mkdir, rmdir
 
 
 RPM2RS = pi/30.0
@@ -546,7 +546,7 @@ if __name__ == '__main__':
 
 
 
-    basepath = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', 'wese', 'aning', 'twister', 'src', 'twister', 'examples', '5MW_AFFiles')
+    basepath = os.path.join('5MW_files', '5MW_AFFiles')
 
     # load all airfoils
     airfoil_types = [0]*8
@@ -613,8 +613,6 @@ if __name__ == '__main__':
     CP, CT, CQ = rotor.evaluate(Uinf, Omega, pitch, coefficient=True)
 
 
-
-    rotor.cleanup()
 
     import matplotlib.pyplot as plt
     plt.plot(tsr, CP, 'k')
