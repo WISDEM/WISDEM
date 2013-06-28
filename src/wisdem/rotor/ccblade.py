@@ -33,7 +33,7 @@ class CCBlade(RotorAeroAnalysisBase):
         self.rho = rho
         self.yaw = yaw
         self.tilt = tilt
-        self.precone = precone
+        self.precone = self.analysis.precone
         self.nBlade = B
         super(CCBlade, self).__init__(self.analysis.nSector)
 
@@ -41,14 +41,14 @@ class CCBlade(RotorAeroAnalysisBase):
     def distributedAeroLoads(self, Uinf, Omega, pitch, azimuth):
 
         # azimuth not yet included
-        r, theta, Tp, Np = self.analysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+        r, Tp, Np, theta, precone = self.analysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
         # conform to coordinate system
         Px = Np
         Py = -Tp
         Pz = 0*Np
 
-        return r, theta, Px, Py, Pz
+        return r, Px, Py, Pz, theta, precone
 
 
 

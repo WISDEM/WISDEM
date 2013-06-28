@@ -12,6 +12,7 @@ import math
 from zope.interface import Interface, Attribute
 
 from wisdem.common import DirectionVector, _pBEAM
+from wisdem.common.utilities import cosd
 
 
 # ------------------
@@ -23,7 +24,7 @@ class SectionStrucInterface(Interface):
     Evaluates mass and stiffness properties of structure at appropriate
     sections"""
 
-    theta = Attribute(':ref:`twist angle <twist_angle>` of each section')
+    theta = Attribute(':ref:`twist angle <twist_angle>` of each section (deg)')
 
     def sectionProperties():
         """Get the mass and stiffness properties of the cross-section at specified locations along blade
@@ -507,6 +508,20 @@ class RotorStruc:
 
         P = weight.yawToHub(tilt).hubToAzimuth(azimuth)\
             .azimuthToBlade(precone).bladeToAirfoil(theta)
+
+        return self.r, P.x, P.y, P.z
+
+
+
+    def centrifugalLoads(self, Omega, precone, pitch):
+
+        Omega *= math.pi/30.0  # RPM to rad/s
+
+        load = DirectionVector(0.0, 0.0, self.rhoA*Omega**2*self.r*cosd(precone))
+
+        theta = np.array(self.theta) + pitch
+
+        P = load.azimuthToBlade(precone).bladeToAirfoil(theta)
 
         return self.r, P.x, P.y, P.z
 

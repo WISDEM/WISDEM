@@ -17,7 +17,7 @@ equations with guaranteed convergence", Wind Energy, 2013. (in press)
 """
 
 import numpy as np
-from math import pi, radians, cos
+from math import pi, radians
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline
 from zope.interface import Interface, implements
@@ -188,8 +188,9 @@ class CCBlade:
             freestream fluid density
         mu : float, optional (kg/m/s)
             dynamic viscosity of fluid
-        precone : float, optional (deg)
+        precone : ndarray, optional (deg)
             blade :ref:`precone angle <azimuth_blade_coord>`
+            if you input a float it will automatically populate the array with constant value
         tilt : float, optional (deg)
             nacelle :ref:`tilt angle <yaw_hub_coord>`
         yaw : float, optional (deg)
@@ -230,7 +231,10 @@ class CCBlade:
         self.B = B
         self.rho = rho
         self.mu = mu
-        self.precone = precone
+        if not isinstance(precone, np.ndarray):
+            self.precone = np.ones_like(r)*precone
+        else:
+            self.precone = precone
         self.tilt = tilt
         self.yaw = yaw
         self.shearExp = shearExp
@@ -304,11 +308,12 @@ class CCBlade:
 
         # loads must go to zero at tips
         r = np.concatenate(([self.Rhub], self.r, [self.Rtip]))
-        theta = np.concatenate(([self.theta[0]], self.theta, [self.theta[-1]]))
         Np = np.concatenate(([0.0], Np, [0.0]))
         Tp = np.concatenate(([0.0], Tp, [0.0]))
+        theta = np.concatenate(([self.theta[0]], self.theta, [self.theta[-1]]))
+        precone = np.concatenate(([self.precone[0]], self.precone, [self.precone[-1]]))
 
-        return r, theta, Tp, Np
+        return r, Tp, Np, theta, precone
 
 
 
@@ -331,13 +336,15 @@ class CCBlade:
         -------
         r : ndarray (m)
             radial stations where force is specified (should go all the way from hub to tip)
-        theta : ndarray (deg)
-            corresponding geometric twist angle (not including pitch)---
-            positive twists nose into the wind
         Tp : ndarray (N/m)
             force per unit length tangential to the section in the direction of rotation
         Np : ndarray (N/m)
             force per unit length normal to the section on downwind side
+        theta : ndarray (deg)
+            corresponding geometric twist angle (not including pitch)---
+            positive twists nose into the wind
+        precone : ndarray (deg)
+            corresponding precone angle
 
         """
 
@@ -354,7 +361,7 @@ class CCBlade:
         Vwind = DirectionVector(V, 0*V, 0*V).windToYaw(self.yaw).yawToHub(self.tilt)\
             .hubToAzimuth(azimuth).azimuthToBlade(self.precone)
         self.Vx = Vwind.x*np.ones_like(self.r)
-        self.Vy = Vwind.y + Omega*RPM2RS*self.r*cos(radians(self.precone))
+        self.Vy = Vwind.y + Omega*RPM2RS*self.r*np.cos(np.radians(self.precone))
 
         # initialize
         n = len(self.r)
@@ -408,9 +415,9 @@ class CCBlade:
 
 
         # update distributed loads
-        r, theta, Tp, Np = self.__evaluateLoads(phivec, avec, apvec)
+        r, Tp, Np, theta, precone = self.__evaluateLoads(phivec, avec, apvec)
 
-        return r, np.degrees(theta), Tp, Np
+        return r, Tp, Np, np.degrees(theta), precone
 
 
         # # conform to coordinate system
@@ -460,7 +467,6 @@ class CCBlade:
         """
 
         # rename
-        cosPrecone = cos(radians(self.precone))
         B = self.B
         nsec = self.nSector
 
@@ -481,17 +487,31 @@ class CCBlade:
                 azimuth = 360.0*float(j)/nsec
 
                 # run analysis
-                r, theta, Tp, Np = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], azimuth)
+                r, Tp, Np, theta, precone = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], azimuth)
 
-                # interpolate to help smooth out radial discretization
+                cosPrecone = np.cos(np.radians(precone))
+                thrust = Np*cosPrecone
+                torque = r*Tp*cosPrecone
+
+                # smooth out integration
                 oldr = r
                 r = np.linspace(oldr[0], oldr[-1], 200)
-                Tp = _akima.interpolate(oldr, Tp, r)
-                Np = _akima.interpolate(oldr, Np, r)
+                thrust = _akima.interpolate(oldr, thrust, r)
+                torque = _akima.interpolate(oldr, torque, r)
 
                 # integrate Thrust and Torque
-                T[i] += B * np.trapz(Np*cosPrecone, r) / nsec
-                Q[i] += B * np.trapz(r*Tp*cosPrecone, r) / nsec
+                T[i] += B * np.trapz(thrust, r) / nsec
+                Q[i] += B * np.trapz(torque, r) / nsec
+
+                # # interpolate to help smooth out radial discretization
+                # oldr = r
+                # r = np.linspace(oldr[0], oldr[-1], 200)
+                # Tp = _akima.interpolate(oldr, Tp, r)
+                # Np = _akima.interpolate(oldr, Np, r)
+
+                # # integrate Thrust and Torque
+                # T[i] += B * np.trapz(Np*cosPrecone, r) / nsec
+                # Q[i] += B * np.trapz(r*Tp*cosPrecone, r) / nsec
 
 
         # Power
@@ -574,7 +594,7 @@ if __name__ == '__main__':
     azimuth = 90
 
     # evaluate distributed loads
-    rload, theta, Tp, Np = aeroanalysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+    rload, Tp, Np, theta, precone = aeroanalysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
     # plot
     import matplotlib.pyplot as plt
