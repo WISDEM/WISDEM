@@ -28,6 +28,8 @@ class RotorAeroComp(RotorAeroBase):
     af_file = List(Str, iotype='in', desc='names of airfoil file')
     af_path = Str(iotype='in', desc='path to directory containing airfoil files')
 
+    nSector = Int(iotype='in', desc='number of azimuthal sectors to discretize for aero analysis')
+
     # analysis types
     aeroanalysis_type = Enum('ccblade', ('ccblade', 'wtperf'), iotype='in', desc='aerodynamic analysis code')
     drivetrain_type = Enum('geared', ('geared', 'single-stage', 'multi-drive', 'pm-direct-drive'), iotype='in', desc='drivetrain type')
@@ -63,6 +65,10 @@ class RotorAeroComp(RotorAeroBase):
 
 
 
+    def __init__(self):
+        super(RotorAeroComp, self).__init__()
+
+
     def execute(self):
 
         # initialize airfoils
@@ -95,12 +101,14 @@ class RotorAeroComp(RotorAeroBase):
 
 
         # initialize aeroanalysis
-        vars = (self.r, self.chord, theta, af, self.Rhub, self.Rtip, self.B, self.atm.rho, self.atm.mu)
+        vars = (self.r, self.chord, theta, af, self.Rhub, self.Rtip, self.B, self.atm.rho, self.atm.mu,
+                self.precone, self.tilt, self.yaw, self.atm.shearExp, self.hubHt, self.nSector)
+
 
         if self.aeroanalysis_type == 'ccblade':
             aeroanalysis = CCBlade(*vars)
         elif self.aeroanalysis_type == 'wtperf':
-            aeroanalysis = WTPerf(*vars, shearExp=self.atm.shearExp)
+            aeroanalysis = WTPerf(*vars)
 
         # initialize drivetrain
         drivetrain = NRELCSMDrivetrain(self.drivetrain_type)
@@ -173,8 +181,17 @@ if __name__ == '__main__':
     rotor.B = 3
 
     # atmosphere
-    rotor.rho = 1.225
-    rotor.mu = 1.81206e-5
+    rotor.atm.rho = 1.225
+    rotor.atm.mu = 1.81206e-5
+    rotor.atm.shearExp = 0.2
+
+    rotor.hubHt = 90.0
+
+    rotor.nSector = 4
+
+    rotor.precone = 2.5
+    rotor.tilt = -5
+    rotor.yaw = 0.0
 
 
     rotor.af_path = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', '5MW_files', '5MW_AFFiles')
@@ -198,9 +215,9 @@ if __name__ == '__main__':
         rotor.af_file[i] = airfoil_types[af_idx[i]]
 
 
-    rotor.aeroanalysis_type = 'wtperf'
+    rotor.aeroanalysis_type = 'ccblade'
     rotor.drivetrain_type = 'geared'
-    # rotor.wind_turbine_class = 'I'
+    rotor.wind_turbine_class = 'I'
     rotor.machine_type = 'VSVP'
 
 

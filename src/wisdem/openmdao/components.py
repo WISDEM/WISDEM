@@ -41,6 +41,7 @@ class RotorAeroBase(Component):
     precone = Float(iotype='in', units='deg', desc='precone angle')
     tilt = Float(iotype='in', units='deg', desc='rotor tilt angle')
     yaw = Float(iotype='in', units='deg', desc='yaw angle')
+    hubHt = Float(iotype='in', units='m', desc='hub height')
 
     r_structural = Array([0.0], iotype='in', units='m', desc='radial location where structural twist is defined')
     twist_structural = Array([0.0], iotype='in', units='deg', desc='structural twist (for steady aeroelastics)')

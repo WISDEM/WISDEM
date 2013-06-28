@@ -9,7 +9,7 @@ Copyright (c) NREL. All rights reserved.
 
 import numpy as np
 import os
-from math import log10
+# from math import log10
 
 from openmdao.main.datatypes.api import Array, Float, List, Str
 

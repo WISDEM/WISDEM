@@ -47,10 +47,11 @@ class RotorAssembly(Assembly):
         # TODO: passthrough everything that isn't already connected
 
 
-class RotorTWISTER(RotorAssembly):
+class RotorWISDEM(RotorAssembly):
 
     def replace(self, name, obj):
-        super(RotorTWISTER, self).replace(name, obj)
+        super(RotorWISDEM, self).replace(name, obj)
+
 
         if name == 'rstruc':
             self.create_passthrough('rstruc.f1')
@@ -188,7 +189,7 @@ if __name__ == '__main__':
 
     # ----- rotor  ------
 
-    rotor = RotorTWISTER()
+    rotor = RotorWISDEM()
     rotor.replace('raero', raero)
     rotor.replace('rstruc', rstruc)
     rotor.run()
