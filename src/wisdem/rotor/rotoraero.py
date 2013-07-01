@@ -27,6 +27,8 @@ RS2RPM = 30.0/pi
 class RotorAeroAnalysisInterface(Interface):
     """Interface for evaluating rotor aerodynamic performance used by :class:`RotorAero`."""
 
+    # r = Attribute("""radial positions along blade : float (m)""")
+
     rotorR = Attribute("""radius of rotor used in normalization of pressure coefficient : float (m)""")
 
     rho = Attribute("""freestream air density used in normalized of pressure coefficient : float (kg/m**3)""")
@@ -37,10 +39,12 @@ class RotorAeroAnalysisInterface(Interface):
     tilt = Attribute(""":ref:`tilt angle <yaw_hub_coord>` about axis parallel to ground.
                      positive tilts rotor up for upstream configuration : float (deg)""")
 
-    precone = Attribute(""":ref:`precone angle <azimuth_blade_coord>`, positive tilts blades
-                        away from tower for upstream configuration. : ndarray (deg)""")
+    # precone = Attribute(""":ref:`precone angle <azimuth_blade_coord>`, positive tilts blades
+    #                     away from tower for upwind configuration. : ndarray (deg)""")
 
-    nBlade = Attribute("""number of blades : int""")
+    # # hubPrecone = Attribute("""precone at hub""")
+
+    # nBlade = Attribute("""number of blades : int""")
 
 
 
@@ -1194,7 +1198,7 @@ class RotorAero(object):
 
 
 
-    def distributedAeroLoads(self, Uinf, azimuth, pitch=0.0):
+    def aeroLoads(self, Uinf, azimuth, pitch=0.0):
         """Compute (azimuthally-averaged) distributed aerodynamic loads along blade
         in the airfoil-aligned coordinate system (:ref:`blade_airfoil_coord`).
 
@@ -1235,30 +1239,42 @@ class RotorAero(object):
         theta = twist + pitch
         P = DirectionVector(Px, Py, Pz).bladeToAirfoil(theta)
 
-        return (r, P.x, P.y, P.z, pitch)
+        return r, P, Omega, pitch, azimuth, self.analysis.tilt, precone
 
 
 
-    def allLoads(self, rotorstruc, Uinf, tilt, azimuth, precone, pitch, g=9.81):
+    # def totalLoads(self, rotorstruc, Uinf, tilt, azimuth, pitch, g=9.81, separate=False):
 
-        r_a, Px_a, Py_a, Pz_a, pitch = self.distributedAeroLoads(Uinf, azimuth, pitch)
 
-        # find control setting
-        if Uinf >= self.Vin and Uinf <= self.Vout:
-            Omega, pitch = self.__findControlSetting(Uinf)
-        else:
-            Omega = 0.0
+    #     # find control setting
+    #     if Uinf >= self.Vin and Uinf <= self.Vout:
+    #         Omega, pitch = self.__findControlSetting(Uinf)
+    #     else:
+    #         Omega = 0.0
 
-        r_w, Px_w, Py_w, Pz_w = rotorstruc.weightLoads(tilt, azimuth, precone, pitch, g)
+    #     r_a, Px_a, Py_a, Pz_a, pitch = self.distributedAeroLoads(Uinf, azimuth, pitch)
 
-        r_c, Px_c, Py_c, Pz_c = rotorstruc.centrifugalLoads(Omega, precone, pitch)
+    #     r_w, Px_w, Py_w, Pz_w = rotorstruc.weightLoads(tilt, azimuth, pitch, g)
 
-        Px_a = _akima.interpolate(r_a, Px_a, r_w)
-        Py_a = _akima.interpolate(r_a, Py_a, r_w)
-        Pz_a = _akima.interpolate(r_a, Pz_a, r_w)
+    #     r_c, Px_c, Py_c, Pz_c = rotorstruc.centrifugalLoads(Omega, pitch)
 
-        return r_w, DirectionVector(Px_a, Py_a, Pz_a), \
-            DirectionVector(Px_w, Py_w, Pz_w), DirectionVector(Px_c, Py_c, Pz_c)
+
+    #     # interpolate aerodynamic loads onto structural grid
+    #     Px_a = _akima.interpolate(r_a, Px_a, r_w)
+    #     Py_a = _akima.interpolate(r_a, Py_a, r_w)
+    #     Pz_a = _akima.interpolate(r_a, Pz_a, r_w)
+
+    #     # combine
+    #     aero = DirectionVector(Px_a, Py_a, Pz_a)
+    #     weight = DirectionVector(Px_w, Py_w, Pz_w)
+    #     cent = DirectionVector(Px_c, Py_c, Pz_c)
+
+    #     total = aero + weight + cent
+
+    #     if separate:
+    #         return r_w, aero, weight, cent
+    #     else:
+    #         return r_w, total
 
 
 

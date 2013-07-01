@@ -29,6 +29,7 @@ class CCBlade(RotorAeroAnalysisBase):
                                            tiploss, hubloss, wakerotation, usecd, iterRe)
 
         # conform to interface
+        self.r = r
         self.rotorR = Rtip
         self.rho = rho
         self.yaw = yaw

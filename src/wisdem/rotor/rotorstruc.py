@@ -11,7 +11,7 @@ import numpy as np
 import math
 from zope.interface import Interface, Attribute
 
-from wisdem.common import DirectionVector, _pBEAM
+from wisdem.common import DirectionVector, _pBEAM, _akima
 from wisdem.common.utilities import cosd
 
 
@@ -24,7 +24,8 @@ class SectionStrucInterface(Interface):
     Evaluates mass and stiffness properties of structure at appropriate
     sections"""
 
-    theta = Attribute(':ref:`twist angle <twist_angle>` of each section (deg)')
+    # r = Attribute('radial location of each section (m)')
+    # theta = Attribute(':ref:`twist angle <twist_angle>` of each section (deg)')
 
     def sectionProperties():
         """Get the mass and stiffness properties of the cross-section at specified locations along blade
@@ -32,7 +33,9 @@ class SectionStrucInterface(Interface):
         Returns
         -------
         r : ndarray (m)
-            axial locations along blade where section properties are defined
+            distance along blade where section properties are defined
+        theta : ndarray (deg)
+            orientation of section
         EA : ndarray (N)
             axial stiffness
         EIxx : ndarray (N*m^2)
@@ -89,7 +92,7 @@ class RotorStruc:
     """Structural model of a wind turbine rotor using pBEAM, a beam finite element code."""
 
 
-    def __init__(self, blade, nblades=3):
+    def __init__(self, blade, nBlade=3):
         """Constructor
 
         Parameters
@@ -102,15 +105,15 @@ class RotorStruc:
         """
 
         self.sectionstruc = blade
-        self.nblades = nblades
+        self.nblades = nBlade
 
         # extract section properties
-        (r, EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str) = blade.sectionProperties()
+        (r, theta, EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str) = blade.sectionProperties()
         nsec = len(r)
 
         self.nsec = len(r)
         self.r = r
-        self.theta = blade.theta
+        self.theta = theta
 
         # translate to elastic center and rotate to principal axes
         theta = np.zeros(nsec)  # rotation angle from airfoil coordinate system to principal
@@ -175,16 +178,16 @@ class RotorStruc:
 
 
         # define method to change loading on blade
-        def changeLoads(rp, Px, Py, Pz):
+        def changeLoads(P):
 
-            # interpolate then rotate distributed loads
-            Px = np.interp(r, rp, Px)
-            Py = np.interp(r, rp, Py)
-            Pz = np.interp(r, rp, Pz)
+            # # interpolate then rotate distributed loads
+            # Px = np.interp(r, rp, Px)
+            # Py = np.interp(r, rp, Py)
+            # Pz = np.interp(r, rp, Pz)
 
 
-            P1, P2 = self.rotateFromAirfoilXYToPrincipal(Px, Py)
-            P3 = Pz
+            P1, P2 = self.rotateFromAirfoilXYToPrincipal(P.x, P.y)
+            P3 = P.z
 
             p_loads = _pBEAM.Loads(nsec, P1, P2, P3)
 
@@ -192,7 +195,7 @@ class RotorStruc:
             self.blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
 
 
-        self.changeLoads = changeLoads
+        self._changeLoads = changeLoads
 
 
 
@@ -278,7 +281,7 @@ class RotorStruc:
 
 
 
-    def displacements(self, r, Px, Py, Pz):
+    def displacements(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
         """Computes the displacement of the structure due to the applied loading.
 
         Parameters
@@ -315,7 +318,10 @@ class RotorStruc:
 
         """
 
-        self.changeLoads(r, Px, Py, Pz)
+        # add weight/centrifugal loading
+        P = self.totalLoads(ra, Paero, Omega, pitch, azimuth, tilt, precone)
+        self._changeLoads(P)
+
         dr1, dr2, dz, dtheta_r1, dtheta_r2, dtheta_z = self.blade.displacement()
 
         dx, dy = self.rotateFromPrincipalToAirfoilXY(dr1, dr2)
@@ -324,14 +330,15 @@ class RotorStruc:
         return dx, dy, dz, dtheta_x, dtheta_y, dtheta_z
 
 
-    def tipDeflection(self, r, Px, Py, Pz, pitch, precone):
+    def tipDeflection(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
         """tip deflection of blade in x-direction of azimuth-aligned coordinate system
 
 
         """
-        dx, dy, dz, dtheta_x, dtheta_y, dtheta_z = self.displacements(r, Px, Py, Pz)
+        dx, dy, dz, dt_x, dt_y, dt_z = self.displacements(ra, Paero, Omega, pitch, azimuth, tilt, precone)
 
         theta = np.array(self.theta) + pitch
+        precone = _akima.interpolate(ra, precone, self.r)  # convert to structural grid
 
         delta = DirectionVector(dx, dy, dz).airfoilToBlade(theta).bladeToAzimuth(precone)
 
@@ -341,7 +348,7 @@ class RotorStruc:
 
 
 
-    def axialStrainAlongBlade(self, r, Px, Py, Pz):
+    def axialStrainAlongBlade(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
         """Computes axial strain at top and bottom surface of each section
         at location of maximum thickness.
 
@@ -370,7 +377,9 @@ class RotorStruc:
 
         """
 
-        self.changeLoads(r, Px, Py, Pz)
+
+        P = self.totalLoads(ra, Paero, Omega, pitch, azimuth, tilt, precone)
+        self._changeLoads(P)
 
         # get strain locations
         xu_e, yu_e, xl_e, yl_e = self.sectionstruc.criticalStrainLocations()
@@ -389,7 +398,7 @@ class RotorStruc:
         return strainU, strainL
 
 
-    def criticalGlobalBucklingLoads(self, r, Px, Py, Pz):
+    def criticalGlobalBucklingLoads(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
         """
         Estimates the critical global buckling loads of the blade due to axial loads.
 
@@ -418,7 +427,9 @@ class RotorStruc:
 
         """
 
-        self.changeLoads(r, Px, Py, Pz)
+        P = self.totalLoads(ra, Paero, Omega, pitch, azimuth, tilt, precone)
+        self._changeLoads(P)
+
         Pcr_p1, Pcr_p2 = self.blade.criticalBucklingLoads()
         Pcr_x, Pcr_y = self.rotateFromPrincipalToAirfoilXY(Pcr_p1, Pcr_p2)
         return Pcr_x[0], Pcr_y[0]  # others are same loads just with different twists
@@ -475,7 +486,7 @@ class RotorStruc:
         # return eps_crit
 
 
-    def weightLoads(self, tilt, azimuth, precone, pitch, g=9.81):
+    def weightLoads(self, tilt, azimuth, pitch, precone, g=9.81):
         """Computes distributed weight loads along the blade
 
         Parameters
@@ -509,11 +520,12 @@ class RotorStruc:
         P = weight.yawToHub(tilt).hubToAzimuth(azimuth)\
             .azimuthToBlade(precone).bladeToAirfoil(theta)
 
-        return self.r, P.x, P.y, P.z
+        return P
+        # return self.r, P.x, P.y, P.z
 
 
 
-    def centrifugalLoads(self, Omega, precone, pitch):
+    def centrifugalLoads(self, Omega, pitch, precone):
 
         Omega *= math.pi/30.0  # RPM to rad/s
 
@@ -523,20 +535,72 @@ class RotorStruc:
 
         P = load.azimuthToBlade(precone).bladeToAirfoil(theta)
 
-        return self.r, P.x, P.y, P.z
+        return P
+        # return self.r, P.x, P.y, P.z
 
 
-    def rootStrainDueToGravityLoads(self, tilt, precone):
+    def totalLoads(self, raero, Paero, Omega, pitch, azimuth, tilt, precone, g=9.81):
+
+        # interpolate aerodynamic loads onto structural grid
+        P_a = DirectionVector(0, 0, 0)
+        P_a.x = _akima.interpolate(raero, Paero.x, self.r)
+        P_a.y = _akima.interpolate(raero, Paero.y, self.r)
+        P_a.z = _akima.interpolate(raero, Paero.z, self.r)
+        precone = _akima.interpolate(raero, precone, self.r)
+
+        # weight loads
+        P_w = self.weightLoads(tilt, azimuth, pitch, precone, g)
+
+        # centrifugal loads
+        P_c = self.centrifugalLoads(Omega, pitch, precone)
+
+        P = P_a + P_w + P_c
+
+        return P
+
+
+    # def setTotalLoads(self, Uinf, azimuth, pitch=0.0, g=9.91, returnLoads=False):
+    #     # r_a, P_a, Omega, pitch, tilt, azimuth, g=9.81, returnLoads=False):
+    #     """airfoil coordinate system"""
+
+    #     # aerodynamic loads
+    #     r_a, P_a, Omega, pitch = self.rotoraero.distributedAeroLoads(Uinf, azimuth, pitch)
+
+    #     # weight loads
+    #     tilt = self.rotoraero.analysis.tilt
+    #     P_w = self.weightLoads(tilt, azimuth, pitch, g)
+
+    #     # centrifugal loads
+    #     P_c = self.centrifugalLoads(Omega, pitch)
+
+    #     # interpolate aerodynamic loads onto structural grid
+    #     P_a.x = _akima.interpolate(r_a, P_a.x, self.r)
+    #     P_a.y = _akima.interpolate(r_a, P_a.y, self.r)
+    #     P_a.z = _akima.interpolate(r_a, P_a.z, self.r)
+
+    #     P = P_a + P_w + P_c
+
+    #     self.changeLoads(P.x, P.y, P.z)
+
+    #     if returnLoads:
+    #         return self.r, P
+
+
+    def rootStrainDueToGravityLoads(self, tilt):
         """edgewise fully-reversed weight loads"""
 
         azimuth = 90.0  # fully-reversed
         pitch = 0.0
 
-        r_w, Px_w, Py_w, Pz_w = self.weightLoads(tilt, azimuth, precone, pitch)
+        r_w, Px_w, Py_w, Pz_w = self.weightLoads(tilt, azimuth, pitch)
 
         strainU, strainL = self.axialStrainAlongBlade(r_w, Px_w, Py_w, Pz_w)
 
         return strainU[0]
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -549,6 +613,8 @@ if __name__ == '__main__':
     theta_str = [13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 13.31, 12.53, 11.48, 10.63, 10.16, 9.59, 9.01, 8.4, 7.79, 6.54, 6.18, 5.36, 4.75, 4.19, 3.66, 3.4, 3.13, 2.74, 2.32, 1.53, 0.86, 0.37, 0.11, 0.0]
     le_str = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.498, 0.497, 0.465, 0.447, 0.43, 0.411, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
     nweb_str = [0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0]
+
+    precone_str = np.zeros_like(r_str)
 
     # -------- materials and composite layup  -----------------
     import os
@@ -577,7 +643,7 @@ if __name__ == '__main__':
     precomp = PreComp(r_str, chord_str, theta_str, profile, compSec, le_str, materials)
 
 
-    rotor = RotorStruc(precomp, nblades=3)
+    rotor = RotorStruc(precomp, theta_str, precone_str, nblades=3)
 
     print rotor.mass()
     print rotor.momentsOfInertia()
@@ -609,7 +675,7 @@ if __name__ == '__main__':
     plt.plot(r_str, strain_buckling)
     plt.ylim([-5e-3, 5e-3])
 
-    rstr, Pxw, Pyw, Pzw = rotor.weightLoads(tilt=0.0, azimuth=0.0, precone=0.0, pitch=0.0)
+    rstr, Pxw, Pyw, Pzw = rotor.weightLoads(tilt=0.0, azimuth=0.0, pitch=0.0)
     plt.figure()
     plt.plot(r_str, Pxw)
     plt.plot(r_str, Pyw)
