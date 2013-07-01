@@ -11,6 +11,7 @@ import os
 from subprocess import Popen
 import numpy as np
 from math import pi
+import atexit
 
 from airfoilprep import Airfoil
 from rotoraero import RotorAeroAnalysisBase
@@ -20,6 +21,14 @@ from wisdem.common.utilities import exe_path, mkdir, rmdir
 RPM2RS = pi/30.0
 SCRATCH_DIR = 'wtp_scratch' + os.path.sep
 basefilename = SCRATCH_DIR + 'wtperf'
+
+
+@atexit.register
+def cleanup():
+    """remove all WTPerf input/output files unless in debug mode"""
+    if not WTPerf.DEBUG:
+        rmdir(SCRATCH_DIR)
+
 
 
 
@@ -88,7 +97,7 @@ class WTPerf(RotorAeroAnalysisBase):
         self.Rtip = Rtip
         self.af = af
         self.pathToWTPerf = exe_path(pathToWTPerf, 'wtperf', os.path.dirname(__file__))
-        self.DEBUG = DEBUG
+        WTPerf.DEBUG = DEBUG
 
         # atmosphere
         self.mu = mu
@@ -148,13 +157,6 @@ class WTPerf(RotorAeroAnalysisBase):
             self.af_idx[i] = i+1
             self.af_files[i] = fname
         # ------------------------------------------
-
-
-
-    def __del__(self):
-        """remove all WTPerf input/output files unless in debug mode"""
-        if not self.DEBUG:
-            rmdir(SCRATCH_DIR)
 
 
 

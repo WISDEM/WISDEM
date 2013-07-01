@@ -14,6 +14,7 @@ import shutil
 import platform
 import numpy as np
 import math
+import atexit
 
 from rotorstruc import SectionStrucInterface
 from wisdem.common.utilities import exe_path, mkdir, rmdir
@@ -21,6 +22,15 @@ from wisdem.common.utilities import exe_path, mkdir, rmdir
 
 isWindows = (platform.system() == 'Windows')
 SCRATCH_DIR='pc_scratch' + os.path.sep
+
+
+@atexit.register
+def cleanup():
+    """remove all PreComp input/output files unless in debug mode"""
+    if not PreComp.DEBUG:
+        rmdir(SCRATCH_DIR)
+        os.remove('materials.inp')
+
 
 
 # --- convenience methods for reading/writing Precomp files ----
@@ -54,10 +64,10 @@ def file7colnum(f, s1, s2, s3, s4, s5, s6, s7):
 
 
 
-class PreComp:
+class PreComp(object):
     implements(SectionStrucInterface)
 
-
+    DEBUG = False
 
     def __init__(self, r, chord, theta, profile, compSec, leLoc, materials=None,
                  precompPath=None, DEBUG=False):
@@ -99,7 +109,7 @@ class PreComp:
         self.materials = materials
 
         self.precompPath = exe_path(precompPath, 'precomp', os.path.dirname(__file__))
-        self.DEBUG = DEBUG
+        PreComp.DEBUG = DEBUG
 
         # create working directory
         mkdir(SCRATCH_DIR)
@@ -119,12 +129,6 @@ class PreComp:
                 os.remove(mfile)
                 os.symlink(SCRATCH_DIR+mfile, mfile)
 
-
-    def __del__(self):
-        """remove all PreComp input/output files unless in debug mode"""
-        if not self.DEBUG:
-            rmdir(SCRATCH_DIR)
-            os.remove('materials.inp')
 
 
 
@@ -223,10 +227,22 @@ class PreComp:
             pass
 
         # run precomp
-        f = open(SCRATCH_DIR + 'output', 'w')
+        f = open(SCRATCH_DIR + 'output', 'w+')
         process = subprocess.Popen([self.precompPath, inputfile], shell=False, stdout=f)
         process.communicate()  # clear buffer and wait for process to terminate
+
+        # check for successful completion
+        f.seek(-50, 2)
+        ending = f.read(50)
+        success = 'PreComp terminated normally.' in ending
+
+        if not success:
+            f.seek(0, 0)
+            for line in f:
+                print line
+            exit()
         f.close()
+
 
         # open output file
         f = open(outfile)
@@ -273,7 +289,7 @@ class PreComp:
 
         f.close()
 
-        return self.r, EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str
+        return self.r, self.theta, EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str
 
 
 
@@ -344,7 +360,7 @@ class PreComp:
             Nxx = 2 * (math.pi/sector_length)**2 * (math.sqrt(D1*D2) + D3)
             # Nxx = 3.6 * (math.pi/sector_length)**2 * D1
 
-            Nxx *= 3.9  # a fudge factor that gives good agreement with other simple method
+            # Nxx *= 3.9  # a fudge factor that gives good agreement with other simple method
             # need some ANSYS tests to pick a better factor.
 
             eps_crit[i] = - Nxx / totalHeight / E
