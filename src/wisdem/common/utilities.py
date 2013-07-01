@@ -10,6 +10,7 @@ Copyright (c) NREL. All rights reserved.
 import os
 import shutil
 import numpy as np
+import atexit
 
 
 def exe_path(defaultPath, exeName, searchPath):
@@ -53,7 +54,7 @@ def exe_path(defaultPath, exeName, searchPath):
 
 
 
-def mkdir(dirname):
+def mktmpdir(dirname, DEBUG, tmp_files=None):
     """create a working directory at location dirname"""
 
     # create working directory
@@ -64,11 +65,21 @@ def mkdir(dirname):
         if e.errno != 17:  # silently ignore case where directory exists
             print 'OS error({0}): {1}'.format(e.errno, e.strerror)
 
+    # schedule deletion of working directory
+    @atexit.register
+    def cleanup():
+        if not DEBUG:
+            shutil.rmtree(dirname)
+            # rmdir(dirname)
+            for f in tmp_files:
+                os.remove(f)
 
-def rmdir(dirname):
-    """remove working directory dirname"""
 
-    shutil.rmtree(dirname)
+
+# def rmdir(dirname):
+#     """remove working directory dirname"""
+
+#     shutil.rmtree(dirname)
 
 
 def cosd(value):

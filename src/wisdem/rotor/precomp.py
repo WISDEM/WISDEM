@@ -14,22 +14,13 @@ import shutil
 import platform
 import numpy as np
 import math
-import atexit
 
 from rotorstruc import SectionStrucInterface
-from wisdem.common.utilities import exe_path, mkdir, rmdir
+from wisdem.common.utilities import exe_path, mktmpdir
 
 
 isWindows = (platform.system() == 'Windows')
 SCRATCH_DIR='pc_scratch' + os.path.sep
-
-
-@atexit.register
-def cleanup():
-    """remove all PreComp input/output files unless in debug mode"""
-    if not PreComp.DEBUG:
-        rmdir(SCRATCH_DIR)
-        os.remove('materials.inp')
 
 
 
@@ -67,7 +58,6 @@ def file7colnum(f, s1, s2, s3, s4, s5, s6, s7):
 class PreComp(object):
     implements(SectionStrucInterface)
 
-    DEBUG = False
 
     def __init__(self, r, chord, theta, profile, compSec, leLoc, materials=None,
                  precompPath=None, DEBUG=False):
@@ -109,10 +99,9 @@ class PreComp(object):
         self.materials = materials
 
         self.precompPath = exe_path(precompPath, 'precomp', os.path.dirname(__file__))
-        PreComp.DEBUG = DEBUG
 
         # create working directory
-        mkdir(SCRATCH_DIR)
+        mktmpdir(SCRATCH_DIR, DEBUG, ['materials.inp'])
 
         # create a symlink if necessary (only for *nix, windows must copy)
         if not isWindows:
