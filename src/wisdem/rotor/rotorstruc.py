@@ -260,7 +260,7 @@ class RotorStruc:
 
 
 
-    def naturalFrequencies(self, n):
+    def naturalFrequencies(self, n, eigenvectors=False):
         """Computes the first n natural frequencies of the rotor blades.
 
         Parameters
@@ -277,7 +277,35 @@ class RotorStruc:
 
         """
 
-        return self.blade.naturalFrequencies(n)
+        if eigenvectors:
+            freq, vectors = self.blade.naturalFrequenciesAndEigenvectors(n)
+
+            vectors_rot = [0]*n
+
+            for idx, v in enumerate(vectors):
+                dr1 = v[:self.nsec]
+                dr2 = v[self.nsec:2*self.nsec]
+                dz = v[2*self.nsec:3*self.nsec]
+                dtheta_r1 = v[3*self.nsec:4*self.nsec]
+                dtheta_r2 = v[4*self.nsec:5*self.nsec]
+                dtheta_z = v[5*self.nsec:6*self.nsec]
+
+                dx, dy = self.rotateFromPrincipalToAirfoilXY(dr1, dr2)
+                dtheta_x, dtheta_y = self.rotateFromPrincipalToAirfoilXY(dtheta_r1, dtheta_r2)
+
+                d = DirectionVector(dx, dy, dz).airfoilToBlade(self.theta)
+                dtheta = DirectionVector(dtheta_x, dtheta_y, dtheta_z).airfoilToBlade(self.theta)
+
+                vectors_rot[idx] = (d.x, d.y, d.z, dtheta.x, dtheta.y, dtheta.z)
+
+            return freq, vectors_rot
+
+        else:
+            return self.blade.naturalFrequencies(n)
+
+
+
+
 
 
 
@@ -539,14 +567,14 @@ class RotorStruc:
         # return self.r, P.x, P.y, P.z
 
 
-    def totalLoads(self, raero, Paero, Omega, pitch, azimuth, tilt, precone, g=9.81):
+    def totalLoads(self, r_aero, P_aero, Omega, pitch, azimuth, tilt, precone, g=9.81):
 
         # interpolate aerodynamic loads onto structural grid
         P_a = DirectionVector(0, 0, 0)
-        P_a.x = _akima.interpolate(raero, Paero.x, self.r)
-        P_a.y = _akima.interpolate(raero, Paero.y, self.r)
-        P_a.z = _akima.interpolate(raero, Paero.z, self.r)
-        precone = _akima.interpolate(raero, precone, self.r)
+        P_a.x = _akima.interpolate(r_aero, P_aero.x, self.r)
+        P_a.y = _akima.interpolate(r_aero, P_aero.y, self.r)
+        P_a.z = _akima.interpolate(r_aero, P_aero.z, self.r)
+        precone = _akima.interpolate(r_aero, precone, self.r)
 
         # weight loads
         P_w = self.weightLoads(tilt, azimuth, pitch, precone, g)
