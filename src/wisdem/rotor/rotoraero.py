@@ -44,7 +44,7 @@ class RotorAeroAnalysisInterface(Interface):
 
     # # hubPrecone = Attribute("""precone at hub""")
 
-    # nBlade = Attribute("""number of blades : int""")
+    nBlade = Attribute("""number of blades : int""")
 
 
 
@@ -249,19 +249,6 @@ class RotorAeroAnalysisBase(object):
                 # integrate Thrust and Torque
                 T[i] += B * np.trapz(thrust, r) / nsec
                 Q[i] += B * np.trapz(torque, r) / nsec
-
-                # # swap coordinate directions and interpolate to help smooth out radial discretization
-                # oldr = r
-                # r = np.linspace(oldr[0], oldr[-1], 200)
-                # Tp = _akima.interpolate(oldr, -Py, r)
-                # Np = _akima.interpolate(oldr, Px, r)
-                # Rp = _akima.interpolate(oldr, Pz, r)
-
-
-                # # integrate Thrust and Torque
-                # T[i] += B * np.trapz(Np*np.cos(precone)-Rp*np.sin(precone), r) / nsec
-                # Q[i] += B * np.trapz(r*Tp*np.cos(precone), r) / nsec
-
 
         # Power
         P = Q * Omega*RPM2RS

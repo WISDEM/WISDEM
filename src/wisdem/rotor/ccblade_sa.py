@@ -17,7 +17,7 @@ equations with guaranteed convergence", Wind Energy, 2013. (in press)
 """
 
 import numpy as np
-from math import pi, radians
+from math import pi, radians, fabs
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline
 from zope.interface import Interface, implements
@@ -164,7 +164,8 @@ class CCBlade:
 
     def __init__(self, r, chord, theta, af, Rhub, Rtip, B=3, rho=1.225, mu=1.81206e-5,
                  precone=0.0, tilt=0.0, yaw=0.0, shearExp=0.2, hubHt=80.0, nSector=8,
-                 tiploss=True, hubloss=True, wakerotation=True, usecd=True, iterRe=1):
+                 tiploss=True, hubloss=True, wakerotation=True, usecd=True, iterRe=1,
+                 rcentered=False):
         """Constructor for aerodynamic rotor analysis
 
         Parameters
@@ -231,7 +232,7 @@ class CCBlade:
         self.B = B
         self.rho = rho
         self.mu = mu
-        if not isinstance(precone, np.ndarray):
+        if isinstance(precone, float) or isinstance(precone, int):
             self.precone = np.ones_like(r)*precone
         else:
             self.precone = precone
@@ -242,6 +243,26 @@ class CCBlade:
 
         self.iterRe = iterRe
         self.bemoptions = dict(usecd=usecd, tiploss=tiploss, hubloss=hubloss, wakerotation=wakerotation)
+
+        # compute actual rotor radius (w/ precone)
+        n = len(r)
+        length = np.zeros(n)
+
+        if rcentered:
+            for i in range(n):
+                length[i] = 2*(r[i] - Rhub - np.sum(length[:i]))
+
+            # verify lengths
+            if np.any(length < 0) or fabs(Rtip - (Rhub + np.sum(length)))/Rtip > 1e-3:
+                raise Exception('grid does not conform to centered control points')
+
+        else:
+            length[1:n-1] = (self.r[2:] - self.r[:n-2])/2.0
+            length[0] = (r[1]+r[0])/2.0 - Rhub
+            length[-1] = Rtip - (r[-1]+r[-2])/2.0
+
+
+        self.rotorR = Rhub + np.sum(length*np.cos(np.radians(self.precone)))
 
 
         # azimuthal discretization
@@ -313,7 +334,7 @@ class CCBlade:
         theta = np.concatenate(([self.theta[0]], self.theta, [self.theta[-1]]))
         precone = np.concatenate(([self.precone[0]], self.precone, [self.precone[-1]]))
 
-        return r, Tp, Np, theta, precone
+        return r, Tp, Np, np.degrees(theta), precone
 
 
 
@@ -417,15 +438,7 @@ class CCBlade:
         # update distributed loads
         r, Tp, Np, theta, precone = self.__evaluateLoads(phivec, avec, apvec)
 
-        return r, Tp, Np, np.degrees(theta), precone
-
-
-        # # conform to coordinate system
-        # Px = Np
-        # Py = -Tp
-        # Pz = 0*Np
-
-        # return r, np.degrees(theta), Px, Py, Pz
+        return r, Tp, Np, theta, precone
 
 
 
@@ -520,10 +533,10 @@ class CCBlade:
         # normalize if necessary
         if coefficient:
             q = 0.5 * self.rho * Uinf**2
-            A = pi * self.Rtip**2
+            A = pi * self.rotorR**2
             P /= (q * A * Uinf)
             T /= (q * A)
-            Q /= (q * self.Rtip * A)
+            Q /= (q * self.rotorR * A)
 
         return P, T, Q
 

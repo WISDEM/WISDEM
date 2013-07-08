@@ -16,7 +16,8 @@ class CCBlade(RotorAeroAnalysisBase):
 
     def __init__(self, r, chord, theta, af, Rhub, Rtip, B=3, rho=1.225, mu=1.81206e-5,
                  precone=0.0, tilt=0.0, yaw=0.0, shearExp=0.2, hubHt=80.0, nSector=8,
-                 tiploss=True, hubloss=True, wakerotation=True, usecd=True, iterRe=1):
+                 tiploss=True, hubloss=True, wakerotation=True, usecd=True, iterRe=1,
+                 rcentered=False):
 
         # translate from AirfoilPrep format to CCAirfoil
         ccaf = [0]*len(af)
@@ -29,13 +30,13 @@ class CCBlade(RotorAeroAnalysisBase):
                                            tiploss, hubloss, wakerotation, usecd, iterRe)
 
         # conform to interface
-        self.r = r
-        self.rotorR = Rtip
+        self.rotorR = self.analysis.rotorR
         self.rho = rho
         self.yaw = yaw
         self.tilt = tilt
-        self.precone = self.analysis.precone
         self.nBlade = B
+        # self.precone = self.analysis.precone
+        # self.r = r
         super(CCBlade, self).__init__(self.analysis.nSector)
 
 

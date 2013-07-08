@@ -11,6 +11,10 @@ import os
 import shutil
 import numpy as np
 import atexit
+from math import pi
+
+RPM2RS = pi/30.0
+RS2RPM = 30.0/pi
 
 
 def exe_path(defaultPath, exeName, searchPath):
@@ -70,9 +74,10 @@ def mktmpdir(dirname, DEBUG, tmp_files=None):
     def cleanup():
         if not DEBUG:
             shutil.rmtree(dirname)
-            # rmdir(dirname)
-            for f in tmp_files:
-                os.remove(f)
+
+            if tmp_files is not None:
+                for f in tmp_files:
+                    os.remove(f)
 
 
 

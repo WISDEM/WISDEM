@@ -10,11 +10,11 @@ Copyright (c) NREL. All rights reserved.
 import os
 from subprocess import Popen
 import numpy as np
-from math import pi
+from math import pi, fabs
 
 from airfoilprep import Airfoil
 from rotoraero import RotorAeroAnalysisBase
-from wisdem.common.utilities import exe_path, mktmpdir
+from wisdem.common.utilities import exe_path, mktmpdir, cosd
 
 
 RPM2RS = pi/30.0
@@ -90,18 +90,35 @@ class WTPerf(RotorAeroAnalysisBase):
         self.af = af
         self.pathToWTPerf = exe_path(pathToWTPerf, 'wtperf', os.path.dirname(__file__))
 
+        self.yaw = yaw
+        self.tilt = -tilt  # opposite sign convention
+        self.precone = precone
+        self.nBlade = B
+
         # atmosphere
         self.mu = mu
         self.shearExp = shearExp
         self.hubHt = hubHt
 
-        # interface variables
-        self.rotorR = Rtip
+
+        # compute actual rotor radius (w/ precone)
+        n = len(r)
+        length = np.zeros(n)
+
+        for i in range(n):
+            length[i] = 2*(r[i] - Rhub - np.sum(length[:i]))
+
+        # verify lengths
+        if np.any(length < 0) or fabs(Rtip - (Rhub + np.sum(length)))/Rtip > 1e-3:
+            raise Exception('grid does not conform to centered control points')
+
+
+        # TODO: check what WT_Perf assumes with precone for the rotor radius.
+
+        self.rotorR = Rhub + np.sum(length*cosd(self.precone))
         self.rho = rho
-        self.yaw = yaw
-        self.tilt = -tilt  # opposite sign convention
-        self.precone = precone
-        self.nBlade = B
+
+
         nAzimuth = 1  # not used.  WTPerf handles discretization internally
         super(WTPerf, self).__init__(nAzimuth)
 
@@ -464,6 +481,9 @@ class WTPerf(RotorAeroAnalysisBase):
         f.close()
 
 
+
+
+
     def __readOutput(self, idx1, idx2, n):
         """
         private method
@@ -574,7 +594,7 @@ if __name__ == '__main__':
     azimuth = 0.0
 
     # evaluate distributed loads
-    r, theta, Px, Py, Pz = rotor.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+    r, Px, Py, Pz, theta = rotor.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
 
 
