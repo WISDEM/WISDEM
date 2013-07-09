@@ -377,6 +377,12 @@ class RotorStruc:
 
 
     def axialStrainAlongBlade(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
+
+        P = self.totalLoads(ra, Paero, Omega, pitch, azimuth, tilt, precone)
+        return self.__axialStrainAlongBladeForPrescribedLoad(P)
+
+
+    def __axialStrainAlongBladeForPrescribedLoad(self, P):
         """Computes axial strain at top and bottom surface of each section
         at location of maximum thickness.
 
@@ -405,8 +411,6 @@ class RotorStruc:
 
         """
 
-
-        P = self.totalLoads(ra, Paero, Omega, pitch, azimuth, tilt, precone)
         self._changeLoads(P)
 
         # get strain locations
@@ -614,17 +618,18 @@ class RotorStruc:
     #         return self.r, P
 
 
-    def rootStrainDueToGravityLoads(self, tilt):
+    def rootStressDueToGravityLoads(self, tilt, pitch, precone, sector_idx):
         """edgewise fully-reversed weight loads"""
 
         azimuth = 90.0  # fully-reversed
-        pitch = 0.0
 
-        r_w, Px_w, Py_w, Pz_w = self.weightLoads(tilt, azimuth, pitch)
+        Pw = self.weightLoads(tilt, azimuth, pitch, precone)
 
-        strainU, strainL = self.axialStrainAlongBlade(r_w, Px_w, Py_w, Pz_w)
+        strainU, strainL = self.__axialStrainAlongBladeForPrescribedLoad(Pw)
 
-        return strainU[0]
+        E = self.sectionstruc.rootE(sector_idx)
+
+        return strainU[0]*E
 
 
 

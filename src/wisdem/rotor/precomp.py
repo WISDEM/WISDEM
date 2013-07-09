@@ -54,7 +54,6 @@ def file7colnum(f, s1, s2, s3, s4, s5, s6, s7):
 
 
 
-
 class PreComp(object):
     implements(SectionStrucInterface)
 
@@ -221,11 +220,15 @@ class PreComp(object):
         process.communicate()  # clear buffer and wait for process to terminate
 
         # check for successful completion
-        f.seek(-50, 2)
-        ending = f.read(50)
-        success = 'PreComp terminated normally.' in ending
+        try:
+            f.seek(-50, 2)
+            ending = f.read(50)
+            success = 'PreComp terminated normally.' in ending
+        except IOError:
+            success = False
 
         if not success:
+            print '*** PreComp failure ***'
             f.seek(0, 0)
             for line in f:
                 print line
@@ -357,6 +360,12 @@ class PreComp(object):
 
         return eps_crit
 
+
+    def rootE(self, sector_idx):
+
+        sector = self.compSec[0].secListUpper[sector_idx]
+
+        return sector.effectiveEAxial()
 
 
 
