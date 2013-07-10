@@ -361,13 +361,6 @@ class PreComp(object):
         return eps_crit
 
 
-    def rootE(self, sector_idx):
-
-        sector = self.compSec[0].secListUpper[sector_idx]
-
-        return sector.effectiveEAxial()
-
-
 
 
 

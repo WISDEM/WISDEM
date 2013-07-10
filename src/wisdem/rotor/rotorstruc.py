@@ -618,7 +618,7 @@ class RotorStruc:
     #         return self.r, P
 
 
-    def rootStressDueToGravityLoads(self, tilt, pitch, precone, sector_idx):
+    def rootStrainDueToGravityLoads(self, tilt, pitch, precone):
         """edgewise fully-reversed weight loads"""
 
         azimuth = 90.0  # fully-reversed
@@ -627,9 +627,7 @@ class RotorStruc:
 
         strainU, strainL = self.__axialStrainAlongBladeForPrescribedLoad(Pw)
 
-        E = self.sectionstruc.rootE(sector_idx)
-
-        return strainU[0]*E
+        return strainU[0]
 
 
 

@@ -1185,7 +1185,7 @@ class RotorAero(object):
 
 
 
-    def aeroLoads(self, Uinf, azimuth, pitch=0.0, safetyFactor=1.0):
+    def aeroLoads(self, Uinf, azimuth, pitch=0.0, safetyFactor=1.0, gustMultiplier=1.0):
         """Compute (azimuthally-averaged) distributed aerodynamic loads along blade
         in the airfoil-aligned coordinate system (:ref:`blade_airfoil_coord`).
 
@@ -1220,7 +1220,9 @@ class RotorAero(object):
         else:
             Omega = 0.0
 
-        r, Px, Py, Pz, twist, precone = self.analysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+        V = Uinf * gustMultiplier
+
+        r, Px, Py, Pz, twist, precone = self.analysis.distributedAeroLoads(V, Omega, pitch, azimuth)
 
         # rotate to airfoil coordinate system
         theta = twist + pitch
