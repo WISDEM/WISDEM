@@ -359,7 +359,7 @@ class RotorStruc:
 
 
     def tipDeflection(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
-        """tip deflection of blade in x-direction of azimuth-aligned coordinate system
+        """tip deflection of blade in x-direction of yaw-aligned coordinate system
 
 
         """
@@ -368,7 +368,8 @@ class RotorStruc:
         theta = np.array(self.theta) + pitch
         precone = _akima.interpolate(ra, precone, self.r)  # convert to structural grid
 
-        delta = DirectionVector(dx, dy, dz).airfoilToBlade(theta).bladeToAzimuth(precone)
+        delta = DirectionVector(dx, dy, dz).airfoilToBlade(theta).bladeToAzimuth(precone) \
+            .azimuthToHub(azimuth).hubToYaw(tilt)
 
         return delta.x[-1]
 
