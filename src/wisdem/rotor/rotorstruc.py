@@ -9,7 +9,7 @@ Copyright (c)  NREL. All rights reserved.
 
 import numpy as np
 import math
-from zope.interface import Interface, Attribute
+from zope.interface import Interface
 
 from wisdem.common import DirectionVector, _pBEAM, _akima
 from wisdem.common.utilities import cosd
@@ -116,23 +116,25 @@ class RotorStruc:
         self.theta = theta
 
         # translate to elastic center and rotate to principal axes
-        theta = np.zeros(nsec)  # rotation angle from airfoil coordinate system to principal
         EI11 = np.zeros(nsec)
         EI22 = np.zeros(nsec)
 
         for i in range(nsec):
 
             # translate to elastic center
-            EI = np.array([EIxx[i], EIyy[i], EIxy[i]]) + \
+            EItemp = np.array([EIxx[i], EIyy[i], EIxy[i]]) + \
                 np.array([-y_ec_str[i]**2, -x_ec_str[i]**2, -x_ec_str[i]*y_ec_str[i]])*EA[i]
 
-            # rotate to principal axes  (sign change due to coordinate system definition)
-            if (EI[0] == EI[1]):
-                theta[i] = math.pi/4.0
-            else:
-                theta[i] = 0.5*math.atan(2.0*EI[2] / (EI[0]-EI[1]))
-            EI11[i] = EI[0] + EI[2]*math.tan(theta[i])
-            EI22[i] = EI[1] - EI[2]*math.tan(theta[i])
+            # use profile c.s. for conveneince in using Hansen's notation
+            EI = DirectionVector.fromArray(EItemp).airfoilToProfile()
+
+            # let alpha = 1/2 beta and use half-angle identity (avoid arctan issues)
+            cb = (EI.y - EI.x) / math.sqrt((2*EI.z)**2 + (EI.y - EI.x)**2)  # EI.z is EIxy
+            sa = math.sqrt((1-cb)/2)
+            ca = math.sqrt((1+cb)/2)
+            ta = sa/ca
+            EI11[i] = EI.x - EI.z*ta
+            EI22[i] = EI.y + EI.z*ta
 
 
         # save for distributed weight
@@ -150,14 +152,14 @@ class RotorStruc:
 
 
 
-        # create utility functions for translation/rotation
+        # create utility functions for rotation
 
         def rotateFromAirfoilXYToPrincipal(x, y):
 
-            r1 = x*np.cos(theta) - y*np.sin(theta)
-            r2 = x*np.sin(theta) + y*np.cos(theta)
-            # r1 = x*np.cos(theta) + y*np.sin(theta)
-            # r2 = -x*np.sin(theta) + y*np.cos(theta)
+            v = DirectionVector(x, y, 0.0).airfoilToProfile()
+
+            r1 = v.x*ca + v.y*sa
+            r2 = -v.x*sa + v.y*ca
 
             return r1, r2
 
@@ -166,25 +168,18 @@ class RotorStruc:
 
         def rotateFromPrincipalToAirfoilXY(r1, r2):
 
-            x = r1*np.cos(theta) + r2*np.sin(theta)
-            y = -r1*np.sin(theta) + r2*np.cos(theta)
+            x = r1*ca - r2*sa
+            y = r1*sa + r2*ca
 
-            # x = r1*np.cos(theta) - r2*np.sin(theta)
-            # y = r1*np.sin(theta) + r2*np.cos(theta)
+            v = DirectionVector(x, y, 0.0).profileToAirfoil()
 
-            return x, y
+            return v.x, v.y
 
         self.rotateFromPrincipalToAirfoilXY = rotateFromPrincipalToAirfoilXY
 
 
         # define method to change loading on blade
         def changeLoads(P):
-
-            # # interpolate then rotate distributed loads
-            # Px = np.interp(r, rp, Px)
-            # Py = np.interp(r, rp, Py)
-            # Pz = np.interp(r, rp, Pz)
-
 
             P1, P2 = self.rotateFromAirfoilXYToPrincipal(P.x, P.y)
             P3 = P.z
@@ -629,10 +624,6 @@ class RotorStruc:
         strainU, strainL = self.__axialStrainAlongBladeForPrescribedLoad(Pw)
 
         return strainU[0]
-
-
-
-
 
 
 if __name__ == '__main__':
