@@ -360,6 +360,12 @@ class DirectionVector(object):
             return DirectionVector(v[0], v[1], v[2])
 
 
+    def __neg__(self):
+        """negate direction vector"""
+
+        return DirectionVector(-self.x, -self.y, -self.z)
+
+
     def __add__(self, other):
         """add two DirectionVector objects (v1 = v2 + v3)"""
 
