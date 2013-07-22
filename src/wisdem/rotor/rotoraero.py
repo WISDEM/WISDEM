@@ -12,11 +12,8 @@ from math import pi, sqrt
 from scipy import interpolate, optimize
 from zope.interface import Interface, Attribute, implements
 
-from wisdem.common import DirectionVector, _akima
+from wisdem.common import DirectionVector, _akima, RPM2RS, RS2RPM, sind, cosd, bladePositionAzimuthCS
 
-
-RPM2RS = pi/30.0
-RS2RPM = 30.0/pi
 
 
 # ------------------
@@ -39,8 +36,8 @@ class RotorAeroAnalysisInterface(Interface):
     tilt = Attribute(""":ref:`tilt angle <yaw_hub_coord>` about axis parallel to ground.
                      positive tilts rotor up for upstream configuration : float (deg)""")
 
-    # precone = Attribute(""":ref:`precone angle <azimuth_blade_coord>`, positive tilts blades
-    #                     away from tower for upwind configuration. : ndarray (deg)""")
+    precone = Attribute(""":ref:`hub precone angle <azimuth_blade_coord>`, positive tilts blades
+                        away from tower for upwind configuration. : ndarray (deg)""")
 
     # # hubPrecone = Attribute("""precone at hub""")
 
@@ -207,7 +204,6 @@ class RotorAeroAnalysisBase(object):
         """see :meth:`interface <RotorAeroAnalysisInterface.evaluate>`"""
 
         # rename
-        # precone = np.radians(self.precone)
         B = self.nBlade
         nsec = self.nAzimuth
 
@@ -236,9 +232,10 @@ class RotorAeroAnalysisBase(object):
                 Rp = Pz
 
                 # thrust and tangential loads
-                precone = np.radians(precone)
-                thrust = Np*np.cos(precone)-Rp*np.sin(precone)
-                torque = r*Tp*np.cos(precone)
+                blade_azim = bladePositionAzimuthCS(r, precone)
+
+                thrust = Np*cosd(precone)-Rp*sind(precone)
+                torque = Tp*blade_azim.z
 
                 # smooth out integration
                 oldr = r
@@ -286,17 +283,18 @@ class RotorAeroAnalysisBase(object):
             # run analysis
             r, Px, Py, Pz, theta, precone = self.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
-            # this can be extended to variable sweep blades simply by
-            # using azimuth + array(Lambda ) in place of azimuth
-            # the locations along the blade dyh, and dzh would also need to be recomputed
-            P = DirectionVector(Px, Py, Pz).bladeToAzimuth(precone).azimuthToHub(azimuth)
+            # loads in azimuthal c.s.
+            P = DirectionVector(Px, Py, Pz).bladeToAzimuth(precone)
 
-            # location of loads in hub coordinate system
-            az_rad = np.radians(azimuth)
-            position = DirectionVector(np.zeros_like(r), -r*np.sin(az_rad), r*np.cos(az_rad))
+            # location of loads in azimuth c.s.
+            position = bladePositionAzimuthCS(r, precone)
 
-            # distributed bending load in hub coordinate ysstem
+            # distributed bending load in azimuth coordinate ysstem
             Mp = position.cross(P)
+
+            # convert to hub c.s.
+            P = P.azimuthToHub(azimuth)
+            Mp = Mp.azimuthToHub(azimuth)
 
             # interpolate to help smooth out radial discretization
             oldr = r
@@ -1185,7 +1183,7 @@ class RotorAero(object):
 
 
 
-    def aeroLoads(self, Uinf, azimuth, pitch=0.0, gustMultiplier=1.0):
+    def aeroLoads(self, Uinf, azimuth, pitch=0.0):
         """Compute (azimuthally-averaged) distributed aerodynamic loads along blade
         in the airfoil-aligned coordinate system (:ref:`blade_airfoil_coord`).
 
@@ -1214,15 +1212,18 @@ class RotorAero(object):
 
         """
 
+        if not isinstance(Uinf, float):  # allow case where velocity along radius is specified
+            Uhub = Uinf[0]
+        else:
+            Uhub = Uinf
+
         # find control setting
-        if Uinf >= self.Vin and Uinf <= self.Vout:
-            Omega, pitch = self.__findControlSetting(Uinf)
+        if Uhub >= self.Vin and Uhub <= self.Vout:
+            Omega, pitch = self.__findControlSetting(Uhub)
         else:
             Omega = 0.0
 
-        V = Uinf * gustMultiplier
-
-        r, Px, Py, Pz, twist, precone = self.analysis.distributedAeroLoads(V, Omega, pitch, azimuth)
+        r, Px, Py, Pz, twist, precone = self.analysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
         # rotate to airfoil coordinate system
         theta = twist + pitch

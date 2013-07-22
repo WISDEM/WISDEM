@@ -58,7 +58,7 @@ class PreComp(object):
     implements(SectionStrucInterface)
 
 
-    def __init__(self, r, chord, theta, profile, compSec, leLoc, materials=None,
+    def __init__(self, r, chord, theta, precone, profile, compSec, leLoc, materials=None,
                  precompPath=None, DEBUG=False):
         """Constructor
 
@@ -92,6 +92,7 @@ class PreComp(object):
         self.r = np.array(r)
         self.chord = np.array(chord)
         self.theta = np.array(theta)
+        self.precone = precone
         self.profile = profile
         self.compSec = compSec
         self.leLoc = leLoc
@@ -281,7 +282,7 @@ class PreComp(object):
 
         f.close()
 
-        return self.r, self.theta, EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str
+        return EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str
 
 
 

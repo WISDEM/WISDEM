@@ -17,18 +17,21 @@ equations with guaranteed convergence", Wind Energy, 2013. (in press)
 """
 
 import numpy as np
-from math import pi, radians, fabs
+from math import pi, radians
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline
 from zope.interface import Interface, implements
 
 from airfoilprep import Airfoil
 import _bemroutines
-import _akima
-from csystem import DirectionVector
 
 
-RPM2RS = pi/30.0
+try:
+    from wisdem.common import cosd, DirectionVector, _akima, RPM2RS, bladePositionAzimuthCS
+except ImportError:
+    from common import cosd, DirectionVector, _akima, RPM2RS, bladePositionAzimuthCS
+
+
 
 
 # ------------------
@@ -164,14 +167,13 @@ class CCBlade:
 
     def __init__(self, r, chord, theta, af, Rhub, Rtip, B=3, rho=1.225, mu=1.81206e-5,
                  precone=0.0, tilt=0.0, yaw=0.0, shearExp=0.2, hubHt=80.0, nSector=8,
-                 tiploss=True, hubloss=True, wakerotation=True, usecd=True, iterRe=1,
-                 rcentered=False):
+                 tiploss=True, hubloss=True, wakerotation=True, usecd=True, iterRe=1):
         """Constructor for aerodynamic rotor analysis
 
         Parameters
         ----------
         r : array_like (m)
-            radial locations where blade is defined (should be increasing)
+            radial locations where blade is defined (should be increasing.  +x_z direction)
         chord : array_like (m)
             corresponding chord length at each section
         theta : array_like (deg)
@@ -189,9 +191,9 @@ class CCBlade:
             freestream fluid density
         mu : float, optional (kg/m/s)
             dynamic viscosity of fluid
-        precone : ndarray, optional (deg)
+        precone : float or ndarray, optional (deg)
             blade :ref:`precone angle <azimuth_blade_coord>`
-            if you input a float it will automatically populate the array with constant value
+            can be used for precurve in addition to precone by using array input.  blade length is preserved.
         tilt : float, optional (deg)
             nacelle :ref:`tilt angle <yaw_hub_coord>`
         yaw : float, optional (deg)
@@ -225,45 +227,38 @@ class CCBlade:
 
         self.r = np.array(r)
         self.chord = np.array(chord)
-        self.theta = np.radians(np.array(theta))
+        self.theta = np.radians(theta)
         self.af = af
         self.Rhub = Rhub
         self.Rtip = Rtip
         self.B = B
         self.rho = rho
         self.mu = mu
-        if isinstance(precone, float) or isinstance(precone, int):
-            self.precone = np.ones_like(r)*precone
-        else:
-            self.precone = precone
         self.tilt = tilt
         self.yaw = yaw
         self.shearExp = shearExp
         self.hubHt = hubHt
-
-        self.iterRe = iterRe
         self.bemoptions = dict(usecd=usecd, tiploss=tiploss, hubloss=hubloss, wakerotation=wakerotation)
+        self.iterRe = iterRe
 
-        # compute actual rotor radius (w/ precone)
-        n = len(r)
-        length = np.zeros(n)
-
-        if rcentered:
-            for i in range(n):
-                length[i] = 2*(r[i] - Rhub - np.sum(length[:i]))
-
-            # verify lengths
-            if np.any(length < 0) or fabs(Rtip - (Rhub + np.sum(length)))/Rtip > 1e-3:
-                raise Exception('grid does not conform to centered control points')
-
+        if isinstance(precone, float) or isinstance(precone, int):
+            self.precone = precone*np.ones_like(r)
         else:
-            length[1:n-1] = (self.r[2:] - self.r[:n-2])/2.0
-            length[0] = (r[1]+r[0])/2.0 - Rhub
-            length[-1] = Rtip - (r[-1]+r[-2])/2.0
+            self.precone = np.array(precone)
 
+        # find blade position in azimuthal c.s.
+        self.preconefull = np.concatenate(([self.precone[0]], self.precone, [self.precone[-1]]))
+        self.rfull = np.concatenate(([Rhub], self.r, [Rtip]))
+        blade_az = bladePositionAzimuthCS(self.rfull, self.preconefull)
+        self.z_azim_full = blade_az.z
 
-        self.rotorR = Rhub + np.sum(length*np.cos(np.radians(self.precone)))
+        # actual rotor radius
+        self.rotorR = blade_az.z[-1]
 
+        # save intermediate positions (not root and tip)
+        self.z_azim = blade_az.z[1:-1]
+        self.x_azim = blade_az.x[1:-1]
+        self.y_azim = np.zeros_like(self.x_azim)
 
         # azimuthal discretization
         if self.tilt == 0.0 and self.yaw == 0.0 and self.shearExp == 0.0:
@@ -328,13 +323,11 @@ class CCBlade:
         Tp = ct*q*self.chord
 
         # loads must go to zero at tips
-        r = np.concatenate(([self.Rhub], self.r, [self.Rtip]))
         Np = np.concatenate(([0.0], Np, [0.0]))
         Tp = np.concatenate(([0.0], Tp, [0.0]))
         theta = np.concatenate(([self.theta[0]], self.theta, [self.theta[-1]]))
-        precone = np.concatenate(([self.precone[0]], self.precone, [self.precone[-1]]))
 
-        return r, Tp, Np, np.degrees(theta), precone
+        return self.rfull, Tp, Np, np.degrees(theta), self.preconefull
 
 
 
@@ -372,17 +365,22 @@ class CCBlade:
         self.pitch = radians(pitch)
 
         # get section heights in wind-aligned coordinate system
-        heightFromHub = DirectionVector(0*self.r, 0*self.r, self.r).bladeToAzimuth(self.precone)\
-            .azimuthToHub(azimuth).hubToYaw(self.tilt).z
+        heightFromHub = DirectionVector(self.x_azim, self.y_azim, self.z_azim).azimuthToHub(azimuth).hubToYaw(self.tilt).z
 
         # shear profile
         V = Uinf*(1 + heightFromHub/self.hubHt)**self.shearExp
 
-        # convert velocity to blade reference frame
-        Vwind = DirectionVector(V, 0*V, 0*V).windToYaw(self.yaw).yawToHub(self.tilt)\
-            .hubToAzimuth(azimuth).azimuthToBlade(self.precone)
-        self.Vx = Vwind.x*np.ones_like(self.r)
-        self.Vy = Vwind.y + Omega*RPM2RS*self.r*np.cos(np.radians(self.precone))
+        # compute wind and rotation velocity in azimuthal reference frame
+        Vwind = DirectionVector(V, 0*V, 0*V).windToYaw(self.yaw).yawToHub(self.tilt).hubToAzimuth(azimuth)
+        OmegaV = DirectionVector(Omega*RPM2RS, 0.0, 0.0)
+        RV = DirectionVector(self.x_azim, self.y_azim, self.z_azim)
+        Vrot = -OmegaV.cross(RV)  # negative sign because relative wind opposite to rotation
+
+        # combine and rotate to local blade frame
+        Vtotal = (Vwind + Vrot).azimuthToBlade(self.precone)
+
+        self.Vx = Vtotal.x
+        self.Vy = Vtotal.y
 
         # initialize
         n = len(self.r)
@@ -436,9 +434,7 @@ class CCBlade:
 
 
         # update distributed loads
-        r, Tp, Np, theta, precone = self.__evaluateLoads(phivec, avec, apvec)
-
-        return r, Tp, Np, theta, precone
+        return self.__evaluateLoads(phivec, avec, apvec)
 
 
 
@@ -502,9 +498,8 @@ class CCBlade:
                 # run analysis
                 r, Tp, Np, theta, precone = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], azimuth)
 
-                cosPrecone = np.cos(np.radians(precone))
-                thrust = Np*cosPrecone
-                torque = r*Tp*cosPrecone
+                thrust = Np*cosd(precone)
+                torque = Tp*self.z_azim_full
 
                 # smooth out integration
                 oldr = r
@@ -515,16 +510,6 @@ class CCBlade:
                 # integrate Thrust and Torque
                 T[i] += B * np.trapz(thrust, r) / nsec
                 Q[i] += B * np.trapz(torque, r) / nsec
-
-                # # interpolate to help smooth out radial discretization
-                # oldr = r
-                # r = np.linspace(oldr[0], oldr[-1], 200)
-                # Tp = _akima.interpolate(oldr, Tp, r)
-                # Np = _akima.interpolate(oldr, Np, r)
-
-                # # integrate Thrust and Torque
-                # T[i] += B * np.trapz(Np*cosPrecone, r) / nsec
-                # Q[i] += B * np.trapz(r*Tp*cosPrecone, r) / nsec
 
 
         # Power
@@ -594,6 +579,8 @@ if __name__ == '__main__':
     hubHt = 80.0
     nSector = 8
 
+    precone = np.linspace(0, -40, len(r))
+
     # create CCBlade object
     aeroanalysis = CCBlade(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu, precone, tilt, yaw,
                            shearExp, hubHt, nSector)
@@ -638,7 +625,8 @@ if __name__ == '__main__':
     plt.xlabel('$\lambda$')
     plt.ylabel('$c_p$')
 
-    aeroanalysis = CCBlade(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu, precone=0, tilt=0, yaw=0, shearExp=0)
+    aeroanalysis = CCBlade(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu,
+        precone=0, tilt=0, yaw=0, shearExp=0)
 
     CP, CT, CQ = aeroanalysis.evaluate(Uinf, Omega, pitch, coefficient=True)
 

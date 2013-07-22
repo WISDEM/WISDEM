@@ -12,6 +12,8 @@ import shutil
 import numpy as np
 import atexit
 from math import pi
+from scipy import integrate
+from csystem import DirectionVector
 
 RPM2RS = pi/30.0
 RS2RPM = 30.0/pi
@@ -99,3 +101,28 @@ def sind(value):
     return np.sin(np.radians(value))
 
 
+def tand(value):
+    """tangent of value where value is given in degrees"""
+
+    return np.tan(np.radians(value))
+
+
+def bladePositionAzimuthCS(r, precone):
+    """compute coordiantes of blade in azimuthal coordinate system
+    accounting for precone and precurve
+
+    """
+    Rhub = r[0]
+
+    # z-direction
+    integrandZ = 1.0/np.sqrt(1 + tand(precone)**2)
+    z_azim = Rhub + np.concatenate(([0.0], integrate.cumtrapz(integrandZ, r)))
+
+
+    # x-direction
+    integrandX = np.zeros_like(integrandZ)
+    idx = (precone != 0)  # avoid divide by zero
+    integrandX[idx] = 1.0/np.sqrt(1 + 1.0/tand(precone[idx])**2)
+    x_azim = np.concatenate(([0.0], integrate.cumtrapz(integrandX, r)))
+
+    return DirectionVector(x_azim, 0*x_azim, z_azim)

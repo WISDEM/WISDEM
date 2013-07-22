@@ -9,10 +9,10 @@ Copyright (c)  NREL. All rights reserved.
 
 import numpy as np
 import math
-from zope.interface import Interface
+from zope.interface import Interface, Attribute
 
-from wisdem.common import DirectionVector, _pBEAM, _akima
-from wisdem.common.utilities import cosd
+from wisdem.common import DirectionVector, _pBEAM, _akima, cosd, bladePositionAzimuthCS
+import _curvefem
 
 
 # ------------------
@@ -24,18 +24,15 @@ class SectionStrucInterface(Interface):
     Evaluates mass and stiffness properties of structure at appropriate
     sections"""
 
-    # r = Attribute('radial location of each section (m)')
-    # theta = Attribute(':ref:`twist angle <twist_angle>` of each section (deg)')
+    r = Attribute('distance along blade where section properties are defined (m)')
+    theta = Attribute(':ref:`twist angle <twist_angle>` of each section (deg)')
+    precone = Attribute('precone angle along blade (including precurve)')
 
     def sectionProperties():
         """Get the mass and stiffness properties of the cross-section at specified locations along blade
 
         Returns
         -------
-        r : ndarray (m)
-            distance along blade where section properties are defined
-        theta : ndarray (deg)
-            orientation of section
         EA : ndarray (N)
             axial stiffness
         EIxx : ndarray (N*m^2)
@@ -108,12 +105,12 @@ class RotorStruc:
         self.nblades = nBlade
 
         # extract section properties
-        (r, theta, EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str) = blade.sectionProperties()
-        nsec = len(r)
+        (EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str) = blade.sectionProperties()
 
-        self.nsec = len(r)
-        self.r = r
-        self.theta = theta
+        nsec = len(blade.r)
+        self.nsec = nsec
+        self.r = blade.r
+        self.theta = blade.theta
 
         # translate to elastic center and rotate to principal axes
         EI11 = np.zeros(nsec)
@@ -141,15 +138,27 @@ class RotorStruc:
         self.rhoA = rhoA
 
         # create finite element objects
-        p_section = _pBEAM.SectionData(nsec, r, EA, EI11, EI22, GJ, rhoA, rhoJ)
+        p_section = _pBEAM.SectionData(nsec, self.r, EA, EI11, EI22, GJ, rhoA, rhoJ)
         p_loads = _pBEAM.Loads(nsec)  # no loads
         p_tip = _pBEAM.TipData()  # no tip mass
         k = np.array([float('inf'), float('inf'), float('inf'), float('inf'), float('inf'), float('inf')])
         p_base = _pBEAM.BaseData(k, float('inf'))  # rigid base
 
-        # create blade object
+        # create pBEAM object
         self.blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
 
+
+        # setup curveFEM parameters
+        blade_azim = bladePositionAzimuthCS(blade.r, blade.precone)
+        z_azim = blade_azim.z
+
+        rHub = z_azim[0]
+        bladeLength = z_azim[-1] - z_azim[0]
+        bladeFrac = (z_azim - rHub) / bladeLength
+        precurve = blade_azim.x
+        presweep = np.zeros_like(precurve)  # for now
+        self.curveparams = (bladeLength, rHub, bladeFrac, blade.theta, rhoA, EI11, EI22,
+                            GJ, EA, rhoJ, precurve, presweep)
 
 
         # create utility functions for rotation
@@ -255,52 +264,56 @@ class RotorStruc:
 
 
 
-    def naturalFrequencies(self, n, eigenvectors=False):
-        """Computes the first n natural frequencies of the rotor blades.
+    # def naturalFrequencies(self, n, eigenvectors=False):
+    #     """Computes the first n natural frequencies of the rotor blades.
 
-        Parameters
-        ----------
-        n : int
-            number of natural frequencies to return
+    #     Parameters
+    #     ----------
+    #     n : int
+    #         number of natural frequencies to return
 
-        Returns
-        -------
-        freq : ndarray (Hz)
-            returns first n natural frequencies in order (lowest to highest),
-            if n is greater than the number of total degrees of freedom of the structure
-            then as many frequencies are available are returned.
+    #     Returns
+    #     -------
+    #     freq : ndarray (Hz)
+    #         returns first n natural frequencies in order (lowest to highest),
+    #         if n is greater than the number of total degrees of freedom of the structure
+    #         then as many frequencies are available are returned.
 
-        """
+    #     """
 
-        if eigenvectors:
-            freq, vectors = self.blade.naturalFrequenciesAndEigenvectors(n)
+    #     if eigenvectors:
+    #         freq, vectors = self.blade.naturalFrequenciesAndEigenvectors(n)
 
-            vectors_rot = [0]*n
+    #         vectors_rot = [0]*n
 
-            for idx, v in enumerate(vectors):
-                dr1 = v[:self.nsec]
-                dr2 = v[self.nsec:2*self.nsec]
-                dz = v[2*self.nsec:3*self.nsec]
-                dtheta_r1 = v[3*self.nsec:4*self.nsec]
-                dtheta_r2 = v[4*self.nsec:5*self.nsec]
-                dtheta_z = v[5*self.nsec:6*self.nsec]
+    #         for idx, v in enumerate(vectors):
+    #             dr1 = v[:self.nsec]
+    #             dr2 = v[self.nsec:2*self.nsec]
+    #             dz = v[2*self.nsec:3*self.nsec]
+    #             dtheta_r1 = v[3*self.nsec:4*self.nsec]
+    #             dtheta_r2 = v[4*self.nsec:5*self.nsec]
+    #             dtheta_z = v[5*self.nsec:6*self.nsec]
 
-                dx, dy = self.rotateFromPrincipalToAirfoilXY(dr1, dr2)
-                dtheta_x, dtheta_y = self.rotateFromPrincipalToAirfoilXY(dtheta_r1, dtheta_r2)
+    #             dx, dy = self.rotateFromPrincipalToAirfoilXY(dr1, dr2)
+    #             dtheta_x, dtheta_y = self.rotateFromPrincipalToAirfoilXY(dtheta_r1, dtheta_r2)
 
-                d = DirectionVector(dx, dy, dz).airfoilToBlade(self.theta)
-                dtheta = DirectionVector(dtheta_x, dtheta_y, dtheta_z).airfoilToBlade(self.theta)
+    #             d = DirectionVector(dx, dy, dz).airfoilToBlade(self.theta)
+    #             dtheta = DirectionVector(dtheta_x, dtheta_y, dtheta_z).airfoilToBlade(self.theta)
 
-                vectors_rot[idx] = (d.x, d.y, d.z, dtheta.x, dtheta.y, dtheta.z)
+    #             vectors_rot[idx] = (d.x, d.y, d.z, dtheta.x, dtheta.y, dtheta.z)
 
-            return freq, vectors_rot
+    #         return freq, vectors_rot
 
-        else:
-            return self.blade.naturalFrequencies(n)
-
-
+    #     else:
+    #         return self.blade.naturalFrequencies(n)
 
 
+    def naturalFrequencies(self, Omega, n=6):
+        """uses CurveFEM"""
+
+        freq = _curvefem.frequencies(Omega, *self.curveparams)
+
+        return freq[:n]
 
 
 
@@ -373,12 +386,6 @@ class RotorStruc:
 
 
     def axialStrainAlongBlade(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
-
-        P = self.totalLoads(ra, Paero, Omega, pitch, azimuth, tilt, precone)
-        return self.__axialStrainAlongBladeForPrescribedLoad(P)
-
-
-    def __axialStrainAlongBladeForPrescribedLoad(self, P):
         """Computes axial strain at top and bottom surface of each section
         at location of maximum thickness.
 
@@ -406,6 +413,8 @@ class RotorStruc:
         Forces input in the :ref:`airfoil-aligned coordinate system <blade_airfoil_coord>`
 
         """
+
+        P = self.totalLoads(ra, Paero, Omega, pitch, azimuth, tilt, precone)
 
         self._changeLoads(P)
 
@@ -557,7 +566,9 @@ class RotorStruc:
 
         Omega *= math.pi/30.0  # RPM to rad/s
 
-        load = DirectionVector(0.0, 0.0, self.rhoA*Omega**2*self.r*cosd(precone))
+        blade_azim = bladePositionAzimuthCS(self.r, precone)
+
+        load = DirectionVector(0.0, 0.0, self.rhoA*Omega**2*blade_azim.z)
 
         theta = np.array(self.theta) + pitch
 
@@ -637,7 +648,7 @@ if __name__ == '__main__':
     le_str = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.498, 0.497, 0.465, 0.447, 0.43, 0.411, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
     nweb_str = [0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0]
 
-    precone_str = np.zeros_like(r_str)
+    precurve_str = np.linspace(0, 10, len(r_str))
 
     # -------- materials and composite layup  -----------------
     import os
@@ -662,16 +673,18 @@ if __name__ == '__main__':
         profile[i] = Profile.initFromPreCompFile(os.path.join(basepath, 'shape_' + str(i+1) + '.inp'))
     # --------------------------------------
 
+
     # create object
-    precomp = PreComp(r_str, chord_str, theta_str, profile, compSec, le_str, materials)
+    precomp = PreComp(r_str, chord_str, theta_str, precurve_str, profile, compSec, le_str, materials)
 
-
-    rotor = RotorStruc(precomp, theta_str, precone_str, nblades=3)
+    rotor = RotorStruc(precomp, nBlade=3)
 
     print rotor.mass()
     print rotor.momentsOfInertia()
-    print rotor.naturalFrequencies(5)
+    Omega = 10.0
+    print rotor.naturalFrequencies(Omega, 5)
 
+    exit()
 
     rloads = np.array([1.5, 2.87, 5.6, 8.33, 11.75, 15.85, 19.95, 24.05, 28.15, 32.25, 36.35, 40.45, 44.55, 48.65, 52.75, 56.17, 58.9, 61.63, 63.0])
     Px = np.array([0.0, 94.8364811803, 129.791836351, 120.512309484, 1122.1746305, 1585.54994028, 1920.49807227, 2314.70230308, 2924.45483362, 3428.12192908, 4047.93300221, 4596.32163203, 4899.05923464, 5354.03619714, 5688.5117827, 5756.48798554, 5578.85761707, 4864.89492594, 0.0])
