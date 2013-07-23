@@ -1212,7 +1212,7 @@ class RotorAero(object):
 
         """
 
-        if not isinstance(Uinf, float):  # allow case where velocity along radius is specified
+        if not (isinstance(Uinf, float) or isinstance(Uinf, int)):  # allow case where velocity along radius is specified
             Uhub = Uinf[0]
         else:
             Uhub = Uinf

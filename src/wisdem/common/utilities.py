@@ -126,3 +126,8 @@ def bladePositionAzimuthCS(r, precone):
     x_azim = np.concatenate(([0.0], integrate.cumtrapz(integrandX, r)))
 
     return DirectionVector(x_azim, 0*x_azim, z_azim)
+
+
+def actualDiameter(r, precone):
+
+    return 2.0 * bladePositionAzimuthCS(r, precone).z[-1]

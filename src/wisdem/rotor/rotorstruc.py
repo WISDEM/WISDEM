@@ -11,7 +11,7 @@ import numpy as np
 import math
 from zope.interface import Interface, Attribute
 
-from wisdem.common import DirectionVector, _pBEAM, _akima, cosd, bladePositionAzimuthCS
+from wisdem.common import DirectionVector, _pBEAM, _akima, bladePositionAzimuthCS
 import _curvefem
 
 
