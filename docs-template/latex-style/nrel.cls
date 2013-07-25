@@ -106,6 +106,9 @@
 % ams math
 \RequirePackage{amsfonts,amssymb}
 
+% gensymb. Required for degrees symbol
+\RequirePackage{gensymb}
+
 % better tables
 \RequirePackage{booktabs}
 

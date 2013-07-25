@@ -20,3 +20,12 @@ CCBlade
     documentation
     theory
 
+.. only:: html
+
+    .. rubric:: Appendix
+
+.. toctree::
+    :maxdepth: 1
+
+    csystem
+

@@ -4,7 +4,7 @@ Composite laminae lay-up inside the blade section
 7                N_scts(1):  no of sectors on top surface
 
 normalized chord location of  nodes defining airfoil sectors boundaries (xsec_node)
-0.0000   0.0146   0.3892   0.6108   0.8099   0.9854   0.9926   1.0000   
+0.0000   0.0293   0.4114   0.5886   0.8537   0.9707   0.9852   1.0000   
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_LP_LE
 1             4             
@@ -12,10 +12,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_LP_LE
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_LP_LE_PANEL
 2             4             
@@ -23,10 +23,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_LP_LE_PANEL
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_LP_CAP
 3             4             
@@ -34,10 +34,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_LP_CAP
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_LP_TE_PANEL
 4             4             
@@ -45,10 +45,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_LP_TE_PANEL
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_LP_TE_REINF
 5             4             
@@ -56,10 +56,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_LP_TE_REINF
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_LP_TE
 6             4             
@@ -67,10 +67,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_LP_TE
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_LP_FLAT
 7             4             
@@ -78,17 +78,17 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_LP_FLAT
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 
 
 *************************** BOTTOM SURFACE ****************************
 7                N_scts(1):  no of sectors on top surface
 
 normalized chord location of  nodes defining airfoil sectors boundaries (xsec_node)
--0.0000   0.0146   0.3892   0.6108   0.8099   0.9854   0.9926   1.0000   
+-0.0000   0.0293   0.4114   0.5886   0.8537   0.9707   0.9852   1.0000   
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_HP_LE
 1             4             
@@ -96,10 +96,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_HP_LE
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_HP_LE_PANEL
 2             4             
@@ -107,10 +107,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_HP_LE_PANEL
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_HP_CAP
 3             4             
@@ -118,10 +118,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_HP_CAP
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_HP_TE_PANEL
 4             4             
@@ -129,10 +129,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_HP_TE_PANEL
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_HP_TE_REINF
 5             4             
@@ -140,10 +140,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_HP_TE_REINF
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_HP_TE
 6             4             
@@ -151,10 +151,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_HP_TE
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 ...........................................................................
 Sect_num    no of laminae (N_laminas)          STACK:000500_HP_FLAT
 7             4             
@@ -162,10 +162,10 @@ Sect_num    no of laminae (N_laminas)          STACK:000500_HP_FLAT
 lamina    num of  thickness   fibers_direction  composite_material ID
 number    plies   of ply (m)       (deg)               (-)
 lam_num  N_plies    Tply         Tht_lam            Mat_id
-  1        1      5.000e-005       0.0           1 (Gelcoat)
-  2        1      2.820e-003       0.0           3 (SNL(Triax))
-  3        1      7.050e-002       0.0           3 (SNL(Triax))
-  4        1      2.820e-003       0.0           3 (SNL(Triax))
+  1        1      5.000e-05       0.0           1 (Gelcoat)
+  2        1      2.820e-03       0.0           3 (SNL(Triax))
+  3        1      5.170e-02       0.0           3 (SNL(Triax))
+  4        1      2.820e-03       0.0           3 (SNL(Triax))
 
 
 **********************************************************************

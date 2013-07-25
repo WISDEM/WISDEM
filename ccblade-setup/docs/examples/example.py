@@ -5,7 +5,7 @@ os.chdir(basepath)
 
 # just to temporarily change PYTHONPATH without installing
 import sys
-sys.path.append(os.path.expanduser('~') + '/Dropbox/NREL/SysEng/TWISTER/src/twister/rotoraero')
+sys.path.append(os.path.expanduser('~') + '/Dropbox/NREL/NREL_WISDEM/src/wisdem/rotor')
 
 
 # 1 ---------
@@ -14,7 +14,7 @@ import numpy as np
 from math import pi
 import matplotlib.pyplot as plt
 
-from ccblade import CCAirfoil, CCBlade
+from ccblade_sa import CCAirfoil, CCBlade
 
 
 # geometry
@@ -30,9 +30,19 @@ theta = np.array([13.308, 13.308, 13.308, 13.308, 11.480, 10.162, 9.011, 7.795,
                   6.544, 5.361, 4.188, 3.125, 2.319, 1.526, 0.863, 0.370, 0.106])
 B = 3  # number of blades
 
+tilt = 5.0
+precone = 2.5
+yaw = 0.0
+
+nSector = 8  # azimuthal discretization
+
 # atmosphere
 rho = 1.225
 mu = 1.81206e-5
+
+# power-law wind shear profile
+shearExp = 0.2
+hubHt = 90.0
 
 # 1 ----------
 
@@ -64,7 +74,8 @@ for i in range(len(r)):
 # 3 ----------
 
 # create CCBlade object
-rotor = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu)
+rotor = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu,
+                precone, tilt, yaw, shearExp, hubHt, nSector)
 
 # 3 ----------
 
@@ -75,9 +86,10 @@ Uinf = 10.0
 tsr = 7.55
 pitch = 0.0
 Omega = Uinf*tsr/Rtip * 30.0/pi  # convert to RPM
+azimuth = 0.0
 
 # evaluate distributed loads
-r, theta, Tp, Np = rotor.distributedAeroLoads(Uinf, Omega, pitch)
+r, Tp, Np, theta, precone = rotor.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
 # 4 ----------
 
@@ -85,15 +97,17 @@ r, theta, Tp, Np = rotor.distributedAeroLoads(Uinf, Omega, pitch)
 
 # plot
 rstar = (r - Rhub) / (Rtip - Rhub)
-plt.plot(rstar, Tp/1e3, 'k', label='lead-lag')
-plt.plot(rstar, Np/1e3, 'r', label='flapwise')
+plt.plot(rstar, Tp/1e3, label='lead-lag')
+plt.plot(rstar, Np/1e3, label='flapwise')
 plt.xlabel('blade fraction')
 plt.ylabel('distributed aerodynamic loads (kN)')
 plt.legend(loc='upper left')
+plt.grid()
 plt.show()
 # 5 ----------
-# plt.savefig('/Users/sning/Dropbox/NREL/SysEng/TWISTER/ccblade-setup/docs/images/distributedAeroLoads.pdf')
 
+# plt.savefig('/Users/sning/Dropbox/NREL/SysEng/TWISTER/ccblade-beta-setup/docs/images/distributedAeroLoads.pdf')
+# plt.savefig('/Users/sning/Dropbox/NREL/SysEng/TWISTER/ccblade-beta-setup/docs/images/distributedAeroLoads.png')
 
 # 6 ----------
 
@@ -116,10 +130,11 @@ pitch = np.zeros_like(tsr)
 CP, CT, CQ = rotor.evaluate(Uinf, Omega, pitch, coefficient=True)
 
 plt.figure()
-plt.plot(tsr, CP, 'k')
+plt.plot(tsr, CP)
 plt.xlabel('$\lambda$')
 plt.ylabel('$c_p$')
 plt.show()
 # 7 ----------
 
-# plt.savefig('/Users/sning/Dropbox/NREL/SysEng/TWISTER/ccblade-setup/docs/images/cp.pdf')
+# plt.savefig('/Users/sning/Dropbox/NREL/SysEng/TWISTER/ccblade-beta-setup/docs/images/cp.pdf')
+# plt.savefig('/Users/sning/Dropbox/NREL/SysEng/TWISTER/ccblade-beta-setup/docs/images/cp.png')

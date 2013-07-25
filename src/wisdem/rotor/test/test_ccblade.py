@@ -9,7 +9,6 @@ except ImportError:
     from wisdem.rotor.ccblade_sa import CCAirfoil, CCBlade
 
 
-
 class TestNREL5MW(unittest.TestCase):
 
     def setUp(self):
@@ -32,9 +31,7 @@ class TestNREL5MW(unittest.TestCase):
         mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-
-        basepath = path.join(path.pardir, '5MW_files', '5MW_AFFiles')
-
+        basepath = path.join(path.dirname(path.realpath(__file__)), '5MW_AFFiles')
 
         # load all airfoils
         airfoil_types = [0]*8

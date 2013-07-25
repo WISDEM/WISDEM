@@ -12,7 +12,7 @@ continuously differentiable output.
 _sa == stand-alone version
 
 .. [1] S. Andrew Ning, "A simple solution method for the blade element momentum
-equations with guaranteed convergence", Wind Energy, 2013. (in press)
+equations with guaranteed convergence", Wind Energy, 2013.
 
 """
 
@@ -21,6 +21,7 @@ from math import pi, radians
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline
 from zope.interface import Interface, implements
+import warnings
 
 from airfoilprep import Airfoil
 import _bemroutines
@@ -29,7 +30,9 @@ import _bemroutines
 try:
     from wisdem.common import cosd, DirectionVector, _akima, RPM2RS, bladePositionAzimuthCS
 except ImportError:
-    from common import cosd, DirectionVector, _akima, RPM2RS, bladePositionAzimuthCS
+    from common.csystem import DirectionVector
+    import _akima
+    from common.utilities import cosd, RPM2RS, bladePositionAzimuthCS
 
 
 
@@ -66,6 +69,10 @@ class AirfoilInterface(Interface):
 
         """
 
+
+# ------------------
+#  Airfoil Class
+# ------------------
 
 
 class CCAirfoil:
@@ -162,6 +169,10 @@ class CCAirfoil:
 
 
 
+# ------------------
+#  Main Class: CCBlade
+# ------------------
+
 
 class CCBlade:
 
@@ -173,7 +184,8 @@ class CCBlade:
         Parameters
         ----------
         r : array_like (m)
-            radial locations where blade is defined (should be increasing.  +x_z direction)
+            locations defining the blade along a reference axis that
+            follows the blade path (values should be increasing).
         chord : array_like (m)
             corresponding chord length at each section
         theta : array_like (deg)
@@ -182,18 +194,18 @@ class CCBlade:
         af : list(AirfoilInterface)
             list of :ref:`AirfoilInterface <airfoil-interface-label>` objects at each section
         Rhub : float (m)
-            radial location of hub
+            location of hub
         Rtip : float (m)
-            radial location of tip
+            location of tip
         B : int, optional
             number of blades
         rho : float, optional (kg/m^3)
             freestream fluid density
         mu : float, optional (kg/m/s)
             dynamic viscosity of fluid
-        precone : float or ndarray, optional (deg)
-            blade :ref:`precone angle <azimuth_blade_coord>`
-            can be used for precurve in addition to precone by using array input.  blade length is preserved.
+        precone : float or array_like, optional (deg)
+            :ref:`hub precone angle <azimuth_blade_coord>`
+            can be used for precurve in addition to precone by using an array input (blade length is preserved).
         tilt : float, optional (deg)
             nacelle :ref:`tilt angle <yaw_hub_coord>`
         yaw : float, optional (deg)
@@ -202,7 +214,7 @@ class CCBlade:
             shear exponent for a power-law wind profile across hub
         hubHt : float, optional
             hub height used for power-law wind profile.
-            U = Uref*(z/z0)**shearExp, where z = hubHt + r*cos(azimuth), z0 = hubHt
+            U = Uref*(z/hubHt)**shearExp
         nSector : int, optional
             number of azimuthal sectors to descretize aerodynamic calculation.  automatically set to
             ``1`` if tilt, yaw, and shearExp are all 0.0.  Otherwise set to a minimum of 4.
@@ -241,6 +253,7 @@ class CCBlade:
         self.bemoptions = dict(usecd=usecd, tiploss=tiploss, hubloss=hubloss, wakerotation=wakerotation)
         self.iterRe = iterRe
 
+        # check if precurve specified
         if isinstance(precone, float) or isinstance(precone, int):
             self.precone = precone*np.ones_like(r)
         else:
@@ -302,8 +315,6 @@ class CCBlade:
         """
 
         n = len(a)
-        Np = np.zeros(n)
-        Tp = np.zeros(n)
         cl = np.zeros(n)
         cd = np.zeros(n)
         W = np.zeros(n)
@@ -322,7 +333,7 @@ class CCBlade:
         Np = cn*q*self.chord
         Tp = ct*q*self.chord
 
-        # loads must go to zero at tips
+        # loads must go to zero at ends
         Np = np.concatenate(([0.0], Np, [0.0]))
         Tp = np.concatenate(([0.0], Tp, [0.0]))
         theta = np.concatenate(([self.theta[0]], self.theta, [self.theta[-1]]))
@@ -336,29 +347,32 @@ class CCBlade:
 
         Parameters
         ----------
-        Uinf : float (m/s)
-            freestream velocity
+        Uinf : float or array_like (m/s)
+            hub height wind speed (float).  If desired, an array can be input which specifies
+            the velocity at each radial location along the blade (useful for analyzing loads
+            behind tower shadow for example).  In either case shear corrections will be applied.
         Omega : float (RPM)
             rotor rotation speed
         pitch : float (deg)
             blade pitch in same direction as :ref:`twist <blade_airfoil_coord>`
             (positive decreases angle of attack)
         azimuth : float (deg)
-            :ref:`azimuth angle <hub_azimuth_coord>` where aerodynamic loads should be computed at
+            the :ref:`azimuth angle <hub_azimuth_coord>` where aerodynamic loads should be computed at
 
         Returns
         -------
         r : ndarray (m)
-            radial stations where force is specified (should go all the way from hub to tip)
+            radial stations along blade where force is specified (all the way from hub to tip)
         Tp : ndarray (N/m)
             force per unit length tangential to the section in the direction of rotation
         Np : ndarray (N/m)
             force per unit length normal to the section on downwind side
         theta : ndarray (deg)
-            corresponding geometric twist angle (not including pitch)---
+            corresponding geometric :ref:`twist angle <blade_airfoil_coord>` (not including pitch)---
             positive twists nose into the wind
         precone : ndarray (deg)
-            corresponding precone angle
+            corresponding :ref:`precone/precurve <azimuth_blade_coord>` angles (these later two outputs
+            are provided to facilitate coordinate transformations)
 
         """
 
@@ -409,7 +423,7 @@ class CCBlade:
                 phi_lower = epsilon
                 phi_upper = pi/2
 
-                if errf(phi_lower, *args)*errf(phi_upper, *args) > 0:  # a rare but possible case
+                if errf(phi_lower, *args)*errf(phi_upper, *args) > 0:  # an uncommon but possible case
 
                     if errf(-pi/4, *args) < 0 and errf(-epsilon, *args) > 0:
                         phi_lower = -pi/4
@@ -423,7 +437,7 @@ class CCBlade:
 
                 except ValueError:
 
-                    print 'user error.  check input values.'
+                    warnings.warn('error.  check input values.')
                     phi_opt = 0.0
 
 
@@ -444,7 +458,7 @@ class CCBlade:
         Parameters
         ----------
         Uinf : array_like (m/s)
-            freestream velocity
+            hub height wind speed
         Omega : array_like (RPM)
             rotor rotation speed
         pitch : array_like (deg)
@@ -463,15 +477,15 @@ class CCBlade:
 
         Notes
         -----
-        Normalization uses Rtip and rho provided in the constructor:
 
         CP = P / (q * Uinf * A)
 
         CT = T / (q * A)
 
-        CQ = Q / (q * A * Rtip)
+        CQ = Q / (q * A * R)
 
-        where A = pi*Rtip**2 and q = 0.5*rho*Uinf**2
+        note: that the rotor radius R, may not actually be Rtip in the case
+            of precone/precurve
 
         """
 
@@ -533,27 +547,28 @@ class CCBlade:
 
 if __name__ == '__main__':
 
-
     # geometry
     Rhub = 1.5
     Rtip = 63.0
-    r = np.array([2.87, 5.60, 8.33, 11.75, 15.85, 19.95, 24.05, 28.15, 32.25,
-                  36.35, 40.45, 44.55, 48.65, 52.75, 56.17, 58.9, 61.63])
-    chord = np.array([3.48, 3.88, 4.22, 4.50, 4.57, 4.44, 4.28, 4.08, 3.85,
-                      3.58, 3.28, 2.97, 2.66, 2.35, 2.07, 1.84, 1.59])
-    theta = np.array([13.28, 13.28, 13.28, 13.28, 11.77, 10.34, 8.97, 7.67,
-                      6.43, 5.28, 4.20, 3.21, 2.30, 1.50, 0.91, 0.48, 0.09])
-    B = 3
+
+    r = np.array([2.8667, 5.6000, 8.3333, 11.7500, 15.8500, 19.9500, 24.0500,
+                  28.1500, 32.2500, 36.3500, 40.4500, 44.5500, 48.6500, 52.7500,
+                  56.1667, 58.9000, 61.6333])
+    chord = np.array([3.542, 3.854, 4.167, 4.557, 4.652, 4.458, 4.249, 4.007, 3.748,
+                      3.502, 3.256, 3.010, 2.764, 2.518, 2.313, 2.086, 1.419])
+    theta = np.array([13.308, 13.308, 13.308, 13.308, 11.480, 10.162, 9.011, 7.795,
+                      6.544, 5.361, 4.188, 3.125, 2.319, 1.526, 0.863, 0.370, 0.106])
+    B = 3  # number of blades
 
     # atmosphere
     rho = 1.225
     mu = 1.81206e-5
 
     import os
+    afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
     basepath = os.path.join('5MW_files', '5MW_AFFiles') + os.path.sep
 
     # load all airfoils
-    afinit = CCAirfoil.initFromAerodynFile
     airfoil_types = [0]*8
     airfoil_types[0] = afinit(basepath + 'Cylinder1.dat')
     airfoil_types[1] = afinit(basepath + 'Cylinder2.dat')
@@ -564,26 +579,24 @@ if __name__ == '__main__':
     airfoil_types[6] = afinit(basepath + 'DU21_A17.dat')
     airfoil_types[7] = afinit(basepath + 'NACA64_A17.dat')
 
-    # place at appropriate radial stations, and convert format
+    # place at appropriate radial stations
     af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
 
-    bem_airfoil = [0]*len(r)
+    af = [0]*len(r)
     for i in range(len(r)):
-        bem_airfoil[i] = airfoil_types[af_idx[i]]
+        af[i] = airfoil_types[af_idx[i]]
 
 
-    precone = 20.0
-    tilt = 20.0
-    yaw = 20.0
+    tilt = -5.0
+    precone = 2.5
+    yaw = 0.0
     shearExp = 0.2
     hubHt = 80.0
     nSector = 8
 
-    precone = np.linspace(0, -40, len(r))
-
     # create CCBlade object
-    aeroanalysis = CCBlade(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu, precone, tilt, yaw,
-                           shearExp, hubHt, nSector)
+    aeroanalysis = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu,
+                           precone, tilt, yaw, shearExp, hubHt, nSector)
 
 
     # set conditions
@@ -604,9 +617,6 @@ if __name__ == '__main__':
     plt.xlabel('blade fraction')
     plt.ylabel('distributed aerodynamic loads (kN)')
     plt.legend(loc='upper left')
-    # plt.show()
-
-    P, T, Q = aeroanalysis.evaluate([Uinf], [Omega], [pitch])
 
     CP, CT, CQ = aeroanalysis.evaluate([Uinf], [Omega], [pitch], coefficient=True)
 
@@ -624,13 +634,5 @@ if __name__ == '__main__':
     plt.plot(tsr, CP, 'k')
     plt.xlabel('$\lambda$')
     plt.ylabel('$c_p$')
-
-    aeroanalysis = CCBlade(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu,
-        precone=0, tilt=0, yaw=0, shearExp=0)
-
-    CP, CT, CQ = aeroanalysis.evaluate(Uinf, Omega, pitch, coefficient=True)
-
-    plt.plot(tsr, CP, 'r')
-
 
     plt.show()

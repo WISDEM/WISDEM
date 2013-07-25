@@ -17,26 +17,26 @@ if 'sdist' in sys.argv:
 
     # copy test files
     os.mkdir('test')
-    testdir = os.path.join(os.getcwd(), 'src', 'twister', 'rotoraero', 'test')
+    testdir = os.path.join(os.getcwd(), 'src', 'wisdem', 'rotor', 'test')
     copyfile(os.path.join(testdir, 'test_ccblade.py'), 'test/test_ccblade.py')
-    copytree(os.path.join(testdir, '5MW_AFFiles'), 'test/5MW_AFFiles')
+    copytree(os.path.join(testdir, os.pardir, '5MW_files', '5MW_AFFiles'), 'test/5MW_AFFiles')
 
 
 
 
 setup(
     name='CCBlade',
-    version='0.1.0',
+    version='0.3.0',
     description='Blade element momentum aerodynamics for wind turbines',
     author='S. Andrew Ning',
     author_email='andrew.ning@nrel.gov',
-    package_dir={'': 'src/twister/rotoraero'},
-    py_modules=['ccblade', 'airfoilprep'],
+    package_dir={'': 'src/wisdem/rotor', 'common': 'src/wisdem/common'},
+    py_modules=['ccblade_sa', 'airfoilprep', 'common.csystem', 'common.utilities'],
     # install_requires=['numpy', 'scipy'],
     # test_suite='test.test_ccblade.py',
     license='Apache License, Version 2.0',
-    ext_modules=[Extension('_bemroutines', ['src/twister/rotoraero/bemroutines.f90'], extra_compile_args=['-O2']),
-                 Extension('_akima', ['src/twister/rotoraero/akima.c'], include_dirs=[numpy.get_include()])]
+    ext_modules=[Extension('_bemroutines', ['src/wisdem/rotor/bemroutines.f90'], extra_compile_args=['-O2']),
+                 Extension('_akima', ['src/wisdem/common/akima.c'], include_dirs=[numpy.get_include()])]
 )
 
 

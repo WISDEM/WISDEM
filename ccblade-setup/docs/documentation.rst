@@ -1,4 +1,4 @@
-.. module:: ccblade
+.. module:: ccblade_sa
 
 .. _interfaces-label:
 
@@ -60,16 +60,16 @@ len(Re)    degree of spline
         .. autosummary::
             :nosignatures:
 
-            ~CCAirfoil.evaluate
             ~CCAirfoil.initFromAerodynFile
+            ~CCAirfoil.evaluate
 
 
 .. autogenerate
     .. autosummary::
         :toctree: generated
 
-        ~CCAirfoil.evaluate
         ~CCAirfoil.initFromAerodynFile
+        ~CCAirfoil.evaluate
 
 
 
@@ -105,7 +105,4 @@ This class provides aerodynamic analysis of wind turbine rotor blades using BEM 
 
         ~CCBlade.distributedAeroLoads
         ~CCBlade.evaluate
-
-
-
 

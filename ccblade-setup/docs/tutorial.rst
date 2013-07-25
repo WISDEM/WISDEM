@@ -5,7 +5,12 @@
 Tutorial
 --------
 
-One example of a CCBlade application is to simulate the aerodynamic performance of the NREL 5-MW reference model.  First, define the geometry and atmospheric properties.
+Two examples are shown below.  The first is a complete setup for the NREL 5-MW model, and the second shows how to model blade precurvature using CCBlade.
+
+NREL 5-MW
+^^^^^^^^^
+
+One example of a CCBlade application is the simulation of the NREL 5-MW reference model's aerodynamic performance.  First, define the geometry and atmospheric properties.
 
 .. literalinclude:: examples/example.py
     :start-after: # 1 ---
@@ -47,7 +52,7 @@ as shown in :num:`Figure #distributed-fig`.
     :width: 5in
     :align: center
 
-    Flatwise and edgewise aerodynamic loads along blade.
+    Flapwise and lead-lag aerodynamic loads along blade.
 
 
 To get the power, thrust, and torque at the same conditions (in both absolute and coefficient form), use the :meth:`evaluate <ccblade.CCBlade.evaluate>` method.  This is generally used for generating power curves so it expects ``array_like`` input.  For this example a list of size one is used.
@@ -86,7 +91,28 @@ CCBlade provides a few additional options in its constructor.  The other options
 .. code-block:: python
 
     # create CCBlade object
-    rotor = CCBlade(r, chord, theta, bem_airfoil, Rhub, Rtip, B, rho, mu,
+    rotor = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu,
+                    precone, tilt, yaw, shearExp, hubHt, nSector
                     tiploss=True, hubloss=True, wakerotation=True, usecd=True, iterRe=1)
 
 The parameters :code:`tiploss` and :code:`hubloss` toggle Prandtl tip and hub losses repsectively. The parameter :code:`wakerotation` toggles wake swirl (i.e., :math:`a^\prime = 0`).  The parameter :code:`usecd` can be used to disable the inclusion of drag in the calculation of the induction factors (it is always used in calculations of the distributed loads).  However, doing so may cause potential failure in the solution methodology (see :cite:`Ning2013A-simple-soluti`).  In practice, it should work fine, but special care for that particular case has not yet been examined, and the default implementation allows for the possibility of convergence failure.  All four of these parameters are ``True`` by default.  The parameter :code:`iterRe` is for advanced usage.  Referring to :cite:`Ning2013A-simple-soluti`, this parameter controls the number of internal iterations on the Reynolds number.  One iteration is almost always sufficient, but for high accuracy in the Reynolds number :code:`iterRe` could be set at 2.  Anything larger than that is unnecessary.
+
+
+Precurve
+^^^^^^^^
+
+CCBlade can also simulate blades with precurve.  This is done by using the ``precone`` parameter and passing in an array rather than just a float.  The values in the array correspond to the angle of precurve along the blade using the same sign conventions as for :ref:`precone <azimuth_blade_coord>` For example, a downwind machine (negative precurve) with significant curvature could be simulated using:
+
+.. literalinclude:: examples/precurve.py
+    :start-after: # 1 ---
+    :end-before: # 1 ---
+
+The shape of the blade is seen in :num:`Figure #shape-fig`.  Note that the radius of the blade is *not* 63 m (it is now 58.16 m), but the blade length is preserved at 63 m.  The precurve angles are treated as (local) rotations in the same manner as the precone angle is.
+
+.. _shape-fig:
+
+.. figure:: /images/rotorshape.*
+    :width: 5in
+    :align: center
+
+    Profile of an example (highly) precurved blade.

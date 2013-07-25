@@ -10,14 +10,12 @@ Copyright (c) NREL. All rights reserved.
 from tempfile import mkstemp
 from shutil import move
 from os import remove, close
+import re
 
-FLAG1 = '[width=5in]{distributedAeroLoads.pdf}'
-FLAG2 = '[width=5in]{cp.pdf}'
-FLAG3 = 'Referring to \\citep{ning2013a-simple-soluti}, this parameter controls'
+FLAG = '\chapter{Coordinate System}'
 
 
 def fixit(path):
-
 
     oldfile = open(path)
     handle, temp_path = mkstemp()
@@ -25,11 +23,25 @@ def fixit(path):
 
     for line in oldfile:
 
-        if FLAG1 in line or FLAG2 in line:
-            line = line.replace('5in', '4in')
+        if FLAG in line:
+            line = line.replace('chapter', 'chapter*')
+            line += '\n\\addcontentsline{toc}{chapter}{Coordinate System}'
 
-        if FLAG3 in line:
-            line = line.replace('citep', 'cite')
+        if '\section' in line and '-aligned' in line:
+            line = line.replace('section', 'section*')
+
+        if '\includegraphics' in line:
+            line = re.sub('\d+\.?\d*in', '3.5in', line)
+
+        if '\includegraphics[width=3.5in]{blade_airfoil.pdf}' in line:
+            line = line.replace('3.5in', '4.0in')
+
+        if '\includegraphics[width=3.5in]{azimuth_blade.pdf}' in line:
+            line = line.replace('3.5in', '2.25in')
+
+        if '\includegraphics[width=3.5in]{yaw_hub.pdf}' in line:
+            line = line.replace('3.5in', '2.5in')
+
 
         newfile.write(line)
 

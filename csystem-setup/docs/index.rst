@@ -3,7 +3,6 @@
 Coordinate System
 =================
 
-.. .. module:: twister.common.csystem
 .. module:: csystem
 
 This module defines coordinate systems for horizontal axis wind turbines and provides convenience methods for transforming vectors between the various coordinate systems.  The supplied transformation methods are for *rotation only* and do not account for any offsets that may be necessary depending on the vector quantity (e.g., transfer of forces between coordinate system does not depend on the location where the force is defined, but position, velocity, moments, etc. do).  In other words the vectors are treated as directions only and are independent of the defined position.  How the vector should transform based on position is not generalizable and depends on the quantity of interest.  All coordinate systems obey the right-hand rule, :math:`x \times y = z`, and all angles must be input in **degrees**.  The turbine can be either an upwind or downwind configuration, but in either case it is assumed that that the blades rotate in the **clockwise** direction when looking downwind (more specifically the rotor is assumed to rotate about the :math:`+x_h` axis in :num:`Figure #yaw-hub-fig`).   The vectors allow for elementary operations (+, -, \*, /, +=, -=, \*=, /=) between other vectors of the same type, or with scalars (e.g., force_total = force1 + force2).
@@ -69,10 +68,18 @@ Inertial and Wind-aligned
     .. rubric:: Associated Methods
 
     .. autosummary::
+
+        ~DirectionVector.inertialToWind
+        ~DirectionVector.windToInertial
+
+
+.. autogenerate
+    .. autosummary::
         :toctree: generated
 
         ~DirectionVector.inertialToWind
         ~DirectionVector.windToInertial
+
 
 
 
@@ -119,6 +126,12 @@ Wind-aligned and Yaw-aligned
 
     .. rubric:: Associated Methods
 
+    .. autosummary::
+
+        ~DirectionVector.windToYaw
+        ~DirectionVector.yawToWind
+
+.. autogenerate
     .. autosummary::
         :toctree: generated
 
@@ -170,6 +183,12 @@ Yaw-aligned and Hub-aligned
     .. rubric:: Associated Methods
 
     .. autosummary::
+
+        ~DirectionVector.yawToHub
+        ~DirectionVector.hubToYaw
+
+.. autogenerate
+    .. autosummary::
         :toctree: generated
 
         ~DirectionVector.yawToHub
@@ -218,6 +237,12 @@ Hub-aligned and Azimuth-aligned
 
     .. rubric:: Associated Methods
 
+    .. autosummary::
+
+        ~DirectionVector.hubToAzimuth
+        ~DirectionVector.azimuthToHub
+
+.. autogenerate
     .. autosummary::
         :toctree: generated
 
@@ -274,6 +299,12 @@ Azimuth-aligned and Blade-aligned
     .. rubric:: Associated Methods
 
     .. autosummary::
+
+        ~DirectionVector.azimuthToBlade
+        ~DirectionVector.bladeToAzimuth
+
+.. autogenerate
+    .. autosummary::
         :toctree: generated
 
         ~DirectionVector.azimuthToBlade
@@ -325,6 +356,12 @@ Blade-aligned and Airfoil-aligned
     .. rubric:: Associated Methods
 
     .. autosummary::
+
+        ~DirectionVector.bladeToAirfoil
+        ~DirectionVector.airfoilToBlade
+
+.. autogenerate
+    .. autosummary::
         :toctree: generated
 
         ~DirectionVector.bladeToAirfoil
@@ -375,9 +412,13 @@ Airfoil-aligned and Profile
     .. rubric:: Associated Methods
 
     .. autosummary::
-        :toctree: generated
 
         ~DirectionVector.airfoilToProfile
         ~DirectionVector.profileToAirfoil
 
+.. autogenerate
+    .. autosummary::
+        :toctree: generated
 
+        ~DirectionVector.airfoilToProfile
+        ~DirectionVector.profileToAirfoil

@@ -24,4 +24,4 @@ To check if installation was successful, run the unit tests
 
 ## Detailed Documentation
 
-Open `docs/index.html` in your browser.
+Open `docs/index.html` in your browser.  The HTML version is hyperlinked with the source code, but an alternative PDF version is also available at `docs/UserGuide.pdf`.

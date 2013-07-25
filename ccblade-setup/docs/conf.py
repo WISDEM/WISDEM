@@ -22,8 +22,8 @@ sys.path.insert(0, os.path.abspath('.'))
 codeName = u'CCBlade'
 authorName = u'S. Andrew Ning'
 copyright = u'2013, NREL'
-version = '0.1'
-release = '0.1.0'
+version = '0.3'
+release = '0.3.0'
 
 # -- General configuration -----------------------------------------------------
 

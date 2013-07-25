@@ -14,8 +14,8 @@ location   position   length    twist         file          file
 Span_loc    Le_loc    Chord    Tw_aero   Af_shape_file  Int_str_file
   (-)        (-)       (m)    (degrees)       (-)           (-)
 
-  0.00     0.400   3.748e+000   6.54      shape_24.inp     layup_24.inp
-  1.00     0.400   3.748e+000   6.54      shape_24.inp     layup_24.inp
+  0.00     0.400   3.748e+00   6.54      shape_24.inp     layup_24.inp
+  1.00     0.400   3.748e+00   6.54      shape_24.inp     layup_24.inp
 
 Webs (spars) data  --------------------------------------------------
 
@@ -24,6 +24,6 @@ Webs (spars) data  --------------------------------------------------
 2                Ob_sp_stn   : blade station number where outer-most end of webs is located (-)
 
 Web_num   Inb_end_ch_loc   Oub_end_ch_loc (fraction of chord length)
-1.0000        0.3006        0.3006        
-2.0000        0.5945        0.5945        
+1.0000        0.3003        0.3003        
+2.0000        0.4997        0.4997        
 3.0000        1.0000        1.0000        
