@@ -41,8 +41,8 @@ The constructed blade object can now be used for various computations.  For exam
 
 which result in
 
->>> mass = 18246.13375
->>> natural freq = [ 0.90859363  1.21962076  2.6788661   4.51458224  5.8724871 ]
+>>> mass = 17170.0189
+>>> natural freq = [ 0.90910346  1.13977516  2.81855826  4.23836926  6.40037864]
 
 :num:`Figure #dy-fig` shows a plot of the blade displacement in the second principal direction generated from the following commands.
 
