@@ -363,7 +363,7 @@ class RotorStruc:
         dx, dy = self.rotateFromPrincipalToAirfoilXY(dr1, dr2)
         dtheta_x, dtheta_y = self.rotateFromPrincipalToAirfoilXY(dtheta_r1, dtheta_r2)
 
-        return dx, dy, dz, dtheta_x, dtheta_y, dtheta_z
+        return DirectionVector(dx, dy, dz), DirectionVector(dtheta_x, dtheta_y, dtheta_z)
 
 
     def tipDeflection(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
@@ -371,12 +371,12 @@ class RotorStruc:
 
 
         """
-        dx, dy, dz, dt_x, dt_y, dt_z = self.displacements(ra, Paero, Omega, pitch, azimuth, tilt, precone)
+        dr, dtheta = self.displacements(ra, Paero, Omega, pitch, azimuth, tilt, precone)
 
         theta = np.array(self.theta) + pitch
         precone = _akima.interpolate(ra, precone, self.r)  # convert to structural grid
 
-        delta = DirectionVector(dx, dy, dz).airfoilToBlade(theta).bladeToAzimuth(precone) \
+        delta = dr.airfoilToBlade(theta).bladeToAzimuth(precone) \
             .azimuthToHub(azimuth).hubToYaw(tilt)
 
         return delta.x[-1]
