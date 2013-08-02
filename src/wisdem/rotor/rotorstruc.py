@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-pbeam_wrapper.py
+rotorstruc.py
 
 Created by Andrew Ning on 2012-02-28.
 Copyright (c)  NREL. All rights reserved.
@@ -385,7 +385,7 @@ class RotorStruc:
 
 
 
-    def axialStrainAlongBlade(self, ra, Paero, Omega, pitch, azimuth, tilt, precone):
+    def axialStrainAlongBlade(self, sector_idx_array, ra, Paero, Omega, pitch, azimuth, tilt, precone):
         """Computes axial strain at top and bottom surface of each section
         at location of maximum thickness.
 
@@ -419,7 +419,7 @@ class RotorStruc:
         self._changeLoads(P)
 
         # get strain locations
-        xu_e, yu_e, xl_e, yl_e = self.sectionstruc.criticalStrainLocations()
+        xu_e, yu_e, xl_e, yl_e = self.sectionstruc.criticalStrainLocations(sector_idx_array)
 
         # rotate to principle axes
         xu, yu = self.rotateFromAirfoilXYToPrincipal(xu_e, yu_e)
