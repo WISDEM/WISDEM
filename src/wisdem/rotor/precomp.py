@@ -713,10 +713,6 @@ class Profile:
         self.yu = np.interp(self.x, xu, yu)
         self.yl = np.interp(self.x, xl, yl)
 
-        # compute thickness to chord ratio
-        self.tc = max(self.yu - self.yl)
-
-
 
     @classmethod
     def initWithTEtoTEdata(cls, x, y):
@@ -990,8 +986,15 @@ class Profile:
     @property
     def tc(self):
         """thickness to chord ratio of the Profile"""
-        return self.tc
+        return max(self.yu - self.yl)
 
+
+    def set_tc(self, new_tc):
+
+        factor = new_tc / self.tc
+
+        self.yu *= factor
+        self.yl *= factor
 
 
 

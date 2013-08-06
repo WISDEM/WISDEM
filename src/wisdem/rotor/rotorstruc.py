@@ -383,7 +383,9 @@ class RotorStruc:
 
 
 
-
+    # TODO: remove sector_idx_array and have x,y locations specified
+    # also rename criticalStrainLocations to somethign like midPanelLocation
+    # finally remove it from the interface
 
     def axialStrainAlongBlade(self, sector_idx_array, ra, Paero, Omega, pitch, azimuth, tilt, precone):
         """Computes axial strain at top and bottom surface of each section
