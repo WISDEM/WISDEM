@@ -134,7 +134,7 @@ class MonopileStruc(object):
         # if top is None:
         #     tip = _pBEAM.TipData()
         # else:
-        tip = _pBEAM.TipData(top['m'], top['cm'], top['I'], np.zeros(3), np.zeros(3))
+        tip = _pBEAM.TipData(top['m'], np.array(top['cm']), np.array(top['I']), np.zeros(3), np.zeros(3))
         baseData = _pBEAM.BaseData(k, soil.infinity)
 
 
@@ -156,7 +156,7 @@ class MonopileStruc(object):
             Pz += Pz_weight
 
             loads = _pBEAM.Loads(self.nodes, Px, Py, Pz)
-            tip = _pBEAM.TipData(top['m'], top['cm'], top['I'], Ftop, Mtop)
+            tip = _pBEAM.TipData(top['m'], np.array(top['cm']), np.array(top['I']), Ftop, Mtop)
 
             Ftop[2] -= top['m']*g
 

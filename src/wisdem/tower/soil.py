@@ -45,7 +45,7 @@ class SoilModel(Interface):
 
 
 
-class SoilModelCylindricalFoundation():
+class SoilModelCylindricalFoundation:
     implements(SoilModel)
     """Estimates equivalent spring stiffness at the base of a
     foundation supported in soil.
