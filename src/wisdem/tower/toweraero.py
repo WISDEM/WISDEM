@@ -34,7 +34,10 @@ class MonopileAero(object):
         """return in yaw-aligned coordinate system"""
 
         z, Px_wind, Py_wind, Pz_wind, q_wind = self.__distributedWindLoads(Uhub)
-        z, Px_wave, Py_wave, Pz_wave, q_wave = self.__distributedWaveLoads(Uc)
+        if self.wave is not None:
+            z, Px_wave, Py_wave, Pz_wave, q_wave = self.__distributedWaveLoads(Uc)
+        else:
+            Px_wave = Py_wave = Pz_wave = q_wave = 0.0
 
         Px = Px_wind + Px_wave
         Py = Py_wind + Py_wave

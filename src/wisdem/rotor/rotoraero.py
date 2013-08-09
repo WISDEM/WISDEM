@@ -1148,7 +1148,7 @@ class RotorAero(object):
 
 
 
-    def thrustAndTorque(self, Uinf, pitch=0.0):
+    def thrustAndTorque(self, Uinf, pitch=0.0, Ugust=0.0):
         """thrust and torque as a function of wind speed
 
         Parameters
@@ -1176,6 +1176,8 @@ class RotorAero(object):
             Omega, pitch = self.__findControlSetting(Uinf)
         else:
             Omega = 0.0
+
+        Uinf += Ugust
 
         P, T, Q = self.analysis.evaluate([Uinf], [Omega], [pitch])
 

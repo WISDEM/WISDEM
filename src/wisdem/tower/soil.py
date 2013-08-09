@@ -44,6 +44,19 @@ class SoilModel(Interface):
         """
 
 
+class RigidFoundation(object):
+    implements(SoilModel)
+
+    def __init__(self):
+
+        self.infinity = float('inf')
+        self.depth = 0.0
+
+    def equivalentSpringStiffnessAtBase(self, r0, t0):
+
+        return self.infinity*np.ones(6)
+
+
 
 class SoilModelCylindricalFoundation:
     implements(SoilModel)
