@@ -1137,7 +1137,7 @@ class RotorAero(object):
 
         """
 
-        Omega, pitch = self.__findControlSetting(self.ratedSpeed)
+        Omega, pitch = self._findControlSetting(self.ratedSpeed)
 
         P, T, Q = self.analysis.evaluate([self.ratedSpeed], [Omega], [pitch])
 
@@ -1173,7 +1173,7 @@ class RotorAero(object):
 
         # find control setting
         if Uinf >= self.Vin and Uinf <= self.Vout:
-            Omega, pitch = self.__findControlSetting(Uinf)
+            Omega, pitch = self._findControlSetting(Uinf)
         else:
             Omega = 0.0
 
@@ -1221,7 +1221,7 @@ class RotorAero(object):
 
         # find control setting
         if Uhub >= self.Vin and Uhub <= self.Vout:
-            Omega, pitch = self.__findControlSetting(Uhub)
+            Omega, pitch = self._findControlSetting(Uhub)
         else:
             Omega = 0.0
 
@@ -1243,7 +1243,7 @@ class RotorAero(object):
 
     #     # find control setting
     #     if Uinf >= self.Vin and Uinf <= self.Vout:
-    #         Omega, pitch = self.__findControlSetting(Uinf)
+    #         Omega, pitch = self._findControlSetting(Uinf)
     #     else:
     #         Omega = 0.0
 
@@ -1304,7 +1304,7 @@ class RotorAero(object):
 
         # find control setting
         if Uinf >= self.Vin and Uinf <= self.Vout:
-            Omega, pitch = self.__findControlSetting(Uinf)
+            Omega, pitch = self._findControlSetting(Uinf)
         else:
             Omega = 0.0
 
@@ -1314,7 +1314,7 @@ class RotorAero(object):
 
 
 
-    def __findControlSetting(self, Uinf):
+    def _findControlSetting(self, Uinf):
         """private method
         finds rotation speed and pitch to achieve the correct power output
         at a given wind speed.
