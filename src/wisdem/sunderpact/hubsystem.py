@@ -12,18 +12,18 @@ from zope.interface import implements
 
 #-------------------------------------------------------------------------------
 
-class Hub(): 
+class Hub():
     implements(SubComponent)
-    ''' Hub class    
-          The Hub class is used to represent the hub component of a wind turbine. 
+    ''' Hub class
+          The Hub class is used to represent the hub component of a wind turbine.
           It contains the general properties for a wind turbine component as well as additional design load and dimentional attributes as listed below.
-          It contains an update method to determine the mass, mass properties, and dimensions of the component.            
+          It contains an update method to determine the mass, mass properties, and dimensions of the component.
     '''
-    
+
     def __init__(self, BladeMass, RotorDiam, BladeNum, hubDiam=0, RatedWindSpeed = 12, RootMoment=0.0, AirDensity=1.225, Solidity=0.065):
-        ''' 
-        Initializes hub component 
-        
+        '''
+        Initializes hub component
+
         Parameters
         ----------
         RotorDiam : float
@@ -43,18 +43,18 @@ class Hub():
         Solidity : float
           solidity of the rotor (default == 0.065 if not provided)
         '''
-        
+
         self.update_mass(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
 
 
     def update_mass(self, BladeMass, RotorDiam, BladeNum, hubDiam=0, RatedWindSpeed = 12, RootMoment=0.0, AirDensity=1.225, Solidity=0.065):
         '''
         Computes the dimensions, mass, and mass properiteis for the wind turbine hub component.
-        
-        The compute method determines and sets the attributes for the hub system based on the inputs described in the parameter section below. 
+
+        The compute method determines and sets the attributes for the hub system based on the inputs described in the parameter section below.
         The mass is calculated based input loads according to the University of Sunderland model [1] and the dimensions are calculated based on the NREL WindPACT rotor studies [2].
-     
-        
+
+
         Parameters
         ----------
         RotorDiam : float
@@ -73,7 +73,7 @@ class Hub():
           air density at hub height (default == 1.225 kg / m^3 if not provided) [kg / m^3]
         Solidity : float
           solidity of the rotor (default == 0.065 if not provided)
-          
+
         '''
 
         # Sunderland method for calculating hub, pitch and spinner cone masses
@@ -86,7 +86,7 @@ class Hub():
         if RootMoment == 0.0:
             RootMoment = (3.06 * pi / 8) * AirDensity * (RatedWindSpeed ** 2) * (Solidity * (RotorDiam ** 3)) / BladeNum
                                                             # simplified equation for blade root moment (Sunderland model) if one is not provided
-        
+
         self.mass =50 * hubgeomFact * hubloadFact * hubcontFact * BladeNum * RootMoment * (hubmatldensity / hubmatlstress)
                                                             # mass of hub based on Sunderland model
                                                             # 31.4 adapted to 50 to fit 5 MW data
@@ -113,19 +113,19 @@ class Hub():
 
 #-------------------------------------------------------------------------------
 
-class PitchSystem(): 
-    implements(SubComponent) 
+class PitchSystem():
+    implements(SubComponent)
     '''
-     PitchSystem class          
-      The PitchSystem class is used to represent the pitch system of a wind turbine. 
+     PitchSystem class
+      The PitchSystem class is used to represent the pitch system of a wind turbine.
       It contains the general properties for a wind turbine component as well as additional design load and dimentional attributes as listed below.
       It contains an update method to determine the mass, mass properties, and dimensions of the component.
     '''
-    
+
     def __init__(self, BladeMass, RotorDiam, BladeNum, hubDiam=0, RatedWindSpeed = 12, RootMoment=0.0, AirDensity=1.225, Solidity=0.065):
-        ''' 
+        '''
         Initializes pitch system
-        
+
         Parameters
         ----------
         RotorDiam : float
@@ -145,18 +145,18 @@ class PitchSystem():
         Solidity : float
           solidity of the rotor (default == 0.065 if not provided)
         '''
-        
+
         self.update_mass(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
 
 
     def update_mass(self, BladeMass, RotorDiam, BladeNum, hubDiam=0, RatedWindSpeed = 12, RootMoment=0.0, AirDensity=1.225, Solidity=0.065):
         '''
         Computes the dimensions, mass, and mass properiteis for the wind turbine hub system and components.
-        
-        The compute method determines and sets the attributes for the hub system based on the inputs described in the parameter section below. 
+
+        The compute method determines and sets the attributes for the hub system based on the inputs described in the parameter section below.
         The mass is calculated based input loads accoreding to the University of Sunderland model [1] and the dimensions are calculated based on the NREL WindPACT rotor studies [2].
-     
-        
+
+
         Parameters
         ----------
         RotorDiam : float
@@ -208,21 +208,21 @@ class PitchSystem():
         I[2] = I[1]
         self.I = (I)
 
-#-------------------------------------------------------------------------------      
+#-------------------------------------------------------------------------------
 
-class Spinner(): 
-    implements(SubComponent) 
-    ''' 
+class Spinner():
+    implements(SubComponent)
+    '''
        Spinner class
-          The SpinnerClass is used to represent the spinner of a wind turbine. 
+          The SpinnerClass is used to represent the spinner of a wind turbine.
           It contains the general properties for a wind turbine component as well as additional design load and dimentional attributes as listed below.
           It contains an update method to determine the mass, mass properties, and dimensions of the component.
     '''
-    
+
     def __init__(self, RotorDiam, hubDiam=0):
-        ''' 
-        Initializes spinner component 
-        
+        '''
+        Initializes spinner component
+
         Parameters
         ----------
         RotorDiam : float
@@ -230,23 +230,23 @@ class Spinner():
         hubDiam : float
           the specified hub diameter (if == 0, then it is set within compute method) [m]
         '''
-        
+
         self.update_mass(RotorDiam, hubDiam)
 
 
     def update_mass(self, RotorDiam, hubDiam=0):
         '''
         Computes the dimensions, mass, and mass properties for the wind turbine spinner.
-        
-        The compute method determines and sets the attributes for the spinner component. 
+
+        The compute method determines and sets the attributes for the spinner component.
         The mass is calculated based input loads accoreding to the University of Sunderland model [1] and the dimensions are calculated based on the NREL WindPACT rotor studies [2].
-        
+
         Parameters
         ----------
         RotorDiam : float
           The wind turbine rotor diameter [m]
         hubDiam : float
-          the specified hub diameter (if == 0, then it is set within compute method) [m]          
+          the specified hub diameter (if == 0, then it is set within compute method) [m]
         '''
 
         self.mass =18.5 * RotorDiam + (-520.5)   # spinner mass comes from cost and scaling model
@@ -273,19 +273,19 @@ class Spinner():
 
 #-------------------------------------------------------------------------------
 
-class HubSystem(): 
-    implements(SubComponent) 
-    ''' 
-       HubSystem class
-          The HubSystem class is used to represent the hub system of a wind turbine. 
-          It contains the general properties for a wind turbine component as well as additional design load and dimentional attributes as listed below.
-          It contains an update method to determine the mass, mass properties, and dimensions of the component.            
+class HubSystem():
+    implements(SubComponent)
     '''
-    
+       HubSystem class
+          The HubSystem class is used to represent the hub system of a wind turbine.
+          It contains the general properties for a wind turbine component as well as additional design load and dimentional attributes as listed below.
+          It contains an update method to determine the mass, mass properties, and dimensions of the component.
+    '''
+
     def __init__(self, BladeMass, RotorDiam, BladeNum, hubDiam=0, RatedWindSpeed = 12, RootMoment=0.0, AirDensity=1.225, Solidity=0.065):
-        ''' 
-        Initializes hub system component 
-        
+        '''
+        Initializes hub system component
+
         Parameters
         ----------
         RotorDiam : float
@@ -312,20 +312,16 @@ class HubSystem():
           the spinner / nose cone sub component
         '''
 
-        self.hub = Hub(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
-        self.pitchSystem = PitchSystem(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
-        self.spinner = Spinner(RotorDiam, hubDiam)
-        
         self.update_mass(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
 
 
     def update_mass(self, BladeMass, RotorDiam, BladeNum, hubDiam=0, RatedWindSpeed = 12, RootMoment=0.0, AirDensity=1.225, Solidity=0.065):
         '''
         Computes the dimensions, mass, and mass properiteis for the wind turbine hub system and components.
-        
-        The compute method determines and sets the attributes for the hub system based on the inputs described in the parameter section below. 
+
+        The compute method determines and sets the attributes for the hub system based on the inputs described in the parameter section below.
         The mass is calculated based input loads accoreding to the University of Sunderland model [1] and the dimensions are calculated based on the NREL WindPACT rotor studies [2].
-       
+
         Parameters
         ----------
         RotorDiam : float
@@ -343,12 +339,12 @@ class HubSystem():
         AirDensity : float
           air density at hub height (default == 1.225 kg / m^3 if not provided) [kg / m^3]
         Solidity : float
-          solidity of the rotor (default == 0.065 if not provided)          
+          solidity of the rotor (default == 0.065 if not provided)
         '''
 
-        self.hub.update_mass(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
-        self.pitchSystem.update_mass(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
-        self.spinner.update_mass(RotorDiam, hubDiam)
+        self.hub = Hub(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
+        self.pitchSystem = PitchSystem(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
+        self.spinner = Spinner(RotorDiam, hubDiam)
 
         self.mass =self.hub.mass + self.pitchSystem.mass + self.spinner.mass
 
@@ -367,7 +363,7 @@ class HubSystem():
             # sum moments around each components CM
             I[i]  =  self.hub.I[i] + self.pitchSystem.I[i] + self.spinner.I[i]
             # translate to hub system CM using parallel axis theorem
-            for j in (range(0,3)): 
+            for j in (range(0,3)):
                 if i != j:
                     I[i] +=  (self.hub.mass * (self.hub.cm[i] - self.cm[i]) ** 2) + \
                                   (self.pitchSystem.mass * (self.pitchSystem.cm[i] - self.cm[i]) ** 2) + \
@@ -377,7 +373,7 @@ class HubSystem():
 #-------------------------------------------------------------------------------
 
 def example():
-  
+
     # simple test of module
 
     # NREL 5 MW turbine
@@ -388,7 +384,7 @@ def example():
     hubDiam   = 0.0 # m
     RootMoment= 0.0 # Nm
     AirDensity= 1.225 # kg/(m^3)
-    Solidity  = 0.0517 
+    Solidity  = 0.0517
     RatedWindSpeed = 11.05 # m/s
     hub = HubSystem(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
 
@@ -454,8 +450,8 @@ def example2():
     AirDensity = 1.225
     Solidity = 0.06 # unknown value
     RatedWindSpeed = 12.0 # expected to be closer to 1.5 and 5 MW
-    hub.update_mass(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)   
-    
+    hub.update_mass(BladeMass, RotorDiam, BladeNum, hubDiam, RatedWindSpeed, RootMoment, AirDensity, Solidity)
+
     print "Hub Components"
     print '  hub         {0:8.1f} kg'.format(hub.hub.mass)
     print '  pitch mech  {0:8.1f} kg'.format(hub.pitchSystem.mass)
@@ -467,5 +463,5 @@ def example2():
 if __name__ == "__main__":
 
     example()
-    
+
     #example2()
