@@ -327,6 +327,39 @@ class RotorAeroAnalysisBase(object):
 
 
 
+    def rootMoment(self, Uinf, Omega, pitch, azimuth):
+
+        # run analysis
+        r, Px, Py, Pz, theta, precone = self.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+
+        # loads in azimuthal c.s.
+        P = DirectionVector(Px, Py, Pz).bladeToAzimuth(precone)
+
+        # location of loads in azimuth c.s.
+        position = bladePositionAzimuthCS(r, precone)
+
+        # distributed bending load in azimuth coordinate ysstem
+        Mp = position.cross(P)
+
+        # convert to hub c.s.
+        Mp = Mp.azimuthToHub(azimuth)
+
+        # interpolate to help smooth out radial discretization
+        oldr = r
+        r = np.linspace(oldr[0], oldr[-1], 200)
+        Mpx = _akima.interpolate(oldr, Mp.x, r)
+        Mpy = _akima.interpolate(oldr, Mp.y, r)
+        Mpz = _akima.interpolate(oldr, Mp.z, r)
+
+        # integrate across span
+        Mx = np.trapz(Mpx, r)
+        My = np.trapz(Mpy, r)
+        Mz = np.trapz(Mpz, r)
+
+        M = DirectionVector(Mx, My, Mz).hubToAzimuth(azimuth)
+
+        return M.y
+
 
 
 
