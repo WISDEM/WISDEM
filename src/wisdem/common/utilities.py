@@ -125,6 +125,9 @@ def bladePositionAzimuthCS(r, precone):
     integrandX[idx] = 1.0/np.sqrt(1 + 1.0/tand(precone[idx])**2)
     x_azim = np.concatenate(([0.0], integrate.cumtrapz(integrandX, r)))
 
+    if precone[0] > 0:
+        x_azim *= -1
+
     return DirectionVector(x_azim, 0*x_azim, z_azim)
 
 
