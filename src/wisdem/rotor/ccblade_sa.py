@@ -382,7 +382,7 @@ class CCBlade:
         heightFromHub = DirectionVector(self.x_azim, self.y_azim, self.z_azim).azimuthToHub(azimuth).hubToYaw(self.tilt).z
 
         # shear profile
-        V = Uinf*(1 + heightFromHub/self.hubHt)**self.shearExp
+        V = Uinf*np.abs(1 + heightFromHub/self.hubHt)**self.shearExp
 
         # compute wind and rotation velocity in azimuthal reference frame
         Vwind = DirectionVector(V, 0*V, 0*V).windToYaw(self.yaw).yawToHub(self.tilt).hubToAzimuth(azimuth)
