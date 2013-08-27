@@ -502,49 +502,49 @@ class Gearbox():
       '''
       Computes the gearbox weight based on a surface durability criteria.
       '''
-        stageType=[]
-        for character in config:
-            if character == 'e':
-                stageType.append(2)
-            if character == 'p':
-                stageType.append(1)
-        stageRatio=np.array(stageRatioCalc(overallRatio,Np,ratioType,config))
+      stageType=[]
+      for character in config:
+          if character == 'e':
+              stageType.append(2)
+          if character == 'p':
+              stageType.append(1)
+      stageRatio=np.array(stageRatioCalc(overallRatio,Np,ratioType,config))
 
-        stageMass=np.zeros([len(stageRatio),1])
-        stageTorque=np.zeros([len(stageRatio),1])
+      stageMass=np.zeros([len(stageRatio),1])
+      stageTorque=np.zeros([len(stageRatio),1])
 
-        ## Define Application Factors ##
+      ## Define Application Factors ##
 
-        #Application factor for weight estimate
-        Ka=0.6
+      #Application factor for weight estimate
+      Ka=0.6
 
-        #K factor for pitting analysis
-        if torque < 200000.0:
-            Kfact = 850.0
-        elif torque < 700000.0:
-            Kfact = 950.0
-        else:
-            Kfact = 1100.0
+      #K factor for pitting analysis
+      if torque < 200000.0:
+          Kfact = 850.0
+      elif torque < 700000.0:
+          Kfact = 950.0
+      else:
+          Kfact = 1100.0
 
-        #Unit conversion from Nm to inlb and vice-versa
-        Kunit=8.029
+      #Unit conversion from Nm to inlb and vice-versa
+      Kunit=8.029
 
-        # Shaft length factor
-        if shType == 'normal':
-            Kshaft = 1.0
-        elif shType == 'short':
-            Kshaft = 1.25
+      # Shaft length factor
+      if shType == 'normal':
+          Kshaft = 1.0
+      elif shType == 'short':
+          Kshaft = 1.25
 
-        #Individual stage torques
-        torqueTemp=torque
-        for s in range(len(stageTorque)):
-            stageTorque[s]=torqueTemp/stageRatio[s]
-            torqueTemp=stageTorque[s]
-            stageMass[s]=Kunit*Ka/Kfact*stageTorque[s]*stageMassCalc(stageRatio[s],Np[s],stageType[s])
+      #Individual stage torques
+      torqueTemp=torque
+      for s in range(len(stageTorque)):
+          stageTorque[s]=torqueTemp/stageRatio[s]
+          torqueTemp=stageTorque[s]
+          stageMass[s]=Kunit*Ka/Kfact*stageTorque[s]*stageMassCalc(stageRatio[s],Np[s],stageType[s])
 
-        gbxWeight=(sum(stageMass))*Kshaft
-       
-        return gbxWeight    
+      gbxWeight=(sum(stageMass))*Kshaft
+     
+      return gbxWeight    
         
 
 #-------------------------------------------------------------------------------
