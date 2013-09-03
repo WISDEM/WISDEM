@@ -446,6 +446,67 @@ class CCBlade:
 
             # ----------------------------------------------
 
+        # # update distributed loads
+        # rload, Tp, Np, theta, precone = self.__evaluateLoads(phivec, avec, apvec)
+
+
+        # # get gradients
+        # delta = 1e-6
+        # zero_new = np.zeros(n)
+
+        # phivec += delta
+        # ignore, Tp_d, Np_d, ignore, ignore = self.__evaluateLoads(phivec, avec, apvec)
+        # for i in range(n):
+        #     args = (self.r[i], self.chord[i], self.theta[i], self.af[i], self.Vx[i], self.Vy[i])
+        #     zero_new[i], a, ap = self.__runBEM(phivec[i], *args)
+        # phivec -= delta
+
+        # dNpdy = (Np_d[1:-1] - Np[1:-1]) / delta
+        # dTpdy = (Tp_d[1:-1] - Tp[1:-1]) / delta
+        # drdy = (zero_new - zero) / delta
+
+        # dNpdx = np.zeros((3, n))
+        # dTpdx = np.zeros((3, n))
+        # drdx = np.zeros((3, n))
+
+        # self.r += delta
+        # ignore, Tp_d, Np_d, ignore, ignore = self.__evaluateLoads(phivec, avec, apvec)
+        # for i in range(n):
+        #     args = (self.r[i], self.chord[i], self.theta[i], self.af[i], self.Vx[i], self.Vy[i])
+        #     zero_new[i], a, ap = self.__runBEM(phivec[i], *args)
+        # self.r -= delta
+
+        # dNpdx[0, :] = (Np_d[1:-1] - Np[1:-1]) / delta
+        # dTpdx[0, :] = (Tp_d[1:-1] - Tp[1:-1]) / delta
+        # drdx[0, :] = (zero_new - zero) / delta
+
+
+        # self.chord += delta
+        # ignore, Tp_d, Np_d, ignore, ignore = self.__evaluateLoads(phivec, avec, apvec)
+        # for i in range(n):
+        #     args = (self.r[i], self.chord[i], self.theta[i], self.af[i], self.Vx[i], self.Vy[i])
+        #     zero_new[i], a, ap = self.__runBEM(phivec[i], *args)
+        # self.chord -= delta
+
+        # dNpdx[1, :] = (Np_d[1:-1] - Np[1:-1]) / delta
+        # dTpdx[1, :] = (Tp_d[1:-1] - Tp[1:-1]) / delta
+        # drdx[1, :] = (zero_new - zero) / delta
+
+        # self.theta += delta
+        # ignore, Tp_d, Np_d, ignore, ignore = self.__evaluateLoads(phivec, avec, apvec)
+        # for i in range(n):
+        #     args = (self.r[i], self.chord[i], self.theta[i], self.af[i], self.Vx[i], self.Vy[i])
+        #     zero_new[i], a, ap = self.__runBEM(phivec[i], *args)
+        # self.theta -= delta
+
+        # dNpdx[2, :] = (Np_d[1:-1] - Np[1:-1]) / delta
+        # dTpdx[2, :] = (Tp_d[1:-1] - Tp[1:-1]) / delta
+        # drdx[2, :] = (zero_new - zero) / delta
+
+        # DTpDx = dTpdx - dTpdy/drdy*drdx
+        # DNpDx = dNpdx - dNpdy/drdy*drdx
+
+        # return rload, Tp, Np, theta, precone, DTpDx, DNpDx
 
         # update distributed loads
         return self.__evaluateLoads(phivec, avec, apvec)

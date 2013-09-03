@@ -716,7 +716,7 @@ class Bedplate():
         self.length = (BPlengthFact * nacellevolFact * RotorDiam)     # bedplate length [m] calculated as a function of rotor diameter
         self.width = (self.length / 2.0)                              # bedplate width [m] assumed to be half of bedplate length
         self.area       = self.length * self.width                        # bedplate area [m^2]
-        self.height = ((2 / 3) * self.length)                         # bedplate height [m] calculated based on cladding area
+        self.height = ((2. / 3) * self.length)                         # bedplate height [m] calculated based on cladding area
         areaweightCoeff = 100                                       # regression coefficient multiplier for bedplate weight based on bedplate area
         MassFromArea    = bedplateWeightFact * (areaweightCoeff * self.area)
 

@@ -16,8 +16,8 @@ class LowSpeedShaftCost():
 
     def __init__(self, lssMass, curr_yr, curr_mon):
         '''
-          Initial computation of the costs for the wind turbine low speed shaft component.       
-          
+          Initial computation of the costs for the wind turbine low speed shaft component.
+
           Parameters
           ----------
           lssMass : float
@@ -26,17 +26,17 @@ class LowSpeedShaftCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
-        
+
         self.update_cost(lssMass, curr_yr, curr_mon)
-    
+
     def update_cost(self, lssMass, curr_yr, curr_mon):
 
         '''
           Computes the costs for the wind turbine low speed shaft component.
-          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.       
-          
+          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.
+
           Parameters
           ----------
           lssMass : float
@@ -45,27 +45,27 @@ class LowSpeedShaftCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
 
         # assign input variables
         ppi.curr_yr   = curr_yr
         ppi.curr_mon   = curr_mon
-        
-        # calculate component cost        
+
+        # calculate component cost
         LowSpeedShaftCost2002 = 3.3602 * lssMass + 13587      # equation adjusted to be based on mass rather than rotor diameter using data from CSM
         lssCostEsc            = ppi.compute('IPPI_LSS')
         self.cost = (LowSpeedShaftCost2002 * lssCostEsc )
 
 #-------------------------------------------------------------------------------
 
-class MainBearingsCost(): 
+class MainBearingsCost():
     implements(ComponentCost)
 
     def __init__(self, bearingsMass, curr_yr, curr_mon):
         '''
-          Initial computation of the costs for the wind turbine maing bearings.       
-          
+          Initial computation of the costs for the wind turbine maing bearings.
+
           Parameters
           ----------
           bearingsMass : float
@@ -74,17 +74,17 @@ class MainBearingsCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
-        
+
         self.update_cost(bearingsMass, curr_yr, curr_mon)
-    
+
     def update_cost(self, bearingsMass, curr_yr, curr_mon):
 
         '''
           Computes the costs for the wind turbine main bearings.
-          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.       
-          
+          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.
+
           Parameters
           ----------
           bearingsMass : float
@@ -93,7 +93,7 @@ class MainBearingsCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
 
         # assign input variables
@@ -105,18 +105,18 @@ class MainBearingsCost():
 
         brngSysCostFactor = 17.6 # $/kg                  # cost / unit mass from CSM
         Bearings2002 = (bearingsMass) * brngSysCostFactor
-        self.cost    = (( Bearings2002 ) * bearingCostEsc ) / 4   # div 4 to account for bearing cost mass differences CSM to Sunderland  
-             
+        self.cost    = (( Bearings2002 ) * bearingCostEsc ) / 4   # div 4 to account for bearing cost mass differences CSM to Sunderland
+
 
 #-------------------------------------------------------------------------------
 
-class GearboxCost():  
+class GearboxCost():
     implements(ComponentCost)
 
     def __init__(self, gearboxMass, iDesign, curr_yr, curr_mon):
         '''
-          Initial computation of the costs for the wind turbine gearbox component.       
-          
+          Initial computation of the costs for the wind turbine gearbox component.
+
           Parameters
           ----------
           gearboxMass : float
@@ -127,17 +127,17 @@ class GearboxCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
-        
+
         self.update_cost(gearboxMass, iDesign, curr_yr, curr_mon)
-    
+
     def update_cost(self, gearboxMass, iDesign, curr_yr, curr_mon):
 
         '''
           Computes the costs for the wind turbine gearbox component.
-          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.       
-          
+          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.
+
           Parameters
           ----------
           gearboxMass : float
@@ -148,35 +148,35 @@ class GearboxCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
 
         # assign input variables
         ppi.curr_yr   = curr_yr
         ppi.curr_mon   = curr_mon
 
-        # calculate component cost                                              
+        # calculate component cost
         GearboxCostEsc     = ppi.compute('IPPI_GRB')
 
         costCoeff = [None, 16.45  , 74.101     ,   15.25697015,  0 ]
         costExp   = [None,  1.2491,  1.002     ,    1.2491    ,  0 ]
 
-        if iDesign == 1:                                 
+        if iDesign == 1:
           Gearbox2002 = 16.9 * gearboxMass - 25066          # for traditional 3-stage gearbox, use mass based cost equation from NREL CSM
         else:
           Gearbox2002 = costCoeff[iDsgn] * (MachineRating ** costCoeff[iDesign])        # for other drivetrain configurations, use NREL CSM equation based on machine rating
 
-        self.cost   = Gearbox2002 * GearboxCostEsc      
+        self.cost   = Gearbox2002 * GearboxCostEsc
 
 #-------------------------------------------------------------------------------
-              
+
 class HighSpeedShaftCost():
     implements(ComponentCost)
 
     def __init__(self, mechBrakeMass, curr_yr, curr_mon):
         '''
-          Initial computation of the costs for the wind turbine mechanical brake and HSS component.       
-          
+          Initial computation of the costs for the wind turbine mechanical brake and HSS component.
+
           Parameters
           ----------
           mechBrakeMass : float
@@ -185,17 +185,17 @@ class HighSpeedShaftCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
-        
+
         self.update_cost(mechBrakeMass, curr_yr, curr_mon)
-    
+
     def update_cost(self, mechBrakeMass, curr_yr, curr_mon):
 
         '''
           Computes the costs for the wind turbine mechanical brake and HSS component.
-          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.       
-          
+          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.
+
           Parameters
           ----------
           mechBrakeMass : float
@@ -204,16 +204,16 @@ class HighSpeedShaftCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
 
         # assign input variables
         ppi.curr_yr   = curr_yr
-        ppi.curr_mon   = curr_mon 
+        ppi.curr_mon   = curr_mon
         # calculate component cost
         mechBrakeCostEsc     = ppi.compute('IPPI_BRK')
         mechBrakeCost2002    = 10 * mechBrakeMass                  # mechanical brake system cost based on $10 / kg multiplier from CSM model (inverse relationship)
-        self.cost            = mechBrakeCostEsc * mechBrakeCost2002                                
+        self.cost            = mechBrakeCostEsc * mechBrakeCost2002
 
 #-------------------------------------------------------------------------------
 
@@ -222,8 +222,8 @@ class GeneratorCost():
 
     def __init__(self, generatorMass, iDesign, curr_yr, curr_mon):
         '''
-          Initial computation of the costs for the wind turbine generator component.       
-          
+          Initial computation of the costs for the wind turbine generator component.
+
           Parameters
           ----------
           generatorMass : float
@@ -234,17 +234,17 @@ class GeneratorCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
-        
+
         self.update_cost(generatorMass, iDesign, curr_yr, curr_mon)
-    
+
     def update_cost(self, generatorMass, iDesign, curr_yr, curr_mon):
 
         '''
           Computes the costs for the wind turbine generator component.
-          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.       
-          
+          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.
+
           Parameters
           ----------
           generatorMass : float
@@ -255,20 +255,20 @@ class GeneratorCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
 
         # assign input variables
         ppi.curr_yr   = curr_yr
         ppi.curr_mon   = curr_mon
-                                                        
+
         # calculate component cost                                      #TODO: only handles traditional drivetrain configuration at present
         generatorCostEsc     = ppi.compute('IPPI_GEN')
         costCoeff = [None, 65    , 54.73 ,  48.03 , 219.33 ] # $/kW - from 'Generators' worksheet
 
         GeneratorCost2002 = 19.697 * generatorMass + 9277.3
-        self.cost         = GeneratorCost2002 * generatorCostEsc 
-                       
+        self.cost         = GeneratorCost2002 * generatorCostEsc
+
 
 #-------------------------------------------------------------------------------
 
@@ -277,8 +277,8 @@ class BedplateCost():
 
     def __init__(self, bedplateMass, curr_yr, curr_mon):
         '''
-          Initial computation of the costs for the wind turbine bedplate component.       
-          
+          Initial computation of the costs for the wind turbine bedplate component.
+
           Parameters
           ----------
           bedplateMass : float
@@ -287,17 +287,17 @@ class BedplateCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
-        
+
         self.update_cost(bedplateMass, curr_yr, curr_mon)
-    
+
     def update_cost(self, bedplateMass, curr_yr, curr_mon):
 
         '''
           Computes the costs for the wind turbine bedplate component.
-          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.       
-          
+          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.
+
           Parameters
           ----------
           bedplateMass : float
@@ -306,14 +306,14 @@ class BedplateCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
 
         # assign input variables
         ppi.curr_yr   = curr_yr
         ppi.curr_mon   = curr_mon
 
-        #calculate component cost                                    # TODO: cost needs to be adjusted based on look-up table or a materials, mass and manufacturing equation            
+        #calculate component cost                                    # TODO: cost needs to be adjusted based on look-up table or a materials, mass and manufacturing equation
         BedplateCostEsc     = ppi.compute('IPPI_MFM')
 
         costCoeff = [None, 9.48850 , 303.96000, 17.92300 , 627.280000 ]
@@ -321,17 +321,17 @@ class BedplateCost():
 
         self.cost2002 = 0.9461 * bedplateMass + 17799                   # equation adjusted based on mass / cost relationships for components documented in NREL CSM
         self.cost     = self.cost2002 * BedplateCostEsc
-      
+
 
 #-------------------------------------------------------------------------------
-   
+
 class YawSystemCost():
     implements(ComponentCost)
 
     def __init__(self, yawSystemMass, curr_yr, curr_mon):
         '''
-          Initial computation of the costs for the wind turbine yaw system.       
-          
+          Initial computation of the costs for the wind turbine yaw system.
+
           Parameters
           ----------
           yawSystemMass : float
@@ -340,17 +340,17 @@ class YawSystemCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
-        
+
         self.update_cost(yawSystemMass, curr_yr, curr_mon)
-    
+
     def update_cost(self, yawSystemMass, curr_yr, curr_mon):
 
         '''
           Computes the costs for the wind turbine yaw system.
-          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.       
-          
+          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.
+
           Parameters
           ----------
           yawSystemMass : float
@@ -359,7 +359,7 @@ class YawSystemCost():
             Project start year
           curr_mon : int
             Project start month
-          
+
         '''
 
         # assign input variables
@@ -370,8 +370,8 @@ class YawSystemCost():
         yawDrvBearingCostEsc = ppi.compute('IPPI_YAW')
 
         YawDrvBearing2002 = 8.3221 * yawSystemMass + 2708.5          # cost / mass relationship derived from NREL CSM data
-        self.cost         = YawDrvBearing2002 * yawDrvBearingCostEsc 
-               
+        self.cost         = YawDrvBearing2002 * yawDrvBearingCostEsc
+
 
 #-------------------------------------------------------------------------------
 
@@ -380,8 +380,8 @@ class NacelleSystemCost(): # changed name to nacelle - need to rename, move code
 
     def __init__(self, lssMass, bearingsMass, gearboxMass, mechBrakeMass, generatorMass, bedplateMass, yawSystemMass, machineRating, iDesign, offshore, curr_yr, curr_mon, crane=False):
         '''
-          Initial computation of the costs for the wind turbine gearbox component.       
-          
+          Initial computation of the costs for the wind turbine gearbox component.
+
           Parameters
           ----------
           lssMass : float
@@ -407,7 +407,7 @@ class NacelleSystemCost(): # changed name to nacelle - need to rename, move code
           curr_mon : int
             Project start month
           crane : bool
-              boolean for crane present on-board          
+              boolean for crane present on-board
         '''
 
         self.lss = LowSpeedShaftCost(lssMass, curr_yr, curr_mon)
@@ -417,15 +417,15 @@ class NacelleSystemCost(): # changed name to nacelle - need to rename, move code
         self.generator = GeneratorCost(generatorMass, iDesign, curr_yr, curr_mon)
         self.bedplate = BedplateCost(bedplateMass, curr_yr, curr_mon)
         self.yawsystem = YawSystemCost(yawSystemMass, curr_yr, curr_mon)
-        
+
         self.update_cost(lssMass, bearingsMass, gearboxMass, mechBrakeMass, generatorMass, bedplateMass, yawSystemMass, machineRating, iDesign, offshore, curr_yr, curr_mon, crane)
-    
+
     def update_cost(self, lssMass, bearingsMass, gearboxMass, mechBrakeMass, generatorMass, bedplateMass, yawSystemMass, machineRating, iDesign, offshore, curr_yr, curr_mon, crane=False):
 
         '''
           Computes the costs for the wind turbine gearbox component.
-          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.       
-          
+          Component costs are based on mass vs. cost relationships derived from drivetrain component cost and mass data of the NREL cost and scaling model.
+
           Parameters
           ----------
           lssMass : float
@@ -451,7 +451,7 @@ class NacelleSystemCost(): # changed name to nacelle - need to rename, move code
           curr_mon : int
             Project start month
           crane : bool
-              boolean for crane present on-board          
+              boolean for crane present on-board
         '''
 
         # assign input variables
@@ -478,19 +478,19 @@ class NacelleSystemCost(): # changed name to nacelle - need to rename, move code
         # electronic systems, hydraulics and controls
         econnectionsCost2002  = 40.0 * machineRating  # 2002
         self.econnectionsCost = econnectionsCost2002 * econnectionsCostEsc
-               
+
         VspdEtronics2002      = 79.32 * machineRating
-        self.vspdEtronicsCost = VspdEtronics2002 * VspdEtronicsCostEsc         
+        self.vspdEtronicsCost = VspdEtronics2002 * VspdEtronicsCostEsc
 
         hydrCoolingCost2002  = 12.0 * machineRating # 2002
-        self.hydrCoolingCost = hydrCoolingCost2002 * hydrCoolingCostEsc   
+        self.hydrCoolingCost = hydrCoolingCost2002 * hydrCoolingCostEsc
 
         if (not offshore):
             ControlsCost2002  = 35000.0 # initial approximation 2002
-            self.controlsCost = ControlsCost2002 * controlsCostEsc 
+            self.controlsCost = ControlsCost2002 * controlsCostEsc
         else:
             ControlsCost2002  = 55900.0 # initial approximation 2002
-            self.controlsCost = ControlsCost2002 * controlsCostEsc      
+            self.controlsCost = ControlsCost2002 * controlsCostEsc
 
         # mainframe system including bedplate, platforms, crane and miscellaneous hardware
         nacellePlatformsMass = 0.125 * bedplateMass
@@ -505,12 +505,12 @@ class NacelleSystemCost(): # changed name to nacelle - need to rename, move code
         BaseHardwareCost2002  = self.bedplate.cost2002 * 0.7
         MainFrameCost2002   = (NacellePlatforms2002 + craneCost2002  + \
                           BaseHardwareCost2002 )
-        self.mainframeCost  = MainFrameCost2002 * BedplateCostEsc + self.bedplate.cost       
-        
+        self.mainframeCost  = MainFrameCost2002 * BedplateCostEsc + self.bedplate.cost
+
         nacelleCovCost2002  = 11.537 * machineRating + (3849.7)
-        self.nacelleCovCost = nacelleCovCost2002 * nacelleCovCostEsc 
-        
-        
+        self.nacelleCovCost = nacelleCovCost2002 * nacelleCovCostEsc
+
+
         # aggregation of nacelle costs
         self.cost = self.lss.cost + \
                     self.bearings.cost + \
@@ -530,12 +530,12 @@ class NacelleSystemCost(): # changed name to nacelle - need to rename, move code
 def example():
 
     # test of module for turbine data set
-    
+
     ref_yr   = 2002
     ref_mon  =    9
     curr_yr  = 2009
     curr_mon =  12
-    
+
     ppi.ref_yr   = ref_yr
     ppi.ref_mon  = ref_mon
 
