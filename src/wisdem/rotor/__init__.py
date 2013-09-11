@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 from rotoraero import RotorAero
-from ccblade import CCBlade
+# from ccblade import CCBlade
 from wtperf import WTPerf
 from airfoilprep import Airfoil
 from CSMdt import NRELCSMDrivetrain

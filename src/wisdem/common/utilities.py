@@ -107,6 +107,53 @@ def tand(value):
     return np.tan(np.radians(value))
 
 
+# def curvedblade(r, precone, precurve):
+
+#     # blade geometry in azimuthal coordinate
+#     azm = DirectionVector(0, 0, r).bladeToAzimuth(precone)
+
+#     x_azim = azm.x + precurve  # precurve defined here as an offset in +x azimuthal direction (thus preserving rotor radius)
+#     y_azim = np.zeros_like(r)
+#     z_azim = azm.z
+
+
+#     # compute total coning angle for purposes of relative velocity
+#     cone_angle = np.zeros_like(r)
+#     cone_angle[0] = np.arctan2(-(x_azim[1] - x_azim[0]), z_azim[1] - z_azim[0])
+#     cone_angle[1:-1] = 0.5*(np.arctan2(-(x_azim[2:] - x_azim[1:-1]), z_azim[2:] - z_azim[1:-1])
+#                             + np.arctan2(-(x_azim[1:-1] - x_azim[:-2]), z_azim[1:-1] - z_azim[:-2]))
+#     cone_angle[-1] = np.arctan2(-(x_azim[-1] - x_azim[-2]), z_azim[-1] - z_azim[-2])
+
+
+#     # compute path length of blade
+#     ds = np.sqrt((x_azim[1:] - x_azim[:-1])**2 + (z_azim[1:] - z_azim[:-1])**2)
+#     s = r[0] + np.concatenate([[0.0], np.cumsum(ds)])
+
+#     return x_azim, y_azim, z_azim, cone_angle, s
+
+
+# def curvedblade(r, precone, precurve):
+
+#     # blade geometry in azimuthal coordinate
+#     azm = DirectionVector(precurve, 0*r, r).bladeToAzimuth(precone)
+
+#     rotorR = azm.z[-1]
+
+#     # compute total coning angle for purposes of relative velocity
+#     cone_angle = np.zeros_like(r)
+#     cone_angle[0] = np.arctan2(-(azm.x[1] - azm.x[0]), azm.z[1] - azm.z[0])
+#     cone_angle[1:-1] = 0.5*(np.arctan2(-(azm.x[2:] - azm.x[1:-1]), azm.z[2:] - azm.z[1:-1])
+#                             + np.arctan2(-(azm.x[1:-1] - azm.x[:-2]), azm.z[1:-1] - azm.z[:-2]))
+#     cone_angle[-1] = np.arctan2(-(azm.x[-1] - azm.x[-2]), azm.z[-1] - azm.z[-2])
+
+#     # compute path length of blade
+#     ds = np.sqrt((azm.x[1:] - azm.x[:-1])**2 + (azm.z[1:] - azm.z[:-1])**2)
+#     s = r[0] + np.concatenate([[0.0], np.cumsum(ds)])
+
+#     return azm, rotorR, cone_angle, s
+
+
+
 def bladePositionAzimuthCS(r, precone):
     """compute coordiantes of blade in azimuthal coordinate system
     accounting for precone and precurve
