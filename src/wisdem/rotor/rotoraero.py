@@ -12,8 +12,8 @@ from math import pi, sqrt
 from scipy import interpolate, optimize
 from zope.interface import Interface, Attribute, implements
 
-from wisdem.common import DirectionVector, _akima, RPM2RS, RS2RPM, sind, cosd, bladePositionAzimuthCS
-
+from wisdem.common import DirectionVector, _akima, RPM2RS, RS2RPM, bladePositionAzimuthCS
+from external import _bem
 
 
 # ------------------
@@ -24,7 +24,9 @@ from wisdem.common import DirectionVector, _akima, RPM2RS, RS2RPM, sind, cosd, b
 class RotorAeroAnalysisInterface(Interface):
     """Interface for evaluating rotor aerodynamic performance used by :class:`RotorAero`."""
 
-    # r = Attribute("""radial positions along blade : float (m)""")
+    r = Attribute("""z positions along blade : float (m)""")
+    precurve = Attribute("""x positions along blade : float (m)""")
+    presweep = Attribute("""y positions along blade : float (m)""")
 
     rotorR = Attribute("""radius of rotor used in normalization of pressure coefficient : float (m)""")
 
@@ -38,8 +40,6 @@ class RotorAeroAnalysisInterface(Interface):
 
     precone = Attribute(""":ref:`hub precone angle <azimuth_blade_coord>`, positive tilts blades
                         away from tower for upwind configuration. : ndarray (deg)""")
-
-    # # hubPrecone = Attribute("""precone at hub""")
 
     nBlade = Attribute("""number of blades : int""")
 
@@ -197,7 +197,10 @@ class RotorAeroAnalysisBase(object):
         """
         self.nAzimuth = nAzimuth
 
+        x_az, y_az, z_az, self.cone, self.s = \
+            _bem.definecurvature(self.r, self.precurve, self.presweep, self.precone*pi/180.0)
 
+        self.az = DirectionVector(x_az, y_az, z_az)
 
 
     def evaluate(self, Uinf, Omega, pitch, coefficient=False):
@@ -218,13 +221,14 @@ class RotorAeroAnalysisBase(object):
         P = np.zeros(npts)
 
 
+
         for i in range(npts):  # iterate across conditions
 
             for j in range(nsec):  # integrate across azimuth
                 azimuth = 360.0*float(j)/nsec
 
                 # run analysis
-                r, Px, Py, Pz, theta, precone = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], azimuth)
+                Px, Py, Pz = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], azimuth)
 
                 # swap coordinate directions
                 Tp = -Py
@@ -232,20 +236,18 @@ class RotorAeroAnalysisBase(object):
                 Rp = Pz
 
                 # thrust and tangential loads
-                blade_azim = bladePositionAzimuthCS(r, precone)
-
-                thrust = Np*cosd(precone)-Rp*sind(precone)
-                torque = Tp*blade_azim.z
+                thrust = Np*np.cos(self.cone)-Rp*np.sin(self.cone)
+                torque = Tp*self.az.z
 
                 # smooth out integration
-                oldr = r
-                r = np.linspace(oldr[0], oldr[-1], 200)
-                thrust = _akima.interpolate(oldr, thrust, r)
-                torque = _akima.interpolate(oldr, torque, r)
+                olds = self.s
+                s = np.linspace(olds[0], olds[-1], 200)
+                thrust = _akima.interpolate(olds, thrust, s)
+                torque = _akima.interpolate(olds, torque, s)
 
                 # integrate Thrust and Torque
-                T[i] += B * np.trapz(thrust, r) / nsec
-                Q[i] += B * np.trapz(torque, r) / nsec
+                T[i] += B * np.trapz(thrust, s) / nsec
+                Q[i] += B * np.trapz(torque, s) / nsec
 
         # Power
         P = Q * Omega*RPM2RS
@@ -281,40 +283,37 @@ class RotorAeroAnalysisBase(object):
             azimuth = 360.0*float(i)/nsec
 
             # run analysis
-            r, Px, Py, Pz, theta, precone = self.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+            Px, Py, Pz = self.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
             # loads in azimuthal c.s.
-            P = DirectionVector(Px, Py, Pz).bladeToAzimuth(precone)
-
-            # location of loads in azimuth c.s.
-            position = bladePositionAzimuthCS(r, precone)
+            P = DirectionVector(Px, Py, Pz).bladeToAzimuth(self.precone)
 
             # distributed bending load in azimuth coordinate ysstem
-            Mp = position.cross(P)
+            Mp = self.az.cross(P)
 
             # convert to hub c.s.
             P = P.azimuthToHub(azimuth)
             Mp = Mp.azimuthToHub(azimuth)
 
             # interpolate to help smooth out radial discretization
-            oldr = r
-            r = np.linspace(oldr[0], oldr[-1], 200)
-            Px = _akima.interpolate(oldr, P.x, r)
-            Py = _akima.interpolate(oldr, P.y, r)
-            Pz = _akima.interpolate(oldr, P.z, r)
-            Mpx = _akima.interpolate(oldr, Mp.x, r)
-            Mpy = _akima.interpolate(oldr, Mp.y, r)
-            Mpz = _akima.interpolate(oldr, Mp.z, r)
+            olds = self.s
+            s = np.linspace(olds[0], olds[-1], 200)
+            Px = _akima.interpolate(olds, P.x, s)
+            Py = _akima.interpolate(olds, P.y, s)
+            Pz = _akima.interpolate(olds, P.z, s)
+            Mpx = _akima.interpolate(olds, Mp.x, s)
+            Mpy = _akima.interpolate(olds, Mp.y, s)
+            Mpz = _akima.interpolate(olds, Mp.z, s)
 
 
             # integrate across span
-            Fx += B * np.trapz(Px, r) / nsec
-            Fy += B * np.trapz(Py, r) / nsec
-            Fz += B * np.trapz(Pz, r) / nsec
+            Fx += B * np.trapz(Px, s) / nsec
+            Fy += B * np.trapz(Py, s) / nsec
+            Fz += B * np.trapz(Pz, s) / nsec
 
-            Mx += B * np.trapz(Mpx, r) / nsec
-            My += B * np.trapz(Mpy, r) / nsec
-            Mz += B * np.trapz(Mpz, r) / nsec
+            Mx += B * np.trapz(Mpx, s) / nsec
+            My += B * np.trapz(Mpy, s) / nsec
+            Mz += B * np.trapz(Mpz, s) / nsec
 
 
         if nsec == 1:  # symmetry
@@ -330,31 +329,28 @@ class RotorAeroAnalysisBase(object):
     def rootMoment(self, Uinf, Omega, pitch, azimuth):
 
         # run analysis
-        r, Px, Py, Pz, theta, precone = self.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+        Px, Py, Pz = self.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
         # loads in azimuthal c.s.
-        P = DirectionVector(Px, Py, Pz).bladeToAzimuth(precone)
-
-        # location of loads in azimuth c.s.
-        position = bladePositionAzimuthCS(r, precone)
+        P = DirectionVector(Px, Py, Pz).bladeToAzimuth(self.precone)
 
         # distributed bending load in azimuth coordinate ysstem
-        Mp = position.cross(P)
+        Mp = self.az.cross(P)
 
         # convert to hub c.s.
         Mp = Mp.azimuthToHub(azimuth)
 
         # interpolate to help smooth out radial discretization
-        oldr = r
-        r = np.linspace(oldr[0], oldr[-1], 200)
-        Mpx = _akima.interpolate(oldr, Mp.x, r)
-        Mpy = _akima.interpolate(oldr, Mp.y, r)
-        Mpz = _akima.interpolate(oldr, Mp.z, r)
+        olds = self.s
+        s = np.linspace(olds[0], olds[-1], 200)
+        Mpx = _akima.interpolate(olds, Mp.x, s)
+        Mpy = _akima.interpolate(olds, Mp.y, s)
+        Mpz = _akima.interpolate(olds, Mp.z, s)
 
         # integrate across span
-        Mx = np.trapz(Mpx, r)
-        My = np.trapz(Mpy, r)
-        Mz = np.trapz(Mpz, r)
+        Mx = np.trapz(Mpx, s)
+        My = np.trapz(Mpy, s)
+        Mz = np.trapz(Mpz, s)
 
         M = DirectionVector(Mx, My, Mz).hubToAzimuth(azimuth)
 
@@ -1261,13 +1257,13 @@ class RotorAero(object):
         # add gust load
         Uinf += Ugust
 
-        r, Px, Py, Pz, twist, precone = self.analysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+        Px, Py, Pz = self.analysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
         # rotate to airfoil coordinate system
-        theta = twist + pitch
+        theta = self.analysis.twist + pitch
         P = DirectionVector(Px, Py, Pz).bladeToAirfoil(theta)
 
-        return r, P, Omega, pitch, azimuth, self.analysis.tilt, precone
+        return self.analysis.r, P, Omega, pitch, azimuth, self.analysis.tilt, self.analysis.precone
 
 
 
@@ -1448,9 +1444,9 @@ if __name__ == '__main__':
     # config = nose.config.Config(verbosity=1)
     # nose.main(defaultTest="tests/test_rotoraero.py", config=config)
 
-    from airfoilprep import Airfoil
-    from ccblade import CCBlade
-    from wtperf import WTPerf
+    # from airfoilprep import Airfoil
+    from ccblade import CCBlade, CCAirfoil
+    # from wtperf import WTPerf
     from CSMdt import NRELCSMDrivetrain
 
 
@@ -1474,14 +1470,14 @@ if __name__ == '__main__':
 
     # load all airfoils
     airfoil_types = [0]*8
-    airfoil_types[0] = Airfoil.initFromAerodynFile(basepath + os.path.sep + 'Cylinder1.dat')
-    airfoil_types[1] = Airfoil.initFromAerodynFile(basepath + os.path.sep + 'Cylinder2.dat')
-    airfoil_types[2] = Airfoil.initFromAerodynFile(basepath + os.path.sep + 'DU40_A17.dat')
-    airfoil_types[3] = Airfoil.initFromAerodynFile(basepath + os.path.sep + 'DU35_A17.dat')
-    airfoil_types[4] = Airfoil.initFromAerodynFile(basepath + os.path.sep + 'DU30_A17.dat')
-    airfoil_types[5] = Airfoil.initFromAerodynFile(basepath + os.path.sep + 'DU25_A17.dat')
-    airfoil_types[6] = Airfoil.initFromAerodynFile(basepath + os.path.sep + 'DU21_A17.dat')
-    airfoil_types[7] = Airfoil.initFromAerodynFile(basepath + os.path.sep + 'NACA64_A17.dat')
+    airfoil_types[0] = CCAirfoil.initFromAerodynFile(basepath + os.path.sep + 'Cylinder1.dat')
+    airfoil_types[1] = CCAirfoil.initFromAerodynFile(basepath + os.path.sep + 'Cylinder2.dat')
+    airfoil_types[2] = CCAirfoil.initFromAerodynFile(basepath + os.path.sep + 'DU40_A17.dat')
+    airfoil_types[3] = CCAirfoil.initFromAerodynFile(basepath + os.path.sep + 'DU35_A17.dat')
+    airfoil_types[4] = CCAirfoil.initFromAerodynFile(basepath + os.path.sep + 'DU30_A17.dat')
+    airfoil_types[5] = CCAirfoil.initFromAerodynFile(basepath + os.path.sep + 'DU25_A17.dat')
+    airfoil_types[6] = CCAirfoil.initFromAerodynFile(basepath + os.path.sep + 'DU21_A17.dat')
+    airfoil_types[7] = CCAirfoil.initFromAerodynFile(basepath + os.path.sep + 'NACA64_A17.dat')
 
     # place at appropriate radial stations, and convert format
     af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -1504,13 +1500,13 @@ if __name__ == '__main__':
     azimuth = 0
 
     # evaluate distributed loads
-    rloads, Px, Py, Pz, theta, precone = aeroanalysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+    Px, Py, Pz = aeroanalysis.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
 
     # plot
     import matplotlib.pyplot as plt
-    rstar = (rloads - rloads[0]) / (rloads[-1] - rloads[0])
-    plt.plot(rstar, -Py/1e3, 'k', label='edgewise')
-    plt.plot(rstar, Px/1e3, 'r', label='flapwise')
+    # rstar = (rloads - rloads[0]) / (rloads[-1] - rloads[0])
+    plt.plot(aeroanalysis.r, -Py/1e3, 'k', label='edgewise')
+    plt.plot(aeroanalysis.r, Px/1e3, 'r', label='flapwise')
     plt.xlabel('blade fraction')
     plt.ylabel('distributed aerodynamic loads (kN)')
     plt.legend(loc='upper left')
@@ -1579,16 +1575,16 @@ if __name__ == '__main__':
     print rotor.averageRotorSpeed(RotorAero.RayleighPDF(10.0))
     print rotor.conditionsAtRated()
     V = np.linspace(Vin, Vout, 40)
-    T = np.zeros(40)
-    Q = np.zeros(40)
-    for i in range(len(V)):
-        T[i], Q[i] = rotor.thrustAndTorque(V[i])
+    # T = np.zeros(40)
+    # Q = np.zeros(40)
+    # for i in range(len(V)):
+    #     T[i], Q[i] = rotor.thrustAndTorque(V[i])
 
-    plt.figure()
-    plt.plot(V, T)
+    # plt.figure()
+    # plt.plot(V, T)
 
-    plt.figure()
-    plt.plot(V, Q)
+    # plt.figure()
+    # plt.plot(V, Q)
 
     P = rotor.powerCurve(V)
 

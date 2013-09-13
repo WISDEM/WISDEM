@@ -11,8 +11,8 @@ import numpy as np
 import math
 from zope.interface import Interface, Attribute
 
-from wisdem.common import DirectionVector, _pBEAM, _akima, bladePositionAzimuthCS
-import _curvefem
+from wisdem.common import DirectionVector, _pBEAM, _akima, sind, cosd
+from external import _curvefem, _bem
 
 
 # ------------------
@@ -25,8 +25,10 @@ class SectionStrucInterface(Interface):
     sections"""
 
     r = Attribute('distance along blade where section properties are defined (m)')
+    precurve = Attribute('distance along blade where section properties are defined (m)')
+    presweep = Attribute('distance along blade where section properties are defined (m)')
     theta = Attribute(':ref:`twist angle <twist_angle>` of each section (deg)')
-    precone = Attribute('precone angle along blade (including precurve)')
+
 
     def sectionProperties():
         """Get the mass and stiffness properties of the cross-section at specified locations along blade
@@ -110,7 +112,15 @@ class RotorStruc:
         nsec = len(blade.r)
         self.nsec = nsec
         self.r = blade.r
+        self.precurve = blade.precurve
         self.theta = blade.theta
+
+
+        x_az, y_az, z_az, cone, s = \
+            _bem.definecurvature(blade.r, blade.precurve, blade.presweep, 0.0)
+        self.s = self.r[0] + s
+        self.precurveCone = cone
+
 
         # translate to elastic center and rotate to principal axes
         EI11 = np.zeros(nsec)
@@ -138,7 +148,7 @@ class RotorStruc:
         self.rhoA = rhoA
 
         # create finite element objects
-        p_section = _pBEAM.SectionData(nsec, self.r, EA, EI11, EI22, GJ, rhoA, rhoJ)
+        p_section = _pBEAM.SectionData(nsec, self.s, EA, EI11, EI22, GJ, rhoA, rhoJ)
         p_loads = _pBEAM.Loads(nsec)  # no loads
         p_tip = _pBEAM.TipData()  # no tip mass
         k = np.array([float('inf'), float('inf'), float('inf'), float('inf'), float('inf'), float('inf')])
@@ -149,16 +159,11 @@ class RotorStruc:
 
 
         # setup curveFEM parameters
-        blade_azim = bladePositionAzimuthCS(blade.r, blade.precone)
-        z_azim = blade_azim.z
-
-        rHub = z_azim[0]
-        bladeLength = z_azim[-1] - z_azim[0]
-        bladeFrac = (z_azim - rHub) / bladeLength
-        precurve = blade_azim.x
-        presweep = np.zeros_like(precurve)  # for now
+        rHub = self.r[0]
+        bladeLength = self.r[-1] - self.r[0]
+        bladeFrac = (self.r - rHub) / bladeLength
         self.curveparams = (bladeLength, rHub, bladeFrac, blade.theta, rhoA, EI11, EI22,
-                            GJ, EA, rhoJ, precurve, presweep)
+                            GJ, EA, rhoJ, blade.precurve, blade.presweep)
 
 
         # create utility functions for rotation
@@ -374,9 +379,8 @@ class RotorStruc:
         dr, dtheta = self.displacements(ra, Paero, Omega, pitch, azimuth, tilt, precone)
 
         theta = np.array(self.theta) + pitch
-        precone = _akima.interpolate(ra, precone, self.r)  # convert to structural grid
 
-        delta = dr.airfoilToBlade(theta).bladeToAzimuth(precone) \
+        delta = dr.airfoilToBlade(theta).bladeToAzimuth(self.precurveCone + precone) \
             .azimuthToHub(azimuth).hubToYaw(tilt)
 
         return delta.x[-1]
@@ -428,7 +432,7 @@ class RotorStruc:
         xl, yl = self.rotateFromAirfoilXYToPrincipal(xl_e, yl_e)
         xvec = np.concatenate((xu, xl))
         yvec = np.concatenate((yu, yl))
-        zvec = np.concatenate((self.r, self.r))
+        zvec = np.concatenate((self.s, self.s))
 
         strain = self.blade.axialStrain(len(xvec), xvec, yvec, zvec)
         strainU = strain[:self.nsec]
@@ -557,7 +561,7 @@ class RotorStruc:
         theta = np.array(self.theta) + pitch
 
         P = weight.yawToHub(tilt).hubToAzimuth(azimuth)\
-            .azimuthToBlade(precone).bladeToAirfoil(theta)
+            .azimuthToBlade(self.precurveCone + precone).bladeToAirfoil(theta)
 
         return P
         # return self.r, P.x, P.y, P.z
@@ -568,13 +572,13 @@ class RotorStruc:
 
         Omega *= math.pi/30.0  # RPM to rad/s
 
-        blade_azim = bladePositionAzimuthCS(self.r, precone)
+        Z = self.r*cosd(precone) + self.precurve*sind(precone)
 
-        load = DirectionVector(0.0, 0.0, self.rhoA*Omega**2*blade_azim.z)
+        load = DirectionVector(0.0, 0.0, self.rhoA*Omega**2*Z)
 
         theta = np.array(self.theta) + pitch
 
-        P = load.azimuthToBlade(precone).bladeToAirfoil(theta)
+        P = load.azimuthToBlade(self.precurveCone + precone).bladeToAirfoil(theta)
 
         return P
         # return self.r, P.x, P.y, P.z
@@ -587,7 +591,6 @@ class RotorStruc:
         P_a.x = _akima.interpolate(r_aero, P_aero.x, self.r)
         P_a.y = _akima.interpolate(r_aero, P_aero.y, self.r)
         P_a.z = _akima.interpolate(r_aero, P_aero.z, self.r)
-        precone = _akima.interpolate(r_aero, precone, self.r)
 
         # weight loads
         P_w = self.weightLoads(tilt, azimuth, pitch, precone, g)

@@ -2,9 +2,9 @@
 # encoding: utf-8
 
 from rotoraero import RotorAero
-# from ccblade import CCBlade
-from wtperf import WTPerf
-from airfoilprep import Airfoil
+from ccblade import CCBlade, CCAirfoil
+# from wtperf import WTPerf
+# from airfoilprep import Airfoil
 from CSMdt import NRELCSMDrivetrain
 
 from rotorstruc import RotorStruc

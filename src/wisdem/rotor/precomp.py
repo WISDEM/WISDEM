@@ -13,7 +13,7 @@ import math
 
 from rotorstruc import SectionStrucInterface
 from wisdem.common import sind, cosd
-from _precomp import precomp as _precomp
+from external._precomp import precomp as _precomp
 
 
 
@@ -39,7 +39,7 @@ class PreComp(object):
     implements(SectionStrucInterface)
 
 
-    def __init__(self, r, chord, theta, leLoc, precone, profile, materials, upperCS, lowerCS, websCS):
+    def __init__(self, r, chord, theta, leLoc, precurve, presweep, profile, materials, upperCS, lowerCS, websCS):
         """Constructor
 
         Parameters
@@ -71,7 +71,9 @@ class PreComp(object):
         self.chord = np.array(chord)
         self.theta = np.array(theta)
         self.leLoc = np.array(leLoc)
-        self.precone = np.array(precone)
+        self.precurve = np.array(precurve)
+        self.presweep = np.array(presweep)
+
 
         self.profile = profile
         self.materials = materials
@@ -1013,7 +1015,8 @@ if __name__ == '__main__':
     web1 = np.array([-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 0.4114, 0.4102, 0.4094, 0.3876, 0.3755, 0.3639, 0.345, 0.3342, 0.3313, 0.3274, 0.323, 0.3206, 0.3172, 0.3138, 0.3104, 0.307, 0.3003, 0.2982, 0.2935, 0.2899, 0.2867, 0.2833, 0.2817, 0.2799, 0.2767, 0.2731, 0.2664, 0.2607, 0.2562, 0.1886, -1.0])
     web2 = np.array([-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 0.5886, 0.5868, 0.5854, 0.5508, 0.5315, 0.5131, 0.4831, 0.4658, 0.4687, 0.4726, 0.477, 0.4794, 0.4828, 0.4862, 0.4896, 0.493, 0.4997, 0.5018, 0.5065, 0.5101, 0.5133, 0.5167, 0.5183, 0.5201, 0.5233, 0.5269, 0.5336, 0.5393, 0.5438, 0.6114, -1.0])
     web3 = np.array([-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0])
-    precone_str = np.zeros_like(r_str)
+    precurve_str = np.zeros_like(r_str)
+    presweep_str = np.zeros_like(r_str)
 
 
     # -------- materials and composite layup  -----------------
@@ -1058,7 +1061,7 @@ if __name__ == '__main__':
         profile[i] = Profile.initFromPreCompFile(os.path.join(basepath, 'shape_' + str(i+1) + '.inp'))
     # --------------------------------------
 
-    precomp = PreComp(r_str, chord_str, theta_str, le_str, precone_str,
+    precomp = PreComp(r_str, chord_str, theta_str, le_str, precurve_str, presweep_str,
         profile, materials, upper, lower, webs)
 
 
