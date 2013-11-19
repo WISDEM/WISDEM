@@ -1,4 +1,0 @@
-Introduction
-------------
-
-The set of models contained in this software allow for the determination of costs for major hub and drivetrain components of a wind turbine based on their masses and a few other select parameters.  The software combines sources of information from several areas: The NREL Cost and Scaling Model :cite:`Fingersh2006` and related subsequent cost model development efforts, the Wind Partnerships for Advanced Component Technology (WindPACT) work that occurred between roughly 2002 to 2005 :cite:`WindPACT`, and the University of Sunderland (the Sunderland Model) :cite:`Sunderland1993`.  These mass-cost models use the data from the sources above to take the component mass and estimate the associated cost in a reference year and month.  The component cost can then be scaled to a different year and month based on economic multipliers as done in :cite:`Fingersh2006`.

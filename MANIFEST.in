@@ -1,0 +1,3 @@
+graft src/NREL_WISDEM/sphinx_build/html
+recursive-include src/NREL_WISDEM/test *.py
+
