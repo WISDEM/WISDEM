@@ -137,7 +137,7 @@ class lcoe_csm_bos_ecn_assembly(ExtendedFinancialAnalysis):
 def example(ssfile_1, ssfile_2):
 
     lcoe = lcoe_csm_bos_ecn_assembly(ssfile_1, ssfile_2)
-  
+    lcoe.machine_rating = 5000.0 # need to manipulate an input to get the component to execute in python
     lcoe.execute()
     
     print "LCOE: {0}".format(lcoe.lcoe)
