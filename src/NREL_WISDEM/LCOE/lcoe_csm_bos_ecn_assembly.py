@@ -20,9 +20,6 @@ from Plant_AEPSE.NREL_CSM_AEP.weibull_aep import aep_weibull_assembly
 from Plant_AEPSE.NREL_CSM_AEP.drivetrain_csm_component import drive_csm_component
 from Plant_AEPSE.NREL_CSM_AEP.aero_csm_component import aero_csm_component
 
-from NREL_CSM.csmDriveEfficiency import DrivetrainEfficiencyModel, csmDriveEfficiency
-
-
 class lcoe_csm_bos_ecn_assembly(ExtendedFinancialAnalysis):
 
     # variables
@@ -137,7 +134,7 @@ class lcoe_csm_bos_ecn_assembly(ExtendedFinancialAnalysis):
 def example(ssfile_1, ssfile_2):
 
     lcoe = lcoe_csm_bos_ecn_assembly(ssfile_1, ssfile_2)
-    lcoe.machine_rating = 5000.0 # need to manipulate an input to get the component to execute in python
+    lcoe.machine_rating = 5000.001 # need to manipulate an input to get the component to execute in python
     lcoe.execute()
     
     print "LCOE: {0}".format(lcoe.lcoe)
