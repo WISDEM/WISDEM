@@ -114,6 +114,8 @@ def example():
     
     lcoe.advanced_blade = True
     lcoe.aep_a.drive.drivetrain = csmDriveEfficiency(1)
+    lcoe.machine_rating = 5000.001
+    lcoe.sea_depth = 20.0001
     
     lcoe.execute()
     
