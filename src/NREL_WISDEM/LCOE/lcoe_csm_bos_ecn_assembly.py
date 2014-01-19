@@ -14,7 +14,7 @@ from fusedwind.vartrees.varTrees import Turbine
 from Turbine_CostsSE.NREL_CSM_TCC.nrel_csm_tcc import tcc_csm_assembly
 from Plant_CostsSE.Plant_BOS.NREL_Offshore_BOS.nrel_bos_offshore import bos_nrel_offshore_assembly
 from Plant_CostsSE.Plant_OM.ECN_Offshore_OM.ecn_offshore_om  import om_ecn_assembly
-from Plant_FinanceSE.NREL_CSM_FIN.coe_fin import fin_cst_assembly
+from Plant_FinanceSE.Basic_Finance.coe_fin import fin_cst_assembly
 from Plant_AEPSE.NREL_CSM_AEP.nrel_csm_aep import aep_csm_assembly
 from Plant_AEPSE.NREL_CSM_AEP.csmDriveEfficiency import DrivetrainEfficiencyModel, csmDriveEfficiency
 
