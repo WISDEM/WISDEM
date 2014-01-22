@@ -13,7 +13,7 @@ from fusedwind.vartrees.varTrees import Turbine
 
 # NREL cost and scaling model sub-assemblies
 from Turbine_CostsSE.Turbine_CostsSE.Turbine_CostsSE import Turbine_CostsSE
-from TurbineSE.TurbineSE import TurbineSE
+from TurbineSE.turbine import TurbineSE
 from Plant_CostsSE.Plant_BOS.NREL_CSM_BOS.nrel_csm_bos import bos_csm_assembly
 from Plant_CostsSE.Plant_OM.NREL_CSM_OM.nrel_csm_om  import om_csm_assembly
 from Plant_FinanceSE.NREL_CSM_FIN.nrel_csm_fin import fin_csm_assembly
