@@ -28,7 +28,7 @@ class lcoe_se_csm_assembly(ExtendedFinancialAnalysis):
     #machine_rating = Float(5000.0, units = 'kW', iotype='in', desc= 'rated machine power in kW')
     #rotor_diameter = Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
     #max_tip_speed = Float(80.0, units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor')
-    hub_height = Float(90.0, units = 'm', iotype='in', desc='hub height of wind turbine above ground / sea level') #TODO: tie-in with turbine model
+    #hub_height = Float(90.0, units = 'm', iotype='in', desc='hub height of wind turbine above ground / sea level') #TODO: tie-in with turbine model
     sea_depth = Float(0.0, units = 'm', iotype='in', desc = 'sea depth for offshore wind project')
 
     # parameters
@@ -55,23 +55,23 @@ class lcoe_se_csm_assembly(ExtendedFinancialAnalysis):
         # turbine configuration
         # rotor
         self.connect('blade_number', ['trb.blade_number', 'tcc_a.blade_number'])
-        #self.connect('trb.rotor_diameter', ['bos_a.rotor_diameter']) # TODO: not used in basic BOS model
+        self.connect('trb.rotor_diameter', 'bos_a.rotor_diameter')
         # drivetrain
-        self.connect('trb.machine_rating', ['bos_a.machine_rating','opex_a.machine_rating'])
+        self.connect('trb.machine_rating', ['bos_a.machine_rating', 'opex_a.machine_rating'])
         self.connect('drivetrain_design', ['trb.drivetrain_design', 'tcc_a.drivetrain_design'])
         # tower
-        self.connect('hub_height', ['trb.hub_height', 'tcc_a.hub_height', 'bos_a.hub_height'])
+        self.connect('trb.hub_height', ['bos_a.hub_height'])
         # plant configuration
         # climate
         self.connect('sea_depth', ['bos_a.sea_depth', 'opex_a.sea_depth', 'fin_a.sea_depth'])
         # plant operation       
         self.connect('turbine_number', ['aep_a.turbine_number', 'bos_a.turbine_number', 'opex_a.turbine_number', 'fin_a.turbine_number']) 
         # financial
-        self.connect('year', ['tcc_a.curr_yr', 'bos_a.year', 'opex_a.year'])
-        self.connect('month', ['tcc_a.curr_mon', 'bos_a.month', 'opex_a.month'])
+        self.connect('year', ['tcc_a.year', 'bos_a.year', 'opex_a.year'])
+        self.connect('month', ['tcc_a.month', 'bos_a.month', 'opex_a.month'])
 
         # inter-model connections
-        self.connect('trb.wind_curve', 'aep_a.x')
+        self.connect('trb.wind_curve', 'aep_a.wind_curve')
         self.connect('trb.power_curve', 'aep_a.power_curve')
         self.connect('trb.blade_mass', 'tcc_a.blade_mass')
         self.connect('trb.hub_mass', 'tcc_a.hub_mass')
@@ -87,13 +87,11 @@ class lcoe_se_csm_assembly(ExtendedFinancialAnalysis):
         self.connect('trb.yaw_system_mass', 'tcc_a.yaw_system_mass')
         self.connect('aep_a.net_aep', ['opex_a.net_aep'])
 
-
         # create passthroughs for key input variables of interest
         # turbine
-        self.create_passthrough('tcc_a.advanced')
-        self.create_passthrough('tcc_a.crane') # todo
-        self.create_passthrough('tcc_a.offshore') # todo
-        self.create_passthrough('tcc_a.advanced_bedplate') # todo
+        self.create_passthrough('tcc_a.advanced_blade')
+        self.connect('trb.crane', 'tcc_a.crane') 
+        self.create_passthrough('tcc_a.offshore') # todo connections
         # plant
         self.create_passthrough('aep_a.A')
         self.create_passthrough('aep_a.k')
@@ -118,10 +116,12 @@ def example():
     lcoe.trb.gear_configuration = 'eep'
     lcoe.trb.gear_ratio = 97.0
     lcoe.drivetrain_design = 1
+    lcoe.offshore = False
+    lcoe.A = 8.35
+    lcoe.k = 2.15
 
     lcoe.execute()
-    
-    print "LCOE: {0}".format(lcoe.lcoe)
+
     print "COE: {0}".format(lcoe.coe)
     print "\n"
     print "AEP per turbine: {0}".format(lcoe.net_aep / lcoe.turbine_number)
