@@ -1,0 +1,6448 @@
+****************
+000000_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000000_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000300_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000400_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000500_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000600_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000700_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+000800_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001500_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001600_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+004100_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+005500_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+006833_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+009000_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+010250_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+012000_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+014350_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+017000_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+018450_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+020500_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+022550_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+024600_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+026650_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+030750_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+032000_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+034850_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+037000_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_HP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+038950_LP_FLAT
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+041000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+042000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_HP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_LP_TE_REINF
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  E-LT-5500(UD)
+      Material ID# 2
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+043050_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+045000_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+047150_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+051250_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+054667_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  FOAM
+      Material ID# 5
+  SNL(Triax)
+      Material ID# 3
+****************
+057400_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  Carbon(UD)
+      Material ID# 6
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+060133_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_HP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_HP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_HP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_HP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_HP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_LP_LE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_LP_LE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_LP_CAP
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_LP_TE_PANEL
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+061500_LP_TE
+        contains:
+ LAYERS:
+  Gelcoat
+      Material ID# 1
+  SNL(Triax)
+      Material ID# 3
+  SNL(Triax)
+      Material ID# 3
+****************
+001367_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+001367_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+001500_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+001500_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+001600_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+001600_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+004100_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+004100_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+005500_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+005500_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+006833_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+006833_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+009000_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+009000_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+010250_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+010250_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+012000_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+012000_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+014350_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+014350_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+017000_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+017000_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+018450_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+018450_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+020500_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+020500_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+022550_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+022550_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+024600_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+024600_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+026650_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+026650_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+030750_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+030750_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+032000_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+032000_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+034850_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+034850_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+037000_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+037000_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+038950_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+038950_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+041000_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+041000_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+042000_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+042000_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+043050_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+043050_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+045000_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+045000_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+047150_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+047150_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+051250_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+051250_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+054667_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+054667_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+057400_SW1
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
+****************
+057400_SW2
+        contains:
+ LAYERS:
+  Saertex(DB)
+      Material ID# 4
+  FOAM
+      Material ID# 5
+  Saertex(DB)
+      Material ID# 4
