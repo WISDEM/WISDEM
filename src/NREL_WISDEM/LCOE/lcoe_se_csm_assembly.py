@@ -10,12 +10,12 @@ from openmdao.main.datatypes.api import Int, Float
 from fusedwind.plant_cost.fused_fin_asym import ExtendedFinancialAnalysis
 
 # NREL cost and scaling model sub-assemblies
-from turbinese.turbine import TurbineSE
+from TurbineSE.turbine import TurbineSE
 from Turbine_CostsSE.Turbine_CostsSE.turbine_costsSE import Turbine_CostsSE
 from Plant_CostsSE.Plant_BOS.NREL_CSM_BOS.nrel_csm_bos import bos_csm_assembly
 from Plant_CostsSE.Plant_OM.NREL_CSM_OM.nrel_csm_om import om_csm_assembly
 from Plant_FinanceSE.NREL_CSM_FIN.nrel_csm_fin import fin_csm_assembly
-from Plant_AEPSE.Basic_AEP.basic_aep import BasicAEP
+from Plant_AEPSE.Basic_AEP.basic_aep import aep_assembly
 
 
 class lcoe_se_csm_assembly(ExtendedFinancialAnalysis):
@@ -37,7 +37,7 @@ class lcoe_se_csm_assembly(ExtendedFinancialAnalysis):
         self.replace('tcc_a', Turbine_CostsSE())
         self.replace('bos_a', bos_csm_assembly())
         self.replace('opex_a', om_csm_assembly())
-        self.replace('aep_a', BasicAEP())
+        self.replace('aep_a', aep_assembly())
         self.replace('fin_a', fin_csm_assembly())
 
         self.add('turbine', TurbineSE(3))
