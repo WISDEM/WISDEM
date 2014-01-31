@@ -79,6 +79,7 @@ class lcoe_se_csm_assembly(ExtendedFinancialAnalysis):
         self.connect('turbine.generator_mass', 'tcc_a.generator_mass')
         self.connect('turbine.bedplate_mass', 'tcc_a.bedplate_mass')
         self.connect('turbine.yaw_system_mass', 'tcc_a.yaw_system_mass')
+        self.connect('turbine.tower_mass', 'tcc_a.tower_mass')
         self.connect('aep_a.net_aep', 'opex_a.net_aep')
 
         # create passthroughs for key input variables of interest
@@ -95,33 +96,6 @@ class lcoe_se_csm_assembly(ExtendedFinancialAnalysis):
         self.create_passthrough('fin_a.fixed_charge_rate')
         self.create_passthrough('turbine.power_curve')
         self.create_passthrough('turbine.turbine_mass')
-
-
-
-def example():
-
-    lcoe = lcoe_se_csm_assembly()
-
-    lcoe.turbine.crane = True
-    lcoe.turbine.gear_configuration = 'eep'
-    lcoe.turbine.gear_ratio = 97.0
-    lcoe.drivetrain_design = 1
-    lcoe.offshore = False
-    lcoe.A = 8.35
-    lcoe.k = 2.15
-
-    lcoe.execute()
-
-    print "COE: {0}".format(lcoe.coe)
-    print "\n"
-    print "AEP per turbine: {0}".format(lcoe.net_aep / lcoe.turbine_number)
-    print "Turbine _cost: {0}".format(lcoe.turbine_cost)
-    print "BOS costs per turbine: {0}".format(lcoe.bos_costs / lcoe.turbine_number)
-    print "OnM costs per turbine: {0}".format(lcoe.avg_annual_opex / lcoe.turbine_number)
-
-    #print "Turbine variable tree:"
-    #lcoe.turbineVT.printVT()
-    #print
 
 
 def tipspeed():
@@ -308,14 +282,10 @@ def tipspeed():
     tower.soil.rigid = 6*[True]
 
 
+    # turbine cost parameters
+    lcoe.tcc_a.tcc.assemblyCostMultiplier = 0.30
+    lcoe.tcc_a.tcc.profitMultiplier = 0.20
     lcoe.run()
-
-
-    print "COE: {0}".format(lcoe.coe)
-    print "AEP per turbine: {0}".format(lcoe.net_aep / lcoe.turbine_number)
-    print "Turbine _cost: {0}".format(lcoe.turbine_cost)
-    print "BOS costs per turbine: {0}".format(lcoe.bos_costs / lcoe.turbine_number)
-    print "OnM costs per turbine: {0}".format(lcoe.avg_annual_opex / lcoe.turbine_number)
 
 
     # # outputs
@@ -422,7 +392,15 @@ def tipspeed():
     plt.plot(tower.damage[idx_tower_fatigue] - 1, tower.z_nodes[idx_tower_fatigue], 'x')
     plt.show()
 
-
+    print "COE: {0}".format(lcoe.coe)
+    print "AEP per turbine: {0}".format(lcoe.net_aep / lcoe.turbine_number)
+    print "Turbine _cost: {0}".format(lcoe.turbine_cost)
+    print "BOS costs per turbine: {0}".format(lcoe.bos_costs / lcoe.turbine_number)
+    print "OnM costs per turbine: {0}".format(lcoe.avg_annual_opex / lcoe.turbine_number)
+    print "Blade Mass: {0}".format(lcoe.tcc_a.blade_mass)
+    print "LSS Mass: {0}".format(lcoe.tcc_a.low_speed_shaft_mass)
+    print "Gearbox Mass: {0}".format(lcoe.tcc_a.gearbox_mass)
+    print "Tower Mass: {0}".format(lcoe.tcc_a.tower_mass)
 
 
 if __name__=="__main__":
