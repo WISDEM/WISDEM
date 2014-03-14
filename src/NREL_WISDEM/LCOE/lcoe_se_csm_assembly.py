@@ -7,7 +7,7 @@ Copyright (c) NREL. All rights reserved.
 
 
 from openmdao.main.api import Assembly
-from openmdao.main.datatypes.api import Int, Float
+from openmdao.main.datatypes.api import Int, Float, Enum
 
 from turbinese.turbine import configure_turbine
 from fusedwind.plant_cost.fused_fin_asym import configure_extended_financial_analysis
@@ -16,9 +16,10 @@ from Plant_CostsSE.Plant_BOS.NREL_CSM_BOS.nrel_csm_bos import bos_csm_assembly
 from Plant_CostsSE.Plant_OM.NREL_CSM_OM.nrel_csm_om import om_csm_assembly
 from Plant_FinanceSE.NREL_CSM_FIN.nrel_csm_fin import fin_csm_assembly
 from Plant_AEPSE.Basic_AEP.basic_aep import aep_assembly
+from landbos import LandBOS
 
 
-def configure_lcoe(assembly):
+def configure_lcoe(assembly, with_new_nacelle=True, with_new_BOS=True):
     """
     tcc_a inputs:
         advanced_blade = Bool
@@ -44,13 +45,24 @@ def configure_lcoe(assembly):
         year
         month
 
+        if with_new_BOS:
+        voltage
+        distInter
+        terrain
+        layout
+        soil
+
     """
 
-    configure_turbine(assembly)
+
+    configure_turbine(assembly, with_new_nacelle=with_new_nacelle)
     configure_extended_financial_analysis(assembly)
 
     assembly.replace('tcc_a', Turbine_CostsSE())
-    assembly.replace('bos_a', bos_csm_assembly())
+    if with_new_BOS:
+        assembly.replace('bos_a', LandBOS())
+    else:
+        assembly.replace('bos_a', bos_csm_assembly())
     assembly.replace('opex_a', om_csm_assembly())
     assembly.replace('aep_a', aep_assembly())
     assembly.replace('fin_a', fin_csm_assembly())
@@ -60,6 +72,16 @@ def configure_lcoe(assembly):
     assembly.add('turbine_number', Int(100, iotype='in', desc='total number of wind turbines at the plant'))
     assembly.add('year', Int(2009, iotype='in', desc='year of project start'))
     assembly.add('month', Int(12, iotype='in', desc='month of project start'))
+
+    if with_new_BOS:
+        assembly.add('voltage', Float(iotype='in', units='kV', desc='interconnect voltage'))
+        assembly.add('distInter', Float(iotype='in', units='mi', desc='distance to interconnect'))
+        assembly.add('terrain', Enum('FLAT_TO_ROLLING', ('FLAT_TO_ROLLING', 'RIDGE_TOP', 'MOUNTAINOUS'),
+            iotype='in', desc='terrain options'))
+        assembly.add('layout', Enum('SIMPLE', ('SIMPLE', 'COMPLEX'), iotype='in',
+            desc='layout options'))
+        assembly.add('soil', Enum('STANDARD', ('STANDARD', 'BOUYANT'), iotype='in',
+            desc='soil options'))
 
     # connections to turbine costs
     assembly.connect('rotor.mass_one_blade', 'tcc_a.blade_mass')
@@ -83,14 +105,23 @@ def configure_lcoe(assembly):
     assembly.connect('nacelle.drivetrain_design', 'tcc_a.drivetrain_design')
 
     # connections to bos
-    assembly.connect('sea_depth', 'bos_a.sea_depth')
-    assembly.connect('year', 'bos_a.year')
-    assembly.connect('month', 'bos_a.month')
     assembly.connect('rotor.control.ratedPower', 'bos_a.machine_rating')
     assembly.connect('rotor.diameter', 'bos_a.rotor_diameter')
     assembly.connect('rotor.hubHt', 'bos_a.hub_height')
-    assembly.connect('rotor.mass_all_blades + hub.hub_system_mass + nacelle.nacelle_mass', 'bos_a.RNA_mass')
     assembly.connect('turbine_number', 'bos_a.turbine_number')
+    assembly.connect('rotor.mass_all_blades + hub.hub_system_mass + nacelle.nacelle_mass', 'bos_a.RNA_mass')
+
+    if with_new_BOS:
+        assembly.connect('voltage', 'bos_a.voltage')
+        assembly.connect('distInter', 'bos_a.distInter')
+        assembly.connect('terrain', 'bos_a.terrain')
+        assembly.connect('layout', 'bos_a.layout')
+        assembly.connect('soil', 'bos_a.soil')
+
+    else:
+        assembly.connect('sea_depth', 'bos_a.sea_depth')
+        assembly.connect('year', 'bos_a.year')
+        assembly.connect('month', 'bos_a.month')
 
     # connections to opex
     assembly.connect('rotor.control.ratedPower', 'opex_a.machine_rating')
