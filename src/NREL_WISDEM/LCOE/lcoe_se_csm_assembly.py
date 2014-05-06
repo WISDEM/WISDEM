@@ -19,7 +19,7 @@ from Plant_AEPSE.Basic_AEP.basic_aep import aep_assembly
 from landbos import LandBOS
 
 
-def configure_lcoe(assembly, with_new_nacelle=True, with_new_BOS=True):
+def configure_lcoe(assembly, with_new_nacelle=True, with_new_BOS=True, flexible_blade=False):
     """
     tcc_a inputs:
         advanced_blade = Bool
@@ -55,7 +55,7 @@ def configure_lcoe(assembly, with_new_nacelle=True, with_new_BOS=True):
     """
 
 
-    configure_turbine(assembly, with_new_nacelle=with_new_nacelle)
+    configure_turbine(assembly, with_new_nacelle=with_new_nacelle, flexible_blade=flexible_blade)
     configure_extended_financial_analysis(assembly)
 
     assembly.replace('tcc_a', Turbine_CostsSE())
