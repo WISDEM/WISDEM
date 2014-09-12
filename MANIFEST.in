@@ -1,3 +1,6 @@
-graft src/NREL_WISDEM/sphinx_build/html
-recursive-include src/NREL_WISDEM/test *.py
+include README.md
+include CHANGELOG.md
+include LICENSE.txt
+graft src/test
+global-exclude openmdao_log.txt
 

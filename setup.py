@@ -6,26 +6,29 @@
 
 from setuptools import setup, find_packages
 
-kwargs = {'author': 'NREL Systems Engineering Team',
- 'author_email': 'systems.engineering@nrel.gov',
- 'classifiers': ['Intended Audience :: Science/Research',
-                 'Topic :: Scientific/Engineering'],
- 'description': '',
- 'download_url': '',
- 'include_package_data': True,
- 'install_requires': ['openmdao.main'],
- 'keywords': ['openmdao'],
- 'license': 'Apache v. 2.0',
- #'maintainer': '',
- #'maintainer_email': '',
- 'name': 'NREL_WISDEM',
- 'package_data': {'NREL_WISDEM': []},
- 'package_dir': {'': 'src'},
- 'packages': ['NREL_WISDEM', 'NREL_WISDEM.LCOE'],
- 'url': '',
- 'version': '0.1',
- 'zip_safe': False}
-
-
-setup(**kwargs)
+setup(
+    name='WISDEM',
+    version='0.1.0',
+    description='Wind-Plant Integrated System Design & Engineering Model',
+    author='K. Dykes and S. Andrew Ning',
+    author_email='katherine.dykes@nrel.gov',
+    install_requires=['fusedwind','commonse', 'drivese','drivewpact','plant_costsse','plant_energyse','plant_financese','rotorse','towerse', 'turbine_costsse', 'turbinese'],
+    package_data= {'WISDEM': []},
+    package_dir= {'': 'src'},
+    packages= ['wisdem'],
+    license='Apache License, Version 2.0',
+    dependency_links=[#'https://github.com/WISDEM/CommonSE/tarball/master#egg=fusedwind', #need to update fusedwind repository name
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=commonse',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=drivese',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=drivewpact',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=plant_costsse',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=plant_energyse',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=plant_financese',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=rotorse',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=towerse',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=turbine_costsse',
+        'https://github.com/WISDEM/CommonSE/tarball/master#egg=turbinese',
+        ],
+    zip_safe=False
+)
 
