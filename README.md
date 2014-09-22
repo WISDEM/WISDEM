@@ -2,6 +2,10 @@ WISDEM is a set of models for assessing overall wind plant cost of energy (coe).
 
 Author: [K. Dykes](mailto:katherine.dykes@nrel.gov) and [S. Andrew Ning](mailto:simeon.ning@nrel.gov)
 
+## Detailed Documentation
+
+For detailed documentation see <http://wisdem.github.io/WISDEM/>
+
 ## Prerequisites
 
 General: NumPy, SciPy, OpenMDAO
@@ -28,6 +32,3 @@ You may also run the unit tests.
 
 	$ python src/test/test_WISDEM.py
 
-## Detailed Documentation
-
-Online documentation is available at <http://wisdem.github.io/WISDEM/>

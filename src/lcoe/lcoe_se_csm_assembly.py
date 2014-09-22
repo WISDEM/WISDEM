@@ -10,12 +10,12 @@ from openmdao.main.api import Assembly
 from openmdao.main.datatypes.api import Int, Float, Enum
 
 from turbinese.turbine import configure_turbine
-from fusedwind.plant_cost.fused_fin_asym import configure_extended_financial_analysis
-from Turbine_CostsSE.Turbine_CostsSE.turbine_costsSE import Turbine_CostsSE
-from Plant_CostsSE.Plant_BOS.NREL_CSM_BOS.nrel_csm_bos import bos_csm_assembly
-from Plant_CostsSE.Plant_OM.NREL_CSM_OM.nrel_csm_om import om_csm_assembly
-from Plant_FinanceSE.NREL_CSM_FIN.nrel_csm_fin import fin_csm_assembly
-from Plant_AEPSE.Basic_AEP.basic_aep import aep_assembly
+from fusedwind.plant_cost.fused_finance import configure_extended_financial_analysis
+from turbine_costsse.turbine_costsse.turbine_costsse import turbine_costsse
+from plant_costsse.plant_bos.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
+from plant_costsse.plant_om.nrel_csm_om.nrel_csm_om import om_csm_assembly
+from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
+from plant_aepse.basic_aep.basic_aep import aep_assembly
 from landbos import LandBOS
 
 
@@ -144,7 +144,7 @@ def configure_lcoe(assembly, with_new_nacelle=True, with_new_BOS=True, flexible_
 
 
 
-class LCOE_SE_CSM_ASSEMBLY(Assembly):
+class lcoe_se_csm_assembly(Assembly):
 
     def configure(self):
         configure_lcoe(self)

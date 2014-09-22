@@ -6,42 +6,54 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from openmdao.main.api import Component, Assembly, VariableTree
-from openmdao.main.datatypes.api import Int, Bool, Float, Array, VarTree
+from openmdao.main.datatypes.api import Int, Bool, Float, Array, VarTree, Enum
 
-from fusedwind.plant_cost.fused_fin_asym import ExtendedFinancialAnalysis
-from fusedwind.vartrees.varTrees import Turbine
+from fusedwind.plant_cost.fused_finance import ExtendedFinancialAnalysis, configure_extended_financial_analysis
+from fusedwind.plant_cost.fused_bos_costs import BOSVarTree
+from fusedwind.plant_cost.fused_opex import OPEXVarTree
+from fusedwind.interface import implement_base
 
 # NREL cost and scaling model sub-assemblies
-from Turbine_CostsSE.NREL_CSM_TCC.nrel_csm_tcc import tcc_csm_assembly
-from Plant_CostsSE.Plant_BOS.NREL_CSM_BOS.nrel_csm_bos import bos_csm_assembly
-from Plant_CostsSE.Plant_OM.NREL_CSM_OM.nrel_csm_om  import om_csm_assembly
-from Plant_FinanceSE.NREL_CSM_FIN.nrel_csm_fin import fin_csm_assembly
-from Plant_AEPSE.NREL_CSM_AEP.nrel_csm_aep import aep_csm_assembly
-from Plant_AEPSE.NREL_CSM_AEP.csmDriveEfficiency import DrivetrainEfficiencyModel, csmDriveEfficiency
+from nrel_csm_tcc.nrel_csm_tcc import tcc_csm_assembly
+from nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
+from nrel_csm_opex.nrel_csm_opex  import opex_csm_assembly
+from nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
+from nrel_csm_aep.nrel_csm_aep import aep_csm_assembly
 
-class lcoe_csm_assembly(ExtendedFinancialAnalysis):
+@implement_base(ExtendedFinancialAnalysis)
+class lcoe_csm_assembly(Assembly):
 
-    # variables
+    # Variables
+    turbine_number = Int(iotype = 'in', desc = 'number of turbines at plant')
     machine_rating = Float(5000.0, units = 'kW', iotype='in', desc= 'rated machine power in kW')
     rotor_diameter = Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
     max_tip_speed = Float(80.0, units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor')
     hub_height = Float(90.0, units = 'm', iotype='in', desc='hub height of wind turbine above ground / sea level')
     sea_depth = Float(20.0, units = 'm', iotype='in', desc = 'sea depth for offshore wind project')
 
-    # parameters
-    drivetrain_design = Int(1, iotype='in', desc= 'drivetrain design type 1 = 3-stage geared, 2 = single-stage geared, 3 = multi-generator, 4 = direct drive')
+    # Parameters
+    drivetrain_design = Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in')
     altitude = Float(0.0, units = 'm', iotype='in', desc= 'altitude of wind plant')
     turbine_number = Int(100, iotype='in', desc = 'total number of wind turbines at the plant')
     year = Int(2009, iotype='in', desc = 'year of project start')
     month = Int(12, iotype='in', desc = 'month of project start')
+
+    #Outputs
+    turbine_cost = Float(iotype='out', desc = 'A Wind Turbine Capital _cost')
+    bos_costs = Float(iotype='out', desc='A Wind Plant Balance of Station _cost Model')
+    avg_annual_opex = Float(iotype='out', desc='A Wind Plant Operations Expenditures Model')
+    net_aep = Float(iotype='out', desc='A Wind Plant Annual Energy Production Model', units='kW*h')
+    coe = Float(iotype='out', desc='Levelized cost of energy for the wind plant')
+    opex_breakdown = VarTree(OPEXVarTree(),iotype='out')
+    bos_breakdown = VarTree(BOSVarTree(), iotype='out', desc='BOS cost breakdown')
                 
     def configure(self):
         
-        super(lcoe_csm_assembly,self).configure()
+        configure_extended_financial_analysis(self)
         
         self.replace('tcc_a', tcc_csm_assembly())
         self.replace('bos_a', bos_csm_assembly())
-        self.replace('opex_a', om_csm_assembly())
+        self.replace('opex_a', opex_csm_assembly())
         self.replace('aep_a', aep_csm_assembly())
         self.replace('fin_a', fin_csm_assembly())
 
@@ -60,7 +72,7 @@ class lcoe_csm_assembly(ExtendedFinancialAnalysis):
         self.connect('altitude', ['aep_a.altitude'])
         self.connect('sea_depth', ['bos_a.sea_depth', 'opex_a.sea_depth', 'fin_a.sea_depth'])
         # plant operation       
-        self.connect('turbine_number', ['aep_a.turbine_number', 'bos_a.turbine_number', 'opex_a.turbine_number', 'fin_a.turbine_number']) 
+        self.connect('turbine_number', ['aep_a.turbine_number', 'bos_a.turbine_number', 'opex_a.turbine_number']) 
         # financial
         self.connect('year', ['tcc_a.year', 'bos_a.year', 'opex_a.year'])
         self.connect('month', ['tcc_a.month', 'bos_a.month', 'opex_a.month'])
@@ -94,7 +106,6 @@ class lcoe_csm_assembly(ExtendedFinancialAnalysis):
         self.create_passthrough('aep_a.power_curve')
         # tcc_a
         self.create_passthrough('tcc_a.turbine_mass')
-        self.create_passthrough('tcc_a.turbineVT')
         # fin_a
         self.create_passthrough('fin_a.lcoe')
 
@@ -102,9 +113,6 @@ class lcoe_csm_assembly(ExtendedFinancialAnalysis):
 def example():
 
     lcoe = lcoe_csm_assembly()
-    
-    lcoe.advanced_blade = True
-    lcoe.aep_a.drive.drivetrain = csmDriveEfficiency(1)
 
     lcoe.run()
     
@@ -115,10 +123,6 @@ def example():
     print "Turbine _cost: {0}".format(lcoe.turbine_cost)
     print "BOS costs per turbine: {0}".format(lcoe.bos_costs / lcoe.turbine_number)
     print "OnM costs per turbine: {0}".format(lcoe.avg_annual_opex / lcoe.turbine_number)
-
-    print "Turbine variable tree:"
-    lcoe.turbineVT.printVT()
-    print
 
 
 if __name__=="__main__":
