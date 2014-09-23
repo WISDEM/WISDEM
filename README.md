@@ -16,7 +16,7 @@ Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, Jack
 
 ## Installation
 
-Install Turbine_CostsSE within an activated OpenMDAO environment
+Install WISDEM within an activated OpenMDAO environment
 
 	$ plugin install
 
