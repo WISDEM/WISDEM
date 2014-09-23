@@ -1,4 +1,4 @@
-WISDEM is a set of models for assessing overall wind plant cost of energy (coe).  The models use wind turbine and plant cost and energy production as well as financial models to estimate coe and other wind plant system attributes.  It is built in OpenMDAO and uses several sub-models that are also designed as OpenMDAO plugin-ins.  These sub-models can be used independently but they are also automatically installed when WISDEM is installed.
+The Wind-Plant Integrated System Design and Engineering Model (WISDEM) is a set of models for assessing overall wind plant cost of energy (coe).  The models use wind turbine and plant cost and energy production as well as financial models to estimate coe and other wind plant system attributes.  It is built in OpenMDAO and uses several sub-models that are also designed as OpenMDAO plugin-ins.  These sub-models can be used independently but they are also automatically installed when WISDEM is installed.
 
 Author: [K. Dykes](mailto:katherine.dykes@nrel.gov) and [S. Andrew Ning](mailto:simeon.ning@nrel.gov)
 
@@ -10,7 +10,7 @@ For detailed documentation see <http://wisdem.github.io/WISDEM/>
 
 General: NumPy, SciPy, OpenMDAO
 
-Wind Plant Framework: FUSED-Wind
+Wind Plant Framework: FUSED-Wind (Framework for Unified Systems Engineering and Design of Wind Plants)
 
 Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, TurbineSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSE
 
