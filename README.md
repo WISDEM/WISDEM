@@ -9,7 +9,9 @@ For detailed documentation see <http://wisdem.github.io/WISDEM/>
 ## Prerequisites
 
 General: NumPy, SciPy, OpenMDAO
+
 Wind Plant Framework: FUSED-Wind
+
 Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, TurbineSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSE
 
 ## Installation
