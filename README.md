@@ -2,6 +2,10 @@ The Wind-Plant Integrated System Design and Engineering Model (WISDEM) is a set 
 
 Author: [K. Dykes](mailto:katherine.dykes@nrel.gov) and [S. Andrew Ning](mailto:simeon.ning@nrel.gov)
 
+## Version
+
+This software is a beta version 0.1.0.
+
 ## Detailed Documentation
 
 For detailed documentation see <http://wisdem.github.io/WISDEM/>
