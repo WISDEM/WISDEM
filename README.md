@@ -38,3 +38,4 @@ You may also run the unit tests.
 
 	$ python src/test/test_WISDEM.py
 
+For software issues please use <https://github.com/WISDEM/WISDEM/issues>.  For functionality and theory related questions and comments please use the NWTC forum for [Systems Engineering Software Questions](https://wind.nrel.gov/forum/wind/viewtopic.php?f=34&t=1002).

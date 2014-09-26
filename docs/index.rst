@@ -1,13 +1,22 @@
-=========================
-NREL_WISDEM Documentation
-=========================
+WISDEM
+===============
 
-Contents:
+.. only:: html
+
+    Wind turbine and plant system level assemblies.
+
+    Author: `Katherine Dykes <mailto:katherine.dykes@nrel.gov>`_
+
+    .. rubric:: Table of Contents
+
 
 .. toctree::
-   :maxdepth: 2
-    
-   usage
-   srcdocs
-   pkgdocs
+    :numbered:
+    :maxdepth: 2
+
+    intro
+    installation
+    tutorial
+    documentation
+
 
