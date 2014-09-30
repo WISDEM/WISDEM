@@ -11,11 +11,11 @@ from openmdao.main.datatypes.api import Int, Float, Enum
 
 from turbinese.turbine import configure_turbine
 from fusedwind.plant_cost.fused_finance import configure_extended_financial_analysis
-from turbine_costsse.turbine_costsse.turbine_costsse import turbine_costsse
-from plant_costsse.plant_bos.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
-from plant_costsse.plant_om.nrel_csm_om.nrel_csm_om import om_csm_assembly
+from turbine_costsse.turbine_costsse.turbine_costsse import Turbine_CostsSE
+from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
+from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
-from plant_aepse.basic_aep.basic_aep import aep_assembly
+from plant_energyse.basic_aep.basic_aep import aep_assembly
 from landbos import LandBOS
 
 
