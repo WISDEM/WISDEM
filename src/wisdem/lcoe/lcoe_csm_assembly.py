@@ -19,7 +19,7 @@ from turbine_costsse.nrel_csm_tcc.nrel_csm_tcc import tcc_csm_assembly
 from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
 from plant_costsse.nrel_csm_opex.nrel_csm_opex  import opex_csm_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
-from nrel_csm_aep.nrel_csm_aep import aep_csm_assembly
+from plant_energyse.nrel_csm_aep.nrel_csm_aep import aep_csm_assembly
 
 @implement_base(ExtendedFinancialAnalysis)
 class lcoe_csm_assembly(Assembly):
