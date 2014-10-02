@@ -1,16 +1,25 @@
-import os,sys,glob,subprocess, urllib2, tarfile
+import os,sys,glob,subprocess, urllib2, tarfile, shutil
 
-def install_url(url):
+
+failures = []
+
+def install_url(f, url, subdir=None):
+    print "install url: package=", f, "url= ", url
     response = urllib2.urlopen(url)
     thetarfile = tarfile.open(fileobj=response, mode="r|gz")
     thetarfile.extractall()
 
-    dirname = glob.glob("WISDEM-%s*" % (f))
-#    print "unpacked to ", dirname
+    if os.path.exists(f):
+        shutil.rmtree(f)
+
+    dirname = glob.glob("*%s*" % (f))
     curdir = os.getcwd()
     dirname = dirname[0]
     os.rename(dirname, f)   # potential bug if something exists/not empty?
-    os.chdir(f)
+    if (subdir == None):
+        os.chdir(f)        
+    else:
+        os.chdir(subdir)    
     res = 0
     try:
         res = subprocess.call(["plugin", "install"])
@@ -39,12 +48,16 @@ if not os.path.exists(subdir):
     os.mkdir(subdir)
 os.chdir(subdir)
 
+# install fused wind
+f = "fusedwind"
+subdir = os.path.join(f,f) # fusedwind is nested!
+url = "http://github.com/FUSED-Wind/fusedwind/tarball/master"
+install_url(f,url,subdir)
+
 # download and install all the necessary WISDEM plugins
-failures = []
 for f in files:
     url = "%s%s/tarball/master" % (wis, f)
-    install_url(url)
-
+    install_url(f, url)
     
 # finally install WISDEM itself
 os.chdir(rootdir)
