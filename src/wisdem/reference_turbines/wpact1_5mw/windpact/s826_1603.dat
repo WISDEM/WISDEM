@@ -1,0 +1,71 @@
+AeroDyn airfoil file.  Compatible with AeroDyn v13.0.
+s826_1601.dat Re=3,000,000 (windward modified the flat Cl section near stall)
+FROM Dayton Griffin, Sept 28'00, post stall combined with flat plate.  Foilchcked by Windward on 10-Oct-2000 at 10:37.
+     1          Number of airfoil tables in this file
+     9.99e9     Reynolds number in millions.  For efficiency, make very large if only one table.
+     0.0        Control setting
+    12.0        Stall angle (deg)
+    -6.61       Zero lift angle of attack (deg)
+     6.16567    Cn slope for zero lift (dimensionless)
+     2.0013     Cn at stall value for positive angle of attack
+    -0.8        Cn at stall value for negative angle of attack
+    -4.0        Angle of attack for minimum CD (deg)
+     0.0067     Minimum CD value
+  -180.0    -0.17   0.0200
+  -170.0     0.64   0.0500
+  -160.0     0.84   0.3100
+  -150.0     1.08   0.6200
+  -140.0     1.15   0.9600
+  -130.0     1.09   1.3000
+  -120.0     0.88   1.5200
+  -110.0     0.60   1.6600
+  -100.0     0.31   1.7600
+   -90.0     0.00   1.8000
+   -80.0    -0.31   1.7600
+   -70.0    -0.60   1.6600
+   -60.0    -0.88   1.5200
+   -50.0    -1.09   1.3000
+   -40.0    -1.15   0.9600
+   -30.0    -1.08   0.6200
+   -20.0    -0.84   0.3100
+   -10.0    -0.64   0.0144
+    -8.0    -0.48   0.0124
+    -6.0     0.06   0.0092
+    -5.0     0.17   0.0082
+    -4.0     0.28   0.0067
+    -3.0     0.39   0.0068
+    -2.0     0.50   0.0069
+    -1.0     0.60   0.0070
+     0.0     0.71   0.0072
+     1.0     0.82   0.0074
+     2.0     0.93   0.0076
+     3.0     1.04   0.0078
+     4.0     1.14   0.0082
+     5.0     1.25   0.0087
+     6.0     1.35   0.0104
+     7.0     1.44   0.0146
+     8.0     1.53   0.0184
+     9.0     1.63   0.0200
+    10.0     1.65   0.0219
+    11.0     1.67   0.0239
+    12.0     1.68   0.0262
+    13.0     1.67   0.0288
+    14.0     1.65   0.0316
+    15.0     1.63   0.0520
+    30.0     1.08   0.6200
+    40.0     1.15   0.9600
+    50.0     1.09   1.3000
+    60.0     0.88   1.5200
+    70.0     0.60   1.6600
+    80.0     0.31   1.7600
+    90.0     0.00   1.8000
+   100.0    -0.31   1.7600
+   110.0    -0.60   1.6600
+   120.0    -0.88   1.5200
+   130.0    -1.09   1.3000
+   140.0    -1.15   0.9600
+   150.0    -1.08   0.6200
+   160.0    -0.84   0.3100
+   170.0    -0.64   0.0500
+   180.0    -0.17   0.0200
+EOT
