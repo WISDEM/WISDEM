@@ -123,6 +123,7 @@ def configure_lcoe_with_basic_aep(assembly):
     # connections to aep
     assembly.connect('rotor.AEP', 'aep_a.AEP_one_turbine')
     assembly.connect('turbine_number', 'aep_a.turbine_number')
+    assembly.connect('machine_rating','aep_a.machine_rating')
 
 def configure_lcoe_with_csm_fin(assembly):
     """
@@ -142,7 +143,7 @@ def configure_lcoe_with_csm_fin(assembly):
 
 # ====================================================================
 # Overall assembly configuration
-def configure_lcoe_se(assembly, with_new_nacelle=False, with_landbos=False, flexible_blade=False):
+def configure_lcoe_se(assembly, with_new_nacelle=False, with_landbos=False, flexible_blade=False,with_3pt_drive=False):
     """
     tcc_a inputs:
         advanced_blade = Bool
@@ -183,7 +184,7 @@ def configure_lcoe_se(assembly, with_new_nacelle=False, with_landbos=False, flex
     assembly.add('month', Int(12, iotype='in', desc='month of project start'))
 
     # add TurbineSE assembly
-    configure_turbine(assembly, with_new_nacelle=with_new_nacelle, flexible_blade=flexible_blade)
+    configure_turbine(assembly, with_new_nacelle, flexible_blade, with_3pt_drive)
 
     # replace TCC with turbine_costs
     configure_lcoe_with_turb_costs(assembly)
@@ -226,6 +227,7 @@ class lcoe_se_assembly(Assembly):
     with_new_nacelle = Bool(False, iotype='in', desc='configure with DriveWPACT if false, else configure with DriveSE')
     with_landbose = Bool(False, iotype='in', desc='configure with CSM BOS if flase, else configure with new LandBOS model')
     flexible_blade = Bool(False, iotype='in', desc='configure rotor with flexible blade if True')
+    with_3pt_drive = Bool(False, iotype='in', desc='only used if configuring DriveSE - selects 3 pt or 4 pt design option') # TODO: change nacelle selection to enumerated rather than nested boolean
 
     # Other I/O
     eta_strain = Float(1.35*1.3*1.0, iotype='in')
@@ -240,26 +242,34 @@ class lcoe_se_assembly(Assembly):
     # idx_tower_fatigue = Array([0, 3, 6, 9, 12, 15, 18, 20], iotype='in', dtype=np.int)
 
 
-    def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False):
+    def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False):
         
         self.with_new_nacelle = with_new_nacelle
         self.with_landbos = with_landbos
         self.flexible_blade = flexible_blade
+        self.with_3pt_drive = with_3pt_drive
         
         super(lcoe_se_assembly,self).__init__()
 
     def configure(self):
 
-        configure_lcoe_se(self, self.with_new_nacelle, self.with_landbos, self.flexible_blade)
+        configure_lcoe_se(self, self.with_new_nacelle, self.with_landbos, self.flexible_blade, self.with_3pt_drive)
 
-def example():
+def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False):
+    """
+    Inputs:
+        wind_class : str ('I', 'III', 'Offshore' - selected wind class for project)
+        sea_depth : float (sea depth if an offshore wind plant)
+    """
 
-    # Configuration choices
-    with_new_nacelle = False
-    with_landbos = False
-    flexible_blade = False
+    # === Create LCOE SE assembly ========
+    lcoe_se = lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive)
 
-    lcoe_se = lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade)
+    # === Set assembly variables and objects ===
+    lcoe_se.sea_depth = depth # 0.0 for land-based turbine
+    lcoe_se.turbine_number = 100
+    lcoe_se.year = 2009
+    lcoe_se.month = 12
 
     rotor = lcoe_se.rotor
     nacelle = lcoe_se.nacelle
@@ -272,12 +282,21 @@ def example():
 
     # ===== Turbine ===========
     from wisdem.reference_turbines.nrel5mw.nrel5mw import configure_nrel5mw_turbine
-    configure_nrel5mw_turbine(rotor,nacelle,tower)
+    configure_nrel5mw_turbine(rotor,nacelle,tower,wind_class,lcoe_se.sea_depth)
 
+    # TODO: these should be specified at the turbine level and connected to other system inputs
     lcoe_se.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
     lcoe_se.generator_speed = 1173.7  # (Float, rpm)  # generator speed
     # extra variable constant for now
-    lcoe_se.nacelle.bedplate.rotor_bending_moment_y = -2.3250E+06
+    #lcoe_se.nacelle.bedplate.rotor_bending_moment_y = -2.3250E+06 # shouldnt be needed anymore
+
+    # additional 5 MW reference variables #TODO: these should go into turbine level
+    lcoe_se.strain_ult_spar = rotor.strain_ult_spar
+    lcoe_se.strain_ult_te = rotor.strain_ult_te
+    lcoe_se.eta_strain = 1.35*1.3*1.0
+    lcoe_se.eta_dfl = 1.35*1.1*1.0
+    lcoe_se.freq_margin = 1.1
+    lcoe_se.min_ground_clearance = 20.0
 
     # ===== tcc ====
     tcc_a.advanced_blade = True
@@ -286,6 +305,14 @@ def example():
     tcc_a.profitMultiplier = 0.20
     tcc_a.overheadCostMultiplier = 0.0
     tcc_a.transportMultiplier = 0.0
+
+    # for new landBOS
+    ''' # === new landBOS ===
+    lcoe_se.voltage = 137
+    lcoe_se.distInter = 5
+    lcoe_se.terrain = 'FLAT_TO_ROLLING'
+    lcoe_se.layout = 'SIMPLE'
+    lcoe_se.soil = 'STANDARD' '''
 
     # ==== aep ====
     aep_a.array_losses = 0.059
@@ -300,30 +327,8 @@ def example():
     fin_a.construction_time = 1.0
     fin_a.project_lifetime = 20.0
 
-    # === assembly variables ===
-    lcoe_se.sea_depth = 0.0
-    lcoe_se.turbine_number = 100
-    lcoe_se.year = 2009
-    lcoe_se.month = 12
-
-    # additional 5 MW reference variables #TODO: where should these go?
-    lcoe_se.strain_ult_spar = rotor.strain_ult_spar
-    lcoe_se.strain_ult_te = rotor.strain_ult_te
-    lcoe_se.eta_strain = 1.35*1.3*1.0
-    lcoe_se.eta_dfl = 1.35*1.1*1.0
-    lcoe_se.freq_margin = 1.1
-    lcoe_se.min_ground_clearance = 20.0
-
-    '''# for new landBOS
-    lcoe_se.voltage = 137
-    lcoe_se.distInter = 5
-    lcoe_se.terrain = 'FLAT_TO_ROLLING'
-    lcoe_se.layout = 'SIMPLE'
-    lcoe_se.soil = 'STANDARD' '''
-
-
-    # set up reference wind plant site conditions
-    shearExp = 0.2
+    # === Set plant level inputs ===
+    shearExp = 0.2 #TODO : should be an input to lcoe
     rotor.cdf_reference_height_wind_speed = 90.0
     aep_a.array_losses = 0.15
     aep_a.other_losses = 0.0
@@ -331,73 +336,25 @@ def example():
     rotor.turbulence_class = 'B'
     lcoe_se.bos_a.multiplier = 2.23
 
-    rotor.shearExp = shearExp
-    tower.wind1.shearExp = shearExp
-    tower.wind2.shearExp = shearExp
-
-    wind_class = 'I'
-
-    if wind_class == 'I':
-        rotor.turbine_class = 'I'
-
-    elif wind_class == 'III':
-        rotor.turbine_class = 'III'
-
-        # for fatigue based analysis of class III wind turbine
-        #tower.M_DEL = 1.028713178 * 1e3*np.array([7.8792E+003, 7.7507E+003, 7.4918E+003, 7.2389E+003, 6.9815E+003, 6.7262E+003, 6.4730E+003, 6.2174E+003, 5.9615E+003, 5.7073E+003, 5.4591E+003, 5.2141E+003, 4.9741E+003, 4.7399E+003, 4.5117E+003, 4.2840E+003, 4.0606E+003, 3.8360E+003, 3.6118E+003, 3.3911E+003, 3.1723E+003, 2.9568E+003, 2.7391E+003, 2.5294E+003, 2.3229E+003, 2.1246E+003, 1.9321E+003, 1.7475E+003, 1.5790E+003, 1.4286E+003, 1.3101E+003, 1.2257E+003, 1.1787E+003, 1.1727E+003, 1.1821E+003])
-
-        #rotor.Mxb_damage = 1e3*np.array([2.3617E+003, 2.0751E+003, 1.8051E+003, 1.5631E+003, 1.2994E+003, 1.0388E+003, 8.1384E+002, 6.2492E+002, 4.6916E+002, 3.4078E+002, 2.3916E+002, 1.5916E+002, 9.9752E+001, 5.6139E+001, 2.6492E+001, 1.0886E+001, 3.7210E+000, 4.3206E-001])
-        #rotor.Myb_damage = 1e3*np.array([2.5492E+003, 2.6261E+003, 2.4265E+003, 2.2308E+003, 1.9882E+003, 1.7184E+003, 1.4438E+003, 1.1925E+003, 9.6251E+002, 7.5564E+002, 5.7332E+002, 4.1435E+002, 2.8036E+002, 1.7106E+002, 8.7732E+001, 3.8678E+001, 1.3942E+001, 1.6600E+000])
-
-    # set up for an offshore analysis - change site conditions
-    if wind_class == 'offshore':
-
-        rotor.turbine_class = 'I'
+    if wind_class == 'Offshore':
         # rotor.turbulence_class = 'B'
         # rotor.cdf_reference_mean_wind_speed = 8.4
         # rotor.cdf_reference_height_wind_speed = 50.0
         # rotor.weibull_shape = 2.1
-        shearExp = 0.14
+        shearExp = 0.14 # TODO : should be an input to lcoe
         # aep_a.array_losses = 0.15
         # aep_a.other_losses = 0.0
         aep_a.availability = 0.96
-        rotor.shearExp = shearExp
-        tower.wind1.shearExp = shearExp
-        tower.wind2.shearExp = shearExp
         tcc_a.offshore = True
         lcoe_se.bos_a.multiplier = 2.33
         lcoe_se.fin_a.fixed_charge_rate = 0.118
 
-        depth = 20.0
-
-        lcoe_se.sea_depth = depth
-        lcoe_se.offshore = True
-        tower.replace('wave1', LinearWaves())
-        tower.replace('wave2', LinearWaves())
-
-        tower.wave1.Uc = 0.0
-        tower.wave1.hs = 8.0 * 1.86
-        tower.wave1.T = 10.0
-        tower.wave1.z_surface = 0.0
-        tower.wave1.z_floor = -depth
-        tower.wave1.g = 9.81
-        tower.wave1.betaWave = 0.0
-
-        tower.wave2.Uc = 0.0
-        tower.wave2.hs = 8.0 * 1.86
-        tower.wave2.T = 10.0
-        tower.wave2.z_surface = 0.0
-        tower.wave2.z_floor = -depth
-        tower.wave2.g = 9.81
-        tower.wave2.betaWave = 0.0
-
-        tower.monopileHeight = depth
-        tower.n_monopile = 5
-        tower.d_monopile = 6.0
-        tower.t_monopile = 6.0/80.0
+    rotor.shearExp = shearExp
+    tower.wind1.shearExp = shearExp
+    tower.wind2.shearExp = shearExp
 
 
-    # Run default assembly and print results
+    # === Run default assembly and print results
     lcoe_se.run()
 
     print "Key Turbine Outputs for NREL 5 MW Reference Turbine"
@@ -408,7 +365,7 @@ def example():
     print 'maximum tip deflection (m) =', lcoe_se.maxdeflection.max_tip_deflection
     print 'ground clearance (m) =', lcoe_se.maxdeflection.ground_clearance
     print
-    print "Key Plant Outputs for land-based wind plant with NREL 5 MW Turbine"
+    print "Key Plant Outputs for wind plant with NREL 5 MW Turbine"
     #print "LCOE: ${0:.4f} USD/kWh".format(lcoe_se.lcoe) # not in base output set (add to assembly output if desired)
     print "COE: ${0:.4f} USD/kWh".format(lcoe_se.coe)
     print
@@ -419,4 +376,15 @@ def example():
 
 if __name__ == '__main__':
 
-    example()
+    # NREL 5 MW in land-based wind plant with high winds (as class I)
+    #example('I',0.0,True,False,False,False)
+    #example('I',0.0,True,False,False,True)
+    #example('I',0.0,False,False,False,False)
+    #example('I',0.0,False,True,False,False)
+    #example('I',0.0,False,False,True,False) #TODO: circular dependency with fixed point iterator
+
+    # NREL 5 MW in land-based wind plant with low winds (as class III)
+    #example('III',0.0,True,False,False)
+
+    # NREL 5 MW in offshore plant with high winds and 20 m sea depth (as class I)
+    example('Offshore',20.0,True,False,False)

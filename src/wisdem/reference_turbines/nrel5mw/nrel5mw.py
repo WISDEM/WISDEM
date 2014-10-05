@@ -9,12 +9,45 @@ from commonse.utilities import cosd, sind
 from rotorse.rotoraero import RS2RPM
 
 
-def configure_nrel5mw_turbine(rotor,nacelle,tower):
+def configure_offshore(tower,sea_depth):
     """
     Inputs:
-       rotor = RotorSE()
-       nacelle = DriveSE()
-       tower = TowerSE()
+        tower = TowerSE()
+    """
+
+    tower.replace('wave1', LinearWaves())
+    tower.replace('wave2', LinearWaves())
+
+    tower.wave1.Uc = 0.0
+    tower.wave1.hs = 8.0 * 1.86
+    tower.wave1.T = 10.0
+    tower.wave1.z_surface = 0.0
+    tower.wave1.z_floor = -sea_depth
+    tower.wave1.g = 9.81
+    tower.wave1.betaWave = 0.0
+
+    tower.wave2.Uc = 0.0
+    tower.wave2.hs = 8.0 * 1.86
+    tower.wave2.T = 10.0
+    tower.wave2.z_surface = 0.0
+    tower.wave2.z_floor = -sea_depth
+    tower.wave2.g = 9.81
+    tower.wave2.betaWave = 0.0
+
+    tower.monopileHeight = sea_depth
+    tower.n_monopile = 5
+    tower.d_monopile = 6.0
+    tower.t_monopile = 6.0/80.0
+
+
+def configure_nrel5mw_turbine(rotor,nacelle,tower,wind_class='I',sea_depth = 0.0):
+    """
+    Inputs:
+        rotor = RotorSE()
+        nacelle = DriveSE()
+        tower = TowerSE()
+        wind_class : str ('I', 'III', 'Offshore' - selected wind class for project)
+        sea_depth : float (sea depth if an offshore wind plant)
     """
 
     # =================
@@ -199,15 +232,32 @@ def configure_nrel5mw_turbine(rotor,nacelle,tower):
     nacelle.Np = [3, 3, 1]  # (Array): number of planets in each stage
     nacelle.ratio_type = 'optimal'  # (Str): optimal or empirical stage ratios
     nacelle.shaft_type = 'normal'  # (Str): normal or short shaft length
-    nacelle.shaft_angle = 5.0  # (Float, deg): Angle of the LSS inclindation with respect to the horizontal
+    #nacelle.shaft_angle = 5.0  # (Float, deg): Angle of the LSS inclindation with respect to the horizontal
     nacelle.shaft_ratio = 0.10  # (Float): Ratio of inner diameter to outer diameter.  Leave zero for solid LSS
-    nacelle.shrink_disc_mass = 1000.0  # (Float, kg): Mass of the shrink disc
+    nacelle.carrier_mass = 8000.0 # estimated for 5 MW
     nacelle.mb1Type = 'CARB'  # (Str): Main bearing type: CARB, TRB or SRB
     nacelle.mb2Type = 'SRB'  # (Str): Second bearing type: CARB, TRB or SRB
     nacelle.yaw_motors_number = 8.0  # (Float): number of yaw motors
+    nacelle.uptower_transformer = True
+    nacelle.flange_length = 0.5 #m
+    nacelle.gearbox_cm = 0.1
+    nacelle.hss_length = 1.5
+    nacelle.overhang = 5.0 #TODO - should come from turbine configuration level
 
-    nacelle.h0_rear = 1.35
-    nacelle.h0_front = 1.7
+    nacelle.check_fatigue = 0 #0 if no fatigue check, 1 if parameterized fatigue check, 2 if known loads inputs
+
+    # TODO: should come from rotor (these are FAST outputs)
+    nacelle.DrivetrainEfficiency = 0.95
+    nacelle.rotor_bending_moment_x = 330770.0# Nm
+    nacelle.rotor_bending_moment_y = -16665000.0 # Nm
+    nacelle.rotor_bending_moment_z = 2896300.0 # Nm
+    nacelle.rotor_force_x = 599610.0 # N
+    nacelle.rotor_force_y = 186780.0 # N
+    nacelle.rotor_force_z = -842710.0 # N
+
+    #nacelle.h0_rear = 1.35 # only used in drive smooth
+    #nacelle.h0_front = 1.7
+
     # =================
 
     # === tower ===
@@ -272,4 +322,23 @@ def configure_nrel5mw_turbine(rotor,nacelle,tower):
     tower.E = 2.1e+11  # (Float, N/m**2): material modulus of elasticity
     tower.G = 80800000000.0  # (Float, N/m**2): material shear modulus
     # ----------------
+    
+    if sea_depth <> 0.0:
+    	  configure_offshore(tower,sea_depth)
+
+    if wind_class == 'I':
+        rotor.turbine_class = 'I'
+
+    elif wind_class == 'III':
+        rotor.turbine_class = 'III'
+
+        # for fatigue based analysis of class III wind turbine
+        tower.M_DEL = 1.028713178 * 1e3*np.array([7.8792E+003, 7.7507E+003, 7.4918E+003, 7.2389E+003, 6.9815E+003, 6.7262E+003, 6.4730E+003, 6.2174E+003, 5.9615E+003, 5.7073E+003, 5.4591E+003, 5.2141E+003, 4.9741E+003, 4.7399E+003, 4.5117E+003, 4.2840E+003, 4.0606E+003, 3.8360E+003, 3.6118E+003, 3.3911E+003, 3.1723E+003, 2.9568E+003, 2.7391E+003, 2.5294E+003, 2.3229E+003, 2.1246E+003, 1.9321E+003, 1.7475E+003, 1.5790E+003, 1.4286E+003, 1.3101E+003, 1.2257E+003, 1.1787E+003, 1.1727E+003, 1.1821E+003])
+
+        rotor.Mxb_damage = 1e3*np.array([2.3617E+003, 2.0751E+003, 1.8051E+003, 1.5631E+003, 1.2994E+003, 1.0388E+003, 8.1384E+002, 6.2492E+002, 4.6916E+002, 3.4078E+002, 2.3916E+002, 1.5916E+002, 9.9752E+001, 5.6139E+001, 2.6492E+001, 1.0886E+001, 3.7210E+000, 4.3206E-001])
+        rotor.Myb_damage = 1e3*np.array([2.5492E+003, 2.6261E+003, 2.4265E+003, 2.2308E+003, 1.9882E+003, 1.7184E+003, 1.4438E+003, 1.1925E+003, 9.6251E+002, 7.5564E+002, 5.7332E+002, 4.1435E+002, 2.8036E+002, 1.7106E+002, 8.7732E+001, 3.8678E+001, 1.3942E+001, 1.6600E+000])
+
+    elif wind_class == 'Offshore':
+        rotor.turbine_class = 'I'
+
     # =================
