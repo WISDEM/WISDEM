@@ -12,10 +12,10 @@ setup(
     description='Wind-Plant Integrated System Design & Engineering Model',
     author='K. Dykes and S. Andrew Ning',
     author_email='katherine.dykes@nrel.gov',
-    install_requires=['fusedwind','commonse', 'drivese','drivewpact','plant_costsse','plant_energyse','plant_financese','rotorse','towerse', 'turbine_costsse', 'turbinese'],
+    install_requires=['fusedwind','commonse', 'drivese','drivewpact','plant_costsse','plant_energyse','plant_financese','rotorse','towerse', 'turbine_costsse'],
     package_data= {'WISDEM': []},
     package_dir= {'': 'src'},
-    packages= ['wisdem.lcoe','test'],
+    packages= ['wisdem.lcoe','test','wisdem.turbinese'],
     license='Apache License, Version 2.0',
     dependency_links=[#'https://github.com/WISDEM/CommonSE/tarball/master#egg=fusedwind', #need to update fusedwind repository name
         'https://github.com/WISDEM/CommonSE/tarball/master#egg=commonse',

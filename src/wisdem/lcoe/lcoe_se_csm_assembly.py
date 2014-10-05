@@ -10,7 +10,7 @@ import numpy as np
 from openmdao.main.api import Assembly
 from openmdao.main.datatypes.api import Int, Float, Enum, VarTree, Bool
 
-from turbinese.turbine import configure_turbine
+from wisdem.turbinese.turbine import configure_turbine
 from fusedwind.plant_cost.fused_finance import configure_extended_financial_analysis, ExtendedFinancialAnalysis
 from fusedwind.plant_cost.fused_opex import OPEXVarTree
 from fusedwind.plant_cost.fused_bos_costs import BOSVarTree
@@ -378,7 +378,7 @@ if __name__ == '__main__':
 
     # NREL 5 MW in land-based wind plant with high winds (as class I)
     #example('I',0.0,True,False,False,False)
-    #example('I',0.0,True,False,False,True)
+    example('I',0.0,True,False,False,True)
     #example('I',0.0,False,False,False,False)
     #example('I',0.0,False,True,False,False)
     #example('I',0.0,False,False,True,False) #TODO: circular dependency with fixed point iterator
@@ -387,4 +387,4 @@ if __name__ == '__main__':
     #example('III',0.0,True,False,False)
 
     # NREL 5 MW in offshore plant with high winds and 20 m sea depth (as class I)
-    example('Offshore',20.0,True,False,False)
+    #example('Offshore',20.0,True,False,False)

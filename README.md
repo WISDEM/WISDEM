@@ -16,7 +16,7 @@ General: NumPy, SciPy, OpenMDAO
 
 Wind Plant Framework: FUSED-Wind (Framework for Unified Systems Engineering and Design of Wind Plants)
 
-Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, TurbineSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSE
+Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSE
 
 ## Installation
 
@@ -31,11 +31,13 @@ It is not recommended to install the software outside of OpenMDAO.
 To check if installation was successful try to import the module
 
 	$ python
-	> import lcoe.lcoe_csm_assembly
-	> import lcoe.lcoe_se_csm_assembly
+	> import wisdem.lcoe.lcoe_csm_assembly
+	> import wisdem.lcoe.lcoe_se_csm_assembly
+	> import wisdem.turbinese.turbine
 
 You may also run the unit tests.
 
 	$ python src/test/test_WISDEM.py
+	$ python src/test/test_turbine_gradients.py
 
 For software issues please use <https://github.com/WISDEM/WISDEM/issues>.  For functionality and theory related questions and comments please use the NWTC forum for [Systems Engineering Software Questions](https://wind.nrel.gov/forum/wind/viewtopic.php?f=34&t=1002).

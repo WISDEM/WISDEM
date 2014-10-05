@@ -37,3 +37,27 @@ Referenced Model
 ========================
 .. module:: wisdem.lcoe.lcoe_csm_ecn_assembly
 .. class:: lcoe_csm_ecn_assembly
+
+
+
+Documentation for WISDEM Turbine Assembly
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. module:: wisdem.turbinese.turbine
+
+.. _interfaces-label:
+
+
+For this assembly the configure process is handled in a separate function.  This allows for additional options to be passed in (as noted in the linked documentation below), but more importantly allows it to be used in a larger assembly while still retaining a flat manner.  Creating multiple levels of nested assemblies is generally not advisable.  This is what is done when linking the cost models with the turbine models.  All of the configuring can be done in one flat assembly.
+
+.. autosummary::
+    :toctree: generated
+
+    configure_turbine
+
+For this case where there is only a turbine (and no cost models), the actual configure method in the assembly is very simple.  For the cost model additional configuration can be done after calling ``configure_turbine``.
+
+.. literalinclude:: ../src/wisdem/turbinese/turbine.py
+    :start-after: TurbineSE(Assembly)
+    :end-before: if __name__ == '__main__':
+    :prepend: class TurbineSE(Assembly):

@@ -91,3 +91,47 @@ The result is:
 >>> BOS costs per turbine: $7664647.465834 USD/turbine
 >>> OPEX per turbine: $433958.907447 USD/turbine
 
+
+Tutorial for Turbine Assembly
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The turbine assembly is a nested assembly and contains subassemblies for the rotor, hub, nacelle, and tower.  Determining what inputs need to be set, and which are already connected through the assembly, can be challenging for one of these large assemblies.  There is a helper method ``print_vars`` in commonse noted below.  This can be particularly useful as the models are udpated and different variable sets are used.
+
+.. literalinclude:: ../src/wisdem/turbinese/turbine.py
+    :start-after: # === setup
+    :end-before: # ====
+
+All of the variables from the rotor need to be set.
+
+.. literalinclude:: ../src/wisdem/turbinese/turbine.py
+    :start-after: # === rotor
+    :end-before: # ====
+
+Most of the nacelle parameters need to be set.
+
+.. literalinclude:: ../src/wisdem/turbinese/turbine.py
+    :start-after: # === nacelle
+    :end-before: # ====
+
+Some tower parameters need to be set, including those which come from the configurable slots.  Loading conditions and mass properties are connected to the rotor and nacelle and do not need to be set by the user.
+
+.. literalinclude:: ../src/wisdem/turbinese/turbine.py
+    :start-after: # === tower
+    :end-before: # ====
+
+With the model defined we can now run it. All outputs of the subassemblies are available, as are two additional outputs related to the turbine geometry.  The parameter ``turbine.maxdeflection.max_tip_deflection`` gives the clearance between the undeflected blade shape and the tower.  It represents the maximum allowable tip deflection in the +x yaw c.s. (not including safety factors) before a tower strike.  The parameter ``turbine.maxdeflection.ground_clearance`` gives the distance between the blade tip at its bottom passage and the ground.
+
+.. literalinclude:: ../src/wisdem/turbinese/turbine.py
+    :start-after: # === run
+    :end-before: # ====
+
+>>> mass rotor blades (kg) = 54674.7959412
+>>> mass hub system (kg) = 37118.3606357
+>>> mass nacelle (kg) = 193805.649876
+>>> mass tower (kg) = 358230.152841
+>>> maximum tip deflection (m) = 10.6526326093
+>>> ground clearance (m) = 28.4361396283
+
+
+
+
