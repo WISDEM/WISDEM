@@ -20,7 +20,7 @@ from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
 from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
 from plant_energyse.basic_aep.basic_aep import aep_assembly
-from landbos import LandBOS
+#from landbos import LandBOS
 
 # Current configuration assembly options for LCOE SE
 def configure_lcoe_with_turb_costs(assembly):
@@ -255,7 +255,7 @@ class lcoe_se_assembly(Assembly):
 
         configure_lcoe_se(self, self.with_new_nacelle, self.with_landbos, self.flexible_blade, self.with_3pt_drive)
 
-def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False):
+def example(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False):
     """
     Inputs:
         wind_class : str ('I', 'III', 'Offshore' - selected wind class for project)
@@ -266,7 +266,7 @@ def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,f
     lcoe_se = lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive)
 
     # === Set assembly variables and objects ===
-    lcoe_se.sea_depth = depth # 0.0 for land-based turbine
+    lcoe_se.sea_depth = sea_depth # 0.0 for land-based turbine
     lcoe_se.turbine_number = 100
     lcoe_se.year = 2009
     lcoe_se.month = 12
@@ -280,7 +280,7 @@ def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,f
     aep_a = lcoe_se.aep_a
     fin_a = lcoe_se.fin_a
 
-    # ===== Turbine ===========
+    # Turbine ===========
     from wisdem.reference_turbines.nrel5mw.nrel5mw import configure_nrel5mw_turbine
     configure_nrel5mw_turbine(rotor,nacelle,tower,wind_class,lcoe_se.sea_depth)
 
@@ -298,7 +298,7 @@ def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,f
     lcoe_se.freq_margin = 1.1
     lcoe_se.min_ground_clearance = 20.0
 
-    # ===== tcc ====
+    # tcc ====
     tcc_a.advanced_blade = True
     tcc_a.offshore = False
     tcc_a.assemblyCostMultiplier = 0.30
@@ -314,12 +314,12 @@ def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,f
     lcoe_se.layout = 'SIMPLE'
     lcoe_se.soil = 'STANDARD' '''
 
-    # ==== aep ====
+    # aep ====
     aep_a.array_losses = 0.059
     aep_a.other_losses = 0.0
     aep_a.availability = 0.94
 
-    # === fin ===
+    # fin ===
     fin_a.fixed_charge_rate = 0.095
     fin_a.construction_finance_rate = 0.0
     fin_a.tax_rate = 0.4
@@ -327,7 +327,7 @@ def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,f
     fin_a.construction_time = 1.0
     fin_a.project_lifetime = 20.0
 
-    # === Set plant level inputs ===
+    # Set plant level inputs ===
     shearExp = 0.2 #TODO : should be an input to lcoe
     rotor.cdf_reference_height_wind_speed = 90.0
     aep_a.array_losses = 0.15
@@ -353,9 +353,13 @@ def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,f
     tower.wind1.shearExp = shearExp
     tower.wind2.shearExp = shearExp
 
+    # ====
 
     # === Run default assembly and print results
     lcoe_se.run()
+    # ====
+
+    # === Print ===
 
     print "Key Turbine Outputs for NREL 5 MW Reference Turbine"
     print 'mass rotor blades (kg) =', lcoe_se.rotor.mass_all_blades
@@ -374,11 +378,13 @@ def example(wind_class='I',depth=0.0,with_new_nacelle=False,with_landbos=False,f
     print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
     print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)    
 
+    # ====
+
 if __name__ == '__main__':
 
     # NREL 5 MW in land-based wind plant with high winds (as class I)
-    #example('I',0.0,True,False,False,False)
-    example('I',0.0,True,False,False,True)
+    example('I',0.0,True,False,False,False)
+    #example('I',0.0,True,False,False,True)
     #example('I',0.0,False,False,False,False)
     #example('I',0.0,False,True,False,False)
     #example('I',0.0,False,False,True,False) #TODO: circular dependency with fixed point iterator

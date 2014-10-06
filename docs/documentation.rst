@@ -38,6 +38,28 @@ Referenced Model
 .. module:: wisdem.lcoe.lcoe_csm_ecn_assembly
 .. class:: lcoe_csm_ecn_assembly
 
+Documentation for WISDEM using SE Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following inputs and outputs are defined for WISDEM:
+
+.. literalinclude:: ../src/wisdem/lcoe/lcoe_se_csm_assembly.py
+    :language: python
+    :start-after: lcoe_se_assembly(Assembly)
+    :end-before: def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False)
+    :prepend: class lcoe_se_assembly(Assembly):
+
+Referenced Model
+========================
+.. module:: wisdem.lcoe.lcoe_se_csm_assembly
+.. class:: lcoe_se_assembly
+.. function:: configure_lcoe_se
+.. function:: configure_lcoe_with_turb_costs
+.. function:: configure_lcoe_with_csm_bos
+.. function:: configure_lcoe_with_landbos
+.. function:: configure_lcoe_with_csm_opex
+.. function:: configure_lcoe_with_basic_aep
+.. function:: configure_lcoe_with_csm_fin
 
 
 Documentation for WISDEM Turbine Assembly

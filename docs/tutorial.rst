@@ -70,15 +70,15 @@ Similar to before, the NREL CSM plus the ECN Offshore OPEX Model assembly relies
 We can now simulate the overall wind plant cost of energy.
 
 .. literalinclude:: examples/example.py
-    :start-after: # 9 ---
-    :end-before: # 9 ---
+    :start-after: # 7 ---
+    :end-before: # 7 ---
 
 
 We then print out the resulting cost values:
 
 .. literalinclude:: examples/example.py
-    :start-after: # 10 ---
-    :end-before: # 10 ---
+    :start-after: # 8 ---
+    :end-before: # 8 ---
 
 The result is:
 
@@ -90,6 +90,53 @@ The result is:
 >>> Turbine Cost: $5950210.271159 USD
 >>> BOS costs per turbine: $7664647.465834 USD/turbine
 >>> OPEX per turbine: $433958.907447 USD/turbine
+
+
+
+Tutorial for WISDEM with SE Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+We can also use the new systems engineering WISDEM modules for assessing plant cost of energy.  In this example, we add the new turbine systems engineering and cost models along with the NREL CSM plant energy production and plant cost models.  First we create the assembly with a set of options.  Here we are setting up the lcoe_se_assembly with the new DriveSE 4-pt configuration nacelle, the NREL CSM balance of station model and a rigid blade.
+
+.. literalinclude:: examples/example.py
+    :start-after: # 9 ---
+    :end-before: # 9 ---
+
+Next we need to set up the LCOE level inputs for the analysis and several inputs for the sub-modules.
+
+.. literalinclude:: ../src/wisdem/lcoe/lcoe_se_csm_assembly.py
+    :start-after: # === Set
+    :end-before: # ====
+
+Then we run the lcoe analysis.
+
+.. literalinclude:: ../src/wisdem/lcoe/lcoe_se_csm_assembly.py
+    :start-after: # === Run
+    :end-before: # ====
+
+Finally we print the values from the analysis.
+
+.. literalinclude:: ../src/wisdem/lcoe/lcoe_se_csm_assembly.py
+    :start-after: # === Print
+    :end-before: # ====
+
+The results should be:
+
+>>> Key Turbine Outputs for NREL 5 MW Reference Turbine
+>>> mass rotor blades (kg) = 54674.7959412
+>>> mass hub system (kg) = 37118.3606357
+>>> mass nacelle (kg) = 193805.649876
+>>> mass tower (kg) = 358230.152841
+>>> maximum tip deflection (m) = 10.6526326093
+>>> ground clearance (m) = 28.4361396283
+>>> 
+>>> Key Plant Outputs for wind plant with NREL 5 MW Turbine
+>>> COE: $0.0654 USD/kWh
+>>> AEP per turbine: 19566021.325794 kWh/turbine
+>>> Turbine Cost: $5122974.187114 USD
+>>> BOS costs per turbine: $6878279.755879 USD/turbine
+>>> OPEX per turbine: $232156.470030 USD/turbine
+
 
 
 Tutorial for Turbine Assembly
@@ -131,6 +178,7 @@ With the model defined we can now run it. All outputs of the subassemblies are a
 >>> mass tower (kg) = 358230.152841
 >>> maximum tip deflection (m) = 10.6526326093
 >>> ground clearance (m) = 28.4361396283
+
 
 
 
