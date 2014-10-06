@@ -151,14 +151,17 @@ print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.
 print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number)
 
 # 8 -----------
-
-
-# 8 -----------
 # 9 -----------
+from wisdem.lcoe.lcoe_se_csm_assembly import lcoe_se_assembly
 
+with_new_nacelle = True
+with_landbos = False
+flexible_blade = False
+with_3pt_drive = False
+sea_depth = 0.0
+wind_class = 'I'
+
+# === Create LCOE SE assembly ========
+lcoe_se = lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive)
 
 # 9 -----------
-# 10 ----------
-
-
-# 10 ----------

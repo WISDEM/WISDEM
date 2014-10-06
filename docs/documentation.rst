@@ -37,3 +37,49 @@ Referenced Model
 ========================
 .. module:: wisdem.lcoe.lcoe_csm_ecn_assembly
 .. class:: lcoe_csm_ecn_assembly
+
+Documentation for WISDEM using SE Models
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following inputs and outputs are defined for WISDEM:
+
+.. literalinclude:: ../src/wisdem/lcoe/lcoe_se_csm_assembly.py
+    :language: python
+    :start-after: lcoe_se_assembly(Assembly)
+    :end-before: def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False)
+    :prepend: class lcoe_se_assembly(Assembly):
+
+Referenced Model
+========================
+.. module:: wisdem.lcoe.lcoe_se_csm_assembly
+.. class:: lcoe_se_assembly
+.. function:: configure_lcoe_se
+.. function:: configure_lcoe_with_turb_costs
+.. function:: configure_lcoe_with_csm_bos
+.. function:: configure_lcoe_with_landbos
+.. function:: configure_lcoe_with_csm_opex
+.. function:: configure_lcoe_with_basic_aep
+.. function:: configure_lcoe_with_csm_fin
+
+
+Documentation for WISDEM Turbine Assembly
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. module:: wisdem.turbinese.turbine
+
+.. _interfaces-label:
+
+
+For this assembly the configure process is handled in a separate function.  This allows for additional options to be passed in (as noted in the linked documentation below), but more importantly allows it to be used in a larger assembly while still retaining a flat manner.  Creating multiple levels of nested assemblies is generally not advisable.  This is what is done when linking the cost models with the turbine models.  All of the configuring can be done in one flat assembly.
+
+.. autosummary::
+    :toctree: generated
+
+    configure_turbine
+
+For this case where there is only a turbine (and no cost models), the actual configure method in the assembly is very simple.  For the cost model additional configuration can be done after calling ``configure_turbine``.
+
+.. literalinclude:: ../src/wisdem/turbinese/turbine.py
+    :start-after: TurbineSE(Assembly)
+    :end-before: if __name__ == '__main__':
+    :prepend: class TurbineSE(Assembly):
