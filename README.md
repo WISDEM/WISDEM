@@ -65,13 +65,13 @@ Remember the location for steps 5 and 6.
     C:\lapack  (LAPACK dynamic libraries)
     C:\boost_1_55_0\stage\lib  (Boost Python dynamic libraries)
 
-6) Modify the 'setup.py' script in pBEAM's main directory.  Unlike GCC on *nix systems, Windows does not have typical locations to store headers and libraries (e.g., /usr/local/include) and so you will need manually specify them.  Add the header locations for Boost in the include_dirs.  Add the library locations for Boost and LAPACK.  You may also need to rename the boost_python library.  Use the example below, modifying as needed based on where you installed things.  Note that setup.py expects unix style slashes (forward), and that you do not need to include 'lib' at the front of the library names (i.e., 'lapack' corresponds to 'liblapack.dll' or 'liblapack.a').  Note: make sure your boost version matches the boost version installed (i.e. mgw48, mgw46, etc).
+For the remainder of the setup, use the below directions for *nix systems.  If you have issues with installation of pBEAM and RotorSE, then do this additional step:
+
+6) Modify the 'setup.py' and script in the pBEAM and RotorSE main directories.  Unlike GCC on *nix systems, Windows does not have typical locations to store headers and libraries (e.g., /usr/local/include) and so you will need manually specify them.  Add the header locations for Boost in the include_dirs.  Add the library locations for Boost and LAPACK.  You may also need to rename the boost_python library.  Use the example below, modifying as needed based on where you installed things.  Note that setup.py expects unix style slashes (forward), and that you do not need to include 'lib' at the front of the library names (i.e., 'lapack' corresponds to 'liblapack.dll' or 'liblapack.a').  Note: make sure your boost version matches the boost version installed (i.e. mgw48, mgw46, etc).
 
     include_dirs=[join(path, 'pBEAM'), 'C:/boost_1_55_0'],
     library_dirs=['C:/boost_1_55_0/stage/lib', 'C:/lapack'],
     libraries=['boost_python-mgw48-mt-1_55', 'lapack']
-
-For the remainder of the setup, use the below directions for *nix systems.
 
 
 ## Installation (OS X, Linux)
