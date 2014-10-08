@@ -1,4 +1,4 @@
-import os,sys,glob,subprocess, urllib2, tarfile, shutil
+import os,sys,glob,subprocess, urllib2, tarfile, shutil, platform
 
 
 failures = []
@@ -59,7 +59,7 @@ options, args = get_options()
 #files = ["Turbine_CostsSE", "CommonSE", "Plant_CostsSE", "Plant_FinanceSE", "Plant_EnergySE"]
 files = ["Turbine_CostsSE", "CommonSE", "Plant_CostsSE", "Plant_FinanceSE", "Plant_EnergySE",
          "AeroelasticSE", "AirfoilPreppy", "CCBlade", "DriveSE", "DriveWPACT", "NREL_CSM", "RotorSE",
-         "TowerSE", "TurbineSE", "pyFrame3DD", "pBEAM"]
+         "TowerSE", "pyFrame3DD", "pBEAM"]
 
 #files = ["pBEAM"]
 
@@ -73,10 +73,11 @@ subprocess.call(["easy_install", "zope.interface"])
 subprocess.call(["easy_install", "sphinx"])
 subprocess.call(["easy_install", "xlrd"])
 subprocess.call(["easy_install", "pyopt"])
-subprocess.call(["easy_install", "py2exe"])
+if platform.system() == 'Windows': 
+    subprocess.call(["easy_install", "py2exe"])
 subprocess.call(["easy_install", "pyzmq"])
 subprocess.call(["easy_install", "sphinxcontrib-bibtex"])
-subprocess.call(["easy_install", "sphinxcontrib-zopeext"])
+#subprocess.call(["easy_install", "sphinxcontrib-zopeext"])
 subprocess.call(["easy_install", "numpydoc"])
 subprocess.call(["easy_install", "ipython"])
 
