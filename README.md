@@ -13,21 +13,32 @@ For detailed documentation see <http://wisdem.github.io/WISDEM/>
 
 ## Prerequisites
 
-General: NumPy, SciPy, OpenMDAO
+General: C compiler, Fortran compiler, NumPy, SciPy, Swig, pyWin32, MatlPlotLib, Lxml, OpenMDAO
 
-Wind Plant Framework: FUSED-Wind (Framework for Unified Systems Engineering and Design of Wind Plants)
+## Dependencies installed with WISDEM using by setup_all.py (see installation below):
 
-Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSE
+Wind Plant Framework: [FUSED-Wind](http://fusedwind.org) (Framework for Unified Systems Engineering and Design of Wind Plants)
+
+Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSE, pBEAM, CCBlade, Akima
+
+Supporting python packages: Pandas, Algopy, Zope.interface, Sphinx, Xlrd, PyOpt, py2exe, Pyzmq, Sphinxcontrib-bibtex, Sphinxcontrib-zopeext, Numpydoc, Ipython
 
 ## Installation (Windows)
+
+First, clone the [repository](https://github.com/WISDEM/WISDEM)
+or download the releases and uncompress/unpack (WISDEM.py-|release|.tar.gz or WISDEM.py-|release|.zip) from the website link at the bottom the [WISDEM site](http://nwtc.nrel.gov/WISDEM).
 
 These instructions assume you are using MinGW and have already installed gcc and g++.
 Also you should already have successfully installed Python (for a [single user only](http://bugs.python.org/issue5459#msg101098)), NumPy, and setuptools.
 The example directories may need to be modified depending on where you installed things.  See this [Windows guideline set](https://nwtc.nrel.gov/system/files/Windows%20OpenMDAO%20Install%20Tips.pdf) for additional support on installing python.
 
-1) Edit (or create) a distutils config 'distutils.cfg' file in your Python directory.
+1) Edit (or create) a distutils config 'distutils.cfg' file in your Python Lib directory or in your openmdao Lib directory if working from an activated openmdao environment.
 
     C:\Python27\Lib\distutils\distutils.cfg
+
+or
+
+    "Path to openmdao"\Lib\distutils.cfg
 
 and put the following in it:
 
@@ -46,7 +57,7 @@ This should create a folder called: bin.ntx86.  For convenience in the next step
 
     C:\boost_1_55_0\tools\build\v2\engine\bin.ntx86
 
-3) Compile Boost.Python
+3) Download [Boost](http://www.boost.org) (v 1.55 as of this writing) and setup bjam:
 
 In the boost root directory (must be in the root directory) type the following at the command prompt:
 
@@ -76,11 +87,11 @@ For the remainder of the setup, use the below directions for *nix systems.  If y
 
 ## Installation (OS X, Linux)
 
-If you want to install WISDEM with all its underlying dependencies, then use the following command from within an activated OpenMDAO environment:
+If you want to install WISDEM with all its underlying dependencies, then use the following command from within an [activated OpenMDAO](http://openmdao.org/docs/getting-started/install.html) environment:
 
     $ python setup_all.py
 
-If all dependencies are already installed, then WISDEM with the following command from within an activated OpenMDAO environment:
+If all dependencies were already installed separately and you just want to install the WISDEM plugin, then install WISDEM with the following command from within an activated OpenMDAO environment:
 
     $ plugin install
 
@@ -90,12 +101,11 @@ To check if installation was successful try to import the module
 
 	$ python
 	> import wisdem.lcoe.lcoe_csm_assembly
-	> import wisdem.lcoe.lcoe_se_csm_assembly
+	> import wisdem.lcoe.lcoe_se_assembly
 	> import wisdem.turbinese.turbine
 
-You may also run the unit tests.
+You may also run unit tests.
 
-	$ python src/test/test_WISDEM.py
 	$ python src/test/test_turbine_gradients.py
 
 For software issues please use <https://github.com/WISDEM/WISDEM/issues>.  For functionality and theory related questions and comments please use the NWTC forum for [Systems Engineering Software Questions](https://wind.nrel.gov/forum/wind/viewtopic.php?f=34&t=1002).

@@ -69,6 +69,16 @@ subdir = "plugins"
 # install pandas and algopy
 subprocess.call(["easy_install", "pandas"])
 subprocess.call(["easy_install", "algopy"])
+subprocess.call(["easy_install", "zope.interface"])
+subprocess.call(["easy_install", "sphinx"])
+subprocess.call(["easy_install", "xlrd"])
+subprocess.call(["easy_install", "pyopt"])
+subprocess.call(["easy_install", "py2exe"])
+subprocess.call(["easy_install", "pyzmq"])
+subprocess.call(["easy_install", "sphinxcontrib-bibtex"])
+subprocess.call(["easy_install", "sphinxcontrib-zopeext"])
+subprocess.call(["easy_install", "numpydoc"])
+subprocess.call(["easy_install", "ipython"])
 
 # make plug in dir and cd to it:
 rootdir = os.getcwd()

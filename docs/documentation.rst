@@ -29,7 +29,7 @@ The following inputs and outputs are defined for WISDEM:
 .. literalinclude:: ../src/wisdem/lcoe/lcoe_csm_ecn_assembly.py
     :language: python
     :start-after: lcoe_csm_ecn_assembly(Assembly)
-    :end-before: def configure(self)
+    :end-before: def __init__(self, ssfile_1)
     :prepend: class lcoe_csm_ecn_assembly(Assembly):
 
 
@@ -41,23 +41,23 @@ Referenced Model
 Documentation for WISDEM using SE Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following inputs and outputs are defined for WISDEM:
+The following inputs and outputs are defined for WISDEM using SE models:
 
-.. literalinclude:: ../src/wisdem/lcoe/lcoe_se_csm_assembly.py
+.. literalinclude:: ../src/wisdem/lcoe/lcoe_se_assembly.py
     :language: python
     :start-after: lcoe_se_assembly(Assembly)
-    :end-before: def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False)
+    :end-before: __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False, with_ecn_opex=False, ecn_file=None)
     :prepend: class lcoe_se_assembly(Assembly):
 
 Referenced Model
 ========================
-.. module:: wisdem.lcoe.lcoe_se_csm_assembly
+.. module:: wisdem.lcoe.lcoe_se_assembly
 .. class:: lcoe_se_assembly
-.. function:: configure_lcoe_se
 .. function:: configure_lcoe_with_turb_costs
 .. function:: configure_lcoe_with_csm_bos
 .. function:: configure_lcoe_with_landbos
 .. function:: configure_lcoe_with_csm_opex
+.. function:: configure_lcoe_with_ecn_opex
 .. function:: configure_lcoe_with_basic_aep
 .. function:: configure_lcoe_with_csm_fin
 

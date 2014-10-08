@@ -21,6 +21,7 @@ from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
 from plant_costsse.ecn_offshore_opex.ecn_offshore_opex  import opex_ecn_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
 from plant_energyse.basic_aep.basic_aep import aep_assembly
+from plant_energyse.openwind.enterprise.openwind_assembly import openwind_assembly
 #from landbos import LandBOS
 
 # Current configuration assembly options for LCOE SE
@@ -178,6 +179,48 @@ def configure_lcoe_with_basic_aep(assembly):
     assembly.connect('other_losses','aep_a.other_losses')
 
 
+class zip_powercurve(Component):
+
+    #in
+    P = Array([],iotype='in',desc='power curve in')
+    V = Array([],iotype='in',desc='wind curve in')
+    Omega = Array([], iotype='in', desc='speed curve in')
+    
+    #out
+    power_curve = Array([],iotype='out',desc='power curve out')
+    rpm_curve = Array([],iotype='out', desc='speed curve out')
+
+    def execute(self):
+    	  
+    	  self.power_curve = np.array([self.V,self.P])
+    	  self.rpm_curve = np.array([self.V,self.Omega])
+
+def configure_lcoe_with_openwind(assembly, ow_file='', ow_wkbook=''):
+    """
+    aep inputs
+        power_curve    = Array([], iotype='in', desc='wind turbine power curve')
+        rpm            = Array([], iotype='in', desc='wind turbine rpm curve')
+        ct             = Array([], iotype='in', desc='wind turbine ct curve')
+    """
+
+    assembly.add('other_losses',Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc'))
+
+    assembly.replace('aep_a', openwind_assembly(ow_file, ow_wkbook))
+    
+    assembly.connect('rotor.hubHt','aep_a.hub_height')
+    assembly.connect('rotor.diameter','aep_a.rotor_diameter')
+    assembly.connect('machine_rating','aep_a.machine_rating')
+    assembly.connect('other_losses','aep_a.other_losses')
+
+    '''assembly.add('zippy',zip_powercurve())
+    assembly.driver.workflow.add(['zippy'])
+    assembly.connect('rotor.V','zippy.V')
+    assembly.connect('rotor.P','zippy.P')
+    assembly.connect('rotor.Omega','zippy.Omega')
+    assembly.connect('zippy.power_curve','aep_a.power_curve')
+    assembly.connect('zippy.rpm_curve','aep_a.rpm')'''
+
+
 # Finance
 def configure_lcoe_with_csm_fin(assembly):
     """
@@ -239,7 +282,7 @@ class lcoe_se_assembly(Assembly):
     month = Int(12, iotype='in', desc='month of project start')
     project_lifetime = Float(20.0, iotype='in', desc = 'project lifetime for wind plant')
 
-    def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False, with_ecn_opex=False, ecn_file=None):
+    def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False, with_ecn_opex=False, ecn_file=None,with_openwind=False,ow_file=None,ow_wkbook=None):
         
         self.with_new_nacelle = with_new_nacelle
         self.with_landbos = with_landbos
@@ -250,6 +293,15 @@ class lcoe_se_assembly(Assembly):
             self.ecn_file=''
         else:
             self.ecn_file = ecn_file
+        self.with_openwind = with_openwind
+        if ow_file == None:
+            self.ow_file = ''
+        else:
+            self.ow_file = ow_file
+        if ow_wkbook == None:
+            self.ow_wkbook = ''
+        else:
+            self.ow_wkbook = ow_wkbook
         
         super(lcoe_se_assembly,self).__init__()
 
@@ -307,8 +359,17 @@ class lcoe_se_assembly(Assembly):
 		    else:
 		        configure_lcoe_with_csm_bos(self)
 		    
-		    # replace OPEX with CSM or ECN opex and add AEP
-		    if self.with_ecn_opex:  
+		    # replace OPEX with CSM or ECN opex
+		    if self.with_ecn_opex and self.with_openwind:
+		        configure_lcoe_with_openwind(self,ow_file, ow_wkbook)
+		        configure_lcoe_with_ecn_opex(self,ecn_file)
+		        self.connect('opex_a.availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model 
+		    elif (not self.with_ecn_opex) and self.with_openwind:
+		        configure_lcoe_with_openwind(self,ow_file, ow_wkbook)
+		        configure_lcoe_with_csm_opex(self)
+		        self.add('availability',Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant'))
+		        self.connect('availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model
+		    elif self.with_ecn_opex and (not self.with_openwind):  
 		        configure_lcoe_with_basic_aep(self)
 		        configure_lcoe_with_ecn_opex(self,ecn_file)     
 		        self.connect('opex_a.availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model 
@@ -330,7 +391,7 @@ def example(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=Fal
     """
 
     # === Create LCOE SE assembly ========
-    lcoe_se = lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
+    lcoe_se = lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)
 
     # === Set assembly variables and objects ===
     lcoe_se.sea_depth = sea_depth # 0.0 for land-based turbine
@@ -424,21 +485,29 @@ def example(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=Fal
     # === Print ===
 
     print "Key Turbine Outputs for NREL 5 MW Reference Turbine"
-    print 'mass rotor blades:{0:.2f} (kg) '.format(lcoe_se.rotor.mass_all_blades)
-    print 'mass hub system: {0:.2f} (kg) '.format(lcoe_se.hub.hub_system_mass)
-    print 'mass nacelle: {0:.2f} (kg) '.format(lcoe_se.nacelle.nacelle_mass)
-    print 'mass tower: {0:.2f} (kg) '.format(lcoe_se.tower.mass)
-    print 'maximum tip deflection: {0:.2f} (m) '.format(lcoe_se.maxdeflection.max_tip_deflection)
-    print 'ground clearance: {0:.2f} (m) '.format(lcoe_se.maxdeflection.ground_clearance)
+    print 'mass rotor blades (kg) =', lcoe_se.rotor.mass_all_blades
+    print 'mass hub system (kg) =', lcoe_se.hub.hub_system_mass
+    print 'mass nacelle (kg) =', lcoe_se.nacelle.nacelle_mass
+    print 'mass tower (kg) =', lcoe_se.tower.mass
+    print 'maximum tip deflection (m) =', lcoe_se.maxdeflection.max_tip_deflection
+    print 'ground clearance (m) =', lcoe_se.maxdeflection.ground_clearance
     print
     print "Key Plant Outputs for wind plant with NREL 5 MW Turbine"
     #print "LCOE: ${0:.4f} USD/kWh".format(lcoe_se.lcoe) # not in base output set (add to assembly output if desired)
     print "COE: ${0:.4f} USD/kWh".format(lcoe_se.coe)
     print
-    print "AEP per turbine: {0:.1f} kWh/turbine".format(lcoe_se.net_aep / lcoe_se.turbine_number)
-    print "Turbine Cost: ${0:.2f} USD".format(lcoe_se.turbine_cost)
-    print "BOS costs per turbine: ${0:.2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
-    print "OPEX per turbine: ${0:.2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)    
+    print "AEP per turbine: {0:1f} kWh/turbine".format(lcoe_se.net_aep / lcoe_se.turbine_number)
+    print "Turbine Cost: ${0:2f} USD".format(lcoe_se.turbine_cost)
+    print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
+    print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)    
+
+    # Power Curve Outputs
+    '''import matplotlib.pyplot as plt
+    print 'Rotor power curve'
+    plt.figure()
+    plt.plot(lcoe_se.rotor.V, lcoe_se.rotor.P/1e6)
+    plt.xlabel('wind speed (m/s)')
+    plt.xlabel('power (W)')'''
 
     # ====
 
@@ -453,34 +522,44 @@ if __name__ == '__main__':
     with_3pt_drive = False
     with_ecn_opex = False
     ecn_file = ''
-    example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    with_openwind = False
+    ow_file = ''
+    ow_wkbook = ''
+    example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)
 
     #with_3pt_drive = True
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) )
+    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)
 
     #with_new_nacelle = False
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)
 
     #with_landbos = True
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)
 
     #flexible_blade = True
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)
 
     # NREL 5 MW in land-based wind plant with low winds (as class III)
     #wind_class = 'III'
     #with_new_nacelle = True
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)
 
     # NREL 5 MW in offshore plant with high winds and 20 m sea depth (as class I)
     #wind_class = 'Offshore'
     #sea_depth = 20.0
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)
     
     # NREL 5 MW in offshore plant with high winds, 20 m sea depth and ECN opex model
     #wind_class = 'Offshore'
     #sea_depth = 20.0
     #with_ecn_opex = True
     #ecn_file = 'C:/Models/ECN Model/ECN O&M Model.xls'
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
-   
+    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook) 
+    
+    # NREL 5 MW in land-based wind plant with high winds (as class I) using openwind
+    '''wind_class = 'Offshore'
+    sea_depth = 20.0
+    with_openwind = True
+    ow_file = 'C:/Models/Openwind/openWind64.exe'
+    ow_wkbook = 'C:/Models/Openwind/Workbooks/owTestWkbkExtend.blb'
+    example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file,with_openwind,ow_file,ow_wkbook)'''

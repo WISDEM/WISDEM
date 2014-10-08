@@ -123,19 +123,21 @@ Finally we print the values from the analysis.
 The results should be:
 
 >>> Key Turbine Outputs for NREL 5 MW Reference Turbine
->>> mass rotor blades (kg) = 54674.7959412
->>> mass hub system (kg) = 37118.3606357
->>> mass nacelle (kg) = 193805.649876
->>> mass tower (kg) = 358230.152841
->>> maximum tip deflection (m) = 10.6526326093
->>> ground clearance (m) = 28.4361396283
+>>> mass rotor blades:54674.80 (kg)
+>>> mass hub system: 37118.36 (kg)
+>>> mass nacelle: 193805.65 (kg)
+>>> mass tower: 358230.15 (kg)
+>>> maximum tip deflection: 10.65 (m)
+>>> ground clearance: 28.44 (m)
 >>> 
 >>> Key Plant Outputs for wind plant with NREL 5 MW Turbine
->>> COE: $0.0654 USD/kWh
->>> AEP per turbine: 19566021.325794 kWh/turbine
->>> Turbine Cost: $5122974.187114 USD
->>> BOS costs per turbine: $6878279.755879 USD/turbine
->>> OPEX per turbine: $232156.470030 USD/turbine
+>>> COE: $0.0447 USD/kWh
+>>> 
+>>> AEP per turbine: 20716963.8 kWh/turbine
+>>> Turbine Cost: $5122974.19 USD
+>>> BOS costs per turbine: $3084430.38 USD/turbine
+>>> OPEX per turbine: $242359.84 USD/turbine
+
 
 
 
@@ -171,6 +173,8 @@ With the model defined we can now run it. All outputs of the subassemblies are a
 .. literalinclude:: ../src/wisdem/turbinese/turbine.py
     :start-after: # === run
     :end-before: # ====
+
+The results should be:
 
 >>> mass rotor blades (kg) = 54674.7959412
 >>> mass hub system (kg) = 37118.3606357

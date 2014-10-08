@@ -4,22 +4,24 @@ Installation
 .. admonition:: prerequisites
    :class: warning
 
-	General: NumPy, SciPy, OpenMDAO
+	General: C compiler, Fortran compiler, NumPy, SciPy, Swig, pyWin32, MatlPlotLib, Lxml, OpenMDAO
 
 	Wind Plant Framework: FUSED-Wind (Framework for Unified Systems Engineering and Design of Wind Plants)
 
-	Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSEE
+	Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSEE, pBEAM, CCBlade, Akima
+
+	Supporting python packages: Pandas, Algopy, Zope.interface, Sphinx, Xlrd, PyOpt, py2exe, Pyzmq, Sphinxcontrib-bibtex, Sphinxcontrib-zopeext, Numpydoc, Ipython
 
 Clone the repository at `<https://github.com/WISDEM/WISDEM>`_
-or download the releases and uncompress/unpack (WISDEM.py-|release|.tar.gz or WISDEM.py-|release|.zip)
+or download the releases and uncompress/unpack (WISDEM.py-|release|.tar.gz or WISDEM.py-|release|.zip) from the website link at the bottom the `WISDEM site<http://nwtc.nrel.gov/WISDEM>`_.
 
-To install WISDEM, first activate the OpenMDAO environment and then install with the following command.
+To install WISDEM, first activate the OpenMDAO environment and then install with the following command.  For full instructions for Windows, see the README.md file.
 
 .. code-block:: bash
 
-   $ plugin install
+   $ python setup_all.py
 
-To check if installation was successful try to import the module
+To check if installation was successful try to import the module from within an activated OpenMDAO environment:
 
 .. code-block:: bash
 

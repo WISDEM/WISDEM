@@ -6,8 +6,8 @@ WISDEM
     Wind turbine and plant system level assemblies.
 
     Author: 
-`K. Dykes <mailto:katherine.dykes@nrel.gov>`_ and
-`S. Andrew Ning <mailto:simeon.ning@nrel.gov>`_
+`NREL WISDEM Team <mailto:nrel.wisdem+wisdem@gmail.com>`_
+K. Dykes, S. A. Ning, P. Graf, G. Scott, Y. Guo, R. King, T. Parsons, R. Damiani, P. Fleming
 
     .. rubric:: Table of Contents
 
