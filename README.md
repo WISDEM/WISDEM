@@ -2,6 +2,8 @@ The Wind-Plant Integrated System Design and Engineering Model (WISDEM) is a set 
 
 You can also watch the [overview video of WISDEM capabilities and development](https://nwtc.nrel.gov/system/files/SE%20Webinar%20Oct%208%202014.wmv).
 
+The corresponding slides are available [here](https://nwtc.nrel.gov/system/files/SE%20Webinar%202014-10-08.pdf).
+
 Authors: [NREL WISDEM Team](mailto:nrel.wisdem+wisdem@gmail.com)
 K. Dykes, S. A. Ning, P. Graf, G. Scott, Y. Guo, R. King, T. Parsons, R. Damiani, P. Fleming
 
