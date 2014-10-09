@@ -404,7 +404,7 @@ if __name__ == '__main__':
     # ----------------------
 
     # --- materials and composite layup  ---
-    basepath = os.path.join(os.path.dirname(rotorse.__file__), '5MW_PrecompFiles')
+    basepath = os.path.join(os.path.dirname(rotorse.__file__), '5MW_PreCompFiles')
     # basepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '5MW_PrecompFiles')
 
     materials = Orthotropic2DMaterial.listFromPreCompFile(os.path.join(basepath, 'materials.inp'))
