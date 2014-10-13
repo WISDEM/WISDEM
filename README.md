@@ -15,81 +15,158 @@ This software is a beta version 0.1.0.
 
 For detailed documentation see <http://wisdem.github.io/WISDEM/>
 
-## Prerequisites
+## Dependencies
 
-General: C compiler, Fortran compiler, NumPy, SciPy, Swig, pyWin32, MatlPlotLib, Lxml, OpenMDAO
+* **General Prerequisites**
+    * A C compiler and a Fortran compiler
+    * [LaPack](http://www.netlib.org/lapack/) and [BLAS](http://www.netlib.org/blas/)
+    * [Swig](http://www.swig.org/)
+    * [Lxml](http://lxml.de/)
+    * [boost-python](http://www.boost.org/doc/libs/1_55_0/libs/python/doc/)
+    * [Python 2.7.x](www.python.org) - Python 3 will not work with OpenMDAO and WISDEM
+    * [NumPy](http://www.numpy.org/)
+    * [SciPy](http://scipy.org/)
+    * [MatPlotLib](http://matplotlib.org/)
+    * [Pandas](http://pandas.pydata.org/)
+    * [git](http://git-scm.com/)
+    * [pyWin32](http://docs.activestate.com/activepython/2.6/pywin32/PyWin32.HTML) (For Windows installations only)
+* **Supporting python packages**
+    * [OpenMDAO](http://openmdao.org/)
+    * [Algopy](https://pythonhosted.org/algopy/)
+    * [zope.interface](http://docs.zope.org/zope.interface/)
+    * [sphinx](http://sphinx-doc.org/)
+    * [Xlrd](pypi.python.org/pypi/xlrd)
+    * [PyOpt](http://www.pyopt.org/)
+    * [py2exe](http://www.py2exe.org/) (For Windows installations only)
+    * [Pyzmq](http://zeromq.github.io/pyzmq/)
+    * [sphinxcontrib-bibtex](https://sphinxcontrib-bibtex.readthedocs.org/en/latest/)
+    * [sphinxcontrib-zopeext](http://pythonhosted.org//sphinxcontrib-zopeext/)
+    * [Numpydoc](https://pypi.python.org/pypi/numpydoc)
+    * [Ipython](ipython.org)
+* **Dependencies installed with WISDEM** by setup_all.py (see installation below):
+    * The [FUSED-Wind](http://fusedwind.org) Wind Plant Framework (Framework for Unified Systems Engineering and Design of Wind Plants)
+    * [WISDEM Sub-Models](https://github.com/WISDEM/)
+        * CommonSE
+        * AeroelasticSE
+        * RotorSE
+        * DriveSE
+        * DriveWPACT
+        * TowerSE
+        * JacketSE
+        * Turbine\_CostsSE
+        * Plant\_CostsSE
+        * Plant\_EnergySE
+        * Plant\_FinanceSE
+        * pBEAM
+        * CCBlade
+        * Akima
 
-## Dependencies installed with WISDEM using by setup_all.py (see installation below):
+## Download
 
-Wind Plant Framework: [FUSED-Wind](http://fusedwind.org) (Framework for Unified Systems Engineering and Design of Wind Plants)
+WISDEM can be obtained by either cloning the git [repository](https://github.com/WISDEM/WISDEM) (this requires the `git` tool), or by downloading the releases (WISDEM.py-|release|.tar.gz or WISDEM.py-|release|.zip) from the website link at the bottom of the [WISDEM site](http://nwtc.nrel.gov/WISDEM).
 
-Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSE, pBEAM, CCBlade, Akima
-
-Supporting python packages: Pandas, Algopy, Zope.interface, Sphinx, Xlrd, PyOpt, py2exe, Pyzmq, Sphinxcontrib-bibtex, Sphinxcontrib-zopeext, Numpydoc, Ipython
 
 ## Installation (Windows)
 
-First, clone the [repository](https://github.com/WISDEM/WISDEM)
-or download the releases and uncompress/unpack (WISDEM.py-|release|.tar.gz or WISDEM.py-|release|.zip) from the website link at the bottom the [WISDEM site](http://nwtc.nrel.gov/WISDEM).
-
+First, clone the 
+or 
 These instructions assume you are using MinGW and have already installed gcc and g++.
 Also you should already have successfully installed Python (for a [single user only](http://bugs.python.org/issue5459#msg101098)), NumPy, and setuptools.
 The example directories may need to be modified depending on where you installed things.  See this [Windows guideline set](https://nwtc.nrel.gov/system/files/Windows%20OpenMDAO%20Install%20Tips.pdf) for additional support on installing python.
 
-1) Edit (or create) a distutils config 'distutils.cfg' file in your Python Lib directory or in your openmdao Lib directory if working from an activated openmdao environment.
+1.  Edit (or create) a distutils config 'distutils.cfg' file in your Python Lib directory or in your openmdao Lib directory if working from an activated openmdao environment.
 
-    C:\Python27\Lib\distutils\distutils.cfg
+        C:\Python27\Lib\distutils\distutils.cfg
 
-or
+    or
 
-    "Path to openmdao"\Lib\distutils.cfg
+        "Path to openmdao"\Lib\distutils.cfg
 
-and put the following in it:
+    and put the following in it:
 
-    [build]
-    compiler=mingw32
-
-
-2) Download [Boost](http://www.boost.org) (v 1.55 as of this writing) and setup bjam
-
-At the command prompt:
-
-    > cd boost_1_55_0\tools\build\v2\engine
-    > build.bat mingw
-
-This should create a folder called: bin.ntx86.  For convenience in the next step you can add this folder to your PATH so bjam is accessible.  Otherwise, use the whole path when calling bjam.
-
-    C:\boost_1_55_0\tools\build\v2\engine\bin.ntx86
-
-3) Download [Boost](http://www.boost.org) (v 1.55 as of this writing) and setup bjam:
-
-In the boost root directory (must be in the root directory) type the following at the command prompt:
-
-    > bjam toolset=gcc --with-python link=shared
-
-the libraries should be built in stage/lib and will be needed in steps 5 and 6.
-
-4) Install LAPACK and BLAS.  I just used [prebuilt libraries](http://icl.cs.utk.edu/lapack-for-windows/lapack/#libraries).  Make sure to grab all three libraries - BLAS, LAPACK and LAPACKE and make sure they are the 32-bit versions.
-Remember the location for steps 5 and 6.
-
-5) Make sure the following are on your system PATH.  The dynamic libraries are needed in order to actually run pBEAM.
-
-    C:\Python27  (for Python)
-    C:\Python27\Scripts  (for easy_install)
-    C:\MinGW\bin  (for g++, gcc, etc.)
-    C:\lapack  (LAPACK dynamic libraries)
-    C:\boost_1_55_0\stage\lib  (Boost Python dynamic libraries)
-
-For the remainder of the setup, use the below directions for *nix systems.  If you have issues with installation of pBEAM and RotorSE, then do this additional step:
-
-6) Modify the 'setup.py' and script in the pBEAM and RotorSE main directories.  Unlike GCC on *nix systems, Windows does not have typical locations to store headers and libraries (e.g., /usr/local/include) and so you will need manually specify them.  Add the header locations for Boost in the include_dirs.  Add the library locations for Boost and LAPACK.  You may also need to rename the boost_python library.  Use the example below, modifying as needed based on where you installed things.  Note that setup.py expects unix style slashes (forward), and that you do not need to include 'lib' at the front of the library names (i.e., 'lapack' corresponds to 'liblapack.dll' or 'liblapack.a').  Note: make sure your boost version matches the boost version installed (i.e. mgw48, mgw46, etc).
-
-    include_dirs=[join(path, 'pBEAM'), 'C:/boost_1_55_0'],
-    library_dirs=['C:/boost_1_55_0/stage/lib', 'C:/lapack'],
-    libraries=['boost_python-mgw48-mt-1_55', 'lapack']
+        [build]
+        compiler=mingw32
 
 
-## Installation (OS X, Linux)
+2. Download [Boost](http://www.boost.org) (v 1.55 as of this writing) and setup bjam
+
+   At the command prompt:
+
+        > cd boost_1_55_0\tools\build\v2\engine
+        > build.bat mingw
+
+    This should create a folder called: bin.ntx86.  For convenience in the next step you can add this folder to your PATH so bjam is accessible.  Otherwise, use the whole path when calling bjam.
+
+        C:\boost_1_55_0\tools\build\v2\engine\bin.ntx86
+
+3.  Download [Boost](http://www.boost.org) (v 1.55 as of this writing) and setup bjam:
+
+    In the boost root directory (must be in the root directory) type the following at the command prompt:
+
+        > bjam toolset=gcc --with-python link=shared
+
+    the libraries should be built in stage/lib and will be needed in steps 5 and 6.
+
+4. Install LAPACK and BLAS.  I just used [prebuilt libraries](http://icl.cs.utk.edu/lapack-for-windows/lapack/#libraries).  Make sure to grab all three libraries - BLAS, LAPACK and LAPACKE and make sure they are the 32-bit versions.
+   Remember the location for steps 5 and 6.
+
+5.  Make sure the following are on your system PATH.  The dynamic libraries are needed in order to actually run pBEAM.
+
+        C:\Python27  (for Python)
+        C:\Python27\Scripts  (for easy_install)
+        C:\MinGW\bin  (for g++, gcc, etc.)
+        C:\lapack  (LAPACK dynamic libraries)
+        C:\boost_1_55_0\stage\lib  (Boost Python dynamic libraries)
+
+    For the remainder of the setup, use the below directions for *nix systems.  If you have issues with installation of pBEAM and RotorSE, then do this additional step:
+
+6. Modify the 'setup.py' and script in the pBEAM and RotorSE main directories.  Unlike GCC on *nix systems, Windows does not have typical locations to store headers and libraries (e.g., /usr/local/include) and so you will need manually specify them.  Add the header locations for Boost in the include_dirs.  Add the library locations for Boost and LAPACK.  You may also need to rename the boost_python library.  Use the example below, modifying as needed based on where you installed things.  Note that setup.py expects unix style slashes (forward), and that you do not need to include 'lib' at the front of the library names (i.e., 'lapack' corresponds to 'liblapack.dll' or 'liblapack.a').  Note: make sure your boost version matches the boost version installed (i.e. mgw48, mgw46, etc).
+
+        include_dirs=[join(path, 'pBEAM'), 'C:/boost_1_55_0'],
+        library_dirs=['C:/boost_1_55_0/stage/lib', 'C:/lapack'],
+        libraries=['boost_python-mgw48-mt-1_55', 'lapack']
+
+
+## Installation (Unix/Linux)
+
+1. First make sure you have the *general prerequisites* installed on your system. In particular, you should install compilers, LaPack, BLAS and Boost-Python libraries. For example on a debian-based environment (e.g. Ubuntu) these packages can be installed by executing the following (as root):
+
+    $ apt-get install gfortran g++ liblapack3 liblapack-dev libblas3 libblas-dev libboost-python1.55-dev swig python-lxml python-matplotlib python-scipy
+
+2. Install OpenMDAO using the most recent 'go-openmdao' script.
+
+    a. Download the most recent script from <http://openmdao.org/downloads/recent/> and place it in a directory in which you want OpenMDAO to run from.
+
+    b. Execute the script, e.g.:
+
+        $ ./go-openmdao-0.xx.x.py
+
+    This will create a new directory, `./openmdao-0.xx.x/`, and install several python tools into it, then it will install openmdao into that directory.
+
+    c. Now activate the OpenMDAO virtual environment by:
+
+        $ cd openmdao-0.xx.x
+        $ . bin/activate
+        
+    You are now operating in an [OpenMDAO Virtual environment](http://openmdao.org/docs/getting-started/install.html) (note the `(openmdao-0.xx.x)` at the beginning of your prompt).  All Python software installed from within this environment will be local to the environment; that is it will not be accessible without being in this virtual environment (see the documentation on [Python Virtual Environments](http://docs.python-guide.org/en/latest/dev/virtualenvs/) for more information).
+    
+3. You are now ready to install WISDEM into this *activated OpenMDAO virtual environment*.
+
+    a. If you haven't already downloaded WISDEM, `cd` to a directory where you want WISDEM installed then clone the [repository](https://github.com/WISDEM/WISDEM) into this directory:
+    
+        $ git clone http://github.com/WISDEM/WISDEM
+
+    This will create a `./WISDEM/` directory.
+
+    b. Now install WISDEM,
+
+        $ cd WISDEM
+        $ python setup_all.py
+
+If you complete all of these steps without error, then you have successfully installed WISDEM!  Consider running the tests to confirm that things are working as expected.
+
+
+## Installation (OS X)
 
 If you want to install WISDEM with all its underlying dependencies, then use the following command from within an [activated OpenMDAO](http://openmdao.org/docs/getting-started/install.html) environment:
 
