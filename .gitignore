@@ -7,6 +7,9 @@ openmdao_log.txt
 _build
 generated
 
+# Install
+plugins
+
 # XCode
 *.xcodeproj
 
