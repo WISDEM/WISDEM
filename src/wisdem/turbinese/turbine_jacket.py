@@ -8,12 +8,16 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from openmdao.main.api import Assembly, Component
-from openmdao.main.datatypes.api import Float, Array, Enum
+from openmdao.main.datatypes.api import Float, Array
 from openmdao.lib.drivers.api import FixedPointIterator
 import numpy as np
 
 from rotorse.rotor import RotorSE
-from towerse.tower import TowerSE
+#from towerse.tower import TowerSE
+from jacketse.jacket import JacketSE
+from jacketse.jacket import JcktGeoInputs,SoilGeoInputs,WaterInputs,WindInputs,RNAprops,TPlumpMass,Frame3DDaux,\
+                    MatInputs,LegGeoInputs,XBrcGeoInputs,MudBrcGeoInputs,HBrcGeoInputs,TPGeoInputs,PileGeoInputs,\
+                    TwrGeoInputs,JacketAsmly
 from drivewpact.drive import DriveWPACT
 from drivewpact.hub import HubWPACT
 from commonse.csystem import DirectionVector
@@ -169,16 +173,6 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         to the structure but there is no further iteration.
     """
 
-    # --- general turbine inputs---
-    assembly.add('rho', Float(1.225, iotype='in', units='kg/m**3', desc='density of air', deriv_ignore=True))
-    assembly.add('mu', Float(1.81206e-5, iotype='in', units='kg/m/s', desc='dynamic viscosity of air', deriv_ignore=True))
-    assembly.add('shear_exponent', Float(0.2, iotype='in', desc='shear exponent', deriv_ignore=True))
-    assembly.add('hub_height', Float(90.0, iotype='in', units='m', desc='hub height'))
-    assembly.add('turbine_class', Enum('I', ('I', 'II', 'III'), iotype='in', desc='IEC turbine class'))
-    assembly.add('turbulence_class', Enum('B', ('A', 'B', 'C'), iotype='in', desc='IEC turbulence class class'))
-    assembly.add('g', Float(9.81, iotype='in', units='m/s**2', desc='acceleration of gravity', deriv_ignore=True))
-    assembly.add('cdf_reference_height_wind_speed', Float(90.0, iotype='in', desc='reference hub height for IEC wind speed (used in CDF calculation)'))
-
     assembly.add('rotor', RotorSE())
     if with_new_nacelle:
         assembly.add('hub',HubSE())
@@ -219,15 +213,6 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
 
     # connections to rotor
     assembly.connect('machine_rating','rotor.control.ratedPower')
-    assembly.connect('rho', 'rotor.rho')
-    assembly.connect('mu', 'rotor.mu')
-    assembly.connect('shear_exponent', 'rotor.shearExp')
-    assembly.connect('hub_height', 'rotor.hubHt')
-    assembly.connect('turbine_class', 'rotor.turbine_class')
-    assembly.connect('turbulence_class', 'rotor.turbulence_class')
-    assembly.connect('g', 'rotor.g')
-    assembly.connect('cdf_reference_height_wind_speed', 'rotor.cdf_reference_height_wind_speed')
-
 
     # connections to hub
     assembly.connect('rotor.mass_one_blade', 'hub.blade_mass')
@@ -258,16 +243,17 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         assembly.connect('rotor.g', 'nacelle.g')''' # Only drive smooth taking g from rotor; TODO: update when drive_smooth is updated
     assembly.connect('tower_d[-1]', 'nacelle.tower_top_diameter')  # OpenMDAO circular dependency issue
 
+
     # connections to tower
-    assembly.connect('rho', 'tower.wind_rho')
-    assembly.connect('mu', 'tower.wind_mu')
-    assembly.connect('g', 'tower.g')
-    assembly.connect('hub_height', 'tower.wind_zref')
     assembly.connect('tower_d', 'tower.d')
+    assembly.connect('rotor.rho', 'tower.wind_rho')
+    assembly.connect('rotor.mu', 'tower.wind_mu')
     assembly.connect('rotor.ratedConditions.V', 'tower.wind_Uref1')
     assembly.connect('rotor.V_extreme', 'tower.wind_Uref2')
+    assembly.connect('rotor.hubHt', 'tower.wind_zref')
     assembly.connect('rotor.yaw', 'tower.yaw')
     assembly.connect('rotor.tilt', 'tower.tilt')
+    assembly.connect('rotor.g', 'tower.g')
     assembly.connect('rotor.mass_all_blades', 'tower.blades_mass')
     assembly.connect('rotor.I_all_blades', 'tower.blades_I')
     assembly.connect('hub.hub_system_mass', 'tower.hub_mass')
@@ -280,7 +266,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.ratedConditions.Q', 'tower.rotorM1[0]')
     assembly.connect('rotor.T_extreme', 'tower.rotorF2[0]')
     assembly.connect('rotor.Q_extreme', 'tower.rotorM2[0]')
-    assembly.connect('hub_height - nacelle.nacelle_cm[2]', 'tower.towerHeight')
+    assembly.connect('rotor.hubHt - nacelle.nacelle_cm[2]', 'tower.towerHeight')
 
     # connections to maxdeflection
     assembly.connect('rotor.Rtip', 'maxdeflection.Rtip')
@@ -324,22 +310,6 @@ if __name__ == '__main__':
     tower.replace('tower2', TowerWithpBEAM())
 
     # =================
-
-    # === Turbine Configuration ===
-
-    # --- atmosphere ---
-    turbine.rho = 1.225  # (Float, kg/m**3): density of air
-    turbine.mu = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    turbine.shear_exponent = 0.2  # (Float): shear exponent
-    turbine.hub_height = 90.0  # (Float, m): hub height
-    turbine.turbine_class = 'I'  # (Enum): IEC turbine class
-    turbine.turbulence_class = 'B'  # (Enum): IEC turbulence class class
-    turbine.cdf_reference_height_wind_speed = 90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
-    turbine.g = 9.81  # (Float, m/s**2): acceleration of gravity
-    # ----------------------
-
-    # ============================
-
 
     # === rotor ===
     # --- blade grid ---
@@ -400,6 +370,17 @@ if __name__ == '__main__':
     for i in range(n):
         af[i] = airfoil_types[af_idx[i]]
     rotor.airfoil_files = af  # (List): names of airfoil file
+    # ----------------------
+
+    # --- atmosphere ---
+    rotor.rho = 1.225  # (Float, kg/m**3): density of air
+    rotor.mu = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
+    rotor.shearExp = 0.2  # (Float): shear exponent
+    rotor.hubHt = 90.0  # (Float, m): hub height
+    rotor.turbine_class = 'I'  # (Enum): IEC turbine class
+    rotor.turbulence_class = 'B'  # (Enum): IEC turbulence class class
+    rotor.cdf_reference_height_wind_speed = 90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
+    rotor.g = 9.81  # (Float, m/s**2): acceleration of gravity
     # ----------------------
 
     # --- control ---

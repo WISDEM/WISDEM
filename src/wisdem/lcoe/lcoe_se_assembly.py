@@ -10,17 +10,19 @@ import numpy as np
 from openmdao.main.api import Assembly, Component
 from openmdao.main.datatypes.api import Int, Float, Enum, VarTree, Bool, Str, Array
 
-from wisdem.turbinese.turbine import configure_turbine
+
 from fusedwind.plant_cost.fused_finance import configure_extended_financial_analysis, ExtendedFinancialAnalysis
 from fusedwind.plant_cost.fused_opex import OPEXVarTree
 from fusedwind.plant_cost.fused_bos_costs import BOSVarTree
 from fusedwind.interface import implement_base
+
+from wisdem.turbinese.turbine import configure_turbine
 from turbine_costsse.turbine_costsse.turbine_costsse import Turbine_CostsSE
 from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
 from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
 from plant_costsse.ecn_offshore_opex.ecn_offshore_opex  import opex_ecn_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
-from plant_energyse.basic_aep.basic_aep import aep_assembly
+from fusedwind.plant_flow.basic_aep import aep_assembly
 #from landbos import LandBOS
 
 # Current configuration assembly options for LCOE SE
@@ -349,7 +351,7 @@ def example(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=Fal
 
     # Turbine ===========
     from wisdem.reference_turbines.nrel5mw.nrel5mw import configure_nrel5mw_turbine
-    configure_nrel5mw_turbine(rotor,nacelle,tower,wind_class,lcoe_se.sea_depth)
+    configure_nrel5mw_turbine(lcoe_se,wind_class,lcoe_se.sea_depth)
 
     # TODO: these should be specified at the turbine level and connected to other system inputs
     lcoe_se.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
