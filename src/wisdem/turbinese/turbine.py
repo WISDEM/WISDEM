@@ -8,12 +8,13 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from openmdao.main.api import Assembly, Component
-from openmdao.main.datatypes.api import Float, Array, Enum
+from openmdao.main.datatypes.api import Float, Array, Enum, Bool
 from openmdao.lib.drivers.api import FixedPointIterator
 import numpy as np
 
 from rotorse.rotor import RotorSE
 from towerse.tower import TowerSE
+from rna import RNAMass, RotorLoads
 from drivewpact.drive import DriveWPACT
 from drivewpact.hub import HubWPACT
 from commonse.csystem import DirectionVector
@@ -169,7 +170,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         to the structure but there is no further iteration.
     """
 
-    # --- general turbine inputs---
+    # --- general turbine configuration inputs---
     assembly.add('rho', Float(1.225, iotype='in', units='kg/m**3', desc='density of air', deriv_ignore=True))
     assembly.add('mu', Float(1.81206e-5, iotype='in', units='kg/m/s', desc='dynamic viscosity of air', deriv_ignore=True))
     assembly.add('shear_exponent', Float(0.2, iotype='in', desc='shear exponent', deriv_ignore=True))
@@ -178,6 +179,11 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.add('turbulence_class', Enum('B', ('A', 'B', 'C'), iotype='in', desc='IEC turbulence class class'))
     assembly.add('g', Float(9.81, iotype='in', units='m/s**2', desc='acceleration of gravity', deriv_ignore=True))
     assembly.add('cdf_reference_height_wind_speed', Float(90.0, iotype='in', desc='reference hub height for IEC wind speed (used in CDF calculation)'))
+    assembly.add('downwind', Bool(False, iotype='in', desc='flag if rotor is downwind'))
+    assembly.add('tower_d', Array([0.0], iotype='in', units='m', desc='diameters along tower'))
+    assembly.add('generator_speed', Float(iotype='in', units='rpm', desc='generator speed'))
+    assembly.add('machine_rating', Float(5000.0, units='kW', iotype='in', desc='machine rated power'))
+    assembly.add('rna_weightM', Bool(True, iotype='in', desc='flag to consider or not the RNA weight effect on Moment'))
 
     assembly.add('rotor', RotorSE())
     if with_new_nacelle:
@@ -185,10 +191,13 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         if with_3pt_drive:
             assembly.add('nacelle', Drive3pt())
         else:
-        	  assembly.add('nacelle', Drive4pt())
+            assembly.add('nacelle', Drive4pt())
     else:
         assembly.add('nacelle', DriveWPACT())
         assembly.add('hub', HubWPACT())
+    assembly.add('rna', RNAMass())
+    assembly.add('rotorloads1', RotorLoads())
+    assembly.add('rotorloads2', RotorLoads())
     assembly.add('tower', TowerSE())
     assembly.add('maxdeflection', MaxTipDeflection())
 
@@ -208,14 +217,9 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     else:
         assembly.driver.workflow.add(['rotor'])
 
-    assembly.driver.workflow.add(['hub', 'nacelle', 'tower', 'maxdeflection'])
+    assembly.driver.workflow.add(['hub', 'nacelle', 'tower', 'maxdeflection', 'rna', 'rotorloads1', 'rotorloads2'])
 
     # TODO: rotor drivetrain design should be connected to nacelle drivetrain design
-
-    # inputs #TODO: awkward adding class inputs in configuration step
-    assembly.add('tower_d', Array([0.0], iotype='in', units='m', desc='diameters along tower'))
-    assembly.add('generator_speed', Float(iotype='in', units='rpm', desc='generator speed'))
-    assembly.add('machine_rating', Float(5000.0, units='kW', iotype='in', desc='machine rated power'))
 
     # connections to rotor
     assembly.connect('machine_rating','rotor.control.ratedPower')
@@ -236,9 +240,10 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.hub_diameter', 'hub.blade_root_diameter')
     assembly.connect('rotor.nBlades', 'hub.blade_number')
     if with_new_nacelle:
-    	  assembly.connect('nacelle.MB1_location','hub.MB1_location')
-    	  assembly.connect('rotor.tilt','hub.gamma')
-    	  assembly.connect('nacelle.L_rb','hub.L_rb')
+        assembly.connect('nacelle.MB1_location','hub.MB1_location')
+        assembly.connect('rotor.tilt','hub.gamma')
+        assembly.connect('nacelle.L_rb','hub.L_rb')
+
 
     # connections to nacelle #TODO: fatigue option variables
     assembly.connect('rotor.diameter', 'nacelle.rotor_diameter')
@@ -258,6 +263,39 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         assembly.connect('rotor.g', 'nacelle.g')''' # Only drive smooth taking g from rotor; TODO: update when drive_smooth is updated
     assembly.connect('tower_d[-1]', 'nacelle.tower_top_diameter')  # OpenMDAO circular dependency issue
 
+
+    # connections to rna
+    assembly.connect('rotor.mass_all_blades', 'rna.blades_mass')
+    assembly.connect('rotor.I_all_blades', 'rna.blades_I')
+    assembly.connect('hub.hub_system_mass', 'rna.hub_mass')
+    assembly.connect('hub.hub_system_cm', 'rna.hub_cm')
+    assembly.connect('hub.hub_system_I', 'rna.hub_I')
+    assembly.connect('nacelle.nacelle_mass', 'rna.nac_mass')
+    assembly.connect('nacelle.nacelle_cm', 'rna.nac_cm')
+    assembly.connect('nacelle.nacelle_I', 'rna.nac_I')
+
+    # connections to rotorloads1
+    assembly.connect('downwind', 'rotorloads1.downwind')
+    assembly.connect('rna_weightM', 'rotorloads1.rna_weightM')
+    assembly.connect('1.8 * rotor.ratedConditions.T', 'rotorloads1.F[0]')
+    assembly.connect('rotor.ratedConditions.Q', 'rotorloads1.M[0]')
+    assembly.connect('hub.hub_system_cm', 'rotorloads1.r_hub')
+    assembly.connect('rna.rna_cm', 'rotorloads1.rna_cm')
+    assembly.connect('rotor.tilt', 'rotorloads1.tilt')
+    assembly.connect('g', 'rotorloads1.g')
+    assembly.connect('rna.rna_mass', 'rotorloads1.m_RNA')
+
+    # connections to rotorloads2
+    assembly.connect('downwind', 'rotorloads2.downwind')
+    assembly.connect('rna_weightM', 'rotorloads2.rna_weightM')
+    assembly.connect('rotor.T_extreme', 'rotorloads2.F[0]')
+    assembly.connect('rotor.Q_extreme', 'rotorloads2.M[0]')
+    assembly.connect('hub.hub_system_cm', 'rotorloads2.r_hub')
+    assembly.connect('rna.rna_cm', 'rotorloads2.rna_cm')
+    assembly.connect('rotor.tilt', 'rotorloads2.tilt')
+    assembly.connect('g', 'rotorloads2.g')
+    assembly.connect('rna.rna_mass', 'rotorloads2.m_RNA')
+
     # connections to tower
     assembly.connect('rho', 'tower.wind_rho')
     assembly.connect('mu', 'tower.wind_mu')
@@ -267,20 +305,14 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.ratedConditions.V', 'tower.wind_Uref1')
     assembly.connect('rotor.V_extreme', 'tower.wind_Uref2')
     assembly.connect('rotor.yaw', 'tower.yaw')
-    assembly.connect('rotor.tilt', 'tower.tilt')
-    assembly.connect('rotor.mass_all_blades', 'tower.blades_mass')
-    assembly.connect('rotor.I_all_blades', 'tower.blades_I')
-    assembly.connect('hub.hub_system_mass', 'tower.hub_mass')
-    assembly.connect('hub.hub_system_cm', 'tower.hub_cm')
-    assembly.connect('hub.hub_system_I', 'tower.hub_I')
-    assembly.connect('nacelle.nacelle_mass', 'tower.nac_mass')
-    assembly.connect('nacelle.nacelle_cm', 'tower.nac_cm')
-    assembly.connect('nacelle.nacelle_I', 'tower.nac_I')
-    assembly.connect('1.8 * rotor.ratedConditions.T', 'tower.rotorF1[0]')
-    assembly.connect('rotor.ratedConditions.Q', 'tower.rotorM1[0]')
-    assembly.connect('rotor.T_extreme', 'tower.rotorF2[0]')
-    assembly.connect('rotor.Q_extreme', 'tower.rotorM2[0]')
     assembly.connect('hub_height - nacelle.nacelle_cm[2]', 'tower.towerHeight')
+    assembly.connect('rna.rna_mass', 'tower.top_m')
+    assembly.connect('rna.rna_cm', 'tower.top_cm')
+    assembly.connect('rna.rna_I_TT', 'tower.top_I')
+    assembly.connect('rotorloads1.top_F', 'tower.top1_F')
+    assembly.connect('rotorloads1.top_M', 'tower.top1_M')
+    assembly.connect('rotorloads2.top_F', 'tower.top2_F')
+    assembly.connect('rotorloads2.top_M', 'tower.top2_M')
 
     # connections to maxdeflection
     assembly.connect('rotor.Rtip', 'maxdeflection.Rtip')
