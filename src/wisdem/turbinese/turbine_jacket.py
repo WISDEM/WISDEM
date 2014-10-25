@@ -14,6 +14,7 @@ import numpy as np
 
 from rotorse.rotor import RotorSE
 #from towerse.tower import TowerSE
+from rna import RNAMass, RotorLoads
 from jacketse.jacket import JacketSE
 from jacketse.jacket import JcktGeoInputs,SoilGeoInputs,WaterInputs,WindInputs,RNAprops,TPlumpMass,Frame3DDaux,\
                     MatInputs,LegGeoInputs,XBrcGeoInputs,MudBrcGeoInputs,HBrcGeoInputs,TPGeoInputs,PileGeoInputs,\
@@ -173,17 +174,35 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         to the structure but there is no further iteration.
     """
 
+    # --- general turbine configuration inputs---
+    assembly.add('rho', Float(1.225, iotype='in', units='kg/m**3', desc='density of air', deriv_ignore=True))
+    assembly.add('mu', Float(1.81206e-5, iotype='in', units='kg/m/s', desc='dynamic viscosity of air', deriv_ignore=True))
+    assembly.add('shear_exponent', Float(0.2, iotype='in', desc='shear exponent', deriv_ignore=True))
+    assembly.add('hub_height', Float(90.0, iotype='in', units='m', desc='hub height'))
+    assembly.add('turbine_class', Enum('I', ('I', 'II', 'III'), iotype='in', desc='IEC turbine class'))
+    assembly.add('turbulence_class', Enum('B', ('A', 'B', 'C'), iotype='in', desc='IEC turbulence class class'))
+    assembly.add('g', Float(9.81, iotype='in', units='m/s**2', desc='acceleration of gravity', deriv_ignore=True))
+    assembly.add('cdf_reference_height_wind_speed', Float(90.0, iotype='in', desc='reference hub height for IEC wind speed (used in CDF calculation)'))
+    assembly.add('downwind', Bool(False, iotype='in', desc='flag if rotor is downwind'))
+    assembly.add('tower_d', Array([0.0], iotype='in', units='m', desc='diameters along tower'))
+    assembly.add('generator_speed', Float(iotype='in', units='rpm', desc='generator speed'))
+    assembly.add('machine_rating', Float(5000.0, units='kW', iotype='in', desc='machine rated power'))
+    assembly.add('rna_weightM', Bool(True, iotype='in', desc='flag to consider or not the RNA weight effect on Moment'))
+
     assembly.add('rotor', RotorSE())
     if with_new_nacelle:
         assembly.add('hub',HubSE())
         if with_3pt_drive:
             assembly.add('nacelle', Drive3pt())
         else:
-        	  assembly.add('nacelle', Drive4pt())
+            assembly.add('nacelle', Drive4pt())
     else:
         assembly.add('nacelle', DriveWPACT())
         assembly.add('hub', HubWPACT())
-    assembly.add('tower', TowerSE())
+    assembly.add('rna', RNAMass())
+    assembly.add('rotorloads1', RotorLoads())
+    assembly.add('rotorloads2', RotorLoads())
+    assembly.add('jacket', JacketSE())
     assembly.add('maxdeflection', MaxTipDeflection())
 
     if flexible_blade:
@@ -202,17 +221,21 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     else:
         assembly.driver.workflow.add(['rotor'])
 
-    assembly.driver.workflow.add(['hub', 'nacelle', 'tower', 'maxdeflection'])
+    assembly.driver.workflow.add(['hub', 'nacelle', 'tower', 'maxdeflection', 'rna', 'rotorloads1', 'rotorloads2'])
 
     # TODO: rotor drivetrain design should be connected to nacelle drivetrain design
 
-    # inputs #TODO: awkward adding class inputs in configuration step
-    assembly.add('tower_d', Array([0.0], iotype='in', units='m', desc='diameters along tower'))
-    assembly.add('generator_speed', Float(iotype='in', units='rpm', desc='generator speed'))
-    assembly.add('machine_rating', Float(5000.0, units='kW', iotype='in', desc='machine rated power'))
-
     # connections to rotor
     assembly.connect('machine_rating','rotor.control.ratedPower')
+    assembly.connect('rho', 'rotor.rho')
+    assembly.connect('mu', 'rotor.mu')
+    assembly.connect('shear_exponent', 'rotor.shearExp')
+    assembly.connect('hub_height', 'rotor.hubHt')
+    assembly.connect('turbine_class', 'rotor.turbine_class')
+    assembly.connect('turbulence_class', 'rotor.turbulence_class')
+    assembly.connect('g', 'rotor.g')
+    assembly.connect('cdf_reference_height_wind_speed', 'rotor.cdf_reference_height_wind_speed')
+
 
     # connections to hub
     assembly.connect('rotor.mass_one_blade', 'hub.blade_mass')
@@ -221,9 +244,10 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.hub_diameter', 'hub.blade_root_diameter')
     assembly.connect('rotor.nBlades', 'hub.blade_number')
     if with_new_nacelle:
-    	  assembly.connect('nacelle.MB1_location','hub.MB1_location')
-    	  assembly.connect('rotor.tilt','hub.gamma')
-    	  assembly.connect('nacelle.L_rb','hub.L_rb')
+        assembly.connect('nacelle.MB1_location','hub.MB1_location')
+        assembly.connect('rotor.tilt','hub.gamma')
+        assembly.connect('nacelle.L_rb','hub.L_rb')
+
 
     # connections to nacelle #TODO: fatigue option variables
     assembly.connect('rotor.diameter', 'nacelle.rotor_diameter')
@@ -241,32 +265,58 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('generator_speed/rotor.ratedConditions.Omega', 'nacelle.gear_ratio')
     '''if  with_new_nacelle:
         assembly.connect('rotor.g', 'nacelle.g')''' # Only drive smooth taking g from rotor; TODO: update when drive_smooth is updated
-    assembly.connect('tower_d[-1]', 'nacelle.tower_top_diameter')  # OpenMDAO circular dependency issue
+    assembly.connect('tower_d[-1]', 'nacelle.tower_top_diameter')  # OpenMDAO circular dependency issue #TODO - this from jacket
 
+
+    # connections to rna
+    assembly.connect('rotor.mass_all_blades', 'rna.blades_mass')
+    assembly.connect('rotor.I_all_blades', 'rna.blades_I')
+    assembly.connect('hub.hub_system_mass', 'rna.hub_mass')
+    assembly.connect('hub.hub_system_cm', 'rna.hub_cm')
+    assembly.connect('hub.hub_system_I', 'rna.hub_I')
+    assembly.connect('nacelle.nacelle_mass', 'rna.nac_mass')
+    assembly.connect('nacelle.nacelle_cm', 'rna.nac_cm')
+    assembly.connect('nacelle.nacelle_I', 'rna.nac_I')
+
+    # connections to rotorloads1
+    assembly.connect('downwind', 'rotorloads1.downwind')
+    assembly.connect('rna_weightM', 'rotorloads1.rna_weightM')
+    assembly.connect('1.8 * rotor.ratedConditions.T', 'rotorloads1.F[0]')
+    assembly.connect('rotor.ratedConditions.Q', 'rotorloads1.M[0]')
+    assembly.connect('hub.hub_system_cm', 'rotorloads1.r_hub')
+    assembly.connect('rna.rna_cm', 'rotorloads1.rna_cm')
+    assembly.connect('rotor.tilt', 'rotorloads1.tilt')
+    assembly.connect('g', 'rotorloads1.g')
+    assembly.connect('rna.rna_mass', 'rotorloads1.m_RNA')
+
+    # connections to rotorloads2
+    assembly.connect('downwind', 'rotorloads2.downwind')
+    assembly.connect('rna_weightM', 'rotorloads2.rna_weightM')
+    assembly.connect('rotor.T_extreme', 'rotorloads2.F[0]')
+    assembly.connect('rotor.Q_extreme', 'rotorloads2.M[0]')
+    assembly.connect('hub.hub_system_cm', 'rotorloads2.r_hub')
+    assembly.connect('rna.rna_cm', 'rotorloads2.rna_cm')
+    assembly.connect('rotor.tilt', 'rotorloads2.tilt')
+    assembly.connect('g', 'rotorloads2.g')
+    assembly.connect('rna.rna_mass', 'rotorloads2.m_RNA')
 
     # connections to tower
-    assembly.connect('tower_d', 'tower.d')
-    assembly.connect('rotor.rho', 'tower.wind_rho')
-    assembly.connect('rotor.mu', 'tower.wind_mu')
-    assembly.connect('rotor.ratedConditions.V', 'tower.wind_Uref1')
-    assembly.connect('rotor.V_extreme', 'tower.wind_Uref2')
-    assembly.connect('rotor.hubHt', 'tower.wind_zref')
-    assembly.connect('rotor.yaw', 'tower.yaw')
-    assembly.connect('rotor.tilt', 'tower.tilt')
-    assembly.connect('rotor.g', 'tower.g')
-    assembly.connect('rotor.mass_all_blades', 'tower.blades_mass')
-    assembly.connect('rotor.I_all_blades', 'tower.blades_I')
-    assembly.connect('hub.hub_system_mass', 'tower.hub_mass')
-    assembly.connect('hub.hub_system_cm', 'tower.hub_cm')
-    assembly.connect('hub.hub_system_I', 'tower.hub_I')
-    assembly.connect('nacelle.nacelle_mass', 'tower.nac_mass')
-    assembly.connect('nacelle.nacelle_cm', 'tower.nac_cm')
-    assembly.connect('nacelle.nacelle_I', 'tower.nac_I')
-    assembly.connect('1.8 * rotor.ratedConditions.T', 'tower.rotorF1[0]')
-    assembly.connect('rotor.ratedConditions.Q', 'tower.rotorM1[0]')
-    assembly.connect('rotor.T_extreme', 'tower.rotorF2[0]')
-    assembly.connect('rotor.Q_extreme', 'tower.rotorM2[0]')
-    assembly.connect('rotor.hubHt - nacelle.nacelle_cm[2]', 'tower.towerHeight')
+    assembly.connect('rho', 'tower.wind_rho') # TODO: jacket input
+    assembly.connect('mu', 'tower.wind_mu') # TODO: jacket input
+    assembly.connect('g', 'tower.g') # TODO: jacket input
+    assembly.connect('hub_height', 'tower.wind_zref') # TODO: jacket input
+    assembly.connect('tower_d', 'tower.d') # TODO: jacket input
+    assembly.connect('rotor.ratedConditions.V', 'tower.wind_Uref1') # TODO: jacket input
+    assembly.connect('rotor.V_extreme', 'tower.wind_Uref2') # TODO: jacket input
+    assembly.connect('rotor.yaw', 'tower.yaw') # TODO: jacket input
+    assembly.connect('hub_height - nacelle.nacelle_cm[2]', 'tower.towerHeight') # TODO: jacket input
+    assembly.connect('rna.rna_mass', 'tower.top_m') # TODO: jacket input
+    assembly.connect('rna.rna_cm', 'tower.top_cm') # TODO: jacket input
+    assembly.connect('rna.rna_I_TT', 'tower.top_I') # TODO: jacket input
+    assembly.connect('rotorloads1.top_F', 'tower.top1_F') # TODO: jacket input
+    assembly.connect('rotorloads1.top_M', 'tower.top1_M') # TODO: jacket input
+    assembly.connect('rotorloads2.top_F', 'tower.top2_F') # TODO: jacket input
+    assembly.connect('rotorloads2.top_M', 'tower.top2_M') # TODO: jacket input
 
     # connections to maxdeflection
     assembly.connect('rotor.Rtip', 'maxdeflection.Rtip')
@@ -275,9 +325,9 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.precone', 'maxdeflection.precone')
     assembly.connect('rotor.tilt', 'maxdeflection.tilt')
     assembly.connect('hub.hub_system_cm', 'maxdeflection.hub_tt')
-    assembly.connect('tower.z', 'maxdeflection.tower_z')
-    assembly.connect('tower_d', 'maxdeflection.tower_d')
-    assembly.connect('tower.towerHeight', 'maxdeflection.towerHt')
+    assembly.connect('tower.z', 'maxdeflection.tower_z') # TODO: jacket input
+    assembly.connect('tower_d', 'maxdeflection.tower_d') # TODO: jacket input
+    assembly.connect('tower.towerHeight', 'maxdeflection.towerHt') # TODO: jacket input
 
 
 
@@ -310,6 +360,24 @@ if __name__ == '__main__':
     tower.replace('tower2', TowerWithpBEAM())
 
     # =================
+
+    # === Turbine Configuration ===
+
+    # --- atmosphere ---
+    turbine.rho = 1.225  # (Float, kg/m**3): density of air
+    turbine.mu = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
+    turbine.shear_exponent = 0.2  # (Float): shear exponent
+    turbine.hub_height = 90.0  # (Float, m): hub height
+    turbine.turbine_class = 'I'  # (Enum): IEC turbine class
+    turbine.turbulence_class = 'B'  # (Enum): IEC turbulence class class
+    turbine.cdf_reference_height_wind_speed = 90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
+    turbine.g = 9.81  # (Float, m/s**2): acceleration of gravity
+    turbine.downwind = False  # (Bool): flag if rotor is downwind
+    turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
+    # ----------------------
+
+    # ============================
+
 
     # === rotor ===
     # --- blade grid ---
@@ -370,17 +438,6 @@ if __name__ == '__main__':
     for i in range(n):
         af[i] = airfoil_types[af_idx[i]]
     rotor.airfoil_files = af  # (List): names of airfoil file
-    # ----------------------
-
-    # --- atmosphere ---
-    rotor.rho = 1.225  # (Float, kg/m**3): density of air
-    rotor.mu = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    rotor.shearExp = 0.2  # (Float): shear exponent
-    rotor.hubHt = 90.0  # (Float, m): hub height
-    rotor.turbine_class = 'I'  # (Enum): IEC turbine class
-    rotor.turbulence_class = 'B'  # (Enum): IEC turbulence class class
-    rotor.cdf_reference_height_wind_speed = 90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
-    rotor.g = 9.81  # (Float, m/s**2): acceleration of gravity
     # ----------------------
 
     # --- control ---
@@ -479,7 +536,6 @@ if __name__ == '__main__':
     nacelle.h0_front = 1.7  # (Float, m): height of Ibeam in bedplate front
     nacelle.h0_rear = 1.35  # (Float, m): height of Ibeam in bedplate rear
 
-    turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
     # TODO: sync with rotor drivetrainType variable
     nacelle.drivetrain_design = 'geared'
     nacelle.crane = True  # (Bool): flag for presence of crane
@@ -524,8 +580,7 @@ if __name__ == '__main__':
     turbine.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
     tower.t = [0.027*1.3, 0.023*1.3, 0.019*1.3]  # (Array, m): shell thickness at corresponding locations
     tower.n = [10, 10]  # (Array): number of finite elements between sections.  array length should be ``len(z)-1``
-    tower.L_reinforced = 30.0  # (Float, m): distance along tower for reinforcements used in buckling calc
-    tower.downwind = False  # (Bool): flag if rotor is downwind
+    tower.L_reinforced=np.array([30.])#,30.,30.]) #[m] buckling length
     # ---------------
 
     # --- wind ---

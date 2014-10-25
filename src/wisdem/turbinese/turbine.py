@@ -368,6 +368,8 @@ if __name__ == '__main__':
     turbine.turbulence_class = 'B'  # (Enum): IEC turbulence class class
     turbine.cdf_reference_height_wind_speed = 90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
     turbine.g = 9.81  # (Float, m/s**2): acceleration of gravity
+    turbine.downwind = False  # (Bool): flag if rotor is downwind
+    turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
     # ----------------------
 
     # ============================
@@ -530,7 +532,6 @@ if __name__ == '__main__':
     nacelle.h0_front = 1.7  # (Float, m): height of Ibeam in bedplate front
     nacelle.h0_rear = 1.35  # (Float, m): height of Ibeam in bedplate rear
 
-    turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
     # TODO: sync with rotor drivetrainType variable
     nacelle.drivetrain_design = 'geared'
     nacelle.crane = True  # (Bool): flag for presence of crane
@@ -575,8 +576,7 @@ if __name__ == '__main__':
     turbine.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
     tower.t = [0.027*1.3, 0.023*1.3, 0.019*1.3]  # (Array, m): shell thickness at corresponding locations
     tower.n = [10, 10]  # (Array): number of finite elements between sections.  array length should be ``len(z)-1``
-    tower.L_reinforced = 30.0  # (Float, m): distance along tower for reinforcements used in buckling calc
-    tower.downwind = False  # (Bool): flag if rotor is downwind
+    tower.L_reinforced=np.array([30.])#,30.,30.]) #[m] buckling length
     # ---------------
 
     # --- wind ---
