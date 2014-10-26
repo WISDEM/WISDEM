@@ -14,7 +14,7 @@ import numpy as np
 
 from rotorse.rotor import RotorSE
 #from towerse.tower import TowerSE
-from rna import RNAMass, RotorLoads
+from commonse.rna import RNAMass, RotorLoads
 from jacketse.jacket import JacketSE
 from jacketse.jacket import JcktGeoInputs,SoilGeoInputs,WaterInputs,WindInputs,RNAprops,TPlumpMass,Frame3DDaux,\
                     MatInputs,LegGeoInputs,XBrcGeoInputs,MudBrcGeoInputs,HBrcGeoInputs,TPGeoInputs,PileGeoInputs,\

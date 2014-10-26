@@ -14,7 +14,7 @@ import numpy as np
 
 from rotorse.rotor import RotorSE
 from towerse.tower import TowerSE
-from rna import RNAMass, RotorLoads
+from commonse.rna import RNAMass, RotorLoads
 from drivewpact.drive import DriveWPACT
 from drivewpact.hub import HubWPACT
 from commonse.csystem import DirectionVector
