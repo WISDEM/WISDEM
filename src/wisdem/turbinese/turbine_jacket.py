@@ -8,7 +8,7 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from openmdao.main.api import Assembly, Component
-from openmdao.main.datatypes.api import Float, Array
+from openmdao.main.datatypes.api import Float, Array, Enum, Bool
 from openmdao.lib.drivers.api import FixedPointIterator
 import numpy as np
 
@@ -18,7 +18,7 @@ from commonse.rna import RNAMass, RotorLoads
 from jacketse.jacket import JacketSE
 from jacketse.jacket import JcktGeoInputs,SoilGeoInputs,WaterInputs,WindInputs,RNAprops,TPlumpMass,Frame3DDaux,\
                     MatInputs,LegGeoInputs,XBrcGeoInputs,MudBrcGeoInputs,HBrcGeoInputs,TPGeoInputs,PileGeoInputs,\
-                    TwrGeoInputs,JacketAsmly
+                    TwrGeoInputs
 from drivewpact.drive import DriveWPACT
 from drivewpact.hub import HubWPACT
 from commonse.csystem import DirectionVector
@@ -37,7 +37,7 @@ class MaxTipDeflection(Component):
     tilt = Float(iotype='in', units='deg')
     hub_tt = Array(iotype='in', units='m', desc='location of hub relative to tower-top in yaw-aligned c.s.')
     tower_z = Array(iotype='in', units='m')
-    tower_d = Array(iotype='in', units='m')
+    tower_d = Array(np.array([3.87, 3.87]),iotype='in', units='m') #TODO remove default
     towerHt = Float(iotype='in', units='m')
 
     max_tip_deflection = Float(iotype='out', units='m', desc='clearance between undeflected blade and tower')
@@ -157,7 +157,7 @@ class MaxTipDeflection(Component):
 
 
 
-def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, with_3pt_drive=False):
+def configure_turbine_with_jacket(assembly, with_new_nacelle=True, flexible_blade=False, with_3pt_drive=False):
     """a stand-alone configure method to allow for flatter assemblies
 
     Parameters
@@ -184,7 +184,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.add('g', Float(9.81, iotype='in', units='m/s**2', desc='acceleration of gravity', deriv_ignore=True))
     assembly.add('cdf_reference_height_wind_speed', Float(90.0, iotype='in', desc='reference hub height for IEC wind speed (used in CDF calculation)'))
     assembly.add('downwind', Bool(False, iotype='in', desc='flag if rotor is downwind'))
-    assembly.add('tower_d', Array([0.0], iotype='in', units='m', desc='diameters along tower'))
+    assembly.add('tower_dt', Float(iotype='in', units='m', desc='tower top diameter')) # update for jacket
     assembly.add('generator_speed', Float(iotype='in', units='rpm', desc='generator speed'))
     assembly.add('machine_rating', Float(5000.0, units='kW', iotype='in', desc='machine rated power'))
     assembly.add('rna_weightM', Bool(True, iotype='in', desc='flag to consider or not the RNA weight effect on Moment'))
@@ -221,7 +221,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     else:
         assembly.driver.workflow.add(['rotor'])
 
-    assembly.driver.workflow.add(['hub', 'nacelle', 'tower', 'maxdeflection', 'rna', 'rotorloads1', 'rotorloads2'])
+    assembly.driver.workflow.add(['hub', 'nacelle', 'jacket', 'maxdeflection', 'rna', 'rotorloads1', 'rotorloads2'])
 
     # TODO: rotor drivetrain design should be connected to nacelle drivetrain design
 
@@ -265,7 +265,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('generator_speed/rotor.ratedConditions.Omega', 'nacelle.gear_ratio')
     '''if  with_new_nacelle:
         assembly.connect('rotor.g', 'nacelle.g')''' # Only drive smooth taking g from rotor; TODO: update when drive_smooth is updated
-    assembly.connect('tower_d[-1]', 'nacelle.tower_top_diameter')  # OpenMDAO circular dependency issue #TODO - this from jacket
+    assembly.connect('tower_dt', 'nacelle.tower_top_diameter')  # OpenMDAO circular dependency issue # update for jacket input
 
 
     # connections to rna
@@ -300,23 +300,25 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('g', 'rotorloads2.g')
     assembly.connect('rna.rna_mass', 'rotorloads2.m_RNA')
 
-    # connections to tower
-    assembly.connect('rho', 'tower.wind_rho') # TODO: jacket input
-    assembly.connect('mu', 'tower.wind_mu') # TODO: jacket input
-    assembly.connect('g', 'tower.g') # TODO: jacket input
-    assembly.connect('hub_height', 'tower.wind_zref') # TODO: jacket input
-    assembly.connect('tower_d', 'tower.d') # TODO: jacket input
-    assembly.connect('rotor.ratedConditions.V', 'tower.wind_Uref1') # TODO: jacket input
-    assembly.connect('rotor.V_extreme', 'tower.wind_Uref2') # TODO: jacket input
-    assembly.connect('rotor.yaw', 'tower.yaw') # TODO: jacket input
-    assembly.connect('hub_height - nacelle.nacelle_cm[2]', 'tower.towerHeight') # TODO: jacket input
-    assembly.connect('rna.rna_mass', 'tower.top_m') # TODO: jacket input
-    assembly.connect('rna.rna_cm', 'tower.top_cm') # TODO: jacket input
-    assembly.connect('rna.rna_I_TT', 'tower.top_I') # TODO: jacket input
-    assembly.connect('rotorloads1.top_F', 'tower.top1_F') # TODO: jacket input
-    assembly.connect('rotorloads1.top_M', 'tower.top1_M') # TODO: jacket input
-    assembly.connect('rotorloads2.top_F', 'tower.top2_F') # TODO: jacket input
-    assembly.connect('rotorloads2.top_M', 'tower.top2_M') # TODO: jacket input
+    # connections to jacket
+    assembly.connect('rho', 'jacket.Windinputs.rho') # jacket input
+    assembly.connect('mu', 'jacket.Windinputs.mu') # jacket input
+    assembly.connect('-g', 'jacket.FrameAuxIns.gvector[2]') # jacket input
+    assembly.connect('hub_height', 'jacket.Windinputs.HH') # jacket input
+    assembly.connect('tower_dt', 'jacket.Twrinputs.Dt') # jacket input
+    assembly.connect('rotor.yaw', 'jacket.RNAinputs.yawangle') # jacket input
+    #assembly.connect('hub_height - nacelle.nacelle_cm[2]', 'jacket.Twrinputs.Htwr') # jacket input; TODO: probably irrelevant for this purpose, tower length is now determined in jacket
+    assembly.connect('rna.rna_mass', 'jacket.RNAinputs.mass') # jacket input
+    assembly.connect('rna.rna_cm', 'jacket.RNAinputs.CMoff') # jacket input
+    assembly.connect('rna.rna_I_TT', 'jacket.RNAinputs.I') # jacket input
+    # Rated rotor loads (Option 1)
+    assembly.connect('rotor.ratedConditions.V', 'jacket.Windinputs.U50HH') # jacket input
+    assembly.connect('rotorloads1.top_F', 'jacket.RNA_F[0:3]') # jacket input
+    assembly.connect('rotorloads1.top_M', 'jacket.RNA_F[3:6]') # jacket input
+    # Survival rotor loads (Option 2)
+    #assembly.connect('rotor.V_extreme', 'tower.Windinputs.U50HH') # jacket input
+    #assembly.connect('rotorloads2.top_F', 'jacket.RNA_F') # jacket input
+    #assembly.connect('rotorloads2.top_M', 'jacket.RNA_M') # jacket input
 
     # connections to maxdeflection
     assembly.connect('rotor.Rtip', 'maxdeflection.Rtip')
@@ -325,16 +327,16 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.precone', 'maxdeflection.precone')
     assembly.connect('rotor.tilt', 'maxdeflection.tilt')
     assembly.connect('hub.hub_system_cm', 'maxdeflection.hub_tt')
-    assembly.connect('tower.z', 'maxdeflection.tower_z') # TODO: jacket input
-    assembly.connect('tower_d', 'maxdeflection.tower_d') # TODO: jacket input
-    assembly.connect('tower.towerHeight', 'maxdeflection.towerHt') # TODO: jacket input
+    assembly.connect('jacket.Twrouts.nodes[2,:]', 'maxdeflection.tower_z') # TODO: jacket input; it doesnt like the [2,:] syntax  ---THIS is the z at CMzoff, not necessarily the top flange
+    #assembly.connect('jacket.legouts.LegObj.D', 'maxdeflection.tower_d') # TODO: jacket input - doesnt recognize logobj
+    assembly.connect('jacket.Twrouts.Htwr', 'maxdeflection.towerHt') # TODO: jacket input
 
 
 
-class TurbineSE(Assembly):
+class TurbineSE_jacket(Assembly):
 
     def configure(self):
-        configure_turbine(self)
+        configure_turbine_with_jacket(self)
 
 
 if __name__ == '__main__':
@@ -351,13 +353,7 @@ if __name__ == '__main__':
 
     rotor = turbine.rotor
     nacelle = turbine.nacelle
-    tower = turbine.tower
-    tower.replace('wind1', PowerWind())
-    tower.replace('wind2', PowerWind())
-    # onshore (no waves)
-    tower.replace('soil', TowerSoil())
-    tower.replace('tower1', TowerWithpBEAM())
-    tower.replace('tower2', TowerWithpBEAM())
+    jacket = turbine.jacket
 
     # =================
 
@@ -374,6 +370,7 @@ if __name__ == '__main__':
     turbine.g = 9.81  # (Float, m/s**2): acceleration of gravity
     turbine.downwind = False  # (Bool): flag if rotor is downwind
     turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
+    turbine.tower_dt = 3.87
     # ----------------------
 
     # ============================
@@ -573,69 +570,240 @@ if __name__ == '__main__':
 
     # =================
 
-    # === tower ===
+    # === jacket ===
 
-    # --- geometry ---
-    tower.z = [0.0, 0.5, 1.0]  # (Array): locations along unit tower, linear lofting between
-    turbine.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
-    tower.t = [0.027*1.3, 0.023*1.3, 0.019*1.3]  # (Array, m): shell thickness at corresponding locations
-    tower.n = [10, 10]  # (Array): number of finite elements between sections.  array length should be ``len(z)-1``
-    tower.L_reinforced=np.array([30.])#,30.,30.]) #[m] buckling length
-    # ---------------
+    #--- Set Jacket Input Parameters ---#
+    Jcktins=JcktGeoInputs()
+    Jcktins.nlegs =4
+    Jcktins.nbays =5
+    Jcktins.batter=12.
+    Jcktins.dck_botz =16.
+    Jcktins.weld2D   =0.5
+    Jcktins.VPFlag = True    #vertical pile T/F;  to enable piles in frame3DD set pileinputs.ndiv>0
+    Jcktins.clamped= False    #whether or not the bottom of the structure is rigidly connected. Use False when equivalent spring constants are being used.
+    Jcktins.AFflag = False  #whether or not to use apparent fixity piles
+    Jcktins.PreBuildTPLvl = 2  #if >0, the TP is prebuilt according to rules per PreBuildTP
 
-    # --- wind ---
-    tower.wind_z0 = 0.0  # (Float, m): bottom of wind profile (height of ground/sea)
-    tower.wind1.shearExp = 0.2
-    tower.wind2.shearExp = 0.2
-    # ---------------
+    #Soil inputs
+    Soilinputs=SoilGeoInputs()
+    Soilinputs.zbots   =-np.array([3.,5.,7.,15.,30.,50.])
+    Soilinputs.gammas  =np.array([10000.,10000.,10000.,10000.,10000.,10000.])
+    Soilinputs.cus     =np.array([60000.,60000.,60000.,60000.,60000.,60000.])
+    Soilinputs.phis    =np.array([26.,26.,26.,26.,26.,26])#np.array([36.,33.,26.,37.,35.,37.5])#np.array([36.,33.,26.,37.,35.,37.5])
+    Soilinputs.delta   =25.
+    Soilinputs.sndflg   =True
+    Soilinputs.PenderSwtch   =False #True
+    Soilinputs.SoilSF   =1.
 
-    # --- soil ---
-    tower.soil.rigid = 6*[True]
-    # ---------------
+    #Water and wind inputs
+    Waterinputs=WaterInputs()
+    Waterinputs.wdepth   =30.
+    Waterinputs.wlevel   =30. #Distance from bottom of structure to surface  THIS, I believe is no longer needed as piles may be negative in z, to check and remove in case
+    Waterinputs.T=12.  #Wave Period
+    Waterinputs.HW=10. #Wave Height
+    '''Windinputs=WindInputs()
+    Windinputs.HH=100. #CHECK HOW THIS COMPLIES....
+    Windinputs.U50HH=30. #assumed gust speed'''
 
-    # --- safety factors ---
-    tower.gamma_f = 1.35  # (Float): safety factor on loads
-    tower.gamma_m = 1.3  # (Float): safety factor on materials
-    tower.gamma_n = 1.0  # (Float): safety factor on consequence of failure
-    tower.gamma_b = 1.1  # (Float): buckling safety factor
-    # ---------------
+    #RNA loads              Fx-z,         Mxx-zz
+    #RNA_F=np.array([1000.e3,0.,0.,0.,0.,0.])
 
-    # --- fatigue ---
-    tower.z_DEL = 1.0/87.6*np.array([0.000, 1.327, 3.982, 6.636, 9.291, 11.945, 14.600, 17.255, 19.909,
-        22.564, 25.218, 27.873, 30.527, 33.182, 35.836, 38.491, 41.145, 43.800, 46.455, 49.109, 51.764,
-        54.418, 57.073, 59.727, 62.382, 65.036, 67.691, 70.345, 73.000, 75.655, 78.309, 80.964, 83.618,
-        86.273, 87.600])  # (Array): locations along unit tower for M_DEL
-    tower.M_DEL = 1e3*np.array([8.2940E+003, 8.1518E+003, 7.8831E+003, 7.6099E+003, 7.3359E+003,
-        7.0577E+003, 6.7821E+003, 6.5119E+003, 6.2391E+003, 5.9707E+003, 5.7070E+003, 5.4500E+003,
-        5.2015E+003, 4.9588E+003, 4.7202E+003, 4.4884E+003, 4.2577E+003, 4.0246E+003, 3.7942E+003,
-        3.5664E+003, 3.3406E+003, 3.1184E+003, 2.8977E+003, 2.6811E+003, 2.4719E+003, 2.2663E+003,
-        2.0673E+003, 1.8769E+003, 1.7017E+003, 1.5479E+003, 1.4207E+003, 1.3304E+003, 1.2780E+003,
-        1.2673E+003, 1.2761E+003])  # (Array, N*m): damage equivalent moments along tower
-    tower.gamma_fatigue = 1.35*1.3*1.0  # (Float): total safety factor for fatigue
-    tower.life = 20.0  # (Float): fatigue life of tower
-    tower.m_SN = 4  # (Int): slope of S/N curve
-    tower.DC = 80.0  # (Float): standard value of stress
-    # ---------------
+    #Pile data
+    Pilematin=MatInputs()
+    Pilematin.matname=np.array(['steel'])
+    Pilematin.E=np.array([ 25.e9])
+    Dpile=2.5#0.75 # 2.0
+    tpile=0.01
+    Lp=20. #45
 
-    # --- constraints ---
-    tower.min_d_to_t = 120.0  # (Float): minimum allowable diameter to thickness ratio
-    tower.min_taper = 0.4  # (Float): minimum allowable taper ratio from tower top to tower bottom
-    # ---------------
+    Pileinputs=PileGeoInputs()
+    Pileinputs.Pilematins=Pilematin
+    Pileinputs.ndiv=0 #3
+    Pileinputs.Dpile=Dpile
+    Pileinputs.tpile=tpile
+    Pileinputs.Lp=Lp #[m] Embedment length
 
-    # --- material properties
-    tower.sigma_y = 450000000.0  # (Float, N/m**2): yield stress
-    tower.rho = 8500.0  # (Float, kg/m**3): material density
-    tower.E = 2.1e+11  # (Float, N/m**2): material modulus of elasticity
-    tower.G = 80800000000.0  # (Float, N/m**2): material shear modulus
-    # ----------------
+    #Legs data
+    legmatin=MatInputs()
+    legmatin.matname=(['steel','steel','steel','steel'])
+    legmatin.E=np.array([2.0e11])
+    Dleg=np.array([2.0,1.8,1.8,1.8,1.8,1.8])
+    tleg=1.55*np.array([0.0254]).repeat(Dleg.size)
+    leginputs=LegGeoInputs()
+    leginputs.legZbot   = 1.0
+    leginputs.ndiv=1
+    leginputs.legmatins=legmatin
+    leginputs.Dleg=Dleg
+    leginputs.tleg=tleg
+
+    legbot_stmphin =1.5  #Distance from bottom of leg to second joint along z; must be>0
+
+    #Xbrc data
+    Xbrcmatin=MatInputs()
+    Xbrcmatin.matname=np.array(['steel']).repeat(Jcktins.nbays)
+    Xbrcmatin.E=np.array([ 2.2e11, 2.0e11,2.0e11,2.0e11,2.0e11])
+    Dbrc=np.array([1.,1.,1.0,1.0,1.0])
+    tbrc=np.array([1.,1.,1.0,1.0,1.0])*0.0254
+
+    Xbrcinputs=XBrcGeoInputs()
+    Xbrcinputs.Dbrc=Dbrc
+    Xbrcinputs.tbrc=tbrc
+    Xbrcinputs.ndiv=2#2
+    Xbrcinputs.Xbrcmatins=Xbrcmatin
+    Xbrcinputs.precalc=True   #This can be set to true if we want Xbraces to be precalculated in D and t, in which case the above set Dbrc and tbrc would be overwritten
+
+    #Mbrc data
+    Mbrcmatin=MatInputs()
+    Mbrcmatin.matname=np.array(['steel'])
+    Mbrcmatin.E=np.array([ 2.5e11])
+    Dbrc_mud=1.5
+
+    Mbrcinputs=MudBrcGeoInputs()
+    Mbrcinputs.Dbrc_mud=Dbrc_mud
+    Mbrcinputs.ndiv=2
+    Mbrcinputs.Mbrcmatins=Mbrcmatin
+    Mbrcinputs.precalc=True   #This can be set to true if we want Mudbrace to be precalculated in D and t, in which case the above set Dbrc_mud and tbrc_mud would be overwritten
+    #Hbrc data
+    Hbrcmatin=MatInputs()
+    Hbrcmatin.matname=np.array(['steel'])
+    Hbrcmatin.E=np.array([ 2.5e11])
+    Dbrc_hbrc=1.1
+
+    Hbrcinputs=HBrcGeoInputs()
+    Hbrcinputs.Dbrch=Dbrc_hbrc
+    Hbrcinputs.ndiv=0#2
+    Hbrcinputs.Hbrcmatins=Hbrcmatin
+    Hbrcinputs.precalc=True   #This can be set to true if we want Hbrace to be set=Xbrace top D and t, in which case the above set Dbrch and tbrch would be overwritten
+
+    #TP data
+    TPlumpinputs=TPlumpMass()
+    TPlumpinputs.mass=300.e3 #[kg]
+
+    TPstmpsmatin=MatInputs()
+    TPbrcmatin=MatInputs()
+    TPstemmatin=MatInputs()
+    TPbrcmatin.matname=np.array(['steel'])
+    TPbrcmatin.E=np.array([ 2.5e11])
+    TPstemmatin.matname=np.array(['steel']).repeat(2)
+    TPstemmatin.E=np.array([ 2.1e11]).repeat(2)
+
+    TPinputs=TPGeoInputs()
+    TPinputs.TPbrcmatins=TPbrcmatin
+    TPinputs.TPstemmatins=TPstemmatin
+    TPinputs.TPstmpmatins=TPstmpsmatin
+    TPinputs.Dstrut=1.6
+    TPinputs.Dgir=Dbrc_hbrc
+    TPinputs.Dbrc=1.1
+    TPinputs.hstump=0.0#1.0
+    TPinputs.stumpndiv=1#2
+    TPinputs.brcndiv=1#2
+    TPinputs.girndiv=1#2
+    TPinputs.strutndiv=1#2
+    TPinputs.stemndiv=1#2
+    TPinputs.nstems=3
+    TPinputs.Dstem=np.array([6.]).repeat(TPinputs.nstems)
+    TPinputs.tstem=np.array([0.1,0.11,0.11])
+    TPinputs.hstem=np.array([4.,3.,1.])
+
+    #Tower data
+    Twrmatin=MatInputs()
+    Twrmatin.matname=np.array(['steel'])
+    Twrmatin.E=np.array([ 2.77e11])
+    Db=5.6
+    tb=0.05
+    Dt=Db*0.55
+
+    '''Twrinputs=TwrGeoInputs()
+    Twrinputs.Twrmatins=Twrmatin
+    #Twrinputs.Htwr=70.  #Trumped by HH
+    Twrinputs.Htwr2frac=0.2   #fraction of tower height with constant x-section
+    Twrinputs.ndiv=np.array([6,6])  #ndiv for uniform and tapered section
+    Twrinputs.Db=Db
+    Twrinputs.DTRb=Db/tb
+    #Twrinputs.Dt=Dt'''
+
+    TwrRigidTop=True #False       #False=Account for RNA via math rather than a physical rigidmember
+
+    #RNA data
+    '''RNAins=RNAprops()
+    RNAins.mass=3*350.e3
+    RNAins.I[0]=86.579E+6
+    RNAins.I[1]=53.530E+6
+    RNAins.I[2]=58.112E+6
+    RNAins.CMoff[2]=2.34
+    RNAins.yawangle=45.  #angle with respect to global X, CCW looking from above, wind from left
+    RNAins.rna_weightM=True'''
+
+    #Frame3DD parameters
+    FrameAuxIns=Frame3DDaux()
+    FrameAuxIns.sh_fg=1               #shear flag-->Timoshenko
+    FrameAuxIns.deltaz=5.
+    FrameAuxIns.geo_fg=0
+    FrameAuxIns.nModes = 6             # number of desired dynamic modes of vibration
+    FrameAuxIns.Mmethod = 1            # 1: subspace Jacobi     2: Stodola
+    FrameAuxIns.lump = 0               # 0: consistent mass ... 1: lumped mass matrix
+    FrameAuxIns.tol = 1e-9             # mode shape tolerance
+    FrameAuxIns.shift = 0.0            # shift value ... for unrestrained structures
+    FrameAuxIns.gvector=np.array([0.,0.,-9.8065])    #GRAVITY
+
+    #Pass all inputs to jacket assembly
+    jacket.JcktGeoIn=Jcktins
+    jacket.Soilinputs=Soilinputs
+    jacket.Waterinputs=Waterinputs
+    #jacket.Windinputs=Windinputs
+    #jacket.RNA_F=RNA_F
+    jacket.Pileinputs=Pileinputs
+    jacket.leginputs=leginputs
+    jacket.legbot_stmphin =legbot_stmphin
+    jacket.Xbrcinputs=Xbrcinputs
+    jacket.Mbrcinputs=Mbrcinputs
+    jacket.Hbrcinputs=Hbrcinputs
+    jacket.TPlumpinputs=TPlumpinputs
+    jacket.TPinputs=TPinputs
+    #jacket.RNAinputs=RNAins
+    #jacket.Twrinputs=Twrinputs
+    jacket.Twrinputs.Twrmatins=Twrmatin
+    jacket.Twrinputs.Htwr2frac=0.2   #fraction of tower height with constant x-section
+    jacket.Twrinputs.ndiv=np.array([6,6])  #ndiv for uniform and tapered section
+    jacket.Twrinputs.Db=Db
+    jacket.Twrinputs.DTRb=Db/tb
+    jacket.TwrRigidTop=TwrRigidTop
+    jacket.FrameAuxIns=FrameAuxIns
+
     # =================
 
     # === run ===
     turbine.run()
+
+    print [c.name for c in turbine.driver.workflow]
     print 'mass rotor blades (kg) =', turbine.rotor.mass_all_blades
     print 'mass hub system (kg) =', turbine.hub.hub_system_mass
     print 'mass nacelle (kg) =', turbine.nacelle.nacelle_mass
-    print 'mass tower (kg) =', turbine.tower.mass
+    print 'mass tower (kg) =', jacket.Tower.Twrouts.mass
     print 'maximum tip deflection (m) =', turbine.maxdeflection.max_tip_deflection
     print 'ground clearance (m) =', turbine.maxdeflection.ground_clearance
+
+
+    # Jacket specific outputs
+    print
+    print('First two Freqs.= {:5.4f} and {:5.4f} Hz'.format(*jacket.Frameouts.Freqs))
+    print
+    #print component masses
+    print('jacket+TP(structural+lumped) mass (no tower, no piles) [kg] = {:6.0f}'.format(jacket.Frameouts.mass[0]+jacket.TP.TPlumpinputs.mass-jacket.Tower.Twrouts.mass))
+    print('tower mass [kg] = {:6.0f}'.format(jacket.Tower.Twrouts.mass))
+    print('TP mass structural + lumped mass [kg] = {:6.0f}'.format(jacket.TP.TPouts.mass+jacket.TP.TPlumpinputs.mass))
+    print('piles (all) mass (for assigned (not optimum) Lp [kg] = {:6.0f}'.format(jacket.Mpiles))
+    print('frame3dd model mass (structural + TP lumped) [kg] = {:6.0f}'.format(jacket.Frameouts.mass[0]+jacket.TP.TPlumpinputs.mass))
+    print
+
+    #print tower top displacement
+    print('Tower Top Displacement in Global Coordinate System [m] ={:5.4f}'.format(*jacket.Frameouts.top_deflection))
+    print
+
+    #print max API code checks
+    print('MAX member compression-bending utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.cb_util)))
+    print('MAX member tension utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.t_util)))
+    print('MAX X-joint  utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.XjntUtil)))
+    print('MAX K-joint  utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.KjntUtil)))
+
     # =================

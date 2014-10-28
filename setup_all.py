@@ -77,6 +77,7 @@ if platform.system() == 'Windows':
     subprocess.call(["easy_install", "py2exe"])
 subprocess.call(["easy_install", "pyzmq"])
 subprocess.call(["easy_install", "sphinxcontrib-bibtex"])
+subprocess.call(["easy_install", "sphinxcontrib-napoleon"])
 #subprocess.call(["easy_install", "sphinxcontrib-zopeext"])
 subprocess.call(["easy_install", "numpydoc"])
 subprocess.call(["easy_install", "ipython"])
