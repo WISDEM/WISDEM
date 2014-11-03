@@ -792,6 +792,20 @@ if __name__ == '__main__':
     print 'maximum tip deflection (m) =', turbine.maxdeflection.max_tip_deflection
     print 'ground clearance (m) =', turbine.maxdeflection.ground_clearance
 
+    # Jacket connected inputs
+    print
+    print turbine.jacket.Windinputs.rho
+    print turbine.jacket.Windinputs.mu
+    print turbine.jacket.FrameAuxIns.gvector[2]
+    print turbine.jacket.Windinputs.HH
+    print turbine.jacket.Twrinputs.Dt
+    print turbine.jacket.RNAinputs.yawangle
+    print turbine.jacket.RNAinputs.mass
+    print turbine.jacket.RNAinputs.CMoff
+    print turbine.jacket.RNAinputs.I
+    print turbine.jacket.Windinputs.U50HH
+    print turbine.jacket.RNA_F[0:3]
+    print turbine.jacket.RNA_F[3:6]
 
     # Jacket specific outputs
     print
