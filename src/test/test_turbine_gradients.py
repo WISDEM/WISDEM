@@ -50,8 +50,8 @@ class TestMaxTipDeflection(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    import turbinese.turbine
+    import wisdem.turbinese.turbine
 
-    check_for_missing_unit_tests([turbinese.turbine])
+    check_for_missing_unit_tests([wisdem.turbinese.turbine])
     unittest.main()
 

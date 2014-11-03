@@ -8,7 +8,7 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from openmdao.main.api import Assembly, Component
-from openmdao.main.datatypes.api import Float, Array, Enum, Bool
+from openmdao.main.datatypes.api import Float, Array, Enum, Bool, VarTree, Instance
 from openmdao.lib.drivers.api import FixedPointIterator
 import numpy as np
 
@@ -18,7 +18,8 @@ from commonse.rna import RNAMass, RotorLoads
 from jacketse.jacket import JacketSE
 from jacketse.jacket import JcktGeoInputs,SoilGeoInputs,WaterInputs,WindInputs,RNAprops,TPlumpMass,Frame3DDaux,\
                     MatInputs,LegGeoInputs,XBrcGeoInputs,MudBrcGeoInputs,HBrcGeoInputs,TPGeoInputs,PileGeoInputs,\
-                    TwrGeoInputs
+                    TwrGeoInputs, LegGeoOutputs, TwrGeoOutputs
+from commonse.Tube import Tube
 from drivewpact.drive import DriveWPACT
 from drivewpact.hub import HubWPACT
 from commonse.csystem import DirectionVector
@@ -37,11 +38,12 @@ class MaxTipDeflection(Component):
     tilt = Float(iotype='in', units='deg')
     hub_tt = Array(iotype='in', units='m', desc='location of hub relative to tower-top in yaw-aligned c.s.')
     tower_z = Array(iotype='in', units='m')
-    tower_d = Array(np.array([3.87, 3.87]),iotype='in', units='m') #TODO remove default
+    #tower_d = Array(np.array([3.87, 3.87]),iotype='in', units='m') #TODO remove default
     towerHt = Float(iotype='in', units='m')
 
     max_tip_deflection = Float(iotype='out', units='m', desc='clearance between undeflected blade and tower')
     ground_clearance = Float(iotype='out', units='m', desc='distance between blade tip and ground')
+    Twrouts  = VarTree(TwrGeoOutputs(), iotype='in', desc='Basic Output data for Tower')
 
     def execute(self):
 
@@ -52,7 +54,7 @@ class MaxTipDeflection(Component):
         # find corresponding radius of tower
         ztower = (self.towerHt + self.hub_tt[2] + blade_yaw.z)/self.towerHt  # nondimensional location
         # rtower = np.interp(ztower, self.tower_z, self.tower_d) / 2.0
-        dtower, ddtower_dztower, ddtower_dtowerz, ddtower_dtowerd = interp_with_deriv(ztower, self.tower_z, self.tower_d)
+        dtower, ddtower_dztower, ddtower_dtowerz, ddtower_dtowerd = interp_with_deriv(ztower, self.tower_z, self.Twrouts.TwrObj.D)
         rtower = dtower / 2.0
         self.drtower_dztower = ddtower_dztower / 2.0
         self.drtower_dtowerz = ddtower_dtowerz / 2.0
@@ -327,9 +329,9 @@ def configure_turbine_with_jacket(assembly, with_new_nacelle=True, flexible_blad
     assembly.connect('rotor.precone', 'maxdeflection.precone')
     assembly.connect('rotor.tilt', 'maxdeflection.tilt')
     assembly.connect('hub.hub_system_cm', 'maxdeflection.hub_tt')
-    assembly.connect('jacket.Twrouts.nodes[2,:]', 'maxdeflection.tower_z') # TODO: jacket input; it doesnt like the [2,:] syntax  ---THIS is the z at CMzoff, not necessarily the top flange
-    #assembly.connect('jacket.legouts.LegObj.D', 'maxdeflection.tower_d') # TODO: jacket input - doesnt recognize logobj
-    assembly.connect('jacket.Twrouts.Htwr', 'maxdeflection.towerHt') # TODO: jacket input
+    assembly.connect('jacket.Twrouts.nodes[2,:]', 'maxdeflection.tower_z') # jacket input, had to make array dimensions explicit on instantiation for this connect to work ---THIS is the z at CMzoff, not necessarily the top flange
+    assembly.connect('jacket.Twrouts', 'maxdeflection.Twrouts') # TODO: jacket input - doesnt recognize logobj
+    assembly.connect('jacket.Twrouts.Htwr', 'maxdeflection.towerHt') # jacket input
 
 
 
@@ -348,7 +350,7 @@ if __name__ == '__main__':
     from commonse.environment import PowerWind, TowerSoil
     from commonse.utilities import print_vars
 
-    turbine = TurbineSE()
+    turbine = TurbineSE_jacket()
     # print_vars(turbine, list_type='inputs', prefix='turbine')
 
     rotor = turbine.rotor
@@ -771,6 +773,13 @@ if __name__ == '__main__':
     jacket.FrameAuxIns=FrameAuxIns
 
     # =================
+
+    import logging
+    logging.getLogger().setLevel(logging.DEBUG)
+    from openmdao.main.api import enable_console
+    enable_console()
+
+
 
     # === run ===
     turbine.run()
