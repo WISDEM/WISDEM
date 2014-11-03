@@ -574,17 +574,17 @@ if __name__ == '__main__':
 
     # === jacket ===
 
-    #--- Set Jacket Input Parameters ---#
     Jcktins=JcktGeoInputs()
     Jcktins.nlegs =4
     Jcktins.nbays =5
     Jcktins.batter=12.
     Jcktins.dck_botz =16.
+    Jcktins.dck_width=2*6.
     Jcktins.weld2D   =0.5
     Jcktins.VPFlag = True    #vertical pile T/F;  to enable piles in frame3DD set pileinputs.ndiv>0
     Jcktins.clamped= False    #whether or not the bottom of the structure is rigidly connected. Use False when equivalent spring constants are being used.
     Jcktins.AFflag = False  #whether or not to use apparent fixity piles
-    Jcktins.PreBuildTPLvl = 2  #if >0, the TP is prebuilt according to rules per PreBuildTP
+    Jcktins.PreBuildTPLvl = 5  #if >0, the TP is prebuilt according to rules per PreBuildTP
 
     #Soil inputs
     Soilinputs=SoilGeoInputs()
@@ -603,12 +603,14 @@ if __name__ == '__main__':
     Waterinputs.wlevel   =30. #Distance from bottom of structure to surface  THIS, I believe is no longer needed as piles may be negative in z, to check and remove in case
     Waterinputs.T=12.  #Wave Period
     Waterinputs.HW=10. #Wave Height
-    '''Windinputs=WindInputs()
-    Windinputs.HH=100. #CHECK HOW THIS COMPLIES....
-    Windinputs.U50HH=30. #assumed gust speed'''
+    Waterinputs.Cd=3.  #Drag Coefficient, enhanced to account for marine growth and other members not calculated
+    Waterinputs.Cm=8.#2.  #ADded mass Coefficient
 
-    #RNA loads              Fx-z,         Mxx-zz
-    #RNA_F=np.array([1000.e3,0.,0.,0.,0.,0.])
+    #Windinputs=WindInputs()
+    #Windinputs.Cdj=4.  #Drag Coefficient for jacket members, enhanced to account for TP drag not calculated otherwise
+    #Windinputs.Cdt=2  #Drag Coefficient for tower, enhanced to account for TP drag not calculated otherwise
+    #Windinputs.HH=100. #CHECK HOW THIS COMPLIES....
+    #Windinputs.U50HH=30. #assumed gust speed
 
     #Pile data
     Pilematin=MatInputs()
@@ -627,10 +629,10 @@ if __name__ == '__main__':
 
     #Legs data
     legmatin=MatInputs()
-    legmatin.matname=(['steel','steel','steel','steel'])
-    legmatin.E=np.array([2.0e11])
-    Dleg=np.array([2.0,1.8,1.8,1.8,1.8,1.8])
-    tleg=1.55*np.array([0.0254]).repeat(Dleg.size)
+    legmatin.matname=(['heavysteel','heavysteel','heavysteel','heavysteel'])
+    #legmatin.E=np.array([2.0e11])
+    Dleg=np.array([1.5,1.5,1.5,1.5,1.5,1.5])
+    tleg=1.5*np.array([0.0254]).repeat(Dleg.size)
     leginputs=LegGeoInputs()
     leginputs.legZbot   = 1.0
     leginputs.ndiv=1
@@ -642,8 +644,8 @@ if __name__ == '__main__':
 
     #Xbrc data
     Xbrcmatin=MatInputs()
-    Xbrcmatin.matname=np.array(['steel']).repeat(Jcktins.nbays)
-    Xbrcmatin.E=np.array([ 2.2e11, 2.0e11,2.0e11,2.0e11,2.0e11])
+    Xbrcmatin.matname=np.array(['heavysteel']).repeat(Jcktins.nbays)
+    #Xbrcmatin.E=np.array([ 2.2e11, 2.0e11,2.0e11,2.0e11,2.0e11])
     Dbrc=np.array([1.,1.,1.0,1.0,1.0])
     tbrc=np.array([1.,1.,1.0,1.0,1.0])*0.0254
 
@@ -652,22 +654,23 @@ if __name__ == '__main__':
     Xbrcinputs.tbrc=tbrc
     Xbrcinputs.ndiv=2#2
     Xbrcinputs.Xbrcmatins=Xbrcmatin
-    Xbrcinputs.precalc=True   #This can be set to true if we want Xbraces to be precalculated in D and t, in which case the above set Dbrc and tbrc would be overwritten
+    Xbrcinputs.precalc=False #True   #This can be set to true if we want Xbraces to be precalculated in D and t, in which case the above set Dbrc and tbrc would be overwritten
 
     #Mbrc data
     Mbrcmatin=MatInputs()
-    Mbrcmatin.matname=np.array(['steel'])
-    Mbrcmatin.E=np.array([ 2.5e11])
+    Mbrcmatin.matname=np.array(['heavysteel'])
+    #Mbrcmatin.E=np.array([ 2.5e11])
     Dbrc_mud=1.5
 
     Mbrcinputs=MudBrcGeoInputs()
     Mbrcinputs.Dbrc_mud=Dbrc_mud
     Mbrcinputs.ndiv=2
     Mbrcinputs.Mbrcmatins=Mbrcmatin
-    Mbrcinputs.precalc=True   #This can be set to true if we want Mudbrace to be precalculated in D and t, in which case the above set Dbrc_mud and tbrc_mud would be overwritten
+    Mbrcinputs.precalc=False #True   #This can be set to true if we want Mudbrace to be precalculated in D and t, in which case the above set Dbrc_mud and tbrc_mud would be overwritten
+
     #Hbrc data
     Hbrcmatin=MatInputs()
-    Hbrcmatin.matname=np.array(['steel'])
+    Hbrcmatin.matname=np.array(['heavysteel'])
     Hbrcmatin.E=np.array([ 2.5e11])
     Dbrc_hbrc=1.1
 
@@ -679,23 +682,28 @@ if __name__ == '__main__':
 
     #TP data
     TPlumpinputs=TPlumpMass()
-    TPlumpinputs.mass=300.e3 #[kg]
+    TPlumpinputs.mass=200.e3 #[kg]
 
     TPstmpsmatin=MatInputs()
     TPbrcmatin=MatInputs()
     TPstemmatin=MatInputs()
-    TPbrcmatin.matname=np.array(['steel'])
-    TPbrcmatin.E=np.array([ 2.5e11])
-    TPstemmatin.matname=np.array(['steel']).repeat(2)
-    TPstemmatin.E=np.array([ 2.1e11]).repeat(2)
+    TPbrcmatin.matname=np.array(['heavysteel'])
+    #TPbrcmatin.E=np.array([ 2.5e11])
+    TPstemmatin.matname=np.array(['heavysteel']).repeat(2)
+    #TPstemmatin.E=np.array([ 2.1e11]).repeat(2)
 
     TPinputs=TPGeoInputs()
     TPinputs.TPbrcmatins=TPbrcmatin
     TPinputs.TPstemmatins=TPstemmatin
     TPinputs.TPstmpmatins=TPstmpsmatin
-    TPinputs.Dstrut=1.6
+    TPinputs.Dstrut=leginputs.Dleg[-1]
+    TPinputs.tstrut=leginputs.tleg[-1]
     TPinputs.Dgir=Dbrc_hbrc
+    TPinputs.tgir=0.0254
     TPinputs.Dbrc=1.1
+    TPinputs.Dbrc=TPinputs.Dgir
+    TPinputs.tbrc=TPinputs.tgir
+
     TPinputs.hstump=0.0#1.0
     TPinputs.stumpndiv=1#2
     TPinputs.brcndiv=1#2
@@ -705,24 +713,22 @@ if __name__ == '__main__':
     TPinputs.nstems=3
     TPinputs.Dstem=np.array([6.]).repeat(TPinputs.nstems)
     TPinputs.tstem=np.array([0.1,0.11,0.11])
-    TPinputs.hstem=np.array([4.,3.,1.])
+    TPinputs.hstem=np.array([6./TPinputs.nstems]).repeat(TPinputs.nstems)
 
     #Tower data
     Twrmatin=MatInputs()
-    Twrmatin.matname=np.array(['steel'])
-    Twrmatin.E=np.array([ 2.77e11])
-    Db=5.6
-    tb=0.05
-    Dt=Db*0.55
-
+    Twrmatin.matname=np.array(['heavysteel'])
+    #Twrmatin.E=np.array([ 2.77e11])
     '''Twrinputs=TwrGeoInputs()
     Twrinputs.Twrmatins=Twrmatin
     #Twrinputs.Htwr=70.  #Trumped by HH
     Twrinputs.Htwr2frac=0.2   #fraction of tower height with constant x-section
-    Twrinputs.ndiv=np.array([6,6])  #ndiv for uniform and tapered section
-    Twrinputs.Db=Db
-    Twrinputs.DTRb=Db/tb
-    #Twrinputs.Dt=Dt'''
+    Twrinputs.ndiv=np.array([6,12])  #ndiv for uniform and tapered section
+    Twrinputs.DeltaZmax= 6. #[m], maximum FE element length allowed in the tower members (i.e. the uniform and the tapered members)
+    Twrinputs.Db=5.6
+    Twrinputs.DTRb=130.
+    Twrinputs.DTRt=150.'''
+    #Twrinputs.Dt=0.55*Twrinputs.Db
 
     TwrRigidTop=True #False       #False=Account for RNA via math rather than a physical rigidmember
 
@@ -736,6 +742,9 @@ if __name__ == '__main__':
     RNAins.yawangle=45.  #angle with respect to global X, CCW looking from above, wind from left
     RNAins.rna_weightM=True'''
 
+    #RNA loads              Fx-z,         Mxx-zz
+    #RNA_F=np.array([1000.e3,0.,0.,0.,0.,0.])
+
     #Frame3DD parameters
     FrameAuxIns=Frame3DDaux()
     FrameAuxIns.sh_fg=1               #shear flag-->Timoshenko
@@ -746,13 +755,15 @@ if __name__ == '__main__':
     FrameAuxIns.lump = 0               # 0: consistent mass ... 1: lumped mass matrix
     FrameAuxIns.tol = 1e-9             # mode shape tolerance
     FrameAuxIns.shift = 0.0            # shift value ... for unrestrained structures
-    FrameAuxIns.gvector=np.array([0.,0.,-9.8065])    #GRAVITY
+    #FrameAuxIns.gvector=np.array([0.,0.,-9.8065])    #GRAVITY
 
     #Pass all inputs to jacket assembly
     jacket.JcktGeoIn=Jcktins
     jacket.Soilinputs=Soilinputs
     jacket.Waterinputs=Waterinputs
     #jacket.Windinputs=Windinputs
+    jacket.Windinputs.Cdj = 4.
+    jacket.Windinputs.Cdt = 2.
     #jacket.RNA_F=RNA_F
     jacket.Pileinputs=Pileinputs
     jacket.leginputs=leginputs
@@ -766,9 +777,11 @@ if __name__ == '__main__':
     #jacket.Twrinputs=Twrinputs
     jacket.Twrinputs.Twrmatins=Twrmatin
     jacket.Twrinputs.Htwr2frac=0.2   #fraction of tower height with constant x-section
-    jacket.Twrinputs.ndiv=np.array([6,6])  #ndiv for uniform and tapered section
-    jacket.Twrinputs.Db=Db
-    jacket.Twrinputs.DTRb=Db/tb
+    jacket.Twrinputs.ndiv=np.array([6,12])  #ndiv for uniform and tapered section
+    jacket.Twrinputs.DeltaZmax = 6.
+    jacket.Twrinputs.Db=5.6
+    jacket.Twrinputs.DTRb=130.
+    jacket.Twrinputs.DTRt=150.
     jacket.TwrRigidTop=TwrRigidTop
     jacket.FrameAuxIns=FrameAuxIns
 
