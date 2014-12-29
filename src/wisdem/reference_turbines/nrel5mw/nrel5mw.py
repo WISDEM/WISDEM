@@ -273,7 +273,7 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
     turbine.tower.z = [0.0, 0.5, 1.0]  # (Array): locations along unit tower, linear lofting between
     turbine.tower.t = [0.027*1.3, 0.023*1.3, 0.019*1.3]  # (Array, m): shell thickness at corresponding locations
     turbine.tower.n = [10, 10]  # (Array): number of finite elements between sections.  array length should be ``len(z)-1``
-    turbine.tower.L_reinforced=np.array([30.])#,30.,30.]) #[m] buckling length
+    turbine.tower.L_reinforced=np.array([30., 30., 30.])#,30.,30.]) #[m] buckling length
     turbine.tower.downwind = False  # (Bool): flag if rotor is downwind
     # ---------------
 
