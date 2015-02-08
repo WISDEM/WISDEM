@@ -11,7 +11,7 @@ from openmdao.main.api import Assembly, Component
 from openmdao.main.datatypes.api import Int, Float, Enum, VarTree, Bool, Str, Array
 
 
-from fusedwind.plant_cost.fused_finance import configure_extended_financial_analysis, ExtendedFinancialAnalysis
+from fusedwind.plant_cost.fused_finance import configure_base_financial_analysis, configure_extended_financial_analysis, ExtendedFinancialAnalysis
 from fusedwind.plant_cost.fused_opex import OPEXVarTree
 from fusedwind.plant_cost.fused_bos_costs import BOSVarTree
 from fusedwind.interface import implement_base
@@ -22,8 +22,8 @@ from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
 from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
 from plant_costsse.ecn_offshore_opex.ecn_offshore_opex  import opex_ecn_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
-from fusedwind.plant_flow.basic_aep import aep_assembly
-#from landbos import LandBOS
+from fusedwind.plant_flow.basic_aep import aep_assembly, aep_weibull_assembly
+from landbos import LandBOS
 
 # Current configuration assembly options for LCOE SE
 # Turbine Costs
@@ -78,7 +78,7 @@ def configure_lcoe_with_turb_costs(assembly):
 def configure_lcoe_with_csm_bos(assembly):
     """
     bos inputs:
-    		bos_multiplier = Float
+        bos_multiplier = Float
     """
 
     assembly.replace('bos_a', bos_csm_assembly())
@@ -179,6 +179,32 @@ def configure_lcoe_with_basic_aep(assembly):
     assembly.connect('array_losses','aep_a.array_losses')
     assembly.connect('other_losses','aep_a.other_losses')
 
+def configure_lcoe_with_weibull_aep(assembly):
+    """
+    aep inputs
+        power_curve    = Array([], iotype='in', desc='wind turbine power curve')
+        array_losses = Float
+        other_losses = Float
+        A = Float
+        k = Float
+    """
+
+    assembly.add('array_losses',Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant'))
+    assembly.add('other_losses',Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc'))
+    assembly.add('A',Float(8.2,iotype='in', desc='scale factor'))
+    assembly.add('k', Float(2.0,iotype='in', desc='shape or form factor'))
+
+    assembly.replace('aep_a', aep_weibull_assembly())
+    
+    assembly.connect('turbine_number', 'aep_a.turbine_number')
+    assembly.connect('machine_rating','aep_a.machine_rating')
+    assembly.connect('array_losses','aep_a.array_losses')
+    assembly.connect('other_losses','aep_a.other_losses')
+    assembly.connect('A','aep_a.A')
+    assembly.connect('k','aep_a.k')
+    assembly.connect('rotor.V','aep_a.wind_curve')
+    assembly.connect('rotor.P','aep_a.power_curve')
+
 
 # Finance
 def configure_lcoe_with_csm_fin(assembly):
@@ -256,75 +282,76 @@ class lcoe_se_assembly(Assembly):
         super(lcoe_se_assembly,self).__init__()
 
     def configure(self):
-		    """
-		    tcc_a inputs:
-		        advanced_blade = Bool
-		        offshore = Bool
-		        assemblyCostMultiplier = Float
-		        overheadCostMultiplier = Float
-		        profitMultiplier = Float
-		        transportMultiplier = Float
-		    aep inputs:
-		        array_losses = Float
-		        other_losses = Float
-		    fin inputs:
-		        fixed_charge_rate = Float
-		        construction_finance_rate = Float
-		        tax_rate = Float
-		        discount_rate = Float
-		        construction_time = Float
-		    bos inputs:
-		        bos_multiplier = Float
-		    inputs:
-		        sea_depth
-		        year
-		        month
-		        project lifetime
-		    if csm opex additional inputs:
-		        availability = Float()
-		    if openwind opex additional inputs:
-		        power_curve 
-		        rpm 
-		        ct 
-		    if with_landbos additional inputs:
-		        voltage
-		        distInter
-		        terrain
-		        layout
-		        soil
-		    """
-		
-		    # configure base asesmbly
-		    configure_extended_financial_analysis(self)
-		
-		    # add TurbineSE assembly
-		    configure_turbine(self, self.with_new_nacelle, self.flexible_blade, self.with_3pt_drive)
-		
-		    # replace TCC with turbine_costs
-		    configure_lcoe_with_turb_costs(self)
-		
-		    # replace BOS with either CSM or landbos
-		    if self.with_landbos:
-		        configure_lcoe_with_landbos(self)
-		    else:
-		        configure_lcoe_with_csm_bos(self)
-		    
-		    # replace OPEX with CSM or ECN opex and add AEP
-		    if self.with_ecn_opex:  
-		        configure_lcoe_with_basic_aep(self)
-		        configure_lcoe_with_ecn_opex(self,ecn_file)     
-		        self.connect('opex_a.availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model 
-		    else:
-		        configure_lcoe_with_basic_aep(self)
-		        configure_lcoe_with_csm_opex(self)
-		        self.add('availability',Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant'))
-		        self.connect('availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model
-		
-		    # replace Finance with CSM Finance
-		    configure_lcoe_with_csm_fin(self)
+        """
+        tcc_a inputs:
+            advanced_blade = Bool
+            offshore = Bool
+            assemblyCostMultiplier = Float
+            overheadCostMultiplier = Float
+            profitMultiplier = Float
+            transportMultiplier = Float
+        aep inputs:
+            array_losses = Float
+            other_losses = Float
+        fin inputs:
+            fixed_charge_rate = Float
+            construction_finance_rate = Float
+            tax_rate = Float
+            discount_rate = Float
+            construction_time = Float
+        bos inputs:
+            bos_multiplier = Float
+        inputs:
+            sea_depth
+            year
+            month
+            project lifetime
+        if csm opex additional inputs:
+            availability = Float()
+        if openwind opex additional inputs:
+            power_curve 
+            rpm 
+            ct 
+        if with_landbos additional inputs:
+            voltage
+            distInter
+            terrain
+            layout
+            soil
+        """
+    
+        # configure base asesmbly
+        configure_base_financial_analysis(self)
+    
+        # add TurbineSE assembly
+        configure_turbine(self, self.with_new_nacelle, self.flexible_blade, self.with_3pt_drive)
+    
+        # replace TCC with turbine_costs
+        configure_lcoe_with_turb_costs(self)
+    
+        # replace BOS with either CSM or landbos
+        if self.with_landbos:
+            configure_lcoe_with_landbos(self)
+        else:
+            configure_lcoe_with_csm_bos(self)
+
+        # replace AEP with weibull AEP (TODO: option for basic aep)
+        configure_lcoe_with_weibull_aep(self)
+        
+        # replace OPEX with CSM or ECN opex and add AEP
+        if self.with_ecn_opex:  
+            configure_lcoe_with_ecn_opex(self,ecn_file)     
+            self.connect('opex_a.availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model 
+        else:
+            configure_lcoe_with_csm_opex(self)
+            self.add('availability',Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant'))
+            self.connect('availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model
+    
+        # replace Finance with CSM Finance
+        configure_lcoe_with_csm_fin(self)
 
 
-def example(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False, with_ecn_opex=False, ecn_file=None,with_openwind=False,ow_file=None,ow_wkbook=None):
+def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False, with_ecn_opex=False, ecn_file=None,with_openwind=False,ow_file=None,ow_wkbook=None):
     """
     Inputs:
         wind_class : str ('I', 'III', 'Offshore' - selected wind class for project)
@@ -375,10 +402,12 @@ def example(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=Fal
     lcoe_se.layout = 'SIMPLE'
     lcoe_se.soil = 'STANDARD' '''
 
-    # aep ====
+    # aep ==== # based on COE review for land-based machines
     if not with_openwind:
         lcoe_se.array_losses = 0.059
-    lcoe_se.other_losses = 0.0
+        lcoe_se.A = 8.9 # weibull of 7.25 at 50 m with shear exp of 0.143
+        lcoe_se.k = 2.0
+    lcoe_se.other_losses = 0.101
     if not with_ecn_opex:
         lcoe_se.availability = 0.94
 
@@ -455,34 +484,34 @@ if __name__ == '__main__':
     with_3pt_drive = False
     with_ecn_opex = False
     ecn_file = ''
-    example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
 
     #with_3pt_drive = True
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) )
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) )
 
     #with_new_nacelle = False
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
 
     #with_landbos = True
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
 
     #flexible_blade = True
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
 
     # NREL 5 MW in land-based wind plant with low winds (as class III)
     #wind_class = 'III'
     #with_new_nacelle = True
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
 
     # NREL 5 MW in offshore plant with high winds and 20 m sea depth (as class I)
     #wind_class = 'Offshore'
     #sea_depth = 20.0
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
     
     # NREL 5 MW in offshore plant with high winds, 20 m sea depth and ECN opex model
     #wind_class = 'Offshore'
     #sea_depth = 20.0
     #with_ecn_opex = True
     #ecn_file = 'C:/Models/ECN Model/ECN O&M Model.xls'
-    #example(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
    
