@@ -41,7 +41,7 @@ def install_url(f, url, subdir=None, plugin=True, force=False):
         if (plugin):
             res = subprocess.call(["plugin", "install"])
         else:
-            res = subprocess.call(["python", "setup.py", "install"])
+            res = subprocess.call(["python", "setup.py", "config", "--compiler=mingw32", "build", "--compiler=mingw32", "install"])
         print "subprocess returned ", res
     except:
         print "plugin %s FAILED to install correctly" % f       
