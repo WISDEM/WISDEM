@@ -248,12 +248,12 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     # TODO: should come from rotor (these are FAST outputs)
     turbine.nacelle.DrivetrainEfficiency = 0.95
-    turbine.nacelle.rotor_bending_moment_x = 330770.0# Nm
+    '''turbine.nacelle.rotor_bending_moment_x = 330770.0# Nm
     turbine.nacelle.rotor_bending_moment_y = -16665000.0 # Nm
     turbine.nacelle.rotor_bending_moment_z = 2896300.0 # Nm
     turbine.nacelle.rotor_force_x = 599610.0 # N
     turbine.nacelle.rotor_force_y = 186780.0 # N
-    turbine.nacelle.rotor_force_z = -842710.0 # N
+    turbine.nacelle.rotor_force_z = -842710.0 # N'''
 
     #turbine.nacelle.h0_rear = 1.35 # only used in drive smooth
     #turbine.nacelle.h0_front = 1.7

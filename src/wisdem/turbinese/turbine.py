@@ -175,7 +175,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.add('mu', Float(1.81206e-5, iotype='in', units='kg/m/s', desc='dynamic viscosity of air', deriv_ignore=True))
     assembly.add('shear_exponent', Float(0.2, iotype='in', desc='shear exponent', deriv_ignore=True))
     assembly.add('hub_height', Float(90.0, iotype='in', units='m', desc='hub height'))
-    assembly.add('turbine_class', Enum('I', ('I', 'II', 'III'), iotype='in', desc='IEC turbine class'))
+    assembly.add('turbine_class', Enum('I', ('I', 'II', 'III', 'IV'), iotype='in', desc='IEC turbine class'))
     assembly.add('turbulence_class', Enum('B', ('A', 'B', 'C'), iotype='in', desc='IEC turbulence class class'))
     assembly.add('g', Float(9.81, iotype='in', units='m/s**2', desc='acceleration of gravity', deriv_ignore=True))
     assembly.add('cdf_reference_height_wind_speed', Float(90.0, iotype='in', desc='reference hub height for IEC wind speed (used in CDF calculation)'))
@@ -240,28 +240,41 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.hub_diameter', 'hub.blade_root_diameter')
     assembly.connect('rotor.nBlades', 'hub.blade_number')
     if with_new_nacelle:
-        assembly.connect('nacelle.MB1_location','hub.MB1_location')
+        # TODO: circular dependency
+        #assembly.connect('nacelle.MB1_location','hub.MB1_location')
+        #assembly.connect('nacelle.L_rb','hub.L_rb')
+        assembly.add('dummyMB_location',Array(np.array([0.0, 0.0, 0.0]),iotype='in', desc='dummary variable for MB location to avoid circular dependency'))
+        assembly.connect('dummyMB_location','hub.MB1_location')
+        assembly.add('dummyL_rb',Float(5.0,iotype='in', desc='L_rb dummy')) # using overhang length - need to update DriveSE to move hub cm calculation to nacelle
+        assembly.connect('dummyL_rb','hub.L_rb')
         assembly.connect('rotor.tilt','hub.gamma')
-        assembly.connect('nacelle.L_rb','hub.L_rb')
+
 
 
     # connections to nacelle #TODO: fatigue option variables
     assembly.connect('rotor.diameter', 'nacelle.rotor_diameter')
-    if not with_new_nacelle:
-        assembly.connect('rotor.mass_all_blades + hub.hub_system_mass', 'nacelle.rotor_mass') #DODO: circular dependency if using DriveSE (nacelle csm --> hub, hub mass --> nacelle)
-    if with_new_nacelle:
-        assembly.connect('rotor.nBlades','nacelle.blade_number')
-        assembly.connect('rotor.tilt','nacelle.shaft_angle')
-        assembly.connect('333.3 * machine_rating / 1000.0','nacelle.shrink_disc_mass')
     assembly.connect('1.5 * rotor.ratedConditions.Q', 'nacelle.rotor_torque')
     assembly.connect('rotor.ratedConditions.T', 'nacelle.rotor_thrust')
     assembly.connect('rotor.ratedConditions.Omega', 'nacelle.rotor_speed')
     assembly.connect('machine_rating', 'nacelle.machine_rating')
     assembly.connect('rotor.root_bending_moment', 'nacelle.rotor_bending_moment')
     assembly.connect('generator_speed/rotor.ratedConditions.Omega', 'nacelle.gear_ratio')
-    '''if  with_new_nacelle:
-        assembly.connect('rotor.g', 'nacelle.g')''' # Only drive smooth taking g from rotor; TODO: update when drive_smooth is updated
     assembly.connect('tower_d[-1]', 'nacelle.tower_top_diameter')  # OpenMDAO circular dependency issue
+    assembly.connect('rotor.mass_all_blades + hub.hub_system_mass', 'nacelle.rotor_mass') # assuming not already in rotor force / moments
+    # variable connections for new nacelle
+    if with_new_nacelle:
+        assembly.connect('rotor.nBlades','nacelle.blade_number')
+        assembly.connect('rotor.tilt','nacelle.shaft_angle')
+        assembly.connect('333.3 * machine_rating / 1000.0','nacelle.shrink_disc_mass')
+        assembly.connect('rotor.hub_diameter','nacelle.blade_root_diameter')
+        assembly.connect('rotor.ratedConditions.Q','nacelle.rotor_bending_moment_x')
+        #assembly.connect('...','nacelle.rotor_bending_moment_y') # CCblade doesn't provide these other components
+        #assembly.connect('...','nacelle.rotor_bending_moment_z')
+        assembly.connect('rotor.ratedConditions.T','nacelle.rotor_force_x')
+        #assembly.connect('...','nacelle.rotor_force_y')
+        #assembly.connect('...','nacelle.rotor_force_z')
+    '''if  with_new_nacelle:
+        assembly.connect('rotor.g', 'nacelle.g') # Only drive smooth taking g from rotor; TODO: update when drive_smooth is updated'''
 
 
     # connections to rna

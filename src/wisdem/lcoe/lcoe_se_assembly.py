@@ -117,6 +117,8 @@ def configure_lcoe_with_landbos(assembly):
         desc='layout options'))
     assembly.add('soil', Enum('STANDARD', ('STANDARD', 'BOUYANT'), iotype='in',
         desc='soil options'))
+    assembly.add('transportDist',Float(0.0, iotype='in', units='mi', desc='transportation distance'))
+    # TODO: add rest of land-bos connections
 
     # connections to bos
     assembly.connect('machine_rating', 'bos_a.machine_rating')
@@ -130,6 +132,7 @@ def configure_lcoe_with_landbos(assembly):
     assembly.connect('terrain', 'bos_a.terrain')
     assembly.connect('layout', 'bos_a.layout')
     assembly.connect('soil', 'bos_a.soil')
+    assembly.connect('transportDist','bos_a.transportDist')
 
 # Operational Expenditures
 def configure_lcoe_with_csm_opex(assembly):
