@@ -249,7 +249,8 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         assembly.connect('dummyL_rb','hub.L_rb')
         assembly.connect('rotor.tilt','hub.gamma')
 
-
+    # connections to blade_moment_transform from rotor
+    
 
     # connections to nacelle #TODO: fatigue option variables
     assembly.connect('rotor.diameter', 'nacelle.rotor_diameter')
