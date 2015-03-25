@@ -426,7 +426,8 @@ if __name__ == '__main__':
 
     # --- airfoil files ---
     import rotorse
-    basepath = os.path.join(os.path.dirname(rotorse.__file__), '5MW_AFFiles')
+#    basepath = os.path.join(os.path.dirname(rotorse.__file__), '5MW_AFFiles')
+    basepath = os.path.join('..','reference_turbines','nrel5mw','airfoils')
     # basepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '5MW_AFFiles')
 
     # load all airfoils
@@ -475,7 +476,8 @@ if __name__ == '__main__':
     # ----------------------
 
     # --- materials and composite layup  ---
-    basepath = os.path.join(os.path.dirname(rotorse.__file__), '5MW_PreCompFiles')
+#    basepath = os.path.join(os.path.dirname(rotorse.__file__), '5MW_PreCompFiles')
+    basepath = os.path.join('..','reference_turbines','nrel5mw','blade')
     # basepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), '5MW_PrecompFiles')
 
     materials = Orthotropic2DMaterial.listFromPreCompFile(os.path.join(basepath, 'materials.inp'))
