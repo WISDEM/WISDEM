@@ -21,7 +21,7 @@ from commonse.csystem import DirectionVector
 from commonse.utilities import interp_with_deriv, hstack, vstack
 from drivese.drive_smooth import NacelleTS
 from drivese.drive import Drive4pt, Drive3pt
-from drivese.hub import HubSE
+from drivese.hub import HubSE, Hub_System_Adder_drive
 
 
 class MaxTipDeflection(Component):
