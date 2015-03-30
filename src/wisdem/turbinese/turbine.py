@@ -679,9 +679,9 @@ if __name__ == '__main__':
     print 'mass tower (kg) =', turbine.tower.mass
     print 'maximum tip deflection (m) =', turbine.maxdeflection.max_tip_deflection
     print 'ground clearance (m) =', turbine.maxdeflection.ground_clearance
-    print
-    print '"Torque":',turbine.nacelle.rotor_torque
-    print 'Mx:',turbine.nacelle.rotor_bending_moment_x
-    print 'My:',turbine.nacelle.rotor_bending_moment_y
-    print 'Mz:',turbine.nacelle.rotor_bending_moment_z
+    # print
+    # print '"Torque":',turbine.nacelle.rotor_torque
+    # print 'Mx:',turbine.nacelle.rotor_bending_moment_x
+    # print 'My:',turbine.nacelle.rotor_bending_moment_y
+    # print 'Mz:',turbine.nacelle.rotor_bending_moment_z
     # =================
