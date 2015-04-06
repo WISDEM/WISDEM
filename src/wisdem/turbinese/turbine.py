@@ -21,7 +21,7 @@ from commonse.csystem import DirectionVector
 from commonse.utilities import interp_with_deriv, hstack, vstack
 from drivese.drive_smooth import NacelleTS
 from drivese.drive import Drive4pt, Drive3pt
-from drivese.drivese_utils import blade_moment_transform
+from drivese.drivese_utils import blade_moment_transform, blade_force_transform
 from drivese.hub import HubSE, Hub_System_Adder_drive
 
 
@@ -191,6 +191,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         assembly.add('hub',HubSE())
         assembly.add('hubSystem',Hub_System_Adder_drive())
         assembly.add('moments',blade_moment_transform())
+        assembly.add('forces',blade_force_transform())
         if with_3pt_drive:
             assembly.add('nacelle', Drive3pt())
         else:
@@ -223,7 +224,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.driver.workflow.add(['hub', 'nacelle', 'tower', 'maxdeflection', 'rna', 'rotorloads1', 'rotorloads2'])
 
     if with_new_nacelle:
-        assembly.driver.workflow.add(['hubSystem','moments'])
+        assembly.driver.workflow.add(['hubSystem','moments','forces'])
 
     # TODO: rotor drivetrain design should be connected to nacelle drivetrain design
 
@@ -272,19 +273,28 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
         assembly.connect('rotor.tilt','nacelle.shaft_angle')
         assembly.connect('333.3 * machine_rating / 1000.0','nacelle.shrink_disc_mass')
         assembly.connect('rotor.hub_diameter','nacelle.blade_root_diameter')
-        # assembly.connect('rotor.ratedConditions.Q','nacelle.rotor_bending_moment_x')
+
+        #moments
+        # assembly.connect('rotor.Q_extreme','nacelle.rotor_bending_moment_x')
         assembly.connect('rotor.Mxyz_0','moments.b1')
         assembly.connect('rotor.Mxyz_120','moments.b2')
         assembly.connect('rotor.Mxyz_240','moments.b3')
         assembly.connect('rotor.Pitch','moments.pitch_angle')
         assembly.connect('rotor.TotalCone','moments.cone_angle')
-        assembly.connect('moments.Mx','nacelle.rotor_bending_moment_x')
+        assembly.connect('moments.Mx','nacelle.rotor_bending_moment_x') #accounted for in ratedConditions.Q
         assembly.connect('moments.My','nacelle.rotor_bending_moment_y')
         assembly.connect('moments.Mz','nacelle.rotor_bending_moment_z')
-        assembly.connect('rotor.ratedConditions.T','nacelle.rotor_force_x')
-        #TODO find/add force calculations from rotor
-        #assembly.connect('...','nacelle.rotor_force_y')
-        #assembly.connect('...','nacelle.rotor_force_z')
+
+        #forces
+        # assembly.connect('rotor.T_extreme','nacelle.rotor_force_x')
+        assembly.connect('rotor.Fxyz_0','forces.b1')
+        assembly.connect('rotor.Fxyz_120','forces.b2')
+        assembly.connect('rotor.Fxyz_240','forces.b3')
+        assembly.connect('rotor.Pitch','forces.pitch_angle')
+        assembly.connect('rotor.TotalCone','forces.cone_angle')
+        assembly.connect('forces.Fx','nacelle.rotor_force_x')
+        assembly.connect('forces.Fy','nacelle.rotor_force_y')
+        assembly.connect('forces.Fz','nacelle.rotor_force_z')
 
     '''if  with_new_nacelle:
         assembly.connect('rotor.g', 'nacelle.g') # Only drive smooth taking g from rotor; TODO: update when drive_smooth is updated'''
@@ -684,4 +694,7 @@ if __name__ == '__main__':
     # print 'Mx:',turbine.nacelle.rotor_bending_moment_x
     # print 'My:',turbine.nacelle.rotor_bending_moment_y
     # print 'Mz:',turbine.nacelle.rotor_bending_moment_z
+    # print 'Fx:',turbine.nacelle.rotor_force_x
+    # print 'Fy:',turbine.nacelle.rotor_force_y
+    # print 'Fz:',turbine.nacelle.rotor_force_z
     # =================
