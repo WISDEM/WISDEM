@@ -128,10 +128,10 @@ The example directories may need to be modified depending on where you installed
         libraries=['boost_python-mgw48-mt-1_55', 'lapack']
 
 7. Then you are now finally ready to install! Activate your OpenMDAO environment and then navigate to your WISDEM directory (which you have cloned or downloaded and unzipped) and run from the WISDEM root directory:
-	
-	python setup_all.py 
 
-It should return a message that all models were properly installed.  If there are errors (likely with compiled code such as pBEAM) check the MinGW error messages.  You may have to rebuild the python library for mingw for some combinations of python and mingw.  See instructions for doing so [here] (https://nwtc.nrel.gov/system/files/Windows%20OpenMDAO%20Install%20Tips_04062015.pdf) if that is the case.
+        python setup_all.py 
+
+    It should return a message that all models were properly installed.  If there are errors (likely with compiled code such as pBEAM) check the MinGW error messages.  You may have to rebuild the python library for mingw for some combinations of python and mingw.  See instructions for doing so [here] (https://nwtc.nrel.gov/system/files/Windows%20OpenMDAO%20Install%20Tips_04062015.pdf) if that is the case.
 
 
 ## Installation (Unix/Linux)
