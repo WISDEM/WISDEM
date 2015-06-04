@@ -81,6 +81,7 @@ subprocess.call(["easy_install", "sphinxcontrib-napoleon"])
 #subprocess.call(["easy_install", "sphinxcontrib-zopeext"])
 subprocess.call(["easy_install", "numpydoc"])
 subprocess.call(["easy_install", "ipython"])
+subprocess.call(["easy_install", "python-dateutil")
 
 # make plug in dir and cd to it:
 rootdir = os.getcwd()

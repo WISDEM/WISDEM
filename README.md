@@ -43,6 +43,7 @@ For detailed documentation see <http://wisdem.github.io/WISDEM/>
     * [sphinxcontrib-zopeext](http://pythonhosted.org//sphinxcontrib-zopeext/)
     * [Numpydoc](https://pypi.python.org/pypi/numpydoc)
     * [Ipython](ipython.org)
+    * python-dateutil
 * **Dependencies installed with WISDEM** by setup_all.py (see installation below):
     * The [FUSED-Wind](http://fusedwind.org) Wind Plant Framework (Framework for Unified Systems Engineering and Design of Wind Plants)
     * [WISDEM Sub-Models](https://github.com/WISDEM/)
@@ -72,7 +73,7 @@ First, clone the
 or 
 These instructions assume you are using MinGW and have already installed gcc and g++.
 Also you should already have successfully installed Python (for a [single user only](http://bugs.python.org/issue5459#msg101098)), NumPy, and setuptools.
-The example directories may need to be modified depending on where you installed things.  See this [Windows guideline set](https://nwtc.nrel.gov/system/files/Windows%20OpenMDAO%20Install%20Tips.pdf) for additional support on installing python.
+The example directories may need to be modified depending on where you installed things.  See this [Windows guideline set](https://nwtc.nrel.gov/system/files/Windows%20OpenMDAO%20Install%20Tips_04062015.pdf) for additional support on installing python.
 
 1.  Edit (or create) a distutils config 'distutils.cfg' file in your Python Lib directory or in your openmdao Lib directory if working from an activated openmdao environment.
 
@@ -125,6 +126,12 @@ The example directories may need to be modified depending on where you installed
         include_dirs=[join(path, 'pBEAM'), 'C:/boost_1_55_0'],
         library_dirs=['C:/boost_1_55_0/stage/lib', 'C:/lapack'],
         libraries=['boost_python-mgw48-mt-1_55', 'lapack']
+
+7. Then you are now finally ready to install! Activate your OpenMDAO environment and then navigate to your WISDEM directory (which you have cloned or downloaded and unzipped) and run from the WISDEM root directory:
+	
+	python setup_all.py 
+
+It should return a message that all models were properly installed.  If there are errors (likely with compiled code such as pBEAM) check the MinGW error messages.  You may have to rebuild the python library for mingw for some combinations of python and mingw.  See instructions for doing so [here] (https://nwtc.nrel.gov/system/files/Windows%20OpenMDAO%20Install%20Tips_04062015.pdf) if that is the case.
 
 
 ## Installation (Unix/Linux)
