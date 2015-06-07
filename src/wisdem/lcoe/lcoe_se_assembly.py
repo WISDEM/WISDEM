@@ -23,7 +23,9 @@ from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
 from plant_costsse.ecn_offshore_opex.ecn_offshore_opex  import opex_ecn_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
 from fusedwind.plant_flow.basic_aep import aep_assembly, aep_weibull_assembly
-from landbos import LandBOS
+
+import platform
+if platform.system() == 'Windows':from landbos import LandBOS
 
 # Current configuration assembly options for LCOE SE
 # Turbine Costs
