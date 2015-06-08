@@ -19,7 +19,7 @@ from drivewpact.drive import DriveWPACT
 from drivewpact.hub import HubWPACT
 from commonse.csystem import DirectionVector
 from commonse.utilities import interp_with_deriv, hstack, vstack
-from drivese.drive_smooth import NacelleTS
+#from drivese.drive_smooth import NacelleTS
 from drivese.drive import Drive4pt, Drive3pt
 from drivese.drivese_utils import blade_moment_transform, blade_force_transform
 from drivese.hub import HubSE, Hub_System_Adder_drive
