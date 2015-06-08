@@ -41,7 +41,10 @@ def install_url(f, url, subdir=None, plugin=True, force=False):
         if (plugin):
             res = subprocess.call(["plugin", "install"])
         else:
-            res = subprocess.call(["python", "setup.py", "config", "--compiler=mingw32", "build", "--compiler=mingw32", "install"])
+            if platform.system() == 'Windows':
+                res = subprocess.call(["python", "setup.py", "config", "--compiler=mingw32", "build", "--compiler=mingw32", "install"])
+            else:
+                res = subprocess.call(["python","setup.py","install"])
         print "subprocess returned ", res
     except:
         print "plugin %s FAILED to install correctly" % f       
@@ -81,6 +84,7 @@ subprocess.call(["easy_install", "sphinxcontrib-napoleon"])
 #subprocess.call(["easy_install", "sphinxcontrib-zopeext"])
 subprocess.call(["easy_install", "numpydoc"])
 subprocess.call(["easy_install", "ipython"])
+subprocess.call(["easy_install", "python-dateutil"])
 
 # make plug in dir and cd to it:
 rootdir = os.getcwd()

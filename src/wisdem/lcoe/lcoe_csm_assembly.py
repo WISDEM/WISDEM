@@ -50,6 +50,7 @@ class lcoe_csm_assembly(Assembly):
     array_losses = Float(0.06, iotype='in', desc = 'energy losses due to turbine interactions - across entire plant')
     availability = Float(0.94287630736, iotype='in', desc = 'average annual availbility of wind turbines at plant')
     thrust_coefficient = Float(0.50, iotype='in', desc='thrust coefficient at rated power')
+    max_efficiency = Float(iotype='in', desc = 'maximum efficiency of rotor and drivetrain - at rated power') # TODO: should come from drivetrain
     # Extra TCC parameters
     blade_number = Int(3, iotype='in', desc = 'number of rotor blades')
     offshore = Bool(True, iotype='in', desc = 'boolean for offshore')
@@ -79,7 +80,7 @@ class lcoe_csm_assembly(Assembly):
     rotor_thrust = Float(iotype='out', units='N', desc='maximum thrust from rotor')    
     rotor_torque = Float(iotype='out', units='N * m', desc = 'torque from rotor at rated power') 
     power_curve = Array(np.array([[4.0,80.0],[25.0, 5000.0]]), iotype='out', desc = 'power curve for a particular rotor')
-    max_efficiency = Float(0.902, iotype='out', desc = 'maximum efficiency of rotor and drivetrain - at rated power')  
+    #max_efficiency = Float(0.902, iotype='out', desc = 'maximum efficiency of rotor and drivetrain - at rated power')  
     gross_aep = Float(0.0, iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', unit='kWh')                
     #TCC outputs
     turbine_mass = Float(0.0, units='kg', iotype='out', desc='turbine mass')
@@ -101,6 +102,7 @@ class lcoe_csm_assembly(Assembly):
         # rotor
         self.connect('rotor_diameter', ['aep_a.rotor_diameter', 'tcc_a.rotor_diameter', 'bos_a.rotor_diameter'])
         self.connect('max_tip_speed', ['aep_a.max_tip_speed'])
+        self.connect('max_power_coefficient', 'aep_a.max_power_coefficient')
         self.connect('opt_tsr','aep_a.opt_tsr')
         self.connect('cut_in_wind_speed','aep_a.cut_in_wind_speed')
         self.connect('cut_out_wind_speed','aep_a.cut_out_wind_speed')
@@ -112,6 +114,7 @@ class lcoe_csm_assembly(Assembly):
         self.connect('array_losses','aep_a.array_losses')
         self.connect('availability','aep_a.availability')
         self.connect('thrust_coefficient','aep_a.thrust_coefficient')
+        self.connect('max_efficiency', 'aep_a.max_efficiency')
         self.connect('blade_number','tcc_a.blade_number')
         self.connect('advanced_blade','tcc_a.advanced_blade')
         # drivetrain
@@ -151,7 +154,7 @@ class lcoe_csm_assembly(Assembly):
         self.connect('aep_a.rotor_thrust','rotor_thrust')
         self.connect('aep_a.rotor_torque','rotor_torque')
         self.connect('aep_a.power_curve','power_curve')
-        self.connect('aep_a.max_efficiency','max_efficiency')
+        #self.connect('aep_a.max_efficiency','max_efficiency')
         self.connect('aep_a.gross_aep','gross_aep')
         # tcc_a
         self.connect('tcc_a.turbine_mass','turbine_mass')
@@ -193,6 +196,7 @@ def example():
     lcoe.availability = 0.941 #Float(0.94287630736, iotype='in', desc = 'average annual availbility of wind turbines at plant')
     lcoe.turbine_number = 100 #Int(100, iotype='in', desc = 'total number of wind turbines at the plant')
     lcoe.thrust_coefficient = 0.50 #Float(0.50, iotype='in', desc='thrust coefficient at rated power')
+    lcoe.max_efficiency = 0.902
 
     # Extra TCC inputs
     lcoe.blade_number = 3 #Int(3, iotype='in', desc = 'number of rotor blades')
