@@ -40,7 +40,7 @@ def configure_lcoe_with_turb_costs(assembly):
         transportMultiplier = Float
     """
 
-    assembly.replace('tcc_a', Turbine_CostsSE())
+    #assembly.replace('tcc_a', Turbine_CostsSE())
 
     assembly.add('advanced_blade', Bool(True, iotype='in', desc='advanced (True) or traditional (False) blade design'))
     assembly.add('offshore', Bool(iotype='in', desc='flag for offshore site'))
@@ -83,7 +83,7 @@ def configure_lcoe_with_csm_bos(assembly):
         bos_multiplier = Float
     """
 
-    assembly.replace('bos_a', bos_csm_assembly())
+    #assembly.replace('bos_a', bos_csm_assembly())
 
     assembly.add('bos_multiplier', Float(1.0, iotype='in'))
 
@@ -109,7 +109,7 @@ def configure_lcoe_with_landbos(assembly):
         soil
     """
 
-    assembly.replace('bos_a', LandBOS())
+    #assembly.replace('bos_a', LandBOS())
 
     assembly.add('voltage', Float(iotype='in', units='kV', desc='interconnect voltage'))
     assembly.add('distInter', Float(iotype='in', units='mi', desc='distance to interconnect'))
@@ -143,7 +143,7 @@ def configure_lcoe_with_csm_opex(assembly):
        availability = Float()
     """
 
-    assembly.replace('opex_a', opex_csm_assembly())
+    #assembly.replace('opex_a', opex_csm_assembly())
 
     # connections to opex
     assembly.connect('machine_rating', 'opex_a.machine_rating')
@@ -156,7 +156,7 @@ def configure_lcoe_with_csm_opex(assembly):
 
 def configure_lcoe_with_ecn_opex(assembly,ecn_file):
 
-    assembly.replace('opex_a', opex_ecn_assembly(ecn_file))
+    #assembly.replace('opex_a', opex_ecn_assembly(ecn_file))
 
     assembly.connect('machine_rating', 'opex_a.machine_rating')
     assembly.connect('turbine_number', 'opex_a.turbine_number')
@@ -172,7 +172,7 @@ def configure_lcoe_with_basic_aep(assembly):
         availability = Float
     """
 
-    assembly.replace('aep_a', aep_assembly())
+    #assembly.replace('aep_a', aep_assembly())
 
     assembly.add('array_losses',Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant'))
     assembly.add('other_losses',Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc'))
@@ -199,7 +199,7 @@ def configure_lcoe_with_weibull_aep(assembly):
     assembly.add('A',Float(8.2,iotype='in', desc='scale factor'))
     assembly.add('k', Float(2.0,iotype='in', desc='shape or form factor'))
 
-    assembly.replace('aep_a', aep_weibull_assembly())
+    #assembly.replace('aep_a', aep_weibull_assembly())
     
     assembly.connect('turbine_number', 'aep_a.turbine_number')
     assembly.connect('machine_rating','aep_a.machine_rating')
@@ -222,7 +222,7 @@ def configure_lcoe_with_csm_fin(assembly):
         construction_time = Float
     """
 
-    assembly.replace('fin_a', fin_csm_assembly())
+    #assembly.replace('fin_a', fin_csm_assembly())
 
     assembly.add('fixed_charge_rate', Float(0.12, iotype = 'in', desc = 'fixed charge rate for coe calculation'))
     assembly.add('construction_finance_rate', Float(0.00, iotype='in', desc = 'construction financing rate applied to overnight capital costs'))
@@ -325,8 +325,22 @@ class lcoe_se_assembly(Assembly):
             soil
         """
     
-        # configure base asesmbly
-        configure_base_financial_analysis(self)
+        # configure base assembly
+        configure_extended_financial_analysis(self)
+
+        # putting replace statements here for now; TODO - openmdao bug
+        # replace BOS with either CSM or landbos
+        if self.with_landbos:
+            self.replace('bos_a', LandBOS())
+        else:
+            self.replace('bos_a', bos_csm_assembly())
+        self.replace('tcc_a', Turbine_CostsSE())
+        if self.with_ecn_opex:  
+            self.replace('opex_a', opex_ecn_assembly(ecn_file))
+        else:
+            self.replace('opex_a', opex_csm_assembly())
+        self.replace('aep_a', aep_weibull_assembly())
+        self.replace('fin_a', fin_csm_assembly())
     
         # add TurbineSE assembly
         configure_turbine(self, self.with_new_nacelle, self.flexible_blade, self.with_3pt_drive)
@@ -492,8 +506,9 @@ if __name__ == '__main__':
     create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
 
     #with_3pt_drive = True
-    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) )
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
 
+    #TODO: not working with new updated to DriveSE
     #with_new_nacelle = False
     #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
 

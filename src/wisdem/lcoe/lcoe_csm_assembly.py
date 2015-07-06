@@ -161,6 +161,12 @@ class lcoe_csm_assembly(Assembly):
         # fin_a
         self.connect('fin_a.lcoe','lcoe')
 
+    def plot(self, fig):
+
+        from plot_capex import plot_capex
+        fig = plot_capex(self)
+        return fig
+
 
 def example():
 
@@ -224,6 +230,11 @@ def example():
     print "Turbine Cost: ${0:2f} USD".format(lcoe.turbine_cost)
     print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.turbine_number)
     print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number)
+
+
+    #from bokeh.plotting import figure
+    #fig = figure()
+    #lcoe.plot(fig)
 
 if __name__=="__main__":
 

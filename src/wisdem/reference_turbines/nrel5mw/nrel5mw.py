@@ -3,10 +3,9 @@ import numpy as np
 import os
 
 from rotorse.precomp import Profile, Orthotropic2DMaterial, CompositeSection  # TODO: can just pass file names and do this initialization inside of rotor
-from towerse.tower import TowerWithpBEAM
 from commonse.environment import PowerWind, TowerSoil, LinearWaves
 from commonse.utilities import cosd, sind
-from rotorse.rotoraero import RS2RPM
+#from rotorse.rotoraero import RS2RPM
 
 
 def configure_offshore(tower,sea_depth):
@@ -34,6 +33,7 @@ def configure_offshore(tower,sea_depth):
     tower.wave2.g = 9.81
     tower.wave2.betaWave = 0.0
 
+    #TODO: restructure for new tower version
     tower.monopileHeight = sea_depth
     tower.n_monopile = 5
     tower.d_monopile = 6.0
@@ -49,10 +49,7 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
         wind_class : str ('I', 'III', 'Offshore' - selected wind class for project)
         sea_depth : float (sea depth if an offshore wind plant)
     """
-
-    # =================
-
-
+    
     # === Turbine ===
     turbine.rho = 1.225  # (Float, kg/m**3): density of air
     turbine.mu = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
@@ -248,7 +245,7 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     # TODO: should come from rotor (these are FAST outputs)
     turbine.nacelle.DrivetrainEfficiency = 0.95
-    '''turbine.nacelle.rotor_bending_moment_x = 330770.0# Nm
+    turbine.nacelle.rotor_bending_moment_x = 330770.0# Nm
     turbine.nacelle.rotor_bending_moment_y = -16665000.0 # Nm
     turbine.nacelle.rotor_bending_moment_z = 2896300.0 # Nm
     turbine.nacelle.rotor_force_x = 599610.0 # N
@@ -262,69 +259,105 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     # === tower ===
 
+    # ---- tower ------
     turbine.tower.replace('wind1', PowerWind())
     turbine.tower.replace('wind2', PowerWind())
-    # turbine.tower.replace('wave1', LinearWaves())  # no waves (onshore)
-    turbine.tower.replace('soil', TowerSoil())
-    turbine.tower.replace('tower1', TowerWithpBEAM())
-    turbine.tower.replace('tower2', TowerWithpBEAM())
+    # onshore (no waves)
 
-    # --- geometry ---
-    turbine.tower.z = [0.0, 0.5, 1.0]  # (Array): locations along unit tower, linear lofting between
-    turbine.tower.t = [0.027*1.3, 0.023*1.3, 0.019*1.3]  # (Array, m): shell thickness at corresponding locations
-    turbine.tower.n = [10, 10]  # (Array): number of finite elements between sections.  array length should be ``len(z)-1``
-    turbine.tower.L_reinforced=np.array([30., 30., 30.])#,30.,30.]) #[m] buckling length
-    turbine.tower.downwind = False  # (Bool): flag if rotor is downwind
-    # ---------------
+    # --- geometry ----
+    turbine.tower.z_param = [0.0, 43.8, 87.6]
+    turbine.tower.d_param = [6.0, 4.935, 3.87]
+    turbine.tower.t_param = [0.027*1.3, 0.023*1.3, 0.019*1.3]
+    n = 15
+    turbine.tower.z_full = np.linspace(0.0, 87.6, n)
+    turbine.tower.L_reinforced = 30.0*np.ones(n)  # [m] buckling length
+    turbine.tower.theta_stress = 0.0*np.ones(n)
+    turbine.tower.yaw = 0.0
+
+    # --- material props ---
+    turbine.tower.E = 210e9*np.ones(n)
+    turbine.tower.G = 80.8e9*np.ones(n)
+    turbine.tower.rho = 8500.0*np.ones(n)
+    turbine.tower.sigma_y = 450.0e6*np.ones(n)
+
+    # --- spring reaction data.  Use float('inf') for rigid constraints. ---
+    turbine.tower.kidx = [0]  # applied at base
+    turbine.tower.kx = [float('inf')]
+    turbine.tower.ky = [float('inf')]
+    turbine.tower.kz = [float('inf')]
+    turbine.tower.ktx = [float('inf')]
+    turbine.tower.kty = [float('inf')]
+    turbine.tower.ktz = [float('inf')]
+
+    # --- extra mass ----
+    turbine.tower.midx = [n-1]  # RNA mass at top
+    turbine.tower.m = [285598.8]
+    turbine.tower.mIxx = [1.14930678e+08]
+    turbine.tower.mIyy = [2.20354030e+07]
+    turbine.tower.mIzz = [1.87597425e+07]
+    turbine.tower.mIxy = [0.00000000e+00]
+    turbine.tower.mIxz = [5.03710467e+05]
+    turbine.tower.mIyz = [0.00000000e+00]
+    turbine.tower.mrhox = [-1.13197635]
+    turbine.tower.mrhoy = [0.]
+    turbine.tower.mrhoz = [0.50875268]
+    turbine.tower.addGravityLoadForExtraMass = True
+    # -----------
 
     # --- wind ---
-    turbine.tower.wind_z0 = 0.0  # (Float, m): bottom of wind profile (height of ground/sea)
+    turbine.tower.wind_zref = 90.0
+    turbine.tower.wind_z0 = 0.0
     turbine.tower.wind1.shearExp = 0.2
     turbine.tower.wind2.shearExp = 0.2
     # ---------------
 
-    # --- soil ---
-    turbine.tower.soil.rigid = 6*[True]
-    # ---------------
+    # if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also
+    # # --- loading case 1: max Thrust ---
+    turbine.tower.wind_Uref1 = 11.73732
+    turbine.tower.plidx1 = [n-1]  # at tower top
+    turbine.tower.Fx1 = [1284744.19620519]
+    turbine.tower.Fy1 = [0.]
+    turbine.tower.Fz1 = [-2914124.84400512]
+    turbine.tower.Mxx1 = [3963732.76208099]
+    turbine.tower.Myy1 = [-2275104.79420872]
+    turbine.tower.Mzz1 = [-346781.68192839]
+    # # ---------------
+
+    # # --- loading case 2: max wind speed ---
+    turbine.tower.wind_Uref2 = 70.0
+    turbine.tower.plidx2 = [n-1]  # at tower top
+    turbine.tower.Fx2 = [930198.60063279]
+    turbine.tower.Fy2 = [0.]
+    turbine.tower.Fz2 = [-2883106.12368949]
+    turbine.tower.Mxx2 = [-1683669.22411597]
+    turbine.tower.Myy2 = [-2522475.34625363]
+    turbine.tower.Mzz2 = [147301.97023764]
+    # # ---------------
 
     # --- safety factors ---
-    turbine.tower.gamma_f = 1.35  # (Float): safety factor on loads
-    turbine.tower.gamma_m = 1.3  # (Float): safety factor on materials
-    turbine.tower.gamma_n = 1.0  # (Float): safety factor on consequence of failure
-    turbine.tower.gamma_b = 1.1  # (Float): buckling safety factor
+    turbine.tower.gamma_f = 1.35
+    turbine.tower.gamma_m = 1.3
+    turbine.tower.gamma_n = 1.0
+    turbine.tower.gamma_b = 1.1
     # ---------------
 
     # --- fatigue ---
-    turbine.tower.z_DEL = 1.0/87.6*np.array([0.000, 1.327, 3.982, 6.636, 9.291, 11.945, 14.600, 17.255, 19.909,
-        22.564, 25.218, 27.873, 30.527, 33.182, 35.836, 38.491, 41.145, 43.800, 46.455, 49.109, 51.764,
-        54.418, 57.073, 59.727, 62.382, 65.036, 67.691, 70.345, 73.000, 75.655, 78.309, 80.964, 83.618,
-        86.273, 87.600])  # (Array): locations along unit tower for M_DEL
-    turbine.tower.M_DEL = 1e3*np.array([8.2940E+003, 8.1518E+003, 7.8831E+003, 7.6099E+003, 7.3359E+003,
-        7.0577E+003, 6.7821E+003, 6.5119E+003, 6.2391E+003, 5.9707E+003, 5.7070E+003, 5.4500E+003,
-        5.2015E+003, 4.9588E+003, 4.7202E+003, 4.4884E+003, 4.2577E+003, 4.0246E+003, 3.7942E+003,
-        3.5664E+003, 3.3406E+003, 3.1184E+003, 2.8977E+003, 2.6811E+003, 2.4719E+003, 2.2663E+003,
-        2.0673E+003, 1.8769E+003, 1.7017E+003, 1.5479E+003, 1.4207E+003, 1.3304E+003, 1.2780E+003,
-        1.2673E+003, 1.2761E+003])  # (Array, N*m): damage equivalent moments along tower
-    turbine.tower.gamma_fatigue = 1.35*1.3*1.0  # (Float): total safety factor for fatigue
-    turbine.tower.life = 20.0  # (Float): fatigue life of tower
-    turbine.tower.m_SN = 4  # (Int): slope of S/N curve
-    turbine.tower.DC = 80.0  # (Float): standard value of stress
+    turbine.tower.z_DEL = np.array([0.000, 1.327, 3.982, 6.636, 9.291, 11.945, 14.600, 17.255, 19.909, 22.564, 25.218, 27.873, 30.527, 33.182, 35.836, 38.491, 41.145, 43.800, 46.455, 49.109, 51.764, 54.418, 57.073, 59.727, 62.382, 65.036, 67.691, 70.345, 73.000, 75.655, 78.309, 80.964, 83.618, 86.273, 87.600])
+    turbine.tower.M_DEL = 1e3*np.array([8.2940E+003, 8.1518E+003, 7.8831E+003, 7.6099E+003, 7.3359E+003, 7.0577E+003, 6.7821E+003, 6.5119E+003, 6.2391E+003, 5.9707E+003, 5.7070E+003, 5.4500E+003, 5.2015E+003, 4.9588E+003, 4.7202E+003, 4.4884E+003, 4.2577E+003, 4.0246E+003, 3.7942E+003, 3.5664E+003, 3.3406E+003, 3.1184E+003, 2.8977E+003, 2.6811E+003, 2.4719E+003, 2.2663E+003, 2.0673E+003, 1.8769E+003, 1.7017E+003, 1.5479E+003, 1.4207E+003, 1.3304E+003, 1.2780E+003, 1.2673E+003, 1.2761E+003])
+    turbine.tower.gamma_fatigue = 1.35*1.3*1.0
+    turbine.tower.life = 20.0
+    turbine.tower.m_SN = 4
     # ---------------
 
     # --- constraints ---
-    turbine.tower.min_d_to_t = 120.0  # (Float): minimum allowable diameter to thickness ratio
-    turbine.tower.min_taper = 0.4  # (Float): minimum allowable taper ratio from tower top to tower bottom
+    turbine.tower.min_d_to_t = 120.0
+    turbine.tower.min_taper = 0.4
     # ---------------
 
-    # --- material properties
-    turbine.tower.sigma_y = 450000000.0  # (Float, N/m**2): yield stress
-    turbine.tower.rho = 8500.0  # (Float, kg/m**3): material density
-    turbine.tower.E = 2.1e+11  # (Float, N/m**2): material modulus of elasticity
-    turbine.tower.G = 80800000000.0  # (Float, N/m**2): material shear modulus
-    # ----------------
-    
-    if sea_depth <> 0.0:
-    	  configure_offshore(turbine.tower,sea_depth)
+    # ==== Other options
+
+    if turbine.sea_depth <> 0.0:
+          configure_offshore(turbine.tower,sea_depth)
 
     if wind_class == 'I':
         turbine.rotor.turbine_class = 'I'
@@ -340,5 +373,9 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     elif wind_class == 'Offshore':
         turbine.rotor.turbine_class = 'I'
-
-    # =================
+    
+    # TODO: these should be specified at the turbine level and connected to other system inputs
+    turbine.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
+    turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
+    # extra variable constant for now
+    #lcoe_se.nacelle.bedplate.rotor_bending_moment_y = -2.3250E+06 # shouldnt be needed anymore
