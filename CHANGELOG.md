@@ -22,3 +22,16 @@
 [FIX]:
 
 - TowerSE L_reinforced variable changed from float type to array type, updated 5 MW tower structure to match
+
+
+## 0.1.2 ([07/08/2015])
+
+[Katherine Dykes](mailto: katherine.dykes@nrel.gov)
+
+[CHANGE]:
+
+- Updated turbine.py and lcoe_se_assembly.py for TowerSE and DriveSE updates
+
+[REMOVED]:
+
+- Removed two obselete assemblies lcoe_csm_ecn_assembly and lcoe_se_jacket_assembly

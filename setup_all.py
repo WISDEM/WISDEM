@@ -101,7 +101,7 @@ install_url(f,url,force=options.force)
 
 # download and install all the necessary WISDEM plugins
 for f in files:
-    url = "%s%s/tarball/master" % (wis, f)
+    url = "%s%s/tarball/0.1" % (wis, f)
     install_url(f, url,force=options.force)
     
 # finally install WISDEM itself
