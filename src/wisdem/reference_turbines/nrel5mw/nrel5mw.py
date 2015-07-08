@@ -7,39 +7,6 @@ from commonse.environment import PowerWind, TowerSoil, LinearWaves
 from commonse.utilities import cosd, sind
 #from rotorse.rotoraero import RS2RPM
 
-
-def configure_offshore(tower,sea_depth):
-    """
-    Inputs:
-        tower = TowerSE()
-    """
-
-    tower.replace('wave1', LinearWaves())
-    tower.replace('wave2', LinearWaves())
-
-    tower.wave1.Uc = 0.0
-    tower.wave1.hs = 8.0 * 1.86
-    tower.wave1.T = 10.0
-    tower.wave1.z_surface = 0.0
-    tower.wave1.z_floor = -sea_depth
-    tower.wave1.g = 9.81
-    tower.wave1.betaWave = 0.0
-
-    tower.wave2.Uc = 0.0
-    tower.wave2.hs = 8.0 * 1.86
-    tower.wave2.T = 10.0
-    tower.wave2.z_surface = 0.0
-    tower.wave2.z_floor = -sea_depth
-    tower.wave2.g = 9.81
-    tower.wave2.betaWave = 0.0
-
-    #TODO: restructure for new tower version
-    tower.monopileHeight = sea_depth
-    tower.n_monopile = 5
-    tower.d_monopile = 6.0
-    tower.t_monopile = 6.0/80.0
-
-
 def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
     """
     Inputs:
@@ -264,21 +231,58 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
     turbine.tower.replace('wind2', PowerWind())
     # onshore (no waves)
 
-    # --- geometry ----
-    turbine.tower.z_param = [0.0, 43.8, 87.6]
-    turbine.tower.d_param = [6.0, 4.935, 3.87]
-    turbine.tower.t_param = [0.027*1.3, 0.023*1.3, 0.019*1.3]
-    n = 15
-    turbine.tower.z_full = np.linspace(0.0, 87.6, n)
-    turbine.tower.L_reinforced = 30.0*np.ones(n)  # [m] buckling length
-    turbine.tower.theta_stress = 0.0*np.ones(n)
-    turbine.tower.yaw = 0.0
+    if turbine.sea_depth <> 0.0:
+        turbine.tower.replace('wave1', LinearWaves())
+        turbine.tower.replace('wave2', LinearWaves())
+    
+        turbine.tower.wave1.Uc = 0.0
+        turbine.tower.wave1.hs = 8.0 * 1.86
+        turbine.tower.wave1.T = 10.0
+        turbine.tower.wave1.z_surface = 0.0
+        turbine.tower.wave1.z_floor = -sea_depth
+        turbine.tower.wave1.g = 9.81
+        turbine.tower.wave1.betaWave = 0.0
+    
+        turbine.tower.wave2.Uc = 0.0
+        turbine.tower.wave2.hs = 8.0 * 1.86
+        turbine.tower.wave2.T = 10.0
+        turbine.tower.wave2.z_surface = 0.0
+        turbine.tower.wave2.z_floor = -sea_depth
+        turbine.tower.wave2.g = 9.81
+        turbine.tower.wave2.betaWave = 0.0
 
-    # --- material props ---
-    turbine.tower.E = 210e9*np.ones(n)
-    turbine.tower.G = 80.8e9*np.ones(n)
-    turbine.tower.rho = 8500.0*np.ones(n)
-    turbine.tower.sigma_y = 450.0e6*np.ones(n)
+    if turbine.sea_depth == 0.0:
+        # --- geometry ----
+        turbine.tower.z_param = [0.0, 43.8, 87.6]
+        turbine.tower.d_param = [6.0, 4.935, 3.87]
+        turbine.tower.t_param = [0.027*1.3, 0.023*1.3, 0.019*1.3]
+        n = 15
+        turbine.tower.z_full = np.linspace(0.0, 87.6, n)
+        turbine.tower.L_reinforced = 30.0*np.ones(n)  # [m] buckling length
+        turbine.tower.theta_stress = 0.0*np.ones(n)
+        turbine.tower.yaw = 0.0
+    
+        # --- material props ---
+        turbine.tower.E = 210e9*np.ones(n)
+        turbine.tower.G = 80.8e9*np.ones(n)
+        turbine.tower.rho = 8500.0*np.ones(n)
+        turbine.tower.sigma_y = 450.0e6*np.ones(n)
+    else:
+        # --- geometry ----
+        turbine.tower.z_param = [-20.0, 0.0, 43.8, 87.6]
+        turbine.tower.d_param = [6.0, 6.0, 4.935, 3.87]
+        turbine.tower.t_param = [0.06, 0.027*1.3, 0.023*1.3, 0.019*1.3]
+        n = 20
+        turbine.tower.z_full = np.linspace(-20, 87.6, n)
+        turbine.tower.L_reinforced = 30.0*np.ones(n)  # [m] buckling length
+        turbine.tower.theta_stress = 0.0*np.ones(n)
+        turbine.tower.yaw = 0.0
+    
+        # --- material props ---
+        turbine.tower.E = 210e9*np.ones(n)
+        turbine.tower.G = 80.8e9*np.ones(n)
+        turbine.tower.rho = 8500.0*np.ones(n)
+        turbine.tower.sigma_y = 450.0e6*np.ones(n)
 
     # --- spring reaction data.  Use float('inf') for rigid constraints. ---
     turbine.tower.kidx = [0]  # applied at base
@@ -356,9 +360,6 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     # ==== Other options
 
-    if turbine.sea_depth <> 0.0:
-          configure_offshore(turbine.tower,sea_depth)
-
     if wind_class == 'I':
         turbine.rotor.turbine_class = 'I'
 
@@ -375,7 +376,10 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
         turbine.rotor.turbine_class = 'I'
     
     # TODO: these should be specified at the turbine level and connected to other system inputs
-    turbine.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
+    if turbine.sea_depth == 0.0:
+        turbine.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
+    else:
+        turbine.tower_d = [6.0, 6.0, 4.935, 3.87]
     turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
     # extra variable constant for now
     #lcoe_se.nacelle.bedplate.rotor_bending_moment_y = -2.3250E+06 # shouldnt be needed anymore

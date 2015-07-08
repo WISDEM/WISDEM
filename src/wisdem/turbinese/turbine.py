@@ -19,7 +19,6 @@ from drivewpact.drive import DriveWPACT
 from drivewpact.hub import HubWPACT
 from commonse.csystem import DirectionVector
 from commonse.utilities import interp_with_deriv, hstack, vstack
-#from drivese.drive_smooth import NacelleTS
 from drivese.drive import Drive4pt, Drive3pt
 from drivese.drivese_utils import blade_moment_transform, blade_force_transform
 from drivese.hub import HubSE, Hub_System_Adder_drive
@@ -243,12 +242,12 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     # connections to hub and hub system
     assembly.connect('rotor.mass_one_blade', 'hub.blade_mass')
     assembly.connect('rotor.root_bending_moment', 'hub.rotor_bending_moment')
-    assembly.connect('rotor.diameter', ['hub.rotor_diameter','hubSystem.rotor_diameter'])
+    assembly.connect('rotor.diameter', ['hub.rotor_diameter'])
     assembly.connect('rotor.hub_diameter', 'hub.blade_root_diameter')
     assembly.connect('rotor.nBlades', 'hub.blade_number')
     if with_new_nacelle:
-        # TODO: circular dependency
-        assembly.connect('nacelle.MB1_location','hubSystem.MB1_location')
+        assembly.connect('rotor.diameter', ['hubSystem.rotor_diameter'])
+        assembly.connect('nacelle.MB1_location','hubSystem.MB1_location') # TODO: bearing locations
         assembly.connect('nacelle.L_rb','hubSystem.L_rb')
         assembly.connect('rotor.tilt','hubSystem.shaft_angle')
         assembly.connect('hub.hub_diameter','hubSystem.hub_diameter')
@@ -303,9 +302,14 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     # connections to rna
     assembly.connect('rotor.mass_all_blades', 'rna.blades_mass')
     assembly.connect('rotor.I_all_blades', 'rna.blades_I')
-    assembly.connect('hubSystem.hub_system_mass', 'rna.hub_mass')
-    assembly.connect('hubSystem.hub_system_cm', 'rna.hub_cm')
-    assembly.connect('hubSystem.hub_system_I', 'rna.hub_I')
+    if with_new_nacelle:
+        assembly.connect('hubSystem.hub_system_mass', 'rna.hub_mass')
+        assembly.connect('hubSystem.hub_system_cm', 'rna.hub_cm')
+        assembly.connect('hubSystem.hub_system_I', 'rna.hub_I')
+    else:
+        assembly.connect('hub.hub_system_mass', 'rna.hub_mass')
+        assembly.connect('hub.hub_system_cm', 'rna.hub_cm')
+        assembly.connect('hub.hub_system_I', 'rna.hub_I')
     assembly.connect('nacelle.nacelle_mass', 'rna.nac_mass')
     assembly.connect('nacelle.nacelle_cm', 'rna.nac_cm')
     assembly.connect('nacelle.nacelle_I', 'rna.nac_I')
@@ -315,7 +319,10 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rna_weightM', 'rotorloads1.rna_weightM')
     assembly.connect('1.8 * rotor.ratedConditions.T', 'rotorloads1.F[0]')
     assembly.connect('rotor.ratedConditions.Q', 'rotorloads1.M[0]')
-    assembly.connect('hubSystem.hub_system_cm', 'rotorloads1.r_hub')
+    if with_new_nacelle:
+        assembly.connect('hubSystem.hub_system_cm', 'rotorloads1.r_hub')
+    else:
+        assembly.connect('hub.hub_system_cm', 'rotorloads1.r_hub')
     assembly.connect('rna.rna_cm', 'rotorloads1.rna_cm')
     assembly.connect('rotor.tilt', 'rotorloads1.tilt')
     assembly.connect('g', 'rotorloads1.g')
@@ -326,7 +333,10 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rna_weightM', 'rotorloads2.rna_weightM')
     assembly.connect('rotor.T_extreme', 'rotorloads2.F[0]')
     assembly.connect('rotor.Q_extreme', 'rotorloads2.M[0]')
-    assembly.connect('hubSystem.hub_system_cm', 'rotorloads2.r_hub')
+    if with_new_nacelle:
+        assembly.connect('hubSystem.hub_system_cm', 'rotorloads2.r_hub')
+    else:
+        assembly.connect('hub.hub_system_cm', 'rotorloads2.r_hub')
     assembly.connect('rna.rna_cm', 'rotorloads2.rna_cm')
     assembly.connect('rotor.tilt', 'rotorloads2.tilt')
     assembly.connect('g', 'rotorloads2.g')
@@ -371,7 +381,10 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.presweepTip', 'maxdeflection.presweepTip')
     assembly.connect('rotor.precone', 'maxdeflection.precone')
     assembly.connect('rotor.tilt', 'maxdeflection.tilt')
-    assembly.connect('hubSystem.hub_system_cm', 'maxdeflection.hub_tt')
+    if with_new_nacelle:
+        assembly.connect('hubSystem.hub_system_cm', 'maxdeflection.hub_tt')
+    else:
+        assembly.connect('hub.hub_system_cm', 'maxdeflection.hub_tt')
     assembly.connect('tower.z_param', 'maxdeflection.tower_z')
     assembly.connect('tower.d_param', 'maxdeflection.tower_d')
     assembly.connect('hub_height - nacelle.nacelle_cm[2]', 'maxdeflection.towerHt')

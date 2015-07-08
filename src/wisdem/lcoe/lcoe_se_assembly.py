@@ -20,12 +20,10 @@ from wisdem.turbinese.turbine import configure_turbine
 from turbine_costsse.turbine_costsse.turbine_costsse import Turbine_CostsSE
 from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
 from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
+from plant_costsse.nrel_land_bosse.nrel_land_bosse import NREL_Land_BOSSE
 from plant_costsse.ecn_offshore_opex.ecn_offshore_opex  import opex_ecn_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
 from fusedwind.plant_flow.basic_aep import aep_assembly, aep_weibull_assembly
-
-import platform
-if platform.system() == 'Windows':from landbos import LandBOS
 
 # Current configuration assembly options for LCOE SE
 # Turbine Costs
@@ -109,7 +107,7 @@ def configure_lcoe_with_landbos(assembly):
         soil
     """
 
-    #assembly.replace('bos_a', LandBOS())
+    #assembly.replace('bos_a', NREL_Land_BOSSE())
 
     assembly.add('voltage', Float(iotype='in', units='kV', desc='interconnect voltage'))
     assembly.add('distInter', Float(iotype='in', units='mi', desc='distance to interconnect'))
@@ -331,7 +329,7 @@ class lcoe_se_assembly(Assembly):
         # putting replace statements here for now; TODO - openmdao bug
         # replace BOS with either CSM or landbos
         if self.with_landbos:
-            self.replace('bos_a', LandBOS())
+            self.replace('bos_a', NREL_Land_BOSSE())
         else:
             self.replace('bos_a', bos_csm_assembly())
         self.replace('tcc_a', Turbine_CostsSE())
@@ -399,12 +397,6 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     from wisdem.reference_turbines.nrel5mw.nrel5mw import configure_nrel5mw_turbine
     configure_nrel5mw_turbine(lcoe_se,wind_class,lcoe_se.sea_depth)
 
-    # TODO: these should be specified at the turbine level and connected to other system inputs
-    lcoe_se.tower_d = [6.0, 4.935, 3.87]  # (Array, m): diameters along tower
-    lcoe_se.generator_speed = 1173.7  # (Float, rpm)  # generator speed
-    # extra variable constant for now
-    #lcoe_se.nacelle.bedplate.rotor_bending_moment_y = -2.3250E+06 # shouldnt be needed anymore
-
     # tcc ====
     lcoe_se.advanced_blade = True
     lcoe_se.offshore = False
@@ -414,12 +406,13 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     lcoe_se.transportMultiplier = 0.0
 
     # for new landBOS
-    ''' # === new landBOS ===
-    lcoe_se.voltage = 137
-    lcoe_se.distInter = 5
-    lcoe_se.terrain = 'FLAT_TO_ROLLING'
-    lcoe_se.layout = 'SIMPLE'
-    lcoe_se.soil = 'STANDARD' '''
+    # === new landBOS ===
+    if with_landbos:
+        lcoe_se.voltage = 137
+        lcoe_se.distInter = 5
+        lcoe_se.terrain = 'FLAT_TO_ROLLING'
+        lcoe_se.layout = 'SIMPLE'
+        lcoe_se.soil = 'STANDARD'
 
     # aep ==== # based on COE review for land-based machines
     if not with_openwind:
@@ -532,6 +525,6 @@ if __name__ == '__main__':
     #wind_class = 'Offshore'
     #sea_depth = 20.0
     #with_ecn_opex = True
-    #ecn_file = 'C:/Models/ECN Model/ECN O&M Model.xls'
+    #ecn_file = 'C:/Models/ECN Model/ECN O&M Model.xls' # replace with your file path
     #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
    

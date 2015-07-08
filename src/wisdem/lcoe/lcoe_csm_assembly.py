@@ -25,11 +25,11 @@ from plant_energyse.nrel_csm_aep.nrel_csm_aep import aep_csm_assembly
 class lcoe_csm_assembly(Assembly):
 
     # Variables
-    machine_rating = Float(units = 'kW', iotype='in', desc= 'rated machine power in kW')
-    rotor_diameter = Float(units = 'm', iotype='in', desc= 'rotor diameter of the machine')
-    max_tip_speed = Float(units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor')
-    hub_height = Float(units = 'm', iotype='in', desc='hub height of wind turbine above ground / sea level')
-    sea_depth = Float(units = 'm', iotype='in', desc = 'sea depth for offshore wind project')
+    machine_rating = Float(5000.0, units = 'kW', iotype='in', desc= 'rated machine power in kW')
+    rotor_diameter = Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
+    max_tip_speed = Float(80.0, units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor')
+    hub_height = Float(90.0, units = 'm', iotype='in', desc='hub height of wind turbine above ground / sea level')
+    sea_depth = Float(20.0, units = 'm', iotype='in', desc = 'sea depth for offshore wind project')
 
     # Parameters
     drivetrain_design = Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in')

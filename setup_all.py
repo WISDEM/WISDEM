@@ -62,7 +62,7 @@ options, args = get_options()
 #files = ["Turbine_CostsSE", "CommonSE", "Plant_CostsSE", "Plant_FinanceSE", "Plant_EnergySE"]
 files = ["Turbine_CostsSE", "CommonSE", "Plant_CostsSE", "Plant_FinanceSE", "Plant_EnergySE",
          "AeroelasticSE", "AirfoilPreppy", "CCBlade", "DriveSE", "DriveWPACT", "NREL_CSM", "RotorSE",
-         "TowerSE", "pyFrame3DD", "pBEAM", "JacketSE"]
+         "TowerSE", "pyFrame3DD", "pBEAM", "JacketSE", "akima"]
 
 #files = ["pBEAM"]
 
@@ -98,10 +98,6 @@ f = "fusedwind"
 subdir = f
 url = "http://github.com/FUSED-Wind/fusedwind/tarball/develop"  ## note, develop branch
 install_url(f,url,force=options.force)
-
-#install Andrew Ning's akima
-url = "http://github.com/andrewning/akima/tarball/master"
-install_url("akima", url, plugin=False,force=options.force)
 
 # download and install all the necessary WISDEM plugins
 for f in files:
