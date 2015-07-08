@@ -62,7 +62,7 @@ options, args = get_options()
 #files = ["Turbine_CostsSE", "CommonSE", "Plant_CostsSE", "Plant_FinanceSE", "Plant_EnergySE"]
 files = ["Turbine_CostsSE", "CommonSE", "Plant_CostsSE", "Plant_FinanceSE", "Plant_EnergySE",
          "AeroelasticSE", "AirfoilPreppy", "CCBlade", "DriveSE", "DriveWPACT", "NREL_CSM", "RotorSE",
-         "TowerSE", "pyFrame3DD", "pBEAM", "JacketSE", "akima"]
+         "TowerSE", "pyFrame3DD", "JacketSE", "akima", "pBEAM"] 
 
 #files = ["pBEAM"]
 
