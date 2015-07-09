@@ -26,7 +26,7 @@ from drivese.hub import HubSE, Hub_System_Adder_drive
 from SEAMLoads.SEAMLoads import SEAMLoads
 from SEAMTower.SEAMTower import SEAMTower
 from SEAMAero.SEAM_AEP import SEAMAEP
-from SEAMRotor.SEAMRotor import SEAMRotor
+from SEAMRotor.SEAMRotor import SEAMBladeStructure
 # from SEAMGeometry.SEAMGeometry import SEAMGeometry
 
 def connect_io(top, cls):
@@ -67,8 +67,8 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     #SEAM variables ----------------------------------
     #d2e = Float(0.73, iotype='in', desc='Dollars to Euro ratio'
     assembly.add('rated_power',Float(3., iotype='in', units='MW', desc='Turbine rated power'))
-    #hub_height = Float(100., iotype='in', units='m', desc='Hub height')
-    #rotor_diameter = Float(110., iotype='in', units='m', desc='Rotor diameter')
+    assembly.add('hub_height', Float(100., iotype='in', units='m', desc='Hub height'))
+    assembly.add('rotor_diameter',  Float(110., iotype='in', units='m', desc='Rotor diameter'))
     assembly.add('site_type',Enum('onshore', values=('onshore', 'offshore'), iotype='in', desc='Site type: onshore or offshore'))
     #tower_cost_per_mass = Float(4.0, iotype='in', desc='Tower cost per mass')
     #blade_cost_per_mass = Float(15., iotype='in', desc='Blade cost per mass')
@@ -112,11 +112,11 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.add('min_wsp', Float(0.0, iotype = 'in', units = 'm/s', desc = 'min wind speed'))
     assembly.add('max_wsp', Float(iotype = 'in', units = 'm/s', desc = 'max wind speed'))
 
-    #Iref = Float(iotype='in', desc='Reference turbulence intensity')
-    #WeibullInput = Bool(iotype='in', desc='Flag for Weibull input')
-    #WeiA_input = Float(iotype = 'in', units='m/s', desc = 'Weibull A')
-    #WeiC_input = Float(iotype = 'in', desc='Weibull C')
-    #NYears = Float(iotype = 'in', desc='Operating years')
+    assembly.add('Iref', Float(iotype='in', desc='Reference turbulence intensity'))
+    assembly.add('WeibullInput', Bool(iotype='in', desc='Flag for Weibull input'))
+    assembly.add('WeiA_input', Float(iotype = 'in', units='m/s', desc = 'Weibull A'))
+    assembly.add('WeiC_input', Float(iotype = 'in', desc='Weibull C'))
+    assembly.add('NYears', Float(iotype = 'in', desc='Operating years'))
 
     assembly.add('overallMaxTower', Float(iotype='out', units='kN*m', desc='Max tower bottom moment'))
     assembly.add('overallMaxFlap', Float(iotype='out', units='kN*m', desc='Max blade root flap moment'))
@@ -181,7 +181,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     # Add SEAM components and connections
     assembly.add('loads', SEAMLoads())
     assembly.add('tower_design', SEAMTower(21))
-    assembly.add('blade_design', SEAMRotor())
+    assembly.add('blade_design', SEAMBladeStructure())
     assembly.add('aep_calc', SEAMAEP())
     assembly.driver.workflow.add(['loads', 'tower_design', 'blade_design', 'aep_calc'])
 
@@ -362,6 +362,71 @@ if __name__ == '__main__':
     # leftover variable
     turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
 
+
+    #=========== SEAM inputs
+
+    turbine.BladeCostPerMass = 15.0
+    turbine.HubCostPerMass = 3.5
+    turbine.SpinnerCostPerMass = 4.5
+    turbine.hub_cost_per_mass = 3.5
+    turbine.spinner_cost_per_mass = 4.5
+    turbine.tower_cost_per_mass = 4.0
+    
+    turbine.AddWeightFactorBlade = 1.2
+    turbine.BladeDens = 2100.0
+    turbine.D_bottom = 8.3
+    turbine.D_top = 5.5
+    turbine.EdgeExtDynFact = 2.5
+    turbine.EdgeFatDynFact = 0.75
+    turbine.F = 0.777
+    turbine.Iref = 0.16
+    turbine.MaxChordrR = 0.2
+    turbine.NYears = 20.0
+    turbine.Neq = 10000000.0
+    turbine.Nsections = 21
+    turbine.PMtarget = 1.0
+    turbine.SF_blade = 1.1
+    turbine.SF_tower = 1.5
+    turbine.Slim_ext = 235.0
+    turbine.Slim_fat = 14.885
+    turbine.Slim_ext_blade = 200.0
+    turbine.Slim_fat_blade = 27.0
+    turbine.TIF_EDext = 1.0
+    turbine.TIF_FLext = 1.0
+    turbine.TIF_FLfat = 1.0
+    turbine.WeiA_input = 11.0
+    turbine.WeiC_input = 2.0
+    turbine.WeibullInput = True
+    turbine.WohlerExpFlap = 10.0
+    turbine.WohlerExpTower = 4.0
+    turbine.bearing_cost_per_mass = 14.0
+    turbine.blade_cost_per_mass = 15.0
+    turbine.d2e = 0.73
+    turbine.dLoaddUfactorFlap = 0.9
+    turbine.dLoaddUfactorTower = 0.8
+    turbine.hub_height = 120.0
+    turbine.max_tipspeed = 90.0
+    turbine.n_wsp = 26
+    turbine.min_wsp = 0.0
+    turbine.max_wsp = 25.0
+    turbine.nSigma4fatFlap = 1.2
+    turbine.nSigma4fatTower = 0.8
+    turbine.rated_power = 10.0
+    turbine.rho_steel = 7800.0
+    turbine.rotor_diameter = 178.0
+    turbine.sc_frac_edge = 0.8
+    turbine.sc_frac_flap = 0.3
+    turbine.site_type = 'onshore'
+    turbine.tsr = 8.0
+    turbine.air_density = 1.225
+    turbine.turbulence_int = 0.1
+    turbine.max_Cp = 0.49
+    turbine.gearloss_const = 0.01    # Fraction
+    turbine.gearloss_var = 0.014     # Fraction
+    turbine.genloss = 0.03          # Fraction
+    turbine.convloss = 0.03         # Fraction
+    
+    #==============
 
     # === run ===
     turbine.run()
