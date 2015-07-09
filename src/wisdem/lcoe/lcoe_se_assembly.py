@@ -496,7 +496,7 @@ if __name__ == '__main__':
     with_3pt_drive = False
     with_ecn_opex = False
     ecn_file = ''
-    create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
 
     #with_3pt_drive = True
     #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
@@ -522,9 +522,9 @@ if __name__ == '__main__':
     #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
     
     # NREL 5 MW in offshore plant with high winds, 20 m sea depth and ECN opex model
-    #wind_class = 'Offshore'
-    #sea_depth = 20.0
-    #with_ecn_opex = True
-    #ecn_file = 'C:/Models/ECN Model/ECN O&M Model.xls' # replace with your file path
-    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    wind_class = 'Offshore'
+    sea_depth = 20.0
+    with_ecn_opex = True
+    ecn_file = 'C:/Models/ECN Model/ECN O&M Model.xls' # replace with your file path
+    create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
    
