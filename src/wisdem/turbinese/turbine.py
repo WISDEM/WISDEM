@@ -246,6 +246,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.hub_diameter', 'hub.blade_root_diameter')
     assembly.connect('rotor.nBlades', 'hub.blade_number')
     if with_new_nacelle:
+        assembly.connect('machine_rating','hub.machine_rating')
         assembly.connect('rotor.diameter', ['hubSystem.rotor_diameter'])
         assembly.connect('nacelle.MB1_location','hubSystem.MB1_location') # TODO: bearing locations
         assembly.connect('nacelle.L_rb','hubSystem.L_rb')

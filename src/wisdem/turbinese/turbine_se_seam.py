@@ -70,15 +70,15 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.add('hub_height', Float(100., iotype='in', units='m', desc='Hub height'))
     assembly.add('rotor_diameter',  Float(110., iotype='in', units='m', desc='Rotor diameter'))
     assembly.add('site_type',Enum('onshore', values=('onshore', 'offshore'), iotype='in', desc='Site type: onshore or offshore'))
-    #tower_cost_per_mass = Float(4.0, iotype='in', desc='Tower cost per mass')
-    #blade_cost_per_mass = Float(15., iotype='in', desc='Blade cost per mass')
-    #hub_cost_per_mass = Float(3.5, iotype='in', desc='Hub cost per mass')
-    #spinner_cost_per_mass = Float(4.5, iotype='in', desc='Spinner cost per mass')
-    #bearing_cost_per_mass = Float(14.0, iotype='in', desc='Bearing cost per mass')
+    assembly.add('tower_cost_per_mass', Float(4.0, iotype='in', desc='Tower cost per mass'))
+    assembly.add('blade_cost_per_mass', Float(15., iotype='in', desc='Blade cost per mass'))
+    assembly.add('hub_cost_per_mass', Float(3.5, iotype='in', desc='Hub cost per mass'))
+    assembly.add('spinner_cost_per_mass', Float(4.5, iotype='in', desc='Spinner cost per mass'))
+    assembly.add('bearing_cost_per_mass', Float(14.0, iotype='in', desc='Bearing cost per mass'))
 
-    #turbine_cost = Float(iotype='out', desc='Total turbine CAPEX')
-    #infra_cost = Float(iotype='out', desc='Total infrastructure CAPEX')
-    #total_cost = Float(iotype='out', desc='Total CAPEX')
+    assembly.add('turbine_cost',Float(iotype='out', desc='Total turbine CAPEX'))
+    assembly.add('infra_cost', Float(iotype='out', desc='Total infrastructure CAPEX'))
+    assembly.add('total_cost', Float(iotype='out', desc='Total CAPEX'))
 
     assembly.add('rho_steel', Float(7.8e3, iotype='in', desc='density of steel'))
     assembly.add('D_bottom', Float(4., iotype='in', desc='Tower bottom diameter'))
@@ -150,9 +150,9 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
 
     assembly.add('AddWeightFactorBlade', Float(iotype='in', desc='')) # Additional weight factor for blade shell
     assembly.add('BladeDens', Float(iotype='in', units='kg/m**3', desc='density of blades')) # [kg / m^3]
-    #BladeCostPerMass = Float(iotype='in', desc='') #[e/kg]
-    #HubCostPerMass = Float(iotype='in', desc='') #[e/kg]
-    #SpinnerCostPerMass = Float(iotype='in', desc='') #[e/kg]
+    assembly.add('BladeCostPerMass', Float(iotype='in', desc='')) #[e/kg]
+    assembly.add('HubCostPerMass', Float(iotype='in', desc='')) #[e/kg]
+    assembly.add('SpinnerCostPerMass', Float(iotype='in', desc='')) #[e/kg]
 
     assembly.add('BladeWeight', Float(iotype = 'out', units = 'kg', desc = 'BladeMass' ))
 
@@ -171,10 +171,10 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.add('power_curve', Array(iotype='out', units='kW', desc='total power including losses and turbulence'))
     assembly.add('wind_curve', Array(iotype='out', units='m/s', desc='wind curve associated with power curve'))
 
-    #NYears = Float(iotype = 'in', desc='Operating years')  # move this to COE calculation
+    assembly.add('NYears', Float(iotype = 'in', desc='Operating years'))  # move this to COE calculation
 
-    #aep = Float(iotype = 'out', units='mW*h', desc='Annual energy production in mWh')
-    #total_aep = Float(iotype = 'out', units='mW*h', desc='AEP for total years of production')
+    assembly.add('aep', Float(iotype = 'out', units='mW*h', desc='Annual energy production in mWh'))
+    assembly.add('total_aep', Float(iotype = 'out', units='mW*h', desc='AEP for total years of production'))
 
     # END SEAM Variables ----------------------
 
@@ -200,26 +200,10 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
 
     # End SEAM add components and connections -------------
 
-    # --- general turbine configuration inputs---
-    assembly.add('rho', Float(1.225, iotype='in', units='kg/m**3', desc='density of air', deriv_ignore=True))
-    assembly.add('mu', Float(1.81206e-5, iotype='in', units='kg/m/s', desc='dynamic viscosity of air', deriv_ignore=True))
-    assembly.add('shear_exponent', Float(0.2, iotype='in', desc='shear exponent', deriv_ignore=True))
-    assembly.add('hub_height', Float(90.0, iotype='in', units='m', desc='hub height'))
-    assembly.add('turbine_class', Enum('I', ('I', 'II', 'III', 'IV'), iotype='in', desc='IEC turbine class'))
-    assembly.add('turbulence_class', Enum('B', ('A', 'B', 'C'), iotype='in', desc='IEC turbulence class class'))
-    assembly.add('g', Float(9.81, iotype='in', units='m/s**2', desc='acceleration of gravity', deriv_ignore=True))
-    assembly.add('cdf_reference_height_wind_speed', Float(90.0, iotype='in', desc='reference hub height for IEC wind speed (used in CDF calculation)'))
-    assembly.add('downwind', Bool(False, iotype='in', desc='flag if rotor is downwind'))
-    assembly.add('tower_d', Array([0.0], iotype='in', units='m', desc='diameters along tower'))
-    assembly.add('generator_speed', Float(iotype='in', units='rpm', desc='generator speed'))
-    assembly.add('machine_rating', Float(5000.0, units='kW', iotype='in', desc='machine rated power'))
-    assembly.add('rna_weightM', Bool(True, iotype='in', desc='flag to consider or not the RNA weight effect on Moment'))
 
     if with_new_nacelle:
         assembly.add('hub',HubSE())
         assembly.add('hubSystem',Hub_System_Adder_drive())
-        assembly.add('moments',blade_moment_transform())
-        assembly.add('forces',blade_force_transform())
         if with_3pt_drive:
             assembly.add('nacelle', Drive3pt())
         else:
@@ -230,19 +214,22 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
 
     assembly.driver.workflow.add(['hub', 'nacelle'])
     if with_new_nacelle:
-        assembly.driver.workflow.add(['hubSystem','moments','forces'])
+        assembly.driver.workflow.add(['hubSystem'])
 
     # connections to hub and hub system
     assembly.connect('blade_design.BladeWeight', 'hub.blade_mass')
     assembly.connect('loads.overallMaxFlap', 'hub.rotor_bending_moment')
     assembly.connect('rotor_diameter', ['hub.rotor_diameter'])
-    #assembly.connect('rotor.hub_diameter', 'hub.blade_root_diameter')
-    #assembly.connect('rotor.nBlades', 'hub.blade_number')
+    assembly.connect('blade_design.RootChord', 'hub.blade_root_diameter')
+    assembly.add('blade_number',Int(3,iotype='in',desc='number of blades - was in RotorSE, now adding here to turbine for SEAM'))
+    assembly.connect('blade_number', 'hub.blade_number')
     if with_new_nacelle:
+        assembly.connect('rated_power','hub.machine_rating')
         assembly.connect('rotor_diameter', ['hubSystem.rotor_diameter'])
         assembly.connect('nacelle.MB1_location','hubSystem.MB1_location') # TODO: bearing locations
         assembly.connect('nacelle.L_rb','hubSystem.L_rb')
-        #assembly.connect('rotor.tilt','hubSystem.shaft_angle')
+        assembly.add('rotor_tilt',Float(5.0, iotype='in', desc='rotor tilt - was in RotorSE, now adding here to turbine for SEAM'))
+        assembly.connect('rotor_tilt','hubSystem.shaft_angle')
         assembly.connect('hub.hub_diameter','hubSystem.hub_diameter')
         assembly.connect('hub.hub_thickness','hubSystem.hub_thickness')
         assembly.connect('hub.hub_mass','hubSystem.hub_mass')
@@ -251,45 +238,43 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
 
     # connections to nacelle #TODO: fatigue option variables
     assembly.connect('rotor_diameter', 'nacelle.rotor_diameter')
-    #assembly.connect('1.5 * rotor.ratedConditions.Q', 'nacelle.rotor_torque')
-    #assembly.connect('rotor.ratedConditions.T', 'nacelle.rotor_thrust')
-    #assembly.connect('rotor.ratedConditions.Omega', 'nacelle.rotor_speed')
+    assembly.connect('1.5 * aep_calc.rated_torque', 'nacelle.rotor_torque')
+    assembly.connect('loads.max_thrust', 'nacelle.rotor_thrust')
+    assembly.connect('aep_calc.rated_speed', 'nacelle.rotor_speed')
     assembly.connect('rated_power', 'nacelle.machine_rating')
-    #assembly.connect('rotor.root_bending_moment', 'nacelle.rotor_bending_moment')
-    #assembly.connect('generator_speed/rotor.ratedConditions.Omega', 'nacelle.gear_ratio')
-    #assembly.connect('tower_d[-1]', 'nacelle.tower_top_diameter')  # OpenMDAO circular dependency issue
-    #assembly.connect('rotor.mass_all_blades + hub.hub_system_mass', 'nacelle.rotor_mass') # assuming not already in rotor force / moments
+    assembly.add('generator_speed',Float(1173.7,iotype='in',units='rpm',desc='speed of generator - should be in nacelle'))
+    assembly.connect('generator_speed/aep_calc.rated_speed', 'nacelle.gear_ratio')
+    assembly.connect('D_top', 'nacelle.tower_top_diameter')
+    assembly.connect('blade_number * blade_design.BladeWeight + hub.hub_system_mass', 'nacelle.rotor_mass') # assuming not already in rotor force / moments
     # variable connections for new nacelle
     if with_new_nacelle:
-        #assembly.connect('rotor.nBlades','nacelle.blade_number')
-        #assembly.connect('rotor.tilt','nacelle.shaft_angle')
+        assembly.connect('blade_number','nacelle.blade_number')
+        assembly.connect('rotor_tilt','nacelle.shaft_angle')
         assembly.connect('333.3 * rated_power / 1000.0','nacelle.shrink_disc_mass')
-        #assembly.connect('rotor.hub_diameter','nacelle.blade_root_diameter')
+        assembly.connect('blade_design.RootChord','nacelle.blade_root_diameter')
 
-        #moments
-        # assembly.connect('rotor.Q_extreme','nacelle.rotor_bending_moment_x')
+        #moments - ignoring for now (nacelle will use internal defaults)
         #assembly.connect('rotor.Mxyz_0','moments.b1')
         #assembly.connect('rotor.Mxyz_120','moments.b2')
         #assembly.connect('rotor.Mxyz_240','moments.b3')
         #assembly.connect('rotor.Pitch','moments.pitch_angle')
         #assembly.connect('rotor.TotalCone','moments.cone_angle')
-        #assembly.connect('moments.Mx','nacelle.rotor_bending_moment_x') #accounted for in ratedConditions.Q
+        assembly.connect('1.5 * aep_calc.rated_torque','nacelle.rotor_bending_moment_x') #accounted for in ratedConditions.Q
         #assembly.connect('moments.My','nacelle.rotor_bending_moment_y')
         #assembly.connect('moments.Mz','nacelle.rotor_bending_moment_z')
 
-        #forces
-        # assembly.connect('rotor.T_extreme','nacelle.rotor_force_x')
+        #forces - ignoring for now (nacelle will use internal defaults)
         #assembly.connect('rotor.Fxyz_0','forces.b1')
         #assembly.connect('rotor.Fxyz_120','forces.b2')
         #assembly.connect('rotor.Fxyz_240','forces.b3')
         #assembly.connect('rotor.Pitch','forces.pitch_angle')
         #assembly.connect('rotor.TotalCone','forces.cone_angle')
-        #assembly.connect('forces.Fx','nacelle.rotor_force_x')
+        assembly.connect('loads.max_thrust','nacelle.rotor_force_x')
         #assembly.connect('forces.Fy','nacelle.rotor_force_y')
         #assembly.connect('forces.Fz','nacelle.rotor_force_z')
 
 
-class TurbineSE(Assembly):
+class Turbine_SE_SEAM(Assembly):
 
     def configure(self):
         configure_turbine(self)
@@ -297,71 +282,7 @@ class TurbineSE(Assembly):
 
 if __name__ == '__main__':
 
-    turbine = TurbineSE()
-    turbine.sea_depth = 0.0 # 0.0 for land-based turbine
-    wind_class = 'I'
-
-    #from wisdem.reference_turbines.nrel5mw.nrel5mw import configure_nrel5mw_turbine
-    #configure_nrel5mw_turbine(turbine,wind_class,turbine.sea_depth)
-
-    # === Turbine ===
-    turbine.rho = 1.225  # (Float, kg/m**3): density of air
-    turbine.mu = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    turbine.shear_exponent = 0.2  # (Float): shear exponent
-    turbine.hub_height = 90.0  # (Float, m): hub height
-    turbine.turbine_class = 'I'  # (Enum): IEC turbine class
-    turbine.turbulence_class = 'B'  # (Enum): IEC turbulence class class
-    turbine.cdf_reference_height_wind_speed = 90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
-    turbine.g = 9.81  # (Float, m/s**2): acceleration of gravity
-    # ======================
-
-
-    # === nacelle ======
-    turbine.nacelle.L_ms = 1.0  # (Float, m): main shaft length downwind of main bearing in low-speed shaft
-    turbine.nacelle.L_mb = 2.5  # (Float, m): main shaft length in low-speed shaft
-
-    turbine.nacelle.h0_front = 1.7  # (Float, m): height of Ibeam in bedplate front
-    turbine.nacelle.h0_rear = 1.35  # (Float, m): height of Ibeam in bedplate rear
-
-    turbine.nacelle.drivetrain_design = 'geared'
-    turbine.nacelle.crane = True  # (Bool): flag for presence of crane
-    turbine.nacelle.bevel = 0  # (Int): Flag for the presence of a bevel stage - 1 if present, 0 if not
-    turbine.nacelle.gear_configuration = 'eep'  # (Str): tring that represents the configuration of the gearbox (stage number and types)
-
-    turbine.nacelle.Np = [3, 3, 1]  # (Array): number of planets in each stage
-    turbine.nacelle.ratio_type = 'optimal'  # (Str): optimal or empirical stage ratios
-    turbine.nacelle.shaft_type = 'normal'  # (Str): normal or short shaft length
-    #turbine.nacelle.shaft_angle = 5.0  # (Float, deg): Angle of the LSS inclindation with respect to the horizontal
-    turbine.nacelle.shaft_ratio = 0.10  # (Float): Ratio of inner diameter to outer diameter.  Leave zero for solid LSS
-    turbine.nacelle.carrier_mass = 8000.0 # estimated for 5 MW
-    turbine.nacelle.mb1Type = 'CARB'  # (Str): Main bearing type: CARB, TRB or SRB
-    turbine.nacelle.mb2Type = 'SRB'  # (Str): Second bearing type: CARB, TRB or SRB
-    turbine.nacelle.yaw_motors_number = 8.0  # (Float): number of yaw motors
-    turbine.nacelle.uptower_transformer = True
-    turbine.nacelle.flange_length = 0.5 #m
-    turbine.nacelle.gearbox_cm = 0.1
-    turbine.nacelle.hss_length = 1.5
-    turbine.nacelle.overhang = 5.0 #TODO - should come from turbine configuration level
-
-    turbine.nacelle.check_fatigue = 0 #0 if no fatigue check, 1 if parameterized fatigue check, 2 if known loads inputs
-
-    # TODO: should come from rotor (these are FAST outputs)
-    turbine.nacelle.DrivetrainEfficiency = 0.95
-    turbine.nacelle.rotor_bending_moment_x = 330770.0# Nm
-    turbine.nacelle.rotor_bending_moment_y = -16665000.0 # Nm
-    turbine.nacelle.rotor_bending_moment_z = 2896300.0 # Nm
-    turbine.nacelle.rotor_force_x = 599610.0 # N
-    turbine.nacelle.rotor_force_y = 186780.0 # N
-    turbine.nacelle.rotor_force_z = -842710.0 # N'''
-
-    #turbine.nacelle.h0_rear = 1.35 # only used in drive smooth
-    #turbine.nacelle.h0_front = 1.7
-
-    # =================
-
-    # leftover variable
-    turbine.generator_speed = 1173.7  # (Float, rpm)  # generator speed
-
+    turbine = Turbine_SE_SEAM()
 
     #=========== SEAM inputs
 
@@ -428,20 +349,45 @@ if __name__ == '__main__':
     
     #==============
 
+    # === nacelle ======
+    turbine.blade_number = 3 # turbine level that must be added for SEAM
+    turbine.rotor_tilt = 5.0 # turbine level that must be added for SEAM
+    turbine.generator_speed = 1173.7
+    
+    turbine.nacelle.L_ms = 1.0  # (Float, m): main shaft length downwind of main bearing in low-speed shaft
+    turbine.nacelle.L_mb = 2.5  # (Float, m): main shaft length in low-speed shaft
+
+    turbine.nacelle.h0_front = 1.7  # (Float, m): height of Ibeam in bedplate front
+    turbine.nacelle.h0_rear = 1.35  # (Float, m): height of Ibeam in bedplate rear
+
+    turbine.nacelle.drivetrain_design = 'geared'
+    turbine.nacelle.crane = True  # (Bool): flag for presence of crane
+    turbine.nacelle.bevel = 0  # (Int): Flag for the presence of a bevel stage - 1 if present, 0 if not
+    turbine.nacelle.gear_configuration = 'eep'  # (Str): tring that represents the configuration of the gearbox (stage number and types)
+
+    turbine.nacelle.Np = [3, 3, 1]  # (Array): number of planets in each stage
+    turbine.nacelle.ratio_type = 'optimal'  # (Str): optimal or empirical stage ratios
+    turbine.nacelle.shaft_type = 'normal'  # (Str): normal or short shaft length
+    #turbine.nacelle.shaft_angle = 5.0  # (Float, deg): Angle of the LSS inclindation with respect to the horizontal
+    turbine.nacelle.shaft_ratio = 0.10  # (Float): Ratio of inner diameter to outer diameter.  Leave zero for solid LSS
+    turbine.nacelle.carrier_mass = 8000.0 # estimated for 5 MW
+    turbine.nacelle.mb1Type = 'CARB'  # (Str): Main bearing type: CARB, TRB or SRB
+    turbine.nacelle.mb2Type = 'SRB'  # (Str): Second bearing type: CARB, TRB or SRB
+    turbine.nacelle.yaw_motors_number = 8.0  # (Float): number of yaw motors
+    turbine.nacelle.uptower_transformer = True
+    turbine.nacelle.flange_length = 0.5 #m
+    turbine.nacelle.gearbox_cm = 0.1
+    turbine.nacelle.hss_length = 1.5
+    turbine.nacelle.overhang = 5.0 #TODO - should come from turbine configuration level
+
+    turbine.nacelle.check_fatigue = 0 #0 if no fatigue check, 1 if parameterized fatigue check, 2 if known loads inputs
+
+    # =================
+
     # === run ===
     turbine.run()
-    print 'mass rotor blades (kg) =', turbine.rotor.mass_all_blades
+    print 'mass rotor blades (kg) =', turbine.blade_number * turbine.blade_design.BladeWeight
     print 'mass hub system (kg) =', turbine.hubSystem.hub_system_mass
     print 'mass nacelle (kg) =', turbine.nacelle.nacelle_mass
-    print 'mass tower (kg) =', turbine.tower.mass
-    print 'maximum tip deflection (m) =', turbine.maxdeflection.max_tip_deflection
-    print 'ground clearance (m) =', turbine.maxdeflection.ground_clearance
-    # print
-    # print '"Torque":',turbine.nacelle.rotor_torque
-    # print 'Mx:',turbine.nacelle.rotor_bending_moment_x
-    # print 'My:',turbine.nacelle.rotor_bending_moment_y
-    # print 'Mz:',turbine.nacelle.rotor_bending_moment_z
-    # print 'Fx:',turbine.nacelle.rotor_force_x
-    # print 'Fy:',turbine.nacelle.rotor_force_y
-    # print 'Fz:',turbine.nacelle.rotor_force_z
+    print 'mass tower (kg) =', turbine.tower_design.mass
     # =================
