@@ -198,7 +198,7 @@ def configure_lcoe_with_weibull_aep(assembly):
     assembly.add('k', Float(2.0,iotype='in', desc='shape or form factor'))
 
     #assembly.replace('aep_a', aep_weibull_assembly())
-    
+
     assembly.connect('turbine_number', 'aep_a.turbine_number')
     assembly.connect('rated_power','aep_a.machine_rating')
     assembly.connect('array_losses','aep_a.array_losses')
@@ -271,7 +271,7 @@ class lcoe_se_assembly(Assembly):
     project_lifetime = Float(20.0, iotype='in', desc = 'project lifetime for wind plant')
 
     def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False, with_ecn_opex=False, ecn_file=None):
-        
+
         self.with_new_nacelle = with_new_nacelle
         self.with_landbos = with_landbos
         self.flexible_blade = flexible_blade
@@ -281,7 +281,7 @@ class lcoe_se_assembly(Assembly):
             self.ecn_file=''
         else:
             self.ecn_file = ecn_file
-        
+
         super(lcoe_se_assembly,self).__init__()
 
     def configure(self):
@@ -312,9 +312,9 @@ class lcoe_se_assembly(Assembly):
         if csm opex additional inputs:
             availability = Float()
         if openwind opex additional inputs:
-            power_curve 
-            rpm 
-            ct 
+            power_curve
+            rpm
+            ct
         if with_landbos additional inputs:
             voltage
             distInter
@@ -322,7 +322,7 @@ class lcoe_se_assembly(Assembly):
             layout
             soil
         """
-    
+
         # configure base assembly
         configure_extended_financial_analysis(self)
 
@@ -333,19 +333,19 @@ class lcoe_se_assembly(Assembly):
         else:
             self.replace('bos_a', bos_csm_assembly())
         self.replace('tcc_a', Turbine_CostsSE())
-        if self.with_ecn_opex:  
+        if self.with_ecn_opex:
             self.replace('opex_a', opex_ecn_assembly(ecn_file))
         else:
             self.replace('opex_a', opex_csm_assembly())
         self.replace('aep_a', aep_weibull_assembly())
         self.replace('fin_a', fin_csm_assembly())
-    
+
         # add TurbineSE assembly
         configure_turbine(self, self.with_new_nacelle, self.flexible_blade, self.with_3pt_drive)
-    
+
         # replace TCC with turbine_costs
         configure_lcoe_with_turb_costs(self)
-    
+
         # replace BOS with either CSM or landbos
         if self.with_landbos:
             configure_lcoe_with_landbos(self)
@@ -354,16 +354,16 @@ class lcoe_se_assembly(Assembly):
 
         # replace AEP with weibull AEP (TODO: option for basic aep)
         configure_lcoe_with_weibull_aep(self)
-        
+
         # replace OPEX with CSM or ECN opex and add AEP
-        if self.with_ecn_opex:  
-            configure_lcoe_with_ecn_opex(self,ecn_file)     
-            self.connect('opex_a.availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model 
+        if self.with_ecn_opex:
+            configure_lcoe_with_ecn_opex(self,ecn_file)
+            self.connect('opex_a.availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model
         else:
             configure_lcoe_with_csm_opex(self)
             self.add('availability',Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant'))
             self.connect('availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model
-    
+
         # replace Finance with CSM Finance
         configure_lcoe_with_csm_fin(self)
 
@@ -376,7 +376,8 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     """
 
     # === Create LCOE SE assembly ========
-    lcoe_se = lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
+    from openmdao.main.api import set_as_top
+    lcoe_se = set_as_top(lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file))
 
     # === Set assembly variables and objects ===
     lcoe_se.sea_depth = sea_depth # 0.0 for land-based turbine
@@ -412,7 +413,7 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     lcoe_se.hub_cost_per_mass = 3.5
     lcoe_se.spinner_cost_per_mass = 4.5
     lcoe_se.tower_cost_per_mass = 4.0
-    
+
     lcoe_se.AddWeightFactorBlade = 1.2
     lcoe_se.BladeDens = 2100.0
     lcoe_se.D_bottom = 8.3
@@ -461,14 +462,14 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     lcoe_se.gearloss_var = 0.014     # Fraction
     lcoe_se.genloss = 0.03          # Fraction
     lcoe_se.convloss = 0.03         # Fraction
-    
+
     #==============
 
     # === nacelle ======
     lcoe_se.blade_number = 3 # turbine level that must be added for SEAM
     lcoe_se.rotor_tilt = 5.0 # turbine level that must be added for SEAM
     lcoe_se.generator_speed = 1173.7
-    
+
     lcoe_se.nacelle.L_ms = 1.0  # (Float, m): main shaft length downwind of main bearing in low-speed shaft
     lcoe_se.nacelle.L_mb = 2.5  # (Float, m): main shaft length in low-speed shaft
 
@@ -557,25 +558,26 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     # ====
 
     # === Run default assembly and print results
-    lcoe_se.run()
+    # lcoe_se.run()
+    return lcoe_se
     # ====
 
     # === Print ===
 
-    print "Key Turbine Outputs for Reference Turbine"
-    print 'mass rotor blades:{0:.2f} (kg) '.format(lcoe_se.blade_number * lcoe_se.blade_design.BladeWeight)
-    print 'mass hub system: {0:.2f} (kg) '.format(lcoe_se.hubSystem.hub_system_mass)
-    print 'mass nacelle: {0:.2f} (kg) '.format(lcoe_se.nacelle.nacelle_mass)
-    print 'mass tower: {0:.2f} (kg) '.format(lcoe_se.tower_design.mass)
-    print
-    print "Key Plant Outputs for wind plant with Reference Turbine"
-    #print "LCOE: ${0:.4f} USD/kWh".format(lcoe_se.lcoe) # not in base output set (add to assembly output if desired)
-    print "COE: ${0:.4f} USD/kWh".format(lcoe_se.coe)
-    print
-    print "AEP per turbine: {0:.1f} kWh/turbine".format(lcoe_se.net_aep / lcoe_se.turbine_number)
-    print "Turbine Cost: ${0:.2f} USD".format(lcoe_se.turbine_cost)
-    print "BOS costs per turbine: ${0:.2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
-    print "OPEX per turbine: ${0:.2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)    
+#   print "Key Turbine Outputs for Reference Turbine"
+#   print 'mass rotor blades:{0:.2f} (kg) '.format(lcoe_se.blade_number * lcoe_se.blade_design.BladeWeight)
+#   print 'mass hub system: {0:.2f} (kg) '.format(lcoe_se.hubSystem.hub_system_mass)
+#   print 'mass nacelle: {0:.2f} (kg) '.format(lcoe_se.nacelle.nacelle_mass)
+#   print 'mass tower: {0:.2f} (kg) '.format(lcoe_se.tower_design.mass)
+#   print
+#   print "Key Plant Outputs for wind plant with Reference Turbine"
+#   #print "LCOE: ${0:.4f} USD/kWh".format(lcoe_se.lcoe) # not in base output set (add to assembly output if desired)
+#   print "COE: ${0:.4f} USD/kWh".format(lcoe_se.coe)
+#   print
+#   print "AEP per turbine: {0:.1f} kWh/turbine".format(lcoe_se.net_aep / lcoe_se.turbine_number)
+#   print "Turbine Cost: ${0:.2f} USD".format(lcoe_se.turbine_cost)
+#   print "BOS costs per turbine: ${0:.2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
+#   print "OPEX per turbine: ${0:.2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)
 
     # ====
 
@@ -590,16 +592,17 @@ if __name__ == '__main__':
     with_ecn_opex = False
     flexible_blade = False
     ecn_file = ''
-    create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
-
+    # create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
+    lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
+    lcoe_se.run()
     #with_3pt_drive = True
     #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
 
     #with_new_nacelle = False
-    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
 
     #with_landbos = True
-    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
 
     # NREL 5 MW in offshore plant with high winds and 20 m sea depth (as class I)
     #wind_class = 'Offshore'
