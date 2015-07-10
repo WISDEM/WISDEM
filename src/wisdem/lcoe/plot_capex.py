@@ -14,8 +14,8 @@ def plot_capex(top):
 
     # all this can probably be done smarter with a Pandas DataFrame?! Any takers?
     turbine_capex = OrderedDict(Rotor=top.tcc_a.tcc.rotor_cost,
-                                Tower=top.tcc_a.tower.tower_cost,
-                                Nacelle=top.tcc_a.nacelle.nacelle_cost)
+                                Tower=top.tcc_a.tcc.tower_cost,
+                                Nacelle=top.tcc_a.tcc.nacelle_cost)
     infra_capex = OrderedDict(BOS=top.bos_a.bos_costs)
 
     wt_sum = np.sum(turbine_capex.values())
