@@ -368,6 +368,12 @@ class lcoe_se_assembly(Assembly):
         configure_lcoe_with_csm_fin(self)
 
 
+    def plot(self, fig):
+
+        from plot_capex import plot_capex
+        fig = plot_capex(self)
+        return fig
+
 def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False, with_ecn_opex=False, ecn_file=None,with_openwind=False,ow_file=None,ow_wkbook=None):
     """
     Inputs:

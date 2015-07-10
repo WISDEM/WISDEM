@@ -70,15 +70,6 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.add('hub_height', Float(100., iotype='in', units='m', desc='Hub height'))
     assembly.add('rotor_diameter',  Float(110., iotype='in', units='m', desc='Rotor diameter'))
     assembly.add('site_type',Enum('onshore', values=('onshore', 'offshore'), iotype='in', desc='Site type: onshore or offshore'))
-    assembly.add('tower_cost_per_mass', Float(4.0, iotype='in', desc='Tower cost per mass'))
-    assembly.add('blade_cost_per_mass', Float(15., iotype='in', desc='Blade cost per mass'))
-    assembly.add('hub_cost_per_mass', Float(3.5, iotype='in', desc='Hub cost per mass'))
-    assembly.add('spinner_cost_per_mass', Float(4.5, iotype='in', desc='Spinner cost per mass'))
-    assembly.add('bearing_cost_per_mass', Float(14.0, iotype='in', desc='Bearing cost per mass'))
-
-    assembly.add('turbine_cost',Float(iotype='out', desc='Total turbine CAPEX'))
-    assembly.add('infra_cost', Float(iotype='out', desc='Total infrastructure CAPEX'))
-    assembly.add('total_cost', Float(iotype='out', desc='Total CAPEX'))
 
     assembly.add('rho_steel', Float(7.8e3, iotype='in', desc='density of steel'))
     assembly.add('D_bottom', Float(4., iotype='in', desc='Tower bottom diameter'))
@@ -132,13 +123,9 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     #rotor_diameter = Float(iotype='in', units='m', desc='') #[m]
     assembly.add('MaxChordrR', Float(iotype='in', units='m', desc='')) #[m]
 
-    assembly.add('OverallMaxFlap', Float(iotype='in', desc=''))
-    assembly.add('OverallMaxEdge', Float(iotype='in', desc=''))
     assembly.add('TIF_FLext', Float(iotype='in', desc='')) # Tech Impr Factor _ flap extreme
     assembly.add('TIF_EDext', Float(iotype='in', desc=''))
 
-    assembly.add('FlapLEQ', Float(iotype='in', desc=''))
-    assembly.add('EdgeLEQ', Float(iotype='in', desc=''))
     assembly.add('TIF_FLfat', Float(iotype='in', desc=''))
 
     assembly.add('sc_frac_flap', Float(iotype='in', desc='')) # sparcap fraction of chord flap
@@ -150,9 +137,6 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
 
     assembly.add('AddWeightFactorBlade', Float(iotype='in', desc='')) # Additional weight factor for blade shell
     assembly.add('BladeDens', Float(iotype='in', units='kg/m**3', desc='density of blades')) # [kg / m^3]
-    assembly.add('BladeCostPerMass', Float(iotype='in', desc='')) #[e/kg]
-    assembly.add('HubCostPerMass', Float(iotype='in', desc='')) #[e/kg]
-    assembly.add('SpinnerCostPerMass', Float(iotype='in', desc='')) #[e/kg]
 
     assembly.add('BladeWeight', Float(iotype = 'out', units = 'kg', desc = 'BladeMass' ))
 
@@ -286,13 +270,6 @@ if __name__ == '__main__':
 
     #=========== SEAM inputs
 
-    turbine.BladeCostPerMass = 15.0
-    turbine.HubCostPerMass = 3.5
-    turbine.SpinnerCostPerMass = 4.5
-    turbine.hub_cost_per_mass = 3.5
-    turbine.spinner_cost_per_mass = 4.5
-    turbine.tower_cost_per_mass = 4.0
-    
     turbine.AddWeightFactorBlade = 1.2
     turbine.BladeDens = 2100.0
     turbine.D_bottom = 8.3
@@ -320,8 +297,6 @@ if __name__ == '__main__':
     turbine.WeibullInput = True
     turbine.WohlerExpFlap = 10.0
     turbine.WohlerExpTower = 4.0
-    turbine.bearing_cost_per_mass = 14.0
-    turbine.blade_cost_per_mass = 15.0
     turbine.d2e = 0.73
     turbine.dLoaddUfactorFlap = 0.9
     turbine.dLoaddUfactorTower = 0.8
@@ -346,14 +321,14 @@ if __name__ == '__main__':
     turbine.gearloss_var = 0.014     # Fraction
     turbine.genloss = 0.03          # Fraction
     turbine.convloss = 0.03         # Fraction
-    
+
     #==============
 
     # === nacelle ======
     turbine.blade_number = 3 # turbine level that must be added for SEAM
     turbine.rotor_tilt = 5.0 # turbine level that must be added for SEAM
     turbine.generator_speed = 1173.7
-    
+
     turbine.nacelle.L_ms = 1.0  # (Float, m): main shaft length downwind of main bearing in low-speed shaft
     turbine.nacelle.L_mb = 2.5  # (Float, m): main shaft length in low-speed shaft
 
