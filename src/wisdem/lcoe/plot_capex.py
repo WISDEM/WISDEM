@@ -13,9 +13,9 @@ def plot_capex(top):
         return r * np.cos(ang), r * np.sin(ang)
 
     # all this can probably be done smarter with a Pandas DataFrame?! Any takers?
-    turbine_capex = OrderedDict(Rotor=top.tcc_a.tcc.rotor_cost,
-                                Tower=top.tcc_a.tcc.tower_cost,
-                                Nacelle=top.tcc_a.tcc.nacelle_cost)
+    turbine_capex = OrderedDict(Rotor=top.tcc_a.tcc.rotor_cost * top.turbine_number,
+                                Tower=top.tcc_a.tcc.tower_cost * top.turbine_number,
+                                Nacelle=top.tcc_a.tcc.nacelle_cost * top.turbine_number)
     infra_capex = OrderedDict(BOS=top.bos_a.bos_costs)
 
     wt_sum = np.sum(turbine_capex.values())

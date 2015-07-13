@@ -104,7 +104,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.add('max_wsp', Float(iotype = 'in', units = 'm/s', desc = 'max wind speed'))
 
     assembly.add('Iref', Float(iotype='in', desc='Reference turbulence intensity'))
-    assembly.add('WeibullInput', Bool(iotype='in', desc='Flag for Weibull input'))
+    assembly.add('WeibullInput', Bool(True, iotype='in', desc='Flag for Weibull input'))
     assembly.add('WeiA_input', Float(iotype = 'in', units='m/s', desc = 'Weibull A'))
     assembly.add('WeiC_input', Float(iotype = 'in', desc='Weibull C'))
     assembly.add('NYears', Float(iotype = 'in', desc='Operating years'))
