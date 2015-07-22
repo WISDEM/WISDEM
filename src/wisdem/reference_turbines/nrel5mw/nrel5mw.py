@@ -212,12 +212,12 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     # TODO: should come from rotor (these are FAST outputs)
     turbine.nacelle.DrivetrainEfficiency = 0.95
-    turbine.nacelle.rotor_bending_moment_x = 330770.0# Nm
-    turbine.nacelle.rotor_bending_moment_y = -16665000.0 # Nm
-    turbine.nacelle.rotor_bending_moment_z = 2896300.0 # Nm
-    turbine.nacelle.rotor_force_x = 599610.0 # N
-    turbine.nacelle.rotor_force_y = 186780.0 # N
-    turbine.nacelle.rotor_force_z = -842710.0 # N'''
+    #turbine.nacelle.rotor_bending_moment_x = 330770.0# Nm
+    #turbine.nacelle.rotor_bending_moment_y = -16665000.0 # Nm
+    #turbine.nacelle.rotor_bending_moment_z = 2896300.0 # Nm
+    #turbine.nacelle.rotor_force_x = 599610.0 # N
+    #turbine.nacelle.rotor_force_y = 186780.0 # N
+    #turbine.nacelle.rotor_force_z = -842710.0 # N'''
 
     #turbine.nacelle.h0_rear = 1.35 # only used in drive smooth
     #turbine.nacelle.h0_front = 1.7
@@ -253,8 +253,11 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     if turbine.sea_depth == 0.0:
         # --- geometry ----
-        turbine.tower.z_param = [0.0, 43.8, 87.6]
-        turbine.tower.d_param = [6.0, 4.935, 3.87]
+        #np.insert(turbine.tower.z_param,0,87.9)
+        #np.insert(turbine.tower.z_param,0,43.8)
+        #np.insert(turbine.tower.z_param,0,0.0)
+        turbine.tower.z_param = [0.0, 43.8, 87.9]
+        turbine.tower_d = [6.0, 4.935, 3.87]
         turbine.tower.t_param = [0.027*1.3, 0.023*1.3, 0.019*1.3]
         n = 15
         turbine.tower.z_full = np.linspace(0.0, 87.6, n)
@@ -269,8 +272,12 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
         turbine.tower.sigma_y = 450.0e6*np.ones(n)
     else:
         # --- geometry ----
-        turbine.tower.z_param = [-20.0, 0.0, 43.8, 87.6]
-        turbine.tower.d_param = [6.0, 6.0, 4.935, 3.87]
+        #np.insert(turbine.tower.z_param,0,87.9)
+        #np.insert(turbine.tower.z_param,0,43.8)
+        #np.insert(turbine.tower.z_param,0,0.0)
+        #np.insert(turbine.tower.z_param,0,-20.0)
+        turbine.tower.z_param = [-20.0, 0.0, 43.8, 87.9]
+        turbine.tower_d = [6.0, 6.0, 4.935, 3.87]
         turbine.tower.t_param = [0.06, 0.027*1.3, 0.023*1.3, 0.019*1.3]
         n = 20
         turbine.tower.z_full = np.linspace(-20, 87.6, n)
@@ -309,7 +316,7 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
     # -----------
 
     # --- wind ---
-    turbine.tower.wind_zref = 90.0
+    #turbine.tower.wind_zref = 90.0
     turbine.tower.wind_z0 = 0.0
     turbine.tower.wind1.shearExp = 0.2
     turbine.tower.wind2.shearExp = 0.2
@@ -317,7 +324,7 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     # if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also
     # # --- loading case 1: max Thrust ---
-    turbine.tower.wind_Uref1 = 11.73732
+    #turbine.tower.wind_Uref1 = 11.73732
     turbine.tower.plidx1 = [n-1]  # at tower top
     turbine.tower.Fx1 = [1284744.19620519]
     turbine.tower.Fy1 = [0.]
@@ -328,7 +335,7 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
     # # ---------------
 
     # # --- loading case 2: max wind speed ---
-    turbine.tower.wind_Uref2 = 70.0
+    #turbine.tower.wind_Uref2 = 70.0
     turbine.tower.plidx2 = [n-1]  # at tower top
     turbine.tower.Fx2 = [930198.60063279]
     turbine.tower.Fy2 = [0.]

@@ -352,7 +352,7 @@ def configure_turbine(assembly, with_new_nacelle=True, flexible_blade=False, wit
     assembly.connect('rotor.ratedConditions.V', 'tower.wind_Uref1')
     assembly.connect('rotor.V_extreme', 'tower.wind_Uref2')
     assembly.connect('rotor.yaw', 'tower.yaw')
-    assembly.connect('hub_height - nacelle.nacelle_cm[2]', 'tower.z_full[-1]')
+    assembly.connect('hub_height - nacelle.nacelle_cm[2]', 'tower.z_param[-1]') #TODO: hub height should be derived
     assembly.connect('rna.rna_mass', 'tower.m[0]')
     assembly.connect('rna.rna_cm[0]', 'tower.mrhox[0]')
     assembly.connect('rna.rna_cm[1]', 'tower.mrhoy[0]')

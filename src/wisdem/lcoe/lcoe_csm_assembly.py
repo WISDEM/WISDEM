@@ -25,11 +25,11 @@ from plant_energyse.nrel_csm_aep.nrel_csm_aep import aep_csm_assembly
 class lcoe_csm_assembly(Assembly):
 
     # Variables
-    machine_rating = Float(5000.0, units = 'kW', iotype='in', desc= 'rated machine power in kW')
-    rotor_diameter = Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
-    max_tip_speed = Float(80.0, units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor')
-    hub_height = Float(90.0, units = 'm', iotype='in', desc='hub height of wind turbine above ground / sea level')
-    sea_depth = Float(20.0, units = 'm', iotype='in', desc = 'sea depth for offshore wind project')
+    machine_rating = Float(units = 'kW', iotype='in', desc= 'rated machine power in kW; HighImport')
+    rotor_diameter = Float(units = 'm', iotype='in', desc= 'rotor diameter of the machine; HighImport')
+    max_tip_speed = Float(units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor; HighImport')
+    hub_height = Float(units = 'm', iotype='in', desc='hub height of wind turbine above ground / sea level; HighImport')
+    sea_depth = Float(units = 'm', iotype='in', desc = 'sea depth for offshore wind project; HighImport')
 
     # Parameters
     drivetrain_design = Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in')
@@ -50,10 +50,10 @@ class lcoe_csm_assembly(Assembly):
     array_losses = Float(0.06, iotype='in', desc = 'energy losses due to turbine interactions - across entire plant')
     availability = Float(0.94287630736, iotype='in', desc = 'average annual availbility of wind turbines at plant')
     thrust_coefficient = Float(0.50, iotype='in', desc='thrust coefficient at rated power')
-    max_efficiency = Float(iotype='in', desc = 'maximum efficiency of rotor and drivetrain - at rated power') # TODO: should come from drivetrain
+    max_efficiency = Float(0.90, iotype='in', desc = 'maximum efficiency of rotor and drivetrain - at rated power') # TODO: should come from drivetrain
     # Extra TCC parameters
     blade_number = Int(3, iotype='in', desc = 'number of rotor blades')
-    offshore = Bool(True, iotype='in', desc = 'boolean for offshore')
+    offshore = Bool(True, iotype='in', desc = 'boolean for offshore; HighImport')
     advanced_blade = Bool(False, iotype='in', desc = 'boolean for use of advanced blade curve')
     crane = Bool(True, iotype='in', desc = 'boolean for presence of a service crane up tower')
     advanced_bedplate = Int(0, iotype='in', desc= 'indicator for drivetrain bedplate design 0 - conventional')   
@@ -230,7 +230,6 @@ def example():
     print "Turbine Cost: ${0:2f} USD".format(lcoe.turbine_cost)
     print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.turbine_number)
     print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number)
-
 
     #from bokeh.plotting import figure
     #fig = figure()

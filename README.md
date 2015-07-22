@@ -133,12 +133,12 @@ The example directories may need to be modified depending on where you installed
 
     It should return a message that all models were properly installed.  If there are errors (likely with compiled code such as pBEAM) check the MinGW error messages.  You may have to rebuild the python library for mingw for some combinations of python and mingw.  To do this follow these steps:
 
-    Download gendef for your version of mingw from the mingw installer
-    Then in msys shell:
-	Navigate to the location of your python dll (for python 2.7 it will be python27.dll and likely can be found in the python27 folder)
-    	Run gendef python27.dll
-    	Run dlltool -D python27.dll -d python27.def -l libpython27.a
-    	Copy libpython27.a to your ./python27/libs directory.
+    Download gendef for your version of mingw from the mingw installer.  In the mysys shell, navigate to the location of your python dll (for python 2.7 it will be python27.dll and likely can be found in the python27 folder).  Then run:
+    	
+	gendef python27.dll
+    	dlltool -D python27.dll -d python27.def -l libpython27.a
+    
+    Copy libpython27.a to your ./python27/libs directory.
 
 
 

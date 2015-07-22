@@ -433,7 +433,7 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
     # Set plant level inputs ===
     shearExp = 0.2 #TODO : should be an input to lcoe
-    rotor.cdf_reference_height_wind_speed = 90.0
+    #rotor.cdf_reference_height_wind_speed = 90.0
     if not with_openwind:
         lcoe_se.array_losses = 0.1
     lcoe_se.other_losses = 0.0
