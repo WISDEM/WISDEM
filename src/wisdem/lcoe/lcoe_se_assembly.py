@@ -487,6 +487,8 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
 if __name__ == '__main__':
 
+
+
     # NREL 5 MW in land-based wind plant with high winds (as class I)
     wind_class = 'I'
     sea_depth = 0.0
@@ -528,3 +530,4 @@ if __name__ == '__main__':
     #ecn_file = 'C:/Models/ECN Model/ECN O&M Model.xls' # replace with your file path
     create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
    
+    
