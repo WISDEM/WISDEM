@@ -601,6 +601,8 @@ if __name__ == '__main__':
     # create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
     lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
     lcoe_se.run()
+    print lcoe_se.coe
+    print lcoe_se.turbine_cost
     #with_3pt_drive = True
     #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
 
