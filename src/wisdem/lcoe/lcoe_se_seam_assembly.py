@@ -282,7 +282,7 @@ class lcoe_se_seam_assembly(Assembly):
         else:
             self.ecn_file = ecn_file
 
-        super(lcoe_se_assembly,self).__init__()
+        super(lcoe_se_seam_assembly,self).__init__()
 
     def configure(self):
         """
