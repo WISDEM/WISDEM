@@ -241,7 +241,7 @@ def configure_lcoe_with_csm_fin(assembly):
 # =============================================================================
 # Overall LCOE Assembly
 @implement_base(ExtendedFinancialAnalysis)
-class lcoe_se_assembly(Assembly):
+class lcoe_se_seam_assembly(Assembly):
 
     # Base I/O
     # Inputs
@@ -383,7 +383,7 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
     # === Create LCOE SE assembly ========
     from openmdao.main.api import set_as_top
-    lcoe_se = set_as_top(lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file))
+    lcoe_se = set_as_top(lcoe_se_seam_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file))
 
     # === Set assembly variables and objects ===
     lcoe_se.sea_depth = sea_depth # 0.0 for land-based turbine
