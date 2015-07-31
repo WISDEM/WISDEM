@@ -16,7 +16,14 @@ def plot_capex(top):
     turbine_capex = OrderedDict(Rotor=top.tcc_a.tcc.rotor_cost * top.turbine_number,
                                 Tower=top.tcc_a.tcc.tower_cost * top.turbine_number,
                                 Nacelle=top.tcc_a.tcc.nacelle_cost * top.turbine_number)
-    infra_capex = OrderedDict(BOS=top.bos_a.bos_costs)
+    infra_capex = OrderedDict(Assembly=top.bos_breakdown.assembly_and_installation_costs,
+                              Development=top.bos_breakdown.development_costs,
+                              Electrical=top.bos_breakdown.electrical_costs,
+                              Substructure=top.bos_breakdown.foundation_and_substructure_costs,
+                              Other=top.bos_breakdown.foundation_and_substructure_costs,
+                              Preparation=top.bos_breakdown.preparation_and_staging_costs,
+                              Soft=top.bos_breakdown.soft_costs,
+                              Transportation=top.bos_breakdown.transportation_costs)
 
     wt_sum = np.sum(turbine_capex.values())
     infra_sum = np.sum(infra_capex.values())

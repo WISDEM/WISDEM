@@ -241,7 +241,7 @@ def configure_lcoe_with_csm_fin(assembly):
 # =============================================================================
 # Overall LCOE Assembly
 @implement_base(ExtendedFinancialAnalysis)
-class lcoe_se_assembly(Assembly):
+class lcoe_se_opt(Assembly):
 
     # Base I/O
     # Inputs
@@ -282,7 +282,9 @@ class lcoe_se_assembly(Assembly):
         else:
             self.ecn_file = ecn_file
 
-        super(lcoe_se_assembly,self).__init__()
+        super(lcoe_se_opt,self).__init__()
+        print 'ping!'
+
 
     def configure(self):
         """
@@ -322,6 +324,25 @@ class lcoe_se_assembly(Assembly):
             layout
             soil
         """
+
+        optimize_flag = True 
+
+        if optimize_flag:
+
+            from pyopt_driver.pyopt_driver import pyOptDriver
+
+            self.add('driver', pyOptDriver())
+
+            self.driver.optimizer = 'SNOPT'
+            self.driver.options = {'Major step limit': .1,
+                                   'Major iterations limit': 40,
+                                   'Verify level': 2}
+            # self.driver.optimizer = 'PSQP'
+            # self.driver.options['XMAX'] = 0.1
+            # self.driver.options['MIT'] = 50
+
+            self.driver.gradient_options.force_fd = True 
+            self.driver.gradient_options.fd_step = 1.e-6
 
         # configure base assembly
         configure_extended_financial_analysis(self)
@@ -374,7 +395,7 @@ class lcoe_se_assembly(Assembly):
         fig = plot_capex(self)
         return fig
 
-def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False, with_ecn_opex=False, ecn_file=None,with_openwind=False,ow_file=None,ow_wkbook=None):
+def create_example_se_opt(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False, with_ecn_opex=False, ecn_file=None,with_openwind=False,ow_file=None,ow_wkbook=None):
     """
     Inputs:
         wind_class : str ('I', 'III', 'Offshore' - selected wind class for project)
@@ -383,7 +404,7 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
     # === Create LCOE SE assembly ========
     from openmdao.main.api import set_as_top
-    lcoe_se = set_as_top(lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file))
+    lcoe_se = set_as_top(lcoe_se_opt(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file))
 
     # === Set assembly variables and objects ===
     lcoe_se.sea_depth = sea_depth # 0.0 for land-based turbine
@@ -565,6 +586,22 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
     # === Run default assembly and print results
     # lcoe_se.run()
+    # lcoe_se.driver.add_objective('coe')
+    lcoe_se.driver.add_objective('fin_a.lcoe')
+    lcoe_se.driver.add_parameter('rotor_diameter', low=0, high=2., scaler=178., start=1.)
+    lcoe_se.driver.add_parameter('rated_power', low=0.05, high=2., scaler=10., start=1.)
+    lcoe_se.driver.add_parameter('hub_height', low=0.25, high=2., scaler=120., start=1.)
+    lcoe_se.driver.add_parameter('D_top', low=0.05, high=4., scaler=5.3, start=1.)
+    lcoe_se.driver.add_parameter('D_bottom', low=0.05, high=4., scaler=8.5, start=1.)
+#   lcoe_se.driver.add_parameter('max_tipspeed', low=0.75, high=1.25, scaler=90., start=1.)
+    lcoe_se.driver.add_constraint('(hub_height-rotor_diameter/2)/(rotor_diameter/2)>0.3')
+    lcoe_se.driver.add_constraint('(D_bottom/rotor_diameter)/0.055<1.')
+    lcoe_se.driver.add_constraint('(D_top/rotor_diameter)/0.03<1.')
+    from openmdao.lib.casehandlers.api import ListCaseRecorder, DumpCaseRecorder, JSONCaseRecorder
+    fid = open('hawtopt2.log','w',0)
+    lcoe_se.recorders.append(DumpCaseRecorder(fid))
+
+    lcoe_se.recording_options.save_problem_formulation = True
     return lcoe_se
     # ====
 
