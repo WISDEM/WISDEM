@@ -55,7 +55,7 @@ class lcoe_csm_assembly(Assembly):
     offshore = Bool(True, iotype='in', desc = 'boolean for offshore', group='Global')
     advanced_blade = Bool(False, iotype='in', desc = 'boolean for use of advanced blade curve', group='Turbine_Cost')
     crane = Bool(True, iotype='in', desc = 'boolean for presence of a service crane up tower', group='Turbine_Cost')
-    advanced_bedplate = Int(0, iotype='in', desc= 'indicator for drivetrain bedplate design 0 - conventional', group='Turbine_Cost')   
+    advanced_bedplate = Int(0, iotype='in', desc= 'indicator for drivetrain bedplate design 0 - conventional', group='Turbine_Cost')
     advanced_tower = Bool(False, iotype='in', desc = 'advanced tower configuration', group='Turbine_Cost')
     # Extra Finance parameters
     fixed_charge_rate = Float(0.12, iotype = 'in', desc = 'fixed charge rate for coe calculation', group='Plant_Finance')
@@ -76,20 +76,20 @@ class lcoe_csm_assembly(Assembly):
     #AEP outputs
     rated_wind_speed = Float(11.506, units = 'm / s', iotype='out', desc='wind speed for rated power')
     rated_rotor_speed = Float(12.126, units = 'rpm', iotype='out', desc = 'rotor speed at rated power')
-    rotor_thrust = Float(iotype='out', units='N', desc='maximum thrust from rotor')    
-    rotor_torque = Float(iotype='out', units='N * m', desc = 'torque from rotor at rated power') 
+    rotor_thrust = Float(iotype='out', units='N', desc='maximum thrust from rotor')
+    rotor_torque = Float(iotype='out', units='N * m', desc = 'torque from rotor at rated power')
     power_curve = Array(np.array([[4.0,80.0],[25.0, 5000.0]]), iotype='out', desc = 'power curve for a particular rotor')
-    #max_efficiency = Float(0.902, iotype='out', desc = 'maximum efficiency of rotor and drivetrain - at rated power')  
-    gross_aep = Float(0.0, iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', unit='kWh')                
+    #max_efficiency = Float(0.902, iotype='out', desc = 'maximum efficiency of rotor and drivetrain - at rated power')
+    gross_aep = Float(0.0, iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', unit='kWh')
     #TCC outputs
     turbine_mass = Float(0.0, units='kg', iotype='out', desc='turbine mass')
     #Finance outputs
     lcoe = Float(iotype='out', desc='_cost of energy - unlevelized')
 
     def configure(self):
-        
+
         configure_extended_financial_analysis(self)
-        
+
         self.replace('tcc_a', tcc_csm_assembly())
         self.replace('bos_a', bos_csm_assembly())
         self.replace('opex_a', opex_csm_assembly())
@@ -128,8 +128,8 @@ class lcoe_csm_assembly(Assembly):
         # climate
         self.connect('sea_depth', ['bos_a.sea_depth', 'opex_a.sea_depth', 'fin_a.sea_depth'])
         self.connect('offshore','tcc_a.offshore')
-        # plant operation       
-        self.connect('turbine_number', ['aep_a.turbine_number', 'bos_a.turbine_number', 'opex_a.turbine_number']) 
+        # plant operation
+        self.connect('turbine_number', ['aep_a.turbine_number', 'bos_a.turbine_number', 'opex_a.turbine_number'])
         # financial
         self.connect('year', ['tcc_a.year', 'bos_a.year', 'opex_a.year'])
         self.connect('month', ['tcc_a.month', 'bos_a.month', 'opex_a.month'])
@@ -139,13 +139,13 @@ class lcoe_csm_assembly(Assembly):
         self.connect('discount_rate','fin_a.discount_rate')
         self.connect('construction_time','fin_a.construction_time')
         self.connect('project_lifetime','fin_a.project_lifetime')
-        
+
         # connections
         self.connect('aep_a.rotor_thrust','tcc_a.rotor_thrust')
         self.connect('aep_a.rotor_torque','tcc_a.rotor_torque')
         self.connect('aep_a.net_aep', ['opex_a.net_aep'])
         self.connect('tcc_a.turbine_cost','bos_a.turbine_cost')
- 
+
         # create passthroughs for key output variables of interest
         # aep_a
         self.connect('aep_a.rated_rotor_speed','rated_rotor_speed')
@@ -162,7 +162,7 @@ class lcoe_csm_assembly(Assembly):
 
     def plot(self, fig):
 
-        from plot_capex import plot_capex
+        from plot_capex_csm import plot_capex
         fig = plot_capex(self)
         return fig
 
@@ -208,7 +208,7 @@ def example():
     lcoe.offshore = True #Bool(True, iotype='in', desc = 'boolean for offshore')
     lcoe.advanced_blade = True #Bool(False, iotype='in', desc = 'boolean for use of advanced blade curve')
     lcoe.crane = True #Bool(True, iotype='in', desc = 'boolean for presence of a service crane up tower')
-    lcoe.advanced_bedplate = 0 #Int(0, iotype='in', desc= 'indicator for drivetrain bedplate design 0 - conventional')   
+    lcoe.advanced_bedplate = 0 #Int(0, iotype='in', desc= 'indicator for drivetrain bedplate design 0 - conventional')
     lcoe.advanced_tower = False #Bool(False, iotype='in', desc = 'advanced tower configuration')
 
     # Extra Finance inputs
@@ -220,7 +220,7 @@ def example():
     lcoe.project_lifetime = 20.0 #Float(20.0, iotype = 'in', desc = 'project lifetime for LCOE calculation')
 
     lcoe.run()
-
+    return lcoe
     print "Cost of Energy results for a 500 MW offshore wind farm using the NREL 5 MW reference turbine"
     print "LCOE: ${0:.4f} USD/kWh".format(lcoe.lcoe)
     print "COE: ${0:.4f} USD/kWh".format(lcoe.coe)
@@ -236,4 +236,4 @@ def example():
 
 if __name__=="__main__":
 
-    example()
+    lcoe = example()
