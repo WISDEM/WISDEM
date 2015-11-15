@@ -15,7 +15,7 @@ from fusedwind.plant_cost.fused_opex import OPEXVarTree
 from fusedwind.interface import implement_base
 
 # NREL cost and scaling model sub-assemblies
-from turbine_costsse.nrel_csm_tcc.nrel_csm_tcc import tcc_csm_assembly
+from turbine_costsse.nrel_csm_tcc import tcc_csm_assembly
 from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
 from plant_costsse.nrel_csm_opex.nrel_csm_opex  import opex_csm_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
@@ -229,10 +229,6 @@ def example():
     print "Turbine Cost: ${0:2f} USD".format(lcoe.turbine_cost)
     print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.turbine_number)
     print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number)
-
-    #from bokeh.plotting import figure
-    #fig = figure()
-    #lcoe.plot(fig)
 
 if __name__=="__main__":
 

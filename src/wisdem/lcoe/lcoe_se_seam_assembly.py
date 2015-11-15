@@ -17,7 +17,7 @@ from fusedwind.plant_cost.fused_bos_costs import BOSVarTree
 from fusedwind.interface import implement_base
 
 from wisdem.turbinese.turbine_se_seam import configure_turbine
-from turbine_costsse.turbine_costsse.turbine_costsse import Turbine_CostsSE
+from turbine_costsse.turbine_costsse import Turbine_CostsSE
 from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
 from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
 from plant_costsse.nrel_land_bosse.nrel_land_bosse import NREL_Land_BOSSE
