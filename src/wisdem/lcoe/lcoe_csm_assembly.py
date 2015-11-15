@@ -220,7 +220,7 @@ def example():
     lcoe.project_lifetime = 20.0 #Float(20.0, iotype = 'in', desc = 'project lifetime for LCOE calculation')
 
     lcoe.run()
-    return lcoe
+    
     print "Cost of Energy results for a 500 MW offshore wind farm using the NREL 5 MW reference turbine"
     print "LCOE: ${0:.4f} USD/kWh".format(lcoe.lcoe)
     print "COE: ${0:.4f} USD/kWh".format(lcoe.coe)
@@ -232,4 +232,4 @@ def example():
 
 if __name__=="__main__":
 
-    lcoe = example()
+    example()
