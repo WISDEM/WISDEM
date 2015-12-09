@@ -172,8 +172,8 @@ def configure_lcoe_with_basic_aep(assembly):
 
     #assembly.replace('aep_a', aep_assembly())
 
-    assembly.add('array_losses',Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant'))
-    assembly.add('other_losses',Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc'))
+    assembly.add('array_losses',Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant', group='Plant_AEP'))
+    assembly.add('other_losses',Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc', group='Plant_AEP'))
 
     # connections to aep
     assembly.connect('aep_calc.aep', 'aep_a.AEP_one_turbine')
@@ -258,7 +258,7 @@ class lcoe_se_seam_assembly(Assembly):
 
     # Configuration options
     with_new_nacelle = Bool(False, iotype='in', desc='configure with DriveWPACT if false, else configure with DriveSE', group='Drivetrain')
-    with_landbose = Bool(False, iotype='in', desc='configure with CSM BOS if false, else configure with new LandBOS model')
+    with_landbose = Bool(False, iotype='in', desc='configure with CSM BOS if false, else configure with new LandBOS model', group='Plant_cost')
     # flexible_blade = Bool(False, iotype='in', desc='configure rotor with flexible blade if True')
     with_3pt_drive = Bool(False, iotype='in', desc='only used if configuring DriveSE - selects 3 pt or 4 pt design option', group='Drivetrain') # TODO: change nacelle selection to enumerated rather than nested boolean
     with_ecn_opex = Bool(False, iotype='in', desc='configure with CSM OPEX if flase, else configure with ECN OPEX model', group='Other')
@@ -361,7 +361,7 @@ class lcoe_se_seam_assembly(Assembly):
             self.connect('opex_a.availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model
         else:
             configure_lcoe_with_csm_opex(self)
-            self.add('availability',Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant'))
+            self.add('availability',Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant', group='Plant_AEP'))
             self.connect('availability','aep_a.availability') # connecting here due to aep / opex reversal depending on model
 
         # replace Finance with CSM Finance
