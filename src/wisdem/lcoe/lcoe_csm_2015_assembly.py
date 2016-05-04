@@ -16,14 +16,15 @@ from fusedwind.plant_cost.fused_opex import OPEXVarTree
 from fusedwind.plant_cost.fused_bos_costs import BOSVarTree
 from fusedwind.interface import implement_base
 
-from wisdem.turbinese.turbine import configure_turbine
-from turbine_costsse.turbine_costsse import Turbine_CostsSE
+#from wisdem.turbinese.turbine import configure_turbine
+from turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from turbine_costsse.nrel_csm_tcc_2015 import nrel_csm_tcc_2015
 from plant_costsse.nrel_csm_bos.nrel_csm_bos import bos_csm_assembly
 from plant_costsse.nrel_csm_opex.nrel_csm_opex import opex_csm_assembly
 from plant_costsse.nrel_land_bosse.nrel_land_bosse import NREL_Land_BOSSE
 from plant_costsse.ecn_offshore_opex.ecn_offshore_opex  import opex_ecn_assembly
 from plant_financese.nrel_csm_fin.nrel_csm_fin import fin_csm_assembly
-from fusedwind.plant_flow.basic_aep import aep_assembly, aep_weibull_assembly
+from plant_energyse.nrel_csm_aep.nrel_csm_aep import aep_csm_assembly
 
 # Current configuration assembly options for LCOE SE
 # Turbine Costs
@@ -38,41 +39,32 @@ def configure_lcoe_with_turb_costs(assembly):
         transportMultiplier = Float
     """
 
-    #assembly.replace('tcc_a', Turbine_CostsSE())
+    assembly.replace('tcc_a', nrel_csm_tcc_2015())
 
-    assembly.add('advanced_blade', Bool(True, iotype='in', desc='advanced (True) or traditional (False) blade design'))
-    assembly.add('offshore', Bool(iotype='in', desc='flag for offshore site'))
-    assembly.add('assemblyCostMultiplier',Float(0.0, iotype='in', desc='multiplier for assembly cost in manufacturing'))
-    assembly.add('overheadCostMultiplier', Float(0.0, iotype='in', desc='multiplier for overhead'))
-    assembly.add('profitMultiplier', Float(0.0, iotype='in', desc='multiplier for profit markup'))
-    assembly.add('transportMultiplier', Float(0.0, iotype='in', desc='multiplier for transport costs'))
+    # Turbine Cost and Mass Inputs
+    # parameters / high level inputs
+    assembly.add('machine_rating', Float(iotype='in', units='kW', desc='machine rating'))
+    assembly.add('blade_number', Int(iotype='in', desc='number of rotor blades'))
+    assembly.add('offshore', Bool(iotype='in', desc='flag for offshore project'))
+    assembly.add('crane', Bool(iotype='in', desc='flag for presence of onboard crane'))
+    assembly.add('bearing_number', Int(2, iotype='in', desc='number of main bearings []') )#number of main bearings- defaults to 2
+    assembly.add('rotor_diameter', Float(units = 'm', iotype='in', desc= 'rotor diameter of the machine'))
+    assembly.add('turbine_class', Enum('I', ('I', 'II/III', 'User Exponent'), iotype = 'in', desc='turbine class'))
+    assembly.add('blade_has_carbon', Bool(False, iotype='in', desc= 'does the blade have carbon?')) #default to doesn't have carbon
+    #assembly.add('rotor_torque', Float(iotype='in', units='N * m', desc = 'torque from rotor at rated power')) #JMF do we want this default?
+    assembly.add('hub_height', Float(units = 'm', iotype='in', desc= 'hub height of wind turbine above ground / sea level'))
 
-    # connections to turbine costs
-    assembly.connect('rotor.mass_one_blade', 'tcc_a.blade_mass')
-    assembly.connect('hub.hub_mass', 'tcc_a.hub_mass')
-    assembly.connect('hub.pitch_system_mass', 'tcc_a.pitch_system_mass')
-    assembly.connect('hub.spinner_mass', 'tcc_a.spinner_mass')
-    assembly.connect('nacelle.low_speed_shaft_mass', 'tcc_a.low_speed_shaft_mass')
-    assembly.connect('nacelle.main_bearing_mass', 'tcc_a.main_bearing_mass')
-    assembly.connect('nacelle.second_bearing_mass', 'tcc_a.second_bearing_mass')
-    assembly.connect('nacelle.gearbox_mass', 'tcc_a.gearbox_mass')
-    assembly.connect('nacelle.high_speed_side_mass', 'tcc_a.high_speed_side_mass')
-    assembly.connect('nacelle.generator_mass', 'tcc_a.generator_mass')
-    assembly.connect('nacelle.bedplate_mass', 'tcc_a.bedplate_mass')
-    assembly.connect('nacelle.yaw_system_mass', 'tcc_a.yaw_system_mass')
-    assembly.connect('tower.mass', 'tcc_a.tower_mass')
-    assembly.connect('rotor.control.ratedPower', 'tcc_a.machine_rating')
-    assembly.connect('rotor.nBlades', 'tcc_a.blade_number')
-    assembly.connect('nacelle.crane', 'tcc_a.crane')
-    assembly.connect('year', 'tcc_a.year')
-    assembly.connect('month', 'tcc_a.month')
-    assembly.connect('nacelle.drivetrain_design', 'tcc_a.drivetrain_design')
-    assembly.connect('advanced_blade','tcc_a.advanced_blade')
-    assembly.connect('offshore','tcc_a.offshore')
-    assembly.connect('assemblyCostMultiplier','tcc_a.assemblyCostMultiplier')
-    assembly.connect('overheadCostMultiplier','tcc_a.overheadCostMultiplier')
-    assembly.connect('profitMultiplier','tcc_a.profitMultiplier')
-    assembly.connect('transportMultiplier','tcc_a.transportMultiplier')
+    assembly.connect('machine_rating','tcc_a.machine_rating')
+    assembly.connect('blade_number',['tcc_a.blade_number'])
+    assembly.connect('offshore',['tcc_a.offshore'])
+    assembly.connect('crane',['tcc_a.crane'])
+    assembly.connect('bearing_number',['tcc_a.bearing_number'])
+    assembly.connect('rotor_diameter','tcc_a.rotor_diameter')
+    assembly.connect('turbine_class','tcc_a.turbine_class')
+    assembly.connect('blade_has_carbon','tcc_a.blade_has_carbon')
+    #assembly.connect('rotor_torque','tcc_a.rotor_torque') #TODO - fix
+    assembly.connect('hub_height','tcc_a.hub_height')
+
 
 # Balance of Station Costs
 def configure_lcoe_with_csm_bos(assembly):
@@ -87,10 +79,10 @@ def configure_lcoe_with_csm_bos(assembly):
 
     # connections to bos
     assembly.connect('machine_rating', 'bos_a.machine_rating')
-    assembly.connect('rotor.diameter', 'bos_a.rotor_diameter')
-    assembly.connect('rotor.hubHt', 'bos_a.hub_height')
+    assembly.connect('rotor_diameter', 'bos_a.rotor_diameter')
+    assembly.connect('hub_height', 'bos_a.hub_height')
     assembly.connect('turbine_number', 'bos_a.turbine_number')
-    assembly.connect('rotor.mass_all_blades + hub.hub_system_mass + nacelle.nacelle_mass', 'bos_a.RNA_mass')
+    #assembly.connect('rotor.mass_all_blades + hub.hub_system_mass + nacelle.nacelle_mass', 'bos_a.RNA_mass')
 
     assembly.connect('sea_depth', 'bos_a.sea_depth')
     assembly.connect('year', 'bos_a.year')
@@ -161,28 +153,8 @@ def configure_lcoe_with_ecn_opex(assembly,ecn_file):
     assembly.connect('tcc_a.turbine_cost','opex_a.turbine_cost')
     assembly.connect('project_lifetime','opex_a.project_lifetime')
 
-# Energy Production
-def configure_lcoe_with_basic_aep(assembly):
-    """
-    aep inputs:
-        array_losses = Float
-        other_losses = Float
-        availability = Float
-    """
-
-    #assembly.replace('aep_a', aep_assembly())
-
-    assembly.add('array_losses',Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant'))
-    assembly.add('other_losses',Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc'))
-
-    # connections to aep
-    assembly.connect('rotor.AEP', 'aep_a.AEP_one_turbine')
-    assembly.connect('turbine_number', 'aep_a.turbine_number')
-    assembly.connect('machine_rating','aep_a.machine_rating')
-    assembly.connect('array_losses','aep_a.array_losses')
-    assembly.connect('other_losses','aep_a.other_losses')
-
-def configure_lcoe_with_weibull_aep(assembly):
+# Energy production
+def configure_lcoe_with_csm_aep(assembly):
     """
     aep inputs
         power_curve    = Array([], iotype='in', desc='wind turbine power curve')
@@ -192,22 +164,50 @@ def configure_lcoe_with_weibull_aep(assembly):
         k = Float
     """
 
-    assembly.add('array_losses',Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant'))
-    assembly.add('other_losses',Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc'))
-    assembly.add('A',Float(8.2,iotype='in', desc='scale factor'))
-    assembly.add('k', Float(2.0,iotype='in', desc='shape or form factor'))
+    # Variables
+    #machine_rating = Float(units = 'kW', iotype='in', desc= 'rated machine power in kW')
+    assembly.add('max_tip_speed', Float(units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor'))
+    #rotor_diameter = Float(units = 'm', iotype='in', desc= 'rotor diameter of the machine') 
+    assembly.add('max_power_coefficient', Float(iotype='in', desc= 'maximum power coefficient of rotor for operation in region 2'))
+    assembly.add('opt_tsr', Float(iotype='in', desc= 'optimum tip speed ratio for operation in region 2'))
+    assembly.add('cut_in_wind_speed', Float(units = 'm/s', iotype='in', desc= 'cut in wind speed for the wind turbine'))
+    assembly.add('cut_out_wind_speed', Float(units = 'm/s', iotype='in', desc= 'cut out wind speed for the wind turbine'))
+    assembly.add('hub_height', Float(units = 'm', iotype='in', desc= 'hub height of wind turbine above ground / sea level'))
+    assembly.add('altitude', Float(units = 'm', iotype='in', desc= 'altitude of wind plant'))
+    assembly.add('air_density', Float(0.0, units = 'kg / (m * m * m)', iotype='in', desc= 'air density at wind plant site')) # default air density value is 0.0 - forces aero csm to calculate air density in model
+    assembly.add('drivetrain_design', Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in'))
+    assembly.add('shear_exponent', Float(iotype='in', desc= 'shear exponent for wind plant')) #TODO - could use wind model here
+    assembly.add('wind_speed_50m', Float(iotype='in', units = 'm/s', desc='mean annual wind speed at 50 m height'))
+    assembly.add('weibull_k', Float(iotype='in', desc = 'weibull shape factor for annual wind speed distribution'))
+    assembly.add('soiling_losses', Float(iotype='in', desc = 'energy losses due to blade soiling for the wind plant - average across turbines'))
+    assembly.add('array_losses', Float(iotype='in', desc = 'energy losses due to turbine interactions - across entire plant'))
+    #assembly.add('availability', Float(iotype='in', desc = 'average annual availbility of wind turbines at plant'))
+    #turbine_number = Int(iotype='in', desc = 'total number of wind turbines at the plant')
+    assembly.add('thrust_coefficient', Float(iotype='in', desc='thrust coefficient at rated power'))
+    assembly.add('max_efficiency', Float(iotype='in', desc = 'maximum efficiency of rotor and drivetrain - at rated power')) # TODO: should come from drivetrain
 
-    #assembly.replace('aep_a', aep_weibull_assembly())
-    
-    assembly.connect('turbine_number', 'aep_a.turbine_number')
+
+    assembly.connect('rotor_diameter','aep_a.rotor_diameter')
     assembly.connect('machine_rating','aep_a.machine_rating')
+    assembly.connect('turbine_number','aep_a.turbine_number')
+    
+    assembly.connect('max_tip_speed','aep_a.max_tip_speed')
+    assembly.connect('max_power_coefficient','aep_a.max_power_coefficient')
+    assembly.connect('opt_tsr','aep_a.opt_tsr')
+    assembly.connect('cut_in_wind_speed','aep_a.cut_in_wind_speed')
+    assembly.connect('cut_out_wind_speed','aep_a.cut_out_wind_speed')
+    assembly.connect('hub_height','aep_a.hub_height')
+    assembly.connect('altitude','aep_a.altitude')
+    assembly.connect('air_density','aep_a.air_density')
+    assembly.connect('drivetrain_design','aep_a.drivetrain_design')
+    assembly.connect('shear_exponent','aep_a.shear_exponent')
+    assembly.connect('wind_speed_50m','aep_a.wind_speed_50m')
+    assembly.connect('weibull_k','aep_a.weibull_k')
+    assembly.connect('soiling_losses','aep_a.soiling_losses')
     assembly.connect('array_losses','aep_a.array_losses')
-    assembly.connect('other_losses','aep_a.other_losses')
-    assembly.connect('A','aep_a.A')
-    assembly.connect('k','aep_a.k')
-    assembly.connect('rotor.V','aep_a.wind_curve')
-    assembly.connect('rotor.P','aep_a.power_curve')
-
+    #assembly.connect('availability','aep_a.availability')
+    assembly.connect('thrust_coefficient','aep_a.thrust_coefficient')
+    assembly.connect('max_efficiency','aep_a.max_efficiency')
 
 # Finance
 def configure_lcoe_with_csm_fin(assembly):
@@ -257,10 +257,7 @@ class lcoe_se_assembly(Assembly):
     bos_breakdown = VarTree(BOSVarTree(), iotype='out', desc='BOS cost breakdown')
 
     # Configuration options
-    with_new_nacelle = Bool(False, iotype='in', desc='configure with DriveWPACT if false, else configure with DriveSE')
     with_landbose = Bool(False, iotype='in', desc='configure with CSM BOS if false, else configure with new LandBOS model')
-    flexible_blade = Bool(False, iotype='in', desc='configure rotor with flexible blade if True')
-    with_3pt_drive = Bool(False, iotype='in', desc='only used if configuring DriveSE - selects 3 pt or 4 pt design option') # TODO: change nacelle selection to enumerated rather than nested boolean
     with_ecn_opex = Bool(False, iotype='in', desc='configure with CSM OPEX if flase, else configure with ECN OPEX model')
     ecn_file = Str(iotype='in', desc='location of ecn excel file if used')
 
@@ -270,12 +267,9 @@ class lcoe_se_assembly(Assembly):
     month = Int(12, iotype='in', desc='month of project start')
     project_lifetime = Float(20.0, iotype='in', desc = 'project lifetime for wind plant')
 
-    def __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False, with_ecn_opex=False, ecn_file=None):
-        
-        self.with_new_nacelle = with_new_nacelle
+    def __init__(self, with_landbos=False, with_ecn_opex=False, ecn_file=None):
+
         self.with_landbos = with_landbos
-        self.flexible_blade = flexible_blade
-        self.with_3pt_drive = with_3pt_drive
         self.with_ecn_opex = with_ecn_opex
         if ecn_file == None:
             self.ecn_file=''
@@ -332,16 +326,13 @@ class lcoe_se_assembly(Assembly):
             self.replace('bos_a', NREL_Land_BOSSE())
         else:
             self.replace('bos_a', bos_csm_assembly())
-        self.replace('tcc_a', Turbine_CostsSE())
+        #self.replace('tcc_a', Turbine_CostsSE_2015())
         if self.with_ecn_opex:  
             self.replace('opex_a', opex_ecn_assembly(ecn_file))
         else:
             self.replace('opex_a', opex_csm_assembly())
-        self.replace('aep_a', aep_weibull_assembly())
+        self.replace('aep_a', aep_csm_assembly()) # TODO include AEP assembly from CSM and use to bridge rotor torque
         self.replace('fin_a', fin_csm_assembly())
-    
-        # add TurbineSE assembly
-        configure_turbine(self, self.with_new_nacelle, self.flexible_blade, self.with_3pt_drive)
     
         # replace TCC with turbine_costs
         configure_lcoe_with_turb_costs(self)
@@ -353,7 +344,8 @@ class lcoe_se_assembly(Assembly):
             configure_lcoe_with_csm_bos(self)
 
         # replace AEP with weibull AEP (TODO: option for basic aep)
-        configure_lcoe_with_weibull_aep(self)
+        configure_lcoe_with_csm_aep(self)
+        self.connect('aep_a.rotor_torque','tcc_a.rotor_torque')
         
         # replace OPEX with CSM or ECN opex and add AEP
         if self.with_ecn_opex:  
@@ -368,7 +360,7 @@ class lcoe_se_assembly(Assembly):
         configure_lcoe_with_csm_fin(self)
 
 
-def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=False,flexible_blade=False,with_3pt_drive=False, with_ecn_opex=False, ecn_file=None,with_openwind=False,ow_file=None,ow_wkbook=None):
+def create_example_se_assembly(with_landbos=False,with_ecn_opex=False, ecn_file=None,with_openwind=False,ow_file=None,ow_wkbook=None):
     """
     Inputs:
         wind_class : str ('I', 'III', 'Offshore' - selected wind class for project)
@@ -376,34 +368,37 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     """
 
     # === Create LCOE SE assembly ========
-    lcoe_se = lcoe_se_assembly(with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
+    lcoe_se = lcoe_se_assembly(with_landbos,with_ecn_opex,ecn_file)
 
     # === Set assembly variables and objects ===
-    lcoe_se.sea_depth = sea_depth # 0.0 for land-based turbine
+    lcoe_se.sea_depth = 0.0 # 0.0 for land-based turbine
     lcoe_se.turbine_number = 100
     lcoe_se.year = 2009
     lcoe_se.month = 12
 
-    rotor = lcoe_se.rotor
-    nacelle = lcoe_se.nacelle
-    tower = lcoe_se.tower
     tcc_a = lcoe_se.tcc_a
     # bos_a = lcoe_se.bos_a
     # opex_a = lcoe_se.opex_a
     aep_a = lcoe_se.aep_a
     fin_a = lcoe_se.fin_a
 
-    # Turbine ===========
-    from wisdem.reference_turbines.nrel5mw.nrel5mw import configure_nrel5mw_turbine
-    configure_nrel5mw_turbine(lcoe_se,wind_class,lcoe_se.sea_depth)
-
     # tcc ====
-    lcoe_se.advanced_blade = True
-    lcoe_se.offshore = False
-    lcoe_se.assemblyCostMultiplier = 0.30
-    lcoe_se.profitMultiplier = 0.20
-    lcoe_se.overheadCostMultiplier = 0.0
-    lcoe_se.transportMultiplier = 0.0
+    lcoe_se.rotor_diameter = 126.0
+    lcoe_se.turbine_class = 'I'
+    lcoe_se.blade_has_carbon = False
+    lcoe_se.blade_number = 3    
+    lcoe_se.machine_rating = 5000.0
+    lcoe_se.hub_height = 90.0
+    lcoe_se.bearing_number = 2
+    lcoe_se.crane = True
+
+    # Rotor force calculations for nacelle inputs
+    #maxTipSpd = 80.0
+    #maxEfficiency = 0.90
+
+    #ratedHubPower  = lcoe_se.machine_rating*1000. / maxEfficiency 
+    #rotorSpeed     = (maxTipSpd/(0.5*lcoe_se.rotor_diameter)) * (60.0 / (2*np.pi))
+    #lcoe_se.rotor_torque = ratedHubPower/(rotorSpeed*(np.pi/30))
 
     # for new landBOS
     # === new landBOS ===
@@ -416,12 +411,30 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
     # aep ==== # based on COE review for land-based machines
     if not with_openwind:
-        lcoe_se.array_losses = 0.059
-        lcoe_se.A = 8.9 # weibull of 7.25 at 50 m with shear exp of 0.143
-        lcoe_se.k = 2.0
+        lcoe_se.machine_rating = 5000.0 # Float(units = 'kW', iotype='in', desc= 'rated machine power in kW')
+        lcoe_se.rotor_diameter = 126.0 # Float(units = 'm', iotype='in', desc= 'rotor diameter of the machine')
+        lcoe_se.max_tip_speed = 80.0 # Float(units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor')
+        lcoe_se.drivetrain_design = 'geared' # Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in')
+        lcoe_se.altitude = 0.0 # Float(0.0, units = 'm', iotype='in', desc= 'altitude of wind plant')
+        lcoe_se.turbine_number = 100 # Int(100, iotype='in', desc = 'total number of wind turbines at the plant')
+        lcoe_se.hub_height = 90.0 # Float(units = 'm', iotype='in', desc='hub height of wind turbine above ground / sea level')s
+        lcoe_se.max_power_coefficient = 0.488 #Float(0.488, iotype='in', desc= 'maximum power coefficient of rotor for operation in region 2')
+        lcoe_se.opt_tsr = 7.525 #Float(7.525, iotype='in', desc= 'optimum tip speed ratio for operation in region 2')
+        lcoe_se.cut_in_wind_speed = 3.0 #Float(3.0, units = 'm/s', iotype='in', desc= 'cut in wind speed for the wind turbine')
+        lcoe_se.cut_out_wind_speed = 25.0 #Float(25.0, units = 'm/s', iotype='in', desc= 'cut out wind speed for the wind turbine')
+        lcoe_se.hub_height = 90.0 #Float(90.0, units = 'm', iotype='in', desc= 'hub height of wind turbine above ground / sea level')
+        #lcoe_se.air_density = Float(0.0, units = 'kg / (m * m * m)', iotype='in', desc= 'air density at wind plant site')  # default air density value is 0.0 - forces aero csm to calculate air density in model
+        lcoe_se.shear_exponent = 0.1 #Float(0.1, iotype='in', desc= 'shear exponent for wind plant') #TODO - could use wind model here
+        lcoe_se.wind_speed_50m = 8.02 #Float(8.35, units = 'm/s', iotype='in', desc='mean annual wind speed at 50 m height')
+        lcoe_se.weibull_k= 2.15 #Float(2.1, iotype='in', desc = 'weibull shape factor for annual wind speed distribution')
+        lcoe_se.soiling_losses = 0.0 #Float(0.0, iotype='in', desc = 'energy losses due to blade soiling for the wind plant - average across turbines')
+        lcoe_se.array_losses = 0.10 #Float(0.06, iotype='in', desc = 'energy losses due to turbine interactions - across entire plant')
+        lcoe_se.thrust_coefficient = 0.50 #Float(0.50, iotype='in', desc='thrust coefficient at rated power')
+        lcoe_se.max_efficiency = 0.902
     lcoe_se.other_losses = 0.101
     if not with_ecn_opex:
-        lcoe_se.availability = 0.94
+        lcoe_se.availability = 0.941 #Float(0.94287630736, iotype='in', desc = 'average annual availbility of wind turbines at plant')
+
 
     # fin ===
     lcoe_se.fixed_charge_rate = 0.095
@@ -439,10 +452,9 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     lcoe_se.other_losses = 0.0
     if not with_ecn_opex:
         lcoe_se.availability = 0.98
-    rotor.turbulence_class = 'B'
     lcoe_se.multiplier = 2.23
 
-    if wind_class == 'Offshore':
+    '''if wind_class == 'Offshore':
         # rotor.cdf_reference_mean_wind_speed = 8.4 # TODO - aep from its own module
         # rotor.cdf_reference_height_wind_speed = 50.0
         # rotor.weibull_shape = 2.1
@@ -453,12 +465,7 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
         lcoe_se.offshore = True
         lcoe_se.multiplier = 2.33
         lcoe_se.fixed_charge_rate = 0.118
-
-    rotor.shearExp = shearExp
-    tower.wind1.shearExp = shearExp
-    tower.wind2.shearExp = shearExp
-
-    # ====
+    # ===='''
 
     # === Run default assembly and print results
     lcoe_se.run()
@@ -466,14 +473,7 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
     # === Print ===
 
-    print "Key Turbine Outputs for NREL 5 MW Reference Turbine"
-    print 'mass rotor blades:{0:.2f} (kg) '.format(lcoe_se.rotor.mass_all_blades)
-    print 'mass hub system: {0:.2f} (kg) '.format(lcoe_se.hub.hub_system_mass)
-    print 'mass nacelle: {0:.2f} (kg) '.format(lcoe_se.nacelle.nacelle_mass)
-    print 'mass tower: {0:.2f} (kg) '.format(lcoe_se.tower.mass)
-    print 'maximum tip deflection: {0:.2f} (m) '.format(lcoe_se.maxdeflection.max_tip_deflection)
-    print 'ground clearance: {0:.2f} (m) '.format(lcoe_se.maxdeflection.ground_clearance)
-    print
+
     print "Key Plant Outputs for wind plant with NREL 5 MW Turbine"
     #print "LCOE: ${0:.4f} USD/kWh".format(lcoe_se.lcoe) # not in base output set (add to assembly output if desired)
     print "COE: ${0:.4f} USD/kWh".format(lcoe_se.coe)
@@ -482,24 +482,18 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     print "Turbine Cost: ${0:.2f} USD".format(lcoe_se.turbine_cost)
     print "BOS costs per turbine: ${0:.2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
     print "OPEX per turbine: ${0:.2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)    
-
+    print
     # ====
 
 if __name__ == '__main__':
 
-
-
     # NREL 5 MW in land-based wind plant with high winds (as class I)
-    wind_class = 'I'
-    sea_depth = 0.0
-    with_new_nacelle = True
     with_landbos = False
-    flexible_blade = False
-    with_3pt_drive = False
     with_ecn_opex = False
     ecn_file = ''
-    #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
+    create_example_se_assembly(with_landbos,with_ecn_opex,ecn_file) 
 
+    '''
     #with_3pt_drive = True
     #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
 
@@ -530,4 +524,4 @@ if __name__ == '__main__':
     #ecn_file = 'C:/Models/ECN Model/ECN O&M Model.xls' # replace with your file path
     create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file) 
    
-    
+    '''
