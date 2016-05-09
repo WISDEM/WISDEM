@@ -81,6 +81,7 @@ class lcoe_csm_assembly(Assembly):
     power_curve = Array(np.array([[4.0,80.0],[25.0, 5000.0]]), iotype='out', desc = 'power curve for a particular rotor')
     #max_efficiency = Float(0.902, iotype='out', desc = 'maximum efficiency of rotor and drivetrain - at rated power')
     gross_aep = Float(0.0, iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', unit='kWh')
+    capacity_factor = Float(iotype='out',desc='plant capacity factor')
     #TCC outputs
     turbine_mass = Float(0.0, units='kg', iotype='out', desc='turbine mass')
     #Finance outputs
@@ -155,6 +156,7 @@ class lcoe_csm_assembly(Assembly):
         self.connect('aep_a.power_curve','power_curve')
         #self.connect('aep_a.max_efficiency','max_efficiency')
         self.connect('aep_a.gross_aep','gross_aep')
+        self.connect('aep_a.capacity_factor','capacity_factor')
         # tcc_a
         self.connect('tcc_a.turbine_mass','turbine_mass')
         # fin_a

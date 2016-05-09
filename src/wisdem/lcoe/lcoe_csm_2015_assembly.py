@@ -186,6 +186,7 @@ def configure_lcoe_with_csm_aep(assembly):
     assembly.add('thrust_coefficient', Float(iotype='in', desc='thrust coefficient at rated power'))
     assembly.add('max_efficiency', Float(iotype='in', desc = 'maximum efficiency of rotor and drivetrain - at rated power')) # TODO: should come from drivetrain
 
+    assembly.add('capacity_factor', Float(iotype='out'))
 
     assembly.connect('rotor_diameter','aep_a.rotor_diameter')
     assembly.connect('machine_rating','aep_a.machine_rating')
@@ -208,6 +209,7 @@ def configure_lcoe_with_csm_aep(assembly):
     #assembly.connect('availability','aep_a.availability')
     assembly.connect('thrust_coefficient','aep_a.thrust_coefficient')
     assembly.connect('max_efficiency','aep_a.max_efficiency')
+    assembly.connect('aep_a.capacity_factor','capacity_factor')
 
 # Finance
 def configure_lcoe_with_csm_fin(assembly):
@@ -228,6 +230,8 @@ def configure_lcoe_with_csm_fin(assembly):
     assembly.add('discount_rate', Float(0.07, iotype = 'in', desc = 'applicable project discount rate'))
     assembly.add('construction_time', Float(1.0, iotype = 'in', desc = 'number of years to complete project construction'))
 
+    assembly.add('lcoe',Float(iotype='out'))
+
     # connections to fin
     assembly.connect('sea_depth', 'fin_a.sea_depth')
     assembly.connect('project_lifetime','fin_a.project_lifetime')
@@ -236,7 +240,7 @@ def configure_lcoe_with_csm_fin(assembly):
     assembly.connect('tax_rate','fin_a.tax_rate')
     assembly.connect('discount_rate','fin_a.discount_rate')
     assembly.connect('construction_time','fin_a.construction_time')
-
+    assembly.connect('fin_a.lcoe','lcoe')
 
 # =============================================================================
 # Overall LCOE Assembly
