@@ -194,20 +194,23 @@ def configure_lcoe_with_weibull_aep(assembly):
 
     assembly.add('array_losses',Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant', group='Plant_AEP'))
     assembly.add('other_losses',Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc', group='Plant_AEP'))
-    assembly.add('weibull_C',Float(8.2,iotype='in', desc='Weibull scale factor', group='Plant_AEP'))
+    #assembly.add('weibull_C',Float(8.2,iotype='in', desc='Weibull scale factor', group='Plant_AEP'))
     assembly.add('weibull_k', Float(2.0,iotype='in', desc='Weibull shape or form factor', group='Plant_AEP'))
-
+    assembly.add('wind_speed_50m',Float(4.0,iotype='in'))
     #assembly.replace('aep_a', aep_weibull_assembly())
 
     assembly.connect('turbine_number', 'aep_a.turbine_number')
     assembly.connect('rated_power','aep_a.machine_rating')
     assembly.connect('array_losses','aep_a.array_losses')
     assembly.connect('other_losses','aep_a.other_losses')
-    assembly.connect('weibull_C','aep_a.A')
+    #assembly.connect('weibull_C','aep_a.A')
+    assembly.connect('wind_speed_50m * (hub_height / 50.0) ** 0.143','aep_a.A')
     assembly.connect('weibull_k','aep_a.k')
     assembly.connect('aep_calc.wind_curve','aep_a.wind_curve')
     assembly.connect('aep_calc.power_curve','aep_a.power_curve')
 
+    #assembly.add('capacity_factor',Float(iotype='out'))
+    #assembly.connect('aep_calc.capacity_factor','capacity_factor')
 
 # Finance
 def configure_lcoe_with_csm_fin(assembly):
@@ -522,8 +525,8 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
     # aep ==== # based on COE review for land-based machines
     if not with_openwind:
         lcoe_se.array_losses = 0.059
-        lcoe_se.A = 8.9 # weibull of 7.25 at 50 m with shear exp of 0.143
-        lcoe_se.k = 2.0
+        lcoe_se.wind_speed_50m = 8.9 # weibull of 7.25 at 50 m with shear exp of 0.143
+        lcoe_se.weibull_k = 2.0
     lcoe_se.other_losses = 0.101
     if not with_ecn_opex:
         lcoe_se.availability = 0.94
@@ -561,26 +564,11 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
     # === Run default assembly and print results
     # lcoe_se.run()
-    return lcoe_se
     # ====
 
     # === Print ===
 
-#   print "Key Turbine Outputs for Reference Turbine"
-#   print 'mass rotor blades:{0:.2f} (kg) '.format(lcoe_se.blade_number * lcoe_se.blade_design.BladeWeight)
-#   print 'mass hub system: {0:.2f} (kg) '.format(lcoe_se.hubSystem.hub_system_mass)
-#   print 'mass nacelle: {0:.2f} (kg) '.format(lcoe_se.nacelle.nacelle_mass)
-#   print 'mass tower: {0:.2f} (kg) '.format(lcoe_se.tower_design.mass)
-#   print
-#   print "Key Plant Outputs for wind plant with Reference Turbine"
-#   #print "LCOE: ${0:.4f} USD/kWh".format(lcoe_se.lcoe) # not in base output set (add to assembly output if desired)
-#   print "COE: ${0:.4f} USD/kWh".format(lcoe_se.coe)
-#   print
-#   print "AEP per turbine: {0:.1f} kWh/turbine".format(lcoe_se.net_aep / lcoe_se.turbine_number)
-#   print "Turbine Cost: ${0:.2f} USD".format(lcoe_se.turbine_cost)
-#   print "BOS costs per turbine: ${0:.2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
-#   print "OPEX per turbine: ${0:.2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)
-
+    return lcoe_se
     # ====
 
 if __name__ == '__main__':
@@ -596,8 +584,26 @@ if __name__ == '__main__':
     ecn_file = ''
     # create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
     lcoe_se = create_example_se_assembly('I', 0., True, False, False,False,False, '')
+
     lcoe_se.run()
+
+    print "Key Turbine Outputs for Reference Turbine"
+    #print 'mass rotor blades:{0:.2f} (kg) '.format(lcoe_se.blade_number * lcoe_se.blade_design.BladeWeight)
+    #print 'mass hub system: {0:.2f} (kg) '.format(lcoe_se.hubSystem.hub_system_mass)
+    #print 'mass nacelle: {0:.2f} (kg) '.format(lcoe_se.nacelle.nacelle_mass)
+    #print 'mass tower: {0:.2f} (kg) '.format(lcoe_se.tower_design.mass)
     print 'cost:', lcoe_se.turbine_cost
+    print
+    print "Key Plant Outputs for wind plant with Reference Turbine"
+    #print "LCOE: ${0:.4f} USD/kWh".format(lcoe_se.lcoe) # not in base output set (add to assembly output if desired)
+    print "COE: ${0:.4f} USD/kWh".format(lcoe_se.coe)
+    print
+    print "AEP per turbine: {0:.1f} kWh/turbine".format(lcoe_se.net_aep / lcoe_se.turbine_number)
+    print "Turbine Cost: ${0:.2f} USD".format(lcoe_se.turbine_cost)
+    print "BOS costs per turbine: ${0:.2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
+    print "OPEX per turbine: ${0:.2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)
+
+
     #with_3pt_drive = True
     #create_example_se_assembly(wind_class,sea_depth,with_new_nacelle,with_landbos,flexible_blade,with_3pt_drive,with_ecn_opex,ecn_file)
 
