@@ -146,7 +146,7 @@ The example directories may need to be modified depending on where you installed
 
 1. First make sure you have the *general prerequisites* installed on your system. In particular, you should install compilers, LaPack, BLAS and Boost-Python libraries. For example on a debian-based environment (e.g. Ubuntu) these packages can be installed by executing the following (as root):
 
-    $ apt-get install gfortran g++ liblapack3 liblapack-dev libblas3 libblas-dev libboost-all-dev swig python-lxml python-matplotlib python-scipy
+    $ apt-get install gfortran g++ liblapack3 liblapack-dev libblas3 libblas-dev libboost-all-dev swig python-lxml python-matplotlib python-scipy python-numpy 
 
 2. Install OpenMDAO using the most recent 'go-openmdao' script.
 
