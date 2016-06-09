@@ -146,11 +146,11 @@ The example directories may need to be modified depending on where you installed
 
 1. First make sure you have the *general prerequisites* installed on your system. In particular, you should install compilers, LaPack, BLAS and Boost-Python libraries. For example on a debian-based environment (e.g. Ubuntu) these packages can be installed by executing the following (as root):
 
-    $ apt-get install gfortran g++ liblapack3 liblapack-dev libblas3 libblas-dev libboost-python1.55-dev swig python-lxml python-matplotlib python-scipy
+    $ apt-get install gfortran g++ liblapack3 liblapack-dev libblas3 libblas-dev libboost-all-dev swig python-lxml python-matplotlib python-scipy python-numpy 
 
 2. Install OpenMDAO using the most recent 'go-openmdao' script.
 
-    a. Download the most recent script from <http://openmdao.org/downloads/recent/> and place it in a directory in which you want OpenMDAO to run from.
+    a. Download the script for version 10.3.2 from <http://openmdao.org/releases/0.10.3.2/go-openmdao-0.10.3.2.py> and place it in a directory in which you want OpenMDAO to run from.
 
     b. Execute the script, e.g.:
 
