@@ -1,10 +1,8 @@
 """
 LCOE_csm_ssembly.py
-
 Created by NWTC Systems Engineering Sub-Task on 2012-08-01.
 Copyright (c) NREL. All rights reserved.
 """
-
 from openmdao.main.api import Component, Assembly, VariableTree
 from openmdao.main.datatypes.api import Int, Bool, Float, Array, VarTree, Enum
 import numpy as np
@@ -162,10 +160,22 @@ class lcoe_csm_assembly(Assembly):
         # fin_a
         self.connect('fin_a.lcoe','lcoe')
 
+    # Pie Chart for CAPEX
     def plot(self, fig):
-
-        from plot_capex_csm import plot_capex
+        from plot_capex import plot_capex
         fig = plot_capex(self)
+        return fig
+
+    # to see this, instead rename it to plot and comment out above. 
+    # Waterfall Plot
+    def lcoe_plot(self, fig):
+
+        from plot_lcoe_csm import plot_lcoe
+        from bokeh.io import show, output_file
+        fig = plot_lcoe(self)
+        output_file('bokeh plot', title='Bokeh Plot')
+
+        #show(fig)
         return fig
 
 
@@ -231,6 +241,10 @@ def example():
     print "Turbine Cost: ${0:2f} USD".format(lcoe.turbine_cost)
     print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.turbine_number)
     print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number)
+    from bokeh.plotting import figure
+    from bokeh.io import output_file, show
+    fig = figure()
+    lcoe.plot(fig)
 
 if __name__=="__main__":
 
