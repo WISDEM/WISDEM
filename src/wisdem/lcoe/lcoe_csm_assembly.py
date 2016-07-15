@@ -166,7 +166,6 @@ class lcoe_csm_assembly(Assembly):
         fig = plot_capex(self)
         return fig
 
-    # to see this, instead rename it to plot and comment out above. 
     # Waterfall Plot
     def lcoe_plot(self, fig):
 
