@@ -28,7 +28,6 @@ def plot_capex(top):
     wt_sum = np.sum(turbine_capex.values())
     infra_sum = np.sum(infra_capex.values())
     total_capex = np.array([wt_sum, infra_sum])
-
     inner_frac = np.append([0.], 2.0 * np.pi * total_capex / total_capex.sum())
     inner_angles = np.cumsum(inner_frac)
     vals = np.array(turbine_capex.values())
@@ -43,7 +42,7 @@ def plot_capex(top):
         x_axis_type=None, y_axis_type=None,
         x_range=[-420, 420], y_range=[-420, 420],
         min_border=0, outline_line_color="black",
-        background_fill="white", border_fill="white")
+        background_fill_color="white", border_fill_color="white",toolbar_location="above")
 
     # setup the plot
     width = p.plot_width
