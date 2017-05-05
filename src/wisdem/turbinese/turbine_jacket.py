@@ -886,6 +886,6 @@ if __name__ == '__main__':
     print 'mass hub system (kg) =', turbine.hub.hub_system_mass
     #print 'mass hub system (kg) =', turbine.hubSystem.hub_system_mass
     print 'mass nacelle (kg) =', turbine.nacelle.nacelle_mass
-    print 'mass tower (kg) =', turbine.jacket.Tower.mass
+    print 'mass tower (kg) =', turbine.jacket.Tower.Twrouts.mass
     print 'maximum tip deflection (m) =', turbine.maxdeflection.max_tip_deflection
     print 'ground clearance (m) =', turbine.maxdeflection.ground_clearance
