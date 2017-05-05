@@ -792,37 +792,37 @@ if __name__ == '__main__':
 
     #-----Launch the assembly-----#
 
-    myjckt=JacketSE(Jcktins.clamped,Jcktins.AFflag,twodlcs=twodlcs)
-    #myjckt=set_as_top(JacketSE(Jcktins.clamped,Jcktins.AFflag,twodlcs=twodlcs)) ##(Jcktins.PreBuildTPLvl>0),
+    #turbine.jacket=JacketSE(Jcktins.clamped,Jcktins.AFflag,twodlcs=twodlcs)
+    #turbine.jacket=set_as_top(JacketSE(Jcktins.clamped,Jcktins.AFflag,twodlcs=twodlcs)) ##(Jcktins.PreBuildTPLvl>0),
 
     #Pass all inputs to assembly
-    myjckt.JcktGeoIn=Jcktins
+    turbine.jacket.JcktGeoIn=Jcktins
 
-    myjckt.Soilinputs=Soilinputs
-    myjckt.Soilinputs2=Soilinputs2   #Parked conditions
+    turbine.jacket.Soilinputs=Soilinputs
+    turbine.jacket.Soilinputs2=Soilinputs2   #Parked conditions
 
-    myjckt.Waterinputs=Waterinputs
-    myjckt.Windinputs=Windinputs
-    myjckt.RNA_F=RNA_F
-    myjckt.Waterinputs2=Waterinputs2 #Parked conditions
-    myjckt.Windinputs2=Windinputs2   #Parked conditions
-    myjckt.RNA_F2=RNA_F2            #Parked conditions
+    turbine.jacket.Waterinputs=Waterinputs
+    turbine.jacket.Windinputs=Windinputs
+    turbine.jacket.RNA_F=RNA_F
+    turbine.jacket.Waterinputs2=Waterinputs2 #Parked conditions
+    turbine.jacket.Windinputs2=Windinputs2   #Parked conditions
+    turbine.jacket.RNA_F2=RNA_F2            #Parked conditions
 
-    myjckt.Pileinputs=Pileinputs
-    myjckt.leginputs=leginputs
-    #myjckt.legbot_stmphin =legbot_stmphin
-    myjckt.Xbrcinputs=Xbrcinputs
-    myjckt.Mbrcinputs=Mbrcinputs
-    myjckt.Hbrcinputs=Hbrcinputs
-    myjckt.TPlumpinputs=TPlumpinputs
-    myjckt.TPinputs=TPinputs
-    myjckt.RNAinputs=RNAins
-    myjckt.RNAinputs2=RNAins2
-    myjckt.Twrinputs=Twrinputs
-    myjckt.TwrRigidTop=TwrRigidTop
-    myjckt.FrameAuxIns=FrameAuxIns
+    turbine.jacket.Pileinputs=Pileinputs
+    turbine.jacket.leginputs=leginputs
+    #turbine.jacket.legbot_stmphin =legbot_stmphin
+    turbine.jacket.Xbrcinputs=Xbrcinputs
+    turbine.jacket.Mbrcinputs=Mbrcinputs
+    turbine.jacket.Hbrcinputs=Hbrcinputs
+    turbine.jacket.TPlumpinputs=TPlumpinputs
+    turbine.jacket.TPinputs=TPinputs
+    turbine.jacket.RNAinputs=RNAins
+    turbine.jacket.RNAinputs2=RNAins2
+    turbine.jacket.Twrinputs=Twrinputs
+    turbine.jacket.TwrRigidTop=TwrRigidTop
+    turbine.jacket.FrameAuxIns=FrameAuxIns
     # =================
-    #myjckt.run() ; quit()
+    #turbine.jacket.run() ; quit()
     import logging
     logging.getLogger().setLevel(logging.DEBUG)
     from openmdao.main.api import enable_console
@@ -831,7 +831,7 @@ if __name__ == '__main__':
 
 
     # === run ===
-    turbine.jacket = myjckt
+    #turbine.jacket = turbine.jacket
     turbine.run()
 
     print [c.name for c in turbine.driver.workflow]
@@ -859,24 +859,33 @@ if __name__ == '__main__':
 
     # Jacket specific outputs
     print
-    print('First two Freqs.= {:5.4f} and {:5.4f} Hz'.format(*jacket.Frameouts.Freqs))
+    print('First two Freqs.= {:5.4f} and {:5.4f} Hz'.format(*jacket.LoadFrameOuts.Frameouts.Freqs))
     print
     #print component masses
-    print('jacket+TP(structural+lumped) mass (no tower, no piles) [kg] = {:6.0f}'.format(jacket.Frameouts.mass[0]+jacket.TP.TPlumpinputs.mass-jacket.Tower.Twrouts.mass))
+    print('jacket+TP(structural+lumped) mass (no tower, no piles) [kg] = {:6.0f}'.format(jacket.LoadFrameOuts.Frameouts.mass[0]+jacket.TP.TPlumpinputs.mass-jacket.Tower.Twrouts.mass))
     print('tower mass [kg] = {:6.0f}'.format(jacket.Tower.Twrouts.mass))
     print('TP mass structural + lumped mass [kg] = {:6.0f}'.format(jacket.TP.TPouts.mass+jacket.TP.TPlumpinputs.mass))
     print('piles (all) mass (for assigned (not optimum) Lp [kg] = {:6.0f}'.format(jacket.Mpiles))
-    print('frame3dd model mass (structural + TP lumped) [kg] = {:6.0f}'.format(jacket.Frameouts.mass[0]+jacket.TP.TPlumpinputs.mass))
+    print('frame3dd model mass (structural + TP lumped) [kg] = {:6.0f}'.format(jacket.LoadFrameOuts.Frameouts.mass[0]+jacket.TP.TPlumpinputs.mass))
     print
 
     #print tower top displacement
-    print('Tower Top Displacement in Global Coordinate System [m] ={:5.4f}'.format(*jacket.Frameouts.top_deflection))
+    print('Tower Top Displacement in Global Coordinate System [m] ={:5.4f}'.format(*jacket.LoadFrameOuts.Frameouts.top_deflection))
     print
 
     #print max API code checks
-    print('MAX member compression-bending utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.cb_util)))
-    print('MAX member tension utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.t_util)))
-    print('MAX X-joint  utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.XjntUtil)))
-    print('MAX K-joint  utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.KjntUtil)))
+    print('MAX member compression-bending utilization at joints = {:5.4f}'.format(np.max(jacket.LoadFrameOuts.jacket_utilization.cb_util)))
+    print('MAX member tension utilization at joints = {:5.4f}'.format(np.max(jacket.LoadFrameOuts.jacket_utilization.t_util)))
+    print('MAX X-joint  utilization at joints = {:5.4f}'.format(np.max(jacket.LoadFrameOuts.jacket_utilization.XjntUtil)))
+    print('MAX K-joint  utilization at joints = {:5.4f}'.format(np.max(jacket.LoadFrameOuts.jacket_utilization.KjntUtil)))
 
     # =================
+
+    print ("==========================")
+    print 'mass rotor blades (kg) =', turbine.rotor.mass_all_blades
+    print 'mass hub system (kg) =', turbine.hub.hub_system_mass
+    #print 'mass hub system (kg) =', turbine.hubSystem.hub_system_mass
+    print 'mass nacelle (kg) =', turbine.nacelle.nacelle_mass
+    print 'mass tower (kg) =', turbine.jacket.Tower.mass
+    print 'maximum tip deflection (m) =', turbine.maxdeflection.max_tip_deflection
+    print 'ground clearance (m) =', turbine.maxdeflection.ground_clearance
