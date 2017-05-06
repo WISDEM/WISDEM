@@ -668,45 +668,7 @@ if __name__ == '__main__':
     print 'mass rotor blades (kg) =', turbine.rotor.mass_all_blades
     print 'mass hub system (kg) =', turbine.hub.hub_system_mass
     print 'mass nacelle (kg) =', turbine.nacelle.nacelle_mass
-    print 'mass tower (kg) =', jacket.Tower.Twrouts.mass
-    print 'maximum tip deflection (m) =', turbine.maxdeflection.max_tip_deflection
-    print 'ground clearance (m) =', turbine.maxdeflection.ground_clearance
+    #print 'mass tower (kg) =', jacket.Tower.Twrouts.mass
+    #print 'maximum tip deflection (m) =', turbine.maxdeflection.max_tip_deflection
+    #print 'ground clearance (m) =', turbine.maxdeflection.ground_clearance
 
-    # Jacket connected inputs
-    print
-    print turbine.jacket.Windinputs.rho
-    print turbine.jacket.Windinputs.mu
-    print turbine.jacket.FrameAuxIns.gvector[2]
-    print turbine.jacket.Windinputs.HH
-    print turbine.jacket.Twrinputs.Dt
-    print turbine.jacket.RNAinputs.yawangle
-    print turbine.jacket.RNAinputs.mass
-    print turbine.jacket.RNAinputs.CMoff
-    print turbine.jacket.RNAinputs.I
-    print turbine.jacket.Windinputs.U50HH
-    print turbine.jacket.RNA_F[0:3]
-    print turbine.jacket.RNA_F[3:6]
-
-    # Jacket specific outputs
-    print
-    print('First two Freqs.= {:5.4f} and {:5.4f} Hz'.format(*jacket.Frameouts.Freqs))
-    print
-    #print component masses
-    print('jacket+TP(structural+lumped) mass (no tower, no piles) [kg] = {:6.0f}'.format(jacket.Frameouts.mass[0]+jacket.TP.TPlumpinputs.mass-jacket.Tower.Twrouts.mass))
-    print('tower mass [kg] = {:6.0f}'.format(jacket.Tower.Twrouts.mass))
-    print('TP mass structural + lumped mass [kg] = {:6.0f}'.format(jacket.TP.TPouts.mass+jacket.TP.TPlumpinputs.mass))
-    print('piles (all) mass (for assigned (not optimum) Lp [kg] = {:6.0f}'.format(jacket.Mpiles))
-    print('frame3dd model mass (structural + TP lumped) [kg] = {:6.0f}'.format(jacket.Frameouts.mass[0]+jacket.TP.TPlumpinputs.mass))
-    print
-
-    #print tower top displacement
-    print('Tower Top Displacement in Global Coordinate System [m] ={:5.4f}'.format(*jacket.Frameouts.top_deflection))
-    print
-
-    #print max API code checks
-    print('MAX member compression-bending utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.cb_util)))
-    print('MAX member tension utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.t_util)))
-    print('MAX X-joint  utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.XjntUtil)))
-    print('MAX K-joint  utilization at joints = {:5.4f}'.format(np.max(jacket.jacket_utilization.KjntUtil)))
-
-    # =================
