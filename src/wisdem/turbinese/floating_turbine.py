@@ -54,6 +54,9 @@ class MaxTipDeflection(Component):
 
         # find corresponding radius of tower
         ztower = (self.towerHt + self.hub_tt[2] + blade_yaw.z)/self.towerHt  # nondimensional location
+        print ztower
+        print self.TwrObjTD
+        print self.tower_z ; quit()
         # rtower = np.interp(ztower, self.tower_z, self.tower_d) / 2.0
         dtower, ddtower_dztower, ddtower_dtowerz, ddtower_dtowerd = interp_with_deriv(ztower, self.tower_z, self.TwrObjTD)
         #dtower, ddtower_dztower, ddtower_dtowerz, ddtower_dtowerd = interp_with_deriv(ztower, self.tower_z, self.Twrouts.TwrObj.D)
@@ -207,7 +210,7 @@ def configure_floating_turbine(assembly, with_new_nacelle=False, flexible_blade=
     assembly.add('rotorloads1', RotorLoads())
     assembly.add('rotorloads2', RotorLoads())
     assembly.add('spar', sparAssembly())
-    assembly.add('maxdeflection', MaxTipDeflection())
+    #assembly.add('maxdeflection', MaxTipDeflection())
 
     if flexible_blade:
         assembly.add('fpi', FixedPointIterator())
@@ -225,7 +228,8 @@ def configure_floating_turbine(assembly, with_new_nacelle=False, flexible_blade=
     else:
         assembly.driver.workflow.add(['rotor'])
 
-    assembly.driver.workflow.add(['hub', 'nacelle', 'spar', 'maxdeflection', 'rna', 'rotorloads1', 'rotorloads2'])
+    assembly.driver.workflow.add(['hub', 'nacelle', 'spar', 'rna', 'rotorloads1', 'rotorloads2'])
+    #assembly.driver.workflow.add(['hub', 'nacelle', 'spar', 'maxdeflection', 'rna', 'rotorloads1', 'rotorloads2'])
 
     # TODO: rotor drivetrain design should be connected to nacelle drivetrain design
 
@@ -326,16 +330,18 @@ def configure_floating_turbine(assembly, with_new_nacelle=False, flexible_blade=
     #assembly.connect('rotorloads2.top_M', 'jacket.RNA_M') # jacket input
 
     # connections to maxdeflection
-    assembly.connect('rotor.Rtip', 'maxdeflection.Rtip')
-    assembly.connect('rotor.precurveTip', 'maxdeflection.precurveTip')
-    assembly.connect('rotor.presweepTip', 'maxdeflection.presweepTip')
-    assembly.connect('rotor.precone', 'maxdeflection.precone')
-    assembly.connect('rotor.tilt', 'maxdeflection.tilt')
-    assembly.connect('hub.hub_system_cm', 'maxdeflection.hub_tt')
+    #assembly.connect('rotor.Rtip', 'maxdeflection.Rtip')
+    #assembly.connect('rotor.precurveTip', 'maxdeflection.precurveTip')
+    #assembly.connect('rotor.presweepTip', 'maxdeflection.presweepTip')
+    #assembly.connect('rotor.precone', 'maxdeflection.precone')
+    #assembly.connect('rotor.tilt', 'maxdeflection.tilt')
+    #assembly.connect('hub.hub_system_cm', 'maxdeflection.hub_tt')
+
     #assembly.connect('jacket.Twrouts.nodes[2,:]', 'maxdeflection.tower_z') # jacket input, had to make array dimensions explicit on instantiation for this connect to work ---THIS is the z at CMzoff, not necessarily the top flange 
     #assembly.connect('jacket.Twrouts', 'maxdeflection.Twrouts') # TODO: jacket input - doesnt recognize logobj
-    assembly.connect('spar.tower_base_outer_diameter', 'maxdeflection.TwrObjTD')
-    assembly.connect('hub_height', 'maxdeflection.towerHt') # jacket input
+
+    #assembly.connect('spar.tower_base_outer_diameter', 'maxdeflection.TwrObjTD')
+    #assembly.connect('hub_height', 'maxdeflection.towerHt') # jacket input
 
 
 
