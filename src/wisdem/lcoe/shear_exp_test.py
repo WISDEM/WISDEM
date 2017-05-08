@@ -434,7 +434,11 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
 
     # Set plant level inputs ===
     costs = []
-    shears = np.arange(.1,.3,.02)
+    costs1 = []
+    costs2 = []
+    costs3 = []
+    costs4 = []
+    shears = np.arange(.1,.32,.02)
     for shearExp in shears:
         print shearExp
         if not with_openwind:
@@ -466,12 +470,26 @@ def create_example_se_assembly(wind_class='I',sea_depth=0.0,with_new_nacelle=Fal
         # === Run default assembly and print results
         lcoe_se.shear_exponent = shearExp
         lcoe_se.run()
+        #print( (lcoe_se.tcc_a.towerCC.cost) ) ; quit()
+        #print( dir(lcoe_se.tcc_a) ) ; quit()
         costs.append(lcoe_se.turbine_cost)
-    print costs
-    plt.plot(shears, costs)
-    plt.xlabel("Shear Exponent")
-    plt.ylabel("Turbine Cost")
-    plt.savefig('shears.pdf') ; quit()
+        costs2.append(lcoe_se.tcc_a.towerCC.cost)
+        costs3.append(lcoe_se.tcc_a.rotorCC.cost)
+        costs4.append(lcoe_se.tcc_a.nacelleCC.cost)
+    print costs2
+    f, ax = plt.subplots(4, sharex=True)
+    ax[0].plot(shears, costs, label="Total Turbine Cost")
+    ax[1].plot(shears, costs2, label="Tower Cost")
+    ax[2].plot(shears, costs3, label="Rotor Cost")
+    ax[3].plot(shears, costs4, label="Nacelle Cost")
+    ax[0].set_xlim(0.1,.3)
+    #plt.xlabel("Shear Exponent")
+    ax[0].set_ylabel("Total Turbine Cost")
+    ax[1].set_ylabel("Tower Cost")
+    ax[2].set_ylabel("Rotor Cost")
+    ax[3].set_ylabel("Nacelle Cost")
+    #plt.ylabel("Turbine Cost")
+    plt.savefig('shears.png') ; quit()
     # ====
 
     # === Print ===
