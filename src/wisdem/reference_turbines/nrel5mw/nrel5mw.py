@@ -1,7 +1,7 @@
 
 import numpy as np
 import os
-
+import wisdem
 from rotorse.precomp import Profile, Orthotropic2DMaterial, CompositeSection  # TODO: can just pass file names and do this initialization inside of rotor
 from commonse.environment import PowerWind, TowerSoil, LinearWaves
 from commonse.utilities import cosd, sind
@@ -66,7 +66,7 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
     # --- airfoil files ---
     import rotorse
     #basepath = os.path.join('5MW_files', '5MW_AFFiles')
-    basepath = os.path.join('..','reference_turbines','nrel5mw','airfoils')
+    basepath = os.path.join(wisdem.__path__[0], 'reference_turbines','nrel5mw','airfoils')
 
     # load all airfoils
     airfoil_types = [0]*8
@@ -115,7 +115,7 @@ def configure_nrel5mw_turbine(turbine,wind_class='I',sea_depth = 0.0):
 
     # --- materials and composite layup  ---
     #basepath = os.path.join('5MW_files', '5MW_PrecompFiles')
-    basepath = os.path.join('..', 'reference_turbines','nrel5mw','blade')
+    basepath = os.path.join(wisdem.__path__[0], 'reference_turbines','nrel5mw','blade')
 
     materials = Orthotropic2DMaterial.listFromPreCompFile(os.path.join(basepath, 'materials.inp'))
 
