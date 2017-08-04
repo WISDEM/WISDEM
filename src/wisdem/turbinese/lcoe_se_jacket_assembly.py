@@ -450,7 +450,7 @@ if __name__ == '__main__':
     # NREL 5 MW in land-based wind plant with high winds (as class I)
     wind_class = 'I'
     sea_depth = 0.0
-    with_new_nacelle = True
+    with_new_nacelle = False # MB1 error when true
     with_landbos = False
     flexible_blade = False
     with_3pt_drive = False

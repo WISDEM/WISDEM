@@ -445,6 +445,9 @@ def configure_nrel5mw_turbine_with_jacket(turbine,wind_class='I',sea_depth = 0.0
     turbine.jacket.Twrinputs.Htwr2frac=0.2   #fraction of tower height with constant x-section
     turbine.jacket.Twrinputs.ndiv=np.array([6,6])  #ndiv for uniform and tapered section
     turbine.jacket.Twrinputs.Db=Db
+    turbine.jacket.Twrinputs.Dt=Dt
     turbine.jacket.Twrinputs.DTRb=Db/tb
+    turbine.jacket.Twrinputs.DTRt=Db/Dt # TODO double check
     turbine.jacket.TwrRigidTop=TwrRigidTop
     turbine.jacket.FrameAuxIns=FrameAuxIns
+
