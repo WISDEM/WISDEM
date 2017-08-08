@@ -10,6 +10,13 @@ import numpy as np
 from openmdao.main.api import Assembly, Component
 from openmdao.main.datatypes.api import Int, Float, Enum, VarTree, Bool, Str, Array
 
+import os
+import copy
+
+from rotorse.precomp import Profile, Orthotropic2DMaterial, CompositeSection
+from jacketse.jacket import JcktGeoInputs,SoilGeoInputs,WaterInputs,WindInputs,RNAprops,TPlumpMass,Frame3DDaux,\
+                    MatInputs,LegGeoInputs,XBrcGeoInputs,MudBrcGeoInputs,HBrcGeoInputs,TPGeoInputs,PileGeoInputs,\
+                    TwrGeoInputs, LegGeoOutputs, TwrGeoOutputs
 
 from fusedwind.plant_cost.fused_finance import configure_extended_financial_analysis, ExtendedFinancialAnalysis
 from fusedwind.plant_cost.fused_opex import OPEXVarTree
@@ -419,6 +426,258 @@ def example(wind_class='I',sea_depth=0.0,with_new_nacelle=False,with_landbos=Fal
     #tower.wind2.shearExp = shearExp
 
     # ====
+    #--- Set Jacket Input Parameters ---#
+    Jcktins=JcktGeoInputs()
+    Jcktins.nlegs =4
+    Jcktins.nbays =5
+    Jcktins.batter=12.
+    Jcktins.dck_botz =16.
+    Jcktins.dck_width=2*6.
+    Jcktins.weld2D   =0.5
+    Jcktins.VPFlag = True    #vertical pile T/F;  to enable piles in frame3DD set pileinputs.ndiv>0
+    Jcktins.clamped= False    #whether or not the bottom of the structure is rigidly connected. Use False when equivalent spring constants are being used.
+    Jcktins.AFflag = False  #whether or not to use apparent fixity piles
+    Jcktins.PreBuildTPLvl = 5  #if >0, the TP is prebuilt according to rules per PreBuildTP
+
+    #Soil inputs
+    Soilinputs=SoilGeoInputs()
+    Soilinputs.zbots   =-np.array([3.,5.,7.,15.,30.,50.])
+    Soilinputs.gammas  =np.array([10000.,10000.,10000.,10000.,10000.,10000.])
+    Soilinputs.cus     =np.array([60000.,60000.,60000.,60000.,60000.,60000.])
+    Soilinputs.phis    =np.array([26.,26.,26.,26.,26.,26])#np.array([36.,33.,26.,37.,35.,37.5])#np.array([36.,33.,26.,37.,35.,37.5])
+    Soilinputs.delta   =25.
+    Soilinputs.sndflg   =True
+    Soilinputs.PenderSwtch   =False #True
+    Soilinputs.SoilSF   =1.
+
+    Soilinputs2=copy.copy(Soilinputs) #Parked case. We assume same stiffness although this may not be the case under a different load
+
+    #Water and wind inputs
+    Waterinputs=WaterInputs()
+    Waterinputs.wdepth   =30.
+    Waterinputs.wlevel   =30. #Distance from bottom of structure to surface  THIS, I believe is no longer needed as piles may be negative in z, to check and remove in case
+    Waterinputs.T=12.  #Wave Period
+    Waterinputs.HW=10. #Wave Height
+    Waterinputs.Cd=3.  #Drag Coefficient, enhanced to account for marine growth and other members not calculated
+    Waterinputs.Cm=8.#2.  #ADded mass Coefficient
+
+    Waterinputs2=copy.copy(Waterinputs)  #PARKED CONDITIONS - still max wave here
+    Waterinputs.T=8.  #Wave Period
+    Waterinputs.HW=4. #Wave Height
+
+    Windinputs=WindInputs()
+    Windinputs.Cdj=4.  #Drag Coefficient for jacket members, enhanced to account for TP drag not calculated otherwise
+    Windinputs.Cdt=2  #Drag Coefficient for tower, enhanced to account for TP drag not calculated otherwise
+    Windinputs.HH=100. #CHECK HOW THIS COMPLIES....
+    Windinputs.U50HH=30. #assumed gust speed
+
+    ## if turbine_jacket
+    ##Windinputs.HH=90. #CHECK HOW THIS COMPLIES....
+    ##Windinputs.U50HH=11.7373200354 # using rated loads
+    ##Windinputs.rho = 1.225
+    ##Windinputs.mu = 1.81206e-05
+
+    Windinputs2=copy.copy(Windinputs)
+    Windinputs2.U50HH=70. #assumed gust speed
+
+    #Pile data
+    Pilematin=MatInputs()
+    Pilematin.matname=np.array(['steel'])
+    Pilematin.E=np.array([ 25.e9])
+    Dpile=2.5#0.75 # 2.0
+    tpile=0.01
+    Lp=20. #45
+
+    Pileinputs=PileGeoInputs()
+    Pileinputs.Pilematins=Pilematin
+    Pileinputs.ndiv=0 #3
+    Pileinputs.Dpile=Dpile
+    Pileinputs.tpile=tpile
+    Pileinputs.Lp=Lp #[m] Embedment length
+
+    #Legs data
+    legmatin=MatInputs()
+    legmatin.matname=(['heavysteel','heavysteel','heavysteel','heavysteel'])
+    #legmatin.E=np.array([2.0e11])
+    Dleg=np.array([1.5,1.5,1.5,1.5,1.5,1.5])
+    tleg=1.5*np.array([0.0254]).repeat(Dleg.size)
+    leginputs=LegGeoInputs()
+    leginputs.legZbot   = 1.0
+    leginputs.ndiv=1
+    leginputs.legmatins=legmatin
+    leginputs.Dleg0=Dleg[0]
+    leginputs.tleg0=tleg[0]
+
+    legbot_stmphin =1.5  #Distance from bottom of leg to second joint along z; must be>0
+
+    #Xbrc data
+    Xbrcmatin=MatInputs()
+    Xbrcmatin.matname=np.array(['heavysteel']).repeat(Jcktins.nbays)
+    #Xbrcmatin.E=np.array([ 2.2e11, 2.0e11,2.0e11,2.0e11,2.0e11])
+    Dbrc=np.array([1.,1.,1.0,1.0,1.0])
+    tbrc=np.array([1.,1.,1.0,1.0,1.0])*0.0254
+
+    Xbrcinputs=XBrcGeoInputs()
+    Xbrcinputs.Dbrc0=Dbrc[0]
+    Xbrcinputs.tbrc0=tbrc[0]
+    Xbrcinputs.ndiv=2#2
+    Xbrcinputs.Xbrcmatins=Xbrcmatin
+    Xbrcinputs.precalc=False #True   #This can be set to true if we want Xbraces to be precalculated in D and t, in which case the above set Dbrc and tbrc would be overwritten
+
+    #Mbrc data
+    Mbrcmatin=MatInputs()
+    Mbrcmatin.matname=np.array(['heavysteel'])
+    #Mbrcmatin.E=np.array([ 2.5e11])
+    Dbrc_mud=1.5
+
+    Mbrcinputs=MudBrcGeoInputs()
+    Mbrcinputs.Dbrc_mud=Dbrc_mud
+    Mbrcinputs.ndiv=2
+    Mbrcinputs.Mbrcmatins=Mbrcmatin
+    Mbrcinputs.precalc=False #True   #This can be set to true if we want Mudbrace to be precalculated in D and t, in which case the above set Dbrc_mud and tbrc_mud would be overwritten
+
+    #Hbrc data
+    Hbrcmatin=MatInputs()
+    Hbrcmatin.matname=np.array(['heavysteel'])
+    Hbrcmatin.E=np.array([ 2.5e11])
+    Dbrc_hbrc=1.1
+
+    Hbrcinputs=HBrcGeoInputs()
+    Hbrcinputs.Dbrch=Dbrc_hbrc
+    Hbrcinputs.ndiv=0#2
+    Hbrcinputs.Hbrcmatins=Hbrcmatin
+    Hbrcinputs.precalc=True   #This can be set to true if we want Hbrace to be set=Xbrace top D and t, in which case the above set Dbrch and tbrch would be overwritten
+
+    #TP data
+    TPlumpinputs=TPlumpMass()
+    TPlumpinputs.mass=200.e3 #[kg]
+
+    TPstmpsmatin=MatInputs()
+    TPbrcmatin=MatInputs()
+    TPstemmatin=MatInputs()
+    TPbrcmatin.matname=np.array(['heavysteel'])
+    #TPbrcmatin.E=np.array([ 2.5e11])
+    TPstemmatin.matname=np.array(['heavysteel']).repeat(2)
+    #TPstemmatin.E=np.array([ 2.1e11]).repeat(2)
+
+    TPinputs=TPGeoInputs()
+    TPinputs.TPbrcmatins=TPbrcmatin
+    TPinputs.TPstemmatins=TPstemmatin
+    TPinputs.TPstmpmatins=TPstmpsmatin
+    TPinputs.Dstrut=leginputs.Dleg[-1]
+    TPinputs.tstrut=leginputs.tleg[-1]
+    TPinputs.Dgir=Dbrc_hbrc
+    TPinputs.tgir=0.0254
+    TPinputs.Dbrc=1.1
+    TPinputs.Dbrc=TPinputs.Dgir
+    TPinputs.tbrc=TPinputs.tgir
+
+    TPinputs.hstump=1.0#1.0
+    TPinputs.Dstump=1.25#1.0
+    TPinputs.stumpndiv=1#2
+    TPinputs.brcndiv=1#2
+    TPinputs.girndiv=1#2
+    TPinputs.strutndiv=1#2
+    TPinputs.stemndiv=1#2
+    TPinputs.nstems=3
+    TPinputs.Dstem=np.array([6.]).repeat(TPinputs.nstems)
+    TPinputs.tstem=np.array([0.1,0.11,0.11])
+    TPinputs.hstem=np.array([6./TPinputs.nstems]).repeat(TPinputs.nstems)
+
+    #Tower data
+    Twrmatin=MatInputs()
+    Twrmatin.matname=np.array(['heavysteel'])
+    #Twrmatin.E=np.array([ 2.77e11])
+    Twrinputs=TwrGeoInputs()
+    Twrinputs.Twrmatins=Twrmatin
+    #Twrinputs.Htwr=70.  #Trumped by HH
+    Twrinputs.Htwr2frac=0.2   #fraction of tower height with constant x-section
+    Twrinputs.ndiv=np.array([6,12])  #ndiv for uniform and tapered section
+    Twrinputs.DeltaZmax= 6. #[m], maximum FE element length allowed in the tower members (i.e. the uniform and the tapered members)
+    Twrinputs.Db=5.6
+    Twrinputs.DTRb=130.
+    Twrinputs.DTRt=150.
+    Twrinputs.Dt=0.55*Twrinputs.Db
+    ## if turbine_jacket
+    ##Twrinputs.Dt = 3.87
+
+    TwrRigidTop=True #False       #False=Account for RNA via math rather than a physical rigidmember
+
+    #RNA data
+    RNAins=RNAprops()
+    RNAins.mass=3*350.e3
+    RNAins.I[0]=86.579E+6
+    RNAins.I[1]=53.530E+6
+    RNAins.I[2]=58.112E+6
+    RNAins.CMoff[2]=2.34
+    RNAins.yawangle=45.  #angle with respect to global X, CCW looking from above, wind from left
+    RNAins.rna_weightM=True
+    ## if turbine_jacket
+    ##RNAins.mass=285598.806453
+    ##RNAins.I = np.array([1.14930678e8, 2.20354030e7, 1.87597425e7, 0.0, 5.03710467e5, 0.0])
+    ##RNAins.CMoff = np.array([-1.13197635, 0.0, 0.50875268])
+    ##RNAins.yawangle=0.0  #angle with respect to global X, CCW looking from above, wind from left
+    #RNAins.rna_weightM=True
+
+    RNAins2=copy.copy(RNAins)  #PARKED CASE, for now assume the same
+
+    #RNA loads              Fx-z,         Mxx-zz
+    RNA_F=np.array([1000.e3,0.,0.,0.,0.,0.])    #operational
+    RNA_F2=np.array([500.e3,0.,0.,0.,0.,0.])    #Parked
+    ## if turbine_jacket
+    ##RNA_F=np.array([1284744.19620519,0.,-2914124.84400512,3963732.76208099,-2275104.79420872,-346781.68192839])
+
+    #Frame3DD parameters
+    FrameAuxIns=Frame3DDaux()
+    FrameAuxIns.sh_fg=1               #shear flag-->Timoshenko
+    FrameAuxIns.deltaz=5.
+    FrameAuxIns.geo_fg=0
+    FrameAuxIns.nModes = 6             # number of desired dynamic modes of vibration
+    FrameAuxIns.Mmethod = 1            # 1: subspace Jacobi     2: Stodola
+    FrameAuxIns.lump = 0               # 0: consistent mass ... 1: lumped mass matrix
+    FrameAuxIns.tol = 1e-9             # mode shape tolerance
+    FrameAuxIns.shift = 0.0            # shift value ... for unrestrained structures
+    FrameAuxIns.gvector=np.array([0.,0.,-9.8065])    #GRAVITY
+    ## if turbine_jacket
+    ##FrameAuxIns.gvector=np.array([0.,0.,-9.81])    #GRAVITY
+
+    #Decide whether or not to consider DLC 6.1 as well
+    twodlcs=False
+
+    #-----Launch the assembly-----#
+
+    #turbine.jacket=JacketSE(Jcktins.clamped,Jcktins.AFflag,twodlcs=twodlcs)
+    #turbine.jacket=set_as_top(JacketSE(Jcktins.clamped,Jcktins.AFflag,twodlcs=twodlcs)) ##(Jcktins.PreBuildTPLvl>0),
+
+    #Pass all inputs to assembly
+    lcoe_se.jacket.JcktGeoIn=Jcktins
+
+    lcoe_se.jacket.Soilinputs=Soilinputs
+    lcoe_se.jacket.Soilinputs2=Soilinputs2   #Parked conditions
+
+    lcoe_se.jacket.Waterinputs=Waterinputs
+    lcoe_se.jacket.Windinputs=Windinputs
+    lcoe_se.jacket.RNA_F=RNA_F
+    lcoe_se.jacket.Waterinputs2=Waterinputs2 #Parked conditions
+    lcoe_se.jacket.Windinputs2=Windinputs2   #Parked conditions
+    lcoe_se.jacket.RNA_F2=RNA_F2            #Parked conditions
+
+    lcoe_se.jacket.Pileinputs=Pileinputs
+    lcoe_se.jacket.leginputs=leginputs
+    #turbine.jacket.legbot_stmphin =legbot_stmphin
+    lcoe_se.jacket.Xbrcinputs=Xbrcinputs
+    lcoe_se.jacket.Mbrcinputs=Mbrcinputs
+    lcoe_se.jacket.Hbrcinputs=Hbrcinputs
+    lcoe_se.jacket.TPlumpinputs=TPlumpinputs
+    lcoe_se.jacket.TPinputs=TPinputs
+    lcoe_se.jacket.RNAinputs=RNAins
+    lcoe_se.jacket.RNAinputs2=RNAins2
+    lcoe_se.jacket.Twrinputs=Twrinputs
+    lcoe_se.jacket.TwrRigidTop=TwrRigidTop
+    lcoe_se.jacket.FrameAuxIns=FrameAuxIns
+
+
+
 
     # === Run default assembly and print results
     lcoe_se.run()
