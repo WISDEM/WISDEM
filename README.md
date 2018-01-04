@@ -9,7 +9,7 @@ K. Dykes, S. A. Ning, P. Graf, G. Scott, Y. Guo, R. King, T. Parsons, R. Damiani
 
 ## Version
 
-This software is a beta version 0.1.0.
+This software is a beta version 0.1.1.
 
 ## Detailed Documentation
 
