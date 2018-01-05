@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='WISDEM',
-    version='0.1.2',
+    version='0.1.1',
     description='Wind-Plant Integrated System Design & Engineering Model',
     author='K. Dykes and S. Andrew Ning',
     author_email='katherine.dykes@nrel.gov',
