@@ -1,12 +1,17 @@
 from floatingse.instance import FloatingInstance, NSECTIONS, NPTS, vecOption
 from wisdem.floating.floating_turbine_assembly import FloatingTurbine
 from commonse import eps
+from commonse.csystem import rotMat_x, rotMat_y, rotMat_z
 from rotorse import TURBULENCE_CLASS, TURBINE_CLASS, DRIVETRAIN_TYPE, NREL5MW, DTU10MW
 import numpy as np
 import offshorebos.wind_obos as wind_obos
 import time
+from StringIO import StringIO
+
+from mayavi import mlab
 
 NDEL = 0
+
 
 class FloatingTurbineInstance(FloatingInstance):
     def __init__(self, RefBlade):
@@ -396,8 +401,6 @@ class FloatingTurbineInstance(FloatingInstance):
 
 
     def set_reference(self, instr):
-        super(FloatingTurbineInstance, self).set_reference(instr)
-        
         if instr.upper() in ['NREL', 'NREL5', 'NREL5MW', '5', '5MW', 'NREL-5', 'NREL-5MW']:
             myref = NREL5MW()
 
@@ -445,7 +448,9 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['control:pitch']    = myref.control_pitch
         self.params['machine_rating']   = myref.rating
         self.params['drivetrainType']   = myref.drivetrain
-    
+
+        super(FloatingTurbineInstance, self).set_reference(instr)
+        
         
     def get_assembly(self): return FloatingTurbine(self.refBlade, NSECTIONS)
 
@@ -453,10 +458,151 @@ class FloatingTurbineInstance(FloatingInstance):
         # OBJECTIVE FUNCTION: Minimize total cost!
         self.prob.driver.add_objective('lcoe')
 
+        
+    def get_constraints(self):
+        conList = super(FloatingTurbineInstance, self).get_constraints()
+        for con in conList:
+            con[0] = 'sm.' + con[0]
 
-    def draw_rotor(self, fig):
-        pass
+        conList.extend( [['rotor.Pn_margin', None, 1.0, None],
+                         ['rotor.P1_margin', None, 1.0, None],
+                         ['rotor.Pn_margin_cfem', None, 1.0, None],
+                         ['rotor.P1_margin_cfem', None, 1.0, None],
+                         ['rotor.rotor_strain_sparU', -1.0, None, None],
+                         ['rotor.rotor_strain_sparL', None, 1.0, None],
+                         ['rotor.rotor_strain_teU', -1.0, None, None],
+                         ['rotor.rotor_strain_teL', None, 1.0, None],
+                         ['rotor.rotor_buckling_sparU', None, 1.0, None],
+                         ['rotor.rotor_buckling_sparL', None, 1.0, None],
+                         ['rotor.rotor_buckling_teU', None, 1.0, None],
+                         ['rotor.rotor_buckling_teL', None, 1.0, None],
+                         ['rotor.rotor_damage_sparU', None, 0.0, None],
+                         ['rotor.rotor_damage_sparL', None, 0.0, None],
+                         ['rotor.rotor_damage_teU', None, 0.0, None],
+                         ['rotor.rotor_damage_teL', None, 0.0, None],
+                         ['tcons.frequency_ratio', None, 1.0, None],
+                         ['tcons.tip_deflection_ratio', None, 1.0, None],
+                         ['tcons.ground_clearance', 30.0, None, None],
+        ])
+        return conList
 
-    def draw_nacelle(self, fig, truss, R, freeboard):
-        pass
+    def draw_rna(self, fig):
+        if fig is None: fig=self.init_figure()
+
+        # Quantities from input and output simulatioin parameters
+        r_cylinder   = self.refBlade.r_cylinder
+        bladeLength  = self.params['bladeLength']
+        hubD         = 2*self.prob['rotor.Rhub']
+        nblade       = self.params['nBlades']
+        pitch        = 0.0
+        precone      = self.params['precone']
+        tilt         = self.params['tilt']
+        hubH         = self.params['hub_height']
+        cm_hub       = self.prob['hub_cm']
+        cm_hub[-1]  += hubH
+        chord        = self.prob['rotor.chord']
+        thick        = self.prob['rotor.chord'] / self.refBlade.chord_ref
+        twist        = self.prob['rotor.theta']
+        precurve     = self.prob['rotor.precurve']
+        presweep     = self.prob['rotor.presweep']
+        le_loc       = self.refBlade.le_location
+
+        # Rotation matrices
+        T_tilt    = rotMat_y(np.deg2rad(tilt))
+        T_precone = rotMat_y(np.deg2rad(-precone))
+        T_pitch   = rotMat_z(np.deg2rad(-pitch))
+
+        # Spanwise coordinates
+        r_blade = self.prob['rotor.r_pts']
+
+        # Airfoil coordinates
+        afcoord = self.refBlade.getAirfoilCoordinates()
+
+        # Assemble airfoil coordinates along the span
+        # Not flip x and y and flip sign to be consistent with global coordinate system at pitch=0:
+        # +x downstream
+        # +y towards TE
+        # +z towards sky
+        X = []
+        Y = []
+        for k in range(len(r_blade)):
+            thisy = afcoord[k][:,0].copy()
+            thisx = afcoord[k][:,1].copy()
+
+            # Pre-twist modifications
+            thisy -= le_loc[k]
+            thisx *= chord[k] * thick[k]
+            thisy *= chord[k]
+
+            # Chord scaling and twist rotation
+            thismat = np.asmatrix( np.c_[thisx, thisy] ).T
+            T_th    = rotMat_z( np.deg2rad(-twist[k]) )[:2,:2]
+            thismat = np.asarray( (T_th * thismat).T )
+
+            if k==0:
+                X = thismat[:,0]
+                Y = thismat[:,1]
+            else:
+                X = np.c_[X, thismat[:,0] + precurve[k]]
+                Y = np.c_[Y, thismat[:,1] + presweep[k]]
+
+        # Set Z-positions
+        Z = r_blade[np.newaxis,:] * np.ones(X.shape)
+
+        # Create plot of blades
+        bladeAng = np.linspace(0, 2*np.pi, nblade+1)[:nblade]
+        orig = X.shape
+        for a in bladeAng:
+            T_tot   = T_tilt * rotMat_x(a) * T_precone * T_pitch
+            thismat = np.asmatrix( np.c_[X.flatten(), Y.flatten(), Z.flatten()] ).T
+            thismat = np.asarray( (T_tot * thismat).T ) + cm_hub[np.newaxis,:]
+            Xplot, Yplot, Zplot = thismat[:,0], thismat[:,1], thismat[:,2]
+            mlab.mesh(Xplot.reshape(orig), Yplot.reshape(orig), Zplot.reshape(orig), color=(1,1,1), figure=fig)
+
+        # Now do hub
+        npts    = 30
+        rk      = 0.5*hubD*np.ones(npts)
+        th      = np.linspace(0,2*np.pi,npts)
+        x       = np.linspace(-0.5, 0.5, npts) * 1.5*chord[0]
+        R, TH   = np.meshgrid(rk, th)
+        X, _    = np.meshgrid(x, th)
+        Y       = R*np.cos(TH)
+        Z       = R*np.sin(TH)
+        orig    = X.shape
+        thismat = np.asmatrix( np.c_[X.flatten(), Y.flatten(), Z.flatten()] ).T
+        thismat = np.asarray( (T_tilt * thismat).T ) + cm_hub[np.newaxis,:]
+        Xplot, Yplot, Zplot = thismat[:,0], thismat[:,1], thismat[:,2]
+        mlab.mesh(Xplot.reshape(orig), Yplot.reshape(orig), Zplot.reshape(orig), color=(0.9,)*3, figure=fig)
+
+        ph      = np.linspace(0, 0.5*np.pi, npts) + np.pi
+        PH,_    = np.meshgrid(ph,th)
+        Y       = R*np.cos(TH)*np.sin(PH)
+        Z       = R*np.sin(TH)*np.sin(PH)
+        X       = R*np.cos(PH) - 0.75*chord[0]
+        orig    = X.shape
+        thismat = np.asmatrix( np.c_[X.flatten(), Y.flatten(), Z.flatten()] ).T
+        thismat = np.asarray( (T_tilt * thismat).T ) + cm_hub[np.newaxis,:]
+        Xplot, Yplot, Zplot = thismat[:,0], thismat[:,1], thismat[:,2]
+        mlab.mesh(Xplot.reshape(orig), Yplot.reshape(orig), Zplot.reshape(orig), color=(0.9,)*3, figure=fig)
+
+        # Now do nacelle
+        nacW   = nacH = hubD + 2.0
+        nacL   = nacW + 5.0
+        cm_nac = cm_hub + 0.5*np.array([nacL, 0.0, 0.0])
+        cm_nac[0] += 0.75*chord[0]
+        xx     = np.array([-0.5, 0.0, 0.5])
+        PX,PY  = np.meshgrid(xx, xx)
+        PZ     = np.ones(PX.shape)
+        # Top and bottom
+        mlab.mesh(PX*nacL + cm_nac[0], PY*nacW + cm_nac[1], -PZ*0.5*nacH + cm_nac[2], color=(0.9,)*3, figure=fig)
+        mlab.mesh(PX*nacL + cm_nac[0], PY*nacW + cm_nac[1],  PZ*0.5*nacH + cm_nac[2], color=(0.9,)*3, figure=fig)
+        # Sides
+        mlab.mesh(PX*nacL + cm_nac[0], -PZ*nacW*0.5 + cm_nac[1], PY*nacH + cm_nac[2], color=(0.9,)*3, figure=fig)
+        mlab.mesh(PX*nacL + cm_nac[0],  PZ*nacW*0.5 + cm_nac[1], PY*nacH + cm_nac[2], color=(0.9,)*3, figure=fig)
+        # Front and Back
+        mlab.mesh(-PZ*nacL*0.5 + cm_nac[0], PX*nacW + cm_nac[1], PY*nacH + cm_nac[2], color=(0.9,)*3, figure=fig)
+        mlab.mesh( PZ*nacL*0.5 + cm_nac[0], PX*nacW + cm_nac[1], PY*nacH + cm_nac[2], color=(0.9,)*3, figure=fig)
+
+
+
         

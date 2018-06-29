@@ -1,11 +1,8 @@
-from wisdem.floating.floating_turbine_instance import FloatingTurbineInstance, NSECTIONS, NPTS, vecOption
-from floatingse.instance import SparInstance
-from commonse import eps
 import numpy as np
-import offshorebos.wind_obos as wind_obos
-import time
 
-NDEL = 0
+from wisdem.floating.floating_turbine_instance import FloatingTurbineInstance, NSECTIONS, NPTS, vecOption
+import offshorebos.wind_obos as wind_obos
+
 
 class TurbineSparInstance(FloatingTurbineInstance):
     def __init__(self, RefBlade):
@@ -55,32 +52,38 @@ class TurbineSparInstance(FloatingTurbineInstance):
 
         
     def get_constraints(self):
-        conList = SparInstance().get_constraints()
-        for con in conList:
-            con[0] = 'sm.' + con[0]
+        conlist = super(TurbineSparInstance, self).get_constraints()
 
-        conList.extend( [['rotor.Pn_margin', None, 1.0, None],
-                         ['rotor.P1_margin', None, 1.0, None],
-                         ['rotor.Pn_margin_cfem', None, 1.0, None],
-                         ['rotor.P1_margin_cfem', None, 1.0, None],
-                         ['rotor.rotor_strain_sparU', -1.0, None, None],
-                         ['rotor.rotor_strain_sparL', None, 1.0, None],
-                         ['rotor.rotor_strain_teU', -1.0, None, None],
-                         ['rotor.rotor_strain_teL', None, 1.0, None],
-                         ['rotor.rotor_buckling_sparU', None, 1.0, None],
-                         ['rotor.rotor_buckling_sparL', None, 1.0, None],
-                         ['rotor.rotor_buckling_teU', None, 1.0, None],
-                         ['rotor.rotor_buckling_teL', None, 1.0, None],
-                         ['rotor.rotor_damage_sparU', None, 0.0, None],
-                         ['rotor.rotor_damage_sparL', None, 0.0, None],
-                         ['rotor.rotor_damage_teU', None, 0.0, None],
-                         ['rotor.rotor_damage_teL', None, 0.0, None],
-                         ['tcons.frequency_ratio', None, 1.0, None],
-                         ['tcons.tip_deflection_ratio', None, 1.0, None],
-                         ['tcons.ground_clearance', 30.0, None, None],
-        ])
-        return conList
+        poplist = []
+        for k in range(len(conlist)):
+            if ( (conlist[k][0].find('aux') >= 0) or
+                 (conlist[k][0].find('pontoon') >= 0) or
+                 (conlist[k][0].find('base_connection_ratio') >= 0) ):
+                poplist.append(k)
 
+        poplist.reverse()
+        for k in poplist: conlist.pop(k)
+
+        return conlist
+
+    
+    def visualize(self, fname=None):
+        fig = self.init_figure()
+
+        self.draw_ocean(fig)
+
+        self.draw_mooring(fig, self.prob['sm.mm.plot_matrix'])
+
+        self.draw_column(fig, [0.0, 0.0], self.params['base_freeboard'], self.params['base_section_height'],
+                           0.5*self.params['base_outer_diameter'], self.params['base_stiffener_spacing'])
+
+        self.draw_column(fig, [0.0, 0.0], self.params['hub_height'], self.params['tower_section_height'],
+                         0.5*self.params['tower_outer_diameter'], None, (0.9,)*3)
+
+        self.draw_rna(fig)
+        
+        self.set_figure(fig, fname)
+        
 
 def deriv_check():
    # ----------------
