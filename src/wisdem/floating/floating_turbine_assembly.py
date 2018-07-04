@@ -410,6 +410,7 @@ class FloatingTurbine(Group):
         self.connect('rotor.Mxyz_total','rna.loads.M')
         self.connect('downwind','rna.downwind')
         self.connect('rna_weightM','rna.rna_weightM')
+        self.connect('rotor.Rhub', 'sm.sg.Rhub')
         
         self.connect('air_density', ['sm.base.windLoads.rho','rotor.analysis.rho'])
         self.connect('air_viscosity', ['sm.base.windLoads.mu','rotor.analysis.mu'])

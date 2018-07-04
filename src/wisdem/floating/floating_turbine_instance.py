@@ -482,7 +482,7 @@ class FloatingTurbineInstance(FloatingInstance):
                          ['rotor.rotor_damage_teL', None, 0.0, None],
                          ['tcons.frequency_ratio', None, 1.0, None],
                          ['tcons.tip_deflection_ratio', None, 1.0, None],
-                         ['tcons.ground_clearance', 30.0, None, None],
+                         ['tcons.ground_clearance', 20.0, None, None],
         ])
         return conList
 
