@@ -24,8 +24,8 @@ class FloatingTurbine(Group):
         self.add('rotor', RotorSE(RefBlade), promotes=['hubFraction','nBlades','turbine_class','sparT_in','teT_in','bladeLength','precone','tilt','yaw',
                                                        'r_max_chord','chord_in','theta_in','precurve_in','presweep_in','precurve_tip','presweep_tip',
                                                        'turbulence_class','gust_stddev','VfactorPC','shape_parameter','Rtip','precurveTip','presweepTip',
-                                                       'control:Vin','control:Vout','machine_rating','control:minOmega','control:maxOmega',
-                                                       'control:tsr','control:pitch','pitch_extreme','azimuth_extreme','drivetrainType',
+                                                       'control_Vin','control_Vout','machine_rating','control_minOmega','control_maxOmega',
+                                                       'control_tsr','control_pitch','pitch_extreme','azimuth_extreme','drivetrainType',
                                                        'rstar_damage','Mxb_damage','Myb_damage','strain_ult_spar','strain_ult_te','m_damage',
                                                        'nSector','tiploss','hubloss','wakerotation','usecd','AEP_loss_factor','tip_deflection',
                                                        'dynamic_amplication_tip_deflection'])
@@ -53,7 +53,7 @@ class FloatingTurbine(Group):
                                           'upper_attachment_pontoons_int','lower_ring_pontoons_int','upper_ring_pontoons_int','outer_cross_pontoons_int',
                                           'pontoon_cost_rate','connection_ratio_max','base_pontoon_attach_upper','base_pontoon_attach_lower',
                                           'tower_section_height','tower_outer_diameter','tower_wall_thickness','tower_outfitting_factor',
-                                          'tower_buckling_length','tower_mass','loading','min_diameter_thickness_ratio','min_taper_ratio',
+                                          'tower_buckling_length','tower_mass','loading','min_diameter_thickness_ratio','max_taper_ratio',
                                           'wave_period_range_low','wave_period_range_high'])
 
         # Turbine constraints
@@ -441,7 +441,7 @@ class FloatingTurbine(Group):
 
         self.connect('nBlades','blade_number')
         self.connect('rotor.mass_one_blade', 'blade_mass')
-        self.connect('control:maxOmega', 'tcons.rotor_omega')
+        self.connect('control_maxOmega', 'tcons.rotor_omega')
         self.connect('sm.structural_frequencies', 'tcons.tower_freq')
         self.connect('sm.tow.z_full', 'tcons.tower_z')
         self.connect('sm.tow.d_full', 'tcons.tower_d')

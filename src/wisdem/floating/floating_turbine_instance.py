@@ -91,12 +91,12 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['theta_in']                              = np.array([13.2783, 7.46036, 2.89317, -0.0878099])
         self.params['precone']                               = 2.5
         self.params['tilt']                                  = 5.0
-        self.params['control:Vin']                           = 3.0
-        self.params['control:Vout']                          = 25.0
+        self.params['control_Vin']                           = 3.0
+        self.params['control_Vout']                          = 25.0
         self.params['machine_rating']                        = 5e6
-        self.params['control:minOmega']                      = 0.0
-        self.params['control:maxOmega']                      = 12.0
-        self.params['control:tsr']                           = 7.55
+        self.params['control_minOmega']                      = 0.0
+        self.params['control_maxOmega']                      = 12.0
+        self.params['control_tsr']                           = 7.55
         self.params['sparT_in']                              = np.array([0.05, 0.047754, 0.045376, 0.031085, 0.0061398])
         self.params['teT_in']                                = np.array([0.1, 0.09569, 0.06569, 0.02569, 0.00569])
 
@@ -110,7 +110,7 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['turbulence_class']                      = TURBULENCE_CLASS['B']
         self.params['drivetrainType']                        = DRIVETRAIN_TYPE['GEARED']
         self.params['gust_stddev']                           = 3
-        self.params['control:pitch']                         = 0.0
+        self.params['control_pitch']                         = 0.0
         self.params['VfactorPC']                             = 0.7
         self.params['pitch_extreme']                         = 0.0
         self.params['azimuth_extreme']                       = 0.0
@@ -440,12 +440,12 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['hub_height']       = myref.hub_height
         self.params['turbine_class']    = myref.turbine_class
         self.params['wind_reference_height'] = myref.hub_height
-        self.params['control:Vin']      = myref.control_Vin
-        self.params['control:Vout']     = myref.control_Vout
-        self.params['control:minOmega'] = myref.control_minOmega
-        self.params['control:maxOmega'] = myref.control_maxOmega
-        self.params['control:tsr']      = myref.control_tsr
-        self.params['control:pitch']    = myref.control_pitch
+        self.params['control_Vin']      = myref.control_Vin
+        self.params['control_Vout']     = myref.control_Vout
+        self.params['control_minOmega'] = myref.control_minOmega
+        self.params['control_maxOmega'] = myref.control_maxOmega
+        self.params['control_tsr']      = myref.control_tsr
+        self.params['control_pitch']    = myref.control_pitch
         self.params['machine_rating']   = myref.rating
         self.params['drivetrainType']   = myref.drivetrain
 
