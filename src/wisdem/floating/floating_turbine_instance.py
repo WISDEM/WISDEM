@@ -24,6 +24,7 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params.pop('rna_I', None)
         self.params.pop('rna_moment', None)
         self.params.pop('rna_force', None)
+        self.params.pop('sg.Rhub', None)
 
         # Environmental parameters
         self.params['air_density'] = self.params['base.windLoads.rho']
