@@ -31,7 +31,7 @@ class FloatingTurbine(Group):
                                                        'dynamic_amplication_tip_deflection'])
 
         # RNA
-        self.add('rna', RNA(1))
+        self.add('rna', RNA(1), promotes=['downwind'])
         
         # Tower and substructure
         myfloat = FloatingSE(nSection)
@@ -58,7 +58,7 @@ class FloatingTurbine(Group):
 
         # Turbine constraints
         self.add('tcons', TurbineConstraints(myfloat.nFull), promotes=['blade_number','Rtip','precurveTip','presweepTip','precone','tilt',
-                                                                       'tip_deflection'])
+                                                                       'tip_deflection','downwind'])
         
         # Turbine costs
         self.add('tcost', Turbine_CostsSE_2015(), promotes=['*'])
@@ -408,7 +408,6 @@ class FloatingTurbine(Group):
         self.connect('tilt', 'rna.tilt')
         self.connect('rotor.Fxyz_total','rna.loads.F')
         self.connect('rotor.Mxyz_total','rna.loads.M')
-        self.connect('downwind','rna.downwind')
         self.connect('rna_weightM','rna.rna_weightM')
         self.connect('rotor.Rhub', 'sm.sg.Rhub')
         
