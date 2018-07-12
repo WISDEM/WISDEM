@@ -51,7 +51,7 @@ class TurbineSemiInstance(FloatingTurbineInstance):
                               0.5*self.params['auxiliary_outer_diameter']-self.params['auxiliary_wall_thickness'],
                               self.params['auxiliary_permanent_ballast_height'], 0.0)
 
-        self.draw_column(fig, [0.0, 0.0], self.params['base_freeboard']+self.params['hub_height'], self.params['tower_section_height'],
+        self.draw_column(fig, [0.0, 0.0], self.params['hub_height'], self.params['tower_section_height'],
                          0.5*self.params['tower_outer_diameter'], None, (0.9,)*3)
 
         self.draw_rna(fig)
