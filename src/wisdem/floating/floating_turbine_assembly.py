@@ -39,7 +39,7 @@ class FloatingTurbine(Group):
                                           'fairlead_support_wall_thickness','fairlead_support_outer_diameter',
                                           'base_freeboard','base_section_height','base_outer_diameter','base_wall_thickness',
                                           'auxiliary_freeboard','auxiliary_section_height','auxiliary_outer_diameter','auxiliary_wall_thickness',
-                                          'mooring_line_length','anchor_radius','mooring_diameter','number_of_mooring_lines','mooring_type',
+                                          'mooring_line_length','anchor_radius','mooring_diameter','number_of_mooring_connections','mooring_lines_per_connection','mooring_type',
                                           'anchor_type','drag_embedment_extra_length','mooring_max_offset','mooring_max_heel','mooring_cost_rate',
                                           'permanent_ballast_density','base_stiffener_web_height','base_stiffener_web_thickness',
                                           'base_stiffener_flange_width','base_stiffener_flange_thickness','base_stiffener_spacing',
