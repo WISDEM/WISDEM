@@ -5,8 +5,8 @@ import offshorebos.wind_obos as wind_obos
 
 
 class TurbineSparInstance(FloatingTurbineInstance):
-    def __init__(self, RefBlade):
-        super(TurbineSparInstance, self).__init__(RefBlade)
+    def __init__(self, refStr):
+        super(TurbineSparInstance, self).__init__(refStr)
 
         # Parameters beyond those in superclass
         self.params['number_of_auxiliary_columns'] = 0
@@ -77,6 +77,9 @@ class TurbineSparInstance(FloatingTurbineInstance):
         self.draw_column(fig, [0.0, 0.0], self.params['base_freeboard'], self.params['base_section_height'],
                            0.5*self.params['base_outer_diameter'], self.params['base_stiffener_spacing'])
 
+        zcut = 1.0 + self.params['base_freeboard']
+        self.draw_pontoons(fig, self.prob['sm.load.plot_matrix'], 0.5*self.params['fairlead_support_outer_diameter'], zcut)
+        
         self.draw_ballast(fig, [0.0, 0.0], self.params['base_freeboard'], self.params['base_section_height'],
                           0.5*self.params['base_outer_diameter']-self.params['base_wall_thickness'],
                           self.params['base_permanent_ballast_height'], self.prob['sm.subs.variable_ballast_height'])

@@ -1,4 +1,4 @@
-from floatingse.instance import FloatingInstance, NSECTIONS, NPTS, vecOption
+from floatingse.instance.floating_instance import FloatingInstance, NSECTIONS, NPTS, vecOption, Five_strings, Ten_strings
 from wisdem.floating.floating_turbine_assembly import FloatingTurbine
 from commonse import eps
 from commonse.csystem import rotMat_x, rotMat_y, rotMat_z
@@ -14,10 +14,18 @@ NDEL = 0
 
 
 class FloatingTurbineInstance(FloatingInstance):
-    def __init__(self, RefBlade):
+    def __init__(self, refStr):
         super(FloatingTurbineInstance, self).__init__()
-        self.refBlade = RefBlade
-        
+
+        if type(refStr) != type(''):
+            raise ValueError('Must enter reference turbine name as a string')
+        if refStr in Five_strings:
+            self.refBlade = NREL5MW()
+        elif refStr in Ten_strings:
+            self.refBlade = DU10MW()
+        else:
+            raise ValueError('Unknown reference turbine name, '+refStr)
+            
         # Remove what we don't need from Semi
         self.params.pop('rna_cg', None)
         self.params.pop('rna_mass', None)
@@ -402,7 +410,7 @@ class FloatingTurbineInstance(FloatingInstance):
 
 
     def set_reference(self, instr):
-        if instr.upper() in ['NREL', 'NREL5', 'NREL5MW', '5', '5MW', 'NREL-5', 'NREL-5MW']:
+        if instr.upper() in Five_strings:
             myref = NREL5MW()
 
             self.params['hub_mass'] = 56.780e3
@@ -413,7 +421,7 @@ class FloatingTurbineInstance(FloatingInstance):
             self.params['nac_I']    = np.array([7.77616624894e7, 8.34033992e+05, 8.34033992e+05, 0.0, 2.05892434e+05, 0.0])
             self.params['rna_weightM'] = True
             
-        elif instr.upper() in ['DTU', 'DTU10', 'DTU10MW', '10', '10MW', 'DTU-10', 'DTU-10MW']:
+        elif instr.upper() in Ten_strings:
             myref = DTU10MW()
 
             self.params['hub_mass'] = 105520.0
@@ -481,7 +489,10 @@ class FloatingTurbineInstance(FloatingInstance):
                          ['rotor.rotor_damage_sparL', None, 0.0, None],
                          ['rotor.rotor_damage_teU', None, 0.0, None],
                          ['rotor.rotor_damage_teL', None, 0.0, None],
-                         ['tcons.frequency_ratio', None, 1.0, None],
+                         ['tcons.frequency1P_margin_low', None, 1.0, None],
+                         ['tcons.frequency1P_margin_high', 1.0, None, None],
+                         ['tcons.frequency3P_margin_low', None, 1.0, None],
+                         ['tcons.frequency3P_margin_high', 1.0, None, None],
                          ['tcons.tip_deflection_ratio', None, 1.0, None],
                          ['tcons.ground_clearance', 20.0, None, None],
         ])

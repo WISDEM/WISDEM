@@ -5,8 +5,8 @@ import offshorebos.wind_obos as wind_obos
 
 
 class TurbineSemiInstance(FloatingTurbineInstance):
-    def __init__(self, RefBlade):
-        super(TurbineSemiInstance, self).__init__(RefBlade)
+    def __init__(self, refStr):
+        super(TurbineSemiInstance, self).__init__(refStr)
 
         self.params['substructure'] =                 wind_obos.Substructure.SEMISUBMERSIBLE
         self.params['anchor'] =                       wind_obos.Anchor.DRAGEMBEDMENT
