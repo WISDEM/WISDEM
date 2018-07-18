@@ -22,7 +22,7 @@ class FloatingTurbineInstance(FloatingInstance):
         if refStr in Five_strings:
             self.refBlade = NREL5MW()
         elif refStr in Ten_strings:
-            self.refBlade = DU10MW()
+            self.refBlade = DTU10MW()
         else:
             raise ValueError('Unknown reference turbine name, '+refStr)
             

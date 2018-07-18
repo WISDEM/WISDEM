@@ -36,7 +36,8 @@ class TurbineSparInstance(FloatingTurbineInstance):
         self.params['shearExp'] = 0.11
         self.params['morison_mass_coefficient'] = 2.0
 
-        self.params['number_of_mooring_lines'] = 3
+        self.params['number_of_mooring_connections']        = 3
+        self.params['mooring_lines_per_connection']         = 1
         self.params['mooring_line_length'] = 902.2
         self.params['anchor_radius'] = 853.87
         self.params['mooring_diameter'] = 0.09
