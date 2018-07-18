@@ -434,7 +434,7 @@ class FloatingTurbine(Group):
         self.connect('mooring_cost_rate', 'wobos.moorCR')
         self.connect('sm.mm.mooring_cost', 'wobos.moorCost')
         self.connect('mooring_diameter', 'wobos.moorDia')
-        self.connect('number_of_mooring_lines', 'wobos.moorLines')
+        self.connect('sm.mm.number_of_mooring_lines', 'wobos.moorLines')
         self.connect('outfitting_cost_rate', 'wobos.sSteelCR')
         self.connect('tapered_col_cost_rate', ['wobos.spStifColCR', 'wobos.spTapColCR', 'wobos.ssStifColCR'])
         self.connect('pontoon_cost_rate', 'wobos.ssTrussCR')
