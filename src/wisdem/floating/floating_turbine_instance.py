@@ -464,8 +464,9 @@ class FloatingTurbineInstance(FloatingInstance):
     def get_assembly(self): return FloatingTurbine(self.refBlade, NSECTIONS)
 
     def add_objective(self):
-        # OBJECTIVE FUNCTION: Minimize total cost!
-        self.prob.driver.add_objective('lcoe')
+        curobj = self.prob.driver.get_objective()
+        if (curobj is None) or )len(curobj) == 0):
+            self.prob.driver.add_objective('lcoe')
 
         
     def get_constraints(self):
