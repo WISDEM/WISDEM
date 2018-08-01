@@ -43,10 +43,11 @@ class FloatingTurbine(Group):
                                           'anchor_type','mooring_max_offset','mooring_operational_heel','max_survival_heel','mooring_cost_rate',
                                           'permanent_ballast_density','base_stiffener_web_height','base_stiffener_web_thickness',
                                           'base_stiffener_flange_width','base_stiffener_flange_thickness','base_stiffener_spacing',
-                                          'base_bulkhead_thickness','base_permanent_ballast_height','auxiliary_stiffener_web_height',
-                                          'auxiliary_stiffener_web_thickness','auxiliary_stiffener_flange_width',
+                                          'base_bulkhead_thickness','base_permanent_ballast_height','base_heave_plate_diameter',
+                                          'auxiliary_stiffener_web_height','auxiliary_stiffener_web_thickness','auxiliary_stiffener_flange_width',
                                           'auxiliary_stiffener_flange_thickness','auxiliary_stiffener_spacing','auxiliary_bulkhead_thickness',
-                                          'auxiliary_permanent_ballast_height','bulkhead_mass_factor','ring_mass_factor','shell_mass_factor',
+                                          'auxiliary_permanent_ballast_height','auxiliary_heave_plate_diameter',
+                                          'bulkhead_mass_factor','ring_mass_factor','shell_mass_factor',
                                           'column_mass_factor','outfitting_mass_fraction','ballast_cost_rate','tapered_col_cost_rate',
                                           'outfitting_cost_rate','number_of_auxiliary_columns','pontoon_outer_diameter',
                                           'pontoon_wall_thickness','cross_attachment_pontoons_int','lower_attachment_pontoons_int',
@@ -415,7 +416,7 @@ class FloatingTurbine(Group):
         self.connect('air_viscosity', ['sm.base.windLoads.mu','rotor.analysis.mu'])
         self.connect('water_density', 'sm.water_density')
         self.connect('water_viscosity', 'sm.base.waveLoads.mu')
-        self.connect('wave_height', 'sm.hmax')
+        self.connect('wave_height', 'sm.Hs')
         self.connect('wave_period', 'sm.T')
         self.connect('wind_reference_speed', 'sm.Uref')
         self.connect('wind_reference_height', ['sm.zref','rotor.wind.zref'])

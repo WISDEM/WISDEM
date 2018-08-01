@@ -44,8 +44,8 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['water_viscosity'] = self.params['base.waveLoads.mu']
         self.params.pop('base.waveLoads.mu')
         
-        self.params['wave_height'] = self.params['hmax']
-        self.params.pop('hmax')
+        self.params['wave_height'] = self.params['Hs']
+        self.params.pop('Hs')
         
         self.params['wave_period'] = self.params['T']
         self.params.pop('T', None)
@@ -489,10 +489,10 @@ class FloatingTurbineInstance(FloatingInstance):
                          ['rotor.rotor_damage_sparL', None, 0.0, None],
                          ['rotor.rotor_damage_teU', None, 0.0, None],
                          ['rotor.rotor_damage_teL', None, 0.0, None],
-                         ['tcons.frequency1P_margin_low', None, 1.0, None],
-                         ['tcons.frequency1P_margin_high', 1.0, None, None],
-                         ['tcons.frequency3P_margin_low', None, 1.0, None],
-                         ['tcons.frequency3P_margin_high', 1.0, None, None],
+                         #['tcons.frequency1P_margin_low', None, 1.0, None],
+                         #['tcons.frequency1P_margin_high', 1.0, None, None],
+                         #['tcons.frequency3P_margin_low', None, 1.0, None],
+                         #['tcons.frequency3P_margin_high', 1.0, None, None],
                          ['tcons.tip_deflection_ratio', None, 1.0, None],
                          ['tcons.ground_clearance', 20.0, None, None],
         ])
