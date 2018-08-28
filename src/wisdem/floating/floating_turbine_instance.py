@@ -186,25 +186,25 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['turbine_transportMultiplier']           = 0.0
         self.params['offshore']                              = True
         self.params['crane']                                 = False
-        self.params['bearing_number']                        = 2
-        self.params['bedplate_mass']                         = 93090.6
-        self.params['controls_cost_base']                    = np.array([35000.0,55900.0])
-        self.params['controls_esc']                          = 1.5
-        self.params['crane_cost']                            = 0.0
-        self.params['elec_connec_cost_esc']                  = 1.5
-        self.params['gearbox_mass']                          = 30237.60
-        self.params['generator_mass']                        = 16699.85
-        self.params['high_speed_side_mass']                  = 1492.45
-        self.params['hydraulic_cooling_mass']                = 1e3
-        self.params['low_speed_shaft_mass']                  = 31257.3
-        self.params['main_bearing_mass']                     = 9731.41 / 2
-        self.params['nacelle_cover_mass']                    = 1e3
-        self.params['nacelle_platforms_mass']                = 1e3
-        self.params['pitch_system_mass']                     = 17004.0
-        self.params['spinner_mass']                          = 1810.5
-        self.params['transformer_mass']                      = 1e3
-        self.params['variable_speed_elec_mass']              = 1e3
-        self.params['yaw_system_mass']                       = 11878.24
+        self.params['bearing_number']       = 2
+        self.params['bedplate_mass']        = 93090.6
+        self.params['controls_cost_base']   = np.array([35000.0,55900.0])
+        self.params['controls_esc']         = 1.5
+        self.params['crane_cost']           = 0.0
+        self.params['elec_connec_cost_esc'] = 1.5
+        self.params['gearbox_mass']         = 30237.60
+        self.params['generator_mass']       = 16699.85
+        self.params['hss_mass']             = 1492.45
+        self.params['hvac_mass']            = 1e3
+        self.params['lss_mass']             = 31257.3
+        self.params['main_bearing_mass']    = 9731.41 / 2
+        self.params['cover_mass']           = 1e3
+        self.params['platforms_mass']       = 1e3
+        self.params['pitch_system_mass']    = 17004.0
+        self.params['spinner_mass']         = 1810.5
+        self.params['transformer_mass']     = 1e3
+        self.params['vs_electronics_mass']  = 1e3
+        self.params['yaw_mass']             = 11878.24
         
         # Offshore BOS
         # Turbine / Plant parameters
