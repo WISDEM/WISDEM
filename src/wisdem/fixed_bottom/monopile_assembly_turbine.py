@@ -41,9 +41,13 @@ class MonopileTurbine(Group):
         
         # Tower and substructure
         self.add('tow',TowerSE(nLC, NSECTION+1, nFull, nDEL, wind='PowerWind'), promotes=['material_density','tower_section_height',
-                                                                      'tower_outer_diameter','tower_wall_thickness','tower_outfitting_factor',
-                                                                      'tower_buckling_length','max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
-                                                                                          'tower_mass','tower_I_base','hub_height','foundation_height'])
+                                                                                          'tower_outer_diameter','tower_wall_thickness',
+                                                                                          'tower_outfitting_factor','tower_buckling_length',
+                                                                                          'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
+                                                                                          'tower_mass','tower_I_base','hub_height',
+                                                                                          'foundation_height','monopile','soil_G','soil_nu',
+                                                                                          'suctionpile_depth'
+        ])
                  
         # Turbine constraints
         self.add('tcons', TurbineConstraints(nFull), promotes=['blade_number','Rtip','precurveTip','presweepTip','precone','tilt',
@@ -184,9 +188,6 @@ class MonopileTurbine(Group):
         self.add('outfitting_cost_rate',         IndepVarComp('outfitting_cost_rate', 0.0), promotes=['*'])
         self.add('mpileCR',                      IndepVarComp('mpileCR', 0.0), promotes=['*']) #2250.0
         self.add('mtransCR',                     IndepVarComp('mtransCR', 0.0), promotes=['*']) #3230.0
-        self.add('mpileD',                       IndepVarComp('mpileD', 0.0), promotes=['*']) #0.0
-        self.add('mpileL',                       IndepVarComp('mpileL', 0.0), promotes=['*']) #0.0
-        self.add('mpEmbedL',                     IndepVarComp('mpEmbedL', 0.0), promotes=['*']) #30.0
         self.add('jlatticeCR',                   IndepVarComp('jlatticeCR', 0.0), promotes=['*']) #4680.0
         self.add('jtransCR',                     IndepVarComp('jtransCR', 0.0), promotes=['*']) #4500.0
         self.add('jpileCR',                      IndepVarComp('jpileCR', 0.0), promotes=['*']) #2250.0
@@ -358,9 +359,11 @@ class MonopileTurbine(Group):
         self.add('discount_rate',      IndepVarComp('discount_rate', 0.0), promotes=['*'])
 
         # Connect all input variables from all models
-        self.connect('water_depth', ['tow.z_floor','wobos.waterD', 'sea_depth'])
+        self.connect('water_depth', ['tow.z_floor','wobos.waterD', 'sea_depth','wobos.mpileL'])
         self.connect('hub_height', ['rotor.hub_height', 'wobos.hubH'])
-        self.connect('tower_outer_diameter', 'wobos.towerD', src_indices=[0])
+        self.connect('tower_outer_diameter', 'wobos.towerD', src_indices=[NSECTION])
+        self.connect('tower_outer_diameter', 'wobos.mpileD', src_indices=[0])
+        self.connect('suctionpile_depth', 'mpEmbedL')
         
         self.connect('wind_beta', 'tow.windLoads.beta')
         self.connect('wave_beta', 'tow.waveLoads.beta')

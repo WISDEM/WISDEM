@@ -28,9 +28,13 @@ class MonopileTower(Group):
 
         # Tower and substructure
         self.add('tow',TowerSE(nLC, NSECTION+1, nFull, nDEL, wind='PowerWind'), promotes=['material_density','tower_section_height',
-                                                                      'tower_outer_diameter','tower_wall_thickness','tower_outfitting_factor',
-                                                                      'tower_buckling_length','max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
-                                                                                          'tower_mass','tower_I_base','hub_height','foundation_height'])
+                                                                                          'tower_outer_diameter','tower_wall_thickness',
+                                                                                          'tower_outfitting_factor','tower_buckling_length',
+                                                                                          'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
+                                                                                          'tower_mass','tower_I_base','hub_height',
+                                                                                          'foundation_height','monopile','soil_G','soil_nu',
+                                                                                          'suctionpile_depth'
+        ])
                  
         
         # Tower and Frame3DD options
