@@ -43,10 +43,12 @@ class FloatingTurbine(Group):
                                           'anchor_type','mooring_max_offset','mooring_operational_heel','max_survival_heel','mooring_cost_rate',
                                           'permanent_ballast_density','base_stiffener_web_height','base_stiffener_web_thickness',
                                           'base_stiffener_flange_width','base_stiffener_flange_thickness','base_stiffener_spacing',
-                                          'base_bulkhead_thickness','base_permanent_ballast_height','base_heave_plate_diameter',
+                                          'base_bulkhead_thickness','base_permanent_ballast_height','base_ballast_heave_box_diameter',
+                                          'base_ballast_heave_box_height','base_ballast_heave_box_location',
                                           'auxiliary_stiffener_web_height','auxiliary_stiffener_web_thickness','auxiliary_stiffener_flange_width',
                                           'auxiliary_stiffener_flange_thickness','auxiliary_stiffener_spacing','auxiliary_bulkhead_thickness',
-                                          'auxiliary_permanent_ballast_height','auxiliary_heave_plate_diameter',
+                                          'auxiliary_permanent_ballast_height','auxiliary_ballast_heave_box_diameter',
+                                          'auxiliary_ballast_heave_box_height','auxiliary_ballast_heave_box_location',
                                           'bulkhead_mass_factor','ring_mass_factor','shell_mass_factor',
                                           'column_mass_factor','outfitting_mass_fraction','ballast_cost_rate','tapered_col_cost_rate',
                                           'outfitting_cost_rate','number_of_auxiliary_columns','pontoon_outer_diameter',
@@ -55,7 +57,7 @@ class FloatingTurbine(Group):
                                           'pontoon_cost_rate','connection_ratio_max','base_pontoon_attach_upper','base_pontoon_attach_lower',
                                           'tower_section_height','tower_outer_diameter','tower_wall_thickness','tower_outfitting_factor',
                                           'tower_buckling_length','tower_mass','loading','min_diameter_thickness_ratio','max_taper_ratio',
-                                          'wave_period_range_low','wave_period_range_high'])
+                                          'wave_period_range_low','wave_period_range_high','z_offset'])
 
         # Turbine constraints
         self.add('tcons', TurbineConstraints(myfloat.nFull), promotes=['blade_number','Rtip','precurveTip','presweepTip','precone','tilt',
@@ -247,6 +249,7 @@ class FloatingTurbine(Group):
         #self.add('arrayCables',                  IndepVarComp('arrayCables', [33, 66], pass_by_obj=True), promotes=['*'])
         #self.add('exportCables',                 IndepVarComp('exportCables', [132, 220], pass_by_obj=True), promotes=['*'])
         #Assembly & Installation',
+        self.add('deaFixLeng',                   IndepVarComp('deaFixLeng', 0.0), promotes=['*']) #0.005
         self.add('moorTimeFac',                  IndepVarComp('moorTimeFac', 0.0), promotes=['*']) #0.005
         self.add('moorLoadout',                  IndepVarComp('moorLoadout', 0.0), promotes=['*']) #5.0
         self.add('moorSurvey',                   IndepVarComp('moorSurvey', 0.0), promotes=['*']) #4.0
@@ -433,7 +436,7 @@ class FloatingTurbine(Group):
         self.connect('ballast_cost_rate', 'wobos.ballCR')
         #self.connect('drag_embedment_extra_length', 'wobos.deaFixLeng')
         self.connect('mooring_cost_rate', 'wobos.moorCR')
-        self.connect('sm.mm.mooring_cost', 'wobos.moorCost')
+        self.connect('sm.mooring_cost', 'wobos.moorCost')
         self.connect('mooring_diameter', 'wobos.moorDia')
         self.connect('sm.mm.number_of_mooring_lines', 'wobos.moorLines')
         self.connect('outfitting_cost_rate', 'wobos.sSteelCR')
@@ -533,6 +536,7 @@ class FloatingTurbine(Group):
         self.connect('expSubsInterCR', 'wobos.expSubsInterCR')
         #self.connect('arrayCables', 'wobos.arrayCables')
         #self.connect('exportCables', 'wobos.exportCables')
+        self.connect('deaFixLeng', 'wobos.deaFixLeng')
         self.connect('moorTimeFac', 'wobos.moorTimeFac')
         self.connect('moorLoadout', 'wobos.moorLoadout')
         self.connect('moorSurvey', 'wobos.moorSurvey')

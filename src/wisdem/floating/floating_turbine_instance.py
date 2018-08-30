@@ -8,8 +8,6 @@ import offshorebos.wind_obos as wind_obos
 import time
 from StringIO import StringIO
 
-from mayavi import mlab
-
 NDEL = 0
 
 
@@ -156,15 +154,15 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['lss_mass_cost_coeff']                   = 12.6
         self.params['bearings_mass_cost_coeff']              = 6.35
         self.params['gearbox_mass_cost_coeff']               = 17.4
-        self.params['high_speed_side_mass_cost_coeff']       = 8.25
+        self.params['hss_mass_cost_coeff']       = 8.25
         self.params['generator_mass_cost_coeff']             = 17.43
         self.params['bedplate_mass_cost_coeff']              = 4.5
-        self.params['yaw_system_mass_cost_coeff']            = 11.01
-        self.params['variable_speed_elec_mass_cost_coeff']   = 26.5
-        self.params['hydraulic_cooling_mass_cost_coeff']     = 163.95
-        self.params['nacelle_cover_mass_cost_coeff']         = 7.61
+        self.params['yaw_mass_cost_coeff']            = 11.01
+        self.params['vs_electronics_mass_cost_coeff']   = 26.5
+        self.params['hvac_mass_cost_coeff']     = 163.95
+        self.params['cover_mass_cost_coeff']         = 7.61
         self.params['elec_connec_machine_rating_cost_coeff'] = 40.0
-        self.params['nacelle_platforms_mass_cost_coeff']     = 8.7
+        self.params['platforms_mass_cost_coeff']     = 8.7
         self.params['base_hardware_cost_coeff']              = 0.7
         self.params['transformer_mass_cost_coeff']           = 26.5
         self.params['tower_mass_cost_coeff']                 = 3.20
@@ -499,6 +497,7 @@ class FloatingTurbineInstance(FloatingInstance):
         return conList
 
     def draw_rna(self, fig):
+        from mayavi import mlab
         if fig is None: fig=self.init_figure()
 
         # Quantities from input and output simulatioin parameters
