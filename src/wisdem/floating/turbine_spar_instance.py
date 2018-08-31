@@ -88,7 +88,11 @@ class TurbineSparInstance(FloatingTurbineInstance):
         self.draw_column(fig, [0.0, 0.0], self.params['hub_height'], self.params['tower_section_height'],
                          0.5*self.params['tower_outer_diameter'], None, (0.9,)*3)
 
-        self.draw_heave_plate(fig, [0.0, 0.0], self.params['base_freeboard'], self.params['base_section_height'], 0.5*self.params['base_heave_plate_diameter'])
+        self.draw_ballast_heave_box(fig, [0.0, 0.0], self.params['base_freeboard'],
+                                    self.params['base_section_height'],
+                                    self.params['base_ballast_heave_box_location'],
+                                    0.5*self.params['base_ballast_heave_box_diameter'],
+                                    self.params['base_ballast_heave_box_height'])
 
         self.draw_rna(fig)
         
