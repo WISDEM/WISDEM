@@ -13,7 +13,7 @@ from plant_financese.plant_finance import PlantFinance
 from drivese.drivese_omdao import Drive3pt, Drive4pt
 
 import numpy as np
-from monopile_assembly import wind, nLC, nDEL, NSECTION
+from .monopile_assembly import wind, nLC, nDEL, NSECTION
 
     
 class MonopileTurbine(Group):
