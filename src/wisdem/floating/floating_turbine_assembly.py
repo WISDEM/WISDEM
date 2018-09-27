@@ -173,7 +173,6 @@ class FloatingTurbine(Group):
         self.connect('Fxyz_total','rna.loads.F')
         self.connect('Mxyz_total','rna.loads.M')
         self.connect('rna_weightM','rna.rna_weightM')
-        self.connect('Rhub', 'sg.Rhub')
         
         self.connect('air_density', ['base.windLoads.rho','analysis.rho'])
         self.connect('air_viscosity', ['base.windLoads.mu','analysis.mu'])
@@ -192,7 +191,7 @@ class FloatingTurbine(Group):
         self.connect('mooring_cost_rate', 'moorCR')
         self.connect('mooring_cost', 'moorCost')
         self.connect('mooring_diameter', 'moorDia')
-        self.connect('mm.number_of_mooring_lines', 'moorLines')
+        self.connect('number_of_mooring_lines', 'moorLines')
         self.connect('outfitting_cost_rate', 'sSteelCR')
         self.connect('tapered_col_cost_rate', ['spStifColCR', 'spTapColCR', 'ssStifColCR'])
         self.connect('pontoon_cost_rate', 'ssTrussCR')
