@@ -33,14 +33,14 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params.pop('sg.Rhub', None)
 
         # Environmental parameters
-        self.params['air_density'] = self.params['base.windLoads.rho']
-        self.params.pop('base.windLoads.rho')
+        self.params['air_density'] = self.params['main.windLoads.rho']
+        self.params.pop('main.windLoads.rho')
         
-        self.params['air_viscosity'] = self.params['base.windLoads.mu']
-        self.params.pop('base.windLoads.mu', None)
+        self.params['air_viscosity'] = self.params['main.windLoads.mu']
+        self.params.pop('main.windLoads.mu', None)
         
-        self.params['water_viscosity'] = self.params['base.waveLoads.mu']
-        self.params.pop('base.waveLoads.mu')
+        self.params['water_viscosity'] = self.params['main.waveLoads.mu']
+        self.params.pop('main.waveLoads.mu')
         
         self.params['wave_height'] = self.params['Hs']
         self.params.pop('Hs')
@@ -248,6 +248,7 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['ssHeaveCR']                             = 6250.0
         self.params['scourMat']                              = 250000.0
         self.params['number_install_seasons']                = 1.0
+        self.params['deaFixLeng']                = 0.0
         #Electrical Infrastructure']                         = , 
         self.params['pwrFac']                                = 0.95
         self.params['buryFac']                               = 0.10

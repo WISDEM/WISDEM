@@ -174,10 +174,10 @@ class FloatingTurbine(Group):
         self.connect('Mxyz_total','rna.loads.M')
         self.connect('rna_weightM','rna.rna_weightM')
         
-        self.connect('air_density', ['base.windLoads.rho','analysis.rho'])
-        self.connect('air_viscosity', ['base.windLoads.mu','analysis.mu'])
+        self.connect('air_density', ['main.windLoads.rho','analysis.rho'])
+        self.connect('air_viscosity', ['main.windLoads.mu','analysis.mu'])
         self.connect('water_density', 'water_density')
-        self.connect('water_viscosity', 'base.waveLoads.mu')
+        self.connect('water_viscosity', 'main.waveLoads.mu')
         self.connect('wave_height', 'Hs')
         self.connect('wave_period', 'T')
         self.connect('wind_reference_speed', 'Uref')
@@ -187,7 +187,6 @@ class FloatingTurbine(Group):
         self.connect('morison_mass_coefficient', 'cm')
         
         self.connect('ballast_cost_rate', 'ballCR')
-        #self.connect('drag_embedment_extra_length', 'deaFixLeng')
         self.connect('mooring_cost_rate', 'moorCR')
         self.connect('mooring_cost', 'moorCost')
         self.connect('mooring_diameter', 'moorDia')
@@ -211,7 +210,7 @@ class FloatingTurbine(Group):
         
         # Link outputs from one model to inputs to another
         self.connect('tower_mass', 'towerM')
-        self.connect('dummy_mass', 'aux.stack_mass_in')
+        self.connect('dummy_mass', 'off.stack_mass_in')
 
         self.connect('total_cost', 'subTotCost')
         self.connect('total_mass', 'subTotM')
