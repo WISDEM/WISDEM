@@ -24,10 +24,10 @@ class TurbineSemiInstance(FloatingTurbineInstance):
 
         self.draw_ocean(fig)
 
-        mooringMat = self.prob['sm.mm.plot_matrix']
+        mooringMat = self.prob['mm.plot_matrix']
         self.draw_mooring(fig, mooringMat)
 
-        pontoonMat = self.prob['sm.load.plot_matrix']
+        pontoonMat = self.prob['load.plot_matrix']
         zcut = 1.0 + np.maximum( self.params['base_freeboard'], self.params['auxiliary_freeboard'] )
         self.draw_pontoons(fig, pontoonMat, 0.5*self.params['pontoon_outer_diameter'], zcut)
 
@@ -36,13 +36,14 @@ class TurbineSemiInstance(FloatingTurbineInstance):
 
         self.draw_ballast(fig, [0.0, 0.0], self.params['base_freeboard'], self.params['base_section_height'],
                           0.5*self.params['base_outer_diameter']-self.params['base_wall_thickness'],
-                          self.params['base_permanent_ballast_height'], self.prob['sm.subs.variable_ballast_height'])
+                          self.params['base_permanent_ballast_height'], self.prob['subs.variable_ballast_height'])
 
-        self.draw_ballast_heave_box(fig, [0.0, 0.0], self.params['base_freeboard'],
-                                    self.params['base_section_height'],
-                                    self.params['base_ballast_heave_box_location'],
-                                    0.5*self.params['base_ballast_heave_box_diameter'],
-                                    self.params['base_ballast_heave_box_height'])
+        if self.prob['base.ballast_heave_box_mass'] > 0.0:
+            self.draw_ballast_heave_box(fig, [0.0, 0.0], self.params['base_freeboard'],
+                                        self.params['base_section_height'],
+                                        self.params['base_ballast_heave_box_location'],
+                                        0.5*self.params['base_ballast_heave_box_diameter'],
+                                        self.params['base_ballast_heave_box_height'])
         
         R_semi  = self.params['radius_to_auxiliary_column']
         ncolumn = int(self.params['number_of_auxiliary_columns'])
@@ -57,11 +58,12 @@ class TurbineSemiInstance(FloatingTurbineInstance):
                               0.5*self.params['auxiliary_outer_diameter']-self.params['auxiliary_wall_thickness'],
                               self.params['auxiliary_permanent_ballast_height'], 0.0)
 
-            self.draw_ballast_heave_box(fig, [x[k], y[k]], self.params['auxiliary_freeboard'],
-                                        self.params['auxiliary_section_height'],
-                                        self.params['auxiliary_ballast_heave_box_location'],
-                                        0.5*self.params['auxiliary_ballast_heave_box_diameter'],
-                                        self.params['auxiliary_ballast_heave_box_height'])
+            if self.prob['aux.ballast_heave_box_mass'] > 0.0:
+                self.draw_ballast_heave_box(fig, [x[k], y[k]], self.params['auxiliary_freeboard'],
+                                            self.params['auxiliary_section_height'],
+                                            self.params['auxiliary_ballast_heave_box_location'],
+                                            0.5*self.params['auxiliary_ballast_heave_box_diameter'],
+                                            self.params['auxiliary_ballast_heave_box_height'])
             
         self.draw_column(fig, [0.0, 0.0], self.params['hub_height'], self.params['tower_section_height'],
                          0.5*self.params['tower_outer_diameter'], None, (0.9,)*3)

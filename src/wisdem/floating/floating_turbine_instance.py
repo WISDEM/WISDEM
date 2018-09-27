@@ -72,17 +72,12 @@ class FloatingTurbineInstance(FloatingInstance):
 
         self.params['hub_height']                            = 90.0
         
-        self.params['safety_factor_frequency']               = 1.1
-        self.params['safety_factor_stress']                  = 1.35
-        self.params['safety_factor_materials']               = 1.3
-        self.params['safety_factor_buckling']                = 1.1
-        self.params['safety_factor_fatigue']                 = 1.35*1.3*1.0
-        self.params['safety_factor_consequence']             = 1.0
-        self.params.pop('gamma_f', None)
-        self.params.pop('gamma_m', None)
-        self.params.pop('gamma_n', None)
-        self.params.pop('gamma_b', None)
-        self.params.pop('gamma_fatigue', None)
+        self.params['gamma_freq']               = 1.1
+        self.params['gamma_f']                  = 1.35 # stress
+        self.params['gamma_m']               = 1.3 # materials
+        self.params['gamma_b']                = 1.1 # buckling
+        self.params['gamma_fatigue']                 = 1.35*1.3*1.0
+        self.params['gamma_n']             = 1.0 # consequence
       
         self.params['project_lifetime']                      = 20.0
         self.params['number_of_turbines']                    = 20
@@ -244,9 +239,6 @@ class FloatingTurbineInstance(FloatingInstance):
         #Substructure & Foundation']                         = , 
         self.params['mpileCR']                               = 2250.0
         self.params['mtransCR']                              = 3230.0
-        self.params['mpileD']                                = 0.0
-        self.params['mpileL']                                = 0.0
-        self.params['mpEmbedL']                              = 30.0
         self.params['jlatticeCR']                            = 4680.0
         self.params['jtransCR']                              = 4500.0
         self.params['jpileCR']                               = 2250.0
@@ -461,38 +453,35 @@ class FloatingTurbineInstance(FloatingInstance):
         
     def get_assembly(self): return FloatingTurbine(self.refBlade, NSECTIONS)
 
-    def add_objective(self):
-        if (len(self.prob.driver._objs) == 0):
-            self.prob.driver.add_objective('lcoe')
+    def add_objective(self, varname='lcoe', scale=1.0):
+        super(FloatingTurbineInstance, self).add_objective(varname, scale)
             
         
     def get_constraints(self):
         conList = super(FloatingTurbineInstance, self).get_constraints()
-        for con in conList:
-            con[0] = 'sm.' + con[0]
 
-        conList.extend( [['rotor.Pn_margin', None, 1.0, None],
-                         ['rotor.P1_margin', None, 1.0, None],
-                         ['rotor.Pn_margin_cfem', None, 1.0, None],
-                         ['rotor.P1_margin_cfem', None, 1.0, None],
-                         ['rotor.rotor_strain_sparU', -1.0, None, None],
-                         ['rotor.rotor_strain_sparL', None, 1.0, None],
-                         ['rotor.rotor_strain_teU', -1.0, None, None],
-                         ['rotor.rotor_strain_teL', None, 1.0, None],
-                         ['rotor.rotor_buckling_sparU', None, 1.0, None],
-                         ['rotor.rotor_buckling_sparL', None, 1.0, None],
-                         ['rotor.rotor_buckling_teU', None, 1.0, None],
-                         ['rotor.rotor_buckling_teL', None, 1.0, None],
-                         ['rotor.rotor_damage_sparU', None, 0.0, None],
-                         ['rotor.rotor_damage_sparL', None, 0.0, None],
-                         ['rotor.rotor_damage_teU', None, 0.0, None],
-                         ['rotor.rotor_damage_teL', None, 0.0, None],
-                         #['tcons.frequency1P_margin_low', None, 1.0, None],
-                         #['tcons.frequency1P_margin_high', 1.0, None, None],
-                         #['tcons.frequency3P_margin_low', None, 1.0, None],
-                         #['tcons.frequency3P_margin_high', 1.0, None, None],
-                         ['tcons.tip_deflection_ratio', None, 1.0, None],
-                         ['tcons.ground_clearance', 20.0, None, None],
+        conList.extend( [['Pn_margin', None, 1.0, None],
+                         ['P1_margin', None, 1.0, None],
+                         ['Pn_margin_cfem', None, 1.0, None],
+                         ['P1_margin_cfem', None, 1.0, None],
+                         ['rotor_strain_sparU', -1.0, None, None],
+                         ['rotor_strain_sparL', None, 1.0, None],
+                         ['rotor_strain_teU', -1.0, None, None],
+                         ['rotor_strain_teL', None, 1.0, None],
+                         ['rotor_buckling_sparU', None, 1.0, None],
+                         ['rotor_buckling_sparL', None, 1.0, None],
+                         ['rotor_buckling_teU', None, 1.0, None],
+                         ['rotor_buckling_teL', None, 1.0, None],
+                         ['rotor_damage_sparU', None, 0.0, None],
+                         ['rotor_damage_sparL', None, 0.0, None],
+                         ['rotor_damage_teU', None, 0.0, None],
+                         ['rotor_damage_teL', None, 0.0, None],
+                         #['frequency1P_margin_low', None, 1.0, None],
+                         #['frequency1P_margin_high', 1.0, None, None],
+                         #['frequency3P_margin_low', None, 1.0, None],
+                         #['frequency3P_margin_high', 1.0, None, None],
+                         ['tip_deflection_ratio', None, 1.0, None],
+                         ['ground_clearance', 20.0, None, None],
         ])
         return conList
 
@@ -503,7 +492,7 @@ class FloatingTurbineInstance(FloatingInstance):
         # Quantities from input and output simulatioin parameters
         r_cylinder   = self.refBlade.r_cylinder
         bladeLength  = self.params['bladeLength']
-        hubD         = 2*self.prob['rotor.Rhub']
+        hubD         = 2*self.prob['Rhub']
         nblade       = self.params['nBlades']
         pitch        = 0.0
         precone      = self.params['precone']
@@ -511,11 +500,11 @@ class FloatingTurbineInstance(FloatingInstance):
         hubH         = self.params['hub_height']
         cm_hub       = self.prob['hub_cm']
         cm_hub[-1]  += hubH
-        chord        = self.prob['rotor.chord']
-        thick        = self.prob['rotor.chord'] / self.refBlade.chord_ref
-        twist        = self.prob['rotor.theta']
-        precurve     = self.prob['rotor.precurve']
-        presweep     = self.prob['rotor.presweep']
+        chord        = self.prob['chord']
+        thick        = self.prob['chord'] / self.refBlade.chord_ref
+        twist        = self.prob['theta']
+        precurve     = self.prob['precurve']
+        presweep     = self.prob['presweep']
         le_loc       = self.refBlade.le_location
 
         # Rotation matrices
@@ -524,7 +513,7 @@ class FloatingTurbineInstance(FloatingInstance):
         T_pitch   = rotMat_z(np.deg2rad(-pitch))
 
         # Spanwise coordinates
-        r_blade = self.prob['rotor.r_pts']
+        r_blade = self.prob['r_pts']
 
         # Airfoil coordinates
         afcoord = self.refBlade.getAirfoilCoordinates()

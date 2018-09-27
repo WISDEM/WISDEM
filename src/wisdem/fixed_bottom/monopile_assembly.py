@@ -27,13 +27,13 @@ class MonopileTower(Group):
 
 
         # Tower and substructure
-        self.add('tow',TowerSE(nLC, NSECTION+1, nFull, nDEL, wind='PowerWind'), promotes=['material_density','tower_section_height',
+        self.add('tow',TowerSE(nLC, NSECTION+1, nFull, nDEL, wind='PowerWind'), promotes=['material_density','E','G','tower_section_height',
                                                                                           'tower_outer_diameter','tower_wall_thickness',
                                                                                           'tower_outfitting_factor','tower_buckling_length',
                                                                                           'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                                                                           'tower_mass','tower_I_base','hub_height',
                                                                                           'foundation_height','monopile','soil_G','soil_nu',
-                                                                                          'suctionpile_depth'
+                                                                                          'suctionpile_depth','gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue'
         ])
                  
         
@@ -72,14 +72,6 @@ class MonopileTower(Group):
         self.add('wave_period',                IndepVarComp('wave_period', 0.0), promotes=['*'])
         self.add('mean_current_speed',         IndepVarComp('mean_current_speed', 0.0), promotes=['*'])
         self.add('wave_beta',                  IndepVarComp('wave_beta', 0.0), promotes=['*'])
-        
-        # Design standards
-        self.add('safety_factor_frequency',    IndepVarComp('safety_factor_frequency', 0.0), promotes=['*'])
-        self.add('safety_factor_stress',       IndepVarComp('safety_factor_stress', 0.0), promotes=['*'])
-        self.add('safety_factor_materials',    IndepVarComp('safety_factor_materials', 0.0), promotes=['*'])
-        self.add('safety_factor_buckling',     IndepVarComp('safety_factor_buckling', 0.0), promotes=['*'])
-        self.add('safety_factor_fatigue',      IndepVarComp('safety_factor_fatigue', 0.0), promotes=['*'])
-        self.add('safety_factor_consequence',  IndepVarComp('safety_factor_consequence', 0.0), promotes=['*'])
 
         # Column
         self.add('morison_mass_coefficient',   IndepVarComp('morison_mass_coefficient', 0.0), promotes=['*'])
@@ -87,6 +79,14 @@ class MonopileTower(Group):
         self.add('E',                          IndepVarComp('E', 0.0), promotes=['*'])
         self.add('G',                          IndepVarComp('G', 0.0), promotes=['*'])
         self.add('yield_stress',               IndepVarComp('yield_stress', 0.0), promotes=['*'])
+        
+        # Design standards
+        self.add('gamma_freq',      IndepVarComp('gamma_freq', 0.0), promotes=['*'])
+        self.add('gamma_f',         IndepVarComp('gamma_f', 0.0), promotes=['*'])
+        self.add('gamma_m',         IndepVarComp('gamma_m', 0.0), promotes=['*'])
+        self.add('gamma_b',         IndepVarComp('gamma_b', 0.0), promotes=['*'])
+        self.add('gamma_fatigue',   IndepVarComp('gamma_fatigue', 0.0), promotes=['*'])
+        self.add('gamma_n',         IndepVarComp('gamma_n', 0.0), promotes=['*'])
 
         # Connect all input variables from all models
         self.connect('water_depth', 'tow.z_floor')
@@ -108,12 +108,6 @@ class MonopileTower(Group):
         self.connect('compute_stiffness', 'tow.geom')
         self.connect('frame3dd_matrix_method', 'tow.Mmethod')
         
-        self.connect('safety_factor_stress', 'tow.gamma_f')
-        self.connect('safety_factor_materials', 'tow.gamma_m')
-        self.connect('safety_factor_buckling', 'tow.gamma_b')
-        self.connect('safety_factor_fatigue', 'tow.gamma_fatigue')
-        self.connect('safety_factor_consequence', 'tow.gamma_n')
-        
         self.connect('air_density', 'tow.windLoads.rho')
         self.connect('air_viscosity', 'tow.windLoads.mu')
         self.connect('water_density',['tow.wave.rho','tow.waveLoads.rho'])
@@ -125,9 +119,6 @@ class MonopileTower(Group):
         self.connect('wind_bottom_height', 'tow.z0')
         self.connect('shearExp', 'tow.wind.shearExp')
         self.connect('morison_mass_coefficient', 'tow.cm')
-        self.connect('E', 'tow.E')
-        self.connect('G', 'tow.G')
-        #self.connect('nu', 'tow.nu')
         self.connect('yield_stress', 'tow.sigma_y')
         self.connect('max_taper_ratio', 'max_taper')
         self.connect('min_diameter_thickness_ratio', 'min_d_to_t')

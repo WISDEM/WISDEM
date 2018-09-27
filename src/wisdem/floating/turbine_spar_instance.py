@@ -73,26 +73,27 @@ class TurbineSparInstance(FloatingTurbineInstance):
 
         self.draw_ocean(fig)
 
-        self.draw_mooring(fig, self.prob['sm.mm.plot_matrix'])
+        self.draw_mooring(fig, self.prob['mm.plot_matrix'])
 
         self.draw_column(fig, [0.0, 0.0], self.params['base_freeboard'], self.params['base_section_height'],
                            0.5*self.params['base_outer_diameter'], self.params['base_stiffener_spacing'])
 
         zcut = 1.0 + self.params['base_freeboard']
-        self.draw_pontoons(fig, self.prob['sm.load.plot_matrix'], 0.5*self.params['fairlead_support_outer_diameter'], zcut)
+        self.draw_pontoons(fig, self.prob['load.plot_matrix'], 0.5*self.params['fairlead_support_outer_diameter'], zcut)
         
         self.draw_ballast(fig, [0.0, 0.0], self.params['base_freeboard'], self.params['base_section_height'],
                           0.5*self.params['base_outer_diameter']-self.params['base_wall_thickness'],
-                          self.params['base_permanent_ballast_height'], self.prob['sm.subs.variable_ballast_height'])
+                          self.params['base_permanent_ballast_height'], self.prob['subs.variable_ballast_height'])
         
         self.draw_column(fig, [0.0, 0.0], self.params['hub_height'], self.params['tower_section_height'],
                          0.5*self.params['tower_outer_diameter'], None, (0.9,)*3)
 
-        self.draw_ballast_heave_box(fig, [0.0, 0.0], self.params['base_freeboard'],
-                                    self.params['base_section_height'],
-                                    self.params['base_ballast_heave_box_location'],
-                                    0.5*self.params['base_ballast_heave_box_diameter'],
-                                    self.params['base_ballast_heave_box_height'])
+        if self.prob['base.ballast_heave_box_mass'] > 0.0:
+            self.draw_ballast_heave_box(fig, [0.0, 0.0], self.params['base_freeboard'],
+                                        self.params['base_section_height'],
+                                        self.params['base_ballast_heave_box_location'],
+                                        0.5*self.params['base_ballast_heave_box_diameter'],
+                                        self.params['base_ballast_heave_box_height'])
 
         self.draw_rna(fig)
         
