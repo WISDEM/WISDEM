@@ -88,12 +88,12 @@ class TurbineSparInstance(FloatingTurbineInstance):
         self.draw_column(fig, [0.0, 0.0], self.params['hub_height'], self.params['tower_section_height'],
                          0.5*self.params['tower_outer_diameter'], None, (0.9,)*3)
 
-        if self.prob['main.ballast_heave_box_mass'] > 0.0:
-            self.draw_ballast_heave_box(fig, [0.0, 0.0], self.params['main_freeboard'],
+        if self.prob['main.buoyancy_tank_mass'] > 0.0:
+            self.draw_buoyancy_tank(fig, [0.0, 0.0], self.params['main_freeboard'],
                                         self.params['main_section_height'],
-                                        self.params['main_ballast_heave_box_location'],
-                                        0.5*self.params['main_ballast_heave_box_diameter'],
-                                        self.params['main_ballast_heave_box_height'])
+                                        self.params['main_buoyancy_tank_location'],
+                                        0.5*self.params['main_buoyancy_tank_diameter'],
+                                        self.params['main_buoyancy_tank_height'])
 
         self.draw_rna(fig)
         

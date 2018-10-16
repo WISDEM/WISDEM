@@ -38,12 +38,12 @@ class TurbineSemiInstance(FloatingTurbineInstance):
                           0.5*self.params['main_outer_diameter']-self.params['main_wall_thickness'],
                           self.params['main_permanent_ballast_height'], self.prob['variable_ballast_height'])
 
-        if self.prob['main.ballast_heave_box_mass'] > 0.0:
-            self.draw_ballast_heave_box(fig, [0.0, 0.0], self.params['main_freeboard'],
+        if self.prob['main.buoyancy_tank_mass'] > 0.0:
+            self.draw_buoyancy_tank(fig, [0.0, 0.0], self.params['main_freeboard'],
                                         self.params['main_section_height'],
-                                        self.params['main_ballast_heave_box_location'],
-                                        0.5*self.params['main_ballast_heave_box_diameter'],
-                                        self.params['main_ballast_heave_box_height'])
+                                        self.params['main_buoyancy_tank_location'],
+                                        0.5*self.params['main_buoyancy_tank_diameter'],
+                                        self.params['main_buoyancy_tank_height'])
         
         R_semi  = self.params['radius_to_offset_column']
         ncolumn = int(self.params['number_of_offset_columns'])
@@ -58,12 +58,12 @@ class TurbineSemiInstance(FloatingTurbineInstance):
                               0.5*self.params['offset_outer_diameter']-self.params['offset_wall_thickness'],
                               self.params['offset_permanent_ballast_height'], 0.0)
 
-            if self.prob['off.ballast_heave_box_mass'] > 0.0:
-                self.draw_ballast_heave_box(fig, [x[k], y[k]], self.params['offset_freeboard'],
+            if self.prob['off.buoyancy_tank_mass'] > 0.0:
+                self.draw_buoyancy_tank(fig, [x[k], y[k]], self.params['offset_freeboard'],
                                             self.params['offset_section_height'],
-                                            self.params['offset_ballast_heave_box_location'],
-                                            0.5*self.params['offset_ballast_heave_box_diameter'],
-                                            self.params['offset_ballast_heave_box_height'])
+                                            self.params['offset_buoyancy_tank_location'],
+                                            0.5*self.params['offset_buoyancy_tank_diameter'],
+                                            self.params['offset_buoyancy_tank_height'])
             
         self.draw_column(fig, [0.0, 0.0], self.params['hub_height'], self.params['tower_section_height'],
                          0.5*self.params['tower_outer_diameter'], None, (0.9,)*3)

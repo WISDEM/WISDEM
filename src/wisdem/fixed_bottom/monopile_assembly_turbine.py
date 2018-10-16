@@ -27,16 +27,7 @@ class MonopileTurbine(Group):
 
         
         # Rotor
-        self.add('rotor', RotorSE(RefBlade), promotes=['*'])#hubFraction','nBlades','turbine_class','sparT_in','teT_in','bladeLength','precone','tilt','yaw',
-        '''
-                                                       'r_max_chord','chord_in','theta_in','precurve_in','presweep_in','precurve_tip','presweep_tip',
-                                                       'turbulence_class','gust_stddev','VfactorPC','shape_parameter','Rtip','precurveTip','presweepTip',
-                                                       'control_Vin','control_Vout','machine_rating','control_minOmega','control_maxOmega',
-                                                       'control_tsr','control_pitch','pitch_extreme','azimuth_extreme','drivetrainType',
-                                                       'rstar_damage','Mxb_damage','Myb_damage','strain_ult_spar','strain_ult_te','m_damage',
-                                                       'nSector','tiploss','hubloss','wakerotation','usecd','AEP_loss_factor','tip_deflection',
-                                                       'dynamic_amplication_tip_deflection'])
-        '''
+        self.add('rotor', RotorSE(RefBlade), promotes=['*'])
 
         # RNA
         self.add('rna', RNA(nLC), promotes=['*'])

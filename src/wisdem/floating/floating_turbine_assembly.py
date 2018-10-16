@@ -31,7 +31,7 @@ class FloatingTurbine(Group):
         self.add('sm', myfloat, promotes=['*'])
 
         # Turbine constraints
-        self.add('tcons', TurbineConstraints(myfloat.nFull), promotes=['*'])#blade_number','Rtip','precurveTip','presweepTip','precone','tilt','tip_deflection','downwind'])
+        self.add('tcons', TurbineConstraints(myfloat.nFull), promotes=['*'])
         
         # Turbine costs
         self.add('tcost', Turbine_CostsSE_2015(), promotes=['*'])
