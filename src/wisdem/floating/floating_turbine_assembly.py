@@ -191,8 +191,8 @@ class FloatingTurbine(Group):
         self.connect('mooring_cost', 'moorCost')
         self.connect('mooring_diameter', 'moorDia')
         self.connect('number_of_mooring_lines', 'moorLines')
-        self.connect('outfitting_cost_rate', 'sSteelCR')
-        self.connect('tapered_col_cost_rate', ['spStifColCR', 'spTapColCR', 'ssStifColCR'])
+        self.connect('material_cost_rate', 'sSteelCR')
+        self.connect('main.tapered_column_cost_rate', ['spStifColCR', 'spTapColCR', 'ssStifColCR'])
         self.connect('pontoon_cost_rate', 'ssTrussCR')
 
         self.connect('nBlades','blade_number')
