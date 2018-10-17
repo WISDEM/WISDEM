@@ -2,6 +2,7 @@ import numpy as np
 
 from wisdem.floating.floating_turbine_instance import FloatingTurbineInstance, NSECTIONS, NPTS, vecOption
 import offshorebos.wind_obos as wind_obos
+from commonse.utilities import sectional2nodal
 
 
 class TurbineSparInstance(FloatingTurbineInstance):
@@ -81,8 +82,9 @@ class TurbineSparInstance(FloatingTurbineInstance):
         zcut = 1.0 + self.params['main_freeboard']
         self.draw_pontoons(fig, self.prob['plot_matrix'], 0.5*self.params['fairlead_support_outer_diameter'], zcut)
         
+        t_full = sectional2nodal(self.params['main_wall_thickness'])
         self.draw_ballast(fig, [0.0, 0.0], self.params['main_freeboard'], self.params['main_section_height'],
-                          0.5*self.params['main_outer_diameter']-self.params['main_wall_thickness'],
+                          0.5*self.params['main_outer_diameter']-t_full,
                           self.params['main_permanent_ballast_height'], self.prob['variable_ballast_height'])
         
         self.draw_column(fig, [0.0, 0.0], self.params['hub_height'], self.params['tower_section_height'],
