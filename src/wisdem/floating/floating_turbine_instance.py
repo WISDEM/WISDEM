@@ -1,4 +1,4 @@
-from floatingse.instance.floating_instance import FloatingInstance, NSECTIONS, NPTS, vecOption, Five_strings, Ten_strings
+from floatingse.instance.floating_instance import FloatingInstance, NPTS, vecOption, Five_strings, Ten_strings
 from wisdem.floating.floating_turbine_assembly import FloatingTurbine
 from commonse import eps
 from commonse.csystem import rotMat_x, rotMat_y, rotMat_z
@@ -452,7 +452,7 @@ class FloatingTurbineInstance(FloatingInstance):
         super(FloatingTurbineInstance, self).set_reference(instr)
         
         
-    def get_assembly(self): return FloatingTurbine(self.refBlade, NSECTIONS)
+    def get_assembly(self): return FloatingTurbine(self.refBlade)
 
     def add_objective(self, varname='lcoe', scale=1.0):
         super(FloatingTurbineInstance, self).add_objective(varname, scale)

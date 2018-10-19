@@ -1,6 +1,6 @@
 import numpy as np
 
-from wisdem.floating.floating_turbine_instance import FloatingTurbineInstance, NSECTIONS, NPTS, vecOption
+from wisdem.floating.floating_turbine_instance import FloatingTurbineInstance, NPTS, vecOption
 import offshorebos.wind_obos as wind_obos
 from commonse.utilities import sectional2nodal
 
@@ -22,8 +22,8 @@ class TurbineSparInstance(FloatingTurbineInstance):
         self.params['main_freeboard'] = 10.0
         self.params['fairlead_location'] = 0.75862 # Want 5m
         self.set_length_main(130.0)
-        self.params['main_section_height'] = np.array([36.0, 36.0, 36.0, 8.0, 14.0])
-        self.params['main_outer_diameter'] = 2*np.array([4.7, 4.7, 4.7, 4.7, 3.25, 3.25])
+        self.params['main_section_height'] = np.array([36.0, 72.0, 8.0, 14.0])
+        self.params['main_outer_diameter'] = 2*np.array([4.7, 4.7, 4.7, 3.25, 3.25])
         self.params['main_wall_thickness'] = 0.05
         self.params['fairlead_offset_from_shell'] = 5.2-4.7
         self.params['main_permanent_ballast_height'] = 10.0

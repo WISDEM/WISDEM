@@ -1,6 +1,6 @@
 import numpy as np
 
-from wisdem.floating.floating_turbine_instance import FloatingTurbineInstance, NSECTIONS, NPTS, vecOption
+from wisdem.floating.floating_turbine_instance import FloatingTurbineInstance, NPTS, vecOption
 import offshorebos.wind_obos as wind_obos
 from commonse.utilities import sectional2nodal
 

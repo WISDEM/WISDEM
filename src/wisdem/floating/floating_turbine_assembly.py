@@ -12,7 +12,7 @@ import numpy as np
         
 class FloatingTurbine(Group):
 
-    def __init__(self, RefBlade, nSection):
+    def __init__(self, RefBlade):
         super(FloatingTurbine, self).__init__()
 
         self.add('hub_height', IndepVarComp('hub_height', 0.0), promotes=['*'])
@@ -27,11 +27,11 @@ class FloatingTurbine(Group):
         self.add('rna', RNA(1), promotes=['downwind'])
         
         # Tower and substructure
-        myfloat = FloatingSE(nSection)
+        myfloat = FloatingSE()
         self.add('sm', myfloat, promotes=['*'])
 
         # Turbine constraints
-        self.add('tcons', TurbineConstraints(myfloat.nFull), promotes=['*'])
+        self.add('tcons', TurbineConstraints(myfloat.nFullTow), promotes=['*'])
         
         # Turbine costs
         self.add('tcost', Turbine_CostsSE_2015(), promotes=['*'])
