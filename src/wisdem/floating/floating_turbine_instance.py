@@ -31,6 +31,7 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params.pop('rna_moment', None)
         self.params.pop('rna_force', None)
         self.params.pop('sg.Rhub', None)
+        self.params.pop('tip_position', None)
 
         # Environmental parameters
         self.params['air_density'] = self.params['main.windLoads.rho']
@@ -132,14 +133,14 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['shape_parameter']                       = 0.0
 
         # For RNA
-        self.params['hub_mass']                              = 0.1*285599.0
-        self.params['nac_mass']                              = 0.5*285599.0
-        self.params['hub_cm']                                = np.array([-1.13197635, 0.0, 0.50875268])
-        self.params['nac_cm']                                = np.array([-1.13197635, 0.0, 0.50875268])
-        self.params['hub_I']                                 = 0.1*np.array([1.14930678e+08, 2.20354030e+07, 1.87597425e+07, 0.0, 0.0, 5.03710467e+05])
-        self.params['nac_I']                                 = 0.1*np.array([1.14930678e+08, 2.20354030e+07, 1.87597425e+07, 0.0, 0.0, 5.03710467e+05])
-        self.params['downwind']                              = False
-        self.params['rna_weightM']                           = True
+        self.params['hub_mass']    = 56.780e3
+        self.params['nac_mass']    = 240e3
+        self.params['hub_cm']      = np.array([-5.01910, 0.0, 1.96256])
+        self.params['nac_cm']      = np.array([1.9, 0.0, 1.75])
+        self.params['hub_I']       = self.params['hub_mass']*1.75**2. * np.r_[(2./3.), (5./12.), (5./12.), np.zeros(3)]
+        self.params['nac_I']       = np.array([7.77616624894e7, 8.34033992e+05, 8.34033992e+05, 0.0, 2.05892434e+05, 0.0])
+        self.params['downwind']    = False
+        self.params['rna_weightM'] = True
 
         # For turbine costs
         self.params['blade_mass_cost_coeff']                 = 13.08

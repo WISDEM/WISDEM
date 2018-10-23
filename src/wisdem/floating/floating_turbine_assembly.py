@@ -117,7 +117,6 @@ class FloatingTurbine(Group):
         self.add('nac_cm',                     IndepVarComp('nac_cm', np.zeros((3,))), promotes=['*'])
         self.add('hub_I',                      IndepVarComp('hub_I', np.zeros(6)), promotes=['*'])
         self.add('nac_I',                      IndepVarComp('nac_I', np.zeros(6)), promotes=['*'])
-        self.add('downwind',                   IndepVarComp('downwind', False, pass_by_obj=True), promotes=['*'])
         self.add('rna_weightM',                IndepVarComp('rna_weightM', True, pass_by_obj=True), promotes=['*'])
         
         # Column
@@ -165,7 +164,7 @@ class FloatingTurbine(Group):
         self.connect('I_all_blades', 'rna.blades_I')
         self.connect('hub_mass', 'rna.hub_mass')
         self.connect('nac_mass', 'rna.nac_mass')
-        self.connect('hub_cm', ['rna.hub_cm','hub_tt'])
+        self.connect('hub_cm', 'rna.hub_cm')
         self.connect('nac_cm', 'rna.nac_cm')
         self.connect('hub_I', 'rna.hub_I')
         self.connect('nac_I', 'rna.nac_I')
@@ -173,6 +172,7 @@ class FloatingTurbine(Group):
         self.connect('Fxyz_total','rna.loads.F')
         self.connect('Mxyz_total','rna.loads.M')
         self.connect('rna_weightM','rna.rna_weightM')
+
         
         self.connect('air_density', ['main.windLoads.rho','analysis.rho'])
         self.connect('air_viscosity', ['main.windLoads.mu','analysis.mu'])
@@ -199,8 +199,6 @@ class FloatingTurbine(Group):
         self.connect('mass_one_blade', 'blade_mass')
         self.connect('control_maxOmega', 'rotor_omega')
         self.connect('structural_frequencies', 'tower_freq')
-        self.connect('tow.z_full', 'tower_z')
-        self.connect('tow.d_full', 'tower_d')
         
         self.connect('turbine_cost_kW', 'turbCapEx')
         self.connect('machine_rating', 'turbR')
