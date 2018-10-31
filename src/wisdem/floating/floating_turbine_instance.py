@@ -482,7 +482,7 @@ class FloatingTurbineInstance(FloatingInstance):
                          #['frequency1P_margin_high', 1.0, None, None],
                          #['frequency3P_margin_low', None, 1.0, None],
                          #['frequency3P_margin_high', 1.0, None, None],
-                         ['tip_deflection_ratio', None, 1.0, None],
+                         #['tip_deflection_ratio', None, 1.0, None],
                          ['ground_clearance', 20.0, None, None],
         ])
         return conList
