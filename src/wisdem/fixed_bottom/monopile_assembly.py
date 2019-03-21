@@ -10,14 +10,13 @@ from commonse.environment import PowerWind, LogWind
 from commonse.turbine_constraints import TurbineConstraints
 from turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from plant_financese.plant_finance import PlantFinance
-from drivese.drivese_omdao import Drive3pt, Drive4pt
 
 import numpy as np
 
 wind = 'PowerWind'
 nLC = 1
 nDEL = 0
-NSECTION = 6
+NSECTION = 4
     
 class MonopileTower(Group):
 
@@ -31,7 +30,7 @@ class MonopileTower(Group):
                                                                                           'tower_outer_diameter','tower_wall_thickness',
                                                                                           'tower_outfitting_factor','tower_buckling_length','downwind',
                                                                                           'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I','hub_cm',
-                                                                                          'tower_mass','tower_I_base','hub_height','tip_position',
+                                                                                          'tower_mass','tower_cost','tower_I_base','hub_height','tip_position',
                                                                                           'foundation_height','monopile','soil_G','soil_nu',
                                                                                           'suctionpile_depth','tip_deflection_margin',
                                                                                           'gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue'
