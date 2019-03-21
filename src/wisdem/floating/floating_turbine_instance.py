@@ -6,7 +6,10 @@ from rotorse import TURBULENCE_CLASS, TURBINE_CLASS, DRIVETRAIN_TYPE, NREL5MW, D
 import numpy as np
 import offshorebos.wind_obos as wind_obos
 import time
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 NDEL = 0
 

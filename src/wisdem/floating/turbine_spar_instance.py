@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 from wisdem.floating.floating_turbine_instance import FloatingTurbineInstance, NPTS, vecOption
@@ -112,7 +113,7 @@ def deriv_check():
     tol = 1e-4
     for comp in out.keys():
         if ( (out[comp]['rel error'][0] > tol) and (out[comp]['abs error'][0] > tol) ):
-            print comp, out[comp]['magnitude'][0], out[comp]['rel error'][0], out[comp]['abs error'][0]
+            print(comp, out[comp]['magnitude'][0], out[comp]['rel error'][0], out[comp]['abs error'][0])
 
     
 if __name__ == '__main__':

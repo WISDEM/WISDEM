@@ -51,7 +51,7 @@ class TurbineSemiInstance(FloatingTurbineInstance):
         angles = np.linspace(0, 2*np.pi, ncolumn+1)
         x = R_semi * np.cos( angles )
         y = R_semi * np.sin( angles )
-        for k in xrange(ncolumn):
+        for k in range(ncolumn):
             self.draw_column(fig, [x[k], y[k]], self.params['offset_freeboard'], self.params['offset_section_height'],
                                0.5*self.params['offset_outer_diameter'], self.params['offset_stiffener_spacing'])
 
