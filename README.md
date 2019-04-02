@@ -1,4 +1,4 @@
-The Wind-Plant Integrated System Design and Engineering Model (WISDEM) is a set of models for assessing overall wind plant cost of energy (COE).  The models use wind turbine and plant cost and energy production as well as financial models to estimate coe and other wind plant system attributes.  It is built in OpenMDAO and uses several sub-models that are also designed as OpenMDAO plugin-ins.  These sub-models can be used independently but they are required to use the overall WISDEM capability.  Please install all of the pre-requisites prior to installing WISDEM.  For additional information about the NWTC effort in systems engineering that supports WISDEM development, please visit the official [NREL systems engineering for wind energy website](https://www.nrel.gov/wind/systems-engineering.html).
+The Wind-Plant Integrated System Design and Engineering Model (WISDEM&reg;) is a set of models for assessing overall wind plant cost of energy (COE).  The models use wind turbine and plant cost and energy production as well as financial models to estimate coe and other wind plant system attributes.  It is built in OpenMDAO and uses several sub-models that are also designed as OpenMDAO plugin-ins.  These sub-models can be used independently but they are required to use the overall WISDEM&reg; capability.  Please install all of the pre-requisites prior to installing WISDEM&reg;.  For additional information about the NWTC effort in systems engineering that supports WISDEM&reg; development, please visit the official [NREL systems engineering for wind energy website](https://www.nrel.gov/wind/systems-engineering.html).
 
 Authors: [NREL WISDEM Team](mailto:garrett.barter@nrel.gov)
 
@@ -12,7 +12,7 @@ For detailed documentation see <http://wisdem.github.io/WISDEM/>
 
 ## Packages
 
-WISDEM is a family of modules.  The core modules are:
+WISDEM&reg; is a family of modules.  The core modules are:
 * *CommonSE* includes several libraries shared among modules
 * *DriveSE* sizes the drive-train system
 * *FloatingSE* works with the floating platforms
@@ -36,7 +36,7 @@ The core modules draw upon some utility packages, which are typically compiled c
 
 ## Installation (Anaconda)
 
-Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).
+Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM&reg; requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).
 
 The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.
 
@@ -73,16 +73,16 @@ The installation instructions below use the environment name, "wisdem-env," but 
         xcode-select --install
         conda install -y clang_osx-64 clangxx_osx-64 gfortran_osx-64
 
-3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM
+3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM&reg;
 
         pip install OpenMDAO==1.7.4
 
-4.  Now create a directory to store all of the WISDEM files.  This directory may be placed anywhere in the user's filesystem.
+4.  Now create a directory to store all of the WISDEM&reg; files.  This directory may be placed anywhere in the user's filesystem.
 
         mkdir wisdem
         cd  wisdem
 
-5.  Git clone all of the core WISDEM modules
+5.  Git clone all of the core WISDEM&reg; modules
 
         git clone https://github.com/WISDEM/akima.git
         git clone https://github.com/WISDEM/AirfoilPreppy.git
@@ -167,7 +167,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 ## Installation (Linux or MacOS with package management)
 
-WISDEM can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM installations have succeeded on Linux ([Ubuntu](https://www.ubuntu.com/), [Fedora](https://getfedora.org), etc), MacOS with [MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh), and Windows with [Cygwin](http://cygwin.com).
+WISDEM&reg; can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM&reg; installations have succeeded on Linux ([Ubuntu](https://www.ubuntu.com/), [Fedora](https://getfedora.org), etc), MacOS with [MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh), and Windows with [Cygwin](http://cygwin.com).
 
 1. Obtain the local version of Python3 and the packages listed in Anaconda Step 2 above.  Each package manager will have a slightly unique name for these packages.
 
