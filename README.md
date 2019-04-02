@@ -43,7 +43,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 1.  Setup and activate the Anaconda environment from a prompt
 
         conda config --add channels conda-forge
-	conda create -y --name wisdem-env python=3.7
+        conda create -y --name wisdem-env python=3.7
 
     on Linux or MacOS
 
@@ -62,16 +62,16 @@ The installation instructions below use the environment name, "wisdem-env," but 
     
     on Windows add on:
     
-	conda install -y mingw m2w64-toolchain libpython
+        conda install -y mingw m2w64-toolchain libpython
 
     on Linux add on:
     
-	conda install -y gcc_linux-64 gxx_linux-64 gfortran_linux-64
+        conda install -y gcc_linux-64 gxx_linux-64 gfortran_linux-64
 
     on MacOS add on:
     
-	xcode-select --install
-	conda install -y clang_osx-64 clangxx_osx-64 gfortran_osx-64
+        xcode-select --install
+        conda install -y clang_osx-64 clangxx_osx-64 gfortran_osx-64
 
 3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM
 
@@ -80,9 +80,10 @@ The installation instructions below use the environment name, "wisdem-env," but 
 4.  Now create a directory to store all of the WISDEM files.  This directory may be placed anywhere in the user's filesystem.
 
         mkdir wisdem
-	cd  wisdem
+        cd  wisdem
 
 5.  Git clone all of the core WISDEM modules
+
         git clone https://github.com/WISDEM/akima.git
         git clone https://github.com/WISDEM/AirfoilPreppy.git
         git clone https://github.com/WISDEM/CCBlade.git
