@@ -36,7 +36,7 @@ The core modules draw upon some utility packages, which are typically compiled c
 
 ## Installation (Anaconda)
 
-Installation with Anaconda is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM requires Anaconda 64-bit.
+Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).
 
 The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.
 
@@ -167,7 +167,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 ## Installation (Linux or MacOS with package management)
 
-WISDEM can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM installations have succeeded on Linux (Ubuntu, Fedora, etc), MacOS with MacPorts or Homebrew, and Windows with Cygwin.
+WISDEM can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM installations have succeeded on Linux ([Ubuntu](https://www.ubuntu.com/), [Fedora](https://getfedora.org), etc), MacOS with [MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh), and Windows with [Cygwin](http://cygwin.com).
 
 1. Obtain the local version of Python3 and the packages listed in Anaconda Step 2 above.  Each package manager will have a slightly unique name for these packages.
 
