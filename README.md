@@ -1,37 +1,41 @@
+# WISDEM&reg;
+
 The Wind-Plant Integrated System Design and Engineering Model (WISDEM&reg;) is a set of models for assessing overall wind plant cost of energy (COE).  The models use wind turbine and plant cost and energy production as well as financial models to estimate coe and other wind plant system attributes.  It is built in OpenMDAO and uses several sub-models that are also designed as OpenMDAO plugin-ins.  These sub-models can be used independently but they are required to use the overall WISDEM&reg; capability.  Please install all of the pre-requisites prior to installing WISDEM&reg;.  For additional information about the NWTC effort in systems engineering that supports WISDEM&reg; development, please visit the official [NREL systems engineering for wind energy website](https://www.nrel.gov/wind/systems-engineering.html).
 
-Authors: [NREL WISDEM Team](mailto:garrett.barter@nrel.gov)
+Author: [NREL WISDEM Team](mailto:systems.engineering@nrel.gov) 
 
 ## Version
 
 This software is a beta version 0.2.0.
 
-## Detailed Documentation
+## Documentation
 
-For detailed documentation see <http://wisdem.github.io/WISDEM/>
+See local documentation in the `docs`-directory or access the online version at <http://wisdem.github.io/WISDEM/>
 
 ## Packages
 
 WISDEM&reg; is a family of modules.  The core modules are:
-* *CommonSE* includes several libraries shared among modules
-* *DriveSE* sizes the drive-train system
-* *FloatingSE* works with the floating platforms
-* *OffshoreBOS* sizes the balance of systems for offshore plants
-* *Plant_FinanceSE* runs the financial analysis of a wind plant
-* *RotorSE* is a tool for rotor design
-* *TowerSE* is a tool for tower design
-* *Turbine_CostsSE* is a turbine cost model
-* *NREL CSM* is the old cost-and-scaling model
-* *WISDEM* provides the interface between models
+
+* _CommonSE_ includes several libraries shared among modules
+* _DriveSE_ sizes the drive-train system
+* _FloatingSE_ works with the floating platforms
+* _OffshoreBOS_ sizes the balance of systems for offshore plants
+* _Plant_FinanceSE_ runs the financial analysis of a wind plant
+* _RotorSE_ is a tool for rotor design
+* _TowerSE_ is a tool for tower (and monopile) design
+* _Turbine_CostsSE_ is a turbine cost model
+* _NREL CSM_ is the old cost-and-scaling model
+* _WISDEM_ provides the interface between models
 
 The core modules draw upon some utility packages, which are typically compiled code with python wrappers:
-* *Akima* is a spline package
-* *Airfoil Preppy* is a tool to handle airfoil polar data
-* *CCBlade* is the BEM module of WISDEM
-* *pBEAM* provides a basic beam model
-* *pyFrame3DD* brings libraries to handle various coordinate transformations
-* *pyMAP* provides a python interface to MAP++, a quasi-static mooring line model
-* *pyoptsparse* provides some additional optimization algorithms to OpenMDAO
+
+* _Akima_ is a spline package
+* _Airfoil Preppy_ is a tool to handle airfoil polar data
+* _CCBlade_ is the BEM module of WISDEM
+* _pBEAM_ provides a basic beam model
+* _pyFrame3DD_ brings libraries to handle various coordinate transformations
+* _pyMAP_ provides a python interface to MAP++, a quasi-static mooring line model
+* _pyoptsparse_ provides some additional optimization algorithms to OpenMDAO
 
 
 ## Installation (Anaconda)
@@ -102,7 +106,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         git clone https://github.com/WISDEM/pyMAP.git
         git clone https://github.com/mdolab/pyoptsparse.git
 
-6.  Now install all of the packages.  The instructions here assume that the user will be interacting with the source code and incorporating code updates frequently, so the python packages are set-up for development (python setup.py develop), instead of hard installs (python setup.py install).
+6.  Now install all of the packages.  The instructions here assume that the user will be interacting with the source code and incorporating code updates frequently, so the python packages are set-up for development (`python setup.py develop`), instead of hard installs (`python setup.py install`).
 
         cd akima
         python setup.py install 
@@ -169,7 +173,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 WISDEM&reg; can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM&reg; installations have succeeded on Linux ([Ubuntu](https://www.ubuntu.com/), [Fedora](https://getfedora.org), etc), MacOS with [MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh), and Windows with [Cygwin](http://cygwin.com).
 
-1. Obtain the local version of Python3 and the packages listed in Anaconda Step 2 above.  Each package manager will have a slightly unique name for these packages.
+1. Obtain the local version of Python3 and the packages listed in Anaconda Step 2 above.  Each package manager will have a different name for these packages.
 
 2. Continue with Anaconda Steps 3-6
 
