@@ -60,7 +60,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 2.  Install Anaconda package dependencies
 
-        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer simpy pandas openpyxl xlrd jinja2 git mpi4py imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex
+        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer simpy pandas openpyxl xlrd jinja2 git mpi4py imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex jsonschema ruamel.yaml compilers
 
     if sphinxcontrib-bibtex does not install correctly, it is not critical and you can press on.
     
@@ -68,14 +68,10 @@ The installation instructions below use the environment name, "wisdem-env," but 
     
         conda install -y mingw m2w64-toolchain libpython
 
-    on Linux add on:
-    
-        conda install -y gcc_linux-64 gxx_linux-64 gfortran_linux-64
-
     on MacOS add on:
     
         xcode-select --install
-        conda install -y clang_osx-64 clangxx_osx-64 gfortran_osx-64
+
 
 3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM&reg;
 
@@ -173,7 +169,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 WISDEM&reg; can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM&reg; installations have succeeded on Linux ([Ubuntu](https://www.ubuntu.com/), [Fedora](https://getfedora.org), etc), MacOS with [MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh), and Windows with [Cygwin](http://cygwin.com).
 
-1. Obtain the local version of Python3 and the packages listed in Anaconda Step 2 above.  Each package manager will have a different name for these packages.
+1. Obtain the local version of Python3 and the packages listed in Anaconda Step 2 above.  Each package manager will have a different name for these packages.  If your package manager does not have a particular Python package, you can obtain it via `pip install` from the Python Package Index, [PyPI](https://pypi.org/).
 
 2. Continue with Anaconda Steps 3-6
 
