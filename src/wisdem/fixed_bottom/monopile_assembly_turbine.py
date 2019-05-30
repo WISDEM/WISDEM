@@ -670,7 +670,7 @@ if __name__ == '__main__':
     prob['drive.shaft_angle']=5.0*np.pi / 180.0  # rad
     prob['drive.shaft_ratio']=0.10
     prob['drive.planet_numbers']=[3, 3, 1]
-    prob['drive.shrink_disc_mass']=333.3 * prob['machine_rating'] / 1000.0  # estimated
+    prob['drive.shrink_disc_mass']=333.3 * prob['machine_rating'] / 1e+6.0  # estimated
     prob['drive.carrier_mass']=8000.0  # estimated
     prob['drive.flange_length']=0.5
     prob['drive.overhang']=5.0
