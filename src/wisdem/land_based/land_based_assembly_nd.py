@@ -408,7 +408,7 @@ class Onshore_Assembly(Group):
         self.connect('water_viscosity', 'tow.waveLoads.mu')
         self.connect('wave_height',     'tow.wave.hmax')
         self.connect('wave_period',     'tow.wave.T')
-        self.connect('wind_reference_speed',    'tow.wind.Uref')
+        self.connect('gust.V_gust',    'tow.wind.Uref')
         self.connect('wind_reference_height',   ['tow.wind.zref','wind.zref'])
         self.connect('wind_bottom_height',      ['tow.z0','wind.z0'])
         self.connect('shearExp',                ['tow.wind.shearExp', 'wind.shearExp'])
