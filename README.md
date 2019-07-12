@@ -62,7 +62,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
         conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git mpi4py imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex jsonschema ruamel.yaml compilers
 	
-	pip install simpy
+        pip install simpy
 
     if sphinxcontrib-bibtex does not install correctly, it is not critical and you can press on.
     
