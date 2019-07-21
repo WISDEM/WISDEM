@@ -1,13 +1,13 @@
 from openmdao.api import Component, Group
 import numpy as np
 
-from commonse.utilities import nodal2sectional, sectional2nodal, assembleI, unassembleI, sectionalInterp
-import commonse.frustum as frustum
-import commonse.manufacturing as manufacture
-from commonse.UtilizationSupplement import shellBuckling_withStiffeners, GeometricConstraints
-from commonse import gravity, eps, AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
-from commonse.vertical_cylinder import CylinderDiscretization, CylinderMass
-from commonse.environment import PowerWind, LinearWaves
+from wisdem.commonse.utilities import nodal2sectional, sectional2nodal, assembleI, unassembleI, sectionalInterp
+import wisdem.commonse.frustum as frustum
+import wisdem.commonse.manufacturing as manufacture
+from wisdem.commonse.UtilizationSupplement import shellBuckling_withStiffeners, GeometricConstraints
+from wisdem.commonse import gravity, eps, AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass
+from wisdem.commonse.environment import PowerWind, LinearWaves
 
 def get_inner_radius(Ro, t):
     # Radius varies at nodes, t varies by section

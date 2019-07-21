@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import plant_financese.plant_finance as pf
+import wisdem.plant_financese.plant_finance as pf
 from openmdao.api import Problem, Group
 
 class TestPlantFinance(unittest.TestCase):

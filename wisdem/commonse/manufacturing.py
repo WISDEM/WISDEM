@@ -1,6 +1,6 @@
 import numpy as np
 
-from commonse import eps
+from wisdem.commonse import eps
 
 def steel_cutting_plasma_time(length, thickness):
     # Length input as meters, thickness in mm

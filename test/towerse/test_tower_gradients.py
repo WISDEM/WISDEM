@@ -9,10 +9,10 @@ Copyright (c) NREL. All rights reserved.
 
 import unittest
 import numpy as np
-from commonse.rna import RNAMass, RotorLoads
+from wisdem.commonse.rna import RNAMass, RotorLoads
 # --- tower setup ------
-from commonse.environment import PowerWind, LogWind
-from towerse.tower import TowerSE, TowerWindDrag, TowerWaveDrag, TowerDiscretization, GeometricConstraints#, JacketPositioning
+from wisdem.commonse.environment import PowerWind, LogWind
+from wisdem.towerse.tower import TowerSE, TowerWindDrag, TowerWaveDrag, TowerDiscretization, GeometricConstraints#, JacketPositioning
 from openmdao.api import Problem, Group, IndepVarComp, pyOptSparseDriver
 
 

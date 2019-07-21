@@ -14,7 +14,7 @@ from openmdao.api import IndepVarComp, Group, Problem, ExecComp
 from rotor_aeropower import RotorAeroPower
 from rotor_structure import RotorStructure
 from rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
-from rotorse import RPM2RS, RS2RPM, TURBULENCE_CLASS, DRIVETRAIN_TYPE
+from wisdem.rotorse import RPM2RS, RS2RPM, TURBULENCE_CLASS, DRIVETRAIN_TYPE
 
 try:
     from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7

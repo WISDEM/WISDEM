@@ -1,7 +1,7 @@
 from openmdao.api import Group, ExplicitComponent
 from .csystem import DirectionVector
 from .utilities import interp_with_deriv
-from commonse import NFREQ
+from wisdem.commonse import NFREQ
 import numpy as np
 
 

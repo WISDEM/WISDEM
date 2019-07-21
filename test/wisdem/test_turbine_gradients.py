@@ -9,7 +9,7 @@ Copyright (c) NREL. All rights reserved.
 
 import unittest
 import numpy as np
-from commonse.utilities import check_gradient_unit_test, check_for_missing_unit_tests
+from wisdem.commonse.utilities import check_gradient_unit_test, check_for_missing_unit_tests
 from wisdem.turbinese.turbine import MaxTipDeflection
 
 

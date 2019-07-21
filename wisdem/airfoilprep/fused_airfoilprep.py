@@ -5,7 +5,7 @@ from fusedwind.turbine.airfoil import ModifyAirfoilBase
 from fusedwind.turbine.airfoilaero_vt import AirfoilDataVT
 from fusedwind.interface import implement_base
 
-from airfoilprep import Polar
+from wisdem.airfoilprep import Polar
 
 @implement_base(ModifyAirfoilBase)
 class AirfoilPreppyPolarExtrapolator(Component):

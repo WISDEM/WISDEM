@@ -1,7 +1,7 @@
 import numpy as np
 from openmdao.api import Group, Problem, IndepVarComp
-from towerse.tower import *
-from commonse.environment import PowerWind, LogWind
+from wisdem.towerse.tower import *
+from wisdem.commonse.environment import PowerWind, LogWind
 import matplotlib.pyplot as plt
 
 

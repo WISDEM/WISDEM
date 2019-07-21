@@ -2,9 +2,9 @@ from __future__ import print_function
 import numpy as np
 from openmdao.api import ExplicitComponent, Group, IndepVarComp
 
-from commonse.utilities import hstack, vstack
-from commonse.csystem import DirectionVector
-from commonse import gravity
+from wisdem.commonse.utilities import hstack, vstack
+from wisdem.commonse.csystem import DirectionVector
+from wisdem.commonse import gravity
 
 #TODO CHECK
 

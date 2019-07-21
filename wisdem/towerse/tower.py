@@ -22,18 +22,18 @@ from __future__ import print_function
 import numpy as np
 from openmdao.api import ExplicitComponent, Group, Problem, IndepVarComp
 
-from commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
+from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
 
-from commonse.environment import WindBase, WaveBase, LinearWaves, TowerSoil, PowerWind, LogWind
-from commonse.tube import CylindricalShellProperties
-from commonse.utilities import assembleI, unassembleI, nodal2sectional
-from commonse import gravity, eps, NFREQ
+from wisdem.commonse.environment import WindBase, WaveBase, LinearWaves, TowerSoil, PowerWind, LogWind
+from wisdem.commonse.tube import CylindricalShellProperties
+from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional
+from wisdem.commonse import gravity, eps, NFREQ
 
-from commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD
 #from fusedwind.turbine.tower import TowerFromCSProps
 #from fusedwind.interface import implement_base
 
-import commonse.UtilizationSupplement as Util
+import wisdem.commonse.UtilizationSupplement as Util
 
 
 # -----------------
@@ -668,8 +668,8 @@ class TowerSE(Group):
         
 if __name__ == '__main__':
     # --- tower setup ------
-    from commonse.environment import PowerWind
-    from commonse.environment import LogWind
+    from wisdem.commonse.environment import PowerWind
+    from wisdem.commonse.environment import LogWind
 
     # --- geometry ----
     h_param = np.diff(np.array([0.0, 43.8, 87.6]))

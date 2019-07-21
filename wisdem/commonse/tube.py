@@ -14,7 +14,7 @@ import math
 import numpy as np
 from .Material import Material
 from openmdao.api import ExplicitComponent, Group, Problem
-from commonse.utilities import nodal2sectional
+from wisdem.commonse.utilities import nodal2sectional
 pi = math.pi
 
 def main():

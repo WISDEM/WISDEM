@@ -5,18 +5,18 @@ from scipy.optimize import curve_fit
 from scipy.interpolate import PchipInterpolator
 import os, copy
 from openmdao.api import IndepVarComp, Component, Group, Problem
-from ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
-from commonse import gravity, NFREQ
-from commonse.csystem import DirectionVector
-from commonse.utilities import trapz_deriv, interp_with_deriv
+from wisdem.ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
+from wisdem.commonse import gravity, NFREQ
+from wisdem.commonse.csystem import DirectionVector
+from wisdem.commonse.utilities import trapz_deriv, interp_with_deriv
 from precomp import _precomp
 from akima import Akima, akima_interp_with_derivs
 from rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT, TURBULENCE_CLASS, TURBINE_CLASS
 import _pBEAM
-# import ccblade._bem as _bem  # TODO: move to rotoraero
+# import wisdem.ccblade._bem as _bem  # TODO: move to rotoraero
 import _bem  # TODO: move to rotoraero
 
-from rotorse import RPM2RS, RS2RPM
+from wisdem.rotorse import RPM2RS, RS2RPM
 
 try:
     from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7

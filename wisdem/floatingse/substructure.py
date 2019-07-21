@@ -2,8 +2,8 @@ from openmdao.api import Component
 import numpy as np
 from scipy.integrate import cumtrapz
 
-from commonse import gravity, eps, DirectionVector, NFREQ
-from commonse.utilities import assembleI, unassembleI
+from wisdem.commonse import gravity, eps, DirectionVector, NFREQ
+from wisdem.commonse.utilities import assembleI, unassembleI
 from .map_mooring import NLINES_MAX
         
 class SubstructureGeometry(Component):

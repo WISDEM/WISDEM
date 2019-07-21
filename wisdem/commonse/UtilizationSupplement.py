@@ -8,8 +8,8 @@ Copyright (c) NREL. All rights reserved.
 
 from math import atan2
 import numpy as np
-from commonse.constants import eps
-from commonse.utilities import CubicSplineSegment, cubic_spline_eval, smooth_max, smooth_min, nodal2sectional, sectional2nodal
+from wisdem.commonse.constants import eps
+from wisdem.commonse.utilities import CubicSplineSegment, cubic_spline_eval, smooth_max, smooth_min, nodal2sectional, sectional2nodal
 from openmdao.api import ExplicitComponent
 from scipy.optimize import brentq, minimize_scalar
 

@@ -2,14 +2,14 @@
 from openmdao.api import Component, Group, IndepVarComp
 import numpy as np
 import pyframe3dd.frame3dd as frame3dd
-from commonse.utilities import nodal2sectional
+from wisdem.commonse.utilities import nodal2sectional
 
-from commonse import gravity, eps, Tube, NFREQ
-import commonse.UtilizationSupplement as util
-import commonse.manufacturing as manufacture
-from commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
-from commonse.environment import WaveBase, PowerWind
-from commonse.vertical_cylinder import CylinderDiscretization, CylinderMass
+from wisdem.commonse import gravity, eps, Tube, NFREQ
+import wisdem.commonse.UtilizationSupplement as util
+import wisdem.commonse.manufacturing as manufacture
+from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
+from wisdem.commonse.environment import WaveBase, PowerWind
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass
 from .map_mooring import NLINES_MAX
 
 

@@ -8,7 +8,7 @@
 # Copyright:   (c) rdamiani 2013
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
-from commonse.Material import Material
+from wisdem.commonse.Material import Material
 
 def main():
     pass

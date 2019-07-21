@@ -4,8 +4,8 @@ import os
 import sys
 from pymap import pyMAP
 
-from commonse import gravity, Enum
-from commonse.utilities import assembleI, unassembleI
+from wisdem.commonse import gravity, Enum
+from wisdem.commonse.utilities import assembleI, unassembleI
 
 Anchor    = Enum('DRAGEMBEDMENT SUCTIONPILE')
 NLINES_MAX = 15

@@ -27,7 +27,7 @@ from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 import warnings
 
-from airfoilprep import Airfoil
+from wisdem.airfoilprep import Airfoil
 import _bem
 
 

@@ -6,22 +6,22 @@ try:
 except ImportError:
     from io import StringIO
 import csv
-import commonse
+import wisdem.commonse
 
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, ExecComp
 
-from commonse.akima import Akima
-from ccblade.ccblade_component import CCBladeGeometry
-from ccblade import CCAirfoil
-from airfoilprep import Airfoil
+from wisdem.commonse.akima import Akima
+from wisdem.ccblade.ccblade_component import CCBladeGeometry
+from wisdem.ccblade import CCAirfoil
+from wisdem.airfoilprep import Airfoil
 from precomp import Profile, Orthotropic2DMaterial, CompositeSection, _precomp
 
 from scipy.interpolate import PchipInterpolator
 
 NINPUT = 5
-TURBULENCE_CLASS = commonse.enum.Enum('A B C')
-TURBINE_CLASS = commonse.enum.Enum('I II III')
-DRIVETRAIN_TYPE = commonse.enum.Enum('geared single_stage multi_drive pm_direct_drive')
+TURBULENCE_CLASS = wisdem.commonse.enum.Enum('A B C')
+TURBINE_CLASS = wisdem.commonse.enum.Enum('I II III')
+DRIVETRAIN_TYPE = wisdem.commonse.enum.Enum('geared single_stage multi_drive pm_direct_drive')
 
 class ReferenceBlade(object):
     def __init__(self):

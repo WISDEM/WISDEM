@@ -8,7 +8,7 @@ Copyright (c) NREL. All rights reserved.
 
 """ config file for global variables """
 
-from nrelcsm.csmPPI import *
+from wisdem.nrelcsm.csmPPI import *
 
 # Initialize ref and current YYYYMM
 # Calling program can override these

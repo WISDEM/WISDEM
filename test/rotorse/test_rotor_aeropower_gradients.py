@@ -9,18 +9,18 @@ Copyright (c) NREL. All rights reserved.
 
 import pytest
 import numpy as np
-from commonse.utilities import check_gradient_unit_test, check_for_missing_unit_tests
-from rotorse.rotor_aeropower import SetupRunVarSpeed, RegulatedPowerCurve, AEP, CSMDrivetrain, OutputsAero
-from ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
-from commonse.distribution import WeibullCDF, WeibullWithMeanCDF, RayleighCDF
+from wisdem.commonse.utilities import check_gradient_unit_test, check_for_missing_unit_tests
+from wisdem.rotorse.rotor_aeropower import SetupRunVarSpeed, RegulatedPowerCurve, AEP, CSMDrivetrain, OutputsAero
+from wisdem.ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
+from wisdem.commonse.distribution import WeibullCDF, WeibullWithMeanCDF, RayleighCDF
 
 from enum import Enum
 from openmdao.api import IndepVarComp, Component, Problem, Group, SqliteRecorder, BaseRecorder
 import os
 
-from rotorse import DRIVETRAIN_TYPE
+from wisdem.rotorse import DRIVETRAIN_TYPE
 
-from commonse_testing import check_gradient_unit_test, init_IndepVar_add, init_IndepVar_set# <- TODO give this a permanent home
+from wisdem.commonse_testing import check_gradient_unit_test, init_IndepVar_add, init_IndepVar_set# <- TODO give this a permanent home
 
 ##### Input Fixtures #####
 @pytest.fixture

@@ -4,18 +4,18 @@ import numpy as np
 from scipy.optimize import curve_fit
 import os
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ExecComp
-from ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
-from commonse import gravity, NFREQ
-from commonse.csystem import DirectionVector
-from commonse.utilities import trapz_deriv, interp_with_deriv
+from wisdem.ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
+from wisdem.commonse import gravity, NFREQ
+from wisdem.commonse.csystem import DirectionVector
+from wisdem.commonse.utilities import trapz_deriv, interp_with_deriv
 from precomp import _precomp
-from commonse.akima import Akima
+from wisdem.commonse.akima import Akima
 from rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT, TURBULENCE_CLASS
 import _pBEAM
-# import ccblade._bem as _bem  # TODO: move to rotoraero
+# import wisdem.ccblade._bem as _bem  # TODO: move to rotoraero
 import _bem  # TODO: move to rotoraero
 
-from rotorse import RPM2RS, RS2RPM
+from wisdem.rotorse import RPM2RS, RS2RPM
 
 try:
     from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
@@ -3000,7 +3000,7 @@ if __name__ == '__main__':
     #    print(io + ' ' + str(rotor.model.outputs[io]))
 
     ## Write precomp files out
-    # from rotorse.precomp import PreCompWriter
+    # from wisdem.rotorse.precomp import PreCompWriter
     # dir_out     = 'temp'
     # materials   = rotor['materials']
     # upper       = rotor['upperCS']

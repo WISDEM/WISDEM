@@ -9,14 +9,14 @@ Copyright (c) NREL. All rights reserved.
 
 import pytest
 import numpy as np
-#from commonse.utilities import check_gradient_unit_test, check_for_missing_unit_tests
-from rotorse.rotor_structure import TotalLoads, RootMoment, MassProperties, TipDeflection, \
+#from wisdem.commonse.utilities import check_gradient_unit_test, check_for_missing_unit_tests
+from wisdem.rotorse.rotor_structure import TotalLoads, RootMoment, MassProperties, TipDeflection, \
     ExtremeLoads, GustETM, BladeCurvature, SetupPCModVarSpeed, BladeDeflection, DamageLoads, NREL5MW
-from rotorse import TURBULENCE_CLASS
+from wisdem.rotorse import TURBULENCE_CLASS
 from openmdao.api import IndepVarComp, Problem, Group
 from enum import Enum
 
-from commonse_testing import check_gradient_unit_test, init_IndepVar_add, init_IndepVar_set# <- TODO give this a permanent home
+from wisdem.commonse_testing import check_gradient_unit_test, init_IndepVar_add, init_IndepVar_set# <- TODO give this a permanent home
 
 ##### Input Fixtures #####
 @pytest.fixture

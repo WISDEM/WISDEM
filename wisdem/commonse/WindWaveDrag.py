@@ -24,10 +24,10 @@ import math
 import numpy as np
 
 from openmdao.api import ExplicitComponent, Problem, Group
-from commonse.utilities import sind, cosd  # , linspace_with_deriv, interp_with_deriv, hstack, vstack
-from commonse.csystem import DirectionVector
+from wisdem.commonse.utilities import sind, cosd  # , linspace_with_deriv, interp_with_deriv, hstack, vstack
+from wisdem.commonse.csystem import DirectionVector
 
-from commonse.akima import Akima
+from wisdem.commonse.akima import Akima
 
 #TODO CHECK
 

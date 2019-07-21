@@ -1,13 +1,13 @@
 
 import numpy as np
 from openmdao.api import ExplicitComponent
-from commonse.tube import CylindricalShellProperties
+from wisdem.commonse.tube import CylindricalShellProperties
 
-from commonse import gravity, eps
-import commonse.frustum as frustum
-import commonse.manufacturing as manufacture
-from commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
-from commonse.utilities import assembleI, unassembleI, sectionalInterp, nodal2sectional
+from wisdem.commonse import gravity, eps
+import wisdem.commonse.frustum as frustum
+import wisdem.commonse.manufacturing as manufacture
+from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
+from wisdem.commonse.utilities import assembleI, unassembleI, sectionalInterp, nodal2sectional
 import pyframe3dd.frame3dd as frame3dd
 
 

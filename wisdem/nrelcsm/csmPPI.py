@@ -5,7 +5,7 @@ Created by George Scott on 2012-08-01.
 Modified by Katherine Dykes 2012.
 Copyright (c) NREL. All rights reserved.
 """
-import nrelcsm
+import wisdem.nrelcsm
 import os
 import sys
 import re
