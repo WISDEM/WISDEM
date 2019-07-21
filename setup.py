@@ -3,6 +3,7 @@
 import os
 import sys
 import platform
+import glob
 from setuptools import setup, find_packages
 from numpy.distutils.core import setup, Extension
 
@@ -30,17 +31,17 @@ bemExt     = Extension('_bem',
                        sources=[os.path.join('wisdem','ccblade','bem.f90')],
                        extra_compile_args=['-O2','-fPIC'])
 pyframeExt = Extension('_pyframe3dd',
-                       sources=[os.path.join('wisdem','pyframe3dd','src','*.c')])
+                       sources=glob.glob(os.path.join('wisdem','pyframe3dd','src','*.c')))
 precompExt = Extension('_precomp',
                        sources=[os.path.join('wisdem','rotorse','PreCompPy.f90')],
                        extra_compile_args=['-O2','-fPIC'])
 pbeamExt   = Extension('_pBEAM',
-                       sources=[os.path.join('wisdem','pBeam','src','*.cpp')],
+                       sources=glob.glob(os.path.join('wisdem','pBeam','src','*.cpp')),
                        extra_compile_args=pbeamArgs,
-                       include_dirs=[os.path.join('wisdem','pBeam','src','include')])
-pymapExt   = Extension('_libmap', sources=[os.path.join('wisdem','pymap','src','*.c*')],
+                       include_dirs=[os.path.join('wisdem','include')])
+pymapExt   = Extension('_libmap', sources=glob.glob(os.path.join('wisdem','pymap','src','*.c*')),
                        extra_compile_args=pymapArgs,
-                       include_dirs=[os.path.join('pymap','lapack')])
+                       include_dirs=[os.path.join('wisdem','include','lapack')])
 
 # Top-level setup
 setup(

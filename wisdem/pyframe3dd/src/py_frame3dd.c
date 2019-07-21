@@ -29,8 +29,8 @@
 #include "py_frame3dd.h"
 #include "common.h"
 #include "coordtrans.h"
-#include "eig.h"
-#include "HPGmatrix.h"
+#include "py_eig.h"
+#include "py_HPGmatrix.h"
 #include "NRutil.h"
 
 
