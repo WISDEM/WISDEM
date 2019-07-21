@@ -1,40 +1,55 @@
 #!/usr/bin/env python
-# encoding: utf-8
 
-from setuptools import setup, find_packages
+import os
+import sys
+from numpy.distutils.core import setup
+from numpy.distutils.misc_util import Configuration
 
+if len(sys.argv) == 1:
+    print("\nTo install, run: python setup.py install --user\n\n"
+          "To build, run: python setup.py build_ext --inplace\n\n"
+          "For help on C-compiler options run: python setup.py build --help-compiler\n\n"
+          "For help on Fortran-compiler options run: python setup.py build --help-fcompiler\n\n"
+          "To specify a Fortran compiler to use run: python setup.py install --user --fcompiler=<fcompiler name>\n\n"
+          "For further help run: python setup.py build --help"
+      )
+    sys.exit(-1)
+
+def configuration(parent_package='',top_path=None):
+    config = Configuration(None,parent_package,top_path)
+    config.set_options(ignore_setup_xxx_py=True,
+                       assume_default_configuration=True,
+                       delegate_options_to_subpackages=True,
+                       quiet=True)
+    config.add_subpackage('wisdem')
+    return config
 
 setup(
-    name='WISDEM',
-    version='0.2.0',
-    description='Wind-Plant Integrated System Design & Engineering Model',
-    author='NREL WISDEM Team',
-    author_email='systems.engineering@nrel.gov',
-    install_requires=['openmdao>=1.6','akima','airfoilprep','ccblade','pbeam','pyframe3dd','commonse',
-                      'offshorebos','plant_financese','nrel_csm','rotorse','towerse','drivese',
-                      'pyoptsparse','turbine_costsse'],
-    package_data= {'WISDEM': []},
-    package_dir={'': 'src'},
-    packages=['wisdem'],
-    license='Apache License, Version 2.0',
-    dependency_links=[
-        'https://github.com/WISDEM/akima/tarball/master#egg=akima',
-        'https://github.com/WISDEM/AirfoilPreppy/tarball/master#egg=airfoilprep',
-        'https://github.com/WISDEM/CCBlade/tarball/master#egg=ccblade',
-        'https://github.com/WISDEM/pBeam/tarball/master#egg=pbeam',
-        'https://github.com/WISDEM/pyFrame3DD/tarball/master#egg=pyframe3dd',
-        # 'https://github.com/WISDEM/pyMAP/tarball/master#egg=pymap',
-        'https://github.com/WISDEM/CommonSE/tarball/master#egg=commonse',
-        'https://github.com/WISDEM/OffshoreBOS/tarball/master#egg=offshorebos',
-        'https://github.com/WISDEM/Plant_FinanceSE/tarball/master#egg=plant_financese',
-        'https://github.com/WISDEM/Turbine_CostsSE/tarball/master#egg=turbine_costsse',
-        'https://github.com/WISDEM/NREL_CSM/tarball/master#egg=nrel_csm',
-        'https://github.com/WISDEM/TowerSE/tarball/master#egg=towerse',
-        'https://github.com/WISDEM/RotorSE/tarball/master#egg=rotorse',
-        'https://github.com/WISDEM/DriveSE/tarball/master#egg=drivese',
-        # 'https://github.com/WISDEM/FloatingSE/tarball/master#egg=floatingse',
-        'https://github.com/OpenMDAO/pyoptsparse/tarball/master#egg=pyoptsparse',
-        'https://github.com/OpenMDAO/OpenMDAO1/tarball/master#egg=openmdao',
-    ],
-    zip_safe=False
+    name             = 'wisdem',
+    version          = '2.0.0',
+    author           = 'NREL WISDEM Team',
+    author_email     = 'systems.engineering@nrel.gov',
+    maintainer       = 'NREL WISDEM Team',
+    maintainer_email = 'systems.engineering@nrel.gov',
+    description      = 'Wind-Plant Integrated System Design & Engineering Model',
+    long_description = 'WISDEM is a Python package for conducting multidisciplinary analysis and optimization of wind turbines and plants',
+    keywords         = ['wind','systems engineering','mdao'],
+    license          = 'Apache License, Version 2.0',
+    platforms        = ['Windows','Linux','Solaris','Mac OS-X','Unix'],
+    classifiers      = ['Development Status :: 4 - Beta',
+                        'Environment :: Console',
+                        'Intended Audience :: Science/Research',
+                        'Intended Audience :: Developers',
+                        'Intended Audience :: Education',
+                        'License :: Apache',
+                        'Operating System :: Microsoft :: Windows',
+                        'Operating System :: POSIX :: Linux',
+                        'Operating System :: Unix',
+                        'Operating System :: MacOS',
+                        'Programming Language :: Python',
+                        'Topic :: Scientific/Engineering',
+                        'Topic :: Software Development',
+                        'Topic :: Education'],
+    configuration = configuration,
 )
+    
