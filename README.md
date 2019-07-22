@@ -6,7 +6,7 @@ Author: [NREL WISDEM Team](mailto:systems.engineering@nrel.gov)
 
 ## Version
 
-This software is a beta version 0.2.0.
+This software is a version 1.0.0.
 
 ## Documentation
 
@@ -19,6 +19,7 @@ WISDEM&reg; is a family of modules.  The core modules are:
 * _CommonSE_ includes several libraries shared among modules
 * _DriveSE_ sizes the drive-train system
 * _FloatingSE_ works with the floating platforms
+* _GeneratorSE_ is a tool for generator design
 * _OffshoreBOS_ sizes the balance of systems for offshore plants
 * _Plant_FinanceSE_ runs the financial analysis of a wind plant
 * _RotorSE_ is a tool for rotor design
@@ -29,7 +30,6 @@ WISDEM&reg; is a family of modules.  The core modules are:
 
 The core modules draw upon some utility packages, which are typically compiled code with python wrappers:
 
-* _Akima_ is a spline package
 * _Airfoil Preppy_ is a tool to handle airfoil polar data
 * _CCBlade_ is the BEM module of WISDEM
 * _pBEAM_ provides a basic beam model
@@ -71,99 +71,25 @@ The installation instructions below use the environment name, "wisdem-env," but 
         pip install OpenMDAO
         pip install simpy
 
-4.  Now create a directory to store all of the WISDEM&reg; files.  This directory may be placed anywhere in the user's filesystem.
+4.  Now navigate to a directory for WISDEM&reg; and all of its files.  This directory may be placed anywhere in the user's filesystem.
 
-        mkdir wisdem
-        cd  wisdem
+5.  Git clone WISDEM&reg; 
 
-5.  Git clone all of the core WISDEM&reg; modules
-
-        git clone https://github.com/WISDEM/akima.git
-        git clone https://github.com/WISDEM/AirfoilPreppy.git
-        git clone https://github.com/WISDEM/CCBlade.git
-        git clone https://github.com/WISDEM/CommonSE.git
-        git clone https://github.com/WISDEM/DriveSE.git
-        git clone https://github.com/WISDEM/FloatingSE.git
-        git clone https://github.com/WISDEM/OffshoreBOS.git
-        git clone https://github.com/WISDEM/Plant_FinanceSE.git
-        git clone https://github.com/WISDEM/RotorSE.git
-        git clone https://github.com/WISDEM/TowerSE.git
-        git clone https://github.com/WISDEM/Turbine_CostsSE.git
-        git clone https://github.com/WISDEM/NREL_CSM.git
         git clone https://github.com/WISDEM/WISDEM.git
-        git clone https://github.com/WISDEM/pBeam.git
-        git clone https://github.com/WISDEM/pyFrame3DD.git
-        git clone https://github.com/WISDEM/pyMAP.git
-        git clone https://github.com/mdolab/pyoptsparse.git
 
 6.  Now install all of the packages.  The instructions here assume that the user will be interacting with the source code and incorporating code updates frequently, so the python packages are set-up for development (`python setup.py develop`), instead of hard installs (`python setup.py install`).
 
-        cd akima
-        python setup.py install 
-
-        cd ../AirfoilPreppy
+        cd WISDEM
+	git checkout --track origin/opendmao2
         python setup.py develop 
-
-        cd ../CCBlade
-        python setup.py develop 
-
-        cd ../pBeam
-        python setup.py develop 
-
-        cd ../pyFrame3DD
-        python setup.py develop 
-
-        cd ../pyMAP
-        python setup.py develop 
-
-        cd ../CommonSE
-        python setup.py develop 
-
-        cd ../OffshoreBOS
-        python setup.py develop 
-
-        cd ../Plant_FinanceSE
-        python setup.py develop 
-
-        cd ../Turbine_CostsSE
-        python setup.py develop 
-
-        cd ../NREL_CSM
-        python setup.py develop 
-
-        cd ../TowerSE
-        python setup.py develop 
-
-        cd ../RotorSE
-        python setup.py develop 
-
-        cd ../WISDEM
-        python setup.py develop 
-
-        cd ../DriveSE
-        python setup.py develop 
-
-        cd ../FloatingSE
-        python setup.py develop 
-
-        cd ../pyoptsparse
-	
-    on Windows edit pyoptsparse\pyoptsparse\setup.py and comment out the line:
-    
-        #    config.add_subpackage('pyFSQP')
-
-    for all OSes continue:
-	
-        python setup.py install
 	cd ..
-
 
 
 ## Installation (Linux or MacOS with package management)
 
 WISDEM&reg; can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM&reg; installations have succeeded on Linux ([Ubuntu](https://www.ubuntu.com/), [Fedora](https://getfedora.org), etc), MacOS with [MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh), and Windows with [Cygwin](http://cygwin.com).
 
-1. Obtain the local version of Python3 and the packages listed in Anaconda Step 2 above.  Each package manager will have a different name for these packages.  If your package manager does not have a particular Python package, you can obtain it via `pip install` from the Python Package Index, [PyPI](https://pypi.org/).
+1. Obtain the local version of Python3 and the packages listed in Step 2 above.  Each package manager will have a different name for these packages.  If your package manager does not have a particular Python package, you can obtain it via `pip install` from the Python Package Index, [PyPI](https://pypi.org/).
 
 2. Continue with Anaconda Steps 3-6
 

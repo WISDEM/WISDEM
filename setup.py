@@ -46,7 +46,7 @@ pymapExt   = Extension('_libmap', sources=glob.glob(os.path.join('wisdem','pymap
 # Top-level setup
 setup(
     name             = 'WISDEM',
-    version          = '2.0.0',
+    version          = '1.0.0',
     description      = 'Wind-Plant Integrated System Design & Engineering Model',
     long_description =  'WISDEM is a Python package for conducting multidisciplinary analysis and optimization of wind turbines and plants',
     url              = 'https://github.com/WISDEM/WISDEM',
