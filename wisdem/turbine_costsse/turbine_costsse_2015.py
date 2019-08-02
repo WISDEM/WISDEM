@@ -755,12 +755,12 @@ class Outputs2Screen(ExplicitComponent):
             print('Other main frame cost   %.3f k USD'                    % (inputs['other_cost'] * 1.e-003))
             print('Transformer cost        %.3f k USD       mass %.3f kg' % (inputs['transformer_cost'] * 1.e-003,  inputs['transformer_mass']))
             print('------------------------------------------------')
-            print('Nacelle cost            %.3f k USD       mass %.3f kg' % (inputs['nacelle_cost'] * 1.e-003,      inputs['nacelle_mass']))
+            print('Nacelle cost            %.3f k USD       mass %.3f kg' % (inputs['nacelle_cost'] * 1.e-003,      inputs['nacelle_mass_tcc']))
             print('')
             print('Tower cost              %.3f k USD       mass %.3f kg' % (inputs['tower_cost'] * 1.e-003,        inputs['tower_mass']))
             print('------------------------------------------------')
             print('------------------------------------------------')
-            print('Turbine cost            %.3f k USD       mass %.3f kg' % (inputs['turbine_cost'] * 1.e-003,      inputs['turbine_mass']))
+            print('Turbine cost            %.3f k USD       mass %.3f kg' % (inputs['turbine_cost'] * 1.e-003,      inputs['turbine_mass_tcc']))
             print('################################################')
                 
     

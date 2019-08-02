@@ -10,7 +10,7 @@ import numpy as np
 
 from openmdao.api import ExplicitComponent, Problem, Group, IndepVarComp
 
-from turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 
 # --------------------------------------------------------------------
 class BladeMass(ExplicitComponent):
