@@ -13,7 +13,7 @@ import sys
 import warnings
 warnings.simplefilter("error")
 
-from wisdem.drivese.drivese_utils import get_distance_hub2mb
+from wisdem.drivetrainse.drivese_utils import get_distance_hub2mb
 
 # -------------------------------------------------
 

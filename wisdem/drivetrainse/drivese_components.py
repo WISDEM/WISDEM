@@ -50,7 +50,7 @@ import scipy as scp
 import scipy.optimize as opt
 from math import pi, cos, sqrt, sin, exp, log10, log
 
-from wisdem.drivese.drivese_utils import get_rotor_mass, get_distance_hub2mb, get_My, get_Mz, resize_for_bearings, mainshaftFlangeCalc 
+from wisdem.drivetrainse.drivese_utils import get_rotor_mass, get_distance_hub2mb, get_My, get_Mz, resize_for_bearings, mainshaftFlangeCalc 
 from wisdem.commonse.utilities import assembleI, unassembleI 
 
 # Constants

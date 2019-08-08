@@ -8,7 +8,7 @@ Components for the new spherical hub model - July 2019
 import numpy as np
 
 from openmdao.api import ExplicitComponent, Group, Problem, IndepVarComp
-from wisdem.drivese.hubse_components import Hub, PitchSystem, Spinner, Hub_System_Adder, Hub_Mass_Adder, Hub_CM_Adder
+from wisdem.drivetrainse.hubse_components import Hub, PitchSystem, Spinner, Hub_System_Adder, Hub_Mass_Adder, Hub_CM_Adder
 
 #-------------------------------------------------------------------------
 
