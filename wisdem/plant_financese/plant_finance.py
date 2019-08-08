@@ -1,4 +1,4 @@
-from openmdao.api import ExplicitComponent
+from openmdao.api import ExplicitComponent, Group, Problem
 import numpy as np
 
 class PlantFinance(ExplicitComponent):
@@ -19,7 +19,6 @@ class PlantFinance(ExplicitComponent):
 
         # parameters
         self.add_input('fixed_charge_rate', val=0.12,               desc = 'Fixed charge rate for coe calculation')
-        #self.add_input('sea_depth',         val=0.0, units='m',    desc = 'Sea depth of project for offshore, (0 for onshore)')
 
         #Outputs
         self.add_output('lcoe',             val=0.0, units='USD/kW',desc='Levelized cost of energy for the wind plant')
@@ -29,7 +28,6 @@ class PlantFinance(ExplicitComponent):
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack parameters
-        #depth       = inputs['sea_depth']
         n_turbine   = discrete_inputs['turbine_number']
         c_turbine   = inputs['turbine_cost'] 
         c_bos_turbine  = inputs['turbine_bos_costs'] 
@@ -38,9 +36,6 @@ class PlantFinance(ExplicitComponent):
         wlf         = inputs['wake_loss_factor']
         turb_aep    = inputs['turbine_aep']
         t_rating    = inputs['machine_rating']
-        
-        # Handy offshore boolean flag
-        offshore = (depth > 0.0)
         
         # Run a few checks on the inputs
         if n_turbine == 0:
@@ -55,7 +50,7 @@ class PlantFinance(ExplicitComponent):
         if c_opex_turbine == 0:
             print('WARNING: The Opex costs of the turbine are not initialized correctly and they are currently equal to 0 USD. Check the connections to Plant_FinanceSE')
         
-        if park_aep == 0:
+        if inputs['park_aep'] == 0:
             if turb_aep != 0:
                 park_aep     =  n_turbine * turb_aep * (1. - wlf)
                 dpark_dtaep  =  n_turbine            * (1. - wlf)
@@ -86,15 +81,6 @@ class PlantFinance(ExplicitComponent):
         dicc_dtrating   = -icc / t_rating
         dcopex_dtrating = -c_opex / t_rating
         dicc_dcturb = dicc_dcbos = dcopex_dcopex = 1.0 / (t_rating * 1.e003)
-
-        '''
-        GB 7 Aug 2019: Need to double check this one
-        if offshore:
-           # warranty Premium 
-           icc += (c_turbine * n_turbine / 1.10) * 0.15
-           dicc_dcturb += (n_turbine / 1.10) * 0.15
-           dicc_dnturb = (c_turbine / 1.10) * 0.15
-        '''
            
         #compute COE and LCOE values
         lcoe = ((icc * fcr + c_opex) / nec) # changed per COE report
@@ -102,7 +88,7 @@ class PlantFinance(ExplicitComponent):
         
         self.J = {}
         self.J['lcoe', 'turbine_cost'            ] = dicc_dcturb*fcr /nec
-        self.J['lcoe', 'turbine_number'          ] = dicc_dnturb*fcr /nec - dnec_dnturb*lcoe/nec
+        self.J['lcoe', 'turbine_number'          ] = - dnec_dnturb*lcoe/nec
         self.J['lcoe', 'turbine_bos_costs'       ] = dicc_dcbos *fcr /nec
         self.J['lcoe', 'turbine_avg_annual_opex' ] = dcopex_dcopex   /nec
         self.J['lcoe', 'fixed_charge_rate'       ] = icc / nec
@@ -115,13 +101,12 @@ class PlantFinance(ExplicitComponent):
             print('################################################')
             print('Computation of CoE and LCoE from Plant_FinanceSE')
             print('Inputs:')
-            print('Water depth                      %.2f m'          % depth)
             print('Number of turbines in the park   %u'              % n_turbine)
             print('Cost of the single turbine       %.3f M USD'      % (c_turbine * 1.e-006))  
             print('BoS costs of the single turbine  %.3f M USD'      % (c_bos_turbine * 1.e-006))  
-            print('Initial capital cost of the park %.3f M USD'      % (icc * 1.e-006))  
+            print('Initial capital cost of the park %.3f M USD'      % (icc * n_turbine * t_rating * 1.e-003))  
             print('Opex costs of the single turbine %.3f M USD'      % (c_opex_turbine * 1.e-006))
-            print('Opex costs of the park           %.3f M USD'      % (c_opex * 1.e-006))              
+            print('Opex costs of the park           %.3f M USD'      % (c_opex_turbine * n_turbine * 1.e-006))              
             print('Fixed charge rate                %.2f %%'         % (fcr * 100.))     
             print('Wake loss factor                 %.2f %%'         % (wlf * 100.))         
             print('AEP of the single turbine        %.3f GWh'        % (turb_aep * 1.e-006))    
@@ -137,4 +122,30 @@ class PlantFinance(ExplicitComponent):
     def compute_partials(self, inputs, J):
         J.update(self.J)
 
+
+
+    
+class Finance(Group):
+    
+    def setup(self):
+        self.add_subsystem('plantfinancese', PlantFinance(verbosity = True), promotes=['*'])
+
+
+if __name__ == "__main__":
+    # Initialize OpenMDAO problem and FloatingSE Group
+    prob = Problem()
+    prob.model=Finance() # runs script
+    prob.setup()
+
+    rating = 2.32 #MW
+    prob['machine_rating']          = rating
+    prob['turbine_cost']            = 1093  * rating * 1.e+003  #USD
+    prob['turbine_number']          = 87.
+    prob['turbine_avg_annual_opex'] = 43.56 * rating * 1.e+003  # USD/yr Source: 70 $/kW/yr, updated from report, (70 is on the high side)
+    prob['fixed_charge_rate']       = 0.079216644 # 7.9 % confirmed from report
+    prob['turbine_bos_costs']       = 517. * rating * 1.e+003 # from apendix of report
+    prob['wake_loss_factor']        = 0.15 # confirmed from report 
+    prob['turbine_aep']             = 8428.56 * 1.e+003 # confirmed from report 
+    
+    prob.run_driver()
 
