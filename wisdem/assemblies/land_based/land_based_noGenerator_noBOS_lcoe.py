@@ -116,7 +116,7 @@ class OnshoreTurbinePlant(Group):
         self.add_subsystem('tcons', TurbineConstraints(nFull=5*NSECTION+1), promotes=['*'])
         
         # Turbine costs
-        self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity = False, topLevelFlag=False), promotes=['*'])
+        self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=True, topLevelFlag=False), promotes=['*'])
 
         # LCOE Calculation
         self.add_subsystem('plantfinancese', PlantFinance(verbosity=True), promotes=['machine_rating'])
