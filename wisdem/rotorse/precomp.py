@@ -17,7 +17,7 @@ import os
 # from rotorstruc import SectionStrucInterface
 # from wisdem.common import sind, cosd
 # from external._precomp import precomp as _precomp
-from _precomp import precomp as _precomp
+from wisdem.rotorse._precomp import precomp as _precomp
 
 
 
@@ -585,17 +585,17 @@ class CompositeSection:
         s2 = s*s
         cs = c*s
 
-        Q = np.mat([[E11/denom, nu12*E22/denom, 0],
+        Q = np.array([[E11/denom, nu12*E22/denom, 0],
                     [nu12*E22/denom, E22/denom, 0],
                     [0, 0, G12]])
-        T12 = np.mat([[c2, s2, cs],
+        T12 = np.array([[c2, s2, cs],
                       [s2, c2, -cs],
                       [-cs, cs, 0.5*(c2-s2)]])
-        Tinv = np.mat([[c2, s2, -2*cs],
+        Tinv = np.array([[c2, s2, -2*cs],
                        [s2, c2, 2*cs],
                        [cs, -cs, c2-s2]])
 
-        return Tinv*Q*T12
+        return Tinv @ Q @ T12
 
 
 

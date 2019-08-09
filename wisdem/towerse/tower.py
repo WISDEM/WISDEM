@@ -287,11 +287,11 @@ class TowerPreFrame(ExplicitComponent):
 class TowerPostFrame(ExplicitComponent):
     def initialize(self):
         self.options.declare('nFull')
-        self.options.declare('nDEL')
+        #self.options.declare('nDEL')
 
     def setup(self):
         nFull = self.options['nFull']
-        nDEL  = self.options['nDEL']
+        #nDEL  = self.options['nDEL']
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
         self.add_input('z', np.zeros(nFull), units='m', desc='location along tower. start at bottom and go to top')
@@ -322,8 +322,8 @@ class TowerPostFrame(ExplicitComponent):
         self.add_input('life', 20.0, desc='fatigue life of tower')
         self.add_input('m_SN', 4, desc='slope of S/N curve')
         self.add_input('DC', 80.0, desc='standard value of stress')
-        self.add_input('z_DEL', np.zeros(nDEL), units='m', desc='absolute z coordinates of corresponding fatigue parameters')
-        self.add_input('M_DEL', np.zeros(nDEL), desc='fatigue parameters at corresponding z coordinates')
+        #self.add_input('z_DEL', np.zeros(nDEL), units='m', desc='absolute z coordinates of corresponding fatigue parameters')
+        #self.add_input('M_DEL', np.zeros(nDEL), desc='fatigue parameters at corresponding z coordinates')
 
         # Frequencies
         self.add_input('f1', 0.0, units='Hz', desc='First natural frequency')
@@ -335,7 +335,7 @@ class TowerPostFrame(ExplicitComponent):
         self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
         self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
         self.add_output('global_buckling', np.zeros(nFull-1), desc='Global buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
-        self.add_output('damage', np.zeros(nFull-1), desc='Fatigue damage at each tower section')
+        #self.add_output('damage', np.zeros(nFull-1), desc='Fatigue damage at each tower section')
         self.add_output('turbine_F', val=np.zeros(3), units='N', desc='Total force on tower+rna')
         self.add_output('turbine_M', val=np.zeros(3), units='N*m', desc='Total x-moment on tower+rna measured at base')
         
@@ -375,12 +375,13 @@ class TowerPostFrame(ExplicitComponent):
 
         # fatigue
         N_DEL = 365.0*24.0*3600.0*inputs['life'] * np.ones(len(inputs['t']))
-        outputs['damage'] = np.zeros(N_DEL.shape)
-        if any(inputs['M_DEL']):
-            M_DEL = np.interp(z_section, inputs['z_DEL'], inputs['M_DEL'])
+        #outputs['damage'] = np.zeros(N_DEL.shape)
 
-            outputs['damage'] = Util.fatigue(M_DEL, N_DEL, d, inputs['t'], inputs['m_SN'],
-                                              inputs['DC'], inputs['gamma_fatigue'], stress_factor=1.0, weld_factor=True)
+        #if any(inputs['M_DEL']):
+        #    M_DEL = np.interp(z_section, inputs['z_DEL'], inputs['M_DEL'])
+
+        #    outputs['damage'] = Util.fatigue(M_DEL, N_DEL, d, inputs['t'], inputs['m_SN'],
+        #                                      inputs['DC'], inputs['gamma_fatigue'], stress_factor=1.0, weld_factor=True)
 
 # -----------------
 #  Assembly
@@ -450,7 +451,7 @@ class TowerSE(Group):
         self.options.declare('nLC')
         self.options.declare('nPoints')
         self.options.declare('nFull')
-        self.options.declare('nDEL')
+        #self.options.declare('nDEL')
         self.options.declare('wind', default='')
         self.options.declare('topLevelFlag', default=True)
     
@@ -458,20 +459,33 @@ class TowerSE(Group):
         nLC     = self.options['nLC']
         nPoints = self.options['nPoints']
         nFull   = self.options['nFull']
-        nDEL    = self.options['nDEL']
+        #nDEL    = self.options['nDEL']
         wind    = self.options['wind']
         topLevelFlag = self.options['topLevelFlag']
         
         # Independent variables that are unique to TowerSE
         towerIndeps = IndepVarComp()
-        towerIndeps.add_output('tower_M_DEL', np.zeros(nDEL))
-        towerIndeps.add_output('tower_z_DEL', np.zeros(nDEL), units='m')
+        #towerIndeps.add_output('tower_M_DEL', np.zeros(nDEL))
+        #towerIndeps.add_output('tower_z_DEL', np.zeros(nDEL), units='m')
         towerIndeps.add_output('tower_force_discretization', 5.0)
         towerIndeps.add_output('suctionpile_depth', 0.0, units='m')
         towerIndeps.add_output('soil_G', 0.0, units='N/m**2')
         towerIndeps.add_output('soil_nu', 0.0)
         towerIndeps.add_discrete_output('monopile', False)
         towerIndeps.add_discrete_output('tower_add_gravity', True)
+        towerIndeps.add_discrete_output('shear', True)
+        towerIndeps.add_discrete_output('geom', False)
+        towerIndeps.add_discrete_output('nM', 2)
+        towerIndeps.add_discrete_output('Mmethod', 1)
+        towerIndeps.add_discrete_output('lump', 0)
+        towerIndeps.add_output('tol', 1e-9)
+        towerIndeps.add_output('shift', 0.0)
+        towerIndeps.add_output('DC', 0.0)
+        towerIndeps.add_output('water_density', 0.0, units='kg/m**3')
+        towerIndeps.add_output('water_viscosity', 0.0, units='kg/m/s')
+        towerIndeps.add_output('significant_wave_height', 0.0, units='m')
+        towerIndeps.add_output('significant_wave_period', 0.0, units='s')
+        towerIndeps.add_output('wave_beta', 0.0, units='deg')
         self.add_subsystem('towerIndeps', towerIndeps, promotes=['*'])
 
         # Independent variables that may be duplicated at higher levels of aggregation
@@ -484,11 +498,6 @@ class TowerSE(Group):
             sharedIndeps.add_output('wind_z0', 0.0, units='m')
             sharedIndeps.add_output('wind_beta', 0.0, units='deg')
             sharedIndeps.add_output('cd_usr', np.nan)
-            sharedIndeps.add_output('water_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('water_viscosity', 0.0, units='kg/m/s')
-            sharedIndeps.add_output('significant_wave_height', 0.0, units='m')
-            sharedIndeps.add_output('significant_wave_period', 0.0, units='s')
-            sharedIndeps.add_output('wave_beta', 0.0, units='deg')
             sharedIndeps.add_output('yaw', 0.0, units='deg')
             sharedIndeps.add_output('E', 0.0, units='N/m**2')
             sharedIndeps.add_output('G', 0.0, units='N/m**2')
@@ -501,14 +510,6 @@ class TowerSE(Group):
             sharedIndeps.add_output('gamma_n', 0.0)
             sharedIndeps.add_output('gamma_b', 0.0)
             sharedIndeps.add_output('gamma_fatigue', 0.0)
-            sharedIndeps.add_output('DC', 0.0)
-            sharedIndeps.add_discrete_output('shear', True)
-            sharedIndeps.add_discrete_output('geom', False)
-            sharedIndeps.add_discrete_output('nM', 2)
-            sharedIndeps.add_discrete_output('Mmethod', 1)
-            sharedIndeps.add_discrete_output('lump', 0)
-            sharedIndeps.add_output('tol', 0.0)
-            sharedIndeps.add_output('shift', 0.0)
             sharedIndeps.add_output('life', 0.0)
             sharedIndeps.add_output('m_SN', 0.0)
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
@@ -546,17 +547,17 @@ class TowerSE(Group):
             self.add_subsystem('pre'+lc, TowerPreFrame(nFull=nFull), promotes=['monopile'])
             self.add_subsystem('tower'+lc, CylinderFrame3DD(npts=nFull, nK=1, nMass=1, nPL=1), promotes=['E','G','tol','Mmethod','geom','lump','shear',
                                                                              'nM','shift','sigma_y'])
-            self.add_subsystem('post'+lc, TowerPostFrame(nFull=nFull, nDEL=nDEL), promotes=['E','sigma_y','DC','life','m_SN',
-                                                                      'gamma_b','gamma_f','gamma_fatigue','gamma_m','gamma_n'])
+            self.add_subsystem('post'+lc, TowerPostFrame(nFull=nFull), promotes=['E','sigma_y','DC','life','m_SN',
+                                                                                 'gamma_b','gamma_f','gamma_fatigue','gamma_m','gamma_n'])
             
             self.connect('z_full', ['wind'+lc+'.z', 'wave'+lc+'.z', 'windLoads'+lc+'.z', 'waveLoads'+lc+'.z', 'distLoads'+lc+'.z', 'pre'+lc+'.z', 'tower'+lc+'.z', 'post'+lc+'.z'])
             self.connect('d_full', ['windLoads'+lc+'.d', 'waveLoads'+lc+'.d', 'tower'+lc+'.d', 'post'+lc+'.d'])
 
-            self.connect('rna_mass', 'pre'+lc+'.mass')
-            self.connect('rna_cg', 'pre'+lc+'.mrho')
-            self.connect('rna_I', 'pre'+lc+'.mI')
-        
-            self.connect('material_density', 'tower'+lc+'.rho')
+            if topLevelFlag:
+                self.connect('rna_mass', 'pre'+lc+'.mass')
+                self.connect('rna_cg', 'pre'+lc+'.mrho')
+                self.connect('rna_I', 'pre'+lc+'.mI')
+                self.connect('material_density', 'tower'+lc+'.rho')
 
             self.connect('pre'+lc+'.kidx', 'tower'+lc+'.kidx')
             self.connect('pre'+lc+'.kx', 'tower'+lc+'.kx')
@@ -599,26 +600,28 @@ class TowerSE(Group):
             self.connect('tower'+lc+'.hoop_stress_euro', 'post'+lc+'.hoop_stress')
         
             # connections to wind, wave
-            self.connect('wind_reference_height', 'wind'+lc+'.zref')
-            self.connect('wind_z0', ['wind'+lc+'.z0', 'wave'+lc+'.z_surface'])
-            #self.connect('z_floor', 'waveLoads'+lc+'.wlevel')
-            if wind=='PowerWind':
-                self.connect('shearExp', 'wind'+lc+'.shearExp')
-            self.connect('significant_wave_height', 'wave'+lc+'.hmax')
-            self.connect('significant_wave_period', 'wave'+lc+'.T')
-
-            # connections to windLoads1
-            self.connect('air_density', 'windLoads'+lc+'.rho')
-            self.connect('air_viscosity', 'windLoads'+lc+'.mu')
-            self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
-            self.connect('wind_beta', 'windLoads'+lc+'.beta')
+            if topLevelFlag:
+                self.connect('wind_reference_height', 'wind'+lc+'.zref')
+                self.connect('wind_z0', ['wind'+lc+'.z0', 'wave'+lc+'.z_surface'])
+                #self.connect('z_floor', 'waveLoads'+lc+'.wlevel')
+                if wind=='PowerWind':
+                    self.connect('shearExp', 'wind'+lc+'.shearExp')
+                
+                # connections to windLoads1
+                self.connect('air_density', 'windLoads'+lc+'.rho')
+                self.connect('air_viscosity', 'windLoads'+lc+'.mu')
+                self.connect('wind_beta', 'windLoads'+lc+'.beta')
 
             # connections to waveLoads1
             self.connect('water_density', ['wave'+lc+'.rho', 'waveLoads'+lc+'.rho'])
             self.connect('water_viscosity', 'waveLoads'+lc+'.mu')
+            self.connect('wave_beta', 'waveLoads'+lc+'.beta')
+            self.connect('significant_wave_height', 'wave'+lc+'.hmax')
+            self.connect('significant_wave_period', 'wave'+lc+'.T')
+                
+            self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
             self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
             self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
-            self.connect('wave_beta', 'waveLoads'+lc+'.beta')
             self.connect('wave'+lc+'.p', 'waveLoads'+lc+'.p')
 
             # connections to distLoads1
@@ -650,8 +653,8 @@ class TowerSE(Group):
 
             # Tower connections
             self.connect('tower_buckling_length', ['tower'+lc+'.L_reinforced', 'post'+lc+'.L_reinforced'])
-            self.connect('tower_M_DEL', 'post'+lc+'.M_DEL')
-            self.connect('tower_z_DEL', 'post'+lc+'.z_DEL')
+            #self.connect('tower_M_DEL', 'post'+lc+'.M_DEL')
+            #self.connect('tower_z_DEL', 'post'+lc+'.z_DEL')
 
             self.connect('props.Az', 'tower'+lc+'.Az')
             self.connect('props.Asx', 'tower'+lc+'.Asx')
@@ -771,7 +774,7 @@ if __name__ == '__main__':
     nLC = 2
     
     prob = Problem()
-    prob.model = TowerSE(nLC=nLC, nPoints=nPoints, nFull=nFull, nDEL=nDEL, wind=wind, topLevelFlag=True)
+    prob.model = TowerSE(nLC=nLC, nPoints=nPoints, nFull=nFull, wind=wind, topLevelFlag=True)
     prob.setup()
 
     if wind=='PowerWind':
@@ -838,8 +841,8 @@ if __name__ == '__main__':
 
     
     # --- fatigue ---
-    prob['tower_z_DEL'] = z_DEL
-    prob['tower_M_DEL'] = M_DEL
+    #prob['tower_z_DEL'] = z_DEL
+    #prob['tower_M_DEL'] = M_DEL
     prob['life'] = life
     prob['m_SN'] = m_SN
     # ---------------
@@ -882,25 +885,25 @@ if __name__ == '__main__':
     print('stress1 =', prob['post1.stress'])
     print('GL buckling =', prob['post1.global_buckling'])
     print('Shell buckling =', prob['post1.shell_buckling'])
-    print('damage =', prob['post1.damage'])
+    #print('damage =', prob['post1.damage'])
     print('\nwind: ', prob['wind2.Uref'])
     print('f1 (Hz) =', prob['tower2.f1'])
     print('top_deflection2 (m) =', prob['post2.top_deflection'])
     print('stress2 =', prob['post2.stress'])
     print('GL buckling =', prob['post2.global_buckling'])
     print('Shell buckling =', prob['post2.shell_buckling'])
-    print('damage =', prob['post2.damage'])
+    #print('damage =', prob['post2.damage'])
 
 
     stress1 = np.copy( prob['post1.stress'] )
     shellBuckle1 = np.copy( prob['post1.shell_buckling'] )
     globalBuckle1 = np.copy( prob['post1.global_buckling'] )
-    damage1 = np.copy( prob['post1.damage'] )
+    #damage1 = np.copy( prob['post1.damage'] )
 
     stress2 = prob['post2.stress']
     shellBuckle2 = prob['post2.shell_buckling']
     globalBuckle2 = prob['post2.global_buckling']
-    damage2 = prob['post2.damage']
+    #damage2 = prob['post2.damage']
 
     
     import matplotlib.pyplot as plt
@@ -912,8 +915,8 @@ if __name__ == '__main__':
     plt.plot(shellBuckle2, z, label='shell buckling 2')
     plt.plot(globalBuckle1, z, label='global buckling 1')
     plt.plot(globalBuckle2, z, label='global buckling 2')
-    plt.plot(damage1, z, label='damage 1')
-    plt.plot(damage2, z, label='damage 2')
+    #plt.plot(damage1, z, label='damage 1')
+    #plt.plot(damage2, z, label='damage 2')
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc=2)
     plt.xlabel('utilization')
     plt.ylabel('height along tower (m)')

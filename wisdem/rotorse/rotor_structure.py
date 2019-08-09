@@ -8,12 +8,11 @@ from wisdem.ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBlade
 from wisdem.commonse import gravity, NFREQ
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.commonse.utilities import trapz_deriv, interp_with_deriv
-from precomp import _precomp
+from wisdem.rotorse.precomp import _precomp
 from wisdem.commonse.akima import Akima
-from rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT, TURBULENCE_CLASS
-import _pBEAM
-# import wisdem.ccblade._bem as _bem  # TODO: move to rotoraero
-import _bem  # TODO: move to rotoraero
+from wisdem.rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
+import wisdem.pBeam._pBEAM as _pBEAM
+import wisdem.ccblade._bem as _bem
 
 from wisdem.rotorse import RPM2RS, RS2RPM
 
@@ -1724,7 +1723,7 @@ class MassProperties(ExplicitComponent):
 
         # outputs
         self.add_output('mass_all_blades', val=0.0, units='kg', desc='mass of all blades')
-        self.add_output('I_all_blades', shape=6, desc='mass moments of inertia of all blades in yaw c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz')
+        self.add_output('I_all_blades', val=np.zeros(6), units='kg*m**2', desc='mass moments of inertia of all blades in yaw c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz')
 
         self.declare_partials(['mass_all_blades', 'I_all_blades'], 
                               ['blade_mass', 'blade_moment_of_inertia', 'tilt'])
@@ -1816,7 +1815,7 @@ class GustETM(ExplicitComponent):
         self.add_input('V_hub', val=0.0, units='m/s', desc='hub height wind speed')
 
         # parameters
-        self.add_discrete_input('turbulence_class', val=TURBULENCE_CLASS['A'], desc='IEC turbulence class')
+        self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
         self.add_discrete_input('std', val=3, desc='number of standard deviations for strength of gust')
 
         # out
@@ -1831,11 +1830,11 @@ class GustETM(ExplicitComponent):
         turbulence_class = discrete_inputs['turbulence_class']
         std = discrete_inputs['std']
 
-        if turbulence_class == TURBULENCE_CLASS['A']:
+        if turbulence_class == 'A':
             Iref = 0.16
-        elif turbulence_class == TURBULENCE_CLASS['B']:
+        elif turbulence_class == 'B':
             Iref = 0.14
-        elif turbulence_class == TURBULENCE_CLASS['C']:
+        elif turbulence_class == 'C':
             Iref = 0.12
 
         c = 2.0
@@ -2089,7 +2088,7 @@ class OutputsStructures(ExplicitComponent):
         # structural outputs
         self.add_input('mass_one_blade_in', val=0.0, units='kg', desc='mass of one blade')
         self.add_input('mass_all_blades_in', val=0.0,  units='kg', desc='mass of all blade')
-        self.add_input('I_all_blades_in', shape=6, desc='out of plane moments of inertia in yaw-aligned c.s.')
+        self.add_input('I_all_blades_in', val=np.zeros(6), units='kg*m**2', desc='out of plane moments of inertia in yaw-aligned c.s.')
         self.add_input('freq_in', val=np.zeros(NFREQ), units='Hz', desc='1st nF natural frequencies')
         self.add_input('freq_curvefem_in', val=np.zeros(NFREQ), units='Hz', desc='1st nF natural frequencies')
         self.add_input('modes_coef_curvefem_in', val=np.zeros((3, 5)), desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
@@ -2130,7 +2129,7 @@ class OutputsStructures(ExplicitComponent):
         # structural outputs
         self.add_output('mass_one_blade', val=0.0, units='kg', desc='mass of one blade')
         self.add_output('mass_all_blades', val=0.0,  units='kg', desc='mass of all blade')
-        self.add_output('I_all_blades', shape=6, desc='out of plane moments of inertia in yaw-aligned c.s.')
+        self.add_output('I_all_blades', val=np.zeros(6), units='kg*m**2', desc='out of plane moments of inertia in yaw-aligned c.s.')
         self.add_output('freq', val=np.zeros(NFREQ), units='Hz', desc='1st nF natural frequencies')
         self.add_output('freq_curvefem', val=np.zeros(NFREQ), units='Hz', desc='1st nF natural frequencies')
         self.add_output('modes_coef_curvefem', val=np.zeros((3, 5)), desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
@@ -2333,7 +2332,7 @@ class RotorStructure(Group):
         structIndeps = IndepVarComp()
         structIndeps.add_discrete_output('fst_vt_in', val={})
         structIndeps.add_output('VfactorPC', val=0.7, desc='fraction of rated speed at which the deflection is assumed to representative throughout the power curve calculation')
-        structIndeps.add_discrete_output('turbulence_class', val=TURBULENCE_CLASS['A'], desc='IEC turbulence class class')
+        structIndeps.add_discrete_output('turbulence_class', val='A', desc='IEC turbulence class class')
         structIndeps.add_discrete_output('gust_stddev', val=3)
         structIndeps.add_output('pitch_extreme', val=0.0, units='deg', desc='worst-case pitch at survival wind condition')
         structIndeps.add_output('azimuth_extreme', val=0.0, units='deg', desc='worst-case azimuth at survival wind condition')
@@ -2924,7 +2923,7 @@ if __name__ == '__main__':
     rotor['aero_0.shearExp'] = 0.25  # (Float): shear exponent
     rotor['hubHt'] = myref.hubHt  # (Float, m): hub height
     rotor['turbine_class'] = myref.turbine_class #TURBINE_CLASS['I']  # (Enum): IEC turbine class
-    rotor['turbulence_class'] = TURBULENCE_CLASS['B']  # (Enum): IEC turbulence class class
+    rotor['turbulence_class'] = 'B'  # (Enum): IEC turbulence class class
     rotor['gust_stddev'] = 3
     # ----------------------
 

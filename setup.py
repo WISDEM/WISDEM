@@ -27,19 +27,19 @@ else:
     pymapArgs = ['-O1', '-m64', '-fPIC', '-std=c99']
 
 # All the extensions
-bemExt     = Extension('_bem',
+bemExt     = Extension('wisdem.ccblade._bem',
                        sources=[os.path.join('wisdem','ccblade','bem.f90')],
                        extra_compile_args=['-O2','-fPIC'])
-pyframeExt = Extension('_pyframe3dd',
+pyframeExt = Extension('wisdem.pyframe3dd._pyframe3dd',
                        sources=glob.glob(os.path.join('wisdem','pyframe3dd','src','*.c')))
-precompExt = Extension('_precomp',
+precompExt = Extension('wisdem.rotorse._precomp',
                        sources=[os.path.join('wisdem','rotorse','PreCompPy.f90')],
                        extra_compile_args=['-O2','-fPIC'])
-pbeamExt   = Extension('_pBEAM',
+pbeamExt   = Extension('wisdem.pBeam._pBEAM',
                        sources=glob.glob(os.path.join('wisdem','pBeam','src','*.cpp')),
                        extra_compile_args=pbeamArgs,
                        include_dirs=[os.path.join('wisdem','include')])
-pymapExt   = Extension('_libmap', sources=glob.glob(os.path.join('wisdem','pymap','**','*.c*'), recursive=True),
+pymapExt   = Extension('wisdem.pymap._libmap', sources=glob.glob(os.path.join('wisdem','pymap','**','*.c*'), recursive=True),
                        extra_compile_args=pymapArgs,
                        include_dirs=[os.path.join('wisdem','include','lapack')])
 

@@ -13,31 +13,31 @@ class TowerModes(ExplicitComponent):
         self.add_input('gamma_freq', val=0.0, desc='partial safety factor for fatigue')
         self.add_discrete_input('blade_number', 3, desc='number of rotor blades')
 
-        self.add_output('frequency3P_margin_low', val=np.zeros(NFREQ), desc='Upper bound constraint of tower/structure frequency to blade passing frequency with margin')
-        self.add_output('frequency3P_margin_high', val=np.zeros(NFREQ), desc='Lower bound constraint of tower/structure frequency to blade passing frequency with margin')
+        self.add_output('frequencyNP_margin_low', val=np.zeros(NFREQ), desc='Upper bound constraint of tower/structure frequency to blade passing frequency with margin')
+        self.add_output('frequencyNP_margin_high', val=np.zeros(NFREQ), desc='Lower bound constraint of tower/structure frequency to blade passing frequency with margin')
         self.add_output('frequency1P_margin_low', val=np.zeros(NFREQ), desc='Upper bound constraint of tower/structure frequency to rotor frequency with margin')
         self.add_output('frequency1P_margin_high', val=np.zeros(NFREQ), desc='Lower bound constraint of tower/structure frequency to rotor frequency with margin')
 
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         freq_struct = inputs['tower_freq']
         gamma       = inputs['gamma_freq']
         oneP        = (inputs['rotor_omega']/60.0)
         oneP_high   = oneP * gamma
         oneP_low    = oneP / gamma
-        threeP      = oneP * inputs['blade_number']
+        threeP      = oneP * discrete_inputs['blade_number']
         threeP_high = threeP * gamma
         threeP_low  = threeP / gamma
         
         # Compute margins between (N/3)P and structural frequencies
         indicator_high = threeP_high * np.ones(freq_struct.shape)
         indicator_high[freq_struct < threeP_low] = 1e-16
-        outputs['frequency3P_margin_high'] = freq_struct / indicator_high
+        outputs['frequencyNP_margin_high'] = freq_struct / indicator_high
 
         indicator_low = threeP_low * np.ones(freq_struct.shape)
         indicator_low[freq_struct > threeP_high] = 1e30
-        outputs['frequency3P_margin_low']  = freq_struct / indicator_low
+        outputs['frequencyNP_margin_low']  = freq_struct / indicator_low
 
         # Compute margins between 1P and structural frequencies
         indicator_high = oneP_high * np.ones(freq_struct.shape)
@@ -70,11 +70,10 @@ class MaxTipDeflection(ExplicitComponent):
 
         self.add_output('tip_deflection_ratio',      val=0.0,           desc='Ratio of blade tip deflectiion towardsa the tower and clearance between undeflected blade tip and tower')
         self.add_output('blade_tip_tower_clearance', val=0.0, units='m',desc='Clearance between undeflected blade tip and tower in x-direction of yaw c.s.')
-        self.add_output('ground_clearance',          val=0.0, units='m',desc='Distance between blade tip and ground')
 
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack variables
         z_tower = inputs['z_full']
         d_tower = inputs['d_full']
@@ -82,7 +81,7 @@ class MaxTipDeflection(ExplicitComponent):
         precone = inputs['precone']
         tilt    = inputs['tilt']
         delta   = inputs['tip_deflection']
-        upwind  = not inputs['downwind']
+        upwind  = not discrete_inputs['downwind']
         
 
         # Coordinates of blade tip in yaw c.s.
@@ -104,9 +103,6 @@ class MaxTipDeflection(ExplicitComponent):
             parked_margin = hub_cm[0] + blade_yaw.x - r_interp
         outputs['blade_tip_tower_clearance']   = parked_margin
         outputs['tip_deflection_ratio']        = delta * inputs['gamma_m'] / parked_margin
-            
-        # ground clearance
-        outputs['ground_clearance'] = z_interp
 
 
     
@@ -115,8 +111,8 @@ class TurbineConstraints(Group):
     def initialize(self):
         self.options.declare('nFull')
         
-    def super(self):
+    def setup(self):
         nFull = self.options['nFull']
         
         self.add_subsystem('modes', TowerModes(), promotes=['*'])
-        self.add_subsystem('tipd', MaxTipDeflection(nFull), promotes=['*'])
+        self.add_subsystem('tipd', MaxTipDeflection(nFullTow=nFull), promotes=['*'])

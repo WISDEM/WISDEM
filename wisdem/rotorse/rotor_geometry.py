@@ -14,7 +14,7 @@ from wisdem.commonse.akima import Akima
 from wisdem.ccblade.ccblade_component import CCBladeGeometry
 from wisdem.ccblade import CCAirfoil
 from wisdem.airfoilprep import Airfoil
-from precomp import Profile, Orthotropic2DMaterial, CompositeSection, _precomp
+from wisdem.rotorse.precomp import Profile, Orthotropic2DMaterial, CompositeSection, _precomp
 
 from scipy.interpolate import PchipInterpolator
 
@@ -255,8 +255,8 @@ class NREL5MW(ReferenceBlade):
         self.rating   = 5e6
         self.nBlades  = 3
         self.downwind = False
-        self.turbine_class = TURBINE_CLASS['I']
-        self.drivetrain    = DRIVETRAIN_TYPE['GEARED']
+        self.turbine_class = 'I'
+        self.drivetrain    = 'GEARED'
 
         self.hubHt  = 90.0
         self.hubFraction = 1.5/61.5
@@ -386,8 +386,8 @@ class DTU10MW(ReferenceBlade):
         self.rating = 10e6
         self.nBlades  = 3
         self.downwind = False
-        self.turbine_class = TURBINE_CLASS['I']
-        self.drivetrain    = DRIVETRAIN_TYPE['GEARED']
+        self.turbine_class = 'I'
+        self.drivetrain    = 'GEARED'
 
         self.hubHt  = 119.0
         self.bladeLength = 0.5 * (198.0 - 4.6)
@@ -610,8 +610,8 @@ class TUM3_35MW(ReferenceBlade):
         self.rating = 3.35e6
         self.nBlades  = 3
         self.downwind = False
-        self.turbine_class = TURBINE_CLASS['III']
-        self.drivetrain    = DRIVETRAIN_TYPE['GEARED']
+        self.turbine_class = 'III'
+        self.drivetrain    = 'GEARED'
 
         self.hubHt  = 110.0
         self.bladeLength = 0.5 * (130.0 - 4.)
@@ -886,8 +886,8 @@ class BAR_00(ReferenceBlade):
         self.rating         = 5.0e6
         self.nBlades        = 3
         self.downwind       = False
-        self.turbine_class  = TURBINE_CLASS['III']
-        self.drivetrain     = DRIVETRAIN_TYPE['GEARED']
+        self.turbine_class  = 'III'
+        self.drivetrain     = 'GEARED'
 
         self.hubHt     = 140.0
         self.bladeLength    = 100.0
@@ -1097,7 +1097,7 @@ class Location(ExplicitComponent):
 class TurbineClass(ExplicitComponent):
     def setup(self):
         # parameters
-        self.add_discrete_input('turbine_class', val=TURBINE_CLASS['I'], desc='IEC turbine class')
+        self.add_discrete_input('turbine_class', val='I', desc='IEC turbine class')
 
         # outputs should be constant
         self.add_output('V_mean', shape=1, units='m/s', desc='IEC mean wind speed for Rayleigh distribution')
@@ -1109,16 +1109,18 @@ class TurbineClass(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        self.turbine_class = discrete_inputs['turbine_class']
+        turbine_class = discrete_inputs['turbine_class'].upper()
 
-        if self.turbine_class == TURBINE_CLASS['I']:
+        if turbine_class == 'I':
             Vref = 50.0
-        elif self.turbine_class == TURBINE_CLASS['II']:
+        elif turbine_class == 'II':
             Vref = 42.5
-        elif self.turbine_class == TURBINE_CLASS['III']:
+        elif turbine_class == 'III':
             Vref = 37.5
-        elif self.turbine_class == TURBINE_CLASS['IV']:
+        elif turbine_class == 'IV':
             Vref = 30.0
+        else:
+            raise ValueError('turbine_class input must be I/II/III/IV')
 
         outputs['V_mean'] = 0.2*Vref
         outputs['V_extreme1'] = 0.8*Vref
@@ -1155,7 +1157,7 @@ class RotorGeometry(Group):
             geomIndeps.add_output('yaw', 0.0, units='deg')
             geomIndeps.add_discrete_output('nBlades', 3)
             geomIndeps.add_discrete_output('downwind', False)
-            geomIndeps.add_discrete_output('turbine_class', val=TURBINE_CLASS['I'], desc='IEC turbine class')
+            geomIndeps.add_discrete_output('turbine_class', val='I', desc='IEC turbine class')
             geomIndeps.add_output('sparT_in', val=np.zeros(NINPUT), units='m', desc='spar cap thickness parameters')
             geomIndeps.add_output('teT_in', val=np.zeros(NINPUT), units='m', desc='trailing-edge thickness parameters')
             self.add_subsystem('geomIndeps', geomIndeps, promotes=['*'])

@@ -19,9 +19,9 @@ These objects are defined in drivese_components.py (which contains NO OpenMDAO c
 import numpy as np
 import sys
 
-from wisdem.drivese.drivese_components import LowSpeedShaft4pt, LowSpeedShaft3pt, Gearbox, MainBearing, Bedplate, YawSystem, \
+from wisdem.drivetrainse.drivese_components import LowSpeedShaft4pt, LowSpeedShaft3pt, Gearbox, MainBearing, Bedplate, YawSystem, \
     Transformer, HighSpeedSide, Generator, NacelleSystemAdder, AboveYawMassAdder, RNASystemAdder
-from wisdem.drivese.hubse_omdao import HubSE, HubSE, Hub_CM_Adder_OM
+from wisdem.drivetrainse.hubse_omdao import HubSE, HubSE, Hub_CM_Adder_OM
 from openmdao.api import Group, ExplicitComponent, IndepVarComp, Problem, view_connections
 
 #-------------------------------------------------------------------------

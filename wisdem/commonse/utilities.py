@@ -177,7 +177,7 @@ def cubic_with_deriv(x, xp, yp):
     # l[-1] = 0.0
 
     # solve for second derivatives
-    fpp = solve_banded((1, 1), np.matrix([u, d, l]), b)
+    fpp = solve_banded((1, 1), np.array([u, d, l]), b)
     fpp = np.concatenate([[0.0], fpp, [0.0]])  # natural spline
 
     # find location in vector
@@ -387,26 +387,26 @@ class CubicSplineSegment(object):
 
         x1 = self.x1
         x2 = self.x2
-        dA_dx1 = np.matrix([[3*x1**2, 2*x1, 1.0, 0.0],
+        dA_dx1 = np.array([[3*x1**2, 2*x1, 1.0, 0.0],
                   [0.0, 0.0, 0.0, 0.0],
                   [6*x1, 2.0, 0.0, 0.0],
                   [0.0, 0.0, 0.0, 0.0]])
-        dA_dx2 = np.matrix([[0.0, 0.0, 0.0, 0.0],
+        dA_dx2 = np.array([[0.0, 0.0, 0.0, 0.0],
                   [3*x2**2, 2*x2, 1.0, 0.0],
                   [0.0, 0.0, 0.0, 0.0],
                   [6*x2, 2.0, 0.0, 0.0]])
         df = np.array([df1, df2, dg1, dg2])
-        c = np.matrix(self.coeff).T
+        c = np.array(self.coeff).T
 
         n = len(xvec)
         dF = np.zeros(n)
         for i in range(n):
             x = np.array([xvec[i]**3, xvec[i]**2, xvec[i], 1.0])
             d = np.linalg.solve(self.A.T, x)
-            dF_dx1 = -d*dA_dx1*c
-            dF_dx2 = -d*dA_dx2*c
+            dF_dx1 = -d @ dA_dx1 @ c
+            dF_dx2 = -d @ dA_dx2 @ c
             dF_df = np.linalg.solve(self.A.T, x)
-            dF[i] = np.dot(dF_df, df) + dF_dx1[0]*dx1 + dF_dx2[0]*dx2
+            dF[i] = np.dot(dF_df, df) + dF_dx1*dx1 + dF_dx2*dx2
 
         return dF
 

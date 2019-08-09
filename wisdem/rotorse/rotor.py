@@ -11,10 +11,10 @@ Copyright (c)  NREL. All rights reserved.
 import numpy as np
 import os, time
 from openmdao.api import IndepVarComp, Group, Problem, ExecComp
-from rotor_aeropower import RotorAeroPower
-from rotor_structure import RotorStructure
-from rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
-from wisdem.rotorse import RPM2RS, RS2RPM, TURBULENCE_CLASS, DRIVETRAIN_TYPE
+from wisdem.rotorse.rotor_aeropower import RotorAeroPower
+from wisdem.rotorse.rotor_structure import RotorStructure
+from wisdem.rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
+from wisdem.rotorse import RPM2RS, RS2RPM
 
 try:
     from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
@@ -205,8 +205,8 @@ if __name__ == '__main__':
     rotor['shearExp'] = 0.25  # (Float): shear exponent
     rotor['hub_height'] = myref.hubHt #90.0  # (Float, m): hub height
     rotor['turbine_class'] = myref.turbine_class #TURBINE_CLASS['I']  # (Enum): IEC turbine class
-    rotor['turbulence_class'] = TURBULENCE_CLASS['B']  # (Enum): IEC turbulence class class
-    rotor['cdf_wind_speed_reference_height'] = myref.hubHt #90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
+    rotor['turbulence_class'] = 'B'  # (Enum): IEC turbulence class class
+    rotor['wind_reference_height'] = myref.hubHt #90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
     rotor['gust_stddev'] = 3
     # ----------------------
 

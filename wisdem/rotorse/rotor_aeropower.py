@@ -20,9 +20,8 @@ from wisdem.ccblade import CCAirfoil, CCBlade
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 from wisdem.commonse.utilities import vstack, trapz_deriv, linspace_with_deriv, smooth_min, smooth_abs
 from wisdem.commonse.environment import PowerWind
-#from precomp import Profile, Orthotropic2DMaterial, CompositeSection, _precomp
 from wisdem.commonse.akima import Akima
-from rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, DRIVETRAIN_TYPE
+from wisdem.rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW
 
 from wisdem.rotorse import RPM2RS, RS2RPM
 
@@ -71,7 +70,7 @@ import time
 #         self.add_input('control_maxTS',      val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
 #         self.add_input('control_tsr',        val=0.0,               desc='tip-speed ratio in Region 2 (should be optimized externally)')
 #         self.add_input('control_pitch',      val=0.0, units='deg',  desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
-#         self.add_discrete_input('drivetrainType',     val=DRIVETRAIN_TYPE['GEARED'])
+#         self.add_discrete_input('drivetrainType',     val='GEARED')
 #         self.add_input('drivetrainEff',     val=0.0,               desc='overwrite drivetrain model with a given efficiency, used for FAST analysis')
         
 #         self.add_input('r',         val=np.zeros(naero), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
@@ -286,7 +285,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_input('control_maxTS',      val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
         self.add_input('control_tsr',        val=0.0,               desc='tip-speed ratio in Region 2 (should be optimized externally)')
         self.add_input('control_pitch',      val=0.0, units='deg',  desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
-        self.add_discrete_input('drivetrainType',     val=DRIVETRAIN_TYPE['GEARED'])
+        self.add_discrete_input('drivetrainType',     val='GEARED')
         self.add_input('drivetrainEff',     val=0.0,               desc='overwrite drivetrain model with a given efficiency, used for FAST analysis')
         
         self.add_input('r',         val=np.zeros(naero), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
@@ -606,22 +605,23 @@ class AEP(ExplicitComponent):
 def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
 
     if drivetrainEff == 0.0:
-        if drivetrainType == DRIVETRAIN_TYPE['GEARED']:
+        drivetrainType = drivetrainType.upper()
+        if drivetrainType == 'GEARED':
             constant = 0.01289
             linear = 0.08510
             quadratic = 0.0
 
-        elif drivetrainType == DRIVETRAIN_TYPE['SINGLE_STAGE']:
+        elif drivetrainType == 'SINGLE_STAGE':
             constant = 0.01331
             linear = 0.03655
             quadratic = 0.06107
 
-        elif drivetrainType == DRIVETRAIN_TYPE['MULTI_DRIVE']:
+        elif drivetrainType == 'MULTI_DRIVE':
             constant = 0.01547
             linear = 0.04463
             quadratic = 0.05790
 
-        elif drivetrainType == DRIVETRAIN_TYPE['PM_DIRECT_DRIVE']:
+        elif drivetrainType == 'PM_DIRECT_DRIVE':
             constant = 0.01007
             linear = 0.02000
             quadratic = 0.06899
@@ -742,7 +742,7 @@ class RotorAeroPower(Group):
         topLevelFlag = self.options['topLevelFlag']
 
         aeroIndeps = IndepVarComp()
-        aeroIndeps.add_output('cdf_wind_speed_reference_height', val=0.0, units='m', desc='reference hub height for IEC wind speed (used in CDF calculation)')
+        aeroIndeps.add_output('wind_reference_height', val=0.0, units='m', desc='reference hub height for IEC wind speed (used in CDF calculation)')
         aeroIndeps.add_output('control_Vin', val=0.0, units='m/s', desc='cut-in wind speed')
         aeroIndeps.add_output('control_Vout', val=0.0, units='m/s', desc='cut-out wind speed')
         aeroIndeps.add_output('machine_rating', val=0.0,  units='W', desc='rated power')
@@ -751,7 +751,7 @@ class RotorAeroPower(Group):
         aeroIndeps.add_output('control_maxTS', val=0.0, units='m/s', desc='maximum allowed blade tip speed')
         aeroIndeps.add_output('control_tsr', val=0.0, desc='tip-speed ratio in Region 2 (should be optimized externally)')
         aeroIndeps.add_output('control_pitch', val=0.0, units='deg', desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
-        aeroIndeps.add_discrete_output('drivetrainType', val=DRIVETRAIN_TYPE['GEARED'])
+        aeroIndeps.add_discrete_output('drivetrainType', val='GEARED')
         aeroIndeps.add_output('AEP_loss_factor', val=1.0, desc='availability and other losses (soiling, array, etc.)')
         aeroIndeps.add_output('shape_parameter', val=0.0)
         aeroIndeps.add_output('drivetrainEff', val=0.0, desc='overwrite drivetrain model with a given efficiency, used for FAST analysis')
@@ -831,7 +831,7 @@ class RotorAeroPower(Group):
         # connections to wind
         # self.connect('cdf_reference_mean_wind_speed', 'wind.Uref')
         self.connect('turbineclass.V_mean', 'wind.Uref')
-        self.connect('cdf_wind_speed_reference_height', 'wind.zref')
+        self.connect('wind_reference_height', 'wind.zref')
         self.connect('wind_zvec', 'wind.z')
         #self.connect('shearExp', 'wind.shearExp')
 
@@ -907,7 +907,7 @@ if __name__ == '__main__':
     rotor['hubHt'] = myref.hubHt #90.0
     rotor['shearExp'] = 0.0  # (Float): shear exponent
     rotor['turbine_class'] = myref.turbine_class #TURBINE_CLASS['I']  # (Enum): IEC turbine class
-    rotor['cdf_wind_speed_reference_height'] = myref.hubHt #90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
+    rotor['wind_reference_height'] = myref.hubHt #90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
     # ----------------------
     
     # === control ===
@@ -924,7 +924,7 @@ if __name__ == '__main__':
     # === aero and structural analysis options ===
     rotor['nSector'] = 4  # (Int): number of sectors to divide rotor face into in computing thrust and power
     rotor['AEP_loss_factor'] = 1.0  # (Float): availability and other losses (soiling, array, etc.)
-    rotor['drivetrainType'] = myref.drivetrain #DRIVETRAIN_TYPE['GEARED']  # (Enum)
+    rotor['drivetrainType'] = myref.drivetrain #'GEARED'  # (Enum)
     # ----------------------
 
     # === run and outputs ===

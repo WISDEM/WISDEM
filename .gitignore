@@ -7,14 +7,12 @@ openmdao_log.txt
 _build
 generated
 
-# Install
-#plugins
-
 # XCode
 *.xcodeproj
 
 # C extensions
 *.so
+*.dSYM
 
 # Packages
 *.egg

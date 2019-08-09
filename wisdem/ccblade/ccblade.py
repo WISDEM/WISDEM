@@ -28,7 +28,7 @@ from scipy.interpolate import RectBivariateSpline, bisplev
 import warnings
 
 from wisdem.airfoilprep import Airfoil
-import _bem
+import wisdem.ccblade._bem as _bem
 
 
 

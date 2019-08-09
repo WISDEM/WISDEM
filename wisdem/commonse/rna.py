@@ -147,13 +147,13 @@ class RotorLoads(ExplicitComponent):
     def setup(self):
 
         # variables
-        self.add_input('F', np.array([0.0, 0.0, 0.0]), desc='forces in hub-aligned coordinate system')
-        self.add_input('M', np.array([0.0, 0.0, 0.0]), desc='moments in hub-aligned coordinate system')
-        self.add_input('r_hub', np.zeros(3), desc='position of rotor hub relative to tower top in yaw-aligned c.s.')
+        self.add_input('F', np.zeros(3), units='N', desc='forces in hub-aligned coordinate system')
+        self.add_input('M', np.zeros(3), units='N*m', desc='moments in hub-aligned coordinate system')
+        self.add_input('hub_cm', np.zeros(3), units='m', desc='position of rotor hub relative to tower top in yaw-aligned c.s.')
         self.add_input('rna_mass', 0.0, units='kg', desc='mass of rotor nacelle assembly')
         self.add_input('rna_cm', np.zeros(3), units='m', desc='location of RNA center of mass relative to tower top in yaw-aligned c.s.')
 
-        self.add_discrete_input('rna_weightM', True, units=None, desc='Flag to indicate whether or not the RNA weight should be considered.\
+        self.add_discrete_input('rna_weightM', True, desc='Flag to indicate whether or not the RNA weight should be considered.\
                           An upwind overhang may lead to unconservative estimates due to the P-Delta effect(suggest not using). For downwind turbines set to True. ')
 
         # # These are used for backwards compatibility - do not use
@@ -165,39 +165,40 @@ class RotorLoads(ExplicitComponent):
         self.add_input('tilt', 0.0, units='deg')
 
         # out
-        self.add_output('top_F', np.zeros(3))  # in yaw-aligned
-        self.add_output('top_M', np.zeros(3))
+        self.add_output('top_F', np.zeros(3), units='N')  # in yaw-aligned
+        self.add_output('top_M', np.zeros(3), units='N*m')
 
-        self.declare_partials('topF', ['F','M','r_hub','rna_mass','rna_cm'])
-        self.declare_partials('topM', ['F','M','r_hub','rna_mass','rna_cm'])
+        self.declare_partials('top_F', ['F','M','hub_cm','rna_mass','rna_cm'])
+        self.declare_partials('top_M', ['F','M','hub_cm','rna_mass','rna_cm'])
 
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         F = inputs['F']
         M = inputs['M']
-
-        F = DirectionVector.fromArray(F).hubToYaw(inputs['tilt'])
-        M = DirectionVector.fromArray(M).hubToYaw(inputs['tilt'])
+        tilt = float(inputs['tilt'])
+        
+        F = DirectionVector.fromArray(F).hubToYaw(tilt)
+        M = DirectionVector.fromArray(M).hubToYaw(tilt)
 
         # change x-direction if downwind
-        r_hub = np.copy(inputs['r_hub'])
+        hub_cm = np.copy(inputs['hub_cm'])
         rna_cm = np.copy(inputs['rna_cm'])
         if discrete_inputs['downwind']:
-            r_hub[0] *= -1
+            hub_cm[0] *= -1
             rna_cm[0] *= -1
-        r_hub = DirectionVector.fromArray(r_hub)
+        hub_cm = DirectionVector.fromArray(hub_cm)
         rna_cm = DirectionVector.fromArray(rna_cm)
-        self.save_rhub = r_hub
+        self.save_rhub = hub_cm
         self.save_rcm = rna_cm
 
         # aerodynamic moments
-        M = M + r_hub.cross(F)
+        M = M + hub_cm.cross(F)
         self.saveF = F
 
 
         # add weight loads
-        F_w = DirectionVector(0.0, 0.0, -inputs['rna_mass']*gravity)
+        F_w = DirectionVector(0.0, 0.0, -float(inputs['rna_mass'])*gravity)
         M_w = rna_cm.cross(F_w)
         self.saveF_w = F_w
 
@@ -263,13 +264,13 @@ class RotorLoads(ExplicitComponent):
         
         J['top_F', 'F'] = dtopF_dF
         J['top_F', 'M'] = np.zeros((3, 3))
-        J['top_F', 'r_hub'] = np.zeros((3, 3))
+        J['top_F', 'hub_cm'] = np.zeros((3, 3))
         J['top_F', 'rna_mass'] = dtopF_w_dm
         J['top_F', 'rna_cm'] = np.zeros((3, 3))
 
         J['top_M', 'F'] = dtopM_dF
         J['top_M', 'M'] = dtopM_dM
-        J['top_M', 'r_hub'] = dtopM_dr
+        J['top_M', 'hub_cm'] = dtopM_dr
         J['top_M', 'rna_mass'] = dtopM_dm
         J['top_M', 'rna_cm'] = dtopM_drnacm
 
@@ -286,7 +287,6 @@ class RNA(Group):
         self.add_subsystem('mass', RNAMass(), promotes=['*'])
         for k in range(nLC):
             lc = '' if nLC==1 else str(k+1)
-            self.add_subsystem('loads'+lc, RotorLoads(), promotes=['rna_mass','rna_cm','r_hub','rna_weightM','downwind','tilt'])
+            self.add_subsystem('loads'+lc, RotorLoads(), promotes=['rna_mass','rna_cm','hub_cm','rna_weightM','downwind','tilt'])
 
-        self.connect('hub_cm', 'r_hub')
         

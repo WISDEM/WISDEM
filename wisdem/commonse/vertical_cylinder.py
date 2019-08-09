@@ -8,7 +8,7 @@ import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
 from wisdem.commonse.utilities import assembleI, unassembleI, sectionalInterp, nodal2sectional
-import pyframe3dd.frame3dd as frame3dd
+import wisdem.pyframe3dd.frame3dd as frame3dd
 
 
 # -----------------
@@ -45,19 +45,19 @@ class CylinderDiscretization(ExplicitComponent):
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
-        nRefine = np.round( self.options['nRefine'] )
-
-        outputs['z_param'] = inputs['foundation_height'] + np.r_[0.0, np.cumsum(inputs['section_height'])]
+        nRefine = int(np.round( self.options['nRefine'] ))
+        z_param = float(inputs['foundation_height']) + np.r_[0.0, np.cumsum(inputs['section_height'].flatten())]
         # Have to regine each element one at a time so that we preserve input nodes
         z_full = np.array([])
-        for k in range(outputs['z_param'].size-1):
-            zref = np.linspace(outputs['z_param'][k], outputs['z_param'][k+1], nRefine+1)
+        for k in range(z_param.size-1):
+            zref = np.linspace(z_param[k], z_param[k+1], nRefine+1)
             z_full = np.append(z_full, zref)
         z_full = np.unique(z_full)
         outputs['z_full']  = z_full
         outputs['d_full']  = np.interp(z_full, outputs['z_param'], inputs['diameter'])
         z_section = 0.5*(z_full[:-1] + z_full[1:])
         outputs['t_full']  = sectionalInterp(z_section, outputs['z_param'], inputs['wall_thickness'])
+        outputs['z_param'] = z_param
 
 class CylinderMass(ExplicitComponent):
 
