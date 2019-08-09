@@ -89,3 +89,7 @@ Thumbs.db
 # Jupyter notebooks #
 #####################
 .ipynb_checkpoints
+
+# VSCode #
+##########
+.vscode/
