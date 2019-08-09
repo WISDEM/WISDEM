@@ -683,10 +683,9 @@ class Orthotropic2DMaterial:
                       float(array[4]), float(array[5]), array[6])
 
             materials.append(mat)
+        f.close()
 
         return materials
-
-        f.close()
 
 
 
