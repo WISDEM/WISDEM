@@ -1231,7 +1231,7 @@ if __name__ == '__main__':
     
     nacelle_example_5MW_baseline_3pt(debug=debug)
 
-    nacelle_example_5MW_baseline_4pt(debug=debug)
+    #nacelle_example_5MW_baseline_4pt(debug=debug)
     
     '''
     nacelle_example_1p5MW_3pt()
