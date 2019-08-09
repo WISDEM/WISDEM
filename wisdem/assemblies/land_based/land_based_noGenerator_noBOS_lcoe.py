@@ -119,7 +119,7 @@ class OnshoreTurbinePlant(Group):
         self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity = False, topLevelFlag=False), promotes=['*'])
 
         # LCOE Calculation
-        self.add_subsystem('plantfinancese', PlantFinance(verbosity = False), promotes=['machine_rating'])
+        self.add_subsystem('plantfinancese', PlantFinance(verbosity=True), promotes=['machine_rating'])
         
     
         # Set up connections
@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
     # Environmental parameters
     #prob['water_depth']                    = 0.0
-    prob['rho']                            = 1.198
+    prob['rho']                            = 1.225
     prob['mu']                             = 1.81e-5
     prob['water_density']                  = 1025.0
     prob['water_viscosity']                = 8.9e-4
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     prob['significant_wave_period']        = 0.0
     prob['wind_reference_speed']           = 11.0
     prob['wind_reference_height']          = 90.0
-    prob['shearExp']                       = 0.2
+    prob['shearExp']                       = 0.25
     prob['morison_mass_coefficient']       = 2.0
     prob['wind_bottom_height']             = 0.0
     prob['yaw']                            = 0.0
@@ -283,7 +283,7 @@ if __name__ == "__main__":
     prob['gamma_b'] = 1.1
     
     # Tower
-    prob['hub_height']                     = 90.0 #RefBlade.hub_height
+    prob['hub_height']                     = RefBlade.hubHt
     prob['foundation_height']              = 0.0 #-prob['water_depth']
     prob['tower_outer_diameter']           = np.linspace(10.0, 3.87, nsection+1)
     prob['tower_section_height']           = (prob['hub_height'] - prob['foundation_height']) / nsection * np.ones(nsection)
@@ -302,13 +302,12 @@ if __name__ == "__main__":
     prob['shift'] = 0.0
     
     # Plant size
-    prob['project_lifetime']               = 20.0
+    prob['project_lifetime'] = prob['lifetime'] = 20.0    
     prob['number_of_turbines']             = 20
     prob['annual_opex']                    = 50.0 # $/kW/yr
     prob['bos_costs']                      = 400.0 # $/kW
     prob['fixed_charge_rate']              = 0.12
 
-    
     # For RotorSE
     prob['hubFraction']                        = RefBlade.hubFraction
     prob['bladeLength']                        = RefBlade.bladeLength
@@ -316,12 +315,12 @@ if __name__ == "__main__":
     prob['tilt']                               = RefBlade.tilt
     prob['yaw']                                = 0.0 
     prob['nBlades']                            = RefBlade.nBlades
-    prob['r_max_chord']                        =  RefBlade.r_max_chord 
+    prob['r_max_chord']                        = RefBlade.r_max_chord 
     prob['chord_in']                           = RefBlade.chord
     prob['theta_in']                           = RefBlade.theta
+    prob['precurveTip']                        = RefBlade.precurveT
     prob['precurve_in']                        = RefBlade.precurve
     prob['presweep_in']                        = RefBlade.presweep
-   
     prob['sparT_in']                           = RefBlade.spar_thickness
     prob['teT_in']                             = RefBlade.te_thickness
     prob['turbine_class']                      = RefBlade.turbine_class
@@ -348,7 +347,6 @@ if __name__ == "__main__":
     prob['wakerotation']                       = True 
     prob['usecd']                              = True
     prob['AEP_loss_factor']                    = 1.0
-    #prob['dynamic_amplication_tip_deflection'] = 1.35
     prob['shape_parameter']                    = 0.0
     prob['rstar_damage'] = np.linspace(0,1,39)
     prob['Mxb_damage'] = 1e-10*np.ones(39)
@@ -380,5 +378,5 @@ if __name__ == "__main__":
     prob['drive.hss_input_length'] = 1.5
       
     prob.run_driver()
-    prob.model.list_inputs(units=True)#values = False, hierarchical=False)
-    prob.model.list_outputs(units=True)#values = False, hierarchical=False)    
+    #prob.model.list_inputs(units=True)#values = False, hierarchical=False)
+    #prob.model.list_outputs(units=True)#values = False, hierarchical=False)    
