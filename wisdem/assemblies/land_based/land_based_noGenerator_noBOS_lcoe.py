@@ -125,7 +125,7 @@ class OnshoreTurbinePlant(Group):
         # Set up connections
 
         # Connections to DriveSE
-        self.connect('diameter',        'drive.rotor_diameter')        
+        self.connect('diameter',        'drive.rotor_diameter')     
         self.connect('rated_Q',         'drive.rotor_torque')
         self.connect('rated_Omega',     'drive.rotor_rpm')
         self.connect('Mxyz_total',      'drive.rotor_bending_moment_x', src_indices=[0])
@@ -136,7 +136,9 @@ class OnshoreTurbinePlant(Group):
         self.connect('Fxyz_total',      'drive.rotor_force_z', src_indices=[2])
         self.connect('mass_one_blade',  'drive.blade_mass')
         self.connect('chord',           'drive.blade_root_diameter', src_indices=[0])
+        self.connect('Rtip',            'drive.blade_length', src_indices=[0])
         self.connect('drivetrainEff',   'drive.drivetrain_efficiency', src_indices=[0])
+        self.connect('tower_outer_diameter', 'drive.tower_top_diameter', src_indices=[-1])
         
         # Connections to RNA (CommonSE)
         self.connect('mass_all_blades',     'rna.blades_mass')
@@ -307,6 +309,7 @@ if __name__ == "__main__":
     prob['annual_opex']                    = 50.0 # $/kW/yr
     prob['bos_costs']                      = 400.0 # $/kW
     prob['fixed_charge_rate']              = 0.12
+    prob['wake_loss_factor']               = 0.15
 
     # For RotorSE
     prob['hubFraction']                        = RefBlade.hubFraction
@@ -376,7 +379,9 @@ if __name__ == "__main__":
     prob['drive.distance_hub2mb']=1.912  # length from hub center to main bearing, leave zero if unknown
     prob['drive.gearbox_input_xcm'] = 0.1
     prob['drive.hss_input_length'] = 1.5
-      
+    prob['drive.yaw_motors_number'] = 1
+
+    
     prob.run_driver()
     #prob.model.list_inputs(units=True)#values = False, hierarchical=False)
     #prob.model.list_outputs(units=True)#values = False, hierarchical=False)    

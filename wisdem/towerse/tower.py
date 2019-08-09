@@ -127,7 +127,7 @@ class TurbineMass(ExplicitComponent):
 
     def setup(self):
         
-        self.add_input('hubH', val=0.0, units='m', desc='Hub-height')
+        self.add_input('hub_height', val=0.0, units='m', desc='Hub-height')
         self.add_input('rna_mass', val=0.0, units='kg', desc='Total tower mass')
         self.add_input('rna_I', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of rna about tower top [xx yy zz xy xz yz]')
         self.add_input('rna_cg', np.zeros((3,)), units='m', desc='xyz-location of rna cg relative to tower top')
@@ -142,14 +142,11 @@ class TurbineMass(ExplicitComponent):
        
         # Derivatives
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
         outputs['turbine_mass'] = inputs['rna_mass'] + inputs['tower_mass']
         
-        cg_rna   = inputs['rna_cg'] + np.array([0.0, 0.0, inputs['hubH']])
+        cg_rna   = inputs['rna_cg'] + np.array([0.0, 0.0, inputs['hub_height']])
         cg_tower = np.array([0.0, 0.0, inputs['tower_center_of_mass']])
         outputs['turbine_center_of_mass'] = (inputs['rna_mass']*cg_rna + inputs['tower_mass']*cg_tower) / outputs['turbine_mass']
 
@@ -424,7 +421,7 @@ class TowerLeanSE(Group):
                                                       'material_cost_rate','labor_cost_rate','painting_cost_rate'])
         self.add_subsystem('tm', TowerMass(nPoints=nFull), promotes=['tower_mass','tower_center_of_mass','tower_I_base','tower_raw_cost'])
         self.add_subsystem('gc', Util.GeometricConstraints(nPoints=nPoints), promotes=['min_d_to_t','max_taper','manufacturability','weldability'])
-        self.add_subsystem('turb', TurbineMass(), promotes=['turbine_mass','rna_mass', 'rna_cg', 'rna_I'])
+        self.add_subsystem('turb', TurbineMass(), promotes=['turbine_mass','rna_mass', 'rna_cg', 'rna_I','hub_height'])
         
         # Connections for geometry and mass
         self.connect('tower_section_height', 'section_height')
@@ -432,8 +429,6 @@ class TowerLeanSE(Group):
         self.connect('tower_wall_thickness', ['wall_thickness', 'gc.t'])
         self.connect('tower_outfitting_factor', 'cm.outfitting_factor')
         self.connect('z_param', 'tgeometry.z_end', src_indices=[nPoints-1])
-        if topLevelFlag:
-            self.connect('hub_height', 'turb.hubH')
 
         self.connect('cm.mass', 'tm.cylinder_mass')
         self.connect('cm.cost', 'tm.cylinder_cost')
