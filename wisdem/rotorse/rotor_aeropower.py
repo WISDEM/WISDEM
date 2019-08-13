@@ -107,11 +107,11 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
                 
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], inputs['nSector'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], discrete_inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'])
         
-        Uhub    = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.options['n_pc'])
+        Uhub    = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.options['n_pc']).flatten()
         
         P_aero   = np.zeros_like(Uhub)
         Cp_aero  = np.zeros_like(Uhub)
@@ -130,7 +130,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
             Omega[i] = Uhub[i] * inputs['control_tsr'] / inputs['Rtip']
         
         P_aero, T, Q, M, Cp_aero, _, _, _ = self.ccblade.evaluate(Uhub, Omega * 30. / np.pi, pitch, coefficients=True)
-        P, eff  = CSMDrivetrain(P_aero, inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+        P, eff  = CSMDrivetrain(P_aero, inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
         Cp      = Cp_aero*eff
         
         
@@ -141,7 +141,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 Omega[i]        = Omega_max
                 Uhub[i]         = Omega[i] * inputs['Rtip'] / inputs['control_tsr']
                 P_aero[i], T[i], Q[i], M[i], Cp_aero[i], _, _, _ = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch[i]], coefficients=True)
-                P[i], eff       = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+                P[i], eff       = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
                 Cp[i]           = Cp_aero[i]*eff
                 regionIIhalf    = True
                 i_IIhalf_start  = i
@@ -179,7 +179,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 
                 P_aero[i], T[i], Q[i], M[i], Cp_aero[i], _, _, _ = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch[i]], coefficients=True)
                 
-                P[i], eff  = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+                P[i], eff  = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
                 Cp[i]      = Cp_aero[i]*eff
 
                 if P[i] > inputs['control_ratedPower']:    
@@ -192,7 +192,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
             Omega_i = Omega
             pitch   = pitch           
             P_aero, _, _, _ = self.ccblade.evaluate([Uhub_i], [Omega_i * 30. / np.pi], [pitch], coefficients=False)
-            P, eff          = CSMDrivetrain(P_aero, inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+            P, eff          = CSMDrivetrain(P_aero, inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
             return abs(P - inputs['control_ratedPower'])
             
 
@@ -209,7 +209,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 Omega_i = Omega_max
                 pitch   = min_inputs[0]           
                 P_aero_i, _, _, _ = self.ccblade.evaluate([Uhub_i], [Omega_i * 30. / np.pi], [pitch], coefficients=False)
-                P_i,eff          = CSMDrivetrain(P_aero_i, inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+                P_i,eff          = CSMDrivetrain(P_aero_i.flatten(), inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
                 return abs(P_i - inputs['control_ratedPower'])
 
             x0              = [pitch[i] + 2. , Uhub[i]]
@@ -229,7 +229,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
             
             Omega[i]        = Omega_max
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], _, _, _ = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch0], coefficients=True)
-            P_i, eff        = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+            P_i, eff        = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
             Cp[i]           = Cp_aero[i]*eff
             P[i]            = inputs['control_ratedPower']
             
@@ -241,7 +241,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 Omega_i = min([Uhub_i * inputs['control_tsr'] / inputs['Rtip'], Omega_max])
                 pitch_i = pitch           
                 P_aero_i, _, _, _ = self.ccblade.evaluate([Uhub_i], [Omega_i * 30. / np.pi], [pitch_i], coefficients=False)
-                P_i, eff          = CSMDrivetrain(P_aero_i, inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+                P_i, eff          = CSMDrivetrain(P_aero_i, inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
                 return abs(P_i - inputs['control_ratedPower'])
             
             bnds     = [Uhub[i-1], Uhub[i+1]]
@@ -258,13 +258,13 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
             pitch0   = pitch[i]
             
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], _, _, _ = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch0], coefficients=True)
-            P[i], eff    = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+            P[i], eff    = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
             Cp[i]        = Cp_aero[i]*eff
         
         
         for j in range(i + 1,len(Uhub)):
             Omega[j] = Omega[i]
-            if self.regulation_reg_III == True:
+            if self.options['regulation_reg_III']:
                 
                 pitch0   = pitch[j-1]
                 bnds     = [pitch0, pitch0 + 15.]
@@ -272,7 +272,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 pitch[j]        = pitch_regionIII
                 
                 P_aero[j], T[j], Q[j], M[j], Cp_aero[j], _, _, _ = self.ccblade.evaluate([Uhub[j]], [Omega[j] * 30. / np.pi], [pitch[j]], coefficients=True)
-                P[j], eff       = CSMDrivetrain(P_aero[j], inputs['control_ratedPower'], inputs['drivetrainType'], inputs['drivetrainEff'])
+                P[j], eff       = CSMDrivetrain(P_aero[j], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
                 Cp[j]           = Cp_aero[j]*eff
 
 
@@ -319,13 +319,13 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         
         # outputs
         idx_rated = list(Uhub).index(U_rated)
-        outputs['rated_V']     = U_rated
+        outputs['rated_V']     = U_rated.flatten()
         outputs['rated_Omega'] = Omega[idx_rated] * 30. / np.pi
         outputs['rated_pitch'] = pitch[idx_rated]
         outputs['rated_T']     = T[idx_rated]
         outputs['rated_Q']     = Q[idx_rated]
-        outputs['V_spline']    = V_spline
-        outputs['P_spline']    = P_spline
+        outputs['V_spline']    = V_spline.flatten()
+        outputs['P_spline']    = P_spline.flatten()
         outputs['ax_induct_cutin']   = a_regII
         outputs['tang_induct_cutin'] = ap_regII
         outputs['aoa_cutin']         = alpha_regII
@@ -388,7 +388,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         n_tsr   = self.options['n_tsr']
         n_U     = self.options['n_U']
         
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], inputs['nSector'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], inputs['nSector'])
         
         if max(inputs['U_vector']) == 0.:
             inputs['U_vector']    = np.linspace(inputs['control_Vin'],inputs['control_Vout'], n_U)
@@ -444,7 +444,7 @@ class AEP(ExplicitComponent):
         dAEP_dP *= factor
         dAEP_dCDF *= factor
 
-        dAEP_dlossFactor = np.array([unknowns['AEP']/lossFactor])
+        dAEP_dlossFactor = np.array([outputs['AEP']/lossFactor])
         self.J = {}
         self.J['AEP', 'CDF_V'] = np.reshape(dAEP_dCDF, (1, len(dAEP_dCDF)))
         self.J['AEP', 'P'] = np.reshape(dAEP_dP, (1, len(dAEP_dP)))
@@ -557,7 +557,7 @@ class OutputsAero(ExplicitComponent):
         self.declare_partials('rated_pitch', 'rated_pitch_in')
         self.declare_partials('rated_T', 'rated_T_in')
         self.declare_partials('rated_Q', 'rated_Q_in')
-        self.declare_partials('diameter', 'diameter_in')
+        #self.declare_partials('diameter', 'diameter_in')
         self.declare_partials('V_extreme', 'V_extreme_in')
         self.declare_partials('T_extreme', 'T_extreme_in')
         self.declare_partials('Q_extreme', 'Q_extreme_in')
@@ -589,7 +589,7 @@ class OutputsAero(ExplicitComponent):
         J['rated_pitch', 'rated_pitch_in'] = 1
         J['rated_T', 'rated_T_in'] = 1
         J['rated_Q', 'rated_Q_in'] = 1
-        J['diameter', 'diameter_in'] = 1
+        #J['diameter', 'diameter_in'] = 1
         J['V_extreme', 'V_extreme_in'] = 1
         J['T_extreme', 'T_extreme_in'] = 1
         J['Q_extreme', 'Q_extreme_in'] = 1
@@ -718,7 +718,7 @@ class RotorAeroPower(Group):
         self.connect('AEP_loss_factor', 'aep.lossFactor')
 
         # connect to outputs
-        self.connect('geom.diameter', 'diameter_in')
+        #self.connect('geom.diameter', 'diameter_in')
         self.connect('turbineclass.V_extreme50', 'V_extreme_in')
         self.connect('powercurve.V', 'V_in')
         self.connect('powercurve.P', 'P_in')
@@ -764,7 +764,7 @@ def Init_RotorAeropower_wRefBlade(rotor, blade):
     # === control ===
     rotor['control_Vin']      = blade['config']['Vin'] #3.0  # (Float, m/s): cut-in wind speed
     rotor['control_Vout']     = blade['config']['Vout'] #25.0  # (Float, m/s): cut-out wind speed
-    rotor['control_ratedPower']   = blade['config']['rating'] #5e6  # (Float, W): rated power
+    rotor['machine_rating']   = blade['config']['rating'] #5e6  # (Float, W): rated power
     rotor['control_minOmega'] = blade['config']['minOmega'] #0.0  # (Float, rpm): minimum allowed rotor rotation speed
     rotor['control_maxOmega'] = blade['config']['maxOmega'] #12.0  # (Float, rpm): maximum allowed rotor rotation speed
     rotor['control_maxTS']    = blade['config']['maxTS']
@@ -775,7 +775,7 @@ def Init_RotorAeropower_wRefBlade(rotor, blade):
     # === aero and structural analysis options ===
     rotor['nSector'] = 4  # (Int): number of sectors to divide rotor face into in computing thrust and power
     rotor['AEP_loss_factor'] = 1.0  # (Float): availability and other losses (soiling, array, etc.)
-    rotor['drivetrainType']   = DRIVETRAIN_TYPE[blade['config']['drivetrain'].upper()] #DRIVETRAIN_TYPE['GEARED']  # (Enum)
+    rotor['drivetrainType']   = blade['config']['drivetrain'].upper() #DRIVETRAIN_TYPE['GEARED']  # (Enum)
     # ----------------------
     return rotor
 

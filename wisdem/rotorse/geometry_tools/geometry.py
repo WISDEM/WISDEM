@@ -4,9 +4,9 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.interpolate import pchip, Akima1DInterpolator, PchipInterpolator
 
-from rotorse.geometry_tools.geom_tools import calculate_length, curvature
-from rotorse.geometry_tools.cubicspline import NaturalCubicSpline
-from rotorse.geometry_tools.distfunc import distfunc
+from wisdem.rotorse.geometry_tools.geom_tools import calculate_length, curvature
+from wisdem.rotorse.geometry_tools.cubicspline import NaturalCubicSpline
+from wisdem.rotorse.geometry_tools.distfunc import distfunc
 
 
 class Curve(object):

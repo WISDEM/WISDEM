@@ -57,7 +57,7 @@ class BladeGeometry(ExplicitComponent):
         self.add_output('presweep', val=np.zeros(npts), units='m', desc='presweep at structural locations')
         # self.add_output('sparT', val=np.zeros(npts), units='m', desc='dimensional spar cap thickness distribution')
         # self.add_output('teT', val=np.zeros(npts), units='m', desc='dimensional trailing-edge panel thickness distribution')
-        self.add_output('rthick', val=np.zeros(npts), units='%', desc='relative thickness of airfoil distribution')
+        self.add_output('rthick', val=np.zeros(npts), desc='relative thickness of airfoil distribution')
 
         self.add_output('hub_diameter', val=0.0, units='m')
         self.add_output('diameter', val=0.0, units='m')
@@ -86,8 +86,8 @@ class BladeGeometry(ExplicitComponent):
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        if inputs['blade_in_overwrite'] != {}:
-            blade = copy.deepcopy(inputs['blade_in_overwrite'])
+        if discrete_inputs['blade_in_overwrite'] != {}:
+            blade = copy.deepcopy(discrete_inputs['blade_in_overwrite'])
         else:
             blade = copy.deepcopy(self.refBlade)
 
@@ -100,7 +100,9 @@ class BladeGeometry(ExplicitComponent):
         outputs['Rtip']     = Rtip
         # r_in                 = np.r_[0.0, blade['ctrl_pts']['r_cylinder'].tolist(), np.linspace(inputs['r_max_chord'], 1.0, NINPUT-2)]
         # outputs['r_in']     = Rhub + (Rtip-Rhub)*np.r_[0.0, blade['ctrl_pts']['r_cylinder'].tolist(), np.linspace(inputs['r_max_chord'], 1.0, NINPUT-2)]
-        r_in                 = np.concatenate([[0.], np.linspace(blade['ctrl_pts']['r_cylinder'], inputs['r_max_chord'], num=3)[:-1], np.linspace(inputs['r_max_chord'], 1., NINPUT-3)])
+        r_in                 = np.r_[0.,
+                                     np.linspace(blade['ctrl_pts']['r_cylinder'], inputs['r_max_chord'], num=3).flatten()[:-1],
+                                     np.linspace(inputs['r_max_chord'], 1., NINPUT-3).flatten()]
         outputs['r_in']     = Rhub + (Rtip-Rhub)*np.array(r_in)
 
         blade['ctrl_pts']['bladeLength']  = inputs['bladeLength']
@@ -182,7 +184,7 @@ class Location(ExplicitComponent):
         self.declare_partials('*', '*')
 
     def compute(self, inputs, outputs):
-        outputs['wind_zvec'] = np.array([ inputs['hub_height'] ])
+        outputs['wind_zvec'] = np.array([ np.float(inputs['hub_height']) ])
 
     def compute_partials(self, inputs, J):
         J['wind_zvec','hub_height'] = np.ones(1)
@@ -192,7 +194,7 @@ class Location(ExplicitComponent):
 class TurbineClass(ExplicitComponent):
     def setup(self):
         # parameters
-        self.add_discrete_input('turbine_class', val=TURBINE_CLASS['I'], desc='IEC turbine class')
+        self.add_discrete_input('turbine_class', val='I', desc='IEC turbine class')
         self.add_input('V_mean_overwrite', val=0., desc='overwrite value for mean velocity for using user defined CDFs')
 
         # outputs should be constant
@@ -203,7 +205,7 @@ class TurbineClass(ExplicitComponent):
         
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         turbine_class = discrete_inputs['turbine_class'].upper()
 
