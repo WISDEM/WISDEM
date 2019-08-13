@@ -258,7 +258,7 @@ class NREL5MW(ReferenceBlade):
         self.turbine_class = 'I'
         self.drivetrain    = 'GEARED'
 
-        self.hubHt  = 90.0
+        self.hub_height  = 90.0
         self.hubFraction = 1.5/61.5
         self.bladeLength = 61.5
         self.precone     = 2.5
@@ -389,7 +389,7 @@ class DTU10MW(ReferenceBlade):
         self.turbine_class = 'I'
         self.drivetrain    = 'GEARED'
 
-        self.hubHt  = 119.0
+        self.hub_height  = 119.0
         self.bladeLength = 0.5 * (198.0 - 4.6)
         self.hubFraction = 0.5*4.6 / self.bladeLength
         self.precone     = 4.0
@@ -613,7 +613,7 @@ class TUM3_35MW(ReferenceBlade):
         self.turbine_class = 'III'
         self.drivetrain    = 'GEARED'
 
-        self.hubHt  = 110.0
+        self.hub_height  = 110.0
         self.bladeLength = 0.5 * (130.0 - 4.)
         self.hubFraction = 2. / self.bladeLength
         self.precone     = 3.0
@@ -889,7 +889,7 @@ class BAR_00(ReferenceBlade):
         self.turbine_class  = 'III'
         self.drivetrain     = 'GEARED'
 
-        self.hubHt     = 140.0
+        self.hub_height     = 140.0
         self.bladeLength    = 100.0
         self.hubFraction    = 3. / self.bladeLength
         self.precone        = 2.5
@@ -1082,16 +1082,16 @@ class BladeGeometry(ExplicitComponent):
         
 class Location(ExplicitComponent):
     def setup(self):
-        self.add_input('hubHt', val=0.0, units='m', desc='Tower top hub height')
+        self.add_input('hub_height', val=0.0, units='m', desc='Tower top hub height')
         self.add_output('wind_zvec', val=np.zeros(1), units='m', desc='Tower top hub height as vector')
 
         self.declare_partials('*', '*')
 
     def compute(self, inputs, outputs):
-        outputs['wind_zvec'] = np.array([ np.float(inputs['hubHt']) ])
+        outputs['wind_zvec'] = np.array([ np.float(inputs['hub_height']) ])
 
     def compute_partials(self, inputs, J):
-        J['wind_zvec','hubHt'] = np.ones(1)
+        J['wind_zvec','hub_height'] = np.ones(1)
 
         
 class TurbineClass(ExplicitComponent):

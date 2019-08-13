@@ -87,7 +87,7 @@ class RotorSE(Group):
                                      'bladeLength','hubFraction','r_max_chord','chord_in','theta_in',
                                      'precurve_in','presweep_in','precurveTip','presweepTip','precone',
                                      'tilt','yaw','nBlades','downwind','sparT_in','teT_in','turbine_class',
-                                     'control_tsr','control_pitch','lifetime','hubHt',
+                                     'control_tsr','control_pitch','lifetime','hub_height',
                                      'mass_one_blade','mass_all_blades','I_all_blades',
                                      'freq','freq_curvefem','modes_coef_curvefem','tip_deflection', 
                                      'tip_position','ground_clearance','strainU_spar','strainL_spar',
@@ -102,7 +102,6 @@ class RotorSE(Group):
                                                AEP={'units':'kW*h','value':1000000.0},
                                                obj={'units':'kW*h'}), promotes=['*'])
 
-        self.connect('hub_height','hubHt')
         # Connections between rotor_aero and rotor_structure
         self.connect('powercurve.rated_V', ['rs.gust.V_hub', 'rs.setuppc.Vrated'])
         self.connect('powercurve.rated_Omega', ['rs.Omega', 'rs.aero_rated.Omega_load',
@@ -203,10 +202,10 @@ if __name__ == '__main__':
     rotor['rho'] = 1.225  # (Float, kg/m**3): density of air
     rotor['mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
     rotor['shearExp'] = 0.25  # (Float): shear exponent
-    rotor['hub_height'] = myref.hubHt #90.0  # (Float, m): hub height
+    rotor['hub_height'] = myref.hub_height #90.0  # (Float, m): hub height
     rotor['turbine_class'] = myref.turbine_class #TURBINE_CLASS['I']  # (Enum): IEC turbine class
     rotor['turbulence_class'] = 'B'  # (Enum): IEC turbulence class class
-    rotor['wind_reference_height'] = myref.hubHt #90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
+    rotor['wind_reference_height'] = myref.hub_height #90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
     rotor['gust_stddev'] = 3
     # ----------------------
 

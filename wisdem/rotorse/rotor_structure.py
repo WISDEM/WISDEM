@@ -1007,6 +1007,8 @@ class TotalLoads(ExplicitComponent):
         self.add_input('z_az', val=np.zeros(NPTS), units='m', desc='location of blade in azimuth z-coordinate system')
         self.add_input('rhoA', val=np.zeros(NPTS), units='kg/m', desc='mass per unit length')
 
+        self.add_input('dynamicFactor', val=1.0, desc='a dynamic amplification factor to adjust the static deflection calculation') #)
+
         # outputs
         self.add_output('Px_af', val=np.zeros(NPTS), desc='total distributed loads in airfoil x-direction')
         self.add_output('Py_af', val=np.zeros(NPTS), desc='total distributed loads in airfoil y-direction')
@@ -1019,6 +1021,7 @@ class TotalLoads(ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
+        dynamicFactor = inputs['dynamicFactor']
         r = inputs['r']
         theta = inputs['theta']
         tilt = inputs['tilt']
@@ -1076,9 +1079,9 @@ class TotalLoads(ExplicitComponent):
         theta = np.array(theta) + inputs['aeroloads_pitch']
         P = P.bladeToAirfoil(theta)
 
-        Px_af = P.x
-        Py_af = P.y
-        Pz_af = P.z
+        Px_af = dynamicFactor * P.x
+        Py_af = dynamicFactor * P.y
+        Pz_af = dynamicFactor * P.z
 
         outputs['Px_af'] = Px_af
         outputs['Py_af'] = Py_af
@@ -1165,47 +1168,47 @@ class TotalLoads(ExplicitComponent):
         dPzaf_dzaz = dPz['dx']*dPx_dzaz + dPz['dy']*dPy_dzaz + dPz['dz']*dPz_dzaz
 
         J = {}
-        J['Px_af', 'aeroloads_r'] = dPxaf_daeror
-        J['Px_af', 'aeroloads_Px'] = dPxaf_dPxaero
-        J['Px_af', 'aeroloads_Py'] = dPxaf_dPyaero
-        J['Px_af', 'aeroloads_Pz'] = dPxaf_dPzaero
-        J['Px_af', 'aeroloads_Omega'] = dPxaf_dOmega
-        J['Px_af', 'aeroloads_pitch'] = dPxaf_dpitch
-        J['Px_af', 'aeroloads_azimuth'] = dPxaf_dazimuth
-        J['Px_af', 'r'] = dPxaf_dr
-        J['Px_af', 'theta'] = dPxaf_dtheta
-        J['Px_af', 'tilt'] = dPxaf_dtilt
-        J['Px_af', 'totalCone'] = dPxaf_dprecone
-        J['Px_af', 'rhoA'] = dPxaf_drhoA
-        J['Px_af', 'z_az'] = dPxaf_dzaz
+        J['Px_af', 'aeroloads_r'] = dynamicFactor * dPxaf_daeror
+        J['Px_af', 'aeroloads_Px'] = dynamicFactor * dPxaf_dPxaero
+        J['Px_af', 'aeroloads_Py'] = dynamicFactor * dPxaf_dPyaero
+        J['Px_af', 'aeroloads_Pz'] = dynamicFactor * dPxaf_dPzaero
+        J['Px_af', 'aeroloads_Omega'] = dynamicFactor * dPxaf_dOmega
+        J['Px_af', 'aeroloads_pitch'] = dynamicFactor * dPxaf_dpitch
+        J['Px_af', 'aeroloads_azimuth'] = dynamicFactor * dPxaf_dazimuth
+        J['Px_af', 'r'] = dynamicFactor * dPxaf_dr
+        J['Px_af', 'theta'] = dynamicFactor * dPxaf_dtheta
+        J['Px_af', 'tilt'] = dynamicFactor * dPxaf_dtilt
+        J['Px_af', 'totalCone'] = dynamicFactor * dPxaf_dprecone
+        J['Px_af', 'rhoA'] = dynamicFactor * dPxaf_drhoA
+        J['Px_af', 'z_az'] = dynamicFactor * dPxaf_dzaz
 
-        J['Py_af', 'aeroloads_r'] = dPyaf_daeror
-        J['Py_af', 'aeroloads_Px'] = dPyaf_dPxaero
-        J['Py_af', 'aeroloads_Py'] = dPyaf_dPyaero
-        J['Py_af', 'aeroloads_Pz'] = dPyaf_dPzaero
-        J['Py_af', 'aeroloads_Omega'] = dPyaf_dOmega
-        J['Py_af', 'aeroloads_pitch'] = dPyaf_dpitch
-        J['Py_af', 'aeroloads_azimuth'] = dPyaf_dazimuth
-        J['Py_af', 'r'] = dPyaf_dr
-        J['Py_af', 'theta'] = dPyaf_dtheta
-        J['Py_af', 'tilt'] = dPyaf_dtilt
-        J['Py_af', 'totalCone'] = dPyaf_dprecone
-        J['Py_af', 'rhoA'] = dPyaf_drhoA
-        J['Py_af', 'z_az'] = dPyaf_dzaz
+        J['Py_af', 'aeroloads_r'] = dynamicFactor * dPyaf_daeror
+        J['Py_af', 'aeroloads_Px'] = dynamicFactor * dPyaf_dPxaero
+        J['Py_af', 'aeroloads_Py'] = dynamicFactor * dPyaf_dPyaero
+        J['Py_af', 'aeroloads_Pz'] = dynamicFactor * dPyaf_dPzaero
+        J['Py_af', 'aeroloads_Omega'] = dynamicFactor * dPyaf_dOmega
+        J['Py_af', 'aeroloads_pitch'] = dynamicFactor * dPyaf_dpitch
+        J['Py_af', 'aeroloads_azimuth'] = dynamicFactor * dPyaf_dazimuth
+        J['Py_af', 'r'] = dynamicFactor * dPyaf_dr
+        J['Py_af', 'theta'] = dynamicFactor * dPyaf_dtheta
+        J['Py_af', 'tilt'] = dynamicFactor * dPyaf_dtilt
+        J['Py_af', 'totalCone'] = dynamicFactor * dPyaf_dprecone
+        J['Py_af', 'rhoA'] = dynamicFactor * dPyaf_drhoA
+        J['Py_af', 'z_az'] = dynamicFactor * dPyaf_dzaz
 
-        J['Pz_af', 'aeroloads_r'] = dPzaf_daeror
-        J['Pz_af', 'aeroloads_Px'] = dPzaf_dPxaero
-        J['Pz_af', 'aeroloads_Py'] = dPzaf_dPyaero
-        J['Pz_af', 'aeroloads_Pz'] = dPzaf_dPzaero
-        J['Pz_af', 'aeroloads_Omega'] = dPzaf_dOmega
-        J['Pz_af', 'aeroloads_pitch'] = dPzaf_dpitch
-        J['Pz_af', 'aeroloads_azimuth'] = dPzaf_dazimuth
-        J['Pz_af', 'r'] = dPzaf_dr
-        J['Pz_af', 'theta'] = dPzaf_dtheta
-        J['Pz_af', 'tilt'] = dPzaf_dtilt
-        J['Pz_af', 'totalCone'] = dPzaf_dprecone
-        J['Pz_af', 'rhoA'] = dPzaf_drhoA
-        J['Pz_af', 'z_az'] = dPzaf_dzaz
+        J['Pz_af', 'aeroloads_r'] = dynamicFactor * dPzaf_daeror
+        J['Pz_af', 'aeroloads_Px'] = dynamicFactor * dPzaf_dPxaero
+        J['Pz_af', 'aeroloads_Py'] = dynamicFactor * dPzaf_dPyaero
+        J['Pz_af', 'aeroloads_Pz'] = dynamicFactor * dPzaf_dPzaero
+        J['Pz_af', 'aeroloads_Omega'] = dynamicFactor * dPzaf_dOmega
+        J['Pz_af', 'aeroloads_pitch'] = dynamicFactor * dPzaf_dpitch
+        J['Pz_af', 'aeroloads_azimuth'] = dynamicFactor * dPzaf_dazimuth
+        J['Pz_af', 'r'] = dynamicFactor * dPzaf_dr
+        J['Pz_af', 'theta'] = dynamicFactor * dPzaf_dtheta
+        J['Pz_af', 'tilt'] = dynamicFactor * dPzaf_dtilt
+        J['Pz_af', 'totalCone'] = dynamicFactor * dPzaf_dprecone
+        J['Pz_af', 'rhoA'] = dynamicFactor * dPzaf_drhoA
+        J['Pz_af', 'z_az'] = dynamicFactor * dPzaf_dzaz
         self.J = J
 
 
@@ -1227,7 +1230,7 @@ class TipDeflection(ExplicitComponent):
         self.add_input('tilt', val=0.0, units='deg', desc='tilt angle')
         self.add_input('totalConeTip', val=0.0, units='deg', desc='total coning angle including precone and curvature')
 
-        self.add_input('hubHt', val=0.0, units='m', desc='Tower top hub height')
+        self.add_input('hub_height', val=0.0, units='m', desc='Tower top hub height')
         self.add_discrete_input('downwind', val=False)
         self.add_input('Rtip', val=0.0, units='m', desc='tip location in z_b')
         self.add_input('precurveTip', val=0.0, units='m', desc='tip location in x_b')
@@ -1236,7 +1239,7 @@ class TipDeflection(ExplicitComponent):
         self.add_input('gamma_m', 0.0, desc='safety factor on materials')
 
         # parameters
-        self.add_input('dynamicFactor', val=1.2, desc='a dynamic amplification factor to adjust the static deflection calculation') #)
+        self.add_input('dynamicFactor', val=1.0, desc='a dynamic amplification factor to adjust the static deflection calculation') #)
 
         # outputs
         self.add_output('tip_deflection', val=0.0, units='m', desc='deflection at tip in yaw x-direction')
@@ -1246,6 +1249,8 @@ class TipDeflection(ExplicitComponent):
         self.declare_partials(['tip_deflection'],
                               ['dx', 'dy', 'dz', 'theta', 'pitch', 'azimuth', 'tilt',
                                'totalConeTip','precurveTip','presweepTip','Rtip'])
+        self.declare_partials('tip_position', '*', method='fd', form='central', step=1e-6)
+        self.declare_partials('ground_clearance', '*', method='fd', form='central', step=1e-6)
 
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -1263,7 +1268,7 @@ class TipDeflection(ExplicitComponent):
         precurve      = inputs['precurveTip']
         presweep      = inputs['presweepTip']
         rtip          = inputs['Rtip']
-        upwind             = not discrete_inputs['downwind']
+        upwind        = not discrete_inputs['downwind']
 
         theta = theta + pitch
 
@@ -1281,7 +1286,7 @@ class TipDeflection(ExplicitComponent):
 
         # find corresponding radius of tower
         coeff = 1.0 if upwind else -1.0
-        z_pos = inputs['hubHt'] + blade_yaw.z
+        z_pos = inputs['hub_height'] + blade_yaw.z
         x_pos = coeff*blade_yaw.x + inputs['gamma_m'] * tip_deflection
         outputs['tip_position'] = np.array([x_pos, 0.0, z_pos])
         outputs['ground_clearance'] = z_pos
@@ -1321,7 +1326,7 @@ class TipDeflection(ExplicitComponent):
 #         self.add_input('tilt', val=0.0)
 #         self.add_input('precone', val=0.0)
 #         self.add_input('yawW', val=0.0)
-#         self.add_input('dynamicFactor', val=1.2)
+#         self.add_input('dynamicFactor', val=1.0)
 #         self.add_output('tip_deflection', val=0.0)
 #
 #     def compute(self, inputs, outputs):
@@ -1524,6 +1529,8 @@ class RootMoment(ExplicitComponent):
         self.add_input('z_az', val=np.zeros(NPTS), units='m', desc='location of blade in azimuth z-coordinate system')
         self.add_input('s', val=np.zeros(NPTS), units='m', desc='cumulative path length along blade')
 
+        self.add_input('dynamicFactor', val=1.0, desc='a dynamic amplification factor to adjust the static deflection calculation') #)
+        
         self.add_output('root_bending_moment', val=0.0, units='N*m', desc='total magnitude of bending moment at root of blade')
         self.add_output('Mxyz', val=np.array([0.0, 0.0, 0.0]), units='N*m', desc='individual moments [x,y,z] at the blade root in blade c.s.')
         self.add_output('Fxyz', val=np.array([0.0, 0.0, 0.0]), units='N', desc='individual forces [x,y,z] at the blade root in blade c.s.')
@@ -1531,6 +1538,8 @@ class RootMoment(ExplicitComponent):
         self.declare_partials(['root_bending_moment'],
                               ['r_pts', 'aeroloads_r', 'aeroloads_Px', 'aeroloads_Py', 'aeroloads_Pz',
                                'totalCone', 'x_az', 'y_az', 'z_az', 's'])
+        self.declare_partials('Mxyz', '*', method='fd', form='central', step=1e-6)
+        self.declare_partials('Fxyz', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
 
@@ -1546,11 +1555,15 @@ class RootMoment(ExplicitComponent):
         y_az = y_az
         z_az = z_az
 
+        aeroloads_Px = inputs['aeroloads_Px'] * inputs['dynamicFactor']
+        aeroloads_Py = inputs['aeroloads_Py'] * inputs['dynamicFactor']
+        aeroloads_Pz = inputs['aeroloads_Pz'] * inputs['dynamicFactor']
+        
         # aL = aeroloads
         # TODO: linearly interpolation is not C1 continuous.  it should work OK for now, but is not ideal
-        Px, dPx_dr, dPx_dalr, dPx_dalPx = interp_with_deriv(r, inputs['aeroloads_r'], inputs['aeroloads_Px'])
-        Py, dPy_dr, dPy_dalr, dPy_dalPy = interp_with_deriv(r, inputs['aeroloads_r'], inputs['aeroloads_Py'])
-        Pz, dPz_dr, dPz_dalr, dPz_dalPz = interp_with_deriv(r, inputs['aeroloads_r'], inputs['aeroloads_Pz'])
+        Px, dPx_dr, dPx_dalr, dPx_dalPx = interp_with_deriv(r, inputs['aeroloads_r'], aeroloads_Px)
+        Py, dPy_dr, dPy_dalr, dPy_dalPy = interp_with_deriv(r, inputs['aeroloads_r'], aeroloads_Py)
+        Pz, dPz_dr, dPz_dalr, dPz_dalPz = interp_with_deriv(r, inputs['aeroloads_r'], aeroloads_Pz)
 
         # print 'al.Pz: ', aL.Pz #check=0
 
@@ -1976,7 +1989,8 @@ class ConstraintsStructures(ExplicitComponent):
         omega           = inputs['Omega'] / 60.0 #Hz
         gamma_freq      = inputs['gamma_freq']
         gamma_f         = inputs['gamma_f']
-        gamma_strain    = gamma_f * inputs['gamma_m']
+        gamma_m         = inputs['gamma_m']
+        gamma_strain    = gamma_f * gamma_m
         strain_ult_spar = inputs['strain_ult_spar']
         strain_ult_te   = inputs['strain_ult_te']
         eps_crit_spar   = inputs['eps_crit_spar']
@@ -2004,16 +2018,6 @@ class ConstraintsStructures(ExplicitComponent):
         outputs['rotor_damage_sparL'] = inputs['damageL_spar']
         outputs['rotor_damage_teU']   = inputs['damageU_te']
         outputs['rotor_damage_teL']   = inputs['damageL_te']
-
-        omega           = inputs['Omega'] / 60.0 #Hz
-        gamma_freq      = inputs['gamma_freq']
-        gamma_f         = inputs['gamma_f']
-        gamma_m         = inputs['gamma_m']
-        gamma_strain    = gamma_f * gamma_m
-        strain_ult_spar = inputs['strain_ult_spar']
-        strain_ult_te   = inputs['strain_ult_te']
-        eps_crit_spar   = inputs['eps_crit_spar']
-        eps_crit_te     = inputs['eps_crit_te']
 
         myones = np.ones((NPTS,))
         J = {}
@@ -2346,7 +2350,7 @@ class RotorStructure(Group):
         structIndeps.add_output('gamma_freq', val=1.1, desc='safety factor for resonant frequencies')
         structIndeps.add_output('gamma_f', val=1.35, desc='safety factor for loads/stresses')
         structIndeps.add_output('gamma_m', val=1.1, desc='safety factor for materials')
-        structIndeps.add_output('dynamic_amplification_tip_deflection', val=1.2, desc='a dynamic amplification factor to adjust the static deflection calculation')
+        structIndeps.add_output('dynamic_amplification_tip_deflection', val=1.0, desc='a dynamic amplification factor to adjust the static deflection calculation')
         structIndeps.add_output('pitch_load89', val=89.0, units='deg')
         structIndeps.add_output('azimuth_load0', val=0.0, units='deg')
         structIndeps.add_output('azimuth_load120', val=120.0, units='deg')
@@ -2355,7 +2359,7 @@ class RotorStructure(Group):
 
         if topLevelFlag:
             sharedIndeps = IndepVarComp()
-            sharedIndeps.add_output('hubHt', val=0.0, units='m')
+            sharedIndeps.add_output('hub_height', val=0.0, units='m')
             sharedIndeps.add_output('rho', val=1.225, units='kg/m**3')
             sharedIndeps.add_output('mu', val=1.81e-5, units='kg/(m*s)')
             sharedIndeps.add_output('V_hub', val=0.0, units='m/s')
@@ -2376,7 +2380,7 @@ class RotorStructure(Group):
 
         # --- add structures ---
         promoteList = ['nSector','rho','mu','shearExp','tiploss','hubloss','wakerotation','usecd',
-                       'precone','precurveTip','tilt','yaw','nBlades','hubHt']
+                       'precone','precurveTip','tilt','yaw','nBlades','hub_height']
         self.add_subsystem('curvature', BladeCurvature(NPTS=NPTS), promotes=['precone'])
         self.add_subsystem('resize', ResizeCompositeSection(NPTS=NPTS))
         self.add_subsystem('gust', GustETM())
@@ -2397,7 +2401,7 @@ class RotorStructure(Group):
         self.add_subsystem('curvefem', CurveFEM(NPTS=NPTS))
         self.add_subsystem('tip', TipDeflection(), promotes=['gamma_m','precone','tilt',
                                                              'precurveTip','presweepTip',
-                                                             'downwind','hubHt'])
+                                                             'downwind','hub_height'])
         if not Analysis_Level>0:
             self.add_subsystem('root_moment', RootMoment(NPTS=NPTS))
         self.add_subsystem('mass', MassProperties(), promotes=['tilt','nBlades'])
@@ -2415,7 +2419,7 @@ class RotorStructure(Group):
         self.add_subsystem('constraints', ConstraintsStructures(NPTS=NPTS), promotes=['*'])
 
         if Analysis_Level>=1:
-            self.add_subsystem('aeroelastic', FASTLoadCases(NPTS=NPTS, npts_coarse_power_curve=npts_coarse_power_curve, FASTpref=FASTpref), promotes=['turbine_class','hubHt'])
+            self.add_subsystem('aeroelastic', FASTLoadCases(NPTS=NPTS, npts_coarse_power_curve=npts_coarse_power_curve, FASTpref=FASTpref), promotes=['turbine_class','hub_height'])
 
             self.connect('fst_vt_in', 'aeroelastic.fst_vt_in')
             self.connect('r_pts', 'aeroelastic.r')
@@ -2435,7 +2439,7 @@ class RotorStructure(Group):
             self.connect('curvature.z_az', 'aeroelastic.z_az')
             self.connect('airfoils', 'aeroelastic.airfoils')
 
-            #self.connect('hub_height', 'aeroelastic.hubHt')
+            #self.connect('hub_height', 'aeroelastic.hub_height')
             self.connect('turbulence_class', 'aeroelastic.turbulence_class')
             #self.connect('turbine_class', 'aeroelastic.turbine_class')
             self.connect('powercurve.V',  'aeroelastic.U_init')
@@ -2485,7 +2489,7 @@ class RotorStructure(Group):
         #self.connect('precurveTip', 'aero_rated.precurveTip')
         self.connect('Rhub', 'aero_rated.Rhub')
         self.connect('Rtip', 'aero_rated.Rtip')
-        #self.connect('hub_height', 'aero_rated.hubHt')
+        #self.connect('hub_height', 'aero_rated.hub_height')
         #self.connect('precone', 'aero_rated.precone')
         #self.connect('tilt', 'aero_rated.tilt')
         #self.connect('yaw', 'aero_rated.yaw')
@@ -2506,7 +2510,7 @@ class RotorStructure(Group):
         #self.connect('precurveTip', 'aero_extrm.precurveTip')
         self.connect('Rhub', 'aero_extrm.Rhub')
         self.connect('Rtip', 'aero_extrm.Rtip')
-        #self.connect('hub_height', 'aero_extrm.hubHt')
+        #self.connect('hub_height', 'aero_extrm.hub_height')
         #self.connect('precone', 'aero_extrm.precone')
         #self.connect('tilt', 'aero_extrm.tilt')
         #self.connect('yaw', 'aero_extrm.yaw')
@@ -2526,7 +2530,7 @@ class RotorStructure(Group):
         #self.connect('precurveTip', 'aero_extrm_forces.precurveTip')
         self.connect('Rhub', 'aero_extrm_forces.Rhub')
         self.connect('Rtip', 'aero_extrm_forces.Rtip')
-        #self.connect('hub_height', 'aero_extrm_forces.hubHt')
+        #self.connect('hub_height', 'aero_extrm_forces.hub_height')
         #self.connect('precone', 'aero_extrm_forces.precone')
         #self.connect('tilt', 'aero_extrm_forces.tilt')
         #self.connect('yaw', 'aero_extrm_forces.yaw')
@@ -2549,7 +2553,7 @@ class RotorStructure(Group):
         #self.connect('precurveTip', 'aero_defl_powercurve.precurveTip')
         self.connect('Rhub', 'aero_defl_powercurve.Rhub')
         self.connect('Rtip', 'aero_defl_powercurve.Rtip')
-        #self.connect('hub_height', 'aero_defl_powercurve.hubHt')
+        #self.connect('hub_height', 'aero_defl_powercurve.hub_height')
         #self.connect('precone', 'aero_defl_powercurve.precone')
         #self.connect('tilt', 'aero_defl_powercurve.tilt')
         #self.connect('yaw', 'aero_defl_powercurve.yaw')
@@ -2792,7 +2796,7 @@ class RotorStructure(Group):
         #self.connect('precurveTip', ['aero_0.precurveTip', 'aero_120.precurveTip', 'aero_240.precurveTip'])
         self.connect('Rhub', ['aero_0.Rhub', 'aero_120.Rhub', 'aero_240.Rhub'])
         self.connect('Rtip', ['aero_0.Rtip', 'aero_120.Rtip', 'aero_240.Rtip'])
-        #self.connect('hub_height', ['aero_0.hubHt', 'aero_120.hubHt', 'aero_240.hubHt'])
+        #self.connect('hub_height', ['aero_0.hub_height', 'aero_120.hub_height', 'aero_240.hub_height'])
         #self.connect('precone', ['aero_0.precone', 'aero_120.precone', 'aero_240.precone'])
         #self.connect('tilt', ['aero_0.tilt', 'aero_120.tilt', 'aero_240.tilt'])
         self.connect('airfoils', ['aero_0.airfoils', 'aero_120.airfoils', 'aero_240.airfoils'])
@@ -2919,7 +2923,7 @@ if __name__ == '__main__':
     rotor['aero_0.rho'] = 1.225  # (Float, kg/m**3): density of air
     rotor['aero_0.mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
     rotor['aero_0.shearExp'] = 0.25  # (Float): shear exponent
-    rotor['hubHt'] = myref.hubHt  # (Float, m): hub height
+    rotor['hub_height'] = myref.hub_height  # (Float, m): hub height
     rotor['turbine_class'] = myref.turbine_class #TURBINE_CLASS['I']  # (Enum): IEC turbine class
     rotor['turbulence_class'] = 'B'  # (Enum): IEC turbulence class class
     rotor['gust_stddev'] = 3
