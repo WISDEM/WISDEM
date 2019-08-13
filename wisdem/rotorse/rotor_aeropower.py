@@ -574,13 +574,6 @@ class AEP(ExplicitComponent):
 
         outputs['AEP'] = inputs['lossFactor']*np.trapz(inputs['P'], inputs['CDF_V'])/1e3*365.0*24.0  # in kWh
 
-    def list_deriv_vars(self):
-
-        inputs = ('CDF_V', 'P', 'lossFactor')
-        outputs = ('AEP',)
-
-        return inputs, outputs
-
 
     def compute_partials(self, inputs, J):
 
@@ -598,8 +591,6 @@ class AEP(ExplicitComponent):
         J['AEP', 'CDF_V'] = np.reshape(dAEP_dCDF, (1, len(dAEP_dCDF)))
         J['AEP', 'P'] = np.reshape(dAEP_dP, (1, len(dAEP_dP)))
         J['AEP', 'lossFactor'] = dAEP_dlossFactor
-
-        return J
 
 
 def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
