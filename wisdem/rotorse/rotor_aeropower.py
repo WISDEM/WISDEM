@@ -572,25 +572,24 @@ class AEP(ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        outputs['AEP'] = inputs['lossFactor']*np.trapz(inputs['P'], inputs['CDF_V'])/1e3*365.0*24.0  # in kWh
-
-
-    def compute_partials(self, inputs, J):
-
         lossFactor = inputs['lossFactor']
         P = inputs['P']
+        CDF_V = inputs['CDF_V']
         factor = lossFactor/1e3*365.0*24.0
+        outputs['AEP'] = factor*np.trapz(P, CDF_V)  # in kWh
 
-        dAEP_dP, dAEP_dCDF = trapz_deriv(P, inputs['CDF_V'])
+        dAEP_dP, dAEP_dCDF = trapz_deriv(P, CDF_V)
         dAEP_dP *= factor
         dAEP_dCDF *= factor
 
         dAEP_dlossFactor = np.array([outputs['AEP']/lossFactor])
+        self.J = {}
+        self.J['AEP', 'CDF_V'] = np.reshape(dAEP_dCDF, (1, len(dAEP_dCDF)))
+        self.J['AEP', 'P'] = np.reshape(dAEP_dP, (1, len(dAEP_dP)))
+        self.J['AEP', 'lossFactor'] = dAEP_dlossFactor
 
-        J = {}
-        J['AEP', 'CDF_V'] = np.reshape(dAEP_dCDF, (1, len(dAEP_dCDF)))
-        J['AEP', 'P'] = np.reshape(dAEP_dP, (1, len(dAEP_dP)))
-        J['AEP', 'lossFactor'] = dAEP_dlossFactor
+    def compute_partials(self, inputs, J):
+        J.update(self.J)
 
 
 def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
