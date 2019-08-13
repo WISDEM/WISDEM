@@ -80,7 +80,7 @@ class RotorSE(Group):
                                      'bladeLength','hubFraction','r_max_chord','chord_in','theta_in',
                                      'precurve_in','presweep_in','precurveTip','presweepTip','precone',
                                      'tilt','yaw','nBlades','downwind','sparT_in','teT_in','turbine_class',
-                                     'control_tsr','control_pitch','lifetime','hubHt',
+                                     'control_tsr','control_pitch','lifetime','hub_height',
                                      'mass_one_blade','mass_all_blades','I_all_blades',
                                      'freq','freq_curvefem','modes_coef_curvefem','tip_deflection', 
                                      'tip_position','ground_clearance','strainU_spar','strainL_spar',
@@ -95,7 +95,7 @@ class RotorSE(Group):
                                                AEP={'units':'kW*h','value':1000000.0},
                                                obj={'units':'kW*h'}), promotes=['*'])
 
-        self.connect('hub_height','hubHt')
+        self.connect('hub_height','hub_height')
         # Connections between rotor_aero and rotor_structure
         self.connect('powercurve.rated_V', ['rs.gust.V_hub', 'rs.setuppc.Vrated'])
         self.connect('powercurve.rated_Omega', ['rs.Omega', 'rs.aero_rated.Omega_load',

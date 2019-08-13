@@ -63,7 +63,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_input('theta',     val=np.zeros(naero), units='deg', desc='twist angle at each section (positive decreases angle of attack)')
         self.add_input('Rhub',      val=0.0,             units='m',   desc='hub radius')
         self.add_input('Rtip',      val=0.0,             units='m',   desc='tip radius')
-        self.add_input('hubHt',     val=0.0,             units='m',   desc='hub height')
+        self.add_input('hub_height',     val=0.0,             units='m',   desc='hub height')
         self.add_input('precone',   val=0.0,             units='deg', desc='precone angle', )
         self.add_input('tilt',      val=0.0,             units='deg', desc='shaft tilt', )
         self.add_input('yaw',       val=0.0,             units='deg', desc='yaw error', )
@@ -109,7 +109,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         
     def compute(self, inputs, outputs):
                 
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hubHt'], inputs['nSector'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], inputs['nSector'])
         
         Uhub    = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.options['n_pc'])
         
@@ -354,7 +354,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.add_input('theta',         val=np.zeros(naero), units='deg',       desc='twist angle at each section (positive decreases angle of attack)')
         self.add_input('Rhub',          val=0.0,             units='m',         desc='hub radius')
         self.add_input('Rtip',          val=0.0,             units='m',         desc='tip radius')
-        self.add_input('hubHt',         val=0.0,             units='m',         desc='hub height')
+        self.add_input('hub_height',         val=0.0,             units='m',         desc='hub height')
         self.add_input('precone',       val=0.0,             units='deg',       desc='precone angle')
         self.add_input('tilt',          val=0.0,             units='deg',       desc='shaft tilt')
         self.add_input('yaw',           val=0.0,             units='deg',       desc='yaw error')
@@ -388,7 +388,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         n_tsr   = self.options['n_tsr']
         n_U     = self.options['n_U']
         
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hubHt'], inputs['nSector'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], inputs['nSector'])
         
         if max(inputs['U_vector']) == 0.:
             inputs['U_vector']    = np.linspace(inputs['control_Vin'],inputs['control_Vout'], n_U)
@@ -632,7 +632,7 @@ class RotorAeroPower(Group):
         # --- Rotor Aero & Power ---
         if topLevelFlag:
             sharedIndeps = IndepVarComp()
-            sharedIndeps.add_output('hubHt', val=0.0, units='m')
+            sharedIndeps.add_output('hub_height', val=0.0, units='m')
             sharedIndeps.add_output('rho', val=1.225, units='kg/m**3')
             sharedIndeps.add_output('mu', val=1.81e-5, units='kg/(m*s)')
             sharedIndeps.add_output('shearExp', val=0.2)
@@ -651,7 +651,7 @@ class RotorAeroPower(Group):
                                                              n_pc_spline=npts_spline_power_curve,
                                                              regulation_reg_II5=regulation_reg_II5,
                                                              regulation_reg_III=regulation_reg_III),
-                           promotes=['hubHt','precurveTip','precone','tilt','yaw','nBlades','rho','mu',
+                           promotes=['hub_height','precurveTip','precone','tilt','yaw','nBlades','rho','mu',
                                      'shearExp','nSector','tiploss','hubloss','wakerotation','usecd'])
         self.add_subsystem('wind', PowerWind(nPoints=1), promotes=['shearExp'])
         # self.add_subsystem('cdf', WeibullWithMeanCDF(nspline=npts_coarse_power_curve))
@@ -668,7 +668,7 @@ class RotorAeroPower(Group):
         #self.connect('precurveTip', 'powercurve.precurveTip')
         self.connect('Rhub', 'powercurve.Rhub')
         self.connect('Rtip', 'powercurve.Rtip')
-        #self.connect('hub_height', 'powercurve.hubHt')
+        #self.connect('hub_height', 'powercurve.hub_height')
         #self.connect('precone', 'powercurve.precone')
         #self.connect('tilt', 'powercurve.tilt')
         #self.connect('yaw', 'powercurve.yaw')

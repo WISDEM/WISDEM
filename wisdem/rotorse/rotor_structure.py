@@ -1405,7 +1405,7 @@ class TipDeflection(ExplicitComponent):
 #         self.add_input('tilt', val=0.0)
 #         self.add_input('precone', val=0.0)
 #         self.add_input('yawW', val=0.0)
-#         self.add_input('dynamicFactor', val=1.2)
+#         self.add_input('dynamicFactor', val=1.0)
 #         self.add_output('tip_deflection', val=0.0)
 #
 #     def compute(self, inputs, outputs):

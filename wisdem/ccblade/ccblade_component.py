@@ -70,7 +70,7 @@ class CCBladePower(ExplicitComponent):
         self.add_input('theta', val=np.zeros(naero),  units='deg', desc='twist angle at each section (positive decreases angle of attack)')
         self.add_input('Rhub', val=0.0, units='m', desc='hub radius')
         self.add_input('Rtip', val=0.0, units='m', desc='tip radius')
-        self.add_input('hubHt', val=0.0, units='m', desc='hub height')
+        self.add_input('hub_height', val=0.0, units='m', desc='hub height')
         self.add_input('precone', val=0.0, desc='precone angle', units='deg')
         self.add_input('tilt', val=0.0, desc='shaft tilt', units='deg')
         self.add_input('yaw', val=0.0, desc='yaw error', units='deg')
@@ -91,7 +91,7 @@ class CCBladePower(ExplicitComponent):
         self.add_discrete_input('wakerotation', val=True, desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
         self.add_discrete_input('usecd', val=True, desc='use drag coefficient in computing induction factors')
 
-        self.declare_partials(['P', 'T', 'Q'],['precone', 'tilt', 'hubHt', 'Rhub', 'Rtip', 'yaw',
+        self.declare_partials(['P', 'T', 'Q'],['precone', 'tilt', 'hub_height', 'Rhub', 'Rtip', 'yaw',
                                                'Uhub', 'Omega', 'pitch', 'r', 'chord', 'theta',
                                                'precurve', 'precurveTip'])
 
@@ -103,7 +103,7 @@ class CCBladePower(ExplicitComponent):
         self.theta = inputs['theta']
         self.Rhub = inputs['Rhub']
         self.Rtip = inputs['Rtip']
-        self.hubHt = inputs['hubHt']
+        self.hub_height = inputs['hub_height']
         self.precone = inputs['precone']
         self.tilt = inputs['tilt']
         self.yaw = inputs['yaw']
@@ -124,7 +124,7 @@ class CCBladePower(ExplicitComponent):
         self.pitch = inputs['pitch']
         
         self.ccblade = CCBlade(self.r, self.chord, self.theta, self.airfoils, self.Rhub, self.Rtip, self.B,
-            self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hubHt,
+            self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hub_height,
             self.nSector, self.precurve, self.precurveTip, tiploss=self.tiploss, hubloss=self.hubloss,
             wakerotation=self.wakerotation, usecd=self.usecd, derivatives=True)
 
@@ -143,7 +143,7 @@ class CCBladePower(ExplicitComponent):
         
         J['P', 'precone'] = dP['dprecone']
         J['P', 'tilt'] = dP['dtilt']
-        J['P', 'hubHt'] = dP['dhubHt']
+        J['P', 'hub_height'] = dP['dhub_height']
         J['P', 'Rhub'] = dP['dRhub']
         J['P', 'Rtip'] = dP['dRtip']
         J['P', 'yaw'] = dP['dyaw']
@@ -158,7 +158,7 @@ class CCBladePower(ExplicitComponent):
 
         J['T', 'precone'] = dT['dprecone']
         J['T', 'tilt'] = dT['dtilt']
-        J['T', 'hubHt'] = dT['dhubHt']
+        J['T', 'hub_height'] = dT['dhub_height']
         J['T', 'Rhub'] = dT['dRhub']
         J['T', 'Rtip'] = dT['dRtip']
         J['T', 'yaw'] = dT['dyaw']
@@ -173,7 +173,7 @@ class CCBladePower(ExplicitComponent):
 
         J['Q', 'precone'] = dQ['dprecone']
         J['Q', 'tilt'] = dQ['dtilt']
-        J['Q', 'hubHt'] = dQ['dhubHt']
+        J['Q', 'hub_height'] = dQ['dhub_height']
         J['Q', 'Rhub'] = dQ['dRhub']
         J['Q', 'Rtip'] = dQ['dRtip']
         J['Q', 'yaw'] = dQ['dyaw']
@@ -224,7 +224,7 @@ class CCBladeLoads(ExplicitComponent):
         self.add_input('theta', val=np.zeros(naero),  units='deg', desc='twist angle at each section (positive decreases angle of attack)')
         self.add_input('Rhub', val=0.0, units='m', desc='hub radius')
         self.add_input('Rtip', val=0.0, units='m', desc='tip radius')
-        self.add_input('hubHt', val=0.0, units='m', desc='hub height')
+        self.add_input('hub_height', val=0.0, units='m', desc='hub height')
         self.add_input('precone', val=0.0, desc='precone angle', units='deg')
         self.add_input('tilt', val=0.0, desc='shaft tilt', units='deg')
         self.add_input('yaw', val=0.0, desc='yaw error', units='deg')
@@ -247,7 +247,7 @@ class CCBladeLoads(ExplicitComponent):
 
         self.declare_partials('loads_r', ['r', 'Rhub', 'Rtip'])
         self.declare_partials(['loads_Px', 'loads_Py'],
-                              ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hubHt', 'precone', 'tilt',
+                              ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hub_height', 'precone', 'tilt',
                                'yaw', 'V_load', 'Omega_load', 'pitch_load', 'azimuth_load', 'precurve'])
         self.declare_partials('loads_V', 'V_load')
         self.declare_partials('loads_Omega', 'Omega_load')
@@ -261,7 +261,7 @@ class CCBladeLoads(ExplicitComponent):
         self.theta = inputs['theta']
         self.Rhub = inputs['Rhub']
         self.Rtip = inputs['Rtip']
-        self.hubHt = inputs['hubHt']
+        self.hub_height = inputs['hub_height']
         self.precone = inputs['precone']
         self.tilt = inputs['tilt']
         self.yaw = inputs['yaw']
@@ -294,7 +294,7 @@ class CCBladeLoads(ExplicitComponent):
         #     af[i] = CCAirfoil.initFromAerodynFile(self.airfoil_files[i])
 
         self.ccblade = CCBlade(self.r, self.chord, self.theta, af, self.Rhub, self.Rtip, self.B,
-            self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hubHt,
+            self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hub_height,
             self.nSector, self.precurve, self.precurveTip, tiploss=self.tiploss, hubloss=self.hubloss,
             wakerotation=self.wakerotation, usecd=self.usecd, derivatives=True)
 
@@ -347,7 +347,7 @@ class CCBladeLoads(ExplicitComponent):
         J['loads_Px', 'theta'] = np.vstack([zero, dNp['dtheta'], zero])
         J['loads_Px', 'Rhub'] = np.concatenate([[0.0], np.squeeze(dNp['dRhub']), [0.0]])
         J['loads_Px', 'Rtip'] = np.concatenate([[0.0], np.squeeze(dNp['dRtip']), [0.0]])
-        J['loads_Px', 'hubHt'] = np.concatenate([[0.0], np.squeeze(dNp['dhubHt']), [0.0]])
+        J['loads_Px', 'hub_height'] = np.concatenate([[0.0], np.squeeze(dNp['dhub_height']), [0.0]])
         J['loads_Px', 'precone'] = np.concatenate([[0.0], np.squeeze(dNp['dprecone']), [0.0]])
         J['loads_Px', 'tilt'] = np.concatenate([[0.0], np.squeeze(dNp['dtilt']), [0.0]])
         J['loads_Px', 'yaw'] = np.concatenate([[0.0], np.squeeze(dNp['dyaw']), [0.0]])
@@ -361,7 +361,7 @@ class CCBladeLoads(ExplicitComponent):
         J['loads_Py', 'theta'] = np.vstack([zero, -dTp['dtheta'], zero])
         J['loads_Py', 'Rhub'] = np.concatenate([[0.0], -np.squeeze(dTp['dRhub']), [0.0]])
         J['loads_Py', 'Rtip'] = np.concatenate([[0.0], -np.squeeze(dTp['dRtip']), [0.0]])
-        J['loads_Py', 'hubHt'] = np.concatenate([[0.0], -np.squeeze(dTp['dhubHt']), [0.0]])
+        J['loads_Py', 'hub_height'] = np.concatenate([[0.0], -np.squeeze(dTp['dhub_height']), [0.0]])
         J['loads_Py', 'precone'] = np.concatenate([[0.0], -np.squeeze(dTp['dprecone']), [0.0]])
         J['loads_Py', 'tilt'] = np.concatenate([[0.0], -np.squeeze(dTp['dtilt']), [0.0]])
         J['loads_Py', 'yaw'] = np.concatenate([[0.0], -np.squeeze(dTp['dyaw']), [0.0]])
@@ -526,7 +526,7 @@ def common_io_with_ccblade(group, varspeed, varpitch, cdf_type):
     group.add_input('theta_sub', units='deg', desc='twist at control points')
     group.add_input('Rhub', units='m', desc='hub radius')
     group.add_input('Rtip', units='m', desc='tip radius')
-    group.add_input('hubHt', units='m')
+    group.add_input('hub_height', units='m')
     group.add_input('precone', desc='precone angle', units='deg')
     group.add_input('tilt', val=0.0, desc='shaft tilt', units='deg')
     group.add_input('yaw', val=0.0, desc='yaw error', units='deg')
@@ -618,7 +618,7 @@ def common_configure_with_ccblade(group, varspeed, varpitch, cdf_type):
     group.connect('spline.precurve', 'analysis.precurve')
     group.connect('Rhub', 'analysis.Rhub')
     group.connect('Rtip', 'analysis.Rtip')
-    group.connect('hubHt', 'analysis.hubHt')
+    group.connect('hub_height', 'analysis.hub_height')
     group.connect('precone', 'analysis.precone')
     group.connect('tilt', 'analysis.tilt')
     group.connect('yaw', 'analysis.yaw')

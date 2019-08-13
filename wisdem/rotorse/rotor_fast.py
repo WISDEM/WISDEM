@@ -61,7 +61,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_discrete_input('airfoils', val=[0]*NPTS, desc='CCAirfoil instances')
 
         # Turbine level inputs
-        self.add_input('hubHt', val=0.0, units='m', desc='hub height')
+        self.add_input('hub_height', val=0.0, units='m', desc='hub height')
         self.add_discrete_input('turbulence_class', val=TURBULENCE_CLASS['A'], desc='IEC turbulence class')
         self.add_discrete_input('turbine_class', val=TURBINE_CLASS['I'], desc='IEC turbulence class')
         self.add_input('control_ratedPower', val=0., desc='machine power rating')
@@ -198,10 +198,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip']
         fst_vt['ElastoDyn']['HubRad'] = inputs['Rhub']
         tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
-        fst_vt['ElastoDyn']['TowerHt'] = inputs['hubHt']
+        fst_vt['ElastoDyn']['TowerHt'] = inputs['hub_height']
 
         # Update Inflowwind
-        fst_vt['InflowWind']['RefHt'] = inputs['hubHt']
+        fst_vt['InflowWind']['RefHt'] = inputs['hub_height']
         fst_vt['InflowWind']['PLexp'] = inputs['shearExp']
 
         # Update ElastoDyn Blade Input File
