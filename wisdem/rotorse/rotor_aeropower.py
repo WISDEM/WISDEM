@@ -341,7 +341,8 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.options.declare('n_tsr', default=4)
         self.options.declare('n_U', default=1)
         
-    def setup(self, naero):
+    def setup(self):
+        naero   = self.options['naero']
         n_pitch = self.options['n_pitch']
         n_tsr   = self.options['n_tsr']
         n_U     = self.options['n_U']
@@ -382,22 +383,25 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.add_output('Cq_aero_table',        val=np.zeros((n_tsr, n_pitch, n_U)),           desc='table of aero torque coefficient')
 
         
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         n_pitch = self.options['n_pitch']
         n_tsr   = self.options['n_tsr']
         n_U     = self.options['n_U']
+        U_vector = inputs['U_vector']
+        tsr_vector = inputs['tsr_vector']
+        pitch_vector = inputs['pitch_vector']
         
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], inputs['nSector'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], discrete_inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'])
         
-        if max(inputs['U_vector']) == 0.:
-            inputs['U_vector']    = np.linspace(inputs['control_Vin'],inputs['control_Vout'], n_U)
+        if max(U_vector) == 0.:
+            U_vector    = np.linspace(inputs['control_Vin'],inputs['control_Vout'], n_U)
         
-        if max(inputs['tsr_vector']) == 0.:
-            inputs['tsr_vector'] = np.linspace(7.,11., n_tsr)
+        if max(tsr_vector) == 0.:
+            tsr_vector = np.linspace(7.,11., n_tsr)
         
-        if max(inputs['pitch_vector']) == 0.:
-            inputs['pitch_vector'] = np.linspace(-5., 5., n_pitch)
+        if max(pitch_vector) == 0.:
+            pitch_vector = np.linspace(-5., 5., n_pitch)
         
         R = inputs['Rtip']
         
@@ -407,9 +411,9 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         
         for i in range(n_U):
             for j in range(n_tsr):
-                U     =  inputs['U_vector'][i] * np.ones(n_pitch)
-                Omega = inputs['tsr_vector'][j] *  inputs['U_vector'][i] / R * 30. / np.pi * np.ones(n_pitch)
-                _, _, _, _, outputs['Cp_aero_table'][j,:,i], outputs['Ct_aero_table'][j,:,i], outputs['Cq_aero_table'][j,:,i], _ = self.ccblade.evaluate(U, Omega, inputs['pitch_vector'], coefficients=True)
+                U     =  U_vector[i] * np.ones(n_pitch)
+                Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
+                _, _, _, _, outputs['Cp_aero_table'][j,:,i], outputs['Ct_aero_table'][j,:,i], outputs['Cq_aero_table'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
                 
         
 
@@ -612,6 +616,7 @@ class RotorAeroPower(Group):
         regulation_reg_II5 = self.options['regulation_reg_II5']
         regulation_reg_III = self.options['regulation_reg_III']
         topLevelFlag = self.options['topLevelFlag']
+        NPTS                = len(RefBlade['pf']['s'])
 
         aeroIndeps = IndepVarComp()
         aeroIndeps.add_output('wind_reference_height', val=0.0, units='m', desc='reference hub height for IEC wind speed (used in CDF calculation)')
@@ -646,59 +651,48 @@ class RotorAeroPower(Group):
         self.add_subsystem('rotorGeom', RotorGeometry(RefBlade=RefBlade, topLevelFlag=True), promotes=['*'])
 
         # self.add_subsystem('tipspeed', MaxTipSpeed())
-        self.add_subsystem('powercurve', RegulatedPowerCurve(naero=len(RefBlade['pf']['s']),
+        self.add_subsystem('powercurve', RegulatedPowerCurve(naero=NPTS,
                                                              n_pc=npts_coarse_power_curve,
                                                              n_pc_spline=npts_spline_power_curve,
                                                              regulation_reg_II5=regulation_reg_II5,
                                                              regulation_reg_III=regulation_reg_III),
                            promotes=['hub_height','precurveTip','precone','tilt','yaw','nBlades','rho','mu',
                                      'shearExp','nSector','tiploss','hubloss','wakerotation','usecd'])
+        self.add_subsystem('cpctcq_tables',   Cp_Ct_Cq_Tables(naero=NPTS), promotes=['hub_height','precurveTip','precone','tilt',
+                                                                               'yaw','nBlades','rho','mu','shearExp','nSector'])
         self.add_subsystem('wind', PowerWind(nPoints=1), promotes=['shearExp'])
-        # self.add_subsystem('cdf', WeibullWithMeanCDF(nspline=npts_coarse_power_curve))
-        self.add_subsystem('cdf', RayleighCDF(nspline=npts_spline_power_curve))
+        self.add_subsystem('cdf', WeibullWithMeanCDF(nspline=npts_spline_power_curve))
+        #self.add_subsystem('cdf', RayleighCDF(nspline=npts_spline_power_curve))
         self.add_subsystem('aep', AEP(n_pc_spline=npts_spline_power_curve))
 
         self.add_subsystem('outputs_aero', OutputsAero(npts_coarse_power_curve=npts_coarse_power_curve), promotes=['*'])
 
         # connections to analysis
-        self.connect('r_pts', 'powercurve.r')
-        self.connect('chord', 'powercurve.chord')
-        self.connect('theta', 'powercurve.theta')
-        self.connect('precurve', 'powercurve.precurve')
-        #self.connect('precurveTip', 'powercurve.precurveTip')
-        self.connect('Rhub', 'powercurve.Rhub')
-        self.connect('Rtip', 'powercurve.Rtip')
-        #self.connect('hub_height', 'powercurve.hub_height')
-        #self.connect('precone', 'powercurve.precone')
-        #self.connect('tilt', 'powercurve.tilt')
-        #self.connect('yaw', 'powercurve.yaw')
-        self.connect('airfoils', 'powercurve.airfoils')
-        #self.connect('nBlades', 'powercurve.nBlades')
-        #self.connect('rho', 'powercurve.rho')
-        #self.connect('mu', 'powercurve.mu')
-        #self.connect('shearExp', 'powercurve.shearExp')
-        #self.connect('nSector', 'powercurve.nSector')
-        #self.connect('tiploss', 'powercurve.tiploss')
-        #self.connect('hubloss', 'powercurve.hubloss')
-        #self.connect('wakerotation', 'powercurve.wakerotation')
-        #self.connect('usecd', 'powercurve.usecd')
-
-        # # connectiosn to tipspeed
-        # self.connect('geom.R', 'tipspeed.R')
-        # self.connect('max_tip_speed', 'tipspeed.Vtip_max')
-        # self.connect('tipspeed.Omega_max', 'control_maxOmega')
-        
+        self.connect('r_pts',           ['powercurve.r',            'cpctcq_tables.r'])
+        self.connect('chord',           ['powercurve.chord',        'cpctcq_tables.chord'])
+        self.connect('theta',           ['powercurve.theta',        'cpctcq_tables.theta'])
+        self.connect('precurve',        ['powercurve.precurve',     'cpctcq_tables.precurve'])
+        #self.connect('precurve_tip',    ['powercurve.precurveTip',  'cpctcq_tables.precurveTip'])
+        self.connect('Rhub',            ['powercurve.Rhub',         'cpctcq_tables.Rhub'])
+        self.connect('Rtip',            ['powercurve.Rtip',         'cpctcq_tables.Rtip'])
+        #self.connect('precone',         ['powercurve.precone',      'cpctcq_tables.precone'])
+        #self.connect('tilt',            ['powercurve.tilt',         'cpctcq_tables.tilt'])
+        #self.connect('yaw',             ['powercurve.yaw',          'cpctcq_tables.yaw'])
+        self.connect('airfoils',        ['powercurve.airfoils',     'cpctcq_tables.airfoils'])
+        #self.connect('nBlades',         ['powercurve.nBlades',      'cpctcq_tables.nBlades'])
+        #self.connect('nSector',         ['powercurve.nSector',      'cpctcq_tables.nSector'])
+                                        
         # connections to powercurve
-        self.connect('drivetrainType', 'powercurve.drivetrainType')
-        self.connect('drivetrainEff', 'powercurve.drivetrainEff')
-        self.connect('control_Vin', 'powercurve.control_Vin')
-        self.connect('control_Vout', 'powercurve.control_Vout')
-        self.connect('control_maxTS', 'powercurve.control_maxTS')
-        self.connect('control_maxOmega', 'powercurve.control_maxOmega')
-        self.connect('control_minOmega', 'powercurve.control_minOmega')
-        self.connect('control_pitch', 'powercurve.control_pitch')
-        self.connect('machine_rating', 'powercurve.control_ratedPower')
-        self.connect('control_tsr', 'powercurve.control_tsr')
+        self.connect('drivetrainType',  'powercurve.drivetrainType')
+        self.connect('drivetrainEff',   'powercurve.drivetrainEff')
+        self.connect('control_Vin',     ['powercurve.control_Vin',  'cpctcq_tables.control_Vin'])
+        self.connect('control_Vout',    ['powercurve.control_Vout', 'cpctcq_tables.control_Vout'])
+        self.connect('control_maxTS',   'powercurve.control_maxTS')
+        self.connect('control_maxOmega','powercurve.control_maxOmega')
+        self.connect('control_minOmega','powercurve.control_minOmega')
+        self.connect('control_pitch',   'powercurve.control_pitch')
+        self.connect('machine_rating',  'powercurve.control_ratedPower')
+        self.connect('control_tsr',     'powercurve.control_tsr')
 
         # connections to wind
         # self.connect('cdf_reference_mean_wind_speed', 'wind.Uref')

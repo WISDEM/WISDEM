@@ -13,9 +13,10 @@ import os, time, shutil, copy
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ExecComp
 from wisdem.rotorse.rotor_aeropower import RotorAeroPower
 from wisdem.rotorse.rotor_structure import RotorStructure
-from wisdem.rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
+from wisdem.rotorse.rotor_geometry import RotorGeometry
+from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.rotorse import RPM2RS, RS2RPM
-from wisdem.rotorse.rotor_fast import FASTLoadCases
+#from wisdem.rotorse.rotor_fast import FASTLoadCases
 
 
 class RotorSE(Group):
@@ -66,15 +67,11 @@ class RotorSE(Group):
                                                 regulation_reg_III=regulation_reg_III,
                                                 topLevelFlag=False), promotes=['*'])
         self.add_subsystem('rs', RotorStructure(RefBlade=RefBlade,
-                                                npts_coarse_power_curve=npts_coarse_power_curve,
-                                                Analysis_Level=Analysis_Level,
-                                                FASTpref=FASTpref,
                                                 topLevelFlag=False), 
                            promotes=['fst_vt_in','VfactorPC','turbulence_class','gust_stddev','pitch_extreme',
                                      'azimuth_extreme','rstar_damage','Mxb_damage','Myb_damage',
                                      'strain_ult_spar','strain_ult_te','m_damage',
-                                     'gamma_fatigue','gamma_freq','gamma_f','gamma_m',
-                                     'dynamic_amplification_tip_deflection',
+                                     'gamma_fatigue','gamma_freq','gamma_f','gamma_m','dynamic_amplification',
                                      'pitch_load89','azimuth_load0','azimuth_load120','azimuth_load240',
                                      'nSector','rho','mu','shearExp','tiploss','hubloss','wakerotation','usecd',
                                      'bladeLength','hubFraction','r_max_chord','chord_in','theta_in',
@@ -95,7 +92,6 @@ class RotorSE(Group):
                                                AEP={'units':'kW*h','value':1000000.0},
                                                obj={'units':'kW*h'}), promotes=['*'])
 
-        self.connect('hub_height','hub_height')
         # Connections between rotor_aero and rotor_structure
         self.connect('powercurve.rated_V', ['rs.gust.V_hub', 'rs.setuppc.Vrated'])
         self.connect('powercurve.rated_Omega', ['rs.Omega', 'rs.aero_rated.Omega_load',
@@ -107,7 +103,7 @@ class RotorSE(Group):
 
 def Init_RotorSE_wRefBlade(rotor, blade, fst_vt={}):
 
-    Analysis_Level = rotor.model.Analysis_Level
+    Analysis_Level = rotor.model.options['Analysis_Level']
 
     # === FAST model ===
     if Analysis_Level >= 1:
@@ -140,12 +136,12 @@ def Init_RotorSE_wRefBlade(rotor, blade, fst_vt={}):
     # === atmosphere ===
     rotor['rho']              = 1.225  # (Float, kg/m**3): density of air
     rotor['mu']               = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    rotor['wind.shearExp']    = 0.25  # (Float): shear exponent
+    rotor['shearExp']    = 0.25  # (Float): shear exponent
     rotor['shape_parameter']  = 2.0
     rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
-    rotor['turbine_class']    = TURBINE_CLASS[blade['config']['turbine_class'].upper()] #TURBINE_CLASS['I']  # (Enum): IEC turbine class
-    rotor['turbulence_class'] = TURBULENCE_CLASS[blade['config']['turbulence_class'].upper()]  # (Enum): IEC turbulence class class
-    rotor['wind.zref']        = blade['config']['hub_height']
+    rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class
+    rotor['turbulence_class'] = blade['config']['turbulence_class'].upper()  # (Enum): IEC turbulence class class
+    rotor['wind_reference_height']        = blade['config']['hub_height']
     rotor['gust_stddev']      = 3
     # ----------------------
 
@@ -166,8 +162,8 @@ def Init_RotorSE_wRefBlade(rotor, blade, fst_vt={}):
     # === aero and structural analysis options ===
     rotor['nSector']          = 4  # (Int): number of sectors to divide rotor face into in computing thrust and power
     rotor['AEP_loss_factor']  = 1.0  # (Float): availability and other losses (soiling, array, etc.)
-    rotor['drivetrainType']   = DRIVETRAIN_TYPE[blade['config']['drivetrain'].upper()] #DRIVETRAIN_TYPE['GEARED']  # (Enum)
-    rotor['dynamic_amplication'] = 1.  # (Float): a dynamic amplification factor to adjust the static structural loads
+    rotor['drivetrainType']   = blade['config']['drivetrain'].upper() #DRIVETRAIN_TYPE['GEARED']  # (Enum)
+    rotor['dynamic_amplification'] = 1.  # (Float): a dynamic amplification factor to adjust the static structural loads
     # ----------------------
 
 
@@ -195,7 +191,7 @@ def Init_RotorSE_wRefBlade(rotor, blade, fst_vt={}):
     rotor['gamma_m']         = 1.1 # (Float): safety factor for materials
     rotor['gamma_freq']      = 1.1 # (Float): safety factor for resonant frequencies
     rotor['m_damage']        = 10.0  # (Float): slope of S-N curve for fatigue analysis
-    rotor['struc.lifetime']  = 20.0  # (Float): number of cycles used in fatigue analysis  TODO: make function of rotation speed
+    rotor['lifetime']  = 20.0  # (Float): number of cycles used in fatigue analysis  TODO: make function of rotation speed
     # ----------------
     return rotor
         
@@ -265,8 +261,19 @@ if __name__ == '__main__':
         fst_vt = {}
 
     rotor = Problem()
-    rotor.model = RotorSE(blade, npts_coarse_power_curve=20, npts_spline_power_curve=200, regulation_reg_II5=True, regulation_reg_III=False, Analysis_Level=Analysis_Level, FASTpref=FASTpref)
-    #rotor.setup(check=False)
+    npts_coarse_power_curve = 20 # (Int): number of points to evaluate aero analysis at
+    npts_spline_power_curve = 200  # (Int): number of points to use in fitting spline to power curve
+    regulation_reg_II5 = True # calculate Region 2.5 pitch schedule, False will not maximize power in region 2.5
+    regulation_reg_III = False # calculate Region 3 pitch schedule, False will return erroneous Thrust, Torque, and Moment for above rated
+
+    rotor.model = RotorSE(RefBlade=blade,
+                          npts_coarse_power_curve=npts_coarse_power_curve,
+                          npts_spline_power_curve=npts_spline_power_curve,
+                          regulation_reg_II5=regulation_reg_II5,
+                          regulation_reg_III=regulation_reg_III, 
+                          Analysis_Level=Analysis_Level,
+                          FASTpref=FASTpref,
+                          topLevelFlag=True)
     rotor.setup()
     rotor = Init_RotorSE_wRefBlade(rotor, blade, fst_vt=fst_vt)
     

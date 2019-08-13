@@ -234,7 +234,6 @@ class TurbineClass(ExplicitComponent):
 class RotorGeometry(Group):
     def initialize(self):
         self.options.declare('RefBlade')
-        self.options.declare('flag_nd_opt',default=False)
         self.options.declare('topLevelFlag',default=False)
     
     def setup(self):
@@ -249,6 +248,8 @@ class RotorGeometry(Group):
             geomIndeps.add_output('bladeLength', 0.0, units='m')
             geomIndeps.add_output('hubFraction', 0.0)
             geomIndeps.add_output('r_max_chord', 0.0)
+            geomIndeps.add_output('chord_in', np.zeros(NINPUT),units='m')
+            geomIndeps.add_output('theta_in', np.zeros(NINPUT), units='deg')
             geomIndeps.add_output('precurve_in', np.zeros(NINPUT), units='m')
             geomIndeps.add_output('presweep_in', np.zeros(NINPUT), units='m')
             geomIndeps.add_output('precurveTip', 0.0, units='m')
@@ -262,15 +263,9 @@ class RotorGeometry(Group):
             geomIndeps.add_discrete_output('blade_in_overwrite', val={}, desc='IEC turbine class')
             geomIndeps.add_output('V_mean_overwrite', val=0.0, desc='optional overwrite value for mean velocity for using user defined CDFs')
             geomIndeps.add_output('airfoil_posision', val=np.zeros(NAF))
+            geomIndeps.add_output('sparT_in', val=np.zeros(NINPUT), units='m', desc='spar cap thickness parameters')
             geomIndeps.add_output('teT_in', val=np.zeros(NINPUT), units='m', desc='trailing-edge thickness parameters')
             self.add_subsystem('geomIndeps', geomIndeps, promotes=['*'])
-
-        if not self.options['flag_nd_opt']:
-            ndIndeps = IndepVarComp()
-            ndIndeps.add_output('chord_in', np.zeros(NINPUT), units='m')
-            ndIndeps.add_output('theta_in', np.zeros(NINPUT), units='deg')
-            ndIndeps.add_output('sparT_in', np.zeros(NINPUT), units='m')
-            self.add_subsystem('ndIndeps', ndIndeps, promotes=['*'])
             
         # --- Rotor Definition ---
         self.add_subsystem('loc', Location(), promotes=['*'])

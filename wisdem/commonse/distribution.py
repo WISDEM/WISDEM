@@ -57,7 +57,7 @@ class WeibullWithMeanCDF(CDFBase):
         super(WeibullWithMeanCDF, self).setup()
         """Weibull cumulative distribution function"""
 
-        self.add_input('xbar', shape=1, desc='mean value of distribution')
+        self.add_input('xbar', shape=1, units='m/s', desc='mean value of distribution')
 
         self.declare_partials('F', 'x')
         
