@@ -1,25 +1,23 @@
-from __future__ import print_function
 
 class RotorSE_Example2():
 
 	def execute(self):
 
 		# --- Import Modules
-
 		import numpy as np
 		import os
 		from openmdao.api import IndepVarComp, Component, Group, Problem, Brent, ScipyGMRES, ScipyOptimizer, DumpRecorder
 		from rotorse.rotor_aeropower import RotorAeroPower
-		from rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
+		from rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, NINPUT
 		from rotorse import RPM2RS, RS2RPM, TURBULENCE_CLASS, DRIVETRAIN_TYPE
 
 		rotor = Problem()
-		myref = TUM3_35MW()
+		myref = DTU10MW()
 
 		npts_coarse_power_curve = 20 # (Int): number of points to evaluate aero analysis at
 		npts_spline_power_curve = 200  # (Int): number of points to use in fitting spline to power curve
 
-		rotor.root = RotorAeroPower(myref, npts_coarse_power_curve, npts_spline_power_curve, regulation_reg_II5 = False, regulation_reg_III=False)
+		rotor.root = RotorAeroPower(myref, npts_coarse_power_curve, npts_spline_power_curve)
 		# ---
 
 		# --- Optimizer
@@ -28,15 +26,16 @@ class RotorSE_Example2():
 		rotor.driver.options['tol'] = 1.0e-8
 		# ---
 		# --- Objective
-		AEP0 = 13228756.289082643
+		# AEP0 = 47147596.2911617
+		AEP0 = 48113504.25433461
 		rotor.driver.add_objective('AEP', scaler=-1./AEP0)
 		# --- Design Variables
 		rotor.driver.add_desvar('r_max_chord', lower=0.15, upper=0.4) # 0.2366
-		rotor.driver.add_desvar('chord_in', lower=0.4, upper=7.)
-		rotor.driver.add_desvar('theta_in', lower=-10.0, upper=30.0)
-		rotor.driver.add_desvar('control_tsr', lower=3.0, upper=14.0)
+		rotor.driver.add_desvar('chord_in', low=0.4, high=7.)
+		rotor.driver.add_desvar('theta_in', low=-10.0, high=30.0)
+		rotor.driver.add_desvar('control_tsr', low=3.0, high=14.0)
 
-		T0 = 652703.2929159765
+		T0 = 1448767.9705024462
 		rotor.driver.add_constraint('rated_T',upper=T0*1.02)
 		# ---
 		# --- Recorder
@@ -70,10 +69,10 @@ class RotorSE_Example2():
 		rotor['teT_in'] = myref.te_thickness #np.array([0.1, 0.09569, 0.06569, 0.02569, 0.00569])  # (Array, m): trailing-edge thickness parameters
 
 		# === atmosphere ===
-		rotor['rho'] = 1.225  # (Float, kg/m**3): density of air
-		rotor['mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
+		rotor['analysis.rho'] = 1.225  # (Float, kg/m**3): density of air
+		rotor['analysis.mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
 		rotor['hub_height'] = myref.hub_height #90.0
-		rotor['shearExp'] = 0.25  # (Float): shear exponent
+		rotor['analysis.shearExp'] = 0.25  # (Float): shear exponent
 		rotor['turbine_class'] = myref.turbine_class #TURBINE_CLASS['I']  # (Enum): IEC turbine class
 		rotor['cdf_reference_height_wind_speed'] = myref.hub_height #90.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
 
@@ -83,8 +82,7 @@ class RotorSE_Example2():
 		rotor['control_ratedPower'] = myref.rating #5e6  # (Float, W): rated power
 		rotor['control_minOmega'] = myref.control_minOmega #0.0  # (Float, rpm): minimum allowed rotor rotation speed
 		rotor['control_maxOmega'] = myref.control_maxOmega #12.0  # (Float, rpm): maximum allowed rotor rotation speed
-		rotor['control_tsr'] = myref.control_tsr #10.58  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
-		rotor['control_maxTS'] = myref.control_maxTS
+		rotor['control_tsr'] = myref.control_tsr #7.55  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
 		rotor['control_pitch'] = myref.control_pitch #0.0  # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
 
 		# === aero and structural analysis options ===
@@ -97,16 +95,16 @@ class RotorSE_Example2():
 		rotor.run()
 		# ---
 
-		print('Max Chord Radius = ', rotor['r_max_chord'])
-		print('Chord Control Points = ', rotor['chord_in'])
-		print('Twist Control Points = ', rotor['theta_in'])
-		print('TSR = ', rotor['control_tsr'])
+		print 'Max Chord Radius = ', rotor['r_max_chord']
+		print 'Chord Control Points = ', rotor['chord_in']
+		print 'Twist Control Points = ', rotor['theta_in']
+		print 'TSR = ', rotor['control_tsr']
 
-		print('----------------')
-		print( 'Objective = ', -1*rotor['AEP']/AEP0)
-		print( 'AEP = ', rotor['AEP'])
-		print( 'Rated Thrust =', rotor['rated_T'])
-		print( 'Percent change in thrust =', (rotor['rated_T']-T0)/T0 *100)
+		print'----------------'
+		print 'Objective = ', -1*rotor['AEP']/AEP0
+		print 'AEP = ', rotor['AEP']
+		print 'Rated Thrust =', rotor['rated_T']
+		print 'Percent change in thrust =', (rotor['rated_T']-T0)/T0 *100
 
 
 

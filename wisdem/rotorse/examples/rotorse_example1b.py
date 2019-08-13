@@ -7,18 +7,18 @@ class RotorSE_Example1b():
 		import os
 		from openmdao.api import IndepVarComp, Component, Group, Problem, Brent, ScipyGMRES
 		from rotorse.rotor_aeropower import RotorAeroPower
-		from rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
+		from rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, NINPUT
 		from rotorse import RPM2RS, RS2RPM, TURBULENCE_CLASS, DRIVETRAIN_TYPE, TURBINE_CLASS
 
 
 
-		myref = NREL5MW()
+		myref = DTU10MW()
 		rotor = Problem()
 
 		npts_coarse_power_curve = 20 # (Int): number of points to evaluate aero analysis at
 		npts_spline_power_curve = 200  # (Int): number of points to use in fitting spline to power curve
 
-		rotor.root = RotorAeroPower(myref, npts_coarse_power_curve, npts_spline_power_curve, regulation_reg_II5=False, regulation_reg_III=False)
+		rotor.root = RotorAeroPower(myref, npts_coarse_power_curve, npts_spline_power_curve)
 		rotor.setup()
 
 		# === blade grid ===
@@ -40,10 +40,10 @@ class RotorSE_Example1b():
 		# ------------------
 
 		# === atmosphere ===
-		rotor['rho'] = 1.225  # (Float, kg/m**3): density of air
-		rotor['mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
+		rotor['analysis.rho'] = 1.225  # (Float, kg/m**3): density of air
+		rotor['analysis.mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
 		rotor['hub_height'] = 119. # (Float, m)
-		rotor['shearExp'] = 0.25  # (Float): shear exponent
+		rotor['analysis.shearExp'] = 0.25  # (Float): shear exponent
 		rotor['turbine_class'] = TURBINE_CLASS['I']  # (Enum): IEC turbine class
 		rotor['cdf_reference_height_wind_speed'] = 119.   # (Float): reference hub height for IEC wind speed (used in CDF calculation)
 		# ----------------------
@@ -54,7 +54,6 @@ class RotorSE_Example1b():
 		rotor['control_ratedPower'] = 10.e6  # (Float, W): rated power
 		rotor['control_minOmega'] = 6.0  # (Float, rpm): minimum allowed rotor rotation speed
 		rotor['control_maxOmega'] = 8.88766  # (Float, rpm): maximum allowed rotor rotation speed
-		rotor['control_maxTS'] = 80.0
 		rotor['control_tsr'] = 10.58  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
 		rotor['control_pitch'] = 0.0  # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
 		# ----------------------

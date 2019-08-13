@@ -1,20 +1,18 @@
-from __future__ import print_function
 
 class RotorSE_Example3():
 
 	def execute(self):
 
 		# --- Import Modules
-
 		import numpy as np
 		import os
 		from openmdao.api import IndepVarComp, Component, Group, Problem, Brent, ScipyGMRES, ScipyOptimizer, DumpRecorder
 		from rotorse.rotor_aeropower import RotorAeroPower
-		from rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
+		from rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, NINPUT
 		from rotorse import RPM2RS, RS2RPM, TURBULENCE_CLASS, DRIVETRAIN_TYPE
 		from rotorse.rotor import RotorSE
 
-		myref = TUM3_35MW()
+		myref = DTU10MW()
 
 		rotor = Problem()
 		npts_coarse_power_curve = 20 # (Int): number of points to evaluate aero analysis at
@@ -44,8 +42,8 @@ class RotorSE_Example3():
 		# ---
 
 		# === atmosphere ===
-		rotor['rho'] = 1.225  # (Float, kg/m**3): density of air
-		rotor['mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
+		rotor['analysis.rho'] = 1.225  # (Float, kg/m**3): density of air
+		rotor['analysis.mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
 		rotor['wind.shearExp'] = 0.25  # (Float): shear exponent
 		rotor['hub_height'] = myref.hub_height #119.0  # (Float, m): hub height
 		rotor['turbine_class'] = myref.turbine_class #TURBINE_CLASS['I']  # (Enum): IEC turbine class
@@ -61,7 +59,6 @@ class RotorSE_Example3():
 		rotor['control_maxOmega'] = myref.control_maxOmega #8.88766  # (Float, rpm): maximum allowed rotor rotation speed
 		rotor['control_tsr'] = myref.control_tsr #10.58  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
 		rotor['control_pitch'] = myref.control_pitch #0.0  # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
-		rotor['control_maxTS'] = myref.control_maxTS
 		rotor['machine_rating'] = myref.rating #10e6  # (Float, W): rated power
 		rotor['pitch_extreme'] = 0.0  # (Float, deg): worst-case pitch at survival wind condition
 		rotor['azimuth_extreme'] = 0.0  # (Float, deg): worst-case azimuth at survival wind condition
@@ -106,19 +103,19 @@ class RotorSE_Example3():
 		# === run and outputs ===
 		rotor.run()
 
-		print('AEP =', rotor['AEP'])
-		print('diameter =', rotor['diameter'])
-		print('rated_V =', rotor['rated_V'])
-		print('rated_Omega =', rotor['rated_Omega'])
-		print('rated_pitch =', rotor['rated_pitch'])
-		print('rated_T =', rotor['rated_T'])
-		print('rated_Q =', rotor['rated_Q'])
-		print('mass_one_blade =', rotor['mass_one_blade'])
-		print('mass_all_blades =', rotor['mass_all_blades'])
-		print('I_all_blades =', rotor['I_all_blades'])
-		print('freq =', rotor['freq'])
-		print('tip_deflection =', rotor['tip_deflection'])
-		print('root_bending_moment =', rotor['root_bending_moment'])
+		print 'AEP =', rotor['AEP']
+		print 'diameter =', rotor['diameter']
+		print 'rated_V =', rotor['rated_V']
+		print 'rated_Omega =', rotor['rated_Omega']
+		print 'rated_pitch =', rotor['rated_pitch']
+		print 'rated_T =', rotor['rated_T']
+		print 'rated_Q =', rotor['rated_Q']
+		print 'mass_one_blade =', rotor['mass_one_blade']
+		print 'mass_all_blades =', rotor['mass_all_blades']
+		print 'I_all_blades =', rotor['I_all_blades']
+		print 'freq =', rotor['freq']
+		print 'tip_deflection =', rotor['tip_deflection']
+		print 'root_bending_moment =', rotor['root_bending_moment']
 
 		outpath = '..\..\..\docs\images'
 		import matplotlib.pyplot as plt
