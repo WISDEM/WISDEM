@@ -101,11 +101,12 @@ class Akima(object):
             ypt_jj = ypt[jj, :]
 
             # Compute segment slopes
-            md[:, 2:ncp + 1] = ((yptd[:, 1:] - yptd[:, :-1]) * (xpt[1:] - xpt[:-1]) -
-                                (ypt_jj[1:] - ypt_jj[:-1]) * (xptd[:, 1:] - xptd[:, :-1])) / \
-                (xpt[1:] - xpt[:-1]) ** 2
+            temp = ((yptd[:, 1:] - yptd[:, :-1]) * (xpt[1:] - xpt[:-1]) -
+                    (ypt_jj[1:] - ypt_jj[:-1]) * (xptd[:, 1:] - xptd[:, :-1]))
+            md[:, 2:ncp + 1] = np.divide(temp, (xpt[1:] - xpt[:-1]) ** 2, out=np.zeros_like(temp), where=(xpt[1:] - xpt[:-1])!=0.0)
 
-            m[2:ncp + 1] = (ypt_jj[1:] - ypt_jj[:-1]) / (xpt[1:] - xpt[:-1])
+            #m[2:ncp + 1] = (ypt_jj[1:] - ypt_jj[:-1]) / (xpt[1:] - xpt[:-1])
+            m[2:ncp + 1] = np.divide(ypt_jj[1:] - ypt_jj[:-1], xpt[1:] - xpt[:-1], out=np.zeros_like(ypt_jj[1:]), where=(xpt[1:] - xpt[:-1])!=0.0)
 
             # Estimation for end points.
             md[:, 1] = 2.0 * md[:, 2] - md[:, 3]
@@ -156,15 +157,17 @@ class Akima(object):
             t2 = t[1:]
 
             p1[jj, :] = t1
-            p2[jj, :] = (3.0 * m[2:ncp + 1] - 2.0 * t1 - t2) / dx
-            p3[jj, :] = (t1 + t2 - 2.0 * m[2:ncp + 1]) / dx2
+            p2[jj, :] = np.divide((3.0 * m[2:ncp + 1] - 2.0 * t1 - t2), dx, out=np.zeros_like(p2[jj,:]), where=dx!=0.0) #(3.0 * m[2:ncp + 1] - 2.0 * t1 - t2) / dx
+            p3[jj, :] = np.divide((t1 + t2 - 2.0 * m[2:ncp + 1]), dx2, out=np.zeros_like(p3[jj,:]), where=dx2!=0.0) #(t1 + t2 - 2.0 * m[2:ncp + 1]) / dx2
 
             p0d[jj, ...] = yptd[:, :-1]
             p1d[jj, ...] = td[:, :-1]
-            p2d[jj, ...] = ((3.0 * md[:, 2:ncp + 1] - 2.0 * td[:, :-1] - td[:, 1:]) * dx -
-                            (3.0 * m[2:ncp + 1] - 2.0 * t1 - t2) * dxd) / dx2
-            p3d[jj, ...] = ((td[:, :-1] + td[:, 1:] - 2.0 * md[:, 2:ncp + 1]) * dx2 -
-                            (t1 + t2 - 2.0 * m[2:ncp + 1]) * 2 * dx * dxd) / (dx2)**2
+            temp = ((3.0 * md[:, 2:ncp + 1] - 2.0 * td[:, :-1] - td[:, 1:]) * dx -
+                    (3.0 * m[2:ncp + 1] - 2.0 * t1 - t2) * dxd)
+            p2d[jj, ...] = np.divide(temp, dx2, out=np.zeros_like(p2d[jj,...]), where=dx2!=0.0)
+            temp = ((td[:, :-1] + td[:, 1:] - 2.0 * md[:, 2:ncp + 1]) * dx2 -
+                    (t1 + t2 - 2.0 * m[2:ncp + 1]) * 2 * dx * dxd) 
+            p3d[jj, ...] = np.divide(temp, dx2**2, out=np.zeros_like(p3d[jj,...]), where=dx2!=0.0)
 
         self.xpt = xpt
         
