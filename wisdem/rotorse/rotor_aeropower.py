@@ -414,8 +414,6 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
                 U     =  U_vector[i] * np.ones(n_pitch)
                 Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
                 _, _, _, _, outputs['Cp_aero_table'][j,:,i], outputs['Ct_aero_table'][j,:,i], outputs['Cq_aero_table'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
-                
-        
 
 
 class AEP(ExplicitComponent):

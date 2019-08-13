@@ -67,12 +67,13 @@ class RotorSE(Group):
                                                 regulation_reg_III=regulation_reg_III,
                                                 topLevelFlag=False), promotes=['*'])
         self.add_subsystem('rs', RotorStructure(RefBlade=RefBlade,
-                                                topLevelFlag=False), 
+                                                topLevelFlag=False,
+                                                Analysis_Level=Analysis_Level), 
                            promotes=['fst_vt_in','VfactorPC','turbulence_class','gust_stddev','pitch_extreme',
                                      'azimuth_extreme','rstar_damage','Mxb_damage','Myb_damage',
                                      'strain_ult_spar','strain_ult_te','m_damage',
                                      'gamma_fatigue','gamma_freq','gamma_f','gamma_m','dynamic_amplification',
-                                     'pitch_load89','azimuth_load0','azimuth_load120','azimuth_load240',
+                                     'azimuth_load180','azimuth_load0','azimuth_load120','azimuth_load240',
                                      'nSector','rho','mu','shearExp','tiploss','hubloss','wakerotation','usecd',
                                      'bladeLength','hubFraction','r_max_chord','chord_in','theta_in',
                                      'precurve_in','presweep_in','precurveTip','presweepTip','precone',
@@ -95,8 +96,8 @@ class RotorSE(Group):
         # Connections between rotor_aero and rotor_structure
         self.connect('powercurve.rated_V', ['rs.gust.V_hub', 'rs.setuppc.Vrated'])
         self.connect('powercurve.rated_Omega', ['rs.Omega', 'rs.aero_rated.Omega_load',
-                                                'rs.curvefem.Omega','rs.aero_0.Omega_load',
-                                                'rs.aero_120.Omega_load','rs.aero_240.Omega_load'])
+                                                'rs.curvefem.Omega','rs.aero_rated_0.Omega_load',
+                                                'rs.aero_rated_120.Omega_load','rs.aero_rated_240.Omega_load'])
         self.connect('powercurve.rated_pitch', 'rs.aero_rated.pitch_load')
 
 
@@ -136,7 +137,7 @@ def Init_RotorSE_wRefBlade(rotor, blade, fst_vt={}):
     # === atmosphere ===
     rotor['rho']              = 1.225  # (Float, kg/m**3): density of air
     rotor['mu']               = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    rotor['shearExp']    = 0.25  # (Float): shear exponent
+    rotor['shearExp']         = 0.25  # (Float): shear exponent
     rotor['shape_parameter']  = 2.0
     rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
     rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class
@@ -157,6 +158,9 @@ def Init_RotorSE_wRefBlade(rotor, blade, fst_vt={}):
     rotor['pitch_extreme']    = 0.0  # (Float, deg): worst-case pitch at survival wind condition
     rotor['azimuth_extreme']  = 0.0  # (Float, deg): worst-case azimuth at survival wind condition
     rotor['VfactorPC']        = 0.7  # (Float): fraction of rated speed at which the deflection is assumed to representative throughout the power curve calculation
+    
+    
+    
     # ----------------------
 
     # === aero and structural analysis options ===
@@ -303,9 +307,8 @@ if __name__ == '__main__':
     print('tip_deflection =', rotor['tip_deflection'])
     print('root_bending_moment =', rotor['root_bending_moment'])
     print('moments at the hub =', rotor['Mxyz_total'])
-
-    print(rotor['airfoils'][0].cl_spline)
-
+    
+    
     #for io in rotor.model.unknowns:
     #    print(io + ' ' + str(rotor.model.unknowns[io]))
     '''
@@ -365,7 +368,8 @@ if __name__ == '__main__':
     
     plt.show()
     
-    
+    print(rotor['cpctcq_tables.pitch_vector'])
+    exit()
     n_pitch = len(rotor['cpctcq_tables.pitch_vector'])
     n_tsr   = len(rotor['cpctcq_tables.tsr_vector'])
     n_U     = len(rotor['cpctcq_tables.U_vector'])
@@ -373,13 +377,13 @@ if __name__ == '__main__':
     # file = open(output_folder + 'Cp_Ct_Cq.txt','w')
     # file.write('# Pitch angle vector - x axis (matrix columns) (deg)\n')
     # for i in range(n_pitch):
-        # file.write('%.2f   ' % rotor['cpctcq_tables.pitch_vector'][i])
+        # file.write('%.2f   ' % rotor['ra.cpctcq_tables.pitch_vector'][i])
     # file.write('\n# TSR vector - y axis (matrix rows) (-)\n')
     # for i in range(n_tsr):
-        # file.write('%.2f   ' % rotor['cpctcq_tables.tsr_vector'][i])
+        # file.write('%.2f   ' % rotor['ra.cpctcq_tables.tsr_vector'][i])
     # file.write('\n# Wind speed vector - z axis (m/s)\n')
     # for i in range(n_U):
-        # file.write('%.2f   ' % rotor['cpctcq_tables.U_vector'][i])
+        # file.write('%.2f   ' % rotor['ra.cpctcq_tables.U_vector'][i])
     # file.write('\n')
     
     # file.write('\n# Power coefficient\n\n')
@@ -389,7 +393,7 @@ if __name__ == '__main__':
     # for i in range(n_U):
         # for j in range(n_tsr):
             # for k in range(n_pitch):
-                # file.write('%.5f   ' % rotor['cpctcq_tables.Cp_aero_table'][j,k,i])
+                # file.write('%.5f   ' % rotor['ra.cpctcq_tables.Cp_aero_table'][j,k,i])
             # file.write('\n')
         # file.write('\n')
     
@@ -397,7 +401,7 @@ if __name__ == '__main__':
     # for i in range(n_U):
         # for j in range(n_tsr):
             # for k in range(n_pitch):
-                # file.write('%.5f   ' % rotor['cpctcq_tables.Ct_aero_table'][j,k,i])
+                # file.write('%.5f   ' % rotor['ra.cpctcq_tables.Ct_aero_table'][j,k,i])
             # file.write('\n')
         # file.write('\n')
     
@@ -405,16 +409,17 @@ if __name__ == '__main__':
     # for i in range(n_U):
         # for j in range(n_tsr):
             # for k in range(n_pitch):
-                # file.write('%.5f   ' % rotor['cpctcq_tables.Cq_aero_table'][j,k,i])
+                # file.write('%.5f   ' % rotor['ra.cpctcq_tables.Cq_aero_table'][j,k,i])
             # file.write('\n')
         # file.write('\n')
         
     # file.close()
     
-
+    print(rotor['ra.cpctcq_tables.pitch_vector'])
+    exit()
     for i in range(n_U):
         fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
+        CS0 = ax0.contour(rotor['ra.cpctcq_tables.pitch_vector'], rotor['ra.cpctcq_tables.tsr_vector'], rotor['ra.cpctcq_tables.Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
         ax0.clabel(CS0, inline=1, fontsize=12)
         plt.title('Power Coefficient', fontsize=14, fontweight='bold')
         plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
@@ -425,7 +430,7 @@ if __name__ == '__main__':
         plt.subplots_adjust(bottom = 0.15, left = 0.15)
 
         fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Ct_aero_table'][:, :, i])
+        CS0 = ax0.contour(rotor['ra.cpctcq_tables.pitch_vector'], rotor['ra.cpctcq_tables.tsr_vector'], rotor['ra.cpctcq_tables.Ct_aero_table'][:, :, i])
         ax0.clabel(CS0, inline=1, fontsize=12)
         plt.title('Thrust Coefficient', fontsize=14, fontweight='bold')
         plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
@@ -437,7 +442,7 @@ if __name__ == '__main__':
 
         
         fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Cq_aero_table'][:, :, i])
+        CS0 = ax0.contour(rotor['ra.cpctcq_tables.pitch_vector'], rotor['ra.cpctcq_tables.tsr_vector'], rotor['ra.cpctcq_tables.Cq_aero_table'][:, :, i])
         ax0.clabel(CS0, inline=1, fontsize=12)
         plt.title('Torque Coefficient', fontsize=14, fontweight='bold')
         plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
