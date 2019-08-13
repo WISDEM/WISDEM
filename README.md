@@ -80,7 +80,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 6.  Now install all of the packages.  The instructions here assume that the user will be interacting with the source code and incorporating code updates frequently, so the python packages are set-up for development (`python setup.py develop`), instead of hard installs (`python setup.py install`).
 
         cd WISDEM
-        git checkout --track origin/opendmao2
+        git checkout --track origin/yaml
         python setup.py develop 
         cd ..
 
