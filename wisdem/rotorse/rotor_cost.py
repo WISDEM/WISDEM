@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import math
 from scipy.optimize import brentq
 from openmdao.api import ExplicitComponent
-from wisdem.rotorse.bladecostse import blade_cost_model
 
 class blade_bom(object):
 

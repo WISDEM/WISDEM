@@ -108,18 +108,7 @@ class RotorSE(Group):
                                      'Fxyz_total','Mxyz_total','TotalCone','Pitch'])
         
         self.add_subsystem('rc', RotorCost(RefBlade=RefBlade, verbosity=rc_verbosity),
-                           promotes=['bladeLength','total_blade_cost'])
-        self.connect('rs.Rtip',         'rc.Rtip')
-        self.connect('rs.Rhub',         'rc.Rhub')
-        self.connect('rs.r_pts',        'rc.r_pts')
-        self.connect('rs.chord',        'rc.chord')
-        self.connect('rs.le_location',  'rc.le_location')
-        self.connect('rs.materials',    'rc.materials')
-        self.connect('rs.upperCS',      'rc.upperCS')
-        self.connect('rs.lowerCS',      'rc.lowerCS')
-        self.connect('rs.websCS',       'rc.websCS')
-        self.connect('rs.profile',      'rc.profile')
-        
+                           promotes=['bladeLength','total_blade_cost','Rtip','Rhub','r_pts','chord','le_location','materials','upperCS','lowerCS','websCS','profile'])       
         
         self.add_subsystem('obj_cmp', ExecComp('obj = -AEP',
                                                AEP={'units':'kW*h','value':1000000.0},
