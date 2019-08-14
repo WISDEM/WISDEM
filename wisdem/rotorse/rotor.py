@@ -15,7 +15,9 @@ from wisdem.rotorse.rotor_aeropower import RotorAeroPower
 from wisdem.rotorse.rotor_structure import RotorStructure
 from wisdem.rotorse.rotor_geometry import RotorGeometry
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
+from wisdem.rotorse.rotor_cost import RotorCost
 from wisdem.rotorse import RPM2RS, RS2RPM
+
 #from wisdem.rotorse.rotor_fast import FASTLoadCases
 
 
@@ -31,6 +33,12 @@ class RotorSE(Group):
         self.options.declare('FASTpref',                default={})
         self.options.declare('flag_nd_opt',             default=False)
         self.options.declare('topLevelFlag',            default=False)
+        self.options.declare('rc_verbosity',            default=False)
+        self.options.declare('rc_tex_table',            default=False)
+        self.options.declare('rc_generate_plots',       default=False)
+        self.options.declare('rc_show_plots',           default=False)
+        self.options.declare('rc_show_warnings',        default=False)
+        self.options.declare('rc_discrete',             default=False)
     
     def setup(self):
         RefBlade                = self.options['RefBlade']
@@ -42,6 +50,14 @@ class RotorSE(Group):
         Analysis_Level          = self.options['Analysis_Level']
         FASTpref                = self.options['FASTpref']
         topLevelFlag            = self.options['topLevelFlag']
+        rc_verbosity            = self.options['rc_verbosity']
+        rc_tex_table            = self.options['rc_tex_table']
+        rc_generate_plots       = self.options['rc_generate_plots']
+        rc_show_plots           = self.options['rc_show_plots']
+        rc_show_warnings        = self.options['rc_show_warnings'] 
+        rc_discrete             = self.options['rc_discrete']
+        
+        
 
         rotorIndeps = IndepVarComp()
         rotorIndeps.add_discrete_output('tiploss',      True)
@@ -61,7 +77,6 @@ class RotorSE(Group):
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
                 
         # --- Rotor Aero & Power ---
-        #self.add_subsystem('rg', RotorGeometry(RefBlade=RefBlade, topLevelFlag=True), promotes=['*'])
         self.add_subsystem('ra', RotorAeroPower(RefBlade=RefBlade,
                                                 npts_coarse_power_curve=npts_coarse_power_curve,
                                                 npts_spline_power_curve=npts_spline_power_curve,
@@ -91,6 +106,20 @@ class RotorSE(Group):
                                      'Fxyz_1','Fxyz_2','Fxyz_3','Fxyz_4','Fxyz_5','Fxyz_6',
                                      'Mxyz_1','Mxyz_2','Mxyz_3','Mxyz_4','Mxyz_5','Mxyz_6',
                                      'Fxyz_total','Mxyz_total','TotalCone','Pitch'])
+        
+        self.add_subsystem('rc', RotorCost(RefBlade=RefBlade, verbosity=rc_verbosity),
+                           promotes=['bladeLength','total_blade_cost'])
+        self.connect('rs.Rtip',         'rc.Rtip')
+        self.connect('rs.Rhub',         'rc.Rhub')
+        self.connect('rs.r_pts',        'rc.r_pts')
+        self.connect('rs.chord',        'rc.chord')
+        self.connect('rs.le_location',  'rc.le_location')
+        self.connect('rs.materials',    'rc.materials')
+        self.connect('rs.upperCS',      'rc.upperCS')
+        self.connect('rs.lowerCS',      'rc.lowerCS')
+        self.connect('rs.websCS',       'rc.websCS')
+        self.connect('rs.profile',      'rc.profile')
+        
         
         self.add_subsystem('obj_cmp', ExecComp('obj = -AEP',
                                                AEP={'units':'kW*h','value':1000000.0},
@@ -271,8 +300,15 @@ if __name__ == '__main__':
     npts_coarse_power_curve = 20        # (Int): number of points to evaluate aero analysis at
     npts_spline_power_curve = 200       # (Int): number of points to use in fitting spline to power curve
     regulation_reg_II5      = True      # calculate Region 2.5 pitch schedule, False will not maximize power in region 2.5
-    regulation_reg_III      = False     # calculate Region 3 pitch schedule, False will return erroneous Thrust, Torque, and Moment for above rated
-    flag_Cp_Ct_Cq_Tables    = False      # Compute Cp-Ct-Cq-Beta-TSR tables
+    regulation_reg_III      = True      # calculate Region 3 pitch schedule, False will return erroneous Thrust, Torque, and Moment for above rated
+    flag_Cp_Ct_Cq_Tables    = True      # Compute Cp-Ct-Cq-Beta-TSR tables
+    rc_verbosity            = False      # Verbosity flag for the blade cost model
+    rc_tex_table            = False     # Flag to generate .tex ready tables from the blade cost model
+    rc_generate_plots       = False     # Flag to generate plots in the blade cost model
+    rc_show_plots           = False     # Flag to show plots from the blade cost model
+    rc_show_warnings        = False     # Flag to show warnings from the blade cost model
+    rc_discrete             = False     # Flag to switch between a discrete and a continuous appraoch in the blade cost model
+
     
     rotor.model = RotorSE(RefBlade=blade,
                           npts_coarse_power_curve=npts_coarse_power_curve,
@@ -281,6 +317,12 @@ if __name__ == '__main__':
                           regulation_reg_III=regulation_reg_III, 
                           Analysis_Level=Analysis_Level,
                           FASTpref=FASTpref,
+                          rc_verbosity=rc_verbosity,
+                          rc_tex_table=rc_tex_table,
+                          rc_generate_plots=rc_generate_plots,
+                          rc_show_plots=rc_show_plots,
+                          rc_show_warnings =rc_show_warnings ,
+                          rc_discrete=rc_discrete,                          
                           topLevelFlag=True)
     rotor.setup()
     rotor = Init_RotorSE_wRefBlade(rotor, blade, fst_vt=fst_vt)
@@ -311,7 +353,7 @@ if __name__ == '__main__':
     print('tip_deflection =',           rotor['tip_deflection'])
     print('root_bending_moment =',      rotor['root_bending_moment'])
     print('moments at the hub =',       rotor['Mxyz_total'])
-    
+    print('blade cost =',               rotor['total_blade_cost'])
     
     #for io in rotor.model.unknowns:
     #    print(io + ' ' + str(rotor.model.unknowns[io]))
