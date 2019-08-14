@@ -724,6 +724,7 @@ class Outputs2Screen(ExplicitComponent):
         self.add_input('tower_cost',       0.0,  units='USD', desc='Overall wind turbine tower capital costs')
         self.add_input('tower_mass',       0.0,  units='kg',  desc='Tower mass')
         self.add_input('turbine_cost',     0.0,  units='USD', desc='Overall wind turbine capital costs including transportation costs')
+        self.add_input('turbine_cost_kW',  0.0,  units='USD/kW', desc='Overall wind turbine capital costs including transportation costs per kW')
         self.add_input('turbine_mass_tcc', 0.0,  units='kg',  desc='Turbine mass')
         
         
@@ -761,6 +762,7 @@ class Outputs2Screen(ExplicitComponent):
             print('------------------------------------------------')
             print('------------------------------------------------')
             print('Turbine cost            %.3f k USD       mass %.3f kg' % (inputs['turbine_cost'] * 1.e-003,      inputs['turbine_mass_tcc']))
+            print('Turbine cost per kW     %.3f k USD/kW'                 % inputs['turbine_cost_kW'])
             print('################################################')
                 
     

@@ -123,9 +123,7 @@ class RotorSE(Group):
 
 
 
-def Init_RotorSE_wRefBlade(rotor, blade, fst_vt={}):
-
-    Analysis_Level = rotor.model.options['Analysis_Level']
+def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
 
     # === FAST model ===
     if Analysis_Level >= 1:
@@ -134,48 +132,47 @@ def Init_RotorSE_wRefBlade(rotor, blade, fst_vt={}):
         rotor['drivetrainEff'] = fst_vt['ServoDyn']['GenEff']/100.
 
     # === blade grid ===
-    rotor['hubFraction'] = blade['config']['hubD']/2./blade['ctrl_pts']['bladeLength'] #0.025  # (Float): hub location as fraction of radius
-    rotor['bladeLength'] = blade['ctrl_pts']['bladeLength'] #61.5  # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature
+    rotor['hubFraction']        = blade['config']['hubD']/2./blade['ctrl_pts']['bladeLength'] # (Float): hub location as fraction of radius
+    rotor['bladeLength']        = blade['ctrl_pts']['bladeLength'] # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature
     # rotor['delta_bladeLength'] = 0.0  # (Float, m): adjustment to blade length to account for curvature from loading
-    rotor['precone'] = blade['config']['cone_angle'] #2.5  # (Float, deg): precone angle
-    rotor['tilt'] = blade['config']['tilt_angle'] #5.0  # (Float, deg): shaft tilt
-    rotor['yaw'] = 0.0  # (Float, deg): yaw error
-    rotor['nBlades'] = blade['config']['number_of_blades'] #3  # (Int): number of blades
+    rotor['precone']            = blade['config']['cone_angle']  # (Float, deg): precone angle
+    rotor['tilt']               = blade['config']['tilt_angle']  # (Float, deg): shaft tilt
+    rotor['yaw']                = 0.0  # (Float, deg): yaw error
+    rotor['nBlades']            = blade['config']['number_of_blades'] # (Int): number of blades
     # ------------------
     
     # === blade geometry ===
-    rotor['r_max_chord']      = blade['ctrl_pts']['r_max_chord']  # 0.23577 #(Float): location of max chord on unit radius
-    rotor['chord_in']         = np.array(blade['ctrl_pts']['chord_in']) # np.array([3.2612, 4.3254, 4.5709, 3.7355, 2.69923333, 1.4621])  # (Array, m): chord at control points. defined at hub, then at linearly spaced locations from r_max_chord to tip
-    rotor['theta_in']         = np.array(blade['ctrl_pts']['theta_in']) # np.array([0.0, 13.2783, 12.30514836,  6.95106536,  2.72696309, -0.0878099]) # (Array, deg): twist at control points.  defined at linearly spaced locations from r[idx_cylinder] to tip
-    rotor['precurve_in']      = np.array(blade['ctrl_pts']['precurve_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
-    rotor['presweep_in']      = np.array(blade['ctrl_pts']['presweep_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
-    rotor['sparT_in']         = np.array(blade['ctrl_pts']['sparT_in']) # np.array([0.0, 0.05, 0.047754, 0.045376, 0.031085, 0.0061398])  # (Array, m): spar cap thickness parameters
-    rotor['teT_in']           = np.array(blade['ctrl_pts']['teT_in']) # np.array([0.0, 0.1, 0.09569, 0.06569, 0.02569, 0.00569])  # (Array, m): trailing-edge thickness parameters
-    # rotor['thickness_in']     = np.array(blade['ctrl_pts']['thickness_in'])
+    rotor['r_max_chord']      = blade['ctrl_pts']['r_max_chord']  #(Float): location of max chord on unit radius
+    rotor['chord_in']         = np.array(blade['ctrl_pts']['chord_in']) # (Array, m): chord at control points. defined at hub, then at linearly spaced locations from r_max_chord to tip
+    rotor['theta_in']         = np.array(blade['ctrl_pts']['theta_in']) # (Array, deg): twist at control points.  defined at linearly spaced locations from r[idx_cylinder] to tip
+    rotor['precurve_in']      = np.array(blade['ctrl_pts']['precurve_in']) # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
+    rotor['presweep_in']      = np.array(blade['ctrl_pts']['presweep_in']) # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
+    rotor['sparT_in']         = np.array(blade['ctrl_pts']['sparT_in']) # (Array, m): spar cap thickness parameters
+    rotor['teT_in']           = np.array(blade['ctrl_pts']['teT_in']) # (Array, m): trailing-edge thickness parameters
     rotor['airfoil_position'] = np.array(blade['outer_shape_bem']['airfoil_position']['grid'])
     # ------------------
 
     # === atmosphere ===
-    rotor['rho']              = 1.225  # (Float, kg/m**3): density of air
+    rotor['rho']              = 1.225   # (Float, kg/m**3): density of air
     rotor['mu']               = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    rotor['shearExp']         = 0.25  # (Float): shear exponent
+    rotor['shearExp']         = 0.2     # (Float): shear exponent
     rotor['shape_parameter']  = 2.0
     rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
     rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class
     rotor['turbulence_class'] = blade['config']['turbulence_class'].upper()  # (Enum): IEC turbulence class class
-    rotor['wind_reference_height']        = blade['config']['hub_height']
+    rotor['wind_reference_height'] = blade['config']['hub_height']
     rotor['gust_stddev']      = 3
     # ----------------------
 
     # === control ===
-    rotor['control_Vin']      = blade['config']['Vin'] #3.0  # (Float, m/s): cut-in wind speed
-    rotor['control_Vout']     = blade['config']['Vout'] #25.0  # (Float, m/s): cut-out wind speed
-    rotor['control_minOmega'] = blade['config']['minOmega'] #0.0  # (Float, rpm): minimum allowed rotor rotation speed
-    rotor['control_maxOmega'] = blade['config']['maxOmega'] #12.0  # (Float, rpm): maximum allowed rotor rotation speed
-    rotor['control_tsr']      = blade['config']['tsr'] #7.55  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
-    rotor['control_pitch']    = blade['config']['pitch'] #0.0  # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
+    rotor['control_Vin']      = blade['config']['Vin'] # (Float, m/s): cut-in wind speed
+    rotor['control_Vout']     = blade['config']['Vout'] # (Float, m/s): cut-out wind speed
+    rotor['control_minOmega'] = blade['config']['minOmega'] # (Float, rpm): minimum allowed rotor rotation speed
+    rotor['control_maxOmega'] = blade['config']['maxOmega'] # (Float, rpm): maximum allowed rotor rotation speed
+    rotor['control_tsr']      = blade['config']['tsr'] # (Float): tip-speed ratio in Region 2 (should be optimized externally)
+    rotor['control_pitch']    = blade['config']['pitch'] # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
     rotor['control_maxTS']    = blade['config']['maxTS']
-    rotor['machine_rating']   = blade['config']['rating'] #5e6  # (Float, W): rated power
+    rotor['machine_rating']   = blade['config']['rating'] # (Float, W): rated power
     rotor['pitch_extreme']    = 0.0  # (Float, deg): worst-case pitch at survival wind condition
     rotor['azimuth_extreme']  = 0.0  # (Float, deg): worst-case azimuth at survival wind condition
     rotor['VfactorPC']        = 0.7  # (Float): fraction of rated speed at which the deflection is assumed to representative throughout the power curve calculation
@@ -314,7 +311,7 @@ if __name__ == '__main__':
                           rc_discrete=rc_discrete,                          
                           topLevelFlag=True)
     rotor.setup()
-    rotor = Init_RotorSE_wRefBlade(rotor, blade, fst_vt=fst_vt)
+    rotor = Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level=Analysis_Level, fst_vt=fst_vt)
     
     # rotor['chord_in'] = np.array([3.542, 3.54451799, 2.42342374, 2.44521374, 4.69032208, 6.3306303, 4.41245811, 1.419])
     # rotor['theta_in'] = np.array([13.30800018, 13.30800018, 0.92624531, 10.41054813, 11.48955724, -0.60858835, -1.41595352, 4.89747605])

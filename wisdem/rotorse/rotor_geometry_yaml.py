@@ -462,9 +462,9 @@ class ReferenceBlade(object):
         grid_out = []
         for i in range(1,n_pts):
             if i == n_pts-1:
-                grid_out.append(np.linspace(r_points[i-1], r_points[i], fill[i-1]+2))
+                grid_out.append(np.linspace(r_points[i-1], r_points[i], int(fill[i-1]+2)))
             else:
-                grid_out.append(np.linspace(r_points[i-1], r_points[i], fill[i-1]+2)[:-1])
+                grid_out.append(np.linspace(r_points[i-1], r_points[i], int(fill[i-1]+2))[:-1])
 
         self.s = np.concatenate(grid_out)
 

@@ -31,7 +31,7 @@ class NaturalCubicSpline(object):
         # l[-1] = 0.0
 
         # solve for second derivatives
-        fpp = solve_banded((1, 1), np.matrix([u, d, l]), b)
+        fpp = solve_banded((1, 1), np.array([u, d, l]), b)
         self.fpp = np.concatenate([[0.0], fpp, [0.0]])  # natural spline
         self.xp = xp
         self.yp = yp
