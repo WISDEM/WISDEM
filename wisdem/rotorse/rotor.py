@@ -77,7 +77,7 @@ class RotorSE(Group):
                                      'nSector','rho','mu','shearExp','tiploss','hubloss','wakerotation','usecd',
                                      'bladeLength','hubFraction','r_max_chord','chord_in','theta_in',
                                      'precurve_in','presweep_in','precurveTip','presweepTip','precone',
-                                     'tilt','yaw','nBlades','downwind','sparT_in','teT_in','turbine_class',
+                                     'tilt','yaw','nBlades','downwind','sparT_in','teT_in','airfoil_position','turbine_class',
                                      'control_tsr','control_pitch','lifetime','hub_height',
                                      'mass_one_blade','mass_all_blades','I_all_blades',
                                      'freq','freq_curvefem','modes_coef_curvefem','tip_deflection', 
@@ -205,7 +205,7 @@ if __name__ == '__main__':
     fname_schema  = "turbine_inputs/IEAontology_schema.yaml"
     fname_input   = "turbine_inputs/nrel5mw_mod_update.yaml"
     output_folder = "test/"
-    fname_output  = output_folder + 'test_out.yaml'
+    # fname_output  = output_folder + 'test_out.yaml'
     
     Analysis_Level = 0 # 0: Run CCBlade; 1: Update FAST model at each iteration but do not run; 2: Run FAST w/ ElastoDyn; 3: (Not implemented) Run FAST w/ BeamDyn
 
@@ -290,7 +290,7 @@ if __name__ == '__main__':
     tt = time.time()
     rotor.run_driver()
 
-    refBlade.write_ontology(fname_output, rotor['blade_out'], refBlade.wt_ref)
+    # refBlade.write_ontology(fname_output, rotor['blade_out'], refBlade.wt_ref)
 
     print('Run Time = ', time.time()-tt)
     print('AEP =', rotor['AEP'])

@@ -909,7 +909,7 @@ class RotorWithpBEAM(StrucBase):
 
         # outputs
         nsec = len(inputs['beam:z'])
-
+        
         # create finite element objects
         p_section = _pBEAM.SectionData(nsec, inputs['beam:z'], inputs['beam:EA'], inputs['beam:EIxx'],
             inputs['beam:EIyy'], inputs['beam:GJ'], inputs['beam:rhoA'], inputs['beam:rhoJ'])
@@ -2858,9 +2858,9 @@ def Init_RotorStructure_wRefBlade(rotor, blade):
     # ------------------
 
     # === atmosphere ===
-    rotor['aero_0.rho']       = 1.225  # (Float, kg/m**3): density of air
-    rotor['aero_0.mu']        = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    rotor['aero_0.shearExp']  = 0.25  # (Float): shear exponent
+    rotor['aero_rated_0.rho']       = 1.225  # (Float, kg/m**3): density of air
+    rotor['aero_rated_0.mu']        = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
+    rotor['aero_rated_0.shearExp']  = 0.25  # (Float): shear exponent
     rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
     rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class
     rotor['turbulence_class'] = blade['config']['turbulence_class'].upper()  # (Enum): IEC turbulence class class
@@ -2923,7 +2923,7 @@ if __name__ == '__main__':
     # Initialize blade design
     refBlade = ReferenceBlade()
     refBlade.verbose = True
-    refBlade.NINPUT  = 5
+    refBlade.NINPUT  = 8
     refBlade.NPTS    = 50
     refBlade.spar_var = ['Spar_Cap_SS', 'Spar_Cap_PS']
     refBlade.te_var   = 'TE_reinforcement'

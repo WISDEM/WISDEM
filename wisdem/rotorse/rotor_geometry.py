@@ -116,21 +116,22 @@ class BladeGeometry(ExplicitComponent):
         blade['ctrl_pts']['r_max_chord']  = inputs['r_max_chord']
         # blade['ctrl_pts']['thickness_in'] = inputs['thickness_in']
 
-        #check that airfoil positions are increasing
+        #check that airfoil positions are increasing        
         correct_af_position = False
         airfoil_position = copy.deepcopy(inputs['airfoil_position']).tolist()
         for i in reversed(range(1,len(airfoil_position))):
             if airfoil_position[i] <= airfoil_position[i-1]:
                 airfoil_position[i-1] = airfoil_position[i] - 0.001
-                correct_af_position = True
-
+                correct_af_position = True        
         if correct_af_position:
             blade['outer_shape_bem']['airfoil_position']['grid'] = airfoil_position
             warning_corrected_airfoil_position = "Airfoil spanwise positions must be increasing.  Changed from: %s to: %s" % (inputs['airfoil_position'].tolist(), airfoil_position)
             warnings.warn(warning_corrected_airfoil_position)
+            exit()
         else:
             blade['outer_shape_bem']['airfoil_position']['grid'] = inputs['airfoil_position'].tolist()
-
+        
+        
         # Update
         refBlade = ReferenceBlade()
         refBlade.verbose        = False
@@ -262,7 +263,7 @@ class RotorGeometry(Group):
             geomIndeps.add_discrete_output('turbine_class', val='I', desc='IEC turbine class')
             geomIndeps.add_discrete_output('blade_in_overwrite', val={}, desc='IEC turbine class')
             geomIndeps.add_output('V_mean_overwrite', val=0.0, desc='optional overwrite value for mean velocity for using user defined CDFs')
-            geomIndeps.add_output('airfoil_posision', val=np.zeros(NAF))
+            geomIndeps.add_output('airfoil_position', val=np.zeros(NAF))
             geomIndeps.add_output('sparT_in', val=np.zeros(NINPUT), units='m', desc='spar cap thickness parameters')
             geomIndeps.add_output('teT_in', val=np.zeros(NINPUT), units='m', desc='trailing-edge thickness parameters')
             self.add_subsystem('geomIndeps', geomIndeps, promotes=['*'])
