@@ -24,12 +24,13 @@ class RotorSE(Group):
         self.options.declare('RefBlade')
         self.options.declare('npts_coarse_power_curve', default=20)
         self.options.declare('npts_spline_power_curve', default=200)
-        self.options.declare('regulation_reg_II5',default=True)
-        self.options.declare('regulation_reg_III',default=True)
-        self.options.declare('Analysis_Level',default=0)
-        self.options.declare('FASTpref',default={})
-        self.options.declare('flag_nd_opt',default=False)
-        self.options.declare('topLevelFlag',default=False)
+        self.options.declare('regulation_reg_II5',      default=True)
+        self.options.declare('regulation_reg_III',      default=True)
+        self.options.declare('flag_Cp_Ct_Cq_Tables',    default=True)
+        self.options.declare('Analysis_Level',          default=0)
+        self.options.declare('FASTpref',                default={})
+        self.options.declare('flag_nd_opt',             default=False)
+        self.options.declare('topLevelFlag',            default=False)
     
     def setup(self):
         RefBlade                = self.options['RefBlade']
@@ -37,25 +38,26 @@ class RotorSE(Group):
         npts_spline_power_curve = self.options['npts_spline_power_curve']
         regulation_reg_II5      = self.options['regulation_reg_II5']
         regulation_reg_III      = self.options['regulation_reg_III']
+        flag_Cp_Ct_Cq_Tables    = self.options['flag_Cp_Ct_Cq_Tables']
         Analysis_Level          = self.options['Analysis_Level']
         FASTpref                = self.options['FASTpref']
         topLevelFlag            = self.options['topLevelFlag']
 
         rotorIndeps = IndepVarComp()
-        rotorIndeps.add_discrete_output('tiploss', True)
-        rotorIndeps.add_discrete_output('hubloss', True)
+        rotorIndeps.add_discrete_output('tiploss',      True)
+        rotorIndeps.add_discrete_output('hubloss',      True)
         rotorIndeps.add_discrete_output('wakerotation', True)
-        rotorIndeps.add_discrete_output('usecd', True)
+        rotorIndeps.add_discrete_output('usecd',        True)
         rotorIndeps.add_discrete_output('nSector', val=4, desc='number of sectors to divide rotor face into in computing thrust and power')
         self.add_subsystem('rotorIndeps', rotorIndeps, promotes=['*'])
 
         if topLevelFlag:
             sharedIndeps = IndepVarComp()
-            sharedIndeps.add_output('lifetime', val=20.0, units='year', desc='project lifetime for fatigue analysis')
-            sharedIndeps.add_output('hub_height', val=0.0, units='m')
-            sharedIndeps.add_output('rho', val=1.225, units='kg/m**3')
-            sharedIndeps.add_output('mu', val=1.81e-5, units='kg/(m*s)')
-            sharedIndeps.add_output('shearExp', val=0.2)
+            sharedIndeps.add_output('lifetime',     val=20.0,       units='year', desc='project lifetime for fatigue analysis')
+            sharedIndeps.add_output('hub_height',   val=0.0,        units='m')
+            sharedIndeps.add_output('rho',          val=1.225,      units='kg/m**3')
+            sharedIndeps.add_output('mu',           val=1.81e-5,    units='kg/(m*s)')
+            sharedIndeps.add_output('shearExp',     val=0.2)
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
                 
         # --- Rotor Aero & Power ---
@@ -65,6 +67,7 @@ class RotorSE(Group):
                                                 npts_spline_power_curve=npts_spline_power_curve,
                                                 regulation_reg_II5=regulation_reg_II5,
                                                 regulation_reg_III=regulation_reg_III,
+                                                flag_Cp_Ct_Cq_Tables=flag_Cp_Ct_Cq_Tables,
                                                 topLevelFlag=False), promotes=['*'])
         self.add_subsystem('rs', RotorStructure(RefBlade=RefBlade,
                                                 topLevelFlag=False,
@@ -265,11 +268,12 @@ if __name__ == '__main__':
         fst_vt = {}
 
     rotor = Problem()
-    npts_coarse_power_curve = 20 # (Int): number of points to evaluate aero analysis at
-    npts_spline_power_curve = 200  # (Int): number of points to use in fitting spline to power curve
-    regulation_reg_II5 = True # calculate Region 2.5 pitch schedule, False will not maximize power in region 2.5
-    regulation_reg_III = False # calculate Region 3 pitch schedule, False will return erroneous Thrust, Torque, and Moment for above rated
-
+    npts_coarse_power_curve = 20        # (Int): number of points to evaluate aero analysis at
+    npts_spline_power_curve = 200       # (Int): number of points to use in fitting spline to power curve
+    regulation_reg_II5      = True      # calculate Region 2.5 pitch schedule, False will not maximize power in region 2.5
+    regulation_reg_III      = False     # calculate Region 3 pitch schedule, False will return erroneous Thrust, Torque, and Moment for above rated
+    flag_Cp_Ct_Cq_Tables    = False      # Compute Cp-Ct-Cq-Beta-TSR tables
+    
     rotor.model = RotorSE(RefBlade=blade,
                           npts_coarse_power_curve=npts_coarse_power_curve,
                           npts_spline_power_curve=npts_spline_power_curve,
@@ -292,21 +296,21 @@ if __name__ == '__main__':
 
     # refBlade.write_ontology(fname_output, rotor['blade_out'], refBlade.wt_ref)
 
-    print('Run Time = ', time.time()-tt)
-    print('AEP =', rotor['AEP'])
-    print('diameter =', rotor['diameter'])
-    print('ratedConditions.V =', rotor['rated_V'])
-    print('ratedConditions.Omega =', rotor['rated_Omega'])
-    print('ratedConditions.pitch =', rotor['rated_pitch'])
-    print('ratedConditions.T =', rotor['rated_T'])
-    print('ratedConditions.Q =', rotor['rated_Q'])
-    print('mass_one_blade =', rotor['mass_one_blade'])
-    print('mass_all_blades =', rotor['mass_all_blades'])
-    print('I_all_blades =', rotor['I_all_blades'])
-    print('freq =', rotor['freq'])
-    print('tip_deflection =', rotor['tip_deflection'])
-    print('root_bending_moment =', rotor['root_bending_moment'])
-    print('moments at the hub =', rotor['Mxyz_total'])
+    print('Run Time = ',                time.time()-tt)
+    print('AEP =',                      rotor['AEP'])
+    print('diameter =',                 rotor['diameter'])
+    print('ratedConditions.V =',        rotor['rated_V'])
+    print('ratedConditions.Omega =',    rotor['rated_Omega'])
+    print('ratedConditions.pitch =',    rotor['rated_pitch'])
+    print('ratedConditions.T =',        rotor['rated_T'])
+    print('ratedConditions.Q =',        rotor['rated_Q'])
+    print('mass_one_blade =',           rotor['mass_one_blade'])
+    print('mass_all_blades =',          rotor['mass_all_blades'])
+    print('I_all_blades =',             rotor['I_all_blades'])
+    print('freq =',                     rotor['freq'])
+    print('tip_deflection =',           rotor['tip_deflection'])
+    print('root_bending_moment =',      rotor['root_bending_moment'])
+    print('moments at the hub =',       rotor['Mxyz_total'])
     
     
     #for io in rotor.model.unknowns:
@@ -368,95 +372,88 @@ if __name__ == '__main__':
     
     plt.show()
     
-    print(rotor['cpctcq_tables.pitch_vector'])
-    exit()
-    n_pitch = len(rotor['cpctcq_tables.pitch_vector'])
-    n_tsr   = len(rotor['cpctcq_tables.tsr_vector'])
-    n_U     = len(rotor['cpctcq_tables.U_vector'])
-    
-    # file = open(output_folder + 'Cp_Ct_Cq.txt','w')
-    # file.write('# Pitch angle vector - x axis (matrix columns) (deg)\n')
-    # for i in range(n_pitch):
-        # file.write('%.2f   ' % rotor['ra.cpctcq_tables.pitch_vector'][i])
-    # file.write('\n# TSR vector - y axis (matrix rows) (-)\n')
-    # for i in range(n_tsr):
-        # file.write('%.2f   ' % rotor['ra.cpctcq_tables.tsr_vector'][i])
-    # file.write('\n# Wind speed vector - z axis (m/s)\n')
-    # for i in range(n_U):
-        # file.write('%.2f   ' % rotor['ra.cpctcq_tables.U_vector'][i])
-    # file.write('\n')
-    
-    # file.write('\n# Power coefficient\n\n')
-    
-    
-    
-    # for i in range(n_U):
-        # for j in range(n_tsr):
-            # for k in range(n_pitch):
-                # file.write('%.5f   ' % rotor['ra.cpctcq_tables.Cp_aero_table'][j,k,i])
-            # file.write('\n')
-        # file.write('\n')
-    
-    # file.write('\n#  Thrust coefficient\n\n')
-    # for i in range(n_U):
-        # for j in range(n_tsr):
-            # for k in range(n_pitch):
-                # file.write('%.5f   ' % rotor['ra.cpctcq_tables.Ct_aero_table'][j,k,i])
-            # file.write('\n')
-        # file.write('\n')
-    
-    # file.write('\n# Torque coefficient\n\n')
-    # for i in range(n_U):
-        # for j in range(n_tsr):
-            # for k in range(n_pitch):
-                # file.write('%.5f   ' % rotor['ra.cpctcq_tables.Cq_aero_table'][j,k,i])
-            # file.write('\n')
+    if flag_Cp_Ct_Cq_Tables:
+        n_pitch = len(rotor['cpctcq_tables.pitch_vector'])
+        n_tsr   = len(rotor['cpctcq_tables.tsr_vector'])
+        n_U     = len(rotor['cpctcq_tables.U_vector'])
+        
+        # file = open(output_folder + 'Cp_Ct_Cq.txt','w')
+        # file.write('# Pitch angle vector - x axis (matrix columns) (deg)\n')
+        # for i in range(n_pitch):
+            # file.write('%.2f   ' % rotor['cpctcq_tables.pitch_vector'][i])
+        # file.write('\n# TSR vector - y axis (matrix rows) (-)\n')
+        # for i in range(n_tsr):
+            # file.write('%.2f   ' % rotor['cpctcq_tables.tsr_vector'][i])
+        # file.write('\n# Wind speed vector - z axis (m/s)\n')
+        # for i in range(n_U):
+            # file.write('%.2f   ' % rotor['cpctcq_tables.U_vector'][i])
         # file.write('\n')
         
-    # file.close()
-    
-    print(rotor['ra.cpctcq_tables.pitch_vector'])
-    exit()
-    for i in range(n_U):
-        fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(rotor['ra.cpctcq_tables.pitch_vector'], rotor['ra.cpctcq_tables.tsr_vector'], rotor['ra.cpctcq_tables.Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
-        ax0.clabel(CS0, inline=1, fontsize=12)
-        plt.title('Power Coefficient', fontsize=14, fontweight='bold')
-        plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
-        plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        # file.write('\n# Power coefficient\n\n')
+        
+        
+        
+        # for i in range(n_U):
+            # for j in range(n_tsr):
+                # for k in range(n_pitch):
+                    # file.write('%.5f   ' % rotor['cpctcq_tables.Cp_aero_table'][j,k,i])
+                # file.write('\n')
+            # file.write('\n')
+        
+        # file.write('\n#  Thrust coefficient\n\n')
+        # for i in range(n_U):
+            # for j in range(n_tsr):
+                # for k in range(n_pitch):
+                    # file.write('%.5f   ' % rotor['cpctcq_tables.Ct_aero_table'][j,k,i])
+                # file.write('\n')
+            # file.write('\n')
+        
+        # file.write('\n# Torque coefficient\n\n')
+        # for i in range(n_U):
+            # for j in range(n_tsr):
+                # for k in range(n_pitch):
+                    # file.write('%.5f   ' % rotor['cpctcq_tables.Cq_aero_table'][j,k,i])
+                # file.write('\n')
+            # file.write('\n')
+            
+        # file.close()
+        
+        for i in range(n_U):
+            fig0, ax0 = plt.subplots()
+            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
+            ax0.clabel(CS0, inline=1, fontsize=12)
+            plt.title('Power Coefficient', fontsize=14, fontweight='bold')
+            plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
+            plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
+            plt.xticks(fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+            plt.subplots_adjust(bottom = 0.15, left = 0.15)
 
-        fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(rotor['ra.cpctcq_tables.pitch_vector'], rotor['ra.cpctcq_tables.tsr_vector'], rotor['ra.cpctcq_tables.Ct_aero_table'][:, :, i])
-        ax0.clabel(CS0, inline=1, fontsize=12)
-        plt.title('Thrust Coefficient', fontsize=14, fontweight='bold')
-        plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
-        plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+            fig0, ax0 = plt.subplots()
+            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Ct_aero_table'][:, :, i])
+            ax0.clabel(CS0, inline=1, fontsize=12)
+            plt.title('Thrust Coefficient', fontsize=14, fontweight='bold')
+            plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
+            plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
+            plt.xticks(fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+            plt.subplots_adjust(bottom = 0.15, left = 0.15)
 
+            
+            fig0, ax0 = plt.subplots()
+            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Cq_aero_table'][:, :, i])
+            ax0.clabel(CS0, inline=1, fontsize=12)
+            plt.title('Torque Coefficient', fontsize=14, fontweight='bold')
+            plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
+            plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
+            plt.xticks(fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+            plt.subplots_adjust(bottom = 0.15, left = 0.15)
+            
+            plt.show()
         
-        fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(rotor['ra.cpctcq_tables.pitch_vector'], rotor['ra.cpctcq_tables.tsr_vector'], rotor['ra.cpctcq_tables.Cq_aero_table'][:, :, i])
-        ax0.clabel(CS0, inline=1, fontsize=12)
-        plt.title('Torque Coefficient', fontsize=14, fontweight='bold')
-        plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
-        plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-        plt.subplots_adjust(bottom = 0.15, left = 0.15)
-        
-        plt.show()
-        
-    
-    
-    
-    
     
     # ----------------
