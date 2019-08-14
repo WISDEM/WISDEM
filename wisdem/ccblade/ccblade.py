@@ -666,8 +666,10 @@ class CCBlade(object):
         dct_dx = dcl_dx*sphi + cl*cphi*dphi_dx - dcd_dx*cphi + cd*sphi*dphi_dx
 
         # Np, Tp
-        dNp_dx = Np*(1.0/cn*dcn_dx + 2.0/W*dW_dx + 1.0/chord*dchord_dx)
-        dTp_dx = Tp*(1.0/ct*dct_dx + 2.0/W*dW_dx + 1.0/chord*dchord_dx)
+        temp = 1.0/cn*dcn_dx + 1.0/chord*dchord_dx
+        if W!=0.0: temp += 2.0/W*dW_dx
+        dNp_dx = Np * temp
+        dTp_dx = Tp * temp
         
         alpha_deg = alpha_rad * 180. / np.pi
         

@@ -476,8 +476,8 @@ class TowerSE(Group):
         towerIndeps.add_output('tol', 1e-9)
         towerIndeps.add_output('shift', 0.0)
         towerIndeps.add_output('DC', 0.0)
-        towerIndeps.add_output('water_density', 0.0, units='kg/m**3')
-        towerIndeps.add_output('water_viscosity', 0.0, units='kg/m/s')
+        towerIndeps.add_output('water_density', 1025.0, units='kg/m**3')
+        towerIndeps.add_output('water_viscosity', 8.9e-4, units='kg/m/s')
         towerIndeps.add_output('significant_wave_height', 0.0, units='m')
         towerIndeps.add_output('significant_wave_period', 0.0, units='s')
         towerIndeps.add_output('wave_beta', 0.0, units='deg')
@@ -486,8 +486,8 @@ class TowerSE(Group):
         # Independent variables that may be duplicated at higher levels of aggregation
         if topLevelFlag:
             sharedIndeps = IndepVarComp()
-            sharedIndeps.add_output('air_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('air_viscosity', 0.0, units='kg/m/s')
+            sharedIndeps.add_output('air_density', 1.225, units='kg/m**3')
+            sharedIndeps.add_output('air_viscosity', 1.81206e-5, units='kg/m/s')
             sharedIndeps.add_output('shearExp', 0.0)
             sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
             sharedIndeps.add_output('wind_z0', 0.0, units='m')

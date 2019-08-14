@@ -8,11 +8,11 @@ class PlantFinance(ExplicitComponent):
     def setup(self):
 
         # Inputs
-        self.add_input('machine_rating',  val=0.0, units='kW',        desc='Rating of the turbine')
-        self.add_input('tcc_per_kW' ,     val=0.0, units='USD/kW',   desc='A wind turbine capital cost')
+        self.add_input('machine_rating',    val=0.0, units='kW',        desc='Rating of the turbine')
+        self.add_input('tcc_per_kW' ,       val=0.0, units='USD/kW',   desc='A wind turbine capital cost')
         self.add_discrete_input('turbine_number',    val=0,                  desc='Number of turbines at plant')
-        self.add_input('bos_per_kW', val=0.0, units='USD/kW',   desc='Balance of system costs of the turbine')
-        self.add_input('opex_per_kW',val=0.0, units='USD/kW/yr',desc='Average annual operational expenditures of the turbine')
+        self.add_input('bos_per_kW',        val=0.0, units='USD/kW',   desc='Balance of system costs of the turbine')
+        self.add_input('opex_per_kW',       val=0.0, units='USD/kW/yr',desc='Average annual operational expenditures of the turbine')
         self.add_input('park_aep',          val=0.0, units='kW*h',  desc='Annual Energy Production of the wind plant')
         self.add_input('turbine_aep',       val=0.0, units='kW*h',  desc='Annual Energy Production of the wind turbine')
 
