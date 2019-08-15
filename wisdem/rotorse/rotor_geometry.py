@@ -127,7 +127,6 @@ class BladeGeometry(ExplicitComponent):
             blade['outer_shape_bem']['airfoil_position']['grid'] = airfoil_position
             warning_corrected_airfoil_position = "Airfoil spanwise positions must be increasing.  Changed from: %s to: %s" % (inputs['airfoil_position'].tolist(), airfoil_position)
             warnings.warn(warning_corrected_airfoil_position)
-            exit()
         else:
             blade['outer_shape_bem']['airfoil_position']['grid'] = inputs['airfoil_position'].tolist()
         

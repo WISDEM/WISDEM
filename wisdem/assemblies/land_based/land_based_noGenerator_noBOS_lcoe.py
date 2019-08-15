@@ -14,7 +14,6 @@ from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 
-NSECTION = 6
         
         
 # Group to link the openmdao components
@@ -23,10 +22,13 @@ class OnshoreTurbinePlant(Group):
     def initialize(self):
         self.options.declare('RefBlade')
         self.options.declare('FASTpref', default={})
+        self.options.declare('Nsection_Tow', default = 6)
+        
         
     def setup(self):
         
-        RefBlade                = self.options['RefBlade']
+        RefBlade     = self.options['RefBlade']
+        Nsection_Tow = self.options['Nsection_Tow']
         
         # Define all input variables from all models
         myIndeps = IndepVarComp()
@@ -97,8 +99,8 @@ class OnshoreTurbinePlant(Group):
         
         # Tower and substructure
         self.add_subsystem('tow',TowerSE(nLC=1,
-                                         nPoints=NSECTION+1,
-                                         nFull=5*NSECTION+1,
+                                         nPoints=Nsection_Tow+1,
+                                         nFull=5*Nsection_Tow+1,
                                          wind='PowerWind',
                                          topLevelFlag=False),
                            promotes=['water_density','water_viscosity','wave_beta',
@@ -114,7 +116,7 @@ class OnshoreTurbinePlant(Group):
                                      'DC','shear','geom','tower_force_discretization','nM','Mmethod','lump','tol','shift'])
 
         # Turbine constraints
-        self.add_subsystem('tcons', TurbineConstraints(nFull=5*NSECTION+1), promotes=['*'])
+        self.add_subsystem('tcons', TurbineConstraints(nFull=5*Nsection_Tow+1), promotes=['*'])
         
         # Turbine costs
         self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=True, topLevelFlag=False), promotes=['*'])
@@ -192,7 +194,7 @@ class OnshoreTurbinePlant(Group):
         self.connect('annual_opex',         'plantfinancese.opex_per_kW')
     
 
-def Init_LandBasedAssembly(prob, blade):
+def Init_LandBasedAssembly(prob, blade, Nsection_Tow):
 
     prob = Init_RotorSE_wRefBlade(prob, blade)
     
@@ -221,9 +223,9 @@ def Init_LandBasedAssembly(prob, blade):
     
     # Tower
     prob['foundation_height']              = 0.0 #-prob['water_depth']
-    prob['tower_outer_diameter']           = np.linspace(10.0, 3.87, nsection+1)
-    prob['tower_section_height']           = (prob['hub_height'] - prob['foundation_height']) / nsection * np.ones(nsection)
-    prob['tower_wall_thickness']           = np.linspace(0.027, 0.019, nsection)
+    prob['tower_outer_diameter']           = np.linspace(10.0, 3.87, Nsection_Tow+1)
+    prob['tower_section_height']           = (prob['hub_height'] - prob['foundation_height']) / Nsection_Tow * np.ones(Nsection_Tow)
+    prob['tower_wall_thickness']           = np.linspace(0.027, 0.019, Nsection_Tow)
     prob['tower_buckling_length']          = 30.0
     prob['tower_outfitting_factor']        = 1.07
 
@@ -275,9 +277,8 @@ def Init_LandBasedAssembly(prob, blade):
 if __name__ == "__main__":
     
     optFlag = False #True
-    
-    # Number of sections to be used in the design
-    nsection = NSECTION
+
+
 
     # Reference rotor design
     fname_schema          = "../../rotorse/turbine_inputs/IEAontology_schema.yaml"
@@ -293,10 +294,12 @@ if __name__ == "__main__":
     refBlade.validate     = False
     refBlade.fname_schema = fname_schema
     blade = refBlade.initialize(fname_input)
+    # Initialize tower design
+    Nsection_Tow = 6
     
     # Initialize OpenMDAO problem and FloatingSE Group
     prob = Problem()
-    prob.model=OnshoreTurbinePlant(RefBlade=blade)
+    prob.model=OnshoreTurbinePlant(RefBlade=blade, Nsection_Tow = Nsection_Tow)
     
     if optFlag:
         # --- Solver ---
@@ -342,7 +345,7 @@ if __name__ == "__main__":
 
     prob.setup()
     
-    prob = Init_LandBasedAssembly(prob, blade)
+    prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
     
     prob.run_driver()
     

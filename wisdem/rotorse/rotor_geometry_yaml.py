@@ -912,15 +912,15 @@ class ReferenceBlade(object):
                             blade['st'][type_sec][idx_sec]['offset_x_pa']['values'][i] = 0.0
                             blade['st'][type_sec][idx_sec]['width']['values'][i]  = width
                             
-                            layer_resize_warning = 'WARNING: Layer "%s" may by too large to fit within chord. "offset_x_pa" changed from %f to 0.0 and "width" changed from %f to %f at R=%f (i=%d)'%(sec['name'], offset, width_old, width, blade['pf']['r'][i], i)
-                            warnings.warn(layer_resize_warning)
+                            layer_resize_warning = 'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to 0.0 and "width" changed from %f to %f at R=%f (i=%d)'%(sec['name'], offset, width_old, width, blade['pf']['r'][i], i)
+                            print(layer_resize_warning)
                         
                         
                         # if offset < ratio_SCmax * (- chord * p_le_i) or offset > ratio_SCmax * (chord * (1. - p_le_i)):
                             # width_old = copy.deepcopy(width)
                             # width = 2. * min([ratio_SCmax * (chord * p_le_i) , ratio_SCmax * (chord * (1. - p_le_i))])
                             # blade['st'][type_sec][idx_sec]['width']['values'][i] = width
-                            # layer_resize_warning = 'WARNING: Layer "%s" may by too large to fit within chord. "width" changed from %f to %f at R=%f (i=%d)'%(sec['name'], width_old, width, blade['pf']['r'][i], i)
+                            # layer_resize_warning = 'WARNING: Layer "%s" may be too large to fit within chord. "width" changed from %f to %f at R=%f (i=%d)'%(sec['name'], width_old, width, blade['pf']['r'][i], i)
                             # warnings.warn(layer_resize_warning)
 
 
@@ -957,8 +957,8 @@ class ReferenceBlade(object):
                             else:
                                 offset = ratio_SCmax * (chord * (1. - p_le_i))
                             blade['st'][type_sec][idx_sec]['offset_x_pa']['values'][i] = offset
-                            layer_resize_warning = 'WARNING: Layer "%s" may by too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'%(sec['name'], offset_old, offset, blade['pf']['r'][i], i)
-                            warnings.warn(layer_resize_warning)
+                            layer_resize_warning = 'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'%(sec['name'], offset_old, offset, blade['pf']['r'][i], i)
+                            print(layer_resize_warning)
                         [blade['st'][type_sec][idx_sec]['start_nd_arc']['values'][i], blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i]] = sorted(calc_axis_intersection(rotation, offset, p_le_d, ['suction', 'pressure']))
 
                     elif 'midpoint_nd_arc' in blade['st'][type_sec][idx_sec].keys():
