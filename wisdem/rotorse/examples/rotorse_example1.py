@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 class RotorSE_Example1():
 
@@ -9,18 +8,18 @@ class RotorSE_Example1():
 		import os
 		from openmdao.api import IndepVarComp, Component, Group, Problem, Brent, ScipyGMRES
 		from rotorse.rotor_aeropower import RotorAeroPower
-		from rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, TUM3_35MW, NINPUT
+		from rotorse.rotor_geometry import RotorGeometry, NREL5MW, DTU10MW, NINPUT
 		from rotorse import RPM2RS, RS2RPM, TURBULENCE_CLASS, DRIVETRAIN_TYPE
 		# ---
 
 		# --- Init Problem
 		rotor = Problem()
-		myref = TUM3_35MW()
+		myref = DTU10MW()
 
 		npts_coarse_power_curve = 20 # (Int): number of points to evaluate aero analysis at
 		npts_spline_power_curve = 200  # (Int): number of points to use in fitting spline to power curve
 
-		rotor.root = RotorAeroPower(myref, npts_coarse_power_curve, npts_spline_power_curve, regulation_reg_II5=False, regulation_reg_III=False)
+		rotor.root = RotorAeroPower(myref, npts_coarse_power_curve, npts_spline_power_curve)
 		rotor.setup()
 		# ---
 		# --- default inputs
@@ -42,10 +41,10 @@ class RotorSE_Example1():
 		rotor['teT_in'] = myref.te_thickness #np.array([0.04200055 0.08807739 0.05437378 0.01610219 0.00345225])  # (Array, m): trailing-edge thickness parameters
 
 		# === atmosphere ===
-		rotor['rho'] = 1.225  # (Float, kg/m**3): density of air
-		rotor['mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
+		rotor['analysis.rho'] = 1.225  # (Float, kg/m**3): density of air
+		rotor['analysis.mu'] = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
 		rotor['hub_height'] = myref.hub_height #119.0
-		rotor['shearExp'] = 0.25  # (Float): shear exponent
+		rotor['analysis.shearExp'] = 0.25  # (Float): shear exponent
 		rotor['turbine_class'] = myref.turbine_class #TURBINE_CLASS['I']  # (Enum): IEC turbine class
 		rotor['cdf_reference_height_wind_speed'] = myref.hub_height #119.0  # (Float): reference hub height for IEC wind speed (used in CDF calculation)
 
@@ -55,7 +54,6 @@ class RotorSE_Example1():
 		rotor['control_ratedPower'] = myref.rating #10e6  # (Float, W): rated power
 		rotor['control_minOmega'] = myref.control_minOmega #6.0  # (Float, rpm): minimum allowed rotor rotation speed
 		rotor['control_maxOmega'] = myref.control_maxOmega #8.88766  # (Float, rpm): maximum allowed rotor rotation speed
-		rotor['control_maxTS'] = myref.control_maxTS
 		rotor['control_tsr'] = myref.control_tsr #10.58  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
 		rotor['control_pitch'] = myref.control_pitch #0.0  # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
 
@@ -69,13 +67,13 @@ class RotorSE_Example1():
 		# === run and outputs ===
 		rotor.run()
 
-		print('AEP =', rotor['AEP'])
-		print('diameter =', rotor['diameter'])
-		print('ratedConditions.V =', rotor['rated_V'])
-		print('ratedConditions.Omega =', rotor['rated_Omega'])
-		print('ratedConditions.pitch =', rotor['rated_pitch'])
-		print('ratedConditions.T =', rotor['rated_T'])
-		print('ratedConditions.Q =', rotor['rated_Q'])
+		print 'AEP =', rotor['AEP']
+		print 'diameter =', rotor['diameter']
+		print 'ratedConditions.V =', rotor['rated_V']
+		print 'ratedConditions.Omega =', rotor['rated_Omega']
+		print 'ratedConditions.pitch =', rotor['rated_pitch']
+		print 'ratedConditions.T =', rotor['rated_T']
+		print 'ratedConditions.Q =', rotor['rated_Q']
 
 		import matplotlib.pyplot as plt
 		plt.plot(rotor['V'], rotor['P']/1e6)
@@ -89,8 +87,8 @@ class RotorSE_Example1():
 		f, ax = plt.subplots(1,1,figsize=(5.3, 4))
 		ax.plot(rotor['V'], rotor['P']/1e6)
 		ax.set(xlabel='Wind Speed (m/s)' , ylabel='Power (MW)')
-		# ax.set_ylim([0, 10.3])
-		# ax.set_xlim([0, 25])
+		ax.set_ylim([0, 10.3])
+		ax.set_xlim([0, 25])
 		f.tight_layout()
 		ax.spines['right'].set_visible(False)
 		ax.spines['top'].set_visible(False)
@@ -111,8 +109,8 @@ class RotorSE_Example1():
 		    else:
 		        axc.annotate(txt, (x,y), xytext=(x+0.01,y+0.2), textcoords='data')
 		axc.set(xlabel='Blade Fraction, $r/R$' , ylabel='Chord (m)')
-		# axc.set_ylim([0, 7.5])
-		# axc.set_xlim([0, 1.1])
+		axc.set_ylim([0, 7.5])
+		axc.set_xlim([0, 1.1])
 		fc.tight_layout()
 		axc.spines['right'].set_visible(False)
 		axc.spines['top'].set_visible(False)
@@ -129,8 +127,8 @@ class RotorSE_Example1():
 		    txt = '$\Theta_%d$' % i
 		    axt.annotate(txt, (x,y), xytext=(x+0.01,y+0.1), textcoords='data')
 		axt.set(xlabel='Blade Fraction, $r/R$' , ylabel='Twist ($\deg$)')
-		# axt.set_ylim([-1, 15])
-		# axt.set_xlim([0, 1.1])
+		axt.set_ylim([-1, 15])
+		axt.set_xlim([0, 1.1])
 		ft.tight_layout()
 		axt.spines['right'].set_visible(False)
 		axt.spines['top'].set_visible(False)
