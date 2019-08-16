@@ -94,6 +94,7 @@ if __name__ == '__main__':
     # record (input) a_disk.a -> (output) a_disk.Cp
     prob.model.add_objective('a_disk.Cp', scaler=-1.0)
 
+    prob.setup()
     prob.run_driver()
 
     # List the inputs and outputs to the model
