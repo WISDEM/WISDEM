@@ -41,7 +41,6 @@ class BeamPropertiesBase(ExplicitComponent):
         self.add_output('beam:Tw_iner', val=np.zeros(NPTS), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
         self.add_output('beam:x_ec', val=np.zeros(NPTS), units='m', desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
         self.add_output('beam:y_ec', val=np.zeros(NPTS), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
-
         self.add_output('beam:flap_iner', val=np.zeros(NPTS), units='kg/m', desc='Section flap inertia about the Y_G axis per unit length.')
         self.add_output('beam:edge_iner', val=np.zeros(NPTS), units='kg/m', desc='Section lag inertia about the X_G axis per unit length')
 
@@ -203,334 +202,334 @@ class ResizeCompositeSection(ExplicitComponent):
 
 
 
-class PreCompSections(BeamPropertiesBase):
-    def initialize(self):
-        self.options.declare('NPTS')
+# class PreCompSections(BeamPropertiesBase):
+#     def initialize(self):
+#         self.options.declare('NPTS')
     
-    def setup(self):
-        NPTS = self.options['NPTS']
+#     def setup(self):
+#         NPTS = self.options['NPTS']
         
-        super(PreCompSections, self).setup()
+#         super(PreCompSections, self).setup()
         
-        self.add_input('r', val=np.zeros(NPTS), units='m', desc='radial positions. r[0] should be the hub location \
-            while r[-1] should be the blade tip. Any number \
-            of locations can be specified between these in ascending order.')
-        self.add_input('chord', val=np.zeros(NPTS), units='m', desc='array of chord lengths at corresponding radial positions')
-        self.add_input('theta', val=np.zeros(NPTS), units='deg', desc='array of twist angles at corresponding radial positions. \
-            (positive twist decreases angle of attack)')
-        self.add_input('le_location', val=np.zeros(NPTS), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
-        self.add_discrete_input('materials', val=np.zeros(NPTS), desc='material properties of composite materials')
-        self.add_discrete_input('upperCS', val=np.zeros(NPTS), desc='list of CompositeSection objections defining the properties for upper surface')
-        self.add_discrete_input('lowerCS', val=np.zeros(NPTS), desc='list of CompositeSection objections defining the properties for lower surface')
-        self.add_discrete_input('websCS', val=np.zeros(NPTS), desc='list of CompositeSection objections defining the properties for shear webs')
-        self.add_discrete_input('profile', val=np.zeros(NPTS), desc='list of CompositeSection profiles')
+#         self.add_input('r', val=np.zeros(NPTS), units='m', desc='radial positions. r[0] should be the hub location \
+#             while r[-1] should be the blade tip. Any number \
+#             of locations can be specified between these in ascending order.')
+#         self.add_input('chord', val=np.zeros(NPTS), units='m', desc='array of chord lengths at corresponding radial positions')
+#         self.add_input('theta', val=np.zeros(NPTS), units='deg', desc='array of twist angles at corresponding radial positions. \
+#             (positive twist decreases angle of attack)')
+#         self.add_input('le_location', val=np.zeros(NPTS), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
+#         self.add_discrete_input('materials', val=np.zeros(NPTS), desc='material properties of composite materials')
+#         self.add_discrete_input('upperCS', val=np.zeros(NPTS), desc='list of CompositeSection objections defining the properties for upper surface')
+#         self.add_discrete_input('lowerCS', val=np.zeros(NPTS), desc='list of CompositeSection objections defining the properties for lower surface')
+#         self.add_discrete_input('websCS', val=np.zeros(NPTS), desc='list of CompositeSection objections defining the properties for shear webs')
+#         self.add_discrete_input('profile', val=np.zeros(NPTS), desc='list of CompositeSection profiles')
 
-        self.add_discrete_input('sector_idx_strain_spar_ps', val=np.zeros(NPTS, dtype=np.int_), desc='Index of sector for spar (PreComp definition of sector)')
-        self.add_discrete_input('sector_idx_strain_spar_ss', val=np.zeros(NPTS, dtype=np.int_), desc='Index of sector for spar (PreComp definition of sector)')
-        self.add_discrete_input('sector_idx_strain_te_ps', val=np.zeros(NPTS, dtype=np.int_), desc='Index of sector for trailing edge (PreComp definition of sector)')
-        self.add_discrete_input('sector_idx_strain_te_ss', val=np.zeros(NPTS, dtype=np.int_), desc='Index of sector for trailing edge (PreComp definition of sector)')
+#         self.add_discrete_input('sector_idx_strain_spar_ps', val=np.zeros(NPTS, dtype=np.int_), desc='Index of sector for spar (PreComp definition of sector)')
+#         self.add_discrete_input('sector_idx_strain_spar_ss', val=np.zeros(NPTS, dtype=np.int_), desc='Index of sector for spar (PreComp definition of sector)')
+#         self.add_discrete_input('sector_idx_strain_te_ps', val=np.zeros(NPTS, dtype=np.int_), desc='Index of sector for trailing edge (PreComp definition of sector)')
+#         self.add_discrete_input('sector_idx_strain_te_ss', val=np.zeros(NPTS, dtype=np.int_), desc='Index of sector for trailing edge (PreComp definition of sector)')
 
-        self.add_output('eps_crit_spar', val=np.zeros(NPTS), desc='critical strain in spar from panel buckling calculation')
-        self.add_output('eps_crit_te', val=np.zeros(NPTS), desc='critical strain in trailing-edge panels from panel buckling calculation')
-        self.add_output('xu_strain_spar', val=np.zeros(NPTS), desc='x-position of midpoint of spar cap on upper surface for strain calculation')
-        self.add_output('xl_strain_spar', val=np.zeros(NPTS), desc='x-position of midpoint of spar cap on lower surface for strain calculation')
-        self.add_output('yu_strain_spar', val=np.zeros(NPTS), desc='y-position of midpoint of spar cap on upper surface for strain calculation')
-        self.add_output('yl_strain_spar', val=np.zeros(NPTS), desc='y-position of midpoint of spar cap on lower surface for strain calculation')
-        self.add_output('xu_strain_te', val=np.zeros(NPTS), desc='x-position of midpoint of trailing-edge panel on upper surface for strain calculation')
-        self.add_output('xl_strain_te', val=np.zeros(NPTS), desc='x-position of midpoint of trailing-edge panel on lower surface for strain calculation')
-        self.add_output('yu_strain_te', val=np.zeros(NPTS), desc='y-position of midpoint of trailing-edge panel on upper surface for strain calculation')
-        self.add_output('yl_strain_te', val=np.zeros(NPTS), desc='y-position of midpoint of trailing-edge panel on lower surface for strain calculation')
+#         self.add_output('eps_crit_spar', val=np.zeros(NPTS), desc='critical strain in spar from panel buckling calculation')
+#         self.add_output('eps_crit_te', val=np.zeros(NPTS), desc='critical strain in trailing-edge panels from panel buckling calculation')
+#         self.add_output('xu_strain_spar', val=np.zeros(NPTS), desc='x-position of midpoint of spar cap on upper surface for strain calculation')
+#         self.add_output('xl_strain_spar', val=np.zeros(NPTS), desc='x-position of midpoint of spar cap on lower surface for strain calculation')
+#         self.add_output('yu_strain_spar', val=np.zeros(NPTS), desc='y-position of midpoint of spar cap on upper surface for strain calculation')
+#         self.add_output('yl_strain_spar', val=np.zeros(NPTS), desc='y-position of midpoint of spar cap on lower surface for strain calculation')
+#         self.add_output('xu_strain_te', val=np.zeros(NPTS), desc='x-position of midpoint of trailing-edge panel on upper surface for strain calculation')
+#         self.add_output('xl_strain_te', val=np.zeros(NPTS), desc='x-position of midpoint of trailing-edge panel on lower surface for strain calculation')
+#         self.add_output('yu_strain_te', val=np.zeros(NPTS), desc='y-position of midpoint of trailing-edge panel on upper surface for strain calculation')
+#         self.add_output('yl_strain_te', val=np.zeros(NPTS), desc='y-position of midpoint of trailing-edge panel on lower surface for strain calculation')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
-
-
-    def criticalStrainLocations(self, inputs, discrete_inputs, sector_idx_strain_ss, sector_idx_strain_ps, x_ec_nose, y_ec_nose):
-
-        chord   = inputs['chord']
-        upperCS = discrete_inputs['upperCS']
-        lowerCS = discrete_inputs['lowerCS']
-        profile = discrete_inputs['profile']
-        NPTS    = chord.size
-
-        # find corresponding locations on airfoil at midpoint of sector
-        xun = np.zeros(NPTS)
-        xln = np.zeros(NPTS)
-        yun = np.zeros(NPTS)
-        yln = np.zeros(NPTS)
-
-        for i in range(NPTS):
-            csU = upperCS[i]
-            csL = lowerCS[i]
-            pf  = profile[i]
-            idx_ss = sector_idx_strain_ss[i]
-            idx_ps = sector_idx_strain_ps[i]
-
-            if idx_ss == None:
-                xun[i] = 0.
-                xln[i] = 0.
-                yun[i] = 0.
-                yln[i] = 0.
-            else:
-                xun[i] = 0.5*(csU.loc[idx_ss] + csU.loc[idx_ss+1])
-                xln[i] = 0.5*(csL.loc[idx_ps] + csL.loc[idx_ps+1])
-                yun[i] = np.interp(xun[i], pf.x, pf.yu)
-                yln[i] = np.interp(xln[i], pf.x, pf.yl)
-
-        # make dimensional and define relative to elastic center
-        xu = xun*chord - x_ec_nose
-        xl = xln*chord - x_ec_nose
-        yu = yun*chord - y_ec_nose
-        yl = yln*chord - y_ec_nose
+#         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
 
-        # switch to airfoil coordinate system
-        xu, yu = yu, xu
-        xl, yl = yl, xl
+#     def criticalStrainLocations(self, inputs, discrete_inputs, sector_idx_strain_ss, sector_idx_strain_ps, x_ec_nose, y_ec_nose):
 
-        return xu, xl, yu, yl
+#         chord   = inputs['chord']
+#         upperCS = discrete_inputs['upperCS']
+#         lowerCS = discrete_inputs['lowerCS']
+#         profile = discrete_inputs['profile']
+#         NPTS    = chord.size
+
+#         # find corresponding locations on airfoil at midpoint of sector
+#         xun = np.zeros(NPTS)
+#         xln = np.zeros(NPTS)
+#         yun = np.zeros(NPTS)
+#         yln = np.zeros(NPTS)
+
+#         for i in range(NPTS):
+#             csU = upperCS[i]
+#             csL = lowerCS[i]
+#             pf  = profile[i]
+#             idx_ss = sector_idx_strain_ss[i]
+#             idx_ps = sector_idx_strain_ps[i]
+
+#             if idx_ss == None:
+#                 xun[i] = 0.
+#                 xln[i] = 0.
+#                 yun[i] = 0.
+#                 yln[i] = 0.
+#             else:
+#                 xun[i] = 0.5*(csU.loc[idx_ss] + csU.loc[idx_ss+1])
+#                 xln[i] = 0.5*(csL.loc[idx_ps] + csL.loc[idx_ps+1])
+#                 yun[i] = np.interp(xun[i], pf.x, pf.yu)
+#                 yln[i] = np.interp(xln[i], pf.x, pf.yl)
+
+#         # make dimensional and define relative to elastic center
+#         xu = xun*chord - x_ec_nose
+#         xl = xln*chord - x_ec_nose
+#         yu = yun*chord - y_ec_nose
+#         yl = yln*chord - y_ec_nose
 
 
-    def panelBucklingStrain(self, inputs, discrete_inputs, sector_idx_strain_ss):
-        """
-        see chapter on Structural Component Design Techniques from Alastair Johnson
-        section 6.2: Design of composite panels
+#         # switch to airfoil coordinate system
+#         xu, yu = yu, xu
+#         xl, yl = yl, xl
 
-        assumes: large aspect ratio, simply supported, uniaxial compression, flat rectangular plate
+#         return xu, xl, yu, yl
 
-        """
 
-        # rename
-        chord = inputs['chord']
-        CS_list = discrete_inputs['upperCS']
+#     def panelBucklingStrain(self, inputs, discrete_inputs, sector_idx_strain_ss):
+#         """
+#         see chapter on Structural Component Design Techniques from Alastair Johnson
+#         section 6.2: Design of composite panels
 
-        # initialize
-        nsec = len(chord)
-        eps_crit = np.zeros(nsec)
+#         assumes: large aspect ratio, simply supported, uniaxial compression, flat rectangular plate
 
-        for i in range(nsec):
+#         """
 
-            cs = CS_list[i]
-            sector_idx = sector_idx_strain_ss[i]
+#         # rename
+#         chord = inputs['chord']
+#         CS_list = discrete_inputs['upperCS']
+
+#         # initialize
+#         nsec = len(chord)
+#         eps_crit = np.zeros(nsec)
+
+#         for i in range(nsec):
+
+#             cs = CS_list[i]
+#             sector_idx = sector_idx_strain_ss[i]
             
-            if sector_idx == None:
-                eps_crit[i] = 0.
+#             if sector_idx == None:
+#                 eps_crit[i] = 0.
 
-            else:
+#             else:
 
-                # chord-wise length of sector
-                sector_length = chord[i] * (cs.loc[sector_idx+1] - cs.loc[sector_idx])
+#                 # chord-wise length of sector
+#                 sector_length = chord[i] * (cs.loc[sector_idx+1] - cs.loc[sector_idx])
 
-                # get matrices
-                A, B, D, totalHeight = cs.compositeMatrices(sector_idx)
-                E = cs.effectiveEAxial(sector_idx)
-                D1 = D[0, 0]
-                D2 = D[1, 1]
-                D3 = D[0, 1] + 2*D[2, 2]
+#                 # get matrices
+#                 A, B, D, totalHeight = cs.compositeMatrices(sector_idx)
+#                 E = cs.effectiveEAxial(sector_idx)
+#                 D1 = D[0, 0]
+#                 D2 = D[1, 1]
+#                 D3 = D[0, 1] + 2*D[2, 2]
 
-                # use empirical formula
-                Nxx = 2 * (np.pi/sector_length)**2 * (np.sqrt(D1*D2) + D3)
+#                 # use empirical formula
+#                 Nxx = 2 * (np.pi/sector_length)**2 * (np.sqrt(D1*D2) + D3)
 
-                eps_crit[i] = - Nxx / totalHeight / E
+#                 eps_crit[i] = - Nxx / totalHeight / E
 
-        return eps_crit
+#         return eps_crit
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+#     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        r       = inputs['r']
-        chord   = inputs['chord']
-        mat     = discrete_inputs['materials']
-        leLoc   = inputs['le_location']
-        upperCS = discrete_inputs['upperCS']
-        lowerCS = discrete_inputs['lowerCS']
-        websCS  = discrete_inputs['websCS']
-        profile = discrete_inputs['profile']
-        theta   = inputs['theta']
+#         r       = inputs['r']
+#         chord   = inputs['chord']
+#         mat     = discrete_inputs['materials']
+#         leLoc   = inputs['le_location']
+#         upperCS = discrete_inputs['upperCS']
+#         lowerCS = discrete_inputs['lowerCS']
+#         websCS  = discrete_inputs['websCS']
+#         profile = discrete_inputs['profile']
+#         theta   = inputs['theta']
 
-        strain_idx_spar_ss = discrete_inputs['sector_idx_strain_spar_ss']
-        strain_idx_spar_ps = discrete_inputs['sector_idx_strain_spar_ps']
-        strain_idx_te_ss   = discrete_inputs['sector_idx_strain_te_ss']
-        strain_idx_te_ps   = discrete_inputs['sector_idx_strain_te_ps']
+#         strain_idx_spar_ss = discrete_inputs['sector_idx_strain_spar_ss']
+#         strain_idx_spar_ps = discrete_inputs['sector_idx_strain_spar_ps']
+#         strain_idx_te_ss   = discrete_inputs['sector_idx_strain_te_ss']
+#         strain_idx_te_ps   = discrete_inputs['sector_idx_strain_te_ps']
         
-        # radial discretization
-        nsec = len(r)
+#         # radial discretization
+#         nsec = len(r)
 
-        # initialize variables
-        beam_z = r
-        beam_EA = np.zeros(nsec)
-        beam_EIxx = np.zeros(nsec)
-        beam_EIyy = np.zeros(nsec)
-        beam_EIxy = np.zeros(nsec)
-        beam_GJ = np.zeros(nsec)
-        beam_rhoA = np.zeros(nsec)
-        beam_rhoJ = np.zeros(nsec)
-        beam_Tw_iner = np.zeros(nsec)
+#         # initialize variables
+#         beam_z = r
+#         beam_EA = np.zeros(nsec)
+#         beam_EIxx = np.zeros(nsec)
+#         beam_EIyy = np.zeros(nsec)
+#         beam_EIxy = np.zeros(nsec)
+#         beam_GJ = np.zeros(nsec)
+#         beam_rhoA = np.zeros(nsec)
+#         beam_rhoJ = np.zeros(nsec)
+#         beam_Tw_iner = np.zeros(nsec)
 
-        beam_flap_iner = np.zeros(nsec)
-        beam_edge_iner = np.zeros(nsec)
+#         beam_flap_iner = np.zeros(nsec)
+#         beam_edge_iner = np.zeros(nsec)
 
-        # distance to elastic center from point about which structural properties are computed
-        # using airfoil coordinate system
-        beam_x_ec = np.zeros(nsec)
-        beam_y_ec = np.zeros(nsec)
+#         # distance to elastic center from point about which structural properties are computed
+#         # using airfoil coordinate system
+#         beam_x_ec = np.zeros(nsec)
+#         beam_y_ec = np.zeros(nsec)
 
-        # distance to elastic center from airfoil nose
-        # using profile coordinate system
-        x_ec_nose = np.zeros(nsec)
-        y_ec_nose = np.zeros(nsec)
+#         # distance to elastic center from airfoil nose
+#         # using profile coordinate system
+#         x_ec_nose = np.zeros(nsec)
+#         y_ec_nose = np.zeros(nsec)
 
-        csU = upperCS
-        csL = lowerCS
-        csW = websCS
+#         csU = upperCS
+#         csL = lowerCS
+#         csW = websCS
 
-        # twist rate
-        th_prime = _precomp.tw_rate(r, theta)
+#         # twist rate
+#         th_prime = _precomp.tw_rate(r, theta)
 
-        # arrange materials into list
-        n = len(mat)
-        E1 = [0]*n
-        E2 = [0]*n
-        G12 = [0]*n
-        nu12 = [0]*n
-        rho = [0]*n
+#         # arrange materials into list
+#         n = len(mat)
+#         E1 = [0]*n
+#         E2 = [0]*n
+#         G12 = [0]*n
+#         nu12 = [0]*n
+#         rho = [0]*n
 
-        for i in range(n):
-            E1[i] = mat[i].E1
-            E2[i] = mat[i].E2
-            G12[i] = mat[i].G12
-            nu12[i] = mat[i].nu12
-            rho[i] = mat[i].rho
+#         for i in range(n):
+#             E1[i] = mat[i].E1
+#             E2[i] = mat[i].E2
+#             G12[i] = mat[i].G12
+#             nu12[i] = mat[i].nu12
+#             rho[i] = mat[i].rho
 
-        # for i in range(nsec):
-        #     print(csW[i], type(csW[i]))
+#         # for i in range(nsec):
+#         #     print(csW[i], type(csW[i]))
 
-        for i in range(nsec):
-            xnode, ynode = profile[i]._preCompFormat()
-            locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU = csU[i]._preCompFormat()
-            locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL = csL[i]._preCompFormat()
-            locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW = csW[i]._preCompFormat()
+#         for i in range(nsec):
+#             xnode, ynode = profile[i]._preCompFormat()
+#             locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU = csU[i]._preCompFormat()
+#             locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL = csL[i]._preCompFormat()
+#             locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW = csW[i]._preCompFormat()
 
-            nwebs = len(locW)
+#             nwebs = len(locW)
 
-            # address a bug in f2py (need to pass in length 1 arrays even though they are not used)
-            if nwebs == 0:
-                locW = [0]
-                n_laminaW = [0]
-                n_pliesW = [0]
-                tW = [0]
-                thetaW = [0]
-                mat_idxW = [0]
+#             # address a bug in f2py (need to pass in length 1 arrays even though they are not used)
+#             if nwebs == 0:
+#                 locW = [0]
+#                 n_laminaW = [0]
+#                 n_pliesW = [0]
+#                 tW = [0]
+#                 thetaW = [0]
+#                 mat_idxW = [0]
 
-            try:
-                results = _precomp.properties(chord[i], theta[i],
-                    th_prime[i], leLoc[i],
-                    xnode, ynode, E1, E2, G12, nu12, rho,
-                    locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU,
-                    locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL,
-                    nwebs, locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW)
-            except:
-                print(i)
-                # print('chord[i]', chord[i])
-                # print('theta[i]', theta[i])
-                # print('th_prime[i]', th_prime[i])
-                # print('leLoc[i]', leLoc[i])
-                # print('xnode', xnode)
-                # print('ynode', ynode)
-                # print('E1', E1)
-                # print('E2', E2)
-                # print('G12', G12)
-                # print('nu12', nu12)
-                # print('rho', rho)
-                # print('locU', locU)
-                # print('n_laminaU', n_laminaU)
-                # print('n_pliesU', n_pliesU)
-                # print('tU', tU)
-                # print('thetaU', thetaU)
-                # print('mat_idxU', mat_idxU)
-                # print('locL', locL)
-                # print('n_laminaL', n_laminaL)
-                # print('n_pliesL', n_pliesL)
-                # print('tL', tL)
-                # print('thetaL', thetaL)
-                # print('mat_idxL', mat_idxL)
-                # print('nwebs', nwebs)
-                # print('locW', locW)
-                # print('n_laminaW', n_laminaW)
-                # print('n_pliesW', n_pliesW)
-                # print('tW', tW)
-                # print('thetaW', thetaW)
-                # print('mat_idxW ', mat_idxW )
-                import matplotlib.pyplot as plt
-                plt.plot(xnode,ynode)
-                plt.axis('equal')
-                plt.savefig('debugging_%d.png'%i)
-                # plt.show()
+#             try:
+#                 results = _precomp.properties(chord[i], theta[i],
+#                     th_prime[i], leLoc[i],
+#                     xnode, ynode, E1, E2, G12, nu12, rho,
+#                     locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU,
+#                     locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL,
+#                     nwebs, locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW)
+#             except:
+#                 print(i)
+#                 # print('chord[i]', chord[i])
+#                 # print('theta[i]', theta[i])
+#                 # print('th_prime[i]', th_prime[i])
+#                 # print('leLoc[i]', leLoc[i])
+#                 # print('xnode', xnode)
+#                 # print('ynode', ynode)
+#                 # print('E1', E1)
+#                 # print('E2', E2)
+#                 # print('G12', G12)
+#                 # print('nu12', nu12)
+#                 # print('rho', rho)
+#                 # print('locU', locU)
+#                 # print('n_laminaU', n_laminaU)
+#                 # print('n_pliesU', n_pliesU)
+#                 # print('tU', tU)
+#                 # print('thetaU', thetaU)
+#                 # print('mat_idxU', mat_idxU)
+#                 # print('locL', locL)
+#                 # print('n_laminaL', n_laminaL)
+#                 # print('n_pliesL', n_pliesL)
+#                 # print('tL', tL)
+#                 # print('thetaL', thetaL)
+#                 # print('mat_idxL', mat_idxL)
+#                 # print('nwebs', nwebs)
+#                 # print('locW', locW)
+#                 # print('n_laminaW', n_laminaW)
+#                 # print('n_pliesW', n_pliesW)
+#                 # print('tW', tW)
+#                 # print('thetaW', thetaW)
+#                 # print('mat_idxW ', mat_idxW )
+#                 import matplotlib.pyplot as plt
+#                 plt.plot(xnode,ynode)
+#                 plt.axis('equal')
+#                 plt.savefig('debugging_%d.png'%i)
+#                 # plt.show()
 
-                results = _precomp.properties(chord[i], theta[i],
-                    th_prime[i], leLoc[i],
-                    xnode, ynode, E1, E2, G12, nu12, rho,
-                    locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU,
-                    locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL,
-                    nwebs, locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW)
+#                 results = _precomp.properties(chord[i], theta[i],
+#                     th_prime[i], leLoc[i],
+#                     xnode, ynode, E1, E2, G12, nu12, rho,
+#                     locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU,
+#                     locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL,
+#                     nwebs, locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW)
 
-            beam_EIxx[i] = results[1]  # EIedge
-            beam_EIyy[i] = results[0]  # EIflat
-            beam_GJ[i] = results[2]
-            beam_EA[i] = results[3]
-            beam_EIxy[i] = results[4]  # EIflapedge
-            beam_x_ec[i] = results[12] - results[10]
-            beam_y_ec[i] = results[13] - results[11]
-            beam_rhoA[i] = results[14]
-            beam_rhoJ[i] = results[15] + results[16]  # perpindicular axis theorem
-            beam_Tw_iner[i] = results[17]
+#             beam_EIxx[i] = results[1]  # EIedge
+#             beam_EIyy[i] = results[0]  # EIflat
+#             beam_GJ[i] = results[2]
+#             beam_EA[i] = results[3]
+#             beam_EIxy[i] = results[4]  # EIflapedge
+#             beam_x_ec[i] = results[12] - results[10]
+#             beam_y_ec[i] = results[13] - results[11]
+#             beam_rhoA[i] = results[14]
+#             beam_rhoJ[i] = results[15] + results[16]  # perpindicular axis theorem
+#             beam_Tw_iner[i] = results[17]
 
-            beam_flap_iner[i] = results[15]
-            beam_edge_iner[i] = results[16]
+#             beam_flap_iner[i] = results[15]
+#             beam_edge_iner[i] = results[16]
 
-            x_ec_nose[i] = results[13] + leLoc[i]*chord[i]
-            y_ec_nose[i] = results[12]  # switch b.c of coordinate system used
+#             x_ec_nose[i] = results[13] + leLoc[i]*chord[i]
+#             y_ec_nose[i] = results[12]  # switch b.c of coordinate system used
 
-            # beam_EIxx[i]      = None # EIedge
-            # beam_EIyy[i]      = None # EIflat
-            # beam_GJ[i]        = None
-            # beam_EA[i]        = None
-            # beam_EIxy[i]      = None # EIflapedge
-            # beam_x_ec[i]      = None - results[10]
-            # beam_y_ec[i]      = None - results[11]
-            # beam_rhoA[i]      = None
-            # beam_rhoJ[i]      = None + results[16]  # perpindicular axis theorem
-            # beam_Tw_iner[i]   = None
-            # beam_flap_iner[i] = None
-            # beam_edge_iner[i] = None
-            # x_ec_nose[i]      = None + leLoc[i]*chord[i]
-            # y_ec_nose[i]      = None  # switch b.c of coordinate system used
+#             # beam_EIxx[i]      = None # EIedge
+#             # beam_EIyy[i]      = None # EIflat
+#             # beam_GJ[i]        = None
+#             # beam_EA[i]        = None
+#             # beam_EIxy[i]      = None # EIflapedge
+#             # beam_x_ec[i]      = None - results[10]
+#             # beam_y_ec[i]      = None - results[11]
+#             # beam_rhoA[i]      = None
+#             # beam_rhoJ[i]      = None + results[16]  # perpindicular axis theorem
+#             # beam_Tw_iner[i]   = None
+#             # beam_flap_iner[i] = None
+#             # beam_edge_iner[i] = None
+#             # x_ec_nose[i]      = None + leLoc[i]*chord[i]
+#             # y_ec_nose[i]      = None  # switch b.c of coordinate system used
 
-        outputs['beam:z'] = beam_z
-        outputs['beam:EIxx'] = beam_EIxx
-        outputs['beam:EIyy'] = beam_EIyy
-        outputs['beam:GJ'] = beam_GJ
-        outputs['beam:EA'] = beam_EA
-        outputs['beam:EIxy'] = beam_EIxy
-        outputs['beam:x_ec'] = beam_x_ec
-        outputs['beam:y_ec'] = beam_y_ec
-        outputs['beam:rhoA'] = beam_rhoA
-        outputs['beam:rhoJ'] = beam_rhoJ
-        outputs['beam:Tw_iner'] = beam_Tw_iner
-        outputs['beam:flap_iner'] = beam_flap_iner
-        outputs['beam:edge_iner'] = beam_edge_iner
-        outputs['eps_crit_spar'] = self.panelBucklingStrain(inputs, discrete_inputs, strain_idx_spar_ss)
-        outputs['eps_crit_te'] = self.panelBucklingStrain(inputs, discrete_inputs, strain_idx_te_ss)
+#         outputs['beam:z'] = beam_z
+#         outputs['beam:EIxx'] = beam_EIxx
+#         outputs['beam:EIyy'] = beam_EIyy
+#         outputs['beam:GJ'] = beam_GJ
+#         outputs['beam:EA'] = beam_EA
+#         outputs['beam:EIxy'] = beam_EIxy
+#         outputs['beam:x_ec'] = beam_x_ec
+#         outputs['beam:y_ec'] = beam_y_ec
+#         outputs['beam:rhoA'] = beam_rhoA
+#         outputs['beam:rhoJ'] = beam_rhoJ
+#         outputs['beam:Tw_iner'] = beam_Tw_iner
+#         outputs['beam:flap_iner'] = beam_flap_iner
+#         outputs['beam:edge_iner'] = beam_edge_iner
+#         outputs['eps_crit_spar'] = self.panelBucklingStrain(inputs, discrete_inputs, strain_idx_spar_ss)
+#         outputs['eps_crit_te'] = self.panelBucklingStrain(inputs, discrete_inputs, strain_idx_te_ss)
 
-        xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = self.criticalStrainLocations(inputs, discrete_inputs, strain_idx_spar_ss, strain_idx_spar_ps, x_ec_nose, y_ec_nose)
-        xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = self.criticalStrainLocations(inputs, discrete_inputs, strain_idx_te_ss, strain_idx_te_ps, x_ec_nose, y_ec_nose)
+#         xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = self.criticalStrainLocations(inputs, discrete_inputs, strain_idx_spar_ss, strain_idx_spar_ps, x_ec_nose, y_ec_nose)
+#         xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = self.criticalStrainLocations(inputs, discrete_inputs, strain_idx_te_ss, strain_idx_te_ps, x_ec_nose, y_ec_nose)
 
-        outputs['xu_strain_spar'] = xu_strain_spar
-        outputs['xl_strain_spar'] = xl_strain_spar
-        outputs['yu_strain_spar'] = yu_strain_spar
-        outputs['yl_strain_spar'] = yl_strain_spar
-        outputs['xu_strain_te'] = xu_strain_te
-        outputs['xl_strain_te'] = xl_strain_te
-        outputs['yu_strain_te'] = yu_strain_te
-        outputs['yl_strain_te'] = yl_strain_te
+#         outputs['xu_strain_spar'] = xu_strain_spar
+#         outputs['xl_strain_spar'] = xl_strain_spar
+#         outputs['yu_strain_spar'] = yu_strain_spar
+#         outputs['yl_strain_spar'] = yl_strain_spar
+#         outputs['xu_strain_te'] = xu_strain_te
+#         outputs['xl_strain_te'] = xl_strain_te
+#         outputs['yu_strain_te'] = yu_strain_te
+#         outputs['yl_strain_te'] = yl_strain_te
 
         
 class BladeCurvature(ExplicitComponent):
@@ -2194,8 +2193,8 @@ class OutputsStructures(ExplicitComponent):
         self.add_input('strainL_spar_in',       val=np.zeros(NPTS),                 desc='axial strain and specified locations')
         self.add_input('strainU_te_in',         val=np.zeros(NPTS),                 desc='axial strain and specified locations')
         self.add_input('strainL_te_in',         val=np.zeros(NPTS),                 desc='axial strain and specified locations')
-        self.add_input('eps_crit_spar_in',      val=np.zeros(NPTS),                 desc='critical strain in spar from panel buckling calculation')
-        self.add_input('eps_crit_te_in',        val=np.zeros(NPTS),                 desc='critical strain in trailing-edge panels from panel buckling calculation')
+        # self.add_input('eps_crit_spar_in',      val=np.zeros(NPTS),                 desc='critical strain in spar from panel buckling calculation')
+        # self.add_input('eps_crit_te_in',        val=np.zeros(NPTS),                 desc='critical strain in trailing-edge panels from panel buckling calculation')
         self.add_input('root_bending_moment_in',val=0.0,            units='N*m',    desc='total magnitude of bending moment at root of blade')
         self.add_input('Mxyz_in',               val=np.zeros(3),    units='N*m',    desc='bending moment at root of blade, x,y,z')
         self.add_input('damageU_spar_in',       val=np.zeros(NPTS),                 desc='fatigue damage on upper surface in spar cap')
@@ -2235,8 +2234,8 @@ class OutputsStructures(ExplicitComponent):
         self.add_output('strainL_spar',     val=np.zeros(NPTS),             desc='axial strain and specified locations')
         self.add_output('strainU_te',       val=np.zeros(NPTS),             desc='axial strain and specified locations')
         self.add_output('strainL_te',       val=np.zeros(NPTS),             desc='axial strain and specified locations')
-        self.add_output('eps_crit_spar',    val=np.zeros(NPTS),             desc='critical strain in spar from panel buckling calculation')
-        self.add_output('eps_crit_te',      val=np.zeros(NPTS),             desc='critical strain in trailing-edge panels from panel buckling calculation')
+        # self.add_output('eps_crit_spar',    val=np.zeros(NPTS),             desc='critical strain in spar from panel buckling calculation')
+        # self.add_output('eps_crit_te',      val=np.zeros(NPTS),             desc='critical strain in trailing-edge panels from panel buckling calculation')
         self.add_output('root_bending_moment', val=0.0, units='N*m',        desc='total magnitude of bending moment at root of blade')
         self.add_output('Mxyz',             val=np.zeros(3), units='N*m',   desc='bending moment at root of blade, x,y,z')
         self.add_output('damageU_spar',     val=np.zeros(NPTS),             desc='fatigue damage on upper surface in spar cap')
@@ -2275,8 +2274,8 @@ class OutputsStructures(ExplicitComponent):
         self.declare_partials(['strainL_spar'],     ['strainL_spar_in'])
         self.declare_partials(['strainU_te'],       ['strainU_te_in'])
         self.declare_partials(['strainL_te'],       ['strainL_te_in'])
-        self.declare_partials(['eps_crit_spar'],    ['eps_crit_spar_in'])
-        self.declare_partials(['eps_crit_te'],      ['eps_crit_te_in'])
+        # self.declare_partials(['eps_crit_spar'],    ['eps_crit_spar_in'])
+        # self.declare_partials(['eps_crit_te'],      ['eps_crit_te_in'])
         self.declare_partials(['root_bending_moment'], ['root_bending_moment_in'])
         self.declare_partials(['Mxyz'],             ['Mxyz_in'])
         self.declare_partials(['damageU_spar'],     ['damageU_spar_in'])
@@ -2312,8 +2311,8 @@ class OutputsStructures(ExplicitComponent):
         outputs['strainL_spar'] = inputs['strainL_spar_in']
         outputs['strainU_te'] = inputs['strainU_te_in']
         outputs['strainL_te'] = inputs['strainL_te_in']
-        outputs['eps_crit_spar'] = inputs['eps_crit_spar_in']
-        outputs['eps_crit_te'] = inputs['eps_crit_te_in']
+        # outputs['eps_crit_spar'] = inputs['eps_crit_spar_in']
+        # outputs['eps_crit_te'] = inputs['eps_crit_te_in']
         outputs['root_bending_moment'] = inputs['root_bending_moment_in']
         outputs['Mxyz'] = inputs['Mxyz_in']
         outputs['damageU_spar'] = inputs['damageU_spar_in']
@@ -2386,8 +2385,8 @@ class OutputsStructures(ExplicitComponent):
         J['strainL_spar', 'strainL_spar_in'] = np.diag(np.ones(len(inputs['strainL_spar_in'])))
         J['strainU_te', 'strainU_te_in'] = np.diag(np.ones(len(inputs['strainU_te_in'])))
         J['strainL_te', 'strainL_te_in'] = np.diag(np.ones(len(inputs['strainL_te_in'])))
-        J['eps_crit_spar', 'eps_crit_spar_in'] = np.diag(np.ones(len(inputs['eps_crit_spar_in'])))
-        J['eps_crit_te', 'eps_crit_te_in'] = np.diag(np.ones(len(inputs['eps_crit_te_in'])))
+        # J['eps_crit_spar', 'eps_crit_spar_in'] = np.diag(np.ones(len(inputs['eps_crit_spar_in'])))
+        # J['eps_crit_te', 'eps_crit_te_in'] = np.diag(np.ones(len(inputs['eps_crit_te_in'])))
         J['root_bending_moment', 'root_bending_moment_in'] = 1
         J['Mxyz', 'Mxyz_in'] = np.diag(np.ones(len(inputs['Mxyz_in'])))
         J['damageU_spar', 'damageU_spar_in'] = np.diag(np.ones(len(inputs['damageU_spar_in'])))
@@ -2418,6 +2417,8 @@ class RotorStructure(Group):
         RefBlade        = self.options['RefBlade']
         NPTS            = len(RefBlade['pf']['s'])
         NINPUT          = len(RefBlade['ctrl_pts']['r_in'])
+        NAFgrid         = len(RefBlade['airfoils_aoa'])
+        NRe             = len(RefBlade['airfoils_Re'])
         topLevelFlag    = self.options['topLevelFlag']
         Analysis_Level  = self.options['Analysis_Level']
         
@@ -2476,17 +2477,17 @@ class RotorStructure(Group):
         #self.add_subsystem('resize', ResizeCompositeSection(NPTS=NPTS))
         self.add_subsystem('gust',      GustETM())
         self.add_subsystem('setuppc',   SetupPCModVarSpeed(),promotes=['control_tsr','control_pitch'])
-        self.add_subsystem('beam',      PreCompSections(NPTS=NPTS))
+        # self.add_subsystem('beam',      PreCompSections(NPTS=NPTS))
 
-        self.add_subsystem('aero_rated',            CCBladeLoads(naero=NPTS, npower=1), promotes=promoteList)
-        self.add_subsystem('aero_extrm',            CCBladeLoads(naero=NPTS, npower=1), promotes=promoteList)
-        self.add_subsystem('aero_extrm_forces',     CCBladePower(naero=NPTS, npower=2), promotes=promoteList)
-        self.add_subsystem('aero_defl_powercurve',  CCBladeLoads(naero=NPTS, npower=1), promotes=promoteList)
-        
+        self.add_subsystem('aero_rated',            CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
+        self.add_subsystem('aero_extrm',            CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
+        self.add_subsystem('aero_extrm_forces',     CCBladePower(naero=NPTS, npower=2, n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
+        self.add_subsystem('aero_defl_powercurve',  CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
+
         # Out of plane loads
-        self.add_subsystem('aero_rated_0',    CCBladeLoads(naero=NPTS, npower=1), promotes=promoteList)
-        self.add_subsystem('aero_rated_120',  CCBladeLoads(naero=NPTS, npower=1), promotes=promoteList)
-        self.add_subsystem('aero_rated_240',  CCBladeLoads(naero=NPTS, npower=1), promotes=promoteList)
+        self.add_subsystem('aero_rated_0',    CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
+        self.add_subsystem('aero_rated_120',  CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
+        self.add_subsystem('aero_rated_240',  CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
         
         self.add_subsystem('loads_defl',        TotalLoads(NPTS=NPTS), promotes=['tilt'])
         self.add_subsystem('loads_pc_defl',     TotalLoads(NPTS=NPTS), promotes=['tilt'])
@@ -2517,12 +2518,6 @@ class RotorStructure(Group):
         self.connect('presweep', 'curvature.presweep')
         #self.connect('precone', 'curvature.precone')
 
-        # # connections to resize
-        self.connect('sector_idx_strain_spar_ss',   'beam.sector_idx_strain_spar_ss')
-        self.connect('sector_idx_strain_spar_ps',   'beam.sector_idx_strain_spar_ps')
-        self.connect('sector_idx_strain_te_ss',     'beam.sector_idx_strain_te_ss')
-        self.connect('sector_idx_strain_te_ps',     'beam.sector_idx_strain_te_ps')
-
         # connections to gust
         self.connect('turbulence_class',    'gust.turbulence_class')
         self.connect('turbineclass.V_mean', 'gust.V_mean')
@@ -2541,7 +2536,7 @@ class RotorStructure(Group):
         self.connect('precurve',               ['aero_rated.precurve',  'aero_rated_0.precurve',    'aero_rated_120.precurve',    'aero_rated_240.precurve'])
         self.connect('Rhub',                   ['aero_rated.Rhub',      'aero_rated_0.Rhub',        'aero_rated_120.Rhub',        'aero_rated_240.Rhub'])
         self.connect('Rtip',                   ['aero_rated.Rtip',      'aero_rated_0.Rtip',        'aero_rated_120.Rtip',        'aero_rated_240.Rtip'])
-        self.connect('airfoils',               ['aero_rated.airfoils',  'aero_rated_0.airfoils',    'aero_rated_120.airfoils',    'aero_rated_240.airfoils'])
+        # self.connect('airfoils',               ['aero_rated.airfoils',  'aero_rated_0.airfoils',    'aero_rated_120.airfoils',    'aero_rated_240.airfoils'])
         self.connect('gust.V_gust',            ['aero_rated.V_load',    'aero_rated_0.V_load',      'aero_rated_120.V_load',      'aero_rated_240.V_load'])
         
         if topLevelFlag:
@@ -2554,7 +2549,7 @@ class RotorStructure(Group):
         self.connect('precurve',                    'aero_extrm.precurve')
         self.connect('Rhub',                        'aero_extrm.Rhub')
         self.connect('Rtip',                        'aero_extrm.Rtip')
-        self.connect('airfoils',                    'aero_extrm.airfoils')
+        # self.connect('airfoils',                    'aero_extrm.airfoils')
         self.connect('turbineclass.V_extreme50',    'aero_extrm.V_load')
         self.connect('pitch_extreme',               'aero_extrm.pitch_load')
         self.connect('azimuth_extreme',             'aero_extrm.azimuth_load')
@@ -2567,7 +2562,7 @@ class RotorStructure(Group):
         self.connect('precurve',    'aero_extrm_forces.precurve')
         self.connect('Rhub',        'aero_extrm_forces.Rhub')
         self.connect('Rtip',        'aero_extrm_forces.Rtip')
-        self.connect('airfoils',    'aero_extrm_forces.airfoils')
+        # self.connect('airfoils',    'aero_extrm_forces.airfoils')
         self.aero_extrm_forces.Uhub  = np.zeros(2)
         self.aero_extrm_forces.Omega = np.zeros(2)  # parked case
         self.aero_extrm_forces.pitch = np.zeros(2)
@@ -2583,25 +2578,19 @@ class RotorStructure(Group):
         self.connect('precurve',        'aero_defl_powercurve.precurve')
         self.connect('Rhub',            'aero_defl_powercurve.Rhub')
         self.connect('Rtip',            'aero_defl_powercurve.Rtip')
-        self.connect('airfoils',        'aero_defl_powercurve.airfoils')
+        # self.connect('airfoils',        'aero_defl_powercurve.airfoils')
         self.connect('setuppc.Uhub',    'aero_defl_powercurve.V_load')
         self.connect('setuppc.Omega',   'aero_defl_powercurve.Omega_load')
         self.connect('setuppc.pitch',   'aero_defl_powercurve.pitch_load')
         self.connect('setuppc.azimuth', 'aero_defl_powercurve.azimuth_load')
         self.aero_defl_powercurve.azimuth_load = 0.0
 
-        # connections to beam
-        self.connect('r_pts',       'beam.r')
-        self.connect('chord',       'beam.chord')
-        self.connect('theta',       'beam.theta')
-        self.connect('upperCS',     'beam.upperCS')
-        self.connect('lowerCS',     'beam.lowerCS')
-        self.connect('websCS',      'beam.websCS')
-        self.connect('profile',     'beam.profile')
-        self.connect('le_location', 'beam.le_location')
-        self.connect('materials',   'beam.materials')
-     
-        
+        self.connect('airfoils_cl', ['aero_rated.airfoils_cl', 'aero_rated_0.airfoils_cl', 'aero_rated_120.airfoils_cl', 'aero_rated_240.airfoils_cl', 'aero_extrm.airfoils_cl', 'aero_extrm_forces.airfoils_cl', 'aero_defl_powercurve.airfoils_cl'])
+        self.connect('airfoils_cd', ['aero_rated.airfoils_cd', 'aero_rated_0.airfoils_cd', 'aero_rated_120.airfoils_cd', 'aero_rated_240.airfoils_cd', 'aero_extrm.airfoils_cd', 'aero_extrm_forces.airfoils_cd', 'aero_defl_powercurve.airfoils_cd'])
+        self.connect('airfoils_cm', ['aero_rated.airfoils_cm', 'aero_rated_0.airfoils_cm', 'aero_rated_120.airfoils_cm', 'aero_rated_240.airfoils_cm', 'aero_extrm.airfoils_cm', 'aero_extrm_forces.airfoils_cm', 'aero_defl_powercurve.airfoils_cm'])
+        self.connect('airfoils_aoa', ['aero_rated.airfoils_aoa', 'aero_rated_0.airfoils_aoa', 'aero_rated_120.airfoils_aoa', 'aero_rated_240.airfoils_aoa', 'aero_extrm.airfoils_aoa', 'aero_extrm_forces.airfoils_aoa', 'aero_defl_powercurve.airfoils_aoa'])
+        self.connect('airfoils_Re', ['aero_rated.airfoils_Re', 'aero_rated_0.airfoils_Re', 'aero_rated_120.airfoils_Re', 'aero_rated_240.airfoils_Re', 'aero_extrm.airfoils_Re', 'aero_extrm_forces.airfoils_Re', 'aero_defl_powercurve.airfoils_Re'])
+
         # connections to loads_defl
         self.connect('aero_rated.loads_Omega',  'loads_defl.aeroloads_Omega')
         self.connect('aero_rated.loads_Px',     'loads_defl.aeroloads_Px')
@@ -2611,11 +2600,11 @@ class RotorStructure(Group):
         self.connect('aero_rated.loads_pitch',  'loads_defl.aeroloads_pitch')
         self.connect('aero_rated.loads_r',      'loads_defl.aeroloads_r')
         self.connect('dynamic_amplification',   'loads_defl.dynamicFactor')
-        self.connect('beam.beam:z',             'loads_defl.r')
+        self.connect('beam:z',             'loads_defl.r')
         self.connect('theta',                   'loads_defl.theta')
         self.connect('curvature.totalCone',     'loads_defl.totalCone')
         self.connect('curvature.z_az',          'loads_defl.z_az')
-        self.connect('beam.beam:rhoA',          'loads_defl.rhoA')
+        self.connect('beam:rhoA',          'loads_defl.rhoA')
 
         # connections to loads_pc_defl
         self.connect('aero_defl_powercurve.loads_Omega',    'loads_pc_defl.aeroloads_Omega')
@@ -2625,11 +2614,11 @@ class RotorStructure(Group):
         self.connect('aero_defl_powercurve.loads_azimuth',  'loads_pc_defl.aeroloads_azimuth')
         self.connect('aero_defl_powercurve.loads_pitch',    'loads_pc_defl.aeroloads_pitch')
         self.connect('aero_defl_powercurve.loads_r',        'loads_pc_defl.aeroloads_r')
-        self.connect('beam.beam:z',                         'loads_pc_defl.r')
+        self.connect('beam:z',                         'loads_pc_defl.r')
         self.connect('theta',                               'loads_pc_defl.theta')
         self.connect('curvature.totalCone',                 'loads_pc_defl.totalCone')
         self.connect('curvature.z_az',                      'loads_pc_defl.z_az')
-        self.connect('beam.beam:rhoA',                      'loads_pc_defl.rhoA')
+        self.connect('beam:rhoA',                      'loads_pc_defl.rhoA')
         self.connect('dynamic_amplification',               'loads_pc_defl.dynamicFactor')
 
         # connections to loads_strain
@@ -2649,11 +2638,11 @@ class RotorStructure(Group):
             self.connect('aero_extrm.loads_pitch',      'loads_strain.aeroloads_pitch')
             
         self.connect('aero_extrm.loads_r',      'loads_strain.aeroloads_r')
-        self.connect('beam.beam:z',             'loads_strain.r')
+        self.connect('beam:z',             'loads_strain.r')
         self.connect('theta',                   'loads_strain.theta')
         self.connect('curvature.totalCone',     'loads_strain.totalCone')
         self.connect('curvature.z_az',          'loads_strain.z_az')
-        self.connect('beam.beam:rhoA',          'loads_strain.rhoA')
+        self.connect('beam:rhoA',          'loads_strain.rhoA')
         self.connect('dynamic_amplification',   'loads_strain.dynamicFactor')
 
         # connections to damage
@@ -2661,19 +2650,19 @@ class RotorStructure(Group):
         self.connect('Mxb_damage',      'damage.Mxb')
         self.connect('Myb_damage',      'damage.Myb')
         self.connect('theta',           'damage.theta')
-        self.connect('beam.beam:z',     'damage.r')
+        self.connect('beam:z',     'damage.r')
 
         # connections to struc
-        self.connect('beam.beam:z',         'struc.beam:z')
-        self.connect('beam.beam:EA',        'struc.beam:EA')
-        self.connect('beam.beam:EIxx',      'struc.beam:EIxx')
-        self.connect('beam.beam:EIyy',      'struc.beam:EIyy')
-        self.connect('beam.beam:EIxy',      'struc.beam:EIxy')
-        self.connect('beam.beam:GJ',        'struc.beam:GJ')
-        self.connect('beam.beam:rhoA',      'struc.beam:rhoA')
-        self.connect('beam.beam:rhoJ',      'struc.beam:rhoJ')
-        self.connect('beam.beam:x_ec',      'struc.beam:x_ec')
-        self.connect('beam.beam:y_ec',      'struc.beam:y_ec')
+        self.connect('beam:z',         'struc.beam:z')
+        self.connect('beam:EA',        'struc.beam:EA')
+        self.connect('beam:EIxx',      'struc.beam:EIxx')
+        self.connect('beam:EIyy',      'struc.beam:EIyy')
+        self.connect('beam:EIxy',      'struc.beam:EIxy')
+        self.connect('beam:GJ',        'struc.beam:GJ')
+        self.connect('beam:rhoA',      'struc.beam:rhoA')
+        self.connect('beam:rhoJ',      'struc.beam:rhoJ')
+        self.connect('beam:x_ec',      'struc.beam:x_ec')
+        self.connect('beam:y_ec',      'struc.beam:y_ec')
         self.connect('loads_defl.Px_af',    'struc.Px_defl')
         self.connect('loads_defl.Py_af',    'struc.Py_defl')
         self.connect('loads_defl.Pz_af',    'struc.Pz_defl')
@@ -2683,14 +2672,14 @@ class RotorStructure(Group):
         self.connect('loads_strain.Px_af',  'struc.Px_strain')
         self.connect('loads_strain.Py_af',  'struc.Py_strain')
         self.connect('loads_strain.Pz_af',  'struc.Pz_strain')
-        self.connect('beam.xu_strain_spar', 'struc.xu_strain_spar')
-        self.connect('beam.xl_strain_spar', 'struc.xl_strain_spar')
-        self.connect('beam.yu_strain_spar', 'struc.yu_strain_spar')
-        self.connect('beam.yl_strain_spar', 'struc.yl_strain_spar')
-        self.connect('beam.xu_strain_te',   'struc.xu_strain_te')
-        self.connect('beam.xl_strain_te',   'struc.xl_strain_te')
-        self.connect('beam.yu_strain_te',   'struc.yu_strain_te')
-        self.connect('beam.yl_strain_te',   'struc.yl_strain_te')
+        self.connect('xu_strain_spar', 'struc.xu_strain_spar')
+        self.connect('xl_strain_spar', 'struc.xl_strain_spar')
+        self.connect('yu_strain_spar', 'struc.yu_strain_spar')
+        self.connect('yl_strain_spar', 'struc.yl_strain_spar')
+        self.connect('xu_strain_te',   'struc.xu_strain_te')
+        self.connect('xl_strain_te',   'struc.xl_strain_te')
+        self.connect('yu_strain_te',   'struc.yu_strain_te')
+        self.connect('yl_strain_te',   'struc.yl_strain_te')
         self.connect('damage.Mxa',          'struc.Mx_damage')
         self.connect('damage.Mya',          'struc.My_damage')
         self.connect('strain_ult_spar',     'struc.strain_ult_spar')
@@ -2699,19 +2688,19 @@ class RotorStructure(Group):
         #self.connect('lifetime', 'struc.lifetime')
 
         # connections to curvefem
-        self.connect('beam.beam:z',         'curvefem.beam:z')
-        self.connect('beam.beam:EA',        'curvefem.beam:EA')
-        self.connect('beam.beam:EIxx',      'curvefem.beam:EIxx')
-        self.connect('beam.beam:EIyy',      'curvefem.beam:EIyy')
-        self.connect('beam.beam:EIxy',      'curvefem.beam:EIxy')
-        self.connect('beam.beam:GJ',        'curvefem.beam:GJ')
-        self.connect('beam.beam:rhoA',      'curvefem.beam:rhoA')
-        self.connect('beam.beam:rhoJ',      'curvefem.beam:rhoJ')
-        self.connect('beam.beam:x_ec',      'curvefem.beam:x_ec')
-        self.connect('beam.beam:y_ec',      'curvefem.beam:y_ec')
-        # self.connect('beam.beam:flap_iner', 'curvefem.beam:flap_iner')
-        # self.connect('beam.beam:edge_iner', 'curvefem.beam:edge_iner')
-        # self.connect('beam.beam:Tw_iner',   'curvefem.beam:Tw_iner')
+        self.connect('beam:z',         'curvefem.beam:z')
+        self.connect('beam:EA',        'curvefem.beam:EA')
+        self.connect('beam:EIxx',      'curvefem.beam:EIxx')
+        self.connect('beam:EIyy',      'curvefem.beam:EIyy')
+        self.connect('beam:EIxy',      'curvefem.beam:EIxy')
+        self.connect('beam:GJ',        'curvefem.beam:GJ')
+        self.connect('beam:rhoA',      'curvefem.beam:rhoA')
+        self.connect('beam:rhoJ',      'curvefem.beam:rhoJ')
+        self.connect('beam:x_ec',      'curvefem.beam:x_ec')
+        self.connect('beam:y_ec',      'curvefem.beam:y_ec')
+        # self.connect('beam:flap_iner', 'curvefem.beam:flap_iner')
+        # self.connect('beam:edge_iner', 'curvefem.beam:edge_iner')
+        # self.connect('beam:Tw_iner',   'curvefem.beam:Tw_iner')
         self.connect('theta',               'curvefem.theta')
         self.connect('precurve',            'curvefem.precurve')
         self.connect('presweep',            'curvefem.presweep')
@@ -2775,6 +2764,7 @@ class RotorStructure(Group):
         self.connect('mass.I_all_blades',               'I_all_blades_in')
         self.connect('struc.freq',                      'freq_in')
         self.connect('curvefem.freq',                   'freq_curvefem_in')
+        self.connect('curvefem.modes_coef', 'modes_coef_curvefem_in')
         self.connect('tip.tip_deflection',              'tip_deflection_in')
         self.connect('tip.tip_position',                'tip_position_in')
         self.connect('tip.ground_clearance',            'ground_clearance_in')
@@ -2788,8 +2778,8 @@ class RotorStructure(Group):
         else:
             self.connect('root_moment.root_bending_moment', 'root_bending_moment_in')
             self.connect('root_moment.Mxyz',                'Mxyz_in')
-        self.connect('beam.eps_crit_spar',              'eps_crit_spar_in')
-        self.connect('beam.eps_crit_te',                'eps_crit_te_in')
+        # self.connect('eps_crit_spar',              'eps_crit_spar_in')
+        # self.connect('eps_crit_te',                'eps_crit_te_in')
         self.connect('struc.damageU_spar',              'damageU_spar_in')
         self.connect('struc.damageL_spar',              'damageL_spar_in')
         self.connect('struc.damageU_te',                'damageU_te_in')
@@ -2917,6 +2907,7 @@ def Init_RotorStructure_wRefBlade(rotor, blade):
 if __name__ == '__main__':
     # Turbine Ontology input
     fname_input  = "turbine_inputs/nrel5mw_mod_update.yaml"
+
     fname_output = "turbine_inputs/nrel5mw_mod_out.yaml"
     fname_schema = "turbine_inputs/IEAontology_schema.yaml"
 

@@ -100,15 +100,15 @@ class RotorSE(Group):
                                      'mass_one_blade','mass_all_blades','I_all_blades',
                                      'freq','freq_curvefem','modes_coef_curvefem','tip_deflection', 
                                      'tip_position','ground_clearance','strainU_spar','strainL_spar',
-                                     'strainU_te','strainL_te','eps_crit_spar','eps_crit_te',
+                                     'strainU_te','strainL_te',#'eps_crit_spar','eps_crit_te',
                                      'root_bending_moment','Mxyz','damageU_spar','damageL_spar','damageU_te',
                                      'damageL_te','delta_bladeLength_out','delta_precurve_sub_out',
                                      'Fxyz_1','Fxyz_2','Fxyz_3','Fxyz_4','Fxyz_5','Fxyz_6',
                                      'Mxyz_1','Mxyz_2','Mxyz_3','Mxyz_4','Mxyz_5','Mxyz_6',
                                      'Fxyz_total','Mxyz_total','TotalCone','Pitch'])
         
-        self.add_subsystem('rc', RotorCost(RefBlade=RefBlade, verbosity=rc_verbosity),
-                           promotes=['bladeLength','total_blade_cost','Rtip','Rhub','r_pts','chord','le_location','materials','upperCS','lowerCS','websCS','profile'])       
+        # self.add_subsystem('rc', RotorCost(RefBlade=RefBlade, verbosity=rc_verbosity),
+        #                    promotes=['bladeLength','total_blade_cost','Rtip','Rhub','r_pts','chord','le_location','materials','upperCS','lowerCS','websCS','profile'])       
         
         self.add_subsystem('obj_cmp', ExecComp('obj = -AEP',
                                                AEP={'units':'kW*h','value':1000000.0},
@@ -155,7 +155,7 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     # === atmosphere ===
     rotor['rho']              = 1.225   # (Float, kg/m**3): density of air
     rotor['mu']               = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    rotor['shearExp']         = 0.2     # (Float): shear exponent
+    rotor['shearExp']         = 0.0     # (Float): shear exponent
     rotor['shape_parameter']  = 2.0
     rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
     rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class

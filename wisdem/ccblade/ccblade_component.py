@@ -47,10 +47,17 @@ class CCBladePower(ExplicitComponent):
     def initialize(self):
         self.options.declare('naero')
         self.options.declare('npower')
+
+        self.options.declare('n_aoa_grid')
+        self.options.declare('n_Re_grid')
+
         
     def setup(self):
         self.naero = naero = self.options['naero']
         npower = self.options['npower']
+        n_aoa_grid = self.options['n_aoa_grid']
+        n_Re_grid  = self.options['n_Re_grid']
+
         """blade element momentum code"""
 
         # inputs
@@ -80,7 +87,12 @@ class CCBladePower(ExplicitComponent):
         self.add_input('precurveTip', val=0.0, units='m', desc='precurve at tip')
 
         # parameters
-        self.add_discrete_input('airfoils', val=[0]*naero, desc='CCAirfoil instances')
+        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
+        # self.add_discrete_input('airfoils', val=[0]*naero, desc='CCAirfoil instances')
         self.add_discrete_input('nBlades', val=0, desc='number of blades')
         self.add_input('rho', val=0.0, units='kg/m**3', desc='density of air')
         self.add_input('mu', val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
@@ -109,7 +121,7 @@ class CCBladePower(ExplicitComponent):
         self.yaw = inputs['yaw']
         self.precurve = inputs['precurve']
         self.precurveTip = inputs['precurveTip']
-        self.airfoils = discrete_inputs['airfoils']
+        # self.airfoils = discrete_inputs['airfoils']
         self.B = discrete_inputs['nBlades']
         self.rho = inputs['rho']
         self.mu = inputs['mu']
@@ -122,8 +134,12 @@ class CCBladePower(ExplicitComponent):
         self.Uhub = inputs['Uhub']
         self.Omega = inputs['Omega']
         self.pitch = inputs['pitch']
+
+        af = [None]*self.naero
+        for i in range(self.naero):
+            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
         
-        self.ccblade = CCBlade(self.r, self.chord, self.theta, self.airfoils, self.Rhub, self.Rtip, self.B,
+        self.ccblade = CCBlade(self.r, self.chord, self.theta, af, self.Rhub, self.Rtip, self.B,
             self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hub_height,
             self.nSector, self.precurve, self.precurveTip, tiploss=self.tiploss, hubloss=self.hubloss,
             wakerotation=self.wakerotation, usecd=self.usecd, derivatives=True)
@@ -194,10 +210,15 @@ class CCBladeLoads(ExplicitComponent):
     def initialize(self):
         self.options.declare('naero')
         self.options.declare('npower')
+
+        self.options.declare('n_aoa_grid')
+        self.options.declare('n_Re_grid')
         
     def setup(self):
         self.naero = naero = self.options['naero']
-        npower = self.options['npower']
+        npower     = self.options['npower']
+        n_aoa_grid = self.options['n_aoa_grid']
+        n_Re_grid  = self.options['n_Re_grid']
         """blade element momentum code"""
 
         # inputs
@@ -234,7 +255,13 @@ class CCBladeLoads(ExplicitComponent):
         self.add_input('precurveTip', val=0.0, units='m', desc='precurve at tip')
 
         # parameters
-        self.add_discrete_input('airfoils', val=[0]*naero, desc='CCAirfoil instances')
+        # self.add_discrete_input('airfoils', val=[0]*naero, desc='CCAirfoil instances')
+        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
+
         self.add_discrete_input('nBlades', val=0, desc='number of blades')
         self.add_input('rho', val=0.0, units='kg/m**3', desc='density of air')
         self.add_input('mu', val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
@@ -267,7 +294,7 @@ class CCBladeLoads(ExplicitComponent):
         self.yaw = inputs['yaw']
         self.precurve = inputs['precurve']
         self.precurveTip = inputs['precurveTip']
-        self.airfoils = discrete_inputs['airfoils']
+        # self.airfoils = discrete_inputs['airfoils']
         self.B = discrete_inputs['nBlades']
         self.rho = inputs['rho']
         self.mu = inputs['mu']
@@ -287,11 +314,11 @@ class CCBladeLoads(ExplicitComponent):
             self.precurve = np.zeros_like(self.r)
 
         # airfoil files
-        n = len(self.airfoils)
-        af = self.airfoils
-        # af = [0]*n
-        # for i in range(n):
-        #     af[i] = CCAirfoil.initFromAerodynFile(self.airfoil_files[i])
+        # n = len(self.airfoils)
+        af = [None]*self.naero
+        for i in range(self.naero):
+            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
+        # af = self.airfoils
 
         self.ccblade = CCBlade(self.r, self.chord, self.theta, af, self.Rhub, self.Rtip, self.B,
             self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hub_height,

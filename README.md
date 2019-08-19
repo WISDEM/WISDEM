@@ -53,7 +53,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 2.  Install Anaconda package dependencies
 
-        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git mpi4py imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex jsonschema ruamel.yaml compilers pydoe2
+        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex jsonschema ruamel.yaml pydoe2
 
     if sphinxcontrib-bibtex does not install correctly, it is not critical and you can press on.
     
@@ -63,7 +63,14 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
     on MacOS add on:
     
+        conda install -y compilers
         xcode-select --install
+
+    on Linux add on:
+
+        conda install -y compilers mpi4py==3.0.1 petsc4py
+
+
 
 
 3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM&reg;

@@ -3,14 +3,15 @@ import numpy as np
 import warnings
 import copy, time
 
-from openmdao.api import ExplicitComponent, Group, IndepVarComp
+from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 
 from wisdem.commonse.akima import Akima, akima_interp_with_derivs
 from wisdem.ccblade.ccblade_component import CCBladeGeometry
 from wisdem.ccblade import CCAirfoil
 from wisdem.airfoilprep import Airfoil
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
-from wisdem.rotorse.precomp import Profile, Orthotropic2DMaterial, CompositeSection, _precomp
+from wisdem.rotorse.precomp import PreComp, Profile, Orthotropic2DMaterial, CompositeSection, _precomp
+from wisdem.rotorse.rotor_cost import blade_cost_model
 
 from scipy.interpolate import PchipInterpolator
 
@@ -21,12 +22,22 @@ NINPUT = 5
 class BladeGeometry(ExplicitComponent):
     def initialize(self):
         self.options.declare('RefBlade')
+
+        # Blade Cost Model Options
+        self.options.declare('verbosity',        default=False)
+        self.options.declare('tex_table',        default=False)
+        self.options.declare('generate_plots',   default=False)
+        self.options.declare('show_plots',       default=False)
+        self.options.declare('show_warnings',    default=False)
+        self.options.declare('discrete',         default=False)
     
     def setup(self):
         self.refBlade = RefBlade = self.options['RefBlade']
-        npts   = len(self.refBlade['pf']['s'])
-        NINPUT = len(self.refBlade['ctrl_pts']['r_in'])
-        NAF    = len(self.refBlade['outer_shape_bem']['airfoil_position']['grid'])
+        npts    = len(self.refBlade['pf']['s'])
+        NINPUT  = len(self.refBlade['ctrl_pts']['r_in'])
+        NAF     = len(self.refBlade['outer_shape_bem']['airfoil_position']['grid'])
+        NAFgrid = len(self.refBlade['airfoils_aoa'])
+        NRe     = len(self.refBlade['airfoils_Re'])
 
         # variables
         self.add_discrete_input('blade_in_overwrite', val={}, desc='optional input blade that can be used to overwrite RefBlade from initialization, first intended for the inner loop of a nested optimization')
@@ -39,7 +50,6 @@ class BladeGeometry(ExplicitComponent):
         self.add_input('presweep_in', val=np.zeros(NINPUT), units='m', desc='precurve at control points')  # defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
         self.add_input('sparT_in', val=np.zeros(NINPUT), units='m', desc='thickness values of spar cap that linearly vary from non-cylinder position to tip')
         self.add_input('teT_in', val=np.zeros(NINPUT), units='m', desc='thickness values of trailing edge panels that linearly vary from non-cylinder position to tip')
-        # self.add_input('thickness_in', val=np.zeros(NINPUT), desc='relative thickness of airfoil distribution control points')
         self.add_input('airfoil_position', val=np.zeros(NAF), desc='spanwise position of airfoils')
 
         # parameters
@@ -55,51 +65,69 @@ class BladeGeometry(ExplicitComponent):
         self.add_output('theta', val=np.zeros(npts), units='deg', desc='twist at airfoil locations')
         self.add_output('precurve', val=np.zeros(npts), units='m', desc='precurve at airfoil locations')
         self.add_output('presweep', val=np.zeros(npts), units='m', desc='presweep at structural locations')
-        # self.add_output('sparT', val=np.zeros(npts), units='m', desc='dimensional spar cap thickness distribution')
-        # self.add_output('teT', val=np.zeros(npts), units='m', desc='dimensional trailing-edge panel thickness distribution')
         self.add_output('rthick', val=np.zeros(npts), desc='relative thickness of airfoil distribution')
-
+        self.add_output('le_location', val=np.zeros(npts))
         self.add_output('hub_diameter', val=0.0, units='m')
         self.add_output('diameter', val=0.0, units='m')
-        
-        self.add_discrete_output('airfoils', val=[], desc='Spanwise coordinates for aerodynamic analysis')
-        self.add_output('le_location', val=np.zeros(npts), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
-        self.add_output('chord_ref', val=np.zeros(npts), desc='Chord distribution for reference section, thickness of structural layup scaled with reference thickness (fixed t/c)')
 
-        # Blade layup outputs
-        self.add_discrete_output('materials', val=np.zeros(npts), desc='material properties of composite materials')
-        
-        self.add_discrete_output('upperCS', val=np.zeros(npts), desc='list of CompositeSection objections defining the properties for upper surface')
-        self.add_discrete_output('lowerCS', val=np.zeros(npts), desc='list of CompositeSection objections defining the properties for lower surface')
-        self.add_discrete_output('websCS', val=np.zeros(npts), desc='list of CompositeSection objections defining the properties for shear webs')
-        self.add_discrete_output('profile', val=np.zeros(npts), desc='list of CompositeSection profiles')
-        
-        self.add_discrete_output('sector_idx_strain_spar_ss', val=np.zeros(npts, dtype=np.int_), desc='Index of sector for spar (PreComp definition of sector)')
-        self.add_discrete_output('sector_idx_strain_spar_ps', val=np.zeros(npts, dtype=np.int_), desc='Index of sector for spar (PreComp definition of sector)')
-        self.add_discrete_output('sector_idx_strain_te_ss', val=np.zeros(npts, dtype=np.int_), desc='Index of sector for trailing edge (PreComp definition of sector)')
-        self.add_discrete_output('sector_idx_strain_te_ps', val=np.zeros(npts, dtype=np.int_), desc='Index of sector for trailing edge (PreComp definition of sector)')
+        # Airfoil properties
+        # self.add_discrete_output('airfoils', val=[], desc='Spanwise coordinates for aerodynamic analysis')
+        self.add_output('airfoils_cl', val=np.zeros((NAFgrid, npts, NRe)), desc='lift coefficients, spanwise')
+        self.add_output('airfoils_cd', val=np.zeros((NAFgrid, npts, NRe)), desc='drag coefficients, spanwise')
+        self.add_output('airfoils_cm', val=np.zeros((NAFgrid, npts, NRe)), desc='moment coefficients, spanwise')
+        self.add_output('airfoils_aoa', val=np.zeros((NAFgrid)), units='deg', desc='angle of attack grid for polars')
+        self.add_output('airfoils_Re', val=np.zeros((NRe)), desc='Reynolds numbers of polars')
 
+        # Beam properties
+        self.add_output('beam:z', val=np.zeros(npts), units='m', desc='locations of properties along beam')
+        self.add_output('beam:EA', val=np.zeros(npts), units='N', desc='axial stiffness')
+        self.add_output('beam:EIxx', val=np.zeros(npts), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+        self.add_output('beam:EIyy', val=np.zeros(npts), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+        self.add_output('beam:EIxy', val=np.zeros(npts), units='N*m**2', desc='coupled flap-edge stiffness')
+        self.add_output('beam:GJ', val=np.zeros(npts), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
+        self.add_output('beam:rhoA', val=np.zeros(npts), units='kg/m', desc='mass per unit length')
+        self.add_output('beam:rhoJ', val=np.zeros(npts), units='kg*m', desc='polar mass moment of inertia per unit length')
+        self.add_output('beam:Tw_iner', val=np.zeros(npts), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_output('beam:x_ec', val=np.zeros(npts), units='m', desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
+        self.add_output('beam:y_ec', val=np.zeros(npts), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_output('beam:flap_iner', val=np.zeros(npts), units='kg/m', desc='Section flap inertia about the Y_G axis per unit length.')
+        self.add_output('beam:edge_iner', val=np.zeros(npts), units='kg/m', desc='Section lag inertia about the X_G axis per unit length')
+        self.add_output('eps_crit_spar', val=np.zeros(npts), desc='critical strain in spar from panel buckling calculation')
+        self.add_output('eps_crit_te', val=np.zeros(npts), desc='critical strain in trailing-edge panels from panel buckling calculation')
+        self.add_output('xu_strain_spar', val=np.zeros(npts), desc='x-position of midpoint of spar cap on upper surface for strain calculation')
+        self.add_output('xl_strain_spar', val=np.zeros(npts), desc='x-position of midpoint of spar cap on lower surface for strain calculation')
+        self.add_output('yu_strain_spar', val=np.zeros(npts), desc='y-position of midpoint of spar cap on upper surface for strain calculation')
+        self.add_output('yl_strain_spar', val=np.zeros(npts), desc='y-position of midpoint of spar cap on lower surface for strain calculation')
+        self.add_output('xu_strain_te', val=np.zeros(npts), desc='x-position of midpoint of trailing-edge panel on upper surface for strain calculation')
+        self.add_output('xl_strain_te', val=np.zeros(npts), desc='x-position of midpoint of trailing-edge panel on lower surface for strain calculation')
+        self.add_output('yu_strain_te', val=np.zeros(npts), desc='y-position of midpoint of trailing-edge panel on upper surface for strain calculation')
+        self.add_output('yl_strain_te', val=np.zeros(npts), desc='y-position of midpoint of trailing-edge panel on lower surface for strain calculation')
+
+        # Blade Cost
+        self.add_output('total_blade_cost', val=0.0, units='USD', desc='total blade cost')
+        self.add_output('total_blade_mass', val=0.0, units='USD', desc='total blade cost')
+
+        #
         self.add_discrete_output('blade_out', val={}, desc='updated blade dictionary for ontology')
-
         self.add_output('sparT_in_out', val=np.zeros(NINPUT), units='m', desc='thickness values of spar cap that linearly vary from non-cylinder position to tip, pass through for nested optimization')
-
+        
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+
+        # initialization point
         if discrete_inputs['blade_in_overwrite'] != {}:
             blade = copy.deepcopy(discrete_inputs['blade_in_overwrite'])
         else:
             blade = copy.deepcopy(self.refBlade)
-
         NINPUT = len(blade['ctrl_pts']['r_in'])
 
+        # Set inputs to update blade geometry
         Rhub = inputs['hubFraction'] * inputs['bladeLength']
         Rtip = Rhub + inputs['bladeLength']
 
         outputs['Rhub']     = Rhub
         outputs['Rtip']     = Rtip
-        # r_in                 = np.r_[0.0, blade['ctrl_pts']['r_cylinder'].tolist(), np.linspace(inputs['r_max_chord'], 1.0, NINPUT-2)]
-        # outputs['r_in']     = Rhub + (Rtip-Rhub)*np.r_[0.0, blade['ctrl_pts']['r_cylinder'].tolist(), np.linspace(inputs['r_max_chord'], 1.0, NINPUT-2)]
         r_in                 = np.r_[0.,
                                      np.linspace(blade['ctrl_pts']['r_cylinder'], inputs['r_max_chord'], num=3).flatten()[:-1],
                                      np.linspace(inputs['r_max_chord'], 1., NINPUT-3).flatten()]
@@ -114,7 +142,6 @@ class BladeGeometry(ExplicitComponent):
         blade['ctrl_pts']['sparT_in']     = inputs['sparT_in']
         blade['ctrl_pts']['teT_in']       = inputs['teT_in']
         blade['ctrl_pts']['r_max_chord']  = inputs['r_max_chord']
-        # blade['ctrl_pts']['thickness_in'] = inputs['thickness_in']
 
         #check that airfoil positions are increasing        
         correct_af_position = False
@@ -130,7 +157,6 @@ class BladeGeometry(ExplicitComponent):
         else:
             blade['outer_shape_bem']['airfoil_position']['grid'] = inputs['airfoil_position'].tolist()
         
-        
         # Update
         refBlade = ReferenceBlade()
         refBlade.verbose        = False
@@ -141,10 +167,9 @@ class BladeGeometry(ExplicitComponent):
             refBlade.spar_var   = blade['precomp']['spar_var']
             refBlade.te_var     = blade['precomp']['te_var']
         
-        # blade_out = blade
         blade_out = refBlade.update(blade)
         
-        # Although the inputs get mirrored to outputs, this is still necessary so that the user can designate the inputs as design variables
+        # Get geometric outputs
         outputs['hub_diameter']           = 2.0*Rhub
         outputs['r_pts']                  = Rhub + (Rtip-Rhub)*np.array(blade_out['pf']['s'])
         outputs['diameter']               = 2.0*outputs['r_pts'][-1]
@@ -155,25 +180,85 @@ class BladeGeometry(ExplicitComponent):
         outputs['precurve']               = blade_out['pf']['precurve']
         outputs['presweep']               = blade_out['pf']['presweep']
         outputs['rthick']                 = blade_out['pf']['rthick']
-
-        discrete_outputs['airfoils']               = blade_out['airfoils']
         outputs['le_location']            = blade_out['pf']['p_le']
-        discrete_outputs['upperCS']                = blade_out['precomp']['upperCS']
-        discrete_outputs['lowerCS']                = blade_out['precomp']['lowerCS']
-        discrete_outputs['websCS']                 = blade_out['precomp']['websCS']
-        discrete_outputs['profile']                = blade_out['precomp']['profile']
-        outputs['chord_ref']              = blade_out['pf']['chord']
-        discrete_outputs['materials']              = blade_out['precomp']['materials']
-        
+
+        # airfoils  = blade_out['airfoils']
+        outputs['airfoils_cl']  = blade_out['airfoils_cl']
+        outputs['airfoils_cd']  = blade_out['airfoils_cd']
+        outputs['airfoils_cm']  = blade_out['airfoils_cm']
+        outputs['airfoils_aoa'] = blade_out['airfoils_aoa']
+        outputs['airfoils_Re']  = blade_out['airfoils_Re']
+
+        upperCS   = blade_out['precomp']['upperCS']
+        lowerCS   = blade_out['precomp']['lowerCS']
+        websCS    = blade_out['precomp']['websCS']
+        profile   = blade_out['precomp']['profile']
+        materials = blade_out['precomp']['materials']
+
+
         # Assumptions:
-        # - pressure and suction side regions are the same (i.e. spar cap is the Nth region on both side)
         # - if the composite layer is divided into multiple regions (i.e. if the spar cap is split into 3 regions due to the web locations),
         #   the middle region is selected with int(n_reg/2), note for an even number of regions, this rounds up
-        discrete_outputs['sector_idx_strain_spar_ss'] = blade_out['precomp']['sector_idx_strain_spar_ss']
-        discrete_outputs['sector_idx_strain_spar_ps'] = blade_out['precomp']['sector_idx_strain_spar_ps']
-        discrete_outputs['sector_idx_strain_te_ss']   = blade_out['precomp']['sector_idx_strain_te_ss']
-        discrete_outputs['sector_idx_strain_te_ps']   = blade_out['precomp']['sector_idx_strain_te_ps']
+        sector_idx_strain_spar_ss = blade_out['precomp']['sector_idx_strain_spar_ss']
+        sector_idx_strain_spar_ps = blade_out['precomp']['sector_idx_strain_spar_ps']
+        sector_idx_strain_te_ss   = blade_out['precomp']['sector_idx_strain_te_ss']
+        sector_idx_strain_te_ps   = blade_out['precomp']['sector_idx_strain_te_ps']
 
+
+        # Get Beam Properties        
+        beam = PreComp(outputs['r_pts'], outputs['chord'], outputs['theta'], outputs['le_location'], 
+                       outputs['precurve'], outputs['presweep'], profile, materials, upperCS, lowerCS, websCS, 
+                       sector_idx_strain_spar_ps, sector_idx_strain_spar_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
+        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner = beam.sectionProperties()
+
+        outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_ss)
+        outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_strain_te_ss)
+
+        xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = beam.criticalStrainLocations(sector_idx_strain_spar_ss, sector_idx_strain_spar_ps)
+        xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = beam.criticalStrainLocations(sector_idx_strain_te_ss, sector_idx_strain_te_ps)
+        
+        outputs['beam:z']         = outputs['r_pts']
+        outputs['beam:EIxx']      = EIxx
+        outputs['beam:EIyy']      = EIyy
+        outputs['beam:GJ']        = GJ
+        outputs['beam:EA']        = EA
+        outputs['beam:EIxy']      = EIxy
+        outputs['beam:x_ec']      = x_ec
+        outputs['beam:y_ec']      = y_ec
+        outputs['beam:rhoA']      = rhoA
+        outputs['beam:rhoJ']      = rhoJ
+        outputs['beam:Tw_iner']   = Tw_iner
+        outputs['beam:flap_iner'] = flap_iner
+        outputs['beam:edge_iner'] = edge_iner
+
+        outputs['xu_strain_spar'] = xu_strain_spar
+        outputs['xl_strain_spar'] = xl_strain_spar
+        outputs['yu_strain_spar'] = yu_strain_spar
+        outputs['yl_strain_spar'] = yl_strain_spar
+        outputs['xu_strain_te']   = xu_strain_te
+        outputs['xl_strain_te']   = xl_strain_te
+        outputs['yu_strain_te']   = yu_strain_te
+        outputs['yl_strain_te']   = yl_strain_te
+
+
+        # Blade cost model
+        bcm             = blade_cost_model(options=self.options) # <------------- options, import blade cost model
+        bcm.name        = blade_out['config']['name']
+        bcm.materials   = materials
+        bcm.upperCS     = upperCS
+        bcm.lowerCS     = lowerCS
+        bcm.websCS      = websCS
+        bcm.profile     = profile
+        bcm.chord       = outputs['chord']
+        bcm.r           = (outputs['r_pts'] - outputs['Rhub'])/(outputs['Rtip'] - outputs['Rhub']) * float(inputs['bladeLength'])
+        bcm.bladeLength = float(inputs['bladeLength'])
+        bcm.le_location              = outputs['le_location']
+        blade_cost, blade_mass       = bcm.execute_blade_cost_model()
+
+        outputs['total_blade_cost'] = blade_cost
+        outputs['total_blade_mass'] = blade_mass
+
+        #
         discrete_outputs['blade_out'] = blade_out
         outputs['sparT_in_out'] = inputs['sparT_in']
         
@@ -301,20 +386,45 @@ class RotorGeometry(Group):
         #self.connect('precone', 'geom.precone')
         #self.connect('precurveTip', 'geom.precurveTip')
 
+def Init_RotorGeometry_wRefBlade(rotor, blade):
+    rotor['precone']          = blade['config']['cone_angle']
+    rotor['bladeLength']      = blade['ctrl_pts']['bladeLength'] #61.5  # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature
+    rotor['r_max_chord']      = blade['ctrl_pts']['r_max_chord']  # 0.23577 #(Float): location of max chord on unit radius
+    rotor['chord_in']         = np.array(blade['ctrl_pts']['chord_in']) # np.array([3.2612, 4.3254, 4.5709, 3.7355, 2.69923333, 1.4621])  # (Array, m): chord at control points. defined at hub, then at linearly spaced locations from r_max_chord to tip
+    rotor['theta_in']         = np.array(blade['ctrl_pts']['theta_in']) # np.array([0.0, 13.2783, 12.30514836,  6.95106536,  2.72696309, -0.0878099]) # (Array, deg): twist at control points.  defined at linearly spaced locations from r[idx_cylinder] to tip
+    rotor['precurve_in']      = np.array(blade['ctrl_pts']['precurve_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
+    rotor['presweep_in']      = np.array(blade['ctrl_pts']['presweep_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
+    rotor['sparT_in']         = np.array(blade['ctrl_pts']['sparT_in']) # np.array([0.0, 0.05, 0.047754, 0.045376, 0.031085, 0.0061398])  # (Array, m): spar cap thickness parameters
+    rotor['teT_in']           = np.array(blade['ctrl_pts']['teT_in']) # np.array([0.0, 0.1, 0.09569, 0.06569, 0.02569, 0.00569])  # (Array, m): trailing-edge thickness parameters
+    rotor['airfoil_position'] = np.array(blade['outer_shape_bem']['airfoil_position']['grid'])
+    rotor['hubFraction']      = blade['config']['hubD']/2./blade['pf']['r'][-1] #0.025  # (Float): hub location as fraction of radius
+    rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
+    rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class
+
+    return rotor
 
 if __name__ == "__main__":
 
     # Turbine Ontology input
-    fname_input = "turbine_inputs/nrel5mw_mod.yaml"
+    fname_input = "turbine_inputs/nrel5mw_mod_update.yaml"
 
     # Initialize blade design
     refBlade = ReferenceBlade()
     refBlade.verbose = True
     refBlade.NINPUT  = NINPUT
     refBlade.NPITS   = 50
+    refBlade.validate = False
+    refBlade.fname_schema = "turbine_inputs/IEAontology_schema.yaml"
 
     refBlade.spar_var = ['Spar_Cap_SS', 'Spar_Cap_PS']
     refBlade.te_var   = 'TE_reinforcement'
-
     blade = refBlade.initialize(fname_input)
-    rotor = RotorGeometry(blade)
+
+    # setup
+    rotor = Problem()
+    rotor.model = RotorGeometry(RefBlade=blade, topLevelFlag=True)
+    rotor.setup()
+    rotor = Init_RotorGeometry_wRefBlade(rotor, blade)
+    rotor.run_driver()
+
+    print(rotor['total_blade_cost'])
