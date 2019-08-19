@@ -2,7 +2,7 @@
 from __future__ import print_function
 import numpy as np
 from pprint import pprint
-from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizer, SqliteRecorder
+from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder
 from wisdem.rotorse.rotor import RotorSE, Init_RotorSE_wRefBlade
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.towerse.tower import TowerSE
@@ -276,7 +276,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow):
 
 if __name__ == "__main__":
     
-    optFlag = False
+    optFlag = True
 
 
 
@@ -303,7 +303,7 @@ if __name__ == "__main__":
     
     if optFlag:
         # --- Solver ---
-        prob.driver  = ScipyOptimizer()
+        prob.driver  = ScipyOptimizeDriver()
         prob.driver.options['optimizer'] = 'SLSQP'
         prob.driver.options['tol']       = 1.e-6
         prob.driver.options['maxiter']   = 100
@@ -337,8 +337,8 @@ if __name__ == "__main__":
         prob.model.add_constraint('tow.manufacturability',         lower=0.0)
         prob.model.add_constraint('frequency1P_margin_low',              upper=1.0)
         prob.model.add_constraint('frequency1P_margin_high', lower=1.0)
-        prob.model.add_constraint('frequency3P_margin_low',              upper=1.0)
-        prob.model.add_constraint('frequency3P_margin_high', lower=1.0)
+        prob.model.add_constraint('frequencyNP_margin_low',              upper=1.0)
+        prob.model.add_constraint('frequencyNP_margin_high', lower=1.0)
         prob.model.add_constraint('ground_clearance',        lower=20.0)
         # ----------------------
         
