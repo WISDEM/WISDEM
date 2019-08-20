@@ -58,7 +58,7 @@ class BladeGeometry(ExplicitComponent):
         # Blade geometry outputs
         self.add_output('Rhub', val=0.0, units='m', desc='dimensional radius of hub')
         self.add_output('Rtip', val=0.0, units='m', desc='dimensional radius of tip')
-        self.add_output('r_pts', val=np.zeros(npts), units='m', desc='dimensional aerodynamic grid')
+        self.add_output('r', val=np.zeros(npts), units='m', desc='dimensional aerodynamic grid')
         self.add_output('r_in', val=np.zeros(NINPUT), units='m', desc='Spline control points for inputs')
         self.add_output('max_chord', val=0.0, units='m', desc='maximum chord length')
         self.add_output('chord', val=np.zeros(npts), units='m', desc='chord at airfoil locations')
@@ -79,19 +79,19 @@ class BladeGeometry(ExplicitComponent):
         self.add_output('airfoils_Re', val=np.zeros((NRe)), desc='Reynolds numbers of polars')
 
         # Beam properties
-        self.add_output('beam:z', val=np.zeros(npts), units='m', desc='locations of properties along beam')
-        self.add_output('beam:EA', val=np.zeros(npts), units='N', desc='axial stiffness')
-        self.add_output('beam:EIxx', val=np.zeros(npts), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_output('beam:EIyy', val=np.zeros(npts), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-        self.add_output('beam:EIxy', val=np.zeros(npts), units='N*m**2', desc='coupled flap-edge stiffness')
-        self.add_output('beam:GJ', val=np.zeros(npts), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
-        self.add_output('beam:rhoA', val=np.zeros(npts), units='kg/m', desc='mass per unit length')
-        self.add_output('beam:rhoJ', val=np.zeros(npts), units='kg*m', desc='polar mass moment of inertia per unit length')
-        self.add_output('beam:Tw_iner', val=np.zeros(npts), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
-        self.add_output('beam:x_ec', val=np.zeros(npts), units='m', desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
-        self.add_output('beam:y_ec', val=np.zeros(npts), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
-        self.add_output('beam:flap_iner', val=np.zeros(npts), units='kg/m', desc='Section flap inertia about the Y_G axis per unit length.')
-        self.add_output('beam:edge_iner', val=np.zeros(npts), units='kg/m', desc='Section lag inertia about the X_G axis per unit length')
+        self.add_output('z', val=np.zeros(npts), units='m', desc='locations of properties along beam')
+        self.add_output('EA', val=np.zeros(npts), units='N', desc='axial stiffness')
+        self.add_output('EIxx', val=np.zeros(npts), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+        self.add_output('EIyy', val=np.zeros(npts), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+        self.add_output('EIxy', val=np.zeros(npts), units='N*m**2', desc='coupled flap-edge stiffness')
+        self.add_output('GJ', val=np.zeros(npts), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
+        self.add_output('rhoA', val=np.zeros(npts), units='kg/m', desc='mass per unit length')
+        self.add_output('rhoJ', val=np.zeros(npts), units='kg*m', desc='polar mass moment of inertia per unit length')
+        self.add_output('Tw_iner', val=np.zeros(npts), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_output('x_ec', val=np.zeros(npts), units='m', desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
+        self.add_output('y_ec', val=np.zeros(npts), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_output('flap_iner', val=np.zeros(npts), units='kg/m', desc='Section flap inertia about the Y_G axis per unit length.')
+        self.add_output('edge_iner', val=np.zeros(npts), units='kg/m', desc='Section lag inertia about the X_G axis per unit length')
         self.add_output('eps_crit_spar', val=np.zeros(npts), desc='critical strain in spar from panel buckling calculation')
         self.add_output('eps_crit_te', val=np.zeros(npts), desc='critical strain in trailing-edge panels from panel buckling calculation')
         self.add_output('xu_strain_spar', val=np.zeros(npts), desc='x-position of midpoint of spar cap on upper surface for strain calculation')
@@ -171,8 +171,8 @@ class BladeGeometry(ExplicitComponent):
         
         # Get geometric outputs
         outputs['hub_diameter']           = 2.0*Rhub
-        outputs['r_pts']                  = Rhub + (Rtip-Rhub)*np.array(blade_out['pf']['s'])
-        outputs['diameter']               = 2.0*outputs['r_pts'][-1]
+        outputs['r']                  = Rhub + (Rtip-Rhub)*np.array(blade_out['pf']['s'])
+        outputs['diameter']               = 2.0*outputs['r'][-1]
 
         outputs['chord']                  = blade_out['pf']['chord']
         outputs['max_chord']              = max(blade_out['pf']['chord'])
@@ -206,7 +206,7 @@ class BladeGeometry(ExplicitComponent):
 
 
         # Get Beam Properties        
-        beam = PreComp(outputs['r_pts'], outputs['chord'], outputs['theta'], outputs['le_location'], 
+        beam = PreComp(outputs['r'], outputs['chord'], outputs['theta'], outputs['le_location'], 
                        outputs['precurve'], outputs['presweep'], profile, materials, upperCS, lowerCS, websCS, 
                        sector_idx_strain_spar_ps, sector_idx_strain_spar_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
         EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner = beam.sectionProperties()
@@ -217,19 +217,19 @@ class BladeGeometry(ExplicitComponent):
         xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = beam.criticalStrainLocations(sector_idx_strain_spar_ss, sector_idx_strain_spar_ps)
         xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = beam.criticalStrainLocations(sector_idx_strain_te_ss, sector_idx_strain_te_ps)
         
-        outputs['beam:z']         = outputs['r_pts']
-        outputs['beam:EIxx']      = EIxx
-        outputs['beam:EIyy']      = EIyy
-        outputs['beam:GJ']        = GJ
-        outputs['beam:EA']        = EA
-        outputs['beam:EIxy']      = EIxy
-        outputs['beam:x_ec']      = x_ec
-        outputs['beam:y_ec']      = y_ec
-        outputs['beam:rhoA']      = rhoA
-        outputs['beam:rhoJ']      = rhoJ
-        outputs['beam:Tw_iner']   = Tw_iner
-        outputs['beam:flap_iner'] = flap_iner
-        outputs['beam:edge_iner'] = edge_iner
+        outputs['z']         = outputs['r']
+        outputs['EIxx']      = EIxx
+        outputs['EIyy']      = EIyy
+        outputs['GJ']        = GJ
+        outputs['EA']        = EA
+        outputs['EIxy']      = EIxy
+        outputs['x_ec']      = x_ec
+        outputs['y_ec']      = y_ec
+        outputs['rhoA']      = rhoA
+        outputs['rhoJ']      = rhoJ
+        outputs['Tw_iner']   = Tw_iner
+        outputs['flap_iner'] = flap_iner
+        outputs['edge_iner'] = edge_iner
 
         outputs['xu_strain_spar'] = xu_strain_spar
         outputs['xl_strain_spar'] = xl_strain_spar
@@ -250,7 +250,7 @@ class BladeGeometry(ExplicitComponent):
         bcm.websCS      = websCS
         bcm.profile     = profile
         bcm.chord       = outputs['chord']
-        bcm.r           = (outputs['r_pts'] - outputs['Rhub'])/(outputs['Rtip'] - outputs['Rhub']) * float(inputs['bladeLength'])
+        bcm.r           = (outputs['r'] - outputs['Rhub'])/(outputs['Rtip'] - outputs['Rhub']) * float(inputs['bladeLength'])
         bcm.bladeLength = float(inputs['bladeLength'])
         bcm.le_location              = outputs['le_location']
         blade_cost, blade_mass       = bcm.execute_blade_cost_model()
@@ -354,10 +354,10 @@ class RotorGeometry(Group):
             
         # --- Rotor Definition ---
         self.add_subsystem('loc', Location(), promotes=['*'])
-        self.add_subsystem('turbineclass', TurbineClass(), promotes=['turbine_class','V_mean_overwrite'])
+        self.add_subsystem('turbineclass', TurbineClass(), promotes=['*'])#turbine_class','V_mean_overwrite','V_mean'])
         #self.add_subsystem('spline0', BladeGeometry(RefBlade))
         self.add_subsystem('spline', BladeGeometry(RefBlade=RefBlade), promotes=['*'])
-        self.add_subsystem('geom', CCBladeGeometry(), promotes=['precone','precurveTip'])
+        self.add_subsystem('geom', CCBladeGeometry(), promotes=['precone','precurveTip','R'])
 
         # connections to spline0
         #self.connect('r_max_chord', 'spline0.r_max_chord')
