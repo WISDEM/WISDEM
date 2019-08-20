@@ -711,12 +711,13 @@ class DriveSE(Group):
 
         # select components
         self.add_subsystem('hub', HubSE(mass_only=True, topLevelFlag=False, debug=debug), promotes=['*'])
+        self.add_subsystem('gearbox', Gearbox_OM(), promotes=['*'])
         self.add_subsystem('lowSpeedShaft', LowSpeedShaft4pt_OM(), promotes=['*'])
         self.add_subsystem('mainBearing', MainBearing_OM(bearing_position='main'), promotes=['lss_design_torque','rotor_diameter']) #explicit connections for bearings
         if drive4pt:
             self.add_subsystem('secondBearing', MainBearing_OM(bearing_position='second'), promotes=['lss_design_torque','rotor_diameter']) #explicit connections for bearings
         self.add_subsystem('hubCM', Hub_CM_Adder_OM(), promotes=['*'])
-        self.add_subsystem('gearbox', Gearbox_OM(), promotes=['*'])
+        
         self.add_subsystem('highSpeedSide', HighSpeedSide_OM(), promotes=['*'])
         self.add_subsystem('generator', Generator_OM(), promotes=['*'])
         self.add_subsystem('rna', RNASystemAdder_OM(), promotes=['*'])
