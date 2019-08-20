@@ -3,6 +3,8 @@ from __future__ import print_function
 import numpy as np
 from pprint import pprint
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder
+# from openmdao.api import pyOptSparseDriver
+from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
 from wisdem.rotorse.rotor import RotorSE, Init_RotorSE_wRefBlade
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.towerse.tower import TowerSE
@@ -47,7 +49,8 @@ class LandBasedTurbine(Group):
         # Environment
         myIndeps.add_output('wind_bottom_height',   0.0, units='m')
         myIndeps.add_output('wind_beta',            0.0, units='deg')
-        myIndeps.add_output('cd_usr', np.inf)
+        # myIndeps.add_output('cd_usr', np.inf)
+        myIndeps.add_output('cd_usr', 0.1)
 
         # Design standards
         myIndeps.add_output('gamma_b', 0.0)
@@ -80,10 +83,10 @@ class LandBasedTurbine(Group):
         
         # Add components
         self.add_subsystem('rotorse', RotorSE(RefBlade=RefBlade,
-                                              npts_coarse_power_curve=50,
+                                              npts_coarse_power_curve=20,
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,
-                                              regulation_reg_III=True,
+                                              regulation_reg_III=False,
                                               Analysis_Level=0,
                                               FASTpref=self.options['FASTpref'],
                                               topLevelFlag=True), promotes=['*'])
@@ -165,9 +168,10 @@ class LandBasedTurbine(Group):
         self.connect('rna.rna_mass',            ['rna_mass','tow.pre.mass'])
         self.connect('rs.gust.V_gust',          'tow.wind.Uref')
         self.connect('wind_reference_height',   ['tow.wind.zref','wind.zref'])
-        self.connect('wind_bottom_height',      ['tow.wind.z0','tow.wave.z_surface', 'wind.z0'])
+        # self.connect('wind_bottom_height',      ['tow.wind.z0','tow.wave.z_surface', 'wind.z0'])  # offshore
+        self.connect('wind_bottom_height',      ['tow.wind.z0', 'wind.z0'])
         self.connect('shearExp',                ['tow.wind.shearExp'])
-        self.connect('morison_mass_coefficient','tow.cm')
+        # self.connect('morison_mass_coefficient','tow.cm')                                         # offshore
         self.connect('yield_stress',            'tow.sigma_y')
         self.connect('max_taper_ratio',         'max_taper')
         self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
@@ -303,10 +307,15 @@ if __name__ == "__main__":
     
     if optFlag:
         # --- Solver ---
-        prob.driver  = ScipyOptimizeDriver()
-        prob.driver.options['optimizer'] = 'SLSQP'
-        prob.driver.options['tol']       = 1.e-6
-        prob.driver.options['maxiter']   = 100
+        # prob.driver  = ScipyOptimizeDriver()
+        # prob.driver.options['optimizer'] = 'SLSQP'
+        # prob.driver.options['tol']       = 1.e-6
+        # prob.driver.options['maxiter']   = 100
+
+        prob.driver = pyOptSparseDriver()
+        prob.driver.options['optimizer'] = 'CONMIN'
+        # prob.driver.options['optimizer'] = "SLSQP"
+        # prob.driver.options['gradient method'] = "pyopt_fd"
         # ----------------------
 
         # --- Objective ---
@@ -351,10 +360,12 @@ if __name__ == "__main__":
         # ----------------------
 
 
-    prob.setup()
+    prob.setup(check=True)
     
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
     
+    prob.model.approx_totals()
+
     prob.run_driver()
     
 

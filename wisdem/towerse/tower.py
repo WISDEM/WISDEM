@@ -141,7 +141,7 @@ class TurbineMass(ExplicitComponent):
         self.add_output('turbine_I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of tower about base [xx yy zz xy xz yz]')
        
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
         outputs['turbine_mass'] = inputs['rna_mass'] + inputs['tower_mass']
@@ -264,7 +264,7 @@ class TowerPreFrame(ExplicitComponent):
         outputs['Mzz']   = np.array([ inputs['rna_M'][2] ]).flatten()
 
         
-    def compute_partials(self, inputs, J):
+    def compute_partials(self, inputs, J, discrete_inputs):
         
         J['m','mass']    = 1.0
         J['mIxx','mI']   = np.eye(6)[0,:]
@@ -337,7 +337,7 @@ class TowerPostFrame(ExplicitComponent):
         self.add_output('turbine_M', val=np.zeros(3), units='N*m', desc='Total x-moment on tower+rna measured at base')
         
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
         
     def compute(self, inputs, outputs):
@@ -449,14 +449,16 @@ class TowerSE(Group):
         #self.options.declare('nDEL')
         self.options.declare('wind', default='')
         self.options.declare('topLevelFlag', default=True)
+        self.options.declare('monopile', default=False)
     
     def setup(self):
-        nLC     = self.options['nLC']
-        nPoints = self.options['nPoints']
-        nFull   = self.options['nFull']
-        #nDEL    = self.options['nDEL']
-        wind    = self.options['wind']
-        topLevelFlag = self.options['topLevelFlag']
+        nLC           = self.options['nLC']
+        nPoints       = self.options['nPoints']
+        nFull         = self.options['nFull']
+        # nDEL          = self.options['nDEL']
+        wind          = self.options['wind']
+        topLevelFlag  = self.options['topLevelFlag']
+        self.monopile = self.options['monopile']
         
         # Independent variables that are unique to TowerSE
         towerIndeps = IndepVarComp()
@@ -534,9 +536,12 @@ class TowerSE(Group):
             else:
                 raise ValueError('Unknown wind type, '+wind)
 
-            self.add_subsystem('wave'+lc, LinearWaves(nPoints=nFull), promotes=['z_floor'])
             self.add_subsystem('windLoads'+lc, CylinderWindDrag(nPoints=nFull), promotes=['cd_usr'])
-            self.add_subsystem('waveLoads'+lc, CylinderWaveDrag(nPoints=nFull), promotes=['cm','cd_usr'])
+
+            if self.monopile:
+                self.add_subsystem('wave'+lc, LinearWaves(nPoints=nFull), promotes=['z_floor'])
+                self.add_subsystem('waveLoads'+lc, CylinderWaveDrag(nPoints=nFull), promotes=['cm','cd_usr'])
+
             self.add_subsystem('distLoads'+lc, AeroHydroLoads(nPoints=nFull), promotes=['yaw'])
 
             self.add_subsystem('pre'+lc, TowerPreFrame(nFull=nFull), promotes=['monopile'])
@@ -545,8 +550,11 @@ class TowerSE(Group):
             self.add_subsystem('post'+lc, TowerPostFrame(nFull=nFull), promotes=['E','sigma_y','DC','life','m_SN',
                                                                                  'gamma_b','gamma_f','gamma_fatigue','gamma_m','gamma_n'])
             
-            self.connect('z_full', ['wind'+lc+'.z', 'wave'+lc+'.z', 'windLoads'+lc+'.z', 'waveLoads'+lc+'.z', 'distLoads'+lc+'.z', 'pre'+lc+'.z', 'tower'+lc+'.z', 'post'+lc+'.z'])
-            self.connect('d_full', ['windLoads'+lc+'.d', 'waveLoads'+lc+'.d', 'tower'+lc+'.d', 'post'+lc+'.d'])
+            self.connect('z_full', ['wind'+lc+'.z', 'windLoads'+lc+'.z', 'distLoads'+lc+'.z', 'pre'+lc+'.z', 'tower'+lc+'.z', 'post'+lc+'.z'])
+            self.connect('d_full', ['windLoads'+lc+'.d', 'tower'+lc+'.d', 'post'+lc+'.d'])
+            if self.monopile:
+                self.connect('z_full', ['wave'+lc+'.z', 'waveLoads'+lc+'.z'])
+                self.connect('d_full', 'waveLoads'+lc+'.d')
 
             if topLevelFlag:
                 self.connect('rna_mass', 'pre'+lc+'.mass')
@@ -597,7 +605,9 @@ class TowerSE(Group):
             # connections to wind, wave
             if topLevelFlag:
                 self.connect('wind_reference_height', 'wind'+lc+'.zref')
-                self.connect('wind_z0', ['wind'+lc+'.z0', 'wave'+lc+'.z_surface'])
+                self.connect('wind_z0', 'wind'+lc+'.z0')
+                if self.monopile:
+                    self.connect('wind_z0', 'wave'+lc+'.z_surface')
                 #self.connect('z_floor', 'waveLoads'+lc+'.wlevel')
                 if wind=='PowerWind':
                     self.connect('shearExp', 'wind'+lc+'.shearExp')
@@ -607,17 +617,18 @@ class TowerSE(Group):
                 self.connect('air_viscosity', 'windLoads'+lc+'.mu')
                 self.connect('wind_beta', 'windLoads'+lc+'.beta')
 
-            # connections to waveLoads1
-            self.connect('water_density', ['wave'+lc+'.rho', 'waveLoads'+lc+'.rho'])
-            self.connect('water_viscosity', 'waveLoads'+lc+'.mu')
-            self.connect('wave_beta', 'waveLoads'+lc+'.beta')
-            self.connect('significant_wave_height', 'wave'+lc+'.hmax')
-            self.connect('significant_wave_period', 'wave'+lc+'.T')
-                
-            self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
-            self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
-            self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
-            self.connect('wave'+lc+'.p', 'waveLoads'+lc+'.p')
+            if self.monopile:
+                # connections to waveLoads1
+                self.connect('water_density', ['wave'+lc+'.rho', 'waveLoads'+lc+'.rho'])
+                self.connect('water_viscosity', 'waveLoads'+lc+'.mu')
+                self.connect('wave_beta', 'waveLoads'+lc+'.beta')
+                self.connect('significant_wave_height', 'wave'+lc+'.hmax')
+                self.connect('significant_wave_period', 'wave'+lc+'.T')
+                    
+                self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
+                self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
+                self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
+                self.connect('wave'+lc+'.p', 'waveLoads'+lc+'.p')
 
             # connections to distLoads1
             self.connect('windLoads'+lc+'.windLoads_Px', 'distLoads'+lc+'.windLoads_Px')
@@ -633,18 +644,19 @@ class TowerSE(Group):
             self.connect('windLoads'+lc+'.windLoads_z', 'distLoads'+lc+'.windLoads_z')
             self.connect('windLoads'+lc+'.windLoads_d', 'distLoads'+lc+'.windLoads_d')
 
-            self.connect('waveLoads'+lc+'.waveLoads_Px', 'distLoads'+lc+'.waveLoads_Px')
-            self.connect('waveLoads'+lc+'.waveLoads_Py', 'distLoads'+lc+'.waveLoads_Py')
-            self.connect('waveLoads'+lc+'.waveLoads_Pz', 'distLoads'+lc+'.waveLoads_Pz')
-            self.connect('waveLoads'+lc+'.waveLoads_pt', 'distLoads'+lc+'.waveLoads_qdyn')
-            self.connect('waveLoads'+lc+'.waveLoads_beta', 'distLoads'+lc+'.waveLoads_beta')
-            #self.connect('waveLoads'+lc+'.waveLoads_Px0', 'distLoads'+lc+'.waveLoads_Px0')
-            #self.connect('waveLoads'+lc+'.waveLoads_Py0', 'distLoads'+lc+'.waveLoads_Py0')
-            #self.connect('waveLoads'+lc+'.waveLoads_Pz0', 'distLoads'+lc+'.waveLoads_Pz0')
-            #self.connect('waveLoads'+lc+'.waveLoads_qdyn0', 'distLoads'+lc+'.waveLoads_qdyn0')
-            #self.connect('waveLoads'+lc+'.waveLoads_beta0', 'distLoads'+lc+'.waveLoads_beta0')
-            self.connect('waveLoads'+lc+'.waveLoads_z', 'distLoads'+lc+'.waveLoads_z')
-            self.connect('waveLoads'+lc+'.waveLoads_d', 'distLoads'+lc+'.waveLoads_d')
+            if self.monopile:
+                self.connect('waveLoads'+lc+'.waveLoads_Px', 'distLoads'+lc+'.waveLoads_Px')
+                self.connect('waveLoads'+lc+'.waveLoads_Py', 'distLoads'+lc+'.waveLoads_Py')
+                self.connect('waveLoads'+lc+'.waveLoads_Pz', 'distLoads'+lc+'.waveLoads_Pz')
+                self.connect('waveLoads'+lc+'.waveLoads_pt', 'distLoads'+lc+'.waveLoads_qdyn')
+                self.connect('waveLoads'+lc+'.waveLoads_beta', 'distLoads'+lc+'.waveLoads_beta')
+                #self.connect('waveLoads'+lc+'.waveLoads_Px0', 'distLoads'+lc+'.waveLoads_Px0')
+                #self.connect('waveLoads'+lc+'.waveLoads_Py0', 'distLoads'+lc+'.waveLoads_Py0')
+                #self.connect('waveLoads'+lc+'.waveLoads_Pz0', 'distLoads'+lc+'.waveLoads_Pz0')
+                #self.connect('waveLoads'+lc+'.waveLoads_qdyn0', 'distLoads'+lc+'.waveLoads_qdyn0')
+                #self.connect('waveLoads'+lc+'.waveLoads_beta0', 'distLoads'+lc+'.waveLoads_beta0')
+                self.connect('waveLoads'+lc+'.waveLoads_z', 'distLoads'+lc+'.waveLoads_z')
+                self.connect('waveLoads'+lc+'.waveLoads_d', 'distLoads'+lc+'.waveLoads_d')
 
             # Tower connections
             self.connect('tower_buckling_length', ['tower'+lc+'.L_reinforced', 'post'+lc+'.L_reinforced'])
@@ -769,7 +781,7 @@ if __name__ == '__main__':
     nLC = 2
     
     prob = Problem()
-    prob.model = TowerSE(nLC=nLC, nPoints=nPoints, nFull=nFull, wind=wind, topLevelFlag=True)
+    prob.model = TowerSE(nLC=nLC, nPoints=nPoints, nFull=nFull, wind=wind, topLevelFlag=True, monopile=monopile)
     prob.setup()
 
     if wind=='PowerWind':
@@ -786,7 +798,7 @@ if __name__ == '__main__':
     prob['tower_buckling_length'] = L_reinforced
     prob['tower_outfitting_factor'] = Koutfitting
     prob['yaw'] = yaw
-    prob['monopile'] = monopile
+    # prob['monopile'] = monopile
     prob['suctionpile_depth'] = suction_depth
     prob['soil_G'] = soilG
     prob['soil_nu'] = soilnu

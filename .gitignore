@@ -1,5 +1,7 @@
 *.py[cod]
 
+wisdem/pyoptsparse
+
 # OpenMDAO
 openmdao_log.txt
 

@@ -40,7 +40,7 @@ class BladeGeometry(ExplicitComponent):
         NRe     = len(self.refBlade['airfoils_Re'])
 
         # variables
-        self.add_discrete_input('blade_in_overwrite', val={}, desc='optional input blade that can be used to overwrite RefBlade from initialization, first intended for the inner loop of a nested optimization')
+        # self.add_discrete_input('blade_in_overwrite', val={}, desc='optional input blade that can be used to overwrite RefBlade from initialization, first intended for the inner loop of a nested optimization')
 
         self.add_input('bladeLength', val=0.0, units='m', desc='blade length (if not precurved or swept) otherwise length of blade before curvature')
         self.add_input('r_max_chord', val=0.0, desc='location of max chord on unit radius')
@@ -108,18 +108,18 @@ class BladeGeometry(ExplicitComponent):
         self.add_output('total_blade_mass', val=0.0, units='USD', desc='total blade cost')
 
         #
-        self.add_discrete_output('blade_out', val={}, desc='updated blade dictionary for ontology')
+        # self.add_discrete_output('blade_out', val={}, desc='updated blade dictionary for ontology')
         self.add_output('sparT_in_out', val=np.zeros(NINPUT), units='m', desc='thickness values of spar cap that linearly vary from non-cylinder position to tip, pass through for nested optimization')
         
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
 
         # initialization point
-        if discrete_inputs['blade_in_overwrite'] != {}:
-            blade = copy.deepcopy(discrete_inputs['blade_in_overwrite'])
-        else:
-            blade = copy.deepcopy(self.refBlade)
+        # if discrete_inputs['blade_in_overwrite'] != {}:
+        #     blade = copy.deepcopy(discrete_inputs['blade_in_overwrite'])
+        # else:
+        blade = copy.deepcopy(self.refBlade)
         NINPUT = len(blade['ctrl_pts']['r_in'])
 
         # Set inputs to update blade geometry
@@ -259,7 +259,7 @@ class BladeGeometry(ExplicitComponent):
         outputs['total_blade_mass'] = blade_mass
 
         #
-        discrete_outputs['blade_out'] = blade_out
+        # discrete_outputs['blade_out'] = blade_out
         outputs['sparT_in_out'] = inputs['sparT_in']
         
 class Location(ExplicitComponent):
@@ -288,7 +288,7 @@ class TurbineClass(ExplicitComponent):
         self.add_output('V_extreme50', shape=1, units='m/s', desc='IEC extreme wind speed at hub height')
         self.add_output('V_extreme_full', shape=2, units='m/s', desc='IEC extreme wind speed at hub height')
         
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 

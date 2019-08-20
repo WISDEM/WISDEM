@@ -142,16 +142,17 @@ class PowerWind(WindBase):
         zref = inputs['zref']
         z0 = inputs['z0']
         shearExp = inputs['shearExp']
-        U = outputs['U']
-        Uref = inputs['Uref']
+        idx = z > z0
+
+        U = np.zeros(self.npts)
+        U[idx] = inputs['Uref']*((z[idx] - z0)/(zref - z0))**inputs['shearExp']
 
         # gradients
         dU_dUref = np.zeros(self.npts)
         dU_dz = np.zeros(self.npts)
         dU_dzref = np.zeros(self.npts)
 
-        idx = z > z0
-        dU_dUref[idx] = U[idx]/Uref
+        dU_dUref[idx] = U[idx]/inputs['Uref']
         dU_dz[idx] = U[idx]*shearExp/(z[idx] - z0)
         dU_dzref[idx] = -U[idx]*shearExp/(zref - z0)
 

@@ -1178,8 +1178,7 @@ class ReferenceBlade(object):
         # y = blade['pf']['af_pos_name']
         # blade['pf']['af_pos']      = [x[0]] + [x[i] for i in range(1,len(y)-1) if not(y[i] == y[i-1] and y[i] == y[i+1])] + [x[-1]]
         # blade['pf']['af_pos_name'] = [y[0]] + [y[i] for i in range(1,len(y)-1) if not(y[i] == y[i-1] and y[i] == y[i+1])] + [y[-1]]
-
-
+        sys.stdout.flush()
         return blade
 
         

@@ -42,7 +42,7 @@ class CylinderDiscretization(ExplicitComponent):
         # Convenience outputs for export to other modules
         
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
         nRefine = int(np.round( self.options['nRefine'] ))
@@ -54,9 +54,9 @@ class CylinderDiscretization(ExplicitComponent):
             z_full = np.append(z_full, zref)
         z_full = np.unique(z_full)
         outputs['z_full']  = z_full
-        outputs['d_full']  = np.interp(z_full, outputs['z_param'], inputs['diameter'])
+        outputs['d_full']  = np.interp(z_full, z_param, inputs['diameter'])
         z_section = 0.5*(z_full[:-1] + z_full[1:])
-        outputs['t_full']  = sectionalInterp(z_section, outputs['z_param'], inputs['wall_thickness'])
+        outputs['t_full']  = sectionalInterp(z_section, z_param, inputs['wall_thickness'])
         outputs['z_param'] = z_param
 
 class CylinderMass(ExplicitComponent):
@@ -84,7 +84,7 @@ class CylinderMass(ExplicitComponent):
         self.add_output('I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of cylinder about base [xx yy zz xy xz yz]')
         
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
         # Unpack variables for thickness and average radius at each can interface
@@ -267,7 +267,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_output('hoop_stress_euro', np.zeros(npts-1), units='N/m**2', desc='Hoop stress in cylinder structure calculated with Eurocode method')
         
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):

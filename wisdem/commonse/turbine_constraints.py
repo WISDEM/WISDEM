@@ -18,7 +18,7 @@ class TowerModes(ExplicitComponent):
         self.add_output('frequency1P_margin_low', val=np.zeros(NFREQ), desc='Upper bound constraint of tower/structure frequency to rotor frequency with margin')
         self.add_output('frequency1P_margin_high', val=np.zeros(NFREQ), desc='Lower bound constraint of tower/structure frequency to rotor frequency with margin')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         freq_struct = inputs['tower_freq']
@@ -71,7 +71,7 @@ class MaxTipDeflection(ExplicitComponent):
         self.add_output('tip_deflection_ratio',      val=0.0,           desc='Ratio of blade tip deflectiion towardsa the tower and clearance between undeflected blade tip and tower')
         self.add_output('blade_tip_tower_clearance', val=0.0, units='m',desc='Clearance between undeflected blade tip and tower in x-direction of yaw c.s.')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack variables

@@ -226,12 +226,12 @@ class CylinderWindDrag(ExplicitComponent):
 
         # Reynolds number and drag
         if inputs['cd_usr'] in [np.inf, -np.inf, None, np.nan]:
+            Re = rho*U*d/mu
+            cd, dcd_dRe = cylinderDrag(Re)
+        else:
             cd = inputs['cd_usr']
             Re = 1.0
             dcd_dRe = 0.0
-        else:
-            Re = rho*U*d/mu
-            cd, dcd_dRe = cylinderDrag(Re)
 
         # derivatives
         dq_dU = rho*U
@@ -246,27 +246,26 @@ class CylinderWindDrag(ExplicitComponent):
         n = len(inputs['z'])
 
         zeron = np.zeros((n, n))
-
         
-        J['windLoads.Px', 'U'] = np.diag(dPx_dU)
-        J['windLoads.Px', 'z'] = zeron
-        J['windLoads.Px', 'd'] = np.diag(dPx_dd)
+        J['windLoads_Px', 'U'] = np.diag(dPx_dU)
+        J['windLoads_Px', 'z'] = zeron
+        J['windLoads_Px', 'd'] = np.diag(dPx_dd)
 
-        J['windLoads.Py', 'U'] = np.diag(dPy_dU)
-        J['windLoads.Py', 'z'] = zeron
-        J['windLoads.Py', 'd'] = np.diag(dPy_dd)
+        J['windLoads_Py', 'U'] = np.diag(dPy_dU)
+        J['windLoads_Py', 'z'] = zeron
+        J['windLoads_Py', 'd'] = np.diag(dPy_dd)
 
-        J['windLoads.Pz', 'U'] = zeron
-        J['windLoads.Pz', 'z'] = zeron
-        J['windLoads.Pz', 'd'] = zeron
+        J['windLoads_Pz', 'U'] = zeron
+        J['windLoads_Pz', 'z'] = zeron
+        J['windLoads_Pz', 'd'] = zeron
 
-        J['windLoads.qdyn', 'U'] = np.diag(dq_dU)
-        J['windLoads.qdyn', 'z'] = zeron
-        J['windLoads.qdyn', 'd'] = zeron
+        J['windLoads_qdyn', 'U'] = np.diag(dq_dU)
+        J['windLoads_qdyn', 'z'] = zeron
+        J['windLoads_qdyn', 'd'] = zeron
 
-        J['windLoads.z', 'U'] = zeron
-        J['windLoads.z', 'z'] = np.eye(n)
-        J['windLoads.z', 'd'] = zeron
+        J['windLoads_z', 'U'] = zeron
+        J['windLoads_z', 'z'] = np.eye(n)
+        J['windLoads_z', 'd'] = zeron
 
         
 

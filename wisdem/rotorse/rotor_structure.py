@@ -113,7 +113,7 @@ class BladeCurvature(ExplicitComponent):
         self.J = J
 
     def compute_partials(self, inputs, J):
-        J.update(self.J)
+        J = self.J
 
 
 class CurveFEM(ExplicitComponent):
@@ -146,7 +146,7 @@ class CurveFEM(ExplicitComponent):
         self.add_output('modes_coef', val=np.zeros((3, 5)), desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
         # self.add_output('')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
 
@@ -325,7 +325,7 @@ class RotorWithpBEAM(ExplicitComponent):
         self.add_output('damageU_te', val=np.zeros(NPTS), desc='fatigue damage on upper surface in trailing-edge panels')
         self.add_output('damageL_te', val=np.zeros(NPTS), desc='fatigue damage on lower surface in trailing-edge panels')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
         self.EI11 = None
         self.EI22 = None
@@ -605,7 +605,7 @@ class DamageLoads(ExplicitComponent):
         self.J = J
 
     def compute_partials(self, inputs, J):
-        J.update(self.J)
+        J = self.J
 
         
 
@@ -840,7 +840,7 @@ class TotalLoads(ExplicitComponent):
 
 
     def compute_partials(self, inputs, J):
-        J.update(self.J)
+        J = self.J
         
 
 class TipDeflection(ExplicitComponent):
@@ -934,8 +934,8 @@ class TipDeflection(ExplicitComponent):
         J['tip_deflection', 'dynamicFactor'] = delta.x.tolist()
         self.J = J
 
-    def compute_partials(self, inputs, J):
-        J.update(self.J)
+    def compute_partials(self, inputs, J, discrete_inputs):
+        J = self.J
 
 
         
@@ -1136,7 +1136,7 @@ class BladeDeflection(ExplicitComponent):
         self.J = J
 
     def compute_partials(self, inputs, J):
-        J.update(self.J)        
+        J = self.J        
 
         
 
@@ -1169,8 +1169,8 @@ class RootMoment(ExplicitComponent):
         self.declare_partials(['root_bending_moment'],
                               ['r', 'aeroloads_r', 'aeroloads_Px', 'aeroloads_Py', 'aeroloads_Pz',
                                'totalCone', 'x_az', 'y_az', 'z_az', 's'])
-        self.declare_partials('Mxyz', '*', method='fd', form='central', step=1e-6)
-        self.declare_partials('Fxyz', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('Mxyz', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('Fxyz', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
 
@@ -1349,7 +1349,7 @@ class RootMoment(ExplicitComponent):
         self.J = J
         
     def compute_partials(self, inputs, J):        
-        J.update(self.J)
+        J = self.J
         
 
 
@@ -1410,8 +1410,8 @@ class MassProperties(ExplicitComponent):
         J['I_all_blades', 'tilt'] = np.array([ I.dx['dtilt'],  I.dy['dtilt'],  I.dz['dtilt'], 0.0, 0.0, 0.0])
         self.J = J
         
-    def compute_partials(self, inputs, J):
-        J.update(self.J)
+    def compute_partials(self, inputs, J, discrete_inputs):
+        J = self.J
         
 
 
@@ -1442,8 +1442,8 @@ class ExtremeLoads(ExplicitComponent):
         outputs['Q_extreme'] = 0.0
 
 
-    def compute_partials(self, inputs, J):
-        n = float(inputs['nBlades'])
+    def compute_partials(self, inputs, J, discrete_inputs):
+        n = float(discrete_inputs['nBlades'])
         
         J['T_extreme', 'T'] = np.reshape(np.array([[1.0/n], [(n-1)/n]]), (1, 2))
         # J['Q_extreme', 'Q'] = np.reshape(np.array([1.0/n, (n-1)/n]), (1, 2))
@@ -1490,8 +1490,8 @@ class GustETM(ExplicitComponent):
         J['V_gust', 'V_hub'] = 1.0 + std*(c*Iref*0.072*(V_mean/c + 3)/c)
         self.J = J
         
-    def compute_partials(self, inputs, J):
-        J.update(self.J)
+    def compute_partials(self, inputs, J, discrete_inputs):
+        J = self.J
 
 
         
@@ -1541,7 +1541,7 @@ class SetupPCModVarSpeed(ExplicitComponent):
         self.J = J
         
     def compute_partials(self, inputs, J):
-        J.update(self.J)
+        J = self.J
 
         
 
@@ -1712,8 +1712,8 @@ class ConstraintsStructures(ExplicitComponent):
         J['rotor_damage_teL', 'damageL_te']     = np.diag(myones)
         self.J = J
         
-    def compute_partials(self, inputs, J):
-        J.update(self.J)
+    def compute_partials(self, inputs, J, discrete_inputs):
+        J = self.J
 
 
         
@@ -1919,8 +1919,10 @@ class OutputsStructures(ExplicitComponent):
             self.J['Fxyz_total','Fxyz'+kstr+'_in'] = np.vstack([dFx_dF[k,:], dFy_dF[k,:], dFz_dF[k,:]])
             self.J['Mxyz_total','Mxyz'+kstr+'_in'] = np.vstack([dMx_dM[k,:], dMy_dM[k,:], dMz_dM[k,:]])
 
-    def compute_partials(self, inputs, J):
+    def compute_partials(self, inputs, J, discrete_inputs):
         
+        J = self.J
+
         J['mass_one_blade', 'mass_one_blade_in'] = 1
         J['mass_all_blades', 'mass_all_blades_in'] = 1
         J['I_all_blades', 'I_all_blades_in'] = np.diag(np.ones(len(inputs['I_all_blades_in'])))
@@ -1950,7 +1952,7 @@ class OutputsStructures(ExplicitComponent):
             J['Mxyz'+kstr, 'Mxyz'+kstr+'_in'] = np.diag(np.ones(len(inputs['Mxyz'+kstr+'_in'])))
         J['TotalCone', 'TotalCone_in'] = 1
         J['Pitch', 'Pitch_in'] = 1
-        J.update(self.J)
+        # J = self.J
         
 
 

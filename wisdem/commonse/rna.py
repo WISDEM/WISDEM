@@ -79,8 +79,8 @@ class RNAMass(ExplicitComponent):
         nac_cm = inputs['nac_cm']
         hub_I = inputs['hub_I']
         nac_I = inputs['nac_I']
-        rna_mass = unknowns['rna_mass']
         rotor_mass = blades_mass+hub_mass
+        rna_mass = rotor_mass + nac_mass
 
         
 
@@ -112,9 +112,9 @@ class RNAMass(ExplicitComponent):
         J['rna_cm', 'nac_mass'] = (rna_mass*nac_cm-numerator)/rna_mass**2
         J['rna_cm', 'hub_cm'] = rotor_mass/rna_mass*np.eye(3)
         J['rna_cm', 'nac_cm'] = nac_mass/rna_mass*np.eye(3)
-        J['rna_cm', 'blades_I'] = np.zeros(3, 6)
-        J['rna_cm', 'hub_I'] = np.zeros(3, 6)
-        J['rna_cm', 'nac_I'] = np.zeros(3, 6)
+        J['rna_cm', 'blades_I'] = np.zeros((3, 6))
+        J['rna_cm', 'hub_I'] = np.zeros((3, 6))
+        J['rna_cm', 'nac_I'] = np.zeros((3, 6))
 
 
         # I
@@ -215,7 +215,7 @@ class RotorLoads(ExplicitComponent):
         outputs['top_F'] = np.array([Fout.x, Fout.y, Fout.z])
         outputs['top_M'] = np.array([Mout.x, Mout.y, Mout.z])
 
-    def compute_partials(self, inputs, J):
+    def compute_partials(self, inputs, J, discrete_inputs):
 
         dF = DirectionVector.fromArray(inputs['F']).hubToYaw(inputs['tilt'])
         dFx, dFy, dFz = dF.dx, dF.dy, dF.dz
@@ -224,7 +224,7 @@ class RotorLoads(ExplicitComponent):
         dtopF_dFy = np.array([dFx['dy'], dFy['dy'], dFz['dy']])
         dtopF_dFz = np.array([dFx['dz'], dFy['dz'], dFz['dz']])
         dtopF_dF = hstack([dtopF_dFx, dtopF_dFy, dtopF_dFz])
-        dtopF_w_dm = np.array([0.0, 0.0, -self.g])
+        dtopF_w_dm = np.array([0.0, 0.0, -gravity])
 
         #dtopF = hstack([dtopF_dF, np.zeros((3, 6)), dtopF_w_dm, np.zeros((3, 3))])
 
@@ -247,7 +247,7 @@ class RotorLoads(ExplicitComponent):
 
         dMx_w_cross, dMy_w_cross, dMz_w_cross = self.save_rcm.cross_deriv(self.saveF_w, 'dr', 'dF')
 
-        if inputs['rna_weightM']:
+        if discrete_inputs['rna_weightM']:
             dtopM_drnacm = np.array([dMx_w_cross['dr'], dMy_w_cross['dr'], dMz_w_cross['dr']])
             dtopM_dF_w = np.array([dMx_w_cross['dF'], dMy_w_cross['dF'], dMz_w_cross['dF']])
         else:
@@ -255,7 +255,7 @@ class RotorLoads(ExplicitComponent):
             dtopM_dF_w = np.zeros((3, 3))
         dtopM_dm = np.dot(dtopM_dF_w, dtopF_w_dm)
 
-        if inputs['downwind']:
+        if discrete_inputs['downwind']:
             dtopM_dr[:, 0] *= -1
             dtopM_drnacm[:, 0] *= -1
 

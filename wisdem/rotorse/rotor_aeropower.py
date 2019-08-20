@@ -116,7 +116,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_output('cl_cutin',          val=np.zeros(naero), desc='lift coefficient distribution along blade span at cut-in wind speed')
         self.add_output('cd_cutin',          val=np.zeros(naero), desc='drag coefficient distribution along blade span at cut-in wind speed')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -490,7 +490,7 @@ class AEP(ExplicitComponent):
         self.J['AEP', 'lossFactor'] = dAEP_dlossFactor
 
     def compute_partials(self, inputs, J):
-        J.update(self.J)
+        J = self.J
 
 
 

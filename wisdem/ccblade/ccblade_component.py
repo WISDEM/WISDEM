@@ -151,55 +151,55 @@ class CCBladePower(ExplicitComponent):
         outputs['Q'] = self.Q
         outputs['P'] = self.P
 
-    def compute_partials(self, inputs, J):
+    def compute_partials(self, inputs, J, discrete_inputs):
 
         dP = self.dP
         dT = self.dT
         dQ = self.dQ
         
-        J['P', 'precone'] = dP['dprecone']
-        J['P', 'tilt'] = dP['dtilt']
-        J['P', 'hub_height'] = dP['dhub_height']
-        J['P', 'Rhub'] = dP['dRhub']
-        J['P', 'Rtip'] = dP['dRtip']
-        J['P', 'yaw'] = dP['dyaw']
-        J['P', 'Uhub'] = dP['dUinf']
-        J['P', 'Omega'] = dP['dOmega']
-        J['P', 'pitch'] =  dP['dpitch']
-        J['P', 'r'] = dP['dr']
-        J['P', 'chord'] = dP['dchord']
-        J['P', 'theta'] = dP['dtheta']
-        J['P', 'precurve'] = dP['dprecurve']
+        J['P', 'precone']     = dP['dprecone']
+        J['P', 'tilt']        = dP['dtilt']
+        J['P', 'hub_height']  = dP['dhubHt']
+        J['P', 'Rhub']        = dP['dRhub']
+        J['P', 'Rtip']        = dP['dRtip']
+        J['P', 'yaw']         = dP['dyaw']
+        J['P', 'Uhub']        = dP['dUinf']
+        J['P', 'Omega']       = dP['dOmega']
+        J['P', 'pitch']       = dP['dpitch']
+        J['P', 'r']           = dP['dr']
+        J['P', 'chord']       = dP['dchord']
+        J['P', 'theta']       = dP['dtheta']
+        J['P', 'precurve']    = dP['dprecurve']
         J['P', 'precurveTip'] = dP['dprecurveTip']
 
-        J['T', 'precone'] = dT['dprecone']
-        J['T', 'tilt'] = dT['dtilt']
-        J['T', 'hub_height'] = dT['dhub_height']
-        J['T', 'Rhub'] = dT['dRhub']
-        J['T', 'Rtip'] = dT['dRtip']
-        J['T', 'yaw'] = dT['dyaw']
-        J['T', 'Uhub'] = dT['dUinf']
-        J['T', 'Omega'] = dT['dOmega']
-        J['T', 'pitch'] =  dT['dpitch']
-        J['T', 'r'] = dT['dr']
-        J['T', 'chord'] = dT['dchord']
-        J['T', 'theta'] = dT['dtheta']
-        J['T', 'precurve'] = dT['dprecurve']
+        J['T', 'precone']     = dT['dprecone']
+        J['T', 'tilt']        = dT['dtilt']
+        J['T', 'hub_height']  = dT['dhubHt']
+        J['T', 'Rhub']        = dT['dRhub']
+        J['T', 'Rtip']        = dT['dRtip']
+        J['T', 'yaw']         = dT['dyaw']
+        J['T', 'Uhub']        = dT['dUinf']
+        J['T', 'Omega']       = dT['dOmega']
+        J['T', 'pitch']       = dT['dpitch']
+        J['T', 'r']           = dT['dr']
+        J['T', 'chord']       = dT['dchord']
+        J['T', 'theta']       = dT['dtheta']
+        J['T', 'precurve']    = dT['dprecurve']
         J['T', 'precurveTip'] = dT['dprecurveTip']
 
-        J['Q', 'precone'] = dQ['dprecone']
-        J['Q', 'tilt'] = dQ['dtilt']
-        J['Q', 'hub_height'] = dQ['dhub_height']
-        J['Q', 'Rhub'] = dQ['dRhub']
-        J['Q', 'Rtip'] = dQ['dRtip']
-        J['Q', 'yaw'] = dQ['dyaw']
-        J['Q', 'Uhub'] = dQ['dUinf']
-        J['Q', 'Omega'] = dQ['dOmega']
-        J['Q', 'pitch'] =  dQ['dpitch']
-        J['Q', 'r'] = dQ['dr']
-        J['Q', 'chord'] = dQ['dchord']
-        J['Q', 'theta'] = dQ['dtheta']
-        J['Q', 'precurve'] = dQ['dprecurve']
+        J['Q', 'precone']     = dQ['dprecone']
+        J['Q', 'tilt']        = dQ['dtilt']
+        J['Q', 'hub_height']  = dQ['dhubHt']
+        J['Q', 'Rhub']        = dQ['dRhub']
+        J['Q', 'Rtip']        = dQ['dRtip']
+        J['Q', 'yaw']         = dQ['dyaw']
+        J['Q', 'Uhub']        = dQ['dUinf']
+        J['Q', 'Omega']       = dQ['dOmega']
+        J['Q', 'pitch']       = dQ['dpitch']
+        J['Q', 'r']           = dQ['dr']
+        J['Q', 'chord']       = dQ['dchord']
+        J['Q', 'theta']       = dQ['dtheta']
+        J['Q', 'precurve']    = dQ['dprecurve']
         J['Q', 'precurveTip'] = dQ['dprecurveTip']
 
         
@@ -344,15 +344,15 @@ class CCBladeLoads(ExplicitComponent):
         outputs['loads_pitch'] = self.pitch_load
         outputs['loads_azimuth'] = self.azimuth_load
 
-    def compute_partials(self, inputs, J):
+    def compute_partials(self, inputs, J, discrete_inputs=None):
 
         dNp = self.dNp
         dTp = self.dTp
         n = len(self.r)
 
-        dr_dr = np.vstack([np.zeros(n), np.eye(n), np.zeros(n)])
-        dr_dRhub = np.zeros(n+2)
-        dr_dRtip = np.zeros(n+2)
+        dr_dr = np.eye(n)
+        dr_dRhub = np.zeros(n)
+        dr_dRtip = np.zeros(n)
         dr_dRhub[0] = 1.0
         dr_dRtip[-1] = 1.0
 
@@ -364,42 +364,42 @@ class CCBladeLoads(ExplicitComponent):
         dpitch[3*n+8] = 1.0
         dazimuth = np.zeros(4*n+10)
         dazimuth[3*n+9] = 1.0
-        
+
         zero = np.zeros(self.naero)
-        J['loads_r', 'r'] = dr_dr
-        J['loads_r', 'Rhub'] = dr_dRhub
-        J['loads_r', 'Rtip'] = dr_dRtip
-        J['loads_Px', 'r'] = np.vstack([zero, dNp['dr'], zero])
-        J['loads_Px', 'chord'] = np.vstack([zero, dNp['dchord'], zero])
-        J['loads_Px', 'theta'] = np.vstack([zero, dNp['dtheta'], zero])
-        J['loads_Px', 'Rhub'] = np.concatenate([[0.0], np.squeeze(dNp['dRhub']), [0.0]])
-        J['loads_Px', 'Rtip'] = np.concatenate([[0.0], np.squeeze(dNp['dRtip']), [0.0]])
-        J['loads_Px', 'hub_height'] = np.concatenate([[0.0], np.squeeze(dNp['dhub_height']), [0.0]])
-        J['loads_Px', 'precone'] = np.concatenate([[0.0], np.squeeze(dNp['dprecone']), [0.0]])
-        J['loads_Px', 'tilt'] = np.concatenate([[0.0], np.squeeze(dNp['dtilt']), [0.0]])
-        J['loads_Px', 'yaw'] = np.concatenate([[0.0], np.squeeze(dNp['dyaw']), [0.0]])
-        J['loads_Px', 'V_load'] = np.concatenate([[0.0], np.squeeze(dNp['dUinf']), [0.0]])
-        J['loads_Px', 'Omega_load'] = np.concatenate([[0.0], np.squeeze(dNp['dOmega']), [0.0]])
-        J['loads_Px', 'pitch_load'] = np.concatenate([[0.0], np.squeeze(dNp['dpitch']), [0.0]])
-        J['loads_Px', 'azimuth_load'] = np.concatenate([[0.0], np.squeeze(dNp['dazimuth']), [0.0]])
-        J['loads_Px', 'precurve'] = np.vstack([zero, dNp['dprecurve'], zero])
-        J['loads_Py', 'r'] = np.vstack([zero, -dTp['dr'], zero])
-        J['loads_Py', 'chord'] = np.vstack([zero, -dTp['dchord'], zero])
-        J['loads_Py', 'theta'] = np.vstack([zero, -dTp['dtheta'], zero])
-        J['loads_Py', 'Rhub'] = np.concatenate([[0.0], -np.squeeze(dTp['dRhub']), [0.0]])
-        J['loads_Py', 'Rtip'] = np.concatenate([[0.0], -np.squeeze(dTp['dRtip']), [0.0]])
-        J['loads_Py', 'hub_height'] = np.concatenate([[0.0], -np.squeeze(dTp['dhub_height']), [0.0]])
-        J['loads_Py', 'precone'] = np.concatenate([[0.0], -np.squeeze(dTp['dprecone']), [0.0]])
-        J['loads_Py', 'tilt'] = np.concatenate([[0.0], -np.squeeze(dTp['dtilt']), [0.0]])
-        J['loads_Py', 'yaw'] = np.concatenate([[0.0], -np.squeeze(dTp['dyaw']), [0.0]])
-        J['loads_Py', 'V_load'] = np.concatenate([[0.0], -np.squeeze(dTp['dUinf']), [0.0]])
-        J['loads_Py', 'Omega_load'] = np.concatenate([[0.0], -np.squeeze(dTp['dOmega']), [0.0]])
-        J['loads_Py', 'pitch_load'] = np.concatenate([[0.0], -np.squeeze(dTp['dpitch']), [0.0]])
-        J['loads_Py', 'azimuth_load'] = np.concatenate([[0.0], -np.squeeze(dTp['dazimuth']), [0.0]])
-        J['loads_Py', 'precurve'] = np.vstack([zero, -dTp['dprecurve'], zero])
-        J['loads_V', 'V_load'] = 1.0
-        J['loads_Omega', 'Omega_load'] = 1.0
-        J['loads_pitch', 'pitch_load'] = 1.0
+        J['loads_r',      'r']             = dr_dr
+        J['loads_r',      'Rhub']          = dr_dRhub
+        J['loads_r',      'Rtip']          = dr_dRtip
+        J['loads_Px',     'r']             = dNp['dr']
+        J['loads_Px',     'chord']         = dNp['dchord']
+        J['loads_Px',     'theta']         = dNp['dtheta']
+        J['loads_Px',     'Rhub']          = np.squeeze(dNp['dRhub'])
+        J['loads_Px',     'Rtip']          = np.squeeze(dNp['dRtip'])
+        J['loads_Px',     'hub_height']    = np.squeeze(dNp['dhubHt'])
+        J['loads_Px',     'precone']       = np.squeeze(dNp['dprecone'])
+        J['loads_Px',     'tilt']          = np.squeeze(dNp['dtilt'])
+        J['loads_Px',     'yaw']           = np.squeeze(dNp['dyaw'])
+        J['loads_Px',     'V_load']        = np.squeeze(dNp['dUinf'])
+        J['loads_Px',     'Omega_load']    = np.squeeze(dNp['dOmega'])
+        J['loads_Px',     'pitch_load']    = np.squeeze(dNp['dpitch'])
+        J['loads_Px',     'azimuth_load']  = np.squeeze(dNp['dazimuth'])
+        J['loads_Px',     'precurve']      = dNp['dprecurve']
+        J['loads_Py',     'r']             = -dTp['dr']
+        J['loads_Py',     'chord']         = -dTp['dchord']
+        J['loads_Py',     'theta']         = -dTp['dtheta']
+        J['loads_Py',     'Rhub']          = -np.squeeze(dTp['dRhub'])
+        J['loads_Py',     'Rtip']          = -np.squeeze(dTp['dRtip'])
+        J['loads_Py',     'hub_height']    = -np.squeeze(dTp['dhubHt'])
+        J['loads_Py',     'precone']       = -np.squeeze(dTp['dprecone'])
+        J['loads_Py',     'tilt']          = -np.squeeze(dTp['dtilt'])
+        J['loads_Py',     'yaw']           = -np.squeeze(dTp['dyaw'])
+        J['loads_Py',     'V_load']        = -np.squeeze(dTp['dUinf'])
+        J['loads_Py',     'Omega_load']    = -np.squeeze(dTp['dOmega'])
+        J['loads_Py',     'pitch_load']    = -np.squeeze(dTp['dpitch'])
+        J['loads_Py',     'azimuth_load']  = -np.squeeze(dTp['dazimuth'])
+        J['loads_Py',     'precurve']      = -dTp['dprecurve']
+        J['loads_V',      'V_load']        = 1.0
+        J['loads_Omega',  'Omega_load']    = 1.0
+        J['loads_pitch',  'pitch_load']    = 1.0
         J['loads_azimuth', 'azimuth_load'] = 1.0
 
         
