@@ -1430,7 +1430,7 @@ class ReferenceBlade(object):
                                 ps_end_nd_arc.append(1.)
                             else:
                                 ps_end_nd_arc_temp = float(spline_arc2xnd(sec['end_nd_arc']['values'][i]))
-                                if ps_end_nd_arc_temp == profile_i_rot[-1,0] and profile_i_rot[-1,0] != 1.:
+                                if np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1,0]) and profile_i_rot[-1,0] != 1.:
                                     ps_end_nd_arc_temp = 1.
                                 ps_end_nd_arc.append(ps_end_nd_arc_temp)
                             if sec['start_nd_arc']['values'][i] < loc_LE:
