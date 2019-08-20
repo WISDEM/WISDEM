@@ -531,8 +531,8 @@ def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
             linear = 0.02000
             quadratic = 0.06899
         elif drivetrainType == 'CONSTANT_EFF':
-            constant = 0.07
-            linear = 0.0
+            constant = 0.00
+            linear = 0.07
             quadratic = 0.0
         
         Pbar0 = aeroPower / ratedPower
