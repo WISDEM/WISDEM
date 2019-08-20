@@ -4,7 +4,7 @@ import numpy as np
 from pprint import pprint
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder
 # from openmdao.api import pyOptSparseDriver
-from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
+# from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
 from wisdem.rotorse.rotor import RotorSE, Init_RotorSE_wRefBlade
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.towerse.tower import TowerSE
@@ -307,13 +307,13 @@ if __name__ == "__main__":
     
     if optFlag:
         # --- Solver ---
-        # prob.driver  = ScipyOptimizeDriver()
-        # prob.driver.options['optimizer'] = 'SLSQP'
-        # prob.driver.options['tol']       = 1.e-6
-        # prob.driver.options['maxiter']   = 100
+        prob.driver  = ScipyOptimizeDriver()
+        prob.driver.options['optimizer'] = 'SLSQP'
+        prob.driver.options['tol']       = 1.e-6
+        prob.driver.options['maxiter']   = 100
 
-        prob.driver = pyOptSparseDriver()
-        prob.driver.options['optimizer'] = 'CONMIN'
+        # prob.driver = pyOptSparseDriver()
+        # prob.driver.options['optimizer'] = 'CONMIN'
         # prob.driver.options['optimizer'] = "SLSQP"
         # prob.driver.options['gradient method'] = "pyopt_fd"
         # ----------------------
