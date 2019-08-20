@@ -80,10 +80,10 @@ class LandBasedTurbine(Group):
         
         # Add components
         self.add_subsystem('rotorse', RotorSE(RefBlade=RefBlade,
-                                              npts_coarse_power_curve=50,
+                                              npts_coarse_power_curve=20,
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,
-                                              regulation_reg_III=True,
+                                              regulation_reg_III=False,
                                               Analysis_Level=0,
                                               FASTpref=self.options['FASTpref'],
                                               topLevelFlag=True), promotes=['*'])
