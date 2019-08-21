@@ -494,9 +494,9 @@ class CCBlade(object):
         self.presweep = presweep
         self.presweepTip = presweepTip
 
-        # rotor radius
-        if self.precurveTip != 0 and self.precone != 0.0:
-            warnings.warn('rotor diameter may be modified in unexpected ways if tip precurve and precone are both nonzero')
+        # # rotor radius
+        # if self.precurveTip != 0 and self.precone != 0.0:
+            # print('rotor diameter may be modified in unexpected ways if tip precurve and precone are both nonzero')
 
         self.rotorR = Rtip*cos(self.precone) + self.precurveTip*sin(self.precone)
 

@@ -337,8 +337,8 @@ class RotorGeometry(Group):
             geomIndeps.add_output('theta_in', np.zeros(NINPUT), units='deg')
             geomIndeps.add_output('precurve_in', np.zeros(NINPUT), units='m')
             geomIndeps.add_output('presweep_in', np.zeros(NINPUT), units='m')
-            geomIndeps.add_output('precurveTip', 0.0, units='m')
-            geomIndeps.add_output('presweepTip', 0.0, units='m')
+            # geomIndeps.add_output('precurveTip', 0.0, units='m')
+            # geomIndeps.add_output('presweepTip', 0.0, units='m')
             geomIndeps.add_output('precone', 0.0, units='deg')
             geomIndeps.add_output('tilt', 0.0, units='deg')
             geomIndeps.add_output('yaw', 0.0, units='deg')
@@ -357,7 +357,7 @@ class RotorGeometry(Group):
         self.add_subsystem('turbineclass', TurbineClass(), promotes=['*'])#turbine_class','V_mean_overwrite','V_mean'])
         #self.add_subsystem('spline0', BladeGeometry(RefBlade))
         self.add_subsystem('spline', BladeGeometry(RefBlade=RefBlade), promotes=['*'])
-        self.add_subsystem('geom', CCBladeGeometry(), promotes=['precone','precurveTip','R'])
+        self.add_subsystem('geom', CCBladeGeometry(NINPUT = NINPUT), promotes=['precone','precurve_in', 'presweep_in','precurveTip','presweepTip','R'])
 
         # connections to spline0
         #self.connect('r_max_chord', 'spline0.r_max_chord')
@@ -384,7 +384,8 @@ class RotorGeometry(Group):
         # connections to geom
         self.connect('Rtip', 'geom.Rtip')
         #self.connect('precone', 'geom.precone')
-        #self.connect('precurveTip', 'geom.precurveTip')
+        # self.connect('precurve', 'precurveTip', src_indices=[-1])
+        # self.connect('presweep', 'presweepTip', src_indices=[-1])
 
 def Init_RotorGeometry_wRefBlade(rotor, blade):
     rotor['precone']          = blade['config']['cone_angle']

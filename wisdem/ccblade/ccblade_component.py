@@ -6,27 +6,37 @@ cosd = lambda x: np.cos(np.deg2rad(x))
 sind = lambda x: np.sin(np.deg2rad(x))
 
 class CCBladeGeometry(ExplicitComponent):
+    def initialize(self):
+        self.options.declare('NINPUT')
+        
+        
     def setup(self):
+        NINPUT = self.options['NINPUT']
+        
         self.add_input('Rtip', val=0.0, units='m', desc='tip radius')
-        self.add_input('precurveTip', val=0.0, units='m', desc='tip radius')
+        self.add_input('precurve_in', val=np.zeros(NINPUT), desc='prebend distribution', units='m')
+        self.add_input('presweep_in', val=np.zeros(NINPUT), desc='presweep distribution', units='m')
         self.add_input('precone', val=0.0, desc='precone angle', units='deg')
         self.add_output('R', val=0.0, units='m', desc='rotor radius')
         self.add_output('diameter', val=0.0, units='m')
-
+        self.add_output('precurveTip', val=0.0, units='m', desc='tip prebend')
+        self.add_output('presweepTip', val=0.0, units='m', desc='tip sweep')
+        
         self.declare_partials('R', '*')
         self.declare_partials('diameter', '*')
         self.declare_partials('diameter', 'R')
         
     def compute(self, inputs, outputs):
+        
+        self.Rtip           = inputs['Rtip']
+        self.precone        = inputs['precone']
 
-        self.Rtip = inputs['Rtip']
-        self.precurveTip = inputs['precurveTip']
-        self.precone = inputs['precone']
-
+        outputs['precurveTip']  = -inputs['precurve_in'][-1]
+        outputs['presweepTip']  = inputs['presweep_in'][-1]
+        self.precurveTip        = outputs['precurveTip']
         self.R = self.Rtip*cosd(self.precone) + self.precurveTip*sind(self.precone)
-
-        outputs['R'] = self.R
-        outputs['diameter'] = self.R*2
+        outputs['R']            = self.R
+        outputs['diameter']     = self.R*2
 
     def compute_partials(self, inputs, J):
 
