@@ -266,13 +266,15 @@ class Location(ExplicitComponent):
     def setup(self):
         self.add_input('hub_height', val=0.0, units='m', desc='Tower top hub height')
         self.add_output('wind_zvec', val=np.zeros(1), units='m', desc='Tower top hub height as vector')
-        self.declare_partials('*', '*')
+        #self.declare_partials('*', '*')
 
     def compute(self, inputs, outputs):
         outputs['wind_zvec'] = np.array([ np.float(inputs['hub_height']) ])
+        '''
 
     def compute_partials(self, inputs, J):
         J['wind_zvec','hub_height'] = np.ones(1)
+        '''
 
 
         
@@ -354,39 +356,13 @@ class RotorGeometry(Group):
             
         # --- Rotor Definition ---
         self.add_subsystem('loc', Location(), promotes=['*'])
-        self.add_subsystem('turbineclass', TurbineClass(), promotes=['*'])#turbine_class','V_mean_overwrite','V_mean'])
+        self.add_subsystem('turbineclass', TurbineClass(), promotes=['*'])
         #self.add_subsystem('spline0', BladeGeometry(RefBlade))
         self.add_subsystem('spline', BladeGeometry(RefBlade=RefBlade), promotes=['*'])
-        self.add_subsystem('geom', CCBladeGeometry(NINPUT = NINPUT), promotes=['precone','precurve_in', 'presweep_in','precurveTip','presweepTip','R'])
+        self.add_subsystem('geom', CCBladeGeometry(NINPUT = NINPUT), promotes=['precone','precurve_in', 'presweep_in',
+                                                                               'precurveTip','presweepTip','R','Rtip'])
 
-        # connections to spline0
-        #self.connect('r_max_chord', 'spline0.r_max_chord')
-        #self.connect('chord_in', 'spline0.chord_in')
-        #self.connect('theta_in', 'spline0.theta_in')
-        #self.connect('precurve_in', 'spline0.precurve_in')
-        #self.connect('presweep_in', 'spline0.presweep_in')
-        #self.connect('bladeLength', 'spline0.bladeLength')
-        #self.connect('hubFraction', 'spline0.hubFraction')
-        #self.connect('sparT_in', 'spline0.sparT_in')
-        #self.connect('teT_in', 'spline0.teT_in')
-
-        # connections to spline
-        #self.connect('r_max_chord', 'spline.r_max_chord')
-        #self.connect('chord_in', 'spline.chord_in')
-        #self.connect('theta_in', 'spline.theta_in')
-        #self.connect('precurve_in', 'spline.precurve_in')
-        #self.connect('presweep_in', 'spline.presweep_in')
-        #self.connect('bladeLength', 'spline.bladeLength')
-        #self.connect('hubFraction', 'spline.hubFraction')
-        #self.connect('sparT_in', 'spline.sparT_in')
-        #self.connect('teT_in', 'spline.teT_in')
-
-        # connections to geom
-        self.connect('Rtip', 'geom.Rtip')
-        #self.connect('precone', 'geom.precone')
-        # self.connect('precurve', 'precurveTip', src_indices=[-1])
-        # self.connect('presweep', 'presweepTip', src_indices=[-1])
-
+        
 def Init_RotorGeometry_wRefBlade(rotor, blade):
     rotor['precone']          = blade['config']['cone_angle']
     rotor['bladeLength']      = blade['ctrl_pts']['bladeLength'] #61.5  # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature

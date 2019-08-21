@@ -22,9 +22,9 @@ class CCBladeGeometry(ExplicitComponent):
         self.add_output('precurveTip', val=0.0, units='m', desc='tip prebend')
         self.add_output('presweepTip', val=0.0, units='m', desc='tip sweep')
         
-        self.declare_partials('R', '*')
-        self.declare_partials('diameter', '*')
-        self.declare_partials('diameter', 'R')
+        #self.declare_partials('R', '*')
+        #self.declare_partials('diameter', '*')
+        #self.declare_partials('diameter', 'R')
         
     def compute(self, inputs, outputs):
         
@@ -37,6 +37,7 @@ class CCBladeGeometry(ExplicitComponent):
         self.R = self.Rtip*cosd(self.precone) + self.precurveTip*sind(self.precone)
         outputs['R']            = self.R
         outputs['diameter']     = self.R*2
+        '''
 
     def compute_partials(self, inputs, J):
 
@@ -50,6 +51,7 @@ class CCBladeGeometry(ExplicitComponent):
         J['diameter', 'precurveTip'] = 2.0*J_sub[0][1]
         J['diameter', 'precone'] = 2.0*J_sub[0][2]
         J['diameter', 'R'] = 2.0
+        '''
 
         
 
@@ -113,9 +115,9 @@ class CCBladePower(ExplicitComponent):
         self.add_discrete_input('wakerotation', val=True, desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
         self.add_discrete_input('usecd', val=True, desc='use drag coefficient in computing induction factors')
 
-        self.declare_partials(['P', 'T', 'Q'],['precone', 'tilt', 'hub_height', 'Rhub', 'Rtip', 'yaw',
-                                               'Uhub', 'Omega', 'pitch', 'r', 'chord', 'theta',
-                                               'precurve', 'precurveTip'])
+        #self.declare_partials(['P', 'T', 'Q'],['precone', 'tilt', 'hub_height', 'Rhub', 'Rtip', 'yaw',
+        #                                       'Uhub', 'Omega', 'pitch', 'r', 'chord', 'theta',
+        #                                       'precurve', 'precurveTip'])
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -160,6 +162,7 @@ class CCBladePower(ExplicitComponent):
         outputs['T'] = self.T
         outputs['Q'] = self.Q
         outputs['P'] = self.P
+        '''
 
     def compute_partials(self, inputs, J, discrete_inputs):
 
@@ -211,6 +214,7 @@ class CCBladePower(ExplicitComponent):
         J['Q', 'theta']       = dQ['dtheta']
         J['Q', 'precurve']    = dQ['dprecurve']
         J['Q', 'precurveTip'] = dQ['dprecurveTip']
+        '''
 
         
 
@@ -282,14 +286,14 @@ class CCBladeLoads(ExplicitComponent):
         self.add_discrete_input('wakerotation', val=True, desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
         self.add_discrete_input('usecd', val=True, desc='use drag coefficient in computing induction factors')
 
-        self.declare_partials('loads_r', ['r', 'Rhub', 'Rtip'])
-        self.declare_partials(['loads_Px', 'loads_Py'],
-                              ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hub_height', 'precone', 'tilt',
-                               'yaw', 'V_load', 'Omega_load', 'pitch_load', 'azimuth_load', 'precurve'])
-        self.declare_partials('loads_V', 'V_load')
-        self.declare_partials('loads_Omega', 'Omega_load')
-        self.declare_partials('loads_pitch', 'pitch_load')
-        self.declare_partials('loads_azimuth', 'azimuth_load')
+        #self.declare_partials('loads_r', ['r', 'Rhub', 'Rtip'])
+        #self.declare_partials(['loads_Px', 'loads_Py'],
+        #                      ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hub_height', 'precone', 'tilt',
+        #                       'yaw', 'V_load', 'Omega_load', 'pitch_load', 'azimuth_load', 'precurve'])
+        #self.declare_partials('loads_V', 'V_load')
+        #self.declare_partials('loads_Omega', 'Omega_load')
+        #self.declare_partials('loads_pitch', 'pitch_load')
+        #self.declare_partials('loads_azimuth', 'azimuth_load')
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -353,7 +357,7 @@ class CCBladeLoads(ExplicitComponent):
         outputs['loads_Omega'] = self.Omega_load
         outputs['loads_pitch'] = self.pitch_load
         outputs['loads_azimuth'] = self.azimuth_load
-
+        '''
     def compute_partials(self, inputs, J, discrete_inputs=None):
 
         dNp = self.dNp
@@ -411,360 +415,6 @@ class CCBladeLoads(ExplicitComponent):
         J['loads_Omega',  'Omega_load']    = 1.0
         J['loads_pitch',  'pitch_load']    = 1.0
         J['loads_azimuth', 'azimuth_load'] = 1.0
+        '''
 
         
-    
-'''
-def common_io(group, varspeed, varpitch):
-
-    regulated = varspeed or varpitch
-
-    # add inputs
-    group.add_input('npts_coarse_power_curve', val=20, desc='number of points to evaluate aero analysis at')
-    group.add_input('npts_spline_power_curve', val=200, desc='number of points to use in fitting spline to power curve')
-    group.add_input('AEP_loss_factor', val=1.0, desc='availability and other losses (soiling, array, etc.)')
-    if varspeed:
-        group.add_input('control:Vin', units='m/s', desc='cut-in wind speed')
-        group.add_input('control:Vout', units='m/s', desc='cut-out wind speed')
-        group.add_input('control:ratedPower', units='W', desc='rated power')
-        group.add_input('control:minOmega', units='rpm', desc='minimum allowed rotor rotation speed')
-        group.add_input('control:maxOmega', units='rpm', desc='maximum allowed rotor rotation speed')
-        group.add_input('control:tsr', desc='tip-speed ratio in Region 2 (should be optimized externally)')
-        group.add_input('control:pitch', units='deg', desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
-    else:
-        group.add_input('control:Vin', units='m/s', desc='cut-in wind speed')
-        group.add_input('control:Vout', units='m/s', desc='cut-out wind speed')
-        group.add_input('control:ratedPower', units='W', desc='rated power')
-        group.add_input('control:Omega', units='rpm', desc='fixed rotor rotation speed')
-        group.add_input('control:pitch', units='deg', desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
-        group.add_input('control:npts', val=20, desc='number of points to evalute aero code to generate power curve')
-
-
-    # # add slots (must replace)
-    # group.add('geom', Slot(GeomtrySetupBase))
-    # group.add('analysis', Slot(AeroBase))
-    # group.add('dt', Slot(DrivetrainLossesBase))
-    # group.add('cdf', Slot(CDFBase))
-
-
-    # add outputs
-    group.add_output('AEP', units='kW*h', desc='annual energy production')
-    group.add_output('V', units='m/s', desc='wind speeds (power curve)')
-    group.add_output('P', units='W', desc='power (power curve)')
-    group.add_output('diameter', units='m', desc='rotor diameter')
-    if regulated:
-        group.add_output('ratedConditions:V', units='m/s', desc='rated wind speed')
-        group.add_output('ratedConditions:Omega', units='rpm', desc='rotor rotation speed at rated')
-        group.add_output('ratedConditions:pitch', units='deg', desc='pitch setting at rated')
-        group.add_output('ratedConditions:T', units='N', desc='rotor aerodynamic thrust at rated')
-        group.add_output('ratedConditions:Q', units='N*m', desc='rotor aerodynamic torque at rated')
-
-
-def common_configure(group, varspeed, varpitch):
-
-    regulated = varspeed or varpitch
-
-    # add components
-    group.add('geom', GeomtrySetupBase())
-
-    if varspeed:
-        group.add('setup', SetupRunVarSpeed(20))
-    else:
-        group.add('setup', SetupRunFixedSpeed())
-
-    group.add('analysis', AeroBase())
-    group.add('dt', DrivetrainLossesBase())
-
-    if varspeed or varpitch:
-        group.add('powercurve', RegulatedPowerCurve(20))
-        group.add('brent', Brent())
-        group.brent.workflow.add(['powercurve'])
-    else:
-        group.add('powercurve', UnregulatedPowerCurve())
-
-    group.add('cdf', CDFBase())
-    group.add('aep', AEP(200))
-
-    if regulated:
-        group.driver.workflow.add(['geom', 'setup', 'analysis', 'dt', 'brent', 'cdf', 'aep'])
-    else:
-        group.driver.workflow.add(['geom', 'setup', 'analysis', 'dt', 'powercurve', 'cdf', 'aep'])
-
-
-    # connections to setup
-    group.connect('control', 'setup.control')
-    group.connect('npts_coarse_power_curve', 'setup.npts')
-    if varspeed:
-        group.connect('geom.R', 'setup.R')
-
-
-    # connections to analysis
-    group.connect('setup.Uhub', 'analysis.Uhub')
-    group.connect('setup.Omega', 'analysis.Omega')
-    group.connect('setup.pitch', 'analysis.pitch')
-    group.analysis.run_case = 'power'
-
-
-    # connections to drivetrain
-    group.connect('analysis.P', 'dt.aeroPower')
-    group.connect('analysis.Q', 'dt.aeroTorque')
-    group.connect('analysis.T', 'dt.aeroThrust')
-    group.connect('control:ratedPower', 'dt.ratedPower')
-
-
-    # connections to powercurve
-    group.connect('control', 'powercurve.control')
-    group.connect('setup.Uhub', 'powercurve.Vcoarse')
-    group.connect('dt.power', 'powercurve.Pcoarse')
-    group.connect('analysis.T', 'powercurve.Tcoarse')
-    group.connect('npts_spline_power_curve', 'powercurve.npts')
-
-    if regulated:
-        group.connect('geom.R', 'powercurve.R')
-
-        # setup Brent method to find rated speed
-        group.connect('control:Vin', 'brent.lower_bound')
-        group.connect('control:Vout', 'brent.upper_bound')
-        group.brent.add_inputeter('powercurve.Vrated', low=-1e-15, high=1e15)
-        group.brent.add_constraint('powercurve.residual = 0')
-        group.brent.invalid_bracket_return = 1.0
-
-
-    # connections to cdf
-    group.connect('powercurve.V', 'cdf.x')
-
-
-    # connections to aep
-    group.connect('cdf.F', 'aep.CDF_V')
-    group.connect('powercurve.P', 'aep.P')
-    group.connect('AEP_loss_factor', 'aep.lossFactor')
-
-
-    # connections to outputs
-    group.connect('powercurve.V', 'V')
-    group.connect('powercurve.P', 'P')
-    group.connect('aep.AEP', 'AEP')
-    group.connect('2*geom.R', 'diameter')
-    if regulated:
-        group.connect('powercurve.ratedConditions', 'ratedConditions')
-
-
-
-
-
-def common_io_with_ccblade(group, varspeed, varpitch, cdf_type):
-
-    regulated = varspeed or varpitch
-
-    # add inputs
-    group.add_input('r_af', units='m', desc='locations where airfoils are defined on unit radius')
-    group.add_input('r_max_chord')
-    group.add_input('chord_sub', units='m', desc='chord at control points')
-    group.add_input('theta_sub', units='deg', desc='twist at control points')
-    group.add_input('Rhub', units='m', desc='hub radius')
-    group.add_input('Rtip', units='m', desc='tip radius')
-    group.add_input('hub_height', units='m')
-    group.add_input('precone', desc='precone angle', units='deg')
-    group.add_input('tilt', val=0.0, desc='shaft tilt', units='deg')
-    group.add_input('yaw', val=0.0, desc='yaw error', units='deg')
-    group.add_input('airfoil_files', desc='names of airfoil file')
-    group.add_input('idx_cylinder', desc='location where cylinder section ends on unit radius')
-    group.add_input('nBlades', val=3, desc='number of blades')
-    group.add_input('rho', val=1.225, units='kg/m**3', desc='density of air')
-    group.add_input('mu', val=1.81206e-5, units='kg/m/s', desc='dynamic viscosity of air')
-    group.add_input('shearExp', val=0.2, desc='shear exponent')
-    group.add_input('nSector', val=4, desc='number of sectors to divide rotor face into in computing thrust and power')
-    group.add_input('tiploss', val=True, desc='include Prandtl tip loss model')
-    group.add_input('hubloss', val=True, desc='include Prandtl hub loss model')
-    group.add_input('wakerotation', val=True, desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
-    group.add_input('usecd', val=True, desc='use drag coefficient in computing induction factors')
-    group.add_input('npts_coarse_power_curve', val=20, desc='number of points to evaluate aero analysis at')
-    group.add_input('npts_spline_power_curve', val=200, desc='number of points to use in fitting spline to power curve')
-    group.add_input('AEP_loss_factor', val=1.0, desc='availability and other losses (soiling, array, etc.)')
-
-    if varspeed:
-        group.add_input('control:Vin', units='m/s', desc='cut-in wind speed')
-        group.add_input('control:Vout', units='m/s', desc='cut-out wind speed')
-        group.add_input('control:ratedPower', units='W', desc='rated power')
-        group.add_input('control:minOmega', units='rpm', desc='minimum allowed rotor rotation speed')
-        group.add_input('control:maxOmega', units='rpm', desc='maximum allowed rotor rotation speed')
-        group.add_input('control:tsr', desc='tip-speed ratio in Region 2 (should be optimized externally)')
-        group.add_input('control:pitch', units='deg', desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
-    else:
-        group.add_input('control:Vin', units='m/s', desc='cut-in wind speed')
-        group.add_input('control:Vout', units='m/s', desc='cut-out wind speed')
-        group.add_input('control:ratedPower', units='W', desc='rated power')
-        group.add_input('control:Omega', units='rpm', desc='fixed rotor rotation speed')
-        group.add_input('control:pitch', units='deg', desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
-        group.add_input('control:npts', val=20, desc='number of points to evalute aero code to generate power curve')
-
-    group.add_input('drivetrainType', val=DRIVETRAIN_TYPE['GEARED'])
-    group.add_input('cdf_mean_wind_speed', units='m/s', desc='mean wind speed of site cumulative distribution function')
-
-    if cdf_type == 'weibull':
-        group.add_input('weibull_shape_factor', desc='(shape factor of weibull distribution)')
-
-    # outputs
-    group.add_output('AEP', units='kW*h', desc='annual energy production')
-    group.add_output('V', units='m/s', desc='wind speeds (power curve)')
-    group.add_output('P', units='W', desc='power (power curve)')
-    group.add_output('diameter', units='m')
-    if regulated:
-        group.add_output('ratedConditions:V', units='m/s', desc='rated wind speed')
-        group.add_output('ratedConditions:Omega', units='rpm', desc='rotor rotation speed at rated')
-        group.add_output('ratedConditions:pitch', units='deg', desc='pitch setting at rated')
-        group.add_output('ratedConditions:T', units='N', desc='rotor aerodynamic thrust at rated')
-        group.add_output('ratedConditions:Q', units='N*m', desc='rotor aerodynamic torque at rated')
-
-
-
-def common_configure_with_ccblade(group, varspeed, varpitch, cdf_type):
-    common_configure(group, varspeed, varpitch)
-
-    # put in parameterization for CCBlade
-    group.add('spline', GeometrySpline())
-    group.replace('geom', CCBladeGeometry())
-    group.replace('analysis', CCBlade())
-    group.replace('dt', CSMDrivetrain())
-    if cdf_type == 'rayleigh':
-        group.replace('cdf', RayleighCDF())
-    elif cdf_type == 'weibull':
-        group.replace('cdf', WeibullWithMeanCDF())
-
-
-    # add spline to workflow
-    group.driver.workflow.add('spline')
-
-    # connections to spline
-    group.connect('r_af', 'spline.r_af')
-    group.connect('r_max_chord', 'spline.r_max_chord')
-    group.connect('chord_sub', 'spline.chord_sub')
-    group.connect('theta_sub', 'spline.theta_sub')
-    group.connect('idx_cylinder', 'spline.idx_cylinder')
-    group.connect('Rhub', 'spline.Rhub')
-    group.connect('Rtip', 'spline.Rtip')
-
-    # connections to geom
-    group.connect('Rtip', 'geom.Rtip')
-    group.connect('precone', 'geom.precone')
-
-    # connections to analysis
-    group.connect('spline.r', 'analysis.r')
-    group.connect('spline.chord', 'analysis.chord')
-    group.connect('spline.theta', 'analysis.theta')
-    group.connect('spline.precurve', 'analysis.precurve')
-    group.connect('Rhub', 'analysis.Rhub')
-    group.connect('Rtip', 'analysis.Rtip')
-    group.connect('hub_height', 'analysis.hub_height')
-    group.connect('precone', 'analysis.precone')
-    group.connect('tilt', 'analysis.tilt')
-    group.connect('yaw', 'analysis.yaw')
-    group.connect('airfoil_files', 'analysis.airfoil_files')
-    group.connect('nBlades', 'analysis.nBlades')
-    group.connect('rho', 'analysis.rho')
-    group.connect('mu', 'analysis.mu')
-    group.connect('shearExp', 'analysis.shearExp')
-    group.connect('nSector', 'analysis.nSector')
-    group.connect('tiploss', 'analysis.tiploss')
-    group.connect('hubloss', 'analysis.hubloss')
-    group.connect('wakerotation', 'analysis.wakerotation')
-    group.connect('usecd', 'analysis.usecd')
-
-    # connections to dt
-    group.connect('drivetrainType', 'dt.drivetrainType')
-    group.dt.missing_deriv_policy = 'assume_zero'  # TODO: openmdao bug remove later
-
-    # connnections to cdf
-    group.connect('cdf_mean_wind_speed', 'cdf.xbar')
-    if cdf_type == 'weibull':
-        group.connect('weibull_shape_factor', 'cdf.k')
-
-
-
-
-class RotorAeroVSVP(Group):
-
-    def configure(self):
-        varspeed = True
-        varpitch = True
-        common_io(self, varspeed, varpitch)
-        common_configure(self, varspeed, varpitch)
-
-
-class RotorAeroVSFP(Group):
-
-    def configure(self):
-        varspeed = True
-        varpitch = False
-        common_io(self, varspeed, varpitch)
-        common_configure(self, varspeed, varpitch)
-
-
-class RotorAeroFSVP(Group):
-
-    def configure(self):
-        varspeed = False
-        varpitch = True
-        common_io(self, varspeed, varpitch)
-        common_configure(self, varspeed, varpitch)
-
-
-class RotorAeroFSFP(Group):
-
-    def configure(self):
-        varspeed = False
-        varpitch = False
-        common_io(self, varspeed, varpitch)
-        common_configure(self, varspeed, varpitch)
-
-        
-class RotorAeroVSVPWithCCBlade(Group):
-    def setup(self, cdf_type='weibull'):
-        self.cdf_type = cdf_type
-
-    def configure(self):
-        varspeed = True
-        varpitch = True
-        common_io_with_ccblade(self, varspeed, varpitch, self.cdf_type)
-        common_configure_with_ccblade(self, varspeed, varpitch, self.cdf_type)
-
-
-class RotorAeroVSFPWithCCBlade(Group):
-
-    def setup(self, cdf_type='weibull'):
-        self.cdf_type = cdf_type
-
-    def configure(self):
-        varspeed = True
-        varpitch = False
-        common_io_with_ccblade(self, varspeed, varpitch, self.cdf_type)
-        common_configure_with_ccblade(self, varspeed, varpitch, self.cdf_type)
-
-
-
-class RotorAeroFSVPWithCCBlade(Group):
-
-    def setup(self, cdf_type='weibull'):
-        self.cdf_type = cdf_type
-
-    def configure(self):
-        varspeed = False
-        varpitch = True
-        common_io_with_ccblade(self, varspeed, varpitch, self.cdf_type)
-        common_configure_with_ccblade(self, varspeed, varpitch, self.cdf_type)
-
-
-
-class RotorAeroFSFPWithCCBlade(Group):
-
-    def setup(self, cdf_type='weibull'):
-        self.cdf_type = cdf_type
-
-    def configure(self):
-        varspeed = False
-        varpitch = False
-        common_io_with_ccblade(self, varspeed, varpitch, self.cdf_type)
-        common_configure_with_ccblade(self, varspeed, varpitch, self.cdf_type)
-
-
-'''

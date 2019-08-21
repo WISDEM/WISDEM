@@ -100,14 +100,8 @@ class RotorSE(Group):
                                      'z','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','Tw_iner','flap_iner','edge_iner',
                                      'eps_crit_spar','eps_crit_te','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar',
                                      'xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te',
-                                     #'max_chord','rthick','le_location','hub_diameter','diameter',
-                                     #'hubFraction','r_max_chord',
-                                     #'chord_in','theta_in',
-                                     #'precurve_in','presweep_in',
-                                     'precurveTip','presweepTip',
-                                     'precone',
+                                     'precurveTip','presweepTip','precone',
                                      'tilt','yaw','nBlades','downwind',
-                                     #'sparT_in','teT_in','airfoil_position','turbine_class',
                                      'control_tsr','control_pitch','lifetime','hub_height',
                                      'mass_one_blade','mass_all_blades','I_all_blades',
                                      'freq_pbeam','freq_curvefem','modes_coef_curvefem','tip_deflection', 
@@ -129,7 +123,7 @@ class RotorSE(Group):
         # Connections between rotor_aero and rotor_structure
         self.connect('V_mean','wind.Uref')
         self.connect('wind_zvec', 'wind.z')
-        self.connect('rated_V', ['rs.gust.V_hub', 'rs.setuppc.Vrated'])
+        self.connect('rated_V', ['rs.V_hub', 'rs.setuppc.Vrated'])
         self.connect('rated_Omega', ['rs.Omega', 'rs.aero_rated.Omega_load',
                                      'rs.aero_rated_0.Omega_load',
                                      'rs.aero_rated_120.Omega_load','rs.aero_rated_240.Omega_load'])
@@ -338,6 +332,7 @@ if __name__ == '__main__':
     # === run and outputs ===
     tt = time.time()
     rotor.run_driver()
+    #rotor.check_partials(compact_print=True, step=1e-6, form='central')
 
     # refBlade.write_ontology(fname_output, rotor['blade_out'], refBlade.wt_ref)
 

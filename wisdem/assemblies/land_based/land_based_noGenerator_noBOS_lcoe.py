@@ -363,10 +363,10 @@ if __name__ == "__main__":
     prob.setup(check=True)
     
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
-    
     prob.model.approx_totals()
 
     prob.run_driver()
+    #prob.check_partials(compact_print=True, method='fd', step=1e-6, form='central')
     
 
 
