@@ -333,7 +333,7 @@ class TowerPostFrame(ExplicitComponent):
         self.add_input('f2', 0.0, units='Hz', desc='Second natural frequency')
         
         # outputs
-        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First and second natural frequency')
+        self.add_output('structural_frequencies', np.zeros(2), units='Hz', desc='First and second natural frequency')
         self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
         self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
         self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
@@ -358,7 +358,7 @@ class TowerPostFrame(ExplicitComponent):
         z_section,_  = nodal2sectional(inputs['z'])
 
         # Frequencies
-        outputs['structural_frequencies'] = np.zeros(NFREQ)
+        outputs['structural_frequencies'] = np.zeros(2)
         outputs['structural_frequencies'][0] = inputs['f1']
         outputs['structural_frequencies'][1] = inputs['f2']
         

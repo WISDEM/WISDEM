@@ -345,10 +345,12 @@ if __name__ == "__main__":
         prob.model.add_constraint('tow.post.shell_buckling',                   upper=1.0)
         prob.model.add_constraint('tow.weldability',                           upper=0.0)
         prob.model.add_constraint('tow.manufacturability',         lower=0.0)
-        prob.model.add_constraint('frequency1P_margin_low',              upper=1.0)
-        prob.model.add_constraint('frequency1P_margin_high', lower=1.0)
-        prob.model.add_constraint('frequencyNP_margin_low',              upper=1.0)
-        prob.model.add_constraint('frequencyNP_margin_high', lower=1.0)
+        # prob.model.add_constraint('frequency1P_margin_low',              upper=1.0)
+        # prob.model.add_constraint('frequency1P_margin_high', lower=1.0)
+        # prob.model.add_constraint('frequencyNP_margin_low',              upper=1.0)
+        # prob.model.add_constraint('frequencyNP_margin_high', lower=1.0)
+        prob.model.add_constraint('frequencyNP_margin', upper=0.)
+        prob.model.add_constraint('frequency1P_margin', upper=0.)
         prob.model.add_constraint('ground_clearance',        lower=20.0)
         # ----------------------
         
