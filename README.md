@@ -92,6 +92,21 @@ The installation instructions below use the environment name, "wisdem-env," but 
         cd ..
 
 
+7. OPTIONAL: Install pyOptSparse, an package that provides a handful of additional optimization solvers and has OpenMDAO support:
+
+        git clone https://github.com/OpenMDAO/pyoptsparse.git
+        cd pyoptsparse
+	
+    on Windows edit pyoptsparse\pyoptsparse\setup.py and comment out the line:
+    
+        #    config.add_subpackage('pyFSQP')
+
+    for all OSes continue:
+	
+        python setup.py install
+        cd ..
+
+
 ## Installation (Linux or MacOS with package management)
 
 WISDEM&reg; can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM&reg; installations have succeeded on Linux ([Ubuntu](https://www.ubuntu.com/), [Fedora](https://getfedora.org), etc), MacOS with [MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh), and Windows with [Cygwin](http://cygwin.com).
