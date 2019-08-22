@@ -68,7 +68,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
     on Linux add on:
 
-        conda install -y compilers mpi4py==3.0.1 petsc4py
+        conda install -y compilers mpi4py petsc4py
 
 
 
