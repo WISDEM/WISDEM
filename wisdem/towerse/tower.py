@@ -500,7 +500,7 @@ class TowerSE(Group):
             sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
             sharedIndeps.add_output('wind_z0', 0.0, units='m')
             sharedIndeps.add_output('wind_beta', 0.0, units='deg')
-            sharedIndeps.add_output('cd_usr', np.nan)
+            sharedIndeps.add_output('cd_usr', -1.)
             sharedIndeps.add_output('yaw', 0.0, units='deg')
             sharedIndeps.add_output('E', 0.0, units='N/m**2')
             sharedIndeps.add_output('G', 0.0, units='N/m**2')
@@ -719,7 +719,7 @@ if __name__ == '__main__':
     wind_zref = 90.0
     wind_z0 = 0.0
     shearExp = 0.2
-    cd_usr = np.inf
+    cd_usr = -1.
     # ---------------
 
     # --- wave ---

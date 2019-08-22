@@ -159,7 +159,7 @@ class CylinderWindDrag(ExplicitComponent):
         self.add_input('rho', 0.0, units='kg/m**3', desc='air density')
         self.add_input('mu', 0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         #TODO not sure what to do here?
-        self.add_input('cd_usr', np.inf, desc='User input drag coefficient to override Reynolds number based one')
+        self.add_input('cd_usr', -1., desc='User input drag coefficient to override Reynolds number based one')
 
         # out
         self.add_output('windLoads_Px', np.zeros(nPoints), units='N/m', desc='distributed loads, force per unit length in x-direction')
@@ -189,7 +189,7 @@ class CylinderWindDrag(ExplicitComponent):
         q = 0.5*rho*U**2
 
         # Reynolds number and drag
-        if float(inputs['cd_usr']) in [np.inf, -np.inf, None, np.nan]:
+        if float(inputs['cd_usr']) < 0.:
             Re = rho*U*d/mu
             cd, dcd_dRe = cylinderDrag(Re)
         else:
@@ -225,7 +225,7 @@ class CylinderWindDrag(ExplicitComponent):
         q = 0.5*rho*U**2
 
         # Reynolds number and drag
-        if inputs['cd_usr'] in [np.inf, -np.inf, None, np.nan]:
+        if float(inputs['cd_usr']) < 0.:
             Re = rho*U*d/mu
             cd, dcd_dRe = cylinderDrag(Re)
         else:
@@ -298,7 +298,7 @@ class CylinderWaveDrag(ExplicitComponent):
         self.add_input('mu', 0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
         self.add_input('cm', 0.0, desc='mass coefficient')
         #TODO not sure what to do here?
-        self.add_input('cd_usr', np.inf, desc='User input drag coefficient to override Reynolds number based one')
+        self.add_input('cd_usr', -1., desc='User input drag coefficient to override Reynolds number based one')
 
         # out
         self.add_output('waveLoads_Px', np.zeros(nPoints), units='N/m', desc='distributed loads, force per unit length in x-direction')
@@ -336,7 +336,7 @@ class CylinderWaveDrag(ExplicitComponent):
         #q0= 0.5*rho*U0**2
 
         # Reynolds number and drag
-        if inputs['cd_usr'] in [np.inf, -np.inf, None, np.nan]:
+        if float(inputs['cd_usr']) < 0.:
             Re = rho*U*d/mu
             cd, dcd_dRe = cylinderDrag(Re)
         else:
@@ -409,7 +409,7 @@ class CylinderWaveDrag(ExplicitComponent):
         #q0= 0.5*rho*U0**2
 
         # Reynolds number and drag
-        if inputs['cd_usr'] in [np.inf, -np.inf, None, np.nan]:
+        if float(inputs['cd_usr']) < 0.:
             cd = inputs['cd_usr']*np.ones_like(d)
             Re = 1.0
             dcd_dRe = 0.0
