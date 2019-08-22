@@ -176,8 +176,6 @@ class LandBasedTurbine(Group):
         self.connect('yield_stress',            'tow.sigma_y')
         self.connect('max_taper_ratio',         'max_taper')
         self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
-        self.connect('tower_outer_diameter',    'tow.diameter')
-        self.connect('tower_outer_diameter',    'tow.gc.d')
 
         self.connect('rho',         'tow.windLoads.rho')
         self.connect('mu',          'tow.windLoads.mu')

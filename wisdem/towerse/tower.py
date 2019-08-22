@@ -431,8 +431,7 @@ class TowerLeanSE(Group):
         
         # Connections for geometry and mass
         self.connect('tower_section_height', 'section_height')
-        if topLevelFlag:
-            self.connect('tower_outer_diameter', ['diameter', 'gc.d'])
+        self.connect('tower_outer_diameter', ['diameter', 'gc.d'])
         self.connect('tower_wall_thickness', ['wall_thickness', 'gc.t'])
         self.connect('tower_outfitting_factor', 'cm.outfitting_factor')
         self.connect('z_param', 'tgeometry.z_end', src_indices=[nPoints-1])
