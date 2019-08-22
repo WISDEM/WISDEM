@@ -228,7 +228,8 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow):
     
     # Tower
     prob['foundation_height']              = 0.0 #-prob['water_depth']
-    prob['tower_outer_diameter']           = np.linspace(10.0, 3.87, Nsection_Tow+1)
+    # prob['tower_outer_diameter']           = np.linspace(10.0, 3.87, Nsection_Tow+1)
+    prob['tower_outer_diameter']           = np.linspace(6.0, 3.87, Nsection_Tow+1)
     prob['tower_section_height']           = (prob['hub_height'] - prob['foundation_height']) / Nsection_Tow * np.ones(Nsection_Tow)
     prob['tower_wall_thickness']           = np.linspace(0.027, 0.019, Nsection_Tow)
     prob['tower_buckling_length']          = 30.0
