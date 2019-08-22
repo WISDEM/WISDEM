@@ -126,7 +126,7 @@ class LandBasedTurbine(Group):
         self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=VerbosityCosts, topLevelFlag=False), promotes=['*'])
 
         # LCOE Calculation
-        self.add_subsystem('plantfinancese', PlantFinance(verbosity=VerbosityCosts), promotes=['machine_rating'])
+        self.add_subsystem('plantfinancese', PlantFinance(verbosity=VerbosityCosts), promotes=['machine_rating','lcoe'])
         
     
         # Set up connections
@@ -308,19 +308,19 @@ if __name__ == "__main__":
     
     if optFlag:
         # --- Solver ---
-        # prob.driver  = ScipyOptimizeDriver()
-        # prob.driver.options['optimizer'] = 'SLSQP'
-        # prob.driver.options['tol']       = 1.e-6
-        # prob.driver.options['maxiter']   = 100
+        prob.driver  = ScipyOptimizeDriver()
+        prob.driver.options['optimizer'] = 'SLSQP'
+        prob.driver.options['tol']       = 1.e-6
+        prob.driver.options['maxiter']   = 100
 
-        prob.driver = pyOptSparseDriver()
-        prob.driver.options['optimizer'] = 'CONMIN'
-        # prob.driver.options['optimizer'] = "SLSQP"
+        #prob.driver = pyOptSparseDriver()
+        #prob.driver.options['optimizer'] = 'CONMIN'
+        # prob.driver.options['optimizer'] = 'SNOPT'
         # prob.driver.options['gradient method'] = "pyopt_fd"
         # ----------------------
 
         # --- Objective ---
-        prob.model.add_objective('plantfinancese.lcoe', scaler=1e-6)
+        prob.model.add_objective('lcoe')
         # ----------------------
 
         # --- Design Variables ---
@@ -354,7 +354,7 @@ if __name__ == "__main__":
         
         # --- Recorder ---
         prob.add_recorder(SqliteRecorder('log_opt.sql'))
-        prob.recording_options['includes'] = ['AEP','rc.total_blade_cost','plantfinancese.lcoe','tip_deflection_ratio']
+        prob.recording_options['includes'] = ['AEP','rc.total_blade_cost','lcoe','tip_deflection_ratio']
         prob.recording_options['record_objectives']  = True
         prob.recording_options['record_constraints'] = True
         prob.recording_options['record_desvars']     = True
