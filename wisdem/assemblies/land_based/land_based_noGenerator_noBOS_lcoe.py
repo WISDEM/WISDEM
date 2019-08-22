@@ -18,7 +18,7 @@ from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 
-np.seterr(all ='raise')
+# np.seterr(all ='raise')
         
 # Group to link the openmdao components
 class LandBasedTurbine(Group):
