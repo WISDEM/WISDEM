@@ -18,6 +18,8 @@ from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 
+from wisdem.commonse.mpi_tools import MPI
+
 # np.seterr(all ='raise')
         
 # Group to link the openmdao components
@@ -302,10 +304,17 @@ if __name__ == "__main__":
     blade = refBlade.initialize(fname_input)
     # Initialize tower design
     Nsection_Tow = 6
+
     
     # Initialize OpenMDAO problem and FloatingSE Group
-    prob = Problem()
-    prob.model=LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True)
+    if MPI:
+        num_par_fd = MPI.COMM_WORLD.Get_size()
+        prob = Problem(model=Group(num_par_fd=num_par_fd))
+        prob.model.approx_totals(method='fd')
+        prob.model.add_subsystem('comp', LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True), promotes=['*'])
+    else:
+        prob = Problem()
+        prob.model=LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True)
     
     if optFlag:
         # --- Solver ---
@@ -369,7 +378,7 @@ if __name__ == "__main__":
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
     prob.model.nonlinear_solver = NonlinearRunOnce()
     prob.model.linear_solver = DirectSolver()
-    prob.model.approx_totals()
+    # prob.model.approx_totals()
 
     # prob.run_model()
     # prob.model.list_inputs(units=True)
