@@ -8,15 +8,15 @@ import numpy as np
 class TowerModes(ExplicitComponent):
     def setup(self):
 
-        self.add_input('tower_freq', val=np.zeros(NFREQ), units='Hz', desc='First natural frequencies of tower (and substructure)')
+        self.add_input('tower_freq', val=np.zeros(2), units='Hz', desc='First natural frequencies of tower (and substructure)')
         self.add_input('rotor_omega', val=0.0, units='rpm', desc='rated rotor rotation speed')
         self.add_input('gamma_freq', val=0.0, desc='partial safety factor for fatigue')
         self.add_discrete_input('blade_number', 3, desc='number of rotor blades')
 
-        self.add_output('frequencyNP_margin_low', val=np.zeros(NFREQ), desc='Upper bound constraint of tower/structure frequency to blade passing frequency with margin')
-        self.add_output('frequencyNP_margin_high', val=np.zeros(NFREQ), desc='Lower bound constraint of tower/structure frequency to blade passing frequency with margin')
-        self.add_output('frequency1P_margin_low', val=np.zeros(NFREQ), desc='Upper bound constraint of tower/structure frequency to rotor frequency with margin')
-        self.add_output('frequency1P_margin_high', val=np.zeros(NFREQ), desc='Lower bound constraint of tower/structure frequency to rotor frequency with margin')
+        self.add_output('frequencyNP_margin_low', val=np.zeros(2), desc='Upper bound constraint of tower/structure frequency to blade passing frequency with margin')
+        self.add_output('frequencyNP_margin_high', val=np.zeros(2), desc='Lower bound constraint of tower/structure frequency to blade passing frequency with margin')
+        self.add_output('frequency1P_margin_low', val=np.zeros(2), desc='Upper bound constraint of tower/structure frequency to rotor frequency with margin')
+        self.add_output('frequency1P_margin_high', val=np.zeros(2), desc='Lower bound constraint of tower/structure frequency to rotor frequency with margin')
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
