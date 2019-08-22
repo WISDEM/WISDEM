@@ -3,8 +3,10 @@ from __future__ import print_function
 import numpy as np
 from pprint import pprint
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder
-# from openmdao.api import pyOptSparseDriver
-# from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
+try:
+    from openmdao.api import pyOptSparseDriver
+except:
+    pass
 from wisdem.rotorse.rotor import RotorSE, Init_RotorSE_wRefBlade
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.towerse.tower import TowerSE
@@ -16,7 +18,7 @@ from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 
-        
+np.seterr(all ='raise')
         
 # Group to link the openmdao components
 class LandBasedTurbine(Group):
@@ -45,12 +47,12 @@ class LandBasedTurbine(Group):
         myIndeps.add_output('project_lifetime',             0.0, units='yr')
         myIndeps.add_output('max_taper_ratio',              0.0)
         myIndeps.add_output('min_diameter_thickness_ratio', 0.0)
-        
+        myIndeps.add_output('tower_outer_diameter', np.zeros(Nsection_Tow+1), units='m')
+
         # Environment
         myIndeps.add_output('wind_bottom_height',   0.0, units='m')
         myIndeps.add_output('wind_beta',            0.0, units='deg')
-        # myIndeps.add_output('cd_usr', np.inf)
-        myIndeps.add_output('cd_usr', 0.1)
+        myIndeps.add_output('cd_usr', -1.)
 
         # Design standards
         myIndeps.add_output('gamma_b', 0.0)
@@ -109,7 +111,7 @@ class LandBasedTurbine(Group):
                            promotes=['water_density','water_viscosity','wave_beta',
                                      'significant_wave_height','significant_wave_period',
                                      'material_density','E','G','tower_section_height',
-                                     'tower_outer_diameter','tower_wall_thickness',
+                                     'tower_wall_thickness', #'tower_outer_diameter',
                                      'tower_outfitting_factor','tower_buckling_length',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_mass','tower_I_base','hub_height',
@@ -175,6 +177,8 @@ class LandBasedTurbine(Group):
         self.connect('yield_stress',            'tow.sigma_y')
         self.connect('max_taper_ratio',         'max_taper')
         self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
+        self.connect('tower_outer_diameter',    'tow.diameter')
+        self.connect('tower_outer_diameter',    'tow.gc.d')
 
         self.connect('rho',         'tow.windLoads.rho')
         self.connect('mu',          'tow.windLoads.mu')
@@ -307,13 +311,13 @@ if __name__ == "__main__":
     
     if optFlag:
         # --- Solver ---
-        prob.driver  = ScipyOptimizeDriver()
-        prob.driver.options['optimizer'] = 'SLSQP'
-        prob.driver.options['tol']       = 1.e-6
-        prob.driver.options['maxiter']   = 100
+        # prob.driver  = ScipyOptimizeDriver()
+        # prob.driver.options['optimizer'] = 'SLSQP'
+        # prob.driver.options['tol']       = 1.e-6
+        # prob.driver.options['maxiter']   = 100
 
-        # prob.driver = pyOptSparseDriver()
-        # prob.driver.options['optimizer'] = 'CONMIN'
+        prob.driver = pyOptSparseDriver()
+        prob.driver.options['optimizer'] = 'CONMIN'
         # prob.driver.options['optimizer'] = "SLSQP"
         # prob.driver.options['gradient method'] = "pyopt_fd"
         # ----------------------
@@ -365,8 +369,13 @@ if __name__ == "__main__":
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
     prob.model.approx_totals()
 
+    # prob.run_model()
+    # prob.model.list_inputs(units=True)
+    # prob.model.list_outputs(units=True)
+
+
     prob.run_driver()
-    #prob.check_partials(compact_print=True, method='fd', step=1e-6, form='central')
+    # prob.check_partials(compact_print=True, method='fd', step=1e-6, form='central')
     
 
 
