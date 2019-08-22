@@ -108,12 +108,12 @@ class BladeGeometry(ExplicitComponent):
         self.add_output('total_blade_mass', val=0.0, units='USD', desc='total blade cost')
 
         #
-        # self.add_discrete_output('blade_out', val={}, desc='updated blade dictionary for ontology')
+        self.add_discrete_output('blade_out', val={}, desc='updated blade dictionary for ontology')
         self.add_output('sparT_in_out', val=np.zeros(NINPUT), units='m', desc='thickness values of spar cap that linearly vary from non-cylinder position to tip, pass through for nested optimization')
         
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # initialization point
         # if discrete_inputs['blade_in_overwrite'] != {}:
@@ -259,7 +259,7 @@ class BladeGeometry(ExplicitComponent):
         outputs['total_blade_mass'] = blade_mass
 
         #
-        # discrete_outputs['blade_out'] = blade_out
+        discrete_outputs['blade_out'] = blade_out
         outputs['sparT_in_out'] = inputs['sparT_in']
         
 class Location(ExplicitComponent):
