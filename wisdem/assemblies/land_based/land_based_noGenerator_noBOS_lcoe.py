@@ -378,7 +378,9 @@ if __name__ == "__main__":
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
     prob.model.nonlinear_solver = NonlinearRunOnce()
     prob.model.linear_solver = DirectSolver()
-    # prob.model.approx_totals()
+
+    if not MPI:
+        prob.model.approx_totals()
 
     # prob.run_model()
     # prob.model.list_inputs(units=True)
