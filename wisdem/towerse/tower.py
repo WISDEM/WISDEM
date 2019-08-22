@@ -29,7 +29,7 @@ from wisdem.commonse.tube import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional
 from wisdem.commonse import gravity, eps, NFREQ
 
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, RIGID
 #from fusedwind.turbine.tower import TowerFromCSProps
 #from fusedwind.interface import implement_base
 
@@ -182,7 +182,7 @@ class TowerPreFrame(ExplicitComponent):
         self.add_input('k_monopile', np.zeros(6), units='N/m', desc='Stiffness BCs for ocean soil.  Only used if monoflag inputis True')
         self.add_discrete_input('monopile', False, desc='Flag for monopile BCs')
         
-        # spring reaction data.  Use float('inf') for rigid constraints.
+        # spring reaction data.  Use RIGID global variable for rigid constraints.
         nK = 1
         self.add_output('kidx', np.zeros(nK), desc='indices of z where external stiffness reactions should be applied.')
         self.add_output('kx', np.zeros(nK), units='m', desc='spring stiffness in x-direction')
@@ -234,18 +234,12 @@ class TowerPreFrame(ExplicitComponent):
             outputs['kty']  = np.array([ kmono[3] ]).flatten()
             outputs['ktz']  = np.array([ kmono[5] ]).flatten()
         else:
-            # outputs['kx']   = np.array([ np.inf ])
-            # outputs['ky']   = np.array([ np.inf ])
-            # outputs['kz']   = np.array([ np.inf ])
-            # outputs['ktx']  = np.array([ np.inf ])
-            # outputs['kty']  = np.array([ np.inf ])
-            # outputs['ktz']  = np.array([ np.inf ])
-            outputs['kx']   = np.array([ 1.e16 ])
-            outputs['ky']   = np.array([ 1.e16 ])
-            outputs['kz']   = np.array([ 1.e16 ])
-            outputs['ktx']  = np.array([ 1.e16 ])
-            outputs['kty']  = np.array([ 1.e16 ])
-            outputs['ktz']  = np.array([ 1.e16 ])
+            outputs['kx']   = np.array([ RIGID ])
+            outputs['ky']   = np.array([ RIGID ])
+            outputs['kz']   = np.array([ RIGID ])
+            outputs['ktx']  = np.array([ RIGID ])
+            outputs['kty']  = np.array([ RIGID ])
+            outputs['ktz']  = np.array([ RIGID ])
             
         # Prepare RNA for "extra node mass"
         outputs['midx']  = np.array([ len(inputs['z'])-1 ], dtype=np.int_)
