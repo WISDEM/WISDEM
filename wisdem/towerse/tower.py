@@ -405,6 +405,7 @@ class TowerLeanSE(Group):
         
         # Independent variables that are unique to TowerSE
         towerIndeps = IndepVarComp()
+        towerIndeps.add_output('tower_outer_diameter', np.zeros(nPoints), units='m')
         towerIndeps.add_output('tower_section_height', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_wall_thickness', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_buckling_length', 0.0, units='m')
@@ -413,8 +414,6 @@ class TowerLeanSE(Group):
 
         # Independent variables that may be duplicated at higher levels of aggregation
         if topLevelFlag:
-            towerIndeps.add_output('tower_outer_diameter', np.zeros(nPoints), units='m')
-            
             sharedIndeps = IndepVarComp()
             sharedIndeps.add_output('hub_height', 0.0, units='m')
             sharedIndeps.add_output('material_density', 0.0, units='kg/m**3')

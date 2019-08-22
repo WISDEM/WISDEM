@@ -2,7 +2,7 @@
 from __future__ import print_function
 import numpy as np
 from pprint import pprint
-from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder
+from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder, NonlinearRunOnce, DirectSolver
 try:
     from openmdao.api import pyOptSparseDriver
 except:
@@ -47,7 +47,6 @@ class LandBasedTurbine(Group):
         myIndeps.add_output('project_lifetime',             0.0, units='yr')
         myIndeps.add_output('max_taper_ratio',              0.0)
         myIndeps.add_output('min_diameter_thickness_ratio', 0.0)
-        myIndeps.add_output('tower_outer_diameter', np.zeros(Nsection_Tow+1), units='m')
 
         # Environment
         myIndeps.add_output('wind_bottom_height',   0.0, units='m')
@@ -111,7 +110,7 @@ class LandBasedTurbine(Group):
                            promotes=['water_density','water_viscosity','wave_beta',
                                      'significant_wave_height','significant_wave_period',
                                      'material_density','E','G','tower_section_height',
-                                     'tower_wall_thickness', #'tower_outer_diameter',
+                                     'tower_wall_thickness', 'tower_outer_diameter',
                                      'tower_outfitting_factor','tower_buckling_length',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_mass','tower_I_base','hub_height',
@@ -367,6 +366,8 @@ if __name__ == "__main__":
     prob.setup(check=True)
     
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
+    prob.model.nonlinear_solver = NonlinearRunOnce()
+    prob.model.linear_solver = DirectSolver()
     prob.model.approx_totals()
 
     # prob.run_model()
