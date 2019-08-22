@@ -5,6 +5,49 @@ from wisdem.commonse import NFREQ
 import numpy as np
 
 
+# class TowerModes(ExplicitComponent):
+#     def setup(self):
+
+#         self.add_input('tower_freq', val=np.zeros(2), units='Hz', desc='First natural frequencies of tower (and substructure)')
+#         self.add_input('rotor_omega', val=0.0, units='rpm', desc='rated rotor rotation speed')
+#         self.add_input('gamma_freq', val=0.0, desc='partial safety factor for fatigue')
+#         self.add_discrete_input('blade_number', 3, desc='number of rotor blades')
+
+#         self.add_output('frequencyNP_margin_low', val=np.zeros(2), desc='Upper bound constraint of tower/structure frequency to blade passing frequency with margin')
+#         self.add_output('frequencyNP_margin_high', val=np.zeros(2), desc='Lower bound constraint of tower/structure frequency to blade passing frequency with margin')
+#         self.add_output('frequency1P_margin_low', val=np.zeros(2), desc='Upper bound constraint of tower/structure frequency to rotor frequency with margin')
+#         self.add_output('frequency1P_margin_high', val=np.zeros(2), desc='Lower bound constraint of tower/structure frequency to rotor frequency with margin')
+
+#         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        
+#     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+#         freq_struct = inputs['tower_freq']
+#         gamma       = inputs['gamma_freq']
+#         oneP        = (inputs['rotor_omega']/60.0)
+#         oneP_high   = oneP * gamma
+#         oneP_low    = oneP / gamma
+#         threeP      = oneP * discrete_inputs['blade_number']
+#         threeP_high = threeP * gamma
+#         threeP_low  = threeP / gamma
+        
+#         # Compute margins between (N/3)P and structural frequencies
+#         indicator_high = threeP_high * np.ones(freq_struct.shape)
+#         indicator_high[freq_struct < threeP_low] = 1e-16
+#         outputs['frequencyNP_margin_high'] = freq_struct / indicator_high
+
+#         indicator_low = threeP_low * np.ones(freq_struct.shape)
+#         indicator_low[freq_struct > threeP_high] = 1e30
+#         outputs['frequencyNP_margin_low']  = freq_struct / indicator_low
+
+#         # Compute margins between 1P and structural frequencies
+#         indicator_high = oneP_high * np.ones(freq_struct.shape)
+#         indicator_high[freq_struct < oneP_low] = 1e-16
+#         outputs['frequency1P_margin_high'] = freq_struct / indicator_high
+
+#         indicator_low = oneP_low * np.ones(freq_struct.shape)
+#         indicator_low[freq_struct > oneP_high] = 1e30
+#         outputs['frequency1P_margin_low']  = freq_struct / indicator_low
+
 class TowerModes(ExplicitComponent):
     def setup(self):
 
@@ -13,10 +56,8 @@ class TowerModes(ExplicitComponent):
         self.add_input('gamma_freq', val=0.0, desc='partial safety factor for fatigue')
         self.add_discrete_input('blade_number', 3, desc='number of rotor blades')
 
-        self.add_output('frequencyNP_margin_low', val=np.zeros(2), desc='Upper bound constraint of tower/structure frequency to blade passing frequency with margin')
-        self.add_output('frequencyNP_margin_high', val=np.zeros(2), desc='Lower bound constraint of tower/structure frequency to blade passing frequency with margin')
-        self.add_output('frequency1P_margin_low', val=np.zeros(2), desc='Upper bound constraint of tower/structure frequency to rotor frequency with margin')
-        self.add_output('frequency1P_margin_high', val=np.zeros(2), desc='Lower bound constraint of tower/structure frequency to rotor frequency with margin')
+        self.add_output('frequencyNP_margin', val=np.zeros(2), desc='constraint on tower/structure frequency to blade passing frequency with margin')
+        self.add_output('frequency1P_margin', val=np.zeros(2), desc='constraint on tower/structure frequency to rotor frequency with margin')
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
@@ -30,25 +71,10 @@ class TowerModes(ExplicitComponent):
         threeP_high = threeP * gamma
         threeP_low  = threeP / gamma
         
-        # Compute margins between (N/3)P and structural frequencies
-        indicator_high = threeP_high * np.ones(freq_struct.shape)
-        indicator_high[freq_struct < threeP_low] = 1e-16
-        outputs['frequencyNP_margin_high'] = freq_struct / indicator_high
+        outputs['frequencyNP_margin'] = np.array([min([f-threeP_low, threeP_high-f]) for f in freq_struct]).flatten()
+        outputs['frequency1P_margin'] = np.array([min([f-oneP_low, oneP_high-f]) for f in freq_struct]).flatten()
 
-        indicator_low = threeP_low * np.ones(freq_struct.shape)
-        indicator_low[freq_struct > threeP_high] = 1e30
-        outputs['frequencyNP_margin_low']  = freq_struct / indicator_low
 
-        # Compute margins between 1P and structural frequencies
-        indicator_high = oneP_high * np.ones(freq_struct.shape)
-        indicator_high[freq_struct < oneP_low] = 1e-16
-        outputs['frequency1P_margin_high'] = freq_struct / indicator_high
-
-        indicator_low = oneP_low * np.ones(freq_struct.shape)
-        indicator_low[freq_struct > oneP_high] = 1e30
-        outputs['frequency1P_margin_low']  = freq_struct / indicator_low
-
-    
 class MaxTipDeflection(ExplicitComponent):
     def initialize(self):
         self.options.declare('nFullTow')
