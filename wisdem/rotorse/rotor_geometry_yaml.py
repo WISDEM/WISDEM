@@ -1069,6 +1069,9 @@ class ReferenceBlade(object):
         if 'ctrl_pts' not in blade.keys():
             blade['ctrl_pts'] = {}
 
+        if 'Fix_r_in' not in blade['ctrl_pts'].keys():
+            blade['ctrl_pts']['Fix_r_in'] = False
+
         # solve for max chord radius
         if r_max_chord == 0.:
             r_max_chord = blade['pf']['s'][np.argmax(blade['pf']['chord'])]
@@ -1124,7 +1127,7 @@ class ReferenceBlade(object):
 
         af_ref = blade['AFref']
 
-        if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord']:
+        if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord'] and not blade['ctrl_pts']['Fix_r_in']:
             # blade['ctrl_pts']['r_in'] = np.r_[[0.], [blade['ctrl_pts']['r_cylinder']], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)]
             blade['ctrl_pts']['r_in'] = np.concatenate([[0.], np.linspace(blade['ctrl_pts']['r_cylinder'], blade['ctrl_pts']['r_max_chord'], num=3)[:-1], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-3)])
 
