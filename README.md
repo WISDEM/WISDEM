@@ -53,7 +53,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 2.  Install Anaconda package dependencies
 
-        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex jsonschema ruamel.yaml pydoe2
+        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex pydoe2
 
     if sphinxcontrib-bibtex does not install correctly, it is not critical and you can press on.
     
@@ -75,8 +75,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM&reg;
 
-        pip install OpenMDAO
-        pip install simpy
+        pip install OpenMDAO simpy jsonschema ruamel.yaml
 
 4.  Now navigate to a directory for WISDEM&reg; and all of its files.  This directory may be placed anywhere in the user's filesystem.
 
@@ -94,13 +93,9 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 7. OPTIONAL: Install pyOptSparse, an package that provides a handful of additional optimization solvers and has OpenMDAO support:
 
-        git clone https://github.com/OpenMDAO/pyoptsparse.git
+        git clone https://github.com/evan-gaertner/pyoptsparse.git
         cd pyoptsparse
 	
-    on Windows edit pyoptsparse\pyoptsparse\setup.py and comment out the line:
-    
-        #    config.add_subpackage('pyFSQP')
-
     for all OSes continue:
 	
         python setup.py install
