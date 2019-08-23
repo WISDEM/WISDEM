@@ -365,11 +365,11 @@ if __name__ == "__main__":
         # ----------------------
         
         # --- Recorder ---
-        prob.add_recorder(SqliteRecorder('log_opt.sql'))
-        prob.recording_options['includes'] = ['AEP','rc.total_blade_cost','lcoe','tip_deflection_ratio']
-        prob.recording_options['record_objectives']  = True
-        prob.recording_options['record_constraints'] = True
-        prob.recording_options['record_desvars']     = True
+        prob.driver.add_recorder(SqliteRecorder('log_opt.sql'))
+        prob.driver.recording_options['includes'] = ['AEP','rc.total_blade_cost','lcoe','tip_deflection_ratio']
+        prob.driver.recording_options['record_objectives']  = True
+        prob.driver.recording_options['record_constraints'] = True
+        prob.driver.recording_options['record_desvars']     = True
         # ----------------------
 
 
