@@ -95,9 +95,6 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
         git clone https://github.com/evan-gaertner/pyoptsparse.git
         cd pyoptsparse
-	
-    for all OSes continue:
-	
         python setup.py install
         cd ..
 
