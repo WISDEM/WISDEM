@@ -17,6 +17,8 @@ from wisdem.rotorse.rotor_geometry import RotorGeometry
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.rotorse.rotor_cost import RotorCost
 from wisdem.rotorse import RPM2RS, RS2RPM
+from wisdem.rotorse.rotor_fast import FASTLoadCases
+
 
 #from wisdem.rotorse.rotor_fast import FASTLoadCases
 
@@ -57,7 +59,6 @@ class RotorSE(Group):
         rc_show_warnings        = self.options['rc_show_warnings'] 
         rc_discrete             = self.options['rc_discrete']
         NPTS                    = len(RefBlade['pf']['s'])
-        
 
         rotorIndeps = IndepVarComp()
         rotorIndeps.add_discrete_output('tiploss',      True)
@@ -131,6 +132,32 @@ class RotorSE(Group):
         self.connect('V_extreme50',    'rs.aero_extrm.V_load')
         self.connect('V_extreme_full', 'rs.aero_extrm_forces.Uhub')
         self.connect('theta', 'rs.tip.theta', src_indices=[NPTS-1])
+        
+        # Connections to AeroelasticSE
+        if Analysis_Level>=1:
+            self.add_subsystem('aeroelastic', FASTLoadCases(RefBlade=RefBlade,
+                                                    npts_coarse_power_curve=npts_coarse_power_curve, 
+                                                    npts_spline_power_curve=npts_spline_power_curve,
+                                                    FASTpref=FASTpref), 
+                                                    promotes=['fst_vt_in', 'fst_vt_out', 'FASTpref_updated',
+                                                    'r', 'le_location', 'chord', 'theta', 'precurve','shearExp',
+                                                    'presweep', 'Rhub', 'Rtip', 'turbulence_class', 'turbine_class',
+                                                    'V_R25', 'rho', 'mu', 'control_maxTS', 'control_maxOmega','hub_height',
+                                                    'airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','airfoils_Re'])
+
+            self.connect('rhoA',                'aeroelastic.beam:rhoA')
+            self.connect('EIxx',                'aeroelastic.beam:EIxx')
+            self.connect('EIyy',                'aeroelastic.beam:EIyy')
+            self.connect('Tw_iner',             'aeroelastic.beam:Tw_iner')
+            self.connect('modes_coef_curvefem', 'aeroelastic.modes_coef_curvefem')
+            self.connect('rs.z_az',             'aeroelastic.z_az')
+            self.connect('V',                   'aeroelastic.U_init')
+            self.connect('Omega',               'aeroelastic.Omega_init')
+            self.connect('pitch',               'aeroelastic.pitch_init')
+            self.connect('rated_V',             'aeroelastic.Vrated')
+            self.connect('rs.gust.V_gust',      'aeroelastic.Vgust')
+            self.connect('V_mean',              'aeroelastic.V_mean_iec')
+            self.connect('machine_rating',      'aeroelastic.control_ratedPower')
 
 
 

@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 from scipy.interpolate import PchipInterpolator
 import os, copy, warnings, shutil
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem
-from openmdao.core.mpi_wrap import MPI
+from wisdem.commonse.mpi_tools import MPI
 
 from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from AeroelasticSE.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
@@ -19,23 +19,196 @@ if MPI:
     from openmdao.api import PetscImpl as impl
     from mpi4py import MPI
     from petsc4py import PETSc
-else:
-    from openmdao.api import BasicImpl as impl
+# else:
+    # from openmdao.api import BasicImpl as impl
+
+
+
+def eval_unsteady(alpha, cl, cd, cm):
+    # calculate unsteady coefficients from polars for OpenFAST's Aerodyn
+
+    unsteady = {}
+
+    alpha_rad = np.radians(alpha)
+    cn = cl*np.cos(alpha_rad) + cd*np.sin(alpha_rad)
+
+    # alpha0, Cd0, Cm0
+    aoa_l = [-30.]
+    aoa_h = [30.]
+    idx_low  = np.argmin(abs(alpha-aoa_l))
+    idx_high = np.argmin(abs(alpha-aoa_h))
+
+    if max(np.abs(np.gradient(cl)))>0.:
+        unsteady['alpha0'] = np.interp(0., cl[idx_low:idx_high], alpha[idx_low:idx_high])
+        unsteady['Cd0'] = np.interp(0., cl[idx_low:idx_high], cd[idx_low:idx_high])
+        unsteady['Cm0'] = np.interp(0., cl[idx_low:idx_high], cm[idx_low:idx_high])
+    else:
+        unsteady['alpha0'] = 0.
+        unsteady['Cd0'] = cd[np.argmin(abs(alpha-0.))]
+        unsteady['Cm0'] = 0.
+
+
+    unsteady['eta_e']= 1
+    unsteady['T_f0'] = "Default"
+    unsteady['T_V0'] = "Default"
+    unsteady['T_p']  = "Default"
+    unsteady['T_VL'] = "Default"
+    unsteady['b1']   = "Default"
+    unsteady['b2']   = "Default"
+    unsteady['b5']   = "Default"
+    unsteady['A1']   = "Default"
+    unsteady['A2']   = "Default"
+    unsteady['A5']   = "Default"
+    unsteady['S1']   = 0
+    unsteady['S2']   = 0
+    unsteady['S3']   = 0
+    unsteady['S4']   = 0
+
+    def find_breakpoint(x, y, idx_low, idx_high, multi=1.):
+        lin_fit = np.interp(x[idx_low:idx_high], [x[idx_low],x[idx_high]], [y[idx_low],y[idx_high]])
+        idx_break = 0
+        lin_diff = 0
+        for i, (fit, yi) in enumerate(zip(lin_fit, y[idx_low:idx_high])):
+            if multi==0:
+                diff_i = np.abs(yi-fit)
+            else:
+                diff_i = multi*(yi-fit)
+            if diff_i>lin_diff:
+                lin_diff = diff_i
+                idx_break = i
+        idx_break += idx_low
+        return idx_break
+
+    # Cn1
+    idx_alpha0  = np.argmin(abs(alpha-unsteady['alpha0']))
+    
+    if max(np.abs(np.gradient(cm)))>1.e-10:
+        aoa_h = alpha[idx_alpha0]+35.
+        idx_high = np.argmin(abs(alpha-aoa_h))
+
+        cm_temp = cm[idx_low:idx_high]
+        idx_cm_min = [i for i,local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]) if local_min] + idx_low
+        idx_high = idx_cm_min[-1]
+        
+        
+        idx_Cn1 = find_breakpoint(alpha, cm, idx_alpha0, idx_high)
+        unsteady['Cn1'] = cn[idx_Cn1]
+    else:
+        idx_Cn1 = np.argmin(abs(alpha-0.))
+        unsteady['Cn1'] = 0.
+    
+
+    
+    # Cn2
+    if max(np.abs(np.gradient(cm)))>1.e-10:
+        aoa_l = np.mean([alpha[idx_alpha0], alpha[idx_Cn1]])-30.
+        idx_low  = np.argmin(abs(alpha-aoa_l))
+
+        cm_temp = cm[idx_low:idx_high]
+        idx_cm_min = [i for i,local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]) if local_min] + idx_low
+        idx_high = idx_cm_min[-1]
+        
+        idx_Cn2 = find_breakpoint(alpha, cm, idx_low, idx_alpha0, multi=0.)
+        unsteady['Cn2'] = cn[idx_Cn2]
+    else:
+        idx_Cn2 = np.argmin(abs(alpha-0.))
+        unsteady['Cn2'] = 0.
+
+    # C_nalpha
+    if max(np.abs(np.gradient(cm)))>1.e-10:
+        # unsteady['C_nalpha'] = np.gradient(cn, alpha_rad)[idx_alpha0]
+        unsteady['C_nalpha'] = max(np.gradient(cn[idx_alpha0:idx_Cn1], alpha_rad[idx_alpha0:idx_Cn1]))
+
+    else:
+        unsteady['C_nalpha'] = 0.
+
+    # alpha1, alpha2
+    # finding the break point in drag as a proxy for Trailing Edge separation, f=0.7
+    # 3d stall corrections cause erroneous f calculations 
+    if max(np.abs(np.gradient(cm)))>1.0e-10:
+        aoa_l = [0.]
+        idx_low  = np.argmin(abs(alpha-aoa_l))
+        idx_alpha1 = find_breakpoint(alpha, cd, idx_low, idx_Cn1, multi=-1.)
+        unsteady['alpha1'] = alpha[idx_alpha1]
+    else:
+        idx_alpha1 = np.argmin(abs(alpha-0.))
+        unsteady['alpha1'] = 0.
+    unsteady['alpha2'] = -1.*unsteady['alpha1']
+
+
+    unsteady['St_sh']   = "Default"
+    unsteady['k0']      = 0
+    unsteady['k1']      = 0
+    unsteady['k2']      = 0
+    unsteady['k3']      = 0
+    unsteady['k1_hat']  = 0
+    unsteady['x_cp_bar']   = "Default"
+    unsteady['UACutout']   = "Default"
+    unsteady['filtCutOff'] = "Default"
+
+    unsteady['Alpha']    = alpha
+    unsteady['Cl']    = cl
+    unsteady['Cd']    = cd
+    unsteady['Cm']    = cm
+
+    return unsteady
+
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(6., 8.), sharex=True)
+    # ax[0].plot(alpha, cn)
+    # ax[0].plot(alpha, cl, '--')
+    # ax[0].plot(unsteady['alpha0'], 0.,'o')
+    # ax[0].annotate('alpha0', (unsteady['alpha0'], 0.))
+    # ax[0].plot(alpha[idx_alpha0], cn[idx_alpha0],'o')
+    # ax[0].annotate('C_nalpha', (alpha[idx_alpha0], cn[idx_alpha0]))
+    # ax[0].plot(alpha[idx_Cn1], cn[idx_Cn1],'o')
+    # ax[0].annotate('Cn1', (alpha[idx_Cn1], cn[idx_Cn1]))
+    # ax[0].plot(alpha[idx_Cn2], cn[idx_Cn2],'o')
+    # ax[0].annotate('Cn2', (alpha[idx_Cn2], cn[idx_Cn2]))
+    # ax[0].set_ylabel('C_L')
+    # ax[0].grid(True, linestyle=':')
+
+    # ax[1].plot(alpha, cd)
+    # ax[1].set_ylabel('C_D')
+    # ax[1].grid(True, linestyle=':')
+
+    # ax[2].plot(alpha, cm)
+    # ax[2].plot(alpha[idx_Cn1], cm[idx_Cn1], 'o')
+    # ax[2].annotate('Cn1', (alpha[idx_Cn1], cm[idx_Cn1]))
+    # ax[2].plot(alpha[idx_Cn2], cm[idx_Cn2], 'o')
+    # ax[2].annotate('Cn2', (alpha[idx_Cn2], cm[idx_Cn2]))
+
+    # ax[2].set_ylabel('C_M')
+    # ax[2].set_xlabel('Angle of Attack, deg')
+    # ax[2].grid(True, linestyle=':')
+
+    # plt.show()
+
+
+
+
+
+
+
+
 
 
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
-        self.options.declare('NPTS')
+        self.options.declare('RefBlade')
         self.options.declare('npts_coarse_power_curve', default=20)
         self.options.declare('npts_spline_power_curve', default=200)
         self.options.declare('FASTpref',default={})
 
-    def setup(self, NPTS, npts_coarse_power_curve, npts_spline_power_curve, FASTpref):
-        NPTS                    = self.options['NPTS']
+    def setup(self):
+        RefBlade                = self.options['RefBlade']
         npts_coarse_power_curve = self.options['npts_coarse_power_curve']
         npts_spline_power_curve = self.options['npts_spline_power_curve']
         FASTpref                = self.options['FASTpref']
-
+        NPTS                    = len(RefBlade['pf']['s'])
+        n_aoa_grid              = len(RefBlade['airfoils_aoa'])
+        n_Re_grid               = len(RefBlade['airfoils_Re'])
+        
         self.add_discrete_input('fst_vt_in', val={})
 
         # ElastoDyn Inputs
@@ -58,13 +231,17 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('presweep', val=np.zeros(NPTS), units='m', desc='presweep at structural locations')
         self.add_input('Rhub', val=0.0, units='m', desc='dimensional radius of hub')
         self.add_input('Rtip', val=0.0, units='m', desc='dimensional radius of tip')
-        self.add_discrete_input('airfoils', val=[0]*NPTS, desc='CCAirfoil instances')
+        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
 
         # Turbine level inputs
         self.add_input('hub_height', val=0.0, units='m', desc='hub height')
-        self.add_discrete_input('turbulence_class', val=TURBULENCE_CLASS['A'], desc='IEC turbulence class')
-        self.add_discrete_input('turbine_class', val=TURBINE_CLASS['I'], desc='IEC turbulence class')
-        self.add_input('control_ratedPower', val=0., desc='machine power rating')
+        self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
+        self.add_discrete_input('turbine_class', val='I', desc='IEC turbulence class')
+        self.add_input('control_ratedPower', val=0.,  units='W',    desc='machine power rating')
         self.add_input('control_maxOmega',   val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
         self.add_input('control_maxTS',      val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
 
@@ -159,7 +336,7 @@ class FASTLoadCases(ExplicitComponent):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
 
         fst_vt, R_out = self.update_FAST_model(inputs, discrete_inputs)
-
+        
         # if MPI:
             # rank = int(PETSc.COMM_WORLD.getRank())
             # self.FAST_namingOut = self.FAST_namingOut + '_%00d'%rank
@@ -172,9 +349,9 @@ class FASTLoadCases(ExplicitComponent):
 
         elif self.Analysis_Level == 1:
             # Write FAST files, do not run
-            self.write_FAST(fst_vt, outputs)
+            self.write_FAST(fst_vt, discrete_outputs)
 
-        outputs['fst_vt_out'] = fst_vt
+        discrete_outputs['fst_vt_out'] = fst_vt
 
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
@@ -190,19 +367,19 @@ class FASTLoadCases(ExplicitComponent):
 
         # Create instance of FAST reference model 
 
-        fst_vt = copy.deepcopy(inputs['fst_vt_in'])
+        fst_vt = copy.deepcopy(discrete_inputs['fst_vt_in'])
 
         fst_vt['Fst']['OutFileFmt'] = 2
 
         # Update ElastoDyn
-        fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip']
-        fst_vt['ElastoDyn']['HubRad'] = inputs['Rhub']
+        fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip'][0]
+        fst_vt['ElastoDyn']['HubRad'] = inputs['Rhub'][0]
         tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
-        fst_vt['ElastoDyn']['TowerHt'] = inputs['hub_height']
+        fst_vt['ElastoDyn']['TowerHt'] = inputs['hub_height'][0]
 
         # Update Inflowwind
-        fst_vt['InflowWind']['RefHt'] = inputs['hub_height']
-        fst_vt['InflowWind']['PLexp'] = inputs['shearExp']
+        fst_vt['InflowWind']['RefHt'] = inputs['hub_height'][0]
+        fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -221,8 +398,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['modes_coef_curvefem'][2,i]
         
         # Update AeroDyn15
-        fst_vt['AeroDyn15']['AirDens'] = inputs['rho']
-        fst_vt['AeroDyn15']['KinVisc'] = inputs['mu']        
+        fst_vt['AeroDyn15']['AirDens'] = inputs['rho'][0]
+        fst_vt['AeroDyn15']['KinVisc'] = inputs['mu'][0]
 
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
@@ -235,15 +412,16 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDynBlade']['BlCrvAng'] = np.degrees(np.arcsin(np.gradient(inputs['precurve'])/np.gradient(r)))
         fst_vt['AeroDynBlade']['BlTwist']  = inputs['theta']
         fst_vt['AeroDynBlade']['BlChord']  = inputs['chord']
-        fst_vt['AeroDynBlade']['BlAFID']   = np.asarray(range(1,len(inputs['airfoils'])+1))
+        fst_vt['AeroDynBlade']['BlAFID']   = np.asarray(range(1,len(r)+1))
 
         # Update AeroDyn15 Airfoile Input Files
-        airfoils = inputs['airfoils']
-        fst_vt['AeroDyn15']['NumAFfiles'] = len(airfoils)
+        # airfoils = inputs['airfoils']
+        fst_vt['AeroDyn15']['NumAFfiles'] = len(r)
         # fst_vt['AeroDyn15']['af_data'] = [{}]*len(airfoils)
         fst_vt['AeroDyn15']['af_data'] = []
-        for i in range(len(airfoils)):
-            af = airfoils[i]
+        for i in range(len(r)):
+            # af = airfoils[i]
+            unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][:,i,0], inputs['airfoils_cd'][:,i,0], inputs['airfoils_cm'][:,i,0])
             fst_vt['AeroDyn15']['af_data'].append({})
             fst_vt['AeroDyn15']['af_data'][i]['InterpOrd'] = "DEFAULT"
             fst_vt['AeroDyn15']['af_data'][i]['NonDimArea']= 1
@@ -252,44 +430,44 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn15']['af_data'][i]['Re']        = 0.75       # TODO: functionality for multiple Re tables
             fst_vt['AeroDyn15']['af_data'][i]['Ctrl']      = 0
             fst_vt['AeroDyn15']['af_data'][i]['InclUAdata']= "True"
-            fst_vt['AeroDyn15']['af_data'][i]['alpha0']    = af.unsteady['alpha0']
-            fst_vt['AeroDyn15']['af_data'][i]['alpha1']    = af.unsteady['alpha1']
-            fst_vt['AeroDyn15']['af_data'][i]['alpha2']    = af.unsteady['alpha2']
-            fst_vt['AeroDyn15']['af_data'][i]['eta_e']     = af.unsteady['eta_e']
-            fst_vt['AeroDyn15']['af_data'][i]['C_nalpha']  = af.unsteady['C_nalpha']
-            fst_vt['AeroDyn15']['af_data'][i]['T_f0']      = af.unsteady['T_f0']
-            fst_vt['AeroDyn15']['af_data'][i]['T_V0']      = af.unsteady['T_V0']
-            fst_vt['AeroDyn15']['af_data'][i]['T_p']       = af.unsteady['T_p']
-            fst_vt['AeroDyn15']['af_data'][i]['T_VL']      = af.unsteady['T_VL']
-            fst_vt['AeroDyn15']['af_data'][i]['b1']        = af.unsteady['b1']
-            fst_vt['AeroDyn15']['af_data'][i]['b2']        = af.unsteady['b2']
-            fst_vt['AeroDyn15']['af_data'][i]['b5']        = af.unsteady['b5']
-            fst_vt['AeroDyn15']['af_data'][i]['A1']        = af.unsteady['A1']
-            fst_vt['AeroDyn15']['af_data'][i]['A2']        = af.unsteady['A2']
-            fst_vt['AeroDyn15']['af_data'][i]['A5']        = af.unsteady['A5']
-            fst_vt['AeroDyn15']['af_data'][i]['S1']        = af.unsteady['S1']
-            fst_vt['AeroDyn15']['af_data'][i]['S2']        = af.unsteady['S2']
-            fst_vt['AeroDyn15']['af_data'][i]['S3']        = af.unsteady['S3']
-            fst_vt['AeroDyn15']['af_data'][i]['S4']        = af.unsteady['S4']
-            fst_vt['AeroDyn15']['af_data'][i]['Cn1']       = af.unsteady['Cn1']
-            fst_vt['AeroDyn15']['af_data'][i]['Cn2']       = af.unsteady['Cn2']
-            fst_vt['AeroDyn15']['af_data'][i]['St_sh']     = af.unsteady['St_sh']
-            fst_vt['AeroDyn15']['af_data'][i]['Cd0']       = af.unsteady['Cd0']
-            fst_vt['AeroDyn15']['af_data'][i]['Cm0']       = af.unsteady['Cm0']
-            fst_vt['AeroDyn15']['af_data'][i]['k0']        = af.unsteady['k0']
-            fst_vt['AeroDyn15']['af_data'][i]['k1']        = af.unsteady['k1']
-            fst_vt['AeroDyn15']['af_data'][i]['k2']        = af.unsteady['k2']
-            fst_vt['AeroDyn15']['af_data'][i]['k3']        = af.unsteady['k3']
-            fst_vt['AeroDyn15']['af_data'][i]['k1_hat']    = af.unsteady['k1_hat']
-            fst_vt['AeroDyn15']['af_data'][i]['x_cp_bar']  = af.unsteady['x_cp_bar']
-            fst_vt['AeroDyn15']['af_data'][i]['UACutout']  = af.unsteady['UACutout']
-            fst_vt['AeroDyn15']['af_data'][i]['filtCutOff']= af.unsteady['filtCutOff']
-            fst_vt['AeroDyn15']['af_data'][i]['NumAlf']    = len(af.unsteady['Alpha'])
-            fst_vt['AeroDyn15']['af_data'][i]['Alpha']     = np.array(af.unsteady['Alpha'])
-            fst_vt['AeroDyn15']['af_data'][i]['Cl']        = np.array(af.unsteady['Cl'])
-            fst_vt['AeroDyn15']['af_data'][i]['Cd']        = np.array(af.unsteady['Cd'])
-            fst_vt['AeroDyn15']['af_data'][i]['Cm']        = np.array(af.unsteady['Cm'])
-            fst_vt['AeroDyn15']['af_data'][i]['Cpmin']     = np.zeros_like(af.unsteady['Cm'])
+            fst_vt['AeroDyn15']['af_data'][i]['alpha0']    = unsteady['alpha0']
+            fst_vt['AeroDyn15']['af_data'][i]['alpha1']    = unsteady['alpha1']
+            fst_vt['AeroDyn15']['af_data'][i]['alpha2']    = unsteady['alpha2']
+            fst_vt['AeroDyn15']['af_data'][i]['eta_e']     = unsteady['eta_e']
+            fst_vt['AeroDyn15']['af_data'][i]['C_nalpha']  = unsteady['C_nalpha']
+            fst_vt['AeroDyn15']['af_data'][i]['T_f0']      = unsteady['T_f0']
+            fst_vt['AeroDyn15']['af_data'][i]['T_V0']      = unsteady['T_V0']
+            fst_vt['AeroDyn15']['af_data'][i]['T_p']       = unsteady['T_p']
+            fst_vt['AeroDyn15']['af_data'][i]['T_VL']      = unsteady['T_VL']
+            fst_vt['AeroDyn15']['af_data'][i]['b1']        = unsteady['b1']
+            fst_vt['AeroDyn15']['af_data'][i]['b2']        = unsteady['b2']
+            fst_vt['AeroDyn15']['af_data'][i]['b5']        = unsteady['b5']
+            fst_vt['AeroDyn15']['af_data'][i]['A1']        = unsteady['A1']
+            fst_vt['AeroDyn15']['af_data'][i]['A2']        = unsteady['A2']
+            fst_vt['AeroDyn15']['af_data'][i]['A5']        = unsteady['A5']
+            fst_vt['AeroDyn15']['af_data'][i]['S1']        = unsteady['S1']
+            fst_vt['AeroDyn15']['af_data'][i]['S2']        = unsteady['S2']
+            fst_vt['AeroDyn15']['af_data'][i]['S3']        = unsteady['S3']
+            fst_vt['AeroDyn15']['af_data'][i]['S4']        = unsteady['S4']
+            fst_vt['AeroDyn15']['af_data'][i]['Cn1']       = unsteady['Cn1']
+            fst_vt['AeroDyn15']['af_data'][i]['Cn2']       = unsteady['Cn2']
+            fst_vt['AeroDyn15']['af_data'][i]['St_sh']     = unsteady['St_sh']
+            fst_vt['AeroDyn15']['af_data'][i]['Cd0']       = unsteady['Cd0']
+            fst_vt['AeroDyn15']['af_data'][i]['Cm0']       = unsteady['Cm0']
+            fst_vt['AeroDyn15']['af_data'][i]['k0']        = unsteady['k0']
+            fst_vt['AeroDyn15']['af_data'][i]['k1']        = unsteady['k1']
+            fst_vt['AeroDyn15']['af_data'][i]['k2']        = unsteady['k2']
+            fst_vt['AeroDyn15']['af_data'][i]['k3']        = unsteady['k3']
+            fst_vt['AeroDyn15']['af_data'][i]['k1_hat']    = unsteady['k1_hat']
+            fst_vt['AeroDyn15']['af_data'][i]['x_cp_bar']  = unsteady['x_cp_bar']
+            fst_vt['AeroDyn15']['af_data'][i]['UACutout']  = unsteady['UACutout']
+            fst_vt['AeroDyn15']['af_data'][i]['filtCutOff']= unsteady['filtCutOff']
+            fst_vt['AeroDyn15']['af_data'][i]['NumAlf']    = len(unsteady['Alpha'])
+            fst_vt['AeroDyn15']['af_data'][i]['Alpha']     = np.array(unsteady['Alpha'])
+            fst_vt['AeroDyn15']['af_data'][i]['Cl']        = np.array(unsteady['Cl'])
+            fst_vt['AeroDyn15']['af_data'][i]['Cd']        = np.array(unsteady['Cd'])
+            fst_vt['AeroDyn15']['af_data'][i]['Cm']        = np.array(unsteady['Cm'])
+            fst_vt['AeroDyn15']['af_data'][i]['Cpmin']     = np.zeros_like(unsteady['Cm'])
 
         # AeroDyn spanwise output positions
         r = r/r[-1]
@@ -313,8 +491,8 @@ class FASTLoadCases(ExplicitComponent):
         required_channels = []
         case_keys         = []
 
-        turbulence_class = TURBULENCE_CLASS[inputs['turbulence_class']]
-        turbine_class    = TURBINE_CLASS[inputs['turbine_class']]
+        turbulence_class = discrete_inputs['turbulence_class']
+        turbine_class    = discrete_inputs['turbine_class']
 
         if self.DLC_powercurve != None:
             self.U_init     = copy.deepcopy(inputs['U_init'])
@@ -400,7 +578,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return FAST_Output
 
-    def write_FAST(self, fst_vt, outputs):
+    def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
         writer.fst_vt            = fst_vt
         writer.FAST_runDirectory = self.FAST_runDirectory
@@ -408,12 +586,12 @@ class FASTLoadCases(ExplicitComponent):
         writer.dev_branch        = self.dev_branch
         writer.execute()
 
-        outputs['FASTpref_updated'] = copy.deepcopy(self.FASTpref)
-        outputs['FASTpref_updated']['FAST_runDirectory'] = self.FAST_runDirectory
-        outputs['FASTpref_updated']['FAST_directory']    = self.FAST_runDirectory
-        outputs['FASTpref_updated']['FAST_InputFile']    = os.path.split(writer.FAST_InputFileOut)[-1]
+        discrete_outputs['FASTpref_updated'] = copy.deepcopy(self.FASTpref)
+        discrete_outputs['FASTpref_updated']['FAST_runDirectory'] = self.FAST_runDirectory
+        discrete_outputs['FASTpref_updated']['FAST_directory']    = self.FAST_runDirectory
+        discrete_outputs['FASTpref_updated']['FAST_InputFile']    = os.path.split(writer.FAST_InputFileOut)[-1]
 
-        outputs['model_updated'] = True
+        discrete_outputs['model_updated'] = True
         if self.debug_level > 0:
             print('RAN UPDATE: ', self.FAST_runDirectory, self.FAST_namingOut)
 
