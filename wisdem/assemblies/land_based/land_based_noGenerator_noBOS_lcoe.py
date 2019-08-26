@@ -35,8 +35,7 @@ class LandBasedTurbine(Group):
     def setup(self):
         
         RefBlade     = self.options['RefBlade']
-        Nsection_Tow = self.options['Nsection_Tow']
-        VerbosityCosts = self.options['VerbosityCosts']
+        Nsection_Tow = self.options['Nsection_Tow']        
         
         # Define all input variables from all models
         myIndeps = IndepVarComp()
@@ -90,7 +89,7 @@ class LandBasedTurbine(Group):
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,
                                               regulation_reg_III=False,
-                                              Analysis_Level=0,
+                                              Analysis_Level=self.options['FASTpref']['Analysis_Level'],
                                               FASTpref=self.options['FASTpref'],
                                               topLevelFlag=True), promotes=['*'])
         
@@ -125,10 +124,10 @@ class LandBasedTurbine(Group):
         self.add_subsystem('tcons', TurbineConstraints(nFull=5*Nsection_Tow+1), promotes=['*'])
         
         # Turbine costs
-        self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=VerbosityCosts, topLevelFlag=False), promotes=['*'])
+        self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=self.options['VerbosityCosts'], topLevelFlag=False), promotes=['*'])
 
         # LCOE Calculation
-        self.add_subsystem('plantfinancese', PlantFinance(verbosity=VerbosityCosts), promotes=['machine_rating','lcoe'])
+        self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']), promotes=['machine_rating','lcoe'])
         
     
         # Set up connections
@@ -201,9 +200,9 @@ class LandBasedTurbine(Group):
         self.connect('annual_opex',         'plantfinancese.opex_per_kW')
     
 
-def Init_LandBasedAssembly(prob, blade, Nsection_Tow):
+def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level, fst_vt):
 
-    prob = Init_RotorSE_wRefBlade(prob, blade)
+    prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level = Analysis_Level, fst_vt = fst_vt)
     
     
     # Environmental parameters for the tower
