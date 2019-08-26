@@ -343,9 +343,9 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
-            list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(params, fst_vt)
+            list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
             FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
-            self.post_process(FAST_Output, case_keys, R_out, params, outputs)
+            self.post_process(FAST_Output, case_keys, R_out, inputs, discrete_inputs, outputs)
 
         elif self.Analysis_Level == 1:
             # Write FAST files, do not run

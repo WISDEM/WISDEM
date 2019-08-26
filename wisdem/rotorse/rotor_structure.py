@@ -2008,14 +2008,7 @@ class RotorStructure(Group):
         self.connect('dynamic_amplification',               'loads_pc_defl.dynamicFactor')
 
         # connections to loads_strain
-        if Analysis_Level>1:
-            self.connect('aeroelastic.loads_Px',        'loads_strain.aeroloads_Px')
-            self.connect('aeroelastic.loads_Py',        'loads_strain.aeroloads_Py')
-            self.connect('aeroelastic.loads_Pz',        'loads_strain.aeroloads_Pz')
-            self.connect('aeroelastic.loads_Omega',     'loads_strain.aeroloads_Omega')
-            self.connect('aeroelastic.loads_azimuth',   'loads_strain.aeroloads_azimuth')
-            self.connect('aeroelastic.loads_pitch',     'loads_strain.aeroloads_pitch')
-        else:
+        if Analysis_Level<1:
             self.connect('aero_extrm.loads_Px',         'loads_strain.aeroloads_Px')
             self.connect('aero_extrm.loads_Py',         'loads_strain.aeroloads_Py')
             self.connect('aero_extrm.loads_Pz',         'loads_strain.aeroloads_Pz')
@@ -2045,11 +2038,7 @@ class RotorStructure(Group):
         self.connect('loads_strain.Pz_af',  'Pz_strain')
 
         # connections to tip
-        if Analysis_Level>1:
-            self.connect('aeroelastic.dx_defl', 'tip.dx')
-            self.connect('aeroelastic.dy_defl', 'tip.dy')
-            self.connect('aeroelastic.dz_defl', 'tip.dz')
-        else:
+        if Analysis_Level<1:
             self.connect('dx_defl', 'tip.dx', src_indices=[NPTS-1])
             self.connect('dy_defl', 'tip.dy', src_indices=[NPTS-1])
             self.connect('dz_defl', 'tip.dz', src_indices=[NPTS-1])
@@ -2086,10 +2075,7 @@ class RotorStructure(Group):
         # connect to outputs
         self.connect('blade_mass',                'mass_one_blade_in')
         self.connect('modes_coef', 'modes_coef_curvefem_in')
-        if Analysis_Level>1:
-            self.connect('aeroelastic.root_bending_moment', 'root_bending_moment_in')
-            self.connect('aeroelastic.Mxyz',                'Mxyz_in')
-        else:
+        if Analysis_Level<1:
             self.connect('root_moment.root_bending_moment', 'root_bending_moment_in')
             self.connect('root_moment.Mxyz',                'Mxyz_in')
         self.connect('blade_defl.delta_bladeLength',    'delta_bladeLength_out_in')

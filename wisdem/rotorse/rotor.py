@@ -158,7 +158,18 @@ class RotorSE(Group):
             self.connect('rs.gust.V_gust',      'aeroelastic.Vgust')
             self.connect('V_mean',              'aeroelastic.V_mean_iec')
             self.connect('machine_rating',      'aeroelastic.control_ratedPower')
-
+            if Analysis_Level>1:
+                self.connect('aeroelastic.dx_defl',             'rs.tip.dx')
+                self.connect('aeroelastic.dy_defl',             'rs.tip.dy')
+                self.connect('aeroelastic.dz_defl',             'rs.tip.dz')
+                self.connect('aeroelastic.loads_Px',            'rs.loads_strain.aeroloads_Px')
+                self.connect('aeroelastic.loads_Py',            'rs.loads_strain.aeroloads_Py')
+                self.connect('aeroelastic.loads_Pz',            'rs.loads_strain.aeroloads_Pz')
+                self.connect('aeroelastic.loads_Omega',         'rs.loads_strain.aeroloads_Omega')
+                self.connect('aeroelastic.loads_azimuth',       'rs.loads_strain.aeroloads_azimuth')
+                self.connect('aeroelastic.loads_pitch',         'rs.loads_strain.aeroloads_pitch')
+                self.connect('aeroelastic.root_bending_moment', 'rs.root_bending_moment_in')
+                self.connect('aeroelastic.Mxyz',                'rs.Mxyz_in')
 
 
 def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
