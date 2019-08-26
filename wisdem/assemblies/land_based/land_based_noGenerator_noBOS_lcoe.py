@@ -101,8 +101,6 @@ class LandBasedTurbine(Group):
                                      'hub_mass','bedplate_mass','gearbox_mass','generator_mass','hss_mass','hvac_mass','lss_mass','cover_mass',
                                      'pitch_system_mass','platforms_mass','spinner_mass','transformer_mass','vs_electronics_mass','yaw_mass'])
         
-        self.add_subsystem('rna', RNA(nLC=1), promotes=['hub_cm'])
-        
         # Tower and substructure
         self.add_subsystem('tow',TowerSE(nLC=1,
                                          nPoints=Nsection_Tow+1,
@@ -137,38 +135,23 @@ class LandBasedTurbine(Group):
         self.connect('diameter',        'drive.rotor_diameter')     
         self.connect('rated_Q',         'drive.rotor_torque')
         self.connect('rated_Omega',     'drive.rotor_rpm')
-        self.connect('Mxyz_total',      'drive.rotor_bending_moment_x', src_indices=[0])
-        self.connect('Mxyz_total',      'drive.rotor_bending_moment_y', src_indices=[1])
-        self.connect('Mxyz_total',      'drive.rotor_bending_moment_z', src_indices=[2])
-        self.connect('Fxyz_total',      'drive.rotor_thrust', src_indices=[0])
-        self.connect('Fxyz_total',      'drive.rotor_force_y', src_indices=[1])
-        self.connect('Fxyz_total',      'drive.rotor_force_z', src_indices=[2])
+        self.connect('Fxyz_total',      'drive.Fxyz')
+        self.connect('Mxyz_total',      'drive.Mxyz')
+        self.connect('I_all_blades',        'drive.blades_I')
         self.connect('mass_one_blade',  'drive.blade_mass')
         self.connect('chord',           'drive.blade_root_diameter', src_indices=[0])
         self.connect('Rtip',            'drive.blade_length', src_indices=[0])
         self.connect('drivetrainEff',   'drive.drivetrain_efficiency', src_indices=[0])
         self.connect('tower_outer_diameter', 'drive.tower_top_diameter', src_indices=[-1])
-        
-        # Connections to RNA (CommonSE)
-        self.connect('mass_all_blades',     'rna.blades_mass')
-        self.connect('drive.hub_system_mass', 'rna.hub_mass')
-        self.connect('drive.nacelle_mass',  'rna.nac_mass')
-        self.connect('I_all_blades',        'rna.blades_I')
-        self.connect('drive.hub_system_I',  'rna.hub_I')
-        self.connect('drive.nacelle_I',     'rna.nac_I')
-        self.connect('drive.hub_system_cm', 'hub_cm')
-        self.connect('drive.nacelle_cm',    'rna.nac_cm')
-        self.connect('Fxyz_total',          'rna.loads.F')
-        self.connect('Mxyz_total',          'rna.loads.M')
 
         self.connect('material_density', 'tow.tower.rho')
 
         # Connections to TowerSE
-        self.connect('rna.loads.top_F',         'tow.pre.rna_F')
-        self.connect('rna.loads.top_M',         'tow.pre.rna_M')
-        self.connect('rna.rna_I_TT',            ['rna_I','tow.pre.mI'])
-        self.connect('rna.rna_cm',              ['rna_cg','tow.pre.mrho'])
-        self.connect('rna.rna_mass',            ['rna_mass','tow.pre.mass'])
+        self.connect('drive.top_F',         'tow.pre.rna_F')
+        self.connect('drive.top_M',         'tow.pre.rna_M')
+        self.connect('drive.rna_I_TT',            ['rna_I','tow.pre.mI'])
+        self.connect('drive.rna_cm',              ['rna_cg','tow.pre.mrho'])
+        self.connect('drive.rna_mass',            ['rna_mass','tow.pre.mass'])
         self.connect('rs.gust.V_gust',          'tow.wind.Uref')
         self.connect('wind_reference_height',   ['tow.wind.zref','wind.zref'])
         # self.connect('wind_bottom_height',      ['tow.wind.z0','tow.wave.z_surface', 'wind.z0'])  # offshore

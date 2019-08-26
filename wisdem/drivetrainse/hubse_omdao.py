@@ -15,6 +15,9 @@ from wisdem.drivetrainse.hubse_components import Hub, PitchSystem, Spinner, Hub_
 class Hub_System_Adder_OM(ExplicitComponent):
     ''' 
     Compute hub mass, cm, and I
+
+    NOTE: THIS COMPONENT DOES NOT PLAY WELL WITH DRIVESE BECAUSE IT CREATES CIRCULAR REFERENCES!
+    (requires main bearing location, but outputs from here are required to determine MB1_Location in drivese_omdao.py)
     '''
     def initialize(self):
         self.options.declare('debug', default=False)
