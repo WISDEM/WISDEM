@@ -4,7 +4,11 @@ Copyright (c) NREL. All rights reserved.
 Electromagnetic design based on conventional magnetic circuit laws
 Structural design based on McDonald's thesis """
 
-from openmdao.api import Group, Problem, ExplicitComponent, ExecComp, IndepVarComp, ScipyOptimizeDriver, pyOptSparseDriver
+from openmdao.api import Group, Problem, ExplicitComponent, ExecComp, IndepVarComp
+#from openmdao.api import ScipyOptimizeDriver, pyOptSparseDriver
+import openmdao.api as om
+#from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
+
 import numpy as np
 from scig import SCIG
 from dfig import DFIG
@@ -169,7 +173,7 @@ def optimization_example(genType, exportFlag=False):
     opt_problem.model = Generator(design=genType, topLevelFlag=True)
     
     # add optimizer and set-up problem (using user defined input on objective function)
-    opt_problem.driver = pyOptSparseDriver() #ScipyOptimizeDriver()
+    '''opt_problem.driver = om.pyOptSparseDriver() #ScipyOptimizeDriver()
     opt_problem.driver.options['optimizer'] = 'CONMIN'
     opt_problem.driver.opt_settings['IPRINT'] = 4
     opt_problem.driver.opt_settings['ITRM'] = 3
@@ -177,6 +181,9 @@ def optimization_example(genType, exportFlag=False):
     opt_problem.driver.opt_settings['DELFUN'] = 1e-3
     opt_problem.driver.opt_settings['DABFUN'] = 1e-3
     opt_problem.driver.opt_settings['IFILE'] = 'CONMIN_'+genType.upper()+'.out'
+    '''
+    opt_problem.driver = om.ScipyOptimizeDriver()
+    opt_problem.driver.options['optimizer'] = 'SLSQP'
     
     # Specificiency target efficiency(%)
     Eta_Target = 93.0
@@ -1472,5 +1479,6 @@ def optimization_example(genType, exportFlag=False):
 if __name__=='__main__':
     
     # Run example optimizations for all generator types
-    for m in ['scig','dfig','eesg','pmsg_arms','pmsg_disc']:
+    #for m in ['scig','dfig','eesg','pmsg_arms','pmsg_disc']:
+    for m in ['eesg',]:
         optimization_example(m, exportFlag=True)

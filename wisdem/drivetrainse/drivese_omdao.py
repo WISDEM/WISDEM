@@ -809,6 +809,9 @@ def nacelle_example_5MW_baseline_3pt(debug=False):
     prob['blade_root_diameter'] = 2.5
     prob['blade_length'] = 60.0
     
+    
+    prob['hub_flange_thickness'] = 0
+    
     # Tower inputs
     prob['tower_top_diameter'] = 3.78  # m
 
