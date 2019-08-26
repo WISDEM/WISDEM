@@ -143,7 +143,8 @@ class RotorSE(Group):
                                                     'r', 'le_location', 'chord', 'theta', 'precurve','shearExp',
                                                     'presweep', 'Rhub', 'Rtip', 'turbulence_class', 'turbine_class',
                                                     'V_R25', 'rho', 'mu', 'control_maxTS', 'control_maxOmega','hub_height',
-                                                    'airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','airfoils_Re'])
+                                                    'airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','airfoils_Re',
+                                                    'airfoils_coord_x','airfoils_coord_y','rthick'])
 
             self.connect('rhoA',                'aeroelastic.beam:rhoA')
             self.connect('EIxx',                'aeroelastic.beam:EIxx')

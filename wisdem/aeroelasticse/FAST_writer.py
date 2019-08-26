@@ -714,8 +714,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
 
         # Generate AeroDyn v15 polars
         self.write_AeroDyn15Polar()
-
-
+        
+        # Generate AeroDyn v15 airfoil coordinates
+        self.write_AeroDyn15Coord()
+        
         # Generate AeroDyn v15.03 input file
         self.fst_vt['Fst']['AeroFile'] = self.FAST_namingOut + '_AeroDyn15.dat'
         ad_file = os.path.join(self.FAST_runDirectory, self.fst_vt['Fst']['AeroFile'])
@@ -826,7 +828,6 @@ class InputWriter_OpenFAST(InputWriter_Common):
         
     def write_AeroDyn15Polar(self):
         # Airfoil Info v1.01
-        # TODO: Coordinates file not supported currently
 
         def float_default_out(val):
             # formatted float output when 'default' is an option
@@ -930,7 +931,34 @@ class InputWriter_OpenFAST(InputWriter_Common):
                 f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
             
             f.close()
+    
+    def write_AeroDyn15Coord(self):
 
+        self.fst_vt['AeroDyn15']['AFNames_coord'] = ['']*self.fst_vt['AeroDyn15']['NumAFfiles']
+        
+        for afi in range(int(self.fst_vt['AeroDyn15']['NumAFfiles'])):
+            
+            x     = self.fst_vt['AeroDyn15']['af_coord'][afi]['x']
+            y     = self.fst_vt['AeroDyn15']['af_coord'][afi]['y']
+            coord = np.vstack((x, y)).T
+
+            self.fst_vt['AeroDyn15']['AFNames_coord'][afi] = os.path.join('Airfoils', self.FAST_namingOut + '_AeroDyn15_coords_%02d.txt'%afi)
+            af_file = os.path.join(self.FAST_runDirectory, self.fst_vt['AeroDyn15']['AFNames_coord'][afi])
+            f = open(af_file, 'w')
+            
+            f.write('{: 22d}   {:<11} {:}'.format(len(x), 'NumCoords', '! The number of coordinates in the airfoil shape file (including an extra coordinate for airfoil reference).  Set to zero if coordinates not included.\n'))
+            f.write('! ......... x-y coordinates are next if NumCoords > 0 .............\n')
+            f.write('! x-y coordinate of airfoil reference\n')
+            f.write('!  x/c        y/c\n')
+            f.write('{: 5f}       0\n'.format(self.fst_vt['AeroDyn15']['rthick'][afi]))
+            f.write('! coordinates of airfoil shape\n')
+            f.write('! interpolation to 200 points\n')
+            f.write('!  x/c        y/c\n')
+            for row in coord:
+                f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
+            f.close()
+    
+    
     def write_ServoDyn(self):
         # ServoDyn v1.05 Input File
 
