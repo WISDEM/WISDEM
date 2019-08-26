@@ -53,13 +53,13 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 2.  Install Anaconda package dependencies
 
-        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex jsonschema ruamel.yaml pydoe2
+        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex pydoe2
 
     if sphinxcontrib-bibtex does not install correctly, it is not critical and you can press on.
     
     on Windows add on:
     
-        conda install -y mingw m2w64-toolchain libpython
+        conda install -y m2w64-toolchain libpython
 
     on MacOS add on:
     
@@ -68,15 +68,14 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
     on Linux add on:
 
-        conda install -y compilers mpi4py==3.0.1 petsc4py
+        conda install -y compilers mpi4py petsc4py
 
 
 
 
 3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM&reg;
 
-        pip install OpenMDAO
-        pip install simpy
+        pip install OpenMDAO simpy jsonschema ruamel.yaml
 
 4.  Now navigate to a directory for WISDEM&reg; and all of its files.  This directory may be placed anywhere in the user's filesystem.
 
@@ -87,8 +86,16 @@ The installation instructions below use the environment name, "wisdem-env," but 
 6.  Now install all of the packages.  The instructions here assume that the user will be interacting with the source code and incorporating code updates frequently, so the python packages are set-up for development (`python setup.py develop`), instead of hard installs (`python setup.py install`).
 
         cd WISDEM
-        git checkout --track origin/yaml
+        git checkout --track origin/openmdao2
         python setup.py develop 
+        cd ..
+
+
+7. OPTIONAL: Install pyOptSparse, an package that provides a handful of additional optimization solvers and has OpenMDAO support:
+
+        git clone https://github.com/evan-gaertner/pyoptsparse.git
+        cd pyoptsparse
+        python setup.py install
         cd ..
 
 

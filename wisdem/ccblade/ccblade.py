@@ -221,9 +221,12 @@ class CCAirfoil(object):
             dcl_dRe = 0.0
             dcd_dRe = 0.0
         else:
-            dcl_dRe = bisplev(alpha, Re, tck_cl, dx=0, dy=1)
-            dcd_dRe = bisplev(alpha, Re, tck_cd, dx=0, dy=1)
-
+            try:
+                dcl_dRe = bisplev(alpha, Re, tck_cl, dx=0, dy=1)
+                dcd_dRe = bisplev(alpha, Re, tck_cd, dx=0, dy=1)
+            except:
+                dcl_dRe = 0.0
+                dcd_dRe = 0.0
         return dcl_dalpha, dcl_dRe, dcd_dalpha, dcd_dRe
 
 

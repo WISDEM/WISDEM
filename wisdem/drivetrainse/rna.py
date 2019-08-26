@@ -6,7 +6,7 @@ from wisdem.commonse.utilities import hstack, vstack
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.commonse import gravity
 
-#TODO CHECK
+# This is an extremely simple RNA mass calculator that should be used when DriveSE otherwise seems too complicated
 
 
 class RNAMass(ExplicitComponent):

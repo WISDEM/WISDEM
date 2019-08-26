@@ -2,21 +2,24 @@
 from __future__ import print_function
 import numpy as np
 from pprint import pprint
-from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder
-# from openmdao.api import pyOptSparseDriver
-# from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
+from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder, NonlinearRunOnce, DirectSolver
+try:
+    from openmdao.api import pyOptSparseDriver
+except:
+    pass
 from wisdem.rotorse.rotor import RotorSE, Init_RotorSE_wRefBlade
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.towerse.tower import TowerSE
 from wisdem.commonse import NFREQ
-from wisdem.commonse.rna import RNA
 from wisdem.commonse.environment import PowerWind, LogWind
 from wisdem.commonse.turbine_constraints import TurbineConstraints
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 
-        
+from wisdem.commonse.mpi_tools import MPI
+
+# np.seterr(all ='raise')
         
 # Group to link the openmdao components
 class LandBasedTurbine(Group):
@@ -31,8 +34,7 @@ class LandBasedTurbine(Group):
     def setup(self):
         
         RefBlade     = self.options['RefBlade']
-        Nsection_Tow = self.options['Nsection_Tow']
-        VerbosityCosts = self.options['VerbosityCosts']
+        Nsection_Tow = self.options['Nsection_Tow']        
         
         # Define all input variables from all models
         myIndeps = IndepVarComp()
@@ -45,12 +47,11 @@ class LandBasedTurbine(Group):
         myIndeps.add_output('project_lifetime',             0.0, units='yr')
         myIndeps.add_output('max_taper_ratio',              0.0)
         myIndeps.add_output('min_diameter_thickness_ratio', 0.0)
-        
+
         # Environment
         myIndeps.add_output('wind_bottom_height',   0.0, units='m')
         myIndeps.add_output('wind_beta',            0.0, units='deg')
-        # myIndeps.add_output('cd_usr', np.inf)
-        myIndeps.add_output('cd_usr', 0.1)
+        myIndeps.add_output('cd_usr', -1.)
 
         # Design standards
         myIndeps.add_output('gamma_b', 0.0)
@@ -87,7 +88,7 @@ class LandBasedTurbine(Group):
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,
                                               regulation_reg_III=False,
-                                              Analysis_Level=0,
+                                              Analysis_Level=self.options['FASTpref']['Analysis_Level'],
                                               FASTpref=self.options['FASTpref'],
                                               topLevelFlag=True), promotes=['*'])
         
@@ -98,8 +99,6 @@ class LandBasedTurbine(Group):
                                      'hub_mass','bedplate_mass','gearbox_mass','generator_mass','hss_mass','hvac_mass','lss_mass','cover_mass',
                                      'pitch_system_mass','platforms_mass','spinner_mass','transformer_mass','vs_electronics_mass','yaw_mass'])
         
-        self.add_subsystem('rna', RNA(nLC=1), promotes=['hub_cm'])
-        
         # Tower and substructure
         self.add_subsystem('tow',TowerSE(nLC=1,
                                          nPoints=Nsection_Tow+1,
@@ -109,7 +108,7 @@ class LandBasedTurbine(Group):
                            promotes=['water_density','water_viscosity','wave_beta',
                                      'significant_wave_height','significant_wave_period',
                                      'material_density','E','G','tower_section_height',
-                                     'tower_outer_diameter','tower_wall_thickness',
+                                     'tower_wall_thickness', 'tower_outer_diameter',
                                      'tower_outfitting_factor','tower_buckling_length',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_mass','tower_I_base','hub_height',
@@ -122,10 +121,10 @@ class LandBasedTurbine(Group):
         self.add_subsystem('tcons', TurbineConstraints(nFull=5*Nsection_Tow+1), promotes=['*'])
         
         # Turbine costs
-        self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=VerbosityCosts, topLevelFlag=False), promotes=['*'])
+        self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=self.options['VerbosityCosts'], topLevelFlag=False), promotes=['*'])
 
         # LCOE Calculation
-        self.add_subsystem('plantfinancese', PlantFinance(verbosity=VerbosityCosts), promotes=['machine_rating'])
+        self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']), promotes=['machine_rating','lcoe'])
         
     
         # Set up connections
@@ -134,38 +133,23 @@ class LandBasedTurbine(Group):
         self.connect('diameter',        'drive.rotor_diameter')     
         self.connect('rated_Q',         'drive.rotor_torque')
         self.connect('rated_Omega',     'drive.rotor_rpm')
-        self.connect('Mxyz_total',      'drive.rotor_bending_moment_x', src_indices=[0])
-        self.connect('Mxyz_total',      'drive.rotor_bending_moment_y', src_indices=[1])
-        self.connect('Mxyz_total',      'drive.rotor_bending_moment_z', src_indices=[2])
-        self.connect('Fxyz_total',      'drive.rotor_thrust', src_indices=[0])
-        self.connect('Fxyz_total',      'drive.rotor_force_y', src_indices=[1])
-        self.connect('Fxyz_total',      'drive.rotor_force_z', src_indices=[2])
+        self.connect('Fxyz_total',      'drive.Fxyz')
+        self.connect('Mxyz_total',      'drive.Mxyz')
+        self.connect('I_all_blades',        'drive.blades_I')
         self.connect('mass_one_blade',  'drive.blade_mass')
         self.connect('chord',           'drive.blade_root_diameter', src_indices=[0])
         self.connect('Rtip',            'drive.blade_length', src_indices=[0])
         self.connect('drivetrainEff',   'drive.drivetrain_efficiency', src_indices=[0])
         self.connect('tower_outer_diameter', 'drive.tower_top_diameter', src_indices=[-1])
-        
-        # Connections to RNA (CommonSE)
-        self.connect('mass_all_blades',     'rna.blades_mass')
-        self.connect('drive.hub_system_mass', 'rna.hub_mass')
-        self.connect('drive.nacelle_mass',  'rna.nac_mass')
-        self.connect('I_all_blades',        'rna.blades_I')
-        self.connect('drive.hub_system_I',  'rna.hub_I')
-        self.connect('drive.nacelle_I',     'rna.nac_I')
-        self.connect('drive.hub_system_cm', 'hub_cm')
-        self.connect('drive.nacelle_cm',    'rna.nac_cm')
-        self.connect('Fxyz_total',          'rna.loads.F')
-        self.connect('Mxyz_total',          'rna.loads.M')
 
         self.connect('material_density', 'tow.tower.rho')
 
         # Connections to TowerSE
-        self.connect('rna.loads.top_F',         'tow.pre.rna_F')
-        self.connect('rna.loads.top_M',         'tow.pre.rna_M')
-        self.connect('rna.rna_I_TT',            ['rna_I','tow.pre.mI'])
-        self.connect('rna.rna_cm',              ['rna_cg','tow.pre.mrho'])
-        self.connect('rna.rna_mass',            ['rna_mass','tow.pre.mass'])
+        self.connect('drive.top_F',         'tow.pre.rna_F')
+        self.connect('drive.top_M',         'tow.pre.rna_M')
+        self.connect('drive.rna_I_TT',            ['rna_I','tow.pre.mI'])
+        self.connect('drive.rna_cm',              ['rna_cg','tow.pre.mrho'])
+        self.connect('drive.rna_mass',            ['rna_mass','tow.pre.mass'])
         self.connect('rs.gust.V_gust',          'tow.wind.Uref')
         self.connect('wind_reference_height',   ['tow.wind.zref','wind.zref'])
         # self.connect('wind_bottom_height',      ['tow.wind.z0','tow.wave.z_surface', 'wind.z0'])  # offshore
@@ -198,9 +182,9 @@ class LandBasedTurbine(Group):
         self.connect('annual_opex',         'plantfinancese.opex_per_kW')
     
 
-def Init_LandBasedAssembly(prob, blade, Nsection_Tow):
+def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level, fst_vt):
 
-    prob = Init_RotorSE_wRefBlade(prob, blade)
+    prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level = Analysis_Level, fst_vt = fst_vt)
     
     
     # Environmental parameters for the tower
@@ -227,7 +211,8 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow):
     
     # Tower
     prob['foundation_height']              = 0.0 #-prob['water_depth']
-    prob['tower_outer_diameter']           = np.linspace(10.0, 3.87, Nsection_Tow+1)
+    # prob['tower_outer_diameter']           = np.linspace(10.0, 3.87, Nsection_Tow+1)
+    prob['tower_outer_diameter']           = np.linspace(6.0, 3.87, Nsection_Tow+1)
     prob['tower_section_height']           = (prob['hub_height'] - prob['foundation_height']) / Nsection_Tow * np.ones(Nsection_Tow)
     prob['tower_wall_thickness']           = np.linspace(0.027, 0.019, Nsection_Tow)
     prob['tower_buckling_length']          = 30.0
@@ -300,10 +285,17 @@ if __name__ == "__main__":
     blade = refBlade.initialize(fname_input)
     # Initialize tower design
     Nsection_Tow = 6
+
     
     # Initialize OpenMDAO problem and FloatingSE Group
-    prob = Problem()
-    prob.model=LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True)
+    if MPI:
+        num_par_fd = MPI.COMM_WORLD.Get_size()
+        prob = Problem(model=Group(num_par_fd=num_par_fd))
+        prob.model.approx_totals(method='fd')
+        prob.model.add_subsystem('comp', LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True), promotes=['*'])
+    else:
+        prob = Problem()
+        prob.model=LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True)
     
     if optFlag:
         # --- Solver ---
@@ -312,14 +304,14 @@ if __name__ == "__main__":
         prob.driver.options['tol']       = 1.e-6
         prob.driver.options['maxiter']   = 100
 
-        # prob.driver = pyOptSparseDriver()
-        # prob.driver.options['optimizer'] = 'CONMIN'
-        # prob.driver.options['optimizer'] = "SLSQP"
+        #prob.driver = pyOptSparseDriver()
+        #prob.driver.options['optimizer'] = 'CONMIN'
+        # prob.driver.options['optimizer'] = 'SNOPT'
         # prob.driver.options['gradient method'] = "pyopt_fd"
         # ----------------------
 
         # --- Objective ---
-        prob.model.add_objective('plantfinancese.lcoe', scaler=1e-6)
+        prob.model.add_objective('lcoe')
         # ----------------------
 
         # --- Design Variables ---
@@ -344,29 +336,40 @@ if __name__ == "__main__":
         prob.model.add_constraint('tow.post.shell_buckling',                   upper=1.0)
         prob.model.add_constraint('tow.weldability',                           upper=0.0)
         prob.model.add_constraint('tow.manufacturability',         lower=0.0)
-        prob.model.add_constraint('frequency1P_margin_low',              upper=1.0)
-        prob.model.add_constraint('frequency1P_margin_high', lower=1.0)
-        prob.model.add_constraint('frequencyNP_margin_low',              upper=1.0)
-        prob.model.add_constraint('frequencyNP_margin_high', lower=1.0)
+        # prob.model.add_constraint('frequency1P_margin_low',              upper=1.0)
+        # prob.model.add_constraint('frequency1P_margin_high', lower=1.0)
+        # prob.model.add_constraint('frequencyNP_margin_low',              upper=1.0)
+        # prob.model.add_constraint('frequencyNP_margin_high', lower=1.0)
+        prob.model.add_constraint('frequencyNP_margin', upper=0.)
+        prob.model.add_constraint('frequency1P_margin', upper=0.)
         prob.model.add_constraint('ground_clearance',        lower=20.0)
         # ----------------------
         
         # --- Recorder ---
-        prob.add_recorder(SqliteRecorder('log_opt.sql'))
-        prob.recording_options['includes'] = ['AEP','rc.total_blade_cost','plantfinancese.lcoe','tip_deflection_ratio']
-        prob.recording_options['record_objectives']  = True
-        prob.recording_options['record_constraints'] = True
-        prob.recording_options['record_desvars']     = True
+        prob.driver.add_recorder(SqliteRecorder('log_opt.sql'))
+        prob.driver.recording_options['includes'] = ['AEP','rc.total_blade_cost','lcoe','tip_deflection_ratio']
+        prob.driver.recording_options['record_objectives']  = True
+        prob.driver.recording_options['record_constraints'] = True
+        prob.driver.recording_options['record_desvars']     = True
         # ----------------------
 
 
     prob.setup(check=True)
     
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
-    
-    prob.model.approx_totals()
+    prob.model.nonlinear_solver = NonlinearRunOnce()
+    prob.model.linear_solver = DirectSolver()
+
+    if not MPI:
+        prob.model.approx_totals()
+
+    # prob.run_model()
+    # prob.model.list_inputs(units=True)
+    # prob.model.list_outputs(units=True)
+
 
     prob.run_driver()
+    # prob.check_partials(compact_print=True, method='fd', step=1e-6, form='central')
     
 
 

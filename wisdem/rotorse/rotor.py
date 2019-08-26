@@ -17,6 +17,8 @@ from wisdem.rotorse.rotor_geometry import RotorGeometry
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.rotorse.rotor_cost import RotorCost
 from wisdem.rotorse import RPM2RS, RS2RPM
+from wisdem.rotorse.rotor_fast import FASTLoadCases
+
 
 #from wisdem.rotorse.rotor_fast import FASTLoadCases
 
@@ -57,7 +59,6 @@ class RotorSE(Group):
         rc_show_warnings        = self.options['rc_show_warnings'] 
         rc_discrete             = self.options['rc_discrete']
         NPTS                    = len(RefBlade['pf']['s'])
-        
 
         rotorIndeps = IndepVarComp()
         rotorIndeps.add_discrete_output('tiploss',      True)
@@ -100,14 +101,8 @@ class RotorSE(Group):
                                      'z','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','Tw_iner','flap_iner','edge_iner',
                                      'eps_crit_spar','eps_crit_te','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar',
                                      'xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te',
-                                     #'max_chord','rthick','le_location','hub_diameter','diameter',
-                                     #'hubFraction','r_max_chord',
-                                     #'chord_in','theta_in',
-                                     #'precurve_in','presweep_in',
-                                     'precurveTip','presweepTip',
-                                     'precone',
+                                     'precurveTip','presweepTip','precone',
                                      'tilt','yaw','nBlades','downwind',
-                                     #'sparT_in','teT_in','airfoil_position','turbine_class',
                                      'control_tsr','control_pitch','lifetime','hub_height',
                                      'mass_one_blade','mass_all_blades','I_all_blades',
                                      'freq_pbeam','freq_curvefem','modes_coef_curvefem','tip_deflection', 
@@ -129,7 +124,7 @@ class RotorSE(Group):
         # Connections between rotor_aero and rotor_structure
         self.connect('V_mean','wind.Uref')
         self.connect('wind_zvec', 'wind.z')
-        self.connect('rated_V', ['rs.gust.V_hub', 'rs.setuppc.Vrated'])
+        self.connect('rated_V', ['rs.V_hub', 'rs.setuppc.Vrated'])
         self.connect('rated_Omega', ['rs.Omega', 'rs.aero_rated.Omega_load',
                                      'rs.aero_rated_0.Omega_load',
                                      'rs.aero_rated_120.Omega_load','rs.aero_rated_240.Omega_load'])
@@ -137,7 +132,44 @@ class RotorSE(Group):
         self.connect('V_extreme50',    'rs.aero_extrm.V_load')
         self.connect('V_extreme_full', 'rs.aero_extrm_forces.Uhub')
         self.connect('theta', 'rs.tip.theta', src_indices=[NPTS-1])
+        
+        # Connections to AeroelasticSE
+        if Analysis_Level>=1:
+            self.add_subsystem('aeroelastic', FASTLoadCases(RefBlade=RefBlade,
+                                                    npts_coarse_power_curve=npts_coarse_power_curve, 
+                                                    npts_spline_power_curve=npts_spline_power_curve,
+                                                    FASTpref=FASTpref), 
+                                                    promotes=['fst_vt_in', 'fst_vt_out', 'FASTpref_updated',
+                                                    'r', 'le_location', 'chord', 'theta', 'precurve','shearExp',
+                                                    'presweep', 'Rhub', 'Rtip', 'turbulence_class', 'turbine_class',
+                                                    'V_R25', 'rho', 'mu', 'control_maxTS', 'control_maxOmega','hub_height',
+                                                    'airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','airfoils_Re'])
 
+            self.connect('rhoA',                'aeroelastic.beam:rhoA')
+            self.connect('EIxx',                'aeroelastic.beam:EIxx')
+            self.connect('EIyy',                'aeroelastic.beam:EIyy')
+            self.connect('Tw_iner',             'aeroelastic.beam:Tw_iner')
+            self.connect('modes_coef_curvefem', 'aeroelastic.modes_coef_curvefem')
+            self.connect('rs.z_az',             'aeroelastic.z_az')
+            self.connect('V',                   'aeroelastic.U_init')
+            self.connect('Omega',               'aeroelastic.Omega_init')
+            self.connect('pitch',               'aeroelastic.pitch_init')
+            self.connect('rated_V',             'aeroelastic.Vrated')
+            self.connect('rs.gust.V_gust',      'aeroelastic.Vgust')
+            self.connect('V_mean',              'aeroelastic.V_mean_iec')
+            self.connect('machine_rating',      'aeroelastic.control_ratedPower')
+            if Analysis_Level>1:
+                self.connect('aeroelastic.dx_defl',             'rs.tip.dx')
+                self.connect('aeroelastic.dy_defl',             'rs.tip.dy')
+                self.connect('aeroelastic.dz_defl',             'rs.tip.dz')
+                self.connect('aeroelastic.loads_Px',            'rs.loads_strain.aeroloads_Px')
+                self.connect('aeroelastic.loads_Py',            'rs.loads_strain.aeroloads_Py')
+                self.connect('aeroelastic.loads_Pz',            'rs.loads_strain.aeroloads_Pz')
+                self.connect('aeroelastic.loads_Omega',         'rs.loads_strain.aeroloads_Omega')
+                self.connect('aeroelastic.loads_azimuth',       'rs.loads_strain.aeroloads_azimuth')
+                self.connect('aeroelastic.loads_pitch',         'rs.loads_strain.aeroloads_pitch')
+                self.connect('aeroelastic.root_bending_moment', 'rs.root_bending_moment_in')
+                self.connect('aeroelastic.Mxyz',                'rs.Mxyz_in')
 
 
 def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
@@ -338,6 +370,7 @@ if __name__ == '__main__':
     # === run and outputs ===
     tt = time.time()
     rotor.run_driver()
+    #rotor.check_partials(compact_print=True, step=1e-6, form='central')
 
     # refBlade.write_ontology(fname_output, rotor['blade_out'], refBlade.wt_ref)
 

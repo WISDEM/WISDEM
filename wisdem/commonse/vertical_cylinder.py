@@ -10,6 +10,7 @@ from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
 from wisdem.commonse.utilities import assembleI, unassembleI, sectionalInterp, nodal2sectional
 import wisdem.pyframe3dd.frame3dd as frame3dd
 
+RIGID = 1e30
 
 # -----------------
 #  Components
@@ -199,7 +200,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('d', np.zeros(npts), units='m', desc='effective cylinder diameter for section')
         self.add_input('t', np.zeros(npts-1), units='m', desc='effective shell thickness for section')
 
-        # spring reaction data.  Use float('inf') for rigid constraints.
+        # spring reaction data.  Use global RIGID for rigid constraints.
         self.add_input('kidx', np.zeros(nK), desc='indices of z where external stiffness reactions should be applied.')
         self.add_input('kx', np.zeros(nK), units='m', desc='spring stiffness in x-direction')
         self.add_input('ky', np.zeros(nK), units='m', desc='spring stiffness in y-direction')
@@ -287,7 +288,7 @@ class CylinderFrame3DD(ExplicitComponent):
 
         # rigid base
         node = inputs['kidx'] + np.ones(len(inputs['kidx']))   # add one because 0-based index but 1-based node numbering
-        rigid = float('inf')
+        rigid = RIGID
 
         reactions = frame3dd.ReactionData(node, inputs['kx'], inputs['ky'], inputs['kz'], inputs['ktx'], inputs['kty'], inputs['ktz'], rigid)
         # -----------------------------------

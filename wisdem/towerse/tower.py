@@ -234,12 +234,18 @@ class TowerPreFrame(ExplicitComponent):
             outputs['kty']  = np.array([ kmono[3] ]).flatten()
             outputs['ktz']  = np.array([ kmono[5] ]).flatten()
         else:
-            outputs['kx']   = np.array([ np.inf ])
-            outputs['ky']   = np.array([ np.inf ])
-            outputs['kz']   = np.array([ np.inf ])
-            outputs['ktx']  = np.array([ np.inf ])
-            outputs['kty']  = np.array([ np.inf ])
-            outputs['ktz']  = np.array([ np.inf ])
+            # outputs['kx']   = np.array([ np.inf ])
+            # outputs['ky']   = np.array([ np.inf ])
+            # outputs['kz']   = np.array([ np.inf ])
+            # outputs['ktx']  = np.array([ np.inf ])
+            # outputs['kty']  = np.array([ np.inf ])
+            # outputs['ktz']  = np.array([ np.inf ])
+            outputs['kx']   = np.array([ 1.e16 ])
+            outputs['ky']   = np.array([ 1.e16 ])
+            outputs['kz']   = np.array([ 1.e16 ])
+            outputs['ktx']  = np.array([ 1.e16 ])
+            outputs['kty']  = np.array([ 1.e16 ])
+            outputs['ktz']  = np.array([ 1.e16 ])
             
         # Prepare RNA for "extra node mass"
         outputs['midx']  = np.array([ len(inputs['z'])-1 ], dtype=np.int_)
@@ -327,7 +333,7 @@ class TowerPostFrame(ExplicitComponent):
         self.add_input('f2', 0.0, units='Hz', desc='Second natural frequency')
         
         # outputs
-        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First and second natural frequency')
+        self.add_output('structural_frequencies', np.zeros(2), units='Hz', desc='First and second natural frequency')
         self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
         self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
         self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
@@ -352,7 +358,7 @@ class TowerPostFrame(ExplicitComponent):
         z_section,_  = nodal2sectional(inputs['z'])
 
         # Frequencies
-        outputs['structural_frequencies'] = np.zeros(NFREQ)
+        outputs['structural_frequencies'] = np.zeros(2)
         outputs['structural_frequencies'][0] = inputs['f1']
         outputs['structural_frequencies'][1] = inputs['f2']
         
@@ -399,8 +405,8 @@ class TowerLeanSE(Group):
         
         # Independent variables that are unique to TowerSE
         towerIndeps = IndepVarComp()
-        towerIndeps.add_output('tower_section_height', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_outer_diameter', np.zeros(nPoints), units='m')
+        towerIndeps.add_output('tower_section_height', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_wall_thickness', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_buckling_length', 0.0, units='m')
         towerIndeps.add_output('tower_outfitting_factor', 0.0)
@@ -494,7 +500,7 @@ class TowerSE(Group):
             sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
             sharedIndeps.add_output('wind_z0', 0.0, units='m')
             sharedIndeps.add_output('wind_beta', 0.0, units='deg')
-            sharedIndeps.add_output('cd_usr', np.nan)
+            sharedIndeps.add_output('cd_usr', -1.)
             sharedIndeps.add_output('yaw', 0.0, units='deg')
             sharedIndeps.add_output('E', 0.0, units='N/m**2')
             sharedIndeps.add_output('G', 0.0, units='N/m**2')
@@ -713,7 +719,7 @@ if __name__ == '__main__':
     wind_zref = 90.0
     wind_z0 = 0.0
     shearExp = 0.2
-    cd_usr = np.inf
+    cd_usr = -1.
     # ---------------
 
     # --- wave ---
