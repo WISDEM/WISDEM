@@ -7,12 +7,12 @@ import os, copy, warnings, shutil
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem
 from wisdem.commonse.mpi_tools import MPI
 
-from AeroelasticSE.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
-from AeroelasticSE.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
-from AeroelasticSE.FAST_wrapper import FastWrapper
-from AeroelasticSE.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
-from AeroelasticSE.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
-from AeroelasticSE.FAST_post import return_timeseries
+from wisdem.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
+from wisdem.aeroelasticse.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
+from wisdem.aeroelasticse.FAST_wrapper import FastWrapper
+from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
+from wisdem.aeroelasticse.FAST_post import return_timeseries
 
 
 if MPI:
