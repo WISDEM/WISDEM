@@ -54,7 +54,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 2.  Install Anaconda package dependencies
 
-        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex pydoe2
+        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex pydoe2 jsonschema ruamel_yaml
 
     if sphinxcontrib-bibtex does not install correctly, it is not critical and you can press on.
     
@@ -76,7 +76,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM&reg;
 
-        pip install OpenMDAO simpy jsonschema ruamel.yaml
+        pip install OpenMDAO simpy 
 
 4.  Now navigate to a directory for WISDEM&reg; and all of its files.  This directory may be placed anywhere in the user's filesystem.
 
