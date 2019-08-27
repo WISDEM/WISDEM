@@ -95,9 +95,9 @@ class LandBasedTurbine(Group):
         self.add_subsystem('drive', DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False),
-                           promotes=['machine_rating',
+                           promotes=['machine_rating', 'overhang',
                                      'hub_mass','bedplate_mass','gearbox_mass','generator_mass','hss_mass','hvac_mass','lss_mass','cover_mass',
-                                     'pitch_system_mass','platforms_mass','spinner_mass','transformer_mass','vs_electronics_mass','yaw_mass'])
+                                     'pitch_system_mass','platforms_mass','spinner_mass','transformer_mass','vs_electronics_mass','yaw_mass','hub_cm'])
         
         # Tower and substructure
         self.add_subsystem('tow',TowerSE(nLC=1,
@@ -254,7 +254,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level, fst_vt):
     prob['drive.shrink_disc_mass']  = 333.3 * prob['machine_rating'] / 1e6  # estimated
     prob['drive.carrier_mass']      = 8000.0  # estimated
     prob['drive.flange_length']     = 0.5
-    prob['drive.overhang']          = 5.0
+    prob['overhang']                = 5.0
     prob['drive.distance_hub2mb']   = 1.912  # length from hub center to main bearing, leave zero if unknown
     prob['drive.gearbox_input_xcm'] = 0.1
     prob['drive.hss_input_length']  = 1.5
