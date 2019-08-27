@@ -864,7 +864,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write('! ------------------------------------------------------------------------------\n')
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
             f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
-            f.write('{:<22}   {:<11} {:}'.format(0, 'NumCoords', '! The number of coordinates in the airfoil shape file.  Set to zero if coordinates not included.\n'))
+            f.write('@"AF{:02d}_Coords.txt"   {:<11} {:}'.format(afi, 'NumCoords', '! The number of coordinates in the airfoil shape file.  Set to zero if coordinates not included.\n'))
             f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['NumTabs'], 'NumTabs', '! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
             f.write('! ------------------------------------------------------------------------------\n')
             f.write('! data for table 1\n')
@@ -931,7 +931,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
                 f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
             
             f.close()
-    
+            
     def write_AeroDyn15Coord(self):
 
         self.fst_vt['AeroDyn15']['AFNames_coord'] = ['']*self.fst_vt['AeroDyn15']['NumAFfiles']
@@ -942,11 +942,11 @@ class InputWriter_OpenFAST(InputWriter_Common):
             y     = self.fst_vt['AeroDyn15']['af_coord'][afi]['y']
             coord = np.vstack((x, y)).T
 
-            self.fst_vt['AeroDyn15']['AFNames_coord'][afi] = os.path.join('Airfoils', self.FAST_namingOut + '_AeroDyn15_coords_%02d.txt'%afi)
+            self.fst_vt['AeroDyn15']['AFNames_coord'][afi] = os.path.join('Airfoils/AF%02d_Coords.txt'%afi)
             af_file = os.path.join(self.FAST_runDirectory, self.fst_vt['AeroDyn15']['AFNames_coord'][afi])
             f = open(af_file, 'w')
             
-            f.write('{: 22d}   {:<11} {:}'.format(len(x), 'NumCoords', '! The number of coordinates in the airfoil shape file (including an extra coordinate for airfoil reference).  Set to zero if coordinates not included.\n'))
+            f.write('{: 22d}   {:<11} {:}'.format(len(x)+1, 'NumCoords', '! The number of coordinates in the airfoil shape file (including an extra coordinate for airfoil reference).  Set to zero if coordinates not included.\n'))
             f.write('! ......... x-y coordinates are next if NumCoords > 0 .............\n')
             f.write('! x-y coordinate of airfoil reference\n')
             f.write('!  x/c        y/c\n')
