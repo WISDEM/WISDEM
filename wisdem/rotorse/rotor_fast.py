@@ -213,51 +213,56 @@ class FASTLoadCases(ExplicitComponent):
 
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
-        self.add_input('r', val=np.zeros(NPTS), units='m', desc='radial positions. r[0] should be the hub location \
+        self.add_input('r',                     val=np.zeros(NPTS), units='m', desc='radial positions. r[0] should be the hub location \
             while r[-1] should be the blade tip. Any number \
             of locations can be specified between these in ascending order.')
-        self.add_input('le_location', val=np.zeros(NPTS), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
-        self.add_input('beam:Tw_iner', val=np.zeros(NPTS), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
-        self.add_input('beam:rhoA', val=np.zeros(NPTS), units='kg/m', desc='mass per unit length')
-        self.add_input('beam:EIyy', val=np.zeros(NPTS), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-        self.add_input('beam:EIxx', val=np.zeros(NPTS), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('modes_coef_curvefem', val=np.zeros((3, 5)), desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
+        self.add_input('le_location',           val=np.zeros(NPTS), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
+        self.add_input('beam:Tw_iner',          val=np.zeros(NPTS), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_input('beam:rhoA',             val=np.zeros(NPTS), units='kg/m', desc='mass per unit length')
+        self.add_input('beam:EIyy',             val=np.zeros(NPTS), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+        self.add_input('beam:EIxx',             val=np.zeros(NPTS), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+        self.add_input('modes_coef_curvefem',   val=np.zeros((3, 5)), desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
 
         # AeroDyn Inputs
-        self.add_input('z_az', val=np.zeros(NPTS), units='m', desc='dimensional aerodynamic grid')
-        self.add_input('chord', val=np.zeros(NPTS), units='m', desc='chord at airfoil locations')
-        self.add_input('theta', val=np.zeros(NPTS), units='deg', desc='twist at airfoil locations')
-        self.add_input('precurve', val=np.zeros(NPTS), units='m', desc='precurve at airfoil locations')
-        self.add_input('presweep', val=np.zeros(NPTS), units='m', desc='presweep at structural locations')
-        self.add_input('Rhub', val=0.0, units='m', desc='dimensional radius of hub')
-        self.add_input('Rtip', val=0.0, units='m', desc='dimensional radius of tip')
-        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='moment coefficients, spanwise')
-        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
-        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
-
+        self.add_input('z_az',              val=np.zeros(NPTS), units='m', desc='dimensional aerodynamic grid')
+        self.add_input('chord',             val=np.zeros(NPTS), units='m', desc='chord at airfoil locations')
+        self.add_input('theta',             val=np.zeros(NPTS), units='deg', desc='twist at airfoil locations')
+        self.add_input('precurve',          val=np.zeros(NPTS), units='m', desc='precurve at airfoil locations')
+        self.add_input('presweep',          val=np.zeros(NPTS), units='m', desc='presweep at structural locations')
+        self.add_input('rthick',            val=np.zeros(NPTS), desc='relative thickness of airfoil distribution')
+        self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
+        self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
+        self.add_input('airfoils_cl',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa',      val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re',       val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
+        
+        # Airfoil coordinates
+        self.add_input('airfoils_coord_x',  val=np.zeros((200, NPTS)), desc='x airfoil coordinate, spanwise')
+        self.add_input('airfoils_coord_y',  val=np.zeros((200, NPTS)), desc='y airfoil coordinate, spanwise')
+        
         # Turbine level inputs
-        self.add_input('hub_height', val=0.0, units='m', desc='hub height')
+        self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
-        self.add_discrete_input('turbine_class', val='I', desc='IEC turbulence class')
-        self.add_input('control_ratedPower', val=0.,  units='W',    desc='machine power rating')
-        self.add_input('control_maxOmega',   val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
-        self.add_input('control_maxTS',      val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
+        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
+        self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
+        self.add_input('control_maxOmega',          val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
+        self.add_input('control_maxTS',             val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
 
         # Initial conditions
-        self.add_input('U_init', val=np.zeros(npts_coarse_power_curve), units='m/s', desc='wind speeds')
-        self.add_input('Omega_init', val=np.zeros(npts_coarse_power_curve), units='rpm', desc='rotation speeds to run')
-        self.add_input('pitch_init', val=np.zeros(npts_coarse_power_curve), units='deg', desc='pitch angles to run')
-        self.add_input('V_out', val=np.zeros(npts_spline_power_curve), units='m/s', desc='wind speeds to output powercurve')
-        self.add_input('V',        val=np.zeros(npts_coarse_power_curve), units='m/s',  desc='wind vector')
+        self.add_input('U_init',        val=np.zeros(npts_coarse_power_curve), units='m/s', desc='wind speeds')
+        self.add_input('Omega_init',    val=np.zeros(npts_coarse_power_curve), units='rpm', desc='rotation speeds to run')
+        self.add_input('pitch_init',    val=np.zeros(npts_coarse_power_curve), units='deg', desc='pitch angles to run')
+        self.add_input('V_out',         val=np.zeros(npts_spline_power_curve), units='m/s', desc='wind speeds to output powercurve')
+        self.add_input('V',             val=np.zeros(npts_coarse_power_curve), units='m/s',  desc='wind vector')
 
 
         # Environmental conditions 
-        self.add_input('Vrated', val=11.0, units='m/s', desc='rated wind speed')
-        self.add_input('V_R25', val=0.0, units='m/s', desc='region 2.5 transition wind speed')
-        self.add_input('Vgust', val=11.0, units='m/s', desc='gust wind speed')
-        self.add_input('Vextreme', val=11.0, units='m/s', desc='IEC extreme wind speed at hub height')
+        self.add_input('Vrated',    val=11.0, units='m/s', desc='rated wind speed')
+        self.add_input('V_R25',     val=0.0, units='m/s', desc='region 2.5 transition wind speed')
+        self.add_input('Vgust',     val=11.0, units='m/s', desc='gust wind speed')
+        self.add_input('Vextreme',  val=11.0, units='m/s', desc='IEC extreme wind speed at hub height')
         self.add_input('V_mean_iec', val=11.0, units='m/s', desc='IEC mean wind for turbulence class')
         self.add_input('rho',       val=0.0,        units='kg/m**3',    desc='density of air')
         self.add_input('mu',        val=0.0,        units='kg/(m*s)',   desc='dynamic viscosity of air')
@@ -309,26 +314,26 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('dz_defl', val=0., desc='deflection of blade section in airfoil z-direction under max deflection loading')
     
         self.add_output('root_bending_moment', val=0.0, units='N*m', desc='total magnitude of bending moment at root of blade 1')
-        self.add_output('Mxyz', val=np.array([0.0, 0.0, 0.0]), units='N*m', desc='individual moments [x,y,z] at the blade root in blade c.s.')
+        self.add_output('Mxyz',         val=np.array([0.0, 0.0, 0.0]), units='N*m', desc='individual moments [x,y,z] at the blade root in blade c.s.')
         
-        self.add_output('loads_r', val=np.zeros(NPTS), units='m', desc='radial positions along blade going toward tip')
-        self.add_output('loads_Px', val=np.zeros(NPTS), units='N/m', desc='distributed loads in blade-aligned x-direction')
-        self.add_output('loads_Py', val=np.zeros(NPTS), units='N/m', desc='distributed loads in blade-aligned y-direction')
-        self.add_output('loads_Pz', val=np.zeros(NPTS), units='N/m', desc='distributed loads in blade-aligned z-direction')
-        self.add_output('loads_Omega', val=0.0, units='rpm', desc='rotor rotation speed')
-        self.add_output('loads_pitch', val=0.0, units='deg', desc='pitch angle')
+        self.add_output('loads_r',      val=np.zeros(NPTS), units='m', desc='radial positions along blade going toward tip')
+        self.add_output('loads_Px',     val=np.zeros(NPTS), units='N/m', desc='distributed loads in blade-aligned x-direction')
+        self.add_output('loads_Py',     val=np.zeros(NPTS), units='N/m', desc='distributed loads in blade-aligned y-direction')
+        self.add_output('loads_Pz',     val=np.zeros(NPTS), units='N/m', desc='distributed loads in blade-aligned z-direction')
+        self.add_output('loads_Omega',  val=0.0, units='rpm', desc='rotor rotation speed')
+        self.add_output('loads_pitch',  val=0.0, units='deg', desc='pitch angle')
         self.add_output('loads_azimuth', val=0.0, units='deg', desc='azimuthal angle')
         self.add_discrete_output('model_updated', val=False, desc='boolean, Analysis Level 0: fast model written, but not run')
         self.add_discrete_output('FASTpref_updated', val={}, desc='updated fast preference dictionary')
 
-        self.add_output('P_out', val=np.zeros(npts_spline_power_curve), units='W', desc='electrical power from rotor')
-        self.add_output('P',        val=np.zeros(npts_coarse_power_curve), units='W',    desc='rotor electrical power')
-        self.add_output('Cp',       val=np.zeros(npts_coarse_power_curve),               desc='rotor electrical power coefficient')
-        self.add_output('rated_V',     val=0.0, units='m/s', desc='rated wind speed')
-        self.add_output('rated_Omega', val=0.0, units='rpm', desc='rotor rotation speed at rated')
-        self.add_output('rated_pitch', val=0.0, units='deg', desc='pitch setting at rated')
-        self.add_output('rated_T',     val=0.0, units='N', desc='rotor aerodynamic thrust at rated')
-        self.add_output('rated_Q',     val=0.0, units='N*m', desc='rotor aerodynamic torque at rated')
+        self.add_output('P_out',        val=np.zeros(npts_spline_power_curve), units='W', desc='electrical power from rotor')
+        self.add_output('P',            val=np.zeros(npts_coarse_power_curve), units='W',    desc='rotor electrical power')
+        self.add_output('Cp',           val=np.zeros(npts_coarse_power_curve),               desc='rotor electrical power coefficient')
+        self.add_output('rated_V',      val=0.0, units='m/s', desc='rated wind speed')
+        self.add_output('rated_Omega',  val=0.0, units='rpm', desc='rotor rotation speed at rated')
+        self.add_output('rated_pitch',  val=0.0, units='deg', desc='pitch setting at rated')
+        self.add_output('rated_T',      val=0.0, units='N', desc='rotor aerodynamic thrust at rated')
+        self.add_output('rated_Q',      val=0.0, units='N*m', desc='rotor aerodynamic torque at rated')
 
         self.add_discrete_output('fst_vt_out', val={})
 
@@ -468,7 +473,16 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn15']['af_data'][i]['Cd']        = np.array(unsteady['Cd'])
             fst_vt['AeroDyn15']['af_data'][i]['Cm']        = np.array(unsteady['Cm'])
             fst_vt['AeroDyn15']['af_data'][i]['Cpmin']     = np.zeros_like(unsteady['Cm'])
-
+        
+        
+        fst_vt['AeroDyn15']['af_coord'] = []
+        fst_vt['AeroDyn15']['rthick']   = np.zeros(len(r))
+        for i in range(len(r)):
+            fst_vt['AeroDyn15']['af_coord'].append({})
+            fst_vt['AeroDyn15']['af_coord'][i]['x']  = inputs['airfoils_coord_x'][:,i]
+            fst_vt['AeroDyn15']['af_coord'][i]['y']  = inputs['airfoils_coord_y'][:,i]
+            fst_vt['AeroDyn15']['rthick'][i]         = inputs['rthick'][i]
+                
         # AeroDyn spanwise output positions
         r = r/r[-1]
         r_out_target = [0.0, 0.1, 0.20, 0.40, 0.6, 0.75, 0.85, 0.925, 1.0]
