@@ -16,8 +16,9 @@ See local documentation in the `docs`-directory or access the online version at 
 
 WISDEM&reg; is a family of modules.  The core modules are:
 
+* _AeroelasticSE_ provides multi-fidelity capability for rotor analysis by calling [OpenFAST]<https://github.com/OpenFAST/openfast>
 * _CommonSE_ includes several libraries shared among modules
-* _DriveSE_ sizes the drive-train system
+* _DrivetrainSE_ sizes the drivetrain and generator systems (formerly DriveSE and GeneratorSE)
 * _FloatingSE_ works with the floating platforms
 * _GeneratorSE_ is a tool for generator design
 * _OffshoreBOS_ sizes the balance of systems for offshore plants
