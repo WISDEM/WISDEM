@@ -130,8 +130,9 @@ class ReferenceBlade(object):
         self.NPTS            = 50
         self.NPTS_AfProfile  = 200
         self.NPTS_AfPolar    = 100
+        
         self.r_in            = []          # User definied input grid (must be from 0-1)
-
+        
         # 
         self.analysis_level  = 0           # 0: Precomp, 1: Precomp + write FAST model, 2: FAST/Elastodyn, 3: FAST/Beamdyn)
         self.verbose         = False
@@ -1069,9 +1070,6 @@ class ReferenceBlade(object):
         if 'ctrl_pts' not in blade.keys():
             blade['ctrl_pts'] = {}
 
-        if 'Fix_r_in' not in blade['ctrl_pts'].keys():
-            blade['ctrl_pts']['Fix_r_in'] = False
-
         # solve for max chord radius
         if r_max_chord == 0.:
             r_max_chord = blade['pf']['s'][np.argmax(blade['pf']['chord'])]
@@ -1088,10 +1086,15 @@ class ReferenceBlade(object):
 
         # Build Control Point Grid, if not provided with key word arg
         if len(r_in)==0:
-            # control point grid
-            # r_in = np.array(sorted(np.r_[[0.], [r_cylinder], np.linspace(r_max_chord, 1., self.NINPUT-2)]))
-            r_in = np.concatenate([[0.], np.linspace(r_cylinder, r_max_chord, num=3)[:-1], np.linspace(r_max_chord, 1., self.NINPUT-3)])
-
+            # Set control point grid, which is to be updated when chord changes
+            r_in = np.hstack([0., r_cylinder, np.linspace(r_max_chord, 1., self.NINPUT-2)])
+            blade['ctrl_pts']['update_r_in'] = True
+        else:
+            # Control point grid is passed from the outside as r_in, no need to update it when chord changes
+            blade['ctrl_pts']['update_r_in'] = False
+        
+        blade['ctrl_pts']['r_in']         = r_in
+                
         # Fit control points to planform variables
         blade['ctrl_pts']['theta_in']     = remap2grid(blade['pf']['s'], blade['pf']['theta'], r_in)
         blade['ctrl_pts']['chord_in']     = remap2grid(blade['pf']['s'], blade['pf']['chord'], r_in)
@@ -1112,7 +1115,6 @@ class ReferenceBlade(object):
         blade['ctrl_pts']['teT_in']       = remap2grid(grid_te, vals_te, r_in)
 
         # Store additional rotorse variables
-        blade['ctrl_pts']['r_in']         = r_in
         blade['ctrl_pts']['r_cylinder']   = r_cylinder
         blade['ctrl_pts']['r_max_chord']  = r_max_chord
         # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
@@ -1126,10 +1128,13 @@ class ReferenceBlade(object):
     def update_planform(self, blade):
 
         af_ref = blade['AFref']
-
-        if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord'] and not blade['ctrl_pts']['Fix_r_in']:
-            # blade['ctrl_pts']['r_in'] = np.r_[[0.], [blade['ctrl_pts']['r_cylinder']], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)]
-            blade['ctrl_pts']['r_in'] = np.concatenate([[0.], np.linspace(blade['ctrl_pts']['r_cylinder'], blade['ctrl_pts']['r_max_chord'], num=3)[:-1], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-3)])
+        
+        if blade['ctrl_pts']['update_r_in']:
+            blade['ctrl_pts']['r_in'] = np.hstack([0., blade['ctrl_pts']['r_cylinder'], np.linspace(blade['ctrl_pts']['r_max_chord'][0], 1., self.NINPUT-2)])
+        
+        # if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord'] and not blade['ctrl_pts']['Fix_r_in']:
+            # # blade['ctrl_pts']['r_in'] = np.r_[[0.], [blade['ctrl_pts']['r_cylinder']], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)]
+            # blade['ctrl_pts']['r_in'] = np.concatenate([[0.], np.linspace(blade['ctrl_pts']['r_cylinder'], blade['ctrl_pts']['r_max_chord'], num=3)[:-1], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-3)])
 
         self.s                  = blade['pf']['s'] # TODO: assumes the start and end points of composite sections does not change
         blade['pf']['chord']    = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['chord_in'], self.s)
@@ -1783,8 +1788,9 @@ if __name__ == "__main__":
     refBlade.verbose  = True
     refBlade.spar_var = ['Spar_cap_ss', 'Spar_cap_ps']
     refBlade.te_var   = 'TE_reinforcement'
-    refBlade.NINPUT       = 8
-    refBlade.NPITS        = 40
+    refBlade.NINPUT   = 8
+    refBlade.NPTS     = 40
+    # refBlade.r_in     = np.linspace(0.,1.,refBlade.NINPUT)
     refBlade.validate = False
     refBlade.fname_schema = "turbine_inputs/IEAontology_schema.yaml"
 

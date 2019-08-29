@@ -132,13 +132,9 @@ class BladeGeometry(ExplicitComponent):
 
         outputs['Rhub']     = Rhub
         outputs['Rtip']     = Rtip
-
-        r_in = []
-        if 'Fix_r_in' in self.refBlade['ctrl_pts']:
-            if self.refBlade['ctrl_pts']['Fix_r_in']:
-                r_in = self.refBlade['ctrl_pts']['r_in']
-        if r_in == []:
-            r_in = np.array(sorted(set(np.r_[0., np.linspace(blade['ctrl_pts']['r_cylinder'], inputs['r_max_chord'], num=3).flatten(), np.linspace(inputs['r_max_chord'], 1., num=(NINPUT-3)).flatten()])))
+        
+        r_in = blade['ctrl_pts']['r_in']
+        
         outputs['r_in'] = Rhub + (Rtip-Rhub)*np.array(r_in)
 
         blade['ctrl_pts']['bladeLength']  = inputs['bladeLength']

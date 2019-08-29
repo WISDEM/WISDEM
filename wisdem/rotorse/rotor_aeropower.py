@@ -367,8 +367,8 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
         self.options.declare('naero')
-        self.options.declare('n_pitch', default=4)
-        self.options.declare('n_tsr', default=4)
+        self.options.declare('n_pitch', default=2)
+        self.options.declare('n_tsr', default=2)
         self.options.declare('n_U', default=1)
         self.options.declare('n_aoa_grid')
         self.options.declare('n_Re_grid')
