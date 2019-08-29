@@ -50,7 +50,9 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda config --add channels conda-forge
         conda create -y --name wisdem-env python=3.7
         conda activate wisdem-env
-
+    
+    Note that older versions of anaconda on MacOS and Linux may require:
+        source activate wisdem-env
 
 2.  Install Anaconda package dependencies
 
