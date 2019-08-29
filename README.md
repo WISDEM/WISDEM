@@ -52,6 +52,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda activate wisdem-env
     
     Note that older versions of anaconda on MacOS and Linux may require:
+        
         source activate wisdem-env
 
 2.  Install Anaconda package dependencies
