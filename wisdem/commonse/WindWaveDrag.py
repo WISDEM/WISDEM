@@ -159,7 +159,7 @@ class CylinderWindDrag(ExplicitComponent):
         self.add_input('rho', 0.0, units='kg/m**3', desc='air density')
         self.add_input('mu', 0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         #TODO not sure what to do here?
-        self.add_input('cd_usr', np.inf, desc='User input drag coefficient to override Reynolds number based one')
+        self.add_input('cd_usr', -1., desc='User input drag coefficient to override Reynolds number based one')
 
         # out
         self.add_output('windLoads_Px', np.zeros(nPoints), units='N/m', desc='distributed loads, force per unit length in x-direction')
@@ -189,7 +189,7 @@ class CylinderWindDrag(ExplicitComponent):
         q = 0.5*rho*U**2
 
         # Reynolds number and drag
-        if float(inputs['cd_usr']) in [np.inf, -np.inf, None, np.nan]:
+        if float(inputs['cd_usr']) < 0.:
             Re = rho*U*d/mu
             cd, dcd_dRe = cylinderDrag(Re)
         else:
@@ -225,13 +225,13 @@ class CylinderWindDrag(ExplicitComponent):
         q = 0.5*rho*U**2
 
         # Reynolds number and drag
-        if inputs['cd_usr'] in [np.inf, -np.inf, None, np.nan]:
+        if float(inputs['cd_usr']) < 0.:
+            Re = rho*U*d/mu
+            cd, dcd_dRe = cylinderDrag(Re)
+        else:
             cd = inputs['cd_usr']
             Re = 1.0
             dcd_dRe = 0.0
-        else:
-            Re = rho*U*d/mu
-            cd, dcd_dRe = cylinderDrag(Re)
 
         # derivatives
         dq_dU = rho*U
@@ -246,27 +246,26 @@ class CylinderWindDrag(ExplicitComponent):
         n = len(inputs['z'])
 
         zeron = np.zeros((n, n))
-
         
-        J['windLoads.Px', 'U'] = np.diag(dPx_dU)
-        J['windLoads.Px', 'z'] = zeron
-        J['windLoads.Px', 'd'] = np.diag(dPx_dd)
+        J['windLoads_Px', 'U'] = np.diag(dPx_dU)
+        J['windLoads_Px', 'z'] = zeron
+        J['windLoads_Px', 'd'] = np.diag(dPx_dd)
 
-        J['windLoads.Py', 'U'] = np.diag(dPy_dU)
-        J['windLoads.Py', 'z'] = zeron
-        J['windLoads.Py', 'd'] = np.diag(dPy_dd)
+        J['windLoads_Py', 'U'] = np.diag(dPy_dU)
+        J['windLoads_Py', 'z'] = zeron
+        J['windLoads_Py', 'd'] = np.diag(dPy_dd)
 
-        J['windLoads.Pz', 'U'] = zeron
-        J['windLoads.Pz', 'z'] = zeron
-        J['windLoads.Pz', 'd'] = zeron
+        J['windLoads_Pz', 'U'] = zeron
+        J['windLoads_Pz', 'z'] = zeron
+        J['windLoads_Pz', 'd'] = zeron
 
-        J['windLoads.qdyn', 'U'] = np.diag(dq_dU)
-        J['windLoads.qdyn', 'z'] = zeron
-        J['windLoads.qdyn', 'd'] = zeron
+        J['windLoads_qdyn', 'U'] = np.diag(dq_dU)
+        J['windLoads_qdyn', 'z'] = zeron
+        J['windLoads_qdyn', 'd'] = zeron
 
-        J['windLoads.z', 'U'] = zeron
-        J['windLoads.z', 'z'] = np.eye(n)
-        J['windLoads.z', 'd'] = zeron
+        J['windLoads_z', 'U'] = zeron
+        J['windLoads_z', 'z'] = np.eye(n)
+        J['windLoads_z', 'd'] = zeron
 
         
 
@@ -299,7 +298,7 @@ class CylinderWaveDrag(ExplicitComponent):
         self.add_input('mu', 0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
         self.add_input('cm', 0.0, desc='mass coefficient')
         #TODO not sure what to do here?
-        self.add_input('cd_usr', np.inf, desc='User input drag coefficient to override Reynolds number based one')
+        self.add_input('cd_usr', -1., desc='User input drag coefficient to override Reynolds number based one')
 
         # out
         self.add_output('waveLoads_Px', np.zeros(nPoints), units='N/m', desc='distributed loads, force per unit length in x-direction')
@@ -337,7 +336,7 @@ class CylinderWaveDrag(ExplicitComponent):
         #q0= 0.5*rho*U0**2
 
         # Reynolds number and drag
-        if inputs['cd_usr'] in [np.inf, -np.inf, None, np.nan]:
+        if float(inputs['cd_usr']) < 0.:
             Re = rho*U*d/mu
             cd, dcd_dRe = cylinderDrag(Re)
         else:
@@ -410,7 +409,7 @@ class CylinderWaveDrag(ExplicitComponent):
         #q0= 0.5*rho*U0**2
 
         # Reynolds number and drag
-        if inputs['cd_usr'] in [np.inf, -np.inf, None, np.nan]:
+        if float(inputs['cd_usr']) < 0.:
             cd = inputs['cd_usr']*np.ones_like(d)
             Re = 1.0
             dcd_dRe = 0.0

@@ -10,6 +10,7 @@ from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
 from wisdem.commonse.utilities import assembleI, unassembleI, sectionalInterp, nodal2sectional
 import wisdem.pyframe3dd.frame3dd as frame3dd
 
+RIGID = 1e30
 
 # -----------------
 #  Components
@@ -42,7 +43,7 @@ class CylinderDiscretization(ExplicitComponent):
         # Convenience outputs for export to other modules
         
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
         nRefine = int(np.round( self.options['nRefine'] ))
@@ -54,9 +55,9 @@ class CylinderDiscretization(ExplicitComponent):
             z_full = np.append(z_full, zref)
         z_full = np.unique(z_full)
         outputs['z_full']  = z_full
-        outputs['d_full']  = np.interp(z_full, outputs['z_param'], inputs['diameter'])
+        outputs['d_full']  = np.interp(z_full, z_param, inputs['diameter'])
         z_section = 0.5*(z_full[:-1] + z_full[1:])
-        outputs['t_full']  = sectionalInterp(z_section, outputs['z_param'], inputs['wall_thickness'])
+        outputs['t_full']  = sectionalInterp(z_section, z_param, inputs['wall_thickness'])
         outputs['z_param'] = z_param
 
 class CylinderMass(ExplicitComponent):
@@ -84,7 +85,7 @@ class CylinderMass(ExplicitComponent):
         self.add_output('I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of cylinder about base [xx yy zz xy xz yz]')
         
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
         # Unpack variables for thickness and average radius at each can interface
@@ -199,8 +200,8 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('d', np.zeros(npts), units='m', desc='effective cylinder diameter for section')
         self.add_input('t', np.zeros(npts-1), units='m', desc='effective shell thickness for section')
 
-        # spring reaction data.  Use float('inf') for rigid constraints.
-        self.add_discrete_input('kidx', np.zeros(nK, dtype=np.int_), desc='indices of z where external stiffness reactions should be applied.')
+        # spring reaction data.  Use global RIGID for rigid constraints.
+        self.add_input('kidx', np.zeros(nK), desc='indices of z where external stiffness reactions should be applied.')
         self.add_input('kx', np.zeros(nK), units='m', desc='spring stiffness in x-direction')
         self.add_input('ky', np.zeros(nK), units='m', desc='spring stiffness in y-direction')
         self.add_input('kz', np.zeros(nK), units='m', desc='spring stiffness in z-direction')
@@ -209,7 +210,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('ktz', np.zeros(nK), units='m', desc='spring stiffness in theta_z-rotation')
 
         # extra mass
-        self.add_discrete_input('midx', np.zeros(nMass, dtype=np.int_), desc='indices where added mass should be applied.')
+        self.add_input('midx', np.zeros(nMass), desc='indices where added mass should be applied.')
         self.add_input('m', np.zeros(nMass), units='kg', desc='added mass')
         self.add_input('mIxx', np.zeros(nMass), units='kg*m**2', desc='x mass moment of inertia about some point p')
         self.add_input('mIyy', np.zeros(nMass), units='kg*m**2', desc='y mass moment of inertia about some point p')
@@ -223,7 +224,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_discrete_input('addGravityLoadForExtraMass', True, desc='add gravitational load')
 
         # point loads (if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also)
-        self.add_discrete_input('plidx', np.zeros(nPL, dtype=np.int_), desc='indices where point loads should be applied.')
+        self.add_input('plidx', np.zeros(nPL), desc='indices where point loads should be applied.')
         self.add_input('Fx', np.zeros(nPL), units='N', desc='point force in x-direction')
         self.add_input('Fy', np.zeros(nPL), units='N', desc='point force in y-direction')
         self.add_input('Fz', np.zeros(nPL), units='N', desc='point force in z-direction')
@@ -267,7 +268,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_output('hoop_stress_euro', np.zeros(npts-1), units='N/m**2', desc='Hoop stress in cylinder structure calculated with Eurocode method')
         
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -286,8 +287,8 @@ class CylinderFrame3DD(ExplicitComponent):
         # ------ reaction data ------------
 
         # rigid base
-        node = discrete_inputs['kidx'] + np.ones(len(discrete_inputs['kidx']), dtype=np.int_)  # add one because 0-based index but 1-based node numbering
-        rigid = float('inf')
+        node = inputs['kidx'] + np.ones(len(inputs['kidx']))   # add one because 0-based index but 1-based node numbering
+        rigid = RIGID
 
         reactions = frame3dd.ReactionData(node, inputs['kx'], inputs['ky'], inputs['kz'], inputs['ktx'], inputs['kty'], inputs['ktz'], rigid)
         # -----------------------------------
@@ -326,7 +327,7 @@ class CylinderFrame3DD(ExplicitComponent):
         # ------ add extra mass ------------
 
         # extra node inertia data
-        N = discrete_inputs['midx'] + np.ones(len(discrete_inputs['midx']), dtype=np.int_)
+        N = inputs['midx'] + np.ones(len(inputs['midx']))
 
         cylinder.changeExtraNodeMass(N, inputs['m'], inputs['mIxx'], inputs['mIyy'], inputs['mIzz'], inputs['mIxy'], inputs['mIxz'], inputs['mIyz'],
             inputs['mrhox'], inputs['mrhoy'], inputs['mrhoz'], discrete_inputs['addGravityLoadForExtraMass'])
@@ -347,7 +348,7 @@ class CylinderFrame3DD(ExplicitComponent):
         load = frame3dd.StaticLoadCase(gx, gy, gz)
 
         # point loads
-        nF = discrete_inputs['plidx'] + np.ones(len(discrete_inputs['plidx']), dtype=int)
+        nF = inputs['plidx'] + np.ones(len(inputs['plidx']))
         load.changePointLoads(nF, inputs['Fx'], inputs['Fy'], inputs['Fz'], inputs['Mxx'], inputs['Myy'], inputs['Mzz'])
 
         # distributed loads

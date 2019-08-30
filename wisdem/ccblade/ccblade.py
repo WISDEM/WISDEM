@@ -221,9 +221,12 @@ class CCAirfoil(object):
             dcl_dRe = 0.0
             dcd_dRe = 0.0
         else:
-            dcl_dRe = bisplev(alpha, Re, tck_cl, dx=0, dy=1)
-            dcd_dRe = bisplev(alpha, Re, tck_cd, dx=0, dy=1)
-
+            try:
+                dcl_dRe = bisplev(alpha, Re, tck_cl, dx=0, dy=1)
+                dcd_dRe = bisplev(alpha, Re, tck_cd, dx=0, dy=1)
+            except:
+                dcl_dRe = 0.0
+                dcd_dRe = 0.0
         return dcl_dalpha, dcl_dRe, dcd_dalpha, dcd_dRe
 
 
@@ -494,9 +497,9 @@ class CCBlade(object):
         self.presweep = presweep
         self.presweepTip = presweepTip
 
-        # rotor radius
-        if self.precurveTip != 0 and self.precone != 0.0:
-            warnings.warn('rotor diameter may be modified in unexpected ways if tip precurve and precone are both nonzero')
+        # # rotor radius
+        # if self.precurveTip != 0 and self.precone != 0.0:
+            # print('rotor diameter may be modified in unexpected ways if tip precurve and precone are both nonzero')
 
         self.rotorR = Rtip*cos(self.precone) + self.precurveTip*sin(self.precone)
 

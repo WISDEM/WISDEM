@@ -6,7 +6,7 @@ from ruamel import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
-from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d
+from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d, RectBivariateSpline
 import numpy as np
 import jsonschema as json
 
@@ -130,8 +130,9 @@ class ReferenceBlade(object):
         self.NPTS            = 50
         self.NPTS_AfProfile  = 200
         self.NPTS_AfPolar    = 100
+        
         self.r_in            = []          # User definied input grid (must be from 0-1)
-
+        
         # 
         self.analysis_level  = 0           # 0: Precomp, 1: Precomp + write FAST model, 2: FAST/Elastodyn, 3: FAST/Beamdyn)
         self.verbose         = False
@@ -549,6 +550,14 @@ class ReferenceBlade(object):
                 s = af.s
                 af_points = af.points
             else:
+                # print(af_label)
+                # print(AFref_xy[:,0,0])
+                # print(points[:,0])
+                # print(points[:,1])
+                # import matplotlib.pyplot as plt
+                # plt.plot(points[:,0], points[:,1], '.')
+                # plt.plot(points[:,0], points[:,1])
+                # plt.show()
                 af_points = np.column_stack((AFref_xy[:,0,0], remapAirfoil(points[:,0], points[:,1], AFref_xy[:,0,0])))
 
             # import matplotlib.pyplot as plt
@@ -613,16 +622,15 @@ class ReferenceBlade(object):
         return blade
 
     def remap_polars(self, blade, AFref, spline=PchipInterpolator):
-        # TODO: does not support multiple polars at different Re, takes the first polar from list
-
         ## Set angle of attack grid for airfoil resampling
         # assume grid for last airfoil is sufficient
+
         alpha = np.array(AFref[blade['outer_shape_bem']['airfoil_position']['labels'][-1]]['polars'][0]['c_l']['grid'])
         if alpha[0] != np.radians(-180.):
             alpha[0] = np.radians(-180.)
         if alpha[-1] != np.radians(180.):
             alpha[-1] = np.radians(180.)
-        Re    = [AFref[blade['outer_shape_bem']['airfoil_position']['labels'][-1]]['polars'][0]['re']]
+        # Re    = [AFref[blade['outer_shape_bem']['airfoil_position']['labels'][-1]]['polars'][0]['re']]
 
         # get reference airfoil polars
         af_ref = []
@@ -634,13 +642,47 @@ class ReferenceBlade(object):
         n_aoa     = len(alpha)
         n_span    = self.NPTS
 
-        cl_ref = np.zeros((n_aoa, n_af_ref))
-        cd_ref = np.zeros((n_aoa, n_af_ref))
-        cm_ref = np.zeros((n_aoa, n_af_ref))
+        Re   = sorted(list(set(np.concatenate([[polar['re'] for polar in AFref[afi]['polars']] for afi in AFref]))))
+        n_Re = len(Re)
+
+        cl_ref = np.zeros((n_aoa, n_af_ref, n_Re))
+        cd_ref = np.zeros((n_aoa, n_af_ref, n_Re))
+        cm_ref = np.zeros((n_aoa, n_af_ref, n_Re))
+        Re_ref = np.zeros((n_af_ref, n_Re))
+
+        kx = min(len(alpha)-1, 3)
+
         for i, af in enumerate(af_ref[::-1]):
-            cl_ref[:,i] = remap2grid(np.array(AFref[af]['polars'][0]['c_l']['grid']), np.array(AFref[af]['polars'][0]['c_l']['values']), alpha)
-            cd_ref[:,i] = remap2grid(np.array(AFref[af]['polars'][0]['c_d']['grid']), np.array(AFref[af]['polars'][0]['c_d']['values']), alpha)
-            cm_ref[:,i] = remap2grid(np.array(AFref[af]['polars'][0]['c_m']['grid']), np.array(AFref[af]['polars'][0]['c_m']['values']), alpha)
+            # Remap given polars for this airfoil to common angle of attack grid
+            n_Re_i = len(AFref[af]['polars'])
+            cl_ref_i = np.zeros((n_aoa, n_Re_i))
+            cd_ref_i = np.zeros((n_aoa, n_Re_i))
+            cm_ref_i = np.zeros((n_aoa, n_Re_i))
+
+            Re_i      = [polar['re'] for polar in AFref[af]['polars']]
+            polar_idx = [j for _,j in sorted(zip(Re_i,range(n_Re_i)))]
+            Re_i      = sorted(Re_i)
+            for j in polar_idx:
+                cl_ref_i[:,j] = remap2grid(np.array(AFref[af]['polars'][j]['c_l']['grid']), np.array(AFref[af]['polars'][j]['c_l']['values']), alpha)
+                cd_ref_i[:,j] = remap2grid(np.array(AFref[af]['polars'][j]['c_d']['grid']), np.array(AFref[af]['polars'][j]['c_d']['values']), alpha)
+                cm_ref_i[:,j] = remap2grid(np.array(AFref[af]['polars'][j]['c_m']['grid']), np.array(AFref[af]['polars'][j]['c_m']['values']), alpha)
+
+            # Dupplicate lowest and highest polar, set equal to very small and very large Re, allows 'interpolation' outside of provided range
+            cl_ref_i = np.c_[cl_ref_i[:,0], cl_ref_i, cl_ref_i[:,-1]]
+            cd_ref_i = np.c_[cd_ref_i[:,0], cd_ref_i, cd_ref_i[:,-1]]
+            cm_ref_i = np.c_[cm_ref_i[:,0], cm_ref_i, cm_ref_i[:,-1]]
+            Re_i     = np.r_[1.e1, Re_i, 1.e15]
+
+            # interpolate over full Re grid
+            ky = min(len(Re_i)-1, 3)
+            cl_spline = RectBivariateSpline(alpha, Re_i, cl_ref_i, kx=kx, ky=ky, s=0.1)
+            cd_spline = RectBivariateSpline(alpha, Re_i, cd_ref_i, kx=kx, ky=ky, s=0.001)
+            cm_spline = RectBivariateSpline(alpha, Re_i, cm_ref_i, kx=kx, ky=ky, s=0.0001)
+            for j, re in enumerate(Re):
+                cl_ref[:,i,j] = cl_spline.ev(alpha, re)
+                cd_ref[:,i,j] = cd_spline.ev(alpha, re)
+                cm_ref[:,i,j] = cm_spline.ev(alpha, re)
+
 
         # reference airfoil and spanwise thicknesses
         thk_span  = blade['pf']['rthick']
@@ -649,31 +691,43 @@ class ReferenceBlade(object):
         np.place(thk_span, thk_span>max(thk_afref), max(thk_afref))
         np.place(thk_span, thk_span<min(thk_afref), min(thk_afref))
         # interpolate
-        spline_cl = spline(thk_afref, cl_ref, axis=1)
-        spline_cd = spline(thk_afref, cd_ref, axis=1)
-        spline_cm = spline(thk_afref, cm_ref, axis=1)
-        cl = spline_cl(thk_span)
-        cd = spline_cd(thk_span)
-        cm = spline_cm(thk_span)
+        cl = np.zeros((n_aoa, n_span, n_Re))
+        cd = np.zeros((n_aoa, n_span, n_Re))
+        cm = np.zeros((n_aoa, n_span, n_Re))
+        for j in range(n_Re):
+            spline_cl = spline(thk_afref, cl_ref[:,:,j], axis=1)
+            spline_cd = spline(thk_afref, cd_ref[:,:,j], axis=1)
+            spline_cm = spline(thk_afref, cm_ref[:,:,j], axis=1)
+            cl[:,:,j] = spline_cl(thk_span)
+            cd[:,:,j] = spline_cd(thk_span)
+            cm[:,:,j] = spline_cm(thk_span)
 
         # CCBlade airfoil class instances
-        airfoils = [None]*n_span
+        # airfoils = [None]*n_span
         alpha_out = np.degrees(alpha)
         if alpha[0] != -180.:
             alpha[0] = -180.
         if alpha[-1] != 180.:
             alpha[-1] = 180.
         for i in range(n_span):
-            if cl[0,i] != cl[-1,i]:
-                cl[0,i] = cl[-1,i]
-            if cd[0,i] != cd[-1,i]:
-                cd[0,i] = cd[-1,i]
-            if cm[0,i] != cm[-1,i]:
-                cm[0,i] = cm[-1,i]
-            airfoils[i] = CCAirfoil(alpha_out, Re, cl[:,i], cd[:,i], cm[:,i])
-            airfoils[i].eval_unsteady(alpha_out, cl[:,i], cd[:,i], cm[:,i])
+            for j in range(n_Re):
+                if cl[0,i,j] != cl[-1,i,j]:
+                    cl[0,i,j] = cl[-1,i,j]
+                if cd[0,i,j] != cd[-1,i,j]:
+                    cd[0,i,j] = cd[-1,i,j]
+                if cm[0,i,j] != cm[-1,i,j]:
+                    cm[0,i,j] = cm[-1,i,j]
 
-        blade['airfoils'] = airfoils
+            # airfoils[i] = CCAirfoil(alpha_out, Re, cl[:,i,:], cd[:,i,:], cm[:,i,:])
+            # airfoils[i].eval_unsteady(alpha_out, cl[:,i,j], cd[:,i,j], cm[:,i,j]) # TODO: openmdao2 handling of airfoils has not implimented the unsteady airfoil properties evaluation for FAST
+
+        # blade['airfoils'] = airfoils
+
+        blade['airfoils_cl']  = cl
+        blade['airfoils_cd']  = cd
+        blade['airfoils_cm']  = cm
+        blade['airfoils_aoa'] = alpha_out
+        blade['airfoils_Re']  = Re
 
         return blade
 
@@ -1032,10 +1086,15 @@ class ReferenceBlade(object):
 
         # Build Control Point Grid, if not provided with key word arg
         if len(r_in)==0:
-            # control point grid
-            # r_in = np.array(sorted(np.r_[[0.], [r_cylinder], np.linspace(r_max_chord, 1., self.NINPUT-2)]))
-            r_in = np.concatenate([[0.], np.linspace(r_cylinder, r_max_chord, num=3)[:-1], np.linspace(r_max_chord, 1., self.NINPUT-3)])
-
+            # Set control point grid, which is to be updated when chord changes
+            r_in = np.hstack([0., r_cylinder, np.linspace(r_max_chord, 1., self.NINPUT-2)])
+            blade['ctrl_pts']['update_r_in'] = True
+        else:
+            # Control point grid is passed from the outside as r_in, no need to update it when chord changes
+            blade['ctrl_pts']['update_r_in'] = False
+        
+        blade['ctrl_pts']['r_in']         = r_in
+                
         # Fit control points to planform variables
         blade['ctrl_pts']['theta_in']     = remap2grid(blade['pf']['s'], blade['pf']['theta'], r_in)
         blade['ctrl_pts']['chord_in']     = remap2grid(blade['pf']['s'], blade['pf']['chord'], r_in)
@@ -1056,7 +1115,6 @@ class ReferenceBlade(object):
         blade['ctrl_pts']['teT_in']       = remap2grid(grid_te, vals_te, r_in)
 
         # Store additional rotorse variables
-        blade['ctrl_pts']['r_in']         = r_in
         blade['ctrl_pts']['r_cylinder']   = r_cylinder
         blade['ctrl_pts']['r_max_chord']  = r_max_chord
         # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
@@ -1070,10 +1128,13 @@ class ReferenceBlade(object):
     def update_planform(self, blade):
 
         af_ref = blade['AFref']
-
-        if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord']:
-            # blade['ctrl_pts']['r_in'] = np.r_[[0.], [blade['ctrl_pts']['r_cylinder']], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)]
-            blade['ctrl_pts']['r_in'] = np.concatenate([[0.], np.linspace(blade['ctrl_pts']['r_cylinder'], blade['ctrl_pts']['r_max_chord'], num=3)[:-1], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-3)])
+        
+        if blade['ctrl_pts']['update_r_in']:
+            blade['ctrl_pts']['r_in'] = np.hstack([0., blade['ctrl_pts']['r_cylinder'], np.linspace(blade['ctrl_pts']['r_max_chord'][0], 1., self.NINPUT-2)])
+        
+        # if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord'] and not blade['ctrl_pts']['Fix_r_in']:
+            # # blade['ctrl_pts']['r_in'] = np.r_[[0.], [blade['ctrl_pts']['r_cylinder']], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)]
+            # blade['ctrl_pts']['r_in'] = np.concatenate([[0.], np.linspace(blade['ctrl_pts']['r_cylinder'], blade['ctrl_pts']['r_max_chord'], num=3)[:-1], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-3)])
 
         self.s                  = blade['pf']['s'] # TODO: assumes the start and end points of composite sections does not change
         blade['pf']['chord']    = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['chord_in'], self.s)
@@ -1125,8 +1186,7 @@ class ReferenceBlade(object):
         # y = blade['pf']['af_pos_name']
         # blade['pf']['af_pos']      = [x[0]] + [x[i] for i in range(1,len(y)-1) if not(y[i] == y[i-1] and y[i] == y[i+1])] + [x[-1]]
         # blade['pf']['af_pos_name'] = [y[0]] + [y[i] for i in range(1,len(y)-1) if not(y[i] == y[i-1] and y[i] == y[i+1])] + [y[-1]]
-
-
+        sys.stdout.flush()
         return blade
 
         
@@ -1377,7 +1437,7 @@ class ReferenceBlade(object):
                                 ps_end_nd_arc.append(1.)
                             else:
                                 ps_end_nd_arc_temp = float(spline_arc2xnd(sec['end_nd_arc']['values'][i]))
-                                if ps_end_nd_arc_temp == profile_i_rot[-1,0] and profile_i_rot[-1,0] != 1.:
+                                if np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1,0]) and profile_i_rot[-1,0] != 1.:
                                     ps_end_nd_arc_temp = 1.
                                 ps_end_nd_arc.append(ps_end_nd_arc_temp)
                             if sec['start_nd_arc']['values'][i] < loc_LE:
@@ -1728,8 +1788,9 @@ if __name__ == "__main__":
     refBlade.verbose  = True
     refBlade.spar_var = ['Spar_cap_ss', 'Spar_cap_ps']
     refBlade.te_var   = 'TE_reinforcement'
-    refBlade.NINPUT       = 8
-    refBlade.NPITS        = 40
+    refBlade.NINPUT   = 8
+    refBlade.NPTS     = 40
+    # refBlade.r_in     = np.linspace(0.,1.,refBlade.NINPUT)
     refBlade.validate = False
     refBlade.fname_schema = "turbine_inputs/IEAontology_schema.yaml"
 

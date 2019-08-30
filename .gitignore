@@ -1,7 +1,15 @@
 *.py[cod]
 
+
+wisdem/Design_Opt
+
 # OpenMDAO
 openmdao_log.txt
+openmdao_checks.out
+
+# pyoptsparse
+wisdem/pyoptsparse
+CONMIN.out
 
 # Sphinx
 _build

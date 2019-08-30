@@ -17,6 +17,8 @@ from wisdem.rotorse.rotor_geometry import RotorGeometry
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.rotorse.rotor_cost import RotorCost
 from wisdem.rotorse import RPM2RS, RS2RPM
+from wisdem.rotorse.rotor_fast import FASTLoadCases
+
 
 #from wisdem.rotorse.rotor_fast import FASTLoadCases
 
@@ -56,8 +58,7 @@ class RotorSE(Group):
         rc_show_plots           = self.options['rc_show_plots']
         rc_show_warnings        = self.options['rc_show_warnings'] 
         rc_discrete             = self.options['rc_discrete']
-        
-        
+        NPTS                    = len(RefBlade['pf']['s'])
 
         rotorIndeps = IndepVarComp()
         rotorIndeps.add_discrete_output('tiploss',      True)
@@ -77,6 +78,7 @@ class RotorSE(Group):
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
                 
         # --- Rotor Aero & Power ---
+        self.add_subsystem('rg', RotorGeometry(RefBlade=RefBlade, topLevelFlag=True), promotes=['*'])
         self.add_subsystem('ra', RotorAeroPower(RefBlade=RefBlade,
                                                 npts_coarse_power_curve=npts_coarse_power_curve,
                                                 npts_spline_power_curve=npts_spline_power_curve,
@@ -86,41 +88,89 @@ class RotorSE(Group):
                                                 topLevelFlag=False), promotes=['*'])
         self.add_subsystem('rs', RotorStructure(RefBlade=RefBlade,
                                                 topLevelFlag=False,
-                                                Analysis_Level=Analysis_Level), 
+                                                Analysis_Level=Analysis_Level),
                            promotes=['fst_vt_in','VfactorPC','turbulence_class','gust_stddev','pitch_extreme',
                                      'azimuth_extreme','rstar_damage','Mxb_damage','Myb_damage',
                                      'strain_ult_spar','strain_ult_te','m_damage',
                                      'gamma_fatigue','gamma_freq','gamma_f','gamma_m','dynamic_amplification',
                                      'azimuth_load180','azimuth_load0','azimuth_load120','azimuth_load240',
                                      'nSector','rho','mu','shearExp','tiploss','hubloss','wakerotation','usecd',
-                                     'bladeLength','hubFraction','r_max_chord','chord_in','theta_in',
-                                     'precurve_in','presweep_in','precurveTip','presweepTip','precone',
-                                     'tilt','yaw','nBlades','downwind','sparT_in','teT_in','airfoil_position','turbine_class',
+                                     'bladeLength','R','V_mean',
+                                     'chord','theta','precurve','presweep','Rhub','Rtip','r','r_in',
+                                     'airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','airfoils_Re',
+                                     'z','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','Tw_iner','flap_iner','edge_iner',
+                                     'eps_crit_spar','eps_crit_te','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar',
+                                     'xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te',
+                                     'precurveTip','presweepTip','precone',
+                                     'tilt','yaw','nBlades','downwind',
                                      'control_tsr','control_pitch','lifetime','hub_height',
                                      'mass_one_blade','mass_all_blades','I_all_blades',
-                                     'freq','freq_curvefem','modes_coef_curvefem','tip_deflection', 
+                                     'freq_pbeam','freq_curvefem','modes_coef_curvefem','tip_deflection', 
                                      'tip_position','ground_clearance','strainU_spar','strainL_spar',
-                                     'strainU_te','strainL_te','eps_crit_spar','eps_crit_te',
+                                     'strainU_te','strainL_te',#'eps_crit_spar','eps_crit_te',
                                      'root_bending_moment','Mxyz','damageU_spar','damageL_spar','damageU_te',
                                      'damageL_te','delta_bladeLength_out','delta_precurve_sub_out',
                                      'Fxyz_1','Fxyz_2','Fxyz_3','Fxyz_4','Fxyz_5','Fxyz_6',
                                      'Mxyz_1','Mxyz_2','Mxyz_3','Mxyz_4','Mxyz_5','Mxyz_6',
                                      'Fxyz_total','Mxyz_total','TotalCone','Pitch'])
-        
-        self.add_subsystem('rc', RotorCost(RefBlade=RefBlade, verbosity=rc_verbosity),
-                           promotes=['bladeLength','total_blade_cost','Rtip','Rhub','r_pts','chord','le_location','materials','upperCS','lowerCS','websCS','profile'])       
+
+        # self.add_subsystem('rc', RotorCost(RefBlade=RefBlade, verbosity=rc_verbosity),
+        #                    promotes=['bladeLength','total_blade_cost','Rtip','Rhub','r','chord','le_location','materials','upperCS','lowerCS','websCS','profile'])       
         
         self.add_subsystem('obj_cmp', ExecComp('obj = -AEP',
                                                AEP={'units':'kW*h','value':1000000.0},
                                                obj={'units':'kW*h'}), promotes=['*'])
 
         # Connections between rotor_aero and rotor_structure
-        self.connect('powercurve.rated_V', ['rs.gust.V_hub', 'rs.setuppc.Vrated'])
-        self.connect('powercurve.rated_Omega', ['rs.Omega', 'rs.aero_rated.Omega_load',
-                                                'rs.curvefem.Omega','rs.aero_rated_0.Omega_load',
-                                                'rs.aero_rated_120.Omega_load','rs.aero_rated_240.Omega_load'])
-        self.connect('powercurve.rated_pitch', 'rs.aero_rated.pitch_load')
+        self.connect('V_mean','wind.Uref')
+        self.connect('wind_zvec', 'wind.z')
+        self.connect('rated_V', ['rs.V_hub', 'rs.setuppc.Vrated'])
+        self.connect('rated_Omega', ['rs.Omega', 'rs.aero_rated.Omega_load',
+                                     'rs.aero_rated_0.Omega_load',
+                                     'rs.aero_rated_120.Omega_load','rs.aero_rated_240.Omega_load'])
+        self.connect('rated_pitch', 'rs.aero_rated.pitch_load')
+        self.connect('V_extreme50',    'rs.aero_extrm.V_load')
+        self.connect('V_extreme_full', 'rs.aero_extrm_forces.Uhub')
+        self.connect('theta', 'rs.tip.theta', src_indices=[NPTS-1])
+        
+        # Connections to AeroelasticSE
+        if Analysis_Level>=1:
+            self.add_subsystem('aeroelastic', FASTLoadCases(RefBlade=RefBlade,
+                                                    npts_coarse_power_curve=npts_coarse_power_curve, 
+                                                    npts_spline_power_curve=npts_spline_power_curve,
+                                                    FASTpref=FASTpref), 
+                                                    promotes=['fst_vt_in', 'fst_vt_out', 'FASTpref_updated',
+                                                    'r', 'le_location', 'chord', 'theta', 'precurve','shearExp',
+                                                    'presweep', 'Rhub', 'Rtip', 'turbulence_class', 'turbine_class',
+                                                    'V_R25', 'rho', 'mu', 'control_maxTS', 'control_maxOmega','hub_height',
+                                                    'airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','airfoils_Re',
+                                                    'airfoils_coord_x','airfoils_coord_y','rthick'])
 
+            self.connect('rhoA',                'aeroelastic.beam:rhoA')
+            self.connect('EIxx',                'aeroelastic.beam:EIxx')
+            self.connect('EIyy',                'aeroelastic.beam:EIyy')
+            self.connect('Tw_iner',             'aeroelastic.beam:Tw_iner')
+            self.connect('modes_coef_curvefem', 'aeroelastic.modes_coef_curvefem')
+            self.connect('rs.z_az',             'aeroelastic.z_az')
+            self.connect('V',                   'aeroelastic.U_init')
+            self.connect('Omega',               'aeroelastic.Omega_init')
+            self.connect('pitch',               'aeroelastic.pitch_init')
+            self.connect('rated_V',             'aeroelastic.Vrated')
+            self.connect('rs.gust.V_gust',      'aeroelastic.Vgust')
+            self.connect('V_mean',              'aeroelastic.V_mean_iec')
+            self.connect('machine_rating',      'aeroelastic.control_ratedPower')
+            if Analysis_Level>1:
+                self.connect('aeroelastic.dx_defl',             'rs.tip.dx')
+                self.connect('aeroelastic.dy_defl',             'rs.tip.dy')
+                self.connect('aeroelastic.dz_defl',             'rs.tip.dz')
+                self.connect('aeroelastic.loads_Px',            'rs.loads_strain.aeroloads_Px')
+                self.connect('aeroelastic.loads_Py',            'rs.loads_strain.aeroloads_Py')
+                self.connect('aeroelastic.loads_Pz',            'rs.loads_strain.aeroloads_Pz')
+                self.connect('aeroelastic.loads_Omega',         'rs.loads_strain.aeroloads_Omega')
+                self.connect('aeroelastic.loads_azimuth',       'rs.loads_strain.aeroloads_azimuth')
+                self.connect('aeroelastic.loads_pitch',         'rs.loads_strain.aeroloads_pitch')
+                self.connect('aeroelastic.root_bending_moment', 'rs.root_bending_moment_in')
+                self.connect('aeroelastic.Mxyz',                'rs.Mxyz_in')
 
 
 def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
@@ -155,7 +205,7 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     # === atmosphere ===
     rotor['rho']              = 1.225   # (Float, kg/m**3): density of air
     rotor['mu']               = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    rotor['shearExp']         = 0.2     # (Float): shear exponent
+    rotor['shearExp']         = 0.0     # (Float): shear exponent
     rotor['shape_parameter']  = 2.0
     rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
     rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class
@@ -321,6 +371,7 @@ if __name__ == '__main__':
     # === run and outputs ===
     tt = time.time()
     rotor.run_driver()
+    #rotor.check_partials(compact_print=True, step=1e-6, form='central')
 
     # refBlade.write_ontology(fname_output, rotor['blade_out'], refBlade.wt_ref)
 
@@ -335,7 +386,7 @@ if __name__ == '__main__':
     print('mass_one_blade =',           rotor['mass_one_blade'])
     print('mass_all_blades =',          rotor['mass_all_blades'])
     print('I_all_blades =',             rotor['I_all_blades'])
-    print('freq =',                     rotor['freq'])
+    print('freq =',                     rotor['freq_pbeam'])
     print('tip_deflection =',           rotor['tip_deflection'])
     print('root_bending_moment =',      rotor['root_bending_moment'])
     print('moments at the hub =',       rotor['Mxyz_total'])
@@ -374,9 +425,9 @@ if __name__ == '__main__':
 
     plt.figure()
 
-    plt.plot(rotor['r_pts'], rotor['strainU_spar'], label='suction')
-    plt.plot(rotor['r_pts'], rotor['strainL_spar'], label='pressure')
-    plt.plot(rotor['r_pts'], rotor['eps_crit_spar'], label='critical')
+    plt.plot(rotor['r'], rotor['strainU_spar'], label='suction')
+    plt.plot(rotor['r'], rotor['strainL_spar'], label='pressure')
+    plt.plot(rotor['r'], rotor['eps_crit_spar'], label='critical')
     plt.ylim([-5e-3, 5e-3])
     plt.xlabel('r')
     plt.ylabel('strain')
@@ -384,16 +435,16 @@ if __name__ == '__main__':
 
     plt.figure()
 
-    plt.plot(rotor['r_pts'], rotor['strainU_te'], label='suction')
-    plt.plot(rotor['r_pts'], rotor['strainL_te'], label='pressure')
-    plt.plot(rotor['r_pts'], rotor['eps_crit_te'], label='critical')
+    plt.plot(rotor['r'], rotor['strainU_te'], label='suction')
+    plt.plot(rotor['r'], rotor['strainL_te'], label='pressure')
+    plt.plot(rotor['r'], rotor['eps_crit_te'], label='critical')
     plt.ylim([-5e-3, 5e-3])
     plt.xlabel('r')
     plt.ylabel('strain')
     plt.legend()
 
     plt.figure()
-    plt.plot(rotor['r_pts'], rotor['rthick'], label='airfoil relative thickness')
+    plt.plot(rotor['r'], rotor['rthick'], label='airfoil relative thickness')
     plt.xlabel('r')
     plt.ylabel('rthick')
     plt.legend()
@@ -401,20 +452,20 @@ if __name__ == '__main__':
     plt.show()
     
     if flag_Cp_Ct_Cq_Tables:
-        n_pitch = len(rotor['cpctcq_tables.pitch_vector'])
-        n_tsr   = len(rotor['cpctcq_tables.tsr_vector'])
-        n_U     = len(rotor['cpctcq_tables.U_vector'])
+        n_pitch = len(rotor['pitch_vector'])
+        n_tsr   = len(rotor['tsr_vector'])
+        n_U     = len(rotor['U_vector'])
         
         # file = open(output_folder + 'Cp_Ct_Cq.txt','w')
         # file.write('# Pitch angle vector - x axis (matrix columns) (deg)\n')
         # for i in range(n_pitch):
-            # file.write('%.2f   ' % rotor['cpctcq_tables.pitch_vector'][i])
+            # file.write('%.2f   ' % rotor['pitch_vector'][i])
         # file.write('\n# TSR vector - y axis (matrix rows) (-)\n')
         # for i in range(n_tsr):
-            # file.write('%.2f   ' % rotor['cpctcq_tables.tsr_vector'][i])
+            # file.write('%.2f   ' % rotor['tsr_vector'][i])
         # file.write('\n# Wind speed vector - z axis (m/s)\n')
         # for i in range(n_U):
-            # file.write('%.2f   ' % rotor['cpctcq_tables.U_vector'][i])
+            # file.write('%.2f   ' % rotor['U_vector'][i])
         # file.write('\n')
         
         # file.write('\n# Power coefficient\n\n')
@@ -424,7 +475,7 @@ if __name__ == '__main__':
         # for i in range(n_U):
             # for j in range(n_tsr):
                 # for k in range(n_pitch):
-                    # file.write('%.5f   ' % rotor['cpctcq_tables.Cp_aero_table'][j,k,i])
+                    # file.write('%.5f   ' % rotor['Cp_aero_table'][j,k,i])
                 # file.write('\n')
             # file.write('\n')
         
@@ -432,7 +483,7 @@ if __name__ == '__main__':
         # for i in range(n_U):
             # for j in range(n_tsr):
                 # for k in range(n_pitch):
-                    # file.write('%.5f   ' % rotor['cpctcq_tables.Ct_aero_table'][j,k,i])
+                    # file.write('%.5f   ' % rotor['Ct_aero_table'][j,k,i])
                 # file.write('\n')
             # file.write('\n')
         
@@ -440,7 +491,7 @@ if __name__ == '__main__':
         # for i in range(n_U):
             # for j in range(n_tsr):
                 # for k in range(n_pitch):
-                    # file.write('%.5f   ' % rotor['cpctcq_tables.Cq_aero_table'][j,k,i])
+                    # file.write('%.5f   ' % rotor['Cq_aero_table'][j,k,i])
                 # file.write('\n')
             # file.write('\n')
             
@@ -448,7 +499,7 @@ if __name__ == '__main__':
         
         for i in range(n_U):
             fig0, ax0 = plt.subplots()
-            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
+            CS0 = ax0.contour(rotor['pitch_vector'], rotor['tsr_vector'], rotor['Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
             ax0.clabel(CS0, inline=1, fontsize=12)
             plt.title('Power Coefficient', fontsize=14, fontweight='bold')
             plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
@@ -459,7 +510,7 @@ if __name__ == '__main__':
             plt.subplots_adjust(bottom = 0.15, left = 0.15)
 
             fig0, ax0 = plt.subplots()
-            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Ct_aero_table'][:, :, i])
+            CS0 = ax0.contour(rotor['pitch_vector'], rotor['tsr_vector'], rotor['Ct_aero_table'][:, :, i])
             ax0.clabel(CS0, inline=1, fontsize=12)
             plt.title('Thrust Coefficient', fontsize=14, fontweight='bold')
             plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
@@ -471,7 +522,7 @@ if __name__ == '__main__':
 
             
             fig0, ax0 = plt.subplots()
-            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Cq_aero_table'][:, :, i])
+            CS0 = ax0.contour(rotor['pitch_vector'], rotor['tsr_vector'], rotor['Cq_aero_table'][:, :, i])
             ax0.clabel(CS0, inline=1, fontsize=12)
             plt.title('Torque Coefficient', fontsize=14, fontweight='bold')
             plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')

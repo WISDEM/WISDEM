@@ -39,237 +39,251 @@ def web_loc(r, chord, le, ib_idx, ob_idx, ib_webc, ob_webc):
 
 
 
-# class PreComp(object):
-#     implements(SectionStrucInterface)
-
-
-#     def __init__(self, r, chord, theta, leLoc, precurve, presweep, profile, materials, upperCS, lowerCS, websCS):
-#         """Constructor
-
-#         Parameters
-#         ----------
-#         r : ndarray (m)
-#             radial positions. r[0] should be the hub location
-#             while r[-1] should be the blade tip. Any number
-#             of locations can be specified between these in ascending order.
-#         chord : ndarray (m)
-#             array of chord lengths at corresponding radial positions
-#         theta : ndarray (deg)
-#             array of twist angles at corresponding radial positions.
-#             (positive twist decreases angle of attack)
-#         leLoc : ndarray(float)
-#             array of leading-edge positions from a reference blade axis (usually blade pitch axis).
-#             locations are normalized by the local chord length.  e.g. leLoc[i] = 0.2 means leading edge
-#             is 0.2*chord[i] from reference axis.   positive in -x direction for airfoil-aligned coordinate system
-#         profile : list(:class:`Profile`)
-#             airfoil shape at each radial position
-#         materials : list(:class:`Orthotropic2DMaterial`), optional
-#             list of all Orthotropic2DMaterial objects used in defining the geometry
-#         upperCS, lowerCS, websCS : list(:class:`CompositeSection`)
-#             list of CompositeSection objections defining the properties for upper surface, lower surface,
-#             and shear webs (if any) for each section
-
-#         """
-
-#         self.r = np.array(r)
-#         self.chord = np.array(chord)
-#         self.theta = np.array(theta)
-#         self.leLoc = np.array(leLoc)
-#         self.precurve = np.array(precurve)
-#         self.presweep = np.array(presweep)
-
-
-#         self.profile = profile
-#         self.materials = materials
-#         self.upperCS = upperCS
-#         self.lowerCS = lowerCS
-#         self.websCS = websCS
-
-#         # twist rate
-#         self.th_prime = _precomp.tw_rate(self.r, self.theta)
+class PreComp():
+
+    def __init__(self, r, chord, theta, leLoc, precurve, presweep, profile, materials, upperCS, lowerCS, websCS, sector_idx_strain_spar_ps, sector_idx_strain_spar_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss):
+        """Constructor
+
+        Parameters
+        ----------
+        r : ndarray (m)
+            radial positions. r[0] should be the hub location
+            while r[-1] should be the blade tip. Any number
+            of locations can be specified between these in ascending order.
+        chord : ndarray (m)
+            array of chord lengths at corresponding radial positions
+        theta : ndarray (deg)
+            array of twist angles at corresponding radial positions.
+            (positive twist decreases angle of attack)
+        leLoc : ndarray(float)
+            array of leading-edge positions from a reference blade axis (usually blade pitch axis).
+            locations are normalized by the local chord length.  e.g. leLoc[i] = 0.2 means leading edge
+            is 0.2*chord[i] from reference axis.   positive in -x direction for airfoil-aligned coordinate system
+        profile : list(:class:`Profile`)
+            airfoil shape at each radial position
+        materials : list(:class:`Orthotropic2DMaterial`), optional
+            list of all Orthotropic2DMaterial objects used in defining the geometry
+        upperCS, lowerCS, websCS : list(:class:`CompositeSection`)
+            list of CompositeSection objections defining the properties for upper surface, lower surface,
+            and shear webs (if any) for each section
+
+        """
+
+        self.r        = np.array(r)
+        self.chord    = np.array(chord)
+        self.theta    = np.array(theta)
+        self.leLoc    = np.array(leLoc)
+        self.precurve = np.array(precurve)
+        self.presweep = np.array(presweep)
+
+
+        self.profile   = profile
+        self.materials = materials
+        self.upperCS   = upperCS
+        self.lowerCS   = lowerCS
+        self.websCS    = websCS
+
+        self.sector_idx_strain_spar_ps = sector_idx_strain_spar_ps
+        self.sector_idx_strain_spar_ss = sector_idx_strain_spar_ss
+        self.sector_idx_strain_te_ps   = sector_idx_strain_te_ps
+        self.sector_idx_strain_te_ss   = sector_idx_strain_te_ss
+
+        # twist rate
+        self.th_prime = _precomp.tw_rate(self.r, self.theta)
+
+    def sectionProperties(self):
+        """see meth:`SectionStrucInterface.sectionProperties`"""
+
+        # radial discretization
+        nsec = len(self.r)
+
+        # initialize variables
+        beam_z = self.r
+        beam_EA = np.zeros(nsec)
+        beam_EIxx = np.zeros(nsec)
+        beam_EIyy = np.zeros(nsec)
+        beam_EIxy = np.zeros(nsec)
+        beam_GJ = np.zeros(nsec)
+        beam_rhoA = np.zeros(nsec)
+        beam_rhoJ = np.zeros(nsec)
+        beam_Tw_iner = np.zeros(nsec)
+
+        beam_flap_iner = np.zeros(nsec)
+        beam_edge_iner = np.zeros(nsec)
+
+        # distance to elastic center from point about which structural properties are computed
+        # using airfoil coordinate system
+        beam_x_ec = np.zeros(nsec)
+        beam_y_ec = np.zeros(nsec)
+
+        # distance to elastic center from airfoil nose
+        # using profile coordinate system
+        self.x_ec_nose = np.zeros(nsec)
+        self.y_ec_nose = np.zeros(nsec)
+
+        profile = self.profile
+        mat = self.materials
+        csU = self.upperCS
+        csL = self.lowerCS
+        csW = self.websCS
+
+        # arrange materials into array
+        n = len(mat)
+        E1 = [0]*n
+        E2 = [0]*n
+        G12 = [0]*n
+        nu12 = [0]*n
+        rho = [0]*n
+
+        for i in range(n):
+            E1[i] = mat[i].E1
+            E2[i] = mat[i].E2
+            G12[i] = mat[i].G12
+            nu12[i] = mat[i].nu12
+            rho[i] = mat[i].rho
+
+
+
+        for i in range(nsec):
+            # print(i)
+
+            xnode, ynode = profile[i]._preCompFormat()
+            locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU = csU[i]._preCompFormat()
+            locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL = csL[i]._preCompFormat()
+            locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW = csW[i]._preCompFormat()
+
+            nwebs = len(locW)
+
+            # address a bug in f2py (need to pass in length 1 arrays even though they are not used)
+            if nwebs == 0:
+                locW = [0]
+                n_laminaW = [0]
+                n_pliesW = [0]
+                tW = [0]
+                thetaW = [0]
+                mat_idxW = [0]
+
+            # print(np.c_[xnode, ynode])
+            # import matplotlib.pyplot as plt
+            # plt.plot(xnode, ynode, '.')
+            # plt.plot(xnode, ynode)
+            # plt.show()
+            # if i == 2:
+            #     exit()
 
+            results = _precomp.properties(self.chord[i], self.theta[i],
+                self.th_prime[i], self.leLoc[i],
+                xnode, ynode, E1, E2, G12, nu12, rho,
+                locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU,
+                locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL,
+                nwebs, locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW)
+
+            beam_EIxx[i] = results[1]  # EIedge
+            beam_EIyy[i] = results[0]  # EIflat
+            beam_GJ[i] = results[2]
+            beam_EA[i] = results[3]
+            beam_EIxy[i] = results[4]  # EIflapedge
+            beam_x_ec[i] = results[12] - results[10]
+            beam_y_ec[i] = results[13] - results[11]
+            beam_rhoA[i] = results[14]
+            beam_rhoJ[i] = results[15] + results[16]  # perpindicular axis theorem
+            beam_Tw_iner[i] = results[17]
 
+            beam_flap_iner[i] = results[15]
+            beam_edge_iner[i] = results[16]
 
+            self.x_ec_nose[i] = results[13] + self.leLoc[i]*self.chord[i]
+            self.y_ec_nose[i] = results[12]  # switch b.c of coordinate system used
 
+        return beam_EIxx, beam_EIyy, beam_GJ, beam_EA, beam_EIxy, beam_x_ec, beam_y_ec, beam_rhoA, beam_rhoJ, beam_Tw_iner, beam_flap_iner, beam_edge_iner
 
 
-#     def sectionProperties(self):
-#         """see meth:`SectionStrucInterface.sectionProperties`"""
+    def criticalStrainLocations(self, sector_idx_strain_ss, sector_idx_strain_ps):
 
-#         # radial discretization
-#         nsec = len(self.r)
+        n = len(self.r)
 
-#         # initialize variables
-#         EA = np.zeros(nsec)
-#         EIxx = np.zeros(nsec)
-#         EIyy = np.zeros(nsec)
-#         EIxy = np.zeros(nsec)
-#         GJ = np.zeros(nsec)
-#         rhoA = np.zeros(nsec)
-#         rhoJ = np.zeros(nsec)
+        # find location of max thickness on airfoil
+        xun = np.zeros(n)
+        xln = np.zeros(n)
+        yun = np.zeros(n)
+        yln = np.zeros(n)
 
-#         # distance to elastic center from point about which structural properties are computed
-#         # using airfoil coordinate system
-#         x_ec_str = np.zeros(nsec)
-#         y_ec_str = np.zeros(nsec)
+        # for i, p in enumerate(self.profile):
+        #     xun[i], yun[i], yln[i] = p.locationOfMaxThickness()
+        # xln = xun
 
-#         # distance to elastic center from airfoil nose
-#         # using profile coordinate system
-#         self.x_ec_nose = np.zeros(nsec)
-#         self.y_ec_nose = np.zeros(nsec)
+        for i in range(n):
+            csU = self.upperCS[i]
+            csL = self.lowerCS[i]
+            pf = self.profile[i]
+            idx_ss = sector_idx_strain_ss[i]
+            idx_ps = sector_idx_strain_ps[i]
 
-#         profile = self.profile
-#         mat = self.materials
-#         csU = self.upperCS
-#         csL = self.lowerCS
-#         csW = self.websCS
+            if idx_ss == None:
+                xun[i] = 0.
+                xln[i] = 0.
+                yun[i] = 0.
+                yln[i] = 0.
+            else:
+                xun[i] = 0.5*(csU.loc[idx_ss] + csU.loc[idx_ss+1])
+                xln[i] = 0.5*(csL.loc[idx_ps] + csL.loc[idx_ps+1])
+                yun[i] = np.interp(xun[i], pf.x, pf.yu)
+                yln[i] = np.interp(xln[i], pf.x, pf.yl)
 
-#         # arrange materials into array
-#         n = len(mat)
-#         E1 = [0]*n
-#         E2 = [0]*n
-#         G12 = [0]*n
-#         nu12 = [0]*n
-#         rho = [0]*n
+        # make dimensional and define relative to elastic center
+        xu = xun*self.chord - self.x_ec_nose
+        xl = xln*self.chord - self.x_ec_nose
+        yu = yun*self.chord - self.y_ec_nose
+        yl = yln*self.chord - self.y_ec_nose
 
-#         for i in range(n):
-#             E1[i] = mat[i].E1
-#             E2[i] = mat[i].E2
-#             G12[i] = mat[i].G12
-#             nu12[i] = mat[i].nu12
-#             rho[i] = mat[i].rho
+        # switch to airfoil coordinate system
+        xu, yu = yu, xu
+        xl, yl = yl, xl
 
+        return xu, yu, xl, yl
 
 
-#         for i in range(nsec):
+    def panelBucklingStrain(self, sector_idx_array):
+        """
+        see chapter on Structural Component Design Techniques from Alastair Johnson
+        section 6.2: Design of composite panels
 
-#             xnode, ynode = profile[i]._preCompFormat()
-#             locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU = csU[i]._preCompFormat()
-#             locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL = csL[i]._preCompFormat()
-#             locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW = csW[i]._preCompFormat()
+        assumes: large aspect ratio, simply supported, uniaxial compression, flat rectangular plate
 
-#             nwebs = len(locW)
+        """
+        chord = self.chord
+        nsec = len(self.r)
 
-#             # address a bug in f2py (need to pass in length 1 arrays even though they are not used)
-#             if nwebs == 0:
-#                 locW = [0]
-#                 n_laminaW = [0]
-#                 n_pliesW = [0]
-#                 tW = [0]
-#                 thetaW = [0]
-#                 mat_idxW = [0]
+        eps_crit = np.zeros(nsec)
 
-#             results = _precomp.properties(self.chord[i], self.theta[i],
-#                 self.th_prime[i], self.leLoc[i],
-#                 xnode, ynode, E1, E2, G12, nu12, rho,
-#                 locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU,
-#                 locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL,
-#                 nwebs, locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW)
+        for i in range(nsec):
 
-#             EIxx[i] = results[1]  # EIedge
-#             EIyy[i] = results[0]  # EIflat
-#             GJ[i] = results[2]
-#             EA[i] = results[3]
-#             EIxy[i] = results[4]  # EIflapedge
-#             x_ec_str[i] = results[12] - results[10]
-#             y_ec_str[i] = results[13] - results[11]
-#             rhoA[i] = results[14]
-#             rhoJ[i] = results[15] + results[16]  # perpindicular axis theorem
+            cs = self.upperCS[i]  # TODO: lower surface may be the compression one
+            sector_idx = sector_idx_array[i]
 
-#             self.x_ec_nose[i] = results[13] + self.leLoc[i]*self.chord[i]
-#             self.y_ec_nose[i] = results[12]  # switch b.c of coordinate system used
+            if sector_idx == None:
+                eps_crit[i] = 0.
 
+            else:
 
+                # chord-wise length of sector
+                sector_length = chord[i] * (cs.loc[sector_idx+1] - cs.loc[sector_idx])
 
-#         return EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str
+                # get matrices
+                A, B, D, totalHeight = cs.compositeMatrices(sector_idx)
+                E = cs.effectiveEAxial(sector_idx)
+                D1 = D[0, 0]
+                D2 = D[1, 1]
+                D3 = D[0, 1] + 2*D[2, 2]
 
+                # use empirical formula
+                Nxx = 2 * (math.pi/sector_length)**2 * (math.sqrt(D1*D2) + D3)
+                # Nxx = 3.6 * (math.pi/sector_length)**2 * D1
 
+                eps_crit[i] = - Nxx / totalHeight / E
 
 
-
-
-#     def criticalStrainLocations(self, sector_idx_array):
-
-#         n = len(self.r)
-
-#         # find location of max thickness on airfoil
-#         xun = np.zeros(n)
-#         xln = np.zeros(n)
-#         yun = np.zeros(n)
-#         yln = np.zeros(n)
-
-#         # for i, p in enumerate(self.profile):
-#         #     xun[i], yun[i], yln[i] = p.locationOfMaxThickness()
-#         # xln = xun
-
-
-#         for i in range(n):
-#             csU = self.upperCS[i]
-#             csL = self.lowerCS[i]
-#             pf = self.profile[i]
-#             idx = sector_idx_array[i]
-
-#             xun[i] = 0.5*(csU.loc[idx] + csU.loc[idx+1])
-#             xln[i] = 0.5*(csL.loc[idx] + csL.loc[idx+1])
-#             yun[i] = np.interp(xun[i], pf.x, pf.yu)
-#             yln[i] = np.interp(xln[i], pf.x, pf.yl)
-
-#         # evaluate on both upper and lower surface
-#         xu = np.zeros(n)
-#         yu = np.zeros(n)
-#         xl = np.zeros(n)
-#         yl = np.zeros(n)
-
-#         xu = xun*self.chord - self.x_ec_nose  # define relative to elastic center
-#         xl = xln*self.chord - self.x_ec_nose
-#         yu = yun*self.chord - self.y_ec_nose
-#         yl = yln*self.chord - self.y_ec_nose
-
-#         # switch to airfoil coordinate system
-#         xu, yu = yu, xu
-#         xl, yl = yl, xl
-
-#         return xu, yu, xl, yl
-
-
-
-#     def panelBucklingStrain(self, sector_idx_array):
-#         """
-#         see chapter on Structural Component Design Techniques from Alastair Johnson
-#         section 6.2: Design of composite panels
-
-#         assumes: large aspect ratio, simply supported, uniaxial compression, flat rectangular plate
-
-#         """
-
-#         chord = self.chord
-#         nsec = len(self.r)
-
-#         eps_crit = np.zeros(nsec)
-
-#         for i in range(nsec):
-
-#             cs = self.upperCS[i]  # TODO: lower surface may be the compression one
-#             sector_idx = sector_idx_array[i]
-
-#             # chord-wise length of sector
-#             sector_length = chord[i] * (cs.loc[sector_idx+1] - cs.loc[sector_idx])
-
-#             # get matrices
-#             A, B, D, totalHeight = cs.compositeMatrices(sector_idx)
-#             E = cs.effectiveEAxial(sector_idx)
-#             D1 = D[0, 0]
-#             D2 = D[1, 1]
-#             D3 = D[0, 1] + 2*D[2, 2]
-
-#             # use empirical formula
-#             Nxx = 2 * (math.pi/sector_length)**2 * (math.sqrt(D1*D2) + D3)
-#             # Nxx = 3.6 * (math.pi/sector_length)**2 * D1
-
-#             eps_crit[i] = - Nxx / totalHeight / E
-
-
-#         return eps_crit
+        return eps_crit
 
 
 

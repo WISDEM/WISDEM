@@ -122,8 +122,8 @@ class PlantFinance(ExplicitComponent):
             
                     
 
-    def compute_partials(self, inputs, J):
-        J.update(self.J)
+    def compute_partials(self, inputs, J, discrete_inputs):
+        J = self.J
 
 
 

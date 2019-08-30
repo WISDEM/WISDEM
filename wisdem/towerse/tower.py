@@ -141,7 +141,7 @@ class TurbineMass(ExplicitComponent):
         self.add_output('turbine_I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of tower about base [xx yy zz xy xz yz]')
        
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
         outputs['turbine_mass'] = inputs['rna_mass'] + inputs['tower_mass']
@@ -184,7 +184,7 @@ class TowerPreFrame(ExplicitComponent):
         
         # spring reaction data.  Use float('inf') for rigid constraints.
         nK = 1
-        self.add_discrete_output('kidx', np.zeros(nK, dtype=np.int_), desc='indices of z where external stiffness reactions should be applied.')
+        self.add_output('kidx', np.zeros(nK), desc='indices of z where external stiffness reactions should be applied.')
         self.add_output('kx', np.zeros(nK), units='m', desc='spring stiffness in x-direction')
         self.add_output('ky', np.zeros(nK), units='m', desc='spring stiffness in y-direction')
         self.add_output('kz', np.zeros(nK), units='m', desc='spring stiffness in z-direction')
@@ -194,7 +194,7 @@ class TowerPreFrame(ExplicitComponent):
         
         # extra mass
         nMass = 1
-        self.add_discrete_output('midx', np.zeros(nMass, dtype=np.int_), desc='indices where added mass should be applied.')
+        self.add_output('midx', np.zeros(nMass), desc='indices where added mass should be applied.')
         self.add_output('m', np.zeros(nMass), units='kg', desc='added mass')
         self.add_output('mIxx', np.zeros(nMass), units='kg*m**2', desc='x mass moment of inertia about some point p')
         self.add_output('mIyy', np.zeros(nMass), units='kg*m**2', desc='y mass moment of inertia about some point p')
@@ -208,7 +208,7 @@ class TowerPreFrame(ExplicitComponent):
 
         # point loads (if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also)
         nPL = 1
-        self.add_discrete_output('plidx', np.zeros(nPL, dtype=np.int_), desc='indices where point loads should be applied.')
+        self.add_output('plidx', np.zeros(nPL), desc='indices where point loads should be applied.')
         self.add_output('Fx', np.zeros(nPL), units='N', desc='point force in x-direction')
         self.add_output('Fy', np.zeros(nPL), units='N', desc='point force in y-direction')
         self.add_output('Fz', np.zeros(nPL), units='N', desc='point force in z-direction')
@@ -224,7 +224,7 @@ class TowerPreFrame(ExplicitComponent):
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Prepare for reactions: rigid at tower base
-        discrete_outputs['kidx'] = np.array([ 0 ], dtype=np.int_)
+        outputs['kidx'] = np.array([ 0 ], dtype=np.int_)
         if discrete_inputs['monopile']:
             kmono = discrete_inputs['k_monopile']
             outputs['kx']   = np.array([ kmono[0] ]).flatten()
@@ -234,15 +234,21 @@ class TowerPreFrame(ExplicitComponent):
             outputs['kty']  = np.array([ kmono[3] ]).flatten()
             outputs['ktz']  = np.array([ kmono[5] ]).flatten()
         else:
-            outputs['kx']   = np.array([ np.inf ])
-            outputs['ky']   = np.array([ np.inf ])
-            outputs['kz']   = np.array([ np.inf ])
-            outputs['ktx']  = np.array([ np.inf ])
-            outputs['kty']  = np.array([ np.inf ])
-            outputs['ktz']  = np.array([ np.inf ])
+            # outputs['kx']   = np.array([ np.inf ])
+            # outputs['ky']   = np.array([ np.inf ])
+            # outputs['kz']   = np.array([ np.inf ])
+            # outputs['ktx']  = np.array([ np.inf ])
+            # outputs['kty']  = np.array([ np.inf ])
+            # outputs['ktz']  = np.array([ np.inf ])
+            outputs['kx']   = np.array([ 1.e16 ])
+            outputs['ky']   = np.array([ 1.e16 ])
+            outputs['kz']   = np.array([ 1.e16 ])
+            outputs['ktx']  = np.array([ 1.e16 ])
+            outputs['kty']  = np.array([ 1.e16 ])
+            outputs['ktz']  = np.array([ 1.e16 ])
             
         # Prepare RNA for "extra node mass"
-        discrete_outputs['midx']  = np.array([ len(inputs['z'])-1 ], dtype=np.int_)
+        outputs['midx']  = np.array([ len(inputs['z'])-1 ], dtype=np.int_)
         outputs['m']     = np.array([ inputs['mass'] ]).flatten()
         outputs['mIxx']  = np.array([ inputs['mI'][0] ]).flatten()
         outputs['mIyy']  = np.array([ inputs['mI'][1] ]).flatten()
@@ -255,7 +261,7 @@ class TowerPreFrame(ExplicitComponent):
         outputs['mrhoz'] = np.array([ inputs['mrho'][2] ]).flatten()
 
         # Prepare point forces at RNA node
-        discrete_outputs['plidx'] = np.array([ len(inputs['z'])-1 ], dtype=np.int_)
+        outputs['plidx'] = np.array([ len(inputs['z'])-1 ], dtype=np.int_)
         outputs['Fx']    = np.array([ inputs['rna_F'][0] ]).flatten()
         outputs['Fy']    = np.array([ inputs['rna_F'][1] ]).flatten()
         outputs['Fz']    = np.array([ inputs['rna_F'][2] ]).flatten()
@@ -264,7 +270,7 @@ class TowerPreFrame(ExplicitComponent):
         outputs['Mzz']   = np.array([ inputs['rna_M'][2] ]).flatten()
 
         
-    def compute_partials(self, inputs, J):
+    def compute_partials(self, inputs, J, discrete_inputs):
         
         J['m','mass']    = 1.0
         J['mIxx','mI']   = np.eye(6)[0,:]
@@ -327,7 +333,7 @@ class TowerPostFrame(ExplicitComponent):
         self.add_input('f2', 0.0, units='Hz', desc='Second natural frequency')
         
         # outputs
-        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First and second natural frequency')
+        self.add_output('structural_frequencies', np.zeros(2), units='Hz', desc='First and second natural frequency')
         self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
         self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
         self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
@@ -337,7 +343,7 @@ class TowerPostFrame(ExplicitComponent):
         self.add_output('turbine_M', val=np.zeros(3), units='N*m', desc='Total x-moment on tower+rna measured at base')
         
         # Derivatives
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
         
     def compute(self, inputs, outputs):
@@ -352,7 +358,7 @@ class TowerPostFrame(ExplicitComponent):
         z_section,_  = nodal2sectional(inputs['z'])
 
         # Frequencies
-        outputs['structural_frequencies'] = np.zeros(NFREQ)
+        outputs['structural_frequencies'] = np.zeros(2)
         outputs['structural_frequencies'][0] = inputs['f1']
         outputs['structural_frequencies'][1] = inputs['f2']
         
@@ -399,8 +405,8 @@ class TowerLeanSE(Group):
         
         # Independent variables that are unique to TowerSE
         towerIndeps = IndepVarComp()
-        towerIndeps.add_output('tower_section_height', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_outer_diameter', np.zeros(nPoints), units='m')
+        towerIndeps.add_output('tower_section_height', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_wall_thickness', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_buckling_length', 0.0, units='m')
         towerIndeps.add_output('tower_outfitting_factor', 0.0)
@@ -449,14 +455,16 @@ class TowerSE(Group):
         #self.options.declare('nDEL')
         self.options.declare('wind', default='')
         self.options.declare('topLevelFlag', default=True)
+        self.options.declare('monopile', default=False)
     
     def setup(self):
-        nLC     = self.options['nLC']
-        nPoints = self.options['nPoints']
-        nFull   = self.options['nFull']
-        #nDEL    = self.options['nDEL']
-        wind    = self.options['wind']
-        topLevelFlag = self.options['topLevelFlag']
+        nLC           = self.options['nLC']
+        nPoints       = self.options['nPoints']
+        nFull         = self.options['nFull']
+        # nDEL          = self.options['nDEL']
+        wind          = self.options['wind']
+        topLevelFlag  = self.options['topLevelFlag']
+        self.monopile = self.options['monopile']
         
         # Independent variables that are unique to TowerSE
         towerIndeps = IndepVarComp()
@@ -492,7 +500,7 @@ class TowerSE(Group):
             sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
             sharedIndeps.add_output('wind_z0', 0.0, units='m')
             sharedIndeps.add_output('wind_beta', 0.0, units='deg')
-            sharedIndeps.add_output('cd_usr', np.nan)
+            sharedIndeps.add_output('cd_usr', -1.)
             sharedIndeps.add_output('yaw', 0.0, units='deg')
             sharedIndeps.add_output('E', 0.0, units='N/m**2')
             sharedIndeps.add_output('G', 0.0, units='N/m**2')
@@ -534,9 +542,12 @@ class TowerSE(Group):
             else:
                 raise ValueError('Unknown wind type, '+wind)
 
-            self.add_subsystem('wave'+lc, LinearWaves(nPoints=nFull), promotes=['z_floor'])
             self.add_subsystem('windLoads'+lc, CylinderWindDrag(nPoints=nFull), promotes=['cd_usr'])
-            self.add_subsystem('waveLoads'+lc, CylinderWaveDrag(nPoints=nFull), promotes=['cm','cd_usr'])
+
+            if self.monopile:
+                self.add_subsystem('wave'+lc, LinearWaves(nPoints=nFull), promotes=['z_floor'])
+                self.add_subsystem('waveLoads'+lc, CylinderWaveDrag(nPoints=nFull), promotes=['cm','cd_usr'])
+
             self.add_subsystem('distLoads'+lc, AeroHydroLoads(nPoints=nFull), promotes=['yaw'])
 
             self.add_subsystem('pre'+lc, TowerPreFrame(nFull=nFull), promotes=['monopile'])
@@ -545,8 +556,11 @@ class TowerSE(Group):
             self.add_subsystem('post'+lc, TowerPostFrame(nFull=nFull), promotes=['E','sigma_y','DC','life','m_SN',
                                                                                  'gamma_b','gamma_f','gamma_fatigue','gamma_m','gamma_n'])
             
-            self.connect('z_full', ['wind'+lc+'.z', 'wave'+lc+'.z', 'windLoads'+lc+'.z', 'waveLoads'+lc+'.z', 'distLoads'+lc+'.z', 'pre'+lc+'.z', 'tower'+lc+'.z', 'post'+lc+'.z'])
-            self.connect('d_full', ['windLoads'+lc+'.d', 'waveLoads'+lc+'.d', 'tower'+lc+'.d', 'post'+lc+'.d'])
+            self.connect('z_full', ['wind'+lc+'.z', 'windLoads'+lc+'.z', 'distLoads'+lc+'.z', 'pre'+lc+'.z', 'tower'+lc+'.z', 'post'+lc+'.z'])
+            self.connect('d_full', ['windLoads'+lc+'.d', 'tower'+lc+'.d', 'post'+lc+'.d'])
+            if self.monopile:
+                self.connect('z_full', ['wave'+lc+'.z', 'waveLoads'+lc+'.z'])
+                self.connect('d_full', 'waveLoads'+lc+'.d')
 
             if topLevelFlag:
                 self.connect('rna_mass', 'pre'+lc+'.mass')
@@ -597,7 +611,9 @@ class TowerSE(Group):
             # connections to wind, wave
             if topLevelFlag:
                 self.connect('wind_reference_height', 'wind'+lc+'.zref')
-                self.connect('wind_z0', ['wind'+lc+'.z0', 'wave'+lc+'.z_surface'])
+                self.connect('wind_z0', 'wind'+lc+'.z0')
+                if self.monopile:
+                    self.connect('wind_z0', 'wave'+lc+'.z_surface')
                 #self.connect('z_floor', 'waveLoads'+lc+'.wlevel')
                 if wind=='PowerWind':
                     self.connect('shearExp', 'wind'+lc+'.shearExp')
@@ -607,17 +623,18 @@ class TowerSE(Group):
                 self.connect('air_viscosity', 'windLoads'+lc+'.mu')
                 self.connect('wind_beta', 'windLoads'+lc+'.beta')
 
-            # connections to waveLoads1
-            self.connect('water_density', ['wave'+lc+'.rho', 'waveLoads'+lc+'.rho'])
-            self.connect('water_viscosity', 'waveLoads'+lc+'.mu')
-            self.connect('wave_beta', 'waveLoads'+lc+'.beta')
-            self.connect('significant_wave_height', 'wave'+lc+'.hmax')
-            self.connect('significant_wave_period', 'wave'+lc+'.T')
-                
-            self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
-            self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
-            self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
-            self.connect('wave'+lc+'.p', 'waveLoads'+lc+'.p')
+            if self.monopile:
+                # connections to waveLoads1
+                self.connect('water_density', ['wave'+lc+'.rho', 'waveLoads'+lc+'.rho'])
+                self.connect('water_viscosity', 'waveLoads'+lc+'.mu')
+                self.connect('wave_beta', 'waveLoads'+lc+'.beta')
+                self.connect('significant_wave_height', 'wave'+lc+'.hmax')
+                self.connect('significant_wave_period', 'wave'+lc+'.T')
+                    
+                self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
+                self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
+                self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
+                self.connect('wave'+lc+'.p', 'waveLoads'+lc+'.p')
 
             # connections to distLoads1
             self.connect('windLoads'+lc+'.windLoads_Px', 'distLoads'+lc+'.windLoads_Px')
@@ -633,18 +650,19 @@ class TowerSE(Group):
             self.connect('windLoads'+lc+'.windLoads_z', 'distLoads'+lc+'.windLoads_z')
             self.connect('windLoads'+lc+'.windLoads_d', 'distLoads'+lc+'.windLoads_d')
 
-            self.connect('waveLoads'+lc+'.waveLoads_Px', 'distLoads'+lc+'.waveLoads_Px')
-            self.connect('waveLoads'+lc+'.waveLoads_Py', 'distLoads'+lc+'.waveLoads_Py')
-            self.connect('waveLoads'+lc+'.waveLoads_Pz', 'distLoads'+lc+'.waveLoads_Pz')
-            self.connect('waveLoads'+lc+'.waveLoads_pt', 'distLoads'+lc+'.waveLoads_qdyn')
-            self.connect('waveLoads'+lc+'.waveLoads_beta', 'distLoads'+lc+'.waveLoads_beta')
-            #self.connect('waveLoads'+lc+'.waveLoads_Px0', 'distLoads'+lc+'.waveLoads_Px0')
-            #self.connect('waveLoads'+lc+'.waveLoads_Py0', 'distLoads'+lc+'.waveLoads_Py0')
-            #self.connect('waveLoads'+lc+'.waveLoads_Pz0', 'distLoads'+lc+'.waveLoads_Pz0')
-            #self.connect('waveLoads'+lc+'.waveLoads_qdyn0', 'distLoads'+lc+'.waveLoads_qdyn0')
-            #self.connect('waveLoads'+lc+'.waveLoads_beta0', 'distLoads'+lc+'.waveLoads_beta0')
-            self.connect('waveLoads'+lc+'.waveLoads_z', 'distLoads'+lc+'.waveLoads_z')
-            self.connect('waveLoads'+lc+'.waveLoads_d', 'distLoads'+lc+'.waveLoads_d')
+            if self.monopile:
+                self.connect('waveLoads'+lc+'.waveLoads_Px', 'distLoads'+lc+'.waveLoads_Px')
+                self.connect('waveLoads'+lc+'.waveLoads_Py', 'distLoads'+lc+'.waveLoads_Py')
+                self.connect('waveLoads'+lc+'.waveLoads_Pz', 'distLoads'+lc+'.waveLoads_Pz')
+                self.connect('waveLoads'+lc+'.waveLoads_pt', 'distLoads'+lc+'.waveLoads_qdyn')
+                self.connect('waveLoads'+lc+'.waveLoads_beta', 'distLoads'+lc+'.waveLoads_beta')
+                #self.connect('waveLoads'+lc+'.waveLoads_Px0', 'distLoads'+lc+'.waveLoads_Px0')
+                #self.connect('waveLoads'+lc+'.waveLoads_Py0', 'distLoads'+lc+'.waveLoads_Py0')
+                #self.connect('waveLoads'+lc+'.waveLoads_Pz0', 'distLoads'+lc+'.waveLoads_Pz0')
+                #self.connect('waveLoads'+lc+'.waveLoads_qdyn0', 'distLoads'+lc+'.waveLoads_qdyn0')
+                #self.connect('waveLoads'+lc+'.waveLoads_beta0', 'distLoads'+lc+'.waveLoads_beta0')
+                self.connect('waveLoads'+lc+'.waveLoads_z', 'distLoads'+lc+'.waveLoads_z')
+                self.connect('waveLoads'+lc+'.waveLoads_d', 'distLoads'+lc+'.waveLoads_d')
 
             # Tower connections
             self.connect('tower_buckling_length', ['tower'+lc+'.L_reinforced', 'post'+lc+'.L_reinforced'])
@@ -701,7 +719,7 @@ if __name__ == '__main__':
     wind_zref = 90.0
     wind_z0 = 0.0
     shearExp = 0.2
-    cd_usr = np.inf
+    cd_usr = -1.
     # ---------------
 
     # --- wave ---
@@ -769,7 +787,7 @@ if __name__ == '__main__':
     nLC = 2
     
     prob = Problem()
-    prob.model = TowerSE(nLC=nLC, nPoints=nPoints, nFull=nFull, wind=wind, topLevelFlag=True)
+    prob.model = TowerSE(nLC=nLC, nPoints=nPoints, nFull=nFull, wind=wind, topLevelFlag=True, monopile=monopile)
     prob.setup()
 
     if wind=='PowerWind':
@@ -786,7 +804,7 @@ if __name__ == '__main__':
     prob['tower_buckling_length'] = L_reinforced
     prob['tower_outfitting_factor'] = Koutfitting
     prob['yaw'] = yaw
-    prob['monopile'] = monopile
+    # prob['monopile'] = monopile
     prob['suctionpile_depth'] = suction_depth
     prob['soil_G'] = soilG
     prob['soil_nu'] = soilnu

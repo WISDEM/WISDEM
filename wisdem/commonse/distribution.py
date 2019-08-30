@@ -60,6 +60,7 @@ class WeibullWithMeanCDF(CDFBase):
         self.add_input('xbar', shape=1, units='m/s', desc='mean value of distribution')
 
         self.declare_partials('F', 'x')
+        self.declare_partials('F', 'xbar')
         
     def compute(self, inputs, outputs):
 
@@ -89,6 +90,7 @@ class RayleighCDF(CDFBase):
         self.add_input('xbar', shape=1, units='m/s', desc='reference wind speed (usually at hub height)')
 
         self.declare_partials('F', 'x')
+        self.declare_partials('F', 'xbar')
 
     def compute(self, inputs, outputs):
 

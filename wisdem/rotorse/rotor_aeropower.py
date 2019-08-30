@@ -40,11 +40,17 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.options.declare('regulation_reg_II5',default=True)
         self.options.declare('regulation_reg_III',default=False)
         self.options.declare('lock_pitchII',default=False)
+
+        self.options.declare('n_aoa_grid')
+        self.options.declare('n_Re_grid')
+
     
     def setup(self):
-        naero = self.options['naero']
-        n_pc = self.options['n_pc']
+        naero       = self.naero = self.options['naero']
+        n_pc        = self.options['n_pc']
         n_pc_spline = self.options['n_pc_spline']
+        n_aoa_grid  = self.options['n_aoa_grid']
+        n_Re_grid   = self.options['n_Re_grid']
 
         # parameters
         self.add_input('control_Vin',        val=0.0, units='m/s',  desc='cut-in wind speed')
@@ -70,7 +76,12 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_input('precurve',      val=np.zeros(naero),    units='m', desc='precurve at each section')
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
 
-        self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
+        # self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
+        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
         self.add_discrete_input('nBlades',         val=0,                              desc='number of blades')
         self.add_input('rho',       val=0.0,        units='kg/m**3',    desc='density of air')
         self.add_input('mu',        val=0.0,        units='kg/(m*s)',   desc='dynamic viscosity of air')
@@ -91,6 +102,9 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_output('M',        val=np.zeros(n_pc), units='N*m',    desc='blade root moment')
         self.add_output('Cp',       val=np.zeros(n_pc),                 desc='rotor electrical power coefficient')
         self.add_output('Cp_aero',  val=np.zeros(n_pc),                 desc='rotor aerodynamic power coefficient')
+        self.add_output('Ct_aero',  val=np.zeros(n_pc),                 desc='rotor aerodynamic thrust coefficient')
+        self.add_output('Cq_aero',  val=np.zeros(n_pc),                 desc='rotor aerodynamic torque coefficient')
+        self.add_output('Cm_aero',  val=np.zeros(n_pc),                 desc='rotor aerodynamic moment coefficient')
         self.add_output('V_spline', val=np.zeros(n_pc_spline), units='m/s',  desc='wind vector')
         self.add_output('P_spline', val=np.zeros(n_pc_spline), units='W',    desc='rotor electrical power')
         self.add_output('V_R25',       val=0.0, units='m/s', desc='region 2.5 transition wind speed')
@@ -105,23 +119,32 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_output('cl_cutin',          val=np.zeros(naero), desc='lift coefficient distribution along blade span at cut-in wind speed')
         self.add_output('cd_cutin',          val=np.zeros(naero), desc='drag coefficient distribution along blade span at cut-in wind speed')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-                
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], discrete_inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'])
+
+        # Create Airfoil class instances
+        af = [None]*self.naero
+        for i in range(self.naero):
+            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
         
-        Uhub    = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.options['n_pc']).flatten()
+
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'])
+        
+        Uhub     = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.options['n_pc']).flatten()
         
         P_aero   = np.zeros_like(Uhub)
         Cp_aero  = np.zeros_like(Uhub)
-        P       = np.zeros_like(Uhub)
-        Cp      = np.zeros_like(Uhub)
-        T       = np.zeros_like(Uhub)
-        Q       = np.zeros_like(Uhub)
-        M       = np.zeros_like(Uhub)
-        Omega   = np.zeros_like(Uhub)
-        pitch   = np.zeros_like(Uhub) + inputs['control_pitch']
+        Ct_aero  = np.zeros_like(Uhub)
+        Cq_aero  = np.zeros_like(Uhub)
+        Cm_aero  = np.zeros_like(Uhub)
+        P        = np.zeros_like(Uhub)
+        Cp       = np.zeros_like(Uhub)
+        T        = np.zeros_like(Uhub)
+        Q        = np.zeros_like(Uhub)
+        M        = np.zeros_like(Uhub)
+        Omega    = np.zeros_like(Uhub)
+        pitch    = np.zeros_like(Uhub) + inputs['control_pitch']
 
         Omega_max = min([inputs['control_maxTS'] / inputs['Rtip'], inputs['control_maxOmega']*np.pi/30.])
         
@@ -129,7 +152,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         for i in range(len(Uhub)):
             Omega[i] = Uhub[i] * inputs['control_tsr'] / inputs['Rtip']
         
-        P_aero, T, Q, M, Cp_aero, _, _, _ = self.ccblade.evaluate(Uhub, Omega * 30. / np.pi, pitch, coefficients=True)
+        P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = self.ccblade.evaluate(Uhub, Omega * 30. / np.pi, pitch, coefficients=True)
         P, eff  = CSMDrivetrain(P_aero, inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
         Cp      = Cp_aero*eff
         
@@ -140,7 +163,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
             if Omega[i] > Omega_max and P[i] < inputs['control_ratedPower']:
                 Omega[i]        = Omega_max
                 Uhub[i]         = Omega[i] * inputs['Rtip'] / inputs['control_tsr']
-                P_aero[i], T[i], Q[i], M[i], Cp_aero[i], _, _, _ = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch[i]], coefficients=True)
+                P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch[i]], coefficients=True)
                 P[i], eff       = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
                 Cp[i]           = Cp_aero[i]*eff
                 regionIIhalf    = True
@@ -177,7 +200,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 pitch_regionIIhalf = minimize_scalar(lambda x: maxPregionIIhalf(x, Uhub[i], Omega[i]), bounds=bnds, method='bounded', options=options)['x']
                 pitch[i]    = pitch_regionIIhalf
                 
-                P_aero[i], T[i], Q[i], M[i], Cp_aero[i], _, _, _ = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch[i]], coefficients=True)
+                P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch[i]], coefficients=True)
                 
                 P[i], eff  = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
                 Cp[i]      = Cp_aero[i]*eff
@@ -200,10 +223,10 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         if regionIIhalf == True:
             # Rated conditions
             
-            def min_Uhub_rated_II12(min_params):
+            def min_Uhub_rated_II12(min_inputs):
                 return min_inputs[1]
                 
-            def get_Uhub_rated_II12(min_params):
+            def get_Uhub_rated_II12(min_inputs):
 
                 Uhub_i  = min_inputs[1]
                 Omega_i = Omega_max
@@ -228,7 +251,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 U_rated         = Uhub[i]
             
             Omega[i]        = Omega_max
-            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], _, _, _ = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch0], coefficients=True)
+            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch0], coefficients=True)
             P_i, eff        = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
             Cp[i]           = Cp_aero[i]*eff
             P[i]            = inputs['control_ratedPower']
@@ -257,7 +280,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
             Omega[i] = min([Uhub[i] * inputs['control_tsr'] / inputs['Rtip'], Omega_max])
             pitch0   = pitch[i]
             
-            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], _, _, _ = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch0], coefficients=True)
+            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega[i] * 30. / np.pi], [pitch0], coefficients=True)
             P[i], eff    = CSMDrivetrain(P_aero[i], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
             Cp[i]        = Cp_aero[i]*eff
         
@@ -270,8 +293,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 bnds     = [pitch0, pitch0 + 15.]
                 pitch_regionIII = minimize_scalar(lambda x: constantPregionIII(x, Uhub[j], Omega[j]), bounds=bnds, method='bounded', options=options)['x']
                 pitch[j]        = pitch_regionIII
-                
-                P_aero[j], T[j], Q[j], M[j], Cp_aero[j], _, _, _ = self.ccblade.evaluate([Uhub[j]], [Omega[j] * 30. / np.pi], [pitch[j]], coefficients=True)
+                P_aero[j], T[j], Q[j], M[j], Cp_aero[j], Ct_aero[j], Cq_aero[j], Cm_aero[j] = self.ccblade.evaluate([Uhub[j]], [Omega[j] * 30. / np.pi], [pitch[j]], coefficients=True)
                 P[j], eff       = CSMDrivetrain(P_aero[j], inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
                 Cp[j]           = Cp_aero[j]*eff
 
@@ -284,6 +306,9 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                     M[j]        = M[j-1]
                     pitch[j]    = pitch[j-1]
                     Cp[j]       = P[j] / (0.5 * inputs['rho'] * np.pi * inputs['Rtip']**2 * Uhub[i]**3)
+                    Ct_aero[j]  = Ct_aero[j-1]
+                    Cq_aero[j]  = Cq_aero[j-1]
+                    Cm_aero[j]  = Cm_aero[j-1]
 
                 P[j] = inputs['control_ratedPower']
                 
@@ -294,6 +319,9 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
                 M[j]        = 0
                 pitch[j]    = 0
                 Cp[j]       = P[j] / (0.5 * inputs['rho'] * np.pi * inputs['Rtip']**2 * Uhub[i]**3)
+                Ct_aero[j]  = 0
+                Cq_aero[j]  = 0
+                Cm_aero[j]  = 0
 
         
         outputs['T']       = T
@@ -304,11 +332,13 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         outputs['P']       = P  
         outputs['Cp']      = Cp  
         outputs['Cp_aero'] = Cp_aero
+        outputs['Ct_aero'] = Ct_aero
+        outputs['Cq_aero'] = Cq_aero
+        outputs['Cm_aero'] = Cm_aero
         outputs['V']       = Uhub
         outputs['M']       = M
         outputs['pitch']   = pitch
-        
-        
+                
         self.ccblade.induction_inflow = True
         a_regII, ap_regII, alpha_regII, cl_regII, cd_regII = self.ccblade.distributedAeroLoads(Uhub[0], Omega[0] * 30. / np.pi, pitch[0], 0.0)
         
@@ -337,15 +367,19 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
         self.options.declare('naero')
-        self.options.declare('n_pitch', default=4)
-        self.options.declare('n_tsr', default=4)
+        self.options.declare('n_pitch', default=2)
+        self.options.declare('n_tsr', default=2)
         self.options.declare('n_U', default=1)
-        
+        self.options.declare('n_aoa_grid')
+        self.options.declare('n_Re_grid')
+
     def setup(self):
-        naero   = self.options['naero']
-        n_pitch = self.options['n_pitch']
-        n_tsr   = self.options['n_tsr']
-        n_U     = self.options['n_U']
+        naero       = self.naero = self.options['naero']
+        n_aoa_grid  = self.options['n_aoa_grid']
+        n_Re_grid   = self.options['n_Re_grid']
+        n_pitch     = self.options['n_pitch']
+        n_tsr       = self.options['n_tsr']
+        n_U         = self.options['n_U']
         
         # parameters        
         self.add_input('control_Vin',   val=0.0,             units='m/s',       desc='cut-in wind speed')
@@ -364,7 +398,12 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.add_input('rho',           val=0.0,             units='kg/m**3',   desc='density of air')
         self.add_input('mu',            val=0.0,             units='kg/(m*s)',  desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                desc='shear exponent')
-        self.add_discrete_input('airfoils',      val=[0]*naero,                 desc='CCAirfoil instances')
+        # self.add_discrete_input('airfoils',      val=[0]*naero,                 desc='CCAirfoil instances')
+        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
         self.add_discrete_input('nBlades',       val=0,                         desc='number of blades')
         self.add_discrete_input('nSector',       val=4,                         desc='number of sectors to divide rotor face into in computing thrust and power')
         self.add_discrete_input('tiploss',       val=True,                      desc='include Prandtl tip loss model')
@@ -385,6 +424,12 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        # Create Airfoil class instances
+        af = [None]*self.naero
+        for i in range(self.naero):
+            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
+       
+
         n_pitch  = self.options['n_pitch']
         n_tsr    = self.options['n_tsr']
         n_U      = self.options['n_U']
@@ -395,7 +440,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         tsr_vector = inputs['tsr_vector_in']
         pitch_vector = inputs['pitch_vector_in']
         
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], discrete_inputs['airfoils'], inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'])
         
         if max(U_vector) == 0.:
             U_vector    = np.linspace(V_in[0],V_out[0], n_U)
@@ -437,7 +482,7 @@ class AEP(ExplicitComponent):
         # outputs
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        #self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
 
@@ -446,7 +491,7 @@ class AEP(ExplicitComponent):
         CDF_V = inputs['CDF_V']
         factor = lossFactor/1e3*365.0*24.0
         outputs['AEP'] = factor*np.trapz(P, CDF_V)  # in kWh
-
+        '''
         dAEP_dP, dAEP_dCDF = trapz_deriv(P, CDF_V)
         dAEP_dP *= factor
         dAEP_dCDF *= factor
@@ -458,8 +503,8 @@ class AEP(ExplicitComponent):
         self.J['AEP', 'lossFactor'] = dAEP_dlossFactor
 
     def compute_partials(self, inputs, J):
-        J.update(self.J)
-
+        J = self.J
+        '''
 
 
 def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
@@ -486,8 +531,8 @@ def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
             linear = 0.02000
             quadratic = 0.06899
         elif drivetrainType == 'CONSTANT_EFF':
-            constant = 0.07
-            linear = 0.0
+            constant = 0.00
+            linear = 0.07
             quadratic = 0.0
         
         Pbar0 = aeroPower / ratedPower
@@ -514,93 +559,34 @@ class OutputsAero(ExplicitComponent):
         npts_coarse_power_curve = self.options['npts_coarse_power_curve']
 
         # --- outputs ---
-        self.add_input('AEP_in', val=0.0, units='kW*h', desc='annual energy production')
-        self.add_input('V_in', val=np.zeros(npts_coarse_power_curve), units='m/s', desc='wind speeds (power curve)')
-        self.add_input('P_in', val=np.zeros(npts_coarse_power_curve), units='W', desc='power (power curve)')
-        self.add_input('Cp_in', val=np.zeros(npts_coarse_power_curve), units='W', desc='power (power curve)')
-        self.add_input('Cp_aero_in', val=np.zeros(npts_coarse_power_curve), units='W', desc='power (power curve)')
-
-        self.add_input('rated_V_in', val=0.0, units='m/s', desc='rated wind speed')
         self.add_input('rated_Omega_in', val=0.0, units='rpm', desc='rotor rotation speed at rated')
         self.add_input('rated_pitch_in', val=0.0, units='deg', desc='pitch setting at rated')
         self.add_input('rated_T_in', val=0.0, units='N', desc='rotor aerodynamic thrust at rated')
         self.add_input('rated_Q_in', val=0.0, units='N*m', desc='rotor aerodynamic torque at rated')
 
-        # self.add_input('diameter_in', val=0.0, units='m', desc='rotor diameter')
-        self.add_input('V_extreme_in', val=0.0, units='m/s', desc='survival wind speed')
+        self.add_input('V_extreme50', val=0.0, units='m/s', desc='survival wind speed')
         self.add_input('T_extreme_in', val=0.0, units='N', desc='thrust at survival wind condition')
         self.add_input('Q_extreme_in', val=0.0, units='N*m', desc='thrust at survival wind condition')
 
-        # internal use outputs
-        #self.add_input('precurveTip_in', val=0.0, units='m', desc='tip location in x_b')
-        #self.add_input('presweepTip_in', val=0.0, units='m', desc='tip location in y_b')  # TODO: connect later
-
         # --- outputs ---
-        self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production')
-        self.add_output('V', val=np.zeros(npts_coarse_power_curve), units='m/s', desc='wind speeds (power curve)')
-        self.add_output('P', val=np.zeros(npts_coarse_power_curve), units='W', desc='power (power curve)')
-        self.add_output('Cp', val=np.zeros(npts_coarse_power_curve), units='W', desc='power (power curve)')
-        self.add_output('Cp_aero', val=np.zeros(npts_coarse_power_curve), units='W', desc='power (power curve)')
-
-        self.add_output('rated_V', val=0.0, units='m/s', desc='rated wind speed')
-        self.add_output('rated_Omega', val=0.0, units='rpm', desc='rotor rotation speed at rated')
-        self.add_output('rated_pitch', val=0.0, units='deg', desc='pitch setting at rated')
-        self.add_output('rated_T', val=0.0, units='N', desc='rotor aerodynamic thrust at rated')
-        self.add_output('rated_Q', val=0.0, units='N*m', desc='rotor aerodynamic torque at rated')
-
-        # self.add_output('diameter', val=0.0, units='m', desc='rotor diameter')
         self.add_output('V_extreme', val=0.0, units='m/s', desc='survival wind speed')
         self.add_output('T_extreme', val=0.0, units='N', desc='thrust at survival wind condition')
         self.add_output('Q_extreme', val=0.0, units='N*m', desc='thrust at survival wind condition')
 
-        # internal use outputs
-        #self.add_output('precurveTip', val=0.0, units='m', desc='tip location in x_b')
-        #self.add_output('presweepTip', val=0.0, units='m', desc='tip location in y_b')  # TODO: connect later
-
-        self.declare_partials('AEP', 'AEP_in')
-        self.declare_partials('V', 'V_in')
-        self.declare_partials('P', 'P_in')
-        self.declare_partials('rated_V', 'rated_V_in')
-        self.declare_partials('rated_Omega', 'rated_Omega_in')
-        self.declare_partials('rated_pitch', 'rated_pitch_in')
-        self.declare_partials('rated_T', 'rated_T_in')
-        self.declare_partials('rated_Q', 'rated_Q_in')
-        #self.declare_partials('diameter', 'diameter_in')
-        self.declare_partials('V_extreme', 'V_extreme_in')
-        self.declare_partials('T_extreme', 'T_extreme_in')
-        self.declare_partials('Q_extreme', 'Q_extreme_in')
+        #self.declare_partials('V_extreme', 'V_extreme50')
+        #self.declare_partials('T_extreme', 'T_extreme_in')
+        #self.declare_partials('Q_extreme', 'Q_extreme_in')
 
     def compute(self, inputs, outputs):
-        outputs['AEP'] = inputs['AEP_in']
-        outputs['V'] = inputs['V_in']
-        outputs['Cp'] = inputs['Cp_in']
-        outputs['Cp_aero'] = inputs['Cp_aero_in']
-        outputs['P'] = inputs['P_in']
-        outputs['rated_V'] = inputs['rated_V_in']
-        outputs['rated_Omega'] = inputs['rated_Omega_in']
-        outputs['rated_pitch'] = inputs['rated_pitch_in']
-        outputs['rated_T'] = inputs['rated_T_in']
-        outputs['rated_Q'] = inputs['rated_Q_in']
-        # outputs['diameter'] = inputs['diameter_in']
-        outputs['V_extreme'] = inputs['V_extreme_in']
+        outputs['V_extreme'] = inputs['V_extreme50']
         outputs['T_extreme'] = inputs['T_extreme_in']
         outputs['Q_extreme'] = inputs['Q_extreme_in']
-        #outputs['precurveTip'] = inputs['precurveTip_in']
-        #outputs['presweepTip'] = inputs['presweepTip_in']
-
+        '''
     def compute_partials(self, inputs, J):
-        J['AEP', 'AEP_in'] = 1
-        J['V', 'V_in'] = np.diag(np.ones(len(inputs['V_in'])))
-        J['P', 'P_in'] = np.diag(np.ones(len(inputs['P_in'])))
-        J['rated_V', 'rated_V_in'] = 1
-        J['rated_Omega', 'rated_Omega_in'] = 1
-        J['rated_pitch', 'rated_pitch_in'] = 1
-        J['rated_T', 'rated_T_in'] = 1
-        J['rated_Q', 'rated_Q_in'] = 1
-        #J['diameter', 'diameter_in'] = 1
-        J['V_extreme', 'V_extreme_in'] = 1
+        J['V_extreme', 'V_extreme50'] = 1
         J['T_extreme', 'T_extreme_in'] = 1
         J['Q_extreme', 'Q_extreme_in'] = 1
+        '''
 
         
 
@@ -623,6 +609,8 @@ class RotorAeroPower(Group):
         flag_Cp_Ct_Cq_Tables        = self.options['flag_Cp_Ct_Cq_Tables']
         topLevelFlag                = self.options['topLevelFlag']
         NPTS                        = len(RefBlade['pf']['s'])
+        NAFgrid                     = len(RefBlade['airfoils_aoa'])
+        NRe                         = len(RefBlade['airfoils_Re'])
 
         aeroIndeps = IndepVarComp()
         aeroIndeps.add_output('wind_reference_height',  val=0.0, units='m',     desc='reference hub height for IEC wind speed (used in CDF calculation)')
@@ -654,85 +642,44 @@ class RotorAeroPower(Group):
             sharedIndeps.add_discrete_output('nSector', val=4, desc='number of sectors to divide rotor face into in computing thrust and power')
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
             
-        self.add_subsystem('rotorGeom', RotorGeometry(RefBlade=RefBlade, topLevelFlag=True), promotes=['*'])
+            self.add_subsystem('rotorGeom', RotorGeometry(RefBlade=RefBlade, topLevelFlag=topLevelFlag), promotes=['*'])
 
         # self.add_subsystem('tipspeed', MaxTipSpeed())
         self.add_subsystem('powercurve', RegulatedPowerCurve(naero=NPTS,
                                                              n_pc=npts_coarse_power_curve,
                                                              n_pc_spline=npts_spline_power_curve,
                                                              regulation_reg_II5=regulation_reg_II5,
-                                                             regulation_reg_III=regulation_reg_III),
-                           promotes=['hub_height','precurveTip','precone','tilt','yaw','nBlades','rho','mu',
-                                     'shearExp','nSector','tiploss','hubloss','wakerotation','usecd'])
+                                                             regulation_reg_III=regulation_reg_III,
+                                                             n_aoa_grid=NAFgrid,
+                                                             n_Re_grid=NRe), promotes=['*'])
+
         if flag_Cp_Ct_Cq_Tables:
-            self.add_subsystem('cpctcq_tables',   Cp_Ct_Cq_Tables(naero=NPTS), promotes=['hub_height','precurveTip','precone','tilt',
-                                                                               'yaw','nBlades','rho','mu','shearExp','nSector'])
+            self.add_subsystem('cpctcq_tables',   Cp_Ct_Cq_Tables(naero=NPTS,n_aoa_grid=NAFgrid,n_Re_grid=NRe), promotes=['*'])
+
         self.add_subsystem('wind', PowerWind(nPoints=1), promotes=['shearExp'])
         self.add_subsystem('cdf', WeibullWithMeanCDF(nspline=npts_spline_power_curve))
         #self.add_subsystem('cdf', RayleighCDF(nspline=npts_spline_power_curve))
-        self.add_subsystem('aep', AEP(n_pc_spline=npts_spline_power_curve))
+        self.add_subsystem('aep', AEP(n_pc_spline=npts_spline_power_curve), promotes=['AEP'])
 
         self.add_subsystem('outputs_aero', OutputsAero(npts_coarse_power_curve=npts_coarse_power_curve), promotes=['*'])
 
-        # connections to analysis
-        self.connect('r_pts',           'powercurve.r')
-        self.connect('chord',           'powercurve.chord')
-        self.connect('theta',           'powercurve.theta')
-        self.connect('precurve',        'powercurve.precurve')
-        self.connect('Rhub',            'powercurve.Rhub')
-        self.connect('Rtip',            'powercurve.Rtip')
-        self.connect('airfoils',        'powercurve.airfoils')
-        self.connect('control_Vin',     'powercurve.control_Vin')
-        self.connect('control_Vout',    'powercurve.control_Vout')
-        if flag_Cp_Ct_Cq_Tables:
-            self.connect('r_pts',           'cpctcq_tables.r')
-            self.connect('chord',           'cpctcq_tables.chord')
-            self.connect('theta',           'cpctcq_tables.theta')
-            self.connect('precurve',        'cpctcq_tables.precurve')
-            self.connect('Rhub',            'cpctcq_tables.Rhub')
-            self.connect('Rtip',            'cpctcq_tables.Rtip')
-            self.connect('airfoils',        'cpctcq_tables.airfoils')
-            self.connect('control_Vin',     'cpctcq_tables.control_Vin')
-            self.connect('control_Vout',    'cpctcq_tables.control_Vout')
-                                        
-        # connections to powercurve
-        self.connect('drivetrainType',  'powercurve.drivetrainType')
-        self.connect('drivetrainEff',   'powercurve.drivetrainEff')
-        self.connect('control_maxTS',   'powercurve.control_maxTS')
-        self.connect('control_maxOmega','powercurve.control_maxOmega')
-        self.connect('control_minOmega','powercurve.control_minOmega')
-        self.connect('control_pitch',   'powercurve.control_pitch')
-        self.connect('machine_rating',  'powercurve.control_ratedPower')
-        self.connect('control_tsr',     'powercurve.control_tsr')
-
+        self.connect('machine_rating',  'control_ratedPower')
+        
         # connections to wind
-        # self.connect('cdf_reference_mean_wind_speed', 'wind.Uref')
-        self.connect('turbineclass.V_mean', 'wind.Uref')
+        if topLevelFlag:
+            self.connect('V_mean', 'wind.Uref')
+            self.connect('wind_zvec', 'wind.z')
         self.connect('wind_reference_height', 'wind.zref')
-        self.connect('wind_zvec', 'wind.z')
-        #self.connect('shearExp', 'wind.shearExp')
 
         # connections to cdf
-        self.connect('powercurve.V_spline', 'cdf.x')
+        self.connect('V_spline', 'cdf.x')
         self.connect('wind.U', 'cdf.xbar', src_indices=[0])
         self.connect('shape_parameter', 'cdf.k')
 
         # connections to aep
         self.connect('cdf.F', 'aep.CDF_V')
-        self.connect('powercurve.P_spline', 'aep.P')
+        self.connect('P_spline', 'aep.P')
         self.connect('AEP_loss_factor', 'aep.lossFactor')
-
-        # connect to outputs
-        #self.connect('geom.diameter', 'diameter_in')
-        self.connect('turbineclass.V_extreme50', 'V_extreme_in')
-        self.connect('powercurve.V', 'V_in')
-        self.connect('powercurve.P', 'P_in')
-        self.connect('aep.AEP', 'AEP_in')
-        self.connect('powercurve.rated_V', 'rated_V_in')
-        self.connect('powercurve.rated_Omega', 'rated_Omega_in')
-        self.connect('powercurve.rated_pitch', 'rated_pitch_in')
-        self.connect('powercurve.rated_T', 'rated_T_in')
-        self.connect('powercurve.rated_Q', 'rated_Q_in')
 
 
 def Init_RotorAeropower_wRefBlade(rotor, blade):
@@ -825,6 +772,7 @@ if __name__ == '__main__':
 
     # === run and outputs ===
     rotor.run_driver()
+    #rotor.check_partials(compact_print=True, step=1e-6, form='central')#, includes='*ae*')
 
     print('Run time = ', time.time()-tt)
     print('AEP =', rotor['AEP'])
@@ -843,12 +791,12 @@ if __name__ == '__main__':
     plt.show()
     
     if flag_Cp_Ct_Cq_Tables:
-        n_pitch = len(rotor['cpctcq_tables.pitch_vector'])
-        n_tsr   = len(rotor['cpctcq_tables.tsr_vector'])
-        n_U     = len(rotor['cpctcq_tables.U_vector'])
+        n_pitch = len(rotor['pitch_vector'])
+        n_tsr   = len(rotor['tsr_vector'])
+        n_U     = len(rotor['U_vector'])
         for i in range(n_U):
             fig0, ax0 = plt.subplots()
-            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
+            CS0 = ax0.contour(rotor['pitch_vector'], rotor['tsr_vector'], rotor['Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
             ax0.clabel(CS0, inline=1, fontsize=12)
             plt.title('Power Coefficient', fontsize=14, fontweight='bold')
             plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
@@ -859,7 +807,7 @@ if __name__ == '__main__':
             plt.subplots_adjust(bottom = 0.15, left = 0.15)
 
             fig0, ax0 = plt.subplots()
-            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Ct_aero_table'][:, :, i])
+            CS0 = ax0.contour(rotor['pitch_vector'], rotor['tsr_vector'], rotor['Ct_aero_table'][:, :, i])
             ax0.clabel(CS0, inline=1, fontsize=12)
             plt.title('Thrust Coefficient', fontsize=14, fontweight='bold')
             plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
@@ -871,7 +819,7 @@ if __name__ == '__main__':
 
             
             fig0, ax0 = plt.subplots()
-            CS0 = ax0.contour(rotor['cpctcq_tables.pitch_vector'], rotor['cpctcq_tables.tsr_vector'], rotor['cpctcq_tables.Cq_aero_table'][:, :, i])
+            CS0 = ax0.contour(rotor['pitch_vector'], rotor['tsr_vector'], rotor['Cq_aero_table'][:, :, i])
             ax0.clabel(CS0, inline=1, fontsize=12)
             plt.title('Torque Coefficient', fontsize=14, fontweight='bold')
             plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
