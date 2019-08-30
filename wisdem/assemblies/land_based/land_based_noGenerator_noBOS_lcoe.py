@@ -35,6 +35,11 @@ class LandBasedTurbine(Group):
         
         RefBlade     = self.options['RefBlade']
         Nsection_Tow = self.options['Nsection_Tow']        
+        if 'Analysis_Level' in self.options['FASTpref']:
+            Analysis_Level = self.options['FASTpref']['Analysis_Level']
+        else:
+            Analysis_Level = 0
+        
         
         # Define all input variables from all models
         myIndeps = IndepVarComp()
@@ -88,7 +93,7 @@ class LandBasedTurbine(Group):
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,
                                               regulation_reg_III=False,
-                                              Analysis_Level=self.options['FASTpref']['Analysis_Level'],
+                                              Analysis_Level=Analysis_Level,
                                               FASTpref=self.options['FASTpref'],
                                               topLevelFlag=True), promotes=['*'])
         
@@ -182,7 +187,7 @@ class LandBasedTurbine(Group):
         self.connect('annual_opex',         'plantfinancese.opex_per_kW')
     
 
-def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level, fst_vt):
+def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt = {}):
 
     prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level = Analysis_Level, fst_vt = fst_vt)
     
