@@ -2,9 +2,8 @@ from __future__ import print_function
 import os, sys, copy, time, warnings
 import operator
 
-from ruamel import yaml
-from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel_yaml import YAML
+from ruamel_yaml.comments import CommentedMap, CommentedSeq
 
 from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d, RectBivariateSpline
 import numpy as np
