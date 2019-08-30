@@ -93,3 +93,12 @@ nosetests.xml
 Icon?
 ehthumbs.db
 Thumbs.db
+
+# Jupyter notebooks #
+#####################
+.ipynb_checkpoints
+<<<<<<< HEAD
+
+# VSCode #
+##########
+.vscode/
