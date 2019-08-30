@@ -85,3 +85,7 @@ nosetests.xml
 Icon?
 ehthumbs.db
 Thumbs.db
+
+# Visual Studio Code #
+######################
+.vscode/
