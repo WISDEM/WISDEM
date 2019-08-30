@@ -16,7 +16,7 @@ from wisdem.aeroelasticse.FAST_post import return_timeseries
 
 
 if MPI:
-    from openmdao.api import PetscImpl as impl
+    #from openmdao.api import PetscImpl as impl
     from mpi4py import MPI
     from petsc4py import PETSc
 # else:
