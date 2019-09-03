@@ -104,6 +104,7 @@ class MaxTipDeflection(ExplicitComponent):
         z_tower     = inputs['z_full']
         d_tower     = inputs['d_full']
         overhang    = inputs['overhang']
+        tt2hub      = overhang * np.sin(inputs['tilt'] / 180. * np.pi)
         precone     = inputs['precone']
         tilt        = inputs['tilt']
         delta       = inputs['tip_deflection']
@@ -114,7 +115,8 @@ class MaxTipDeflection(ExplicitComponent):
                     bladeToAzimuth(precone).azimuthToHub(180.0).hubToYaw(tilt)
 
         # Find the radius of tower where blade passes
-        z_interp = z_tower[-1] - overhang + blade_yaw.z
+        z_interp = z_tower[-1] + tt2hub + blade_yaw.z
+        
         d_interp, ddinterp_dzinterp, ddinterp_dtowerz, ddinterp_dtowerd = interp_with_deriv(z_interp, z_tower, d_tower)
         r_interp = 0.5 * d_interp
         drinterp_dzinterp = 0.5 * ddinterp_dzinterp
@@ -128,7 +130,6 @@ class MaxTipDeflection(ExplicitComponent):
             parked_margin = -overhang + blade_yaw.x - r_interp
         outputs['blade_tip_tower_clearance']   = parked_margin
         outputs['tip_deflection_ratio']        = delta * inputs['gamma_m'] / parked_margin
-
 
     
 class TurbineConstraints(Group):
