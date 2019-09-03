@@ -44,7 +44,7 @@ if libext is None or libext == '':
 
 maplib = '_libmap' + libext
 
-libpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.path.sep + maplib
+libpath = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + maplib
 
 """A collection of methods for the MAP++ program"""
 libexec = cdll.LoadLibrary(libpath)
