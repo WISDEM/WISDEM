@@ -39,9 +39,6 @@ class BladeGeometry(ExplicitComponent):
         NAFgrid = len(self.refBlade['airfoils_aoa'])
         NRe     = len(self.refBlade['airfoils_Re'])
 
-        # variables
-        # self.add_discrete_input('blade_in_overwrite', val={}, desc='optional input blade that can be used to overwrite RefBlade from initialization, first intended for the inner loop of a nested optimization')
-
         self.add_input('bladeLength',   val=0.0, units='m', desc='blade length (if not precurved or swept) otherwise length of blade before curvature')
         self.add_input('r_max_chord',   val=0.0, desc='location of max chord on unit radius')
         self.add_input('chord_in',      val=np.zeros(NINPUT), units='m', desc='chord at control points')  # defined at hub, then at linearly spaced locations from r_max_chord to tip
@@ -174,17 +171,17 @@ class BladeGeometry(ExplicitComponent):
         blade_out = refBlade.update(blade)
         
         # Get geometric outputs
-        outputs['hub_diameter']           = 2.0*Rhub
-        outputs['r']                  = Rhub + (Rtip-Rhub)*np.array(blade_out['pf']['s'])
-        outputs['diameter']               = 2.0*outputs['r'][-1]
+        outputs['hub_diameter'] = 2.0*Rhub
+        outputs['r']            = Rhub + (Rtip-Rhub)*np.array(blade_out['pf']['s'])
+        outputs['diameter']     = 2.0*outputs['r'][-1]
 
-        outputs['chord']                  = blade_out['pf']['chord']
-        outputs['max_chord']              = max(blade_out['pf']['chord'])
-        outputs['theta']                  = blade_out['pf']['theta']
-        outputs['precurve']               = blade_out['pf']['precurve']
-        outputs['presweep']               = blade_out['pf']['presweep']
-        outputs['rthick']                 = blade_out['pf']['rthick']
-        outputs['le_location']            = blade_out['pf']['p_le']
+        outputs['chord']        = blade_out['pf']['chord']
+        outputs['max_chord']    = max(blade_out['pf']['chord'])
+        outputs['theta']        = blade_out['pf']['theta']
+        outputs['precurve']     = blade_out['pf']['precurve']
+        outputs['presweep']     = blade_out['pf']['presweep']
+        outputs['rthick']       = blade_out['pf']['rthick']
+        outputs['le_location']  = blade_out['pf']['p_le']
 
         # airfoils  = blade_out['airfoils']
         outputs['airfoils_cl']  = blade_out['airfoils_cl']
@@ -248,7 +245,7 @@ class BladeGeometry(ExplicitComponent):
         outputs['xl_strain_te']   = xl_strain_te
         outputs['yu_strain_te']   = yu_strain_te
         outputs['yl_strain_te']   = yl_strain_te
-
+        
 
         # Blade cost model
         bcm             = blade_cost_model(options=self.options) # <------------- options, import blade cost model
@@ -331,13 +328,28 @@ class RotorGeometry(Group):
     def initialize(self):
         self.options.declare('RefBlade')
         self.options.declare('topLevelFlag',default=False)
-    
+        
+        # Blade Cost Model Options
+        self.options.declare('verbosity',        default=False)
+        self.options.declare('tex_table',        default=False)
+        self.options.declare('generate_plots',   default=False)
+        self.options.declare('show_plots',       default=False)
+        self.options.declare('show_warnings',    default=False)
+        self.options.declare('discrete',         default=False)
+        
     def setup(self):
         RefBlade = self.options['RefBlade']
         topLevelFlag   = self.options['topLevelFlag']
         NINPUT = len(RefBlade['ctrl_pts']['r_in'])
         NAF    = len(RefBlade['outer_shape_bem']['airfoil_position']['grid'])
-
+        
+        verbosity      = self.options['verbosity']
+        tex_table      = self.options['tex_table']     
+        generate_plots = self.options['generate_plots']
+        show_plots     = self.options['show_plots']
+        show_warnings  = self.options['show_warnings']
+        discrete       = self.options['discrete']
+        
         # Independent variables that are unique to TowerSE
         if topLevelFlag:
             geomIndeps = IndepVarComp()
@@ -367,7 +379,13 @@ class RotorGeometry(Group):
         self.add_subsystem('loc', Location(), promotes=['*'])
         self.add_subsystem('turbineclass', TurbineClass(), promotes=['*'])
         #self.add_subsystem('spline0', BladeGeometry(RefBlade))
-        self.add_subsystem('spline', BladeGeometry(RefBlade=RefBlade), promotes=['*'])
+        self.add_subsystem('spline', BladeGeometry(RefBlade=RefBlade, 
+                                               verbosity=verbosity,
+                                               tex_table=tex_table,
+                                               generate_plots=generate_plots,
+                                               show_plots=show_plots,
+                                               show_warnings =show_warnings ,
+                                               discrete=discrete), promotes=['*'])
         self.add_subsystem('geom', CCBladeGeometry(NINPUT = NINPUT), promotes=['precone','precurve_in', 'presweep_in',
                                                                                'precurveTip','presweepTip','R','Rtip'])
 
