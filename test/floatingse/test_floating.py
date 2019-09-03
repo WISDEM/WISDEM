@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import unittest
 from openmdao.api import Problem
-from floatingse.floating import FloatingSE
+from wisdem.floatingse.floating import FloatingSE
 
 nSec = 4
 nSecTow = 3
@@ -10,7 +10,8 @@ NPTS = 100
 
 class TestOC3Mass(unittest.TestCase):
     def setUp(self):
-        self.myfloat = Problem(root=FloatingSE())
+        self.myfloat = Problem()
+        self.myfloat.model=FloatingSE()
         self.myfloat.setup()
 
         # Remove all offset columns
@@ -23,13 +24,13 @@ class TestOC3Mass(unittest.TestCase):
         self.myfloat['outer_cross_pontoons_int']        = 0
 
         # Wind and water properties
-        self.myfloat['main.windLoads.rho'] = 1.226   # Density of air [kg/m^3]
-        self.myfloat['main.windLoads.mu']  = 1.78e-5 # Viscosity of air [kg/m/s]
+        self.myfloat['air_density'] = 1.226   # Density of air [kg/m^3]
+        self.myfloat['air_viscosity']  = 1.78e-5 # Viscosity of air [kg/m/s]
         self.myfloat['water_density']      = 1025.0  # Density of water [kg/m^3]
-        self.myfloat['main.waveLoads.mu']  = 1.08e-3 # Viscosity of water [kg/m/s]
+        self.myfloat['water_viscosity']  = 1.08e-3 # Viscosity of water [kg/m/s]
 
         # Material properties
-        self.myfloat['material_density'] = 7850.0          # Steel [kg/m^3]
+        self.myfloat['material_density'] = self.myfloat['main.material_density'] = self.myfloat['off.material_density'] = 7850.0          # Steel [kg/m^3]
         self.myfloat['E']                = 200e9           # Young's modulus [N/m^2]
         self.myfloat['G']                = 79.3e9          # Shear modulus [N/m^2]
         self.myfloat['yield_stress']     = 3.45e8          # Elastic yield stress [N/m^2]
@@ -47,7 +48,7 @@ class TestOC3Mass(unittest.TestCase):
         self.myfloat['labor_cost_rate']          = 1.0  # Cost factor for labor time [$/min]
         self.myfloat['painting_cost_rate']       = 14.4  # Cost factor for column surface finishing [$/m^2]
         self.myfloat['outfitting_cost_rate']     = 1.5*1.1  # Cost factor for outfitting mass [$/kg]
-        self.myfloat['mooring_cost_rate']        = 1.1     # Cost factor for mooring mass [$/kg]
+        self.myfloat['mooring_cost_factor']        = 1.1     # Cost factor for mooring mass [$/kg]
 
         # Safety factors
         self.myfloat['gamma_f'] = 1.0 # Safety factor on loads
@@ -57,21 +58,21 @@ class TestOC3Mass(unittest.TestCase):
         self.myfloat['gamma_fatigue'] = 1.0 # Not used
 
         # Column geometry
-        self.myfloat['main_permanent_ballast_height'] = 0.0 # Height above keel for permanent ballast [m]
-        self.myfloat['main_freeboard']                = 10.0 # Height extension above waterline [m]
-        self.myfloat['main_section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
-        self.myfloat['main_outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
-        self.myfloat['main_wall_thickness'] = 0.05 * np.ones(nSec)               # Shell thickness at each section node (linear lofting between) [m]
-        self.myfloat['main_bulkhead_thickness'] = 0.05*np.array([1, 1, 0, 1, 0]) # Locations/thickness of internal bulkheads at section interfaces [m]
-        self.myfloat['main_buoyancy_tank_diameter'] = 0.0
-        self.myfloat['main_buoyancy_tank_height'] = 0.0
+        self.myfloat['main.permanent_ballast_height'] = 0.0 # Height above keel for permanent ballast [m]
+        self.myfloat['main.freeboard']                = 10.0 # Height extension above waterline [m]
+        self.myfloat['main.section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
+        self.myfloat['main.outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
+        self.myfloat['main.wall_thickness'] = 0.05 * np.ones(nSec)               # Shell thickness at each section node (linear lofting between) [m]
+        self.myfloat['main.bulkhead_thickness'] = 0.05*np.array([1, 1, 0, 1, 0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+        self.myfloat['main.buoyancy_tank_diameter'] = 0.0
+        self.myfloat['main.buoyancy_tank_height'] = 0.0
 
         # Column ring stiffener parameters
-        self.myfloat['main_stiffener_web_height']       = 0.10 * np.ones(nSec) # (by section) [m]
-        self.myfloat['main_stiffener_web_thickness']    = 0.04 * np.ones(nSec) # (by section) [m]
-        self.myfloat['main_stiffener_flange_width']     = 0.10 * np.ones(nSec) # (by section) [m]
-        self.myfloat['main_stiffener_flange_thickness'] = 0.02 * np.ones(nSec) # (by section) [m]
-        self.myfloat['main_stiffener_spacing']          = np.array([1.5, 2.8, 3.0, 5.0]) # (by section) [m]
+        self.myfloat['main.stiffener_web_height']       = 0.10 * np.ones(nSec) # (by section) [m]
+        self.myfloat['main.stiffener_web_thickness']    = 0.04 * np.ones(nSec) # (by section) [m]
+        self.myfloat['main.stiffener_flange_width']     = 0.10 * np.ones(nSec) # (by section) [m]
+        self.myfloat['main.stiffener_flange_thickness'] = 0.02 * np.ones(nSec) # (by section) [m]
+        self.myfloat['main.stiffener_spacing']          = np.array([1.5, 2.8, 3.0, 5.0]) # (by section) [m]
 
         # Mooring parameters
         self.myfloat['number_of_mooring_connections']    = 3             # Evenly spaced around structure
@@ -101,32 +102,32 @@ class TestOC3Mass(unittest.TestCase):
 
         # Other variables to avoid divide by zeros, even though it won't matter
         self.myfloat['radius_to_offset_column'] = 15.0
-        self.myfloat['offset_section_height'] = 1.0 * np.ones(nSec)
-        self.myfloat['offset_outer_diameter'] = 5.0 * np.ones(nSec+1)
-        self.myfloat['offset_wall_thickness'] = 0.1 * np.ones(nSec)
-        self.myfloat['offset_permanent_ballast_height'] = 0.1
-        self.myfloat['offset_stiffener_web_height'] = 0.1 * np.ones(nSec)
-        self.myfloat['offset_stiffener_web_thickness'] =  0.1 * np.ones(nSec)
-        self.myfloat['offset_stiffener_flange_width'] =  0.1 * np.ones(nSec)
-        self.myfloat['offset_stiffener_flange_thickness'] =  0.1 * np.ones(nSec)
-        self.myfloat['offset_stiffener_spacing'] =  0.1 * np.ones(nSec)
-        self.myfloat['offset_freeboard'] =  0.1
+        self.myfloat['off.section_height'] = 1.0 * np.ones(nSec)
+        self.myfloat['off.outer_diameter'] = 5.0 * np.ones(nSec+1)
+        self.myfloat['off.wall_thickness'] = 0.1 * np.ones(nSec)
+        self.myfloat['off.permanent_ballast_height'] = 0.1
+        self.myfloat['off.stiffener_web_height'] = 0.1 * np.ones(nSec)
+        self.myfloat['off.stiffener_web_thickness'] =  0.1 * np.ones(nSec)
+        self.myfloat['off.stiffener_flange_width'] =  0.1 * np.ones(nSec)
+        self.myfloat['off.stiffener_flange_thickness'] =  0.1 * np.ones(nSec)
+        self.myfloat['off.stiffener_spacing'] =  0.1 * np.ones(nSec)
+        self.myfloat['off.freeboard'] =  0.1
         self.myfloat['pontoon_outer_diameter'] = 1.0
         self.myfloat['pontoon_wall_thickness'] = 0.1
 
         # Set environment to that used in OC3 testing campaign
         self.myfloat['water_depth'] = 320.0  # Distance to sea floor [m]
-        self.myfloat['Hs']        = 0.0    # Significant wave height [m]
-        self.myfloat['T']           = 1e3    # Wave period [s]
-        self.myfloat['Uref']        = 0.0    # Wind reference speed [m/s]
-        self.myfloat['zref']        = 119.0  # Wind reference height [m]
+        self.myfloat['significant_wave_height']        = 0.0    # Significant wave height [m]
+        self.myfloat['significant_wave_period']           = 1e3    # Wave period [s]
+        self.myfloat['wind_reference_speed']        = 0.0    # Wind reference speed [m/s]
+        self.myfloat['wind_reference_height']        = 119.0  # Wind reference height [m]
         self.myfloat['shearExp']    = 0.11   # Shear exponent in wind power law
         self.myfloat['cm']          = 2.0    # Added mass coefficient
         self.myfloat['Uc']          = 0.0    # Mean current speed
-        self.myfloat['z0']          = 0.0    # Water line
+        self.myfloat['wind_z0']          = 0.0    # Water line
         self.myfloat['yaw']         = 0.0    # Turbine yaw angle
         self.myfloat['beta']        = 0.0    # Wind beta angle
-        self.myfloat['cd_usr']      = np.inf # Compute drag coefficient
+        self.myfloat['cd_usr']      = -1.0 # Compute drag coefficient
 
         # Porperties of turbine tower
         self.myfloat['hub_height']              = 77.6                              # Length from tower main to top (not including freeboard) [m]
@@ -145,7 +146,7 @@ class TestOC3Mass(unittest.TestCase):
         
         
     def testMassProperties(self):
-        self.myfloat.run()
+        self.myfloat.run_model()
 
         m_top = np.pi*3.2**2.0*0.05*7850.0
         ansys_m_bulk  = 13204.0 + 2.0*27239.0 + m_top
