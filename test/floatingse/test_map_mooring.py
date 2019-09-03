@@ -1,10 +1,10 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import floatingse.map_mooring as mapMooring
-from floatingse.column import ColumnGeometry
-from pymap import pyMAP
-from commonse import gravity as g
+import wisdem.floatingse.map_mooring as mapMooring
+from wisdem.floatingse.column import ColumnGeometry
+from wisdem.pymap import pyMAP
+from wisdem.commonse import gravity as g
 
 def myisnumber(instr):
     try:
@@ -53,69 +53,69 @@ truth=['---------------------- LINE DICTIONARY ---------------------------------
 class TestMapMooring(unittest.TestCase):
     
     def setUp(self):
-        self.params = {}
-        self.unknowns = {}
-        self.resid = None
+        self.inputs = {}
+        self.outputs = {}
+        self.discrete_inputs = {}
 
-        self.params['wall_thickness'] = np.array([0.5, 0.5, 0.5])
-        self.params['outer_diameter'] = 2*np.array([10.0, 10.0, 10.0])
-        self.params['section_height'] = np.array([20.0, 30.0])
-        self.params['z_param_in'] = self.params['z_full_in'] = np.r_[0.0, np.cumsum(self.params['section_height'])]-15.0
-        self.params['section_center_of_mass'] = np.array([10.0, 35.0])
-        self.params['freeboard'] = 15.0
-        self.params['fairlead'] = 10.0
-        self.params['fairlead_radius'] = 11.0
-        self.params['anchor_radius'] = 175.0
+        self.inputs['wall_thickness'] = np.array([0.5, 0.5, 0.5])
+        self.inputs['outer_diameter'] = 2*np.array([10.0, 10.0, 10.0])
+        self.inputs['section_height'] = np.array([20.0, 30.0])
+        self.inputs['z_param_in'] = self.inputs['z_full_in'] = np.r_[0.0, np.cumsum(self.inputs['section_height'])]-15.0
+        self.inputs['section_center_of_mass'] = np.array([10.0, 35.0])
+        self.inputs['freeboard'] = 15.0
+        self.inputs['fairlead'] = 10.0
+        self.inputs['fairlead_radius'] = 11.0
+        self.inputs['anchor_radius'] = 175.0
 
-        self.params['water_density'] = 1025.0 #1e3
-        self.params['water_depth'] = 218.0 #100.0
+        self.inputs['water_density'] = 1025.0 #1e3
+        self.inputs['water_depth'] = 218.0 #100.0
 
-        self.params['number_of_mooring_connections'] = 3
-        self.params['mooring_lines_per_connection'] = 1
-        self.params['mooring_line_length'] = 0.6*(self.params['water_depth'] + self.params['anchor_radius'])
-        self.params['mooring_diameter'] = 0.05
-        self.params['mooring_type'] = 'chain'
-        self.params['anchor_type'] = 'suctionpile'
-        self.params['drag_embedment_extra_length'] = 300.0
-        self.params['max_offset'] = 10.0
-        self.params['max_survival_heel'] = 10.0
-        self.params['operational_heel'] = 10.0
-        self.params['gamma_f'] = 1.35
-        self.params['max_draft'] = 200.0
+        self.inputs['number_of_mooring_connections'] = 3
+        self.inputs['mooring_lines_per_connection'] = 1
+        self.inputs['mooring_line_length'] = 0.6*(self.inputs['water_depth'] + self.inputs['anchor_radius'])
+        self.inputs['mooring_diameter'] = 0.05
+        self.discrete_inputs['mooring_type'] = 'chain'
+        self.discrete_inputs['anchor_type'] = 'suctionpile'
+        self.inputs['drag_embedment_extra_length'] = 300.0
+        self.inputs['max_offset'] = 10.0
+        self.inputs['max_survival_heel'] = 10.0
+        self.inputs['operational_heel'] = 10.0
+        self.inputs['gamma_f'] = 1.35
+        self.inputs['max_draft'] = 200.0
 
         # Needed for geometry prep
-        self.params['stiffener_web_thickness'] = np.array([0.5, 0.5])
-        self.params['stiffener_flange_thickness'] = np.array([0.3, 0.3])
-        self.params['stiffener_web_height']  = np.array([1.0, 1.0])
-        self.params['stiffener_flange_width'] = np.array([2.0, 2.0])
-        self.params['stiffener_spacing'] = np.array([0.1, 0.1])
-        self.params['Hs'] = 5.0
-        self.params['mooring_cost_rate'] = 1.1
+        self.inputs['stiffener_web_thickness'] = np.array([0.5, 0.5])
+        self.inputs['stiffener_flange_thickness'] = np.array([0.3, 0.3])
+        self.inputs['stiffener_web_height']  = np.array([1.0, 1.0])
+        self.inputs['stiffener_flange_width'] = np.array([2.0, 2.0])
+        self.inputs['stiffener_spacing'] = np.array([0.1, 0.1])
+        self.inputs['Hs'] = 5.0
+        self.inputs['mooring_cost_factor'] = 1.1
 
-        self.params['tower_base_radius'] = 4.0
+        self.inputs['tower_base_radius'] = 4.0
         
         self.set_geometry()
 
         self.mymap = mapMooring.MapMooring()
-        self.mymap.set_properties(self.params)
-        self.mymap.set_geometry(self.params, self.unknowns)
+        self.mymap.set_properties(self.inputs, self.discrete_inputs)
+        self.mymap.set_geometry(self.inputs, self.outputs)
         #self.mymap.finput = open(mapMooring.FINPUTSTR, 'wb')
         
     #def tearDown(self):
         #self.mymap.finput.close()
         
     def set_geometry(self):
-        geom = ColumnGeometry(2, 3)
+        geom = ColumnGeometry(nSection=2, nFull=3)
         tempUnknowns = {}
-        geom.solve_nonlinear(self.params, tempUnknowns, None)
+        geom.compute(self.inputs, tempUnknowns)
         for pairs in tempUnknowns.items():
-            self.params[pairs[0]] = pairs[1]
+            self.inputs[pairs[0]] = pairs[1]
 
     def testSetProperties(self):
         pass
     '''
     def testWriteLineDict(self):
-        self.mymap.write_line_dictionary(self.params)
+        self.mymap.write_line_dictionary(self.inputs)
         self.mymap.finput.close()
         A = self.read_input()
 
@@ -127,17 +127,17 @@ class TestMapMooring(unittest.TestCase):
         A = self.read_input()
 
     def testWriteLine(self):
-        self.mymap.write_line_properties(self.params)
+        self.mymap.write_line_properties(self.inputs)
         self.mymap.finput.close()
         A = self.read_input()
 
     def testWriteSolver(self):
-        self.mymap.write_solver_options(self.params)
+        self.mymap.write_solver_options(self.inputs)
         self.mymap.finput.close()
         A = self.read_input()
     '''
     def testWriteInputAll(self):
-        self.mymap.write_input_file(self.params)
+        self.mymap.write_input_file(self.inputs, self.discrete_inputs)
         actual = self.mymap.finput[:]
         expect = truth[:]
         self.assertEqual(len(expect), len(actual))
@@ -154,23 +154,23 @@ class TestMapMooring(unittest.TestCase):
                     self.assertEqual( actualTok[k], expectTok[k] )
             
     def testRunMap(self):
-        self.mymap.runMAP(self.params, self.unknowns)
+        self.mymap.runMAP(self.inputs, self.discrete_inputs, self.outputs)
 
-        self.assertEqual(np.count_nonzero(self.unknowns['mooring_neutral_load']), 9)
-        self.assertEqual(np.count_nonzero(self.unknowns['mooring_stiffness']), 36)
-        self.assertEqual(np.count_nonzero(self.unknowns['operational_heel_restoring_force']), 9)
-        self.assertGreater(np.count_nonzero(self.unknowns['mooring_plot_matrix']), 9*20-3)
+        self.assertEqual(np.count_nonzero(self.outputs['mooring_neutral_load']), 9)
+        self.assertEqual(np.count_nonzero(self.outputs['mooring_stiffness']), 36)
+        self.assertEqual(np.count_nonzero(self.outputs['operational_heel_restoring_force']), 9)
+        self.assertGreater(np.count_nonzero(self.outputs['mooring_plot_matrix']), 9*20-3)
 
     def testCost(self):
-        self.mymap.compute_cost(self.params, self.unknowns)
+        self.mymap.compute_cost(self.inputs, self.discrete_inputs, self.outputs)
     
     def testListEntry(self):
         # Initiate MAP++ for this design
         mymap = pyMAP( )
         #mymap.ierr = 0
-        mymap.map_set_sea_depth(self.params['water_depth'])
+        mymap.map_set_sea_depth(self.inputs['water_depth'])
         mymap.map_set_gravity(g)
-        mymap.map_set_sea_density(self.params['water_density'])
+        mymap.map_set_sea_density(self.inputs['water_density'])
         mymap.read_list_input(truth)
         mymap.init( )
         mymap.displace_vessel(0, 0, 0, 0, 10, 0)
