@@ -39,7 +39,8 @@ pbeamExt   = Extension('wisdem.pBeam._pBEAM',
                        sources=glob.glob(os.path.join('wisdem','pBeam','src','*.cpp')),
                        extra_compile_args=pbeamArgs,
                        include_dirs=[os.path.join('wisdem','include')])
-pymapExt   = Extension('wisdem.pymap._libmap', sources=glob.glob(os.path.join('wisdem','pymap','**','*.c*'), recursive=True),
+pymapExt   = Extension('wisdem.pymap._libmap', sources=glob.glob(os.path.join('wisdem','pymap','**','*.c'), recursive=True)+
+                       glob.glob(os.path.join('wisdem','pymap','**','*.cc'), recursive=True),
                        extra_compile_args=pymapArgs,
                        include_dirs=[os.path.join('wisdem','include','lapack')])
 
