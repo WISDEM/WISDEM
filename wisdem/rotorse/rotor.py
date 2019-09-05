@@ -59,7 +59,7 @@ class RotorSE(Group):
         rc_show_warnings        = self.options['rc_show_warnings'] 
         rc_discrete             = self.options['rc_discrete']
         NPTS                    = len(RefBlade['pf']['s'])
-
+        
         rotorIndeps = IndepVarComp()
         rotorIndeps.add_discrete_output('tiploss',      True)
         rotorIndeps.add_discrete_output('hubloss',      True)
@@ -78,7 +78,13 @@ class RotorSE(Group):
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
                 
         # --- Rotor Aero & Power ---
-        self.add_subsystem('rg', RotorGeometry(RefBlade=RefBlade, topLevelFlag=True), promotes=['*'])
+        self.add_subsystem('rg', RotorGeometry(RefBlade=RefBlade, topLevelFlag=True,
+                                               verbosity=rc_verbosity,
+                                               tex_table=rc_tex_table,
+                                               generate_plots=rc_generate_plots,
+                                               show_plots=rc_show_plots,
+                                               show_warnings =rc_show_warnings ,
+                                               discrete=rc_discrete), promotes=['*'])
         self.add_subsystem('ra', RotorAeroPower(RefBlade=RefBlade,
                                                 npts_coarse_power_curve=npts_coarse_power_curve,
                                                 npts_spline_power_curve=npts_spline_power_curve,
@@ -338,7 +344,7 @@ if __name__ == '__main__':
     regulation_reg_II5      = True      # calculate Region 2.5 pitch schedule, False will not maximize power in region 2.5
     regulation_reg_III      = True      # calculate Region 3 pitch schedule, False will return erroneous Thrust, Torque, and Moment for above rated
     flag_Cp_Ct_Cq_Tables    = True      # Compute Cp-Ct-Cq-Beta-TSR tables
-    rc_verbosity            = False      # Verbosity flag for the blade cost model
+    rc_verbosity            = False     # Verbosity flag for the blade cost model
     rc_tex_table            = False     # Flag to generate .tex ready tables from the blade cost model
     rc_generate_plots       = False     # Flag to generate plots in the blade cost model
     rc_show_plots           = False     # Flag to show plots from the blade cost model

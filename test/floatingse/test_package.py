@@ -1,20 +1,17 @@
 import unittest
 
-import column_PyU
-import map_mooring_PyU
-import loading_PyU
-import substructure_PyU
-import floating_PyU
-
-import numpy as np
-import numpy.testing as npt
+import test_column
+import test_map_mooring
+import test_loading
+import test_substructure
+import test_floating
 
 def suiteAll():
-    suite = unittest.TestSuite( (column_PyU.suite(),
-                                 map_mooring_PyU.suite(),
-                                 loading_PyU.suite(),
-                                 substructure_PyU.suite(),
-                                 floating_PyU.suite()
+    suite = unittest.TestSuite( (test_column.suite(),
+                                 test_map_mooring.suite(),
+                                 test_loading.suite(),
+                                 test_substructure.suite(),
+                                 test_floating.suite()
     ) )
     return suite
 
