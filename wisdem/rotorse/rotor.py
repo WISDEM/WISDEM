@@ -277,7 +277,7 @@ if __name__ == '__main__':
 
     # Turbine Ontology input
     fname_schema  = "turbine_inputs/IEAontology_schema.yaml"
-    fname_input   = "turbine_inputs/nrel5mw_mod_update.yaml"
+    fname_input   = "turbine_inputs/BAR_200a.yaml"
     output_folder = "test/"
     # fname_output  = output_folder + 'test_out.yaml'
     
@@ -292,6 +292,7 @@ if __name__ == '__main__':
     refBlade.te_var       = 'TE_reinforcement'
     refBlade.validate     = False
     refBlade.fname_schema = fname_schema
+    refBlade.xfoil_path   = "/mnt/c/Material/Programs/xfoil/Xf/bin/xfoil"
     blade = refBlade.initialize(fname_input)
 
     # Set FAST Inputs
@@ -350,7 +351,7 @@ if __name__ == '__main__':
     rc_show_plots           = False     # Flag to show plots from the blade cost model
     rc_show_warnings        = False     # Flag to show warnings from the blade cost model
     rc_discrete             = False     # Flag to switch between a discrete and a continuous appraoch in the blade cost model
-
+    
     
     rotor.model = RotorSE(RefBlade=blade,
                           npts_coarse_power_curve=npts_coarse_power_curve,

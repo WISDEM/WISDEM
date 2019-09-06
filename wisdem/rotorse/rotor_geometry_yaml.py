@@ -139,7 +139,8 @@ class ReferenceBlade(object):
         # Precomp analyis
         self.spar_var        = ['']          # name of composite layer for RotorSE spar cap buckling analysis <---- SS first, then PS
         self.te_var          = ''          # name of composite layer for RotorSE trailing edge buckling analysis
-
+        
+        self.xfoil_path      = ''
 
         
 
@@ -162,7 +163,7 @@ class ReferenceBlade(object):
         blade = self.set_configuration(blade, self.wt_ref)
         blade = self.remap_composites(blade)
         blade = self.remap_planform(blade, af_ref)
-        blade = self.remap_profiles(blade, af_ref)
+        blade = self.remap_profiles(blade, af_ref, xfoil_path = self.xfoil_path)
         blade = self.remap_polars(blade, af_ref)
         blade = self.calc_composite_bounds(blade)
         blade = self.calc_control_points(blade, self.r_in)
@@ -194,7 +195,7 @@ class ReferenceBlade(object):
         blade = self.calc_spanwise_grid(blade)
 
         blade = self.update_planform(blade)
-        blade = self.remap_profiles(blade, blade['AFref']) # <- added to 'update' in rthick update
+        blade = self.remap_profiles(blade, blade['AFref'], xfoil_path = self.xfoil_path) # <- added to 'update' in rthick update
         blade = self.remap_polars(blade, blade['AFref']) # <- added to 'update' in rthick update
         blade = self.calc_composite_bounds(blade)
 
@@ -513,7 +514,7 @@ class ReferenceBlade(object):
 
         return blade
 
-    def remap_profiles(self, blade, AFref, spline=PchipInterpolator):
+    def remap_profiles(self, blade, AFref, spline=PchipInterpolator, xfoil_path = ''):
 
         # Option to correct trailing edge for closed to flatback transition
         trailing_edge_correction = True
@@ -623,7 +624,7 @@ class ReferenceBlade(object):
                         flap_angles = np.linspace(blade['aerodynamic_control']['te_flaps'][k]['delta_max_neg'],blade['aerodynamic_control']['te_flaps'][k]['delta_max_pos'],blade['aerodynamic_control']['te_flaps'][k]['num_delta']) # bem:I am not going to force it to include delta=0.  If this is needed, a more complicated way of getting flap deflections to calculate is needed.
                         for ind, fa in enumerate(flap_angles): # For each of the flap angles
                             af_flap = CCAirfoil(np.array([1,2,3]), np.array([100]), np.zeros(3), np.zeros(3), np.zeros(3), blade['profile'][:,0,i],blade['profile'][:,1,i], "Profile"+str(i)) # bem:I am creating an airfoil name based on index...this structure/naming convention is being assumed in CCAirfoil.runXfoil() via the naming convention used in CCAirfoil.af_flap_coords(). Note that all of the inputs besides profile coordinates and name are just dummy varaiables at this point.
-                            af_flap.af_flap_coords(fa,blade['aerodynamic_control']['te_flaps'][k]['chord_start'],0.5,200) #bem: the last number is the number of points in the profile.  It is currently being hard coded at 200 but should be changed to make sure it is the same number of points as the other profiles
+                            af_flap.af_flap_coords(xfoil_path, fa,  blade['aerodynamic_control']['te_flaps'][k]['chord_start'],0.5,200) #bem: the last number is the number of points in the profile.  It is currently being hard coded at 200 but should be changed to make sure it is the same number of points as the other profiles
                             blade['flap_profiles'][i]['coords'][:,0,ind] = af_flap.af_flap_xcoords # x-coords from xfoil file with flaps
                             blade['flap_profiles'][i]['coords'][:,1,ind] = af_flap.af_flap_ycoords # y-coords from xfoil file with flaps
                             blade['flap_profiles'][i]['flap_angles'].append([])

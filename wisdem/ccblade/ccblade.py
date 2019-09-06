@@ -27,7 +27,7 @@ from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 import warnings
 import os
-from Polar import Polar
+from wisdem.ccblade.Polar import Polar
 
 from wisdem.airfoilprep import Airfoil
 import wisdem.ccblade._bem as _bem
@@ -44,7 +44,7 @@ class CCAirfoil(object):
     differentiable cubic spline"""
 
 
-    def __init__(self, alpha, Re, cl, cd, cm=[]):
+    def __init__(self, alpha, Re, cl, cd, cm=[], x=[], y=[], AFName='DEFAULTAF'):
         """Setup CCAirfoil from raw airfoil data on a grid.
         Parameters
         ----------
@@ -63,6 +63,9 @@ class CCAirfoil(object):
         """
 
         alpha = np.radians(alpha)
+        self.x = x
+        self.y = y
+        self.AFName=AFName
         self.one_Re = False
 
         if len(cm) > 0:
@@ -365,9 +368,8 @@ class CCAirfoil(object):
         self.unsteady = unsteady
 
 
-    def af_flap_coords(self, delta_flap=12.0, xc_hinge=0.8, yt_hinge=0.5,numNodes=250):
+    def af_flap_coords(self, xfoil_path, delta_flap=12.0, xc_hinge=0.8, yt_hinge=0.5,numNodes=250):
         #This function is used to create and run xfoil to get airfoil coordinates for a given flap deflection
-        
         # Set Needed parameter values
         AFName=self.AFName  
         df=str(delta_flap) # Flap deflection angle in deg
@@ -425,7 +427,9 @@ class CCAirfoil(object):
         fid.close()
         
         # Run the XFoil calling command
-        os.system("xfoil.exe < xfoil_input.txt")
+        print(xfoil_path)
+        print(' < xfoil_input.txt')
+        os.system(xfoil_path + " < xfoil_input.txt")
         
         # Load in saved airfoil coordinates (with flap) from xfoil and save to instance variables
         flap_coords = np.loadtxt(saveFlnmAF)
