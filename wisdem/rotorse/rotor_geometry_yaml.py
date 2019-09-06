@@ -599,6 +599,7 @@ class ReferenceBlade(object):
         blade['profile'] = profile_spline(blade['pf']['rthick'])
         blade['profile_spline'] = profile_spline
         blade['AFref'] = AFref
+        blade['flap_profiles']=[]#*self.NPTS
 
         for i in range(self.NPTS):
             af_le = blade['profile'][np.argmin(blade['profile'][:,0,i]),:,i]
@@ -611,6 +612,29 @@ class ReferenceBlade(object):
             if trailing_edge_correction:
                 # if i in trans_correct_idx:
                 blade['profile'][:,:,i] = trailing_edge_smoothing(blade['profile'][:,:,i])
+
+            # Use CCAirfoil.af_flap_coords() (which calls Xfoil) to create AF coordinates with flaps at angles specified in yaml input file 
+            if 'aerodynamic_control' in blade: # Checks if this section is included in yaml file
+                blade['flap_profiles'].append({}) # Start appending new dictionary items
+                for k in range(len(blade['aerodynamic_control']['te_flaps'])): #for multiple flaps specified in yaml file
+                    if blade['outer_shape_bem']['chord']['grid'][i] >= blade['aerodynamic_control']['te_flaps'][k]['span_start'] and blade['outer_shape_bem']['chord']['grid'][i] <= blade['aerodynamic_control']['te_flaps'][k]['span_end']: # Only create flap geometries where the yaml file specifies there is a flap (Currently going to nearest blade station location)
+                        blade['flap_profiles'][i]['flap_angles']=[]
+                        blade['flap_profiles'][i]['coords']=np.zeros((len(blade['profile'][:,0,0]),len(blade['profile'][0,:,0]),blade['aerodynamic_control']['te_flaps'][k]['num_delta'])) # initialize to zeros
+                        flap_angles = np.linspace(blade['aerodynamic_control']['te_flaps'][k]['delta_max_neg'],blade['aerodynamic_control']['te_flaps'][k]['delta_max_pos'],blade['aerodynamic_control']['te_flaps'][k]['num_delta']) # bem:I am not going to force it to include delta=0.  If this is needed, a more complicated way of getting flap deflections to calculate is needed.
+                        for ind, fa in enumerate(flap_angles): # For each of the flap angles
+                            af_flap = CCAirfoil(np.array([1,2,3]), np.array([100]), np.zeros(3), np.zeros(3), np.zeros(3), blade['profile'][:,0,i],blade['profile'][:,1,i], "Profile"+str(i)) # bem:I am creating an airfoil name based on index...this structure/naming convention is being assumed in CCAirfoil.runXfoil() via the naming convention used in CCAirfoil.af_flap_coords(). Note that all of the inputs besides profile coordinates and name are just dummy varaiables at this point.
+                            af_flap.af_flap_coords(fa,blade['aerodynamic_control']['te_flaps'][k]['chord_start'],0.5,200) #bem: the last number is the number of points in the profile.  It is currently being hard coded at 200 but should be changed to make sure it is the same number of points as the other profiles
+                            blade['flap_profiles'][i]['coords'][:,0,ind] = af_flap.af_flap_xcoords # x-coords from xfoil file with flaps
+                            blade['flap_profiles'][i]['coords'][:,1,ind] = af_flap.af_flap_ycoords # y-coords from xfoil file with flaps
+                            blade['flap_profiles'][i]['flap_angles'].append([])
+                            blade['flap_profiles'][i]['flap_angles'][ind] = fa # Putting in flap angles to blade for each profile (can be used for debugging later)
+                        # ** The code below will plot the first three flap deflection profiles (in the case where there are only 3 this will correspond to max negative, zero, and max positive deflection cases)
+                        #import matplotlib.pyplot as plt
+                        #plt.plot(blade['flap_profiles'][i]['coords'][:,0,0], blade['flap_profiles'][i]['coords'][:,1,0], 'k',blade['flap_profiles'][i]['coords'][:,0,1], blade['flap_profiles'][i]['coords'][:,1,1], 'k',blade['flap_profiles'][i]['coords'][:,0,2], blade['flap_profiles'][i]['coords'][:,1,2], 'k')
+                        #plt.axis('equal')
+                        #plt.title(i)
+                        #plt.show()      
+
             # import matplotlib.pyplot as plt
             # plt.plot(temp[:,0,i], temp[:,1,i], 'b')
             # plt.plot(blade['profile'][:,0,i], blade['profile'][:,1,i], 'k')
@@ -621,6 +645,9 @@ class ReferenceBlade(object):
         return blade
 
     def remap_polars(self, blade, AFref, spline=PchipInterpolator):
+        # TODO: does not support multiple polars at different Re, takes the first polar from list (bem: can handle multiple profiles for different flap angles but not Re yet 7/17/19)
+
+
         ## Set angle of attack grid for airfoil resampling
         # assume grid for last airfoil is sufficient
 
@@ -719,6 +746,22 @@ class ReferenceBlade(object):
 
             # airfoils[i] = CCAirfoil(alpha_out, Re, cl[:,i,:], cd[:,i,:], cm[:,i,:])
             # airfoils[i].eval_unsteady(alpha_out, cl[:,i,j], cd[:,i,j], cm[:,i,j]) # TODO: openmdao2 handling of airfoils has not implimented the unsteady airfoil properties evaluation for FAST
+            # airfoils[i].flaps = []
+            # Get polars for flaps using xfoil (CCAirfoil.runXfoil())
+            #if 'aerodynamic_control' in blade: # check if there are any flaps specified in yaml file
+            #    if 'coords' in blade['flap_profiles'][i]: # If this is true then there is a flap at station [i] (assuming remap_profiles has already been run)
+            #        for ind in range(np.shape(blade['flap_profiles'][i]['coords'])[2]): # For number of flaps deflection angles at a given station
+            #            airfoils[i].flaps.append([])
+            #            fa = blade['flap_profiles'][i]['flap_angles'][ind] # Reads out flap angle for naming...note this is important because this is an informal way of passing in the flap angle
+            #            airfoils[i].flaps[ind] = CCAirfoil(alpha_out, Re, cl[:,i], cd[:,i], cm[:,i],blade['flap_profiles'][i]['coords'][:,0,ind],blade['flap_profiles'][i]['coords'][:,1,ind],"Profile"+str(i)+"_"+str(int(fa))) # bem: naming convention is assumed in CCAirfoil.runXfoil() to get flap deflection angle
+            #            airfoils[i].flaps[ind].runXfoil(Re) # Run xfoil to get polars (note: assuming default values for AoA_min=-9, AoA_max=25, and AoA_inc=0.5, but those could be specified here)
+            #            c=blade['outer_shape_bem']['chord']['values'][i] # Chord length at station [i]
+            #            R= blade['outer_shape_bem']['reference_axis']['z']['values'][-1] # Approximate radius of rotor (bem: not sure if there is a better way to get this value)
+            #            tsr = blade['config']['tsr'] # Tip speed ratio 
+            #            cdmax=1.5 #1.5 is a standard value but may need to be changed...for now just leave it as is
+            #            airfoils[i].flaps[ind].AFCorrections(Re,blade['outer_shape_bem']['chord']['grid'][i],c/R, tsr, cdmax) # Correct polars for 3D effects, extrpolate to +-180 deg, and calculate unsteady parameters
+                    
+            
 
         # blade['airfoils'] = airfoils
 

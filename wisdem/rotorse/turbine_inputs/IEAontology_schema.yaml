@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+# Author: Pietro Bortolotti (Edited by Ben Mertz 7/10/19)
+=======
 # Author: Pietro Bortolotti
+>>>>>>> upstream/te_flaps
 # Organization: National Renewable Energy Laboratory, Golden, CO
 # Date: 2018-12-03
 
@@ -92,6 +96,38 @@ properties:
                                     values: 
                                         $ref: "#/definitions/distributed_data/grid_nd"
         
+                    aerodynamic_control:
+                        type: object
+                        properties:
+                            te_flaps:
+                                - span_start:
+                                    type: number
+                                    description: Spanwise starting location of flap (r/R)
+                                    minimum: 0
+                                    maximum: 1
+                                  span_end:
+                                    type: number
+                                    description: Spanwise ending location of flap (r/R)
+                                    minimum: 0
+                                    maximum: 1
+                                  chord_start:
+                                    type: number
+                                    description: Location where flap starts (x/c)
+                                    minimum: 0
+                                    maximum: 1
+                                  delta_max_pos:
+                                    type: number
+                                    description: Maximum positive (downward) flap deflection angle (in degrees) 
+                                    minimum: 0
+                                  delta_max_neg:
+                                    type: number
+                                    description: Maximum negative (upward) flap deflection angle (in degrees)
+                                    maximum: 0
+                                  num_delta:
+                                    type: number
+                                    description: Number of flap delfection agles that will be used in interpolation (minimum of 3...delta_max_neg, zero, delta_max_pos...recommend using odd number and same value for max and min deflection so zero deflection will be used)
+                                    minimum: 3
+                    
                     elastic_properties_mb:
                         type: object
                         properties:
@@ -192,6 +228,12 @@ definitions:
                             re:
                                 type: number
                                 description: Reynolds number of the polars
+                            flap_xc:
+                                type: number
+                                description: x/c location of flap hinge
+                            delta_flap:
+                                type: number
+                                description: Flap deflection angle in degrees for the polar
                             c_l:
                                 type: object
                                 required:
