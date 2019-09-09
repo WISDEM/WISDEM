@@ -424,11 +424,14 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['NumAFfiles'] = len(r)
         # fst_vt['AeroDyn15']['af_data'] = [{}]*len(airfoils)
         fst_vt['AeroDyn15']['af_data'] = []
+        
+        
         for i in range(len(r)):
             # af = airfoils[i]
+            fst_vt['AeroDyn15']['af_data'].append({})
             for j in range(np.size(inputs['airfoils_cl'], 2)): # if there are no flaps at this blade station
                 unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][:,i,j], inputs['airfoils_cd'][:,i,j], inputs['airfoils_cm'][:,i,j])
-                fst_vt['AeroDyn15']['af_data'].append({})
+                fst_vt['AeroDyn15']['af_data'][i].append({})
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
                 fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0          # TODO: link the airfoil profiles to this component and write the coordinate files (no need as of yet)

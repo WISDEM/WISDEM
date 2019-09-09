@@ -427,8 +427,6 @@ class CCAirfoil(object):
         fid.close()
         
         # Run the XFoil calling command
-        print(xfoil_path)
-        print(' < xfoil_input.txt')
         os.system(xfoil_path + " < xfoil_input.txt")
         
         # Load in saved airfoil coordinates (with flap) from xfoil and save to instance variables

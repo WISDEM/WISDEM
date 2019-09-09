@@ -618,7 +618,11 @@ class ReferenceBlade(object):
                 blade['profile'][:,:,i] = trailing_edge_smoothing(blade['profile'][:,:,i])
 
             # Use CCAirfoil.af_flap_coords() (which calls Xfoil) to create AF coordinates with flaps at angles specified in yaml input file 
+            
+            
+            
             if 'aerodynamic_control' in blade: # Checks if this section is included in yaml file
+                
                 blade['flap_profiles'].append({}) # Start appending new dictionary items
                 for k in range(len(blade['aerodynamic_control']['te_flaps'])): #for multiple flaps specified in yaml file
                     if blade['outer_shape_bem']['chord']['grid'][i] >= blade['aerodynamic_control']['te_flaps'][k]['span_start'] and blade['outer_shape_bem']['chord']['grid'][i] <= blade['aerodynamic_control']['te_flaps'][k]['span_end']: # Only create flap geometries where the yaml file specifies there is a flap (Currently going to nearest blade station location)
@@ -649,7 +653,6 @@ class ReferenceBlade(object):
         return blade
 
     def remap_polars(self, blade, AFref, spline=PchipInterpolator):
-        # TODO: does not support multiple polars at different Re, takes the first polar from list (bem: can handle multiple profiles for different flap angles but not Re yet 7/17/19)
 
 
         ## Set angle of attack grid for airfoil resampling
@@ -678,7 +681,7 @@ class ReferenceBlade(object):
         cl_ref = np.zeros((n_aoa, n_af_ref, n_Re))
         cd_ref = np.zeros((n_aoa, n_af_ref, n_Re))
         cm_ref = np.zeros((n_aoa, n_af_ref, n_Re))
-        Re_ref = np.zeros((n_af_ref, n_Re))
+        # Re_ref = np.zeros((n_af_ref, n_Re))
 
         kx = min(len(alpha)-1, 3)
 
@@ -720,18 +723,45 @@ class ReferenceBlade(object):
         # error handling for spanwise thickness greater/less than the max/min airfoil thicknesses
         np.place(thk_span, thk_span>max(thk_afref), max(thk_afref))
         np.place(thk_span, thk_span<min(thk_afref), min(thk_afref))
+        
+        
+        n_ctrl = 1
         # interpolate
-        cl = np.zeros((n_aoa, n_span, n_Re))
-        cd = np.zeros((n_aoa, n_span, n_Re))
-        cm = np.zeros((n_aoa, n_span, n_Re))
+        if 'aerodynamic_control' in blade:
+            for afi in range(n_span):
+                if 'coords' in blade['flap_profiles'][afi]:
+                    n_ctrl = max(n_ctrl, len(blade['flap_profiles'][afi]['flap_angles']))
+        
+            
+        cl = np.zeros((n_aoa, n_span, n_Re, n_ctrl))
+        cd = np.zeros((n_aoa, n_span, n_Re, n_ctrl))
+        cm = np.zeros((n_aoa, n_span, n_Re, n_ctrl))
         for j in range(n_Re):
             spline_cl = spline(thk_afref, cl_ref[:,:,j], axis=1)
             spline_cd = spline(thk_afref, cd_ref[:,:,j], axis=1)
             spline_cm = spline(thk_afref, cm_ref[:,:,j], axis=1)
-            cl[:,:,j] = spline_cl(thk_span)
-            cd[:,:,j] = spline_cd(thk_span)
-            cm[:,:,j] = spline_cm(thk_span)
-
+            cl[:,:,j,0] = spline_cl(thk_span)
+            cd[:,:,j,0] = spline_cd(thk_span)
+            cm[:,:,j,0] = spline_cm(thk_span)
+        
+        
+        if 'aerodynamic_control' in blade:
+            for afi in range(n_span):
+                if 'coords' in blade['flap_profiles'][afi]:
+                    for j in range(n_Re):
+                        for ind in range(np.shape(blade['flap_profiles'][afi]['coords'])[2]):
+                            fa = blade['flap_profiles'][afi]['flap_angles'][ind]
+                            data = self.runXfoil(blade['flap_profiles'][afi]['coords'][:,0,ind], blade['flap_profiles'][afi]['coords'][:,1,ind], Re[j])
+        
+                            print(data)
+                            exit()
+            
+        
+        
+        
+        
+        
+        
         # CCBlade airfoil class instances
         # airfoils = [None]*n_span
         alpha_out = np.degrees(alpha)
@@ -741,12 +771,13 @@ class ReferenceBlade(object):
             alpha[-1] = 180.
         for i in range(n_span):
             for j in range(n_Re):
-                if cl[0,i,j] != cl[-1,i,j]:
-                    cl[0,i,j] = cl[-1,i,j]
-                if cd[0,i,j] != cd[-1,i,j]:
-                    cd[0,i,j] = cd[-1,i,j]
-                if cm[0,i,j] != cm[-1,i,j]:
-                    cm[0,i,j] = cm[-1,i,j]
+                for k in range(n_ctrl):
+                    if cl[0,i,j,k] != cl[-1,i,j,k]:
+                        cl[0,i,j,k] = cl[-1,i,j,k]
+                    if cd[0,i,j,k] != cd[-1,i,j,k]:
+                        cd[0,i,j,k] = cd[-1,i,j,k]
+                    if cm[0,i,j,k] != cm[-1,i,j,k]:
+                        cm[0,i,j,k] = cm[-1,i,j,k]
 
             # airfoils[i] = CCAirfoil(alpha_out, Re, cl[:,i,:], cd[:,i,:], cm[:,i,:])
             # airfoils[i].eval_unsteady(alpha_out, cl[:,i,j], cd[:,i,j], cm[:,i,j]) # TODO: openmdao2 handling of airfoils has not implimented the unsteady airfoil properties evaluation for FAST
@@ -776,7 +807,127 @@ class ReferenceBlade(object):
         blade['airfoils_Re']  = Re
 
         return blade
+    
+    
+    def runXfoil(self, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5):
+        #This function is used to create and run xfoil simulations for a given set of airfoil coordinates
+        
+        # Set initial parameters needed in xfoil      
+        LoadFlnmAF = "airfoil.txt" # This is a temporary file that will be deleted after it is no longer needed
+        numNodes   = 260 # number of panels to use (260...but increases if needed)
+        dist_param = 0.15 # TE/LE panel density ratio (0.15)
+        IterLimit = 100 # Maximum number of iterations to try and get to convergence
+        panelBunch = 1.5 # Panel bunching parameter to bunch near larger changes in profile gradients (1.5)
+        rBunch = 0.15 # Region to LE bunching parameter (used to put additional panels near flap hinge) (0.15)
+        XT1 = 0.55 # Defining left boundary of bunching region on top surface (should be before flap)
+        XT2 = 0.85 # Defining right boundary of bunching region on top surface (should be after flap)
+        XB1 = 0.55 # Defining left boundary of bunching region on bottom surface (should be before flap)
+        XB2 = 0.85 # Defining right boundary of bunching region on bottom surface (should be after flap)
+        saveFlnmPolar = "Polar.txt" # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
+        xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
+        runFlag = 1 # Flag used in error handling
+        dfdn = -0.5 # Change in angle of attack during initialization runs down to AoA_min
+        
+        while numNodes < 450 and runFlag > 0:
+            # Cleaning up old files to prevent replacement issues         
+            if os.path.exists(saveFlnmPolar):
+                os.remove(saveFlnmPolar)
+            if os.path.exists(xfoilFlnm):
+                os.remove(xfoilFlnm)
+            if os.path.exists(LoadFlnmAF):
+                os.remove(LoadFlnmAF)
 
+            # Writing temporary airfoil coordinate file for use in xfoil
+            dat=np.array([x,y])
+            np.savetxt(LoadFlnmAF, dat.T, fmt=['%f','%f'])
+
+            # %% Writes the Xfoil run script to read in coordinates, create flap, re-pannel, and create polar
+            # Create the airfoil with flap 
+            fid = open(xfoilFlnm,"w")
+            fid.write("PLOP \n G \n\n") # turn off graphics
+            fid.write("LOAD \n") 
+            fid.write( LoadFlnmAF + "\n") # name of .txt file with airfoil coordinates
+            # fid.write( self.AFName + "\n") # set name of airfoil (internal to xfoil)
+            fid.write("GDES \n") # enter into geometry editing tools in xfoil
+            fid.write("UNIT \n") # normalize profile to unit chord
+            fid.write("EXEC \n \n") # move buffer airfoil to current airfoil
+        
+            # Re-panel with specified number of panes and LE/TE panel density ratio
+            fid.write("PPAR\n")
+            fid.write("N \n" )
+            fid.write(str(numNodes) + "\n")
+            fid.write("P \n") # set panel bunching parameter
+            fid.write(str(panelBunch) + " \n")
+            fid.write("T \n") # set TE/LE panel density ratio
+            fid.write( str(dist_param) + "\n")
+            fid.write("R \n") # set region panel bunching ratio
+            fid.write(str(rBunch) + " \n")
+            fid.write("XT \n") # set region panel bunching bounds on top surface
+            fid.write(str(XT1) +" \n" + str(XT2) + " \n")
+            fid.write("XB \n") # set region panel bunching bounds on bottom surface
+            fid.write(str(XB1) +" \n" + str(XB2) + " \n")
+            fid.write("\n\n")
+        
+            # Set Simulation parameters (Re and max number of iterations)
+            fid.write("OPER\n")
+            fid.write("VISC \n")
+            #fid.write( str(Re[0]) + "\n") # this sets Re to value specified in yaml file as an input
+            fid.write( "5000000 \n") # bem: I was having trouble geting convergence for some of the thinner airfoils at the tip for the large Re specified in the yaml, so I am hard coding in Re (5e6 is the highest I was able to get to using these paneling parameters)
+            fid.write("ITER \n")
+            fid.write( str(IterLimit) + "\n")
+        
+            # Run simulations for range of AoA
+            fid.write("ASEQ 0 " + str(AoA_min) + " " + str(dfdn) + "\n") # The preliminary runs are just to get an initialize airfoil solution at min AoA so that the actual runs will not become unstable
+            fid.write("PACC\n") #Toggle saving polar on 
+            fid.write( saveFlnmPolar + " \n \n")
+            fid.write("ASEQ " + str(AoA_min) + " " + "16" + " " + str(AoA_inc) + "\n") #run simulations for desired range of AoA using a coarse step size in AoA up to 16 deg
+            fid.write("ASEQ " + "16.5" + " " + str(AoA_max) + " " + "0.1" + "\n") #run simulations for desired range of AoA using a fine AoA increment up to final AoA to help with convergence issues at high Re
+            fid.write("PACC\n\n") #Toggle saving polar off
+        
+            fid.write("QUIT \n")
+            fid.close()
+        
+            # Run the XFoil calling command
+            os.system(self.xfoil_path + " < xfoil_input.txt")
+            flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
+            
+            
+            
+            # Error handling (re-run simulations with more panels if there is not enough data in polars)
+            if flap_polar.size < 3: # This case is if there are convergence issues at the lowest angles of attack
+                plen = 0
+                a0 = 0
+                dfdn = -0.25 # decrease AoA step size during initialization to try and get convergence in the next run
+            else:
+                plen=len(flap_polar[:,0]) # Number of AoA's in polar
+                a0=flap_polar[-1,0] # Maximum AoA in Polar
+
+            if a0 > 19. and plen >= 40: # The a0 > 19 is to check to make sure polar entered into stall regiem plen >= 40 makes sure there are enough AoA's in polar for interpolation.
+                runFlag = -10 # No need ro re-run polar
+            else: 
+                numNodes += 50 # Re-run with additional panels
+        
+        
+        # Load back in polar data to be saved in instance variables
+        #flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12) # (note, we are assuming raw Xfoil polars when skipping the first 12 lines)
+        # self.af_flap_polar = flap_polar
+        # self.flap_polar_flnm = saveFlnmPolar # Not really needed unless you keep the files and want to load them later
+        
+        # Delete Xfoil run script file
+        if os.path.exists(xfoilFlnm):
+            os.remove(xfoilFlnm)
+        #if os.path.exists(saveFlnmPolar): # bem: For now leave the files, but eventually we can get rid of them (remove # in front of commands) so that we don't have to store them
+            #os.remove(saveFlnmPolar)
+        #if os.path.exists(LoadFlnmAF):
+           # os.remove(LoadFlnmAF)
+    
+    
+        return flap_polar
+    
+    
+    
+    
+    
 
     def remap_composites(self, blade):
         # Remap composite sections to a common grid
