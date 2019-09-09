@@ -169,6 +169,7 @@ class ReferenceBlade(object):
         blade = self.calc_control_points(blade, self.r_in)
         
         blade['analysis_level'] = self.analysis_level
+        blade['xfoil_path']     = self.xfoil_path
 
         if self.verbose:
             print('Complete: Geometry Analysis: \t%f s'%(time.time()-t1))
@@ -190,7 +191,9 @@ class ReferenceBlade(object):
         return blade
 
     def update(self, blade):
-
+        
+        self.xfoil_path = blade['xfoil_path']
+        
         t1 = time.time()
         blade = self.calc_spanwise_grid(blade)
 

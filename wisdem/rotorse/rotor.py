@@ -19,8 +19,8 @@ from wisdem.rotorse.rotor_cost import RotorCost
 from wisdem.rotorse import RPM2RS, RS2RPM
 from wisdem.rotorse.rotor_fast import FASTLoadCases
 
-
-#from wisdem.rotorse.rotor_fast import FASTLoadCases
+from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_DLC_1_1_Turb, power_curve
 
 
 class RotorSE(Group):
@@ -281,7 +281,7 @@ if __name__ == '__main__':
     output_folder = "test/"
     # fname_output  = output_folder + 'test_out.yaml'
     
-    Analysis_Level = 0 # 0: Run CCBlade; 1: Update FAST model at each iteration but do not run; 2: Run FAST w/ ElastoDyn; 3: (Not implemented) Run FAST w/ BeamDyn
+    Analysis_Level = 1 # 0: Run CCBlade; 1: Update FAST model at each iteration but do not run; 2: Run FAST w/ ElastoDyn; 3: (Not implemented) Run FAST w/ BeamDyn
 
     # Initialize blade design
     refBlade = ReferenceBlade()
@@ -303,7 +303,7 @@ if __name__ == '__main__':
         FASTpref['FAST_ver']            = 'OpenFAST'
         FASTpref['dev_branch']          = True
         FASTpref['FAST_exe']            = '/mnt/c/Material/Programs/openfast/build/glue-codes/openfast/openfast'
-        FASTpref['FAST_directory']      = '/mnt/c/Material/Projects/RefTurbines/BAR/RotorSE_FAST_BAR_005a'   # Path to fst directory files
+        FASTpref['FAST_directory']      = '/mnt/c/Material/Programs/wisdem_2_0/wisdem/rotorse/RotorSE_FAST_BAR_005a'   # Path to fst directory files
         FASTpref['FAST_InputFile']      = 'RotorSE_FAST_BAR_005a.fst' # FAST input file (ext=.fst)
         # FASTpref['FAST_directory']      = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_Land_DLL_WTurb'   # Path to fst directory files
         # FASTpref['FAST_InputFile']      = '5MW_Land_DLL_WTurb.fst' # FAST input file (ext=.fst)
