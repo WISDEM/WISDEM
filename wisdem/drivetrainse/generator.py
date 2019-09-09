@@ -4,7 +4,7 @@ Copyright (c) NREL. All rights reserved.
 Electromagnetic design based on conventional magnetic circuit laws
 Structural design based on McDonald's thesis """
 
-from openmdao.api import Group, Problem, ExplicitComponent, ExecComp, IndepVarComp, ScipyOptimizeDriver, pyOptSparseDriver
+from openmdao.api import Group, Problem, ExplicitComponent, ExecComp, IndepVarComp, ScipyOptimizeDriver
 import numpy as np
 from scig import SCIG
 from dfig import DFIG
@@ -32,7 +32,7 @@ class Generator_Cost(ExplicitComponent):
         # Outputs
         self.add_output('Costs', val=0.0, units='USD', desc='Total cost')
 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        #self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
         Copper          = inputs['Copper']
@@ -169,14 +169,17 @@ def optimization_example(genType, exportFlag=False):
     opt_problem.model = Generator(design=genType, topLevelFlag=True)
     
     # add optimizer and set-up problem (using user defined input on objective function)
-    opt_problem.driver = pyOptSparseDriver() #ScipyOptimizeDriver()
-    opt_problem.driver.options['optimizer'] = 'CONMIN'
-    opt_problem.driver.opt_settings['IPRINT'] = 4
-    opt_problem.driver.opt_settings['ITRM'] = 3
-    opt_problem.driver.opt_settings['ITMAX'] = 10
-    opt_problem.driver.opt_settings['DELFUN'] = 1e-3
-    opt_problem.driver.opt_settings['DABFUN'] = 1e-3
-    opt_problem.driver.opt_settings['IFILE'] = 'CONMIN_'+genType.upper()+'.out'
+    opt_problem.driver = ScipyOptimizeDriver()
+    opt_problem.driver.options['optimizer'] = 'SLSQP'
+    opt_problem.driver.options['tol']       = 1.e-6
+    opt_problem.driver.options['maxiter']   = 100
+    
+    #opt_problem.driver.opt_settings['IPRINT'] = 4
+    #opt_problem.driver.opt_settings['ITRM'] = 3
+    #opt_problem.driver.opt_settings['ITMAX'] = 10
+    #opt_problem.driver.opt_settings['DELFUN'] = 1e-3
+    #opt_problem.driver.opt_settings['DABFUN'] = 1e-3
+    #opt_problem.driver.opt_settings['IFILE'] = 'CONMIN_'+genType.upper()+'.out'
     
     # Specificiency target efficiency(%)
     Eta_Target = 93.0
@@ -298,7 +301,7 @@ def optimization_example(genType, exportFlag=False):
     
     
     Objective_function = 'Costs'
-    opt_problem.model.add_objective(Objective_function)
+    opt_problem.model.add_objective(Objective_function, scaler=1e-5)
     opt_problem.setup()
     
     # Specify Target machine parameters
@@ -398,6 +401,7 @@ def optimization_example(genType, exportFlag=False):
     opt_problem['shaft_length'] = 2.0
     
     #Run optimization
+    opt_problem.model.approx_totals()
     opt_problem.run_driver()
     opt_problem.model.list_inputs(units=True)#values = False, hierarchical=False)
     opt_problem.model.list_outputs(units=True)#values = False, hierarchical=False)    
