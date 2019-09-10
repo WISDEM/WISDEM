@@ -270,7 +270,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt
 
 if __name__ == "__main__":
     
-    optFlag = False
+    optFlag = True
 
 
 
