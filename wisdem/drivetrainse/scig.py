@@ -102,7 +102,7 @@ class SCIG(ExplicitComponent):
         self.add_output('I',val=np.array([0.0, 0.0, 0.0]),desc='Moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
         self.add_output('cm', val=np.array([0.0, 0.0, 0.0]),desc='COM [x,y,z]')
                 
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        #self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
         #Create internal variables based on inputs

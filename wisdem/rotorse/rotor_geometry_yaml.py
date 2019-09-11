@@ -2,8 +2,13 @@ from __future__ import print_function
 import os, sys, copy, time, warnings
 import operator
 
-from ruamel_yaml import YAML
-from ruamel_yaml.comments import CommentedMap, CommentedSeq
+try:
+    import ruamel_yaml as ry
+except:
+    try:
+        import ruamel.yaml as ry
+    except:
+        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
 from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d, RectBivariateSpline
 import numpy as np
@@ -219,7 +224,7 @@ class ReferenceBlade(object):
             inputs = myfile.read()
 
         # Validate the turbine input with the IEA turbine ontology schema
-        yaml = YAML()
+        yaml = ry.YAML()
         if validate:
             t_validate = time.time()
 
@@ -254,15 +259,15 @@ class ReferenceBlade(object):
         #         for var in vartree.keys():
         #             branch_i = copy.copy(branch)
         #             branch_i.append(var)
-        #             if type(vartree[var]) in [dict, CommentedMap]:
+        #             if type(vartree[var]) in [dict, ry.comments.CommentedMap]:
         #                 loop_dict(vartree_full, vartree[var], branch_i)
         #             else:
         #                 if type(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]]) is np.ndarray:
         #                     get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] = get_dict(vartree_full, branch_i[:-1])[branch_i[-1]].tolist()
         #                 elif type(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]]) is np.float64:
         #                     get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] = float(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]])
-        #                 elif type(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]]) in [tuple, list, CommentedSeq]:
-        #                     get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] = [loop_dict(obji, obji, []) for obji in get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] if type(obji) in [dict, CommentedMap]]
+        #                 elif type(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]]) in [tuple, list, ry.comments.CommentedSeq]:
+        #                     get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] = [loop_dict(obji, obji, []) for obji in get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] if type(obji) in [dict, ry.comments.CommentedMap]]
 
 
         #     loop_dict(out, out, [])
@@ -362,7 +367,7 @@ class ReferenceBlade(object):
 
         # try:
         f = open(fname, "w")
-        yaml=YAML()
+        yaml=ry.YAML()
         yaml.default_flow_style = None
         yaml.width = float("inf")
         yaml.indent(mapping=4, sequence=6, offset=3)
