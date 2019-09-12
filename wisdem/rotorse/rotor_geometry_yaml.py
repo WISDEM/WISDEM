@@ -744,7 +744,8 @@ class ReferenceBlade(object):
             cd[:,:,j,0] = spline_cd(thk_span)
             cm[:,:,j,0] = spline_cm(thk_span)
         
-        
+        from wisdem.ccblade.Polar import Polar
+
         if 'aerodynamic_control' in blade:
             for afi in range(n_span):
                 if 'coords' in blade['flap_profiles'][afi]:
@@ -752,8 +753,36 @@ class ReferenceBlade(object):
                         for ind in range(np.shape(blade['flap_profiles'][afi]['coords'])[2]):
                             fa = blade['flap_profiles'][afi]['flap_angles'][ind]
                             data = self.runXfoil(blade['flap_profiles'][afi]['coords'][:,0,ind], blade['flap_profiles'][afi]['coords'][:,1,ind], Re[j])
-        
-                            print(data)
+                            
+                            
+                            # Apply corrections to airfoil polars
+                            oldpolar= Polar(Re[j], data[:,0],data[:,1],data[:,2],data[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
+                            
+                            
+                            c   = blade['outer_shape_bem']['chord']['values'][afi]
+                            R   = blade['pf']['r'][-1]
+                            rR  = blade['outer_shape_bem']['chord']['grid'][afi]
+                            tsr = blade['config']['tsr']
+                            
+                            polar3d = oldpolar.correction3D(rR,c/R,tsr) # Apply 3D corrections (made sure to change the r/R, c/R, and tsr values appropriately when calling AFcorrections())
+                            cdmax   = 1.5
+                            polar   = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg
+                            
+                            print(polar.alpha)
+                            exit()
+                            
+                            import matplotlib.pyplot as plt
+                            plt.figure()
+                            plt.plot(oldpolar.alpha, oldpolar.cl, label='old')
+                            plt.plot(polar.alpha, polar.cl, label='new')
+                            plt.xlabel('alpha')
+                            plt.ylabel('cl')
+                            plt.legend()
+                            
+                            plt.show()
+                            
+                            
+                            
                             exit()
             
         
@@ -830,8 +859,8 @@ class ReferenceBlade(object):
         
         while numNodes < 450 and runFlag > 0:
             # Cleaning up old files to prevent replacement issues         
-            if os.path.exists(saveFlnmPolar):
-                os.remove(saveFlnmPolar)
+            # if os.path.exists(saveFlnmPolar):
+                # os.remove(saveFlnmPolar)
             if os.path.exists(xfoilFlnm):
                 os.remove(xfoilFlnm)
             if os.path.exists(LoadFlnmAF):
@@ -888,9 +917,8 @@ class ReferenceBlade(object):
             fid.close()
         
             # Run the XFoil calling command
-            os.system(self.xfoil_path + " < xfoil_input.txt")
+            # os.system(self.xfoil_path + " < xfoil_input.txt")
             flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
-            
             
             
             # Error handling (re-run simulations with more panels if there is not enough data in polars)
@@ -907,15 +935,14 @@ class ReferenceBlade(object):
             else: 
                 numNodes += 50 # Re-run with additional panels
         
-        
         # Load back in polar data to be saved in instance variables
         #flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12) # (note, we are assuming raw Xfoil polars when skipping the first 12 lines)
         # self.af_flap_polar = flap_polar
         # self.flap_polar_flnm = saveFlnmPolar # Not really needed unless you keep the files and want to load them later
         
         # Delete Xfoil run script file
-        if os.path.exists(xfoilFlnm):
-            os.remove(xfoilFlnm)
+        # if os.path.exists(xfoilFlnm):
+            # os.remove(xfoilFlnm)
         #if os.path.exists(saveFlnmPolar): # bem: For now leave the files, but eventually we can get rid of them (remove # in front of commands) so that we don't have to store them
             #os.remove(saveFlnmPolar)
         #if os.path.exists(LoadFlnmAF):
