@@ -43,6 +43,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
         self.options.declare('n_aoa_grid')
         self.options.declare('n_Re_grid')
+        self.options.declare('n_ctrl')
 
     
     def setup(self):
@@ -51,7 +52,9 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         n_pc_spline = self.options['n_pc_spline']
         n_aoa_grid  = self.options['n_aoa_grid']
         n_Re_grid   = self.options['n_Re_grid']
-
+        n_ctrl      = self.options['n_ctrl']
+        
+        
         # parameters
         self.add_input('control_Vin',        val=0.0, units='m/s',  desc='cut-in wind speed')
         self.add_input('control_Vout',       val=0.0, units='m/s',  desc='cut-out wind speed')
@@ -77,9 +80,9 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
 
         # self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
-        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid, n_ctrl)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid, n_ctrl)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid, n_ctrl)), desc='moment coefficients, spanwise')
         self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
         self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
         self.add_discrete_input('nBlades',         val=0,                              desc='number of blades')
@@ -126,7 +129,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         # Create Airfoil class instances
         af = [None]*self.naero
         for i in range(self.naero):
-            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
+            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:,0], inputs['airfoils_cd'][:,i,:,0], inputs['airfoils_cm'][:,i,:,0])
         
 
         self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'])
@@ -372,11 +375,13 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.options.declare('n_U', default=1)
         self.options.declare('n_aoa_grid')
         self.options.declare('n_Re_grid')
+        self.options.declare('n_ctrl')
 
     def setup(self):
         naero       = self.naero = self.options['naero']
         n_aoa_grid  = self.options['n_aoa_grid']
         n_Re_grid   = self.options['n_Re_grid']
+        n_ctrl      = self.options['n_ctrl']
         n_pitch     = self.options['n_pitch']
         n_tsr       = self.options['n_tsr']
         n_U         = self.options['n_U']
@@ -399,9 +404,9 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.add_input('mu',            val=0.0,             units='kg/(m*s)',  desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                desc='shear exponent')
         # self.add_discrete_input('airfoils',      val=[0]*naero,                 desc='CCAirfoil instances')
-        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid, n_ctrl)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid, n_ctrl)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid, n_ctrl)), desc='moment coefficients, spanwise')
         self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
         self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
         self.add_discrete_input('nBlades',       val=0,                         desc='number of blades')
@@ -427,7 +432,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         # Create Airfoil class instances
         af = [None]*self.naero
         for i in range(self.naero):
-            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
+            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:,0], inputs['airfoils_cd'][:,i,:,0], inputs['airfoils_cm'][:,i,:,0])
        
 
         n_pitch  = self.options['n_pitch']
@@ -611,6 +616,15 @@ class RotorAeroPower(Group):
         NPTS                        = len(RefBlade['pf']['s'])
         NAFgrid                     = len(RefBlade['airfoils_aoa'])
         NRe                         = len(RefBlade['airfoils_Re'])
+        
+        n_ctrl = 1
+        # interpolate
+        if 'aerodynamic_control' in RefBlade:
+            for afi in range(NPTS):
+                if 'coords' in RefBlade['flap_profiles'][afi]:
+                    n_ctrl = max(n_ctrl, len(RefBlade['flap_profiles'][afi]['flap_angles']))
+        
+        
 
         aeroIndeps = IndepVarComp()
         aeroIndeps.add_output('wind_reference_height',  val=0.0, units='m',     desc='reference hub height for IEC wind speed (used in CDF calculation)')
@@ -651,10 +665,11 @@ class RotorAeroPower(Group):
                                                              regulation_reg_II5=regulation_reg_II5,
                                                              regulation_reg_III=regulation_reg_III,
                                                              n_aoa_grid=NAFgrid,
-                                                             n_Re_grid=NRe), promotes=['*'])
+                                                             n_Re_grid=NRe,
+                                                             n_ctrl=n_ctrl), promotes=['*'])
 
         if flag_Cp_Ct_Cq_Tables:
-            self.add_subsystem('cpctcq_tables',   Cp_Ct_Cq_Tables(naero=NPTS,n_aoa_grid=NAFgrid,n_Re_grid=NRe), promotes=['*'])
+            self.add_subsystem('cpctcq_tables',   Cp_Ct_Cq_Tables(naero=NPTS,n_aoa_grid=NAFgrid,n_Re_grid=NRe,n_ctrl=n_ctrl), promotes=['*'])
 
         self.add_subsystem('wind', PowerWind(nPoints=1), promotes=['shearExp'])
         self.add_subsystem('cdf', WeibullWithMeanCDF(nspline=npts_spline_power_curve))

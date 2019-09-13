@@ -38,6 +38,15 @@ class BladeGeometry(ExplicitComponent):
         NAF     = len(self.refBlade['outer_shape_bem']['airfoil_position']['grid'])
         NAFgrid = len(self.refBlade['airfoils_aoa'])
         NRe     = len(self.refBlade['airfoils_Re'])
+        
+        n_ctrl = 1
+        # interpolate
+        if 'aerodynamic_control' in self.refBlade:
+            for afi in range(npts):
+                if 'coords' in self.refBlade['flap_profiles'][afi]:
+                    n_ctrl = max(n_ctrl, len(self.refBlade['flap_profiles'][afi]['flap_angles']))
+
+                    
 
         self.add_input('bladeLength',   val=0.0, units='m', desc='blade length (if not precurved or swept) otherwise length of blade before curvature')
         self.add_input('r_max_chord',   val=0.0, desc='location of max chord on unit radius')
@@ -69,9 +78,9 @@ class BladeGeometry(ExplicitComponent):
 
         # Airfoil properties
         # self.add_discrete_output('airfoils', val=[], desc='Spanwise coordinates for aerodynamic analysis')
-        self.add_output('airfoils_cl',  val=np.zeros((NAFgrid, npts, NRe)), desc='lift coefficients, spanwise')
-        self.add_output('airfoils_cd',  val=np.zeros((NAFgrid, npts, NRe)), desc='drag coefficients, spanwise')
-        self.add_output('airfoils_cm',  val=np.zeros((NAFgrid, npts, NRe)), desc='moment coefficients, spanwise')
+        self.add_output('airfoils_cl',  val=np.zeros((NAFgrid, npts, NRe, n_ctrl)), desc='lift coefficients, spanwise')
+        self.add_output('airfoils_cd',  val=np.zeros((NAFgrid, npts, NRe, n_ctrl)), desc='drag coefficients, spanwise')
+        self.add_output('airfoils_cm',  val=np.zeros((NAFgrid, npts, NRe, n_ctrl)), desc='moment coefficients, spanwise')
         self.add_output('airfoils_aoa', val=np.zeros((NAFgrid)), units='deg', desc='angle of attack grid for polars')
         self.add_output('airfoils_Re',  val=np.zeros((NRe)), desc='Reynolds numbers of polars')
         

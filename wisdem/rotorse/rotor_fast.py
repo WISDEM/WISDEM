@@ -209,6 +209,14 @@ class FASTLoadCases(ExplicitComponent):
         n_aoa_grid              = len(RefBlade['airfoils_aoa'])
         n_Re_grid               = len(RefBlade['airfoils_Re'])
         
+        n_ctrl = 1
+        # interpolate
+        if 'aerodynamic_control' in RefBlade:
+            for afi in range(NPTS):
+                if 'coords' in RefBlade['flap_profiles'][afi]:
+                    n_ctrl = max(n_ctrl, len(RefBlade['flap_profiles'][afi]['flap_angles']))
+        
+        
         self.add_discrete_input('fst_vt_in', val={})
 
         # ElastoDyn Inputs
@@ -232,9 +240,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('rthick',            val=np.zeros(NPTS), desc='relative thickness of airfoil distribution')
         self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
-        self.add_input('airfoils_cl',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_cl',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid, n_ctrl)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid, n_ctrl)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid, n_ctrl)), desc='moment coefficients, spanwise')
         self.add_input('airfoils_aoa',      val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
         self.add_input('airfoils_Re',       val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
         
@@ -424,18 +432,25 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['NumAFfiles'] = len(r)
         # fst_vt['AeroDyn15']['af_data'] = [{}]*len(airfoils)
         fst_vt['AeroDyn15']['af_data'] = []
-        
-        
+                
         for i in range(len(r)):
-            # af = airfoils[i]
-            fst_vt['AeroDyn15']['af_data'].append({})
-            for j in range(np.size(inputs['airfoils_cl'], 2)): # if there are no flaps at this blade station
-                unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][:,i,j], inputs['airfoils_cd'][:,i,j], inputs['airfoils_cm'][:,i,j])
+        
+            if max(inputs['airfoils_cl'][:,i,0,1]) < 1.e-5 : # if there are no flaps at this blade station
+                tab = 1
+            else: # If there are flaps at this blade station
+                tab = 3
+        
+            fst_vt['AeroDyn15']['af_data'].append([])
+            
+            
+            for j in range(tab): # if there are no flaps at this blade station
+                unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][:,i,0,j], inputs['airfoils_cd'][:,i,0,j], inputs['airfoils_cm'][:,i,0,j])
                 fst_vt['AeroDyn15']['af_data'][i].append({})
+                
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
                 fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0          # TODO: link the airfoil profiles to this component and write the coordinate files (no need as of yet)
-                fst_vt['AeroDyn15']['af_data'][i][j]['NumTabs']   = np.size(inputs['airfoils_cl'], 2) + 1
+                fst_vt['AeroDyn15']['af_data'][i][j]['NumTabs']   = tab
                 fst_vt['AeroDyn15']['af_data'][i][j]['Re']        = 0.75       # TODO: functionality for multiple Re tables
                 fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl']      = 0
                 fst_vt['AeroDyn15']['af_data'][i][j]['InclUAdata']= "True"
@@ -477,7 +492,6 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['AeroDyn15']['af_data'][i][j]['Cd']        = np.array(unsteady['Cd'])
                 fst_vt['AeroDyn15']['af_data'][i][j]['Cm']        = np.array(unsteady['Cm'])
                 fst_vt['AeroDyn15']['af_data'][i][j]['Cpmin']     = np.zeros_like(unsteady['Cm'])
-        
         
         fst_vt['AeroDyn15']['af_coord'] = []
         fst_vt['AeroDyn15']['rthick']   = np.zeros(len(r))

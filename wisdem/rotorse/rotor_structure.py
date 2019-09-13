@@ -1859,6 +1859,14 @@ class RotorStructure(Group):
         topLevelFlag    = self.options['topLevelFlag']
         Analysis_Level  = self.options['Analysis_Level']
         
+        n_ctrl = 1
+        # interpolate
+        if 'aerodynamic_control' in RefBlade:
+            for afi in range(NPTS):
+                if 'coords' in RefBlade['flap_profiles'][afi]:
+                    n_ctrl = max(n_ctrl, len(RefBlade['flap_profiles'][afi]['flap_angles']))
+        
+        
         structIndeps = IndepVarComp()
         structIndeps.add_discrete_output('fst_vt_in', val={})
         structIndeps.add_output('VfactorPC',                val=0.7,            desc='fraction of rated speed at which the deflection is assumed to representative throughout the power curve calculation')
@@ -1914,15 +1922,15 @@ class RotorStructure(Group):
         self.add_subsystem('gust',      GustETM(), promotes=['V_mean','turbulence_class','V_hub'])
         self.add_subsystem('setuppc',   SetupPCModVarSpeed(),promotes=['R','control_tsr','control_pitch'])
 
-        self.add_subsystem('aero_rated',            CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
-        self.add_subsystem('aero_extrm',            CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
-        self.add_subsystem('aero_extrm_forces',     CCBladePower(naero=NPTS, npower=2, n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
-        self.add_subsystem('aero_defl_powercurve',  CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
+        self.add_subsystem('aero_rated',            CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe, n_ctrl=n_ctrl), promotes=promoteList)
+        self.add_subsystem('aero_extrm',            CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe, n_ctrl=n_ctrl), promotes=promoteList)
+        self.add_subsystem('aero_extrm_forces',     CCBladePower(naero=NPTS, npower=2, n_aoa_grid=NAFgrid, n_Re_grid=NRe, n_ctrl=n_ctrl), promotes=promoteList)
+        self.add_subsystem('aero_defl_powercurve',  CCBladeLoads(naero=NPTS, npower=1, n_aoa_grid=NAFgrid, n_Re_grid=NRe, n_ctrl=n_ctrl), promotes=promoteList)
 
         # Out of plane loads
-        self.add_subsystem('aero_rated_0',    CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
-        self.add_subsystem('aero_rated_120',  CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
-        self.add_subsystem('aero_rated_240',  CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe), promotes=promoteList)
+        self.add_subsystem('aero_rated_0',    CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe, n_ctrl=n_ctrl), promotes=promoteList)
+        self.add_subsystem('aero_rated_120',  CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe, n_ctrl=n_ctrl), promotes=promoteList)
+        self.add_subsystem('aero_rated_240',  CCBladeLoads(naero=NPTS, npower=1,  n_aoa_grid=NAFgrid, n_Re_grid=NRe, n_ctrl=n_ctrl), promotes=promoteList)
         
         self.add_subsystem('loads_defl',        TotalLoads(NPTS=NPTS), promotes=['tilt','theta','rhoA','z','totalCone','z_az'])
         self.add_subsystem('loads_pc_defl',     TotalLoads(NPTS=NPTS), promotes=['tilt','theta','rhoA','z','totalCone','z_az'])

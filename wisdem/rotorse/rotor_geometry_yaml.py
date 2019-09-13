@@ -732,7 +732,6 @@ class ReferenceBlade(object):
                 if 'coords' in blade['flap_profiles'][afi]:
                     n_ctrl = max(n_ctrl, len(blade['flap_profiles'][afi]['flap_angles']))
         
-            
         cl = np.zeros((n_aoa, n_span, n_Re, n_ctrl))
         cd = np.zeros((n_aoa, n_span, n_Re, n_ctrl))
         cm = np.zeros((n_aoa, n_span, n_Re, n_ctrl))
@@ -745,20 +744,17 @@ class ReferenceBlade(object):
             cm[:,:,j,0] = spline_cm(thk_span)
         
         from wisdem.ccblade.Polar import Polar
-
+        
         if 'aerodynamic_control' in blade:
             for afi in range(n_span):
                 if 'coords' in blade['flap_profiles'][afi]:
                     for j in range(n_Re):
-                        for ind in range(np.shape(blade['flap_profiles'][afi]['coords'])[2]):
+                        for ind in range(n_ctrl):
                             fa = blade['flap_profiles'][afi]['flap_angles'][ind]
                             data = self.runXfoil(blade['flap_profiles'][afi]['coords'][:,0,ind], blade['flap_profiles'][afi]['coords'][:,1,ind], Re[j])
-                            
-                            
+                            # data[data[:,0].argsort()] # To sort data by increasing aoa
                             # Apply corrections to airfoil polars
                             oldpolar= Polar(Re[j], data[:,0],data[:,1],data[:,2],data[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
-                            
-                            
                             c   = blade['outer_shape_bem']['chord']['values'][afi]
                             R   = blade['pf']['r'][-1]
                             rR  = blade['outer_shape_bem']['chord']['grid'][afi]
@@ -766,33 +762,13 @@ class ReferenceBlade(object):
                             
                             polar3d = oldpolar.correction3D(rR,c/R,tsr) # Apply 3D corrections (made sure to change the r/R, c/R, and tsr values appropriately when calling AFcorrections())
                             cdmax   = 1.5
-                            polar   = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg
+                            polar   = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg                            
                             
-                            print(polar.alpha)
-                            exit()
-                            
-                            import matplotlib.pyplot as plt
-                            plt.figure()
-                            plt.plot(oldpolar.alpha, oldpolar.cl, label='old')
-                            plt.plot(polar.alpha, polar.cl, label='new')
-                            plt.xlabel('alpha')
-                            plt.ylabel('cl')
-                            plt.legend()
-                            
-                            plt.show()
-                            
-                            
-                            
-                            exit()
-            
+                            cl[:,afi,j,ind] = np.interp(np.degrees(alpha), polar.alpha, polar.cl)
+                            cd[:,afi,j,ind] = np.interp(np.degrees(alpha), polar.alpha, polar.cd)
+                            cm[:,afi,j,ind] = np.interp(np.degrees(alpha), polar.alpha, polar.cm)      
+
         
-        
-        
-        
-        
-        
-        # CCBlade airfoil class instances
-        # airfoils = [None]*n_span
         alpha_out = np.degrees(alpha)
         if alpha[0] != -180.:
             alpha[0] = -180.
@@ -807,27 +783,6 @@ class ReferenceBlade(object):
                         cd[0,i,j,k] = cd[-1,i,j,k]
                     if cm[0,i,j,k] != cm[-1,i,j,k]:
                         cm[0,i,j,k] = cm[-1,i,j,k]
-
-            # airfoils[i] = CCAirfoil(alpha_out, Re, cl[:,i,:], cd[:,i,:], cm[:,i,:])
-            # airfoils[i].eval_unsteady(alpha_out, cl[:,i,j], cd[:,i,j], cm[:,i,j]) # TODO: openmdao2 handling of airfoils has not implimented the unsteady airfoil properties evaluation for FAST
-            # airfoils[i].flaps = []
-            # Get polars for flaps using xfoil (CCAirfoil.runXfoil())
-            #if 'aerodynamic_control' in blade: # check if there are any flaps specified in yaml file
-            #    if 'coords' in blade['flap_profiles'][i]: # If this is true then there is a flap at station [i] (assuming remap_profiles has already been run)
-            #        for ind in range(np.shape(blade['flap_profiles'][i]['coords'])[2]): # For number of flaps deflection angles at a given station
-            #            airfoils[i].flaps.append([])
-            #            fa = blade['flap_profiles'][i]['flap_angles'][ind] # Reads out flap angle for naming...note this is important because this is an informal way of passing in the flap angle
-            #            airfoils[i].flaps[ind] = CCAirfoil(alpha_out, Re, cl[:,i], cd[:,i], cm[:,i],blade['flap_profiles'][i]['coords'][:,0,ind],blade['flap_profiles'][i]['coords'][:,1,ind],"Profile"+str(i)+"_"+str(int(fa))) # bem: naming convention is assumed in CCAirfoil.runXfoil() to get flap deflection angle
-            #            airfoils[i].flaps[ind].runXfoil(Re) # Run xfoil to get polars (note: assuming default values for AoA_min=-9, AoA_max=25, and AoA_inc=0.5, but those could be specified here)
-            #            c=blade['outer_shape_bem']['chord']['values'][i] # Chord length at station [i]
-            #            R= blade['outer_shape_bem']['reference_axis']['z']['values'][-1] # Approximate radius of rotor (bem: not sure if there is a better way to get this value)
-            #            tsr = blade['config']['tsr'] # Tip speed ratio 
-            #            cdmax=1.5 #1.5 is a standard value but may need to be changed...for now just leave it as is
-            #            airfoils[i].flaps[ind].AFCorrections(Re,blade['outer_shape_bem']['chord']['grid'][i],c/R, tsr, cdmax) # Correct polars for 3D effects, extrpolate to +-180 deg, and calculate unsteady parameters
-                    
-            
-
-        # blade['airfoils'] = airfoils
 
         blade['airfoils_cl']  = cl
         blade['airfoils_cd']  = cd
@@ -859,8 +814,8 @@ class ReferenceBlade(object):
         
         while numNodes < 450 and runFlag > 0:
             # Cleaning up old files to prevent replacement issues         
-            # if os.path.exists(saveFlnmPolar):
-                # os.remove(saveFlnmPolar)
+            if os.path.exists(saveFlnmPolar):
+                os.remove(saveFlnmPolar)
             if os.path.exists(xfoilFlnm):
                 os.remove(xfoilFlnm)
             if os.path.exists(LoadFlnmAF):
@@ -917,7 +872,7 @@ class ReferenceBlade(object):
             fid.close()
         
             # Run the XFoil calling command
-            # os.system(self.xfoil_path + " < xfoil_input.txt")
+            os.system(self.xfoil_path + " < xfoil_input.txt")
             flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
             
             
@@ -941,12 +896,12 @@ class ReferenceBlade(object):
         # self.flap_polar_flnm = saveFlnmPolar # Not really needed unless you keep the files and want to load them later
         
         # Delete Xfoil run script file
-        # if os.path.exists(xfoilFlnm):
-            # os.remove(xfoilFlnm)
-        #if os.path.exists(saveFlnmPolar): # bem: For now leave the files, but eventually we can get rid of them (remove # in front of commands) so that we don't have to store them
-            #os.remove(saveFlnmPolar)
-        #if os.path.exists(LoadFlnmAF):
-           # os.remove(LoadFlnmAF)
+        if os.path.exists(xfoilFlnm):
+            os.remove(xfoilFlnm)
+        if os.path.exists(saveFlnmPolar): # bem: For now leave the files, but eventually we can get rid of them (remove # in front of commands) so that we don't have to store them
+            os.remove(saveFlnmPolar)
+        if os.path.exists(LoadFlnmAF):
+           os.remove(LoadFlnmAF)
     
     
         return flap_polar
