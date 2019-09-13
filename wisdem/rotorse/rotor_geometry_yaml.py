@@ -751,6 +751,8 @@ class ReferenceBlade(object):
                     for j in range(n_Re):
                         for ind in range(n_ctrl):
                             fa = blade['flap_profiles'][afi]['flap_angles'][ind]
+                            eta = blade['outer_shape_bem']['chord']['grid'][afi]
+                            print('Run xfoil for span section at ' + str(eta*100.) + '%, flap deflection ' + str(fa) + ' deg, and Re equal to ' + str(Re[j]))
                             data = self.runXfoil(blade['flap_profiles'][afi]['coords'][:,0,ind], blade['flap_profiles'][afi]['coords'][:,1,ind], Re[j])
                             # data[data[:,0].argsort()] # To sort data by increasing aoa
                             # Apply corrections to airfoil polars
@@ -861,18 +863,18 @@ class ReferenceBlade(object):
             fid.write( str(IterLimit) + "\n")
         
             # Run simulations for range of AoA
+            fid.write("PACC\n\n\n") #Toggle saving polar on 
             fid.write("ASEQ 0 " + str(AoA_min) + " " + str(dfdn) + "\n") # The preliminary runs are just to get an initialize airfoil solution at min AoA so that the actual runs will not become unstable
-            fid.write("PACC\n") #Toggle saving polar on 
-            fid.write( saveFlnmPolar + " \n \n")
+            
             fid.write("ASEQ " + str(AoA_min) + " " + "16" + " " + str(AoA_inc) + "\n") #run simulations for desired range of AoA using a coarse step size in AoA up to 16 deg
             fid.write("ASEQ " + "16.5" + " " + str(AoA_max) + " " + "0.1" + "\n") #run simulations for desired range of AoA using a fine AoA increment up to final AoA to help with convergence issues at high Re
-            fid.write("PACC\n\n") #Toggle saving polar off
-        
+            fid.write("PWRT\n") #Toggle saving polar off
+            fid.write(saveFlnmPolar + " \n \n")
             fid.write("QUIT \n")
             fid.close()
-        
+            
             # Run the XFoil calling command
-            os.system(self.xfoil_path + " < xfoil_input.txt")
+            os.system(self.xfoil_path + " < xfoil_input.txt  > NUL")
             flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
             
             
@@ -881,6 +883,7 @@ class ReferenceBlade(object):
                 plen = 0
                 a0 = 0
                 dfdn = -0.25 # decrease AoA step size during initialization to try and get convergence in the next run
+                print('XFOIL convergence issues')
             else:
                 plen=len(flap_polar[:,0]) # Number of AoA's in polar
                 a0=flap_polar[-1,0] # Maximum AoA in Polar
@@ -889,6 +892,7 @@ class ReferenceBlade(object):
                 runFlag = -10 # No need ro re-run polar
             else: 
                 numNodes += 50 # Re-run with additional panels
+                print('Refining paneling')
         
         # Load back in polar data to be saved in instance variables
         #flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12) # (note, we are assuming raw Xfoil polars when skipping the first 12 lines)
