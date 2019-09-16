@@ -525,8 +525,11 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('                   OutList             - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx for a listing of available output channels, (-)\n')
 
         outlist = self.get_outlist(self.fst_vt['outlist'], ['ElastoDyn'])
+        
         for channel_list in outlist:
-            f.write('"' + ', '.join(channel_list) + '"\n')
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
+        
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
         f.close()
@@ -590,7 +593,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
         
         outlist = self.get_outlist(self.fst_vt['outlist'], ['InflowWind'])
         for channel_list in outlist:
-            f.write('"' + ', '.join(channel_list) + '"\n')
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
 
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
@@ -716,7 +720,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         self.write_AeroDyn15Polar()
         
         # Generate AeroDyn v15 airfoil coordinates
-        self.write_AeroDyn15Coord()
+        # self.write_AeroDyn15Coord()
         
         # Generate AeroDyn v15.03 input file
         self.fst_vt['Fst']['AeroFile'] = self.FAST_namingOut + '_AeroDyn15.dat'
@@ -793,9 +797,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['AeroDyn15']['TwOutNd']), 'TwOutNd', '- Tower nodes whose values will be output  (-)\n'))
         f.write('                   OutList             - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx for a listing of available output channels, (-)\n')
 
-        outlist = self.get_outlist(self.fst_vt['outlist'], ['AeroDyn'])
+        outlist = self.get_outlist(self.fst_vt['outlist'], ['AeroDyn'])      
         for channel_list in outlist:
-            f.write('"' + ', '.join(channel_list) + '"\n')
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
         f.close()
@@ -864,7 +869,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write('! ------------------------------------------------------------------------------\n')
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
             f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
-            f.write('@"AF{:02d}_Coords.txt"       {:<11} {:}'.format(afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
+            # f.write('@"AF{:02d}_Coords.txt"       {:<11} {:}'.format(afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
+            f.write('{:<22d}       {:<11} {:}'.format(0, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             # f.write('AF{:02d}_BL.txt              {:<11} {:}'.format(afi, 'BL_file', '! The file name including the boundary layer characteristics of the profile. Ignored if the aeroacoustic module is not called.\n'))
             f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['NumTabs'], 'NumTabs', '! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
             f.write('! ------------------------------------------------------------------------------\n')
@@ -1069,7 +1075,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
         
         outlist = self.get_outlist(self.fst_vt['outlist'], ['ServoDyn'])
         for channel_list in outlist:
-            f.write('"' + ', '.join(channel_list) + '"\n')
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
 
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
@@ -1326,7 +1333,9 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('---------------------- OUTPUT CHANNELS -----------------------------------------\n')
         outlist = self.get_outlist(self.fst_vt['outlist'], ['HydroDyn'])
         for channel_list in outlist:
-            f.write('"' + ', '.join(channel_list) + '"\n')
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
+            
         f.write('END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)\n')
         
         f.close()
@@ -1602,7 +1611,8 @@ class InputWriter_FAST7(InputWriter_Common):
         ofh.write('Outlist\n')
         outlist = self.get_outlist(self.fst_vt['outlist7'], ['OutList'])
         for channel_list in outlist:
-            ofh.write('"' + ', '.join(channel_list) + '"\n')
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
         ofh.write('END\n')
         ofh.close()
         
