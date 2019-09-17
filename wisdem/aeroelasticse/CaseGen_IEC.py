@@ -100,7 +100,7 @@ class CaseGen_IEC():
             iecwind.z_hub = self.z_hub
             iecwind.D = self.D
             iecwind.PLExp = alpha
-
+            
             iecwind.outdir = self.wind_dir
             iecwind.case_name = self.case_name_base
             iecwind.Turbsim_exe = self.Turbsim_exe
@@ -185,13 +185,15 @@ class CaseGen_IEC():
                     U_out.extend(U_out_i)
                     WindFile_out.extend(WindFile_out_i)
                     WindFile_type_out.extend(WindFile_type_out_i)
+            
+            for i in range(len(WindFile_out)):
+                WindFile_out[i] = '../../' + iecwind.outdir + '/' +  WindFile_out[i]
 
             # Set FAST variables from DLC setup
             if ("Fst","TMax") not in case_inputs_i:
                 case_inputs_i[("Fst","TMax")] = {'vals':[TMax], 'group':0}
             case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
             case_inputs_i[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
-
             # Set FAST variables from inital conditions
             if self.init_cond:
                 for var in self.init_cond.keys():
