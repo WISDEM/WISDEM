@@ -100,7 +100,8 @@ Thumbs.db
 
 # Ben's Stuff #
 #####################
-*/temp/
+./wisdem/rotorse/temp/
 *NUL
 *.bl
 *.swp
+*.swo
