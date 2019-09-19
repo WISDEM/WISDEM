@@ -97,3 +97,10 @@ Thumbs.db
 # Visual Studio Code #
 ######################
 .vscode/
+
+# Ben's Stuff #
+#####################
+*/temp/
+*NUL
+*.bl
+*.swp
