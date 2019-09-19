@@ -302,12 +302,15 @@ if __name__ == '__main__':
         FASTpref['Analysis_Level']      = Analysis_Level
         FASTpref['FAST_ver']            = 'OpenFAST'
         FASTpref['dev_branch']          = True
+        #FASTpref['FAST_exe']            = '/mnt/c/Material/Programs/openfast/build/glue-codes/openfast/openfast'
+        #FASTpref['FAST_directory']      = '/mnt/c/Material/Programs/wisdem_2_0/wisdem/rotorse/RotorSE_FAST_BAR_005a'   # Path to fst directory files
         FASTpref['FAST_exe']            = '/home/mertzb/Documents/NREL_Codes/openfast_interp/openfast/build/glue-codes/fast/openfast'
         FASTpref['FAST_directory']      = '/home/mertzb/Documents/NREL_Codes/WISDEM/wisdem/rotorse/RotorSE_FAST_BAR_005a'   # Path to fst directory files
         FASTpref['FAST_InputFile']      = 'RotorSE_FAST_BAR_005a.fst' # FAST input file (ext=.fst)
         # FASTpref['FAST_directory']      = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_Land_DLL_WTurb'   # Path to fst directory files
         # FASTpref['FAST_InputFile']      = '5MW_Land_DLL_WTurb.fst' # FAST input file (ext=.fst)
         FASTpref['Turbsim_exe']         = "/home/mertzb/Documents/NREL_Codes/TurbSim/bin/TurbSim_glin64"
+        #FASTpref['Turbsim_exe']         = "/mnt/c/Material/Programs/TurbSim/TurbSim_glin64"
         # FASTpref['FAST_exe']            = '/mnt/c/linux/WT_Codes/openfast_dev/build/glue-codes/openfast/openfast'
         # FASTpref['FAST_directory']      = '/mnt/c/linux/IS/xloads_tc/templates/openfast/5MW_Land_DLL_WTurb-NoAero'   # Path to fst directory files
         # FASTpref['FAST_InputFile']      = '5MW_Land_DLL_WTurb.fst' # FAST input file (ext=.fst)
