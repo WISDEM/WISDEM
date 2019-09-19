@@ -41,7 +41,7 @@ class RotorSE(Group):
         self.options.declare('rc_show_plots',           default=False)
         self.options.declare('rc_show_warnings',        default=False)
         self.options.declare('rc_discrete',             default=False)
-    
+
     def setup(self):
         RefBlade                = self.options['RefBlade']
         npts_coarse_power_curve = self.options['npts_coarse_power_curve']
@@ -56,10 +56,10 @@ class RotorSE(Group):
         rc_tex_table            = self.options['rc_tex_table']
         rc_generate_plots       = self.options['rc_generate_plots']
         rc_show_plots           = self.options['rc_show_plots']
-        rc_show_warnings        = self.options['rc_show_warnings'] 
+        rc_show_warnings        = self.options['rc_show_warnings']
         rc_discrete             = self.options['rc_discrete']
         NPTS                    = len(RefBlade['pf']['s'])
-        
+
         rotorIndeps = IndepVarComp()
         rotorIndeps.add_discrete_output('tiploss',      True)
         rotorIndeps.add_discrete_output('hubloss',      True)
@@ -76,7 +76,7 @@ class RotorSE(Group):
             sharedIndeps.add_output('mu',           val=1.81e-5,    units='kg/(m*s)')
             sharedIndeps.add_output('shearExp',     val=0.2)
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
-                
+
         # --- Rotor Aero & Power ---
         self.add_subsystem('rg', RotorGeometry(RefBlade=RefBlade, topLevelFlag=True,
                                                verbosity=rc_verbosity,
@@ -111,7 +111,7 @@ class RotorSE(Group):
                                      'tilt','yaw','nBlades','downwind',
                                      'control_tsr','control_pitch','lifetime','hub_height',
                                      'mass_one_blade','mass_all_blades','I_all_blades',
-                                     'freq_pbeam','freq_curvefem','modes_coef_curvefem','tip_deflection', 
+                                     'freq_pbeam','freq_curvefem','modes_coef_curvefem','tip_deflection',
                                      'tip_position','ground_clearance','strainU_spar','strainL_spar',
                                      'strainU_te','strainL_te',#'eps_crit_spar','eps_crit_te',
                                      'root_bending_moment','Mxyz','damageU_spar','damageL_spar','damageU_te',
@@ -121,8 +121,8 @@ class RotorSE(Group):
                                      'Fxyz_total','Mxyz_total','TotalCone','Pitch'])
 
         # self.add_subsystem('rc', RotorCost(RefBlade=RefBlade, verbosity=rc_verbosity),
-        #                    promotes=['bladeLength','total_blade_cost','Rtip','Rhub','r','chord','le_location','materials','upperCS','lowerCS','websCS','profile'])       
-        
+        #                    promotes=['bladeLength','total_blade_cost','Rtip','Rhub','r','chord','le_location','materials','upperCS','lowerCS','websCS','profile'])
+
         self.add_subsystem('obj_cmp', ExecComp('obj = -AEP',
                                                AEP={'units':'kW*h','value':1000000.0},
                                                obj={'units':'kW*h'}), promotes=['*'])
@@ -138,13 +138,13 @@ class RotorSE(Group):
         self.connect('V_extreme50',    'rs.aero_extrm.V_load')
         self.connect('V_extreme_full', 'rs.aero_extrm_forces.Uhub')
         self.connect('theta', 'rs.tip.theta', src_indices=[NPTS-1])
-        
+
         # Connections to AeroelasticSE
         if Analysis_Level>=1:
             self.add_subsystem('aeroelastic', FASTLoadCases(RefBlade=RefBlade,
-                                                    npts_coarse_power_curve=npts_coarse_power_curve, 
+                                                    npts_coarse_power_curve=npts_coarse_power_curve,
                                                     npts_spline_power_curve=npts_spline_power_curve,
-                                                    FASTpref=FASTpref), 
+                                                    FASTpref=FASTpref),
                                                     promotes=['fst_vt_in', 'fst_vt_out', 'FASTpref_updated',
                                                     'r', 'le_location', 'chord', 'theta', 'precurve','shearExp',
                                                     'presweep', 'Rhub', 'Rtip', 'turbulence_class', 'turbine_class',
@@ -196,7 +196,7 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     rotor['yaw']                = 0.0  # (Float, deg): yaw error
     rotor['nBlades']            = blade['config']['number_of_blades'] # (Int): number of blades
     # ------------------
-    
+
     # === blade geometry ===
     rotor['r_max_chord']      = blade['ctrl_pts']['r_max_chord']  #(Float): location of max chord on unit radius
     rotor['chord_in']         = np.array(blade['ctrl_pts']['chord_in']) # (Array, m): chord at control points. defined at hub, then at linearly spaced locations from r_max_chord to tip
@@ -232,9 +232,9 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     rotor['pitch_extreme']    = 0.0  # (Float, deg): worst-case pitch at survival wind condition
     rotor['azimuth_extreme']  = 0.0  # (Float, deg): worst-case azimuth at survival wind condition
     rotor['VfactorPC']        = 0.7  # (Float): fraction of rated speed at which the deflection is assumed to representative throughout the power curve calculation
-    
-    
-    
+
+
+
     # ----------------------
 
     # === aero and structural analysis options ===
@@ -272,7 +272,7 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     rotor['lifetime']  = 20.0  # (Float): number of cycles used in fatigue analysis  TODO: make function of rotation speed
     # ----------------
     return rotor
-        
+
 if __name__ == '__main__':
 
     # Turbine Ontology input
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     fname_input   = "turbine_inputs/BAR_200a_noRe.yaml"
     output_folder = "test/"
     # fname_output  = output_folder + 'test_out.yaml'
-    
+
     Analysis_Level = 1 # 0: Run CCBlade; 1: Update FAST model at each iteration but do not run; 2: Run FAST w/ ElastoDyn; 3: (Not implemented) Run FAST w/ BeamDyn
 
     # Initialize blade design
@@ -292,7 +292,7 @@ if __name__ == '__main__':
     refBlade.te_var       = 'TE_reinforcement'
     refBlade.validate     = False
     refBlade.fname_schema = fname_schema
-    refBlade.xfoil_path   = "/mnt/c/Material/Programs/xfoil/Xf/bin/xfoil"
+    refBlade.xfoil_path   = "/home/mertzb/Xfoil/bin/xfoil"
     blade = refBlade.initialize(fname_input)
 
     # Set FAST Inputs
@@ -302,19 +302,19 @@ if __name__ == '__main__':
         FASTpref['Analysis_Level']      = Analysis_Level
         FASTpref['FAST_ver']            = 'OpenFAST'
         FASTpref['dev_branch']          = True
-        FASTpref['FAST_exe']            = '/mnt/c/Material/Programs/openfast/build/glue-codes/openfast/openfast'
-        FASTpref['FAST_directory']      = '/mnt/c/Material/Programs/wisdem_2_0/wisdem/rotorse/RotorSE_FAST_BAR_005a'   # Path to fst directory files
+        FASTpref['FAST_exe']            = '/home/mertzb/Documents/NREL_Codes/openfast_interp/openfast/build/glue-codes/fast/openfast'
+        FASTpref['FAST_directory']      = '/home/mertzb/Documents/NREL_Codes/WISDEM/wisdem/rotorse/RotorSE_FAST_BAR_005a'   # Path to fst directory files
         FASTpref['FAST_InputFile']      = 'RotorSE_FAST_BAR_005a.fst' # FAST input file (ext=.fst)
         # FASTpref['FAST_directory']      = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_Land_DLL_WTurb'   # Path to fst directory files
         # FASTpref['FAST_InputFile']      = '5MW_Land_DLL_WTurb.fst' # FAST input file (ext=.fst)
-        FASTpref['Turbsim_exe']         = "/mnt/c/Material/Programs/TurbSim/TurbSim_glin64"
+        FASTpref['Turbsim_exe']         = "/home/mertzb/Documents/NREL_Codes/TurbSim/bin/TurbSim_glin64"
         # FASTpref['FAST_exe']            = '/mnt/c/linux/WT_Codes/openfast_dev/build/glue-codes/openfast/openfast'
         # FASTpref['FAST_directory']      = '/mnt/c/linux/IS/xloads_tc/templates/openfast/5MW_Land_DLL_WTurb-NoAero'   # Path to fst directory files
         # FASTpref['FAST_InputFile']      = '5MW_Land_DLL_WTurb.fst' # FAST input file (ext=.fst)
         # FASTpref['Turbsim_exe']         = '/mnt/c/linux/WT_Codes/TurbSim_v2.00.07a-bjj/TurbSim_glin64'
         FASTpref['FAST_namingOut']      = 'RotorSE_FAST_'+ blade['config']['name']
         FASTpref['FAST_runDirectory']   = 'temp/' + FASTpref['FAST_namingOut']
-        
+
         # Run Settings
         FASTpref['cores']               = 1
         FASTpref['debug_level']         = 2 # verbosity: set to 0 for quiet, 1 & 2 for increasing levels of output
@@ -351,13 +351,13 @@ if __name__ == '__main__':
     rc_show_plots           = False     # Flag to show plots from the blade cost model
     rc_show_warnings        = False     # Flag to show warnings from the blade cost model
     rc_discrete             = False     # Flag to switch between a discrete and a continuous appraoch in the blade cost model
-    
-    
+
+
     rotor.model = RotorSE(RefBlade=blade,
                           npts_coarse_power_curve=npts_coarse_power_curve,
                           npts_spline_power_curve=npts_spline_power_curve,
                           regulation_reg_II5=regulation_reg_II5,
-                          regulation_reg_III=regulation_reg_III, 
+                          regulation_reg_III=regulation_reg_III,
                           Analysis_Level=Analysis_Level,
                           FASTpref=FASTpref,
                           rc_verbosity=rc_verbosity,
@@ -365,11 +365,11 @@ if __name__ == '__main__':
                           rc_generate_plots=rc_generate_plots,
                           rc_show_plots=rc_show_plots,
                           rc_show_warnings =rc_show_warnings ,
-                          rc_discrete=rc_discrete,                          
+                          rc_discrete=rc_discrete,
                           topLevelFlag=True)
     rotor.setup()
     rotor = Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level=Analysis_Level, fst_vt=fst_vt)
-    
+
     # rotor['chord_in'] = np.array([3.542, 3.54451799, 2.42342374, 2.44521374, 4.69032208, 6.3306303, 4.41245811, 1.419])
     # rotor['theta_in'] = np.array([13.30800018, 13.30800018, 0.92624531, 10.41054813, 11.48955724, -0.60858835, -1.41595352, 4.89747605])
     # rotor['sparT_in'] = np.array([0.00047, 0.00059925, 0.07363709, 0.13907431, 0.19551095, 0.03357394, 0.12021584, 0.00047])
@@ -398,7 +398,7 @@ if __name__ == '__main__':
     print('root_bending_moment =',      rotor['root_bending_moment'])
     print('moments at the hub =',       rotor['Mxyz_total'])
     print('blade cost =',               rotor['total_blade_cost'])
-    
+
     #for io in rotor.model.unknowns:
     #    print(io + ' ' + str(rotor.model.unknowns[io]))
     '''
@@ -455,14 +455,14 @@ if __name__ == '__main__':
     plt.xlabel('r')
     plt.ylabel('rthick')
     plt.legend()
-    
+
     plt.show()
-    
+
     if flag_Cp_Ct_Cq_Tables:
         n_pitch = len(rotor['pitch_vector'])
         n_tsr   = len(rotor['tsr_vector'])
         n_U     = len(rotor['U_vector'])
-        
+
         # file = open(output_folder + 'Cp_Ct_Cq.txt','w')
         # file.write('# Pitch angle vector - x axis (matrix columns) (deg)\n')
         # for i in range(n_pitch):
@@ -474,18 +474,18 @@ if __name__ == '__main__':
         # for i in range(n_U):
             # file.write('%.2f   ' % rotor['U_vector'][i])
         # file.write('\n')
-        
+
         # file.write('\n# Power coefficient\n\n')
-        
-        
-        
+
+
+
         # for i in range(n_U):
             # for j in range(n_tsr):
                 # for k in range(n_pitch):
                     # file.write('%.5f   ' % rotor['Cp_aero_table'][j,k,i])
                 # file.write('\n')
             # file.write('\n')
-        
+
         # file.write('\n#  Thrust coefficient\n\n')
         # for i in range(n_U):
             # for j in range(n_tsr):
@@ -493,7 +493,7 @@ if __name__ == '__main__':
                     # file.write('%.5f   ' % rotor['Ct_aero_table'][j,k,i])
                 # file.write('\n')
             # file.write('\n')
-        
+
         # file.write('\n# Torque coefficient\n\n')
         # for i in range(n_U):
             # for j in range(n_tsr):
@@ -501,9 +501,9 @@ if __name__ == '__main__':
                     # file.write('%.5f   ' % rotor['Cq_aero_table'][j,k,i])
                 # file.write('\n')
             # file.write('\n')
-            
+
         # file.close()
-        
+
         for i in range(n_U):
             fig0, ax0 = plt.subplots()
             CS0 = ax0.contour(rotor['pitch_vector'], rotor['tsr_vector'], rotor['Cp_aero_table'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
@@ -527,7 +527,7 @@ if __name__ == '__main__':
             plt.grid(color=[0.8,0.8,0.8], linestyle='--')
             plt.subplots_adjust(bottom = 0.15, left = 0.15)
 
-            
+
             fig0, ax0 = plt.subplots()
             CS0 = ax0.contour(rotor['pitch_vector'], rotor['tsr_vector'], rotor['Cq_aero_table'][:, :, i])
             ax0.clabel(CS0, inline=1, fontsize=12)
@@ -538,8 +538,8 @@ if __name__ == '__main__':
             plt.yticks(fontsize=12)
             plt.grid(color=[0.8,0.8,0.8], linestyle='--')
             plt.subplots_adjust(bottom = 0.15, left = 0.15)
-            
+
             plt.show()
-        
-    
+
+
     # ----------------

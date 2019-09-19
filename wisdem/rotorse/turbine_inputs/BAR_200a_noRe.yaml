@@ -29,7 +29,7 @@ components:
         aerodynamic_control:
             te_flaps:
                 - span_start: 0.75
-                  span_end: 0.85
+                  span_end: 0.84
                   chord_start: 0.8
                   delta_max_pos: 10
                   delta_max_neg: -10
