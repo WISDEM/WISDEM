@@ -186,9 +186,6 @@ class CaseGen_IEC():
                     WindFile_out.extend(WindFile_out_i)
                     WindFile_type_out.extend(WindFile_type_out_i)
             
-            for i in range(len(WindFile_out)):
-                WindFile_out[i] = '../../' + iecwind.outdir + '/' +  WindFile_out[i]
-
             # Set FAST variables from DLC setup
             if ("Fst","TMax") not in case_inputs_i:
                 case_inputs_i[("Fst","TMax")] = {'vals':[TMax], 'group':0}

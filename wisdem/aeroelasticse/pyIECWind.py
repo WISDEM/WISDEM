@@ -487,10 +487,12 @@ class pyIECWind_turb():
         case_name = self.case_name + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
         tsim_input_file = case_name + '.in'
         wind_file_out   = case_name + '.bts'
+        
+        wind_file_out_abs = os.path.realpath(os.path.normpath(os.path.join(self.outdir, wind_file_out)))
 
         # If wind file already exists and overwriting is turned off, skip wind file write
         if os.path.exists(os.path.join(self.outdir, wind_file_out)) and not self.overwrite:
-            return wind_file_out, 3
+            return wind_file_out_abs, 3
 
         # Run wind file generation
         else:
@@ -505,7 +507,7 @@ class pyIECWind_turb():
             wrapper.debug_level = self.debug_level
             wrapper.execute()
 
-            return wind_file_out, 3
+            return wind_file_out_abs, 3
 
 
 def example_ExtremeWind():
