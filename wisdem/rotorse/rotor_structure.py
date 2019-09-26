@@ -1849,15 +1849,17 @@ class RotorStructure(Group):
         self.options.declare('RefBlade')
         self.options.declare('topLevelFlag',default=False)
         self.options.declare('Analysis_Level',default=0)
+        self.options.declare('user_update_routine', default=None)
         
     def setup(self):
-        RefBlade        = self.options['RefBlade']
-        NPTS            = len(RefBlade['pf']['s'])
-        NINPUT          = len(RefBlade['ctrl_pts']['r_in'])
-        NAFgrid         = len(RefBlade['airfoils_aoa'])
-        NRe             = len(RefBlade['airfoils_Re'])
-        topLevelFlag    = self.options['topLevelFlag']
-        Analysis_Level  = self.options['Analysis_Level']
+        RefBlade            = self.options['RefBlade']
+        NPTS                = len(RefBlade['pf']['s'])
+        NINPUT              = len(RefBlade['ctrl_pts']['r_in'])
+        NAFgrid             = len(RefBlade['airfoils_aoa'])
+        NRe                 = len(RefBlade['airfoils_Re'])
+        topLevelFlag        = self.options['topLevelFlag']
+        Analysis_Level      = self.options['Analysis_Level']
+        user_update_routine = self.options['user_update_routine']
         
         structIndeps = IndepVarComp()
         structIndeps.add_discrete_output('fst_vt_in', val={})
@@ -1903,7 +1905,7 @@ class RotorStructure(Group):
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
             
             # Geometry
-            self.add_subsystem('rotorGeometry', RotorGeometry(RefBlade=RefBlade, topLevelFlag=topLevelFlag), promotes=['*'])
+            self.add_subsystem('rotorGeometry', RotorGeometry(RefBlade=RefBlade, topLevelFlag=topLevelFlag, user_update_routine=user_update_routine), promotes=['*'])
 
         # --- add structures ---
         promoteList = ['nSector','rho','mu','shearExp','tiploss','hubloss','wakerotation','usecd',

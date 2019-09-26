@@ -15,7 +15,7 @@ from wisdem.rotorse.rotor_cost import blade_cost_model
 
 from scipy.interpolate import PchipInterpolator
 
-NINPUT = 5
+NINPUT = 8
 
 
 
@@ -24,12 +24,13 @@ class BladeGeometry(ExplicitComponent):
         self.options.declare('RefBlade')
 
         # Blade Cost Model Options
-        self.options.declare('verbosity',        default=False)
-        self.options.declare('tex_table',        default=False)
-        self.options.declare('generate_plots',   default=False)
-        self.options.declare('show_plots',       default=False)
-        self.options.declare('show_warnings',    default=False)
-        self.options.declare('discrete',         default=False)
+        self.options.declare('verbosity',           default=False)
+        self.options.declare('tex_table',           default=False)
+        self.options.declare('generate_plots',      default=False)
+        self.options.declare('show_plots',          default=False)
+        self.options.declare('show_warnings',       default=False)
+        self.options.declare('discrete',            default=False)
+        self.options.declare('user_update_routine', default=None)
     
     def setup(self):
         self.refBlade = RefBlade = self.options['RefBlade']
@@ -160,13 +161,14 @@ class BladeGeometry(ExplicitComponent):
         
         # Update
         refBlade = ReferenceBlade()
-        refBlade.verbose        = False
-        refBlade.NINPUT         = len(outputs['r_in'])
-        refBlade.NPTS           = len(blade['pf']['s'])
-        refBlade.analysis_level = blade['analysis_level']
+        refBlade.verbose             = False
+        refBlade.NINPUT              = len(outputs['r_in'])
+        refBlade.NPTS                = len(blade['pf']['s'])
+        refBlade.analysis_level      = blade['analysis_level']
+        refBlade.user_update_routine = self.options['user_update_routine']
         if blade['analysis_level'] < 3:
-            refBlade.spar_var   = blade['precomp']['spar_var']
-            refBlade.te_var     = blade['precomp']['te_var']
+            refBlade.spar_var        = blade['precomp']['spar_var']
+            refBlade.te_var          = blade['precomp']['te_var']
         
         blade_out = refBlade.update(blade)
         
@@ -336,6 +338,7 @@ class RotorGeometry(Group):
         self.options.declare('show_plots',       default=False)
         self.options.declare('show_warnings',    default=False)
         self.options.declare('discrete',         default=False)
+        self.options.declare('user_update_routine', default=None)
         
     def setup(self):
         RefBlade = self.options['RefBlade']
@@ -343,12 +346,13 @@ class RotorGeometry(Group):
         NINPUT = len(RefBlade['ctrl_pts']['r_in'])
         NAF    = len(RefBlade['outer_shape_bem']['airfoil_position']['grid'])
         
-        verbosity      = self.options['verbosity']
-        tex_table      = self.options['tex_table']     
-        generate_plots = self.options['generate_plots']
-        show_plots     = self.options['show_plots']
-        show_warnings  = self.options['show_warnings']
-        discrete       = self.options['discrete']
+        verbosity           = self.options['verbosity']
+        tex_table           = self.options['tex_table']     
+        generate_plots      = self.options['generate_plots']
+        show_plots          = self.options['show_plots']
+        show_warnings       = self.options['show_warnings']
+        discrete            = self.options['discrete']
+        user_update_routine = self.options['user_update_routine']
         
         # Independent variables that are unique to TowerSE
         if topLevelFlag:
@@ -385,7 +389,8 @@ class RotorGeometry(Group):
                                                generate_plots=generate_plots,
                                                show_plots=show_plots,
                                                show_warnings =show_warnings ,
-                                               discrete=discrete), promotes=['*'])
+                                               discrete=discrete,
+                                               user_update_routine=user_update_routine), promotes=['*'])
         self.add_subsystem('geom', CCBladeGeometry(NINPUT = NINPUT), promotes=['precone','precurve_in', 'presweep_in',
                                                                                'precurveTip','presweepTip','R','Rtip'])
 
@@ -407,16 +412,18 @@ def Init_RotorGeometry_wRefBlade(rotor, blade):
 
     return rotor
 
+
 if __name__ == "__main__":
 
     # Turbine Ontology input
-    fname_input = "turbine_inputs/nrel5mw_mod_update.yaml"
+    # fname_input = "turbine_inputs/nrel5mw_mod_update.yaml"
+    fname_input = "/mnt/c/Users/egaertne/WISDEM2/wisdem/Design_Opt/nrel15mw/inputs/NREL15MW_prelim_v3.0.yaml"
 
     # Initialize blade design
     refBlade = ReferenceBlade()
-    refBlade.verbose = True
-    refBlade.NINPUT  = NINPUT
-    refBlade.NPITS   = 50
+    refBlade.verbose  = True
+    refBlade.NINPUT   = NINPUT
+    refBlade.NPTS     = 50
     refBlade.validate = False
     refBlade.fname_schema = "turbine_inputs/IEAontology_schema.yaml"
 

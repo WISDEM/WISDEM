@@ -126,7 +126,7 @@ class ReferenceBlade(object):
     def __init__(self):
 
         # Validate input file against JSON schema
-        self.validate        = True       # (bool) run IEA turbine ontology JSON validation
+        self.validate        = True        # (bool) run IEA turbine ontology JSON validation
         self.fname_schema    = ''          # IEA turbine ontology JSON schema file
 
         # Grid sizes
@@ -142,10 +142,11 @@ class ReferenceBlade(object):
         self.verbose         = False
 
         # Precomp analyis
-        self.spar_var        = ['']          # name of composite layer for RotorSE spar cap buckling analysis <---- SS first, then PS
+        self.spar_var        = ['']        # name of composite layer for RotorSE spar cap buckling analysis <---- SS first, then PS
         self.te_var          = ''          # name of composite layer for RotorSE trailing edge buckling analysis
 
-
+        # 
+        self.user_update_routine = None    # Optional additional routine, provided by user, to modify the blade geometry at the beginning of update()
         
 
     def initialize(self, fname_input):
@@ -194,13 +195,16 @@ class ReferenceBlade(object):
         return blade
 
     def update(self, blade):
-
         t1 = time.time()
-        blade = self.calc_spanwise_grid(blade)
 
+        # Option for user to provide additional logic modifying the blade goemetry, useful for setting properties that change relative to another
+        if self.user_update_routine != None:
+            blade = self.user_update_routine(blade)
+
+        blade = self.calc_spanwise_grid(blade)
         blade = self.update_planform(blade)
-        blade = self.remap_profiles(blade, blade['AFref']) # <- added to 'update' in rthick update
-        blade = self.remap_polars(blade, blade['AFref']) # <- added to 'update' in rthick update
+        blade = self.remap_profiles(blade, blade['AFref'])
+        blade = self.remap_polars(blade, blade['AFref'])
         blade = self.calc_composite_bounds(blade)
 
         if self.verbose:
@@ -219,8 +223,8 @@ class ReferenceBlade(object):
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
         """ Load inputs IEA turbine ontology yaml inputs, optional validation """
         # Read IEA turbine ontology yaml input file
+        t_load = time.time()
         with open(fname_input, 'r') as myfile:
-            t_load = time.time()
             inputs = myfile.read()
 
         # Validate the turbine input with the IEA turbine ontology schema
@@ -237,10 +241,6 @@ class ReferenceBlade(object):
                 print('Complete: Schema "%s" validation: \t%f s'%(fname_schema, t_validate))
         else:
             t_validate = 0.
-
-        # return yaml.load(inputs)
-        with open(fname_input, 'r') as myfile:
-            inputs = myfile.read()
 
         if self.verbose:
             t_load = time.time() - t_load - t_validate
@@ -940,7 +940,13 @@ class ReferenceBlade(object):
                 chord = blade['pf']['chord'][i]
 
                 if calc_bounds:
-                    ratio_SCmax = 0.8
+                    if type_sec == 'layers':
+                        ratio_SCmax = 0.8
+                    elif type_sec == 'webs': # geometric constraint on webs relaxed to fit in 3rd TE webs
+                        ratio_SCmax = 0.9
+                    else:
+                        ratio_SCmax = 0.8
+
                     p_le_i      = blade['pf']['p_le'][i]
                     if 'rotation' in blade['st'][type_sec][idx_sec].keys() and 'width' in blade['st'][type_sec][idx_sec].keys() and 'side' in blade['st'][type_sec][idx_sec].keys() and blade['st'][type_sec][idx_sec]['thickness']['values'][i] not in [None, 0., 0]:
 
@@ -1134,7 +1140,10 @@ class ReferenceBlade(object):
         af_ref = blade['AFref']
         
         if blade['ctrl_pts']['update_r_in']:
-            blade['ctrl_pts']['r_in'] = np.hstack([0., blade['ctrl_pts']['r_cylinder'], np.linspace(blade['ctrl_pts']['r_max_chord'][0], 1., self.NINPUT-2)])
+            try:
+                blade['ctrl_pts']['r_in'] = np.hstack([0., blade['ctrl_pts']['r_cylinder'], np.linspace(blade['ctrl_pts']['r_max_chord'][0], 1., self.NINPUT-2)])
+            except:
+                blade['ctrl_pts']['r_in'] = np.hstack([0., blade['ctrl_pts']['r_cylinder'], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)])
         
         # if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord'] and not blade['ctrl_pts']['Fix_r_in']:
             # # blade['ctrl_pts']['r_in'] = np.r_[[0.], [blade['ctrl_pts']['r_cylinder']], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)]

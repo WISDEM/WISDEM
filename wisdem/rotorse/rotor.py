@@ -41,6 +41,7 @@ class RotorSE(Group):
         self.options.declare('rc_show_plots',           default=False)
         self.options.declare('rc_show_warnings',        default=False)
         self.options.declare('rc_discrete',             default=False)
+        self.options.declare('user_update_routine',     default=None)
     
     def setup(self):
         RefBlade                = self.options['RefBlade']
@@ -58,6 +59,7 @@ class RotorSE(Group):
         rc_show_plots           = self.options['rc_show_plots']
         rc_show_warnings        = self.options['rc_show_warnings'] 
         rc_discrete             = self.options['rc_discrete']
+        user_update_routine     = self.options['user_update_routine']
         NPTS                    = len(RefBlade['pf']['s'])
         
         rotorIndeps = IndepVarComp()
@@ -84,7 +86,8 @@ class RotorSE(Group):
                                                generate_plots=rc_generate_plots,
                                                show_plots=rc_show_plots,
                                                show_warnings =rc_show_warnings ,
-                                               discrete=rc_discrete), promotes=['*'])
+                                               discrete=rc_discrete,
+                                               user_update_routine=user_update_routine), promotes=['*'])
         self.add_subsystem('ra', RotorAeroPower(RefBlade=RefBlade,
                                                 npts_coarse_power_curve=npts_coarse_power_curve,
                                                 npts_spline_power_curve=npts_spline_power_curve,
@@ -350,7 +353,7 @@ if __name__ == '__main__':
     rc_show_plots           = False     # Flag to show plots from the blade cost model
     rc_show_warnings        = False     # Flag to show warnings from the blade cost model
     rc_discrete             = False     # Flag to switch between a discrete and a continuous appraoch in the blade cost model
-
+    user_update_routine     = None      # Optional user defined subroutine to run when updating rotor geometry
     
     rotor.model = RotorSE(RefBlade=blade,
                           npts_coarse_power_curve=npts_coarse_power_curve,
@@ -365,7 +368,9 @@ if __name__ == '__main__':
                           rc_show_plots=rc_show_plots,
                           rc_show_warnings =rc_show_warnings ,
                           rc_discrete=rc_discrete,                          
-                          topLevelFlag=True)
+                          topLevelFlag=True,
+                          user_update_routine = set_web3_offset
+                          )
     rotor.setup()
     rotor = Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level=Analysis_Level, fst_vt=fst_vt)
     
@@ -455,7 +460,7 @@ if __name__ == '__main__':
     plt.ylabel('rthick')
     plt.legend()
     
-    plt.show()
+    # plt.show()
     
     if flag_Cp_Ct_Cq_Tables:
         n_pitch = len(rotor['pitch_vector'])

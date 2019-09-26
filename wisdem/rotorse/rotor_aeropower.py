@@ -599,6 +599,7 @@ class RotorAeroPower(Group):
         self.options.declare('regulation_reg_III',      default=True)
         self.options.declare('flag_Cp_Ct_Cq_Tables',    default=True)
         self.options.declare('topLevelFlag',            default=False)
+        self.options.declare('user_update_routine',     default=None)
     
     def setup(self):
         RefBlade = self.options['RefBlade']
@@ -608,6 +609,7 @@ class RotorAeroPower(Group):
         regulation_reg_III          = self.options['regulation_reg_III']
         flag_Cp_Ct_Cq_Tables        = self.options['flag_Cp_Ct_Cq_Tables']
         topLevelFlag                = self.options['topLevelFlag']
+        user_update_routine         = self.options['user_update_routine']
         NPTS                        = len(RefBlade['pf']['s'])
         NAFgrid                     = len(RefBlade['airfoils_aoa'])
         NRe                         = len(RefBlade['airfoils_Re'])
@@ -642,7 +644,7 @@ class RotorAeroPower(Group):
             sharedIndeps.add_discrete_output('nSector', val=4, desc='number of sectors to divide rotor face into in computing thrust and power')
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
             
-            self.add_subsystem('rotorGeom', RotorGeometry(RefBlade=RefBlade, topLevelFlag=topLevelFlag), promotes=['*'])
+            self.add_subsystem('rotorGeom', RotorGeometry(RefBlade=RefBlade, topLevelFlag=topLevelFlag, user_update_routine=user_update_routine), promotes=['*'])
 
         # self.add_subsystem('tipspeed', MaxTipSpeed())
         self.add_subsystem('powercurve', RegulatedPowerCurve(naero=NPTS,
