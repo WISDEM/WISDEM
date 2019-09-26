@@ -29,17 +29,18 @@ class MonopileTurbine(Group):
         self.options.declare('FASTpref', default={})
         self.options.declare('Nsection_Tow', default = 6)
         self.options.declare('VerbosityCosts', default = True)
+        self.options.declare('user_update_routine',     default=None)
         
         
     def setup(self):
         
-        RefBlade     = self.options['RefBlade']
-        Nsection_Tow = self.options['Nsection_Tow']        
+        RefBlade            = self.options['RefBlade']
+        Nsection_Tow        = self.options['Nsection_Tow']        
+        user_update_routine = self.options['user_update_routine']
         if 'Analysis_Level' in self.options['FASTpref']:
-            Analysis_Level = self.options['FASTpref']['Analysis_Level']
+            Analysis_Level  = self.options['FASTpref']['Analysis_Level']
         else:
-            Analysis_Level = 0
-        
+            Analysis_Level  = 0
         
         # Define all input variables from all models
         myIndeps = IndepVarComp()
@@ -102,7 +103,8 @@ class MonopileTurbine(Group):
                                               regulation_reg_III=False,
                                               Analysis_Level=Analysis_Level,
                                               FASTpref=self.options['FASTpref'],
-                                              topLevelFlag=True), promotes=['*'])
+                                              topLevelFlag=True,
+                                              user_update_routine=user_update_routine), promotes=['*'])
         
         self.add_subsystem('drive', DriveSE(debug=False,
                                             number_of_main_bearings=1,
