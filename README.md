@@ -66,7 +66,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 2.  FOR DEVELOPERS (NOT USERS): Use conda to install the build dependencies, but then install WISDEM from source
 
         conda install -y wisdem git jupyter
-	conda remove --force wisdem
+        conda remove --force wisdem
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
         python setup.py develop	
