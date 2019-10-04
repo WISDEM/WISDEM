@@ -10,11 +10,9 @@ Copyright (c) NREL. All rights reserved.
 
 import unittest
 import numpy as np
-from commonse.utilities import check_gradient
-from commonse.environment import PowerWind, LogWind, LinearWaves, TowerSoil
-from openmdao.api import pyOptSparseDriver, Problem, Group
-import sys
-from openmdao.api import ScipyOptimizer, IndepVarComp
+from wisdem.commonse.utilities import check_gradient
+from wisdem.commonse.environment import PowerWind, LogWind, LinearWaves, TowerSoil
+from openmdao.api import ScipyOptimizeDriver, Problem, Group, IndepVarComp
 
 
 class TestPowerWind(unittest.TestCase):
@@ -31,32 +29,33 @@ class TestPowerWind(unittest.TestCase):
         betaWind = 0.0
 
         prob = Problem()
-        root = prob.root = Group()
-        root.add('p1', IndepVarComp('z', z))
-        root.add('p2', IndepVarComp('zref', zref))
-        root.add('p3', IndepVarComp('Uref', Uref))
-        root.add('p', PowerWind(nPoints))
+        root = prob.model = Group()
+        root.add_subsystem('p1', IndepVarComp('z', z, units='m'))
+        root.add_subsystem('p2', IndepVarComp('zref', zref, units='m'))
+        root.add_subsystem('p3', IndepVarComp('Uref', Uref, units='m/s'))
+        root.add_subsystem('p', PowerWind(nPoints=nPoints))
 
 
         root.connect('p1.z', 'p.z')
         root.connect('p2.zref', 'p.zref')
         root.connect('p3.Uref', 'p.Uref')
 
-        prob.driver.add_objective('p.U', scaler=1E-6)
+        prob.driver = ScipyOptimizeDriver()
+        prob.model.add_objective('p.U', scaler=1E-6)
 
-        prob.driver.add_desvar('p1.z', lower=np.ones(nPoints), upper=np.ones(nPoints)*1000, scaler=1E-6)
-        prob.driver.add_desvar('p2.zref', lower=0, upper=1000, scaler=1E-6)
-        prob.driver.add_desvar('p3.Uref', lower=0, upper=1000, scaler=1E-6)
+        prob.model.add_design_var('p1.z', lower=np.ones(nPoints), upper=np.ones(nPoints)*1000, scaler=1E-6)
+        prob.model.add_design_var('p2.zref', lower=0, upper=1000, scaler=1E-6)
+        prob.model.add_design_var('p3.Uref', lower=0, upper=1000, scaler=1E-6)
 
         prob.setup()
 
         prob['p.z0'] = z0
         prob['p.shearExp'] = shearExp
-        prob['p.betaWind'] = betaWind
+        #prob['p.betaWind'] = betaWind
 
-        prob.run()
+        prob.run_driver()
 
-        print prob['p.U']
+        print(prob['p.U'])
 
         self.J = prob.check_total_derivatives(out_stream=None)
 
@@ -80,31 +79,32 @@ class TestLogWind(unittest.TestCase):
         betaWind = 0.0
 
         prob = Problem()
-        root = prob.root = Group()
-        root.add('p1', IndepVarComp('z', z))
-        root.add('p2', IndepVarComp('zref', Uref))
-        root.add('p3', IndepVarComp('Uref', zref))
-        root.add('p', LogWind(nPoints))
+        root = prob.model = Group()
+        root.add_subsystem('p1', IndepVarComp('z', z, units='m'))
+        root.add_subsystem('p2', IndepVarComp('zref', Uref, units='m'))
+        root.add_subsystem('p3', IndepVarComp('Uref', zref, units='m/s'))
+        root.add_subsystem('p', LogWind(nPoints=nPoints))
 
 
         root.connect('p1.z', 'p.z')
         root.connect('p2.zref', 'p.zref')
         root.connect('p3.Uref', 'p.Uref')
 
-        prob.driver.add_objective('p.U', scaler=1E-6)
+        prob.driver = ScipyOptimizeDriver()
+        prob.model.add_objective('p.U', scaler=1E-6)
 
-        prob.driver.add_desvar('p1.z', lower=np.ones(nPoints), upper=np.ones(nPoints)*1000, scaler=1E-6)
-        prob.driver.add_desvar('p2.zref', lower=0, upper=1000, scaler=1E-6)
-        prob.driver.add_desvar('p3.Uref', lower=0, upper=1000, scaler=1E-6)
+        prob.model.add_design_var('p1.z', lower=np.ones(nPoints), upper=np.ones(nPoints)*1000, scaler=1E-6)
+        prob.model.add_design_var('p2.zref', lower=0, upper=1000, scaler=1E-6)
+        prob.model.add_design_var('p3.Uref', lower=0, upper=1000, scaler=1E-6)
 
         prob.setup()
 
         prob['p.z0'] = z0
-        prob['p.betaWind'] = betaWind
+        #prob['p.betaWind'] = betaWind
 
-        prob.run()
+        prob.run_driver()
 
-        print prob['p.U']
+        print(prob['p.U'])
 
         self.J = prob.check_total_derivatives(out_stream=None)
 
@@ -129,18 +129,19 @@ class TestLinearWave(unittest.TestCase):
         nPoints = len(z)
 
         prob = Problem()
-        root = prob.root = Group()
-        root.add('p1', IndepVarComp('z', z))
-        root.add('p2', IndepVarComp('Uc', Uc))
-        root.add('p', LinearWaves(nPoints))
+        root = prob.model = Group()
+        root.add_subsystem('p1', IndepVarComp('z', z, units='m'))
+        root.add_subsystem('p2', IndepVarComp('Uc', Uc, units='m/s'))
+        root.add_subsystem('p', LinearWaves(nPoints=nPoints))
 
         root.connect('p1.z', 'p.z')
         root.connect('p2.Uc', 'p.Uc')
 
-        prob.driver.add_objective('p.U', scaler=1E-6)
+        prob.driver = ScipyOptimizeDriver()
+        prob.model.add_objective('p.U', scaler=1E-6)
 
-        prob.driver.add_desvar('p1.z', lower=np.ones(nPoints), upper=np.ones(nPoints)*1000, scaler=1E-6)
-        prob.driver.add_desvar('p2.Uc', lower=0, upper=1000, scaler=1E-6)
+        prob.model.add_design_var('p1.z', lower=np.ones(nPoints), upper=np.ones(nPoints)*1000, scaler=1E-6)
+        prob.model.add_design_var('p2.Uc', lower=0, upper=1000, scaler=1E-6)
 
         prob.setup()
 
@@ -148,15 +149,15 @@ class TestLinearWave(unittest.TestCase):
         prob['p.z_floor'] = z_floor
         prob['p.hmax'] = hs
         prob['p.T'] = T
-        prob['p.betaWave'] = betaWave
+        #prob['p.betaWave'] = betaWave
 
-        prob.run()
+        prob.run_driver()
 
-        print prob['p.U']
+        print(prob['p.U'])
 
         self.J = prob.check_total_derivatives(out_stream=None)
 
-        print self.J
+        print(self.J)
 
     def test_U(self):
 
@@ -168,41 +169,41 @@ class TestSoil(unittest.TestCase):
 
     def setUp(self):
 
-        r0 = 10.0
+        d0 = 10.0
         depth = 30.0
         G = 140e6
         nu = 0.4
         rigid = [False, False, False, False, False, False]
 
         prob = Problem()
-        root = prob.root = Group()
-        root.add('p1', IndepVarComp('r0', r0))
-        root.add('p2', IndepVarComp('depth', depth))
-        root.add('p', TowerSoil())
+        root = prob.model = Group()
+        root.add_subsystem('p1', IndepVarComp('d0', d0, units='m'))
+        root.add_subsystem('p2', IndepVarComp('depth', depth, units='m'))
+        root.add_subsystem('p', TowerSoil())
 
-        root.connect('p1.r0', 'p.r0')
+        root.connect('p1.d0', 'p.d0')
         root.connect('p2.depth', 'p.depth')
 
-        prob.driver.add_objective('p.k', scaler=1E-6)
+        prob.driver = ScipyOptimizeDriver()
+        prob.model.add_objective('p.k', scaler=1E-6)
 
-        prob.driver.add_desvar('p1.r0', lower=0, upper=1000, scaler=1E-6)
-        prob.driver.add_desvar('p2.depth', lower=0, upper=1000, scaler=1E-6)
+        prob.model.add_design_var('p1.d0', lower=0, upper=1000, scaler=1E-6)
+        prob.model.add_design_var('p2.depth', lower=0, upper=1000, scaler=1E-6)
 
         prob.setup()
 
         prob['p.G'] = G
         prob['p.nu'] = nu
-        prob['p.rigid'] = rigid
 
-        prob.run()
+        prob.run_driver()
 
         self.J = prob.check_total_derivatives(out_stream=None)
 
-        print self.J
+        print(self.J)
 
     def test_k(self):
 
-        np.testing.assert_allclose(self.J[('p.k', 'p1.r0')]['J_fwd'], self.J[('p.k', 'p1.r0')]['J_fd'], 1e-6, 1e-6)
+        np.testing.assert_allclose(self.J[('p.k', 'p1.d0')]['J_fwd'], self.J[('p.k', 'p1.d0')]['J_fd'], 1e-6, 1e-6)
         np.testing.assert_allclose(self.J[('p.k', 'p1.depth')]['J_fwd'], self.J[('p.k', 'p1.depth')]['J_fd'], 1e-6, 1e-6)
 
 
@@ -232,7 +233,7 @@ class TestLinearWave(unittest.TestCase):
             try:
                 self.assertLessEqual(err, tol)
             except AssertionError, e:
-                print '*** error in:', name
+                print('*** error in:', name)
                 raise e
 
 
@@ -255,7 +256,7 @@ class TestLinearWave(unittest.TestCase):
             try:
                 self.assertLessEqual(err, tol)
             except AssertionError, e:
-                print '*** error in:', name
+                print('*** error in:', name)
                 raise e
 
 """

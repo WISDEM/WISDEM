@@ -1,8 +1,8 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import commonse.vertical_cylinder as vc
-from commonse.utilities import nodal2sectional
+import wisdem.commonse.vertical_cylinder as vc
+from wisdem.commonse.utilities import nodal2sectional
 
 npts = 100
 myones = np.ones((npts,))
@@ -19,8 +19,8 @@ class TestDiscretization(unittest.TestCase):
         self.params['foundation_height'] = 0.0
 
     def testRefine2(self):
-        mydis = vc.CylinderDiscretization(5, 2)
-        mydis.solve_nonlinear(self.params, self.unknowns, self.resid)
+        mydis = vc.CylinderDiscretization(nPoints=5, nRefine=2)
+        mydis.compute(self.params, self.unknowns)
         npt.assert_array_equal(self.unknowns['z_param'], np.array([0.0, 1.0, 3.0, 6.0, 10.0]))
         npt.assert_array_equal(self.unknowns['z_full'], np.array([0.0, 0.5, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0, 10.0]))
         npt.assert_array_equal(self.unknowns['d_full'], 5.0)
@@ -28,24 +28,24 @@ class TestDiscretization(unittest.TestCase):
 
     def testFoundation(self):
         self.params['foundation_height'] = -30.0
-        mydis = vc.CylinderDiscretization(5, 2)
-        mydis.solve_nonlinear(self.params, self.unknowns, self.resid)
+        mydis = vc.CylinderDiscretization(nPoints=5, nRefine=2)
+        mydis.compute(self.params, self.unknowns)
         npt.assert_array_equal(self.unknowns['z_param'], np.array([0.0, 1.0, 3.0, 6.0, 10.0])-30.0)
         npt.assert_array_equal(self.unknowns['z_full'], np.array([0.0, 0.5, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0, 10.0])-30.0)
         npt.assert_array_equal(self.unknowns['d_full'], 5.0)
         npt.assert_array_equal(self.unknowns['t_full'], 0.05)
 
     def testRefine3(self):
-        mydis = vc.CylinderDiscretization(5, 3)
-        mydis.solve_nonlinear(self.params, self.unknowns, self.resid)
+        mydis = vc.CylinderDiscretization(nPoints=5, nRefine=2)
+        mydis.compute(self.params, self.unknowns)
         for k in self.unknowns['z_param']:
             self.assertIn(k, self.unknowns['z_full'])
             
     def testRefineInterp(self):
         self.params['diameter'] = np.array([5.0, 5.0, 6.0, 7.0, 7.0])
         self.params['wall_thickness'] = 1e-2 * np.array([5.0, 5.0, 6.0, 7.0])
-        mydis = vc.CylinderDiscretization(5, 2)
-        mydis.solve_nonlinear(self.params, self.unknowns, self.resid)
+        mydis = vc.CylinderDiscretization(nPoints=5, nRefine=2)
+        mydis.compute(self.params, self.unknowns)
         npt.assert_array_equal(self.unknowns['z_param'], np.array([0.0, 1.0, 3.0, 6.0, 10.0]))
         npt.assert_array_equal(self.unknowns['z_full'], np.array([0.0, 0.5, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0, 10.0]))
         npt.assert_array_equal(self.unknowns['d_full'], np.array([5.0, 5.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.0, 7.0]))
@@ -67,11 +67,11 @@ class TestMass(unittest.TestCase):
         self.params['labor_cost_rate'] = 1.0
         self.params['painting_cost_rate'] = 10.0
         
-        self.cm = vc.CylinderMass(npts)
+        self.cm = vc.CylinderMass(nPoints=npts)
 
     def testRegular(self):
         # Straight column
-        self.cm.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.cm.compute(self.params, self.unknowns)
 
         expect = np.pi*(10.**2 - 9.5**2)*5.0*1.5*(50.0/(npts-1))
         m = expect*(npts-1)
@@ -89,7 +89,7 @@ class TestMass(unittest.TestCase):
         # Frustum shell
         self.params['t_full'] = np.array([0.5, 0.4, 0.3])
         self.params['d_full'] = 2*np.array([10.0, 8.0, 6.0])
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wave.compute(self.params, self.unknowns)
 
         expect = np.pi/3.0*5.0*1.5*np.array([20.0, 30.0])*np.array([9.75*1.4+7.8*1.3, 7.8*1.1+5.85*1.0])
         m = expect*(npts-1)

@@ -1,9 +1,9 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import commonse.UtilizationSupplement as util
+import wisdem.commonse.UtilizationSupplement as util
 
-from commonse import gravity as g
+from wisdem.commonse import gravity as g
 myones = np.ones((100,))
 
 class TestUtilization(unittest.TestCase):

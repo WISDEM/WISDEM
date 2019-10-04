@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import commonse.WindWaveDrag as wwd
+import wisdem.commonse.WindWaveDrag as wwd
 
 npts = 100
 myones = np.ones((npts,))
@@ -22,9 +22,9 @@ class TestDrag(unittest.TestCase):
         self.params['mu'] = 1e-3
         self.params['z'] = -100.0 * myones
         self.params['beta'] = 0.0
-        self.params['cd_usr'] = np.inf
+        self.params['cd_usr'] = -1.0
         
-        self.wave = wwd.CylinderWaveDrag(npts)
+        self.wave = wwd.CylinderWaveDrag(nPoints=npts)
 
 
     def testRegular(self):
@@ -44,7 +44,7 @@ class TestDrag(unittest.TestCase):
         Fi = rho * A * np.pi * r*r
         Fp = Fi + D
 
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wave.compute(self.params, self.unknowns)
 
         npt.assert_equal(self.unknowns['waveLoads_Px'], Fp)
         npt.assert_equal(self.unknowns['waveLoads_Py'], 0.0)
@@ -55,14 +55,6 @@ class TestDrag(unittest.TestCase):
         npt.assert_equal(self.unknowns['waveLoads_beta'], 0.0)
         npt.assert_equal(self.unknowns['waveLoads_d'], 10.0)
 
-        self.params['cd_usr'] = np.nan
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
-        npt.assert_equal(self.unknowns['waveLoads_Px'], Fp)
-
-        self.params['cd_usr'] = -np.inf
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
-        npt.assert_equal(self.unknowns['waveLoads_Px'], Fp)
-        
     def testCDset(self):
         self.params['cd_usr'] = 2.0
         U   = 2.0
@@ -76,7 +68,7 @@ class TestDrag(unittest.TestCase):
 
         Fi = rho * A * np.pi * r*r
         Fp = Fi + D
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wave.compute(self.params, self.unknowns)
         npt.assert_equal(self.unknowns['waveLoads_Px'], Fp)
         
 def suite():

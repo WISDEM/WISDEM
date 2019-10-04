@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-from commonse.tube import Tube, CylindricalShellProperties
+from wisdem.commonse.tube import Tube, CylindricalShellProperties
 
 npts = 100
 
@@ -14,7 +14,7 @@ class TestTube(unittest.TestCase):
         self.params['d'] = 2*5.0*np.ones(npts)
         self.params['t'] = 1.0*np.ones(npts-1)
         
-        self.mytube = CylindricalShellProperties(npts)
+        self.mytube = CylindricalShellProperties(nFull=npts)
 
 
     def testTubeProperties(self):
@@ -28,7 +28,7 @@ class TestTube(unittest.TestCase):
         self.assertAlmostEqual(T.C,  np.pi*369.0/2.0/5.0)
     
     def testOutputsIncremental(self):
-        self.mytube.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.mytube.compute(self.params, self.unknowns)
 
         npt.assert_almost_equal(self.unknowns['Az'], np.pi*9.0)
         npt.assert_almost_equal(self.unknowns['Ixx'],  np.pi*369.0/4.0)

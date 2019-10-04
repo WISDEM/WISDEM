@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import commonse.utilities as util
+import wisdem.commonse.utilities as util
 
 npts = 100
 myones = np.ones((npts,))

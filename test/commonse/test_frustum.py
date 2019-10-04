@@ -2,8 +2,8 @@ import __init__
 import numpy as np
 import numpy.testing as npt
 import unittest
-import commonse.frustum as f
-from commonse import eps
+import wisdem.commonse.frustum as f
+from wisdem.commonse import eps
 
 myones = np.ones((100,))
 rb = 4.0

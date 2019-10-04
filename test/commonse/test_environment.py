@@ -1,8 +1,8 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import commonse.environment as env
-from commonse import gravity as g
+import wisdem.commonse.environment as env
+from wisdem.commonse import gravity as g
 
 npts = 100
 myones = np.ones((npts,))
@@ -19,16 +19,16 @@ class TestPowerWind(unittest.TestCase):
         self.params['z0'] = 0.0
         self.params['z'] = 9.0 * myones
         
-        self.wind = env.PowerWind(npts)
+        self.wind = env.PowerWind(nPoints=npts)
 
     def testRegular(self):
-        self.wind.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wind.compute(self.params, self.unknowns)
         expect = 45.0*myones
         npt.assert_equal(self.unknowns['U'], expect)
 
     def testIndex(self):
         self.params['z'][1:] = -1.0
-        self.wind.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wind.compute(self.params, self.unknowns)
         expect = 45.0*myones
         expect[1:] = 0.0
         npt.assert_equal(self.unknowns['U'], expect)
@@ -37,7 +37,7 @@ class TestPowerWind(unittest.TestCase):
         self.params['z0'] = 10.0
         self.params['z'] += 10.0
         self.params['zref'] += 10.0
-        self.wind.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wind.compute(self.params, self.unknowns)
         expect = 45.0*myones
         npt.assert_equal(self.unknowns['U'], expect)
 
@@ -55,7 +55,7 @@ class TestLinearWaves(unittest.TestCase):
         self.params['z_surface'] = 0.0
         self.params['z'] = -2.0 * myones
 
-        self.wave = env.LinearWaves(npts)
+        self.wave = env.LinearWaves(nPoints=npts)
         
     def testRegular(self):
         D = np.abs(self.params['z_floor'])
@@ -63,7 +63,7 @@ class TestLinearWaves(unittest.TestCase):
         omega = np.sqrt(g*k*np.tanh(k*D))
         self.params['T'] = 2.0 * np.pi / omega
         
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wave.compute(self.params, self.unknowns)
         a = 1.0 #0.5*hmax
         z = -2.0
         rho = 1e3
@@ -81,7 +81,7 @@ class TestLinearWaves(unittest.TestCase):
 
         # Positive depth input
         self.params['z_floor'] = 30.0
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wave.compute(self.params, self.unknowns)
         npt.assert_almost_equal(self.unknowns['U'], U_exp)
         npt.assert_almost_equal(self.unknowns['W'], W_exp)
         npt.assert_almost_equal(self.unknowns['V'], V_exp)
@@ -91,7 +91,7 @@ class TestLinearWaves(unittest.TestCase):
     def testPositiveZ(self):
         self.params['T'] = 2.0 
         self.params['z'] = 2.0 * myones
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wave.compute(self.params, self.unknowns)
         npt.assert_equal(self.unknowns['U'], 0.0)
         npt.assert_equal(self.unknowns['W'], 0.0)
         npt.assert_equal(self.unknowns['V'], 0.0)
@@ -102,7 +102,7 @@ class TestLinearWaves(unittest.TestCase):
     def testQuiet(self):
         self.params['hmax'] = 0.0 
         self.params['T'] = 2.0
-        self.wave.solve_nonlinear(self.params, self.unknowns, self.resid)
+        self.wave.compute(self.params, self.unknowns)
         p_exp = 2e3*g
         npt.assert_equal(self.unknowns['U'], 5.0)
         npt.assert_equal(self.unknowns['W'], 0.0)
