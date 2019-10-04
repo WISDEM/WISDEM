@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import _pBEAM as pb
+import wisdem.pBeam._pBEAM as pb
 #import _curvefem
 
 class TestPyBeam(unittest.TestCase):
@@ -386,7 +386,7 @@ class TestPyBeam(unittest.TestCase):
         theta = precurv = presweep = np.zeros(nodes) #np.linspace(0.0, 3.0, nodes)
 
         mycurve = pb.CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, True)
-        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ)
+        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, nodes)[0]
 
         #truth = _curvefem.frequencies(omegaRPM, L, hubR, z/L, theta, rhoA, EIx, EIy, GJ, EA, rhoJ, precurv, presweep)
         #print "n1", truth.tolist()
@@ -415,7 +415,7 @@ class TestPyBeam(unittest.TestCase):
         theta = precurv = presweep = np.zeros(nodes) #np.linspace(0.0, 3.0, nodes)
 
         mycurve = pb.CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, True)
-        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ)
+        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, nodes)[0]
 
         #truth = _curvefem.frequencies(omegaRPM, L, hubR, z/L, theta, rhoA, EIx, EIy, GJ, EA, rhoJ, precurv, presweep)
         #print "n2", truth.tolist()
@@ -445,7 +445,7 @@ class TestPyBeam(unittest.TestCase):
         theta = precurv = presweep = np.zeros(nodes) #np.linspace(0.0, 3.0, nodes)
 
         mycurve = pb.CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, True)
-        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ)
+        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, nodes)[0]
 
         #truth = _curvefem.frequencies(omegaRPM, L, hubR, z/L, theta, rhoA, EIx, EIy, GJ, EA, rhoJ, precurv, presweep)
         #print "n3", truth.tolist()
@@ -475,11 +475,11 @@ class TestPyBeam(unittest.TestCase):
         theta = precurv = presweep = np.linspace(0.0, 3.0, nodes)
 
         mycurve = pb.CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, True)
-        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ)
+        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, nodes)[0]
 
         #truth = _curvefem.frequencies(omegaRPM, L, hubR, z/L, theta, rhoA, EIx, EIy, GJ, EA, rhoJ, precurv, presweep)
         #print "n3 odd", truth.tolist()
-        truth = np.array([0.00583962278555471, 0.013747011747362698, 0.019857000185537085, 0.022065457582918686, 0.022508587859798306, 0.06494224803437999, 0.07593365714823054, 0.08099501901331865, 0.08100059834010384, 0.11781473080899654, 0.1973084679918305, 0.44555268080407895, 0.48641244353481683, 0.7481252945270574, 0.7730228919707995, 1.0518193329242682, 1.0696357241743277, 1.4148111654258362, 1.4280996628456801, 1.9080030090517186, 1.9178773250559262])
+        truth = np.array([0.00583962278555471, 0.013747011747362698, 0.019857000185537085, 0.022065457582918686, 0.022508587859798306, 0.06494224803437999, 0.07593365714823054, 0.08099501901331865, 0.08100059834010384, 0.11781473080899654, 0.1973084679918305, 0.44555268080407895, 0.48641244353481683, 0.7481252945270574, 0.7730228919707995, 1.0518193329242682, 1.0696357241743277, 1.4148111654258362, 1.4280996628456801, 1.9080030090517186, 1.9178773250559262, 0.0, 0.0, 0.0])
         npt.assert_almost_equal(freq, truth)
 
         
@@ -505,7 +505,7 @@ class TestPyBeam(unittest.TestCase):
         theta = precurv = presweep = np.zeros(nodes) #np.linspace(0.0, 3.0, nodes)
 
         mycurve = pb.CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, False)
-        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ)
+        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, nodes)[0]
 
         
         m = rho * A
@@ -542,7 +542,7 @@ class TestPyBeam(unittest.TestCase):
         theta = precurv = presweep = np.zeros(nodes) #np.linspace(0.0, 3.0, nodes)
 
         mycurve = pb.CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, False)
-        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ)
+        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, nodes)[0]
         
         m = rho * A
         alpha = m * (n*L)**4.0 / (840.0 * E * I)
@@ -585,7 +585,7 @@ class TestPyBeam(unittest.TestCase):
         theta = precurv = presweep = np.zeros(nodes) #np.linspace(0.0, 3.0, nodes)
 
         mycurve = pb.CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, False)
-        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ)
+        freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, nodes)[0]
         
         m = rho * A
         alpha = m * (n*L)**4.0 / (840.0 * E * I)
