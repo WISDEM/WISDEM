@@ -2,7 +2,6 @@ import numpy as np
 import numpy.testing as npt
 import unittest
 import wisdem.pBeam._pBEAM as pb
-#import _curvefem
 
 class TestPyBeam(unittest.TestCase):
     

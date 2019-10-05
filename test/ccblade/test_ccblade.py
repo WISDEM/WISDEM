@@ -120,5 +120,11 @@ class TestNREL5MW(unittest.TestCase):
 
 
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestNREL5MW))
+    return suite
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.TextTestRunner().run(suite())
+

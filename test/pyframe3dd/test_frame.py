@@ -829,15 +829,11 @@ class FrameTestEXB(unittest.TestCase):
 
 
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(FrameTestEXA))
+    suite.addTest(unittest.makeSuite(FrameTestEXB))
+    return suite
 
-if __name__ == "__main__":
-    unittest.main()
-
-    # from unittest import TestSuite, TextTestRunner
-    # f = TestSuite()
-    # f.addTest(FrameTestEXB('test_modal'))
-    # TextTestRunner().run(f)
-
-
-
-
+if __name__ == '__main__':
+    unittest.TextTestRunner().run(suite())

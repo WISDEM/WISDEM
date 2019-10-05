@@ -612,5 +612,12 @@ class TestExtrap(unittest.TestCase):
 #         self.assertAlmostEqual(cd, 0.0016)
 
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestBlend))
+    suite.addTest(unittest.makeSuite(Test3DStall))
+    suite.addTest(unittest.makeSuite(TestExtrap))
+    return suite
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.TextTestRunner().run(suite())

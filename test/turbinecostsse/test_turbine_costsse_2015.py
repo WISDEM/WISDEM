@@ -45,5 +45,12 @@ class TestNewAssembly(unittest.TestCase):
     self.assertEqual(np.round(self.prob['transformer_cost'], 2), 18800.00)
     self.assertEqual(np.round(self.prob['turbine_cost'], 2), 4448107.48)
 
-if __name__ == "__main__":
-    unittest.main()
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestNewAssembly))
+    return suite
+
+if __name__ == '__main__':
+    unittest.TextTestRunner().run(suite())
+
