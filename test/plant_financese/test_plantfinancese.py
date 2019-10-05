@@ -6,42 +6,46 @@ from openmdao.api import Problem, Group
 
 class TestPlantFinance(unittest.TestCase):
     def setUp(self):
-        self.params = {}
-        self.unknowns = {}
-        self.resids = {}
+        self.inputs = {}
+        self.discrete_inputs = {}
+        self.outputs = {}
 
-        self.params['sea_depth'] = 0.0
-        self.params['turbine_number'] = 50
-        self.params['turbine_cost'] = 1.2e6
-        self.params['bos_costs'] = 7.7e6
-        self.params['avg_annual_opex'] = 7e5
-        self.params['fixed_charge_rate'] = 0.12
-        self.params['tax_rate'] = 0.4
-        self.params['discount_rate'] = 0.07
-        self.params['net_aep'] = 1.6e7
-        self.params['construction_time'] = 1.0
-        self.params['project_lifetime'] = 20.0
+        self.inputs['machine_rating'] = 1000.0
+        self.inputs['tcc_per_kW'] = 1.2e3
+        self.inputs['bos_per_kW'] = 7.7e3
+        self.inputs['opex_per_kW'] = 7e2
+        self.inputs['fixed_charge_rate'] = 0.12
+        self.inputs['turbine_aep'] = 1.6e7
+        self.inputs['park_aep'] = 1.6e7*50
+        self.inputs['wake_loss_factor'] = 0.15
+
+        self.discrete_inputs['turbine_number'] = 50
         
         self.mypfin = pf.PlantFinance()
 
     def testRun(self):
-        self.mypfin.solve_nonlinear(self.params, self.unknowns, self.resids)
+        # Park AEP way
+        self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
-        r = 0.07
-        a = (1 + 0.5*((1+r)**1.0 - 1)) * (r/(1-(1+r)**(-20.0)))
-        coe = (0.12*(50*1.2e6+7.7e6) + 0.6*7e5)/1.6e7
-        lcoe = (a*(50*1.2e6+7.7e6) + 7e5)/1.6e7
-        self.assertEqual(self.unknowns['coe'], coe)
-        self.assertEqual(self.unknowns['lcoe'], lcoe)
+        lcoe = 1e3*50*(0.12*(1.2e3+7.7e3) + 7e2) / (1.6e7*50.0)
+        self.assertEqual(self.outputs['lcoe'], lcoe)
+
+        # Wake loss way
+        self.inputs['park_aep'] = 0.0
+        self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
+
+        lcoe = 1e3*50*(0.12*(1.2e3+7.7e3) + 7e2) / (1.6e7*50.0*(1-0.15))
+        self.assertEqual(self.outputs['lcoe'], lcoe)
 
 
     def testDerivatives(self):
-        prob = Problem(root=Group())
-        root = prob.root
-        root.add('pf', pf.PlantFinance(), promotes=['*'])
+        prob = Problem()
+        root = prob.model = Group()
+        root.add_subsystem('pf', pf.PlantFinance(), promotes=['*'])
         prob.setup()
-        for k in self.params.keys(): prob[k] = self.params[k]        
-        prob.check_total_derivatives()
+        for k in self.inputs.keys(): prob[k] = self.inputs[k]        
+        for k in self.discrete_inputs.keys(): prob[k] = self.discrete_inputs[k]        
+        #prob.check_partials()
         
 def suite():
     suite = unittest.TestSuite()

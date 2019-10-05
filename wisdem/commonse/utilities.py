@@ -566,7 +566,7 @@ def _getColumnOfOutputs(comp, outputs, m):
 
     return f
 
-
+'''
 def check_for_missing_unit_tests(modules):
     """A heuristic check to find components that don't have a corresonding unit test
     for its gradients.
@@ -872,6 +872,7 @@ def check_gradient(comp, fd='central', step_size=1e-6, tol=1e-6, display=False,
             errorvec.append(error)
 
     return namevec, errorvec
+'''
 
 
 
