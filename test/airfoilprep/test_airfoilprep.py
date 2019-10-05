@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from math import pi
 
-from airfoilprep import Polar, Airfoil
+from wisdem.airfoilprep import Polar, Airfoil
 
 
 class TestBlend(unittest.TestCase):
