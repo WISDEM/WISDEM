@@ -617,7 +617,7 @@ class ReferenceBlade(object):
                 # if i in trans_correct_idx:
                 blade['profile'][:,:,i] = trailing_edge_smoothing(blade['profile'][:,:,i])
             # import matplotlib.pyplot as plt
-            # plt.plot(temp[:,0,i], temp[:,1,i], 'b')
+            # # plt.plot(temp[:,0,i], temp[:,1,i], 'b')
             # plt.plot(blade['profile'][:,0,i], blade['profile'][:,1,i], 'k')
             # plt.axis('equal')
             # plt.title(i)
@@ -925,7 +925,7 @@ class ReferenceBlade(object):
                         if 'fixed' in blade['st'][type_sec][idx_sec]['rotation'].keys():
                             if blade['st'][type_sec][idx_sec]['rotation']['fixed'] == 'twist':
                                 blade['st'][type_sec][idx_sec]['rotation']['grid'] = blade['pf']['s']
-                                blade['st'][type_sec][idx_sec]['rotation']['values'] = np.radians(blade['pf']['theta'])
+                                blade['st'][type_sec][idx_sec]['rotation']['values'] = -np.radians(blade['pf']['theta'])
                             else:
                                 warning_invalid_fixed_rotation_reference = 'Invalid fixed reference given for layer = "%s" rotation. Currently supported options: "twist".'%(sec['name'])
                                 warnings.warn(warning_invalid_fixed_rotation_reference)
