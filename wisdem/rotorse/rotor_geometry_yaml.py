@@ -902,13 +902,13 @@ class ReferenceBlade(object):
                         blade['st'][type_sec][idx_sec]['end_nd_arc'] = {}
                         blade['st'][type_sec][idx_sec]['end_nd_arc']['grid'] = self.s
                         blade['st'][type_sec][idx_sec]['end_nd_arc']['values'] = np.full(self.NPTS, 1.).tolist()
-                    if 'width' in blade['st'][type_sec][idx_sec].keys():
-                        blade['st'][type_sec][idx_sec]['start_nd_arc'] = {}
-                        blade['st'][type_sec][idx_sec]['start_nd_arc']['grid'] = self.s
-                        blade['st'][type_sec][idx_sec]['start_nd_arc']['values'] = np.full(self.NPTS, None).tolist()
-                        blade['st'][type_sec][idx_sec]['end_nd_arc'] = {}
-                        blade['st'][type_sec][idx_sec]['end_nd_arc']['grid'] = self.s
-                        blade['st'][type_sec][idx_sec]['end_nd_arc']['values'] = np.full(self.NPTS, None).tolist()
+                    # if 'width' in blade['st'][type_sec][idx_sec].keys():
+                        # blade['st'][type_sec][idx_sec]['start_nd_arc'] = {}
+                        # blade['st'][type_sec][idx_sec]['start_nd_arc']['grid'] = self.s
+                        # blade['st'][type_sec][idx_sec]['start_nd_arc']['values'] = np.full(self.NPTS, None).tolist()
+                        # blade['st'][type_sec][idx_sec]['end_nd_arc'] = {}
+                        # blade['st'][type_sec][idx_sec]['end_nd_arc']['grid'] = self.s
+                        # blade['st'][type_sec][idx_sec]['end_nd_arc']['values'] = np.full(self.NPTS, None).tolist()
                     if 'start_nd_arc' not in blade['st'][type_sec][idx_sec].keys():
                         blade['st'][type_sec][idx_sec]['start_nd_arc'] = {}
                         blade['st'][type_sec][idx_sec]['start_nd_arc']['grid'] = self.s
@@ -1044,6 +1044,23 @@ class ReferenceBlade(object):
                         if blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] > 1.:
                             blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] -= 1.
                     
+                    elif 'width' in blade['st'][type_sec][idx_sec].keys():
+                        if blade['st'][type_sec][idx_sec]['width']['values'][i] != None:
+                            width      = sec['width']['values'][i]    # meters
+                            if blade['st'][type_sec][idx_sec]['start_nd_arc']['values'][i] != None and blade['st'][type_sec][idx_sec]['thickness']['values'][i] != None:
+                                blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] = blade['st'][type_sec][idx_sec]['start_nd_arc']['values'][i] + width/arc_L
+                            elif blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] != None and blade['st'][type_sec][idx_sec]['thickness']['values'][i] != None:    
+                                blade['st'][type_sec][idx_sec]['start_nd_arc']['values'][i] = blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] - width/arc_L
+                            else:
+                                print('Error: the definition of the layer ' + blade['st'][type_sec][idx_sec]['name'] + " is not supported. Please check the yaml input file.")
+                                exit()
+                    elif 'start_nd_arc' not in blade['st'][type_sec][idx_sec].keys() or 'end_nd_arc' not in blade['st'][type_sec][idx_sec].keys():
+                        print('Error: the definition of the layer ' + blade['st'][type_sec][idx_sec]['name'] + " is not supported. Please check the yaml input file.")
+                        exit()    
+                    
+        
+        
+        
         # Set any end points that are fixed to other sections, loop through composites again
         for idx_sec, sec in enumerate(blade['st']['layers']):
             if 'fixed' in blade['st']['layers'][idx_sec]['start_nd_arc'].keys():
@@ -1057,7 +1074,7 @@ class ReferenceBlade(object):
                     target_idx   = [i for i, sec in enumerate(blade['st']['layers']) if sec['name']==target_name][0]
                     blade['st']['layers'][idx_sec]['start_nd_arc']['grid']   = blade['st']['layers'][target_idx]['end_nd_arc']['grid'].tolist()
                     blade['st']['layers'][idx_sec]['start_nd_arc']['values'] = blade['st']['layers'][target_idx]['end_nd_arc']['values']
-                
+                    
                 
             if 'fixed' in blade['st']['layers'][idx_sec]['end_nd_arc'].keys():
                 blade['st']['layers'][idx_sec]['end_nd_arc']['grid']   = self.s
@@ -1071,6 +1088,13 @@ class ReferenceBlade(object):
                     blade['st']['layers'][idx_sec]['end_nd_arc']['grid']   = blade['st']['layers'][target_idx]['start_nd_arc']['grid'].tolist()
                     blade['st']['layers'][idx_sec]['end_nd_arc']['values'] = blade['st']['layers'][target_idx]['start_nd_arc']['values']
                 
+            for i in range(self.NPTS):
+                if blade['st']['layers'][idx_sec]['end_nd_arc']['values'][i] == None and blade['st']['layers'][idx_sec]['start_nd_arc']['values'][i] != None:
+                    blade['st']['layers'][idx_sec]['end_nd_arc']['values'][i] = 1.0
+                    print('Error in the definition of the layer ' + blade['st']['layers'][idx_sec]['name'] + ' at station ' + str(i) + '. The neighboring layer does not exist. Edge is set to TE')
+                elif blade['st']['layers'][idx_sec]['start_nd_arc']['values'][i] == None and blade['st']['layers'][idx_sec]['end_nd_arc']['values'][i] != None:
+                    blade['st']['layers'][idx_sec]['start_nd_arc']['values'][i] = 0.0
+                    print('Error in the definition of the layer ' + blade['st']['layers'][idx_sec]['name'] + ' at station ' + str(i) + '. The neighboring layer does not exist. Edge is set to TE')
         
         
         return blade
@@ -1127,8 +1151,8 @@ class ReferenceBlade(object):
         # Store additional rotorse variables
         blade['ctrl_pts']['r_cylinder']   = r_cylinder
         blade['ctrl_pts']['r_max_chord']  = r_max_chord
-        # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
-        blade['ctrl_pts']['bladeLength']  = blade['pf']['r'][-1]
+        blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
+        # blade['ctrl_pts']['bladeLength']  = blade['pf']['r'][-1]
 
         # plt.plot(r_in, blade['ctrl_pts']['thickness_in'], 'x')
         # plt.show()
@@ -1429,6 +1453,8 @@ class ReferenceBlade(object):
                             if sec['start_nd_arc']['values'][i] < loc_LE:
                                 # ss_start_nd_arc.append(sec['start_nd_arc']['values'][i])
                                 ss_end_nd_arc_temp = float(spline_arc2xnd(sec['start_nd_arc']['values'][i]))
+                                if ss_end_nd_arc_temp > 1 or ss_end_nd_arc_temp < 0:
+                                    exit('Error in the definition of material ' + sec['name'] + '. It cannot fit in the section')
                                 if ss_end_nd_arc_temp == profile_i_rot[0,0] and profile_i_rot[0,0] != 1.:
                                     ss_end_nd_arc_temp = 1.
                                 ss_end_nd_arc.append(ss_end_nd_arc_temp)
@@ -1476,6 +1502,10 @@ class ReferenceBlade(object):
             # print(time1)
 
             # generate the Precomp composite stacks for chordwise regions
+            if np.min([ss_start_nd_arc, ss_end_nd_arc]) < 0 or np.max([ss_start_nd_arc, ss_end_nd_arc]) > 1:
+                print('Error in the layer definition at station number ' + str(i))
+                exit()
+            
             upperCS[i], region_loc_ss = region_stacking(i, ss_idx, ss_start_nd_arc, ss_end_nd_arc, blade, blade['precomp']['material_dict'], blade['precomp']['materials'], region_loc_ss)
             lowerCS[i], region_loc_ps = region_stacking(i, ps_idx, ps_start_nd_arc, ps_end_nd_arc, blade, blade['precomp']['material_dict'], blade['precomp']['materials'], region_loc_ps)
             if len(web_idx)>0 or flatback:

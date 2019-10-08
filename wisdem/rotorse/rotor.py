@@ -282,7 +282,7 @@ if __name__ == '__main__':
     fname_schema  = "turbine_inputs/IEAontology_schema.yaml"
     fname_input   = "turbine_inputs/nrel5mw_mod_update.yaml"
     output_folder = "test/"
-    # fname_output  = output_folder + 'test_out.yaml'
+    fname_output  = output_folder + 'test_out.yaml'
     
     Analysis_Level = 0 # 0: Run CCBlade; 1: Update FAST model at each iteration but do not run; 2: Run FAST w/ ElastoDyn; 3: (Not implemented) Run FAST w/ BeamDyn
 
@@ -369,7 +369,7 @@ if __name__ == '__main__':
                           rc_show_warnings =rc_show_warnings ,
                           rc_discrete=rc_discrete,                          
                           topLevelFlag=True,
-                          user_update_routine = set_web3_offset
+                          # user_update_routine = set_web3_offset
                           )
     rotor.setup()
     rotor = Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level=Analysis_Level, fst_vt=fst_vt)
@@ -384,7 +384,7 @@ if __name__ == '__main__':
     rotor.run_driver()
     #rotor.check_partials(compact_print=True, step=1e-6, form='central')
 
-    # refBlade.write_ontology(fname_output, rotor['blade_out'], refBlade.wt_ref)
+    refBlade.write_ontology(fname_output, rotor['blade_out'], refBlade.wt_ref)
 
     print('Run Time = ',                time.time()-tt)
     print('AEP =',                      rotor['AEP'])
