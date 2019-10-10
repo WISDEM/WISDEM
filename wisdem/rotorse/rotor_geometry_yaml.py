@@ -1151,8 +1151,8 @@ class ReferenceBlade(object):
         # Store additional rotorse variables
         blade['ctrl_pts']['r_cylinder']   = r_cylinder
         blade['ctrl_pts']['r_max_chord']  = r_max_chord
-        blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
-        # blade['ctrl_pts']['bladeLength']  = blade['pf']['r'][-1]
+        # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
+        blade['ctrl_pts']['bladeLength']  = blade['pf']['r'][-1]
 
         # plt.plot(r_in, blade['ctrl_pts']['thickness_in'], 'x')
         # plt.show()
@@ -1538,97 +1538,141 @@ class ReferenceBlade(object):
         
         # Chord
         fc, axc  = plt.subplots(1,1,figsize=(5.3, 4))
-        axc.plot(blade['pf']['s'], blade['pf']['chord'])
-        axc.set(xlabel='r/R' , ylabel='Chord (m)')
+        axc.plot(blade['pf']['s'], blade['pf']['chord'],color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Chord [m]', fontsize=14, fontweight='bold')
         fig_name = 'init_chord.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         fc.savefig(path + fig_name)
         
         # Theta
         ft, axt  = plt.subplots(1,1,figsize=(5.3, 4))
-        axt.plot(blade['pf']['s'], blade['pf']['theta'])
-        axt.set(xlabel='r/R' , ylabel='Twist (deg)')
+        axt.plot(blade['pf']['s'], blade['pf']['theta'],color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Twist [deg]', fontsize=14, fontweight='bold')
         fig_name = 'init_theta.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         ft.savefig(path + fig_name)
         
         # Pitch axis
         fp, axp  = plt.subplots(1,1,figsize=(5.3, 4))
-        axp.plot(blade['pf']['s'], blade['pf']['p_le']*100.)
-        axp.set(xlabel='r/R' , ylabel='Pitch Axis (%)')
-        fig_name = 'init_p_le.png'
+        axp.plot(blade['pf']['s'], blade['pf']['p_le']*100.,color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Pitch Axis [%]', fontsize=14, fontweight='bold')
+        fig_name = 'init_pa.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         fp.savefig(path + fig_name)
         
+        fr, axr  = plt.subplots(1,1,figsize=(5.3, 4))
+        axr.plot(blade['pf']['s'], blade['pf']['rthick']*100.,color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Relative Thickness [%]', fontsize=14, fontweight='bold')
+        fig_name = 'init_rt.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        fr.savefig(path + fig_name)
         
-        # Planform
+        fa, axa  = plt.subplots(1,1,figsize=(5.3, 4))
+        axa.plot(blade['pf']['s'], blade['pf']['rthick']*blade['pf']['chord'],color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Absolute Thickness [m]', fontsize=14, fontweight='bold')
+        fig_name = 'init_at.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        fa.savefig(path + fig_name)
+        
+        fpb, axpb  = plt.subplots(1,1,figsize=(5.3, 4))
+        axpb.plot(blade['pf']['s'], blade['pf']['precurve'],color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Prebend [m]', fontsize=14, fontweight='bold')
+        fig_name = 'init_pb.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        fpb.savefig(path + fig_name)
         le = blade['pf']['p_le']*blade['pf']['chord']
         te = (1. - blade['pf']['p_le'])*blade['pf']['chord']
 
         fpl, axpl  = plt.subplots(1,1,figsize=(5.3, 4))
-        axpl.plot(blade['pf']['s'], -le)
-        axpl.plot(blade['pf']['s'], te)
-        axpl.set(xlabel='r/R' , ylabel='Planform (m)')
-        axpl.legend()
-        fig_name = 'init_planform.png'
+        axpl.plot(blade['pf']['s'], -le,color='royalblue')
+        axpl.plot(blade['pf']['s'], te,color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Planform [m]', fontsize=14, fontweight='bold')
+        fig_name = 'init_pl.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         fpl.savefig(path + fig_name)
         
-        
-        
-        # Relative thickness
-        frt, axrt  = plt.subplots(1,1,figsize=(5.3, 4))
-        axrt.plot(blade['pf']['s'], blade['pf']['rthick']*100.)
-        axrt.set(xlabel='r/R' , ylabel='Relative Thickness (%)')
-        fig_name = 'init_rthick.png'
-        frt.savefig(path + fig_name)
-        
-        # Absolute thickness
-        fat, axat  = plt.subplots(1,1,figsize=(5.3, 4))
-        axat.plot(blade['pf']['s'], blade['pf']['rthick']*blade['pf']['chord'])
-        axat.set(xlabel='r/R' , ylabel='Absolute Thickness (m)')
-        fig_name = 'init_absthick.png'
-        fat.savefig(path + fig_name)
-        
-        # Prebend
-        fpb, axpb  = plt.subplots(1,1,figsize=(5.3, 4))
-        axpb.plot(blade['pf']['s'], blade['pf']['precurve'])
-        axpb.set(xlabel='r/R' , ylabel='Prebend (m)')
-        fig_name = 'init_prebend.png'
-        fpb.savefig(path + fig_name)
-        
-        # Sweep
-        fsw, axsw  = plt.subplots(1,1,figsize=(5.3, 4))
-        axsw.plot(blade['pf']['s'], blade['pf']['presweep'])
-        axsw.set(xlabel='r/R' , ylabel='Presweep (m)')
-        fig_name = 'init_presweep.png'
-        plt.subplots_adjust(left = 0.14)
-        fsw.savefig(path + fig_name)
-        
-        idx_spar  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.spar_var[0].lower()][0]
-        idx_te    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.te_var.lower()][0]
-        idx_skin  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()=='shell_skin'][0]
-        
-        # Spar caps thickness
+        idx_spar1  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.spar_var[0].lower()][0]
+        idx_spar2  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.spar_var[1].lower()][0]
         fsc, axsc  = plt.subplots(1,1,figsize=(5.3, 4))
-        axsc.plot(blade['st']['layers'][idx_spar]['thickness']['grid'], blade['st']['layers'][idx_spar]['thickness']['values'])
-        axsc.set(xlabel='r/R' , ylabel='Spar Caps Thickness (m)')
+        axsc.plot(blade['st']['layers'][idx_spar1]['thickness']['grid'], blade['st']['layers'][idx_spar1]['thickness']['values'],color='royalblue', label = 'Suction')
+        axsc.plot(blade['st']['layers'][idx_spar2]['thickness']['grid'], blade['st']['layers'][idx_spar2]['thickness']['values'],color='mediumseagreen', label = 'Pressure')
+        axsc.legend(fontsize=12)
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Spar Caps Thickness [m]', fontsize=14, fontweight='bold')
         fig_name = 'init_sc.png'
-        plt.subplots_adjust(left = 0.14)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         fsc.savefig(path + fig_name)
         
-        # TE reinf thickness
-        fte, axte  = plt.subplots(1,1,figsize=(5.3, 4))
-        axte.plot(blade['st']['layers'][idx_te]['thickness']['grid'], blade['st']['layers'][idx_te]['thickness']['values'])
-        axte.set(xlabel='r/R' , ylabel='TE Reinf. Thickness (m)')
-        fig_name = 'init_te.png'
-        plt.subplots_adjust(left = 0.14)
-        fte.savefig(path + fig_name)
-        
-        # Skin
-        fsk, axsk  = plt.subplots(1,1,figsize=(5.3, 4))
-        axsk.plot(blade['st']['layers'][idx_skin]['thickness']['grid'], blade['st']['layers'][idx_skin]['thickness']['values'])
-        axsk.set(xlabel='r/R' , ylabel='Shell Skin Thickness (m)')
-        fig_name = 'init_skin.png'
-        fsk.savefig(path + fig_name)
+        npts   = len(np.array(blade['st']['layers'][idx_spar1]['width']['values']))
+        sc_le  = np.zeros(npts)
+        sc_te  = np.zeros(npts)
         
         
+        for i in range(npts):
+            if blade['st']['layers'][idx_spar1]['width']['values'][i] == None:
+                sc_le[i] = None
+                sc_te[i] = None
+            else:
+                sc_le[i] = blade['st']['layers'][idx_spar1]['offset_x_pa']['values'][i] - 0.5*blade['st']['layers'][idx_spar1]['width']['values'][i]
+                sc_te[i] = blade['st']['layers'][idx_spar1]['offset_x_pa']['values'][i] + 0.5*blade['st']['layers'][idx_spar1]['width']['values'][i]
+        
+        # print(blade['st']['layers'][idx_spar1]['width']['values'])
+        # print(blade['st']['layers'][idx_spar1]['offset_x_pa']['values'])
+        # print(sc_le)
+        # print(sc_te)
+        # exit()
+        
+        
+        fpl2, axpl2  = plt.subplots(1,1,figsize=(5.3, 4))
+        axpl2.plot(blade['pf']['s'], -le,color='royalblue')
+        axpl2.plot(blade['pf']['s'], te,color='royalblue')
+        axpl2.plot(blade['st']['layers'][idx_spar1]['thickness']['grid'], sc_le,color='mediumseagreen', label = 'Spar Caps')
+        axpl2.plot(blade['st']['layers'][idx_spar1]['thickness']['grid'], sc_te,color='mediumseagreen')
+        axpl2.plot(blade['st']['webs'][0]['offset_x_pa']['grid'], blade['st']['webs'][0]['offset_x_pa']['values'],color='darkorange',label = 'Webs')
+        axpl2.plot(blade['st']['webs'][1]['offset_x_pa']['grid'], blade['st']['webs'][1]['offset_x_pa']['values'],color='darkorange')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Planform [m]', fontsize=14, fontweight='bold')
+        fig_name = 'init_pl_w_sc.png'
+        axpl2.legend(fontsize=12)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        fpl2.savefig(path + fig_name)
+        
+        
+        # idx_te    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.te_var.lower()][0]
         if show_plots:
             plt.show()
         
@@ -1706,35 +1750,35 @@ class ReferenceBlade(object):
         fpb.savefig(path + fig_name)
         
         
-        # Relative thickness
-        r_thick_interp = abs_thick_int2 / chord_int2
-        r_thick_airfoils = np.array([0.18, 0.211, 0.241, 0.301, 0.36 , 0.50, 1.00])
-        f_interp1        = interp1d(r_thick_interp,s)
-        s_interp_rt      = f_interp1(r_thick_airfoils)
-        f_interp2        = PchipInterpolator(np.flip(s_interp_rt, axis=0),np.flip(r_thick_airfoils, axis=0))
-        r_thick_int2     = f_interp2(s)
+        # # Relative thickness
+        # r_thick_interp = abs_thick_int2 / chord_int2
+        # r_thick_airfoils = np.array([0.18, 0.211, 0.241, 0.301, 0.36 , 0.50, 1.00])
+        # f_interp1        = interp1d(r_thick_interp,s)
+        # s_interp_rt      = f_interp1(r_thick_airfoils)
+        # f_interp2        = PchipInterpolator(np.flip(s_interp_rt, axis=0),np.flip(r_thick_airfoils, axis=0))
+        # r_thick_int2     = f_interp2(s)
         
         
-        frt, axrt  = plt.subplots(1,1,figsize=(5.3, 4))
-        axrt.plot(blade['pf']['s'], blade['pf']['rthick']*100., c='k', label='Initial')
-        axrt.plot(blade['pf']['s'], r_thick_interp * 100., c='b', label='Interp')
-        axrt.plot(s_interp_rt, r_thick_airfoils * 100., 'og', label='Airfoils')
-        axrt.plot(blade['pf']['s'], r_thick_int2 * 100., c='g', label='Reconstructed')
-        axrt.set(xlabel='r/R' , ylabel='Relative Thickness (%)')
-        fig_name = 'interp_rthick.png'
-        axrt.legend()
-        frt.savefig(path + fig_name)
+        # frt, axrt  = plt.subplots(1,1,figsize=(5.3, 4))
+        # axrt.plot(blade['pf']['s'], blade['pf']['rthick']*100., c='k', label='Initial')
+        # axrt.plot(blade['pf']['s'], r_thick_interp * 100., c='b', label='Interp')
+        # axrt.plot(s_interp_rt, r_thick_airfoils * 100., 'og', label='Airfoils')
+        # axrt.plot(blade['pf']['s'], r_thick_int2 * 100., c='g', label='Reconstructed')
+        # axrt.set(xlabel='r/R' , ylabel='Relative Thickness (%)')
+        # fig_name = 'interp_rthick.png'
+        # axrt.legend()
+        # frt.savefig(path + fig_name)
 
         
-        fat, axat  = plt.subplots(1,1,figsize=(5.3, 4))
-        axat.plot(s, abs_thick_init, c='k', label='Initial')
-        axat.plot(s_interp_at, abs_thick_int1, 'ko', label='Interp Points')
-        axat.plot(s, abs_thick_int2, c='b', label='PCHIP')
-        axat.plot(s, r_thick_int2 * chord_int2, c='g', label='Reconstructed')
-        axat.set(xlabel='r/R' , ylabel='Absolute Thickness (m)')
-        fig_name = 'interp_abs_thick.png'
-        axat.legend()
-        fat.savefig(path + fig_name)
+        # fat, axat  = plt.subplots(1,1,figsize=(5.3, 4))
+        # axat.plot(s, abs_thick_init, c='k', label='Initial')
+        # axat.plot(s_interp_at, abs_thick_int1, 'ko', label='Interp Points')
+        # axat.plot(s, abs_thick_int2, c='b', label='PCHIP')
+        # axat.plot(s, r_thick_int2 * chord_int2, c='g', label='Reconstructed')
+        # axat.set(xlabel='r/R' , ylabel='Absolute Thickness (m)')
+        # fig_name = 'interp_abs_thick.png'
+        # axat.legend()
+        # fat.savefig(path + fig_name)
         
         
         # Pitch axis location
@@ -1803,6 +1847,7 @@ class ReferenceBlade(object):
         fig_name = 'interp_planform.png'
         fpl.savefig(path + fig_name)
         
+        # np.savetxt('temp.txt', le_int2/blade['pf']['chord'])
         
         
         

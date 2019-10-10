@@ -152,7 +152,7 @@ class InputWriter_Common(object):
         f.write('---------------------- TOWER PARAMETERS ----------------------------------------\n')
         if self.FAST_ver.lower() == 'fast7':
             f.write('---\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['NTwInptSt'],  'NTwInptSt', '- Number of input stations to specify tower geometry\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['NTwInpSt'],  'NTwInptSt', '- Number of input stations to specify tower geometry\n'))
         if self.FAST_ver.lower() == 'fast7':
             f.write('{:}\n'.format(self.fst_vt['ElastoDynTower']['CalcTMode']))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['TwrFADmp1'], 'TwrFADmp(1)', '- Tower 1st fore-aft mode structural damping ratio (%)\n'))
