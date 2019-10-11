@@ -199,7 +199,7 @@ class InputReader_Common(object):
 
         # General Tower Paramters
         f.readline()
-        self.fst_vt['ElastoDynTower']['NTwInptSt'] = int(f.readline().split()[0])
+        self.fst_vt['ElastoDynTower']['NTwInpSt'] = int(f.readline().split()[0])
         if self.FAST_ver.lower() == 'fast7':
             self.fst_vt['ElastoDynTower']['CalcTMode'] = bool_read(f.readline().split()[0])
         self.fst_vt['ElastoDynTower']['TwrFADmp1'] = float_read(f.readline().split()[0])
@@ -221,19 +221,19 @@ class InputReader_Common(object):
         f.readline()
         f.readline()
         f.readline()
-        self.fst_vt['ElastoDynTower']['HtFract'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
-        self.fst_vt['ElastoDynTower']['TMassDen'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
-        self.fst_vt['ElastoDynTower']['TwFAStif'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
-        self.fst_vt['ElastoDynTower']['TwSSStif'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
+        self.fst_vt['ElastoDynTower']['HtFract'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
+        self.fst_vt['ElastoDynTower']['TMassDen'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
+        self.fst_vt['ElastoDynTower']['TwFAStif'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
+        self.fst_vt['ElastoDynTower']['TwSSStif'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
         if self.FAST_ver.lower() == 'fast7':
-            self.fst_vt['ElastoDynTower']['TwGJStif'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
-            self.fst_vt['ElastoDynTower']['TwEAStif'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
-            self.fst_vt['ElastoDynTower']['TwFAIner'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
-            self.fst_vt['ElastoDynTower']['TwSSIner'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
-            self.fst_vt['ElastoDynTower']['TwFAcgOf'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
-            self.fst_vt['ElastoDynTower']['TwSScgOf'] = [None] * self.fst_vt['ElastoDynTower']['NTwInptSt']
+            self.fst_vt['ElastoDynTower']['TwGJStif'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
+            self.fst_vt['ElastoDynTower']['TwEAStif'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
+            self.fst_vt['ElastoDynTower']['TwFAIner'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
+            self.fst_vt['ElastoDynTower']['TwSSIner'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
+            self.fst_vt['ElastoDynTower']['TwFAcgOf'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
+            self.fst_vt['ElastoDynTower']['TwSScgOf'] = [None] * self.fst_vt['ElastoDynTower']['NTwInpSt']
 
-        for i in range(self.fst_vt['ElastoDynTower']['NTwInptSt']):
+        for i in range(self.fst_vt['ElastoDynTower']['NTwInpSt']):
             data = f.readline().split()
             self.fst_vt['ElastoDynTower']['HtFract'][i]  = float_read(data[0])
             self.fst_vt['ElastoDynTower']['TMassDen'][i]  = float_read(data[1])

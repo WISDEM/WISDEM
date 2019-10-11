@@ -449,7 +449,7 @@ class pyIECWind_turb():
         turbsim_vt.metboundconds.UserFile     = '"unused"'
         turbsim_vt.metboundconds.IECturbc     = self.Turbulence_Class
         turbsim_vt.metboundconds.IEC_WindType = self.IEC_WindType
-        turbsim_vt.metboundconds.ETMc         = 2.
+        turbsim_vt.metboundconds.ETMc         = '"default"'
         turbsim_vt.metboundconds.WindProfileType = '"PL"'
         turbsim_vt.metboundconds.ProfileFile  = '"unused"'
         turbsim_vt.metboundconds.RefHt        = self.z_hub
@@ -484,7 +484,8 @@ class pyIECWind_turb():
         # self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
         # self.case_name += '_U%d'%self.Uref + '_Seed%d.in'%self.seed
 
-        case_name = self.case_name + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
+        case_name = self.case_name + '_' + IEC_WindType + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
+        
         tsim_input_file = case_name + '.in'
         wind_file_out   = case_name + '.bts'
         

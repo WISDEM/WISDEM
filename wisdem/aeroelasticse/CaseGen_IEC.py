@@ -73,7 +73,15 @@ class CaseGen_IEC():
                 TMax = 630.
 
             elif dlc == 1.3:
-                IEC_WindType = 'ETM'
+                if self.Turbine_Class == 'I':
+                    x = 1
+                elif self.Turbine_Class == 'II':
+                    x = 2
+                elif self.Turbine_Class == 'III':
+                    x = 3
+                else:
+                    exit('Class of the WT is needed for the ETM wind, but it is currently not set to neither 1,2 or 3.')
+                IEC_WindType = '%uETM'%x
                 alpha = 0.11
                 iecwind = pyIECWind_turb()
                 TMax = 630.
