@@ -439,8 +439,8 @@ class pyIECWind_turb():
         turbsim_vt.runtime_options.WrADTWR    = False
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
         turbsim_vt.tmspecs.HubHt              = self.z_hub
-        turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.2)
-        turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.2)
+        turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.05)
+        turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.05)
         turbsim_vt.tmspecs.NumGrid_Z          = 21
         turbsim_vt.tmspecs.NumGrid_Y          = 21
         turbsim_vt.tmspecs.HFlowAng           = 0.0
