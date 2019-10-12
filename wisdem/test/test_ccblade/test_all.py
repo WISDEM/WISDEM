@@ -1,13 +1,13 @@
 import unittest
 
-import test_ccblade
+from . import test_ccblade
 
-def suiteAll():
+def suite():
     suite = unittest.TestSuite( (test_ccblade.suite(),
     ) )
     return suite
 
 
 if __name__ == '__main__':
-    unittest.TextTestRunner().run(suiteAll())
+    unittest.TextTestRunner().run(suite())
         

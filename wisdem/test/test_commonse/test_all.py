@@ -1,18 +1,18 @@
 import unittest
 
-import test_WindWaveDrag
-import test_enum
-import test_environment
-import test_frustum
-import test_tube
-import test_utilities
-import test_utilizationSupplement
-import test_vertical_cylinder
+from . import test_WindWaveDrag
+from . import test_enum
+from . import test_environment
+from . import test_frustum
+from . import test_tube
+from . import test_utilities
+from . import test_utilizationSupplement
+from . import test_vertical_cylinder
 
 import numpy as np
 import numpy.testing as npt
 
-def suiteAll():
+def suite():
     suite = unittest.TestSuite( (test_WindWaveDrag.suite(),
                                  test_enum.suite(),
                                  test_environment.suite(),
@@ -26,5 +26,5 @@ def suiteAll():
 
 
 if __name__ == '__main__':
-    unittest.TextTestRunner().run(suiteAll())
+    unittest.TextTestRunner().run(suite())
         
