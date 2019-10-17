@@ -48,6 +48,7 @@ class BladeGeometry(ExplicitComponent):
         self.add_input('presweep_in',   val=np.zeros(NINPUT), units='m', desc='precurve at control points')  # defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
         self.add_input('sparT_in',      val=np.zeros(NINPUT), units='m', desc='thickness values of spar cap that linearly vary from non-cylinder position to tip')
         self.add_input('teT_in',        val=np.zeros(NINPUT), units='m', desc='thickness values of trailing edge panels that linearly vary from non-cylinder position to tip')
+        self.add_input('leT_in',        val=np.zeros(NINPUT), units='m', desc='thickness values of leading edge panels that linearly vary from non-cylinder position to tip')
         self.add_input('airfoil_position', val=np.zeros(NAF), desc='spanwise position of airfoils')
 
         # parameters
@@ -169,6 +170,8 @@ class BladeGeometry(ExplicitComponent):
         if blade['analysis_level'] < 3:
             refBlade.spar_var        = blade['precomp']['spar_var']
             refBlade.te_var          = blade['precomp']['te_var']
+            if 'le_var' in blade['precomp']:
+                refBlade.le_var     = blade['precomp']['le_var']
         
         blade_out = refBlade.update(blade)
         
@@ -405,6 +408,8 @@ def Init_RotorGeometry_wRefBlade(rotor, blade):
     rotor['presweep_in']      = np.array(blade['ctrl_pts']['presweep_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
     rotor['sparT_in']         = np.array(blade['ctrl_pts']['sparT_in']) # np.array([0.0, 0.05, 0.047754, 0.045376, 0.031085, 0.0061398])  # (Array, m): spar cap thickness parameters
     rotor['teT_in']           = np.array(blade['ctrl_pts']['teT_in']) # np.array([0.0, 0.1, 0.09569, 0.06569, 0.02569, 0.00569])  # (Array, m): trailing-edge thickness parameters
+    if 'le_var' in blade['precomp']['le_var']:
+        rotor['leT_in']       = np.array(blade['ctrl_pts']['leT_in']) ## (Array, m): leading-edge thickness parameters
     rotor['airfoil_position'] = np.array(blade['outer_shape_bem']['airfoil_position']['grid'])
     rotor['hubFraction']      = blade['config']['hubD']/2./blade['pf']['r'][-1] #0.025  # (Float): hub location as fraction of radius
     rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
@@ -429,6 +434,7 @@ if __name__ == "__main__":
 
     refBlade.spar_var = ['Spar_Cap_SS', 'Spar_Cap_PS']
     refBlade.te_var   = 'TE_reinforcement'
+    refBlade.le_var       = 'le_reinf'
     blade = refBlade.initialize(fname_input)
 
     # setup
