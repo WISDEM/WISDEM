@@ -479,7 +479,7 @@ class TestPyBeam(unittest.TestCase):
         #truth = _curvefem.frequencies(omegaRPM, L, hubR, z/L, theta, rhoA, EIx, EIy, GJ, EA, rhoJ, precurv, presweep)
         #print "n3 odd", truth.tolist()
         truth = np.array([0.00583962278555471, 0.013747011747362698, 0.019857000185537085, 0.022065457582918686, 0.022508587859798306, 0.06494224803437999, 0.07593365714823054, 0.08099501901331865, 0.08100059834010384, 0.11781473080899654, 0.1973084679918305, 0.44555268080407895, 0.48641244353481683, 0.7481252945270574, 0.7730228919707995, 1.0518193329242682, 1.0696357241743277, 1.4148111654258362, 1.4280996628456801, 1.9080030090517186, 1.9178773250559262, 0.0, 0.0, 0.0])
-        npt.assert_almost_equal(freq, truth)
+        npt.assert_almost_equal(freq[truth>0.0], truth[truth>0.0], decimal=5)
 
         
     def testCurveFEM_FreeBeam_n1(self):
