@@ -114,7 +114,7 @@ class RotorSE(Group):
                                      'tilt','yaw','nBlades','downwind',
                                      'control_tsr','control_pitch','lifetime','hub_height',
                                      'mass_one_blade','mass_all_blades','I_all_blades',
-                                     'freq_pbeam','freq_curvefem','modes_coef_curvefem','tip_deflection', 
+                                     'freq_pbeam','freq_distance','freq_curvefem','modes_coef_curvefem','tip_deflection', 
                                      'tip_position','ground_clearance','strainU_spar','strainL_spar',
                                      'strainU_te','strainL_te',#'eps_crit_spar','eps_crit_te',
                                      'root_bending_moment','Mxyz','damageU_spar','damageL_spar','damageU_te',

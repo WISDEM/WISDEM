@@ -144,6 +144,7 @@ class BladeGeometry(ExplicitComponent):
         blade['ctrl_pts']['presweep_in']  = inputs['presweep_in']
         blade['ctrl_pts']['sparT_in']     = inputs['sparT_in']
         blade['ctrl_pts']['teT_in']       = inputs['teT_in']
+        blade['ctrl_pts']['leT_in']       = inputs['leT_in']
         blade['ctrl_pts']['r_max_chord']  = inputs['r_max_chord']
 
         #check that airfoil positions are increasing        
@@ -380,6 +381,7 @@ class RotorGeometry(Group):
             geomIndeps.add_output('airfoil_position', val=np.zeros(NAF))
             geomIndeps.add_output('sparT_in', val=np.zeros(NINPUT), units='m', desc='spar cap thickness parameters')
             geomIndeps.add_output('teT_in', val=np.zeros(NINPUT), units='m', desc='trailing-edge thickness parameters')
+            geomIndeps.add_output('leT_in', val=np.zeros(NINPUT), units='m', desc='leading-edge thickness parameters')
             self.add_subsystem('geomIndeps', geomIndeps, promotes=['*'])
             
         # --- Rotor Definition ---

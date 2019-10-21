@@ -308,6 +308,7 @@ class RotorWithpBEAM(ExplicitComponent):
         self.add_output('blade_mass', val=0.0, units='kg', desc='mass of one blades')
         self.add_output('blade_moment_of_inertia', val=0.0, units='kg*m**2', desc='out of plane moment of inertia of a blade')
         self.add_output('freq_pbeam', val=np.zeros(NFREQ), units='Hz', desc='first nF natural frequencies of blade')
+        self.add_output('freq_distance', val=0.0, desc='ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise')
         self.add_output('dx_defl', val=np.zeros(NPTS), desc='deflection of blade section in airfoil x-direction under max deflection loading')
         self.add_output('dy_defl', val=np.zeros(NPTS), desc='deflection of blade section in airfoil y-direction under max deflection loading')
         self.add_output('dz_defl', val=np.zeros(NPTS), desc='deflection of blade section in airfoil z-direction under max deflection loading')
@@ -503,6 +504,7 @@ class RotorWithpBEAM(ExplicitComponent):
         outputs['blade_mass'] = blade_mass
         outputs['blade_moment_of_inertia'] = blade_moment_of_inertia
         outputs['freq_pbeam'] = freq
+        outputs['freq_distance'] = np.float(freq[1]/freq[0])
         outputs['dx_defl'] = dx_defl
         outputs['dy_defl'] = dy_defl
         outputs['dz_defl'] = dz_defl
