@@ -308,6 +308,7 @@ class RotorWithpBEAM(ExplicitComponent):
         self.add_output('blade_mass', val=0.0, units='kg', desc='mass of one blades')
         self.add_output('blade_moment_of_inertia', val=0.0, units='kg*m**2', desc='out of plane moment of inertia of a blade')
         self.add_output('freq_pbeam', val=np.zeros(NFREQ), units='Hz', desc='first nF natural frequencies of blade')
+        self.add_output('freq_distance', val=0.0, desc='ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise')
         self.add_output('dx_defl', val=np.zeros(NPTS), desc='deflection of blade section in airfoil x-direction under max deflection loading')
         self.add_output('dy_defl', val=np.zeros(NPTS), desc='deflection of blade section in airfoil y-direction under max deflection loading')
         self.add_output('dz_defl', val=np.zeros(NPTS), desc='deflection of blade section in airfoil z-direction under max deflection loading')
@@ -503,6 +504,7 @@ class RotorWithpBEAM(ExplicitComponent):
         outputs['blade_mass'] = blade_mass
         outputs['blade_moment_of_inertia'] = blade_moment_of_inertia
         outputs['freq_pbeam'] = freq
+        outputs['freq_distance'] = np.float(freq[1]/freq[0])
         outputs['dx_defl'] = dx_defl
         outputs['dy_defl'] = dy_defl
         outputs['dz_defl'] = dz_defl
@@ -2133,6 +2135,8 @@ def Init_RotorStructure_wRefBlade(rotor, blade):
     rotor['presweep_in']      = np.array(blade['ctrl_pts']['presweep_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
     rotor['sparT_in']         = np.array(blade['ctrl_pts']['sparT_in']) # np.array([0.0, 0.05, 0.047754, 0.045376, 0.031085, 0.0061398])  # (Array, m): spar cap thickness parameters
     rotor['teT_in']           = np.array(blade['ctrl_pts']['teT_in']) # np.array([0.0, 0.1, 0.09569, 0.06569, 0.02569, 0.00569])  # (Array, m): trailing-edge thickness parameters
+    if 'le_var' in blade['precomp']['le_var']:
+        rotor['leT_in']       = np.array(blade['ctrl_pts']['leT_in']) # (Array, m): leading-edge thickness parameters
     # rotor['thickness_in']     = np.array(blade['ctrl_pts']['thickness_in'])
     rotor['airfoil_position'] = np.array(blade['outer_shape_bem']['airfoil_position']['grid'])
     # ------------------
@@ -2208,6 +2212,7 @@ if __name__ == '__main__':
     refBlade.NPTS    = 50
     refBlade.spar_var = ['Spar_Cap_SS', 'Spar_Cap_PS']
     refBlade.te_var   = 'TE_reinforcement'
+    refBlade.le_var   = 'le_reinf'
     refBlade.fname_schema = fname_schema
     
     blade = refBlade.initialize(fname_input)
@@ -2232,6 +2237,8 @@ if __name__ == '__main__':
     blade_out['ctrl_pts']['presweep_in'] = rotor['presweep_in']
     blade_out['ctrl_pts']['sparT_in']    = rotor['sparT_in']
     blade_out['ctrl_pts']['teT_in']      = rotor['teT_in']
+    if 'le_var' in blade['precomp']['le_var']:
+        blade_out['ctrl_pts']['leT_in']  = rotor['leT_in']
     # Update
     refBlade.verbose  = False
     blade_out = refBlade.update(blade_out)

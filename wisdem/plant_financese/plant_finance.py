@@ -77,7 +77,7 @@ class PlantFinance(ExplicitComponent):
         dnec_dtaep    = dpark_dtaep  / npr
         dnec_dpaep    = dpark_dpaep  / npr
         dnec_dnturb   = dpark_dnturb / npr - dnpr_dnturb   * nec / npr
-        dnec_dtrating =                               - dnpr_dtrating * nec / npr
+        dnec_dtrating =                    - dnpr_dtrating * nec / npr
         
         icc     = (c_turbine + c_bos_turbine) / t_rating #$/kW, changed per COE report
         c_opex  = (c_opex_turbine) / t_rating  # $/kW, changed per COE report
@@ -89,17 +89,17 @@ class PlantFinance(ExplicitComponent):
         #compute COE and LCOE values
         lcoe = ((icc * fcr + c_opex) / nec) # changed per COE report
         outputs['lcoe'] = lcoe
-        
+
         self.J = {}
-        self.J['lcoe', 'turbine_cost'            ] = dicc_dcturb*fcr /nec
-        self.J['lcoe', 'turbine_number'          ] = - dnec_dnturb*lcoe/nec
-        self.J['lcoe', 'turbine_bos_costs'       ] = dicc_dcbos *fcr /nec
-        self.J['lcoe', 'turbine_avg_annual_opex' ] = dcopex_dcopex   /nec
-        self.J['lcoe', 'fixed_charge_rate'       ] = icc / nec
-        self.J['lcoe', 'wake_loss_factor'        ] = -dnec_dwlf *lcoe/nec
-        self.J['lcoe', 'turbine_aep'             ] = -dnec_dtaep*lcoe/nec
-        self.J['lcoe', 'park_aep'                ] = -dnec_dpaep*lcoe/nec
-        self.J['lcoe', 'machine_rating'          ] = (dicc_dtrating*fcr + dcopex_dtrating)/nec - dnec_dtrating*lcoe/nec
+        self.J['lcoe', 'tcc_per_kW'       ] = dicc_dcturb*fcr /nec
+        self.J['lcoe', 'turbine_number'   ] = - dnec_dnturb*lcoe/nec
+        self.J['lcoe', 'bos_per_kW'       ] = dicc_dcbos *fcr /nec
+        self.J['lcoe', 'opex_per_kW'      ] = dcopex_dcopex   /nec
+        self.J['lcoe', 'fixed_charge_rate'] = icc / nec
+        self.J['lcoe', 'wake_loss_factor' ] = -dnec_dwlf *lcoe/nec
+        self.J['lcoe', 'turbine_aep'      ] = -dnec_dtaep*lcoe/nec
+        self.J['lcoe', 'park_aep'         ] = -dnec_dpaep*lcoe/nec
+        self.J['lcoe', 'machine_rating'   ] = (dicc_dtrating*fcr + dcopex_dtrating)/nec - dnec_dtrating*lcoe/nec
         
         if self.options['verbosity']:
             print('################################################')

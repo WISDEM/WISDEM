@@ -94,6 +94,10 @@ Icon?
 ehthumbs.db
 Thumbs.db
 
-# Visual Studio Code #
-######################
+# Jupyter notebooks #
+#####################
+.ipynb_checkpoints
+
+# VSCode #
+##########
 .vscode/

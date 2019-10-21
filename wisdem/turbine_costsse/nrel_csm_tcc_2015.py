@@ -177,6 +177,27 @@ class BearingMass(ExplicitComponent):
         outputs['main_bearing_mass'] = bearing_mass_coeff * rotor_diameter ** bearing_mass_exp
 
 # --------------------------------------------------------------------
+class RotorTorque(ExplicitComponent):
+
+    def setup(self):
+  
+        # Variables
+        self.add_input('rotor_diameter', 0.0, units='m', desc= 'rotor diameter of the machine')
+        self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
+        self.add_input('max_tip_speed', 0.0, units='m/s', desc='Maximum allowable blade tip speed')
+        self.add_input('max_efficiency', 0.0, desc='Maximum possible drivetrain efficiency')
+
+        self.add_output('rotor_torque', 0.0, units='N*m', desc = 'torque from rotor at rated power') #JMF do we want this default?
+
+    def compute(self, inputs, outputs):
+        # Rotor force calculations for nacelle inputs
+        maxTipSpd = inputs['max_tip_speed']
+        maxEfficiency = inputs['max_efficiency']
+        
+        ratedHubPower_W  = inputs['machine_rating']*1000. / maxEfficiency 
+        rotorSpeed       = maxTipSpd / (0.5*inputs['rotor_diameter'])
+        outputs['rotor_torque'] = ratedHubPower_W / rotorSpeed
+# --------------------------------------------------------------------
 class GearboxMass(ExplicitComponent):
 
     def setup(self):
@@ -504,6 +525,7 @@ class nrel_csm_mass_2015(Group):
         self.add_subsystem('spinner',SpinnerMass(), promotes=['*'])
         self.add_subsystem('lss',LowSpeedShaftMass(), promotes=['*'])
         self.add_subsystem('bearing',BearingMass(), promotes=['*'])
+        self.add_subsystem('torque',RotorTorque(), promotes=['*'])
         self.add_subsystem('gearbox',GearboxMass(), promotes=['*'])
         self.add_subsystem('hss',HighSpeedSideMass(), promotes=['*'])
         self.add_subsystem('generator',GeneratorMass(), promotes=['*'])
@@ -540,18 +562,12 @@ def mass_example():
     prob['hub_height'] = 90.0
     prob['bearing_number'] = 2
     prob['crane'] = True
-
-    # Rotor force calculations for nacelle inputs
-    maxTipSpd = 80.0
-    maxEfficiency = 0.90
-
-    ratedHubPower  = prob['machine_rating']*1000. / maxEfficiency 
-    rotorSpeed     = (maxTipSpd/(0.5*prob['rotor_diameter'])) * (60.0 / (2*np.pi))
-    prob['rotor_torque'] = ratedHubPower/(rotorSpeed*(np.pi/30))
+    prob['max_tip_speed'] = 80.0
+    prob['max_efficiency'] = 0.90
 
     prob.run_model()
    
-    print("The results for the NREL 5 MW Reference Turbine in an offshore 20 m water depth location are:")
+    print("The MASS results for the NREL 5 MW Reference Turbine in an offshore 20 m water depth location are:")
     #print "Overall turbine mass is {0:.2f} kg".format(trb.turbine.params['turbine_mass'])
     for io in trb._outputs:
         print(io, str(trb._outputs[io]))
@@ -572,18 +588,12 @@ def cost_example():
     prob['hub_height'] = 90.0
     prob['bearing_number'] = 2
     prob['crane'] = True
-
-    # Rotor force calculations for nacelle inputs
-    maxTipSpd = 80.0
-    maxEfficiency = 0.90
-
-    ratedHubPower  = prob['machine_rating']*1000. / maxEfficiency 
-    rotorSpeed     = (maxTipSpd/(0.5*prob['rotor_diameter'])) * (60.0 / (2*np.pi))
-    prob['rotor_torque'] = ratedHubPower/(rotorSpeed*(np.pi/30))
+    prob['max_tip_speed'] = 80.0
+    prob['max_efficiency'] = 0.90
 
     prob.run_model()
 
-    print("The results for the NREL 5 MW Reference Turbine in an offshore 20 m water depth location are:")
+    print("The COST results for the NREL 5 MW Reference Turbine:")
     for io in trb._outputs:
         print(io, str(trb._outputs[io]))
 
