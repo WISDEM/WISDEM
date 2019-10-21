@@ -681,7 +681,7 @@ class TurbineCostAdder2015(ExplicitComponent):
 
 class Outputs2Screen(ExplicitComponent):
     def initialize(self):
-        self.options.declare('verbosity')
+        self.options.declare('verbosity', default=False)
         
     def setup(self):
         
@@ -770,7 +770,7 @@ class Outputs2Screen(ExplicitComponent):
 #-------------------------------------------------------------------------------
 class Turbine_CostsSE_2015(Group):
     def initialize(self):
-        self.options.declare('verbosity')
+        self.options.declare('verbosity', default=False)
         self.options.declare('topLevelFlag', default=True)
 
     def setup(self):
