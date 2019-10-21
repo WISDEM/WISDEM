@@ -100,7 +100,7 @@ class MonopileTurbine(Group):
                                               npts_coarse_power_curve=20,
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,
-                                              regulation_reg_III=False,
+                                              regulation_reg_III=True,
                                               Analysis_Level=Analysis_Level,
                                               FASTpref=self.options['FASTpref'],
                                               topLevelFlag=True,
