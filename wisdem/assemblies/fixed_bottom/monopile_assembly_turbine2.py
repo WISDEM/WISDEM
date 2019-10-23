@@ -200,17 +200,27 @@ class MonopileTurbine(Group):
 def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt = {}):
 
     prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level = Analysis_Level, fst_vt = fst_vt)
-    
-    
+
     # Environmental parameters for the tower
     # prob['wind_reference_speed']           = 11.0
     prob['wind_reference_height']          = prob['hub_height']
+    prob['shearExp']                       = 0.11
+    prob['rho']                            = 1.225
+    prob['mu']                             = 1.7934e-5
+    prob['water_density']                  = 1025.0
+    prob['water_viscosity']                = 1.3351e-3
+    prob['wind_beta'] = prob['wave_beta'] = 0.0
+    prob['significant_wave_height']        = 5.0
+    prob['significant_wave_period']        = 10.0
+    prob['monopile']                       = True
 
     # Steel properties for the tower
     prob['material_density']               = 7850.0
     prob['E']                              = 200e9
     prob['G']                              = 79.3e9
     prob['yield_stress']                   = 3.45e8
+    prob['soil_G']                         = 140e6
+    prob['soil_nu']                        = 0.4
 
     # Design constraints
     prob['max_taper_ratio']                = 0.4
