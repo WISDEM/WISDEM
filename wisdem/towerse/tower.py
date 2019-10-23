@@ -226,7 +226,7 @@ class TowerPreFrame(ExplicitComponent):
         # Prepare for reactions: rigid at tower base
         outputs['kidx'] = np.array([ 0 ], dtype=np.int_)
         if discrete_inputs['monopile']:
-            kmono = discrete_inputs['k_monopile']
+            kmono = inputs['k_monopile']
             outputs['kx']   = np.array([ kmono[0] ]).flatten()
             outputs['ky']   = np.array([ kmono[2] ]).flatten()
             outputs['kz']   = np.array([ kmono[4] ]).flatten()
@@ -630,6 +630,7 @@ class TowerSE(Group):
                 self.connect('wave_beta', 'waveLoads'+lc+'.beta')
                 self.connect('significant_wave_height', 'wave'+lc+'.hmax')
                 self.connect('significant_wave_period', 'wave'+lc+'.T')
+                self.connect('z_full', 'z_floor', src_indices=[0])
                     
                 self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
                 self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
