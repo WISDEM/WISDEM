@@ -144,7 +144,7 @@ class ReferenceBlade(object):
         # Precomp analyis
         self.spar_var        = ['']        # name of composite layer for RotorSE spar cap buckling analysis <---- SS first, then PS
         self.te_var          = ''          # name of composite layer for RotorSE trailing edge buckling analysis
-        self.le_var          = ''          # name of composite layer for RotorSE trailing edge buckling analysis
+        # self.le_var          = ''          # name of composite layer for RotorSE trailing edge buckling analysis
 
         # 
         self.user_update_routine = None    # Optional additional routine, provided by user, to modify the blade geometry at the beginning of update()
@@ -1149,15 +1149,15 @@ class ReferenceBlade(object):
         blade['ctrl_pts']['sparT_in']     = remap2grid(grid_spar, vals_spar, r_in)
         blade['ctrl_pts']['teT_in']       = remap2grid(grid_te, vals_te, r_in)
 
-        if self.le_var.lower() in [sec['name'].lower() for sec in blade['st']['layers']]:
-            idx_le    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.le_var.lower()][0]
-            grid_le   = blade['st']['layers'][idx_le]['thickness']['grid']
-            vals_le   = [0. if val==None else val for val in blade['st']['layers'][idx_le]['thickness']['values']]
-            blade['ctrl_pts']['leT_in']   = remap2grid(grid_le, vals_le, r_in)
-        else:
-            layer_names         = [sec['name'].lower() for sec in blade['st']['layers']]
-            LE_variable_warning = "User supplied LE reinforcement layer variable name: '%s' not found. Section names include: %s" % (self.le_var, ", ".join(layer_names))
-            warnings.warn(LE_variable_warning)
+        # if self.le_var.lower() in [sec['name'].lower() for sec in blade['st']['layers']]:
+        #     idx_le    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.le_var.lower()][0]
+        #     grid_le   = blade['st']['layers'][idx_le]['thickness']['grid']
+        #     vals_le   = [0. if val==None else val for val in blade['st']['layers'][idx_le]['thickness']['values']]
+        #     blade['ctrl_pts']['leT_in']   = remap2grid(grid_le, vals_le, r_in)
+        # else:
+        #     layer_names         = [sec['name'].lower() for sec in blade['st']['layers']]
+        #     LE_variable_warning = "User supplied LE reinforcement layer variable name: '%s' not found. Section names include: %s" % (self.le_var, ", ".join(layer_names))
+        #     warnings.warn(LE_variable_warning)
 
         # Store additional rotorse variables
         blade['ctrl_pts']['r_cylinder']   = r_cylinder
@@ -1209,10 +1209,10 @@ class ReferenceBlade(object):
         blade['st']['layers'][idx_te]['thickness']['grid']   = self.s.tolist()
         blade['st']['layers'][idx_te]['thickness']['values'] = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['teT_in'], self.s).tolist()
 
-        if self.le_var != '' and self.le_var.lower() in [sec['name'].lower() for sec in blade['st']['layers']]:
-            idx_le    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.le_var.lower()][0]
-            blade['st']['layers'][idx_le]['thickness']['grid']   = self.s.tolist()
-            blade['st']['layers'][idx_le]['thickness']['values'] = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['leT_in'], self.s).tolist()
+        # if self.le_var != '' and self.le_var.lower() in [sec['name'].lower() for sec in blade['st']['layers']]:
+        #     idx_le    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.le_var.lower()][0]
+        #     blade['st']['layers'][idx_le]['thickness']['grid']   = self.s.tolist()
+        #     blade['st']['layers'][idx_le]['thickness']['values'] = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['leT_in'], self.s).tolist()
 
 
         # blade['pf']['rthick']   = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['thickness_in'], self.s)
@@ -1350,8 +1350,8 @@ class ReferenceBlade(object):
             blade['precomp'] = {}
 
         region_loc_vars = [self.te_var] + self.spar_var
-        if self.le_var != '':
-            region_loc_vars += [self.le_var]
+        # if self.le_var != '':
+        #     region_loc_vars += [self.le_var]
 
         region_loc_ss = {} # track precomp regions for user selected composite layers
         region_loc_ps = {}
@@ -1549,10 +1549,10 @@ class ReferenceBlade(object):
         blade['precomp']['sector_idx_strain_te_ps']   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.te_var]]
         blade['precomp']['spar_var'] = self.spar_var
         blade['precomp']['te_var']   = self.te_var
-        if self.le_var != '':
-            blade['precomp']['sector_idx_strain_le_ss']   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ss[self.le_var]]
-            blade['precomp']['sector_idx_strain_le_ps']   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.le_var]]
-            blade['precomp']['le_var']   = self.le_var
+        # if self.le_var != '':
+        #     blade['precomp']['sector_idx_strain_le_ss']   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ss[self.le_var]]
+        #     blade['precomp']['sector_idx_strain_le_ps']   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.le_var]]
+        #     blade['precomp']['le_var']   = self.le_var
 
         return blade
 
@@ -1887,8 +1887,7 @@ class ReferenceBlade(object):
 if __name__ == "__main__":
 
     ## File managment
-    # fname_input        = "turbine_inputs/nrel5mw_mod_update.yaml"
-    fname_input        = "/mnt/c/Users/egaertne/WISDEM/nrel15mw/design/turbine_inputs/NREL15MW_opt_v05.yaml"
+    fname_input        = "turbine_inputs/nrel5mw_mod_update.yaml"
     fname_output       = "turbine_inputs/testing_twist.yaml"
     flag_write_out     = False
     flag_write_precomp = False
@@ -1900,7 +1899,7 @@ if __name__ == "__main__":
     refBlade.verbose  = True
     refBlade.spar_var = ['Spar_cap_ss', 'Spar_cap_ps']
     refBlade.te_var   = 'TE_reinforcement'
-    refBlade.le_var   = 'LE_reinforcement'
+    # refBlade.le_var   = 'LE_reinforcement'
     refBlade.NINPUT   = 8
     refBlade.NPTS     = 40
     # refBlade.r_in     = np.linspace(0.,1.,refBlade.NINPUT)

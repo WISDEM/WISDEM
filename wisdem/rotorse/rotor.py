@@ -208,8 +208,8 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     rotor['presweep_in']      = np.array(blade['ctrl_pts']['presweep_in']) # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
     rotor['sparT_in']         = np.array(blade['ctrl_pts']['sparT_in']) # (Array, m): spar cap thickness parameters
     rotor['teT_in']           = np.array(blade['ctrl_pts']['teT_in']) # (Array, m): trailing-edge thickness parameters
-    if 'le_var' in blade['precomp']:
-        rotor['leT_in']       = np.array(blade['ctrl_pts']['leT_in']) # (Array, m): leading-edge thickness parameters
+    # if 'le_var' in blade['precomp']:
+    #     rotor['leT_in']       = np.array(blade['ctrl_pts']['leT_in']) # (Array, m): leading-edge thickness parameters
     rotor['airfoil_position'] = np.array(blade['outer_shape_bem']['airfoil_position']['grid'])
     # ------------------
 
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     refBlade.NPTS         = 50
     refBlade.spar_var     = ['Spar_Cap_SS', 'Spar_Cap_PS'] # SS, then PS
     refBlade.te_var       = 'TE_reinforcement'
-    refBlade.le_var       = 'le_reinf'
+    # refBlade.le_var       = 'le_reinf'
     refBlade.validate     = False
     refBlade.fname_schema = fname_schema
     blade = refBlade.initialize(fname_input)
