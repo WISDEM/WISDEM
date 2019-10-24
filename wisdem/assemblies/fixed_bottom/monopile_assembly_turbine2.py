@@ -216,9 +216,9 @@ def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt =
 
     # Steel properties for the tower
     prob['material_density']               = 7850.0
-    prob['E']                              = 200e9
+    prob['E']                              = 210e9
     prob['G']                              = 79.3e9
-    prob['yield_stress']                   = 3.45e8
+    prob['yield_stress']                   = 345e6
     prob['soil_G']                         = 140e6
     prob['soil_nu']                        = 0.4
 
