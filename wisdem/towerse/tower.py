@@ -426,7 +426,7 @@ class TowerLeanSE(Group):
         self.add_subsystem('cm', CylinderMass(nPoints=nFull), promotes=['material_density','z_full','d_full','t_full',
                                                       'material_cost_rate','labor_cost_rate','painting_cost_rate'])
         self.add_subsystem('tm', TowerMass(nPoints=nFull), promotes=['tower_mass','tower_center_of_mass','tower_I_base','tower_raw_cost'])
-        self.add_subsystem('gc', Util.GeometricConstraints(nPoints=nPoints), promotes=['min_d_to_t','max_taper','manufacturability','weldability'])
+        self.add_subsystem('gc', Util.GeometricConstraints(nPoints=nPoints), promotes=['min_d_to_t','max_taper','manufacturability','weldability','slope'])
         self.add_subsystem('turb', TurbineMass(), promotes=['turbine_mass','rna_mass', 'rna_cg', 'rna_I','hub_height'])
         
         # Connections for geometry and mass
