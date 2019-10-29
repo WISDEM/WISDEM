@@ -889,8 +889,8 @@ class TipDeflection(ExplicitComponent):
         tilt          = inputs['tilt']
         totalConeTip  = inputs['totalConeTip']
         dynamicFactor = inputs['dynamicFactor']
-        precurve      = inputs['precurveTip']
-        presweep      = inputs['presweepTip']
+        precurveTip   = inputs['precurveTip']
+        presweepTip   = inputs['presweepTip']
         rtip          = inputs['Rtip']
         upwind        = not discrete_inputs['downwind']
 
@@ -905,8 +905,9 @@ class TipDeflection(ExplicitComponent):
 
         # coordinates of blade tip in yaw c.s.
         # TODO: Combine intelligently with other Direction Vector
-        dR = DirectionVector(precurve, presweep, rtip)
+        dR = DirectionVector(precurveTip, presweepTip, rtip)
         blade_yaw = dR.bladeToAzimuth(totalConeTip).azimuthToHub(azimuth).hubToYaw(tilt)
+        
 
         # find corresponding radius of tower
         coeff = 1.0 if upwind else -1.0

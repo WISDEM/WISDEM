@@ -76,7 +76,9 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_input('yaw',       val=0.0,             units='deg', desc='yaw error', )
         self.add_input('precurve',      val=np.zeros(naero),    units='m', desc='precurve at each section')
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
-
+        self.add_input('presweep',      val=np.zeros(naero),    units='m', desc='presweep at each section')
+        self.add_input('presweepTip',   val=0.0,                units='m', desc='presweep at tip')
+        
         # self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
         self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
@@ -130,7 +132,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
             af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
         
 
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], -inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
         
         Uhub     = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.options['n_pc']).flatten()
         
@@ -155,6 +157,9 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         
         # self.ccblade.induction = True
         P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = self.ccblade.evaluate(Uhub, Omega * 30. / np.pi, pitch, coefficients=True)
+        
+        print(Cp_aero)
+        # exit()
         
         # print(self.ccblade.a)
         # import matplotlib.pyplot as plt
@@ -386,8 +391,8 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
         self.options.declare('naero')
-        self.options.declare('n_pitch', default=2)
-        self.options.declare('n_tsr', default=2)
+        self.options.declare('n_pitch', default=20)
+        self.options.declare('n_tsr', default=20)
         self.options.declare('n_U', default=1)
         self.options.declare('n_aoa_grid')
         self.options.declare('n_Re_grid')
