@@ -237,9 +237,6 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     rotor['pitch_extreme']    = 0.0  # (Float, deg): worst-case pitch at survival wind condition
     rotor['azimuth_extreme']  = 0.0  # (Float, deg): worst-case azimuth at survival wind condition
     rotor['VfactorPC']        = 0.7  # (Float): fraction of rated speed at which the deflection is assumed to representative throughout the power curve calculation
-    
-    
-    
     # ----------------------
 
     # === aero and structural analysis options ===
@@ -249,6 +246,10 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     rotor['dynamic_amplification'] = 1.  # (Float): a dynamic amplification factor to adjust the static structural loads
     # ----------------------
 
+    # === no stall constraint ===
+    rotor['nostallconstraint.min_s']        = 0.25  # The stall constraint is only computed from this value (nondimensional coordinate along blade span) to blade tip
+    rotor['nostallconstraint.stall_margin'] = 3.0   # Values in deg of stall margin
+    # ----------------------
 
     # === fatigue ===
     r_aero = np.array([0.02222276, 0.06666667, 0.11111057, 0.2, 0.23333333, 0.3, 0.36666667, 0.43333333,

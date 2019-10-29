@@ -24,6 +24,7 @@ from wisdem.commonse.akima import Akima
 from wisdem.rotorse import RPM2RS, RS2RPM
 from wisdem.rotorse.rotor_geometry import RotorGeometry
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
+from wisdem.rotorse.rotor_fast import eval_unsteady
 
 import time
 # ---------------------
@@ -174,7 +175,6 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         
         P, eff  = CSMDrivetrain(P_aero, inputs['control_ratedPower'], discrete_inputs['drivetrainType'], inputs['drivetrainEff'])
         Cp      = Cp_aero*eff
-        
         
         # search for Region 2.5 bounds
         for i in range(len(Uhub)):
@@ -485,6 +485,51 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
                 _, _, _, _, outputs['Cp_aero_table'][j,:,i], outputs['Ct_aero_table'][j,:,i], outputs['Cq_aero_table'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
 
 
+# Class to define a constraint so that the blade cannot operate in stall conditions
+class NoStallConstraint(ExplicitComponent):
+    def initialize(self):
+        
+        self.options.declare('RefBlade')
+        self.options.declare('verbosity', default = False)
+    
+    def setup(self):
+        RefBlade    = self.options['RefBlade']
+        NPTS        = len(RefBlade['pf']['s'])
+        n_aoa_grid  = len(RefBlade['airfoils_aoa'])
+        n_Re_grid   = len(RefBlade['airfoils_Re'])
+        
+        self.add_input('stall_angle_along_span', val=np.zeros(NPTS), units = 'deg', desc = 'Stall angle along blade span')
+        self.add_input('aoa_along_span',         val=np.zeros(NPTS), units = 'deg', desc = 'Angle of attack along blade span')
+        self.add_input('stall_margin',           val=0.0,            units = 'deg', desc = 'Minimum margin from the stall angle')
+        self.add_input('min_s',                  val=0.0,            desc = 'Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)')
+        self.add_input('airfoils_cl',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa',      val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
+        
+        self.add_output('no_stall_constraint',   val=np.zeros(NPTS), desc = 'Constraint, ratio between angle of attack plus a margin and stall angle')
+
+    def compute(self, inputs, outputs):
+        
+        verbosity = self.options['verbosity']
+        RefBlade  = self.options['RefBlade']
+        
+        i_min = np.argmin(abs(inputs['min_s'] - RefBlade['pf']['s']))
+        
+        for i in range(len(RefBlade['pf']['s'])):
+            unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][:,i,0], inputs['airfoils_cd'][:,i,0], inputs['airfoils_cm'][:,i,0])
+            inputs['stall_angle_along_span'][i] = unsteady['alpha1']
+            if inputs['stall_angle_along_span'][i] == 0:
+                inputs['stall_angle_along_span'][i] = 1e-6 # To avoid nan
+        
+        for i in range(i_min, len(RefBlade['pf']['s'])):
+            outputs['no_stall_constraint'][i] = (inputs['aoa_along_span'][i] + inputs['stall_margin']) / inputs['stall_angle_along_span'][i]
+        
+            if verbosity == True:
+                if outputs['no_stall_constraint'][i] > 1:
+                    print('Blade is stalling at span location %.2f %%' % (RefBlade['pf']['s'][i]*100.))
+
+
 class AEP(ExplicitComponent):
     def initialize(self):
         self.options.declare('n_pc_spline')
@@ -676,7 +721,8 @@ class RotorAeroPower(Group):
 
         if flag_Cp_Ct_Cq_Tables:
             self.add_subsystem('cpctcq_tables',   Cp_Ct_Cq_Tables(naero=NPTS,n_aoa_grid=NAFgrid,n_Re_grid=NRe), promotes=['*'])
-
+        
+        self.add_subsystem('nostallconstraint', NoStallConstraint(RefBlade = RefBlade, verbosity = False), promotes=['airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','no_stall_constraint'])
         self.add_subsystem('wind', PowerWind(nPoints=1), promotes=['shearExp'])
         self.add_subsystem('cdf', WeibullWithMeanCDF(nspline=npts_spline_power_curve))
         #self.add_subsystem('cdf', RayleighCDF(nspline=npts_spline_power_curve))
@@ -685,6 +731,9 @@ class RotorAeroPower(Group):
         self.add_subsystem('outputs_aero', OutputsAero(npts_coarse_power_curve=npts_coarse_power_curve), promotes=['*'])
 
         self.connect('machine_rating',  'control_ratedPower')
+        
+        # connections to nostallconstraint
+        self.connect('aoa_cutin','nostallconstraint.aoa_along_span')
         
         # connections to wind
         if topLevelFlag:
@@ -746,7 +795,12 @@ def Init_RotorAeropower_wRefBlade(rotor, blade):
     rotor['control_tsr']      = blade['config']['tsr'] #7.55  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
     rotor['control_pitch']    = blade['config']['pitch'] #0.0  # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
     # ----------------------
-
+    
+    # === no stall constraint ===
+    rotor['nostallconstraint.min_s']        = 0.25  # The stall constraint is only computed from this value (nondimensional coordinate along blade span) to blade tip
+    rotor['nostallconstraint.stall_margin'] = 3.0   # Values in deg of stall margin
+    # ----------------------
+    
     # === aero and structural analysis options ===
     rotor['nSector'] = 4  # (Int): number of sectors to divide rotor face into in computing thrust and power
     rotor['AEP_loss_factor'] = 1.0  # (Float): availability and other losses (soiling, array, etc.)
