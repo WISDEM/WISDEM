@@ -19,7 +19,7 @@ Next, the rated speed must be determined.  This is done using an internal 1D roo
 
 A typical power curve for a variable-speed, variable-pitch turbine is shown below. Region 1 has no power generation as it occurs below the cut-in speed. In Region 2, variable-speed turbines operate at the specified tip-speed ratio until either rated power or the maximum rotation speed is reached. If the maximum rotor speed is reached, a Region 2.5 handles the transition intro Region 3.  Blade pitch is varied in Region 3 so that rated power is maintained in Region 3.
 
-.. figure:: images/rotorse/pc.*
+.. figure:: images/rotorse/power_curve_dtu10mw.*
     :width: 3.5in
     :align: center
 

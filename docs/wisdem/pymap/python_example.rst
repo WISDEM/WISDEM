@@ -9,7 +9,7 @@ This example will be run against the :ref:`baseline input file <baseline_example
 The water depth is :math:`350` meters. 
 The space preceeding the ``repeat 120 240`` solver option flag is removed to enable duplication of the mooring geometry twice with :math:`120^\circ` and :math:`240^\circ` offsets about the :math:`Z` axis. 
 
-.. literalinclude:: ../../python_driver/sphinx_example.py
+.. literalinclude:: /examples/pymap/sphinx_example.py
    :language: python
 
 Output
@@ -69,7 +69,7 @@ A figure is also produced to show the mooring geometry with a :math:`5` meter ve
 Time-Marching for Dynamics Simulation
 -------------------------------------
 
-.. literalinclude:: ../../python_driver/driver.py
+.. literalinclude:: /examples/pymap/driver.py
 
 Output
 ~~~~~~

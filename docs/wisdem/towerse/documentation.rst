@@ -7,7 +7,7 @@ Documentation
 
 The following inputs and outputs are defined for TowerSE:
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: TowerSE(Assembly)
     :end-before: def configure(self)

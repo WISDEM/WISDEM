@@ -24,28 +24,28 @@ Rotor Aerodynamics
 
 This example is available at :mod:`rotorse.examples.rotorse_example1` or can be viewed as an interactive Jupyter notebook _____.  The first step is to import the relevant files.
 
-.. literalinclude:: ../src/examples/rotorse_example1.py
+.. literalinclude:: /examples/rotorse/rotorse_example1.py
     :language: python
     :start-after: # --- Import Modules
     :end-before: # ---
 
 When setting up our Problem, a rotor design that is an implimentation of :mod:`ReferenceBlade`, is used to initialize the Group.  Two reference turbine designs are included as examples in :mod:`rotorse.rotor_geometry`, the :mod:`NREL5MW` and the :mod:`DTU10MW`.  For this tutorial, we will be working with the DTU 10 MW.
 
-.. literalinclude:: ../src/examples/rotorse_example1.py
+.. literalinclude:: /examples/rotorse/rotorse_example1.py
     :language: python
     :start-after: # --- Init Problem
     :end-before: # ---
 
 A number of input variablers covering the blade geometry, atmospheric conditions, and controls system must be set by the use.  While the reference blade design provides this information, it must be again set at the Problem level.  This provides flexibility for modifications by the user or by an optimizer.  The user can choose to use the default values
 
-.. literalinclude:: ../src/examples/rotorse_example1.py
+.. literalinclude:: /examples/rotorse/rotorse_example1.py
     :language: python
     :start-after: # --- default inputs
     :end-before: # ---
 
 Or set their own values.  First, the geometry is defined.  Spanwise blade variables such as chord and twist are definied using control points, which :class:`BladeGeometry` uses to generate the spanwise distribution using Akima splines according to :num:`Figures #chord-param-fig` and :num:`#twist-param-fig`.
 
-.. literalinclude:: ../src/examples/rotorse_example1b.py
+.. literalinclude:: /examples/rotorse/rotorse_example1b.py
     :language: python
     :start-after: # === blade grid ===
     :end-before: # ---
@@ -68,28 +68,28 @@ Or set their own values.  First, the geometry is defined.  Spanwise blade variab
 
 Atmospheric properties are defined.  The wind speed distribution parameters are determined based on the wind turbine class.
 
-.. literalinclude:: ../src/examples/rotorse_example1b.py
+.. literalinclude:: /examples/rotorse/rotorse_example1b.py
     :language: python
     :start-after: # === atmosphere ===
     :end-before: # ---
 
 The relevant control parameters are set
 
-.. literalinclude:: ../src/examples/rotorse_example1b.py
+.. literalinclude:: /examples/rotorse/rotorse_example1b.py
     :language: python
     :start-after: # === control ===
     :end-before: # ---
 
 Finally, a few configuation parameters are set.  The the following drivetrain types are supported: 'geared', 'single_stage', 'multi_drive', or 'pm_direct_drive'.
 
-.. literalinclude:: ../src/examples/rotorse_example1b.py
+.. literalinclude:: /examples/rotorse/rotorse_example1b.py
     :language: python
     :start-after: # === aero and structural analysis options ===
     :end-before: # ---
 
 We can now run the analysis, print the outputs, and plot the power curve.
 
-.. literalinclude:: ../src/examples/rotorse_example1.py
+.. literalinclude:: /examples/rotorse/rotorse_example1.py
     :language: python
     :start-after: # === run and outputs ===
     :end-before: # ---
@@ -115,49 +115,49 @@ Rotor Aerodynamics Optimization
 
 This section describes a simple optimization continuing off of the same setup as the previous section.  This example is available at :mod:`rotorse.examples.rotorse_example2` or can be viewed as an interactive Jupyter notebook _____.  First, we import relevant modules and initialize the problem.
 
-.. literalinclude:: ../src/examples/rotorse_example2.py
+.. literalinclude:: /examples/rotorse/rotorse_example2.py
     :language: python
     :start-after: # --- Import Modules
     :end-before: # ---
 
 The optimizer must be selected and configured, in this example I choose SLSQP.
 
-.. literalinclude:: ../src/examples/rotorse_example2.py
+.. literalinclude:: /examples/rotorse/rotorse_example2.py
     :language: python
     :start-after: # --- Optimizer
     :end-before: # ---
 
 We now set the objective, and in this example it is normalized by the starting AEP for better convergence behavior.
 
-.. literalinclude:: ../src/examples/rotorse_example2.py
+.. literalinclude:: /examples/rotorse/rotorse_example2.py
     :language: python
     :start-after: # --- Objective
     :end-before: # ---
 
 The rotor chord, twist, and tip-speed ratio in Region 2 are added as design variables.
 
-.. literalinclude:: ../src/examples/rotorse_example2.py
+.. literalinclude:: /examples/rotorse/rotorse_example2.py
     :language: python
     :start-after: # --- Design Variables
     :end-before: # ---
 
 A recorder is added to display each iteration to the screen.
 
-.. literalinclude:: ../src/examples/rotorse_example2.py
+.. literalinclude:: /examples/rotorse/rotorse_example2.py
     :language: python
     :start-after: # --- Recorder
     :end-before: # ---
 
 Input variables must be set, see previous example.
 
-.. literalinclude:: ../src/examples/rotorse_example2.py
+.. literalinclude:: /examples/rotorse/rotorse_example2.py
     :language: python
     :start-after: # --- Setup
     :end-before: # ---
 
 Running the optimization (may take several minutes) yields a new design with a 4.83% percent increase in AEP.
 
-.. literalinclude:: ../src/examples/rotorse_example2.py
+.. literalinclude:: /examples/rotorse/rotorse_example2.py
     :language: python
     :start-after: # --- run and outputs
     :end-before: # ---
@@ -194,56 +194,56 @@ Rotor Aero/Structures
 
 This examples includes both aerodynamic and structural analysis.  It is available at :mod:`rotorse.examples.rotorse_example3` or can be viewed as an interactive Jupyter notebook _____.  In this case, they are not fully coupled.  The aerodynamic loads feed into the structural analysis, but there is no feedback from the structural deflections.  We first import the modules we will use and instantiate the objects.
 
-.. literalinclude:: ../src/examples/rotorse_example3.py
+.. literalinclude:: /examples/rotorse/rotorse_example3.py
     :language: python
     :start-after: # --- Import Modules
     :end-before: # ---
 
 Initial grids are set.  From these definitions only changes to the aerodynamic grid needs to be specified (through ``r_aero`` in the next section) and the locations along the aerodynamic and structural grids will be kept in sync.
 
-.. literalinclude:: ../src/examples/rotorse_example3.py
+.. literalinclude:: /examples/rotorse/rotorse_example3.py
     :language: python
     :start-after: # === blade grid ===
     :end-before: # ---
 
 Next, geometric parameters are defined.
 
-.. literalinclude:: ../src/examples/rotorse_example3.py
+.. literalinclude:: /examples/rotorse/rotorse_example3.py
     :language: python
     :start-after: # === blade geometry ===
     :end-before: # ---
 
 The atmospheric data also includes defining the IEC turbine and turbulence class, which are used to compute the average wind speed for the site and the survival wind speed.
 
-.. literalinclude:: ../src/examples/rotorse_example3.py
+.. literalinclude:: /examples/rotorse/rotorse_example3.py
     :language: python
     :start-after: # === atmosphere
     :end-before: # ---
 
 Parameters are defined for the steady-state control conditions.
 
-.. literalinclude:: ../src/examples/rotorse_example3.py
+.. literalinclude:: /examples/rotorse/rotorse_example3.py
     :language: python
     :start-after: # === control
     :end-before: # ---
 
 Various optional parameters for the analysis can be defined.
 
-.. literalinclude:: ../src/examples/rotorse_example3.py
+.. literalinclude:: /examples/rotorse/rotorse_example3.py
     :language: python
     :start-after: # === aero and structural analysis options
     :end-before: # ---
 
 A simplistic fatigue analysis can be done if damage equivalent moments are supplied.
 
-.. literalinclude:: ../src/examples/rotorse_example3.py
+.. literalinclude:: /examples/rotorse/rotorse_example3.py
     :language: python
     :start-after: # === fatigue
     :end-before: # ---
 
 Finally, we run the assembly and print/plot some of the outputs.  :num:`Figures #strain-spar-fig` and :num:`#strain-te-fig` show the strian distributions for the suction and pressure surface, as well as the critical strain load for buckling, in both the spar caps and trailing-edge panels.
 
-.. literalinclude:: ../src/examples/rotorse_example3.py
+.. literalinclude:: /examples/rotorse/rotorse_example3.py
     :language: python
     :start-after: # === run and outputs
     :end-before: # ---

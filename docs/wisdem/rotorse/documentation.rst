@@ -5,7 +5,7 @@ Documentation
 
 The following inputs and outputs are defined for RotorSE:
 
-.. literalinclude:: ../src/rotor.py
+.. literalinclude:: ../../../wisdem/rotorse/rotor.py
     :language: python
     :start-after: """rotor model"""
     :end-before: # --- Rotor Aero & Power ---

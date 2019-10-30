@@ -10,7 +10,7 @@ Documentation for NREL_CSM_FIN
 
 The following inputs and outputs are defined for NREL_CSM_FIN:
 
-.. literalinclude:: ../src/plant_financese/nrel_csm_fin/nrel_csm_fin.py
+.. literalinclude:: ../../../wisdem/plant_financese/nrel_csm_fin/nrel_csm_fin.py
     :language: python
     :start-after: fin_csm_assembly(Assembly)
     :end-before: def configure(self)
@@ -31,7 +31,7 @@ Documentation for Basic_Finance
 
 The following inputs and outputs are defined for Basic_Finance:
 
-.. literalinclude:: ../src/plant_financese/basic_finance/basic_finance.py
+.. literalinclude:: ../../../wisdem/plant_financese/basic_finance/basic_finance.py
     :language: python
     :start-after: fin_cst_assembly(Assembly)
     :end-before: def configure(self)

@@ -36,7 +36,7 @@ is represented as an openMDAO ``VariableTree`` object, is described in :mod:`Aer
 The following code, found at the bottom of :mod:`runFAST.py`, illustrates to basic process of running FAST via
 the template based approach of :mod:`runFAST.py`.  
 
-.. literalinclude:: ../src/AeroelasticSE/runFAST.py
+.. literalinclude:: ../../../wisdem/aeroelasticse/runFAST.py
     :start-after: def example
     :end-before: def turbsim_example
 
@@ -66,7 +66,7 @@ running TurbSim one time
 
 There is a similar example for TurbSim in :mod:`TurbSim.py`:
 
-.. literalinclude:: ../src/AeroelasticSE/runTurbSim.py
+.. literalinclude:: ../../../wisdem/aeroelasticse/runTurbSim.py
     :start-after: if __name__==
 
 Again note, the user is required to specify
@@ -81,7 +81,7 @@ running FusedFAST
 turbine code.  The ``FusedFAST`` object translates these to a form required by ``FAST`` and then runs
 ``FAST``.
 
-.. literalinclude:: ../src/AeroelasticSE/FusedFAST.py
+.. literalinclude:: ../../../wisdem/aeroelasticse/FusedFAST.py
     :start-after: def openFAST_test
 
 running FAST_component
@@ -91,7 +91,7 @@ The ``FAST_component`` presents ``runFAST`` as an openMDAO ``Component``.
 It forms a base class for FAST wrappers that utilize the openMDAO input and output
 conventions, while still utilizing a template input file-based approach to FAST. 
 
-.. literalinclude:: ../src/AeroelasticSE/FAST_component.py
+.. literalinclude:: ../../../wisdem/aeroelasticse/FAST_component.py
     :start-after: def FAST_component_test
     :end-before: end FAST_component_test
 
@@ -102,7 +102,7 @@ running FAST_iter_component
 The ``FAST_iter_component`` allows FAST to be run multiple times  (e.g. for making a power curve)
 in a very simple manner.
 
-.. literalinclude:: ../src/AeroelasticSE/FAST_component.py
+.. literalinclude:: ../../../wisdem/aeroelasticse/FAST_component.py
     :start-after: def FAST_iter_component_test
     :end-before: end FAST_iter_component_test
 
@@ -161,11 +161,11 @@ Hopefully you will see FAST running many times, resulting in stdout like::
     RUNS ARE DONE:
     collecting output from copied-back files (not from case recorder), see runbatch.out
     processing case <fusedwind.runSuite.runCase.GenericRunCase object at 0x103e1af50>
-    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-1.0Hs.1.6Vhu.10.0Tp.11.4Pro.0.0
-    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-0.9Hs.0.9Vhu.10.2Tp.8.4Pro.0.0
-    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-0.4Hs.1.8Vhu.10.0Tp.11.4Pro.0.0
-    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.0.0Hs.1.5Vhu.8.9Tp.13.7Pro.0.0
-    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/src/AeroelasticSE/all_runs/raw_casesAna.3.0Wav.-1.7Hs.1.3Vhu.9.1Tp.10.9Pro.0.0
+    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/wisdem/aeroelasticse/all_runs/raw_casesAna.3.0Wav.-1.0Hs.1.6Vhu.10.0Tp.11.4Pro.0.0
+    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/wisdem/aeroelasticse/all_runs/raw_casesAna.3.0Wav.-0.9Hs.0.9Vhu.10.2Tp.8.4Pro.0.0
+    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/wisdem/aeroelasticse/all_runs/raw_casesAna.3.0Wav.-0.4Hs.1.8Vhu.10.0Tp.11.4Pro.0.0
+    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/wisdem/aeroelasticse/all_runs/raw_casesAna.3.0Wav.0.0Hs.1.5Vhu.8.9Tp.13.7Pro.0.0
+    collecting from  /Users/pgraf/work/wese/AeroelasticSE-1_3_14/wisdem/aeroelasticse/all_runs/raw_casesAna.3.0Wav.-1.7Hs.1.3Vhu.9.1Tp.10.9Pro.0.0
 
 and a file ``runbatch.out`` with the output in the form of a space separated text file table.
 
@@ -176,19 +176,19 @@ running FSTVT_runner
 An example use of the variable tree version of the FAST aeroelastic code wrapper is provided in FSTVT_runner.py.  The code sets up a FAST variable tree from a set of template files for the NREL 5 MW fast turbine; it then updates the environmental variables for wind conditions and runs through cases for those conditions.  First we import the necessary files and set up our case FAST case iterator class.
 
 
-.. literalinclude:: ../src/AeroelasticSE/FAST_VT/FSTVT_runner.py
+.. literalinclude:: ../../../wisdem/aeroelasticse/FAST_VT/FSTVT_runner.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
 Then we create the cases from FUSED-Wind for the environmental conditions of interest.
 
-.. literalinclude:: ../src/AeroelasticSE/FAST_VT/FSTVT_runner.py
+.. literalinclude:: ../../../wisdem/aeroelasticse/FAST_VT/FSTVT_runner.py
     :start-after: # 2 ---
     :end-before: # 2 ---
 
 We then run those cases.
 
 
-.. literalinclude:: ../src/AeroelasticSE/FAST_VT/FSTVT_runner.py
+.. literalinclude:: ../../../wisdem/aeroelasticse/FAST_VT/FSTVT_runner.py
     :start-after: # 3 ---
     :end-before: # 3 ---

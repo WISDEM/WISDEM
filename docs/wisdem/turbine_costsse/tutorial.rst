@@ -13,34 +13,34 @@ As an example of Turbine_CostsSE, let us simulate using masses for major wind tu
 
 The first step is to import the relevant files and set up the component.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
 The turbine cost model relies on the mass inputs of all major turbine components.  These filter down to the individual component models through the rotor, nacelle and tower.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 2 ---
     :end-before: # 2 ---
 
 
 Next, we need to set additional inputs to the model.  The blade number must be known to get the total cost for the blade set; the advanced Boolean for the blade must be set to select which mass-cost curve for the blade to use (normal or advanced blade).  We set this to advanced to be in line with the FAST 5 MW reference model.  The machine rating and boolean flags for onboard crane and offshore project must also be set.  These are used in the determination of costs for auxiliary system components.  Finally, the drivetrain configuration is specified so that the proper gearbox and generator coefficients will be used.  This should always be set to 1 for the current model.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
 
 We can now evaluate the cost for the turbine and its components.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 4 ---
     :end-before: # 4 ---
 
 
 We then print out the resulting cost values:
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 5 ---
     :end-before: # 5 ---
 
@@ -77,34 +77,34 @@ As an example of NREL_CSM_TCC, let us simulate using the key turbine configurati
 
 The first step is to again import the relevant files and set up the component.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 6 ---
     :end-before: # 6 ---
 
 The turbine cost model relies on the key turbine configuration parameters.  These filter down to the individual component models through the rotor, nacelle and tower.  The blade number must be known to get the total cost for the blade set; the advanced Boolean for the blade must be set to select which mass-cost curve for the blade to use (normal or advanced blade).  We set this to advanced to be in line with the FAST 5 MW reference model.  The machine rating and boolean flags for onboard crane and offshore project must also be set.  These are used in the determination of costs for auxiliary system components.  The drivetrain configuration is specified so that the proper gearbox and generator coefficients will be used, an onboard crane is selected for the turbine, a basic/modular bedplate, and finally the baseline tower design.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 7 ---
     :end-before: # 7 ---
 
 
 Next, we need to set additional inputs to the model to estimate the rotor forces on the nacelle.  These can be specified directly if the rotor thrust and rotor torque are known.  
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 8 ---
     :end-before: # 8 ---
 
 
 We can now evaluate the cost for the turbine and its components.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 9 ---
     :end-before: # 9 ---
 
 
 We then print out the resulting cost values:
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 10 ---
     :end-before: # 10 ---
 
@@ -123,34 +123,34 @@ As an example of Turbine_CostsSE_2015, let us simulate using masses for major wi
 
 The first step is to import the relevant files and set up the component.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 11 ---
     :end-before: # 11 ---
 
 The turbine cost model relies on the mass inputs of all major turbine components.  These filter down to the individual component models through the rotor, nacelle and tower.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 12 ---
     :end-before: # 12 ---
 
 
 Next, we need to set additional inputs to the model.  The blade number must be known to get the total cost for the blade set; the advanced Boolean for the blade must be set to select which mass-cost curve for the blade to use (normal or advanced blade).  We set this to advanced to be in line with the FAST 5 MW reference model.  The machine rating and boolean flags for onboard crane and offshore project must also be set.  These are used in the determination of costs for auxiliary system components.  Finally, the drivetrain configuration is specified so that the proper gearbox and generator coefficients will be used.  This should always be set to 1 for the current model.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 13 ---
     :end-before: # 13 ---
 
 
 We can now evaluate the cost for the turbine and its components.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 14 ---
     :end-before: # 14 ---
 
 
 We then print out the resulting cost values:
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 15 ---
     :end-before: # 15 ---
 
@@ -188,34 +188,34 @@ As an example of NREL_CSM_TCC_2015, let us simulate using the key turbine config
 
 The first step is to again import the relevant files and set up the component.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 16 ---
     :end-before: # 16 ---
 
 The turbine cost model relies on the key turbine configuration parameters.  These filter down to the individual component models through the rotor, nacelle and tower.  The blade number must be known to get the total cost for the blade set; the advanced Boolean for the blade must be set to select which mass-cost curve for the blade to use (normal or advanced blade).  We set this to advanced to be in line with the FAST 5 MW reference model.  The machine rating and boolean flags for onboard crane and offshore project must also be set.  These are used in the determination of costs for auxiliary system components.  The drivetrain configuration is specified so that the proper gearbox and generator coefficients will be used, an onboard crane is selected for the turbine, a basic/modular bedplate, and finally the baseline tower design.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 17 ---
     :end-before: # 17 ---
 
 
 Next, we need to set additional inputs to the model to estimate the rotor forces on the nacelle.  These can be specified directly if the rotor thrust and rotor torque are known.  
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 18 ---
     :end-before: # 18 ---
 
 
 We can now evaluate the cost for the turbine and its components.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 19 ---
     :end-before: # 19 ---
 
 
 We then print out the resulting cost values:
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/turbine_costsse/example.py
     :start-after: # 20 ---
     :end-before: # 20 ---
 

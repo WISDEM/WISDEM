@@ -59,7 +59,7 @@ The straightforward way to fix this is to change :math:`\omega` tolerance levels
 The default tolerance levels are omega :math:`\omega< 1.0` for a warning, and omega :math:`\omega<10^{-3}` for fatal. 
 In some cases, this is unavoidable and a different mooring program is needed. 
 
-.. literalinclude:: ../../src/mapinit.c
+.. literalinclude:: ../../../wisdem/pymap/src/mapinit.c
    :language: c
    :start-after: library_iter->a = area;
    :end-before: end read

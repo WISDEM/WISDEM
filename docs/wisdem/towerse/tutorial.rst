@@ -20,7 +20,7 @@ In this case we are using :class:`PowerWind`, which defines a power-profile for 
 
 Tor tower1 and tower2, the module uses the frame finite element code `Frame3DD <http://frame3dd.sourceforge.net/>`_.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- tower setup
     :end-before: # ---
@@ -35,7 +35,7 @@ With the tower configuration setup, we define some of the geometric parameters. 
 
     Example of tower geometric parameterization.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- geometry
     :end-before: # ---
@@ -43,17 +43,17 @@ With the tower configuration setup, we define some of the geometric parameters. 
 
 We now define the mass properties for the rotor-nacelle-assembly.  The center of mass locations are defined relative to the tower top in the yaw-aligned coordinate system.  Blade and hub moments of inertia should be defined about the hub center, nacelle moments of inertia are defined about the center of mass of the nacelle.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- blades
     :end-before: # ---
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- hub
     :end-before: # ---
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- nacelle
     :end-before: # ---
@@ -61,53 +61,53 @@ We now define the mass properties for the rotor-nacelle-assembly.  The center of
 Environmental properties are defined below, note that the parameters that need to be defined depend on which modules were loaded.  For the power-law wind profile, the only parameter needed is the shear exponent.  For the soil, shear and modulus properties for the soil can be defined, but in this example we assume that all directions are rigid (3 translation and 3 rotation).  In addition, some geometric parameters for the wind profile's extend must be defined, the base (or no-slip location) at `z0`, and the height at which a reference velocity will be defined.
 
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- wind
     :end-before: # ---
 
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- soil
     :end-before: # ---
 
 As mentioned earlier, we are allowing for two separate loading cases.  The wind speed, and rotor force/moments for those two cases are now defined.  The wind speed location corresponds to the reference height defined previously as `wind_zref`.  In this simple case, we include only thrust and torque, but in general all 3 components of force and moments can be defined in the hub-aligned coordinate system.  The assembly automatically handles translating the forces and moments defined at the rotor to the tower top.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- loading case 1
     :end-before: # ---
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- loading case 2
     :end-before: # ---
 
 Safety factors for loading, material, consequence of failure, and buckling are defined
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- safety factors
     :end-before: # ---
 
 A simplified fatigue analysis is available for the tower.  This requires running an aeroelastic code, like FAST, before hand and inputing the damage equivalent moments.  The locations of the moments are given on a nondimensional tower.  A safety factor, lifetime (in years), and slope of the S-N curve can be defined.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- fatigue
     :end-before: # ---
 
 Finally, some additional parameters used for constraints can be defined.  These include the minimum allowable taper ratio of the tower (from base to top), and the minimum diameter-to-thickness ratio allowed at any section.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- constraints
     :end-before: # ---
 
 In the folllowing specification, we used the default values for wind density and viscosity, material properties (for steel), and acceleration of gravity.  By examining, :class:`TowerSE` the user can see all possible parameters and their defaults.  We can now run the assembly and display some of the outputs.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- run
     :end-before: # ---
@@ -138,49 +138,49 @@ Land-Based Tower Optimization
 
 We begin with the same setup as the previous section, but now import additional modules for optimization.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- optimizer imports
     :end-before: # ---
 
 The optimizer must first be selected and configured, in this example I use SNOPT.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- Setup Pptimizer
     :end-before: # ---
 
 We now set the objective, and in this example it is normalized to be of order 1 for better convergence behavior.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- Objective
     :end-before: # ---
 
 The tower diameters, thickness, and waist location are added as design variables.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- Design Variables
     :end-before: # ---
 
 A recorder is added to display each iteration to the screen.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- recorder
     :end-before: # ---
 
 Finally, constraints are added.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- Constraints
     :end-before: # ---
 
 Now the optimization can be run.
 
-.. literalinclude:: ../src/towerse/tower.py
+.. literalinclude:: ../../../wisdem/towerse/tower.py
     :language: python
     :start-after: # --- run opt
     :end-before: # ---

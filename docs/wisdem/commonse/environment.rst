@@ -10,7 +10,7 @@ Wind
 
 All wind models currently inherit from :class:`WindBase`:
 
-.. literalinclude:: ../src/commonse/environment.py
+.. literalinclude:: ../../../wisdem/commonse/environment.py
     :language: python
     :start-after: WindBase(Component)
     :end-before: missing_deriv
@@ -37,7 +37,7 @@ Wave
 
 All wind models currently inherit from :class:`WaveBase`:
 
-.. literalinclude:: ../src/commonse/environment.py
+.. literalinclude:: ../../../wisdem/commonse/environment.py
     :language: python
     :start-after: WaveBase(Component)
     :end-before: missing_deriv
@@ -69,7 +69,7 @@ Soil
 
 All wind models currently inherit from :class:`SoilBase`:
 
-.. literalinclude:: ../src/commonse/environment.py
+.. literalinclude:: ../../../wisdem/commonse/environment.py
     :language: python
     :start-after: SoilBase(Component)
     :end-before: missing_deriv

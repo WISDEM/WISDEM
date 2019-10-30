@@ -7,7 +7,7 @@
 Documentation
 -------------
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: JacketSE(Assembly)
     :end-before: def configure(self)

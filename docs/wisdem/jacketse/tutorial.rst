@@ -23,21 +23,21 @@ The structure looks as shown in Figure :ref:`jacketTut-fig` :
 
 First, we set up the jacket geometry parameters:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #--- Set Jacket Input Parameters ---#
     :end-before: #Soil inputs
 
 Then we set up various component inputs. Start with the soil stratigraphy:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Soil inputs
     :end-before: #Water and wind inputs
 
 Then assign water and wind environmental parameters:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Water and wind inputs
     :end-before: ## if turbine_jacket
@@ -48,91 +48,91 @@ We will follow a bottom up approach, where the definitions are offered from the 
 
 Start with the piles:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Pile data
     :end-before: #Legs data
 
 Then continue with the main legs:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Legs data
     :end-before: #Xbrc data
 
 Then move on to the X-braces:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Xbrc data
     :end-before: #Mbrc data
 
 In this example we are considering the Mud-braces. They normally mitigate stress concentrations at the pile-leg connections and provide some torsional stiffness:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Mbrc data
     :end-before: #Hbrc data
 
 In this case we are not considering a top horizontal brace below the main perimeter girder of the TP, so we will set its *ndiv* to 0:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Hbrc data
     :end-before: #TP data
 
 The next step consists of declaring the transition piece properties.
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #TP data
     :end-before: #Tower data
 
 Then the tower geometry is assigned:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Tower data
     :end-before: ## if turbine_jacket
 
 Then the RNA mass properties are specified:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #RNA loads
     :end-before: ## if turbine_jacket
 
 Then assign the RNA aerodynamic loads:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #RNA loads
     :end-before: ## if turbine_jacket
 
 Finally auxiliary parameters for the Frame3DD solver may be assigned:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Frame3DD
     :end-before: ## if turbine_jacket
 
 It is then time to launch the assembly and pass all the inputs to it; note that the assembly is called with parameters depending on the selected inputs:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #-----Launch the assembly-----#
     :end-before: #--- RUN OPTIMIZATION ---#
 
 Then run the assembly:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #--- RUN JACKET ---#
     :end-before: # ---------------
 
 You may print some of the results of the analysis:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #Now show results of modal analysis
     :end-before: #Plot geometry
@@ -175,7 +175,7 @@ Jacket-Tower Optimization - OpenMDAO Internal Optimization Driver
 
 We begin with the same setup as the previous section, but now we need to set up the optimizer and thus also offer bounds for the design variables:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after:  #Set Optimization Bounds for the various variables:
     :end-before: # --- optimizer imports ---
@@ -183,19 +183,19 @@ We begin with the same setup as the previous section, but now we need to set up 
 
 Also import additional modules for optimization:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: # --- optimizer imports
     :end-before: # ---
 
 The optimizer must first be selected and configured, in this example use SNOPT.
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: # --- Setup Optimizer ---
     :end-before: if SNOPTflag:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: if SNOPTflag:
     :end-before: else:
@@ -203,28 +203,28 @@ The optimizer must first be selected and configured, in this example use SNOPT.
 
 We now set the objective, and in this example it is normalized to be of order 1 for better convergence behavior.
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: # --- Objective ---
     :end-before: # ----------------------
 
 The batter,pile OD and thickness, Embedment Length, Leg OD and thickness, X-brace OD and thickness,Mud-brace OD and thickness,Tower base OD and DTR, tower-top OD and DTR, and height of constant cross-section segment are added as design variables.
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: # --- Design Variables
     :end-before: #--- Constraints ---#
 
 Constraints are then added; note that we are after a target first eigenfrequeccy of 0.22 Hz:
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #--- Constraints ---#
     :end-before: # ---
 
 A recorder is added to display each iteration to the screen.
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: # --- recorder ---
     :end-before: # ---
@@ -232,7 +232,7 @@ A recorder is added to display each iteration to the screen.
 
 Now the optimization can be run.
 
-.. literalinclude:: ../src/jacketse/jacket.py
+.. literalinclude:: ../../../wisdem/jacketse/jacket.py
     :language: python
     :start-after: #--- RUN JACKET ---#
     :end-before: # ---------------
@@ -263,7 +263,7 @@ Also note that the first natural frequencies do NOT match the requirement >0.22 
 
 .. _jacket_tower_tutOpt:
 
-.. figure:: ./images/jacketse/jacket_tower_tutOpt.*
+.. figure:: /images/jacketse/jacket_tower_tutOpt.*
     :width: 6in
     :align: center
 
@@ -390,7 +390,7 @@ Cobyla seems to perform better than the other optimization options.
 
 .. _JacketOpt_CobyOptConfig-fig:
  
-  .. figure:: ./images/jacketse/JacketOpt_CobyOptConfig.*
+  .. figure:: /images/jacketse/JacketOpt_CobyOptConfig.*
      :width: 6in
      :align: center
  
@@ -453,7 +453,7 @@ Cobyla seems to perform better than the other optimization options.
 
 .. _JacketOpt_MDAOCobyConfig-fig:
  
-  .. figure:: ./images/jacketse/JacketOpt_MDAOCobyConfig.*
+  .. figure:: /images/jacketse/JacketOpt_MDAOCobyConfig.*
      :width: 6in
      :align: center
  
