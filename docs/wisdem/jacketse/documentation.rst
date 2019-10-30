@@ -1,6 +1,6 @@
 .. _documentation-label:
 
-.. currentmodule:: jacketse.jacket
+.. currentmodule:: wisdem.jacketse.jacket
 
 .. _interfaces-label:
 
@@ -16,14 +16,14 @@ Documentation
 
 Referenced Utilization Modules
 ===============================
-.. module:: jacketse.Utilization
+.. module:: wisdem.jacketse.Utilization
 .. class:: TwrUtilization
 .. class:: JcktUtilization
 .. class:: UtilAssembly
 
 Referenced loads Modules
 ============================
-.. module:: jacketse.loads
+.. module:: wisdem.jacketse.loads
 .. class:: WindInputs
 .. class:: WaterInputs
 .. class:: LoadOutputs
@@ -34,7 +34,7 @@ Referenced loads Modules
 Referenced Jacket Modules
 ============================
 
-.. module:: jacketse.jacket
+.. module:: wisdem.jacketse.jacket
 .. class:: Legs
 .. class:: Xbraces
 .. class:: HBraces
@@ -49,16 +49,16 @@ Referenced Jacket Modules
 Referenced TowerSE Modules
 ====================================
 
-.. module:: towerse.tower_supplement
+.. module:: wisdem.towerse.tower_supplement
 
 Referenced CommonSE Modules
 ====================================
 
-.. module:: commonse.Tube
-.. module:: commonse.SoilC
-.. module:: commonse.EmbedLength
-.. module:: commonse.environment
-.. module:: commonse.Material
+.. module:: wisdem.commonse.Tube
+.. module:: wisdem.commonse.SoilC
+.. module:: wisdem.commonse.EmbedLength
+.. module:: wisdem.commonse.environment
+.. module:: wisdem.commonse.Material
 
 
 

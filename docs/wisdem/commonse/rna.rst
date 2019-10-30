@@ -7,7 +7,7 @@ rna
 =======
 RNA mass properties and rotor loads
 
-.. currentmodule:: commonse.rna
+.. currentmodule:: wisdem.commonse.rna
 
 .. autosummary::
     :toctree: generated

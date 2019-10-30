@@ -1,6 +1,6 @@
 .. _tutorial-label:
 
-.. currentmodule:: ccblade
+.. currentmodule:: wisdem.ccblade
 
 Tutorial
 --------

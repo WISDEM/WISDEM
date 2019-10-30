@@ -1,6 +1,6 @@
 .. _tutorial-label:
 
-.. currentmodule:: towerse.tower
+.. currentmodule:: wisdem.towerse.tower
 
 Tutorial
 --------
@@ -10,13 +10,13 @@ Two examples are included in this tutorial section: simulation of a land-based t
 Land-based Tower Simulation
 ===========================
 
-.. currentmodule:: commonse.environment
+.. currentmodule:: wisdem.commonse.environment
 
 This following example demonstrates how to setup and run *analysis* for a land-based tower.  First, we import the modules we want to use and setup the tower configuration.  `TowerSE` was designed to be modular, and so the specific modules you wish to use in the analysis must be specified. There are `OpenMDAO Slots <http://openmdao.org/docs/basics/variables.html#slot-variables>`_ for wind1, wind2, wave1, wave2, soil, tower1, and tower2.  The first five make use of the commonse.environment module.  We use multiple wind/wave/tower modules because we are considering two separate loading conditions in this simulation.  The slots wind1 and wind2 can be any component that inherits from :class:`WindBase`, wave1 and wave2 require components that inherit from :class:`WaveBase`, and soil uses components that inherit from :class:`SoilBase`.
 
 In this case we are using :class:`PowerWind`, which defines a power-profile for the wind distribution.  A component, :class:`LogWind` for a logarithmic profile is also available.  We are simulating a land-based turbine so we do not load any wave modules.  The default :class:`WaveBase` module is for no wave loading.  A :class:`LinearWaves` component is available which uses linear wave theory.  A simple textbook-based soil model is provided at :class:`TowerSoil`.  For all slots, users may define any custom component as desired.
 
-.. currentmodule:: towerse.tower
+.. currentmodule:: wisdem.towerse.tower
 
 Tor tower1 and tower2, the module uses the frame finite element code `Frame3DD <http://frame3dd.sourceforge.net/>`_.
 

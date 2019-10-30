@@ -1,4 +1,4 @@
-.. module:: _pBEAM
+.. module:: wisdem.pBeam._pBEAM
 
 .. _documentation-label:
 

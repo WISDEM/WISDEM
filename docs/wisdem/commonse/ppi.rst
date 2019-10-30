@@ -7,7 +7,7 @@ csmPPI
 =======
 PPI indicies from NREL Cost and Scaling Model used in several WISDEM modules.
 
-.. currentmodule:: commonse.csmPPI
+.. currentmodule:: wisdem.commonse.csmPPI
 
 .. autosummary::
     :toctree: generated

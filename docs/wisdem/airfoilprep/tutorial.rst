@@ -1,7 +1,7 @@
 Tutorial
 --------
 
-.. currentmodule:: airfoilprep
+.. currentmodule:: wisdem.airfoilprep
 
 AirfoilPrep.py can be accessed either through the :ref:`command line <command-line-usage-label>` or through :ref:`Python <python-usage-label>`.  The command-line interface is the simplest but provides only a limited number of options.  The Python interface is useful for more advanced preprocessing and for integration with other codes.
 

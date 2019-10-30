@@ -99,14 +99,14 @@ The class structure for all the modules is listed below.
 Referenced *FloatingSE* High-Level Group
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. module:: floatingse.floating
+.. module:: wisdem.floatingse.floating
 .. class:: FloatingSE
 
 	    
 Referenced *FloatingSE* Vertical, Submerged Column of Frustums
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. module:: floatingse.column
+.. module:: wisdem.floatingse.column
 .. class:: BulkheadMass
 .. class:: BuoyancyTankProperties
 .. class:: StiffenerMass
@@ -119,7 +119,7 @@ Referenced *FloatingSE* Vertical, Submerged Column of Frustums
 Referenced *FloatingSE* Structural Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. module:: floatingse.loading
+.. module:: wisdem.floatingse.loading
 .. class:: FloatingFrame
 .. class:: TrussIntegerToBoolean
 .. class:: Loading
@@ -128,14 +128,14 @@ Referenced *FloatingSE* Structural Analysis
 Referenced *FloatingSE* Mooring Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. module:: floatingse.map_mooring
+.. module:: wisdem.floatingse.map_mooring
 .. class:: MapMooring
 
 	    
 Referenced *FloatingSE* Stability Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. module:: floatingse.substructure
+.. module:: wisdem.floatingse.substructure
 .. class:: SubstructureGeometry
 .. class:: Substructure
 

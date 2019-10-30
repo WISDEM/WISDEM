@@ -1,6 +1,6 @@
 .. _documentation-label:
 
-.. currentmodule:: turbine_costsse.turbine_costsse
+.. currentmodule:: wisdem.turbine_costsse.turbine_costsse
 
 Documentation
 -------------
@@ -24,7 +24,7 @@ The following inputs and outputs are defined for Turbine_CostsSE:
 
 Referenced Sub-System Modules (Rotor)
 =====================================
-.. module:: turbine_costsse.turbine_costsse_2015
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
 .. class:: BladeCost2015
 .. class:: HubCost2015
 .. class:: PitchSystemCost2015
@@ -35,7 +35,7 @@ Referenced Sub-System Modules (Rotor)
 
 Referenced Sub-System Modules (Nacelle)
 =======================================
-.. module:: turbine_costsse.turbine_costsse_2015
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
 .. class:: LowSpeedShaftCost2015
 .. class:: BearingsCost2015
 .. class:: GearboxCost2015
@@ -55,14 +55,14 @@ Referenced Sub-System Modules (Nacelle)
 
 Referenced Sub-System Modules (Tower)
 =====================================
-.. module:: turbine_costsse.turbine_costsse
+.. module:: wisdem.turbine_costsse.turbine_costsse
 .. class:: TowerCost2015
 .. class:: TowerCostAdder2015
 .. class:: Tower_CostsSE_2015
 
 Referenced Turbine Cost Modules
 ===============================
-.. module:: turbine_costsse.turbine_costsse
+.. module:: wisdem.turbine_costsse.turbine_costsse
 .. class:: Turbine_CostsSE_2015
 .. class:: TurbineCostAdder2015
 
@@ -81,7 +81,7 @@ The following inputs and outputs are defined for NREL_CSM_TCC:
 
 Referenced Sub-System Modules (Rotor)
 =====================================
-.. module:: turbine_costsse.nrel_csm_tcc_2015
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
 .. class:: BladeMass
 .. class:: HubMass
 .. class:: PitchSystemMass
@@ -89,7 +89,7 @@ Referenced Sub-System Modules (Rotor)
 
 Referenced Sub-System Modules (Nacelle)
 =======================================
-.. module:: turbine_costsse.nrel_csm_tcc_2015
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
 .. class:: LowSpeedShaftMass
 .. class:: BearingMass
 .. class:: GearboxMass
@@ -104,12 +104,12 @@ Referenced Sub-System Modules (Nacelle)
 
 Referenced Sub-System Modules (Tower)
 =====================================
-.. module:: turbine_costsse.nrel_csm_tcc_2015
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
 .. class:: TowerMass
 
 Referenced Turbine Cost Modules
 ===============================
-.. module:: turbine_costsse.nrel_csm_tcc_2015
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
 .. class:: turbine_mass_adder
 .. class:: nrel_csm_mass_2015
 .. class:: nrel_csm_tcc_2015

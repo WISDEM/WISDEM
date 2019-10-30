@@ -3,7 +3,7 @@
 Coordinate System
 =================
 
-.. currentmodule:: commonse.csystem
+.. currentmodule:: wisdem.commonse.csystem
 
 This module defines coordinate systems for horizontal axis wind turbines and provides convenience methods for transforming vectors between the various coordinate systems.  The supplied transformation methods are for *rotation only* and do not account for any offsets that may be necessary depending on the vector quantity (e.g., transfer of forces between coordinate system does not depend on the location where the force is defined, but position, velocity, moments, etc. do).  In other words the vectors are treated as directions only and are independent of the defined position.  How the vector should transform based on position is not generalizable and depends on the quantity of interest.  All coordinate systems obey the right-hand rule, :math:`x \times y = z`, and all angles must be input in **degrees**.  The turbine can be either an upwind or downwind configuration, but in either case it is assumed that that the blades rotate in the **clockwise** direction when looking downwind (more specifically the rotor is assumed to rotate about the :math:`+x_h` axis in :num:`Figure #yaw-hub-fig`).   The vectors allow for elementary operations (+, -, \*, /, +=, -=, \*=, /=) between other vectors of the same type, or with scalars (e.g., force_total = force1 + force2).
 

@@ -1,4 +1,4 @@
-.. module:: airfoilprep
+.. module:: wisdem.airfoilprep
 
 
 .. _interfaces-label:

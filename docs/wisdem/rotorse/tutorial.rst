@@ -1,6 +1,6 @@
 .. _tutorial-label:
 
-.. currentmodule:: rotorse.rotoraero
+.. currentmodule:: wisdem.rotorse.rotoraero
 
 Tutorial
 --------
@@ -20,7 +20,7 @@ Two examples are included in this tutorial section: aerodynamic simulation and o
 Rotor Aerodynamics
 ==================
 
-.. currentmodule:: rotorse.rotor_aeropower
+.. currentmodule:: wisdem.rotorse.rotor_aeropower
 
 This example is available at :mod:`rotorse.examples.rotorse_example1` or can be viewed as an interactive Jupyter notebook _____.  The first step is to import the relevant files.
 

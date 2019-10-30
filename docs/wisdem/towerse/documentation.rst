@@ -1,6 +1,6 @@
 .. _documentation-label:
 
-.. currentmodule:: towerse.tower
+.. currentmodule:: wisdem.towerse.tower
 
 Documentation
 -------------
@@ -16,7 +16,7 @@ The following inputs and outputs are defined for TowerSE:
 
 Referenced Environment Modules
 ==============================
-.. module:: commonse.environment
+.. module:: wisdem.commonse.environment
 .. class:: WindBase
 .. class:: WaveBase
 .. class:: SoilBase
@@ -27,5 +27,5 @@ Referenced Environment Modules
 
 Referenced Tower Modules
 ========================
-.. module:: towerse.tower
+.. module:: wisdem.towerse.tower
 .. class:: TowerSE

@@ -8,7 +8,7 @@ Most of the underlying theory is detailed in the stand-alone codes: `AirfoilPrep
 Aerodynamics
 ============
 
-.. currentmodule:: rotorse.rotoraero
+.. currentmodule:: wisdem.rotorse.rotoraero
 
 The :mod:`rotorse.rotoraero` module allows for fixed/variable speed and fixed/variable pitch machines.  Any aerodynamic tool can be used with this module as long as it implements :class:`AeroBase`.  For variable-speed machines the target tip-speed ratio for Region 2 is taken as an input rather than solved internally.  This allows for it to be specified or solved as part of an external optimization process.  There are various potential methods for numerically generating the power curve.  The methodology used here aims for efficiency, with the assumption that the aerodynamic code could potentially be computationally expensive.  For a variable-speed turbine, the aerodynamics code is run at a set number of points from cut-in to cut-out (defaults to 20).  A maximum rotation speed is applied (in a smooth manner so that the result is still continuously differentiable) to the set of run conditions. After running the aerodynamics code, a spline (Akima) is fit between the power to represent the unregulated power curve.  The variation in the unregulated power curve should be smooth and easily represented by a spline, so this approach allows us to specify the unregulated power for any wind speed but only requires running the aerodynamics code at a smaller number of points.  A drivetrain efficiency function is then applied to get the mechanical power, where any function can be applied as long as it is of the form
 
@@ -41,7 +41,7 @@ where P is in Watts, f(V) is a probability density function for the site, and F(
 Structures
 ==========
 
-.. currentmodule:: rotorse.rotor
+.. currentmodule:: wisdem.rotorse.rotor
 
 The :mod:`rotorse.rotor` module uses cross-sectional composite analysis codes that implement :class:`BeamPropertiesBase` (optionally), and structural analysis codes that implement :class:`StrucBase`.  The :class:`PreCompSections` class provides a concrete implementation of :class:`BeamPropertiesBase`.  It links a description of the blade geometry and section composite layup with an existing NWTC code PreComp :cite:`Bir2005`. PreComp uses modified classic laminate theory combined with a shear-flow approach, to estimate equivalent sectional inertial and stiffness properties of composite blades. PreComp requires the geometric description of the blade (chord, twist, section profile shapes, web locations), along with the internal structural layup (laminate schedule, orientation of fibers, laminate material properties). It allows for high-flexibility in the specification of the composite layup both spanwise and chordwise. The underlying code PreComp is written in Fortran and is linked to this class with f2py.
 

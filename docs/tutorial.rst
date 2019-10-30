@@ -13,7 +13,7 @@ As an example of WISDEM, let us use the NREL Cost and Scaling Model and simulate
 
 The first step is to import the relevant files and set up the component.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/wisdem/example.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
@@ -26,14 +26,14 @@ The NREL CSM relies on on a large number of wind turbine and plant parameters in
 
 We can now simulate the overall wind plant cost of energy.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/wisdem/example.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
 
 We then print out the resulting cost values:
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/wisdem/example.py
     :start-after: # 4 ---
     :end-before: # 4 ---
 
@@ -56,27 +56,27 @@ If you have the ECN Offshore OPEX model and license (see (Plant_CostsSE document
 
 The first step is to again import the relevant files and set up the component.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/wisdem/example.py
     :start-after: # 5 ---
     :end-before: # 5 ---
 
 Similar to before, the NREL CSM plus the ECN Offshore OPEX Model assembly relies on on a large number of wind turbine and plant parameters including overall wind turbine configuration, rotor, nacelle and tower options as well as plant characteristics including the number of turbines, wind resource characteristics and financial parameters.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/wisdem/example.py
     :start-after: # 6 ---
     :end-before: # 6 ---
 
 
 We can now simulate the overall wind plant cost of energy.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/wisdem/example.py
     :start-after: # 7 ---
     :end-before: # 7 ---
 
 
 We then print out the resulting cost values:
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/wisdem/example.py
     :start-after: # 8 ---
     :end-before: # 8 ---
 
@@ -98,7 +98,7 @@ Tutorial for WISDEM with SE Models
 
 We can also use the new systems engineering WISDEM modules for assessing plant cost of energy.  In this example, we add the new turbine systems engineering and cost models along with the NREL CSM plant energy production and plant cost models.  First we create the assembly with a set of options.  Here we are setting up the lcoe_se_assembly with the new DriveSE 4-pt configuration nacelle, the NREL CSM balance of station model and a rigid blade.
 
-.. literalinclude:: examples/example.py
+.. literalinclude:: /examples/wisdem/example.py
     :start-after: # 9 ---
     :end-before: # 9 ---
 

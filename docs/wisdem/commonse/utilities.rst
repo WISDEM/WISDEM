@@ -7,7 +7,7 @@ Differentiability
 =================
 Differentiable versions of several functions are provided (along with their derivatives).  These are summarized in the below table
 
-.. currentmodule:: commonse.utilities
+.. currentmodule:: wisdem.commonse.utilities
 
 .. autosummary::
     :toctree: generated
@@ -48,7 +48,7 @@ An example for testing gradients is shown below:
 
         check_gradient_unit_test(self, comp)  # add display=True to see more detail on which gradients failed
 
-.. currentmodule:: commonse.xcel_wrapper
+.. currentmodule:: wisdem.commonse.xcel_wrapper
 Excel Wrapper
 ==============
 

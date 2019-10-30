@@ -1,6 +1,6 @@
 .. _tutorial-label:
 
-.. currentmodule:: NREL_CSM.docs.examples.example
+.. currentmodule:: wisdem.NREL_CSM.docs.examples.example
 
 
 Tutorial for NREL_CSM

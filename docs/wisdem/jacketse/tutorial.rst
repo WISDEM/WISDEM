@@ -8,7 +8,7 @@ Two examples are included in this tutorial section: simulation of a jacket-tower
 5-MW Jacket Tower in 30 m Waters
 ================================
 
-.. currentmodule:: jacketse.jacket
+.. currentmodule:: wisdem.jacketse.jacket
 
 This example demonstrates how to setup and run *analysis* for a jacket-tower support structure.
 The structure looks as shown in Figure :ref:`jacketTut-fig` :
@@ -285,7 +285,7 @@ Also note that the first natural frequencies do NOT match the requirement >0.22 
 Jacket-Tower Optimization - External Optimization via PyOPT
 ===========================================================
 
-.. currentmodule:: jacketse.JacketOpt_PyOPT
+.. currentmodule:: wisdem.jacketse.JacketOpt_PyOPT
 
 For this tutorial, we use an auxiliary module *JacketOpt_PyOPT.py* and the auxiliary input file *MyJacketInputs.py*. 
 The new module is just a wrapper for jacketSE and contains: calls to the pyOPT optimization package to perform the optimization, 
@@ -348,7 +348,7 @@ Note that in this case the frequency constraint is met.
 Jacket-Tower Optimization - External Optimization via Python Cobyla
 ===================================================================
 
-.. currentmodule:: jacketse.JacketOpt_ExtCobyla
+.. currentmodule:: wisdem.jacketse.JacketOpt_ExtCobyla
 
 For this tutorial, we use an auxiliary module *JacketOpt_ExtCobyla.py* and the same auxiliary input file *MyJacketInputs.py* as above. 
 The new module is just a wrapper for jacketSE and contains: calls to the python function *scipy.optimize.fmin_cobyla* to perform the optimization, 
@@ -412,7 +412,7 @@ Cobyla seems to perform better than the other optimization options.
 Jacket-Tower Optimization - Optimization via OpenMDAOs Cobyla (non-PyOPT)
 =========================================================================
 
-.. currentmodule:: jacketse.jacket
+.. currentmodule:: wisdem.jacketse.jacket
 
 For this tutorial, we repeat what was done in Section :ref:`MDAOSNOPT-label` 
 and this time use the simple COBYLAdriver, not the PyOPTdriver. 

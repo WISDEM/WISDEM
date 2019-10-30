@@ -3,7 +3,7 @@ Environment
 
 Environment contains shared wind, wave, and soil models.
 
-.. currentmodule:: commonse.environment
+.. currentmodule:: wisdem.commonse.environment
 
 Wind
 ====

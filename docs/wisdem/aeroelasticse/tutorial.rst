@@ -1,6 +1,6 @@
 .. _tutorial-label:
 
-.. currentmodule:: rotorse.rotoraero
+.. currentmodule:: wisdem.aeroelasticse
 
 Tutorial
 ========

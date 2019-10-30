@@ -1,6 +1,6 @@
 .. _tutorial-label:
 
-.. currentmodule:: turbine_costsse.docs.examples.example
+.. currentmodule:: wisdem.turbine_costsse.docs.examples.example
 
 
 Tutorial

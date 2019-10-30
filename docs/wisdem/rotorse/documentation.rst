@@ -14,7 +14,7 @@ The following inputs and outputs are defined for RotorSE:
 Referenced Rotor Geometry Modules
 =================================
 
-.. module:: rotorse.rotor_geometry
+.. module:: wisdem.rotorse.rotor_geometry
 .. class:: ReferenceBlade
 .. class:: NREL5MW
 .. class:: DTU10MW
@@ -26,7 +26,7 @@ Referenced Rotor Geometry Modules
 Referenced Rotor Aero-Power Modules
 ===================================
 
-.. module:: rotorse.rotor_aeropower
+.. module:: wisdem.rotorse.rotor_aeropower
 .. class:: DrivetrainLossesBase
 .. class:: SetupRunVarSpeed
 .. class:: RegulatedPowerCurve
@@ -38,7 +38,7 @@ Referenced Rotor Aero-Power Modules
 Referenced Rotor Structure Modules
 ==================================
 
-.. module:: rotorse.rotor_structure
+.. module:: wisdem.rotorse.rotor_structure
 .. class:: BeamPropertiesBase
 .. class:: StrucBase
 .. class:: ResizeCompositeSection
@@ -61,17 +61,17 @@ Referenced Rotor Structure Modules
 Referenced Rotor Modules
 ========================
 
-.. module:: rotorse.rotor
+.. module:: wisdem.rotorse.rotor
 .. class:: RotorSE
 
 Referenced Examples
 ===================
 
-.. module:: rotorse.examples.rotorse_example1
+.. module:: wisdem.rotorse.examples.rotorse_example1
 .. class:: RotorSE_Example1
-.. module:: rotorse.examples.rotorse_example2
+.. module:: wisdem.rotorse.examples.rotorse_example2
 .. class:: RotorSE_Example2
-.. module:: rotorse.examples.rotorse_example3
+.. module:: wisdem.rotorse.examples.rotorse_example3
 .. class:: RotorSE_Example3
 
 

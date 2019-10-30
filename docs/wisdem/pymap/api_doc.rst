@@ -8,7 +8,7 @@ API Documentation
 Python API
 ----------
 
-.. .. automodule:: mapsys
+.. .. automodule:: wisdem.pymap.mapsys
 .. 
 .. .. autoclass:: Map
 ..    :members: linear
