@@ -132,7 +132,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
             af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
         
 
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], -inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
         
         Uhub     = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.options['n_pc']).flatten()
         
@@ -419,6 +419,8 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.add_input('yaw',           val=0.0,             units='deg',       desc='yaw error')
         self.add_input('precurve',      val=np.zeros(naero), units='m',         desc='precurve at each section')
         self.add_input('precurveTip',   val=0.0,             units='m',         desc='precurve at tip')
+        self.add_input('presweep',      val=np.zeros(naero), units='m',         desc='presweep at each section')
+        self.add_input('presweepTip',   val=0.0,             units='m',         desc='presweep at tip')
         self.add_input('rho',           val=0.0,             units='kg/m**3',   desc='density of air')
         self.add_input('mu',            val=0.0,             units='kg/(m*s)',  desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                desc='shear exponent')
@@ -464,7 +466,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         tsr_vector = inputs['tsr_vector_in']
         pitch_vector = inputs['pitch_vector_in']
         
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], -inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
         
         if max(U_vector) == 0.:
             U_vector    = np.linspace(V_in[0],V_out[0], n_U)
