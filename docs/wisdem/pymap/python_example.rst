@@ -54,7 +54,7 @@ A figure is also produced to show the mooring geometry with a :math:`5` meter ve
    The default units for the linearized stiffness matrix are [N/m], [N/rad], [Nm/m], and [Nm/rad]. See
    :ref:`the section on the linearized stiffness matrix <linearized_matrix_units>` in the FAQ for more information. 
 
-.. figure:: nstatic/example.png
+.. figure:: nstatic/pymap/example.png
     :align: center
     :width: 60%
 
@@ -74,7 +74,7 @@ Time-Marching for Dynamics Simulation
 Output
 ~~~~~~
 
-.. figure:: nstatic/time_domain_1.png
+.. figure:: nstatic/pymap/time_domain_1.png
     :align: center
     :width: 60%
 
@@ -86,7 +86,7 @@ Output
 	Mooring footprint
 	</b></i></center></font>
 
-.. figure:: nstatic/time_domain_2.png
+.. figure:: nstatic/pymap/time_domain_2.png
     :align: center
     :width: 60%
 
@@ -98,7 +98,7 @@ Output
 	Precribed displacement of the vessel fed to MAP++.
 	</b></i></center></font>
 
-.. figure:: nstatic/time_domain_3.png
+.. figure:: nstatic/pymap/time_domain_3.png
     :align: center
     :width: 60%
 

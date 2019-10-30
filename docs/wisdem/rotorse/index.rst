@@ -9,8 +9,6 @@ RotorSE
 
 
 .. toctree::
-    :numbered:
-    :maxdepth: 4
 
     intro
     tutorial

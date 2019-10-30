@@ -26,8 +26,6 @@ sections from the test code that is part of the modules themselves.
        .. rubric:: Table of Contents
 
 .. toctree::
-    :numbered:
-    :maxdepth: 2
 
     tutorial
     documentation

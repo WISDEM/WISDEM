@@ -10,8 +10,6 @@ Plant_FinanceSE
 
 
 .. toctree::
-    :numbered:
-    :maxdepth: 2
 
     intro
     tutorial

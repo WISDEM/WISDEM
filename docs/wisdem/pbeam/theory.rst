@@ -109,7 +109,7 @@ where the second time derivative is taken in the rotating reference frame.  The 
 
 .. _dynamics-fig:
 
-.. figure:: /images/dynamics.*
+.. figure:: /images/pbeam/dynamics.*
     :width: 5in
     :align: center
 

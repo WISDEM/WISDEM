@@ -71,7 +71,7 @@ displays :num:`Figure #stall-fig` (only one Reynolds number shown) along with pr
 
 .. _stall-fig:
 
-.. figure:: /images/stall3d.*
+.. figure:: /images/airfoilprep/stall3d.*
     :width: 6in
 
     Lift and drag coefficient with 3-D stall corrections applied.
@@ -108,7 +108,7 @@ displays :num:`Figure #extrap-fig` (only one Reynolds number shown) along with p
 
 .. _extrap-fig:
 
-.. figure:: /images/extrap.*
+.. figure:: /images/airfoilprep/extrap.*
     :width: 6in
 
     Airfoil data extrapolated to high angles of attack.

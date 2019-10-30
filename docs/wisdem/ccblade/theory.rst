@@ -19,7 +19,7 @@ The new BEM methodology transforms the two-variable, fixed-point problem into an
 
 .. _inflow-fig:
 
-.. figure:: /images/inflow.*
+.. figure:: /images/ccblade/inflow.*
     :width: 5in
     :align: center
 
@@ -38,7 +38,7 @@ This approach allows the BEM equations to be reduced to a one-dimensional residu
 
 .. _f-fig:
 
-.. figure:: /images/f.*
+.. figure:: /images/ccblade/f.*
     :width: 5in
     :align: center
 

@@ -409,7 +409,7 @@ Example
 -------
 
 .. _fig_exopt-spar:
-.. figure::  figs/spar-cost1.png
+.. figure::  images/floatingse/spar-cost1.png
     :width: 30%
     :align: center
 
@@ -417,7 +417,7 @@ Example
 
        
 .. _fig_exopt-semi:
-.. figure::  figs/semi-mass2.png
+.. figure::  images/floatingse/semi-mass2.png
     :width: 40%
     :align: center
 
@@ -425,7 +425,7 @@ Example
 
 
 .. _fig_exopt-tlp:
-.. figure::  figs/tlp-cost2.png
+.. figure::  images/floatingse/tlp-cost2.png
     :width: 30%
     :align: center
 

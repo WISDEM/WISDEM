@@ -38,7 +38,7 @@ The baseline example below is a template on how properties are defined in MAP++:
 
 The space preceeding ``repeat 120 240`` indicates that line is a comment and is ignored by MAP++. Executing this input file produced the mooring geoemtry illustrated here:
 
-.. figure:: nstatic/input1a_image.png
+.. figure:: nstatic/pymap/input1a_image.png
     :align: center
     :width: 400pt
 

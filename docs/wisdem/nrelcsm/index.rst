@@ -10,8 +10,6 @@ NREL_CSM
 
 
 .. toctree::
-    :numbered:
-    :maxdepth: 2
 
     intro
     tutorial

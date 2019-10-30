@@ -15,7 +15,7 @@ The structure looks as shown in Figure :ref:`jacketTut-fig` :
 
 .. _jacketTut-fig:
 
-.. figure:: /images/jacket_tower_tut.*
+.. figure:: /images/jacketse/jacket_tower_tut.*
     :width: 6in
     :align: center
 
@@ -160,7 +160,7 @@ the Von Mises stress, global and shell buckling utilizations are shown along the
 
 .. _utilization-fig:
 
-.. figure:: /images/util_tut.*
+.. figure:: /images/jacketse/util_tut.*
     :width: 6in
     :align: center
 
@@ -263,7 +263,7 @@ Also note that the first natural frequencies do NOT match the requirement >0.22 
 
 .. _jacket_tower_tutOpt:
 
-.. figure:: ./images/jacket_tower_tutOpt.*
+.. figure:: ./images/jacketse/jacket_tower_tutOpt.*
     :width: 6in
     :align: center
 
@@ -272,7 +272,7 @@ Also note that the first natural frequencies do NOT match the requirement >0.22 
     
 .. _utilopt-fig:
 
-.. figure:: /images/util_tutOpt.*
+.. figure:: /images/jacketse/util_tutOpt.*
     :width: 6in
     :align: center
 
@@ -327,7 +327,7 @@ Note that in this case the frequency constraint is met.
 
 .. _jacket_ExtPySnopt-fig:
 
-.. figure:: /images/jacket_ExtPySnopt.*
+.. figure:: /images/jacketse/jacket_ExtPySnopt.*
     :width: 6in
     :align: center
 
@@ -336,7 +336,7 @@ Note that in this case the frequency constraint is met.
     
 .. _utilextopt-fig:
     
-.. figure:: /images/util_ExtPySnopt.*
+.. figure:: /images/jacketse/util_ExtPySnopt.*
     :width: 6in
     :align: center
 
@@ -390,7 +390,7 @@ Cobyla seems to perform better than the other optimization options.
 
 .. _JacketOpt_CobyOptConfig-fig:
  
-  .. figure:: ./images/JacketOpt_CobyOptConfig.*
+  .. figure:: ./images/jacketse/JacketOpt_CobyOptConfig.*
      :width: 6in
      :align: center
  
@@ -399,7 +399,7 @@ Cobyla seems to perform better than the other optimization options.
  
 .. _util_tutCobyOpt-fig:
     
-  .. figure:: /images/util_tutCobyOpt.*
+  .. figure:: /images/jacketse/util_tutCobyOpt.*
      :width: 6in
      :align: center
  
@@ -453,7 +453,7 @@ Cobyla seems to perform better than the other optimization options.
 
 .. _JacketOpt_MDAOCobyConfig-fig:
  
-  .. figure:: ./images/JacketOpt_MDAOCobyConfig.*
+  .. figure:: ./images/jacketse/JacketOpt_MDAOCobyConfig.*
      :width: 6in
      :align: center
  
@@ -462,7 +462,7 @@ Cobyla seems to perform better than the other optimization options.
  
 .. _util_tutMDAOCoby-fig:
     
-  .. figure:: /images/util_tutMDAOCoby.*
+  .. figure:: /images/jacketse/util_tutMDAOCoby.*
      :width: 6in
      :align: center
  

@@ -9,8 +9,6 @@ Turbine_CostsSE
 
 
 .. toctree::
-    :numbered:
-    :maxdepth: 2
 
     intro
     tutorial

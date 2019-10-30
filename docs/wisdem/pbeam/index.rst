@@ -9,8 +9,6 @@ pBEAM: polynomial beam element analysis module
     .. rubric:: Table of Contents
 
 .. toctree::
-    :numbered:
-    :maxdepth: 2
 
     intro
     tutorial

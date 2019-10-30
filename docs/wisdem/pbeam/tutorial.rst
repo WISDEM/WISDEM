@@ -52,7 +52,7 @@ which result in
 
 .. _dy-fig:
 
-.. figure:: /images/dy.*
+.. figure:: /images/pbeam/dy.*
     :width: 5in
     :align: center
 
@@ -66,7 +66,7 @@ which result in
 
 .. _strain-fig:
 
-.. figure:: /images/strain.*
+.. figure:: /images/pbeam/strain.*
     :width: 5in
     :align: center
 

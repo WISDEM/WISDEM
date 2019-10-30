@@ -21,7 +21,7 @@ Frame :math:`\mathcal{F}_0` is an arbitrary global axis, but it is usually obser
 
 .. _exploded_3d:
 
-.. figure:: nstatic/3dProfileExploded2.png
+.. figure:: nstatic/pymap/3dProfileExploded2.png
     :align: center
     :width: 60%
 
@@ -44,7 +44,7 @@ Interactions between solves is captured in the :ref:`flowchart below to summariz
 
 .. _nested_flow:
 
-.. figure:: nstatic/nested_flowchart.png
+.. figure:: nstatic/pymap/nested_flowchart.png
     :align: center
     :width: 60%
 
@@ -99,7 +99,7 @@ In this case, the forces :math:`H` and :math:`V` are found by simultaneously sol
 
 .. _single_line:
 
-.. figure:: nstatic/singleLineDefinition.png
+.. figure:: nstatic/pymap/singleLineDefinition.png
     :align: center
     :width: 60%
 
@@ -174,7 +174,7 @@ This is given using:
    \sqrt{H^{2}+\left [ \omega\left ( s-L_{B} \right ) \right ]^{2}} &\text{if } L_{B} < s \leq L
    \end{matrix}\right.}
 
-.. figure:: nstatic/singleLineDefinition2.png
+.. figure:: nstatic/pymap/singleLineDefinition2.png
     :align: center
     :width: 70%
 
@@ -202,7 +202,7 @@ Reference Origin
 
 
 
-.. figure:: nstatic/vessel.png
+.. figure:: nstatic/pymap/vessel.png
     :align: center
     :width: 90%
 

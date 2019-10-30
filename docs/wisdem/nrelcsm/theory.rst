@@ -17,7 +17,7 @@ While the NREL Cost and Scaling Model improved the overall cost estimation for l
 
 .. _NRELCSM:
 
-.. figure:: /images/NRELCSM.*
+.. figure:: /images/nrelcsm/NRELCSM.*
     :width: 5.5in
 
     NREL Cost and Scaling Model Key Input-Output Relationships.

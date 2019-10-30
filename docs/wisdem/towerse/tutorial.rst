@@ -29,7 +29,7 @@ With the tower configuration setup, we define some of the geometric parameters. 
 
 .. _tower-fig:
 
-.. figure:: /images/tower.*
+.. figure:: /images/towerse/tower.*
     :height: 4in
     :align: center
 
@@ -126,7 +126,7 @@ The stress, bucklng, and damage loads are shown in :num:`Figure #utilization-fig
 
 .. _utilization-fig:
 
-.. figure:: /images/utilization.*
+.. figure:: /images/towerse/utilization.*
     :width: 6in
     :align: center
 

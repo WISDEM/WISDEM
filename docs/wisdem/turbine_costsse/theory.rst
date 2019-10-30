@@ -17,7 +17,7 @@ While the NREL Cost and Scaling Model improved the overall cost estimation for l
 
 .. _NRELCSM:
 
-.. figure:: /images/NRELCSM.*
+.. figure:: /images/turbine_costsse/NRELCSM.*
     :width: 5.5in
 
     NREL Cost and Scaling Model Key Input-Output Relationships.
@@ -37,7 +37,7 @@ The new NREL blades mass-cost model is based on the data of the NREL Cost and Sc
 
 .. _BladeCost:
 
-.. figure:: /images/BladeCost.*
+.. figure:: /images/turbine_costsse/BladeCost.*
     :width: 6.5in
 
     Blade mass-cost relationship based on NREL Cost and Scaling Model.
@@ -48,7 +48,7 @@ The cost model for the hub and spinner components are already based on a mass-to
 
 .. _pitchCost:
 
-.. figure:: /images/pitchCost.*
+.. figure:: /images/turbine_costsse/pitchCost.*
     :width: 6.5in
 
     Pitch system mass-cost relationship based on NREL Cost and Scaling Model.
@@ -61,7 +61,7 @@ The major components of the low-speed shaft, gearbox, yaw drive and mainframe we
 
 .. _lssCost:
 
-.. figure:: /images/lssCost.*
+.. figure:: /images/turbine_costsse/lssCost.*
     :width: 6.5in
 
 
@@ -69,21 +69,21 @@ The major components of the low-speed shaft, gearbox, yaw drive and mainframe we
 
 .. _gearboxCost:
 
-.. figure:: /images/gearboxCost.*
+.. figure:: /images/turbine_costsse/gearboxCost.*
     :width: 6.5in
 
     Gearbox mass-cost relationship based on NREL Cost and Scaling Model.
 
 .. _mainframeCost:
 
-.. figure:: /images/mainframeCost.*
+.. figure:: /images/turbine_costsse/mainframeCost.*
     :width: 6.5in
 
     Mainframe mass-cost relationship based on NREL Cost and Scaling Model.
 
 .. _yawCost:
 
-.. figure:: /images/yawCost.*
+.. figure:: /images/turbine_costsse/yawCost.*
     :width: 6.5in
 
     Yaw system mass-cost relationship based on NREL Cost and Scaling Model.

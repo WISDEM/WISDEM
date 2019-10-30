@@ -1,4 +1,4 @@
-.. figure:: nstatic/map_logo.png
+.. figure:: nstatic/pymap/map_logo.png
     :align: center
 
 pyMAP++
@@ -6,18 +6,16 @@ pyMAP++
 
 
 .. toctree::
-   :maxdepth: 2
-   :hidden:
 
-   notes.rst
-   definitions.rst
-   theory.rst
-   input_file.rst
-   python_example.rst
-   api_doc.rst
-   faq.rst
-   help.rst
-   ref.rst
+   notes
+   definitions
+   theory
+   input_file
+   python_example
+   api_doc
+   faq
+   help
+   ref
 
 
 The Mooring Analysis Program is a library to model static loads and geometry of cables.
@@ -33,7 +31,7 @@ MAP++ follows the FAST Offshore Wind Turbine Framework :cite:`jonkman2013new` so
 
 More information on the theory behind MAP++ is described :cite:`masciola2013`, with the hopes to extend capabilities to include a heuristic finite element formulation as described :cite:`masciola2014`. MAP++ is licensed under Apache version 2.
 
-.. figure:: nstatic/comparison.png
+.. figure:: nstatic/pymap/comparison.png
     :align: center
 
 

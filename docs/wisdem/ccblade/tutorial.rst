@@ -50,7 +50,7 @@ as shown in :num:`Figure #distributed-fig`.
 
 .. _distributed-fig:
 
-.. figure:: /images/distributedAeroLoads.*
+.. figure:: /images/ccblade/distributedAeroLoads.*
     :width: 5in
     :align: center
 
@@ -81,7 +81,7 @@ Note that the outputs are numpy arrays (of length 1 for this example).  To gener
 
 .. _cp-fig:
 
-.. figure:: /images/cp.*
+.. figure:: /images/ccblade/cp.*
     :width: 5in
     :align: center
 
@@ -114,7 +114,7 @@ The shape of the blade is seen in :num:`Figure #shape-fig`.  Note that the radiu
 
 .. _shape-fig:
 
-.. figure:: /images/rotorshape.*
+.. figure:: /images/ccblade/rotorshape.*
     :width: 5in
     :align: center
 

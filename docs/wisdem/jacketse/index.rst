@@ -11,8 +11,6 @@ Jacketse Documentation
 
 
 .. toctree::
-    :numbered:
-    :maxdepth: 2
 
     intro
     documentation

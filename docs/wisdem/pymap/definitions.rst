@@ -12,7 +12,7 @@ This piece wise system is composed of a collection of nodes and elements.
 
 .. _fig_1:
 
-.. figure:: nstatic/bridle3.png
+.. figure:: nstatic/pymap/bridle3.png
     :width: 75%
     :align: center
 

@@ -21,7 +21,7 @@ Inertial and Wind-aligned
 
 .. _inertial-wind-fig:
 
-.. figure:: /images/inertial_wind.*
+.. figure:: /images/commonse/inertial_wind.*
     :width: 5.5in
     :align: center
 
@@ -90,7 +90,7 @@ Wind-aligned and Yaw-aligned
 
 .. _wind-yaw-fig:
 
-.. figure:: /images/wind_yaw.*
+.. figure:: /images/commonse/wind_yaw.*
     :width: 6.5in
     :align: center
 
@@ -147,7 +147,7 @@ Yaw-aligned and Hub-aligned
 
 .. _yaw-hub-fig:
 
-.. figure:: /images/yaw_hub.*
+.. figure:: /images/commonse/yaw_hub.*
     :width: 3.5in
     :align: center
 
@@ -202,7 +202,7 @@ Hub-aligned and Azimuth-aligned
 
 .. _hub-azimuth-fig:
 
-.. figure:: /images/hub_azimuth.*
+.. figure:: /images/commonse/hub_azimuth.*
     :width: 4.5in
     :align: center
 
@@ -259,7 +259,7 @@ Azimuth-aligned and Blade-aligned
 
 .. _azimuth-blade-fig:
 
-.. figure:: /images/azimuth_blade.*
+.. figure:: /images/commonse/azimuth_blade.*
     :width: 3.5in
     :align: center
 
@@ -320,7 +320,7 @@ Blade-aligned and Airfoil-aligned
 
 .. _blade-airfoil-fig:
 
-.. figure:: /images/blade_airfoil.*
+.. figure:: /images/commonse/blade_airfoil.*
     :width: 6in
     :align: center
 
@@ -378,7 +378,7 @@ Airfoil-aligned and Profile
 
 .. _airfoil-profile-fig:
 
-.. figure:: /images/airfoil_profile.*
+.. figure:: /images/commonse/airfoil_profile.*
     :width: 6in
     :align: center
 

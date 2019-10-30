@@ -12,8 +12,6 @@ AirfoilPrep.py
 
 
 .. toctree::
-    :numbered:
-    :maxdepth: 2
 
     intro
     tutorial

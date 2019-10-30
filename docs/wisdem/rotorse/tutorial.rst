@@ -52,7 +52,7 @@ Or set their own values.  First, the geometry is defined.  Spanwise blade variab
 
 .. _chord-param-fig:
 
-.. figure:: /images/chord_dtu10mw.*
+.. figure:: /images/rotorse/chord_dtu10mw.*
     :height: 3in
     :align: left
 
@@ -60,7 +60,7 @@ Or set their own values.  First, the geometry is defined.  Spanwise blade variab
 
 .. _twist-param-fig:
 
-.. figure:: /images/theta_dtu10mw.*
+.. figure:: /images/rotorse/theta_dtu10mw.*
     :height: 3in
     :align: center
 
@@ -103,7 +103,7 @@ We can now run the analysis, print the outputs, and plot the power curve.
 >>> ratedConditions.T = 1514792.8710181064
 >>> ratedConditions.Q = 10744444.444444444
 
-.. figure:: /images/power_curve_dtu10mw.*
+.. figure:: /images/rotorse/power_curve_dtu10mw.*
     :height: 3in
     :align: center
 
@@ -174,7 +174,7 @@ Running the optimization (may take several minutes) yields a new design with a 4
 
 .. _chord-param-opt-fig:
 
-.. figure:: /images/chord_opt_10mw.*
+.. figure:: /images/rotorse/chord_opt_10mw.*
     :height: 3in
     :align: left
 
@@ -182,7 +182,7 @@ Running the optimization (may take several minutes) yields a new design with a 4
 
 .. _twist-param-opt-fig:
 
-.. figure:: /images/theta_opt_10mw.*
+.. figure:: /images/rotorse/theta_opt_10mw.*
     :height: 3in
     :align: center
 
@@ -266,7 +266,7 @@ Finally, we run the assembly and print/plot some of the outputs.  :num:`Figures 
 
 .. _strain-spar-fig:
 
-.. figure:: /images/strain_spar_dtu10mw.*
+.. figure:: /images/rotorse/strain_spar_dtu10mw.*
     :height: 3in
     :align: left
 
@@ -274,7 +274,7 @@ Finally, we run the assembly and print/plot some of the outputs.  :num:`Figures 
 
 .. _strain-te-fig:
 
-.. figure:: /images/strain_te_dtu10mw.*
+.. figure:: /images/rotorse/strain_te_dtu10mw.*
     :height: 3in
     :align: center
 

@@ -58,7 +58,7 @@ part of the near-term development plan.
 
    
 .. _fig_new-wisdem:
-.. figure::  figs/new_wisdem.png
+.. figure::  images/floatingse/new_wisdem.png
     :width: 90%
     :align: center
 

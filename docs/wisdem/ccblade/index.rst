@@ -10,8 +10,6 @@ CCBlade
 
 
 .. toctree::
-    :numbered:
-    :maxdepth: 2
 
     intro
     tutorial
@@ -23,7 +21,6 @@ CCBlade
     .. rubric:: Appendix
 
 .. toctree::
-    :maxdepth: 1
 
     csystem
 
