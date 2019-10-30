@@ -158,7 +158,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         # self.ccblade.induction = True
         P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = self.ccblade.evaluate(Uhub, Omega * 30. / np.pi, pitch, coefficients=True)
         
-        print(Cp_aero)
+        # print(Cp_aero)
         # exit()
         
         # print(self.ccblade.a)
