@@ -346,7 +346,7 @@ class ReferenceBlade(object):
                     pass
         wt_out['components']['blade']['internal_structure_2d_fem'] = st
 
-        wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['x']['values']  = (-1*blade_out['pf']['precurve']).tolist()
+        wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['x']['values']  = blade_out['pf']['precurve'].tolist()
         wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['x']['grid']    = blade_out['pf']['s'].tolist()
         wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['y']['values']  = blade_out['pf']['presweep'].tolist()
         wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['y']['grid']    = blade_out['pf']['s'].tolist()
