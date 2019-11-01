@@ -22,6 +22,7 @@ NINPUT = 8
 class BladeGeometry(ExplicitComponent):
     def initialize(self):
         self.options.declare('RefBlade')
+        self.options.declare('materials')
 
         # Blade Cost Model Options
         self.options.declare('verbosity',           default=False)
@@ -34,6 +35,7 @@ class BladeGeometry(ExplicitComponent):
     
     def setup(self):
         self.refBlade = RefBlade = self.options['RefBlade']
+        self.materials_yaml = self.options['materials']
         npts    = len(self.refBlade['pf']['s'])
         NINPUT  = len(self.refBlade['ctrl_pts']['r_in'])
         NAF     = len(self.refBlade['outer_shape_bem']['airfoil_position']['grid'])
@@ -256,7 +258,7 @@ class BladeGeometry(ExplicitComponent):
         # Blade cost model
         bcm             = blade_cost_model(options=self.options) # <------------- options, import blade cost model
         bcm.name        = blade_out['config']['name']
-        bcm.materials   = materials
+        bcm.materials   = self.materials_yaml
         bcm.upperCS     = upperCS
         bcm.lowerCS     = lowerCS
         bcm.websCS      = websCS
@@ -333,6 +335,7 @@ class TurbineClass(ExplicitComponent):
 class RotorGeometry(Group):
     def initialize(self):
         self.options.declare('RefBlade')
+        self.options.declare('materials')
         self.options.declare('topLevelFlag',default=False)
         
         # Blade Cost Model Options
@@ -346,6 +349,7 @@ class RotorGeometry(Group):
         
     def setup(self):
         RefBlade = self.options['RefBlade']
+        materials = self.options['materials']
         topLevelFlag   = self.options['topLevelFlag']
         NINPUT = len(RefBlade['ctrl_pts']['r_in'])
         NAF    = len(RefBlade['outer_shape_bem']['airfoil_position']['grid'])
@@ -388,7 +392,8 @@ class RotorGeometry(Group):
         self.add_subsystem('loc', Location(), promotes=['*'])
         self.add_subsystem('turbineclass', TurbineClass(), promotes=['*'])
         #self.add_subsystem('spline0', BladeGeometry(RefBlade))
-        self.add_subsystem('spline', BladeGeometry(RefBlade=RefBlade, 
+        self.add_subsystem('spline', BladeGeometry(RefBlade=RefBlade,
+                                               materials=materials,
                                                verbosity=verbosity,
                                                tex_table=tex_table,
                                                generate_plots=generate_plots,

@@ -192,8 +192,10 @@ class ReferenceBlade(object):
 
             # 
             pass
-
-        return blade
+        
+        materials = self.wt_ref['materials']
+        
+        return blade, materials
 
     def update(self, blade):
         t1 = time.time()
@@ -1365,27 +1367,29 @@ class ReferenceBlade(object):
             material_dict = {}
             materials     = []
             for i, mati in enumerate(materials_in):
-                if mati['orth'] == 1 or mati['orth'] == True:
-                    try:
-                        iter(mati['E'])
-                    except:
-                        warnings.warn('Ontology input warning: Material "%s" entered as Orthogonal, must supply E, G, and nu as a list representing the 3 principle axes.'%mati['name'])
-                if 'G' not in mati.keys():
-                    
+                if mati['name'] != 'resin':
                     if mati['orth'] == 1 or mati['orth'] == True:
-                        warning_shear_modulus_orthogonal = 'Ontology input warning: No shear modulus, G, provided for material "%s".'%mati['name']
-                        warnings.warn(warning_shear_modulus_orthogonal)
-                    else:
-                        warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%mati['name']
-                        warnings.warn(warning_shear_modulus_isotropic)
-                        mati['G'] = mati['E']/(2*(1+mati['nu']))
+                        try:
+                            iter(mati['E'])
+                        except:
+                            warnings.warn('Ontology input warning: Material "%s" entered as Orthogonal, must supply E, G, and nu as a list representing the 3 principle axes.'%mati['name'])
+                    if 'G' not in mati.keys():
+                        
+                        if mati['orth'] == 1 or mati['orth'] == True:
+                            warning_shear_modulus_orthogonal = 'Ontology input warning: No shear modulus, G, provided for material "%s".'%mati['name']
+                            warnings.warn(warning_shear_modulus_orthogonal)
+                        else:
+                            warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%mati['name']
+                            print(warning_shear_modulus_isotropic)
+                            mati['G'] = mati['E']/(2*(1+mati['nu']))
 
+                    if mati['orth'] == 1 or mati['orth'] == True:
+                        materials.append(Orthotropic2DMaterial(mati['E'][0], mati['E'][1], mati['G'][0], mati['nu'][0], mati['rho'], mati['name']))
+                    else:
+                        materials.append(Orthotropic2DMaterial(mati['E'], mati['E'], mati['G'], mati['nu'], mati['rho'], mati['name']))
                 material_id = i
                 material_dict[mati['name']] = material_id
-                if mati['orth'] == 1 or mati['orth'] == True:
-                    materials.append(Orthotropic2DMaterial(mati['E'][0], mati['E'][1], mati['G'][0], mati['nu'][0], mati['rho'], mati['name']))
-                else:
-                    materials.append(Orthotropic2DMaterial(mati['E'], mati['E'], mati['G'], mati['nu'], mati['rho'], mati['name']))
+                
             blade['precomp']['materials']     = materials
             blade['precomp']['material_dict'] = material_dict
 

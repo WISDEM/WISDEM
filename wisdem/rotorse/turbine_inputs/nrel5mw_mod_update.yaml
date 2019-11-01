@@ -302,36 +302,71 @@ materials:
       rho: 1235.0
       orth: 0
       nu: 0.3
+      unit_cost: 7.23
+      ply_t: 0.00051
+      waste: 0.25
    -  E: [41800000000.0, 14000000000.0, 2630000000.0]
       name: glassUD
       G: [2630000000.0, 2630000000.0, 2630000000.0]
       rho: 1920.0
       orth: 1
       nu: [0.28, 0.28, 0.28]
+      unit_cost: 1.87
+      waste: 0.05
+      fiber_density: 2600.
+      area_density_dry: 1.858
+      component: 5
    -  E: [27700000000.0, 13650000000.0, 7200000000.0]
       name: glassTri
       G: [7200000000.0, 7200000000.0, 7200000000.0]
       rho: 1850.0
       orth: 1
       nu: [0.39, 0.39, 0.39]
+      unit_cost: 2.86
+      waste: 0.15
+      fiber_density: 2600.
+      area_density_dry: 1.112
+      component: 2
+      roll_mass: 181.4368
    -  E: [13600000000.0, 13300000000.0, 11800000000.0]
       name: glassDB
       G: [11800000000.0, 11800000000.0, 11800000000.0]
       rho: 1780.0
       orth: 1
       nu: [0.49, 0.49, 0.49]
+      unit_cost: 3.00
+      waste: 0.15
+      fiber_density: 2600.
+      area_density_dry: 1.112
+      component: 3
+      roll_mass: 181.4368
    -  E: 98460000.0
       name: FOAM
       G: 98460000.0
       rho: 200.0
       orth: 0
       nu: 0.3
+      component: 1
+      waste: 0.2
+      unit_cost: 13
+      ply_t: 0.0025
    -  E: [114500000000.0, 8390000000.0, 5990000000.0]
       name: CarbonUD
       G: [5990000000.0, 5990000000.0, 5990000000.0]
       rho: 1220.0
       orth: 1
       nu: [0.27, 0.27, 0.27]
+      unit_cost: 30.00
+      waste: 0.05
+      fiber_density: 1800.
+      area_density_dry: 1.000
+      component: 4
+   -  name: resin
+      description: epoxy
+      E: 1.e+6
+      rho: 1150.
+      orth: 0
+      
 
 assembly:
     global:

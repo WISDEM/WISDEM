@@ -22,150 +22,173 @@ class blade_bom(object):
         self.websCS         = []
         self.profile        = []
         
-        # Material inputs
-        self.density_epoxy  = 1150.        # [kg/m3] Mixed density of resin Huntsman LY1564 and hardener Huntsman XP3416     
-        material_dict       = {}
+        # # Material inputs
+        # self.density_epoxy  = 1150.        # [kg/m3] Mixed density of resin Huntsman LY1564 and hardener Huntsman XP3416     
+        # material_dict       = {}
         
-        # Coatings
-        coatings_names = ['(Gelcoat)', 'Gelcoat', 'Paint', 'paint']
-        for name in coatings_names:
-            material_dict[name]              = {}
-            material_dict[name]['component'] = [0]       # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
-            material_dict[name]['waste']     = 25.       # [%] Waste of the material during production
-            material_dict[name]['ply_t']     = 0.00051   # [m] Gel coat thickness 0.51 mm
-            material_dict[name]['unit_cost'] = 7.23      # [$/kg] 3.28 $/lbs
-        
-        
-        # Sandwich fillers
-        filler_names = ['(Balsa)', 'BalsaCore', 'FOAM', 'Foam','(Foam)', 'Balsa', 'medium_density_foam','balsa','foam']
-        for name in filler_names:
-            material_dict[name]                = {}
-            material_dict[name]['component']   = [1]       # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
-            material_dict[name]['waste']       = 20.       # [%] Waste of the material during production
-            material_dict[name]['unit_cost']   = 13.       # [$/m2]
-        
-        material_dict['(Resin)']                = {}
-        material_dict['(Resin)']['component']   = [-1]      # Flag to specify where the material is used. -1 - nothing, 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
-        material_dict['(Resin)']['waste']       = 20.       # [%] Waste of the material during production
-        material_dict['(Resin)']['unit_cost']   = 13.       # [$/m2]
-        material_dict['(Resin)']['ply_t']       = 0.0025 # [m] 
-        
-        # Triaxial fabrics
-        triax_names = ['(TriaxFabric)', 'TriaxSkin', 'glassTri', 'glass_triax','(SNLTriax)','triax']
-        for name in triax_names:
-            material_dict[name]                      = {}
-            material_dict[name]['component']         = [2]      # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
-            material_dict[name]['area_density_dry']  = 1.112    # [kg/m2] Unit mass dry fabric
-            material_dict[name]['fiber_density']     = 2600.    # [kg/m3] Density of the fibers
-            material_dict[name]['waste']             = 15.      # [%] Waste of the material during production
-            material_dict[name]['unit_cost']         = 2.86     # [$/kg]
-            material_dict[name]['roll_mass']         = 181.4368 # [kg] 400 lbs - mass of an individual roll
+        # # Coatings
+        # coatings_names = ['(Gelcoat)', 'Gelcoat', 'Paint', 'paint']
+        # for name in coatings_names:
+            # material_dict[name]              = {}
+            # material_dict[name]['component'] = [0]       # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
+            # material_dict[name]['waste']     = 25.       # [%] Waste of the material during production
+            # material_dict[name]['ply_t']     = 0.00051   # [m] Gel coat thickness 0.51 mm
+            # material_dict[name]['unit_cost'] = 7.23      # [$/kg] 3.28 $/lbs
         
         
-        # Uniaxial fabrics spar caps
-        uniax_names = ['(SparCapMix)', 'UniaxSC', 'glassUD', 'glass_uni','(ELT5500EP3(Uni))','uniax','ud']
-        for name in uniax_names:
-            material_dict[name]                       = {}
-            material_dict[name]['component']          = [4]# Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
-            material_dict[name]['area_density_dry']   = 1.858    # [kg/m2] Unit mass dry fabric
-            material_dict[name]['fiber_density']     = 2600.    # [kg/m3] Density of the fibers
-            material_dict[name]['waste']              = 5.       # [%] Waste of the material during production
-            material_dict[name]['unit_cost']          = 1.87     # [$/kg]
+        # # Sandwich fillers
+        # filler_names = ['(Balsa)', 'BalsaCore', 'FOAM', 'Foam','(Foam)', 'Balsa', 'medium_density_foam','balsa','foam']
+        # for name in filler_names:
+            # material_dict[name]                = {}
+            # material_dict[name]['component']   = [1]       # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
+            # material_dict[name]['waste']       = 20.       # [%] Waste of the material during production
+            # material_dict[name]['unit_cost']   = 13.       # [$/m2]
+        
+        # material_dict['(Resin)']                = {}
+        # material_dict['(Resin)']['component']   = [-1]      # Flag to specify where the material is used. -1 - nothing, 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
+        # material_dict['(Resin)']['waste']       = 20.       # [%] Waste of the material during production
+        # material_dict['(Resin)']['unit_cost']   = 13.       # [$/m2]
+        # material_dict['(Resin)']['ply_t']       = 0.0025 # [m] 
+        
+        # # Triaxial fabrics
+        # triax_names = ['(TriaxFabric)', 'TriaxSkin', 'glassTri', 'glass_triax','(SNLTriax)','triax']
+        # for name in triax_names:
+            # material_dict[name]                      = {}
+            # material_dict[name]['component']         = [2]      # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
+            # material_dict[name]['area_density_dry']  = 1.112    # [kg/m2] Unit mass dry fabric
+            # material_dict[name]['fiber_density']     = 2600.    # [kg/m3] Density of the fibers
+            # material_dict[name]['waste']             = 15.      # [%] Waste of the material during production
+            # material_dict[name]['unit_cost']         = 2.86     # [$/kg]
+            # material_dict[name]['roll_mass']         = 181.4368 # [kg] 400 lbs - mass of an individual roll
         
         
-        # Uniaxial fabrics reinf
-        uniax_names = ['UniaxTELEre']
-        for name in uniax_names:
-            material_dict[name]                       = {}
-            material_dict[name]['component']          = [5]# Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
-            material_dict[name]['area_density_dry']   = 1.858    # [kg/m2] Unit mass dry fabric
-            material_dict[name]['fiber_density']     = 2600.    # [kg/m3] Density of the fibers
-            material_dict[name]['waste']              = 5.       # [%] Waste of the material during production
-            material_dict[name]['unit_cost']          = 1.87     # [$/kg]
-        
-        uniax_names_CF = ['(Newport307)', 'CarbonUD','carbon_uni'] # 50oz Carbon Uni for the spar caps
-        for name in uniax_names_CF:
-            material_dict[name]                       = {}
-            material_dict[name]['component']          = [4]      # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
-            material_dict[name]['area_density_dry']   = 1.000    # [kg/m2] Unit mass dry fabric
-            material_dict[name]['fiber_density']     = 1800.    # [kg/m3] Density of the fibers
-            material_dict[name]['waste']              = 5.       # [%] Waste of the material during production
-            material_dict[name]['unit_cost']          = 30.00    # [$/kg]
+        # # Uniaxial fabrics spar caps
+        # uniax_names = ['(SparCapMix)', 'UniaxSC', 'glassUD', 'glass_uni','(ELT5500EP3(Uni))','uniax','ud']
+        # for name in uniax_names:
+            # material_dict[name]                       = {}
+            # material_dict[name]['component']          = [4]# Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
+            # material_dict[name]['area_density_dry']   = 1.858    # [kg/m2] Unit mass dry fabric
+            # material_dict[name]['fiber_density']     = 2600.    # [kg/m3] Density of the fibers
+            # material_dict[name]['waste']              = 5.       # [%] Waste of the material during production
+            # material_dict[name]['unit_cost']          = 1.87     # [$/kg]
         
         
+        # # Uniaxial fabrics reinf
+        # uniax_names = ['UniaxTELEre']
+        # for name in uniax_names:
+            # material_dict[name]                       = {}
+            # material_dict[name]['component']          = [5]# Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
+            # material_dict[name]['area_density_dry']   = 1.858    # [kg/m2] Unit mass dry fabric
+            # material_dict[name]['fiber_density']     = 2600.    # [kg/m3] Density of the fibers
+            # material_dict[name]['waste']              = 5.       # [%] Waste of the material during production
+            # material_dict[name]['unit_cost']          = 1.87     # [$/kg]
         
-        # Biaxial fabrics
-        biax_names = ['(RandomMat)', 'BiaxWebs', 'glassDB','glass_biax','(SaertexEP3(DB))','biax']
-        for name in biax_names:
-            material_dict[name]                        = {}
-            material_dict[name]['component']           = [3]      # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
-            material_dict[name]['area_density_dry']    = 1.112    # [kg/m2] Unit mass dry fabric
-            material_dict[name]['fiber_density']     = 2600.    # [kg/m3] Density of the fibers
-            material_dict[name]['waste']               = 15.      # [%] Waste of the material during production
-            material_dict[name]['unit_cost']           = 3.00     # [$/kg]
-            material_dict[name]['roll_mass']           = 181.4368 # [kg] 400 lbs - mass of an individual roll
+        # uniax_names_CF = ['(Newport307)', 'CarbonUD','carbon_uni'] # 50oz Carbon Uni for the spar caps
+        # for name in uniax_names_CF:
+            # material_dict[name]                       = {}
+            # material_dict[name]['component']          = [4]      # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
+            # material_dict[name]['area_density_dry']   = 1.000    # [kg/m2] Unit mass dry fabric
+            # material_dict[name]['fiber_density']     = 1800.    # [kg/m3] Density of the fibers
+            # material_dict[name]['waste']              = 5.       # [%] Waste of the material during production
+            # material_dict[name]['unit_cost']          = 30.00    # [$/kg]
         
         
+        
+        # # Biaxial fabrics
+        # biax_names = ['(RandomMat)', 'BiaxWebs', 'glassDB','glass_biax','(SaertexEP3(DB))','biax']
+        # for name in biax_names:
+            # material_dict[name]                        = {}
+            # material_dict[name]['component']           = [3]      # Flag to specify where the material is used. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
+            # material_dict[name]['area_density_dry']    = 1.112    # [kg/m2] Unit mass dry fabric
+            # material_dict[name]['fiber_density']     = 2600.    # [kg/m3] Density of the fibers
+            # material_dict[name]['waste']               = 15.      # [%] Waste of the material during production
+            # material_dict[name]['unit_cost']           = 3.00     # [$/kg]
+            # material_dict[name]['roll_mass']           = 181.4368 # [kg] 400 lbs - mass of an individual roll
         
         
         
         
-        self.material_dict  = material_dict
+        
+        
+        # self.material_dict  = material_dict
         
     def extract_specs(self):
 
-        precomp_mat = {}
+        mat_dictionary   = {}
         
         core_mat_id      = np.zeros(len(self.materials))
         coating_mat_id   = -1
         le_reinf_mat_id  = -1
         te_reinf_mat_id  = -1
-
         
-        for i, mat in enumerate(self.materials):
-            precomp_mat[mat.name]             = {}
-            precomp_mat[mat.name]['id']       = i + 1
-            precomp_mat[mat.name]['name']     = mat.name
-            precomp_mat[mat.name]['density']  = mat.rho
-            try:
-                precomp_mat[mat.name]['unit_cost']= self.material_dict[mat.name]['unit_cost']
-                precomp_mat[mat.name]['waste']    = self.material_dict[mat.name]['waste']
-                if min(self.material_dict[mat.name]['component']) > 1: # It's a composite
-                    precomp_mat[mat.name]['fvf']  = (precomp_mat[mat.name]['density'] - self.density_epoxy) / (self.material_dict[mat.name]['fiber_density'] - self.density_epoxy) * 100. # [%] Fiber volume fraction
-                    precomp_mat[mat.name]['fwf']  = self.material_dict[mat.name]['fiber_density'] * precomp_mat[mat.name]['fvf'] / 100. / (self.density_epoxy + ((self.material_dict[mat.name]['fiber_density'] - self.density_epoxy) * precomp_mat[mat.name]['fvf'] / 100.)) * 100.
-                    precomp_mat[mat.name]['ply_t']= self.material_dict[mat.name]['area_density_dry'] / precomp_mat[mat.name]['density'] / (precomp_mat[mat.name]['fwf'] / 100.)
-                    
-                    if min(self.material_dict[mat.name]['component']) > 3: # The material does not need to be cut@station
-                        precomp_mat[mat.name]['cut@station'] = 'N'
+        n_mat = len(self.materials)
+        
+        density_resin = 0.
+        for i in range(n_mat):
+            if 'resin' == self.materials[i]['name']:
+                density_resin = self.materials[i]['rho']
+                id_resin = i
+        if density_resin==0.:
+            exit('Error: a material named resin must be defined in the input yaml')
+        
+        
+        for i in range(n_mat):
+            if i != id_resin:
+                name = self.materials[i]['name']
+                mat_dictionary[name]             = {}
+                mat_dictionary[name]['id']       = i + 1
+                mat_dictionary[name]['name']     = self.materials[i]['name']
+                mat_dictionary[name]['density']  = self.materials[i]['rho']
+                # # try:
+                mat_dictionary[name]['unit_cost']= self.materials[i]['unit_cost']
+                mat_dictionary[name]['waste']    = self.materials[i]['waste_fraction'] * 100.
+                if self.materials[i]['component_id'] > 1: # It's a composite
+                    mat_dictionary[name]['fiber_density']  = self.materials[i]['fiber_density']
+                    mat_dictionary[name]['area_density_dry']  = self.materials[i]['area_density_dry']
+                    mat_dictionary[name]['fvf']  = (mat_dictionary[name]['density'] - density_resin) / (mat_dictionary[name]['fiber_density'] - density_resin) * 100. # [%] Fiber volume fraction                    
+                    if 'fvf' in self.materials[i]:
+                        if abs(self.materials[i]['fvf']*100. - mat_dictionary[name]['fvf']) > 1e-3:
+                            exit('Error: the fvf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fvf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['fvf']) + '%')
+                    mat_dictionary[name]['fwf']  = mat_dictionary[name]['fiber_density'] * mat_dictionary[name]['fvf'] / 100. / (density_resin + ((mat_dictionary[name]['fiber_density'] - density_resin) * mat_dictionary[name]['fvf'] / 100.)) * 100.
+                    if 'fwf' in self.materials[i]:
+                        if abs(self.materials[i]['fwf']*100. - mat_dictionary[name]['fwf']) > 1e-3:
+                            exit('Error: the fwf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fwf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['fwf']) + '%')
+                    mat_dictionary[name]['ply_t']= mat_dictionary[name]['area_density_dry'] / mat_dictionary[name]['density'] / (mat_dictionary[name]['fwf'] / 100.)
+                    if 'ply_t' in self.materials[i]:
+                        if abs(self.materials[i]['ply_t'] - mat_dictionary[name]['ply_t']) > 1e-3:
+                            exit('Error: the ply_t of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['ply_t']) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['ply_t']) + 'm')
+                    if self.materials[i]['component_id'] > 3: # The material does not need to be cut@station
+                        mat_dictionary[name]['cut@station'] = 'N'
                     else:
-                        precomp_mat[mat.name]['cut@station'] = 'Y'
-                        precomp_mat[mat.name]['roll_mass']   = self.material_dict[mat.name]['roll_mass'] 
+                        mat_dictionary[name]['cut@station'] = 'Y'
+                        mat_dictionary[name]['roll_mass']   = self.materials[i]['roll_mass'] 
                 else:
-                    precomp_mat[mat.name]['fvf']  = 100.
-                    precomp_mat[mat.name]['fwf']  = 100.
-                    precomp_mat[mat.name]['cut@station'] = 'N'
-                    if max(self.material_dict[mat.name]['component']) <= 0:
-                        precomp_mat[mat.name]['ply_t']  = self.material_dict[mat.name]['ply_t']
+                    mat_dictionary[name]['fvf']  = 100.
+                    mat_dictionary[name]['fwf']  = 100.
+                    mat_dictionary[name]['cut@station'] = 'N'
+                    if self.materials[i]['component_id'] <= 0:
+                        mat_dictionary[name]['ply_t']  = self.materials[i]['ply_thickness']
                 
-                if 0 in self.material_dict[mat.name]['component']:
-                    coating_mat_id = precomp_mat[mat.name]['id']        # Assigning the material to the coating
-                elif 1 in self.material_dict[mat.name]['component']:    
-                    core_mat_id[precomp_mat[mat.name]['id'] - 1]  = 1   # Assigning the material to the core
-                elif 2 in self.material_dict[mat.name]['component']:    
-                    skin_mat_id    = precomp_mat[mat.name]['id']        # Assigning the material to the shell skin
-                elif 3 in self.material_dict[mat.name]['component']:    
-                    skinwebs_mat_id= precomp_mat[mat.name]['id']        # Assigning the material to the webs skin 
-                elif 4 in self.material_dict[mat.name]['component']:    
-                    sc_mat_id      = precomp_mat[mat.name]['id']        # Assigning the material to the spar caps
-                elif 5 in self.material_dict[mat.name]['component']:    
-                    le_reinf_mat_id= precomp_mat[mat.name]['id']        # Assigning the material to the te reinf  
-                    te_reinf_mat_id= precomp_mat[mat.name]['id']        # Assigning the material to the le reinf
-            
-            except:
-                exit('ERROR: The material ' + mat.name + ' does not have its properties fully defined. Please set them in the first lines of blade_bom.py in RotorSE')
+                if self.materials[i]['component_id'] == 0:
+                    coating_mat_id = mat_dictionary[name]['id']        # Assigning the material to the coating
+                elif self.materials[i]['component_id'] == 1:    
+                    core_mat_id[mat_dictionary[name]['id'] - 1]  = 1   # Assigning the material to the core
+                elif self.materials[i]['component_id'] == 2:    
+                    skin_mat_id    = mat_dictionary[name]['id']        # Assigning the material to the shell skin
+                elif self.materials[i]['component_id'] == 3:    
+                    skinwebs_mat_id= mat_dictionary[name]['id']        # Assigning the material to the webs skin 
+                elif self.materials[i]['component_id'] == 4:    
+                    sc_mat_id      = mat_dictionary[name]['id']        # Assigning the material to the spar caps
+                elif self.materials[i]['component_id'] == 5:    
+                    le_reinf_mat_id= mat_dictionary[name]['id']        # Assigning the material to the te reinf  
+                    te_reinf_mat_id= mat_dictionary[name]['id']        # Assigning the material to the le reinf
+                
+                # except:
+                    # exit('ERROR: The material ' + name + ' does not have its properties fully defined. Please set them in the first lines of blade_bom.py in RotorSE')
         
         
-        
+        # print(mat_dictionary)
+        # exit()
         # Width and thickness of the flanges
         blade_specs                                        = {}
         blade_specs['flange_width_inboard_LETE']           = 0.10         # [m] Width of the flanges of the outer surface until 70% of blade span
@@ -178,27 +201,27 @@ class blade_bom(object):
         # ###############################################################################################################################
         # Code
         
-        mat_names = precomp_mat.keys()
+        mat_names = mat_dictionary.keys()
 
         
         if self.options['verbosity']:
-            print('Number of composite laminates defined: %u' % (len(precomp_mat) - sum(core_mat_id)))
+            print('Number of composite laminates defined: %u' % (len(mat_dictionary) - sum(core_mat_id)))
             print('Number of core fillers defined:        %u' % (sum(core_mat_id)))
-            print('Total number of materials defined:     %u' % (len(precomp_mat)))
+            print('Total number of materials defined:     %u' % (len(mat_dictionary)))
         
         t_layer = np.zeros(len(mat_names))
         density = np.zeros(len(mat_names))
         
         for i, name in enumerate(mat_names):
-            if core_mat_id[precomp_mat[name]['id'] - 1] == 0:
+            if core_mat_id[mat_dictionary[name]['id'] - 1] == 0:
                 if self.options['verbosity']:
                     print('Composite :' + name)
-                t_layer[precomp_mat[name]['id']-1] = precomp_mat[name]['ply_t']
-                density[precomp_mat[name]['id']-1] = precomp_mat[name]['density']
+                t_layer[mat_dictionary[name]['id']-1] = mat_dictionary[name]['ply_t']
+                density[mat_dictionary[name]['id']-1] = mat_dictionary[name]['density']
             else:
                 if self.options['verbosity']:
                     print('Filler    :' + name)
-                density[precomp_mat[name]['id']-1] = precomp_mat[name]['density']
+                density[mat_dictionary[name]['id']-1] = mat_dictionary[name]['density']
         
         # Reconstruct number of plies from laminate thickness and single ply thickness
         composite_rounding = False
@@ -661,39 +684,39 @@ class blade_bom(object):
         blade_specs['matrix_total_mass_wo_waste'] = 0.
         
         for name in mat_names:
-            precomp_mat[name]['total_mass_wo_waste']     = mass_per_comp[precomp_mat[name]['id']-1] * precomp_mat[name]['fwf'] / 100.
-            precomp_mat[name]['total_mass_w_waste']      = precomp_mat[name]['total_mass_wo_waste'] * (1 + precomp_mat[name]['waste']/100.)
+            mat_dictionary[name]['total_mass_wo_waste']     = mass_per_comp[mat_dictionary[name]['id']-1] * mat_dictionary[name]['fwf'] / 100.
+            mat_dictionary[name]['total_mass_w_waste']      = mat_dictionary[name]['total_mass_wo_waste'] * (1 + mat_dictionary[name]['waste']/100.)
             
-            blade_specs['matrix_total_mass_wo_waste'] = blade_specs['matrix_total_mass_wo_waste'] + precomp_mat[name]['total_mass_wo_waste'] / (precomp_mat[name]['fwf']/100.) * (1 - precomp_mat[name]['fwf']/100.)
+            blade_specs['matrix_total_mass_wo_waste'] = blade_specs['matrix_total_mass_wo_waste'] + mat_dictionary[name]['total_mass_wo_waste'] / (mat_dictionary[name]['fwf']/100.) * (1 - mat_dictionary[name]['fwf']/100.)
             
-            precomp_mat[name]['total_cost_wo_waste']     = precomp_mat[name]['total_mass_wo_waste'] *  precomp_mat[name]['unit_cost']
-            precomp_mat[name]['total_cost_w_waste']      = precomp_mat[name]['total_mass_w_waste']  * precomp_mat[name]['unit_cost']  
+            mat_dictionary[name]['total_cost_wo_waste']     = mat_dictionary[name]['total_mass_wo_waste'] *  mat_dictionary[name]['unit_cost']
+            mat_dictionary[name]['total_cost_w_waste']      = mat_dictionary[name]['total_mass_w_waste']  * mat_dictionary[name]['unit_cost']  
                         
-            if core_mat_id[precomp_mat[name]['id'] -1] == 0:
+            if core_mat_id[mat_dictionary[name]['id'] -1] == 0:
             
-                precomp_mat[name]['total_volume_wo_waste']   = mass_per_comp[precomp_mat[name]['id']-1] / precomp_mat[name]['density'] * precomp_mat[name]['fvf']
-                precomp_mat[name]['total_volume_w_waste']    = precomp_mat[name]['total_volume_wo_waste'] * (1 + precomp_mat[name]['waste']/100.)
+                mat_dictionary[name]['total_volume_wo_waste']   = mass_per_comp[mat_dictionary[name]['id']-1] / mat_dictionary[name]['density'] * mat_dictionary[name]['fvf']
+                mat_dictionary[name]['total_volume_w_waste']    = mat_dictionary[name]['total_volume_wo_waste'] * (1 + mat_dictionary[name]['waste']/100.)
                 
-                precomp_mat[name]['total_ply_area_wo_waste'] = mass_per_comp[precomp_mat[name]['id']-1] / precomp_mat[name]['density'] / precomp_mat[name]['ply_t']
-                precomp_mat[name]['total_ply_area_w_waste']  = precomp_mat[name]['total_ply_area_wo_waste'] * (1 + precomp_mat[name]['waste']/100.)
+                mat_dictionary[name]['total_ply_area_wo_waste'] = mass_per_comp[mat_dictionary[name]['id']-1] / mat_dictionary[name]['density'] / mat_dictionary[name]['ply_t']
+                mat_dictionary[name]['total_ply_area_w_waste']  = mat_dictionary[name]['total_ply_area_wo_waste'] * (1 + mat_dictionary[name]['waste']/100.)
             else:
-                precomp_mat[name]['total_ply_area_wo_waste'] = blade_specs['areacore2lay_shell_lp'] + blade_specs['areacore2lay_shell_hp'] + sum(blade_specs['area_webs_w_core'])
-                precomp_mat[name]['total_ply_area_w_waste']  = precomp_mat[name]['total_ply_area_wo_waste'] * (1. + precomp_mat[name]['waste']/100.)
+                mat_dictionary[name]['total_ply_area_wo_waste'] = blade_specs['areacore2lay_shell_lp'] + blade_specs['areacore2lay_shell_hp'] + sum(blade_specs['area_webs_w_core'])
+                mat_dictionary[name]['total_ply_area_w_waste']  = mat_dictionary[name]['total_ply_area_wo_waste'] * (1. + mat_dictionary[name]['waste']/100.)
                 
-                precomp_mat[name]['total_volume_wo_waste']   = blade_specs['volume_core_shell_lp'] + blade_specs['volume_core_shell_hp'] + sum(blade_specs['volume_core_webs'])
-                precomp_mat[name]['total_volume_w_waste']    = precomp_mat[name]['total_volume_wo_waste'] * (1. + precomp_mat[name]['waste']/100.)
+                mat_dictionary[name]['total_volume_wo_waste']   = blade_specs['volume_core_shell_lp'] + blade_specs['volume_core_shell_hp'] + sum(blade_specs['volume_core_webs'])
+                mat_dictionary[name]['total_volume_w_waste']    = mat_dictionary[name]['total_volume_wo_waste'] * (1. + mat_dictionary[name]['waste']/100.)
 
             if self.options['verbosity']:
                 print(name)
-                print('surface no waste  %.2f m2  \t \t ---  \t \t volume no waste   %.2f m3' % (precomp_mat[name]['total_ply_area_wo_waste'] , precomp_mat[name]['total_volume_wo_waste']))
-                print('mass no waste   %.2f kg  \t \t ---  \t \t mass with waste %.2f kg' % (precomp_mat[name]['total_mass_wo_waste'] , precomp_mat[name]['total_mass_w_waste']))
-                print('cost no waste   %.2f $   \t \t ---  \t \t cost with waste   %.2f \n' % (precomp_mat[name]['total_cost_wo_waste'] , precomp_mat[name]['total_cost_w_waste']))
+                print('surface no waste  %.2f m2  \t \t ---  \t \t volume no waste   %.2f m3' % (mat_dictionary[name]['total_ply_area_wo_waste'] , mat_dictionary[name]['total_volume_wo_waste']))
+                print('mass no waste   %.2f kg  \t \t ---  \t \t mass with waste %.2f kg' % (mat_dictionary[name]['total_mass_wo_waste'] , mat_dictionary[name]['total_mass_w_waste']))
+                print('cost no waste   %.2f $   \t \t ---  \t \t cost with waste   %.2f \n' % (mat_dictionary[name]['total_cost_wo_waste'] , mat_dictionary[name]['total_cost_w_waste']))
         
         
-        return blade_specs, precomp_mat
+        return blade_specs, mat_dictionary
         
         
-    def compute_matrix_bonding(self, blade_specs, precomp_mat):
+    def compute_matrix_bonding(self, blade_specs, mat_dictionary):
         
         # Resin and hardener
         matrix                                             = {}
@@ -989,7 +1012,7 @@ class blade_bom(object):
     
     
     
-    def compute_bom(self, blade_specs, precomp_mat, matrix, bonding, metallic_parts, consumables):
+    def compute_bom(self, blade_specs, mat_dictionary, matrix, bonding, metallic_parts, consumables):
         
         # Composites, core and coating
         if self.options['verbosity']:
@@ -1008,13 +1031,13 @@ class blade_bom(object):
             tex_table_file.write('Material & Cost with waste [\\$] \\\\ \n')
             tex_table_file.write('\\midrule\n')              
         
-        mat_names = precomp_mat.keys()
+        mat_names = mat_dictionary.keys()
         for name in mat_names:
-            total_mat_cost_wo_waste = total_mat_cost_wo_waste + precomp_mat[name]['total_cost_wo_waste']
-            total_mat_cost_w_waste  = total_mat_cost_w_waste + precomp_mat[name]['total_cost_w_waste']
+            total_mat_cost_wo_waste = total_mat_cost_wo_waste + mat_dictionary[name]['total_cost_wo_waste']
+            total_mat_cost_w_waste  = total_mat_cost_w_waste + mat_dictionary[name]['total_cost_w_waste']
         
             if self.options['tex_table']:
-                tex_table_file.write('%s & %.2f \\\\ \n' % (name , precomp_mat[name]['total_cost_w_waste']))
+                tex_table_file.write('%s & %.2f \\\\ \n' % (name , mat_dictionary[name]['total_cost_w_waste']))
 
         if self.options['tex_table']:
             tex_table_file.write('\\textbf{Total} & \\textbf{%.2f} \\\\ \n' % total_mat_cost_w_waste)          
@@ -1165,11 +1188,11 @@ class blade_bom(object):
 class blade_labor_ct(object):
 
 
-    def __init__(self , blade_specs , precomp_mat , metallic_parts):
+    def __init__(self , blade_specs , mat_dictionary , metallic_parts):
         
         # # Blade input parameters
         # # Material inputs
-        self.materials                               = precomp_mat
+        self.materials                               = mat_dictionary
         # Root preform low pressure side
         self.root_parameters_lp = {}
         self.root_parameters_lp['blade_length']      = blade_specs['blade_length']              # Length of the blade [m]
@@ -3331,14 +3354,14 @@ class blade_cost_model(object):
         bom.profile                                                    = self.profile
         
         
-        blade_specs, precomp_mat                                       = bom.extract_specs()
-        matrix, bonding                                                = bom.compute_matrix_bonding(blade_specs, precomp_mat)
+        blade_specs, mat_dictionary                                       = bom.extract_specs()
+        matrix, bonding                                                = bom.compute_matrix_bonding(blade_specs, mat_dictionary)
         metallic_parts                                                 = bom.compute_metallic_parts(blade_specs)
         consumables                                                    = bom.compute_consumables(blade_specs)
-        self.total_blade_mat_cost_w_waste, self.blade_mass             = bom.compute_bom(blade_specs, precomp_mat, matrix, bonding, metallic_parts, consumables)
+        self.total_blade_mat_cost_w_waste, self.blade_mass             = bom.compute_bom(blade_specs, mat_dictionary, matrix, bonding, metallic_parts, consumables)
         
         # Labor and cycle time
-        labor_ct                                                       = blade_labor_ct(blade_specs, precomp_mat , metallic_parts)
+        labor_ct                                                       = blade_labor_ct(blade_specs, mat_dictionary , metallic_parts)
         labor_ct.options                                               = self.options
         labor_ct.name                                                  = self.name
         operation , labor_hours , skin_mold_gating_ct , non_gating_ct  = labor_ct.execute_blade_labor_ct()
