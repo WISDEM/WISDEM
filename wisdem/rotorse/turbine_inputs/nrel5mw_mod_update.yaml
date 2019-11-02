@@ -315,7 +315,7 @@ materials:
       waste: 0.05
       fiber_density: 2600.
       area_density_dry: 1.858
-      component: 5
+      component_id: 5
    -  E: [27700000000.0, 13650000000.0, 7200000000.0]
       name: glassTri
       G: [7200000000.0, 7200000000.0, 7200000000.0]
@@ -326,7 +326,7 @@ materials:
       waste: 0.15
       fiber_density: 2600.
       area_density_dry: 1.112
-      component: 2
+      component_id: 2
       roll_mass: 181.4368
    -  E: [13600000000.0, 13300000000.0, 11800000000.0]
       name: glassDB
@@ -338,7 +338,7 @@ materials:
       waste: 0.15
       fiber_density: 2600.
       area_density_dry: 1.112
-      component: 3
+      component_id: 3
       roll_mass: 181.4368
    -  E: 98460000.0
       name: FOAM
@@ -346,7 +346,7 @@ materials:
       rho: 200.0
       orth: 0
       nu: 0.3
-      component: 1
+      component_id: 1
       waste: 0.2
       unit_cost: 13
       ply_t: 0.0025
@@ -360,7 +360,7 @@ materials:
       waste: 0.05
       fiber_density: 1800.
       area_density_dry: 1.000
-      component: 4
+      component_id: 4
    -  name: resin
       description: epoxy
       E: 1.e+6
