@@ -30,9 +30,9 @@ class Wind_Turbine(object):
         self.fname_schema    = ''          # IEA turbine ontology JSON schema file
 
         self.verbose         = False
-        
 
     def initialize(self, fname_input):
+        # Class instance to break the yaml into sub dictionaries
         if self.verbose:
             print('Running initialization: %s' % fname_input)
 
@@ -49,9 +49,9 @@ class Wind_Turbine(object):
         
 
         return wt_init_options, blade, tower, nacelle, materials, airfoils
-    
+
     def openmdao_vectors(self):
-    
+        # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
         wt_init_options = {}
         
         # Materials
@@ -76,8 +76,8 @@ class Wind_Turbine(object):
         wt_init_options['blade']              = {}
         wt_init_options['blade']['n_span']    = 30
         wt_init_options['blade']['nd_span']   = np.linspace(0., 1., wt_init_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
-        n_af_span                             = len(self.wt_ref['components']['blade']['outer_shape_bem']['airfoil_position']['labels'])
-        wt_init_options['blade']['n_af_span'] = n_af_span # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+        wt_init_options['blade']['n_af_span'] = len(self.wt_ref['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+        wt_init_options['blade']['n_webs']    = len(self.wt_ref['components']['blade']['internal_structure_2d_fem']['webs'])
         
         
         return wt_init_options
@@ -118,6 +118,7 @@ class Blade(Group):
     def setup(self):
         blade_init_options = self.options['blade_init_options']
         self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
+        self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options))
 
 class Blade_Outer_Shape_BEM(ExplicitComponent):
     # Openmdao component with the blade outer shape data coming from the input yaml file.
@@ -134,7 +135,7 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
         self.add_input('af_position',   val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_name defined along blade span.')
         self.add_input('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_input('chord',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
-        self.add_input('twist',         val=np.zeros(n_span),    units='deg', desc='1D array of the twist values defined along blade span.')
+        self.add_input('twist',         val=np.zeros(n_span),    units='deg', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
         self.add_input('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_input('ref_axis',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
 
@@ -145,7 +146,25 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
         
         outputs['length']   = arc_length(inputs['ref_axis'][:,0], inputs['ref_axis'][:,1], inputs['ref_axis'][:,2])[-1]
         outputs['length_z'] = inputs['ref_axis'][:,2][-1]
-              
+
+class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
+    # Openmdao component with the blade internal structure data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('blade_init_options')
+        
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        n_span             = blade_init_options['n_span']
+        n_webs             = blade_init_options['n_webs']
+        
+        self.add_discrete_input('webs_name', val=n_webs * [''],                      desc='1D array of the names of the shear webs defined in the blade structure.')
+        
+        self.add_input('s',             val=np.zeros(n_span),                        desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('webs_rotation', val=np.zeros((n_webs, n_span)), units='deg', desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. In a standard blade the rotation is equal to negative twist.')
+        self.add_input('webs_offset_y_pa',   val=np.zeros((n_webs, n_span)), units='m',   desc='2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.')
+    
+    
+             
 class Materials(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
     
@@ -415,12 +434,13 @@ def assign_airfoils_values(wt_opt, wt_init_options, airfoils):
 
 def assign_blade_values(wt_opt, wt_init_options, blade):
     # Function to assign values to the openmdao group Blade
-    
     wt_opt = assign_outer_shape_bem_values(wt_opt, wt_init_options, blade['outer_shape_bem'])
+    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, blade['internal_structure_2d_fem'])
+    
     return wt_opt
     
 def assign_outer_shape_bem_values(wt_opt, wt_init_options, outer_shape_bem):
-    # Function to assign values to the openmdao group Blade    
+    # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
     
     n_span      = wt_init_options['blade']['n_span']
     nd_span     = wt_init_options['blade']['nd_span']
@@ -437,6 +457,37 @@ def assign_outer_shape_bem_values(wt_opt, wt_init_options, outer_shape_bem):
     wt_opt['blade.outer_shape_bem.ref_axis'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
     wt_opt['blade.outer_shape_bem.ref_axis'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
     wt_opt['blade.outer_shape_bem.ref_axis'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
+    
+    return wt_opt
+    
+def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_structure_2d_fem):
+    # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
+    n_span          = wt_init_options['blade']['n_span']
+    n_webs          = wt_init_options['blade']['n_webs']
+    
+    webs_name       = n_webs * ['']
+    webs_rotation   = np.zeros((n_webs, n_span))
+    webs_offset_y_pa= np.zeros((n_webs, n_span))
+    
+    nd_span = wt_opt['blade.outer_shape_bem.s']
+    
+    for i in range(n_webs):
+        webs_name[i] = internal_structure_2d_fem['webs'][i]['name']
+        if 'rotation' in internal_structure_2d_fem['webs'][i]:
+            if 'fixed' in internal_structure_2d_fem['webs'][i]['rotation'].keys():
+                if internal_structure_2d_fem['webs'][i]['rotation']['fixed'] == 'twist':
+                    webs_rotation[i,:] = - wt_opt['blade.outer_shape_bem.twist']
+                else:
+                    exit('Invalid rotation reference for web ' + webs_name[i] + '. Please check the yaml input file')
+            else:
+                webs_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['rotation']['grid'], internal_structure_2d_fem['webs'][i]['rotation']['values']) * 180. / np.pi
+        if 'offset_y_pa' in internal_structure_2d_fem['webs'][i]:
+            webs_offset_y_pa[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['offset_y_pa']['grid'], internal_structure_2d_fem['webs'][i]['offset_y_pa']['values'])
+    
+    wt_opt['blade.internal_structure_2d_fem.webs_name']         = webs_name
+    wt_opt['blade.internal_structure_2d_fem.s']                 = nd_span
+    wt_opt['blade.internal_structure_2d_fem.webs_rotation']     = webs_rotation
+    wt_opt['blade.internal_structure_2d_fem.webs_offset_y_pa']  = webs_offset_y_pa
     
     return wt_opt
     
@@ -458,7 +509,7 @@ if __name__ == "__main__":
     wt_opt = yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils)
     wt_opt.run_driver()
     
-    
+    print(wt_opt['blade.internal_structure_2d_fem.webs_offset_y_pa'])
     # Plotting
     import matplotlib.pyplot as plt
     plt.plot(wt_opt['blade.outer_shape_bem.s'], wt_opt['blade.outer_shape_bem.twist'])

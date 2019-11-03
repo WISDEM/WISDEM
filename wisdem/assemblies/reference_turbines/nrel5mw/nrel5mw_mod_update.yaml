@@ -37,13 +37,13 @@ components:
                 - name: Web_fore
                   rotation:
                     fixed: twist
-                  offset_x_pa:
+                  offset_y_pa:
                     grid: [0., 1.]
                     values: [-0.3, -0.3]
                 - name: Web_aft
                   rotation:
                     fixed: twist
-                  offset_x_pa:
+                  offset_y_pa:
                     grid: [0., 1.]
                     values: [0.3, 0.3]
             layers:
@@ -101,7 +101,7 @@ components:
                     values: [0.75, 0.75]
                   rotation:
                     fixed: twist
-                  offset_x_pa:
+                  offset_y_pa:
                     grid: [0., 1.]
                     values: [0., 0.]
                 - name: Spar_Cap_SS
@@ -115,7 +115,7 @@ components:
                     values: [0.75, 0.75]
                   rotation:
                     fixed: twist
-                  offset_x_pa:
+                  offset_y_pa:
                     grid: [0., 1.]
                     values: [0., 0.]
                 - name: LE_foam_PS
