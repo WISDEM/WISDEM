@@ -297,13 +297,13 @@ def assign_airfoils_values(wt_opt, wt_init_options, airfoils):
 if __name__ == "__main__":
 
     ## File management
-    # fname_input        = "turbine_inputs/nrel5mw_mod_update.yaml"
-    fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
-    fname_output       = "turbine_inputs/testing_twist.yaml"
+    fname_input        = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
+    fname_output       = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     
     wt_initial              = Wind_Turbine()
     wt_initial.validate     = False
-    wt_initial.fname_schema = "turbine_inputs/IEAontology_schema.yaml"
+    wt_initial.fname_schema = "reference_turbines/IEAontology_schema.yaml"
     wt_init_options, blade, tower, nacelle, materials, airfoils = wt_initial.initialize(fname_input)
     
     wt_opt          = Problem()
@@ -312,6 +312,7 @@ if __name__ == "__main__":
     wt_opt = yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils)
     wt_opt.run_driver()
     
+    print(wt_opt['materials.E'])
     
 
 
