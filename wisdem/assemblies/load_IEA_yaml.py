@@ -12,6 +12,7 @@ import jsonschema as json
 import time
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
+from wisdem.rotorse.rotor_geometry_yaml import arc_length
 
 class Wind_Turbine(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
@@ -61,6 +62,8 @@ class Wind_Turbine(object):
         wt_init_options['airfoils']           = {}
         wt_init_options['airfoils']['n_af']   = len(self.wt_ref['airfoils'])
         wt_init_options['airfoils']['n_aoa']  = 200
+        wt_init_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-180., -30., wt_init_options['airfoils']['n_aoa'] / 4. + 1), np.linspace(-30., 30., wt_init_options['airfoils']['n_aoa'] / 2.), np.linspace(30., 180., wt_init_options['airfoils']['n_aoa'] / 4. + 1)]))
+        
         Re_all = []
         for i in range(wt_init_options['airfoils']['n_af']):
             for j in range(len(self.wt_ref['airfoils'][i]['polars'])):
@@ -68,6 +71,14 @@ class Wind_Turbine(object):
         wt_init_options['airfoils']['n_Re']   = len(np.unique(Re_all))
         wt_init_options['airfoils']['n_tab']  = 1
         wt_init_options['airfoils']['n_xy']   = 200
+        
+        # Blade
+        wt_init_options['blade']              = {}
+        wt_init_options['blade']['n_span']    = 30
+        wt_init_options['blade']['nd_span']   = np.linspace(0., 1., wt_init_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
+        n_af_span                             = len(self.wt_ref['components']['blade']['outer_shape_bem']['airfoil_position']['labels'])
+        wt_init_options['blade']['n_af_span'] = n_af_span # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+        
         
         return wt_init_options
 
@@ -98,7 +109,43 @@ class Wind_Turbine(object):
             print('Complete: Load Input File: \t%f s'%(t_load))
         
         return yaml.load(inputs)
-               
+
+class Blade(Group):
+    # Openmdao group with components with the blade data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('blade_init_options')
+        
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
+
+class Blade_Outer_Shape_BEM(ExplicitComponent):
+    # Openmdao component with the blade outer shape data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('blade_init_options')
+        
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        n_af_span          = blade_init_options['n_af_span']
+        n_span             = blade_init_options['n_span']
+        
+        self.add_discrete_input('af_name', val=n_af_span * [''],              desc='1D array of names of the airfoils defined along blade span.')
+        
+        self.add_input('af_position',   val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_name defined along blade span.')
+        self.add_input('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('chord',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
+        self.add_input('twist',         val=np.zeros(n_span),    units='deg', desc='1D array of the twist values defined along blade span.')
+        self.add_input('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+        self.add_input('ref_axis',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+
+        self.add_output('length',       val = 0.0,               units='m',   desc='Scalar of the 3D blade length computed along its axis.')
+        self.add_output('length_z',     val = 0.0,               units='m',   desc='Scalar of the 1D blade length along z, i.e. the blade projection in the plane ignoring prebend and sweep. For a straight blade this is equal to length')
+        
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        
+        outputs['length']   = arc_length(inputs['ref_axis'][:,0], inputs['ref_axis'][:,1], inputs['ref_axis'][:,2])[-1]
+        outputs['length_z'] = inputs['ref_axis'][:,2][-1]
+              
 class Materials(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
     
@@ -110,22 +157,22 @@ class Materials(ExplicitComponent):
         mat_init_options = self.options['mat_init_options']
         self.n_mat = n_mat = mat_init_options['n_mat']
         
-        self.add_discrete_input('name', val=n_mat * [''],                         desc='Array of names of materials.')
-        self.add_discrete_input('orth', val=np.zeros(n_mat),                      desc='Array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.')
-        self.add_discrete_input('component_id', val=np.zeros(n_mat),              desc='Array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
+        self.add_discrete_input('name', val=n_mat * [''],                         desc='1D array of names of materials.')
+        self.add_discrete_input('orth', val=np.zeros(n_mat),                      desc='1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.')
+        self.add_discrete_input('component_id', val=np.zeros(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
         
-        self.add_input('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='Matrix of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
-        self.add_input('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='Matrix of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
-        self.add_input('nu',            val=np.zeros([n_mat, 3]),                 desc='Matrix of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
-        self.add_input('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='Array of the density of the materials. For composites, this is the density of the laminate.')
-        self.add_input('unit_cost',     val=np.zeros(n_mat),      units='USD/kg', desc='Array of the unit costs of the materials.')
-        self.add_input('waste',         val=np.zeros(n_mat),                      desc='Array of the non-dimensional waste fraction of the materials.')
-        self.add_input('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='Array of the density of the fibers of the materials.')
-        self.add_input('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='Array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
+        self.add_input('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
+        self.add_input('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
+        self.add_input('nu',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
+        self.add_input('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
+        self.add_input('unit_cost',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
+        self.add_input('waste',         val=np.zeros(n_mat),                      desc='1D array of the non-dimensional waste fraction of the materials.')
+        self.add_input('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the fibers of the materials.')
+        self.add_input('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
         
-        self.add_output('ply_t',        val=np.zeros(n_mat),      units='m',      desc='Array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
-        self.add_output('fvf',          val=np.zeros(n_mat),                      desc='Array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
-        self.add_output('fwf',          val=np.zeros(n_mat),                      desc='Array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
+        self.add_output('ply_t',        val=np.zeros(n_mat),      units='m',      desc='1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
+        self.add_output('fvf',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
+        self.add_output('fwf',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -178,18 +225,18 @@ class Airfoils(ExplicitComponent):
         n_xy            = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
         # Airfoil properties
-        self.add_discrete_input('name', val=n_af * [''],                        desc='Array of names of airfoils.')
-        self.add_input('ac',        val=np.zeros(n_af),                         desc='Grid of the aerodynamic centers of each airfoil.')
-        self.add_input('r_thick',   val=np.zeros(n_af),                         desc='Grid of the relative thicknesses of each airfoil.')
-        self.add_input('aoa',       val=np.zeros(n_aoa),        units='deg',    desc='Grid of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_input('Re',        val=np.zeros((n_Re)),                       desc='Grid of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_input('tab',       val=np.zeros((n_tab)),                      desc='Grid of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
-        self.add_input('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4 dimensional array with the lift coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_input('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4 dimensional array with the drag coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_input('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4 dimensional array with the moment coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        self.add_discrete_input('name', val=n_af * [''],                        desc='1D array of names of airfoils.')
+        self.add_input('ac',        val=np.zeros(n_af),                         desc='1D array of the aerodynamic centers of each airfoil.')
+        self.add_input('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
+        self.add_input('aoa',       val=np.zeros(n_aoa),        units='deg',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        self.add_input('Re',        val=np.zeros((n_Re)),                       desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        self.add_input('tab',       val=np.zeros((n_tab)),                      desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
+        self.add_input('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        self.add_input('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        self.add_input('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         
         # Airfoil coordinates
-        self.add_input('coord_xy',  val=np.zeros((n_af, n_xy, 2)),           desc='Array of the x and y airfoil coordinates of the n_af airfoils.')        
+        self.add_input('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')        
         
 class WT_Data(Group):
     # Openmdao group with all wind turbine data
@@ -201,12 +248,14 @@ class WT_Data(Group):
         wt_init_options = self.options['wt_init_options']
         self.add_subsystem('materials', Materials(mat_init_options = wt_init_options['materials']))
         self.add_subsystem('airfoils',  Airfoils(af_init_options   = wt_init_options['airfoils']))
+        self.add_subsystem('blade',     Blade(blade_init_options   = wt_init_options['blade']))
 
 def yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils):
     # Function to assign values to the openmdao group WT_Data and all its components
     
     wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
     wt_opt = assign_airfoils_values(wt_opt, wt_init_options, airfoils)
+    wt_opt = assign_blade_values(wt_opt, wt_init_options, blade)
     
     return wt_opt
     
@@ -284,12 +333,10 @@ def assign_airfoils_values(wt_opt, wt_init_options, airfoils):
     
     n_af  = wt_init_options['airfoils']['n_af']
     n_aoa = wt_init_options['airfoils']['n_aoa']
+    aoa   = wt_init_options['airfoils']['aoa']
     n_Re  = wt_init_options['airfoils']['n_Re']
     n_tab = wt_init_options['airfoils']['n_tab']
     n_xy  = wt_init_options['airfoils']['n_xy']
-    
-    
-    aoa = np.unique(np.hstack([np.linspace(-180., -30., n_aoa / 4. + 1), np.linspace(-30., 30., n_aoa / 2.), np.linspace(30., 180., n_aoa / 4. + 1)]))
     
     name    = n_af * ['']
     ac      = np.zeros(n_af)
@@ -366,6 +413,33 @@ def assign_airfoils_values(wt_opt, wt_init_options, airfoils):
      
     return wt_opt
 
+def assign_blade_values(wt_opt, wt_init_options, blade):
+    # Function to assign values to the openmdao group Blade
+    
+    wt_opt = assign_outer_shape_bem_values(wt_opt, wt_init_options, blade['outer_shape_bem'])
+    return wt_opt
+    
+def assign_outer_shape_bem_values(wt_opt, wt_init_options, outer_shape_bem):
+    # Function to assign values to the openmdao group Blade    
+    
+    n_span      = wt_init_options['blade']['n_span']
+    nd_span     = wt_init_options['blade']['nd_span']
+    n_af_span   = wt_init_options['blade']['n_af_span']
+    
+    wt_opt['blade.outer_shape_bem.af_name']     = outer_shape_bem['airfoil_position']['labels']
+    wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
+    
+    wt_opt['blade.outer_shape_bem.s']           = nd_span
+    wt_opt['blade.outer_shape_bem.chord']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])
+    wt_opt['blade.outer_shape_bem.twist']       = np.interp(nd_span, outer_shape_bem['twist']['grid'], outer_shape_bem['twist']['values']) * 180. / np.pi
+    wt_opt['blade.outer_shape_bem.pitch_axis']  = np.interp(nd_span, outer_shape_bem['pitch_axis']['grid'], outer_shape_bem['pitch_axis']['values'])
+    
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
+    
+    return wt_opt
+    
 if __name__ == "__main__":
 
     ## File management
@@ -384,7 +458,10 @@ if __name__ == "__main__":
     wt_opt = yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils)
     wt_opt.run_driver()
     
-    print(wt_opt['materials.E'])
     
+    # Plotting
+    import matplotlib.pyplot as plt
+    plt.plot(wt_opt['blade.outer_shape_bem.s'], wt_opt['blade.outer_shape_bem.twist'])
+    plt.show()
 
 
