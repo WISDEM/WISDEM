@@ -11,7 +11,7 @@ import numpy as np
 import jsonschema as json
 import time
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
-
+from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
 class Wind_Turbine(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
@@ -61,7 +61,11 @@ class Wind_Turbine(object):
         wt_init_options['airfoils']           = {}
         wt_init_options['airfoils']['n_af']   = len(self.wt_ref['airfoils'])
         wt_init_options['airfoils']['n_aoa']  = 200
-        wt_init_options['airfoils']['n_Re']   = 1
+        Re_all = []
+        for i in range(wt_init_options['airfoils']['n_af']):
+            for j in range(len(self.wt_ref['airfoils'][i]['polars'])):
+                Re_all.append(self.wt_ref['airfoils'][i]['polars'][j]['re'])
+        wt_init_options['airfoils']['n_Re']   = len(np.unique(Re_all))
         wt_init_options['airfoils']['n_tab']  = 1
         wt_init_options['airfoils']['n_xy']   = 200
         
@@ -94,8 +98,7 @@ class Wind_Turbine(object):
             print('Complete: Load Input File: \t%f s'%(t_load))
         
         return yaml.load(inputs)
-        
-        
+               
 class Materials(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
     
@@ -162,9 +165,6 @@ class Materials(ExplicitComponent):
                 else:
                     outputs['ply_t'][i] = ply_t[i]
         
-        
-        
-        
 class Airfoils(ExplicitComponent):
     def initialize(self):
         self.options.declare('af_init_options')
@@ -178,19 +178,19 @@ class Airfoils(ExplicitComponent):
         n_xy            = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
         # Airfoil properties
-        self.add_input('af_aoa', val=np.zeros(n_aoa),        units='deg',   desc='Grid of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_input('af_Re',  val=np.zeros((n_Re)),                      desc='Grid of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_input('af_tab', val=np.zeros((n_tab)),                     desc='Grid of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
-        self.add_input('af_cl',  val=np.zeros((n_af, n_aoa, n_Re, n_tab)),  desc='4 dimensional array with the lift coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_input('af_cd',  val=np.zeros((n_af, n_aoa, n_Re, n_tab)),  desc='4 dimensional array with the drag coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_input('af_cm',  val=np.zeros((n_af, n_aoa, n_Re, n_tab)),  desc='4 dimensional array with the moment coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        self.add_discrete_input('name', val=n_af * [''],                        desc='Array of names of airfoils.')
+        self.add_input('ac',        val=np.zeros(n_af),                         desc='Grid of the aerodynamic centers of each airfoil.')
+        self.add_input('r_thick',   val=np.zeros(n_af),                         desc='Grid of the relative thicknesses of each airfoil.')
+        self.add_input('aoa',       val=np.zeros(n_aoa),        units='deg',    desc='Grid of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        self.add_input('Re',        val=np.zeros((n_Re)),                       desc='Grid of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        self.add_input('tab',       val=np.zeros((n_tab)),                      desc='Grid of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
+        self.add_input('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4 dimensional array with the lift coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        self.add_input('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4 dimensional array with the drag coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        self.add_input('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4 dimensional array with the moment coefficients of the airfoils. Dimension 0 is aling the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         
         # Airfoil coordinates
-        self.add_input('af_coord_x',  val=np.zeros((n_af, n_xy)),           desc='Array of the x airfoil coordinates of the n_af airfoils.')
-        self.add_input('af_coord_y',  val=np.zeros((n_af, n_xy)),           desc='Array of the y airfoil coordinates of the n_af airfoils.')
+        self.add_input('coord_xy',  val=np.zeros((n_af, n_xy, 2)),           desc='Array of the x and y airfoil coordinates of the n_af airfoils.')        
         
-        
-
 class WT_Data(Group):
     # Openmdao group with all wind turbine data
     
@@ -287,13 +287,85 @@ def assign_airfoils_values(wt_opt, wt_init_options, airfoils):
     n_Re  = wt_init_options['airfoils']['n_Re']
     n_tab = wt_init_options['airfoils']['n_tab']
     n_xy  = wt_init_options['airfoils']['n_xy']
-
+    
+    
+    aoa = np.unique(np.hstack([np.linspace(-180., -30., n_aoa / 4. + 1), np.linspace(-30., 30., n_aoa / 2.), np.linspace(30., 180., n_aoa / 4. + 1)]))
+    
+    name    = n_af * ['']
+    ac      = np.zeros(n_af)
+    r_thick = np.zeros(n_af)
+    Re_all  = []
+    for i in range(n_af):
+        name[i]     = airfoils[i]['name']
+        ac[i]       = airfoils[i]['aerodynamic_center']
+        r_thick[i]  = airfoils[i]['relative_thickness']
+        for j in range(len(airfoils[i]['polars'])):
+            Re_all.append(airfoils[i]['polars'][j]['re'])
+    Re = sorted(np.unique(Re_all)) 
+    
+    cl = np.zeros((n_af, n_aoa, n_Re, n_tab))
+    cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
+    cm = np.zeros((n_af, n_aoa, n_Re, n_tab))
+    
+    coord_xy = np.zeros((n_af, n_xy, 2))
+    
+    for i in range(n_af):
+        # for j in range(n_Re):
+        cl[i,:,0,0] = np.interp(aoa / 180. * np.pi, airfoils[i]['polars'][0]['c_l']['grid'], airfoils[i]['polars'][0]['c_l']['values'])
+        cd[i,:,0,0] = np.interp(aoa / 180. * np.pi, airfoils[i]['polars'][0]['c_d']['grid'], airfoils[i]['polars'][0]['c_d']['values'])
+        cm[i,:,0,0] = np.interp(aoa / 180. * np.pi, airfoils[i]['polars'][0]['c_m']['grid'], airfoils[i]['polars'][0]['c_m']['values'])
+    
+        if cl[i,0,0,0] != cl[i,-1,0,0]:
+            cl[i,0,0,0] = cl[i,-1,0,0]
+            print("Airfoil " + name[i] + ' has the lift coefficient different between + and - 180 deg. This is fixed automatically, but please check the input data.')
+        if cd[i,0,0,0] != cd[i,-1,0,0]:
+            cd[i,0,0,0] = cd[i,-1,0,0]
+            print("Airfoil " + name[i] + ' has the drag coefficient different between + and - 180 deg. This is fixed automatically, but please check the input data.')
+        if cm[i,0,0,0] != cm[i,-1,0,0]:
+            cm[i,0,0,0] = cm[i,-1,0,0]
+            print("Airfoil " + name[i] + ' has the moment coefficient different between + and - 180 deg. This is fixed automatically, but please check the input data.')
+        
+        points = np.column_stack((airfoils[i]['coordinates']['x'], airfoils[i]['coordinates']['y']))
+        # Check that airfoil points are declared from the TE suction side to TE pressure side
+        idx_le = np.argmin(points[:,0])
+        if np.mean(points[:idx_le,1]) > 0.:
+            points = np.flip(points, axis=0)
+        
+        # Remap points using class AirfoilShape
+        af = AirfoilShape(points=points)
+        af.redistribute(n_xy, even=False, dLE=True)
+        s = af.s
+        af_points = af.points
+        
+        # Add trailing edge point if not defined
+        if [1,0] not in af_points.tolist():
+            af_points[:,0] -= af_points[np.argmin(af_points[:,0]), 0]
+        c = max(af_points[:,0])-min(af_points[:,0])
+        af_points[:,:] /= c
+        
+        coord_xy[i,:,:] = af_points
+        
+        # Plotting
+        # import matplotlib.pyplot as plt
+        # plt.plot(af_points[:,0], af_points[:,1], '.')
+        # plt.plot(af_points[:,0], af_points[:,1])
+        # plt.show()
+        
+        
+    wt_opt['airfoils.aoa']       = aoa
+    wt_opt['airfoils.name']      = name
+    wt_opt['airfoils.ac']        = ac
+    wt_opt['airfoils.r_thick']   = r_thick
+    wt_opt['airfoils.Re']        = Re  # Not yet implemented!
+    wt_opt['airfoils.tab']       = 0.  # Not yet implemented!
+    wt_opt['airfoils.cl']        = cl
+    wt_opt['airfoils.cd']        = cd
+    wt_opt['airfoils.cm']        = cm
+    
+    wt_opt['airfoils.coord_xy']  = coord_xy
      
     return wt_opt
-    
-    
-    
-    
+
 if __name__ == "__main__":
 
     ## File management
@@ -314,21 +386,5 @@ if __name__ == "__main__":
     
     print(wt_opt['materials.E'])
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
