@@ -126,7 +126,7 @@ class PPI:
         self.curr_mon = curr_mon
         self.debug = debug
 
-        fullfile = os.path.join(nrelcsm.__path__[0], self.tblfile)
+        fullfile = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.tblfile)
         try:
             infile = open(fullfile, 'r') #infile = open(self.tblfile)
         except:
