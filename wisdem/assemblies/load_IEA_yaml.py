@@ -14,7 +14,7 @@ from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 from wisdem.rotorse.rotor_geometry_yaml import arc_length
 
-class Wind_Turbine(object):
+class WT_Data(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
     #   - wt_init_options: dictionary with all the inputs that will be passed as options to the openmdao components, such as the length of the arrays
     #   - blade: dictionary representing the entry blade in the yaml file
@@ -269,7 +269,7 @@ class Airfoils(ExplicitComponent):
         # Airfoil coordinates
         self.add_input('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')        
         
-class WT_Data(Group):
+class Wind_Turbine(Group):
     # Openmdao group with all wind turbine data
     
     def initialize(self):
@@ -282,7 +282,7 @@ class WT_Data(Group):
         self.add_subsystem('blade',     Blade(blade_init_options   = wt_init_options['blade']))
 
 def yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils):
-    # Function to assign values to the openmdao group WT_Data and all its components
+    # Function to assign values to the openmdao group Wind_Turbine and all its components
     
     wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
     wt_opt = assign_airfoils_values(wt_opt, wt_init_options, airfoils)
@@ -576,13 +576,13 @@ if __name__ == "__main__":
     # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
     fname_output       = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     
-    wt_initial              = Wind_Turbine()
+    wt_initial              = WT_Data()
     wt_initial.validate     = False
     wt_initial.fname_schema = "reference_turbines/IEAontology_schema.yaml"
     wt_init_options, blade, tower, nacelle, materials, airfoils = wt_initial.initialize(fname_input)
     
     wt_opt          = Problem()
-    wt_opt.model    = WT_Data(wt_init_options = wt_init_options)
+    wt_opt.model    = Wind_Turbine(wt_init_options = wt_init_options)
     wt_opt.setup()
     wt_opt = yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils)
     wt_opt.run_driver()
