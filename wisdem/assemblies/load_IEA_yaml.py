@@ -1,18 +1,11 @@
-try:
-    import ruamel_yaml as ry
-except:
-    try:
-        import ruamel.yaml as ry
-    except:
-        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
-
-from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d, RectBivariateSpline
+import ruamel_yaml as ry
 import numpy as np
 import jsonschema as json
 import time
+from scipy.interpolate import PchipInterpolator
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
-from wisdem.rotorse.rotor_geometry_yaml import arc_length
+from wisdem.rotorse.rotor_geometry_yaml import arc_length, trailing_edge_smoothing
 
 class WT_Data(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
@@ -124,12 +117,10 @@ class Blade(Group):
         self.add_subsystem('interp_airfoils', Blade_Interp_Airfoils(blade_init_options = blade_init_options, af_init_options = af_init_options))
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options))
         
-        self.connect('outer_shape_bem.s','interp_airfoils.s')
-        self.connect('outer_shape_bem.af_used','interp_airfoils.af_used')
-        self.connect('outer_shape_bem.af_position','interp_airfoils.af_position')
-        
-        
-        
+        self.connect('outer_shape_bem.s',           'interp_airfoils.s')
+        self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')
+        self.connect('outer_shape_bem.af_position', 'interp_airfoils.af_position')
+   
 class Blade_Outer_Shape_BEM(ExplicitComponent):
     # Openmdao component with the blade outer shape data coming from the input yaml file.
     def initialize(self):
@@ -149,8 +140,8 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
         self.add_output('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_output('ref_axis',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
 
-        self.add_output('length',       val = 0.0,               units='m',   desc='Scalar of the 3D blade length computed along its axis.')
-        self.add_output('length_z',     val = 0.0,               units='m',   desc='Scalar of the 1D blade length along z, i.e. the blade projection in the plane ignoring prebend and sweep. For a straight blade this is equal to length')
+        self.add_output('length',       val = 0.0,               units='m',    desc='Scalar of the 3D blade length computed along its axis.')
+        self.add_output('length_z',     val = 0.0,               units='m',    desc='Scalar of the 1D blade length along z, i.e. the blade projection in the plane ignoring prebend and sweep. For a straight blade this is equal to length')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -158,21 +149,21 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
         outputs['length_z'] = outputs['ref_axis'][:,2][-1]
 
 class Blade_Interp_Airfoils(ExplicitComponent):
-    # Openmdao component with the blade outer shape data coming from the input yaml file.
+    # Openmdao component to interpolate airfoil coordinates and airfoil polars along the span of the blade for a predefined set of airfoils coming from component Airfoils.
     def initialize(self):
         self.options.declare('blade_init_options')
         self.options.declare('af_init_options')
         
     def setup(self):
         blade_init_options = self.options['blade_init_options']
-        self.n_af_span  = n_af_span = blade_init_options['n_af_span']
-        self.n_span     = n_span    = blade_init_options['n_span']
+        self.n_af_span     = n_af_span = blade_init_options['n_af_span']
+        self.n_span        = n_span    = blade_init_options['n_span']
         af_init_options    = self.options['af_init_options']
-        self.n_af       = n_af      = af_init_options['n_af'] # Number of airfoils
-        n_aoa              = af_init_options['n_aoa']# Number of angle of attacks
-        n_Re               = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
-        n_tab              = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        n_xy               = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
+        self.n_aoa         = n_aoa     = af_init_options['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
         self.add_discrete_input('af_used', val=n_af_span * [''],              desc='1D array of names of the airfoils defined along blade span.')
         
@@ -184,8 +175,6 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         self.add_input('ac',        val=np.zeros(n_af),                         desc='1D array of the aerodynamic centers of each airfoil.')
         self.add_input('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
         self.add_input('aoa',       val=np.zeros(n_aoa),        units='deg',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_input('Re',        val=np.zeros(n_Re),                         desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_input('tab',       val=np.zeros(n_tab),                        desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
         self.add_input('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         self.add_input('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         self.add_input('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
@@ -195,6 +184,7 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         
         # Polars and coordinates interpolated along span
         self.add_output('r_thick_interp',   val=np.zeros(n_span),                         desc='1D array of the relative thicknesses of the blade defined along span.')
+        self.add_output('ac_interp',        val=np.zeros(n_span),                         desc='1D array of the aerodynamic center of the blade defined along span.')
         self.add_output('cl_interp',        val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         self.add_output('cd_interp',        val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         self.add_output('cm_interp',        val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
@@ -202,17 +192,75 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
-        r_thick_used = np.zeros(self.n_af_span)
+        # Reconstruct the blade relative thickness along span with a pchip
+        r_thick_used    = np.zeros(self.n_af_span)
+        coord_xy_used   = np.zeros((self.n_af_span, self.n_xy, 2))
+        coord_xy_interp = np.zeros((self.n_span, self.n_xy, 2))
+        cl_used         = np.zeros((self.n_af_span, self.n_aoa, self.n_Re, self.n_tab))
+        cl_interp       = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
+        cd_used         = np.zeros((self.n_af_span, self.n_aoa, self.n_Re, self.n_tab))
+        cd_interp       = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
+        cm_used         = np.zeros((self.n_af_span, self.n_aoa, self.n_Re, self.n_tab))
+        cm_interp       = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         
         for i in range(self.n_af_span):
             for j in range(self.n_af):
-                if discrete_inputs['af_used'][i] == discrete_inputs['name'][j]:
-                    r_thick_used[i] = inputs['r_thick'][j]
+                if discrete_inputs['af_used'][i] == discrete_inputs['name'][j]:                    
+                    r_thick_used[i]     = inputs['r_thick'][j]
+                    coord_xy_used[i,:,:]= inputs['coord_xy'][j]
+                    cl_used[i,:,:,:]    = inputs['cl'][j,:,:,:]
+                    cd_used[i,:,:,:]    = inputs['cd'][j,:,:,:]
+                    cm_used[i,:,:,:]    = inputs['cm'][j,:,:,:]
                     break
         
-        outputs['r_thick_interp'] = np.interp(inputs['s'], inputs['af_position'], r_thick_used)
+        spline         = PchipInterpolator
+        rthick_spline  = spline(inputs['af_position'], r_thick_used)
+        outputs['r_thick_interp'] = rthick_spline(inputs['s'])
         
+        # Spanwise interpolation of the profile coordinates with a pchip
+        r_thick_unique, indices  = np.unique(r_thick_used, return_index = True)
+        profile_spline  = spline(r_thick_unique, coord_xy_used[indices, :, :])        
+        coord_xy_interp = np.flip(profile_spline(np.flip(outputs['r_thick_interp'])), axis=0)
 
+        for i in range(self.n_span):
+            af_le = coord_xy_interp[i, np.argmin(coord_xy_interp[i,:,0]),:]
+            coord_xy_interp[i,:,0] -= af_le[0]
+            coord_xy_interp[i,:,1] -= af_le[1]
+            c = max(coord_xy_interp[i,:,0]) - min(coord_xy_interp[i,:,0])
+            coord_xy_interp[i,:,:] /= c
+            # If the rel thickness is smaller than 0.4 apply a trailing ege smoothing step
+            if outputs['r_thick_interp'][i] < 0.4: 
+                coord_xy_interp[i,:,:] = trailing_edge_smoothing(coord_xy_interp[i,:,:])
+        
+        # Spanwise interpolation of the airfoil polars with a pchip
+        cl_spline = spline(r_thick_unique, cl_used[indices, :, :, :])        
+        cl_interp = np.flip(cl_spline(np.flip(outputs['r_thick_interp'])), axis=0)
+        cd_spline = spline(r_thick_unique, cd_used[indices, :, :, :])        
+        cd_interp = np.flip(cd_spline(np.flip(outputs['r_thick_interp'])), axis=0)
+        cm_spline = spline(r_thick_unique, cm_used[indices, :, :, :])        
+        cm_interp = np.flip(cm_spline(np.flip(outputs['r_thick_interp'])), axis=0)
+        
+        # Plot interpolated coordinates
+        # import matplotlib.pyplot as plt
+        # for i in range(self.n_span):    
+            # plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k')
+            # plt.axis('equal')
+            # plt.title(i)
+            # plt.show()
+            
+        # Plot interpolated polars
+        # for i in range(self.n_span):    
+            # plt.plot(inputs['aoa'], cl_interp[i,:,0,0], 'b')
+            # plt.plot(inputs['aoa'], cd_interp[i,:,0,0], 'r')
+            # plt.plot(inputs['aoa'], cm_interp[i,:,0,0], 'k')
+            # plt.title(i)
+            # plt.show()  
+            
+        outputs['coord_xy_interp'] = coord_xy_interp
+        outputs['cl_interp']       = cl_interp
+        outputs['cd_interp']       = cd_interp
+        outputs['cm_interp']       = cm_interp
+        
 class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
     # Openmdao component with the blade internal structure data coming from the input yaml file.
     def initialize(self):
@@ -346,8 +394,13 @@ class Wind_Turbine(Group):
         self.add_subsystem('airfoils',  Airfoils(af_init_options   = wt_init_options['airfoils']))
         self.add_subsystem('blade',     Blade(blade_init_options   = wt_init_options['blade'], af_init_options   = wt_init_options['airfoils']))
         
-        self.connect('airfoils.name','blade.interp_airfoils.name')
-        self.connect('airfoils.r_thick','blade.interp_airfoils.r_thick')
+        self.connect('airfoils.name',    'blade.interp_airfoils.name')
+        self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
+        self.connect('airfoils.coord_xy','blade.interp_airfoils.coord_xy')
+        self.connect('airfoils.aoa',     'blade.interp_airfoils.aoa')
+        self.connect('airfoils.cl',      'blade.interp_airfoils.cl')
+        self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
+        self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
 
 def yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
