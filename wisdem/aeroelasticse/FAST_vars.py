@@ -618,6 +618,97 @@ ServoDyn['TabDelim']         = False
 ServoDyn['OutFmt']           = ''            
 ServoDyn['TStart']           = 0.0           
 
+# Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
+DISCON_in = {}
+DISCON_in['LoggingLevel']      = 0
+DISCON_in['F_LPFType']         = 0
+DISCON_in['F_NotchType']       = 0
+DISCON_in['IPC_ControlMode']   = 0
+DISCON_in['VS_ControlMode']    = 0
+DISCON_in['PC_ControlMode']    = 0
+DISCON_in['Y_ControlMode']     = 0
+DISCON_in['SS_Mode']           = 0
+DISCON_in['WE_Mode']           = 0
+DISCON_in['PS_Mode']           = 0
+
+DISCON_in['F_LPFCornerFreq']   = 0.0
+DISCON_in['F_LPFDamping']      = 0.0
+DISCON_in['F_NotchCornerFreq'] = 0.0
+DISCON_in['F_NotchBetaNumDen'] = []
+DISCON_in['F_SSCornerFreq']    = 0.0
+
+DISCON_in['PC_GS_n']           = 0
+DISCON_in['PC_GS_angles']      = []
+DISCON_in['PC_GS_KP']          = []
+DISCON_in['PC_GS_KI']          = []
+DISCON_in['PC_GS_KD']          = []
+DISCON_in['PC_GS_TF']          = []
+DISCON_in['PC_MaxPit']         = 0.0
+DISCON_in['PC_MinPit']         = 0.0
+DISCON_in['PC_MaxRat']         = 0.0
+DISCON_in['PC_MinRat']         = 0.0
+DISCON_in['PC_RefSpd']         = 0.0
+DISCON_in['PC_FinePit']        = 0.0
+DISCON_in['PC_Switch']         = 0.0
+DISCON_in['Z_EnableSine']      = 0
+DISCON_in['Z_PitchAmplitude']  = 0.0
+DISCON_in['Z_PitchFrequency']  = 0.0
+
+DISCON_in['IPC_IntSat']        = 0.0
+DISCON_in['IPC_KI']            = []
+DISCON_in['IPC_aziOffset']     = []
+DISCON_in['IPC_CornerFreqAct'] = 0.0
+
+DISCON_in['VS_GenEff']         = 0.0
+DISCON_in['VS_ArSatTq']        = 0.0
+DISCON_in['VS_MaxRat']         = 0.0
+DISCON_in['VS_MaxTq']          = 0.0
+DISCON_in['VS_MinTq']          = 0.0
+DISCON_in['VS_MinOMSpd']       = 0.0
+DISCON_in['VS_Rgn2K']          = 0.0
+DISCON_in['VS_RtPwr']          = 0.0
+DISCON_in['VS_RtTq']           = 0.0
+DISCON_in['VS_RefSpd']         = 0.0
+DISCON_in['VS_n']              = 0
+DISCON_in['VS_KP']             = 0.0
+DISCON_in['VS_KI']             = 0.0
+DISCON_in['VS_TSRopt']         = 0.0
+
+DISCON_in['SS_VSGain']         = 0.0
+DISCON_in['SS_PCGain']         = 0.0
+
+DISCON_in['WE_BladeRadius']    = 0.0
+DISCON_in['WE_CP_n']           = 0
+DISCON_in['WE_CP']             = []
+DISCON_in['WE_Gamma']          = 0.0
+DISCON_in['WE_GearboxRatio']   = 0.0
+DISCON_in['WE_Jtot']           = 0.0
+DISCON_in['WE_RhoAir']         = 0.0
+DISCON_in['PerfFileName']      = ""
+DISCON_in['PerfTableSize']     = []
+DISCON_in['WE_FOPoles_N']      = 0
+DISCON_in['WE_FOPoles_v']      = []
+DISCON_in['WE_FOPoles']        = []
+
+DISCON_in['Y_ErrThresh']       = 0.0
+DISCON_in['Y_IPC_IntSat']      = 0.0
+DISCON_in['Y_IPC_n']           = 0
+DISCON_in['Y_IPC_KP']          = 0.0
+DISCON_in['Y_IPC_KI']          = 0.0
+DISCON_in['Y_IPC_omegaLP']     = 0.0
+DISCON_in['Y_IPC_zetaLP']      = 0.0
+DISCON_in['Y_MErrSet']         = 0.0
+DISCON_in['Y_omegaLPFast']     = 0.0
+DISCON_in['Y_omegaLPSlow']     = 0.0
+DISCON_in['Y_Rate']            = 0.0
+
+DISCON_in['FA_KI']             = 0.0
+DISCON_in['FA_HPF_CornerFreq'] = 0.0
+DISCON_in['FA_IntSat']         = 0.0
+DISCON_in['PS_BldPitchMin_N']  = 0
+DISCON_in['PS_WindSpeeds']     = []
+DISCON_in['PS_BldPitchMin']    = []
+
 # HydroDyn Input File
 HydroDyn = {}
 HydroDyn['Echo']             = False
@@ -1026,6 +1117,7 @@ FstModel['AeroDynBlade']      = AeroDynBlade
 FstModel['AeroDynTower']      = AeroDynTower
 FstModel['AeroDynPolar']      = AeroDynPolar
 FstModel['ServoDyn']          = ServoDyn
+FstModel['DISCON_in']         = DISCON_in
 FstModel['HydroDyn']          = HydroDyn
 FstModel['MAP']               = MAP
 FstModel['Fst7']              = Fst7

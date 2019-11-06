@@ -394,6 +394,7 @@ class InputReader_OpenFAST(InputReader_Common):
         elif self.fst_vt['Fst']['CompAero'] == 2:
             self.read_AeroDyn15()
         self.read_ServoDyn()
+        self.read_DISCON_in()
         if self.fst_vt['Fst']['CompHydro'] == 1: # SubDyn not yet implimented
             self.read_HydroDyn()
         if self.fst_vt['Fst']['CompMooring'] == 1: # only MAP++ implimented for mooring models
@@ -1215,6 +1216,147 @@ class InputReader_OpenFAST(InputReader_Common):
             data = f.readline()
 
         f.close()
+
+    def read_DISCON_in(self):
+        # Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
+        # file version for NREL Reference OpenSource Controller tuning logic on 11/01/19
+
+        discon_in_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['ServoDyn']['DLL_InFile']))
+
+        if os.path.exists(discon_in_file):
+
+            f = open(discon_in_file)
+
+            f.readline()
+            f.readline()
+            f.readline()
+            f.readline()
+            # DEBUG
+            self.fst_vt['DISCON_in']['LoggingLevel']      = int_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # CONTROLLER FLAGS
+            self.fst_vt['DISCON_in']['F_LPFType']         = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_NotchType']       = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['IPC_ControlMode']   = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_ControlMode']    = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_ControlMode']    = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_ControlMode']     = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['SS_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PS_Mode']           = int_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # FILTERS
+            self.fst_vt['DISCON_in']['F_LPFCornerFreq']   = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_LPFDamping']      = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_NotchCornerFreq'] = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_NotchBetaNumDen'] = [float(idx.strip()) for idx in f.readline().split('F_NotchBetaNumDen')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_SSCornerFreq']    = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # BLADE PITCH CONTROL
+            self.fst_vt['DISCON_in']['PC_GS_n']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_GS_angles']      = [float(idx.strip()) for idx in f.readline().split('PC_GS_angles')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_GS_KP']          = [float(idx.strip()) for idx in f.readline().split('PC_GS_KP')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_GS_KI']          = [float(idx.strip()) for idx in f.readline().split('PC_GS_KI')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_GS_KD']          = [float(idx.strip()) for idx in f.readline().split('PC_GS_KD')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_GS_TF']          = [float(idx.strip()) for idx in f.readline().split('PC_GS_TF')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_MaxPit']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_MinPit']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_MaxRat']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_MinRat']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_RefSpd']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_FinePit']        = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_Switch']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Z_EnableSine']      = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Z_PitchAmplitude']  = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Z_PitchFrequency']  = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # INDIVIDUAL PITCH CONTROL
+            self.fst_vt['DISCON_in']['IPC_IntSat']        = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['IPC_KI']            = [float(idx.strip()) for idx in f.readline().split('IPC_KI')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['IPC_aziOffset']     = [float(idx.strip()) for idx in f.readline().split('IPC_aziOffset')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['IPC_CornerFreqAct'] = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # VS TORQUE CONTROL
+            self.fst_vt['DISCON_in']['VS_GenEff']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_ArSatTq']        = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_MaxRat']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_MaxTq']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_MinTq']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_MinOMSpd']       = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_Rgn2K']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_RtPwr']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_RtTq']           = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_RefSpd']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_n']              = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_KP']             = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_KI']             = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_TSRopt']         = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # SETPOINT SMOOTHER
+            self.fst_vt['DISCON_in']['SS_VSGain']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['SS_PCGain']         = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # WIND SPEED ESTIMATOR
+            self.fst_vt['DISCON_in']['WE_BladeRadius']    = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_CP_n']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_CP']             = [float(idx.strip()) for idx in f.readline().split('WE_CP')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['WE_Gamma']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_GearboxRatio']   = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_Jtot']           = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_RhoAir']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PerfFileName']      = os.path.normpath(os.path.join(self.FAST_directory, f.readline().split()[0][1:-1]))
+            self.fst_vt['DISCON_in']['PerfTableSize']     = [int(idx.strip()) for idx in f.readline().split('PerfTableSize')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['WE_FOPoles_N']      = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_FOPoles_v']      = [float(idx.strip()) for idx in f.readline().split('WE_FOPoles_v')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['WE_FOPoles']        = [float(idx.strip()) for idx in f.readline().split('WE_FOPoles')[0].split() if idx.strip() != '!']
+            f.readline()
+            f.readline()
+
+            # YAW CONTROL
+            self.fst_vt['DISCON_in']['Y_ErrThresh']       = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_IntSat']      = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_n']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_KP']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_KI']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_omegaLP']     = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_zetaLP']      = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_MErrSet']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_omegaLPFast']     = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_omegaLPSlow']     = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_Rate']            = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # TOWER FORE-AFT DAMPING
+            self.fst_vt['DISCON_in']['FA_KI']             = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['FA_HPF_CornerFreq'] = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['FA_IntSat']         = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # PEAK SHAVING
+            self.fst_vt['DISCON_in']['PS_BldPitchMin_N']  = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PS_WindSpeeds']     = [float(idx.strip()) for idx in f.readline().split('PS_WindSpeeds')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PS_BldPitchMin']    = [float(idx.strip()) for idx in f.readline().split('PS_BldPitchMin')[0].split() if idx.strip() != '!']
+
+            f.close()
+
+        else:
+            del self.fst_vt['DISCON_in']
 
     def read_HydroDyn(self):
         # AeroDyn v2.03
