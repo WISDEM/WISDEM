@@ -7,7 +7,6 @@ from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 from wisdem.rotorse.rotor_geometry_yaml import arc_length, trailing_edge_smoothing, remap2grid
 
-#######
 def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
     # dimentional analysis that takes a rotation and offset from the pitch axis and calculates the airfoil intersection
     # rotation
@@ -28,18 +27,8 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
     arc_L = xy_coord_arc[-1]
     xy_coord_arc /= arc_L
     
-    try:
-        idx_inter      = np.argwhere(np.diff(np.sign(xy_coord[:,1] - y_intersection))).flatten() # find closest airfoil surface points to intersection 
-    except:
-        for xi,yi in zip(xy_coord[:,0], xy_coord[:,1]):
-            print(xi, yi)
-        import matplotlib.pyplot as plt
-        plt.plot(xy_coord[:,0], xy_coord[:,1])
-        plt.plot(xy_coord[:,0], y_intersection)
-        plt.show()
-        idx_inter      = np.argwhere(np.diff(np.sign(xy_coord[:,1] - y_intersection))).flatten() # find closest airfoil surface points to intersection 
+    idx_inter      = np.argwhere(np.diff(np.sign(xy_coord[:,1] - y_intersection))).flatten() # find closest airfoil surface points to intersection 
     
-
     midpoint_arc = []
     for sidei in side:
         if sidei.lower() == 'suction':
@@ -48,42 +37,20 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
             tangent_line = np.polyfit(xy_coord[idx_inter[1]:idx_inter[1]+2, 0], xy_coord[idx_inter[1]:idx_inter[1]+2, 1], 1)
 
         midpoint_x = (tangent_line[1]-plane_intersection[1])/(plane_intersection[0]-tangent_line[0])
-
         midpoint_y = plane_intersection[0]*(tangent_line[1]-plane_intersection[1])/(plane_intersection[0]-tangent_line[0]) + plane_intersection[1]
 
         # convert to arc position
         if sidei.lower() == 'suction':
             x_half = xy_coord[:idx_le+1,0]
             arc_half = xy_coord_arc[:idx_le+1]
-            
-            
-            
+
         elif sidei.lower() == 'pressure':
             x_half = xy_coord[idx_le:,0]
             arc_half = xy_coord_arc[idx_le:]
         
-        
-        
         midpoint_arc.append(remap2grid(x_half, arc_half, midpoint_x, spline=interp1d))
-        # print(xy_coord)
-        # print(arc_half)
-        # , midpoint_x)
-        # print(xy_coord_arc)
-        # exit()
-    # if len(idx_inter) == 0:
-    # print(blade['pf']['s'][i], blade['pf']['r'][i], blade['pf']['chord'][i], thk)
-    # import matplotlib.pyplot as plt
-    # plt.plot(xy_coord[:,0], xy_coord[:,1])
-    # plt.axis('equal')
-    # ymin, ymax = plt.gca().get_ylim()
-    # xmin, xmax = plt.gca().get_xlim()
-    # plt.plot(xy_coord[:,0], y_intersection)
-    # plt.plot(p_le_d[0], p_le_d[1], '.')
-    # plt.axis([xmin, xmax, ymin, ymax])
-    # plt.show()
 
     return midpoint_arc
-
 
 class WT_Data(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
@@ -440,7 +407,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     web_rotation[j,i] = - inputs['twist'][i]
                     web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i] / 180. * np.pi, outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
                     
-            # Loop through the layers and compute non-dimensional start and end positions along the profile
+            # Loop through the layers and compute non-dimensional start and end positions along the profile for the different layer definitions
             for j in range(self.n_layers):
                 if discrete_outputs['definition_layer'][j] == 1:
                     layer_start_nd[j,i] = 0.
@@ -472,6 +439,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     pass
                 else:
                     exit('Blade layer ' + str(discrete_outputs['layer_name'][j]) + ' not described correctly. Please check the yaml input file.')
+        
         # Assign openmdao outputs
         outputs['web_rotation']   = web_rotation
         outputs['web_start_nd']   = web_start_nd
@@ -479,7 +447,6 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         outputs['layer_rotation'] = layer_rotation
         outputs['layer_start_nd'] = layer_start_nd
         outputs['layer_end_nd']   = layer_end_nd
-
 
 class Materials(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
@@ -787,6 +754,7 @@ def assign_outer_shape_bem_values(wt_opt, wt_init_options, outer_shape_bem):
     
 def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_structure_2d_fem):
     # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
+    
     n_span          = wt_init_options['blade']['n_span']
     n_webs          = wt_init_options['blade']['n_webs']
     
@@ -796,6 +764,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     definition_web  = np.zeros(n_webs)
     nd_span         = wt_opt['blade.outer_shape_bem.s']
     
+    # Loop through the webs and interpolate spanwise the values
     for i in range(n_webs):
         web_name[i] = internal_structure_2d_fem['webs'][i]['name']
         if 'rotation' in internal_structure_2d_fem['webs'][i] and 'offset_y_pa' in internal_structure_2d_fem['webs'][i]:
@@ -826,6 +795,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     layer_side      = n_layers * ['']
     definition_layer= np.zeros(n_layers)
     
+    # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
     for i in range(n_layers):
         layer_name[i]  = internal_structure_2d_fem['layers'][i]['name']
         layer_mat[i]   = internal_structure_2d_fem['layers'][i]['material']
@@ -885,7 +855,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
             definition_layer[i] = 10
     
     
-    
+    # Assign the openmdao values
     wt_opt['blade.internal_structure_2d_fem.web_name']          = web_name
     wt_opt['blade.internal_structure_2d_fem.s']                 = nd_span
     wt_opt['blade.internal_structure_2d_fem.web_rotation']      = web_rotation
