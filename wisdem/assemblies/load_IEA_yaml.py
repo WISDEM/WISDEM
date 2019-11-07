@@ -413,7 +413,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.add_output('layer_end_nd',      val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         
         self.add_discrete_output('definition_web',   val=np.zeros(n_webs),                   desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
-        self.add_discrete_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) offset+rotation=twist+width 2) offset+rotation+width')
+        self.add_discrete_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around 2) offset+rotation=twist+width 3) offset+user defined rotation+width 4) midpoint TE+width 5) midpoint LE+width')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -427,12 +427,13 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
 
         # Loop through spanwise stations
         for i in range(self.n_span):
-            # Compute the arc length (arc_L_i) and the non-dimensional arc coordinates (xy_arc_i) of the profile at position i
+            # Compute the arc length (arc_L_i), the non-dimensional arc coordinates (xy_arc_i), and the non dimensional position of the leading edge of the profile at position i
             xy_coord_i  = inputs['coord_xy_dim'][i,:,:]
             xy_arc_i    = arc_length(xy_coord_i[:,0], xy_coord_i[:,1])
             arc_L_i     = xy_arc_i[-1]
             xy_arc_i    /= arc_L_i
-            
+            idx_le      = np.argmin(xy_coord_i[:,0])
+            LE_loc      = xy_arc_i[idx_le]
             # Loop through the webs and compute non-dimensional start and end positions along the profile
             for j in range(self.n_webs):
                 if discrete_outputs['definition_web'][j] == 1:
@@ -442,12 +443,26 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
             # Loop through the layers and compute non-dimensional start and end positions along the profile
             for j in range(self.n_layers):
                 if discrete_outputs['definition_layer'][j] == 1:
+                    layer_start_nd[j,i] = 0.
+                    layer_end_nd[j,i]   = 1.
+                if discrete_outputs['definition_layer'][j] == 2:
                     layer_rotation[j,i] = - inputs['twist'][i]
                     midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i] / 180. * np.pi, outputs['layer_offset_y_pa'][j,i], [0.,0.], [discrete_outputs['layer_side'][j]])[0]
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-                    
+                if discrete_outputs['definition_layer'][j] == 4:
+                    midpoint = 1. 
+                    outputs['layer_midpoint_nd'][j,i] = midpoint
+                    width    = outputs['layer_width'][j,i]
+                    layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
+                    layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
+                if discrete_outputs['definition_layer'][j] == 5:
+                    midpoint = LE_loc
+                    outputs['layer_midpoint_nd'][j,i] = midpoint
+                    width    = outputs['layer_width'][j,i]
+                    layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
+                    layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
         
         # Assign openmdao outputs
         outputs['web_rotation']   = web_rotation
@@ -810,12 +825,12 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
         if 'rotation' in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' in internal_structure_2d_fem['layers'][i] and 'width' in internal_structure_2d_fem['layers'][i] and 'side' in internal_structure_2d_fem['layers'][i]:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['rotation'].keys():
                 if internal_structure_2d_fem['layers'][i]['rotation']['fixed'] == 'twist':
-                    definition_layer[i] = 1
+                    definition_layer[i] = 2
                 else:
                     exit('Invalid rotation reference for layer ' + layer_name[i] + '. Please check the yaml input file.')
             else:
                 layer_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['rotation']['grid'], internal_structure_2d_fem['layers'][i]['rotation']['values']) * 180. / np.pi
-                definition_layer[i] = 2
+                definition_layer[i] = 3
             layer_offset_y_pa[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['offset_y_pa']['grid'], internal_structure_2d_fem['layers'][i]['offset_y_pa']['values'])
             layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
             layer_side[i]    = internal_structure_2d_fem['layers'][i]['side']
@@ -823,9 +838,9 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
             if 'fixed' in internal_structure_2d_fem['layers'][i]['midpoint_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['fixed'] == 'TE':
                     layer_midpoint_nd[i,:] = np.ones(n_span)
-                    definition_layer[i] = 3
-                elif internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['fixed'] == 'LE':
                     definition_layer[i] = 4
+                elif internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['fixed'] == 'LE':
+                    definition_layer[i] = 5
                     # layer_midpoint_nd[i,:] = -np.ones(n_span) # To be assigned later!
             else:
                 layer_midpoint_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['values'])
