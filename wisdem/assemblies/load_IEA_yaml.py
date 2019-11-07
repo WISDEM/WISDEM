@@ -25,6 +25,8 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
     
     idx_le = np.argmin(xy_coord[:,0])
     xy_coord_arc = arc_length(xy_coord[:,0], xy_coord[:,1])
+    arc_L = xy_coord_arc[-1]
+    xy_coord_arc /= arc_L
     
     try:
         idx_inter      = np.argwhere(np.diff(np.sign(xy_coord[:,1] - y_intersection))).flatten() # find closest airfoil surface points to intersection 
@@ -46,9 +48,7 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
             tangent_line = np.polyfit(xy_coord[idx_inter[1]:idx_inter[1]+2, 0], xy_coord[idx_inter[1]:idx_inter[1]+2, 1], 1)
 
         midpoint_x = (tangent_line[1]-plane_intersection[1])/(plane_intersection[0]-tangent_line[0])
-        
-        print(midpoint_x)
-        # exit()
+
         midpoint_y = plane_intersection[0]*(tangent_line[1]-plane_intersection[1])/(plane_intersection[0]-tangent_line[0]) + plane_intersection[1]
 
         # convert to arc position
@@ -56,16 +56,20 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
             x_half = xy_coord[:idx_le+1,0]
             arc_half = xy_coord_arc[:idx_le+1]
             
-            print(x_half)
-            print(arc_half)
-            exit()
+            
             
         elif sidei.lower() == 'pressure':
             x_half = xy_coord[idx_le:,0]
             arc_half = xy_coord_arc[idx_le:]
-
+        
+        
+        
         midpoint_arc.append(remap2grid(x_half, arc_half, midpoint_x, spline=interp1d))
-
+        # print(xy_coord)
+        # print(arc_half)
+        # , midpoint_x)
+        # print(xy_coord_arc)
+        # exit()
     # if len(idx_inter) == 0:
     # print(blade['pf']['s'][i], blade['pf']['r'][i], blade['pf']['chord'][i], thk)
     # import matplotlib.pyplot as plt
@@ -418,35 +422,25 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         for i in range(self.n_webs):
             if discrete_outputs['definition_web'][i] == 1:
                 webs_rotation[i,:] = - inputs['twist']
-        
-       
-        
+
         for i in range(self.n_span):
             xy_coord_i  = inputs['coord_xy_dim'][i,:,:]
             xy_arc_i    = arc_length(xy_coord_i[:,0], xy_coord_i[:,1])
             arc_L_i     = xy_arc_i[-1]
+            xy_arc_i    /= arc_L_i
             for j in range(self.n_layers):
                 if discrete_outputs['definition_layer'][j] == 1:
                     layer_rotation[j,i] = - inputs['twist'][i]
                     midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i] / 180. * np.pi, outputs['layer_offset_y_pa'][j,i], [0.,0.], [discrete_outputs['layer_side'][j]])[0]
                     width    = outputs['layer_width'][j,i]
-                    
-                    print(midpoint)
-                    print(width)
-                    print(arc_L_i)
-                    exit()
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-            # exit()
+        
         outputs['webs_rotation']  = webs_rotation
         outputs['layer_rotation'] = layer_rotation
         outputs['layer_start_nd'] = layer_start_nd
         outputs['layer_end_nd']   = layer_end_nd
-        
-        print(layer_start_nd)
-        print(layer_end_nd)
-        
-            
+
     
 class Materials(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
