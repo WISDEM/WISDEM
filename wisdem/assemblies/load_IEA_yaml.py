@@ -413,7 +413,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.add_output('layer_end_nd',      val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         
         self.add_discrete_output('definition_web',   val=np.zeros(n_webs),                   desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
-        self.add_discrete_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around 2) offset+rotation=twist+width 3) offset+user defined rotation+width 4) midpoint TE+width 5) midpoint LE+width')
+        self.add_discrete_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around 2) offset+rotation=twist+width 3) offset+user defined rotation+width 4) midpoint TE+width 5) midpoint LE+width 10) web layer')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -445,33 +445,41 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                 if discrete_outputs['definition_layer'][j] == 1:
                     layer_start_nd[j,i] = 0.
                     layer_end_nd[j,i]   = 1.
-                if discrete_outputs['definition_layer'][j] == 2:
+                elif discrete_outputs['definition_layer'][j] == 2:
                     layer_rotation[j,i] = - inputs['twist'][i]
                     midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i] / 180. * np.pi, outputs['layer_offset_y_pa'][j,i], [0.,0.], [discrete_outputs['layer_side'][j]])[0]
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-                if discrete_outputs['definition_layer'][j] == 4:
+                elif discrete_outputs['definition_layer'][j] == 4:
                     midpoint = 1. 
                     outputs['layer_midpoint_nd'][j,i] = midpoint
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
-                    layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-                if discrete_outputs['definition_layer'][j] == 5:
+                    layer_end_nd[j,i]   = width/arc_L_i/2.
+                elif discrete_outputs['definition_layer'][j] == 5:
                     midpoint = LE_loc
                     outputs['layer_midpoint_nd'][j,i] = midpoint
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-        
+                elif discrete_outputs['definition_layer'][j] == 6:
+                    if outputs['layer_start_nd'][j,i] > 1:
+                        layer_start_nd[j,i] = layer_end_nd[int(outputs['layer_start_nd'][j,i]),i]
+                    if outputs['layer_end_nd'][j,i] > 1:
+                        layer_end_nd[j,i]   = layer_start_nd[int(outputs['layer_end_nd'][j,i]),i]
+                elif discrete_outputs['definition_layer'][j] == 10:
+                    pass
+                else:
+                    exit('Blade layer ' + str(discrete_outputs['layer_name'][j]) + ' not described correctly. Please check the yaml input file.')
         # Assign openmdao outputs
         outputs['web_rotation']   = web_rotation
         outputs['web_start_nd']   = web_start_nd
         outputs['web_end_nd']     = web_end_nd
-        
         outputs['layer_rotation'] = layer_rotation
         outputs['layer_start_nd'] = layer_start_nd
         outputs['layer_end_nd']   = layer_end_nd
+
 
 class Materials(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
@@ -822,6 +830,9 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
         layer_name[i]  = internal_structure_2d_fem['layers'][i]['name']
         layer_mat[i]   = internal_structure_2d_fem['layers'][i]['material']
         thickness[i]   = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['thickness']['grid'], internal_structure_2d_fem['layers'][i]['thickness']['values'])
+        if 'rotation' not in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' not in internal_structure_2d_fem['layers'][i] and 'width' not in internal_structure_2d_fem['layers'][i] and 'start_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'end_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'web' not in internal_structure_2d_fem['layers'][i]:
+            definition_layer[i] = 1
+            
         if 'rotation' in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' in internal_structure_2d_fem['layers'][i] and 'width' in internal_structure_2d_fem['layers'][i] and 'side' in internal_structure_2d_fem['layers'][i]:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['rotation'].keys():
                 if internal_structure_2d_fem['layers'][i]['rotation']['fixed'] == 'twist':
@@ -844,12 +855,17 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                     # layer_midpoint_nd[i,:] = -np.ones(n_span) # To be assigned later!
             else:
                 layer_midpoint_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['values'])
+            layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
         if 'start_nd_arc' in internal_structure_2d_fem['layers'][i]:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['start_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'TE':
                     layer_start_nd[i,:] = np.ones(n_span)
                 else:
-                    layer_start_nd[i,:] = -np.ones(n_span) # To be assigned later!
+                    definition_layer[i] = 6
+                    for k in range(n_layers):
+                        if layer_name[k] == internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed']:
+                            layer_start_nd[i,:] = np.ones(n_span) * k
+                            break
             else:
                 layer_start_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['start_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['start_nd_arc']['values'])
         if 'end_nd_arc' in internal_structure_2d_fem['layers'][i]:
@@ -857,16 +873,23 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                 if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
                     layer_end_nd[i,:] = np.ones(n_span)
                 else:
-                    layer_end_nd[i,:] = -np.ones(n_span) # To be assigned later!
+                    definition_layer[i] = 6
+                    for k in range(n_layers):
+                        if layer_name[k] == internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed']:
+                            layer_end_nd[i,:] = np.ones(n_span) * k
+                            break
             else:
                 layer_end_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['end_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['end_nd_arc']['values'])
         if 'web' in internal_structure_2d_fem['layers'][i]:
             layer_web[i] = internal_structure_2d_fem['layers'][i]['web']
-
+            definition_layer[i] = 10
+    
+    
+    
     wt_opt['blade.internal_structure_2d_fem.web_name']          = web_name
     wt_opt['blade.internal_structure_2d_fem.s']                 = nd_span
-    wt_opt['blade.internal_structure_2d_fem.web_rotation']     = web_rotation
-    wt_opt['blade.internal_structure_2d_fem.web_offset_y_pa']  = web_offset_y_pa
+    wt_opt['blade.internal_structure_2d_fem.web_rotation']      = web_rotation
+    wt_opt['blade.internal_structure_2d_fem.web_offset_y_pa']   = web_offset_y_pa
     
     wt_opt['blade.internal_structure_2d_fem.layer_name']        = layer_name
     wt_opt['blade.internal_structure_2d_fem.layer_mat']         = layer_mat
