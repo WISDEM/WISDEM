@@ -117,7 +117,7 @@ class PlantFinance(ExplicitComponent):
             print('Total initial capital cost        %.2f M USD'      % (icc * n_turbine * t_rating * 1.e-006))  
             print('Opex costs of the park            %.2f M USD/yr'   % (c_opex_turbine * n_turbine * 1.e-006))              
             print('Net energy capture                %.2f MWh/MW/yr'  % nec)
-            print('LCoE                              %.2f USD/MW'     % (lcoe  * 1.e003)) #removed "coe", best to have only one metric for cost
+            print('LCoE                              %.2f USD/MWh'    % (lcoe  * 1.e003)) #removed "coe", best to have only one metric for cost
             print('################################################')
             
                     

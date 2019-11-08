@@ -151,8 +151,6 @@ class WT_Data(object):
     def write_ontology(self, wt_opt, fname_output):
         
         pass
-        
-        
 
 class Blade(Group):
     # Openmdao group with components with the blade data coming from the input yaml file.
@@ -951,9 +949,9 @@ if __name__ == "__main__":
     fname_output       = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     
     # Load yaml data into a pure python data structure
-    wt_initial              = WT_Data()
-    wt_initial.validate     = False
-    wt_initial.fname_schema = "reference_turbines/IEAontology_schema.yaml"
+    wt_initial               = WT_Data()
+    wt_initial.validate      = False
+    wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
     # Initialize openmdao problem

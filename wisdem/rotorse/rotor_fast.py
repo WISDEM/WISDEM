@@ -404,8 +404,11 @@ class FASTLoadCases(ExplicitComponent):
         
         # Update AeroDyn15
         fst_vt['AeroDyn15']['AirDens'] = inputs['rho'][0]
-        fst_vt['AeroDyn15']['KinVisc'] = inputs['mu'][0]
-
+        fst_vt['AeroDyn15']['KinVisc'] = inputs['mu'][0] / inputs['rho'][0]
+        
+        print(fst_vt['AeroDyn15']['KinVisc'])
+        exit()
+        
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
         r[0]  = 0.
