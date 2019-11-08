@@ -81,17 +81,11 @@ class WT_Data(object):
 
         # Load input
         self.fname_input = fname_input
-        self.wt_ref = self.load_ontology(self.fname_input, validate=self.validate, fname_schema=self.fname_schema)
+        self.wt_init     = self.load_ontology(self.fname_input, validate=self.validate, fname_schema=self.fname_schema)
 
         wt_init_options = self.openmdao_vectors()        
-        blade           = self.wt_ref['components']['blade']
-        tower           = {} # self.wt_ref['components']['tower']
-        nacelle         = {} # self.wt_ref['components']['tower']
-        materials       = self.wt_ref['materials']
-        airfoils        = self.wt_ref['airfoils']
         
-
-        return wt_init_options, blade, tower, nacelle, materials, airfoils
+        return wt_init_options, self.wt_init
 
     def openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
@@ -99,18 +93,18 @@ class WT_Data(object):
         
         # Materials
         wt_init_options['materials']          = {}
-        wt_init_options['materials']['n_mat'] = len(self.wt_ref['materials'])
+        wt_init_options['materials']['n_mat'] = len(self.wt_init['materials'])
         
         # Airfoils
         wt_init_options['airfoils']           = {}
-        wt_init_options['airfoils']['n_af']   = len(self.wt_ref['airfoils'])
+        wt_init_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
         wt_init_options['airfoils']['n_aoa']  = self.n_aoa
         wt_init_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-180., -30., wt_init_options['airfoils']['n_aoa'] / 4. + 1), np.linspace(-30., 30., wt_init_options['airfoils']['n_aoa'] / 2.), np.linspace(30., 180., wt_init_options['airfoils']['n_aoa'] / 4. + 1)]))
         
         Re_all = []
         for i in range(wt_init_options['airfoils']['n_af']):
-            for j in range(len(self.wt_ref['airfoils'][i]['polars'])):
-                Re_all.append(self.wt_ref['airfoils'][i]['polars'][j]['re'])
+            for j in range(len(self.wt_init['airfoils'][i]['polars'])):
+                Re_all.append(self.wt_init['airfoils'][i]['polars'][j]['re'])
         wt_init_options['airfoils']['n_Re']   = len(np.unique(Re_all))
         wt_init_options['airfoils']['n_tab']  = 1
         wt_init_options['airfoils']['n_xy']   = self.n_xy
@@ -119,9 +113,9 @@ class WT_Data(object):
         wt_init_options['blade']              = {}
         wt_init_options['blade']['n_span']    = self.n_span
         wt_init_options['blade']['nd_span']   = np.linspace(0., 1., wt_init_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
-        wt_init_options['blade']['n_af_span'] = len(self.wt_ref['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
-        wt_init_options['blade']['n_webs']    = len(self.wt_ref['components']['blade']['internal_structure_2d_fem']['webs'])
-        wt_init_options['blade']['n_layers']  = len(self.wt_ref['components']['blade']['internal_structure_2d_fem']['layers'])
+        wt_init_options['blade']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+        wt_init_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
+        wt_init_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
         wt_init_options['blade']['lofted_output'] = False
         
         return wt_init_options
@@ -153,6 +147,12 @@ class WT_Data(object):
             print('Complete: Load Input File: \t%f s'%(t_load))
         
         return yaml.load(inputs)
+    
+    def write_ontology(self, wt_opt, fname_output):
+        
+        pass
+        
+        
 
 class Blade(Group):
     # Openmdao group with components with the blade data coming from the input yaml file.
@@ -175,7 +175,7 @@ class Blade(Group):
         self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')
         self.connect('outer_shape_bem.af_position', 'interp_airfoils.af_position')
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
-        if blade_init_options['lofted_output'] = True:
+        if blade_init_options['lofted_output'] == True:
             self.add_subsystem('blade_lofted',    Blade_Lofted_Shape(blade_init_options = blade_init_options, af_init_options = af_init_options))
             self.connect('interp_airfoils.coord_xy_dim',    'blade_lofted.coord_xy_dim')
             self.connect('outer_shape_bem.twist',           'blade_lofted.twist')
@@ -622,8 +622,14 @@ class Wind_Turbine(Group):
         self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
         self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
 
-def yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils):
+def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
+    
+    blade           = wt_init['components']['blade']
+    tower           = {} # wt_init['components']['tower']
+    nacelle         = {} # wt_init['components']['tower']
+    materials       = wt_init['materials']
+    airfoils        = wt_init['airfoils']
     
     wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
     wt_opt = assign_airfoils_values(wt_opt, wt_init_options, airfoils)
@@ -944,16 +950,22 @@ if __name__ == "__main__":
     # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
     fname_output       = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     
+    # Load yaml data into a pure python data structure
     wt_initial              = WT_Data()
     wt_initial.validate     = False
     wt_initial.fname_schema = "reference_turbines/IEAontology_schema.yaml"
-    wt_init_options, blade, tower, nacelle, materials, airfoils = wt_initial.initialize(fname_input)
+    wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
+    # Initialize openmdao problem
     wt_opt          = Problem()
     wt_opt.model    = Wind_Turbine(wt_init_options = wt_init_options)
     wt_opt.setup()
-    wt_opt = yaml2openmdao(wt_opt, wt_init_options, blade, tower, nacelle, materials, airfoils)
+    # Load wind turbine data from wt_initial to the openmdao problem
+    wt_opt = yaml2openmdao(wt_opt, wt_init_options, wt_init)
     wt_opt.run_driver()
+    
+    # Save data coming from openmdao to an output yaml file
+    wt_initial.initialize(fname_output, wt_opt)
     
     print(wt_opt['blade.interp_airfoils.r_thick_interp'])
 
