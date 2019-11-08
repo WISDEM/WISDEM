@@ -122,7 +122,7 @@ class WT_Data(object):
         wt_init_options['blade']['n_af_span'] = len(self.wt_ref['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
         wt_init_options['blade']['n_webs']    = len(self.wt_ref['components']['blade']['internal_structure_2d_fem']['webs'])
         wt_init_options['blade']['n_layers']  = len(self.wt_ref['components']['blade']['internal_structure_2d_fem']['layers'])
-        
+        wt_init_options['blade']['lofted_output'] = False
         
         return wt_init_options
 
@@ -161,22 +161,31 @@ class Blade(Group):
         self.options.declare('af_init_options')
                 
     def setup(self):
+        # Options
         blade_init_options = self.options['blade_init_options']
         af_init_options    = self.options['af_init_options']
+        
+        # Import outer shape BEM
         self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
+        # Interpolate airfoil profiles and coordinates
         self.add_subsystem('interp_airfoils', Blade_Interp_Airfoils(blade_init_options = blade_init_options, af_init_options = af_init_options))
-        
-        self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
-        
         self.connect('outer_shape_bem.s',           'interp_airfoils.s')
         self.connect('outer_shape_bem.chord',       'interp_airfoils.chord')
         self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils.pitch_axis')
         self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')
         self.connect('outer_shape_bem.af_position', 'interp_airfoils.af_position')
-        
+        # If the flag is true, generate the 3D x,y,z points of the outer blade shape
+        if blade_init_options['lofted_output'] = True:
+            self.add_subsystem('blade_lofted',    Blade_Lofted_Shape(blade_init_options = blade_init_options, af_init_options = af_init_options))
+            self.connect('interp_airfoils.coord_xy_dim',    'blade_lofted.coord_xy_dim')
+            self.connect('outer_shape_bem.twist',           'blade_lofted.twist')
+            self.connect('outer_shape_bem.s',               'blade_lofted.s')
+            self.connect('outer_shape_bem.ref_axis',        'blade_lofted.ref_axis')
+        # Import blade internal structure data and remap composites on the outer blade shape
+        self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
         self.connect('outer_shape_bem.twist',           'internal_structure_2d_fem.twist')
         self.connect('interp_airfoils.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
-   
+
 class Blade_Outer_Shape_BEM(ExplicitComponent):
     # Openmdao component with the blade outer shape data coming from the input yaml file.
     def initialize(self):
@@ -339,7 +348,59 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         outputs['cl_interp']       = cl_interp
         outputs['cd_interp']       = cd_interp
         outputs['cm_interp']       = cm_interp
+
+class Blade_Lofted_Shape(ExplicitComponent):
+    # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.
+    def initialize(self):
+        self.options.declare('blade_init_options')
+        self.options.declare('af_init_options')
         
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        af_init_options    = self.options['af_init_options']
+        self.n_span        = n_span = blade_init_options['n_span']
+        self.n_xy          = n_xy   = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+                
+        self.add_input('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('twist',         val=np.zeros(n_span),    units='deg', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        self.add_input('ref_axis',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+        
+        self.add_input('coord_xy_dim',  val=np.zeros((n_span, n_xy, 2)),     units = 'm', desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
+        
+        self.add_output('coord_xy_dim_twisted',val=np.zeros((n_span, n_xy, 2)), units = 'm', desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
+        self.add_output('3D_shape',     val = np.zeros((n_span * n_xy, 4)),   units = 'm', desc='4D array of the s, and x, y, and z coordinates of the points describing the outer shape of the blade. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+        
+    def compute(self, inputs, outputs):
+
+        for i in range(self.n_span):
+            twist_rad = inputs['twist'][i] / 180. * np.pi
+            x = inputs['coord_xy_dim'][i,:,0]
+            y = inputs['coord_xy_dim'][i,:,1]
+            outputs['coord_xy_dim_twisted'][i,:,0] = x * np.cos(twist_rad) - y * np.sin(twist_rad)
+            outputs['coord_xy_dim_twisted'][i,:,1] = y * np.cos(twist_rad) + x * np.sin(twist_rad)
+                
+        k=0
+        for i in range(self.n_span):
+            for j in range(self.n_xy):
+                outputs['3D_shape'][k,:] = np.array([k, outputs['coord_xy_dim_twisted'][i,j,1], outputs['coord_xy_dim_twisted'][i,j,0], 0.0]) + np.hstack([0, inputs['ref_axis'][i,:]])
+                k=k+1
+        
+        np.savetxt('3d_xyz_nrel5mw.dat', outputs['3D_shape'], header='\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.')
+        
+        import matplotlib.pyplot as plt
+        for i in range(self.n_span):    
+            plt.plot(outputs['coord_xy_dim_twisted'][i,:,0], outputs['coord_xy_dim_twisted'][i,:,1], 'k')
+            plt.axis('equal')
+            plt.title(i)
+            plt.show()
+            
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.mplot3d import Axes3D
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot(outputs['3D_shape'][:,1],outputs['3D_shape'][:,2],outputs['3D_shape'][:,3])
+        plt.show()
+     
 class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
     # Openmdao component with the blade internal structure data coming from the input yaml file.
     def initialize(self):
@@ -759,8 +820,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     n_webs          = wt_init_options['blade']['n_webs']
     
     web_name        = n_webs * ['']
-    web_rotation   = np.zeros((n_webs, n_span))
-    web_offset_y_pa= np.zeros((n_webs, n_span))
+    web_rotation    = np.zeros((n_webs, n_span))
+    web_offset_y_pa = np.zeros((n_webs, n_span))
     definition_web  = np.zeros(n_webs)
     nd_span         = wt_opt['blade.outer_shape_bem.s']
     
