@@ -384,9 +384,6 @@ class InputWriter_OpenFAST(InputWriter_Common):
         try:
             f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['LinTimes'], 'LinTimes', '- List of times at which to linearize (s) [1 to NLinTimes] [unused if Linearize=False]\n'))
         except:
-            print(self.fst_vt['Fst']['LinTimes'], '<------')
-
-            
             f.write('{:<22} {:<11} {:}'.format(', '.join(['{:}'.format(ti) for ti in self.fst_vt['Fst']['LinTimes']]), 'LinTimes', '- List of times at which to linearize (s) [1 to NLinTimes] [unused if Linearize=False]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['LinInputs'], 'LinInputs', '- Inputs included in linearization (switch) {0=none; 1=standard; 2=all module inputs (debug)} [unused if Linearize=False]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['LinOutputs'], 'LinOutputs', '- Outputs included in linearization (switch) {0=none; 1=from OutList(s); 2=all module outputs (debug)} [unused if Linearize=False]\n'))
