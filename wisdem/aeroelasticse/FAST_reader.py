@@ -1318,7 +1318,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['WE_GearboxRatio']   = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['WE_Jtot']           = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['WE_RhoAir']         = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['PerfFileName']      = os.path.normpath(os.path.join(self.FAST_directory, f.readline().split()[0][1:-1]))
+            self.fst_vt['DISCON_in']['PerfFileName']      = os.path.abspath(os.path.join(self.FAST_directory, f.readline().split()[0][1:-1]))
             self.fst_vt['DISCON_in']['PerfTableSize']     = [int(idx.strip()) for idx in f.readline().split('PerfTableSize')[0].split() if idx.strip() != '!']
             self.fst_vt['DISCON_in']['WE_FOPoles_N']      = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['WE_FOPoles_v']      = [float(idx.strip()) for idx in f.readline().split('WE_FOPoles_v')[0].split() if idx.strip() != '!']
