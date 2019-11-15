@@ -73,7 +73,6 @@ class WT_Data(object):
         self.n_xy            = 200         # Number of angles of coordinate points used to discretize each airfoil
         self.n_span          = 30          # Number of spanwise stations used to define the blade properties
         
-
     def initialize(self, fname_input):
         # Class instance to break the yaml into sub dictionaries
         if self.verbose:
@@ -100,7 +99,6 @@ class WT_Data(object):
         wt_init_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
         wt_init_options['airfoils']['n_aoa']  = self.n_aoa
         wt_init_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., wt_init_options['airfoils']['n_aoa'] / 4. + 1), np.linspace(-np.pi / 6., np.pi / 6., wt_init_options['airfoils']['n_aoa'] / 2.), np.linspace(np.pi / 6., np.pi, wt_init_options['airfoils']['n_aoa'] / 4. + 1)]))
-        
         Re_all = []
         for i in range(wt_init_options['airfoils']['n_af']):
             for j in range(len(self.wt_init['airfoils'][i]['polars'])):
@@ -118,6 +116,12 @@ class WT_Data(object):
         wt_init_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
         wt_init_options['blade']['lofted_output'] = False
         
+        # Tower 
+        wt_init_options['tower']              = {}
+        wt_init_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
+        wt_init_options['tower']['nd_height'] = np.linspace(0., 1., wt_init_options['tower']['n_height']) # Equally spaced non-dimensional grid along tower height
+        wt_init_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
+
         return wt_init_options
 
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
@@ -150,7 +154,7 @@ class WT_Data(object):
     
     def write_ontology(self, wt_opt, fname_output):
 
-        # Update outer shape
+        # Update blade outer shape
         self.wt_init['components']['blade']['outer_shape_bem']['chord']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.outer_shape_bem.chord'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['twist']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
@@ -206,6 +210,27 @@ class WT_Data(object):
             if wt_opt['blade.internal_structure_2d_fem.definition_layer'][i] == 4 or wt_opt['blade.internal_structure_2d_fem.definition_layer'][i] == 5:
                 self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['midpoint_nd_arc']['grid']   = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
                 self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['midpoint_nd_arc']['values'] = wt_opt['blade.internal_structure_2d_fem.layer_midpoint_nd'][i,:].tolist()
+
+        # Update hub
+        self.wt_init['components']['hub']['outer_shape_bem']['diameter']   = float(wt_opt['hub.diameter'])
+        self.wt_init['components']['hub']['outer_shape_bem']['cone_angle'] = float(wt_opt['hub.cone'])
+
+        # Update nacelle
+        self.wt_init['components']['nacelle']['outer_shape_bem']['uptilt_angle']    = float(wt_opt['nacelle.uptilt'])
+        self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub'] = float(wt_opt['nacelle.distance_tt_hub'])
+
+        # Update tower
+        self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']      = wt_opt['tower.s'].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['values']    = wt_opt['tower.diameter'].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['tower.s'].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['tower.s'].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['tower.s'].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['tower.ref_axis'][:,0].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['tower.ref_axis'][:,1].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['tower.ref_axis'][:,2].tolist()
+        for i in range(self.wt_init_options['tower']['n_layers']):
+            self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower.s'].tolist()
+            self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['tower.layer_thickness'][i,:].tolist()
 
         # Write yaml with updated values
         f = open(fname_output, "w")
@@ -498,7 +523,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.add_output('layer_offset_y_pa', val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_output('layer_width',       val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_output('layer_midpoint_nd', val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_discrete_output('layer_side',  val=n_layers * [''],                         desc='1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.')
+        self.add_discrete_output('layer_side',val=n_layers * [''],                           desc='1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.')
         self.add_output('layer_start_nd',    val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_output('layer_end_nd',      val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         
@@ -571,6 +596,77 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         outputs['layer_start_nd'] = layer_start_nd
         outputs['layer_end_nd']   = layer_end_nd
 
+class Hub(ExplicitComponent):
+    # Openmdao component with the hub data coming from the input yaml file.
+    def setup(self):
+        self.add_output('diameter',     val=0.0, units='m',     desc='Diameter of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
+        self.add_output('cone',         val=0.0, units='rad',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
+        self.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.')
+
+class Nacelle(ExplicitComponent):
+    # Openmdao component with the nacelle data coming from the input yaml file.
+    def setup(self):
+        self.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
+        self.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
+
+class Tower(ExplicitComponent):
+    # Openmdao component with the tower data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('tower_init_options')
+        
+    def setup(self):
+        tower_init_options = self.options['tower_init_options']
+        n_height           = tower_init_options['n_height']
+        n_layers           = tower_init_options['n_layers']
+                
+        self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
+        self.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
+        self.add_output('drag',     val=np.zeros(n_height),                 desc='1D array of the drag coefficients defined along the tower axis.')
+        self.add_output('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+
+        self.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
+        self.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
+        self.add_output('layer_thickness',     val=np.zeros((n_layers, n_height)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each entry along the tower axis.')
+
+        self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
+        self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        # Compute tower height and tower length (a straight tower will be high as long)
+        outputs['height']   = outputs['ref_axis'][-1,2]
+        outputs['length']   = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])[-1]
+
+class Foundation(ExplicitComponent):
+    # Openmdao component with the foundation data coming from the input yaml file.
+    def setup(self):
+        self.add_output('height',           val=0.0, units='m',     desc='Foundation height in respect to the ground level.')
+
+class Airfoils(ExplicitComponent):
+    def initialize(self):
+        self.options.declare('af_init_options')
+    
+    def setup(self):
+        af_init_options = self.options['af_init_options']
+        n_af            = af_init_options['n_af'] # Number of airfoils
+        n_aoa           = af_init_options['n_aoa']# Number of angle of attacks
+        n_Re            = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        n_tab           = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        n_xy            = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        
+        # Airfoil properties
+        self.add_discrete_output('name', val=n_af * [''],                        desc='1D array of names of airfoils.')
+        self.add_output('ac',        val=np.zeros(n_af),                         desc='1D array of the aerodynamic centers of each airfoil.')
+        self.add_output('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
+        self.add_output('aoa',       val=np.zeros(n_aoa),        units='rad',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        self.add_output('Re',        val=np.zeros(n_Re),                         desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        self.add_output('tab',       val=np.zeros(n_tab),                        desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
+        self.add_output('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        self.add_output('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        self.add_output('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        
+        # Airfoil coordinates
+        self.add_output('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')
+
 class Materials(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
     
@@ -637,32 +733,6 @@ class Materials(ExplicitComponent):
                 else:
                     outputs['ply_t'][i] = ply_t[i]
         
-class Airfoils(ExplicitComponent):
-    def initialize(self):
-        self.options.declare('af_init_options')
-    
-    def setup(self):
-        af_init_options = self.options['af_init_options']
-        n_af            = af_init_options['n_af'] # Number of airfoils
-        n_aoa           = af_init_options['n_aoa']# Number of angle of attacks
-        n_Re            = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
-        n_tab           = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        n_xy            = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        
-        # Airfoil properties
-        self.add_discrete_output('name', val=n_af * [''],                        desc='1D array of names of airfoils.')
-        self.add_output('ac',        val=np.zeros(n_af),                         desc='1D array of the aerodynamic centers of each airfoil.')
-        self.add_output('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
-        self.add_output('aoa',       val=np.zeros(n_aoa),        units='rad',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_output('Re',        val=np.zeros(n_Re),                         desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_output('tab',       val=np.zeros(n_tab),                        desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
-        self.add_output('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_output('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_output('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        
-        # Airfoil coordinates
-        self.add_output('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')   
-        
 class Wind_Turbine(Group):
     # Openmdao group with all wind turbine data
     
@@ -675,6 +745,10 @@ class Wind_Turbine(Group):
         self.add_subsystem('airfoils',  Airfoils(af_init_options   = wt_init_options['airfoils']))
         
         self.add_subsystem('blade',     Blade(blade_init_options   = wt_init_options['blade'], af_init_options   = wt_init_options['airfoils']))
+        self.add_subsystem('hub',       Hub())
+        self.add_subsystem('nacelle',   Nacelle())
+        self.add_subsystem('tower',     Tower(tower_init_options   = wt_init_options['tower']))
+        self.add_subsystem('foundation',Foundation())
         
         self.connect('airfoils.name',    'blade.interp_airfoils.name')
         self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
@@ -683,176 +757,28 @@ class Wind_Turbine(Group):
         self.connect('airfoils.cl',      'blade.interp_airfoils.cl')
         self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
         self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
-
+        
 def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
     
     blade           = wt_init['components']['blade']
-    tower           = {} # wt_init['components']['tower']
-    nacelle         = {} # wt_init['components']['tower']
-    materials       = wt_init['materials']
+    hub             = wt_init['components']['hub']
+    nacelle         = wt_init['components']['nacelle']
+    tower           = wt_init['components']['tower']
+    foundation      = wt_init['components']['foundation']
     airfoils        = wt_init['airfoils']
+    materials       = wt_init['materials']
     
-    wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
-    wt_opt = assign_airfoils_values(wt_opt, wt_init_options, airfoils)
     wt_opt = assign_blade_values(wt_opt, wt_init_options, blade)
+    wt_opt = assign_hub_values(wt_opt, hub)
+    wt_opt = assign_nacelle_values(wt_opt, nacelle)
+    wt_opt = assign_tower_values(wt_opt, wt_init_options, tower)
+    wt_opt = assign_foundation_values(wt_opt, foundation)
+    wt_opt = assign_airfoil_values(wt_opt, wt_init_options, airfoils)
+    wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
     
     return wt_opt
     
-def assign_material_values(wt_opt, wt_init_options, materials):
-    # Function to assign values to the openmdao component Materials
-    
-    n_mat = wt_init_options['materials']['n_mat']
-    
-    name        = n_mat * ['']
-    orth        = np.zeros(n_mat)
-    component_id= -np.ones(n_mat)
-    rho         = np.zeros(n_mat)
-    E           = np.zeros([n_mat, 3])
-    G           = np.zeros([n_mat, 3])
-    nu          = np.zeros([n_mat, 3])
-    rho_fiber   = np.zeros(n_mat)
-    rho_area_dry= np.zeros(n_mat)
-    fvf         = np.zeros(n_mat)
-    fvf         = np.zeros(n_mat)
-    fwf         = np.zeros(n_mat)
-    
-    for i in range(n_mat):
-        name[i] =  materials[i]['name']
-        orth[i] =  materials[i]['orth']
-        rho[i]  =  materials[i]['rho']
-        if 'component_id' in materials[i]:
-            component_id[i] = materials[i]['component_id']
-        
-        if orth[i] == 0:
-            if 'E' in materials[i]:
-                E[i,:]  = np.ones(3) * materials[i]['E']
-            if 'nu' in materials[i]:
-                nu[i,:] = np.ones(3) * materials[i]['nu']
-            if 'G' in materials[i]:
-                G[i,:]  = np.ones(3) * materials[i]['G']
-            elif 'nu' in materials[i]:
-                G[i,:]  = np.ones(3) * materials[i]['E']/(2*(1+materials[i]['nu'])) # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
-                warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%mati['name']
-                print(warning_shear_modulus_isotropic)
-                
-        elif orth[i] == 1:
-            E[i,:]  = materials[i]['E']
-            G[i,:]  = materials[i]['G']
-            nu[i,:] = materials[i]['nu']
-        else:
-            exit('')
-        if 'fiber_density' in materials[i]:
-            rho_fiber[i]    = materials[i]['fiber_density']
-        if 'area_density_dry' in materials[i]:
-            rho_area_dry[i] = materials[i]['area_density_dry']
-        
-        
-        if 'fvf' in materials[i]:
-            fvf[i] = materials[i]['fvf']
-        if 'fwf' in materials[i]:
-            fwf[i] = materials[i]['fwf']
-            
-            
-    wt_opt['materials.name']     = name
-    wt_opt['materials.orth']     = orth
-    wt_opt['materials.rho']      = rho
-    wt_opt['materials.component_id']= component_id
-    wt_opt['materials.E']        = E
-    wt_opt['materials.G']        = G
-    wt_opt['materials.nu']       = nu
-    wt_opt['materials.rho_fiber']      = rho_fiber
-    wt_opt['materials.rho_area_dry']   = rho_area_dry
-    wt_opt['materials.fvf']      = fvf
-    wt_opt['materials.fwf']      = fwf
-
-    return wt_opt
-
-def assign_airfoils_values(wt_opt, wt_init_options, airfoils):
-    # Function to assign values to the openmdao component Airfoils
-    
-    n_af  = wt_init_options['airfoils']['n_af']
-    n_aoa = wt_init_options['airfoils']['n_aoa']
-    aoa   = wt_init_options['airfoils']['aoa']
-    n_Re  = wt_init_options['airfoils']['n_Re']
-    n_tab = wt_init_options['airfoils']['n_tab']
-    n_xy  = wt_init_options['airfoils']['n_xy']
-    
-    name    = n_af * ['']
-    ac      = np.zeros(n_af)
-    r_thick = np.zeros(n_af)
-    Re_all  = []
-    for i in range(n_af):
-        name[i]     = airfoils[i]['name']
-        ac[i]       = airfoils[i]['aerodynamic_center']
-        r_thick[i]  = airfoils[i]['relative_thickness']
-        for j in range(len(airfoils[i]['polars'])):
-            Re_all.append(airfoils[i]['polars'][j]['re'])
-    Re = sorted(np.unique(Re_all)) 
-    
-    cl = np.zeros((n_af, n_aoa, n_Re, n_tab))
-    cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
-    cm = np.zeros((n_af, n_aoa, n_Re, n_tab))
-    
-    coord_xy = np.zeros((n_af, n_xy, 2))
-    
-    for i in range(n_af):
-        # for j in range(n_Re):
-        cl[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_l']['grid'], airfoils[i]['polars'][0]['c_l']['values'])
-        cd[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_d']['grid'], airfoils[i]['polars'][0]['c_d']['values'])
-        cm[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_m']['grid'], airfoils[i]['polars'][0]['c_m']['values'])
-    
-        if cl[i,0,0,0] != cl[i,-1,0,0]:
-            cl[i,0,0,0] = cl[i,-1,0,0]
-            print("Airfoil " + name[i] + ' has the lift coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
-        if cd[i,0,0,0] != cd[i,-1,0,0]:
-            cd[i,0,0,0] = cd[i,-1,0,0]
-            print("Airfoil " + name[i] + ' has the drag coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
-        if cm[i,0,0,0] != cm[i,-1,0,0]:
-            cm[i,0,0,0] = cm[i,-1,0,0]
-            print("Airfoil " + name[i] + ' has the moment coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
-        
-        points = np.column_stack((airfoils[i]['coordinates']['x'], airfoils[i]['coordinates']['y']))
-        # Check that airfoil points are declared from the TE suction side to TE pressure side
-        idx_le = np.argmin(points[:,0])
-        if np.mean(points[:idx_le,1]) > 0.:
-            points = np.flip(points, axis=0)
-        
-        # Remap points using class AirfoilShape
-        af = AirfoilShape(points=points)
-        af.redistribute(n_xy, even=False, dLE=True)
-        s = af.s
-        af_points = af.points
-        
-        # Add trailing edge point if not defined
-        if [1,0] not in af_points.tolist():
-            af_points[:,0] -= af_points[np.argmin(af_points[:,0]), 0]
-        c = max(af_points[:,0])-min(af_points[:,0])
-        af_points[:,:] /= c
-        
-        coord_xy[i,:,:] = af_points
-        
-        # Plotting
-        # import matplotlib.pyplot as plt
-        # plt.plot(af_points[:,0], af_points[:,1], '.')
-        # plt.plot(af_points[:,0], af_points[:,1])
-        # plt.show()
-        
-        
-    wt_opt['airfoils.aoa']       = aoa
-    wt_opt['airfoils.name']      = name
-    wt_opt['airfoils.ac']        = ac
-    wt_opt['airfoils.r_thick']   = r_thick
-    wt_opt['airfoils.Re']        = Re  # Not yet implemented!
-    wt_opt['airfoils.tab']       = 0.  # Not yet implemented!
-    wt_opt['airfoils.cl']        = cl
-    wt_opt['airfoils.cd']        = cd
-    wt_opt['airfoils.cm']        = cm
-    
-    wt_opt['airfoils.coord_xy']  = coord_xy
-     
-    return wt_opt
-
 def assign_blade_values(wt_opt, wt_init_options, blade):
     # Function to assign values to the openmdao group Blade
     wt_opt = assign_outer_shape_bem_values(wt_opt, wt_init_options, blade['outer_shape_bem'])
@@ -863,9 +789,7 @@ def assign_blade_values(wt_opt, wt_init_options, blade):
 def assign_outer_shape_bem_values(wt_opt, wt_init_options, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
     
-    n_span      = wt_init_options['blade']['n_span']
     nd_span     = wt_init_options['blade']['nd_span']
-    n_af_span   = wt_init_options['blade']['n_af_span']
     
     wt_opt['blade.outer_shape_bem.af_used']     = outer_shape_bem['airfoil_position']['labels']
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
@@ -1005,7 +929,211 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     wt_opt['blade.internal_structure_2d_fem.definition_layer']  = definition_layer
     
     return wt_opt
+
+def assign_hub_values(wt_opt, hub):
+
+    wt_opt['hub.diameter']    = hub['outer_shape_bem']['diameter']
+    wt_opt['hub.cone']        = hub['outer_shape_bem']['cone_angle']
+    wt_opt['hub.drag_coeff']  = hub['outer_shape_bem']['drag_coefficient']
+
+    return wt_opt
+
+def assign_nacelle_values(wt_opt, nacelle):
+
+    wt_opt['nacelle.uptilt']            = nacelle['outer_shape_bem']['uptilt_angle']
+    wt_opt['nacelle.distance_tt_hub']   = nacelle['outer_shape_bem']['distance_tt_hub']
+
+    return wt_opt
+
+def assign_tower_values(wt_opt, wt_init_options, tower):
+    # Function to assign values to the openmdao component Tower
+    n_height        = wt_init_options['tower']['n_height'] # Number of points along tower height
+    nd_height       = wt_init_options['tower']['nd_height']# Non-dimensional height coordinate
+    n_layers        = wt_init_options['tower']['n_layers']
     
+    layer_name      = n_layers * ['']
+    layer_mat       = n_layers * ['']
+    thickness       = np.zeros((n_layers, n_height))
+
+    wt_opt['tower.s']          = nd_height
+    wt_opt['tower.diameter']   = np.interp(nd_height, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
+    wt_opt['tower.drag']       = np.interp(nd_height, tower['outer_shape_bem']['drag_coefficient']['grid'], tower['outer_shape_bem']['drag_coefficient']['values'])
+    
+    wt_opt['tower.ref_axis'][:,0]  = np.interp(nd_height, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
+    wt_opt['tower.ref_axis'][:,1]  = np.interp(nd_height, tower['outer_shape_bem']['reference_axis']['y']['grid'], tower['outer_shape_bem']['reference_axis']['y']['values'])
+    wt_opt['tower.ref_axis'][:,2]  = np.interp(nd_height, tower['outer_shape_bem']['reference_axis']['z']['grid'], tower['outer_shape_bem']['reference_axis']['z']['values'])
+
+    for i in range(n_layers):
+        layer_name[i]  = tower['internal_structure_2d_fem']['layers'][i]['name']
+        layer_mat[i]   = tower['internal_structure_2d_fem']['layers'][i]['material']
+        thickness[i]   = np.interp(nd_height, tower['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], tower['internal_structure_2d_fem']['layers'][i]['thickness']['values'])
+
+    wt_opt['tower.layer_name']        = layer_name
+    wt_opt['tower.layer_mat']         = layer_mat
+    wt_opt['tower.layer_thickness']   = thickness
+
+    return wt_opt
+
+def assign_foundation_values(wt_opt, foundation):
+
+    wt_opt['foundation.height']    = foundation['height']
+
+    return wt_opt
+
+def assign_airfoil_values(wt_opt, wt_init_options, airfoils):
+    # Function to assign values to the openmdao component Airfoils
+    
+    n_af  = wt_init_options['airfoils']['n_af']
+    n_aoa = wt_init_options['airfoils']['n_aoa']
+    aoa   = wt_init_options['airfoils']['aoa']
+    n_Re  = wt_init_options['airfoils']['n_Re']
+    n_tab = wt_init_options['airfoils']['n_tab']
+    n_xy  = wt_init_options['airfoils']['n_xy']
+    
+    name    = n_af * ['']
+    ac      = np.zeros(n_af)
+    r_thick = np.zeros(n_af)
+    Re_all  = []
+    for i in range(n_af):
+        name[i]     = airfoils[i]['name']
+        ac[i]       = airfoils[i]['aerodynamic_center']
+        r_thick[i]  = airfoils[i]['relative_thickness']
+        for j in range(len(airfoils[i]['polars'])):
+            Re_all.append(airfoils[i]['polars'][j]['re'])
+    Re = sorted(np.unique(Re_all)) 
+    
+    cl = np.zeros((n_af, n_aoa, n_Re, n_tab))
+    cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
+    cm = np.zeros((n_af, n_aoa, n_Re, n_tab))
+    
+    coord_xy = np.zeros((n_af, n_xy, 2))
+    
+    for i in range(n_af):
+        # for j in range(n_Re):
+        cl[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_l']['grid'], airfoils[i]['polars'][0]['c_l']['values'])
+        cd[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_d']['grid'], airfoils[i]['polars'][0]['c_d']['values'])
+        cm[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_m']['grid'], airfoils[i]['polars'][0]['c_m']['values'])
+    
+        if cl[i,0,0,0] != cl[i,-1,0,0]:
+            cl[i,0,0,0] = cl[i,-1,0,0]
+            print("Airfoil " + name[i] + ' has the lift coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
+        if cd[i,0,0,0] != cd[i,-1,0,0]:
+            cd[i,0,0,0] = cd[i,-1,0,0]
+            print("Airfoil " + name[i] + ' has the drag coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
+        if cm[i,0,0,0] != cm[i,-1,0,0]:
+            cm[i,0,0,0] = cm[i,-1,0,0]
+            print("Airfoil " + name[i] + ' has the moment coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
+        
+        points = np.column_stack((airfoils[i]['coordinates']['x'], airfoils[i]['coordinates']['y']))
+        # Check that airfoil points are declared from the TE suction side to TE pressure side
+        idx_le = np.argmin(points[:,0])
+        if np.mean(points[:idx_le,1]) > 0.:
+            points = np.flip(points, axis=0)
+        
+        # Remap points using class AirfoilShape
+        af = AirfoilShape(points=points)
+        af.redistribute(n_xy, even=False, dLE=True)
+        s = af.s
+        af_points = af.points
+        
+        # Add trailing edge point if not defined
+        if [1,0] not in af_points.tolist():
+            af_points[:,0] -= af_points[np.argmin(af_points[:,0]), 0]
+        c = max(af_points[:,0])-min(af_points[:,0])
+        af_points[:,:] /= c
+        
+        coord_xy[i,:,:] = af_points
+        
+        # Plotting
+        # import matplotlib.pyplot as plt
+        # plt.plot(af_points[:,0], af_points[:,1], '.')
+        # plt.plot(af_points[:,0], af_points[:,1])
+        # plt.show()
+        
+        
+    wt_opt['airfoils.aoa']       = aoa
+    wt_opt['airfoils.name']      = name
+    wt_opt['airfoils.ac']        = ac
+    wt_opt['airfoils.r_thick']   = r_thick
+    wt_opt['airfoils.Re']        = Re  # Not yet implemented!
+    wt_opt['airfoils.tab']       = 0.  # Not yet implemented!
+    wt_opt['airfoils.cl']        = cl
+    wt_opt['airfoils.cd']        = cd
+    wt_opt['airfoils.cm']        = cm
+    
+    wt_opt['airfoils.coord_xy']  = coord_xy
+     
+    return wt_opt
+    
+def assign_material_values(wt_opt, wt_init_options, materials):
+    # Function to assign values to the openmdao component Materials
+    
+    n_mat = wt_init_options['materials']['n_mat']
+    
+    name        = n_mat * ['']
+    orth        = np.zeros(n_mat)
+    component_id= -np.ones(n_mat)
+    rho         = np.zeros(n_mat)
+    E           = np.zeros([n_mat, 3])
+    G           = np.zeros([n_mat, 3])
+    nu          = np.zeros([n_mat, 3])
+    rho_fiber   = np.zeros(n_mat)
+    rho_area_dry= np.zeros(n_mat)
+    fvf         = np.zeros(n_mat)
+    fvf         = np.zeros(n_mat)
+    fwf         = np.zeros(n_mat)
+    
+    for i in range(n_mat):
+        name[i] =  materials[i]['name']
+        orth[i] =  materials[i]['orth']
+        rho[i]  =  materials[i]['rho']
+        if 'component_id' in materials[i]:
+            component_id[i] = materials[i]['component_id']
+        
+        if orth[i] == 0:
+            if 'E' in materials[i]:
+                E[i,:]  = np.ones(3) * materials[i]['E']
+            if 'nu' in materials[i]:
+                nu[i,:] = np.ones(3) * materials[i]['nu']
+            if 'G' in materials[i]:
+                G[i,:]  = np.ones(3) * materials[i]['G']
+            elif 'nu' in materials[i]:
+                G[i,:]  = np.ones(3) * materials[i]['E']/(2*(1+materials[i]['nu'])) # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
+                warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%mati['name']
+                print(warning_shear_modulus_isotropic)
+                
+        elif orth[i] == 1:
+            E[i,:]  = materials[i]['E']
+            G[i,:]  = materials[i]['G']
+            nu[i,:] = materials[i]['nu']
+        else:
+            exit('')
+        if 'fiber_density' in materials[i]:
+            rho_fiber[i]    = materials[i]['fiber_density']
+        if 'area_density_dry' in materials[i]:
+            rho_area_dry[i] = materials[i]['area_density_dry']
+        
+        
+        if 'fvf' in materials[i]:
+            fvf[i] = materials[i]['fvf']
+        if 'fwf' in materials[i]:
+            fwf[i] = materials[i]['fwf']
+            
+            
+    wt_opt['materials.name']     = name
+    wt_opt['materials.orth']     = orth
+    wt_opt['materials.rho']      = rho
+    wt_opt['materials.component_id']= component_id
+    wt_opt['materials.E']        = E
+    wt_opt['materials.G']        = G
+    wt_opt['materials.nu']       = nu
+    wt_opt['materials.rho_fiber']      = rho_fiber
+    wt_opt['materials.rho_area_dry']   = rho_area_dry
+    wt_opt['materials.fvf']      = fvf
+    wt_opt['materials.fwf']      = fwf
+
+    return wt_opt
+
 if __name__ == "__main__":
 
     ## File management

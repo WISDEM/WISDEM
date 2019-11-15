@@ -12,7 +12,7 @@ components:
                 grid: [0., 0.022222764, 0.066666667, 0.111110569, 0.166666667, 0.233333333, 0.3, 0.366666667, 0.433333333, 0.5, 0.566666667, 0.633333333, 0.7, 0.766666667, 0.833333333, 0.888889431, 0.933333333, 0.977777236, 1.]
                 # grid: [0, 0.004878049, 0.022222764, 0.166666667, 0.233333333, 0.366666667, 0.433333333, 0.5, 0.566666667, 0.633333333, 0.7, 0.766666667, 0.833333333, 0.888889431, 0.933333333, 0.977777236, 1]
                 # values: [3.386, 3.386, 3.386, 4.557, 4.652, 4.249, 4.007, 3.748, 3.502, 3.256, 3.01, 2.764, 2.518, 2.313, 2.086, 1.419, 1.0855]
-            reference_axis: &ref_axis
+            reference_axis: &ref_axis_blade
                 x:
                     values: [0.0, 0.0]
                     grid: [0.0, 1.0]
@@ -32,7 +32,7 @@ components:
                 values: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.49849943151756665, 0.49737372372879446, 0.4692310290094897, 0.45347111996667905, 0.4384620580189794, 0.4140713473596524, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
                 grid: [0.0, 0.004878048780487805, 0.0065040650406504065, 0.008130081300813009, 0.00975609756097561, 0.01138211382113821, 0.013008130081300813, 0.022222764227642276, 0.024390243902439025, 0.026016260162601626, 0.06666666666666667, 0.08943089430894309, 0.11111056910569106, 0.14634146341463414, 0.16666666666666666, 0.1951219512195122, 0.23333333333333334, 0.2764227642276423, 0.3, 0.3333333333333333, 0.3666666666666667, 0.4, 0.4333333333333333, 0.5, 0.5203252032520326, 0.5666666666666667, 0.6016260162601627, 0.6333333333333334, 0.6666666666666666, 0.6829268292682927, 0.7, 0.7317073170731707, 0.7666666666666666, 0.8333333333333334, 0.8888894308943089, 0.9333333333333333, 0.9777772357723576, 1.0]
         internal_structure_2d_fem:
-            reference_axis: *ref_axis
+            reference_axis: *ref_axis_blade
             webs:
                 - name: Web_fore
                   rotation:
@@ -168,6 +168,43 @@ components:
                   thickness:
                     grid: *id004
                     values: *id005
+    hub:
+        outer_shape_bem:
+          diameter: 3.
+          cone_angle: 0.04363
+          drag_coefficient: 0.5
+    nacelle:
+        outer_shape_bem:
+          uptilt_angle: 0.08726
+          distance_tt_hub: 2.3
+    tower:
+        outer_shape_bem:
+            reference_axis: &ref_axis_tower
+                x:
+                    grid: [0.0, 1.0]
+                    values: [0.0, 0.0]
+                y:
+                    grid: [0.0, 1.0]
+                    values: [0.0, 0.0]
+                z:
+                    grid: &grid_tower [0., 0.167, 0.333, 0.5 , 0.6667, 0.833, 1.] 
+                    values: [0. , 14.6, 29.2, 43.8, 58.4, 73. , 87.6]
+            outer_diameter:
+                grid: *grid_tower
+                values: [6.   , 5.645, 5.29 , 4.935, 4.58 , 4.225, 3.87]
+            drag_coefficient:
+                grid: [0.0, 1.0]
+                values: [0.5, 0.5]
+        internal_structure_2d_fem:
+            reference_axis: *ref_axis_tower
+            layers:
+                - name: tower_wall
+                  material: steel
+                  thickness:
+                    grid: *grid_tower
+                    values: [0.027 , 0.0254, 0.0238, 0.0222, 0.0206, 0.019, 0.019]
+    foundation:
+        height: 0.
 airfoils:
    -  aerodynamic_center: 0.275
       polars:
@@ -366,24 +403,19 @@ materials:
       E: 1.e+6
       rho: 1150.
       orth: 0
-      
-
 assembly:
-    global:
-        rating: 5e6
-        turbine_class: I
-        turbulence_class: B
-        drivetrain: Geared
-        cone_angle: 2.5
-        tilt_angle: 5.0
-        number_of_blades: 3
-        hub_height: 90.0
-        hubD: 3.
-    control:
-        Vin: 3.0
-        Vout: 25.0
-        minOmega: 6.9
-        maxOmega: 12.1
-        tsr: 7.01754386
-        pitch: 0.
-        maxTS: 80.
+    rating: 5e6
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: Geared
+    rotor_orintation: Upwind
+    number_of_blades: 3
+control:
+    Vin: 3.0
+    Vout: 25.0
+    minOmega: 0.72256
+    maxOmega: 1.26711
+    tsr: 7.01754386
+    pitch: 0.
+    maxTS: 80.      
+    
