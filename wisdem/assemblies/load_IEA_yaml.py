@@ -1215,6 +1215,3 @@ if __name__ == "__main__":
     
     # Save data coming from openmdao to an output yaml file
     wt_initial.write_ontology(wt_opt, fname_output)
-    
-    print(wt_opt['blade.interp_airfoils.r_thick_interp'])
-

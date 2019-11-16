@@ -35,23 +35,31 @@ import time
 class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
     def initialize(self):
-        self.options.declare('naero')
-        self.options.declare('n_pc')
-        self.options.declare('n_pc_spline')
-        self.options.declare('regulation_reg_II5',default=True)
-        self.options.declare('regulation_reg_III',default=False)
-        self.options.declare('lock_pitchII',default=False)
+        # self.options.declare('naero')
+        # self.options.declare('n_pc')
+        # self.options.declare('n_pc_spline')
+        # self.options.declare('regulation_reg_II5',default=True)
+        # self.options.declare('regulation_reg_III',default=False)
+        # self.options.declare('lock_pitchII',default=False)
 
-        self.options.declare('n_aoa_grid')
-        self.options.declare('n_Re_grid')
-
+        # self.options.declare('n_aoa_grid')
+        # self.options.declare('n_Re_grid')
+        self.options.declare('wt_init_options')
     
     def setup(self):
-        naero       = self.naero = self.options['naero']
-        n_pc        = self.options['n_pc']
-        n_pc_spline = self.options['n_pc_spline']
-        n_aoa_grid  = self.options['n_aoa_grid']
-        n_Re_grid   = self.options['n_Re_grid']
+        wt_init_options = self.options['wt_init_options']
+        self.n_span        = n_span    = wt_init_options['blade']['n_span']
+        # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
+        self.n_aoa         = n_aoa     = wt_init_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        
+        # naero       = self.naero = self.options['naero']
+        n_pc        = 20
+        n_pc_spline = 200
+        # n_aoa_grid  = self.options['n_aoa_grid']
+        # n_Re_grid   = self.options['n_Re_grid']
 
         # parameters
         self.add_input('control_Vin',        val=0.0, units='m/s',  desc='cut-in wind speed')
@@ -65,26 +73,26 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_discrete_input('drivetrainType',     val='GEARED')
         self.add_input('drivetrainEff',     val=0.0,               desc='overwrite drivetrain model with a given efficiency, used for FAST analysis')
         
-        self.add_input('r',         val=np.zeros(naero), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
-        self.add_input('chord',     val=np.zeros(naero), units='m',   desc='chord length at each section')
-        self.add_input('theta',     val=np.zeros(naero), units='deg', desc='twist angle at each section (positive decreases angle of attack)')
+        self.add_input('r',         val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
+        self.add_input('chord',     val=np.zeros(n_span), units='m',   desc='chord length at each section')
+        self.add_input('theta',     val=np.zeros(n_span), units='deg', desc='twist angle at each section (positive decreases angle of attack)')
         self.add_input('Rhub',      val=0.0,             units='m',   desc='hub radius')
         self.add_input('Rtip',      val=0.0,             units='m',   desc='tip radius')
-        self.add_input('hub_height',     val=0.0,             units='m',   desc='hub height')
+        self.add_input('hub_height',val=0.0,             units='m',   desc='hub height')
         self.add_input('precone',   val=0.0,             units='deg', desc='precone angle', )
         self.add_input('tilt',      val=0.0,             units='deg', desc='shaft tilt', )
         self.add_input('yaw',       val=0.0,             units='deg', desc='yaw error', )
-        self.add_input('precurve',      val=np.zeros(naero),    units='m', desc='precurve at each section')
+        self.add_input('precurve',      val=np.zeros(n_span),    units='m', desc='precurve at each section')
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
-        self.add_input('presweep',      val=np.zeros(naero),    units='m', desc='presweep at each section')
+        self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
         self.add_input('presweepTip',   val=0.0,                units='m', desc='presweep at tip')
         
         # self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
-        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
-        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
-        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
+        self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
         self.add_discrete_input('nBlades',         val=0,                              desc='number of blades')
         self.add_input('rho',       val=0.0,        units='kg/m**3',    desc='density of air')
         self.add_input('mu',        val=0.0,        units='kg/(m*s)',   desc='dynamic viscosity of air')
@@ -116,19 +124,19 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_output('rated_pitch', val=0.0,                units='deg', desc='pitch setting at rated')
         self.add_output('rated_T',     val=0.0,                units='N',   desc='rotor aerodynamic thrust at rated')
         self.add_output('rated_Q',     val=0.0,                units='N*m', desc='rotor aerodynamic torque at rated')
-        self.add_output('ax_induct_cutin',   val=np.zeros(naero),           desc='rotor axial induction at cut-in wind speed along blade span')
-        self.add_output('tang_induct_cutin', val=np.zeros(naero),           desc='rotor tangential induction at cut-in wind speed along blade span')
-        self.add_output('aoa_cutin',val=np.zeros(naero),       units='deg', desc='angle of attack distribution along blade span at cut-in wind speed')
-        self.add_output('cl_cutin', val=np.zeros(naero),                    desc='lift coefficient distribution along blade span at cut-in wind speed')
-        self.add_output('cd_cutin', val=np.zeros(naero),                    desc='drag coefficient distribution along blade span at cut-in wind speed')
+        self.add_output('ax_induct_cutin',   val=np.zeros(n_span),           desc='rotor axial induction at cut-in wind speed along blade span')
+        self.add_output('tang_induct_cutin', val=np.zeros(n_span),           desc='rotor tangential induction at cut-in wind speed along blade span')
+        self.add_output('aoa_cutin',val=np.zeros(n_span),       units='deg', desc='angle of attack distribution along blade span at cut-in wind speed')
+        self.add_output('cl_cutin', val=np.zeros(n_span),                    desc='lift coefficient distribution along blade span at cut-in wind speed')
+        self.add_output('cd_cutin', val=np.zeros(n_span),                    desc='drag coefficient distribution along blade span at cut-in wind speed')
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Create Airfoil class instances
-        af = [None]*self.naero
-        for i in range(self.naero):
+        af = [None]*self.n_span
+        for i in range(self.n_span):
             af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
         
 
