@@ -404,18 +404,18 @@ materials:
       rho: 1150.
       orth: 0
 assembly:
-    rating: 5e6
     turbine_class: I
     turbulence_class: B
     drivetrain: Geared
-    rotor_orintation: Upwind
+    rotor_orientation: Upwind
     number_of_blades: 3
 control:
+    rated_power: 5.e+6
     Vin: 3.0
     Vout: 25.0
     minOmega: 0.72256
     maxOmega: 1.26711
     tsr: 7.01754386
     pitch: 0.
-    maxTS: 80.      
+    maxTS: 80.    
     

@@ -737,8 +737,31 @@ class Materials(ExplicitComponent):
                     if abs(ply_t[i] - outputs['ply_t'][i]) > 1e-3:
                         exit('Error: the ply_t of composite ' + discrete_output['name'][i] + ' specified in the yaml is equal to '+ str(outputs['ply_t'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm')
                 else:
-                    outputs['ply_t'][i] = ply_t[i]
-        
+                    outputs['ply_t'][i] = ply_t[i]      
+
+class Control(ExplicitComponent):
+    # Openmdao component with the wind turbine controller data coming from the input yaml file.
+    def setup(self):
+
+        self.add_output('rated_power',    val=0.0, units='W',       desc='Electrical rated power of the generator.')
+        self.add_output('V_in',           val=0.0, units='m/s',     desc='Cut in wind speed. This is the wind speed where region II begins.')
+        self.add_output('V_out',          val=0.0, units='m/s',     desc='Cut out wind speed. This is the wind speed where region III ends.')
+        self.add_output('min_Omega',      val=0.0, units='rad/s',   desc='Minimum allowed rotor speed.')
+        self.add_output('max_Omega',      val=0.0, units='rad/s',   desc='Maximum allowed rotor speed.')
+        self.add_output('max_TS',         val=0.0, units='m/s',     desc='Maximum allowed blade tip speed.')
+        self.add_output('rated_TSR',      val=0.0,                  desc='Constant tip speed ratio in region II.')
+        self.add_output('rated_pitch',    val=0.0, units='rad',     desc='Constant pitch angle in region II.')
+
+class Configuration(ExplicitComponent):
+    # Openmdao component with the wind turbine configuration data (class, number of blades, upwind vs downwind, ...) coming from the input yaml file.
+    def setup(self):
+
+        self.add_discrete_output('ws_class',            val='', desc='IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.')
+        self.add_discrete_output('turb_class',          val='', desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
+        self.add_discrete_output('gearbox_type',        val='geared', desc='Gearbox configuration (geared, direct-drive, etc.).')
+        self.add_discrete_output('rotor_orientation',   val='upwind', desc='Rotor orientation, either upwind or downwind.')
+        self.add_discrete_output('n_blades',            val=3,        desc='Number of blades of the rotor.')
+
 class Wind_Turbine(Group):
     # Openmdao group with all wind turbine data
     
@@ -751,10 +774,12 @@ class Wind_Turbine(Group):
         self.add_subsystem('airfoils',  Airfoils(af_init_options   = wt_init_options['airfoils']))
         
         self.add_subsystem('blade',     Blade(blade_init_options   = wt_init_options['blade'], af_init_options   = wt_init_options['airfoils']))
-        self.add_subsystem('hub',       Hub())
-        self.add_subsystem('nacelle',   Nacelle())
-        self.add_subsystem('tower',     Tower(tower_init_options   = wt_init_options['tower']))
-        self.add_subsystem('foundation',Foundation())
+        self.add_subsystem('hub',           Hub())
+        self.add_subsystem('nacelle',       Nacelle())
+        self.add_subsystem('tower',         Tower(tower_init_options   = wt_init_options['tower']))
+        self.add_subsystem('foundation',    Foundation())
+        self.add_subsystem('control',       Control())
+        self.add_subsystem('configuration', Configuration())
         
         self.connect('airfoils.name',    'blade.interp_airfoils.name')
         self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
@@ -772,6 +797,8 @@ def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     nacelle         = wt_init['components']['nacelle']
     tower           = wt_init['components']['tower']
     foundation      = wt_init['components']['foundation']
+    control         = wt_init['control']
+    assembly        = wt_init['assembly']
     airfoils        = wt_init['airfoils']
     materials       = wt_init['materials']
     
@@ -780,9 +807,11 @@ def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     wt_opt = assign_nacelle_values(wt_opt, nacelle)
     wt_opt = assign_tower_values(wt_opt, wt_init_options, tower)
     wt_opt = assign_foundation_values(wt_opt, foundation)
+    wt_opt = assign_control_values(wt_opt, control)
+    wt_opt = assign_configuration_values(wt_opt, assembly)
     wt_opt = assign_airfoil_values(wt_opt, wt_init_options, airfoils)
     wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
-    
+
     return wt_opt
     
 def assign_blade_values(wt_opt, wt_init_options, blade):
@@ -983,6 +1012,29 @@ def assign_tower_values(wt_opt, wt_init_options, tower):
 def assign_foundation_values(wt_opt, foundation):
 
     wt_opt['foundation.height']    = foundation['height']
+
+    return wt_opt
+
+def assign_control_values(wt_opt, control):
+
+    wt_opt['control.rated_power']   = control['rated_power']
+    wt_opt['control.V_in']          = control['Vin']
+    wt_opt['control.V_out']         = control['Vout']
+    wt_opt['control.min_Omega']     = control['minOmega']
+    wt_opt['control.max_Omega']     = control['maxOmega']
+    wt_opt['control.rated_TSR']     = control['tsr']
+    wt_opt['control.rated_pitch']   = control['pitch']
+    wt_opt['control.max_TS']        = control['maxTS']
+
+    return wt_opt
+
+def assign_configuration_values(wt_opt, assembly):
+
+    wt_opt['configuration.ws_class']   = assembly['turbine_class']
+    wt_opt['configuration.turb_class']          = assembly['turbulence_class']
+    wt_opt['configuration.gearbox_type']         = assembly['drivetrain']
+    wt_opt['configuration.rotor_orientation']     = assembly['rotor_orientation']
+    wt_opt['configuration.n_blades']     = assembly['number_of_blades']
 
     return wt_opt
 
