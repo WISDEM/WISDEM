@@ -614,6 +614,7 @@ class Nacelle(ExplicitComponent):
     def setup(self):
         self.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
         self.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
+        self.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
 
 class Tower(ExplicitComponent):
     # Openmdao component with the tower data coming from the input yaml file.
@@ -762,6 +763,29 @@ class Configuration(ExplicitComponent):
         self.add_discrete_output('rotor_orientation',   val='upwind', desc='Rotor orientation, either upwind or downwind.')
         self.add_discrete_output('n_blades',            val=3,        desc='Number of blades of the rotor.')
 
+class WT_Assembly(ExplicitComponent):
+    # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
+    def initialize(self):
+        self.options.declare('blade_init_options')
+
+    def setup(self):
+        n_span             = self.options['blade_init_options']['n_span']
+
+        self.add_input('blade_ref_axis',        val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+        self.add_input('hub_radius',            val=0.0, units='m',         desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
+        self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed its axis.')
+        self.add_input('distance_tt_hub',       val=0.0,    units='m',      desc='Vertical distance from tower top to hub center.')
+
+        self.add_output('r_blade',              val=np.zeros(n_span), units='m',      desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
+        self.add_output('rotor_radius',         val=0.0,    units='m',      desc='Scalar of the rotor radius, defined ignoring prebend curvature and sweep.')
+        self.add_output('hub_height',           val=0.0,    units='m',      desc='Height of the hub in the global reference system, i.e. distance rotor center to ground.')
+
+    def compute(self, inputs, outputs):
+        
+        outputs['r_blade']      = inputs['blade_ref_axis'][:,2] + inputs['hub_radius']
+        outputs['rotor_radius'] = outputs['r_blade'][-1]
+        outputs['hub_height']   = inputs['tower_height'] + inputs['distance_tt_hub']
+
 class Wind_Turbine(Group):
     # Openmdao group with all wind turbine data
     
@@ -773,14 +797,15 @@ class Wind_Turbine(Group):
         self.add_subsystem('materials', Materials(mat_init_options = wt_init_options['materials']))
         self.add_subsystem('airfoils',  Airfoils(af_init_options   = wt_init_options['airfoils']))
         
-        self.add_subsystem('blade',     Blade(blade_init_options   = wt_init_options['blade'], af_init_options   = wt_init_options['airfoils']))
+        self.add_subsystem('blade',         Blade(blade_init_options   = wt_init_options['blade'], af_init_options   = wt_init_options['airfoils']))
         self.add_subsystem('hub',           Hub())
         self.add_subsystem('nacelle',       Nacelle())
         self.add_subsystem('tower',         Tower(tower_init_options   = wt_init_options['tower']))
         self.add_subsystem('foundation',    Foundation())
         self.add_subsystem('control',       Control())
         self.add_subsystem('configuration', Configuration())
-        
+        self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = wt_init_options['blade']))
+
         self.connect('airfoils.name',    'blade.interp_airfoils.name')
         self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
         self.connect('airfoils.coord_xy','blade.interp_airfoils.coord_xy')
@@ -788,6 +813,11 @@ class Wind_Turbine(Group):
         self.connect('airfoils.cl',      'blade.interp_airfoils.cl')
         self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
         self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
+
+        self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
+        self.connect('hub.radius',                      'assembly.hub_radius')
+        self.connect('tower.height',                    'assembly.tower_height')
+        self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
         
 def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
@@ -977,6 +1007,7 @@ def assign_nacelle_values(wt_opt, nacelle):
 
     wt_opt['nacelle.uptilt']            = nacelle['outer_shape_bem']['uptilt_angle']
     wt_opt['nacelle.distance_tt_hub']   = nacelle['outer_shape_bem']['distance_tt_hub']
+    wt_opt['nacelle.overhang']          = nacelle['outer_shape_bem']['overhang']
 
     return wt_opt
 

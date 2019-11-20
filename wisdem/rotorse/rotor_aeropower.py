@@ -54,10 +54,10 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        
+        self.regulation_reg_III = True
         # naero       = self.naero = self.options['naero']
-        n_pc        = 20
-        n_pc_spline = 200
+        self.n_pc          = 20
+        self.n_pc_spline   = 200
         # n_aoa_grid  = self.options['n_aoa_grid']
         # n_Re_grid   = self.options['n_Re_grid']
 
@@ -94,8 +94,8 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_input('airfoils_aoa', val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
         self.add_input('airfoils_Re', val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
         self.add_discrete_input('nBlades',         val=0,                              desc='number of blades')
-        self.add_input('rho',       val=0.0,        units='kg/m**3',    desc='density of air')
-        self.add_input('mu',        val=0.0,        units='kg/(m*s)',   desc='dynamic viscosity of air')
+        self.add_input('rho',       val=1.225,        units='kg/m**3',    desc='density of air')
+        self.add_input('mu',        val=1.81e-5,      units='kg/(m*s)',   desc='dynamic viscosity of air')
         self.add_input('shearExp',  val=0.0,                            desc='shear exponent')
         self.add_discrete_input('nSector',   val=4,                         desc='number of sectors to divide rotor face into in computing thrust and power')
         self.add_discrete_input('tiploss',   val=True,                      desc='include Prandtl tip loss model')
@@ -104,20 +104,20 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_discrete_input('usecd',     val=True,                      desc='use drag coefficient in computing induction factors')
 
         # outputs
-        self.add_output('V',        val=np.zeros(n_pc), units='m/s',        desc='wind vector')
-        self.add_output('Omega',    val=np.zeros(n_pc), units='rpm',        desc='rotor rotational speed')
-        self.add_output('pitch',    val=np.zeros(n_pc), units='deg',        desc='rotor pitch schedule')
-        self.add_output('P',        val=np.zeros(n_pc), units='W',          desc='rotor electrical power')
-        self.add_output('T',        val=np.zeros(n_pc), units='N',          desc='rotor aerodynamic thrust')
-        self.add_output('Q',        val=np.zeros(n_pc), units='N*m',        desc='rotor aerodynamic torque')
-        self.add_output('M',        val=np.zeros(n_pc), units='N*m',        desc='blade root moment')
-        self.add_output('Cp',       val=np.zeros(n_pc),                     desc='rotor electrical power coefficient')
-        self.add_output('Cp_aero',  val=np.zeros(n_pc),                     desc='rotor aerodynamic power coefficient')
-        self.add_output('Ct_aero',  val=np.zeros(n_pc),                     desc='rotor aerodynamic thrust coefficient')
-        self.add_output('Cq_aero',  val=np.zeros(n_pc),                     desc='rotor aerodynamic torque coefficient')
-        self.add_output('Cm_aero',  val=np.zeros(n_pc),                     desc='rotor aerodynamic moment coefficient')
-        self.add_output('V_spline', val=np.zeros(n_pc_spline), units='m/s', desc='wind vector')
-        self.add_output('P_spline', val=np.zeros(n_pc_spline), units='W',   desc='rotor electrical power')
+        self.add_output('V',        val=np.zeros(self.n_pc), units='m/s',        desc='wind vector')
+        self.add_output('Omega',    val=np.zeros(self.n_pc), units='rpm',        desc='rotor rotational speed')
+        self.add_output('pitch',    val=np.zeros(self.n_pc), units='deg',        desc='rotor pitch schedule')
+        self.add_output('P',        val=np.zeros(self.n_pc), units='W',          desc='rotor electrical power')
+        self.add_output('T',        val=np.zeros(self.n_pc), units='N',          desc='rotor aerodynamic thrust')
+        self.add_output('Q',        val=np.zeros(self.n_pc), units='N*m',        desc='rotor aerodynamic torque')
+        self.add_output('M',        val=np.zeros(self.n_pc), units='N*m',        desc='blade root moment')
+        self.add_output('Cp',       val=np.zeros(self.n_pc),                     desc='rotor electrical power coefficient')
+        self.add_output('Cp_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic power coefficient')
+        self.add_output('Ct_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic thrust coefficient')
+        self.add_output('Cq_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic torque coefficient')
+        self.add_output('Cm_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic moment coefficient')
+        self.add_output('V_spline', val=np.zeros(self.n_pc_spline), units='m/s', desc='wind vector')
+        self.add_output('P_spline', val=np.zeros(self.n_pc_spline), units='W',   desc='rotor electrical power')
         self.add_output('V_R25',       val=0.0,                units='m/s', desc='region 2.5 transition wind speed')
         self.add_output('rated_V',     val=0.0,                units='m/s', desc='rated wind speed')
         self.add_output('rated_Omega', val=0.0,                units='rpm', desc='rotor rotation speed at rated')
@@ -137,12 +137,12 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         # Create Airfoil class instances
         af = [None]*self.n_span
         for i in range(self.n_span):
-            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
+            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
         
 
         self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
         
-        Uhub     = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.options['n_pc']).flatten()
+        Uhub     = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.n_pc).flatten()
         
         P_aero   = np.zeros_like(Uhub)
         Cp_aero  = np.zeros_like(Uhub)
@@ -319,7 +319,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         
         for j in range(i + 1,len(Uhub)):
             Omega[j] = Omega[i]
-            if self.options['regulation_reg_III']:
+            if self.regulation_reg_III:
                 
                 pitch0   = pitch[j-1]
                 bnds     = [pitch0, pitch0 + 15.]
@@ -376,7 +376,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         
         # Fit spline to powercurve for higher grid density
         spline   = PchipInterpolator(Uhub, P)
-        V_spline = np.linspace(inputs['control_Vin'],inputs['control_Vout'], num=self.options['n_pc_spline'])
+        V_spline = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.n_pc_spline)
         P_spline = spline(V_spline)
         
         # outputs

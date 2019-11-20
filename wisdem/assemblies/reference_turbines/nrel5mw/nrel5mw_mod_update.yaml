@@ -177,6 +177,7 @@ components:
         outer_shape_bem:
           uptilt_angle: 0.08726
           distance_tt_hub: 2.3
+          overhang: 5.
     tower:
         outer_shape_bem:
             reference_axis: &ref_axis_tower
