@@ -236,8 +236,8 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt
     # Plant size
     prob['project_lifetime'] = prob['lifetime'] = 20.0    
     prob['number_of_turbines']             = 200. * 1.e+006 / prob['machine_rating']
-    prob['annual_opex']                    = 43.56 # $/kW/yr
-    prob['bos_costs']                      = 517.0 # $/kW
+    prob['annual_opex']                    = 44. # $/kW/yr
+    prob['bos_costs']                      = 332. + 127. # $/kW
     
     # For RNA
     prob['rna_weightM'] = True

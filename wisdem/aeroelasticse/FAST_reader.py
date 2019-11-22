@@ -1246,6 +1246,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['SS_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['WE_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['PS_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['SD_Mode']           = int_read(f.readline().split()[0])
             f.readline()
             f.readline()
 
@@ -1348,10 +1349,16 @@ class InputReader_OpenFAST(InputReader_Common):
             f.readline()
             f.readline()
 
-            # PEAK SHAVING
+            # MINIMUM PITCH SATURATION
             self.fst_vt['DISCON_in']['PS_BldPitchMin_N']  = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['PS_WindSpeeds']     = [float(idx.strip()) for idx in f.readline().split('PS_WindSpeeds')[0].split() if idx.strip() != '!']
             self.fst_vt['DISCON_in']['PS_BldPitchMin']    = [float(idx.strip()) for idx in f.readline().split('PS_BldPitchMin')[0].split() if idx.strip() != '!']
+            f.readline()
+            f.readline()
+
+            # SHUTDOWN
+            self.fst_vt['DISCON_in']['SD_MaxPit']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['SD_CornerFreq']     = float_read(f.readline().split()[0])
 
             f.close()
 
