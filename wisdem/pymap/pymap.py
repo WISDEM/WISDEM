@@ -292,7 +292,7 @@ class pyMAP(object):
         self.f_type_initout = self.CreateInitoutState( )
         libexec.set_init_to_null(self.f_type_init, self.status, pointer(self.ierr) )
         libexec.map_initialize_msqs_base(self.f_type_u, self.f_type_p, self.f_type_x, self.f_type_z, self.f_type_d, self.f_type_y, self.f_type_initout)
-        self.summary_file(six.b('outlist.map.sum'))
+        self.summary_file('outlist.map.sum')
 
 
     def init( self ):
@@ -328,7 +328,7 @@ class pyMAP(object):
 
     # Set a name for the MAP summary file. Does not need to be called. If not called, the default name is 'outlist.sum.map'
     def summary_file(self, echo_file):
-        self.f_type_init.contents.summaryFileName = echo_file
+        self.f_type_init.contents.summaryFileName = six.b( echo_file )
         libexec.map_set_summary_file_name(self.f_type_init, self.status, pointer(self.ierr) )
 
 
@@ -614,7 +614,7 @@ class pyMAP(object):
                 break
             else:
                 # create_string_buffer(line, 255).raw
-                self.f_type_init.contents.libraryInputLine =  line+'\0'
+                self.f_type_init.contents.libraryInputLine = six.b( line+'\0' )
                 libexec.map_add_cable_library_input_text(self.f_type_init)
    
         f.seek(line_offset[Node_ref+3])
@@ -622,7 +622,7 @@ class pyMAP(object):
             if line[0] == "-":
                 break
             else:
-                self.f_type_init.contents.nodeInputLine = line+'\0'
+                self.f_type_init.contents.nodeInputLine = six.b( line+'\0' )
                 libexec.map_add_node_input_text(self.f_type_init)
 
         f.seek(line_offset[Line_ref+4])
@@ -630,7 +630,7 @@ class pyMAP(object):
             if line[0] == "-":
                 break
             else:
-                self.f_type_init.contents.elementInputLine = line+'\0'
+                self.f_type_init.contents.elementInputLine = six.b( line+'\0' )
                 libexec.map_add_line_input_text(self.f_type_init)
                  
         f.seek(line_offset[Option_ref+5])
@@ -640,7 +640,7 @@ class pyMAP(object):
             elif line[0]=="!":
                 None
             else:
-                self.f_type_init.contents.optionInputLine = line+'\0'
+                self.f_type_init.contents.optionInputLine = six.b( line+'\0' )
                 libexec.map_add_options_input_text(self.f_type_init)            
 
                     
