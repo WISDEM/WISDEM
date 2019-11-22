@@ -429,7 +429,7 @@ class pyIECWind_turb():
         self.z_hub = 90.             # wind turbine hub height (m)
         self.D = 126.                # rotor diameter (m)
         self.PLExp = 0.2
-        self.AnalysisTime = 630.
+        self.AnalysisTime = 720.
         self.debug_level = 0
         self.overwrite = True
 
