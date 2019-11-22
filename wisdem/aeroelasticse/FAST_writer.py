@@ -1113,6 +1113,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SS_Mode'], '! SS_Mode', '- Setpoint Smoother mode {0: no setpoint smoothing, 1: introduce setpoint smoothing}\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_Mode'], '! WE_Mode', '- Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PS_Mode'], '! PS_Mode', '- Peak shaving mode {0: no peak shaving, 1: implement peak shaving}\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_Mode'], '! SD_Mode', '- Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}\n'))
         f.write('\n!------- FILTERS ----------------------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFCornerFreq'], '! F_LPFCornerFreq', '- Corner frequency (-3dB point) in the low-pass filters, [rad/s]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFDamping'], '! F_LPFDamping', '- Damping coefficient [used only when F_FilterType = 2]\n'))
@@ -1188,10 +1189,14 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['FA_KI'], '! FA_KI', '- Integral gain for the fore-aft tower damper controller, -1 = off / >0 = on [rad s/m] - !NJA - Make this a flag\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['FA_HPF_CornerFreq'], '! FA_HPF_CornerFreq', '- Corner frequency (-3dB point) in the high-pass filter on the fore-aft acceleration signal [rad/s]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['FA_IntSat'], '! FA_IntSat', '- Integrator saturation (maximum signal amplitude contribution to pitch from FA damper), [rad]\n'))
-        f.write('\n!------- PEAK SHAVING -------------------------------------------\n')
+        f.write('\n!------- MINIMUM PITCH SATURATION -------------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PS_BldPitchMin_N'], '! PS_BldPitchMin_N', '- Number of values in minimum blade pitch lookup table (should equal number of values in PS_WindSpeeds and PS_BldPitchMin)\n'))
         f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PS_WindSpeeds']]), '! PS_WindSpeeds', '- Wind speeds corresponding to minimum blade pitch angles [m/s]\n'))
         f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PS_BldPitchMin']]), '! PS_BldPitchMin', '- Minimum blade pitch angles [rad]\n'))
+        f.write('\n!------- SHUTDOWN -------------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_MaxPit'], '! SD_MaxPit', '- Maximum blade pitch angle to initiate shutdown, [rad]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_CornerFreq'], '! SD_CornerFreq', '- Cutoff Frequency for first order low-pass filter for blade pitch angle, [rad/s]\n'))
+
 
         f.close()
 
