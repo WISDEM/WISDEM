@@ -763,6 +763,14 @@ class Configuration(ExplicitComponent):
         self.add_discrete_output('rotor_orientation',   val='upwind', desc='Rotor orientation, either upwind or downwind.')
         self.add_discrete_output('n_blades',            val=3,        desc='Number of blades of the rotor.')
 
+class Environment(ExplicitComponent):
+    # Openmdao component with the environmental parameters
+    def setup(self):
+
+        self.add_output('rho_air',      val=1.225,        units='kg/m**3',    desc='Density of air')
+        self.add_output('mu_air',       val=1.81e-5,      units='kg/(m*s)',   desc='Dynamic viscosity of air')
+        self.add_output('weibull_k',    val=2.0,          desc='Shape parameter of the Weibull probability density function of the wind.')
+
 class WT_Assembly(ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
     def initialize(self):
@@ -804,6 +812,7 @@ class Wind_Turbine(Group):
         self.add_subsystem('foundation',    Foundation())
         self.add_subsystem('control',       Control())
         self.add_subsystem('configuration', Configuration())
+        self.add_subsystem('env',           Environment())
         self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = wt_init_options['blade']))
 
         self.connect('airfoils.name',    'blade.interp_airfoils.name')
@@ -829,6 +838,7 @@ def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     foundation      = wt_init['components']['foundation']
     control         = wt_init['control']
     assembly        = wt_init['assembly']
+    environment     = wt_init['environment']
     airfoils        = wt_init['airfoils']
     materials       = wt_init['materials']
     
@@ -839,6 +849,7 @@ def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     wt_opt = assign_foundation_values(wt_opt, foundation)
     wt_opt = assign_control_values(wt_opt, control)
     wt_opt = assign_configuration_values(wt_opt, assembly)
+    wt_opt = assign_environment_values(wt_opt, environment)
     wt_opt = assign_airfoil_values(wt_opt, wt_init_options, airfoils)
     wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
 
@@ -1066,6 +1077,14 @@ def assign_configuration_values(wt_opt, assembly):
     wt_opt['configuration.gearbox_type']         = assembly['drivetrain']
     wt_opt['configuration.rotor_orientation']     = assembly['rotor_orientation']
     wt_opt['configuration.n_blades']     = assembly['number_of_blades']
+
+    return wt_opt
+
+def assign_environment_values(wt_opt, environment):
+
+    wt_opt['env.rho_air']   = environment['air_density']
+    wt_opt['env.mu_air']    = environment['air_dyn_viscosity']
+    wt_opt['env.weibull_k'] = environment['weib_shape_parameter']
 
     return wt_opt
 

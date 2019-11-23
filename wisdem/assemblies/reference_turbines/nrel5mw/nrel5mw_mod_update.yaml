@@ -418,5 +418,12 @@ control:
     maxOmega: 1.26711
     tsr: 7.01754386
     pitch: 0.
-    maxTS: 80.    
+    maxTS: 80.
+environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+
+    
+
     

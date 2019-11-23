@@ -141,7 +141,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         
 
         self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
-        
+
         Uhub     = np.linspace(inputs['control_Vin'],inputs['control_Vout'], self.n_pc).flatten()
         
         P_aero   = np.zeros_like(Uhub)
@@ -398,46 +398,50 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
-        self.options.declare('naero')
-        self.options.declare('n_pitch', default=20)
-        self.options.declare('n_tsr', default=20)
-        self.options.declare('n_U', default=1)
-        self.options.declare('n_aoa_grid')
-        self.options.declare('n_Re_grid')
+        self.options.declare('wt_init_options')
+        # self.options.declare('naero')
+        # self.options.declare('n_pitch', default=20)
+        # self.options.declare('n_tsr', default=20)
+        # self.options.declare('n_U', default=1)
+        # self.options.declare('n_aoa_grid')
+        # self.options.declare('n_Re_grid')
 
     def setup(self):
-        naero       = self.naero = self.options['naero']
-        n_aoa_grid  = self.options['n_aoa_grid']
-        n_Re_grid   = self.options['n_Re_grid']
-        n_pitch     = self.options['n_pitch']
-        n_tsr       = self.options['n_tsr']
-        n_U         = self.options['n_U']
+        wt_init_options = self.options['wt_init_options']
+        self.n_span        = n_span    = wt_init_options['blade']['n_span']
+        self.n_aoa         = n_aoa     = wt_init_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        
+        self.n_pitch = n_pitch     = 20 #self.options['n_pitch']
+        self.n_tsr   = n_tsr       = 20 #self.options['n_tsr']
+        self.n_U     = n_U         = 1 #self.options['n_U']
         
         # parameters        
         self.add_input('control_Vin',   val=0.0,             units='m/s',       desc='cut-in wind speed')
         self.add_input('control_Vout',  val=0.0,             units='m/s',       desc='cut-out wind speed')
-        self.add_input('r',             val=np.zeros(naero), units='m',         desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
-        self.add_input('chord',         val=np.zeros(naero), units='m',         desc='chord length at each section')
-        self.add_input('theta',         val=np.zeros(naero), units='deg',       desc='twist angle at each section (positive decreases angle of attack)')
+        self.add_input('r',             val=np.zeros(n_span), units='m',         desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
+        self.add_input('chord',         val=np.zeros(n_span), units='m',         desc='chord length at each section')
+        self.add_input('theta',         val=np.zeros(n_span), units='deg',       desc='twist angle at each section (positive decreases angle of attack)')
         self.add_input('Rhub',          val=0.0,             units='m',         desc='hub radius')
         self.add_input('Rtip',          val=0.0,             units='m',         desc='tip radius')
         self.add_input('hub_height',    val=0.0,             units='m',         desc='hub height')
         self.add_input('precone',       val=0.0,             units='deg',       desc='precone angle')
         self.add_input('tilt',          val=0.0,             units='deg',       desc='shaft tilt')
-        self.add_input('yaw',           val=0.0,             units='deg',       desc='yaw error')
-        self.add_input('precurve',      val=np.zeros(naero), units='m',         desc='precurve at each section')
-        self.add_input('precurveTip',   val=0.0,             units='m',         desc='precurve at tip')
-        self.add_input('presweep',      val=np.zeros(naero), units='m',         desc='presweep at each section')
-        self.add_input('presweepTip',   val=0.0,             units='m',         desc='presweep at tip')
-        self.add_input('rho',           val=0.0,             units='kg/m**3',   desc='density of air')
-        self.add_input('mu',            val=0.0,             units='kg/(m*s)',  desc='dynamic viscosity of air')
+        self.add_input('yaw',           val=0.0,                units='deg',       desc='yaw error')
+        self.add_input('precurve',      val=np.zeros(n_span),   units='m',         desc='precurve at each section')
+        self.add_input('precurveTip',   val=0.0,                units='m',         desc='precurve at tip')
+        self.add_input('presweep',      val=np.zeros(n_span),   units='m',         desc='presweep at each section')
+        self.add_input('presweepTip',   val=0.0,                units='m',         desc='presweep at tip')
+        self.add_input('rho',           val=1.225,              units='kg/m**3',    desc='density of air')
+        self.add_input('mu',            val=1.81e-5,            units='kg/(m*s)',   desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                desc='shear exponent')
         # self.add_discrete_input('airfoils',      val=[0]*naero,                 desc='CCAirfoil instances')
-        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
-        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
-        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
+        self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
         self.add_discrete_input('nBlades',       val=0,                         desc='number of blades')
         self.add_discrete_input('nSector',       val=4,                         desc='number of sectors to divide rotor face into in computing thrust and power')
         self.add_discrete_input('tiploss',       val=True,                      desc='include Prandtl tip loss model')
@@ -449,9 +453,9 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.add_input('U_vector_in',      val=np.zeros(n_U),     units='m/s',  desc='wind vector specified by the user')
 
         # outputs
-        self.add_output('Cp_aero_table',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero power coefficient')
-        self.add_output('Ct_aero_table',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero thrust coefficient')
-        self.add_output('Cq_aero_table',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero torque coefficient')
+        self.add_output('Cp',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero power coefficient')
+        self.add_output('Ct',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero thrust coefficient')
+        self.add_output('Cq',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero torque coefficient')
         self.add_output('pitch_vector',    val=np.zeros(n_pitch), units='deg',  desc='pitch vector used')
         self.add_output('tsr_vector',      val=np.zeros(n_tsr),                 desc='tsr vector used')
         self.add_output('U_vector',        val=np.zeros(n_U),     units='m/s',  desc='wind vector used')
@@ -459,14 +463,13 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Create Airfoil class instances
-        af = [None]*self.naero
-        for i in range(self.naero):
-            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
-       
+        af = [None]*self.n_span
+        for i in range(self.n_span):
+            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
 
-        n_pitch  = self.options['n_pitch']
-        n_tsr    = self.options['n_tsr']
-        n_U      = self.options['n_U']
+        n_pitch  = self.n_pitch
+        n_tsr    = self.n_tsr
+        n_U      = self.n_U
         U_vector = inputs['U_vector_in']
         V_in     = inputs['control_Vin']
         V_out    = inputs['control_Vout']
@@ -482,81 +485,77 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
             tsr_vector = np.linspace(7.,11., n_tsr)
         if max(pitch_vector) == 0.:
             pitch_vector = np.linspace(-5., 5., n_pitch)
-        
+
         outputs['pitch_vector'] = pitch_vector
         outputs['tsr_vector']   = tsr_vector        
         outputs['U_vector']     = U_vector
                 
         R = inputs['Rtip']
         
-        Cp_aero_table = np.zeros((n_tsr, n_pitch, n_U))
-        Ct_aero_table = np.zeros((n_tsr, n_pitch, n_U))
-        Cq_aero_table = np.zeros((n_tsr, n_pitch, n_U))
-        
         for i in range(n_U):
             for j in range(n_tsr):
                 U     =  U_vector[i] * np.ones(n_pitch)
                 Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
-                _, _, _, _, outputs['Cp_aero_table'][j,:,i], outputs['Ct_aero_table'][j,:,i], outputs['Cq_aero_table'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
-
+                _, _, _, _, outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
 
 # Class to define a constraint so that the blade cannot operate in stall conditions
 class NoStallConstraint(ExplicitComponent):
     def initialize(self):
         
-        self.options.declare('RefBlade')
-        self.options.declare('verbosity', default = False)
+        self.options.declare('wt_init_options')
     
     def setup(self):
-        RefBlade    = self.options['RefBlade']
-        NPTS        = len(RefBlade['pf']['s'])
-        n_aoa_grid  = len(RefBlade['airfoils_aoa'])
-        n_Re_grid   = len(RefBlade['airfoils_Re'])
         
-        self.add_input('stall_angle_along_span', val=np.zeros(NPTS), units = 'deg', desc = 'Stall angle along blade span')
-        self.add_input('aoa_along_span',         val=np.zeros(NPTS), units = 'deg', desc = 'Angle of attack along blade span')
-        self.add_input('stall_margin',           val=0.0,            units = 'deg', desc = 'Minimum margin from the stall angle')
-        self.add_input('min_s',                  val=0.0,            desc = 'Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)')
-        self.add_input('airfoils_cl',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='moment coefficients, spanwise')
-        self.add_input('airfoils_aoa',      val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
+        wt_init_options = self.options['wt_init_options']
+        self.n_span        = n_span    = wt_init_options['blade']['n_span']
+        self.n_aoa         = n_aoa     = wt_init_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         
-        self.add_output('no_stall_constraint',   val=np.zeros(NPTS), desc = 'Constraint, ratio between angle of attack plus a margin and stall angle')
+        self.add_input('s',                     val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('stall_angle_along_span',val=np.zeros(n_span), units = 'deg', desc = 'Stall angle along blade span')
+        self.add_input('aoa_along_span',        val=np.zeros(n_span), units = 'deg', desc = 'Angle of attack along blade span')
+        self.add_input('stall_margin',          val=3.0,            units = 'deg', desc = 'Minimum margin from the stall angle')
+        self.add_input('min_s',                 val=0.15,            desc = 'Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)')
+        self.add_input('airfoils_cl',           val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd',           val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm',           val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa',          val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
+        
+        self.add_output('no_stall_constraint',  val=np.zeros(n_span), desc = 'Constraint, ratio between angle of attack plus a margin and stall angle')
 
     def compute(self, inputs, outputs):
         
-        verbosity = self.options['verbosity']
-        RefBlade  = self.options['RefBlade']
+        verbosity = True
         
-        i_min = np.argmin(abs(inputs['min_s'] - RefBlade['pf']['s']))
+        i_min = np.argmin(abs(inputs['min_s'] - inputs['s']))
         
-        for i in range(len(RefBlade['pf']['s'])):
-            unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][:,i,0], inputs['airfoils_cd'][:,i,0], inputs['airfoils_cm'][:,i,0])
+        for i in range(self.n_span):
+            unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,0], inputs['airfoils_cd'][i,:,0,0], inputs['airfoils_cm'][i,:,0,0])
             inputs['stall_angle_along_span'][i] = unsteady['alpha1']
             if inputs['stall_angle_along_span'][i] == 0:
                 inputs['stall_angle_along_span'][i] = 1e-6 # To avoid nan
         
-        for i in range(i_min, len(RefBlade['pf']['s'])):
+        for i in range(i_min, self.n_span):
             outputs['no_stall_constraint'][i] = (inputs['aoa_along_span'][i] + inputs['stall_margin']) / inputs['stall_angle_along_span'][i]
         
             if verbosity == True:
                 if outputs['no_stall_constraint'][i] > 1:
-                    print('Blade is stalling at span location %.2f %%' % (RefBlade['pf']['s'][i]*100.))
+                    print('Blade is stalling at span location %.2f %%' % (inputs['s'][i]*100.))
 
 
 class AEP(ExplicitComponent):
-    def initialize(self):
-        self.options.declare('n_pc_spline')
+    # def initialize(self):
+    #     self.options.declare('n_pc_spline', default = 200)
     
     def setup(self):
-        n_pc_spline = self.options['n_pc_spline']
+        n_pc_spline = 200
         """integrate to find annual energy production"""
 
         # inputs
         self.add_input('CDF_V', val=np.zeros(n_pc_spline), units='m/s', desc='cumulative distribution function evaluated at each wind speed')
         self.add_input('P', val=np.zeros(n_pc_spline), units='W', desc='power curve (power)')
-        self.add_input('lossFactor', val=0.0, desc='multiplicative factor for availability and other losses (soiling, array, etc.)')
+        self.add_input('lossFactor', val=1.0, desc='multiplicative factor for availability and other losses (soiling, array, etc.)')
 
         # outputs
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production')
@@ -568,6 +567,7 @@ class AEP(ExplicitComponent):
         lossFactor = inputs['lossFactor']
         P = inputs['P']
         CDF_V = inputs['CDF_V']
+        
         factor = lossFactor/1e3*365.0*24.0
         outputs['AEP'] = factor*np.trapz(P, CDF_V)  # in kWh
         '''
