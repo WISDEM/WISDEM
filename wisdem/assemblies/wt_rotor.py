@@ -32,6 +32,7 @@ class RotorAeroPower(Group):
         # connections to aep
         self.connect('cdf.F',               'aep.CDF_V')
         self.connect('powercurve.P_spline', 'aep.P')
+
 class WT_Rotor(Group):
     # Openmdao group to run the aerostructural analysis of the wind turbine rotor
     
@@ -40,11 +41,10 @@ class WT_Rotor(Group):
         
     def setup(self):
         wt_init_options = self.options['wt_init_options']
-        self.add_subsystem('wt',  Wind_Turbine(wt_init_options     = wt_init_options), promotes = ['*'])
-
-        self.add_subsystem('wt_class',          TurbineClass())
-
-        self.add_subsystem('ra',  RotorAeroPower(wt_init_options   = wt_init_options))
+        
+        self.add_subsystem('wt',        Wind_Turbine(wt_init_options     = wt_init_options), promotes = ['*'])
+        self.add_subsystem('wt_class',  TurbineClass())
+        self.add_subsystem('ra',        RotorAeroPower(wt_init_options   = wt_init_options))
 
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
         self.connect('wt_class.V_mean',         'ra.cdf.xbar')
@@ -75,9 +75,6 @@ class WT_Rotor(Group):
         self.connect('env.rho_air',                     'ra.rho')
         self.connect('env.mu_air',                      'ra.mu')
         self.connect('env.weibull_k',                   'ra.cdf.k')
-        
-
-        
 
 if __name__ == "__main__":
 
