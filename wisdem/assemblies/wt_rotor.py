@@ -6,6 +6,11 @@ from wisdem.rotorse.rotor_aeropower import RegulatedPowerCurve, Cp_Ct_Cq_Tables,
 from wisdem.commonse.environment import PowerWind
 from wisdem.commonse.distribution import WeibullWithMeanCDF
 
+class ParametrizeBlade(ExplicitComponent):
+    # Openmdao component to parameterize distributed quantities for the aerodynamic only analysis of the wind turbine rotor
+    def initialize(self):
+        self.options.declare('wt_init_options')
+
 class RotorAeroPower(Group):
     # Openmdao group for the aerodynamic only analysis of the wind turbine rotor
     def initialize(self):
@@ -44,6 +49,7 @@ class WT_Rotor(Group):
         
         self.add_subsystem('wt',        Wind_Turbine(wt_init_options     = wt_init_options), promotes = ['*'])
         self.add_subsystem('wt_class',  TurbineClass())
+        self.add_subsystem('param',     ParametrizeBlade())
         self.add_subsystem('ra',        RotorAeroPower(wt_init_options   = wt_init_options))
 
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
