@@ -105,7 +105,7 @@ class CaseGen_IEC():
             if self.TMax == 0.
                 iecwind.AnalysisTime = TMax
             else:
-                iecwind.AnalysisTime = TMax
+                iecwind.AnalysisTime = self.TMax
             iecwind.Tstart           = self.Tstart
             iecwind.Turbine_Class    = self.Turbine_Class
             iecwind.Turbulence_Class = self.Turbulence_Class
