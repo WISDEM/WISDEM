@@ -102,7 +102,7 @@ class CaseGen_IEC():
                 TMax = 90.
 
             # Windfile generation setup
-            if self.TMax == 0.
+            if self.TMax == 0.:
                 iecwind.AnalysisTime = TMax
                 iecwind.TF           = TMax
             else:
