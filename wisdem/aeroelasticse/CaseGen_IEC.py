@@ -39,23 +39,26 @@ class CaseGen_IEC():
         
         self.init_cond = {} # Dictionary of steady state operating conditions as a function of wind speed, used for setting inital conditions
 
-        self.Turbine_Class = 'I' # I, II, III, IV
-        self.Turbulence_Class = 'A'
-        self.D = 126.
-        self.z_hub = 90.
+        self.Turbine_Class               = 'I' # I, II, III, IV
+        self.Turbulence_Class            = 'A'
+        self.D                           = 126.
+        self.z_hub                       = 90.
 
         # DLC inputs
         self.dlc_inputs = {}
         self.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
         self.transient_shear_orientation = 'both'  # 'v','h','both': vertical or horizontal shear for EWS
+        self.TMax                        = 0.
+        self.Tstart                      = 30.
 
-        self.debug_level = 2
-        self.parallel_windfile_gen = False
-        self.cores = 0
-        self.overwrite = False
+        self.debug_level                 = 2
+        self.parallel_windfile_gen       = False
+        self.cores                       = 0
+        self.overwrite                   = False
 
-        self.mpi_run = False
-        self.comm_map_down = []
+        self.mpi_run                     = False
+        self.comm_map_down               = []
+
 
     def execute(self, case_inputs={}):
 
@@ -99,21 +102,25 @@ class CaseGen_IEC():
                 TMax = 90.
 
             # Windfile generation setup
-            iecwind.AnalysisTime = TMax
-            iecwind.Turbine_Class = self.Turbine_Class
+            if self.TMax == 0.
+                iecwind.AnalysisTime = TMax
+            else:
+                iecwind.AnalysisTime = TMax
+            iecwind.Tstart           = self.Tstart
+            iecwind.Turbine_Class    = self.Turbine_Class
             iecwind.Turbulence_Class = self.Turbulence_Class
-            iecwind.IEC_WindType = IEC_WindType
-            iecwind.dir_change = self.transient_dir_change
-            iecwind.shear_orient = self.transient_shear_orientation
-            iecwind.z_hub = self.z_hub
-            iecwind.D = self.D
-            iecwind.PLExp = alpha
+            iecwind.IEC_WindType     = IEC_WindType
+            iecwind.dir_change       = self.transient_dir_change
+            iecwind.shear_orient     = self.transient_shear_orientation
+            iecwind.z_hub            = self.z_hub
+            iecwind.D                = self.D
+            iecwind.PLExp            = alpha
             
-            iecwind.outdir = self.wind_dir
-            iecwind.case_name = self.case_name_base
-            iecwind.Turbsim_exe = self.Turbsim_exe
-            iecwind.debug_level = self.debug_level
-            iecwind.overwrite = self.overwrite
+            iecwind.outdir           = self.wind_dir
+            iecwind.case_name        = self.case_name_base
+            iecwind.Turbsim_exe      = self.Turbsim_exe
+            iecwind.debug_level      = self.debug_level
+            iecwind.overwrite        = self.overwrite
 
             # Matrix combining N dlc variables that affect wind file generation
             # Done so a single loop can be used for generating wind files in parallel instead of using nested loops

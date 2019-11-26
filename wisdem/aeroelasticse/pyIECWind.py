@@ -12,18 +12,18 @@ class pyIECWind_extreme():
 
     def __init__(self):
 
-        self.Turbine_Class = 'I'     # IEC Wind Turbine Class
-        self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.Vert_Slope = 0          # Vertical slope of the wind inflow (deg)
-        self.Tstart = 30             # Time to start transient conditions (s)
-        self.dt = 0.05               # Transient wind time step (s)
-        self.dir_change = 'both'     # '+','-','both': sign for transient events in EDC, EWS
-        self.shear_orient = 'both'   # 'v','h','both': vertical or horizontal shear for EWS
-        self.z_hub = 90.             # wind turbine hub height (m)
-        self.D = 126.                # rotor diameter (m)
+        self.Turbine_Class    = 'I'    # IEC Wind Turbine Class
+        self.Turbulence_Class = 'B'    # IEC Turbulance Class
+        self.Vert_Slope       = 0      # Vertical slope of the wind inflow (deg)
+        self.Tstart           = 30     # Time to start transient conditions (s)
+        self.dt               = 0.05   # Transient wind time step (s)
+        self.dir_change       = 'both' # '+','-','both': sign for transient events in EDC, EWS
+        self.shear_orient     = 'both' # 'v','h','both': vertical or horizontal shear for EWS
+        self.z_hub            = 90.    # wind turbine hub height (m)
+        self.D                = 126.   # rotor diameter (m)
         
-        self.T0 = 0.
-        self.TF = 630.
+        self.T0               = 0.
+        self.TF               = 630.
 
     def setup(self):
         # General turbulence parameters: 6.3
@@ -424,14 +424,14 @@ class pyIECWind_turb():
     def __init__(self):
 
         # Defaults
-        self.seed = np.random.uniform(1, 1e8)
+        self.seed             = np.random.uniform(1, 1e8)
         self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.z_hub = 90.             # wind turbine hub height (m)
-        self.D = 126.                # rotor diameter (m)
-        self.PLExp = 0.2
-        self.AnalysisTime = 720.
-        self.debug_level = 0
-        self.overwrite = True
+        self.z_hub            = 90.  # wind turbine hub height (m)
+        self.D                = 126. # rotor diameter (m)
+        self.PLExp            = 0.2
+        self.AnalysisTime     = 720.
+        self.debug_level      = 0
+        self.overwrite        = True
 
     def setup(self):
         turbsim_vt = turbsiminputs()
