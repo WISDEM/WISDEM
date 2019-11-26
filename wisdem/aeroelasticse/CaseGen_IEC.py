@@ -104,8 +104,11 @@ class CaseGen_IEC():
             # Windfile generation setup
             if self.TMax == 0.
                 iecwind.AnalysisTime = TMax
+                iecwind.TF           = TMax
             else:
                 iecwind.AnalysisTime = self.TMax
+                iecwind.TF           = self.TMax
+
             iecwind.Tstart           = self.Tstart
             iecwind.Turbine_Class    = self.Turbine_Class
             iecwind.Turbulence_Class = self.Turbulence_Class
