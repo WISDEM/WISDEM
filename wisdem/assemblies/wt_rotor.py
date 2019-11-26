@@ -1,5 +1,5 @@
 import numpy as np
-from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
+from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver
 from wisdem.assemblies.load_IEA_yaml import WT_Data, Wind_Turbine, yaml2openmdao
 from wisdem.rotorse.rotor_geometry import TurbineClass
 from wisdem.rotorse.rotor_aeropower import RegulatedPowerCurve, Cp_Ct_Cq_Tables, NoStallConstraint, AEP
@@ -9,7 +9,32 @@ from wisdem.commonse.distribution import WeibullWithMeanCDF
 class ParametrizeBlade(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the aerodynamic only analysis of the wind turbine rotor
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('blade_init_options')
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        n_span             = blade_init_options['n_span']
+        self.n_opt_twist   = n_opt_twist        = 8
+
+        self.add_input('s',               val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('twist_original',  val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is the one defined in the yaml.')
+        self.add_input('s_opt_twist',     val=np.zeros(n_opt_twist),            desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade twist angle')
+        self.add_input('twist_opt_gain',  val=0.5 * np.ones(n_opt_twist),       desc='1D array of the non-dimensional gains to optimize the blade spanwise distribution of the twist angle')
+
+        self.add_output('twist_param',    val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is the result of the parameterization.')
+
+    def compute(self, inputs, outputs):
+        
+        print('new eval')
+        print(inputs['twist_opt_gain'])
+
+        twist_opt_gain_nd       = inputs['twist_opt_gain']
+        twist_upper             = np.ones(self.n_opt_twist) * 20.  / 180. * np.pi
+        twist_lower             = np.ones(self.n_opt_twist) * -20. / 180. * np.pi
+        twist_opt_gain_rad      = twist_opt_gain_nd * (twist_upper - twist_lower) + twist_lower
+        twist_opt_gain_rad_interp   = np.interp(inputs['s'], inputs['s_opt_twist'], twist_opt_gain_rad)
+        print(twist_opt_gain_rad_interp)
+        outputs['twist_param']  = inputs['twist_original'] + twist_opt_gain_rad_interp
+
 
 class RotorAeroPower(Group):
     # Openmdao group for the aerodynamic only analysis of the wind turbine rotor
@@ -47,12 +72,20 @@ class WT_Rotor(Group):
     def setup(self):
         wt_init_options = self.options['wt_init_options']
         
-        self.add_subsystem('wt',        Wind_Turbine(wt_init_options     = wt_init_options), promotes = ['*'])
-        self.add_subsystem('wt_class',  TurbineClass())
-        self.add_subsystem('param',     ParametrizeBlade())
-        self.add_subsystem('ra',        RotorAeroPower(wt_init_options   = wt_init_options))
+        # Optimization parameters initialized as indipendent variable component
+        opt_var = IndepVarComp()
+        opt_var.add_output('twist_opt_gain', val = 0.5 * np.ones(8))
+        self.add_subsystem('opt_var',opt_var)
 
+        # Analysis components
+        self.add_subsystem('wt',        Wind_Turbine(wt_init_options        = wt_init_options), promotes = ['*'])
+        self.add_subsystem('wt_class',  TurbineClass())
+        self.add_subsystem('param',     ParametrizeBlade(blade_init_options = wt_init_options['blade']))
+        self.add_subsystem('ra',        RotorAeroPower(wt_init_options      = wt_init_options))
+
+        # Connections to wind turbine class
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
+        # Connections to rotor aeropower
         self.connect('wt_class.V_mean',         'ra.cdf.xbar')
         self.connect('control.V_in' ,           'ra.control_Vin')
         self.connect('control.V_out' ,          'ra.control_Vout')
@@ -66,7 +99,6 @@ class WT_Rotor(Group):
         self.connect('assembly.r_blade',            'ra.r')
         self.connect('assembly.rotor_radius',       'ra.Rtip')
         self.connect('blade.outer_shape_bem.chord', 'ra.chord')
-        self.connect('blade.outer_shape_bem.twist', 'ra.theta')
         self.connect('hub.radius',                  'ra.Rhub')
         self.connect('assembly.hub_height',         'ra.hub_height')
         self.connect('hub.cone',                    'ra.precone')
@@ -81,6 +113,11 @@ class WT_Rotor(Group):
         self.connect('env.rho_air',                     'ra.rho')
         self.connect('env.mu_air',                      'ra.mu')
         self.connect('env.weibull_k',                   'ra.cdf.k')
+        # Connections to blade parametrization
+        self.connect('opt_var.twist_opt_gain',      'param.twist_opt_gain')
+        self.connect('blade.outer_shape_bem.s',     'param.s')
+        self.connect('blade.outer_shape_bem.twist', 'param.twist_original')
+        self.connect('param.twist_param',           'ra.theta')
 
 if __name__ == "__main__":
 
@@ -98,11 +135,38 @@ if __name__ == "__main__":
     # Initialize openmdao problem
     wt_opt          = Problem()
     wt_opt.model    = WT_Rotor(wt_init_options = wt_init_options)
-    wt_opt.setup()
-    # Load wind turbine data from wt_initial to the openmdao problem
-    wt_opt = yaml2openmdao(wt_opt, wt_init_options, wt_init)
-    wt_opt.run_driver()
+    wt_opt.model.approx_totals(method='fd')
     
+    # Set optimization solver and options
+    wt_opt.driver  = ScipyOptimizeDriver()
+    wt_opt.driver.options['optimizer'] = 'SLSQP'
+    wt_opt.driver.options['tol']       = 1.e-6
+    wt_opt.driver.options['maxiter']   = 5
+
+    # Set merit figure
+    wt_opt.model.add_objective('ra.AEP', scaler = -1.e-6)
+    
+    # Set optimization variables
+    indices_no_root         = range(2,8)
+    wt_opt.model.add_design_var('opt_var.twist_opt_gain', indices = indices_no_root, lower=0., upper=1.)    
+    
+    # Set recorder
+    wt_opt.driver.add_recorder(SqliteRecorder('log_opt.sql'))
+    wt_opt.driver.recording_options['includes'] = ['AEP','total_blade_cost','lcoe','tip_deflection_ratio']
+    wt_opt.driver.recording_options['record_objectives']  = True
+    wt_opt.driver.recording_options['record_constraints'] = True
+    wt_opt.driver.recording_options['record_desvars']     = True
+    
+    # Setup openmdao problem
+    wt_opt.setup()
+    
+    # Load initial wind turbine data from wt_initial to the openmdao problem
+    wt_opt = yaml2openmdao(wt_opt, wt_init_options, wt_init)
+    wt_opt['param.s_opt_twist'] = np.linspace(0., 1., 8)
+
+    # Build and run openmdao problem
+    wt_opt.run_driver()
+
     # Save data coming from openmdao to an output yaml file
     wt_initial.write_ontology(wt_opt, fname_output)
 
