@@ -49,7 +49,7 @@ class CaseGen_IEC():
         self.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
         self.transient_shear_orientation = 'both'  # 'v','h','both': vertical or horizontal shear for EWS
         self.TMax                        = 0.
-        self.Tstart                      = 30.
+        self.TStart                      = 30.
 
         self.debug_level                 = 2
         self.parallel_windfile_gen       = False
@@ -109,7 +109,7 @@ class CaseGen_IEC():
                 iecwind.AnalysisTime = self.TMax
                 iecwind.TF           = self.TMax
 
-            iecwind.Tstart           = self.Tstart
+            iecwind.TStart           = self.TStart
             iecwind.Turbine_Class    = self.Turbine_Class
             iecwind.Turbulence_Class = self.Turbulence_Class
             iecwind.IEC_WindType     = IEC_WindType
@@ -142,6 +142,7 @@ class CaseGen_IEC():
                 case_inputs_i[("ElastoDyn","BlPitch1")] = {'vals':[90.], 'group':0}
                 case_inputs_i[("ElastoDyn","BlPitch2")] = {'vals':[90.], 'group':0}
                 case_inputs_i[("ElastoDyn","BlPitch3")] = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[0], 'group':0}
             elif dlc == 6.3:
                 self.dlc_inputs['U'][i] = [V_1]
                 self.dlc_inputs['Yaw'][i] = [-20.,20.]
@@ -151,6 +152,7 @@ class CaseGen_IEC():
                 case_inputs_i[("ElastoDyn","BlPitch1")] = {'vals':[90.], 'group':0}
                 case_inputs_i[("ElastoDyn","BlPitch2")] = {'vals':[90.], 'group':0}
                 case_inputs_i[("ElastoDyn","BlPitch3")] = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[0], 'group':0}
 
             # Matrix combining N dlc variables that affect wind file generation
             # Done so a single loop can be used for generating wind files in parallel instead of using nested loops

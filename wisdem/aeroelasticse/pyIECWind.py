@@ -15,7 +15,7 @@ class pyIECWind_extreme():
         self.Turbine_Class    = 'I'    # IEC Wind Turbine Class
         self.Turbulence_Class = 'B'    # IEC Turbulance Class
         self.Vert_Slope       = 0      # Vertical slope of the wind inflow (deg)
-        self.Tstart           = 30     # Time to start transient conditions (s)
+        self.TStart           = 30     # Time to start transient conditions (s)
         self.dt               = 0.05   # Transient wind time step (s)
         self.dir_change       = 'both' # '+','-','both': sign for transient events in EDC, EWS
         self.shear_orient     = 'both' # 'v','h','both': vertical or horizontal shear for EWS
@@ -380,7 +380,7 @@ class pyIECWind_extreme():
             os.makedirs(self.outdir)
 
         # Move transcient event to user definted time
-        data[:,0] += self.Tstart
+        data[:,0] += self.TStart
         data = np.vstack((data[0,:], data, data[-1,:]))
         data[0,0] = self.T0
         data[-1,0] = self.TF
