@@ -359,8 +359,6 @@ class pyIECWind_extreme():
                 self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
                 self.fname_type.append(2)
 
-        exit()
-
     def heading_common(self, hd):
         hd.append('! IEC Turbine Class %s, IEC Turbulence Category %s\n'%(self.Turbine_Class, self.Turbulence_Class))
         hd.append('! '+('%f'%(self.D)).ljust(14) + ' ' + 'Rotor_Diameter'.ljust(14) + ' - rotor diameter (m)\n')

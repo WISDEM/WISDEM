@@ -156,7 +156,7 @@ class CaseGen_IEC():
 
             # Matrix combining N dlc variables that affect wind file generation
             # Done so a single loop can be used for generating wind files in parallel instead of using nested loops
-            var_list = ['U', 'Seeds', 'Yaw']
+            var_list = ['U', 'Seeds']
             group_len = []
             change_vars = []
             change_vals = []
@@ -238,6 +238,10 @@ class CaseGen_IEC():
                 case_inputs_i[("Fst","TMax")] = {'vals':[TMax], 'group':0}
             case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
             case_inputs_i[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
+
+            if len(self.dlc_inputs['Yaw'][i]) > 0:
+                    case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':self.dlc_inputs['Yaw'][i], 'group':2}
+
             # Set FAST variables from inital conditions
             if self.init_cond:
                 for var in self.init_cond.keys():
