@@ -239,7 +239,7 @@ class CaseGen_IEC():
             # Set FAST variables from inital conditions
             if self.init_cond:
                 for var in self.init_cond.keys():
-                    if var not in inital_cond_i.keys():
+                    if var not in case_inputs_i.keys():
                         inital_cond_i = [np.interp(U, self.init_cond[var]['U'], self.init_cond[var]['val']) for U in U_out]
                         case_inputs_i[var] = {'vals':inital_cond_i, 'group':1}
             
