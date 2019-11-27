@@ -66,7 +66,7 @@ class CaseGen_IEC():
         dlc_all = []
 
         for i, dlc in enumerate(self.dlc_inputs['DLC']):
-            case_inputs_i = copy.copy(case_inputs)
+            case_inputs_i = copy.deepcopy(case_inputs)
 
             # DLC specific variable changes
             if dlc == 1.1 or dlc == 1.2:
@@ -75,7 +75,7 @@ class CaseGen_IEC():
                 iecwind = pyIECWind_turb()
                 TMax = 630.
 
-            elif dlc == 1.3:
+            elif dlc in [1.3, 6.1]:
                 if self.Turbine_Class == 'I':
                     x = 1
                 elif self.Turbine_Class == 'II':
@@ -101,6 +101,20 @@ class CaseGen_IEC():
                 iecwind = pyIECWind_extreme()
                 TMax = 90.
 
+            elif dlc == 6.3:
+                if self.Turbine_Class == 'I':
+                    x = 1
+                elif self.Turbine_Class == 'II':
+                    x = 2
+                elif self.Turbine_Class == 'III':
+                    x = 3
+                else:
+                    exit('Class of the WT is needed for the ETM wind, but it is currently not set to neither 1,2 or 3.')
+                IEC_WindType = '%uETM1'%x
+                alpha = 0.11
+                iecwind = pyIECWind_turb()
+                TMax = 630.
+
             # Windfile generation setup
             if self.TMax == 0.:
                 iecwind.AnalysisTime = TMax
@@ -125,9 +139,28 @@ class CaseGen_IEC():
             iecwind.debug_level      = self.debug_level
             iecwind.overwrite        = self.overwrite
 
+            # Set DLC specific settings
+            iecwind_ex = pyIECWind_extreme()
+            iecwind_ex.Turbine_Class    = self.Turbine_Class
+            iecwind_ex.Turbulence_Class = self.Turbulence_Class
+            iecwind_ex.z_hub            = self.z_hub
+            iecwind_ex.setup()
+            _, V_e50, V_e1, V_50, V_1   = iecwind_ex.EWM(0.)
+
+            if dlc == 6.1:
+                self.dlc_inputs['U'][i] = [V_50]
+                self.dlc_inputs['Yaw'][i] = [-8.,8.]
+                case_inputs_i[("ElastoDyn","GenDOF")] = {'vals':"False", 'group':0}
+                case_inputs_i[("ElastoDyn","YawDOF")] = {'vals':"False", 'group':0}
+            elif dlc == 6.3:
+                self.dlc_inputs['U'][i] = [V_1]
+                self.dlc_inputs['Yaw'][i] = [-20.,20.]
+                case_inputs_i[("ElastoDyn","GenDOF")] = {'vals':"False", 'group':0}
+                case_inputs_i[("ElastoDyn","YawDOF")] = {'vals':"False", 'group':0}
+
             # Matrix combining N dlc variables that affect wind file generation
             # Done so a single loop can be used for generating wind files in parallel instead of using nested loops
-            var_list = ['U', 'Seeds']
+            var_list = ['U', 'Seeds', 'Yaw']
             group_len = []
             change_vars = []
             change_vals = []
