@@ -301,9 +301,10 @@ class pyIECWind_extreme():
         # Transcient
         shear_lin_p = np.zeros_like(t)
         shear_lin_n = np.zeros_like(t)
+
         for i, ti in enumerate(t):
-            shear_lin_p[i] = (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))
-            shear_lin_n[i] = -1*(2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))
+            shear_lin_p[i] = (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
+            shear_lin_n[i] = -1*(2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
 
         # Write Files
         self.fname_out = []
@@ -357,6 +358,8 @@ class pyIECWind_extreme():
                 self.write_wnd(fname, data, hd)
                 self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
                 self.fname_type.append(2)
+
+        exit()
 
     def heading_common(self, hd):
         hd.append('! IEC Turbine Class %s, IEC Turbulence Category %s\n'%(self.Turbine_Class, self.Turbulence_Class))
@@ -525,7 +528,7 @@ def example_ExtremeWind():
     iec.outdir = 'temp'
 
     V_hub = 25
-    iec.execute('EOG', V_hub)
+    iec.execute('EWS', V_hub)
 
 def example_TurbulentWind():
     iec = pyIECWind_turb()
@@ -548,5 +551,5 @@ def example_TurbulentWind():
 
 if __name__=="__main__":
 
-    # example_ExtremeWind()
-    example_TurbulentWind()
+    example_ExtremeWind()
+    # example_TurbulentWind()
