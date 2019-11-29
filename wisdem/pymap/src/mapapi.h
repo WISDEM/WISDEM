@@ -171,6 +171,34 @@ MAP_EXTERNCALL void map_get_fairlead_force_2d(double* H, double* V, MAP_OtherSta
  */
 MAP_EXTERNCALL void map_get_fairlead_force_3d(double* fx, double* fy, double* fz, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr);
 
+/**
+ * @brief   Returns vertical and horizontal anchor force along line plane
+ * @details 
+ * @param   H, reference to horizontal fairlead force magnitude
+ * @param   V, reference to vertical fairlead force magnitude
+ * @param   other_type, other state type fortran derived
+ * @param   index, line number we are requesting the data for
+ * @param   map_msg, error message
+ * @param   ierr, error code
+ * @see     
+ */
+MAP_EXTERNCALL void map_get_anchor_force_2d(double* H, double* V, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr);
+
+
+/**
+ * @brief   Returns X, Y, and Z anchor force in global reference frame
+ * @details
+ * @param   fx, reference to horizontal X fairlead force in global frame
+ * @param   fy, reference to horizontal Y fairlead force in global frame
+ * @param   fz, reference to vertical Z fairlead force in global frame
+ * @param   other_type, other state type fortran derived
+ * @param   index, line number we are requesting the data for
+ * @param   map_msg, error message
+ * @param   ierr, error code
+ * @see     
+ */
+MAP_EXTERNCALL void map_get_anchor_force_3d(double* fx, double* fy, double* fz, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr);
+
 
 /**
  * call this in python: offset_vessel().argtypes = [MapData_Type, MapInput_Type, c_char_p, POINTER(c_int)]        

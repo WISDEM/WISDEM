@@ -210,6 +210,10 @@ libexec.map_jacobian_dzdv.argtypes            = [ MapData_Type, c_int, c_char_p,
 
 
 libexec.map_get_fairlead_force_2d.argtypes = [POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
+libexec.map_get_anchor_force_2d.argtypes = [POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
+
+libexec.map_get_fairlead_force_3d.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
+libexec.map_get_anchor_force_3d.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
 
 
 # plot routines
@@ -484,7 +488,48 @@ class pyMAP(object):
         fz = c_double(-999.9)
         libexec.map_get_fairlead_force_3d( pointer(fx), pointer(fy), pointer(fz), self.f_type_d, index, self.status, pointer(self.ierr))
         return fx.value, fy.value, fz.value
+
+
+    def get_anchor_force_2d(self, index):
+        """Gets the horizontal and vertical anchor force in a 2D plane along the 
+        straight-line line. Must ensure update_states() is called before accessing 
+        this function. The function will not solve the forces for a new vessel position
+        if it updated. , otherwise the anchor forces are not updated with the new 
+        vessel position. Called C function:
         
+        MAP_EXTERNCALL void map_get_anchor_force_2d(double* H, double* V, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr);
+    
+        :param index: The line number the anchor forces are being requested for. Zero indexed
+        :returns: horizontal and vertical anchor force [N]
+    
+        >>> H,V = print get_anchor_force_2d(1)        
+        """
+        Ha_ref = c_double(-999.9)
+        Va_ref = c_double(-999.9)
+        libexec.map_get_anchor_force_2d( pointer(Ha_ref), pointer(Va_ref),self.f_type_d, index, self.status, pointer(self.ierr))
+        return Ha_ref.value, Va_ref.value
+    
+    
+    def get_anchor_force_3d(self, index):
+        """Gets the horizontal and vertical anchor force in a 3D frame along relative 
+        referene global axis. Must ensure update_states() is called before accessing 
+        this function. The function will not solve the forces for a new vessel position
+        if it updated. , otherwise the anchor forces are not updated with the new 
+        vessel position. Called C function:
+        
+        MAP_EXTERNCALL void map_get_anchor_force_3d(double* fx, double* fy, double* fz, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr);
+    
+        :param index: The line number the anchor forces are being requested for. Zero indexed
+        :returns: horizontal and vertical anchor force [N]
+    
+        >>> fx,fy,fz = get_anchor_force_3d(1)        
+        """
+        fxa = c_double(-999.9)
+        fya = c_double(-999.9)
+        fza = c_double(-999.9)
+        libexec.map_get_anchor_force_3d( pointer(fxa), pointer(fya), pointer(fza), self.f_type_d, index, self.status, pointer(self.ierr))
+        return fxa.value, fya.value, fza.value
+    
 
 
 
