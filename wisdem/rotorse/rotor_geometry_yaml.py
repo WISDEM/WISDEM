@@ -1402,7 +1402,7 @@ class ReferenceBlade(object):
             ## Profiles
             # rotate            
             profile_i = np.flip(copy.copy(blade['profile'][:,:,i]), axis=0)
-            profile_i_rot = np.column_stack(rotate(blade['pf']['p_le'][i], 0., profile_i[:,0], profile_i[:,1], -1.*np.radians(blade['pf']['theta'][i])))
+            profile_i_rot = np.column_stack(rotate(blade['pf']['p_le'][i], 0., profile_i[:,0], profile_i[:,1], np.radians(blade['pf']['theta'][i])))
             # normalize
             profile_i_rot[:,0] -= min(profile_i_rot[:,0])
             profile_i_rot = profile_i_rot/ max(profile_i_rot[:,0])

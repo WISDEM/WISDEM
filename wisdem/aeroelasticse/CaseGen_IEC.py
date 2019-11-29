@@ -39,23 +39,26 @@ class CaseGen_IEC():
         
         self.init_cond = {} # Dictionary of steady state operating conditions as a function of wind speed, used for setting inital conditions
 
-        self.Turbine_Class = 'I' # I, II, III, IV
-        self.Turbulence_Class = 'A'
-        self.D = 126.
-        self.z_hub = 90.
+        self.Turbine_Class               = 'I' # I, II, III, IV
+        self.Turbulence_Class            = 'A'
+        self.D                           = 126.
+        self.z_hub                       = 90.
 
         # DLC inputs
         self.dlc_inputs = {}
         self.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
         self.transient_shear_orientation = 'both'  # 'v','h','both': vertical or horizontal shear for EWS
+        self.TMax                        = 0.
+        self.TStart                      = 30.
 
-        self.debug_level = 2
-        self.parallel_windfile_gen = False
-        self.cores = 0
-        self.overwrite = False
+        self.debug_level                 = 2
+        self.parallel_windfile_gen       = False
+        self.cores                       = 0
+        self.overwrite                   = False
 
-        self.mpi_run = False
-        self.comm_map_down = []
+        self.mpi_run                     = False
+        self.comm_map_down               = []
+
 
     def execute(self, case_inputs={}):
 
@@ -63,7 +66,7 @@ class CaseGen_IEC():
         dlc_all = []
 
         for i, dlc in enumerate(self.dlc_inputs['DLC']):
-            case_inputs_i = copy.copy(case_inputs)
+            case_inputs_i = copy.deepcopy(case_inputs)
 
             # DLC specific variable changes
             if dlc == 1.1 or dlc == 1.2:
@@ -72,7 +75,7 @@ class CaseGen_IEC():
                 iecwind = pyIECWind_turb()
                 TMax = 630.
 
-            elif dlc == 1.3:
+            elif dlc in [1.3, 6.1, 6.3]:
                 if self.Turbine_Class == 'I':
                     x = 1
                 elif self.Turbine_Class == 'II':
@@ -99,21 +102,57 @@ class CaseGen_IEC():
                 TMax = 90.
 
             # Windfile generation setup
-            iecwind.AnalysisTime = TMax
-            iecwind.Turbine_Class = self.Turbine_Class
+            if self.TMax == 0.:
+                iecwind.AnalysisTime = TMax
+                iecwind.TF           = TMax
+            else:
+                iecwind.AnalysisTime = self.TMax
+                iecwind.TF           = self.TMax
+
+            iecwind.TStart           = self.TStart
+            iecwind.Turbine_Class    = self.Turbine_Class
             iecwind.Turbulence_Class = self.Turbulence_Class
-            iecwind.IEC_WindType = IEC_WindType
-            iecwind.dir_change = self.transient_dir_change
-            iecwind.shear_orient = self.transient_shear_orientation
-            iecwind.z_hub = self.z_hub
-            iecwind.D = self.D
-            iecwind.PLExp = alpha
+            iecwind.IEC_WindType     = IEC_WindType
+            iecwind.dir_change       = self.transient_dir_change
+            iecwind.shear_orient     = self.transient_shear_orientation
+            iecwind.z_hub            = self.z_hub
+            iecwind.D                = self.D
+            iecwind.PLExp            = alpha
             
-            iecwind.outdir = self.wind_dir
-            iecwind.case_name = self.case_name_base
-            iecwind.Turbsim_exe = self.Turbsim_exe
-            iecwind.debug_level = self.debug_level
-            iecwind.overwrite = self.overwrite
+            iecwind.outdir           = self.wind_dir
+            iecwind.case_name        = self.case_name_base
+            iecwind.Turbsim_exe      = self.Turbsim_exe
+            iecwind.debug_level      = self.debug_level
+            iecwind.overwrite        = self.overwrite
+
+            # Set DLC specific settings
+            iecwind_ex = pyIECWind_extreme()
+            iecwind_ex.Turbine_Class    = self.Turbine_Class
+            iecwind_ex.Turbulence_Class = self.Turbulence_Class
+            iecwind_ex.z_hub            = self.z_hub
+            iecwind_ex.setup()
+            _, V_e50, V_e1, V_50, V_1   = iecwind_ex.EWM(0.)
+
+            if dlc == 6.1:
+                self.dlc_inputs['U'][i] = [V_50]
+                self.dlc_inputs['Yaw'][i] = [-8.,8.]
+                case_inputs_i[("ElastoDyn","GenDOF")]   = {'vals':["False"], 'group':0}
+                case_inputs_i[("ElastoDyn","YawDOF")]   = {'vals':["False"], 'group':0}
+                case_inputs_i[("ElastoDyn","RotSpeed")] = {'vals':[0.], 'group':0}
+                case_inputs_i[("ElastoDyn","BlPitch1")] = {'vals':[90.], 'group':0}
+                case_inputs_i[("ElastoDyn","BlPitch2")] = {'vals':[90.], 'group':0}
+                case_inputs_i[("ElastoDyn","BlPitch3")] = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[0], 'group':0}
+            elif dlc == 6.3:
+                self.dlc_inputs['U'][i] = [V_1]
+                self.dlc_inputs['Yaw'][i] = [-20.,20.]
+                case_inputs_i[("ElastoDyn","GenDOF")]   = {'vals':["False"], 'group':0}
+                case_inputs_i[("ElastoDyn","YawDOF")]   = {'vals':["False"], 'group':0}
+                case_inputs_i[("ElastoDyn","RotSpeed")] = {'vals':[0.], 'group':0}
+                case_inputs_i[("ElastoDyn","BlPitch1")] = {'vals':[90.], 'group':0}
+                case_inputs_i[("ElastoDyn","BlPitch2")] = {'vals':[90.], 'group':0}
+                case_inputs_i[("ElastoDyn","BlPitch3")] = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[0], 'group':0}
 
             # Matrix combining N dlc variables that affect wind file generation
             # Done so a single loop can be used for generating wind files in parallel instead of using nested loops
@@ -199,11 +238,16 @@ class CaseGen_IEC():
                 case_inputs_i[("Fst","TMax")] = {'vals':[TMax], 'group':0}
             case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
             case_inputs_i[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
+
+            if len(self.dlc_inputs['Yaw'][i]) > 0:
+                    case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':self.dlc_inputs['Yaw'][i], 'group':2}
+
             # Set FAST variables from inital conditions
             if self.init_cond:
                 for var in self.init_cond.keys():
-                    inital_cond_i = [np.interp(U, self.init_cond[var]['U'], self.init_cond[var]['val']) for U in U_out]
-                    case_inputs_i[var] = {'vals':inital_cond_i, 'group':1}
+                    if var not in case_inputs_i.keys():
+                        inital_cond_i = [np.interp(U, self.init_cond[var]['U'], self.init_cond[var]['val']) for U in U_out]
+                        case_inputs_i[var] = {'vals':inital_cond_i, 'group':1}
             
             # Append current DLC to full list of cases
             case_list, case_name = CaseGen_General(case_inputs_i, self.run_dir, self.case_name_base)

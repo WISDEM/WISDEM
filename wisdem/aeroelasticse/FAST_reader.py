@@ -1254,7 +1254,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['F_LPFCornerFreq']   = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['F_LPFDamping']      = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['F_NotchCornerFreq'] = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['F_NotchBetaNumDen'] = [float(idx.strip()) for idx in f.readline().split('F_NotchBetaNumDen')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_NotchBetaNumDen'] = [float(idx.strip()) for idx in f.readline().strip().split('F_NotchBetaNumDen')[0].split() if idx.strip() != '!']
             self.fst_vt['DISCON_in']['F_SSCornerFreq']    = float_read(f.readline().split()[0])
             f.readline()
             f.readline()
