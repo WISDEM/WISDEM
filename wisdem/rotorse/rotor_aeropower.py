@@ -667,104 +667,125 @@ class OutputsAero(ExplicitComponent):
         J['Q_extreme', 'Q_extreme_in'] = 1
         '''
 
-        
-
 class RotorAeroPower(Group):
+    # Openmdao group for the aerodynamic only analysis of the wind turbine rotor
     def initialize(self):
-        self.options.declare('RefBlade')
-        self.options.declare('npts_coarse_power_curve', default=20)
-        self.options.declare('npts_spline_power_curve', default=200)
-        self.options.declare('regulation_reg_II5',      default=True)
-        self.options.declare('regulation_reg_III',      default=True)
-        self.options.declare('flag_Cp_Ct_Cq_Tables',    default=True)
-        self.options.declare('topLevelFlag',            default=False)
-        self.options.declare('user_update_routine',     default=None)
-    
+        self.options.declare('wt_init_options')
     def setup(self):
-        RefBlade = self.options['RefBlade']
-        npts_coarse_power_curve     = self.options['npts_coarse_power_curve']
-        npts_spline_power_curve     = self.options['npts_spline_power_curve']
-        regulation_reg_II5          = self.options['regulation_reg_II5']
-        regulation_reg_III          = self.options['regulation_reg_III']
-        flag_Cp_Ct_Cq_Tables        = self.options['flag_Cp_Ct_Cq_Tables']
-        topLevelFlag                = self.options['topLevelFlag']
-        user_update_routine         = self.options['user_update_routine']
-        NPTS                        = len(RefBlade['pf']['s'])
-        NAFgrid                     = len(RefBlade['airfoils_aoa'])
-        NRe                         = len(RefBlade['airfoils_Re'])
+        wt_init_options = self.options['wt_init_options']
 
-        aeroIndeps = IndepVarComp()
-        aeroIndeps.add_output('wind_reference_height',  val=0.0, units='m',     desc='reference hub height for IEC wind speed (used in CDF calculation)')
-        aeroIndeps.add_output('control_Vin',            val=0.0, units='m/s',   desc='cut-in wind speed')
-        aeroIndeps.add_output('control_Vout',           val=0.0, units='m/s',   desc='cut-out wind speed')
-        aeroIndeps.add_output('machine_rating',         val=0.0, units='W',     desc='rated power')
-        aeroIndeps.add_output('control_minOmega',       val=0.0, units='rpm',   desc='minimum allowed rotor rotation speed')
-        aeroIndeps.add_output('control_maxOmega',       val=0.0, units='rpm',   desc='maximum allowed rotor rotation speed')
-        aeroIndeps.add_output('control_maxTS',          val=0.0, units='m/s',   desc='maximum allowed blade tip speed')
-        aeroIndeps.add_output('control_tsr',            val=0.0,                desc='tip-speed ratio in Region 2 (should be optimized externally)')
-        aeroIndeps.add_output('control_pitch',          val=0.0, units='deg',   desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
-        aeroIndeps.add_discrete_output('drivetrainType', val='GEARED')
-        aeroIndeps.add_output('AEP_loss_factor',        val=1.0,                desc='availability and other losses (soiling, array, etc.)')
-        aeroIndeps.add_output('shape_parameter',        val=0.0)
-        aeroIndeps.add_output('drivetrainEff',          val=0.0,                desc='overwrite drivetrain model with a given efficiency, used for FAST analysis')
-        self.add_subsystem('aeroIndeps', aeroIndeps, promotes=['*'])
+        self.add_subsystem('powercurve',        RegulatedPowerCurve(wt_init_options   = wt_init_options), promotes = ['control_Vin', 'control_Vout','control_ratedPower','control_minOmega','control_maxOmega','control_maxTS','control_tsr','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(wt_init_options   = wt_init_options), promotes = ['control_Vin', 'control_Vout','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('stall_check',       NoStallConstraint(wt_init_options   = wt_init_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
+        self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=200))
+        self.add_subsystem('aep',               AEP(), promotes=['AEP'])
+
+        # Connections to the stall check
+        self.connect('powercurve.aoa_cutin','stall_check.aoa_along_span')
+
+        # Connections to the Weibull CDF
+        self.connect('powercurve.V_spline', 'cdf.x')
         
-        # --- Rotor Aero & Power ---
-        if topLevelFlag:
-            sharedIndeps = IndepVarComp()
-            sharedIndeps.add_output('hub_height',   val=0.0, units='m')
-            sharedIndeps.add_output('rho',          val=1.225, units='kg/m**3')
-            sharedIndeps.add_output('mu',           val=1.81e-5, units='kg/(m*s)')
-            sharedIndeps.add_output('shearExp',     val=0.2)
-            sharedIndeps.add_discrete_output('tiploss', True)
-            sharedIndeps.add_discrete_output('hubloss', True)
-            sharedIndeps.add_discrete_output('wakerotation', True)
-            sharedIndeps.add_discrete_output('usecd', True)
-            sharedIndeps.add_discrete_output('nSector', val=4, desc='number of sectors to divide rotor face into in computing thrust and power')
-            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
+        # Connections to the aep computation component
+        self.connect('cdf.F',               'aep.CDF_V')
+        self.connect('powercurve.P_spline', 'aep.P')        
+
+# class RotorAeroPower(Group):
+#     def initialize(self):
+#         self.options.declare('RefBlade')
+#         self.options.declare('npts_coarse_power_curve', default=20)
+#         self.options.declare('npts_spline_power_curve', default=200)
+#         self.options.declare('regulation_reg_II5',      default=True)
+#         self.options.declare('regulation_reg_III',      default=True)
+#         self.options.declare('flag_Cp_Ct_Cq_Tables',    default=True)
+#         self.options.declare('topLevelFlag',            default=False)
+#         self.options.declare('user_update_routine',     default=None)
+    
+#     def setup(self):
+#         RefBlade = self.options['RefBlade']
+#         npts_coarse_power_curve     = self.options['npts_coarse_power_curve']
+#         npts_spline_power_curve     = self.options['npts_spline_power_curve']
+#         regulation_reg_II5          = self.options['regulation_reg_II5']
+#         regulation_reg_III          = self.options['regulation_reg_III']
+#         flag_Cp_Ct_Cq_Tables        = self.options['flag_Cp_Ct_Cq_Tables']
+#         topLevelFlag                = self.options['topLevelFlag']
+#         user_update_routine         = self.options['user_update_routine']
+#         NPTS                        = len(RefBlade['pf']['s'])
+#         NAFgrid                     = len(RefBlade['airfoils_aoa'])
+#         NRe                         = len(RefBlade['airfoils_Re'])
+
+#         aeroIndeps = IndepVarComp()
+#         aeroIndeps.add_output('wind_reference_height',  val=0.0, units='m',     desc='reference hub height for IEC wind speed (used in CDF calculation)')
+#         aeroIndeps.add_output('control_Vin',            val=0.0, units='m/s',   desc='cut-in wind speed')
+#         aeroIndeps.add_output('control_Vout',           val=0.0, units='m/s',   desc='cut-out wind speed')
+#         aeroIndeps.add_output('machine_rating',         val=0.0, units='W',     desc='rated power')
+#         aeroIndeps.add_output('control_minOmega',       val=0.0, units='rpm',   desc='minimum allowed rotor rotation speed')
+#         aeroIndeps.add_output('control_maxOmega',       val=0.0, units='rpm',   desc='maximum allowed rotor rotation speed')
+#         aeroIndeps.add_output('control_maxTS',          val=0.0, units='m/s',   desc='maximum allowed blade tip speed')
+#         aeroIndeps.add_output('control_tsr',            val=0.0,                desc='tip-speed ratio in Region 2 (should be optimized externally)')
+#         aeroIndeps.add_output('control_pitch',          val=0.0, units='deg',   desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
+#         aeroIndeps.add_discrete_output('drivetrainType', val='GEARED')
+#         aeroIndeps.add_output('AEP_loss_factor',        val=1.0,                desc='availability and other losses (soiling, array, etc.)')
+#         aeroIndeps.add_output('shape_parameter',        val=0.0)
+#         aeroIndeps.add_output('drivetrainEff',          val=0.0,                desc='overwrite drivetrain model with a given efficiency, used for FAST analysis')
+#         self.add_subsystem('aeroIndeps', aeroIndeps, promotes=['*'])
+        
+#         # --- Rotor Aero & Power ---
+#         if topLevelFlag:
+#             sharedIndeps = IndepVarComp()
+#             sharedIndeps.add_output('hub_height',   val=0.0, units='m')
+#             sharedIndeps.add_output('rho',          val=1.225, units='kg/m**3')
+#             sharedIndeps.add_output('mu',           val=1.81e-5, units='kg/(m*s)')
+#             sharedIndeps.add_output('shearExp',     val=0.2)
+#             sharedIndeps.add_discrete_output('tiploss', True)
+#             sharedIndeps.add_discrete_output('hubloss', True)
+#             sharedIndeps.add_discrete_output('wakerotation', True)
+#             sharedIndeps.add_discrete_output('usecd', True)
+#             sharedIndeps.add_discrete_output('nSector', val=4, desc='number of sectors to divide rotor face into in computing thrust and power')
+#             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
             
-            self.add_subsystem('rotorGeom', RotorGeometry(RefBlade=RefBlade, topLevelFlag=topLevelFlag, user_update_routine=user_update_routine), promotes=['*'])
+#             self.add_subsystem('rotorGeom', RotorGeometry(RefBlade=RefBlade, topLevelFlag=topLevelFlag, user_update_routine=user_update_routine), promotes=['*'])
 
-        # self.add_subsystem('tipspeed', MaxTipSpeed())
-        self.add_subsystem('powercurve', RegulatedPowerCurve(naero=NPTS,
-                                                             n_pc=npts_coarse_power_curve,
-                                                             n_pc_spline=npts_spline_power_curve,
-                                                             regulation_reg_II5=regulation_reg_II5,
-                                                             regulation_reg_III=regulation_reg_III,
-                                                             n_aoa_grid=NAFgrid,
-                                                             n_Re_grid=NRe), promotes=['*'])
+#         # self.add_subsystem('tipspeed', MaxTipSpeed())
+#         self.add_subsystem('powercurve', RegulatedPowerCurve(naero=NPTS,
+#                                                              n_pc=npts_coarse_power_curve,
+#                                                              n_pc_spline=npts_spline_power_curve,
+#                                                              regulation_reg_II5=regulation_reg_II5,
+#                                                              regulation_reg_III=regulation_reg_III,
+#                                                              n_aoa_grid=NAFgrid,
+#                                                              n_Re_grid=NRe), promotes=['*'])
 
-        if flag_Cp_Ct_Cq_Tables:
-            self.add_subsystem('cpctcq_tables',   Cp_Ct_Cq_Tables(naero=NPTS,n_aoa_grid=NAFgrid,n_Re_grid=NRe), promotes=['*'])
+#         if flag_Cp_Ct_Cq_Tables:
+#             self.add_subsystem('cpctcq_tables',   Cp_Ct_Cq_Tables(naero=NPTS,n_aoa_grid=NAFgrid,n_Re_grid=NRe), promotes=['*'])
         
-        self.add_subsystem('nostallconstraint', NoStallConstraint(RefBlade = RefBlade, verbosity = False), promotes=['airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','no_stall_constraint'])
-        self.add_subsystem('wind', PowerWind(nPoints=1), promotes=['shearExp'])
-        self.add_subsystem('cdf', WeibullWithMeanCDF(nspline=npts_spline_power_curve))
-        #self.add_subsystem('cdf', RayleighCDF(nspline=npts_spline_power_curve))
-        self.add_subsystem('aep', AEP(n_pc_spline=npts_spline_power_curve), promotes=['AEP'])
+#         self.add_subsystem('nostallconstraint', NoStallConstraint(RefBlade = RefBlade, verbosity = False), promotes=['airfoils_cl','airfoils_cd','airfoils_cm','airfoils_aoa','no_stall_constraint'])
+#         self.add_subsystem('wind', PowerWind(nPoints=1), promotes=['shearExp'])
+#         self.add_subsystem('cdf', WeibullWithMeanCDF(nspline=npts_spline_power_curve))
+#         #self.add_subsystem('cdf', RayleighCDF(nspline=npts_spline_power_curve))
+#         self.add_subsystem('aep', AEP(n_pc_spline=npts_spline_power_curve), promotes=['AEP'])
 
-        self.add_subsystem('outputs_aero', OutputsAero(npts_coarse_power_curve=npts_coarse_power_curve), promotes=['*'])
+#         self.add_subsystem('outputs_aero', OutputsAero(npts_coarse_power_curve=npts_coarse_power_curve), promotes=['*'])
 
-        self.connect('machine_rating',  'control_ratedPower')
+#         self.connect('machine_rating',  'control_ratedPower')
         
-        # connections to nostallconstraint
-        self.connect('aoa_cutin','nostallconstraint.aoa_along_span')
+#         # connections to nostallconstraint
+#         self.connect('aoa_cutin','nostallconstraint.aoa_along_span')
         
-        # connections to wind
-        if topLevelFlag:
-            self.connect('V_mean', 'wind.Uref')
-            self.connect('wind_zvec', 'wind.z')
-        self.connect('wind_reference_height', 'wind.zref')
+#         # connections to wind
+#         if topLevelFlag:
+#             self.connect('V_mean', 'wind.Uref')
+#             self.connect('wind_zvec', 'wind.z')
+#         self.connect('wind_reference_height', 'wind.zref')
 
-        # connections to cdf
-        self.connect('V_spline', 'cdf.x')
-        self.connect('wind.U', 'cdf.xbar', src_indices=[0])
-        self.connect('shape_parameter', 'cdf.k')
+#         # connections to cdf
+#         self.connect('V_spline', 'cdf.x')
+#         self.connect('wind.U', 'cdf.xbar', src_indices=[0])
+#         self.connect('shape_parameter', 'cdf.k')
 
-        # connections to aep
-        self.connect('cdf.F', 'aep.CDF_V')
-        self.connect('P_spline', 'aep.P')
-        self.connect('AEP_loss_factor', 'aep.lossFactor')
+#         # connections to aep
+#         self.connect('cdf.F', 'aep.CDF_V')
+#         self.connect('P_spline', 'aep.P')
+#         self.connect('AEP_loss_factor', 'aep.lossFactor')
 
 
 def Init_RotorAeropower_wRefBlade(rotor, blade):
