@@ -5,6 +5,8 @@ from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, Sqlite
 from wisdem.assemblies.load_IEA_yaml import WT_Data, Wind_Turbine, yaml2openmdao
 from wisdem.rotorse.rotor_geometry import TurbineClass
 from wisdem.rotorse.wt_rotor import WT_Rotor
+from wisdem.drivetrainse.drivese_omdao import DriveSE
+from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 
 class Opt_Data(object):
     # Pure python class to set the optimization parameters:
@@ -47,8 +49,11 @@ class WT_RNTA(Group):
         self.add_subsystem('wt',        Wind_Turbine(wt_init_options        = wt_init_options), promotes = ['*'])
         self.add_subsystem('wt_class',  TurbineClass())
         self.add_subsystem('rotorse',   WT_Rotor(wt_init_options = wt_init_options, opt_options = opt_options))
-        # self.add_subsystem('drivese',   DriveSE())
+        self.add_subsystem('drivese',   DriveSE(debug=False,
+                                            number_of_main_bearings=1,
+                                            topLevelFlag=False))
         # self.add_subsystem('towerse',   TowerSE())
+        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=True, topLevelFlag=False))
 
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
@@ -87,6 +92,51 @@ class WT_RNTA(Group):
         self.connect('blade.outer_shape_bem.s',     'rotorse.param.s')
         self.connect('blade.outer_shape_bem.twist', 'rotorse.param.twist_original')
         self.connect('blade.outer_shape_bem.chord', 'rotorse.param.chord_original')
+        # Connections to DriveSE
+        self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')     
+        self.connect('control.rated_power',        'drivese.machine_rating')    
+        self.connect('nacelle.overhang',           'drivese.overhang') 
+        self.connect('nacelle.uptilt',             'drivese.shaft_angle')
+        self.connect('configuration.n_blades',     'drivese.number_of_blades') 
+        self.connect('rotorse.ra.powercurve.rated_Q',         'drivese.rotor_torque')
+        self.connect('rotorse.ra.powercurve.rated_Omega',     'drivese.rotor_rpm')
+        # self.connect('rotorse.rs.Fxyz_total',      'drivese.Fxyz')
+        # self.connect('rotorse.rs.Mxyz_total',      'drivese.Mxyz')
+        # self.connect('rotorse.rs.I_all_blades',    'drivese.blades_I')
+        self.connect('rotorse.rs.mass.mass_one_blade',  'drivese.blade_mass')
+        self.connect('rotorse.param.chord_param',  'drivese.blade_root_diameter', src_indices=[0])
+        self.connect('blade.length','drivese.blade_length')
+        self.connect('nacelle.gear_ratio',         'drivese.gear_ratio')
+        self.connect('nacelle.shaft_ratio',        'drivese.shaft_ratio')
+        self.connect('nacelle.planet_numbers',     'drivese.planet_numbers')
+        self.connect('nacelle.shrink_disc_mass',   'drivese.shrink_disc_mass')
+        self.connect('nacelle.carrier_mass',       'drivese.carrier_mass')
+        self.connect('nacelle.flange_length',      'drivese.flange_length')
+        self.connect('nacelle.gearbox_input_xcm',  'drivese.gearbox_input_xcm')
+        self.connect('nacelle.hss_input_length',   'drivese.hss_input_length')
+        self.connect('nacelle.distance_hub2mb',    'drivese.distance_hub2mb')
+        self.connect('nacelle.yaw_motors_number',  'drivese.yaw_motors_number')
+        self.connect('nacelle.drivetrain_eff',     'drivese.drivetrain_efficiency')
+        self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
+
+        # Connections to turbine capital cost
+        self.connect('control.rated_power',         'tcc.machine_rating')
+        self.connect('rotorse.rs.mass.mass_one_blade','tcc.blade_mass')
+        self.connect('drivese.hub_mass',            'tcc.hub_mass')
+        self.connect('drivese.pitch_system_mass',   'tcc.pitch_system_mass')
+        self.connect('drivese.spinner_mass',        'tcc.spinner_mass')
+        self.connect('drivese.lss_mass',            'tcc.lss_mass')
+        self.connect('drivese.mainBearing.mb_mass', 'tcc.main_bearing_mass')
+        self.connect('drivese.hss_mass',            'tcc.hss_mass')
+        self.connect('drivese.generator_mass',      'tcc.generator_mass')
+        self.connect('drivese.bedplate_mass',       'tcc.bedplate_mass')
+        self.connect('drivese.yaw_mass',            'tcc.yaw_mass')
+        self.connect('drivese.vs_electronics_mass', 'tcc.vs_electronics_mass')
+        self.connect('drivese.hvac_mass',           'tcc.hvac_mass')
+        self.connect('drivese.cover_mass',          'tcc.cover_mass')
+        self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
+        self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
+        # self.connect('towerse.tower_mass',          'tcc.tower_mass')
         # Connections to outputs
         self.connect('rotorse.ra.AEP', 'outputs_2_screen.AEP')
 
@@ -140,15 +190,15 @@ class Outputs_2_Screen(ExplicitComponent):
 if __name__ == "__main__":
 
     ## File management
-    fname_input    = "assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_input    = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
     # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
-    fname_output   = "assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_output   = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output  = 'it_1/'
     opt_flag       = True
     # Load yaml data into a pure python data structure
     wt_initial               = WT_Data()
     wt_initial.validate      = False
-    wt_initial.fname_schema  = "assemblies/reference_turbines/IEAontology_schema.yaml"
+    wt_initial.fname_schema  = "wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
     # Optimization options

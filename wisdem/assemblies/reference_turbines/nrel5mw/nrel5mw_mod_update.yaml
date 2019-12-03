@@ -178,6 +178,19 @@ components:
           uptilt_angle: 0.08726
           distance_tt_hub: 2.3
           overhang: 5.
+        drivetrain:
+          gear_ratio: 96
+          shaft_ratio: 0.1
+          planet_numbers: [3, 3, 1]
+          shrink_disc_mass: 1600
+          carrier_mass: 8000
+          flange_length: 0.5
+          gearbox_input_xcm: 0.1
+          hss_input_length: 1.5
+          distance_hub2mb: 1.912
+          yaw_motors_number: 1
+          efficiency: 0.95
+
     tower:
         outer_shape_bem:
             reference_axis: &ref_axis_tower

@@ -2,6 +2,7 @@ import numpy as np
 import os
 from openmdao.api import ExplicitComponent, Group, IndepVarComp
 from wisdem.rotorse.rotor_aeropower import RotorAeroPower
+from wisdem.rotorse.rotor_structure import RotorStructureSimple
 
 class ParametrizeBladeAero(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the aerodynamic only analysis of the wind turbine rotor
@@ -62,7 +63,7 @@ class WT_Rotor(Group):
         # Analysis components
         self.add_subsystem('param',     ParametrizeBladeAero(blade_init_options = wt_init_options['blade'], opt_options = opt_options))
         self.add_subsystem('ra',        RotorAeroPower(wt_init_options      = wt_init_options))
-        # self.add_subsystem('rs',        RotorStructure(wt_init_options      = wt_init_options))
+        self.add_subsystem('rs',        RotorStructureSimple(wt_init_options      = wt_init_options))
         # self.add_subsystem('rc',        RotorCost(wt_init_options      = wt_init_options))
 
         # Connections to blade parametrization

@@ -1845,6 +1845,19 @@ class OutputsStructures(ExplicitComponent):
         # J = self.J
         '''        
 
+class ComputeBladeMass(ExplicitComponent):
+    def setup(self):
+        self.add_output('mass_one_blade',   val=0.,    units='kg',         desc='mass of one blade')
+    def compute(self, inputs, outputs):
+        outputs['mass_one_blade']= 15000.
+
+class RotorStructureSimple(Group):
+    def initialize(self):
+        self.options.declare('wt_init_options')
+    def setup(self):
+        wt_init_options = self.options['wt_init_options']
+        self.add_subsystem('mass',      ComputeBladeMass())
+
 
 
 class RotorStructure(Group):

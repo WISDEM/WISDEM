@@ -81,7 +81,6 @@ class WT_Data(object):
         # Load input
         self.fname_input = fname_input
         self.wt_init     = self.load_ontology(self.fname_input, validate=self.validate, fname_schema=self.fname_schema)
-
         self.wt_init_options = self.openmdao_vectors()        
         
         return self.wt_init_options, self.wt_init
@@ -98,7 +97,7 @@ class WT_Data(object):
         wt_init_options['airfoils']           = {}
         wt_init_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
         wt_init_options['airfoils']['n_aoa']  = self.n_aoa
-        wt_init_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., wt_init_options['airfoils']['n_aoa'] / 4. + 1), np.linspace(-np.pi / 6., np.pi / 6., wt_init_options['airfoils']['n_aoa'] / 2.), np.linspace(np.pi / 6., np.pi, wt_init_options['airfoils']['n_aoa'] / 4. + 1)]))
+        wt_init_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(wt_init_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(wt_init_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(wt_init_options['airfoils']['n_aoa'] / 4. + 1))]))
         Re_all = []
         for i in range(wt_init_options['airfoils']['n_af']):
             for j in range(len(self.wt_init['airfoils'][i]['polars'])):
@@ -615,6 +614,18 @@ class Nacelle(ExplicitComponent):
         self.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
         self.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
         self.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
+        # Drivetrain parameters
+        self.add_output('gear_ratio',       val=0.0)
+        self.add_output('shaft_ratio',      val=0.0)
+        self.add_discrete_output('planet_numbers',   val=np.zeros(3))
+        self.add_output('shrink_disc_mass', val=0.0, units='kg')
+        self.add_output('carrier_mass',     val=0.0, units='kg')
+        self.add_output('flange_length',    val=0.0, units='m')
+        self.add_output('gearbox_input_xcm',val=0.0, units='m')
+        self.add_output('hss_input_length', val=0.0, units='m')
+        self.add_output('distance_hub2mb',  val=0.0, units='m')
+        self.add_discrete_output('yaw_motors_number', val = 0)
+        self.add_output('drivetrain_eff',   val=0.0)
 
 class Tower(ExplicitComponent):
     # Openmdao component with the tower data coming from the input yaml file.
@@ -785,14 +796,16 @@ class WT_Assembly(ExplicitComponent):
         self.add_input('distance_tt_hub',       val=0.0,    units='m',      desc='Vertical distance from tower top to hub center.')
 
         self.add_output('r_blade',              val=np.zeros(n_span), units='m',      desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
-        self.add_output('rotor_radius',         val=0.0,    units='m',      desc='Scalar of the rotor radius, defined ignoring prebend curvature and sweep.')
+        self.add_output('rotor_radius',         val=0.0,    units='m',      desc='Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
+        self.add_output('rotor_diameter',       val=0.0,    units='m',      desc='Scalar of the rotor diameter, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
         self.add_output('hub_height',           val=0.0,    units='m',      desc='Height of the hub in the global reference system, i.e. distance rotor center to ground.')
 
     def compute(self, inputs, outputs):
         
-        outputs['r_blade']      = inputs['blade_ref_axis'][:,2] + inputs['hub_radius']
-        outputs['rotor_radius'] = outputs['r_blade'][-1]
-        outputs['hub_height']   = inputs['tower_height'] + inputs['distance_tt_hub']
+        outputs['r_blade']        = inputs['blade_ref_axis'][:,2] + inputs['hub_radius']
+        outputs['rotor_radius']   = outputs['r_blade'][-1]
+        outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
+        outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub']
 
 class Wind_Turbine(Group):
     # Openmdao group with all wind turbine data
@@ -1019,6 +1032,18 @@ def assign_nacelle_values(wt_opt, nacelle):
     wt_opt['nacelle.uptilt']            = nacelle['outer_shape_bem']['uptilt_angle']
     wt_opt['nacelle.distance_tt_hub']   = nacelle['outer_shape_bem']['distance_tt_hub']
     wt_opt['nacelle.overhang']          = nacelle['outer_shape_bem']['overhang']
+    
+    wt_opt['nacelle.gear_ratio']        = nacelle['drivetrain']['gear_ratio']
+    wt_opt['nacelle.shaft_ratio']       = nacelle['drivetrain']['shaft_ratio']
+    wt_opt['nacelle.planet_numbers']    = nacelle['drivetrain']['planet_numbers']
+    wt_opt['nacelle.shrink_disc_mass']  = nacelle['drivetrain']['shrink_disc_mass']
+    wt_opt['nacelle.carrier_mass']      = nacelle['drivetrain']['carrier_mass']
+    wt_opt['nacelle.flange_length']     = nacelle['drivetrain']['flange_length']
+    wt_opt['nacelle.gearbox_input_xcm'] = nacelle['drivetrain']['gearbox_input_xcm']
+    wt_opt['nacelle.hss_input_length']  = nacelle['drivetrain']['hss_input_length']
+    wt_opt['nacelle.distance_hub2mb']   = nacelle['drivetrain']['distance_hub2mb']
+    wt_opt['nacelle.yaw_motors_number'] = nacelle['drivetrain']['yaw_motors_number']
+    wt_opt['nacelle.drivetrain_eff']    = nacelle['drivetrain']['efficiency']
 
     return wt_opt
 
@@ -1245,14 +1270,14 @@ def assign_material_values(wt_opt, wt_init_options, materials):
 if __name__ == "__main__":
 
     ## File management
-    fname_input        = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_input        = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
     # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
-    fname_output       = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_output       = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     
     # Load yaml data into a pure python data structure
     wt_initial               = WT_Data()
     wt_initial.validate      = False
-    wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
+    wt_initial.fname_schema  = "wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
     # Initialize openmdao problem
