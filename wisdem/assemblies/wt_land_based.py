@@ -7,6 +7,8 @@ from wisdem.rotorse.rotor_geometry import TurbineClass
 from wisdem.rotorse.wt_rotor import WT_Rotor
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from wisdem.plant_financese.plant_finance import PlantFinance
+
 
 class Opt_Data(object):
     # Pure python class to set the optimization parameters:
@@ -46,7 +48,7 @@ class WT_RNTA(Group):
         opt_options     = self.options['opt_options']
 
         # Analysis components
-        self.add_subsystem('wt',        Wind_Turbine(wt_init_options        = wt_init_options), promotes = ['*'])
+        self.add_subsystem('wt_init',   Wind_Turbine(wt_init_options = wt_init_options), promotes=['*'])
         self.add_subsystem('wt_class',  TurbineClass())
         self.add_subsystem('rotorse',   WT_Rotor(wt_init_options = wt_init_options, opt_options = opt_options))
         self.add_subsystem('drivese',   DriveSE(debug=False,
@@ -140,6 +142,21 @@ class WT_RNTA(Group):
         # Connections to outputs
         self.connect('rotorse.ra.AEP', 'outputs_2_screen.AEP')
 
+class WindPark(Group):
+    # Openmdao group to run the cost analysis of a wind park
+    
+    def initialize(self):
+        self.options.declare('wt_init_options')
+        self.options.declare('opt_options')
+        
+    def setup(self):
+        wt_init_options = self.options['wt_init_options']
+        opt_options     = self.options['opt_options']
+
+        self.add_subsystem('wt',        WT_RNTA(wt_init_options = wt_init_options, opt_options = opt_options), promotes=['*'])
+        self.add_subsystem('financese', PlantFinance(verbosity=True))
+        
+
 class Convergence_Trends_Opt(ExplicitComponent):
     def initialize(self):
         
@@ -194,7 +211,7 @@ if __name__ == "__main__":
     # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
     fname_output   = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output  = 'it_1/'
-    opt_flag       = True
+    opt_flag       = False
     # Load yaml data into a pure python data structure
     wt_initial               = WT_Data()
     wt_initial.validate      = False
@@ -216,29 +233,30 @@ if __name__ == "__main__":
 
     # Initialize openmdao problem
     wt_opt          = Problem()
-    wt_opt.model    = WT_RNTA(wt_init_options = wt_init_options, opt_options = opt_options)
+    wt_opt.model    = WindPark(wt_init_options = wt_init_options, opt_options = opt_options)
     wt_opt.model.approx_totals(method='fd')
     
-    # Set optimization solver and options
-    wt_opt.driver  = ScipyOptimizeDriver()
-    wt_opt.driver.options['optimizer'] = 'SLSQP'
-    wt_opt.driver.options['tol']       = 1.e-6
-    wt_opt.driver.options['maxiter']   = 5
+    if opt_flag == True:
+        # Set optimization solver and options
+        wt_opt.driver  = ScipyOptimizeDriver()
+        wt_opt.driver.options['optimizer'] = 'SLSQP'
+        wt_opt.driver.options['tol']       = 1.e-6
+        wt_opt.driver.options['maxiter']   = 5
 
-    # Set merit figure
-    wt_opt.model.add_objective('rotorse.ra.AEP', scaler = -1.e-6)
-    
-    # Set optimization variables
-    indices_no_root         = range(2,opt_options['blade_aero']['n_opt_twist'])
-    wt_opt.model.add_design_var('rotorse.opt_var.twist_opt_gain', indices = indices_no_root, lower=0., upper=1.)    
-    wt_opt.model.add_design_var('rotorse.opt_var.chord_opt_gain', indices = indices_no_root, lower=0.5, upper=1.5)    
-    
-    # Set recorder
-    wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
-    wt_opt.driver.recording_options['includes'] = ['rotorse.ra.AEP']
-    wt_opt.driver.recording_options['record_objectives']  = True
-    wt_opt.driver.recording_options['record_constraints'] = True
-    wt_opt.driver.recording_options['record_desvars']     = True
+        # Set merit figure
+        wt_opt.model.add_objective('rotorse.ra.AEP', scaler = -1.e-6)
+        
+        # Set optimization variables
+        indices_no_root         = range(2,opt_options['blade_aero']['n_opt_twist'])
+        wt_opt.model.add_design_var('rotorse.opt_var.twist_opt_gain', indices = indices_no_root, lower=0., upper=1.)    
+        wt_opt.model.add_design_var('rotorse.opt_var.chord_opt_gain', indices = indices_no_root, lower=0.5, upper=1.5)    
+        
+        # Set recorder
+        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
+        wt_opt.driver.recording_options['includes'] = ['rotorse.ra.AEP']
+        wt_opt.driver.recording_options['record_objectives']  = True
+        wt_opt.driver.recording_options['record_constraints'] = True
+        wt_opt.driver.recording_options['record_desvars']     = True
     
     # Setup openmdao problem
     wt_opt.setup()
