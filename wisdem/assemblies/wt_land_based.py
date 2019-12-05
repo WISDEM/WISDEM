@@ -56,7 +56,6 @@ class WT_RNTA(Group):
                                             topLevelFlag=False))
         # self.add_subsystem('towerse',   TowerSE())
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=True, topLevelFlag=False))
-
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
         self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
@@ -157,7 +156,7 @@ class WindPark(Group):
         self.add_subsystem('financese', PlantFinance(verbosity=True))
         
         # Input to plantfinancese from wt group
-        self.connect('rotorse.AEP',             'financese.turbine_AEP')
+        self.connect('rotorse.ra.AEP',          'financese.turbine_aep')
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
         # Inputs to plantfinancese from input yaml
         self.connect('control.rated_power',     'financese.machine_rating')
@@ -217,15 +216,15 @@ class Outputs_2_Screen(ExplicitComponent):
 if __name__ == "__main__":
 
     ## File management
-    fname_input    = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_input    = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
     # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
-    fname_output   = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_output   = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output  = 'it_1/'
     opt_flag       = False
     # Load yaml data into a pure python data structure
     wt_initial               = WT_Data()
     wt_initial.validate      = False
-    wt_initial.fname_schema  = "wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
+    wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
     # Optimization options

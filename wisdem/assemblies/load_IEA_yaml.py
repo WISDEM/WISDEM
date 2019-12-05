@@ -786,11 +786,11 @@ class Costs(ExplicitComponent):
     # Openmdao component with the cost parameters
     def setup(self):
 
-        self.add_discrete_input('turbine_number',    val=0,             desc='Number of turbines at plant')
-        self.add_input('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
-        self.add_input('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
-        self.add_input('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
-        self.add_input('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
+        self.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
+        self.add_output('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
+        self.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
+        self.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
+        self.add_output('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
 
 class WT_Assembly(ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
@@ -837,6 +837,7 @@ class Wind_Turbine(Group):
         self.add_subsystem('configuration', Configuration())
         self.add_subsystem('env',           Environment())
         self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = wt_init_options['blade']))
+        self.add_subsystem('costs',         Costs())
 
         self.connect('airfoils.name',    'blade.interp_airfoils.name')
         self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
@@ -862,6 +863,7 @@ def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     control         = wt_init['control']
     assembly        = wt_init['assembly']
     environment     = wt_init['environment']
+    costs           = wt_init['costs']
     airfoils        = wt_init['airfoils']
     materials       = wt_init['materials']
     
@@ -873,6 +875,7 @@ def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     wt_opt = assign_control_values(wt_opt, control)
     wt_opt = assign_configuration_values(wt_opt, assembly)
     wt_opt = assign_environment_values(wt_opt, environment)
+    wt_opt = assign_costs_values(wt_opt, costs)
     wt_opt = assign_airfoil_values(wt_opt, wt_init_options, airfoils)
     wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
 
