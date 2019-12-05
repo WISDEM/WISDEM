@@ -582,6 +582,14 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                         layer_start_nd[j,i] = layer_end_nd[int(outputs['layer_start_nd'][j,i]),i]
                     if outputs['layer_end_nd'][j,i] > 1:
                         layer_end_nd[j,i]   = layer_start_nd[int(outputs['layer_end_nd'][j,i]),i]
+                elif discrete_outputs['definition_layer'][j] == 7:
+                    width    = outputs['layer_width'][j,i]
+                    layer_start_nd[j,i] = outputs['layer_start_nd'][j,i]
+                    layer_end_nd[j,i]   = layer_start_nd[j,i] + width/arc_L_i
+                elif discrete_outputs['definition_layer'][j] == 8:
+                    width    = outputs['layer_width'][j,i]
+                    layer_end_nd[j,i]   = outputs['layer_end_nd'][j,i]
+                    layer_start_nd[j,i] = layer_end_nd[j,i] - width/arc_L_i
                 elif discrete_outputs['definition_layer'][j] == 10:
                     pass
                 else:
@@ -993,6 +1001,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                             break
             else:
                 layer_start_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['start_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['start_nd_arc']['values'])
+            if 'width' in internal_structure_2d_fem['layers'][i]:
+                definition_layer[i] = 7
+                layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
+
         if 'end_nd_arc' in internal_structure_2d_fem['layers'][i]:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
@@ -1005,6 +1017,9 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                             break
             else:
                 layer_end_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['end_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['end_nd_arc']['values'])
+            if 'width' in internal_structure_2d_fem['layers'][i]:
+                definition_layer[i] = 8
+                layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
         if 'web' in internal_structure_2d_fem['layers'][i]:
             layer_web[i] = internal_structure_2d_fem['layers'][i]['web']
             definition_layer[i] = 10

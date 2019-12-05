@@ -216,9 +216,10 @@ class Outputs_2_Screen(ExplicitComponent):
 if __name__ == "__main__":
 
     ## File management
-    fname_input    = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
-    fname_output   = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    # fname_input    = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    # fname_output   = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_input    = "/work/3_projects/1_Hitachi/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v14.yaml"
+    fname_output   = "/work/3_projects/1_Hitachi/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v15.yaml"
     folder_output  = 'it_1/'
     opt_flag       = False
     # Load yaml data into a pure python data structure
