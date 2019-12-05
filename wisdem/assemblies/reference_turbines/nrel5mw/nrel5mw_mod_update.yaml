@@ -436,7 +436,12 @@ environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5
     weib_shape_parameter: 2.
-
+costs:
+    wake_loss_factor: 0.15
+    fixed_charge_rate: 0.075
+    bos_per_kW: 2979.
+    opex_per_kW: 144.
+    turbine_number: 120
     
 
     

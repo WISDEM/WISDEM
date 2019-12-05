@@ -156,6 +156,16 @@ class WindPark(Group):
         self.add_subsystem('wt',        WT_RNTA(wt_init_options = wt_init_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('financese', PlantFinance(verbosity=True))
         
+        # Input to plantfinancese from wt group
+        self.connect('rotorse.AEP',             'financese.turbine_AEP')
+        self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
+        # Inputs to plantfinancese from input yaml
+        self.connect('control.rated_power',     'financese.machine_rating')
+        self.connect('costs.turbine_number',    'financese.turbine_number')
+        self.connect('costs.bos_per_kW',        'financese.bos_per_kW')
+        self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
+        self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
+        self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
 
 class Convergence_Trends_Opt(ExplicitComponent):
     def initialize(self):

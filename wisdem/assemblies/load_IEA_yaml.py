@@ -782,6 +782,16 @@ class Environment(ExplicitComponent):
         self.add_output('mu_air',       val=1.81e-5,      units='kg/(m*s)',   desc='Dynamic viscosity of air')
         self.add_output('weibull_k',    val=2.0,          desc='Shape parameter of the Weibull probability density function of the wind.')
 
+class Costs(ExplicitComponent):
+    # Openmdao component with the cost parameters
+    def setup(self):
+
+        self.add_discrete_input('turbine_number',    val=0,             desc='Number of turbines at plant')
+        self.add_input('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
+        self.add_input('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
+        self.add_input('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
+        self.add_input('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
+
 class WT_Assembly(ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
     def initialize(self):
@@ -1113,6 +1123,16 @@ def assign_environment_values(wt_opt, environment):
 
     return wt_opt
 
+def assign_costs_values(wt_opt, costs):
+
+    wt_opt['costs.turbine_number']      = costs['turbine_number']
+    wt_opt['costs.bos_per_kW']          = costs['bos_per_kW']
+    wt_opt['costs.opex_per_kW']         = costs['opex_per_kW']
+    wt_opt['costs.wake_loss_factor']    = costs['wake_loss_factor']
+    wt_opt['costs.fixed_charge_rate']   = costs['fixed_charge_rate']
+
+    return wt_opt 
+
 def assign_airfoil_values(wt_opt, wt_init_options, airfoils):
     # Function to assign values to the openmdao component Airfoils
     
@@ -1270,14 +1290,14 @@ def assign_material_values(wt_opt, wt_init_options, materials):
 if __name__ == "__main__":
 
     ## File management
-    fname_input        = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_input        = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
     # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
-    fname_output       = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_output       = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     
     # Load yaml data into a pure python data structure
     wt_initial               = WT_Data()
     wt_initial.validate      = False
-    wt_initial.fname_schema  = "wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
+    wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
     # Initialize openmdao problem
