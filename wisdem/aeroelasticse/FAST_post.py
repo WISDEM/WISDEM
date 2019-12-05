@@ -1,5 +1,6 @@
 from __future__ import print_function
 from wisdem.aeroelasticse.Util.ReadFASTout import ReadFASToutFormat
+import numpy as np
 
 def return_fname(fname):
     return fname
