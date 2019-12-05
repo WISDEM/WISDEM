@@ -13,6 +13,7 @@ def return_stats(fname):
     data, meta = ReadFASToutFormat(fname, 2, Verbose=True)
     stats = {}
     for var in data.keys():
+        stats[var] = {}
         stats[var]['mean']   = np.mean(data[var])
         stats[var]['min']    = min(data[var])
         stats[var]['max']    = max(data[var])
