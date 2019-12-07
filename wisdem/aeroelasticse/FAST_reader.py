@@ -895,6 +895,8 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Airfoil Information
         f.readline()
+        if (self.dev_branch):
+            self.fst_vt['AeroDyn15']['AFTabMod']         = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Alfa']       = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Cl']         = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Cd']         = int(f.readline().split()[0])
