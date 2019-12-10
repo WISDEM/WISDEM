@@ -2,7 +2,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver, CaseReader
-from wisdem.assemblies.load_IEA_yaml import WT_Data, Wind_Turbine, yaml2openmdao
+from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyPython, WindTurbineOntologyOpenMDAO, yaml2openmdao
 from wisdem.rotorse.rotor_geometry import TurbineClass
 from wisdem.rotorse.wt_rotor import WT_Rotor
 from wisdem.drivetrainse.drivese_omdao import DriveSE
@@ -48,7 +48,7 @@ class WT_RNTA(Group):
         opt_options     = self.options['opt_options']
 
         # Analysis components
-        self.add_subsystem('wt_init',   Wind_Turbine(wt_init_options = wt_init_options), promotes=['*'])
+        self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(wt_init_options = wt_init_options), promotes=['*'])
         self.add_subsystem('wt_class',  TurbineClass())
         self.add_subsystem('rotorse',   WT_Rotor(wt_init_options = wt_init_options, opt_options = opt_options))
         self.add_subsystem('drivese',   DriveSE(debug=False,
@@ -106,7 +106,7 @@ class WT_RNTA(Group):
         # self.connect('rotorse.rs.I_all_blades',    'drivese.blades_I')
         self.connect('rotorse.rs.mass.mass_one_blade',  'drivese.blade_mass')
         self.connect('rotorse.param.chord_param',  'drivese.blade_root_diameter', src_indices=[0])
-        self.connect('blade.length','drivese.blade_length')
+        self.connect('blade.length',               'drivese.blade_length')
         self.connect('nacelle.gear_ratio',         'drivese.gear_ratio')
         self.connect('nacelle.shaft_ratio',        'drivese.shaft_ratio')
         self.connect('nacelle.planet_numbers',     'drivese.planet_numbers')
@@ -216,14 +216,12 @@ class Outputs_2_Screen(ExplicitComponent):
 if __name__ == "__main__":
 
     ## File management
-    # fname_input    = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    # fname_output   = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
-    fname_input    = "/work/3_projects/1_Hitachi/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v14.yaml"
-    fname_output   = "/work/3_projects/1_Hitachi/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v15.yaml"
+    fname_input    = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_output   = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output  = 'it_1/'
     opt_flag       = False
     # Load yaml data into a pure python data structure
-    wt_initial               = WT_Data()
+    wt_initial               = WindTurbineOntologyPython()
     wt_initial.validate      = False
     wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
@@ -233,7 +231,7 @@ if __name__ == "__main__":
     optimization_data.folder_output = folder_output
     if opt_flag == True:
         optimization_data.n_opt_twist = 8
-        optimization_data.n_opt_chord = 8
+        optimization_data.n_opt_chord = wt_initial.n_span
     else:
         optimization_data.n_opt_twist = wt_initial.n_span
         optimization_data.n_opt_chord = wt_initial.n_span
@@ -251,7 +249,7 @@ if __name__ == "__main__":
         wt_opt.driver  = ScipyOptimizeDriver()
         wt_opt.driver.options['optimizer'] = 'SLSQP'
         wt_opt.driver.options['tol']       = 1.e-6
-        wt_opt.driver.options['maxiter']   = 5
+        wt_opt.driver.options['maxiter']   = 15
 
         # Set merit figure
         wt_opt.model.add_objective('rotorse.ra.AEP', scaler = -1.e-6)
@@ -284,64 +282,3 @@ if __name__ == "__main__":
 
     # Printing and plotting results
     print('AEP = ' + str(wt_opt['rotorse.ra.AEP']*1.e-6) + ' GWh')
-    
-    plt.figure()
-    plt.plot(wt_opt['rotorse.ra.powercurve.V'], wt_opt['rotorse.ra.powercurve.P']/1e6)
-    plt.xlabel('wind speed (m/s)')
-    plt.xlabel('power (W)')
-    plt.show()
-
-    n_pitch = len(wt_opt['rotorse.ra.aeroperf_tables.pitch_vector'])
-    n_tsr   = len(wt_opt['rotorse.ra.aeroperf_tables.tsr_vector'])
-    n_U     = len(wt_opt['rotorse.ra.aeroperf_tables.U_vector'])
-    for i in range(n_U):
-        fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(wt_opt['rotorse.ra.aeroperf_tables.pitch_vector'], wt_opt['rotorse.ra.aeroperf_tables.tsr_vector'], wt_opt['rotorse.ra.aeroperf_tables.Cp'][:, :, i], levels=[0.0, 0.3, 0.40, 0.42, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.50 ])
-        ax0.clabel(CS0, inline=1, fontsize=12)
-        plt.title('Power Coefficient', fontsize=14, fontweight='bold')
-        plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
-        plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-        plt.subplots_adjust(bottom = 0.15, left = 0.15)
-
-        fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(wt_opt['rotorse.ra.aeroperf_tables.pitch_vector'], wt_opt['rotorse.ra.aeroperf_tables.tsr_vector'], wt_opt['rotorse.ra.aeroperf_tables.Ct'][:, :, i])
-        ax0.clabel(CS0, inline=1, fontsize=12)
-        plt.title('Thrust Coefficient', fontsize=14, fontweight='bold')
-        plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
-        plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-        plt.subplots_adjust(bottom = 0.15, left = 0.15)
-
-        
-        fig0, ax0 = plt.subplots()
-        CS0 = ax0.contour(wt_opt['rotorse.ra.aeroperf_tables.pitch_vector'], wt_opt['rotorse.ra.aeroperf_tables.tsr_vector'], wt_opt['rotorse.ra.aeroperf_tables.Cq'][:, :, i])
-        ax0.clabel(CS0, inline=1, fontsize=12)
-        plt.title('Torque Coefficient', fontsize=14, fontweight='bold')
-        plt.xlabel('Pitch Angle [deg]', fontsize=14, fontweight='bold')
-        plt.ylabel('TSR [-]', fontsize=14, fontweight='bold')
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-        plt.subplots_adjust(bottom = 0.15, left = 0.15)
-        
-        plt.show()
-
-    # Angle of attack and stall angle
-    faoa, axaoa = plt.subplots(1,1,figsize=(5.3, 4))
-    axaoa.plot(wt_opt['rotorse.ra.stall_check.s'], wt_opt['rotorse.ra.stall_check.aoa_along_span'], label='AoA')
-    axaoa.plot(wt_opt['rotorse.ra.stall_check.s'], wt_opt['rotorse.ra.stall_check.stall_angle_along_span'], '.', label='Stall')
-    axaoa.legend(fontsize=12)
-    plt.xlabel('Blade Span [m]', fontsize=14, fontweight='bold')
-    plt.ylabel('Angle [deg]', fontsize=14, fontweight='bold')
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-    plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-    plt.subplots_adjust(bottom = 0.15, left = 0.15)
-    fig_name = 'aoa.png'
-    faoa.savefig(folder_output + fig_name)
-    plt.show()

@@ -516,7 +516,7 @@ class NoStallConstraint(ExplicitComponent):
         self.add_input('stall_angle_along_span',val=np.zeros(n_span), units = 'deg', desc = 'Stall angle along blade span')
         self.add_input('aoa_along_span',        val=np.zeros(n_span), units = 'deg', desc = 'Angle of attack along blade span')
         self.add_input('stall_margin',          val=3.0,            units = 'deg', desc = 'Minimum margin from the stall angle')
-        self.add_input('min_s',                 val=0.15,            desc = 'Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)')
+        self.add_input('min_s',                 val=0.25,            desc = 'Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)')
         self.add_input('airfoils_cl',           val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd',           val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
         self.add_input('airfoils_cm',           val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
@@ -788,61 +788,61 @@ class RotorAeroPower(Group):
 #         self.connect('AEP_loss_factor', 'aep.lossFactor')
 
 
-def Init_RotorAeropower_wRefBlade(rotor, blade):
-    # === blade grid ===
-    rotor['hubFraction']      = blade['config']['hubD']/2./blade['pf']['r'][-1] #0.025  # (Float): hub location as fraction of radius
-    rotor['bladeLength']      = blade['ctrl_pts']['bladeLength'] #61.5  # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature
-    rotor['precone']          = blade['config']['cone_angle'] #2.5  # (Float, deg): precone angle
-    rotor['tilt']             = blade['config']['tilt_angle'] #5.0  # (Float, deg): shaft tilt
-    rotor['yaw']              = 0.0  # (Float, deg): yaw error
-    rotor['nBlades']          = blade['config']['number_of_blades'] #3  # (Int): number of blades
-    # ------------------
+# def Init_RotorAeropower_wRefBlade(rotor, blade):
+#     # === blade grid ===
+#     rotor['hubFraction']      = blade['config']['hubD']/2./blade['pf']['r'][-1] #0.025  # (Float): hub location as fraction of radius
+#     rotor['bladeLength']      = blade['ctrl_pts']['bladeLength'] #61.5  # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature
+#     rotor['precone']          = blade['config']['cone_angle'] #2.5  # (Float, deg): precone angle
+#     rotor['tilt']             = blade['config']['tilt_angle'] #5.0  # (Float, deg): shaft tilt
+#     rotor['yaw']              = 0.0  # (Float, deg): yaw error
+#     rotor['nBlades']          = blade['config']['number_of_blades'] #3  # (Int): number of blades
+#     # ------------------
     
-    # === blade geometry ===
-    rotor['r_max_chord']      = blade['ctrl_pts']['r_max_chord']  # 0.23577 #(Float): location of max chord on unit radius
-    rotor['chord_in']         = np.array(blade['ctrl_pts']['chord_in']) # np.array([3.2612, 4.3254, 4.5709, 3.7355, 2.69923333, 1.4621])  # (Array, m): chord at control points. defined at hub, then at linearly spaced locations from r_max_chord to tip
-    rotor['theta_in']         = np.array(blade['ctrl_pts']['theta_in']) # np.array([0.0, 13.2783, 12.30514836,  6.95106536,  2.72696309, -0.0878099]) # (Array, deg): twist at control points.  defined at linearly spaced locations from r[idx_cylinder] to tip
-    rotor['precurve_in']      = np.array(blade['ctrl_pts']['precurve_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
-    rotor['presweep_in']      = np.array(blade['ctrl_pts']['presweep_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
-    rotor['sparT_in']         = np.array(blade['ctrl_pts']['sparT_in']) # np.array([0.0, 0.05, 0.047754, 0.045376, 0.031085, 0.0061398])  # (Array, m): spar cap thickness parameters
-    rotor['teT_in']           = np.array(blade['ctrl_pts']['teT_in']) # np.array([0.0, 0.1, 0.09569, 0.06569, 0.02569, 0.00569])  # (Array, m): trailing-edge thickness parameters
-    # if 'le_var' in blade['precomp']['le_var']:
-    #     rotor['leT_in']       = np.array(blade['ctrl_pts']['leT_in']) ## (Array, m): leading-edge thickness parameters
-    rotor['airfoil_position'] = np.array(blade['outer_shape_bem']['airfoil_position']['grid'])
-    # ------------------
+#     # === blade geometry ===
+#     rotor['r_max_chord']      = blade['ctrl_pts']['r_max_chord']  # 0.23577 #(Float): location of max chord on unit radius
+#     rotor['chord_in']         = np.array(blade['ctrl_pts']['chord_in']) # np.array([3.2612, 4.3254, 4.5709, 3.7355, 2.69923333, 1.4621])  # (Array, m): chord at control points. defined at hub, then at linearly spaced locations from r_max_chord to tip
+#     rotor['theta_in']         = np.array(blade['ctrl_pts']['theta_in']) # np.array([0.0, 13.2783, 12.30514836,  6.95106536,  2.72696309, -0.0878099]) # (Array, deg): twist at control points.  defined at linearly spaced locations from r[idx_cylinder] to tip
+#     rotor['precurve_in']      = np.array(blade['ctrl_pts']['precurve_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
+#     rotor['presweep_in']      = np.array(blade['ctrl_pts']['presweep_in']) #np.array([0.0, 0.0, 0.0])  # (Array, m): precurve at control points.  defined at same locations at chord, starting at 2nd control point (root must be zero precurve)
+#     rotor['sparT_in']         = np.array(blade['ctrl_pts']['sparT_in']) # np.array([0.0, 0.05, 0.047754, 0.045376, 0.031085, 0.0061398])  # (Array, m): spar cap thickness parameters
+#     rotor['teT_in']           = np.array(blade['ctrl_pts']['teT_in']) # np.array([0.0, 0.1, 0.09569, 0.06569, 0.02569, 0.00569])  # (Array, m): trailing-edge thickness parameters
+#     # if 'le_var' in blade['precomp']['le_var']:
+#     #     rotor['leT_in']       = np.array(blade['ctrl_pts']['leT_in']) ## (Array, m): leading-edge thickness parameters
+#     rotor['airfoil_position'] = np.array(blade['outer_shape_bem']['airfoil_position']['grid'])
+#     # ------------------
     
-    # === atmosphere ===
-    rotor['rho']              = 1.225  # (Float, kg/m**3): density of air
-    rotor['mu']               = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
-    rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
-    rotor['shearExp']         = 0.25  # (Float): shear exponent
-    rotor['shape_parameter']  = 2.0
-    rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class
-    rotor['wind_reference_height'] = blade['config']['hub_height']  # (Float, m): hub height
-    # ----------------------
+#     # === atmosphere ===
+#     rotor['rho']              = 1.225  # (Float, kg/m**3): density of air
+#     rotor['mu']               = 1.81206e-5  # (Float, kg/m/s): dynamic viscosity of air
+#     rotor['hub_height']       = blade['config']['hub_height']  # (Float, m): hub height
+#     rotor['shearExp']         = 0.25  # (Float): shear exponent
+#     rotor['shape_parameter']  = 2.0
+#     rotor['turbine_class']    = blade['config']['turbine_class'].upper() #TURBINE_CLASS['I']  # (Enum): IEC turbine class
+#     rotor['wind_reference_height'] = blade['config']['hub_height']  # (Float, m): hub height
+#     # ----------------------
     
-    # === control ===
-    rotor['control_Vin']      = blade['config']['Vin'] #3.0  # (Float, m/s): cut-in wind speed
-    rotor['control_Vout']     = blade['config']['Vout'] #25.0  # (Float, m/s): cut-out wind speed
-    rotor['machine_rating']   = blade['config']['rating'] #5e6  # (Float, W): rated power
-    rotor['control_minOmega'] = blade['config']['minOmega'] #0.0  # (Float, rpm): minimum allowed rotor rotation speed
-    rotor['control_maxOmega'] = blade['config']['maxOmega'] #12.0  # (Float, rpm): maximum allowed rotor rotation speed
-    rotor['control_maxTS']    = blade['config']['maxTS']
-    rotor['control_tsr']      = blade['config']['tsr'] #7.55  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
-    rotor['control_pitch']    = blade['config']['pitch'] #0.0  # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
-    # ----------------------
+#     # === control ===
+#     rotor['control_Vin']      = blade['config']['Vin'] #3.0  # (Float, m/s): cut-in wind speed
+#     rotor['control_Vout']     = blade['config']['Vout'] #25.0  # (Float, m/s): cut-out wind speed
+#     rotor['machine_rating']   = blade['config']['rating'] #5e6  # (Float, W): rated power
+#     rotor['control_minOmega'] = blade['config']['minOmega'] #0.0  # (Float, rpm): minimum allowed rotor rotation speed
+#     rotor['control_maxOmega'] = blade['config']['maxOmega'] #12.0  # (Float, rpm): maximum allowed rotor rotation speed
+#     rotor['control_maxTS']    = blade['config']['maxTS']
+#     rotor['control_tsr']      = blade['config']['tsr'] #7.55  # (Float): tip-speed ratio in Region 2 (should be optimized externally)
+#     rotor['control_pitch']    = blade['config']['pitch'] #0.0  # (Float, deg): pitch angle in region 2 (and region 3 for fixed pitch machines)
+#     # ----------------------
     
-    # === no stall constraint ===
-    rotor['nostallconstraint.min_s']        = 0.25  # The stall constraint is only computed from this value (nondimensional coordinate along blade span) to blade tip
-    rotor['nostallconstraint.stall_margin'] = 3.0   # Values in deg of stall margin
-    # ----------------------
+#     # === no stall constraint ===
+#     rotor['nostallconstraint.min_s']        = 0.25  # The stall constraint is only computed from this value (nondimensional coordinate along blade span) to blade tip
+#     rotor['nostallconstraint.stall_margin'] = 3.0   # Values in deg of stall margin
+#     # ----------------------
     
-    # === aero and structural analysis options ===
-    rotor['nSector'] = 4  # (Int): number of sectors to divide rotor face into in computing thrust and power
-    rotor['AEP_loss_factor'] = 1.0  # (Float): availability and other losses (soiling, array, etc.)
-    rotor['drivetrainType']   = blade['config']['drivetrain'].upper() #DRIVETRAIN_TYPE['GEARED']  # (Enum)
-    # ----------------------
-    return rotor
+#     # === aero and structural analysis options ===
+#     rotor['nSector'] = 4  # (Int): number of sectors to divide rotor face into in computing thrust and power
+#     rotor['AEP_loss_factor'] = 1.0  # (Float): availability and other losses (soiling, array, etc.)
+#     rotor['drivetrainType']   = blade['config']['drivetrain'].upper() #DRIVETRAIN_TYPE['GEARED']  # (Enum)
+#     # ----------------------
+#     return rotor
 
 if __name__ == '__main__':
 

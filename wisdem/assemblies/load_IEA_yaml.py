@@ -52,7 +52,7 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
 
     return midpoint_arc
 
-class WT_Data(object):
+class WindTurbineOntologyPython(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
     #   - wt_init_options: dictionary with all the inputs that will be passed as options to the openmdao components, such as the length of the arrays
     #   - blade: dictionary representing the entry blade in the yaml file
@@ -155,9 +155,11 @@ class WT_Data(object):
 
         # Update blade outer shape
         self.wt_init['components']['blade']['outer_shape_bem']['chord']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.outer_shape_bem.chord'].tolist()
+        # self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.outer_shape_bem.chord'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['rotorse.param.chord_param'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['twist']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['blade.outer_shape_bem.twist'].tolist()
+        # self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['blade.outer_shape_bem.twist'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['rotorse.param.twist_param'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['values']   = wt_opt['blade.outer_shape_bem.pitch_axis'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
@@ -527,7 +529,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.add_output('layer_end_nd',      val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         
         self.add_discrete_output('definition_web',   val=np.zeros(n_webs),                   desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
-        self.add_discrete_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 10) web layer')
+        self.add_discrete_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -556,41 +558,44 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     
             # Loop through the layers and compute non-dimensional start and end positions along the profile for the different layer definitions
             for j in range(self.n_layers):
-                if discrete_outputs['definition_layer'][j] == 1:
+                if discrete_outputs['definition_layer'][j] == 1: # All around
                     layer_start_nd[j,i] = 0.
                     layer_end_nd[j,i]   = 1.
-                elif discrete_outputs['definition_layer'][j] == 2:
+                elif discrete_outputs['definition_layer'][j] == 2: # Midpoint and width
                     layer_rotation[j,i] = - inputs['twist'][i]
                     midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i], outputs['layer_offset_y_pa'][j,i], [0.,0.], [discrete_outputs['layer_side'][j]])[0]
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-                elif discrete_outputs['definition_layer'][j] == 4:
+                elif discrete_outputs['definition_layer'][j] == 4: # Midpoint and width
                     midpoint = 1. 
                     outputs['layer_midpoint_nd'][j,i] = midpoint
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = width/arc_L_i/2.
-                elif discrete_outputs['definition_layer'][j] == 5:
+                elif discrete_outputs['definition_layer'][j] == 5: # Midpoint and width
                     midpoint = LE_loc
                     outputs['layer_midpoint_nd'][j,i] = midpoint
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-                elif discrete_outputs['definition_layer'][j] == 6:
+                elif discrete_outputs['definition_layer'][j] == 6: # Start and end locked to other element
                     if outputs['layer_start_nd'][j,i] > 1:
                         layer_start_nd[j,i] = layer_end_nd[int(outputs['layer_start_nd'][j,i]),i]
                     if outputs['layer_end_nd'][j,i] > 1:
                         layer_end_nd[j,i]   = layer_start_nd[int(outputs['layer_end_nd'][j,i]),i]
-                elif discrete_outputs['definition_layer'][j] == 7:
+                elif discrete_outputs['definition_layer'][j] == 7: # Start nd and width
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = outputs['layer_start_nd'][j,i]
                     layer_end_nd[j,i]   = layer_start_nd[j,i] + width/arc_L_i
-                elif discrete_outputs['definition_layer'][j] == 8:
+                elif discrete_outputs['definition_layer'][j] == 8: # End nd and width
                     width    = outputs['layer_width'][j,i]
                     layer_end_nd[j,i]   = outputs['layer_end_nd'][j,i]
                     layer_start_nd[j,i] = layer_end_nd[j,i] - width/arc_L_i
-                elif discrete_outputs['definition_layer'][j] == 10:
+                elif discrete_outputs['definition_layer'][j] == 9: # Start and end nd positions
+                    layer_start_nd[j,i] = outputs['layer_start_nd'][j,i]
+                    layer_end_nd[j,i]   = outputs['layer_end_nd'][j,i]
+                elif discrete_outputs['definition_layer'][j] == 10: # Web layer
                     pass
                 else:
                     exit('Blade layer ' + str(discrete_outputs['layer_name'][j]) + ' not described correctly. Please check the yaml input file.')
@@ -825,7 +830,7 @@ class WT_Assembly(ExplicitComponent):
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
         outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub']
 
-class Wind_Turbine(Group):
+class WindTurbineOntologyOpenMDAO(Group):
     # Openmdao group with all wind turbine data
     
     def initialize(self):
@@ -989,7 +994,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
             else:
                 layer_midpoint_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['values'])
             layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
-        if 'start_nd_arc' in internal_structure_2d_fem['layers'][i]:
+        if 'start_nd_arc' in internal_structure_2d_fem['layers'][i] and definition_layer[i] == 0:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['start_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'TE':
                     layer_start_nd[i,:] = np.ones(n_span)
@@ -1004,8 +1009,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
             if 'width' in internal_structure_2d_fem['layers'][i]:
                 definition_layer[i] = 7
                 layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
-
-        if 'end_nd_arc' in internal_structure_2d_fem['layers'][i]:
+            
+        if 'end_nd_arc' in internal_structure_2d_fem['layers'][i] and definition_layer[i] == 0:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
                     layer_end_nd[i,:] = np.ones(n_span)
@@ -1020,6 +1025,9 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
             if 'width' in internal_structure_2d_fem['layers'][i]:
                 definition_layer[i] = 8
                 layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
+            if 'start_nd_arc' in internal_structure_2d_fem['layers'][i]:
+                definition_layer[i] = 9
+
         if 'web' in internal_structure_2d_fem['layers'][i]:
             layer_web[i] = internal_structure_2d_fem['layers'][i]['web']
             definition_layer[i] = 10
@@ -1313,14 +1321,14 @@ if __name__ == "__main__":
     fname_output       = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     
     # Load yaml data into a pure python data structure
-    wt_initial               = WT_Data()
+    wt_initial               = WindTurbineOntologyPython()
     wt_initial.validate      = False
     wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
     # Initialize openmdao problem
     wt_opt          = Problem()
-    wt_opt.model    = Wind_Turbine(wt_init_options = wt_init_options)
+    wt_opt.model    = WindTurbineOntologyOpenMDAO(wt_init_options = wt_init_options)
     wt_opt.setup()
     # Load wind turbine data from wt_initial to the openmdao problem
     wt_opt = yaml2openmdao(wt_opt, wt_init_options, wt_init)
