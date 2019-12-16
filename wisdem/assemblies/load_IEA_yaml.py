@@ -555,14 +555,28 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                 if discrete_outputs['definition_web'][j] == 1:
                     web_rotation[j,i] = - inputs['twist'][i]
                     web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
+                elif discrete_outputs['definition_web'][j] == 2:
+                    web_rotation[j,i] = - outputs['web_rotation'][j,i]
+                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
+                    if i == 0:
+                        print('The web ' + discrete_outputs['web_name'][j] + ' is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition.')
+                    if web_start_nd[j,i] < 0. or web_start_nd[j,i] > 1.:
+                        exit('Blade web ' + discrete_outputs['web_name'][j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. start point outside the TE. Please check the yaml input file.')
+                    if web_end_nd[j,i] < 0. or web_end_nd[j,i] > 1.:
+                        exit('Blade web ' + discrete_outputs['web_name'][j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. end point outside the TE. Please check the yaml input file.')
+                else:
+                    exit('Blade web ' + discrete_outputs['web_name'][j] + ' not described correctly. Please check the yaml input file.')
                     
             # Loop through the layers and compute non-dimensional start and end positions along the profile for the different layer definitions
             for j in range(self.n_layers):
                 if discrete_outputs['definition_layer'][j] == 1: # All around
                     layer_start_nd[j,i] = 0.
                     layer_end_nd[j,i]   = 1.
-                elif discrete_outputs['definition_layer'][j] == 2: # Midpoint and width
-                    layer_rotation[j,i] = - inputs['twist'][i]
+                elif discrete_outputs['definition_layer'][j] == 2 or discrete_outputs['definition_layer'][j] == 3: # Midpoint and width
+                    if discrete_outputs['definition_layer'][j] == 2:
+                        layer_rotation[j,i] = - inputs['twist'][i]
+                    else:
+                        layer_rotation[j,i] = - outputs['layer_rotation'][j,i]
                     midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i], outputs['layer_offset_y_pa'][j,i], [0.,0.], [discrete_outputs['layer_side'][j]])[0]
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
@@ -942,9 +956,9 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                 else:
                     exit('Invalid rotation reference for web ' + web_name[i] + '. Please check the yaml input file')
             else:
-                web_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['rotation']['grid'], internal_structure_2d_fem['webs'][i]['rotation']['values'])
+                web_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['rotation']['grid'], internal_structure_2d_fem['webs'][i]['rotation']['values'], left=0., right=0.)
                 definition_web[i] = 2
-            web_offset_y_pa[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['offset_y_pa']['grid'], internal_structure_2d_fem['webs'][i]['offset_y_pa']['values'])
+            web_offset_y_pa[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['offset_y_pa']['grid'], internal_structure_2d_fem['webs'][i]['offset_y_pa']['values'], left=0., right=0.)
         else:
             exit('Webs definition not supported. Please check the yaml input.')
     
@@ -967,7 +981,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     for i in range(n_layers):
         layer_name[i]  = internal_structure_2d_fem['layers'][i]['name']
         layer_mat[i]   = internal_structure_2d_fem['layers'][i]['material']
-        thickness[i]   = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['thickness']['grid'], internal_structure_2d_fem['layers'][i]['thickness']['values'])
+        thickness[i]   = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['thickness']['grid'], internal_structure_2d_fem['layers'][i]['thickness']['values'], left=0., right=0.)
         if 'rotation' not in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' not in internal_structure_2d_fem['layers'][i] and 'width' not in internal_structure_2d_fem['layers'][i] and 'start_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'end_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'web' not in internal_structure_2d_fem['layers'][i]:
             definition_layer[i] = 1
             
@@ -978,10 +992,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                 else:
                     exit('Invalid rotation reference for layer ' + layer_name[i] + '. Please check the yaml input file.')
             else:
-                layer_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['rotation']['grid'], internal_structure_2d_fem['layers'][i]['rotation']['values'])
+                layer_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['rotation']['grid'], internal_structure_2d_fem['layers'][i]['rotation']['values'], left=0., right=0.)
                 definition_layer[i] = 3
-            layer_offset_y_pa[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['offset_y_pa']['grid'], internal_structure_2d_fem['layers'][i]['offset_y_pa']['values'])
-            layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
+            layer_offset_y_pa[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['offset_y_pa']['grid'], internal_structure_2d_fem['layers'][i]['offset_y_pa']['values'], left=0., right=0.)
+            layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'], left=0., right=0.)
             layer_side[i]    = internal_structure_2d_fem['layers'][i]['side']
         if 'midpoint_nd_arc' in internal_structure_2d_fem['layers'][i] and 'width' in internal_structure_2d_fem['layers'][i]:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['midpoint_nd_arc'].keys():
@@ -992,8 +1006,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                     definition_layer[i] = 5
                     # layer_midpoint_nd[i,:] = -np.ones(n_span) # To be assigned later!
             else:
-                layer_midpoint_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['values'])
-            layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
+                layer_midpoint_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['midpoint_nd_arc']['values'], left=0., right=0.)
+            layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'], left=0., right=0.)
         if 'start_nd_arc' in internal_structure_2d_fem['layers'][i] and definition_layer[i] == 0:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['start_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'TE':
@@ -1005,10 +1019,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                             layer_start_nd[i,:] = np.ones(n_span) * k
                             break
             else:
-                layer_start_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['start_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['start_nd_arc']['values'])
+                layer_start_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['start_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['start_nd_arc']['values'], left=0., right=0.)
             if 'width' in internal_structure_2d_fem['layers'][i]:
                 definition_layer[i] = 7
-                layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
+                layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'], left=0., right=0.)
             
         if 'end_nd_arc' in internal_structure_2d_fem['layers'][i] and definition_layer[i] == 0:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
@@ -1021,10 +1035,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
                             layer_end_nd[i,:] = np.ones(n_span) * k
                             break
             else:
-                layer_end_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['end_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['end_nd_arc']['values'])
+                layer_end_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['end_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['end_nd_arc']['values'], left=0., right=0.)
             if 'width' in internal_structure_2d_fem['layers'][i]:
                 definition_layer[i] = 8
-                layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'])
+                layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'], left=0., right=0.)
             if 'start_nd_arc' in internal_structure_2d_fem['layers'][i]:
                 definition_layer[i] = 9
 
@@ -1104,7 +1118,7 @@ def assign_tower_values(wt_opt, wt_init_options, tower):
     for i in range(n_layers):
         layer_name[i]  = tower['internal_structure_2d_fem']['layers'][i]['name']
         layer_mat[i]   = tower['internal_structure_2d_fem']['layers'][i]['material']
-        thickness[i]   = np.interp(nd_height, tower['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], tower['internal_structure_2d_fem']['layers'][i]['thickness']['values'])
+        thickness[i]   = np.interp(nd_height, tower['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], tower['internal_structure_2d_fem']['layers'][i]['thickness']['values'], left=0., right=0.)
 
     wt_opt['tower.layer_name']        = layer_name
     wt_opt['tower.layer_mat']         = layer_mat
@@ -1278,7 +1292,7 @@ def assign_material_values(wt_opt, wt_init_options, materials):
                 G[i,:]  = np.ones(3) * materials[i]['G']
             elif 'nu' in materials[i]:
                 G[i,:]  = np.ones(3) * materials[i]['E']/(2*(1+materials[i]['nu'])) # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
-                warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%mati['name']
+                warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
                 print(warning_shear_modulus_isotropic)
                 
         elif orth[i] == 1:
