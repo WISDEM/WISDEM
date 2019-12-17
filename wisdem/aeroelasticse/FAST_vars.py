@@ -903,6 +903,106 @@ HydroDyn['OutSwtch']         = 2
 HydroDyn['OutFmt']           = ""
 HydroDyn['OutSFmt']          = ""
 
+## SubDyn Input File
+SubDyn = {}
+# SIMULATION CONTROL
+SubDyn['Echo']         = False
+SubDyn['SDdeltaT']     = 0.
+SubDyn['IntMethod']    = 0
+SubDyn['SttcSolve']    = False
+# FEA and CRAIG-BAMPTON PARAMETERS
+SubDyn['FEMMod']       = 0
+SubDyn['NDiv']         = 0
+SubDyn['CBMod']        = False
+SubDyn['Nmodes']       = 0
+SubDyn['JDampings']    = 0
+# STRUCTURE JOINTS
+SubDyn['NJoints']      = 0
+SubDyn['JointID']      = [0]
+SubDyn['JointXss']     = [0.]
+SubDyn['JointYss']     = [0.]
+SubDyn['JointZss']     = [0.]
+# BASE REACTION JOINTS
+SubDyn['NReact']       = 0
+SubDyn['RJointID']     = [0]
+SubDyn['RctTDXss']     = [0]
+SubDyn['RctTDYss']     = [0]
+SubDyn['RctTDZss']     = [0]
+SubDyn['RctRDXss']     = [0]
+SubDyn['RctRDYss']     = [0]
+SubDyn['RctRDZss']     = [0]
+SubDyn['Rct_SoilFile'] = [""]
+# INTERFACE JOINTS
+SubDyn['NInterf']      = 0
+SubDyn['IJointID']     = [0]
+SubDyn['ItfTDXss']     = [0]
+SubDyn['ItfTDYss']     = [0]
+SubDyn['ItfTDZss']     = [0]
+SubDyn['ItfRDXss']     = [0]
+SubDyn['ItfRDYss']     = [0]
+SubDyn['ItfRDZss']     = [0]
+# MEMBERS
+SubDyn['NMembers']     = 0
+SubDyn['MemberID']     = [0]
+SubDyn['MJointID1']    = [0]
+SubDyn['MJointID2']    = [0]
+SubDyn['MPropSetID1']  = [0]
+SubDyn['MPropSetID2']  = [0]
+SubDyn['COSMID']       = [0]
+# MEMBER X-SECTION PROPERTY data 1/2
+SubDyn['NPropSets']    = 0
+SubDyn['PropSetID']    = [0.]
+SubDyn['YoungE']       = [0.]
+SubDyn['ShearG']       = [0.]
+SubDyn['MatDens']      = [0.]
+SubDyn['XsecD']        = [0.]
+SubDyn['XsecT']        = [0.]
+# MEMBER X-SECTION PROPERTY data 2/2
+SubDyn['NXPropSets']   = 0
+SubDyn['PropSetID']    = [0]
+SubDyn['YoungE']       = [0.]
+SubDyn['ShearG']       = [0.]
+SubDyn['MatDens']      = [0.]
+SubDyn['XsecA']        = [0.]
+SubDyn['XsecAsx']      = [0.]
+SubDyn['XsecAsy']      = [0.]
+SubDyn['XsecJxx']      = [0.]
+SubDyn['XsecJyy']      = [0.]
+SubDyn['XsecJ0']       = [0.]
+# MEMBER COSINE MATRICES
+SubDyn['NCOSMs']       = 0
+SubDyn['COSMID']       = 0
+SubDyn['COSM11']       = 0.
+SubDyn['COSM12']       = 0.
+SubDyn['COSM13']       = 0.
+SubDyn['COSM21']       = 0.
+SubDyn['COSM22']       = 0.
+SubDyn['COSM23']       = 0.
+SubDyn['COSM31']       = 0.
+SubDyn['COSM32']       = 0.
+SubDyn['COSM33']       = 0.
+# JOINT ADDITIONAL CONCENTRATED MASSES
+SubDyn['NCmass']       = 0
+SubDyn['CMJointID']    = 0
+SubDyn['JMass']        = 0.
+SubDyn['JMXX']         = 0.
+SubDyn['JMYY']         = 0.
+SubDyn['JMZZ']         = 0.
+# OUTPUT
+SubDyn['SSSum']        = False
+SubDyn['OutCOSM']      = False
+SubDyn['OutAll']       = False
+SubDyn['OutSwtch']     = 0
+SubDyn['TabDelim']     = False
+SubDyn['OutDec']       = 0
+SubDyn['OutFmt']       = ""
+SubDyn['OutSFmt']      = ""
+# MEMBER OUTPUT LIST
+SubDyn['NMOutputs']    = 0
+SubDyn['MemberID']     = 0
+SubDyn['NOutCnt']      = 0
+SubDyn['NodeCnt']      = 0
+
 ## MAP++ Input File
 # LINE DICTIONARY
 MAP = {}
@@ -938,6 +1038,57 @@ MAP['Flags']                 = []
 
 # SOLVER OPTIONS
 MAP['Option']                = []
+
+# BeamDyn Input File
+# SIMULATION CONTROL
+BeamDyn = {}
+BeamDyn['Echo']             = False
+BeamDyn['QuasiStaticInit']  = True
+BeamDyn['rhoinf']           = 0
+BeamDyn['quadrature']       = 2
+BeamDyn['refine']           = "DEFAULT"
+BeamDyn['n_fact']           = "DEFAULT"
+BeamDyn['DTBeam']           = "DEFAULT"
+BeamDyn['load_retries']     = "DEFAULT"
+BeamDyn['NRMax']            = "DEFAULT"
+BeamDyn['stop_tol']         = "DEFAULT"
+BeamDyn['tngt_stf_fd']      = "DEFAULT"
+BeamDyn['tngt_stf_comp']    = "DEFAULT"
+BeamDyn['tngt_stf_pert']    = "DEFAULT"
+BeamDyn['tngt_stf_difftol'] = "DEFAULT"
+BeamDyn['RotStates']        = True
+# GEOMETRY PARAMETER
+BeamDyn['member_total']     = 1
+BeamDyn['kp_total']         = 3
+BeamDyn['members']          = [{'kp_xr':[], 'kp_yr':[], 'kp_zr':[], 'initial_twist':[]}]
+# MESH PARAMETER
+BeamDyn['order_elem']       = 5
+# MATERIAL PARAMETER
+BeamDyn['BldFile']          = ""
+# PITCH ACTUATOR PARAMETERS
+BeamDyn['UsePitchAct']      = False
+BeamDyn['PitchJ']           = 0.
+BeamDyn['PitchK']           = 0.
+BeamDyn['PitchC']           = 0.
+# OUTPUTS
+BeamDyn['SumPrint']         = True
+BeamDyn['OutFmt']           = "ES10.3E2"
+BeamDyn['NNodeOuts']        = 0.
+BeamDyn['OutNd']            = []
+
+## BeamDyn Blade Input File
+BeamDynBlade = {}
+BeamDynBlade['station_total']   = 1
+BeamDynBlade['damp_type']       = 1
+BeamDynBlade['mu1']             = 0.01
+BeamDynBlade['mu2']             = 0.01
+BeamDynBlade['mu3']             = 0.01
+BeamDynBlade['mu4']             = 0.01
+BeamDynBlade['mu5']             = 0.01
+BeamDynBlade['mu6']             = 0.01
+BeamDynBlade['radial_stations'] = []
+BeamDynBlade['beam_stiff']      = []
+BeamDynBlade['beam_inertia']    = []
 
 #######################
 Fst7 = {}
@@ -1119,7 +1270,10 @@ FstModel['AeroDynPolar']      = AeroDynPolar
 FstModel['ServoDyn']          = ServoDyn
 FstModel['DISCON_in']         = DISCON_in
 FstModel['HydroDyn']          = HydroDyn
+FstModel['SubDyn']            = SubDyn
 FstModel['MAP']               = MAP
+FstModel['BeamDyn']           = BeamDyn
+FstModel['BeamDynBlade']      = BeamDynBlade
 FstModel['Fst7']              = Fst7
         
 # List of Outputs (all input files -- FST, ED, SD)
