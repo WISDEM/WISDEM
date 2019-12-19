@@ -162,7 +162,7 @@ class blade_bom(object):
                     te_reinf_mat_id= precomp_mat[mat.name]['id']        # Assigning the material to the le reinf
             
             except:
-                exit('ERROR: The material ' + mat.name + ' does not have its properties fully defined. Please set them in the first lines of blade_bom.py in RotorSE')
+                print('WARNING: The material ' + mat.name + ' does not have its properties fully defined. Please set them in the first lines of blade_bom.py in RotorSE')
         
         
         
@@ -190,6 +190,11 @@ class blade_bom(object):
         density = np.zeros(len(mat_names))
         
         for i, name in enumerate(mat_names):
+            try:
+                _ = precomp_mat[name]['ply_t']
+            except:
+                continue
+            
             if core_mat_id[precomp_mat[name]['id'] - 1] == 0:
                 if self.options['verbosity']:
                     print('Composite :' + name)
@@ -661,6 +666,11 @@ class blade_bom(object):
         blade_specs['matrix_total_mass_wo_waste'] = 0.
         
         for name in mat_names:
+            try:
+                _ = precomp_mat[name]['fwf']
+            except:
+                continue
+            
             precomp_mat[name]['total_mass_wo_waste']     = mass_per_comp[precomp_mat[name]['id']-1] * precomp_mat[name]['fwf'] / 100.
             precomp_mat[name]['total_mass_w_waste']      = precomp_mat[name]['total_mass_wo_waste'] * (1 + precomp_mat[name]['waste']/100.)
             
@@ -1010,6 +1020,11 @@ class blade_bom(object):
         
         mat_names = precomp_mat.keys()
         for name in mat_names:
+            try:
+                _ = precomp_mat[name]['total_cost_wo_waste']
+            except:
+                continue
+            
             total_mat_cost_wo_waste = total_mat_cost_wo_waste + precomp_mat[name]['total_cost_wo_waste']
             total_mat_cost_w_waste  = total_mat_cost_w_waste + precomp_mat[name]['total_cost_w_waste']
         
@@ -1569,6 +1584,11 @@ class material_cutting_process(object):
         
         
         for name in mat_names:
+            try:
+                _ = self.materials[name]['cut@station']
+            except:
+                continue
+            
             if self.materials[name]['cut@station'] == 'Y':
                 # Number of rolls
                 self.materials[name]['n_rolls'] = self.materials[name]['total_mass_w_waste'] / self.materials[name]['roll_mass']
