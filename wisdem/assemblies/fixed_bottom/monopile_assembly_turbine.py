@@ -125,8 +125,9 @@ class MonopileTurbine(Group):
                                      'material_density','E','G','tower_section_height',
                                      'tower_wall_thickness', 'tower_outer_diameter',
                                      'tower_outfitting_factor','tower_buckling_length',
+                                     'transition_piece_mass','transition_piece_height',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
-                                     'tower_mass','tower_I_base','hub_height',
+                                     'tower_add_gravity','tower_mass','tower_I_base','hub_height',
                                      'foundation_height','monopile','soil_G','soil_nu',
                                      'suctionpile_depth','gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue',
                                      'labor_cost_rate','material_cost_rate','painting_cost_rate','z_full','d_full','t_full',
@@ -242,10 +243,12 @@ def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt =
     prob['tower_wall_thickness']           = np.linspace(0.027, 0.019, Nsection_Tow)
     prob['tower_buckling_length']          = 30.0
     prob['tower_outfitting_factor']        = 1.07
+    prob['transition_piece_mass']          = 100e3
+    prob['transition_piece_height']        = 10.0
 
     prob['DC']      = 80.0
     prob['shear']   = True
-    prob['geom']    = False
+    prob['geom']    = True
     prob['tower_force_discretization'] = 5.0
     prob['nM']      = 2
     prob['Mmethod'] = 1
@@ -261,6 +264,7 @@ def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt =
     
     # For RNA
     prob['rna_weightM'] = True
+    prob['tower_add_gravity'] = False # Don't double count
 
     # For turbine costs
     prob['offshore']             = True
