@@ -69,5 +69,5 @@ class WT_Rotor(Group):
         # Connections to blade parametrization
         self.connect('opt_var.twist_opt_gain',      'param.twist_opt_gain')
         self.connect('opt_var.chord_opt_gain',      'param.chord_opt_gain')
-        self.connect('param.twist_param',           'ra.theta')
-        self.connect('param.chord_param',           'ra.chord')
+        self.connect('param.twist_param',           ['ra.theta','rs.theta'])
+        self.connect('param.chord_param',           ['ra.chord','rs.chord'])

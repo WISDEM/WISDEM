@@ -62,6 +62,11 @@ class WT_RNTA(Group):
 
         # Connections to wind turbine class
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
+        # Connections to rotorse and its subcomponents
+        # Connections to blade parametrization
+        self.connect('blade.outer_shape_bem.s',     'rotorse.param.s')
+        self.connect('blade.outer_shape_bem.twist', 'rotorse.param.twist_original')
+        self.connect('blade.outer_shape_bem.chord', 'rotorse.param.chord_original')
         # Connections to rotor aeropower
         self.connect('wt_class.V_mean',         'rotorse.ra.cdf.xbar')
         self.connect('control.V_in' ,           'rotorse.ra.control_Vin')
@@ -89,10 +94,27 @@ class WT_RNTA(Group):
         self.connect('env.rho_air',                     'rotorse.ra.rho')
         self.connect('env.mu_air',                      'rotorse.ra.mu')
         self.connect('env.weibull_k',                   'rotorse.ra.cdf.k')
-        # Connections to blade parametrization
-        self.connect('blade.outer_shape_bem.s',     'rotorse.param.s')
-        self.connect('blade.outer_shape_bem.twist', 'rotorse.param.twist_original')
-        self.connect('blade.outer_shape_bem.chord', 'rotorse.param.chord_original')
+        # Connections to rotor structure
+        self.connect('assembly.r_blade',                                'rotorse.rs.precomp.r')
+        self.connect('blade.outer_shape_bem.pitch_axis',                'rotorse.rs.precomp.pitch_axis')
+        self.connect('blade.interp_airfoils.coord_xy_interp',           'rotorse.rs.precomp.coord_xy_interp')
+        self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'rotorse.rs.precomp.layer_start_nd')
+        self.connect('blade.internal_structure_2d_fem.layer_end_nd',    'rotorse.rs.precomp.layer_end_nd')
+        self.connect('blade.internal_structure_2d_fem.layer_thickness', 'rotorse.rs.precomp.layer_thickness')
+        self.connect('blade.internal_structure_2d_fem.layer_name',      'rotorse.rs.precomp.layer_name')
+        self.connect('blade.internal_structure_2d_fem.layer_web',       'rotorse.rs.precomp.layer_web')
+        self.connect('blade.internal_structure_2d_fem.layer_mat',       'rotorse.rs.precomp.layer_mat')
+        self.connect('blade.internal_structure_2d_fem.definition_layer','rotorse.rs.precomp.definition_layer')
+        self.connect('blade.internal_structure_2d_fem.web_start_nd',    'rotorse.rs.precomp.web_start_nd')
+        self.connect('blade.internal_structure_2d_fem.web_end_nd',      'rotorse.rs.precomp.web_end_nd')
+        self.connect('blade.internal_structure_2d_fem.web_name',        'rotorse.rs.precomp.web_name')
+        self.connect('materials.name',  'rotorse.rs.precomp.mat_name')
+        self.connect('materials.orth',  'rotorse.rs.precomp.orth')
+        self.connect('materials.E',     'rotorse.rs.precomp.E')
+        self.connect('materials.G',     'rotorse.rs.precomp.G')
+        self.connect('materials.nu',    'rotorse.rs.precomp.nu')
+        self.connect('materials.rho',   'rotorse.rs.precomp.rho')
+
         # Connections to DriveSE
         self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')     
         self.connect('control.rated_power',        'drivese.machine_rating')    
@@ -216,14 +238,14 @@ class Outputs_2_Screen(ExplicitComponent):
 if __name__ == "__main__":
 
     ## File management
-    fname_input    = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_output   = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_input    = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_output   = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output  = 'it_1/'
     opt_flag       = False
     # Load yaml data into a pure python data structure
     wt_initial               = WindTurbineOntologyPython()
     wt_initial.validate      = False
-    wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
+    wt_initial.fname_schema  = "wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
     # Optimization options
