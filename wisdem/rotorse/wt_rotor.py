@@ -2,7 +2,7 @@ import numpy as np
 import os
 from openmdao.api import ExplicitComponent, Group, IndepVarComp
 from wisdem.rotorse.rotor_aeropower import RotorAeroPower
-from wisdem.rotorse.rotor_structure import RotorStructureSimple
+from wisdem.rotorse.rotor_structure_simple import RotorStructure
 
 class ParametrizeBladeAero(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the aerodynamic only analysis of the wind turbine rotor
@@ -63,7 +63,7 @@ class WT_Rotor(Group):
         # Analysis components
         self.add_subsystem('param',     ParametrizeBladeAero(blade_init_options = wt_init_options['blade'], opt_options = opt_options))
         self.add_subsystem('ra',        RotorAeroPower(wt_init_options      = wt_init_options))
-        self.add_subsystem('rs',        RotorStructureSimple(wt_init_options      = wt_init_options))
+        self.add_subsystem('rs',        RotorStructure(wt_init_options      = wt_init_options))
         # self.add_subsystem('rc',        RotorCost(wt_init_options      = wt_init_options))
 
         # Connections to blade parametrization
@@ -71,3 +71,10 @@ class WT_Rotor(Group):
         self.connect('opt_var.chord_opt_gain',      'param.chord_opt_gain')
         self.connect('param.twist_param',           ['ra.theta','rs.theta'])
         self.connect('param.chord_param',           ['ra.chord','rs.chord'])
+
+        # Connection from ra to rs for the rated conditions
+        # self.connect('ra.powercurve.rated_V',        'rs.aero_rated.V_load')
+        self.connect('ra.powercurve.rated_V',        'rs.gust.V_hub')
+        self.connect('rs.gust.V_gust',              ['rs.aero_gust.V_load'])
+        self.connect('ra.powercurve.rated_Omega',   ['rs.Omega_load', 'rs.aeroloads_Omega', 'rs.curvefem.Omega'])
+        self.connect('ra.powercurve.rated_pitch',   ['rs.pitch_load', 'rs.aeroloads_pitch'])

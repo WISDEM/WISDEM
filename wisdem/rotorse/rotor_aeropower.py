@@ -14,16 +14,16 @@ from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem
 from scipy.optimize import minimize_scalar, minimize
 from scipy.interpolate import PchipInterpolator
 
-from wisdem.ccblade.ccblade_component import CCBladeGeometry, CCBladePower
+# from wisdem.ccblade.ccblade_component import CCBladeGeometry, CCBladePower
 from wisdem.ccblade import CCAirfoil, CCBlade
 
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 from wisdem.commonse.utilities import vstack, trapz_deriv, linspace_with_deriv, smooth_min, smooth_abs
 from wisdem.commonse.environment import PowerWind
-from wisdem.commonse.akima import Akima
-from wisdem.rotorse import RPM2RS, RS2RPM
-from wisdem.rotorse.rotor_geometry import RotorGeometry
-from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
+# from wisdem.commonse.akima import Akima
+# from wisdem.rotorse import RPM2RS, RS2RPM
+# from wisdem.rotorse.rotor_geometry import RotorGeometry
+# from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
 from wisdem.rotorse.rotor_fast import eval_unsteady
 
 import time

@@ -95,7 +95,7 @@ class WT_RNTA(Group):
         self.connect('env.mu_air',                      'rotorse.ra.mu')
         self.connect('env.weibull_k',                   'rotorse.ra.cdf.k')
         # Connections to rotor structure
-        self.connect('assembly.r_blade',                                'rotorse.rs.precomp.r')
+        self.connect('assembly.r_blade',                                'rotorse.rs.r')
         self.connect('blade.outer_shape_bem.pitch_axis',                'rotorse.rs.precomp.pitch_axis')
         self.connect('blade.interp_airfoils.coord_xy_interp',           'rotorse.rs.precomp.coord_xy_interp')
         self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'rotorse.rs.precomp.layer_start_nd')
@@ -114,6 +114,27 @@ class WT_RNTA(Group):
         self.connect('materials.G',     'rotorse.rs.precomp.G')
         self.connect('materials.nu',    'rotorse.rs.precomp.nu')
         self.connect('materials.rho',   'rotorse.rs.precomp.rho')
+        self.connect('assembly.rotor_radius',           'rotorse.rs.Rtip')
+        self.connect('hub.radius',                      'rotorse.rs.Rhub')
+        self.connect('assembly.hub_height',             'rotorse.rs.hub_height')
+        self.connect('hub.cone',                        'rotorse.rs.precone')
+        self.connect('nacelle.uptilt',                  'rotorse.rs.tilt')
+        self.connect('airfoils.aoa',                    'rotorse.rs.airfoils_aoa')
+        self.connect('airfoils.Re',                     'rotorse.rs.airfoils_Re')
+        self.connect('blade.interp_airfoils.cl_interp', 'rotorse.rs.airfoils_cl')
+        self.connect('blade.interp_airfoils.cd_interp', 'rotorse.rs.airfoils_cd')
+        self.connect('blade.interp_airfoils.cm_interp', 'rotorse.rs.airfoils_cm')
+        self.connect('configuration.n_blades',          'rotorse.rs.nBlades')
+        self.connect('env.rho_air',                     'rotorse.rs.rho')
+        self.connect('env.mu_air',                      'rotorse.rs.mu')
+        # Connections to rotorse-rs-gustetm
+        self.connect('wt_class.V_mean',                 'rotorse.rs.gust.V_mean')
+        self.connect('configuration.turb_class',        'rotorse.rs.gust.turbulence_class')
+        # self.connect('wt_class.V_extreme1',             'rotorse.rs.aero_storm_1yr.V_load')
+        # self.connect('wt_class.V_extreme50',            'rotorse.rs.aero_storm_50yr.V_load')
+        # Connections to rotorse-rc
+        # self.connect('blade.length',            'rotorse.rc.blade_length')
+
 
         # Connections to DriveSE
         self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')     
@@ -126,7 +147,7 @@ class WT_RNTA(Group):
         # self.connect('rotorse.rs.Fxyz_total',      'drivese.Fxyz')
         # self.connect('rotorse.rs.Mxyz_total',      'drivese.Mxyz')
         # self.connect('rotorse.rs.I_all_blades',    'drivese.blades_I')
-        self.connect('rotorse.rs.mass.mass_one_blade',  'drivese.blade_mass')
+        self.connect('rotorse.rs.blade_mass',      'drivese.blade_mass')
         self.connect('rotorse.param.chord_param',  'drivese.blade_root_diameter', src_indices=[0])
         self.connect('blade.length',               'drivese.blade_length')
         self.connect('nacelle.gear_ratio',         'drivese.gear_ratio')
@@ -144,7 +165,7 @@ class WT_RNTA(Group):
 
         # Connections to turbine capital cost
         self.connect('control.rated_power',         'tcc.machine_rating')
-        self.connect('rotorse.rs.mass.mass_one_blade','tcc.blade_mass')
+        self.connect('rotorse.rs.blade_mass',       'tcc.blade_mass')
         self.connect('drivese.hub_mass',            'tcc.hub_mass')
         self.connect('drivese.pitch_system_mass',   'tcc.pitch_system_mass')
         self.connect('drivese.spinner_mass',        'tcc.spinner_mass')
@@ -223,8 +244,8 @@ class Convergence_Trends_Opt(ExplicitComponent):
                 fig.savefig(folder_output + fig_name)
                 plt.close(fig)
 
-# Class to print outputs on screen
 class Outputs_2_Screen(ExplicitComponent):
+    # Class to print outputs on screen
     def setup(self):
         
         self.add_input('AEP', val=0.0, units = 'GW * h')

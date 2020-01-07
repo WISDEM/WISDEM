@@ -115,6 +115,7 @@ class WindTurbineOntologyPython(object):
         wt_init_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
         wt_init_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
         wt_init_options['blade']['lofted_output'] = False
+        wt_init_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
         
         # Tower 
         wt_init_options['tower']              = {}
