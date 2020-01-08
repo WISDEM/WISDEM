@@ -110,7 +110,7 @@ class TipDeflectionConstraint(ExplicitComponent):
         tilt        = inputs['tilt']
         delta       = inputs['tip_deflection']
         upwind      = not discrete_inputs['downwind']
-        prebend_tip = -inputs['ref_axis_blade'][-1,0] # Defined positive for a standard blade
+        prebend_tip =  inputs['ref_axis_blade'][-1,0] # Defined negative for a standard upwind blade
         presweep_tip = inputs['ref_axis_blade'][-1,1] # Defined positive for a standard blade
         # Coordinates of blade tip in yaw c.s.
         blade_yaw = DirectionVector(prebend_tip, presweep_tip, inputs['Rtip']).\

@@ -63,7 +63,7 @@ class WT_Rotor(Group):
         # Analysis components
         self.add_subsystem('param',     ParametrizeBladeAero(blade_init_options = wt_init_options['blade'], opt_options = opt_options))
         self.add_subsystem('ra',        RotorAeroPower(wt_init_options      = wt_init_options))
-        self.add_subsystem('rs',        RotorStructure(wt_init_options      = wt_init_options))
+        self.add_subsystem('rs',        RotorStructure(wt_init_options      = wt_init_options, opt_options = opt_options))
         # self.add_subsystem('rc',        RotorCost(wt_init_options      = wt_init_options))
 
         # Connections to blade parametrization
