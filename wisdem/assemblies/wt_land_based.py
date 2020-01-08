@@ -8,7 +8,7 @@ from wisdem.rotorse.wt_rotor import WT_Rotor
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
-
+from wisdem.commonse.turbine_constraints  import TurbineConstraints
 
 class Opt_Data(object):
     # Pure python class to set the optimization parameters:
@@ -55,6 +55,7 @@ class WT_RNTA(Group):
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
         # self.add_subsystem('towerse',   TowerSE())
+        self.add_subsystem('tcons',     TurbineConstraints(wt_init_options = wt_init_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=True, topLevelFlag=False))
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
@@ -135,7 +136,6 @@ class WT_RNTA(Group):
         # Connections to rotorse-rc
         # self.connect('blade.length',            'rotorse.rc.blade_length')
 
-
         # Connections to DriveSE
         self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')     
         self.connect('control.rated_power',        'drivese.machine_rating')    
@@ -162,6 +162,15 @@ class WT_RNTA(Group):
         self.connect('nacelle.yaw_motors_number',  'drivese.yaw_motors_number')
         self.connect('nacelle.drivetrain_eff',     'drivese.drivetrain_efficiency')
         self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
+        # Connections to turbine constraints
+        self.connect('rotorse.rs.tip_pos.tip_deflection',   'tcons.tip_deflection')
+        self.connect('assembly.rotor_radius',               'tcons.Rtip')
+        self.connect('blade.outer_shape_bem.ref_axis',  'tcons.ref_axis_blade')
+        self.connect('hub.cone',                        'tcons.precone')
+        self.connect('nacelle.uptilt',                  'tcons.tilt')
+        self.connect('nacelle.overhang',                'tcons.overhang')
+        self.connect('tower.ref_axis',                  'tcons.ref_axis_tower')
+        self.connect('tower.diameter',                  'tcons.d_full')
 
         # Connections to turbine capital cost
         self.connect('control.rated_power',         'tcc.machine_rating')
@@ -324,4 +333,7 @@ if __name__ == "__main__":
     wt_initial.write_ontology(wt_opt, fname_output)
 
     # Printing and plotting results
-    print('AEP = ' + str(wt_opt['rotorse.ra.AEP']*1.e-6) + ' GWh')
+    print('AEP in GWh = ' + str(wt_opt['rotorse.ra.AEP']*1.e-6))
+    print('Nat frequencies blades in Hz = ' + str(wt_opt['rotorse.rs.curvefem.freq']))
+    print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
+    print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))

@@ -408,28 +408,28 @@ class RunCurveFEM(ExplicitComponent):
         self.n_freq = n_freq = blade_init_options['n_freq']
 
         # Inputs
-        self.add_input('Omega', val=0.0, units='rpm', desc='rotor rotation frequency')
-        self.add_input('r', val=np.zeros(n_span), units='m', desc='locations of properties along beam')
-        self.add_input('EA', val=np.zeros(n_span), units='N', desc='axial stiffness')
-        self.add_input('EIxx', val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('EIyy', val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-        self.add_input('GJ', val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
-        self.add_input('rhoA', val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
-        self.add_input('rhoJ', val=np.zeros(n_span), units='kg*m', desc='polar mass moment of inertia per unit length')
-        self.add_input('Tw_iner', val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
-        self.add_input('precurve', val=np.zeros(n_span), units='m', desc='structural precuve (see FAST definition)')
-        self.add_input('presweep', val=np.zeros(n_span), units='m', desc='structural presweep (see FAST definition)')
+        self.add_input('Omega',         val=0.0,                units='rpm',    desc='rotor rotation frequency')
+        self.add_input('r',             val=np.zeros(n_span),   units='m',      desc='locations of properties along beam')
+        self.add_input('EA',            val=np.zeros(n_span),   units='N',      desc='axial stiffness')
+        self.add_input('EIxx',          val=np.zeros(n_span),   units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+        self.add_input('EIyy',          val=np.zeros(n_span),   units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+        self.add_input('GJ',            val=np.zeros(n_span),   units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
+        self.add_input('rhoA',          val=np.zeros(n_span),   units='kg/m',   desc='mass per unit length')
+        self.add_input('rhoJ',          val=np.zeros(n_span),   units='kg*m',   desc='polar mass moment of inertia per unit length')
+        self.add_input('Tw_iner',       val=np.zeros(n_span),   units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_input('precurve',      val=np.zeros(n_span),   units='m',      desc='structural precuve (see FAST definition)')
+        self.add_input('presweep',      val=np.zeros(n_span),   units='m',      desc='structural presweep (see FAST definition)')
 
         # Outputs
-        self.add_output('freq_curvefem', val=np.zeros(n_freq), units='Hz', desc='first nF natural frequencies')
-        self.add_output('modes_coef', val=np.zeros((3, 5)), desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
+        self.add_output('freq',         val=np.zeros(n_freq),   units='Hz',     desc='first nF natural frequencies')
+        self.add_output('modes_coef',   val=np.zeros((3, 5)),                   desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
 
 
     def compute(self, inputs, outputs):
 
         mycurve = _pBEAM.CurveFEM(inputs['Omega'], inputs['Tw_iner'], inputs['r'], inputs['precurve'], inputs['presweep'], inputs['rhoA'], True)
         freq, eig_vec = mycurve.frequencies(inputs['EA'], inputs['EIxx'], inputs['EIyy'], inputs['GJ'], inputs['rhoJ'], self.n_span)
-        outputs['freq_curvefem'] = freq[:self.n_freq]
+        outputs['freq'] = freq[:self.n_freq]
         
         # Parse eigen vectors
         R = inputs['r']
@@ -858,7 +858,42 @@ class RunpBEAM(ExplicitComponent):
         outputs['strainL_spar'] = strainL_spar
         outputs['strainU_te'] = strainU_te
         outputs['strainL_te'] = strainL_te
-        
+
+class TipDeflection(ExplicitComponent):
+    def setup(self):
+        # Inputs
+        self.add_input('dx_tip',        val=0.0,                    desc='deflection at tip in airfoil x-direction')
+        self.add_input('dy_tip',        val=0.0,                    desc='deflection at tip in airfoil y-direction')
+        self.add_input('dz_tip',        val=0.0,                    desc='deflection at tip in airfoil z-direction')
+        self.add_input('theta_tip',     val=0.0,    units='deg',    desc='twist at tip section')
+        self.add_input('pitch_load',    val=0.0,    units='deg',    desc='blade pitch angle')
+        self.add_input('tilt',          val=0.0,    units='deg',    desc='tilt angle')
+        self.add_input('3d_curv_tip',   val=0.0,    units='deg',    desc='total coning angle including precone and curvature')
+        self.add_input('dynamicFactor', val=1.0,                    desc='a dynamic amplification factor to adjust the static deflection calculation') #)
+        # Outputs
+        self.add_output('tip_deflection', val=0.0,  units='m',      desc='deflection at tip in yaw x-direction')
+
+    def compute(self, inputs, outputs):
+
+        dx            = inputs['dx_tip']
+        dy            = inputs['dy_tip']
+        dz            = inputs['dz_tip']
+        theta         = inputs['theta_tip']
+        pitch         = inputs['pitch_load']
+        azimuth       = 180.0 # The blade is assumed in front of the tower, although the loading may correspond to another azimuthal position
+        tilt          = inputs['tilt']
+        totalConeTip  = inputs['3d_curv_tip']
+        dynamicFactor = inputs['dynamicFactor']
+
+        theta = theta + pitch
+
+        dr = DirectionVector(dx, dy, dz)
+        delta = dr.airfoilToBlade(theta).bladeToAzimuth(totalConeTip).azimuthToHub(azimuth).hubToYaw(tilt)
+
+        tip_deflection = dynamicFactor * delta.x
+
+        outputs['tip_deflection'] = tip_deflection
+
 class RotorStructure(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
     def initialize(self):
@@ -887,6 +922,7 @@ class RotorStructure(Group):
         # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(wt_init_options = wt_init_options),      promotes=promoteListTotalLoads)
         promoteListpBeam = ['r','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te','blade_mass']
         self.add_subsystem('pbeam',     RunpBEAM(wt_init_options = wt_init_options),      promotes=promoteListpBeam)
+        self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
 
         # Aero loads to total loads
         # self.connect('aero_rated.loads_Px',     'tot_loads_rated.aeroloads_Px')
@@ -906,3 +942,9 @@ class RotorStructure(Group):
         self.connect('tot_loads_gust.Px_af', 'pbeam.Px_af')
         self.connect('tot_loads_gust.Py_af', 'pbeam.Py_af')
         self.connect('tot_loads_gust.Pz_af', 'pbeam.Pz_af')
+
+        # Blade distributed deflections to tip deflection
+        self.connect('pbeam.dx', 'tip_pos.dx_tip', src_indices=[-1])
+        self.connect('pbeam.dy', 'tip_pos.dy_tip', src_indices=[-1])
+        self.connect('pbeam.dz', 'tip_pos.dz_tip', src_indices=[-1])
+        self.connect('3d_curv',  'tip_pos.3d_curv_tip', src_indices=[-1])

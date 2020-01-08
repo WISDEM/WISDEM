@@ -67,9 +67,10 @@ class WT_Rotor(Group):
         # self.add_subsystem('rc',        RotorCost(wt_init_options      = wt_init_options))
 
         # Connections to blade parametrization
-        self.connect('opt_var.twist_opt_gain',      'param.twist_opt_gain')
-        self.connect('opt_var.chord_opt_gain',      'param.chord_opt_gain')
+        self.connect('opt_var.twist_opt_gain',       'param.twist_opt_gain')
+        self.connect('opt_var.chord_opt_gain',       'param.chord_opt_gain')
         self.connect('param.twist_param',           ['ra.theta','rs.theta'])
+        self.connect('param.twist_param',            'rs.tip_pos.theta_tip',   src_indices=[-1])
         self.connect('param.chord_param',           ['ra.chord','rs.chord'])
 
         # Connection from ra to rs for the rated conditions
