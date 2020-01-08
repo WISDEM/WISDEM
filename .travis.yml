@@ -1,0 +1,43 @@
+language: python
+
+python:
+  # We don't actually use the Travis Python, but this keeps it organized.
+  - 3.5
+  - 3.6
+  - 3.7
+
+install:
+  - sudo apt-get update
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - source "$HOME/miniconda/etc/profile.d/conda.sh"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda config --add channels conda-forge
+  # Useful for debugging any issues with conda
+  - conda info -a
+
+  # Create environment and install dependences dependencies
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+  - conda activate test-environment
+  - conda install --yes compilers matplotlib pytest pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy
+  - pip install simpy
+
+  # install pyoptsparse
+  - git clone https://github.com/OpenMDAO/pyoptsparse.git;
+  - cd pyoptsparse;
+  - python setup.py install;
+  - cd ..;
+
+  # Install WISDEM
+  #- python setup.py install
+  - pip install -e .;
+
+  
+script:
+  - python test/test_all.py
+  #- py.test  # will run all tests in the package, currently there are
+  #some we do not want to run though
