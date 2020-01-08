@@ -27,10 +27,10 @@ install:
   - pip install simpy
 
   # install pyoptsparse
-  - git clone https://github.com/OpenMDAO/pyoptsparse.git;
-  - cd pyoptsparse;
-  - python setup.py install;
-  - cd ..;
+  #- git clone https://github.com/OpenMDAO/pyoptsparse.git;
+  #- cd pyoptsparse;
+  #- python setup.py install;
+  #- cd ..;
 
   # Install WISDEM
   #- python setup.py install
