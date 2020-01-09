@@ -34,6 +34,12 @@ class Opt_Data(object):
         self.opt_options['blade_aero']['n_opt_twist'] = self.n_opt_twist
         self.opt_options['blade_aero']['n_opt_chord'] = self.n_opt_chord
 
+        self.opt_options['blade_struct'] = {}
+        self.opt_options['blade_struct']['te_ss_var']   = 'TE_reinforcement'
+        self.opt_options['blade_struct']['te_ps_var']   = 'TE_reinforcement'
+        self.opt_options['blade_struct']['spar_ss_var'] = 'Spar_Cap_SS'
+        self.opt_options['blade_struct']['spar_ps_var'] = 'Spar_Cap_PS'
+
         return self.opt_options
 
 class WT_RNTA(Group):
@@ -337,3 +343,15 @@ if __name__ == "__main__":
     print('Nat frequencies blades in Hz = ' + str(wt_opt['rotorse.rs.curvefem.freq']))
     print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
     print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
+
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rotorse.rs.pbeam.strainU_spar'], label='spar ss')
+    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rotorse.rs.pbeam.strainL_spar'], label='spar ps')
+    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rotorse.rs.pbeam.strainU_te'], label='te ss')
+    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rotorse.rs.pbeam.strainL_te'], label='te ps')
+    plt.ylim([-5e-3, 5e-3])
+    plt.xlabel('r [m]')
+    plt.ylabel('strain [-]')
+    plt.legend()
+    plt.show()
