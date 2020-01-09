@@ -1,7 +1,7 @@
 import ruamel_yaml as ry
 import numpy as np
 import jsonschema as json
-import time
+import time, copy
 from scipy.interpolate import PchipInterpolator, interp1d
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
@@ -346,7 +346,7 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         self.add_output('cl_interp',        val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         self.add_output('cd_interp',        val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         self.add_output('cm_interp',        val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_output('coord_xy_interp',  val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.')
+        self.add_output('coord_xy_interp',  val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
         self.add_output('coord_xy_dim',     val=np.zeros((n_span, n_xy, 2)), units = 'm', desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -384,6 +384,7 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         
         
         for i in range(self.n_span):
+            # Correction to move the leading edge (min x point) to (0,0)
             af_le = coord_xy_interp[i, np.argmin(coord_xy_interp[i,:,0]),:]
             coord_xy_interp[i,:,0] -= af_le[0]
             coord_xy_interp[i,:,1] -= af_le[1]
@@ -397,7 +398,7 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         chord      = inputs['chord']
 
         
-        coord_xy_dim = coord_xy_interp
+        coord_xy_dim = copy.copy(coord_xy_interp)
         coord_xy_dim[:,:,0] -= pitch_axis[:, np.newaxis]
         coord_xy_dim = coord_xy_dim*chord[:, np.newaxis, np.newaxis]
                 
@@ -411,19 +412,14 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         cm_interp = np.flip(cm_spline(np.flip(outputs['r_thick_interp'])), axis=0)
         
         # Plot interpolated coordinates
-        # import matplotlib.pyplot as plt
-        # for i in range(self.n_span):    
-            # plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k')
-            # plt.axis('equal')
-            # plt.title(i)
-            # plt.show()
-
-        # import matplotlib.pyplot as plt
-        # for i in range(self.n_span):    
-            # plt.plot(coord_xy_dim[i,:,0], coord_xy_dim[i,:,1], 'k')
-            # plt.axis('equal')
-            # plt.title(i)
-            # plt.show()
+        import matplotlib.pyplot as plt
+        for i in range(self.n_span):    
+            plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
+            plt.plot(coord_xy_dim[i,:,0], coord_xy_dim[i,:,1], 'b', label = 'coord_xy_dim')
+            plt.axis('equal')
+            plt.title(i)
+            plt.legend()
+            plt.show()
 
         
         # Plot interpolated polars
