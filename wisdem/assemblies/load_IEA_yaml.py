@@ -412,14 +412,14 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         cm_interp = np.flip(cm_spline(np.flip(outputs['r_thick_interp'])), axis=0)
         
         # Plot interpolated coordinates
-        import matplotlib.pyplot as plt
-        for i in range(self.n_span):    
-            plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
-            plt.plot(coord_xy_dim[i,:,0], coord_xy_dim[i,:,1], 'b', label = 'coord_xy_dim')
-            plt.axis('equal')
-            plt.title(i)
-            plt.legend()
-            plt.show()
+        # import matplotlib.pyplot as plt
+        # for i in range(self.n_span):    
+        #     plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
+        #     plt.plot(coord_xy_dim[i,:,0], coord_xy_dim[i,:,1], 'b', label = 'coord_xy_dim')
+        #     plt.axis('equal')
+        #     plt.title(i)
+        #     plt.legend()
+        #     plt.show()
 
         
         # Plot interpolated polars
