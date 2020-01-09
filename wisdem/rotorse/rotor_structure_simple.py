@@ -248,11 +248,11 @@ class RunPreComp(ExplicitComponent):
             profile_i_rot = np.column_stack(rotate(inputs['pitch_axis'][i], 0., profile_i[:,0], profile_i[:,1], np.radians(inputs['theta'][i])))
 
             # import matplotlib.pyplot as plt
+            # plt.plot(profile_i[:,0], profile_i[:,1])
             # plt.plot(profile_i_rot[:,0], profile_i_rot[:,1])
             # plt.axis('equal')
             # plt.title(i)
             # plt.show()
-            # exit()
 
             # normalize
             profile_i_rot[:,0] -= min(profile_i_rot[:,0])

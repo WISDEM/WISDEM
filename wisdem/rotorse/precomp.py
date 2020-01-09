@@ -240,7 +240,7 @@ class PreComp():
         xu, yu = yu, xu
         xl, yl = yl, xl
 
-        return xu, yu, xl, yl
+        return xu, xl, yu, yl
 
 
     def panelBucklingStrain(self, sector_idx_array):
