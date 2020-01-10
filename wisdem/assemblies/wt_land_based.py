@@ -39,6 +39,10 @@ class Opt_Data(object):
         self.opt_options['blade_struct']['te_ps_var']   = 'TE_reinforcement'
         self.opt_options['blade_struct']['spar_ss_var'] = 'Spar_Cap_SS'
         self.opt_options['blade_struct']['spar_ps_var'] = 'Spar_Cap_PS'
+        self.opt_options['blade_struct']['n_opt_spar_ss'] = self.n_opt_spar_ss
+        self.opt_options['blade_struct']['n_opt_spar_ps'] = self.n_opt_spar_ps
+
+
 
         return self.opt_options
 
@@ -71,9 +75,11 @@ class WT_RNTA(Group):
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
         # Connections to rotorse and its subcomponents
         # Connections to blade parametrization
-        self.connect('blade.outer_shape_bem.s',     'rotorse.param.s')
-        self.connect('blade.outer_shape_bem.twist', 'rotorse.param.twist_original')
-        self.connect('blade.outer_shape_bem.chord', 'rotorse.param.chord_original')
+        self.connect('blade.outer_shape_bem.s',    ['rotorse.pa.s', 'rotorse.ps.s'])
+        self.connect('blade.outer_shape_bem.twist', 'rotorse.pa.twist_original')
+        self.connect('blade.outer_shape_bem.chord', 'rotorse.pa.chord_original')
+        self.connect('blade.internal_structure_2d_fem.layer_name',      'rotorse.ps.layer_name')
+        self.connect('blade.internal_structure_2d_fem.layer_thickness', 'rotorse.ps.layer_thickness_original')
         # Connections to rotor aeropower
         self.connect('wt_class.V_mean',         'rotorse.ra.cdf.xbar')
         self.connect('control.V_in' ,           'rotorse.ra.control_Vin')
@@ -107,7 +113,6 @@ class WT_RNTA(Group):
         self.connect('blade.interp_airfoils.coord_xy_interp',           'rotorse.rs.precomp.coord_xy_interp')
         self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'rotorse.rs.precomp.layer_start_nd')
         self.connect('blade.internal_structure_2d_fem.layer_end_nd',    'rotorse.rs.precomp.layer_end_nd')
-        self.connect('blade.internal_structure_2d_fem.layer_thickness', 'rotorse.rs.precomp.layer_thickness')
         self.connect('blade.internal_structure_2d_fem.layer_name',      'rotorse.rs.precomp.layer_name')
         self.connect('blade.internal_structure_2d_fem.layer_web',       'rotorse.rs.precomp.layer_web')
         self.connect('blade.internal_structure_2d_fem.layer_mat',       'rotorse.rs.precomp.layer_mat')
@@ -154,7 +159,7 @@ class WT_RNTA(Group):
         # self.connect('rotorse.rs.Mxyz_total',      'drivese.Mxyz')
         # self.connect('rotorse.rs.I_all_blades',    'drivese.blades_I')
         self.connect('rotorse.rs.blade_mass',      'drivese.blade_mass')
-        self.connect('rotorse.param.chord_param',  'drivese.blade_root_diameter', src_indices=[0])
+        self.connect('rotorse.pa.chord_param',     'drivese.blade_root_diameter', src_indices=[0])
         self.connect('blade.length',               'drivese.blade_length')
         self.connect('nacelle.gear_ratio',         'drivese.gear_ratio')
         self.connect('nacelle.shaft_ratio',        'drivese.shaft_ratio')
@@ -277,7 +282,11 @@ if __name__ == "__main__":
     fname_input    = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
     fname_output   = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output  = 'it_1/'
-    opt_flag       = False
+    opt_flag_twist = False
+    opt_flag_chord = False
+    opt_flag_spar_ss = True
+    opt_flag_spar_ps = True
+    merit_figure     = 'Blade Mass' # 'AEP' - 'LCOE'
     # Load yaml data into a pure python data structure
     wt_initial               = WindTurbineOntologyPython()
     wt_initial.validate      = False
@@ -287,13 +296,27 @@ if __name__ == "__main__":
     # Optimization options
     optimization_data       = Opt_Data()
     optimization_data.folder_output = folder_output
-    if opt_flag == True:
+    if opt_flag_twist == True:
         optimization_data.n_opt_twist = 8
-        optimization_data.n_opt_chord = wt_initial.n_span
     else:
         optimization_data.n_opt_twist = wt_initial.n_span
+    if opt_flag_chord == True:
+        optimization_data.n_opt_chord = 8
+    else:
         optimization_data.n_opt_chord = wt_initial.n_span
-    opt_options             = optimization_data.initialize()
+    if opt_flag_spar_ss == True:
+        optimization_data.n_opt_spar_ss = 8
+    else:
+        optimization_data.n_opt_spar_ss = wt_initial.n_span
+    if opt_flag_spar_ps == True:
+        optimization_data.n_opt_spar_ps = 8
+    else:
+        optimization_data.n_opt_spar_ps = wt_initial.n_span
+
+    if opt_flag_twist or opt_flag_chord or opt_flag_spar_ss or opt_flag_spar_ps:
+        opt_flag = True
+
+    opt_options = optimization_data.initialize()
     if not os.path.isdir(folder_output):
         os.mkdir(folder_output)
 
@@ -310,16 +333,37 @@ if __name__ == "__main__":
         wt_opt.driver.options['maxiter']   = 15
 
         # Set merit figure
-        wt_opt.model.add_objective('rotorse.ra.AEP', scaler = -1.e-6)
+        if merit_figure == 'AEP':
+            wt_opt.model.add_objective('rotorse.ra.AEP', scaler = -1.e-6)
+        elif merit_figure == 'Blade Mass':
+            wt_opt.model.add_objective('rotorse.rs.blade_mass', scaler = 1.e-4)
+        elif merit_figure == 'LCOE':
+            wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
+        else:
+            exit('The merit figure ' + merit_figure + ' is not supported.')
         
         # Set optimization variables
-        indices_no_root         = range(2,opt_options['blade_aero']['n_opt_twist'])
-        wt_opt.model.add_design_var('rotorse.opt_var.twist_opt_gain', indices = indices_no_root, lower=0., upper=1.)    
-        wt_opt.model.add_design_var('rotorse.opt_var.chord_opt_gain', indices = indices_no_root, lower=0.5, upper=1.5)    
+        if opt_flag_twist == True:
+            indices        = range(2,opt_options['blade_aero']['n_opt_twist'])
+            wt_opt.model.add_design_var('rotorse.opt_var.twist_opt_gain', indices = indices, lower=0., upper=1.)
+        if opt_flag_chord == True:
+            indices  = range(2,opt_options['blade_aero']['n_opt_chord'] - 1)
+            wt_opt.model.add_design_var('rotorse.opt_var.chord_opt_gain', indices = indices, lower=0.5, upper=1.5)
+        if opt_flag_spar_ss == True:
+            indices  = range(2,opt_options['blade_struct']['n_opt_spar_ss'] - 1)
+            wt_opt.model.add_design_var('rotorse.opt_var.spar_ss_opt_gain', indices = indices, lower=0.5, upper=1.5)
+        if opt_flag_spar_ps == True:
+            indices  = range(2,opt_options['blade_struct']['n_opt_spar_ps'] - 1)
+            wt_opt.model.add_design_var('rotorse.opt_var.spar_ps_opt_gain', indices = indices, lower=0.5, upper=1.5)
+
+        # Set non-linear constraints
+        wt_opt.model.add_constraint('rotorse.rs.pbeam.strainU_spar', lower=-0.005, upper=0.005) 
+        wt_opt.model.add_constraint('rotorse.rs.pbeam.strainL_spar', lower=-0.005, upper=0.005) 
+        wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
         
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
-        wt_opt.driver.recording_options['includes'] = ['rotorse.ra.AEP']
+        wt_opt.driver.recording_options['includes'] = ['rotorse.ra.AEP, rotorse.rs.blade_mass, financese.lcoe']
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
         wt_opt.driver.recording_options['record_desvars']     = True
@@ -329,8 +373,10 @@ if __name__ == "__main__":
     
     # Load initial wind turbine data from wt_initial to the openmdao problem
     wt_opt = yaml2openmdao(wt_opt, wt_init_options, wt_init)
-    wt_opt['rotorse.param.s_opt_twist'] = np.linspace(0., 1., optimization_data.n_opt_twist)
-    wt_opt['rotorse.param.s_opt_chord'] = np.linspace(0., 1., optimization_data.n_opt_chord)
+    wt_opt['rotorse.pa.s_opt_twist']   = np.linspace(0., 1., optimization_data.n_opt_twist)
+    wt_opt['rotorse.pa.s_opt_chord']   = np.linspace(0., 1., optimization_data.n_opt_chord)
+    wt_opt['rotorse.ps.s_opt_spar_ss'] = np.linspace(0., 1., optimization_data.n_opt_spar_ss)
+    wt_opt['rotorse.ps.s_opt_spar_ps'] = np.linspace(0., 1., optimization_data.n_opt_spar_ps)
 
     # Build and run openmdao problem
     wt_opt.run_driver()
