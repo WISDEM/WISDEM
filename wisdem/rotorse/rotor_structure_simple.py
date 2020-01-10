@@ -423,8 +423,6 @@ class RunPreComp(ExplicitComponent):
         outputs['yu_strain_te']   = yu_strain_te
         outputs['yl_strain_te']   = yl_strain_te
 
-
-
 class RunCurveFEM(ExplicitComponent):
     # OpenMDAO component that computes the natural frequencies for curved blades using _pBEAM
     def initialize(self):
@@ -888,6 +886,7 @@ class RunpBEAM(ExplicitComponent):
         outputs['strainL_te'] = strainL_te
 
 class TipDeflection(ExplicitComponent):
+    # OpenMDAO component that computes the blade deflection at tip in yaw x-direction
     def setup(self):
         # Inputs
         self.add_input('dx_tip',        val=0.0,                    desc='deflection at tip in airfoil x-direction')
@@ -922,6 +921,56 @@ class TipDeflection(ExplicitComponent):
 
         outputs['tip_deflection'] = tip_deflection
 
+class DesignConstraints(ExplicitComponent):
+    # OpenMDAO component that formulates constraints on user-defined maximum strains, frequencies   
+    def initialize(self):
+        self.options.declare('wt_init_options')
+        self.options.declare('opt_options')
+
+    def setup(self):
+        blade_init_options = self.options['wt_init_options']['blade']
+        self.n_span = n_span = blade_init_options['n_span']
+        self.opt_options   = opt_options   = self.options['opt_options']
+        self.n_opt_spar_ss = n_opt_spar_ss = opt_options['blade_struct']['n_opt_spar_ss']
+        self.n_opt_spar_ps = n_opt_spar_ps = opt_options['blade_struct']['n_opt_spar_ps']
+        
+        # Inputs
+        self.add_input('strainU_spar',     val=np.zeros(n_span), desc='strain in spar cap on upper surface at location xu,yu_strain with loads P_strain')
+        self.add_input('strainL_spar',     val=np.zeros(n_span), desc='strain in spar cap on lower surface at location xl,yl_strain with loads P_strain')
+
+        self.add_input('min_strainU_spar', val=0.0, desc='minimum strain in spar cap suction side')
+        self.add_input('max_strainU_spar', val=0.0, desc='minimum strain in spar cap pressure side')
+        self.add_input('min_strainL_spar', val=0.0, desc='maximum strain in spar cap suction side')
+        self.add_input('max_strainL_spar', val=0.0, desc='maximum strain in spar cap pressure side')
+        
+        self.add_input('s',                     val=np.zeros(n_span),       desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('s_opt_spar_ss',         val=np.zeros(n_opt_spar_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
+        self.add_input('s_opt_spar_ps',         val=np.zeros(n_opt_spar_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
+
+        # Outputs
+        self.add_output('constr_min_strainU_spar',     val=np.zeros(n_opt_spar_ss), desc='constraint for minimum strain in spar cap suction side')
+        self.add_output('constr_max_strainU_spar',     val=np.zeros(n_opt_spar_ss), desc='constraint for maximum strain in spar cap suction side')
+        self.add_output('constr_min_strainL_spar',     val=np.zeros(n_opt_spar_ps), desc='constraint for minimum strain in spar cap suction side')
+        self.add_output('constr_max_strainL_spar',     val=np.zeros(n_opt_spar_ps), desc='constraint for maximum strain in spar cap suction side')
+
+    def compute(self, inputs, outputs):
+        
+        s               = inputs['s']
+        s_opt_spar_ss   = inputs['s_opt_spar_ss']
+        s_opt_spar_ps   = inputs['s_opt_spar_ps']
+        
+        strainU_spar    = inputs['strainU_spar']
+        strainL_spar    = inputs['strainL_spar']
+        min_strainU_spar= inputs['min_strainU_spar']
+        max_strainU_spar= inputs['max_strainU_spar']
+        min_strainL_spar= inputs['min_strainL_spar']
+        max_strainL_spar= inputs['max_strainL_spar']
+        
+        outputs['constr_min_strainU_spar'] = abs(np.interp(s_opt_spar_ss, s, strainU_spar)) / abs(min_strainU_spar)
+        outputs['constr_max_strainU_spar'] = abs(np.interp(s_opt_spar_ss, s, strainU_spar)) / max_strainU_spar
+        outputs['constr_min_strainL_spar'] = abs(np.interp(s_opt_spar_ps, s, strainL_spar)) / abs(min_strainL_spar)
+        outputs['constr_max_strainL_spar'] = abs(np.interp(s_opt_spar_ps, s, strainL_spar)) / max_strainL_spar
+        
 class RotorStructure(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
     def initialize(self):
@@ -953,6 +1002,7 @@ class RotorStructure(Group):
         promoteListpBeam = ['r','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te','blade_mass']
         self.add_subsystem('pbeam',     RunpBEAM(wt_init_options = wt_init_options),      promotes=promoteListpBeam)
         self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
+        self.add_subsystem('constr',    DesignConstraints(wt_init_options = wt_init_options, opt_options = opt_options))
 
         # Aero loads to total loads
         # self.connect('aero_rated.loads_Px',     'tot_loads_rated.aeroloads_Px')
@@ -978,3 +1028,7 @@ class RotorStructure(Group):
         self.connect('pbeam.dy', 'tip_pos.dy_tip', src_indices=[-1])
         self.connect('pbeam.dz', 'tip_pos.dz_tip', src_indices=[-1])
         self.connect('3d_curv',  'tip_pos.3d_curv_tip', src_indices=[-1])
+
+        # Strains from pbeam to constraint
+        self.connect('pbeam.strainU_spar', 'constr.strainU_spar')
+        self.connect('pbeam.strainL_spar', 'constr.strainL_spar')

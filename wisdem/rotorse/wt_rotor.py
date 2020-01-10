@@ -65,10 +65,10 @@ class ParametrizeBladeStruct(ExplicitComponent):
         # Blade spar suction side
         self.add_discrete_input('layer_name',   val=n_layers * [''],        desc='1D array of the names of the layers modeled in the blade structure.')
         self.add_input('layer_thickness_original',val=np.zeros((n_layers, n_span)), units='m',desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_input('s_opt_spar_ss',         val=np.zeros(n_opt_spar_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
+        self.add_output('s_opt_spar_ss',         val=np.zeros(n_opt_spar_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
         self.add_input('spar_ss_opt_gain',      val=np.ones(n_opt_spar_ss), desc='1D array of the non-dimensional gains to optimize the blade spanwise distribution of the spar caps suction side')
         # Blade spar suction side
-        self.add_input('s_opt_spar_ps',         val=np.zeros(n_opt_spar_ps),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side')
+        self.add_output('s_opt_spar_ps',         val=np.zeros(n_opt_spar_ps),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side')
         self.add_input('spar_ps_opt_gain',      val=np.ones(n_opt_spar_ps), desc='1D array of the non-dimensional gains to optimize the blade spanwise distribution of the spar caps pressure side')
         
         # Outputs
@@ -82,10 +82,10 @@ class ParametrizeBladeStruct(ExplicitComponent):
         for i in range(self.n_layers):
             if discrete_inputs['layer_name'][i] == spar_ss_name:
                 spar_ss_opt_gain_nd = inputs['spar_ss_opt_gain']
-                opt_gain_m_interp   = np.interp(inputs['s'], inputs['s_opt_spar_ss'], spar_ss_opt_gain_nd)
+                opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_ss'], spar_ss_opt_gain_nd)
             elif discrete_inputs['layer_name'][i] == spar_ps_name:
                 spar_ps_opt_gain_nd = inputs['spar_ps_opt_gain']
-                opt_gain_m_interp   = np.interp(inputs['s'], inputs['s_opt_spar_ps'], spar_ps_opt_gain_nd)
+                opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_ps'], spar_ps_opt_gain_nd)
             else:
                 opt_gain_m_interp = np.ones(self.n_span)
 
@@ -127,11 +127,13 @@ class WT_Rotor(Group):
         self.connect('pa.chord_param',           ['ra.chord','rs.chord'])
 
         # Connections to blade struct parametrization
-        self.connect('opt_var.spar_ss_opt_gain',       'ps.spar_ss_opt_gain')
-        self.connect('opt_var.spar_ps_opt_gain',       'ps.spar_ps_opt_gain')
+        self.connect('opt_var.spar_ss_opt_gain','ps.spar_ss_opt_gain')
+        self.connect('opt_var.spar_ps_opt_gain','ps.spar_ps_opt_gain')
 
         # Connections from blade struct parametrization to rotorse
         self.connect('ps.layer_thickness_param', 'rs.precomp.layer_thickness')
+        self.connect('ps.s_opt_spar_ss',   'rs.constr.s_opt_spar_ss')
+        self.connect('ps.s_opt_spar_ps',   'rs.constr.s_opt_spar_ps')
 
         # Connection from ra to rs for the rated conditions
         # self.connect('ra.powercurve.rated_V',        'rs.aero_rated.V_load')

@@ -79,7 +79,7 @@ class WT_RNTA(Group):
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
         # Connections to rotorse and its subcomponents
         # Connections to blade parametrization
-        self.connect('blade.outer_shape_bem.s',    ['rotorse.pa.s', 'rotorse.ps.s'])
+        self.connect('blade.outer_shape_bem.s',    ['rotorse.pa.s', 'rotorse.ps.s','rotorse.rs.constr.s'])
         self.connect('blade.outer_shape_bem.twist', 'rotorse.pa.twist_original')
         self.connect('blade.outer_shape_bem.chord', 'rotorse.pa.chord_original')
         self.connect('blade.internal_structure_2d_fem.layer_name',      'rotorse.ps.layer_name')
@@ -366,8 +366,8 @@ if __name__ == "__main__":
             wt_opt.model.add_design_var('rotorse.opt_var.spar_ps_opt_gain', indices = indices, lower=0.5, upper=1.5)
 
         # Set non-linear constraints
-        wt_opt.model.add_constraint('rotorse.rs.pbeam.strainU_spar', lower=-0.005, upper=0.005) 
-        wt_opt.model.add_constraint('rotorse.rs.pbeam.strainL_spar', lower=-0.005, upper=0.005) 
+        wt_opt.model.add_constraint('rotorse.rs.pbeam.strainU_spar', upper= 1.) 
+        wt_opt.model.add_constraint('rotorse.rs.pbeam.strainL_spar', upper= 1.) 
         wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
         
         # Set recorder
@@ -386,6 +386,10 @@ if __name__ == "__main__":
     wt_opt['rotorse.pa.s_opt_chord']   = np.linspace(0., 1., optimization_data.n_opt_chord)
     wt_opt['rotorse.ps.s_opt_spar_ss'] = np.linspace(0., 1., optimization_data.n_opt_spar_ss)
     wt_opt['rotorse.ps.s_opt_spar_ps'] = np.linspace(0., 1., optimization_data.n_opt_spar_ps)
+    wt_opt['rotorse.rs.constr.min_strainU_spar'] = -0.003
+    wt_opt['rotorse.rs.constr.max_strainU_spar'] =  0.003
+    wt_opt['rotorse.rs.constr.min_strainL_spar'] = -0.003
+    wt_opt['rotorse.rs.constr.max_strainL_spar'] =  0.003
 
     # Build and run openmdao problem
     wt_opt.run_driver()
