@@ -413,8 +413,8 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         
-        self.n_pitch = n_pitch     = 20 #self.options['n_pitch']
-        self.n_tsr   = n_tsr       = 20 #self.options['n_tsr']
+        self.n_pitch = n_pitch     = 2 #self.options['n_pitch']
+        self.n_tsr   = n_tsr       = 2 #self.options['n_tsr']
         self.n_U     = n_U         = 1 #self.options['n_U']
         
         # parameters        

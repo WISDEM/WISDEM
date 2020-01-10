@@ -528,6 +528,8 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         
         self.add_discrete_output('definition_web',   val=np.zeros(n_webs),                   desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
         self.add_discrete_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+        self.add_discrete_output('index_layer_start',    val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
+        self.add_discrete_output('index_layer_end',      val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -592,10 +594,10 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
                 elif discrete_outputs['definition_layer'][j] == 6: # Start and end locked to other element
-                    if outputs['layer_start_nd'][j,i] > 1:
-                        layer_start_nd[j,i] = layer_end_nd[int(outputs['layer_start_nd'][j,i]),i]
-                    if outputs['layer_end_nd'][j,i] > 1:
-                        layer_end_nd[j,i]   = layer_start_nd[int(outputs['layer_end_nd'][j,i]),i]
+                    # if outputs['layer_start_nd'][j,i] > 1:
+                    layer_start_nd[j,i] = layer_end_nd[int(discrete_outputs['index_layer_start'][j]),i]
+                    # if outputs['layer_end_nd'][j,i] > 1:
+                    layer_end_nd[j,i]   = layer_start_nd[int(discrete_outputs['index_layer_end'][j]),i]
                 elif discrete_outputs['definition_layer'][j] == 7: # Start nd and width
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = outputs['layer_start_nd'][j,i]
@@ -609,6 +611,12 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     layer_end_nd[j,i]   = outputs['layer_end_nd'][j,i]
                 elif discrete_outputs['definition_layer'][j] == 10: # Web layer
                     pass
+                elif discrete_outputs['definition_layer'][j] == 11: # Start nd arc locked to LE
+                    layer_start_nd[j,i] = LE_loc + 1.e-6
+                    layer_end_nd[j,i]   = layer_start_nd[int(discrete_outputs['index_layer_end'][j]),i]
+                elif discrete_outputs['definition_layer'][j] == 12: # End nd arc locked to LE
+                    layer_end_nd[j,i] = LE_loc - 1.e-6
+                    layer_start_nd[j,i] = layer_end_nd[int(discrete_outputs['index_layer_start'][j]),i]
                 else:
                     exit('Blade layer ' + str(discrete_outputs['layer_name'][j]) + ' not described correctly. Please check the yaml input file.')
         
@@ -974,6 +982,9 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     layer_web       = n_layers * ['']
     layer_side      = n_layers * ['']
     definition_layer= np.zeros(n_layers)
+    index_layer_start= np.zeros(n_layers)
+    index_layer_end = np.zeros(n_layers)
+
     
     # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
     for i in range(n_layers):
@@ -1010,14 +1021,37 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
             if 'fixed' in internal_structure_2d_fem['layers'][i]['start_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'TE':
                     layer_start_nd[i,:] = np.ones(n_span)
+                    exit('No need to fix element to TE, set it to 0.')
+                elif internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'LE':
+                    definition_layer[i] = 11
                 else:
                     definition_layer[i] = 6
+                    flag = False
                     for k in range(n_layers):
                         if layer_name[k] == internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed']:
-                            layer_start_nd[i,:] = np.ones(n_span) * k
+                            index_layer_start[i] = k
+                            flag = True
                             break
+                    if flag == False:
+                        exit('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
             else:
                 layer_start_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['start_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['start_nd_arc']['values'], left=0., right=0.)
+            if 'end_nd_arc' in internal_structure_2d_fem['layers'][i]:
+                if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
+                    if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
+                        layer_end_nd[i,:] = np.ones(n_span)
+                        exit('No need to fix element to TE, set it to 0.')
+                    elif internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'LE':
+                        definition_layer[i] = 12
+                    else:
+                        flag = False
+                        for k in range(n_layers):
+                            if layer_name[k] == internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed']:
+                                index_layer_end[i] = k
+                                flag = True
+                                break
+                        if flag == False:
+                            exit('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
             if 'width' in internal_structure_2d_fem['layers'][i]:
                 definition_layer[i] = 7
                 layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'], left=0., right=0.)
@@ -1026,12 +1060,18 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
             if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
                     layer_end_nd[i,:] = np.ones(n_span)
+                    exit('No need to fix element to TE, set it to 0.')
+                elif internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'LE':
+                    definition_layer[i] = 12
                 else:
                     definition_layer[i] = 6
-                    for k in range(n_layers):
-                        if layer_name[k] == internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed']:
-                            layer_end_nd[i,:] = np.ones(n_span) * k
-                            break
+                    flag = False
+                    if layer_name[k] == internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed']:
+                        index_layer_end[i] = k
+                        flag = True
+                        break
+                    if flag == False:
+                        exit('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
             else:
                 layer_end_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['end_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['end_nd_arc']['values'], left=0., right=0.)
             if 'width' in internal_structure_2d_fem['layers'][i]:
@@ -1064,6 +1104,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     wt_opt['blade.internal_structure_2d_fem.layer_web']         = layer_web
     wt_opt['blade.internal_structure_2d_fem.definition_web']    = definition_web
     wt_opt['blade.internal_structure_2d_fem.definition_layer']  = definition_layer
+    wt_opt['blade.internal_structure_2d_fem.index_layer_start'] = index_layer_start
+    wt_opt['blade.internal_structure_2d_fem.index_layer_end']   = index_layer_end
     
     return wt_opt
 

@@ -20,16 +20,20 @@ class Opt_Data(object):
         # Save data
         self.folder_output    = 'it_0/'
         self.optimization_log = 'log_opt.sql'
+        self.costs_verbosity  = False
 
         # Blade aerodynamic optimization parameters
-        self.n_opt_twist = 8
-        self.n_opt_chord = 8
+        self.n_opt_twist   = 8
+        self.n_opt_chord   = 8
+        self.n_opt_spar_ss = 8
+        self.n_opt_spar_ps = 8
 
     def initialize(self):
 
         self.opt_options['folder_output']    = self.folder_output
         self.opt_options['optimization_log'] = self.folder_output + self.optimization_log
-        
+        self.opt_options['costs_verbosity']  = self.costs_verbosity
+
         self.opt_options['blade_aero'] = {}
         self.opt_options['blade_aero']['n_opt_twist'] = self.n_opt_twist
         self.opt_options['blade_aero']['n_opt_chord'] = self.n_opt_chord
@@ -66,7 +70,7 @@ class WT_RNTA(Group):
                                             topLevelFlag=False))
         # self.add_subsystem('towerse',   TowerSE())
         self.add_subsystem('tcons',     TurbineConstraints(wt_init_options = wt_init_options))
-        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=True, topLevelFlag=False))
+        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=opt_options['costs_verbosity'], topLevelFlag=False))
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
         self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
@@ -202,7 +206,9 @@ class WT_RNTA(Group):
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
         # self.connect('towerse.tower_mass',          'tcc.tower_mass')
         # Connections to outputs
-        self.connect('rotorse.ra.AEP', 'outputs_2_screen.AEP')
+        self.connect('rotorse.ra.AEP',          'outputs_2_screen.AEP')
+        self.connect('rotorse.rs.blade_mass',   'outputs_2_screen.blade_mass')
+        # self.connect('financese.lcoe',          'outputs_2_screen.lcoe')
 
 class WindPark(Group):
     # Openmdao group to run the cost analysis of a wind park
@@ -216,7 +222,7 @@ class WindPark(Group):
         opt_options     = self.options['opt_options']
 
         self.add_subsystem('wt',        WT_RNTA(wt_init_options = wt_init_options, opt_options = opt_options), promotes=['*'])
-        self.add_subsystem('financese', PlantFinance(verbosity=True))
+        self.add_subsystem('financese', PlantFinance(verbosity=opt_options['costs_verbosity']))
         
         # Input to plantfinancese from wt group
         self.connect('rotorse.ra.AEP',          'financese.turbine_aep')
@@ -269,11 +275,14 @@ class Outputs_2_Screen(ExplicitComponent):
     def setup(self):
         
         self.add_input('AEP', val=0.0, units = 'GW * h')
-        
+        self.add_input('blade_mass', val=0.0, units = 'kg')
+        self.add_input('lcoe', val=0.0, units = 'USD/kW/h')
     def compute(self, inputs, outputs):
         print('########################################')
         print('Objectives')
         print('AEP:         {:8.10f} GWh'.format(inputs['AEP'][0]))
+        print('Blade Mass:  {:8.10f} kg'.format(inputs['blade_mass'][0]))
+        print('LCOE:        {:8.10f} $/kWh'.format(inputs['lcoe'][0]))
         print('########################################')
 
 if __name__ == "__main__":
