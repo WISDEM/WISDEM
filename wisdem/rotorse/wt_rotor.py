@@ -45,7 +45,6 @@ class ParametrizeBladeAero(ExplicitComponent):
         chord_opt_gain_m_interp = np.interp(inputs['s'], inputs['s_opt_chord'], chord_opt_gain_nd)
         outputs['chord_param']  = inputs['chord_original'] * chord_opt_gain_m_interp
 
-
 class ParametrizeBladeStruct(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the structural design of the wind turbine rotor blades
     def initialize(self):
@@ -111,11 +110,11 @@ class WT_Rotor(Group):
         self.add_subsystem('opt_var',opt_var)
 
         # Analysis components
-        self.add_subsystem('pa',    ParametrizeBladeAero(blade_init_options   = wt_init_options['blade'], opt_options = opt_options))
+        self.add_subsystem('pa',    ParametrizeBladeAero(blade_init_options = wt_init_options['blade'], opt_options = opt_options))
         self.add_subsystem('ps',    ParametrizeBladeStruct(blade_init_options = wt_init_options['blade'], opt_options = opt_options))
-        self.add_subsystem('ra',    RotorAeroPower(wt_init_options      = wt_init_options))
-        self.add_subsystem('rs',    RotorStructure(wt_init_options      = wt_init_options, opt_options = opt_options))
-        # self.add_subsystem('rc',        RotorCost(wt_init_options      = wt_init_options))
+        self.add_subsystem('ra',    RotorAeroPower(wt_init_options = wt_init_options))
+        self.add_subsystem('rs',    RotorStructure(wt_init_options = wt_init_options, opt_options = opt_options))
+        # self.add_subsystem('rc',    RotorCost(wt_init_options = wt_init_options))
 
         # Connections to blade aero parametrization
         self.connect('opt_var.twist_opt_gain',    'pa.twist_opt_gain')
@@ -139,5 +138,5 @@ class WT_Rotor(Group):
         # self.connect('ra.powercurve.rated_V',        'rs.aero_rated.V_load')
         self.connect('ra.powercurve.rated_V',        'rs.gust.V_hub')
         self.connect('rs.gust.V_gust',              ['rs.aero_gust.V_load'])
-        self.connect('ra.powercurve.rated_Omega',   ['rs.Omega_load', 'rs.aeroloads_Omega', 'rs.curvefem.Omega'])
+        self.connect('ra.powercurve.rated_Omega',   ['rs.Omega_load', 'rs.aeroloads_Omega', 'rs.curvefem.Omega', 'rs.constr.rated_Omega'])
         self.connect('ra.powercurve.rated_pitch',   ['rs.pitch_load', 'rs.aeroloads_pitch'])

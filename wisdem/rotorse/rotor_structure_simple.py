@@ -930,11 +930,11 @@ class DesignConstraints(ExplicitComponent):
     def setup(self):
         blade_init_options = self.options['wt_init_options']['blade']
         self.n_span = n_span = blade_init_options['n_span']
+        self.n_freq = n_freq = blade_init_options['n_freq']
         self.opt_options   = opt_options   = self.options['opt_options']
         self.n_opt_spar_ss = n_opt_spar_ss = opt_options['blade_struct']['n_opt_spar_ss']
         self.n_opt_spar_ps = n_opt_spar_ps = opt_options['blade_struct']['n_opt_spar_ps']
-        
-        # Inputs
+        # Inputs strains
         self.add_input('strainU_spar',     val=np.zeros(n_span), desc='strain in spar cap on upper surface at location xu,yu_strain with loads P_strain')
         self.add_input('strainL_spar',     val=np.zeros(n_span), desc='strain in spar cap on lower surface at location xl,yl_strain with loads P_strain')
 
@@ -947,14 +947,22 @@ class DesignConstraints(ExplicitComponent):
         self.add_input('s_opt_spar_ss',         val=np.zeros(n_opt_spar_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
         self.add_input('s_opt_spar_ps',         val=np.zeros(n_opt_spar_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
 
+        # Input frequencies
+        self.add_input('rated_Omega', val=0.0,                units='rpm', desc='rotor rotation speed at rated')
+        self.add_input('delta_f',     val=1.1,                             desc='minimum margin between 3P and edge frequency')
+        self.add_input('freq',        val=np.zeros(n_freq),   units='Hz',  desc='first nF natural frequencies')
+
         # Outputs
         self.add_output('constr_min_strainU_spar',     val=np.zeros(n_opt_spar_ss), desc='constraint for minimum strain in spar cap suction side')
         self.add_output('constr_max_strainU_spar',     val=np.zeros(n_opt_spar_ss), desc='constraint for maximum strain in spar cap suction side')
-        self.add_output('constr_min_strainL_spar',     val=np.zeros(n_opt_spar_ps), desc='constraint for minimum strain in spar cap suction side')
-        self.add_output('constr_max_strainL_spar',     val=np.zeros(n_opt_spar_ps), desc='constraint for maximum strain in spar cap suction side')
+        self.add_output('constr_min_strainL_spar',     val=np.zeros(n_opt_spar_ps), desc='constraint for minimum strain in spar cap pressure side')
+        self.add_output('constr_max_strainL_spar',     val=np.zeros(n_opt_spar_ps), desc='constraint for maximum strain in spar cap pressure side')
+        self.add_output('constr_flap_f_above_3P',      val=0.0,                     desc='constraint on flap blade frequency to stay above 3P + delta')
+        self.add_output('constr_edge_f_above_3P',      val=0.0,                     desc='constraint on edge blade frequency to stay above 3P + delta')
 
     def compute(self, inputs, outputs):
         
+        # Constraints on blade strains
         s               = inputs['s']
         s_opt_spar_ss   = inputs['s_opt_spar_ss']
         s_opt_spar_ps   = inputs['s_opt_spar_ps']
@@ -970,6 +978,14 @@ class DesignConstraints(ExplicitComponent):
         outputs['constr_max_strainU_spar'] = abs(np.interp(s_opt_spar_ss, s, strainU_spar)) / max_strainU_spar
         outputs['constr_min_strainL_spar'] = abs(np.interp(s_opt_spar_ps, s, strainL_spar)) / abs(min_strainL_spar)
         outputs['constr_max_strainL_spar'] = abs(np.interp(s_opt_spar_ps, s, strainL_spar)) / max_strainL_spar
+
+        # Constraints on blade frequencies
+        threeP = 3. * inputs['rated_Omega'] / 60.
+        flap_f = inputs['freq'][0] # assuming the flap frequency is the first lowest
+        edge_f = inputs['freq'][1] # assuming the edge frequency is the second lowest
+        delta  = inputs['delta_f']
+        outputs['constr_flap_f_above_3P'] = (threeP * delta) / flap_f
+        outputs['constr_edge_f_above_3P'] = (threeP * delta) / edge_f
         
 class RotorStructure(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
@@ -1032,3 +1048,6 @@ class RotorStructure(Group):
         # Strains from pbeam to constraint
         self.connect('pbeam.strainU_spar', 'constr.strainU_spar')
         self.connect('pbeam.strainL_spar', 'constr.strainL_spar')
+
+        # Frequencies from curvefem to constraint
+        self.connect('curvefem.freq',      'constr.freq')  
