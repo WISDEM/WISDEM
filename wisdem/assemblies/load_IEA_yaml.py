@@ -731,7 +731,7 @@ class Materials(ExplicitComponent):
         
         self.add_discrete_output('name', val=n_mat * [''],                         desc='1D array of names of materials.')
         self.add_discrete_output('orth', val=np.zeros(n_mat),                      desc='1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.')
-        self.add_discrete_output('component_id', val=np.zeros(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
+        self.add_discrete_output('component_id', val=-np.ones(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
         
         self.add_output('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
         self.add_output('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
@@ -741,6 +741,7 @@ class Materials(ExplicitComponent):
         self.add_output('waste',         val=np.zeros(n_mat),                      desc='1D array of the non-dimensional waste fraction of the materials.')
         self.add_output('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the fibers of the materials.')
         self.add_output('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
+        self.add_output('roll_mass',     val=np.zeros(n_mat),      units='kg',     desc='1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.')
         
         self.add_output('ply_t',        val=np.zeros(n_mat),      units='m',      desc='1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
         self.add_output('fvf',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
@@ -766,21 +767,21 @@ class Materials(ExplicitComponent):
                 fvf[i]  = (outputs['rho'][i] - density_resin) / (outputs['rho_fiber'][i] - density_resin) 
                 if outputs['fvf'][i] > 0.:
                     if abs(fvf[i] - outputs['fvf'][i]) > 1e-3:
-                        exit('Error: the fvf of composite ' + discrete_output['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fvf'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fvf[i]*100.) + '%')
+                        exit('Error: the fvf of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fvf'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fvf[i]*100.) + '%')
                 else:
                     outputs['fvf'][i] = fvf[i]
                 # Formula to estimate the fiber weight fraction fwf from the fiber volume fraction and the fiber densities
                 fwf[i]  = outputs['rho_fiber'][i] * outputs['fvf'][i] / (density_resin + ((outputs['rho_fiber'][i] - density_resin) * outputs['fvf'][i]))
                 if outputs['fwf'][i] > 0.:
                     if abs(fwf[i] - outputs['fwf'][i]) > 1e-3:
-                        exit('Error: the fwf of composite ' + discrete_output['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fwf'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fwf[i]*100.) + '%')
+                        exit('Error: the fwf of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fwf'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fwf[i]*100.) + '%')
                 else:
                     outputs['fwf'][i] = fwf[i]
                 # Formula to estimate the plyt thickness ply_t of a laminate from the aerial density, the laminate density and the fiber weight fraction
                 ply_t[i] = outputs['rho_area_dry'][i] / outputs['rho'][i] / outputs['fwf'][i]
                 if outputs['ply_t'][i] > 0.:
-                    if abs(ply_t[i] - outputs['ply_t'][i]) > 1e-3:
-                        exit('Error: the ply_t of composite ' + discrete_output['name'][i] + ' specified in the yaml is equal to '+ str(outputs['ply_t'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm')
+                    if abs(ply_t[i] - outputs['ply_t'][i]) > 1.e-3:
+                        exit('Error: the ply_t of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['ply_t'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm')
                 else:
                     outputs['ply_t'][i] = ply_t[i]      
 
@@ -1313,8 +1314,11 @@ def assign_material_values(wt_opt, wt_init_options, materials):
     rho_fiber   = np.zeros(n_mat)
     rho_area_dry= np.zeros(n_mat)
     fvf         = np.zeros(n_mat)
-    fvf         = np.zeros(n_mat)
     fwf         = np.zeros(n_mat)
+    ply_t       = np.zeros(n_mat)
+    roll_mass   = np.zeros(n_mat)
+    unit_cost   = np.zeros(n_mat)
+    waste       = np.zeros(n_mat)
     
     for i in range(n_mat):
         name[i] =  materials[i]['name']
@@ -1322,7 +1326,6 @@ def assign_material_values(wt_opt, wt_init_options, materials):
         rho[i]  =  materials[i]['rho']
         if 'component_id' in materials[i]:
             component_id[i] = materials[i]['component_id']
-        
         if orth[i] == 0:
             if 'E' in materials[i]:
                 E[i,:]  = np.ones(3) * materials[i]['E']
@@ -1334,23 +1337,28 @@ def assign_material_values(wt_opt, wt_init_options, materials):
                 G[i,:]  = np.ones(3) * materials[i]['E']/(2*(1+materials[i]['nu'])) # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
                 warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
                 print(warning_shear_modulus_isotropic)
-                
         elif orth[i] == 1:
             E[i,:]  = materials[i]['E']
             G[i,:]  = materials[i]['G']
             nu[i,:] = materials[i]['nu']
         else:
-            exit('')
+            exit('The flag orth must be set to either 0 or 1. Error in material ' + name[i])
         if 'fiber_density' in materials[i]:
             rho_fiber[i]    = materials[i]['fiber_density']
         if 'area_density_dry' in materials[i]:
             rho_area_dry[i] = materials[i]['area_density_dry']
-        
-        
         if 'fvf' in materials[i]:
             fvf[i] = materials[i]['fvf']
         if 'fwf' in materials[i]:
             fwf[i] = materials[i]['fwf']
+        if 'ply_t' in materials[i]:
+            ply_t[i] = materials[i]['ply_t']
+        if 'roll_mass' in materials[i]:
+            roll_mass[i] = materials[i]['roll_mass']
+        if 'unit_cost' in materials[i]:
+            unit_cost[i] = materials[i]['unit_cost']
+        if 'waste' in materials[i]:
+            waste[i] = materials[i]['waste']
             
             
     wt_opt['materials.name']     = name
@@ -1364,6 +1372,10 @@ def assign_material_values(wt_opt, wt_init_options, materials):
     wt_opt['materials.rho_area_dry']   = rho_area_dry
     wt_opt['materials.fvf']      = fvf
     wt_opt['materials.fwf']      = fwf
+    wt_opt['materials.ply_t']    = ply_t
+    wt_opt['materials.roll_mass']= roll_mass
+    wt_opt['materials.unit_cost']= unit_cost
+    wt_opt['materials.waste']    = waste
 
     return wt_opt
 
