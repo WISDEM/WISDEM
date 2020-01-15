@@ -884,19 +884,19 @@ class DriveSE(Group):
 
         # Independent variables that are unique to DriveSE
         driveIndeps = IndepVarComp()
-        driveIndeps.add_output('gear_ratio', 0.0)
-        driveIndeps.add_output('shaft_angle', 0.0, units='rad')
-        driveIndeps.add_output('shaft_ratio', 0.0)
-        driveIndeps.add_output('shrink_disc_mass', 0.0, units='kg')
-        driveIndeps.add_output('carrier_mass', 0.0, units='kg')
-        driveIndeps.add_output('flange_length', 0.0, units='m')
-        driveIndeps.add_output('overhang', 0.0, units='m')
-        driveIndeps.add_output('distance_hub2mb', 0.0, units='m')
-        driveIndeps.add_output('gearbox_input_xcm', 0.0, units='m')
-        driveIndeps.add_output('hss_input_length', 0.0, units='m')
-        driveIndeps.add_discrete_output('planet_numbers', np.array([0, 0, 0]))
-        driveIndeps.add_discrete_output('drivetrain_design', 'geared')
-        driveIndeps.add_discrete_output('gear_configuration', 'eep')
+        # driveIndeps.add_output('gear_ratio', 0.0)
+        # driveIndeps.add_output('shaft_angle', 0.0, units='rad')
+        # driveIndeps.add_output('shaft_ratio', 0.0)
+        # driveIndeps.add_output('shrink_disc_mass', 0.0, units='kg')
+        # driveIndeps.add_output('carrier_mass', 0.0, units='kg')
+        # driveIndeps.add_output('flange_length', 0.0, units='m')
+        # driveIndeps.add_output('overhang', 0.0, units='m')
+        # driveIndeps.add_output('distance_hub2mb', 0.0, units='m')
+        # driveIndeps.add_output('gearbox_input_xcm', 0.0, units='m')
+        # driveIndeps.add_output('hss_input_length', 0.0, units='m')
+        # driveIndeps.add_discrete_output('planet_numbers', np.array([0, 0, 0]))
+        # driveIndeps.add_discrete_output('drivetrain_design', 'geared')
+        # driveIndeps.add_discrete_output('gear_configuration', 'eep')
         if drive4pt:
             driveIndeps.add_discrete_output('mb1Type', 'CARB')
             driveIndeps.add_discrete_output('mb2Type', 'SRB')
@@ -908,7 +908,7 @@ class DriveSE(Group):
         driveIndeps.add_discrete_output('crane', True)
         driveIndeps.add_discrete_output('rna_weightM', True)
         driveIndeps.add_discrete_output('downwind', True)
-        driveIndeps.add_discrete_output('yaw_motors_number', 0)
+        # driveIndeps.add_discrete_output('yaw_motors_number', 0)
         self.add_subsystem('driveIndeps', driveIndeps, promotes=['*'])
 
         # Independent variables that may be duplicated at higher levels of aggregation
@@ -1030,6 +1030,9 @@ def nacelle_example_5MW_baseline_3pt(debug=False):
     prob['blade_root_diameter'] = 2.5
     prob['blade_length'] = 60.0
     prob['blades_I'] = np.array([37125777.37275547, 17852835.54452561, 14672945.83129043, 0.0, 0.0, 0.0])
+    
+    
+    prob['hub_flange_thickness'] = 0
     
     # Tower inputs
     prob['tower_top_diameter'] = 3.78  # m

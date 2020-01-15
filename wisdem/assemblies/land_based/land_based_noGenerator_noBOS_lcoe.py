@@ -25,7 +25,8 @@ from wisdem.commonse.mpi_tools import MPI
 class LandBasedTurbine(Group):
 
     def initialize(self):
-        self.options.declare('RefBlade')
+        self.options.declare('blade')
+        self.options.declare('materials')
         self.options.declare('FASTpref', default={})
         self.options.declare('Nsection_Tow', default = 6)
         self.options.declare('VerbosityCosts', default = True)
@@ -33,7 +34,8 @@ class LandBasedTurbine(Group):
         
     def setup(self):
         
-        RefBlade     = self.options['RefBlade']
+        blade        = self.options['blade']
+        materials    = self.options['materials']
         Nsection_Tow = self.options['Nsection_Tow']        
         if 'Analysis_Level' in self.options['FASTpref']:
             Analysis_Level = self.options['FASTpref']['Analysis_Level']
@@ -88,7 +90,7 @@ class LandBasedTurbine(Group):
 
         
         # Add components
-        self.add_subsystem('rotorse', RotorSE(RefBlade=RefBlade,
+        self.add_subsystem('rotorse', RotorSE(blade=blade, materials=materials,
                                               npts_coarse_power_curve=20,
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,
@@ -236,8 +238,8 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt
     # Plant size
     prob['project_lifetime'] = prob['lifetime'] = 20.0    
     prob['number_of_turbines']             = 200. * 1.e+006 / prob['machine_rating']
-    prob['annual_opex']                    = 43.56 # $/kW/yr
-    prob['bos_costs']                      = 517.0 # $/kW
+    prob['annual_opex']                    = 44. # $/kW/yr
+    prob['bos_costs']                      = 332. + 127. # $/kW
     
     # For RNA
     prob['rna_weightM'] = True

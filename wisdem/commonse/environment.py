@@ -30,20 +30,20 @@ class WindBase(ExplicitComponent):
         self.options.declare('nPoints')
         
     def setup(self):
-        self.npts = self.options['nPoints']
+        npts = self.options['nPoints']
         
         # TODO: if I put required=True here for Uref there is another bug
 
         # variables
         self.add_input('Uref', 0.0, units='m/s', desc='reference wind speed (usually at hub height)')
         self.add_input('zref', 0.0, units='m', desc='corresponding reference height')
-        self.add_input('z', np.zeros(self.npts), units='m', desc='heights where wind speed should be computed')
+        self.add_input('z', np.zeros(npts), units='m', desc='heights where wind speed should be computed')
 
         # parameters
         self.add_input('z0', 0.0, units='m', desc='bottom of wind profile (height of ground/sea)')
 
         # out
-        self.add_output('U', np.zeros(self.npts), units='m/s', desc='magnitude of wind speed at each z location')
+        self.add_output('U', np.zeros(npts), units='m/s', desc='magnitude of wind speed at each z location')
 
 
 class WaveBase(ExplicitComponent):
@@ -52,20 +52,20 @@ class WaveBase(ExplicitComponent):
         self.options.declare('nPoints')
         
     def setup(self):
-        self.npts = self.options['nPoints']
+        npts = self.options['nPoints']
 
         # variables
         self.add_input('rho', 0.0, units='kg/m**3', desc='water density')
-        self.add_input('z', np.zeros(self.npts), units='m', desc='heights where wave speed should be computed')
+        self.add_input('z', np.zeros(npts), units='m', desc='heights where wave speed should be computed')
         self.add_input('z_surface', 0.0, units='m', desc='vertical location of water surface')
         self.add_input('z_floor', 0.0, units='m', desc='vertical location of sea floor')
 
         # out
-        self.add_output('U', np.zeros(self.npts), units='m/s', desc='horizontal wave velocity at each z location')
-        self.add_output('W', np.zeros(self.npts), units='m/s', desc='vertical wave velocity at each z location')
-        self.add_output('V', np.zeros(self.npts), units='m/s', desc='total wave velocity at each z location')
-        self.add_output('A', np.zeros(self.npts), units='m/s**2', desc='horizontal wave acceleration at each z location')
-        self.add_output('p', np.zeros(self.npts), units='N/m**2', desc='pressure oscillation at each z location')
+        self.add_output('U', np.zeros(npts), units='m/s', desc='horizontal wave velocity at each z location')
+        self.add_output('W', np.zeros(npts), units='m/s', desc='vertical wave velocity at each z location')
+        self.add_output('V', np.zeros(npts), units='m/s', desc='total wave velocity at each z location')
+        self.add_output('A', np.zeros(npts), units='m/s**2', desc='horizontal wave acceleration at each z location')
+        self.add_output('p', np.zeros(npts), units='N/m**2', desc='pressure oscillation at each z location')
         #self.add_output('U0', 0.0, units='m/s', desc='magnitude of wave speed at z=MSL')
         #self.add_output('A0', 0.0, units='m/s**2', desc='magnitude of wave acceleration at z=MSL')
 
@@ -82,13 +82,6 @@ class WaveBase(ExplicitComponent):
         #outputs['A0'] = 0.
 
 
-
-class SoilBase(ExplicitComponent):
-    """base component for soil stiffness"""
-
-    def setup(self):
-        self.add_output('k', np.zeros(6), units='N/m', desc='spring stiffness. rigid directions should use \
-        ``float(''inf'')``. order: (x, theta_x, y, theta_y, z, theta_z)')
 
 
 # -----------------------
@@ -118,7 +111,7 @@ class PowerWind(WindBase):
 
         # velocity
         idx = z > z0
-        outputs['U'] = np.zeros(self.npts)
+        outputs['U'] = np.zeros(self.options['nPoints'])
         outputs['U'][idx] = inputs['Uref']*((z[idx] - z0)/(zref - z0))**inputs['shearExp']
 
         # # add small cubic spline to allow continuity in gradient
@@ -143,14 +136,15 @@ class PowerWind(WindBase):
         z0 = inputs['z0']
         shearExp = inputs['shearExp']
         idx = z > z0
+        npts = self.options['nPoints']
 
-        U = np.zeros(self.npts)
+        U = np.zeros(npts)
         U[idx] = inputs['Uref']*((z[idx] - z0)/(zref - z0))**inputs['shearExp']
 
         # gradients
-        dU_dUref = np.zeros(self.npts)
-        dU_dz = np.zeros(self.npts)
-        dU_dzref = np.zeros(self.npts)
+        dU_dUref = np.zeros(npts)
+        dU_dz = np.zeros(npts)
+        dU_dzref = np.zeros(npts)
 
         dU_dUref[idx] = U[idx]/inputs['Uref']
         dU_dz[idx] = U[idx]*shearExp/(z[idx] - z0)
@@ -216,10 +210,11 @@ class LogWind(WindBase):
         z0 = inputs['z0']
         z_roughness = inputs['z_roughness']/1e3
         Uref = inputs['Uref']
+        npts = self.options['nPoints']
 
-        dU_dUref = np.zeros(self.npts)
-        dU_dz_diag = np.zeros(self.npts)
-        dU_dzref = np.zeros(self.npts)
+        dU_dUref = np.zeros(npts)
+        dU_dz_diag = np.zeros(npts)
+        dU_dzref = np.zeros(npts)
 
         idx = [z - z0 > z_roughness]
         lt = np.log((z[idx] - z0)/z_roughness)
@@ -340,7 +335,7 @@ class LinearWaves(WaveBase):
         dU_dUc[idx] = 0.0
         dV_dUc[idx] = 0.0
         
-        #dU0 = np.zeros((1,self.npts))
+        #dU0 = np.zeros((1,npts))
         #dA0 = omega * dU0
 
         
@@ -361,24 +356,8 @@ class LinearWaves(WaveBase):
 
         
 
-class TowerSoilK(SoilBase):
-    """Passthrough of Soil-Structure-INteraction equivalent spring constants used to bypass TowerSoil."""
 
-    def setup(self):
-        super(TowerSoilK, self).setup()
-
-        # variable
-        self.add_input('kin', np.ones(6)*float('inf'),  desc='spring stiffness. rigid directions should use \
-            ``float(''inf'')``. order: (x, theta_x, y, theta_y, z, theta_z)')
-        #self.add_input('rigid', np.ones(6), dtype=np.bool, desc='directions that should be considered infinitely rigid\
-        #    order is x, theta_x, y, theta_y, z, theta_z')
-
-
-    def compute(self, inputs, outputs):
-        outputs['k'] = inputs['kin']
-        inputs['k'][inputs['rigid']] = float('inf')
-
-class TowerSoil(SoilBase):
+class TowerSoil(ExplicitComponent):
     """textbook soil stiffness method"""
     def setup(self):
         super(TowerSoil, self).setup()
@@ -390,8 +369,9 @@ class TowerSoil(SoilBase):
         # inputeter
         self.add_input('G', 140e6, units='Pa', desc='shear modulus of soil')
         self.add_input('nu', 0.4, desc='Poisson''s ratio of soil')
-        #self.add_input('rigid', np.ones(6), dtype=np.bool, desc='directions that should be considered infinitely rigid\
-        #    order is x, theta_x, y, theta_y, z, theta_z')
+        self.add_input('k_usr', -1*np.ones(6), desc='User overrides of stiffness values. Use positive values and for rigid use np.inf. Order is x, theta_x, y, theta_y, z, theta_z')
+        self.add_output('k', np.zeros(6), units='N/m', desc='spring stiffness (x, theta_x, y, theta_y, z, theta_z)')
+
         self.declare_partials('k', ['d0','depth'])
 
     def compute(self, inputs, outputs):
@@ -416,7 +396,8 @@ class TowerSoil(SoilBase):
         # torsional
         k_phi = 16.0*G*r0**3/3.0
         outputs['k'] = np.array([k_x, k_thetax, k_x, k_thetax, k_z, k_phi]).flatten()
-        #outputs['k'][inputs['rigid']] = float('inf')
+        ind = np.nonzero(inputs['k_usr'] >= 0.0)[0]
+        outputs['k'][ind] = inputs['k_usr'][ind]
 
 
     def compute_partials(self, inputs, J):
@@ -461,7 +442,9 @@ class TowerSoil(SoilBase):
 
         J['k', 'd0'] = 0.5*dk_dr0
         J['k', 'depth'] = dk_dh
-
+        ind = np.nonzero(inputs['k_usr'] >= 0.0)[0]
+        J['k', 'd0'][ind] = 0.0
+        J['k', 'depth'][ind] = 0.0
         
 
 

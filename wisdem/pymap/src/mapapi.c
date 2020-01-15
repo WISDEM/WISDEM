@@ -997,6 +997,44 @@ MAP_EXTERNCALL void map_get_fairlead_force_3d(double* fx, double* fy, double* fz
   };
 }
 
+MAP_EXTERNCALL void map_get_anchor_force_2d(double* Ha, double* Va, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr)
+{
+  Line* iter_line = NULL;
+  Domain* domain = other_type->object;
+  const unsigned int i = index;
+
+  map_reset_universal_error(map_msg, ierr);  
+
+  if (i<=list_size(&domain->line)-1) {
+    iter_line = (Line*)list_get_at(&domain->line, i);
+    *Ha = -(iter_line->H_at_anchor);
+    *Va = -(iter_line->V_at_anchor);
+  } else {
+    /* throw error: line out of range */
+    //set_universal_error_with_message(map_msg, ierr, MAP_FATAL_42, "Line out of range: %d.", index);
+  };
+}
+
+
+MAP_EXTERNCALL void map_get_anchor_force_3d(double* fxa, double* fya, double* fza, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr)
+{
+  Line* iter_line = NULL;
+  Domain* domain = other_type->object;
+  double psi = 0.0;
+  const unsigned int i = index;
+
+  if (i<=list_size(&domain->line)-1) {
+    iter_line = (Line*)list_get_at(&domain->line, i);
+    psi = iter_line->psi;
+    *fxa = -(iter_line->H_at_anchor)*cos(psi);
+    *fya = -(iter_line->H_at_anchor)*sin(psi);
+    *fza = -(iter_line->V_at_anchor);
+  } else {
+    /* throw error: line out of range */
+    //set_universal_error_with_message(map_msg, ierr, MAP_FATAL_42, "Line out of range: %d.", index);
+  };
+}
+
 
 MAP_EXTERNCALL int map_size_lines(MAP_OtherStateType_t* other_type, MAP_ERROR_CODE* ierr, char* map_msg)
 {
