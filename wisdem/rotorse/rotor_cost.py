@@ -191,7 +191,7 @@ class blade_bom(object):
                 
         #         # except:
         #             # exit('ERROR: The material ' + name + ' does not have its properties fully defined. Please set them in the first lines of blade_bom.py in RotorSE')
-        
+
         
         # print(mat_dictionary)
         # exit()
@@ -1613,6 +1613,11 @@ class material_cutting_process(object):
         
         
         for name in mat_names:
+            try:
+                _ = self.materials[name]['cut@station']
+            except:
+                continue
+            
             if self.materials[name]['cut@station'] == 'Y':
                 # Number of rolls
                 self.materials[name]['n_rolls'] = self.materials[name]['total_mass_w_waste'] / self.materials[name]['roll_mass']

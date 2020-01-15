@@ -1278,143 +1278,141 @@ def trailing_edge_smoothing(data):
 #                     name = blade['st']['layers'][i_sec]['name']
 #                     if start_nd_arci <= dp0 and end_nd_arci >= dp1:
                         
-#                         if name in region_loc.keys():
-#                             if region_loc[name][i] == None:
-#                                 region_loc[name][i] = [i_reg]
-#                             else:
-#                                 region_loc[name][i].append(i_reg)
+                        if name in region_loc.keys():
+                            if region_loc[name][i] == None:
+                                region_loc[name][i] = [i_reg]
+                            else:
+                                region_loc[name][i].append(i_reg)
 
-#                         n_pliesi.append(1.)
-#                         thki.append(blade['st']['layers'][i_sec]['thickness']['values'][i])
-#                         if blade['st']['layers'][i_sec]['fiber_orientation']['values'][i] == None:
-#                             thetai.append(0.)
-#                         else:
-#                             thetai.append(blade['st']['layers'][i_sec]['fiber_orientation']['values'][i])
-#                         mati.append(material_dict[blade['st']['layers'][i_sec]['material']])
+                        n_pliesi.append(1.)
+                        thki.append(blade['st']['layers'][i_sec]['thickness']['values'][i])
+                        if blade['st']['layers'][i_sec]['fiber_orientation']['values'][i] == None:
+                            thetai.append(0.)
+                        else:
+                            thetai.append(blade['st']['layers'][i_sec]['fiber_orientation']['values'][i])
+                        mati.append(material_dict[blade['st']['layers'][i_sec]['material']])
 
-#                 n_plies.append(np.array(n_pliesi))
-#                 thk.append(np.array(thki))
-#                 theta.append(np.array(thetai))
-#                 mat_idx.append(np.array(mati))
+                n_plies.append(np.array(n_pliesi))
+                thk.append(np.array(thki))
+                theta.append(np.array(thetai))
+                mat_idx.append(np.array(mati))
 
-#             # print('----------------------')
-#             # print('dp', dp)
-#             # print('n_plies', n_plies)
-#             # print('thk', thk)
-#             # print('theta', theta)
-#             # print('mat_idx', mat_idx)
-#             # print('materials', materials)
+            # print('----------------------')
+            # print('dp', dp)
+            # print('n_plies', n_plies)
+            # print('thk', thk)
+            # print('theta', theta)
+            # print('mat_idx', mat_idx)
+            # print('materials', materials)
 
-#             sec = CompositeSection(dp, n_plies, thk, theta, mat_idx, materials)
-#             return sec, region_loc
-#             ##############################
+            sec = CompositeSection(dp, n_plies, thk, theta, mat_idx, materials)
+            return sec, region_loc
+            ##############################
 
-#         def web_stacking(i, web_idx, web_start_nd_arc, web_end_nd_arc, blade, material_dict, materials, flatback, upperCSi):
-#             dp = []
-#             n_plies = []
-#             thk = []
-#             theta = []
-#             mat_idx = []
+        def web_stacking(i, web_idx, web_start_nd_arc, web_end_nd_arc, blade, material_dict, materials, flatback, upperCSi):
+            dp = []
+            n_plies = []
+            thk = []
+            theta = []
+            mat_idx = []
 
-#             if len(web_idx)>0:
-#                 dp = np.mean((np.abs(web_start_nd_arc), np.abs(web_start_nd_arc)), axis=0).tolist()
+            if len(web_idx)>0:
+                dp = np.mean((np.abs(web_start_nd_arc), np.abs(web_start_nd_arc)), axis=0).tolist()
 
-#                 dp_all = [[-1.*start_nd_arci, -1.*end_nd_arci] for start_nd_arci, end_nd_arci in zip(web_start_nd_arc, web_end_nd_arc)]
-#                 web_dp, web_ids = np.unique(dp_all, axis=0, return_inverse=True)
-#                 for webi in np.unique(web_ids):
-#                     # store variable values (thickness, orientation, material) for layers that make up each web, based on the mapping array web_ids
-#                     n_pliesi = [1. for i_reg, web_idi in zip(web_idx, web_ids) if web_idi==webi]
-#                     thki     = [blade['st']['layers'][i_reg]['thickness']['values'][i] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi==webi]
-#                     thetai   = [blade['st']['layers'][i_reg]['fiber_orientation']['values'][i] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi==webi]
-#                     thetai   = [0. if theta_ij==None else theta_ij for theta_ij in thetai]
-#                     mati     = [material_dict[blade['st']['layers'][i_reg]['material']] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi==webi]
+                dp_all = [[-1.*start_nd_arci, -1.*end_nd_arci] for start_nd_arci, end_nd_arci in zip(web_start_nd_arc, web_end_nd_arc)]
+                web_dp, web_ids = np.unique(dp_all, axis=0, return_inverse=True)
+                for webi in np.unique(web_ids):
+                    # store variable values (thickness, orientation, material) for layers that make up each web, based on the mapping array web_ids
+                    n_pliesi = [1. for i_reg, web_idi in zip(web_idx, web_ids) if web_idi==webi]
+                    thki     = [blade['st']['layers'][i_reg]['thickness']['values'][i] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi==webi]
+                    thetai   = [blade['st']['layers'][i_reg]['fiber_orientation']['values'][i] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi==webi]
+                    thetai   = [0. if theta_ij==None else theta_ij for theta_ij in thetai]
+                    mati     = [material_dict[blade['st']['layers'][i_reg]['material']] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi==webi]
 
-#                     n_plies.append(np.array(n_pliesi))
-#                     thk.append(np.array(thki))
-#                     theta.append(np.array(thetai))
-#                     mat_idx.append(np.array(mati))
+                    n_plies.append(np.array(n_pliesi))
+                    thk.append(np.array(thki))
+                    theta.append(np.array(thetai))
+                    mat_idx.append(np.array(mati))
 
-#             if flatback:
-#                 dp.append(1.)
-#                 n_plies.append(upperCSi.n_plies[-1])
-#                 thk.append(upperCSi.t[-1])
-#                 theta.append(upperCSi.theta[-1])
-#                 mat_idx.append(upperCSi.mat_idx[-1])
+            if flatback:
+                dp.append(1.)
+                n_plies.append(upperCSi.n_plies[-1])
+                thk.append(upperCSi.t[-1])
+                theta.append(upperCSi.theta[-1])
+                mat_idx.append(upperCSi.mat_idx[-1])
 
-#             dp_out = sorted(list(set(dp)))
+            dp_out = sorted(list(set(dp)))
 
-#             sec = CompositeSection(dp_out, n_plies, thk, theta, mat_idx, materials)
-#             return sec
-#             ##############################
+            sec = CompositeSection(dp_out, n_plies, thk, theta, mat_idx, materials)
+            return sec
+            ##############################
 
-#         ## Initialization
-#         if 'precomp' not in blade.keys():
-#             blade['precomp'] = {}
+        ## Initialization
+        if 'precomp' not in blade.keys():
+            blade['precomp'] = {}
 
-#         region_loc_vars = [self.te_var] + self.spar_var
-#         # if self.le_var != '':
-#         #     region_loc_vars += [self.le_var]
+        region_loc_vars = [self.te_var] + self.spar_var
+        # if self.le_var != '':
+        #     region_loc_vars += [self.le_var]
 
-#         region_loc_ss = {} # track precomp regions for user selected composite layers
-#         region_loc_ps = {}
-#         for var in region_loc_vars:
-#             region_loc_ss[var] = [None]*self.NPTS
-#             region_loc_ps[var] = [None]*self.NPTS
+        region_loc_ss = {} # track precomp regions for user selected composite layers
+        region_loc_ps = {}
+        for var in region_loc_vars:
+            region_loc_ss[var] = [None]*self.NPTS
+            region_loc_ps[var] = [None]*self.NPTS
 
 
-#         ## Materials
-#         if 'materials' not in blade['precomp']:
-#             material_dict = {}
-#             materials     = []
-#             for i, mati in enumerate(materials_in):
-#                 if mati['name'] != 'resin':
-#                     if mati['orth'] == 1 or mati['orth'] == True:
-#                         try:
-#                             iter(mati['E'])
-#                         except:
-#                             warnings.warn('Ontology input warning: Material "%s" entered as Orthogonal, must supply E, G, and nu as a list representing the 3 principle axes.'%mati['name'])
-#                     if 'G' not in mati.keys():
-                        
-#                         if mati['orth'] == 1 or mati['orth'] == True:
-#                             warning_shear_modulus_orthogonal = 'Ontology input warning: No shear modulus, G, provided for material "%s".'%mati['name']
-#                             warnings.warn(warning_shear_modulus_orthogonal)
-#                         else:
-#                             warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%mati['name']
-#                             print(warning_shear_modulus_isotropic)
-#                             mati['G'] = mati['E']/(2*(1+mati['nu']))
+        ## Materials
+        if 'materials' not in blade['precomp']:
+            material_dict = {}
+            materials     = []
+            for i, mati in enumerate(materials_in):
+                if mati['orth'] == 1 or mati['orth'] == True:
+                    try:
+                        iter(mati['E'])
+                    except:
+                        warnings.warn('Ontology input warning: Material "%s" entered as Orthogonal, must supply E, G, and nu as a list representing the 3 principle axes.'%mati['name'])
+                if 'G' not in mati.keys():
+                    
+                    if mati['orth'] == 1 or mati['orth'] == True:
+                        warning_shear_modulus_orthogonal = 'Ontology input warning: No shear modulus, G, provided for material "%s".'%mati['name']
+                        warnings.warn(warning_shear_modulus_orthogonal)
+                    else:
+                        warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%mati['name']
+                        warnings.warn(warning_shear_modulus_isotropic)
+                        mati['G'] = mati['E']/(2*(1+mati['nu']))
 
-#                     if mati['orth'] == 1 or mati['orth'] == True:
-#                         materials.append(Orthotropic2DMaterial(mati['E'][0], mati['E'][1], mati['G'][0], mati['nu'][0], mati['rho'], mati['name']))
-#                     else:
-#                         materials.append(Orthotropic2DMaterial(mati['E'], mati['E'], mati['G'], mati['nu'], mati['rho'], mati['name']))
-#                 material_id = i
-#                 material_dict[mati['name']] = material_id
-                
-#             blade['precomp']['materials']     = materials
-#             blade['precomp']['material_dict'] = material_dict
+                material_id = i
+                material_dict[mati['name']] = material_id
+                if mati['orth'] == 1 or mati['orth'] == True:
+                    materials.append(Orthotropic2DMaterial(mati['E'][0], mati['E'][1], mati['G'][0], mati['nu'][0], mati['rho'], mati['name']))
+                else:
+                    materials.append(Orthotropic2DMaterial(mati['E'], mati['E'], mati['G'], mati['nu'], mati['rho'], mati['name']))
+            blade['precomp']['materials']     = materials
+            blade['precomp']['material_dict'] = material_dict
 
         
-#         upperCS = [None]*self.NPTS
-#         lowerCS = [None]*self.NPTS
-#         websCS  = [None]*self.NPTS
-#         profile = [None]*self.NPTS
+        upperCS = [None]*self.NPTS
+        lowerCS = [None]*self.NPTS
+        websCS  = [None]*self.NPTS
+        profile = [None]*self.NPTS
 
-#         ## Spanwise
-#         for i in range(self.NPTS):
-#             # time0 = time.time()
+        ## Spanwise
+        for i in range(self.NPTS):
+            # time0 = time.time()
         
-#             ## Profiles
-#             # rotate            
-#             profile_i = np.flip(copy.copy(blade['profile'][:,:,i]), axis=0)
-#             profile_i_rot = np.column_stack(rotate(blade['pf']['p_le'][i], 0., profile_i[:,0], profile_i[:,1], -1.*np.radians(blade['pf']['theta'][i])))
-#             # normalize
-#             profile_i_rot[:,0] -= min(profile_i_rot[:,0])
-#             profile_i_rot = profile_i_rot/ max(profile_i_rot[:,0])
+            ## Profiles
+            # rotate            
+            profile_i = np.flip(copy.copy(blade['profile'][:,:,i]), axis=0)
+            profile_i_rot = np.column_stack(rotate(blade['pf']['p_le'][i], 0., profile_i[:,0], profile_i[:,1], np.radians(blade['pf']['theta'][i])))
+            # normalize
+            profile_i_rot[:,0] -= min(profile_i_rot[:,0])
+            profile_i_rot = profile_i_rot/ max(profile_i_rot[:,0])
 
-#             profile_i_rot_precomp = copy.copy(profile_i_rot)
-#             idx_s = 0
-#             idx_le_precomp = np.argmax(profile_i_rot_precomp[:,0])
-#             if idx_le_precomp != 0:
+            profile_i_rot_precomp = copy.copy(profile_i_rot)
+            idx_s = 0
+            idx_le_precomp = np.argmax(profile_i_rot_precomp[:,0])
+            if idx_le_precomp != 0:
                 
 #                 if profile_i_rot_precomp[0,0] == profile_i_rot_precomp[-1,0]:
 #                      idx_s = 1

@@ -210,6 +210,10 @@ libexec.map_jacobian_dzdv.argtypes            = [ MapData_Type, c_int, c_char_p,
 
 
 libexec.map_get_fairlead_force_2d.argtypes = [POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
+libexec.map_get_anchor_force_2d.argtypes = [POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
+
+libexec.map_get_fairlead_force_3d.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
+libexec.map_get_anchor_force_3d.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
 
 
 # plot routines
@@ -292,7 +296,7 @@ class pyMAP(object):
         self.f_type_initout = self.CreateInitoutState( )
         libexec.set_init_to_null(self.f_type_init, self.status, pointer(self.ierr) )
         libexec.map_initialize_msqs_base(self.f_type_u, self.f_type_p, self.f_type_x, self.f_type_z, self.f_type_d, self.f_type_y, self.f_type_initout)
-        self.summary_file(six.b('outlist.map.sum'))
+        self.summary_file('outlist.map.sum')
 
 
     def init( self ):
@@ -328,7 +332,7 @@ class pyMAP(object):
 
     # Set a name for the MAP summary file. Does not need to be called. If not called, the default name is 'outlist.sum.map'
     def summary_file(self, echo_file):
-        self.f_type_init.contents.summaryFileName = echo_file
+        self.f_type_init.contents.summaryFileName = six.b( echo_file )
         libexec.map_set_summary_file_name(self.f_type_init, self.status, pointer(self.ierr) )
 
 
@@ -484,7 +488,48 @@ class pyMAP(object):
         fz = c_double(-999.9)
         libexec.map_get_fairlead_force_3d( pointer(fx), pointer(fy), pointer(fz), self.f_type_d, index, self.status, pointer(self.ierr))
         return fx.value, fy.value, fz.value
+
+
+    def get_anchor_force_2d(self, index):
+        """Gets the horizontal and vertical anchor force in a 2D plane along the 
+        straight-line line. Must ensure update_states() is called before accessing 
+        this function. The function will not solve the forces for a new vessel position
+        if it updated. , otherwise the anchor forces are not updated with the new 
+        vessel position. Called C function:
         
+        MAP_EXTERNCALL void map_get_anchor_force_2d(double* H, double* V, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr);
+    
+        :param index: The line number the anchor forces are being requested for. Zero indexed
+        :returns: horizontal and vertical anchor force [N]
+    
+        >>> H,V = print get_anchor_force_2d(1)        
+        """
+        Ha_ref = c_double(-999.9)
+        Va_ref = c_double(-999.9)
+        libexec.map_get_anchor_force_2d( pointer(Ha_ref), pointer(Va_ref),self.f_type_d, index, self.status, pointer(self.ierr))
+        return Ha_ref.value, Va_ref.value
+    
+    
+    def get_anchor_force_3d(self, index):
+        """Gets the horizontal and vertical anchor force in a 3D frame along relative 
+        referene global axis. Must ensure update_states() is called before accessing 
+        this function. The function will not solve the forces for a new vessel position
+        if it updated. , otherwise the anchor forces are not updated with the new 
+        vessel position. Called C function:
+        
+        MAP_EXTERNCALL void map_get_anchor_force_3d(double* fx, double* fy, double* fz, MAP_OtherStateType_t* other_type, int index, char* map_msg, MAP_ERROR_CODE* ierr);
+    
+        :param index: The line number the anchor forces are being requested for. Zero indexed
+        :returns: horizontal and vertical anchor force [N]
+    
+        >>> fx,fy,fz = get_anchor_force_3d(1)        
+        """
+        fxa = c_double(-999.9)
+        fya = c_double(-999.9)
+        fza = c_double(-999.9)
+        libexec.map_get_anchor_force_3d( pointer(fxa), pointer(fya), pointer(fza), self.f_type_d, index, self.status, pointer(self.ierr))
+        return fxa.value, fya.value, fza.value
+    
 
 
 
@@ -614,7 +659,7 @@ class pyMAP(object):
                 break
             else:
                 # create_string_buffer(line, 255).raw
-                self.f_type_init.contents.libraryInputLine =  line+'\0'
+                self.f_type_init.contents.libraryInputLine = six.b( line+'\0' )
                 libexec.map_add_cable_library_input_text(self.f_type_init)
    
         f.seek(line_offset[Node_ref+3])
@@ -622,7 +667,7 @@ class pyMAP(object):
             if line[0] == "-":
                 break
             else:
-                self.f_type_init.contents.nodeInputLine = line+'\0'
+                self.f_type_init.contents.nodeInputLine = six.b( line+'\0' )
                 libexec.map_add_node_input_text(self.f_type_init)
 
         f.seek(line_offset[Line_ref+4])
@@ -630,7 +675,7 @@ class pyMAP(object):
             if line[0] == "-":
                 break
             else:
-                self.f_type_init.contents.elementInputLine = line+'\0'
+                self.f_type_init.contents.elementInputLine = six.b( line+'\0' )
                 libexec.map_add_line_input_text(self.f_type_init)
                  
         f.seek(line_offset[Option_ref+5])
@@ -640,7 +685,7 @@ class pyMAP(object):
             elif line[0]=="!":
                 None
             else:
-                self.f_type_init.contents.optionInputLine = line+'\0'
+                self.f_type_init.contents.optionInputLine = six.b( line+'\0' )
                 libexec.map_add_options_input_text(self.f_type_init)            
 
                     

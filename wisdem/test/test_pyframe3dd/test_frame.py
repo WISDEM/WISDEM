@@ -828,11 +828,100 @@ class FrameTestEXB(unittest.TestCase):
 
 
 
+class GravityAdd(unittest.TestCase):
+
+    def test_addgrav_working(self):
+
+        # nodes
+        nnode = 3
+        node = np.arange(1, 1+nnode)
+        x = np.zeros(nnode)
+        y = np.zeros(nnode)
+        z = 10.0*np.arange(nnode)
+        r = np.zeros(nnode)
+        nodes = NodeData(node, x, y, z, r)
+
+        # reactions
+        rigid = 1e16
+        node = np.array([1])
+        Kx = Ky = Kz = Ktx = Kty = Ktz = np.array([rigid])
+        reactions = ReactionData(node, Kx, Ky, Kz, Ktx, Kty, Ktz, rigid)
+
+        # elements
+        EL = np.arange(1, nnode)
+        N1 = np.arange(1, nnode)
+        N2 = np.arange(2, nnode+1)
+        Ax = 5.0*np.ones(nnode-1)
+        Asy = 1.0*np.ones(nnode-1)
+        Asz = 1.0*np.ones(nnode-1)
+        Jx = 1.0*np.ones(nnode-1)
+        Iy = 1.0*np.ones(nnode-1)
+        Iz = 0.5*np.ones(nnode-1)
+        E = 1e5*np.ones(nnode-1)
+        G = 1e4*np.ones(nnode-1)
+        roll = np.zeros(nnode-1)
+        density = 0.25*np.ones(nnode-1)
+        elements = ElementData(EL, N1, N2, Ax, Asy, Asz, Jx, Iy, Iz, E, G, roll, density)
+        mymass = np.sum(density*Ax*np.diff(z))
+        
+        # parameters
+        shear = False               # 1: include shear deformation
+        geom = False                # 1: include geometric stiffness
+        dx = 1.0               # x-axis increment for internal forces
+        options = Options(shear, geom, dx)
+
+        frame = Frame(nodes, reactions, elements, options)
+
+        N = np.array([nnode])
+        EMs = np.array([1e3])
+        EMxx = EMyy = EMzz = EMxy = EMxz = EMyz = np.array([0.0])
+        rhox = rhoy = rhoz = np.array([0.0])
+        addGravityLoad = True
+        frame.changeExtraNodeMass(N, EMs, EMxx, EMyy, EMzz, EMxy, EMxz, EMyz, rhox, rhoy, rhoz, addGravityLoad)
+        
+        # dynamics
+        nM = 1               # number of desired dynamic modes of vibration
+        Mmethod = 1                               # 1: subspace Jacobi     2: Stodola
+        lump = 0               # 0: consistent mass ... 1: lumped mass matrix
+        tol = 1e-9                # mode shape tolerance
+        shift = 0.0             # shift value ... for unrestrained structures
+        frame.enableDynamics(nM, Mmethod, lump, tol, shift)
+        
+        # Load case 1: Added mass with    gravity field and NO point loading
+        # Load case 2: Added mass with NO gravity field and    point loading
+        # Load case 3: Added mass with    gravity field and    point loading
+        gx = gy = 0.0
+        gz = -10.0
+        load1 = StaticLoadCase(gx, gy, gz)
+        load2 = StaticLoadCase(gx, gy, 0.0)
+        load3 = StaticLoadCase(gx, gy, gz)
+
+        nF = np.array([nnode])
+        Fx = Fy = Mxx = Myy = Mzz = np.array([0.0])
+        Fz = np.array([gz*(mymass+EMs)])
+        load2.changePointLoads(nF, Fx, Fy, Fz, Mxx, Myy, Mzz)
+        load3.changePointLoads(nF, Fx, Fy, Fz, Mxx, Myy, Mzz)
+        
+        frame.addLoadCase(load1)
+        frame.addLoadCase(load2)
+        frame.addLoadCase(load3)
+        
+        displacements, forces, reactions, internalForces, mass, modal = frame.run()
+
+        # Check that the mass was added
+        self.assertEqual(mass.struct_mass, mymass )
+        self.assertEqual(mass.total_mass, mymass + EMs)
+
+        # Check that the load cases are equivalent
+        self.assertEqual(reactions.Fz[0,0], reactions.Fz[1,0])
+        self.assertAlmostEqual(2*reactions.Fz[0,0], reactions.Fz[2,0])
+
 
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(FrameTestEXA))
     suite.addTest(unittest.makeSuite(FrameTestEXB))
+    suite.addTest(unittest.makeSuite(GravityAdd))
     return suite
 
 if __name__ == '__main__':

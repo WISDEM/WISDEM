@@ -442,7 +442,7 @@ class TowerSoil(ExplicitComponent):
 
         J['k', 'd0'] = 0.5*dk_dr0
         J['k', 'depth'] = dk_dh
-        ind = np.nonzero(inputs['k_user'] >= 0.0)[0]
+        ind = np.nonzero(inputs['k_usr'] >= 0.0)[0]
         J['k', 'd0'][ind] = 0.0
         J['k', 'depth'][ind] = 0.0
         

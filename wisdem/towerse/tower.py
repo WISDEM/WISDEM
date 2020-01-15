@@ -36,6 +36,10 @@ from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMa
 import wisdem.commonse.UtilizationSupplement as Util
 
 
+def find_nearest(array,value):
+    return (np.abs(array-value)).argmin() 
+
+
 # -----------------
 #  Components
 # -----------------
@@ -70,6 +74,7 @@ class TowerMass(ExplicitComponent):
         self.add_input('cylinder_center_of_mass', val=0.0, units='m', desc='z-position of center of mass of cylinder')
         self.add_input('cylinder_section_center_of_mass', val=np.zeros(nPoints-1), units='m', desc='z position of center of mass of each can in the cylinder')
         self.add_input('cylinder_I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of cylinder about base [xx yy zz xy xz yz]')
+        self.add_input('transition_piece_mass', 0.0, units='kg', desc='point mass of transition piece')
         
         self.add_output('tower_raw_cost', val=0.0, units='USD', desc='Total tower cost')
         self.add_output('tower_mass', val=0.0, units='kg', desc='Total tower mass')
@@ -80,8 +85,8 @@ class TowerMass(ExplicitComponent):
         self.declare_partials('*', '*')
         
     def compute(self, inputs, outputs):
-        outputs['tower_raw_cost']           = inputs['cylinder_cost']
-        outputs['tower_mass']           = inputs['cylinder_mass'].sum()
+        outputs['tower_raw_cost']       = inputs['cylinder_cost']
+        outputs['tower_mass']           = inputs['cylinder_mass'].sum() + inputs['transition_piece_mass']
         outputs['tower_center_of_mass'] = inputs['cylinder_center_of_mass']
         outputs['tower_section_center_of_mass'] = inputs['cylinder_section_center_of_mass']
         outputs['tower_I_base']         = inputs['cylinder_I_base']
@@ -96,30 +101,35 @@ class TowerMass(ExplicitComponent):
         J['tower_mass','cylinder_center_of_mass'] = 0.0
         J['tower_mass','cylinder_section_center_of_mass'] = zeroPts
         J['tower_mass','cylinder_I_base'] = zero6
+        J['tower_mass','transition_piece_mass'] = 1.0
 
         J['tower_raw_cost','cylinder_mass'] = np.zeros(len(inputs['cylinder_mass']))
         J['tower_raw_cost','cylinder_cost'] = 1.0
         J['tower_raw_cost','cylinder_center_of_mass'] = 0.0
         J['tower_raw_cost','cylinder_section_center_of_mass'] = zeroPts
         J['tower_raw_cost','cylinder_I_base'] = zero6
+        J['tower_raw_cost','transition_piece_mass'] = 0.0
 
         J['tower_center_of_mass','cylinder_mass'] = 0.0
         J['tower_center_of_mass','cylinder_cost'] = 0.0
         J['tower_center_of_mass','cylinder_center_of_mass'] = 1.0
         J['tower_center_of_mass','cylinder_section_center_of_mass'] = zeroPts
         J['tower_center_of_mass','cylinder_I_base'] = zero6
+        J['tower_center_of_mass','transition_piece_mass'] = 0.0
 
         J['tower_section_center_of_mass','cylinder_mass'] = 0.0
         J['tower_section_center_of_mass','cylinder_cost'] = 0.0
         J['tower_section_center_of_mass','cylinder_center_of_mass'] = 0.0
         J['tower_section_center_of_mass','cylinder_section_center_of_mass'] = np.eye(npts)
         J['tower_section_center_of_mass','cylinder_I_base'] = np.zeros((npts,6))
+        J['tower_section_center_of_mass','transition_piece_mass'] = 0.0
 
         J['tower_I_base','cylinder_mass'] = 1.0
         J['tower_I_base','cylinder_cost'] = 0.0
         J['tower_I_base','cylinder_center_of_mass'] = 0.0
         J['tower_I_base','cylinder_section_center_of_mass'] = np.zeros((6,npts))
         J['tower_I_base','cylinder_I_base'] = np.eye(len(inputs['cylinder_I_base']))
+        J['tower_I_base','transition_piece_mass'] = 0.0
         
         
         
@@ -168,12 +178,15 @@ class TowerPreFrame(ExplicitComponent):
         nFull = self.options['nFull']
         
         self.add_input('z', np.zeros(nFull), units='m', desc='location along tower. start at bottom and go to top')
+        self.add_input('d', np.zeros(nFull), units='m', desc='diameter along tower')
 
         # extra mass
         self.add_input('mass', 0.0, units='kg', desc='added mass')
         self.add_input('mI', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia about some point p [xx yy zz xy xz yz]')
         self.add_input('mrho', np.zeros((3,)), units='m', desc='xyz-location of p relative to node')
-
+        self.add_input('transition_piece_mass', 0.0, units='kg', desc='point mass of transition piece')
+        self.add_input('transition_piece_height', 0.0, units='m', desc='point mass height of transition piece')
+        
         # point loads
         self.add_input('rna_F', np.zeros((3,)), units='N', desc='rna force')
         self.add_input('rna_M', np.zeros((3,)), units='N*m', desc='rna moment')
@@ -193,7 +206,7 @@ class TowerPreFrame(ExplicitComponent):
         self.add_output('ktz', np.zeros(nK), units='m', desc='spring stiffness in theta_z-rotation')
         
         # extra mass
-        nMass = 1
+        nMass = 2
         self.add_output('midx', np.zeros(nMass), desc='indices where added mass should be applied.')
         self.add_output('m', np.zeros(nMass), units='kg', desc='added mass')
         self.add_output('mIxx', np.zeros(nMass), units='kg*m**2', desc='x mass moment of inertia about some point p')
@@ -247,18 +260,22 @@ class TowerPreFrame(ExplicitComponent):
             outputs['kty']  = np.array([ 1.e16 ])
             outputs['ktz']  = np.array([ 1.e16 ])
             
-        # Prepare RNA for "extra node mass"
-        outputs['midx']  = np.array([ len(inputs['z'])-1 ], dtype=np.int_)
-        outputs['m']     = np.array([ inputs['mass'] ]).flatten()
-        outputs['mIxx']  = np.array([ inputs['mI'][0] ]).flatten()
-        outputs['mIyy']  = np.array([ inputs['mI'][1] ]).flatten()
-        outputs['mIzz']  = np.array([ inputs['mI'][2] ]).flatten()
-        outputs['mIxy']  = np.array([ inputs['mI'][3] ]).flatten()
-        outputs['mIxz']  = np.array([ inputs['mI'][4] ]).flatten()
-        outputs['mIyz']  = np.array([ inputs['mI'][5] ]).flatten()
-        outputs['mrhox'] = np.array([ inputs['mrho'][0] ]).flatten()
-        outputs['mrhoy'] = np.array([ inputs['mrho'][1] ]).flatten()
-        outputs['mrhoz'] = np.array([ inputs['mrho'][2] ]).flatten()
+        # Prepare RNA and transition piece (if applicable) for "extra node mass"
+        itrans = find_nearest(inputs['z'], inputs['transition_piece_height'])
+        rtrans = 0.5*inputs['d'][itrans]
+        mtrans = inputs['transition_piece_mass']
+        Itrans = mtrans*rtrans**2. * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
+        outputs['midx']  = np.array([ len(inputs['z'])-1, itrans ], dtype=np.int_)
+        outputs['m']     = np.array([ inputs['mass'],  mtrans ]).flatten()
+        outputs['mIxx']  = np.array([ inputs['mI'][0], Itrans[0] ]).flatten()
+        outputs['mIyy']  = np.array([ inputs['mI'][1], Itrans[1] ]).flatten()
+        outputs['mIzz']  = np.array([ inputs['mI'][2], Itrans[2] ]).flatten()
+        outputs['mIxy']  = np.array([ inputs['mI'][3], Itrans[3] ]).flatten()
+        outputs['mIxz']  = np.array([ inputs['mI'][4], Itrans[4] ]).flatten()
+        outputs['mIyz']  = np.array([ inputs['mI'][5], Itrans[5] ]).flatten()
+        outputs['mrhox'] = np.array([ inputs['mrho'][0], 0.0 ]).flatten()
+        outputs['mrhoy'] = np.array([ inputs['mrho'][1], 0.0 ]).flatten()
+        outputs['mrhoz'] = np.array([ inputs['mrho'][2], 0.0 ]).flatten()
 
         # Prepare point forces at RNA node
         outputs['plidx'] = np.array([ len(inputs['z'])-1 ], dtype=np.int_)
@@ -410,6 +427,8 @@ class TowerLeanSE(Group):
         towerIndeps.add_output('tower_wall_thickness', np.zeros(nPoints-1), units='m')
         towerIndeps.add_output('tower_buckling_length', 0.0, units='m')
         towerIndeps.add_output('tower_outfitting_factor', 0.0)
+        towerIndeps.add_output('transition_piece_mass', 0.0, units='kg')
+        towerIndeps.add_output('transition_piece_height', 0.0, units='m')
         self.add_subsystem('towerIndepsLean', towerIndeps, promotes=['*'])
 
         # Independent variables that may be duplicated at higher levels of aggregation
@@ -425,8 +444,9 @@ class TowerLeanSE(Group):
         
         self.add_subsystem('cm', CylinderMass(nPoints=nFull), promotes=['material_density','z_full','d_full','t_full',
                                                       'material_cost_rate','labor_cost_rate','painting_cost_rate'])
-        self.add_subsystem('tm', TowerMass(nPoints=nFull), promotes=['tower_mass','tower_center_of_mass','tower_I_base','tower_raw_cost'])
-        self.add_subsystem('gc', Util.GeometricConstraints(nPoints=nPoints), promotes=['min_d_to_t','max_taper','manufacturability','weldability'])
+        self.add_subsystem('tm', TowerMass(nPoints=nFull), promotes=['tower_mass','tower_center_of_mass','tower_I_base',
+                                                                     'tower_raw_cost','transition_piece_mass'])
+        self.add_subsystem('gc', Util.GeometricConstraints(nPoints=nPoints), promotes=['min_d_to_t','max_taper','manufacturability','weldability','slope'])
         self.add_subsystem('turb', TurbineMass(), promotes=['turbine_mass','rna_mass', 'rna_cg', 'rna_I','hub_height'])
         
         # Connections for geometry and mass
@@ -475,9 +495,9 @@ class TowerSE(Group):
         towerIndeps.add_output('soil_G', 0.0, units='N/m**2')
         towerIndeps.add_output('soil_nu', 0.0)
         towerIndeps.add_discrete_output('monopile', False)
-        towerIndeps.add_discrete_output('tower_add_gravity', True)
+        towerIndeps.add_discrete_output('tower_add_gravity', topLevelFlag)
         towerIndeps.add_discrete_output('shear', True)
-        towerIndeps.add_discrete_output('geom', False)
+        towerIndeps.add_discrete_output('geom', True)
         towerIndeps.add_discrete_output('nM', 2)
         towerIndeps.add_discrete_output('Mmethod', 1)
         towerIndeps.add_discrete_output('lump', 0)
@@ -550,14 +570,14 @@ class TowerSE(Group):
 
             self.add_subsystem('distLoads'+lc, AeroHydroLoads(nPoints=nFull), promotes=['yaw'])
 
-            self.add_subsystem('pre'+lc, TowerPreFrame(nFull=nFull), promotes=['monopile'])
-            self.add_subsystem('tower'+lc, CylinderFrame3DD(npts=nFull, nK=1, nMass=1, nPL=1), promotes=['E','G','tol','Mmethod','geom','lump','shear',
+            self.add_subsystem('pre'+lc, TowerPreFrame(nFull=nFull), promotes=['monopile','transition_piece_mass','transition_piece_height'])
+            self.add_subsystem('tower'+lc, CylinderFrame3DD(npts=nFull, nK=1, nMass=2, nPL=1), promotes=['E','G','tol','Mmethod','geom','lump','shear',
                                                                              'nM','shift','sigma_y'])
             self.add_subsystem('post'+lc, TowerPostFrame(nFull=nFull), promotes=['E','sigma_y','DC','life','m_SN',
                                                                                  'gamma_b','gamma_f','gamma_fatigue','gamma_m','gamma_n'])
             
             self.connect('z_full', ['wind'+lc+'.z', 'windLoads'+lc+'.z', 'distLoads'+lc+'.z', 'pre'+lc+'.z', 'tower'+lc+'.z', 'post'+lc+'.z'])
-            self.connect('d_full', ['windLoads'+lc+'.d', 'tower'+lc+'.d', 'post'+lc+'.d'])
+            self.connect('d_full', ['windLoads'+lc+'.d', 'tower'+lc+'.d', 'pre'+lc+'.d', 'post'+lc+'.d'])
             if self.monopile:
                 self.connect('z_full', ['wave'+lc+'.z', 'waveLoads'+lc+'.z'])
                 self.connect('d_full', 'waveLoads'+lc+'.d')
@@ -845,7 +865,7 @@ if __name__ == '__main__':
 
     prob['DC'] = 80.0
     prob['shear'] = True
-    prob['geom'] = False
+    prob['geom'] = True
     prob['tower_force_discretization'] = 5.0
     prob['nM'] = 2
     prob['Mmethod'] = 1

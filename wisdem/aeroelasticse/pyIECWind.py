@@ -12,18 +12,18 @@ class pyIECWind_extreme():
 
     def __init__(self):
 
-        self.Turbine_Class = 'I'     # IEC Wind Turbine Class
-        self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.Vert_Slope = 0          # Vertical slope of the wind inflow (deg)
-        self.Tstart = 30             # Time to start transient conditions (s)
-        self.dt = 0.05               # Transient wind time step (s)
-        self.dir_change = 'both'     # '+','-','both': sign for transient events in EDC, EWS
-        self.shear_orient = 'both'   # 'v','h','both': vertical or horizontal shear for EWS
-        self.z_hub = 90.             # wind turbine hub height (m)
-        self.D = 126.                # rotor diameter (m)
+        self.Turbine_Class    = 'I'    # IEC Wind Turbine Class
+        self.Turbulence_Class = 'B'    # IEC Turbulance Class
+        self.Vert_Slope       = 0      # Vertical slope of the wind inflow (deg)
+        self.TStart           = 30     # Time to start transient conditions (s)
+        self.dt               = 0.05   # Transient wind time step (s)
+        self.dir_change       = 'both' # '+','-','both': sign for transient events in EDC, EWS
+        self.shear_orient     = 'both' # 'v','h','both': vertical or horizontal shear for EWS
+        self.z_hub            = 90.    # wind turbine hub height (m)
+        self.D                = 126.   # rotor diameter (m)
         
-        self.T0 = 0.
-        self.TF = 630.
+        self.T0               = 0.
+        self.TF               = 630.
 
     def setup(self):
         # General turbulence parameters: 6.3
@@ -301,9 +301,10 @@ class pyIECWind_extreme():
         # Transcient
         shear_lin_p = np.zeros_like(t)
         shear_lin_n = np.zeros_like(t)
+
         for i, ti in enumerate(t):
-            shear_lin_p[i] = (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))
-            shear_lin_n[i] = -1*(2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))
+            shear_lin_p[i] = (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
+            shear_lin_n[i] = -1*(2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
 
         # Write Files
         self.fname_out = []
@@ -380,7 +381,7 @@ class pyIECWind_extreme():
             os.makedirs(self.outdir)
 
         # Move transcient event to user definted time
-        data[:,0] += self.Tstart
+        data[:,0] += self.TStart
         data = np.vstack((data[0,:], data, data[-1,:]))
         data[0,0] = self.T0
         data[-1,0] = self.TF
@@ -424,14 +425,14 @@ class pyIECWind_turb():
     def __init__(self):
 
         # Defaults
-        self.seed = np.random.uniform(1, 1e8)
+        self.seed             = np.random.uniform(1, 1e8)
         self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.z_hub = 90.             # wind turbine hub height (m)
-        self.D = 126.                # rotor diameter (m)
-        self.PLExp = 0.2
-        self.AnalysisTime = 630.
-        self.debug_level = 0
-        self.overwrite = True
+        self.z_hub            = 90.  # wind turbine hub height (m)
+        self.D                = 126. # rotor diameter (m)
+        self.PLExp            = 0.2
+        self.AnalysisTime     = 720.
+        self.debug_level      = 0
+        self.overwrite        = True
 
     def setup(self):
         turbsim_vt = turbsiminputs()
@@ -525,7 +526,7 @@ def example_ExtremeWind():
     iec.outdir = 'temp'
 
     V_hub = 25
-    iec.execute('EOG', V_hub)
+    iec.execute('EWS', V_hub)
 
 def example_TurbulentWind():
     iec = pyIECWind_turb()
@@ -548,5 +549,5 @@ def example_TurbulentWind():
 
 if __name__=="__main__":
 
-    # example_ExtremeWind()
-    example_TurbulentWind()
+    example_ExtremeWind()
+    # example_TurbulentWind()
