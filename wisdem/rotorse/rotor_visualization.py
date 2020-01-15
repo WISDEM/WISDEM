@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import numpy as np
 from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d
-from rotorse.rotor_geometry_yaml import remap2grid, remapAirfoil, arc_length, rotate, ReferenceBlade
+from wisdem.rotorse.rotor_geometry_yaml import remap2grid, remapAirfoil, arc_length, rotate, ReferenceBlade
 
 def plot_spanwise_vars(blade, path, show_plots = True):
     
@@ -140,12 +140,12 @@ def arc2xy_section(arc, x, y, start_nd_arc, end_nd_arc, LE_idx, Naf, Nsec):
     idx_half_end   = find_half(end_nd_arc, arc, LE_idx, Naf)
 
     # No LE or Te crossing of composite section
-    if idx_half_start == idx_half_end:
-        section_x = remap2grid(arc[idx_half_start], x[idx_half_start], np.linspace(start_nd_arc, end_nd_arc, num = Nsec))#, spline=interp1d)
-        section_y = remap2grid(x[idx_half_start], y[idx_half_start], section_x)#, spline=interp1d)
+    # if idx_half_start == idx_half_end:
+    section_x = remap2grid(arc[idx_half_start], x[idx_half_start], np.linspace(start_nd_arc, end_nd_arc, num = Nsec))#, spline=interp1d)
+    section_y = remap2grid(x[idx_half_start], y[idx_half_start], section_x)#, spline=interp1d)
 
-    else:
-        print('LE / TE not yet implimented')
+    # else:
+        # print('LE / TE not yet implimented')
 
     return section_x, section_y
 
@@ -169,7 +169,10 @@ def plot_lofted(blade, layer_vars, path, show_plots = True):
     NPTS = len(blade['pf']['s'])
     Naf  = len(blade['profile'][:,0,0])
     Nsec = 30
+    
 
+    
+    
     # Get Profile Coordinates, xy and arc
     out = {}
     out['profile']           = {}
@@ -180,14 +183,13 @@ def plot_lofted(blade, layer_vars, path, show_plots = True):
         profile_i = out['profile']['xy'][:,:,i]
         # if profile_i[0,1] != profile_i[-1,1]:
         #     profile_i = np.row_stack((profile_i, profile_i[0,:])) 
-        arc = arc_length(profile_i[:,0], profile_i[:,1], high_fidelity=True)
+        arc = arc_length(profile_i[:,0], profile_i[:,1])
         out['profile']['arc'].append(arc/arc[-1])
 
     # For each layer, get surface locations
     for var in layer_vars:
         type_sec = 'layers'
         idx_sec  = [i for i, sec in enumerate(blade['st'][type_sec]) if sec['name'].lower()==var.lower()][0]
-
         out[var] = {}
         out[var]['start_nd_arc'] = np.array(blade['st'][type_sec][idx_sec]['start_nd_arc']['values'])
         out[var]['end_nd_arc']   = np.array(blade['st'][type_sec][idx_sec]['end_nd_arc']['values'])
@@ -206,6 +208,8 @@ def plot_lofted(blade, layer_vars, path, show_plots = True):
     # Loop through plot elements, span; translate
     plt_vars = ['profile']
     plt_vars.extend(layer_vars)
+    
+    
     for i in range(NPTS):
         for j, var in enumerate(plt_vars):
             # print(var,i)
@@ -217,35 +221,36 @@ def plot_lofted(blade, layer_vars, path, show_plots = True):
             out[var]['xy'][:,:,i] = out[var]['xy'][:,:,i] * blade['pf']['chord'][i]
 
             # rotate
-            out[var]['xy'][:,:,i] = np.column_stack(rotate(0., 0., out[var]['xy'][:,0,i], out[var]['xy'][:,1,i], np.radians(-1.*blade['pf']['theta'][i])))
+            out[var]['xy'][:,:,i] = np.column_stack(rotate(0., 0., out[var]['xy'][:,0,i], out[var]['xy'][:,1,i], np.radians(blade['pf']['theta'][i])))
 
             # prebend translation
             out[var]['xy'][:,1,i] = out[var]['xy'][:,1,i] - blade['pf']['precurve'][i]
 
             # sweep translation
             out[var]['xy'][:,0,i] = out[var]['xy'][:,0,i] - blade['pf']['presweep'][i]
+            
 
-
-
+        
         
 
     # Plotting
 
     ######### 2D
-    # color    = ['k','b', 'r']
-    # for i in range(NPTS):
-    #     for j, var in enumerate(plt_vars):
-    #         if var == 'profile':
-    #             profile_i = out['profile']['xy'][:,:,i]
-    #             if profile_i[0,1] != profile_i[-1,1]:
-    #                 profile_i = np.row_stack((profile_i, profile_i[0,:]))
-    #             plt.plot(profile_i[:,0], profile_i[:,1], color=color[j])
-    #         else:
-    #             plt.plot(out[var]['xy'][:,0,i], out[var]['xy'][:,1,i], color=color[j])
-    #             plt.plot([out[var]['xy'][0,0,i],out[var]['xy'][-1,0,i]], [out[var]['xy'][0,1,i],out[var]['xy'][-1,1,i]], '.', color=color[j])
-
-    # plt.axis('equal')
-    # plt.show()
+    color    = ['k','b', 'r']
+    for i in range(NPTS):
+        for j, var in enumerate(plt_vars):
+            if var == 'profile':
+                profile_i = out['profile']['xy'][:,:,i]
+                if profile_i[0,1] != profile_i[-1,1]:
+                    profile_i = np.row_stack((profile_i, profile_i[0,:]))
+                plt.plot(profile_i[:,0], profile_i[:,1], color=color[j])
+            else:
+                # # if blade['st'][type_sec][20]['thickness']['values'][i] != None and blade['st'][type_sec][21]['thickness']['values'][i] != None:
+                plt.plot(out[var]['xy'][:,0,i], out[var]['xy'][:,1,i], color=color[j])
+                plt.plot([out[var]['xy'][0,0,i],out[var]['xy'][-1,0,i]], [out[var]['xy'][0,1,i],out[var]['xy'][-1,1,i]], '.', color=color[j])
+    plt.show()
+    plt.axis('equal')
+        
 
 
     ######### 3D
@@ -265,9 +270,9 @@ def plot_lofted(blade, layer_vars, path, show_plots = True):
                 Z = profile_i[:,1]
                 X = [blade['pf']['r'][i]]*len(profile_i[:,0])
                 ax.plot(X, Y, zs=Z, color=color[j])
-            # else:
-            #     plt.plot(out[var]['xy'][:,0,i], out[var]['xy'][:,1,i], color=color[j])
-            #     plt.plot([out[var]['xy'][0,0,i],out[var]['xy'][-1,0,i]], [out[var]['xy'][0,1,i],out[var]['xy'][-1,1,i]], '.', color=color[j])
+            else:
+                plt.plot(out[var]['xy'][:,0,i], out[var]['xy'][:,1,i], color=color[j])
+                plt.plot([out[var]['xy'][0,0,i],out[var]['xy'][-1,0,i]], [out[var]['xy'][0,1,i],out[var]['xy'][-1,1,i]], '.', color=color[j])
 
 
 

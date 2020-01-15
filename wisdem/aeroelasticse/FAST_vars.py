@@ -117,9 +117,9 @@ ElastoDyn['PtfmYaw']          = 0.0
 ElastoDyn['NumBl']           = 0             
 ElastoDyn['TipRad']          = 0.0           
 ElastoDyn['HubRad']          = 0.0           
-ElastoDyn['PreCone1']        = 0.0           
-ElastoDyn['PreCone2']        = 0.0           
-ElastoDyn['PreCone3']        = 0.0           
+ElastoDyn['PreCone(1)']        = 0.0           
+ElastoDyn['PreCone(2)']        = 0.0           
+ElastoDyn['PreCone(3)']        = 0.0           
 ElastoDyn['HubCM']           = 0.0           
 ElastoDyn['UndSling']        = 0.0           
 ElastoDyn['Delta3']          = 0.0           
@@ -142,9 +142,9 @@ ElastoDyn['PtfmCMzt']        = 0.0
 ElastoDyn['PtfmRefzt']       = 0.0           
 
 # Mass and Inertia
-ElastoDyn['TipMass1']       = 0.0           
-ElastoDyn['TipMass2']       = 0.0           
-ElastoDyn['TipMass2']       = 0.0           
+ElastoDyn['TipMass(1)']       = 0.0           
+ElastoDyn['TipMass(2)']       = 0.0           
+ElastoDyn['TipMass(3)']       = 0.0           
 ElastoDyn['HubMass']        = 0.0           
 ElastoDyn['HubIner']        = 0.0           
 ElastoDyn['GenIner']        = 0.0           
@@ -618,6 +618,97 @@ ServoDyn['TabDelim']         = False
 ServoDyn['OutFmt']           = ''            
 ServoDyn['TStart']           = 0.0           
 
+# Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
+DISCON_in = {}
+DISCON_in['LoggingLevel']      = 0
+DISCON_in['F_LPFType']         = 0
+DISCON_in['F_NotchType']       = 0
+DISCON_in['IPC_ControlMode']   = 0
+DISCON_in['VS_ControlMode']    = 0
+DISCON_in['PC_ControlMode']    = 0
+DISCON_in['Y_ControlMode']     = 0
+DISCON_in['SS_Mode']           = 0
+DISCON_in['WE_Mode']           = 0
+DISCON_in['PS_Mode']           = 0
+
+DISCON_in['F_LPFCornerFreq']   = 0.0
+DISCON_in['F_LPFDamping']      = 0.0
+DISCON_in['F_NotchCornerFreq'] = 0.0
+DISCON_in['F_NotchBetaNumDen'] = []
+DISCON_in['F_SSCornerFreq']    = 0.0
+
+DISCON_in['PC_GS_n']           = 0
+DISCON_in['PC_GS_angles']      = []
+DISCON_in['PC_GS_KP']          = []
+DISCON_in['PC_GS_KI']          = []
+DISCON_in['PC_GS_KD']          = []
+DISCON_in['PC_GS_TF']          = []
+DISCON_in['PC_MaxPit']         = 0.0
+DISCON_in['PC_MinPit']         = 0.0
+DISCON_in['PC_MaxRat']         = 0.0
+DISCON_in['PC_MinRat']         = 0.0
+DISCON_in['PC_RefSpd']         = 0.0
+DISCON_in['PC_FinePit']        = 0.0
+DISCON_in['PC_Switch']         = 0.0
+DISCON_in['Z_EnableSine']      = 0
+DISCON_in['Z_PitchAmplitude']  = 0.0
+DISCON_in['Z_PitchFrequency']  = 0.0
+
+DISCON_in['IPC_IntSat']        = 0.0
+DISCON_in['IPC_KI']            = []
+DISCON_in['IPC_aziOffset']     = []
+DISCON_in['IPC_CornerFreqAct'] = 0.0
+
+DISCON_in['VS_GenEff']         = 0.0
+DISCON_in['VS_ArSatTq']        = 0.0
+DISCON_in['VS_MaxRat']         = 0.0
+DISCON_in['VS_MaxTq']          = 0.0
+DISCON_in['VS_MinTq']          = 0.0
+DISCON_in['VS_MinOMSpd']       = 0.0
+DISCON_in['VS_Rgn2K']          = 0.0
+DISCON_in['VS_RtPwr']          = 0.0
+DISCON_in['VS_RtTq']           = 0.0
+DISCON_in['VS_RefSpd']         = 0.0
+DISCON_in['VS_n']              = 0
+DISCON_in['VS_KP']             = 0.0
+DISCON_in['VS_KI']             = 0.0
+DISCON_in['VS_TSRopt']         = 0.0
+
+DISCON_in['SS_VSGain']         = 0.0
+DISCON_in['SS_PCGain']         = 0.0
+
+DISCON_in['WE_BladeRadius']    = 0.0
+DISCON_in['WE_CP_n']           = 0
+DISCON_in['WE_CP']             = []
+DISCON_in['WE_Gamma']          = 0.0
+DISCON_in['WE_GearboxRatio']   = 0.0
+DISCON_in['WE_Jtot']           = 0.0
+DISCON_in['WE_RhoAir']         = 0.0
+DISCON_in['PerfFileName']      = ""
+DISCON_in['PerfTableSize']     = []
+DISCON_in['WE_FOPoles_N']      = 0
+DISCON_in['WE_FOPoles_v']      = []
+DISCON_in['WE_FOPoles']        = []
+
+DISCON_in['Y_ErrThresh']       = 0.0
+DISCON_in['Y_IPC_IntSat']      = 0.0
+DISCON_in['Y_IPC_n']           = 0
+DISCON_in['Y_IPC_KP']          = 0.0
+DISCON_in['Y_IPC_KI']          = 0.0
+DISCON_in['Y_IPC_omegaLP']     = 0.0
+DISCON_in['Y_IPC_zetaLP']      = 0.0
+DISCON_in['Y_MErrSet']         = 0.0
+DISCON_in['Y_omegaLPFast']     = 0.0
+DISCON_in['Y_omegaLPSlow']     = 0.0
+DISCON_in['Y_Rate']            = 0.0
+
+DISCON_in['FA_KI']             = 0.0
+DISCON_in['FA_HPF_CornerFreq'] = 0.0
+DISCON_in['FA_IntSat']         = 0.0
+DISCON_in['PS_BldPitchMin_N']  = 0
+DISCON_in['PS_WindSpeeds']     = []
+DISCON_in['PS_BldPitchMin']    = []
+
 # HydroDyn Input File
 HydroDyn = {}
 HydroDyn['Echo']             = False
@@ -812,6 +903,106 @@ HydroDyn['OutSwtch']         = 2
 HydroDyn['OutFmt']           = ""
 HydroDyn['OutSFmt']          = ""
 
+## SubDyn Input File
+SubDyn = {}
+# SIMULATION CONTROL
+SubDyn['Echo']         = False
+SubDyn['SDdeltaT']     = 0.
+SubDyn['IntMethod']    = 0
+SubDyn['SttcSolve']    = False
+# FEA and CRAIG-BAMPTON PARAMETERS
+SubDyn['FEMMod']       = 0
+SubDyn['NDiv']         = 0
+SubDyn['CBMod']        = False
+SubDyn['Nmodes']       = 0
+SubDyn['JDampings']    = 0
+# STRUCTURE JOINTS
+SubDyn['NJoints']      = 0
+SubDyn['JointID']      = [0]
+SubDyn['JointXss']     = [0.]
+SubDyn['JointYss']     = [0.]
+SubDyn['JointZss']     = [0.]
+# BASE REACTION JOINTS
+SubDyn['NReact']       = 0
+SubDyn['RJointID']     = [0]
+SubDyn['RctTDXss']     = [0]
+SubDyn['RctTDYss']     = [0]
+SubDyn['RctTDZss']     = [0]
+SubDyn['RctRDXss']     = [0]
+SubDyn['RctRDYss']     = [0]
+SubDyn['RctRDZss']     = [0]
+SubDyn['Rct_SoilFile'] = [""]
+# INTERFACE JOINTS
+SubDyn['NInterf']      = 0
+SubDyn['IJointID']     = [0]
+SubDyn['ItfTDXss']     = [0]
+SubDyn['ItfTDYss']     = [0]
+SubDyn['ItfTDZss']     = [0]
+SubDyn['ItfRDXss']     = [0]
+SubDyn['ItfRDYss']     = [0]
+SubDyn['ItfRDZss']     = [0]
+# MEMBERS
+SubDyn['NMembers']     = 0
+SubDyn['MemberID']     = [0]
+SubDyn['MJointID1']    = [0]
+SubDyn['MJointID2']    = [0]
+SubDyn['MPropSetID1']  = [0]
+SubDyn['MPropSetID2']  = [0]
+SubDyn['COSMID']       = [0]
+# MEMBER X-SECTION PROPERTY data 1/2
+SubDyn['NPropSets']    = 0
+SubDyn['PropSetID']    = [0.]
+SubDyn['YoungE']       = [0.]
+SubDyn['ShearG']       = [0.]
+SubDyn['MatDens']      = [0.]
+SubDyn['XsecD']        = [0.]
+SubDyn['XsecT']        = [0.]
+# MEMBER X-SECTION PROPERTY data 2/2
+SubDyn['NXPropSets']   = 0
+SubDyn['PropSetID']    = [0]
+SubDyn['YoungE']       = [0.]
+SubDyn['ShearG']       = [0.]
+SubDyn['MatDens']      = [0.]
+SubDyn['XsecA']        = [0.]
+SubDyn['XsecAsx']      = [0.]
+SubDyn['XsecAsy']      = [0.]
+SubDyn['XsecJxx']      = [0.]
+SubDyn['XsecJyy']      = [0.]
+SubDyn['XsecJ0']       = [0.]
+# MEMBER COSINE MATRICES
+SubDyn['NCOSMs']       = 0
+SubDyn['COSMID']       = 0
+SubDyn['COSM11']       = 0.
+SubDyn['COSM12']       = 0.
+SubDyn['COSM13']       = 0.
+SubDyn['COSM21']       = 0.
+SubDyn['COSM22']       = 0.
+SubDyn['COSM23']       = 0.
+SubDyn['COSM31']       = 0.
+SubDyn['COSM32']       = 0.
+SubDyn['COSM33']       = 0.
+# JOINT ADDITIONAL CONCENTRATED MASSES
+SubDyn['NCmass']       = 0
+SubDyn['CMJointID']    = 0
+SubDyn['JMass']        = 0.
+SubDyn['JMXX']         = 0.
+SubDyn['JMYY']         = 0.
+SubDyn['JMZZ']         = 0.
+# OUTPUT
+SubDyn['SSSum']        = False
+SubDyn['OutCOSM']      = False
+SubDyn['OutAll']       = False
+SubDyn['OutSwtch']     = 0
+SubDyn['TabDelim']     = False
+SubDyn['OutDec']       = 0
+SubDyn['OutFmt']       = ""
+SubDyn['OutSFmt']      = ""
+# MEMBER OUTPUT LIST
+SubDyn['NMOutputs']    = 0
+SubDyn['MemberID']     = 0
+SubDyn['NOutCnt']      = 0
+SubDyn['NodeCnt']      = 0
+
 ## MAP++ Input File
 # LINE DICTIONARY
 MAP = {}
@@ -847,6 +1038,57 @@ MAP['Flags']                 = []
 
 # SOLVER OPTIONS
 MAP['Option']                = []
+
+# BeamDyn Input File
+# SIMULATION CONTROL
+BeamDyn = {}
+BeamDyn['Echo']             = False
+BeamDyn['QuasiStaticInit']  = True
+BeamDyn['rhoinf']           = 0
+BeamDyn['quadrature']       = 2
+BeamDyn['refine']           = "DEFAULT"
+BeamDyn['n_fact']           = "DEFAULT"
+BeamDyn['DTBeam']           = "DEFAULT"
+BeamDyn['load_retries']     = "DEFAULT"
+BeamDyn['NRMax']            = "DEFAULT"
+BeamDyn['stop_tol']         = "DEFAULT"
+BeamDyn['tngt_stf_fd']      = "DEFAULT"
+BeamDyn['tngt_stf_comp']    = "DEFAULT"
+BeamDyn['tngt_stf_pert']    = "DEFAULT"
+BeamDyn['tngt_stf_difftol'] = "DEFAULT"
+BeamDyn['RotStates']        = True
+# GEOMETRY PARAMETER
+BeamDyn['member_total']     = 1
+BeamDyn['kp_total']         = 3
+BeamDyn['members']          = [{'kp_xr':[], 'kp_yr':[], 'kp_zr':[], 'initial_twist':[]}]
+# MESH PARAMETER
+BeamDyn['order_elem']       = 5
+# MATERIAL PARAMETER
+BeamDyn['BldFile']          = ""
+# PITCH ACTUATOR PARAMETERS
+BeamDyn['UsePitchAct']      = False
+BeamDyn['PitchJ']           = 0.
+BeamDyn['PitchK']           = 0.
+BeamDyn['PitchC']           = 0.
+# OUTPUTS
+BeamDyn['SumPrint']         = True
+BeamDyn['OutFmt']           = "ES10.3E2"
+BeamDyn['NNodeOuts']        = 0.
+BeamDyn['OutNd']            = []
+
+## BeamDyn Blade Input File
+BeamDynBlade = {}
+BeamDynBlade['station_total']   = 1
+BeamDynBlade['damp_type']       = 1
+BeamDynBlade['mu1']             = 0.01
+BeamDynBlade['mu2']             = 0.01
+BeamDynBlade['mu3']             = 0.01
+BeamDynBlade['mu4']             = 0.01
+BeamDynBlade['mu5']             = 0.01
+BeamDynBlade['mu6']             = 0.01
+BeamDynBlade['radial_stations'] = []
+BeamDynBlade['beam_stiff']      = []
+BeamDynBlade['beam_inertia']    = []
 
 #######################
 Fst7 = {}
@@ -931,16 +1173,16 @@ Fst7['Twr2Shft']    = 0.
 Fst7['TwrRBHt']     = 0.
 Fst7['ShftTilt']    = 0.
 Fst7['Delta3']      = 0.
-Fst7['PreCone1']    = 0.
-Fst7['PreCone2']    = 0.
-Fst7['PreCone3']    = 0.
+Fst7['PreCone(1)']    = 0.
+Fst7['PreCone(2)']    = 0.
+Fst7['PreCone(3)']    = 0.
 Fst7['AzimB1Up']    = 0.
 Fst7['YawBrMass']   = 0.
 Fst7['NacMas']      = 0.
 Fst7['HubMas']      = 0.
-Fst7['TipMass1']    = 0.
-Fst7['TipMass2']    = 0.
-Fst7['TipMass3']    = 0.
+Fst7['TipMass(1)']    = 0.
+Fst7['TipMass(2)']    = 0.
+Fst7['TipMass(3)']    = 0.
 Fst7['NacYIner']    = 0.
 Fst7['GenIner']     = 0.
 Fst7['HubIner']     = 0.
@@ -1026,8 +1268,12 @@ FstModel['AeroDynBlade']      = AeroDynBlade
 FstModel['AeroDynTower']      = AeroDynTower
 FstModel['AeroDynPolar']      = AeroDynPolar
 FstModel['ServoDyn']          = ServoDyn
+FstModel['DISCON_in']         = DISCON_in
 FstModel['HydroDyn']          = HydroDyn
+FstModel['SubDyn']            = SubDyn
 FstModel['MAP']               = MAP
+FstModel['BeamDyn']           = BeamDyn
+FstModel['BeamDynBlade']      = BeamDynBlade
 FstModel['Fst7']              = Fst7
         
 # List of Outputs (all input files -- FST, ED, SD)

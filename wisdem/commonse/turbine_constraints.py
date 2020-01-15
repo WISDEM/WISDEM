@@ -83,13 +83,13 @@ class MaxTipDeflection(ExplicitComponent):
         nFullTow = self.options['nFullTow']
 
         self.add_discrete_input('downwind',       val=False)
-        self.add_input('tip_deflection', val=0.0,               units='m',  desc='Blade tip deflection in yaw x-direction')
-        self.add_input('Rtip',           val=0.0,               units='m',  desc='Blade tip location in z_b')
-        self.add_input('precurveTip',    val=0.0,               units='m',  desc='Blade tip location in x_b')
-        self.add_input('presweepTip',    val=0.0,               units='m',  desc='Blade tip location in y_b')
-        self.add_input('precone',        val=0.0,               units='deg',desc='Rotor precone angle')
-        self.add_input('tilt',           val=0.0,               units='deg',desc='Nacelle uptilt angle')
-        self.add_input('hub_cm',         val=np.zeros(3),       units='m',  desc='Location of hub relative to tower-top in yaw-aligned c.s.')
+        self.add_input('tip_deflection', val=0.0,       units='m',  desc='Blade tip deflection in yaw x-direction')
+        self.add_input('Rtip',           val=0.0,       units='m',  desc='Blade tip location in z_b')
+        self.add_input('precurveTip',    val=0.0,       units='m',  desc='Blade tip location in x_b')
+        self.add_input('presweepTip',    val=0.0,       units='m',  desc='Blade tip location in y_b')
+        self.add_input('precone',        val=0.0,       units='deg',desc='Rotor precone angle')
+        self.add_input('tilt',           val=0.0,       units='deg',desc='Nacelle uptilt angle')
+        self.add_input('overhang',       val=0.0,       units='m',  desc='Horizontal distance between hub and tower-top axis')
         self.add_input('z_full',         val=np.zeros(nFullTow),units='m',  desc='z-coordinates of tower at fine-section nodes')
         self.add_input('d_full',         val=np.zeros(nFullTow),units='m',  desc='Diameter of tower at fine-section nodes')
         self.add_input('gamma_m',        val=0.0, desc='safety factor on materials')
@@ -101,21 +101,22 @@ class MaxTipDeflection(ExplicitComponent):
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack variables
-        z_tower = inputs['z_full']
-        d_tower = inputs['d_full']
-        hub_cm  = inputs['hub_cm']
-        precone = inputs['precone']
-        tilt    = inputs['tilt']
-        delta   = inputs['tip_deflection']
-        upwind  = not discrete_inputs['downwind']
+        z_tower     = inputs['z_full']
+        d_tower     = inputs['d_full']
+        overhang    = inputs['overhang']
+        tt2hub      = overhang * np.sin(inputs['tilt'] / 180. * np.pi)
+        precone     = inputs['precone']
+        tilt        = inputs['tilt']
+        delta       = inputs['tip_deflection']
+        upwind      = not discrete_inputs['downwind']
         
-
         # Coordinates of blade tip in yaw c.s.
         blade_yaw = DirectionVector(inputs['precurveTip'], inputs['presweepTip'], inputs['Rtip']).\
                     bladeToAzimuth(precone).azimuthToHub(180.0).hubToYaw(tilt)
 
         # Find the radius of tower where blade passes
-        z_interp = z_tower[-1] + hub_cm[2] + blade_yaw.z
+        z_interp = z_tower[-1] + tt2hub + blade_yaw.z
+        
         d_interp, ddinterp_dzinterp, ddinterp_dtowerz, ddinterp_dtowerd = interp_with_deriv(z_interp, z_tower, d_tower)
         r_interp = 0.5 * d_interp
         drinterp_dzinterp = 0.5 * ddinterp_dzinterp
@@ -124,12 +125,11 @@ class MaxTipDeflection(ExplicitComponent):
 
         # Max deflection before strike
         if upwind:
-            parked_margin = -hub_cm[0] - blade_yaw.x - r_interp
+            parked_margin = overhang - blade_yaw.x - r_interp
         else:
-            parked_margin = hub_cm[0] + blade_yaw.x - r_interp
+            parked_margin = -overhang + blade_yaw.x - r_interp
         outputs['blade_tip_tower_clearance']   = parked_margin
         outputs['tip_deflection_ratio']        = delta * inputs['gamma_m'] / parked_margin
-
 
     
 class TurbineConstraints(Group):

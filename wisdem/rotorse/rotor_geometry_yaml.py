@@ -2,9 +2,13 @@ from __future__ import print_function
 import os, sys, copy, time, warnings
 import operator
 
-from ruamel import yaml
-from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
+try:
+    import ruamel_yaml as ry
+except:
+    try:
+        import ruamel.yaml as ry
+    except:
+        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
 from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d, RectBivariateSpline
 import numpy as np
@@ -122,7 +126,7 @@ class ReferenceBlade(object):
     def __init__(self):
 
         # Validate input file against JSON schema
-        self.validate        = True       # (bool) run IEA turbine ontology JSON validation
+        self.validate        = True        # (bool) run IEA turbine ontology JSON validation
         self.fname_schema    = ''          # IEA turbine ontology JSON schema file
 
         # Grid sizes
@@ -130,17 +134,20 @@ class ReferenceBlade(object):
         self.NPTS            = 50
         self.NPTS_AfProfile  = 200
         self.NPTS_AfPolar    = 100
+        
         self.r_in            = []          # User definied input grid (must be from 0-1)
-
+        
         # 
         self.analysis_level  = 0           # 0: Precomp, 1: Precomp + write FAST model, 2: FAST/Elastodyn, 3: FAST/Beamdyn)
         self.verbose         = False
 
         # Precomp analyis
-        self.spar_var        = ['']          # name of composite layer for RotorSE spar cap buckling analysis <---- SS first, then PS
+        self.spar_var        = ['']        # name of composite layer for RotorSE spar cap buckling analysis <---- SS first, then PS
         self.te_var          = ''          # name of composite layer for RotorSE trailing edge buckling analysis
+        # self.le_var          = ''          # name of composite layer for RotorSE trailing edge buckling analysis
 
-
+        # 
+        self.user_update_routine = None    # Optional additional routine, provided by user, to modify the blade geometry at the beginning of update()
         
 
     def initialize(self, fname_input):
@@ -189,13 +196,16 @@ class ReferenceBlade(object):
         return blade
 
     def update(self, blade):
-
         t1 = time.time()
-        blade = self.calc_spanwise_grid(blade)
 
+        # Option for user to provide additional logic modifying the blade goemetry, useful for setting properties that change relative to another
+        if self.user_update_routine != None:
+            blade = self.user_update_routine(blade)
+
+        blade = self.calc_spanwise_grid(blade)
         blade = self.update_planform(blade)
-        blade = self.remap_profiles(blade, blade['AFref']) # <- added to 'update' in rthick update
-        blade = self.remap_polars(blade, blade['AFref']) # <- added to 'update' in rthick update
+        blade = self.remap_profiles(blade, blade['AFref'])
+        blade = self.remap_polars(blade, blade['AFref'])
         blade = self.calc_composite_bounds(blade)
 
         if self.verbose:
@@ -214,12 +224,12 @@ class ReferenceBlade(object):
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
         """ Load inputs IEA turbine ontology yaml inputs, optional validation """
         # Read IEA turbine ontology yaml input file
+        t_load = time.time()
         with open(fname_input, 'r') as myfile:
-            t_load = time.time()
             inputs = myfile.read()
 
         # Validate the turbine input with the IEA turbine ontology schema
-        yaml = YAML()
+        yaml = ry.YAML()
         if validate:
             t_validate = time.time()
 
@@ -232,10 +242,6 @@ class ReferenceBlade(object):
                 print('Complete: Schema "%s" validation: \t%f s'%(fname_schema, t_validate))
         else:
             t_validate = 0.
-
-        # return yaml.load(inputs)
-        with open(fname_input, 'r') as myfile:
-            inputs = myfile.read()
 
         if self.verbose:
             t_load = time.time() - t_load - t_validate
@@ -254,15 +260,15 @@ class ReferenceBlade(object):
         #         for var in vartree.keys():
         #             branch_i = copy.copy(branch)
         #             branch_i.append(var)
-        #             if type(vartree[var]) in [dict, CommentedMap]:
+        #             if type(vartree[var]) in [dict, ry.comments.CommentedMap]:
         #                 loop_dict(vartree_full, vartree[var], branch_i)
         #             else:
         #                 if type(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]]) is np.ndarray:
         #                     get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] = get_dict(vartree_full, branch_i[:-1])[branch_i[-1]].tolist()
         #                 elif type(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]]) is np.float64:
         #                     get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] = float(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]])
-        #                 elif type(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]]) in [tuple, list, CommentedSeq]:
-        #                     get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] = [loop_dict(obji, obji, []) for obji in get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] if type(obji) in [dict, CommentedMap]]
+        #                 elif type(get_dict(vartree_full, branch_i[:-1])[branch_i[-1]]) in [tuple, list, ry.comments.CommentedSeq]:
+        #                     get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] = [loop_dict(obji, obji, []) for obji in get_dict(vartree_full, branch_i[:-1])[branch_i[-1]] if type(obji) in [dict, ry.comments.CommentedMap]]
 
 
         #     loop_dict(out, out, [])
@@ -284,7 +290,7 @@ class ReferenceBlade(object):
         wt_out['components']['blade']['outer_shape_bem']['twist']['grid']               = blade_out['pf']['s'].tolist()
         wt_out['components']['blade']['outer_shape_bem']['pitch_axis']['values']        = blade_out['pf']['p_le'].tolist()
         wt_out['components']['blade']['outer_shape_bem']['pitch_axis']['grid']          = blade_out['pf']['s'].tolist()
-        wt_out['components']['blade']['outer_shape_bem']['reference_axis']['x']['values']  = (-1*blade_out['pf']['precurve']).tolist()
+        wt_out['components']['blade']['outer_shape_bem']['reference_axis']['x']['values']  = blade_out['pf']['precurve'].tolist()
         wt_out['components']['blade']['outer_shape_bem']['reference_axis']['x']['grid']    = blade_out['pf']['s'].tolist()
         wt_out['components']['blade']['outer_shape_bem']['reference_axis']['y']['values']  = blade_out['pf']['presweep'].tolist()
         wt_out['components']['blade']['outer_shape_bem']['reference_axis']['y']['grid']    = blade_out['pf']['s'].tolist()
@@ -340,7 +346,7 @@ class ReferenceBlade(object):
                     pass
         wt_out['components']['blade']['internal_structure_2d_fem'] = st
 
-        wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['x']['values']  = (-1*blade_out['pf']['precurve']).tolist()
+        wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['x']['values']  = blade_out['pf']['precurve'].tolist()
         wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['x']['grid']    = blade_out['pf']['s'].tolist()
         wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['y']['values']  = blade_out['pf']['presweep'].tolist()
         wt_out['components']['blade']['internal_structure_2d_fem']['reference_axis']['y']['grid']    = blade_out['pf']['s'].tolist()
@@ -362,7 +368,7 @@ class ReferenceBlade(object):
 
         # try:
         f = open(fname, "w")
-        yaml=YAML()
+        yaml=ry.YAML()
         yaml.default_flow_style = None
         yaml.width = float("inf")
         yaml.indent(mapping=4, sequence=6, offset=3)
@@ -497,7 +503,7 @@ class ReferenceBlade(object):
         blade['pf']['theta']    = np.degrees(remap2grid(blade['outer_shape_bem']['twist']['grid'], blade['outer_shape_bem']['twist']['values'], self.s))
         blade['pf']['p_le']     = remap2grid(blade['outer_shape_bem']['pitch_axis']['grid'], blade['outer_shape_bem']['pitch_axis']['values'], self.s)
         blade['pf']['r']        = remap2grid(blade['outer_shape_bem']['reference_axis']['z']['grid'], blade['outer_shape_bem']['reference_axis']['z']['values'], self.s)
-        blade['pf']['precurve'] = -1.*remap2grid(blade['outer_shape_bem']['reference_axis']['x']['grid'], blade['outer_shape_bem']['reference_axis']['x']['values'], self.s)
+        blade['pf']['precurve'] = remap2grid(blade['outer_shape_bem']['reference_axis']['x']['grid'], blade['outer_shape_bem']['reference_axis']['x']['values'], self.s)
         blade['pf']['presweep'] = remap2grid(blade['outer_shape_bem']['reference_axis']['y']['grid'], blade['outer_shape_bem']['reference_axis']['y']['values'], self.s)
 
         thk_ref = [af_ref[af]['relative_thickness'] for af in blade['outer_shape_bem']['airfoil_position']['labels']]
@@ -612,7 +618,7 @@ class ReferenceBlade(object):
                 # if i in trans_correct_idx:
                 blade['profile'][:,:,i] = trailing_edge_smoothing(blade['profile'][:,:,i])
             # import matplotlib.pyplot as plt
-            # plt.plot(temp[:,0,i], temp[:,1,i], 'b')
+            # # plt.plot(temp[:,0,i], temp[:,1,i], 'b')
             # plt.plot(blade['profile'][:,0,i], blade['profile'][:,1,i], 'k')
             # plt.axis('equal')
             # plt.title(i)
@@ -897,13 +903,13 @@ class ReferenceBlade(object):
                         blade['st'][type_sec][idx_sec]['end_nd_arc'] = {}
                         blade['st'][type_sec][idx_sec]['end_nd_arc']['grid'] = self.s
                         blade['st'][type_sec][idx_sec]['end_nd_arc']['values'] = np.full(self.NPTS, 1.).tolist()
-                    if 'width' in blade['st'][type_sec][idx_sec].keys():
-                        blade['st'][type_sec][idx_sec]['start_nd_arc'] = {}
-                        blade['st'][type_sec][idx_sec]['start_nd_arc']['grid'] = self.s
-                        blade['st'][type_sec][idx_sec]['start_nd_arc']['values'] = np.full(self.NPTS, None).tolist()
-                        blade['st'][type_sec][idx_sec]['end_nd_arc'] = {}
-                        blade['st'][type_sec][idx_sec]['end_nd_arc']['grid'] = self.s
-                        blade['st'][type_sec][idx_sec]['end_nd_arc']['values'] = np.full(self.NPTS, None).tolist()
+                    # if 'width' in blade['st'][type_sec][idx_sec].keys():
+                        # blade['st'][type_sec][idx_sec]['start_nd_arc'] = {}
+                        # blade['st'][type_sec][idx_sec]['start_nd_arc']['grid'] = self.s
+                        # blade['st'][type_sec][idx_sec]['start_nd_arc']['values'] = np.full(self.NPTS, None).tolist()
+                        # blade['st'][type_sec][idx_sec]['end_nd_arc'] = {}
+                        # blade['st'][type_sec][idx_sec]['end_nd_arc']['grid'] = self.s
+                        # blade['st'][type_sec][idx_sec]['end_nd_arc']['values'] = np.full(self.NPTS, None).tolist()
                     if 'start_nd_arc' not in blade['st'][type_sec][idx_sec].keys():
                         blade['st'][type_sec][idx_sec]['start_nd_arc'] = {}
                         blade['st'][type_sec][idx_sec]['start_nd_arc']['grid'] = self.s
@@ -920,7 +926,7 @@ class ReferenceBlade(object):
                         if 'fixed' in blade['st'][type_sec][idx_sec]['rotation'].keys():
                             if blade['st'][type_sec][idx_sec]['rotation']['fixed'] == 'twist':
                                 blade['st'][type_sec][idx_sec]['rotation']['grid'] = blade['pf']['s']
-                                blade['st'][type_sec][idx_sec]['rotation']['values'] = np.radians(blade['pf']['theta'])
+                                blade['st'][type_sec][idx_sec]['rotation']['values'] = -np.radians(blade['pf']['theta'])
                             else:
                                 warning_invalid_fixed_rotation_reference = 'Invalid fixed reference given for layer = "%s" rotation. Currently supported options: "twist".'%(sec['name'])
                                 warnings.warn(warning_invalid_fixed_rotation_reference)
@@ -935,7 +941,13 @@ class ReferenceBlade(object):
                 chord = blade['pf']['chord'][i]
 
                 if calc_bounds:
-                    ratio_SCmax = 0.8
+                    if type_sec == 'layers':
+                        ratio_SCmax = 0.8
+                    elif type_sec == 'webs': # geometric constraint on webs relaxed to fit in 3rd TE webs
+                        ratio_SCmax = 0.9
+                    else:
+                        ratio_SCmax = 0.8
+
                     p_le_i      = blade['pf']['p_le'][i]
                     if 'rotation' in blade['st'][type_sec][idx_sec].keys() and 'width' in blade['st'][type_sec][idx_sec].keys() and 'side' in blade['st'][type_sec][idx_sec].keys() and blade['st'][type_sec][idx_sec]['thickness']['values'][i] not in [None, 0., 0]:
 
@@ -1033,6 +1045,23 @@ class ReferenceBlade(object):
                         if blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] > 1.:
                             blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] -= 1.
                     
+                    elif 'width' in blade['st'][type_sec][idx_sec].keys():
+                        if blade['st'][type_sec][idx_sec]['width']['values'][i] != None:
+                            width      = sec['width']['values'][i]    # meters
+                            if blade['st'][type_sec][idx_sec]['start_nd_arc']['values'][i] != None and blade['st'][type_sec][idx_sec]['thickness']['values'][i] != None:
+                                blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] = blade['st'][type_sec][idx_sec]['start_nd_arc']['values'][i] + width/arc_L
+                            elif blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] != None and blade['st'][type_sec][idx_sec]['thickness']['values'][i] != None:    
+                                blade['st'][type_sec][idx_sec]['start_nd_arc']['values'][i] = blade['st'][type_sec][idx_sec]['end_nd_arc']['values'][i] - width/arc_L
+                            else:
+                                print('Error: the definition of the layer ' + blade['st'][type_sec][idx_sec]['name'] + " is not supported. Please check the yaml input file.")
+                                exit()
+                    elif 'start_nd_arc' not in blade['st'][type_sec][idx_sec].keys() or 'end_nd_arc' not in blade['st'][type_sec][idx_sec].keys():
+                        print('Error: the definition of the layer ' + blade['st'][type_sec][idx_sec]['name'] + " is not supported. Please check the yaml input file.")
+                        exit()    
+                    
+        
+        
+        
         # Set any end points that are fixed to other sections, loop through composites again
         for idx_sec, sec in enumerate(blade['st']['layers']):
             if 'fixed' in blade['st']['layers'][idx_sec]['start_nd_arc'].keys():
@@ -1046,7 +1075,7 @@ class ReferenceBlade(object):
                     target_idx   = [i for i, sec in enumerate(blade['st']['layers']) if sec['name']==target_name][0]
                     blade['st']['layers'][idx_sec]['start_nd_arc']['grid']   = blade['st']['layers'][target_idx]['end_nd_arc']['grid'].tolist()
                     blade['st']['layers'][idx_sec]['start_nd_arc']['values'] = blade['st']['layers'][target_idx]['end_nd_arc']['values']
-                
+                    
                 
             if 'fixed' in blade['st']['layers'][idx_sec]['end_nd_arc'].keys():
                 blade['st']['layers'][idx_sec]['end_nd_arc']['grid']   = self.s
@@ -1060,6 +1089,13 @@ class ReferenceBlade(object):
                     blade['st']['layers'][idx_sec]['end_nd_arc']['grid']   = blade['st']['layers'][target_idx]['start_nd_arc']['grid'].tolist()
                     blade['st']['layers'][idx_sec]['end_nd_arc']['values'] = blade['st']['layers'][target_idx]['start_nd_arc']['values']
                 
+            for i in range(self.NPTS):
+                if blade['st']['layers'][idx_sec]['end_nd_arc']['values'][i] == None and blade['st']['layers'][idx_sec]['start_nd_arc']['values'][i] != None:
+                    blade['st']['layers'][idx_sec]['end_nd_arc']['values'][i] = 1.0
+                    print('Error in the definition of the layer ' + blade['st']['layers'][idx_sec]['name'] + ' at station ' + str(i) + '. The neighboring layer does not exist. Edge is set to TE')
+                elif blade['st']['layers'][idx_sec]['start_nd_arc']['values'][i] == None and blade['st']['layers'][idx_sec]['end_nd_arc']['values'][i] != None:
+                    blade['st']['layers'][idx_sec]['start_nd_arc']['values'][i] = 0.0
+                    print('Error in the definition of the layer ' + blade['st']['layers'][idx_sec]['name'] + ' at station ' + str(i) + '. The neighboring layer does not exist. Edge is set to TE')
         
         
         return blade
@@ -1068,9 +1104,6 @@ class ReferenceBlade(object):
 
         if 'ctrl_pts' not in blade.keys():
             blade['ctrl_pts'] = {}
-
-        if 'Fix_r_in' not in blade['ctrl_pts'].keys():
-            blade['ctrl_pts']['Fix_r_in'] = False
 
         # solve for max chord radius
         if r_max_chord == 0.:
@@ -1088,10 +1121,15 @@ class ReferenceBlade(object):
 
         # Build Control Point Grid, if not provided with key word arg
         if len(r_in)==0:
-            # control point grid
-            # r_in = np.array(sorted(np.r_[[0.], [r_cylinder], np.linspace(r_max_chord, 1., self.NINPUT-2)]))
-            r_in = np.concatenate([[0.], np.linspace(r_cylinder, r_max_chord, num=3)[:-1], np.linspace(r_max_chord, 1., self.NINPUT-3)])
-
+            # Set control point grid, which is to be updated when chord changes
+            r_in = np.hstack([0., r_cylinder, np.linspace(r_max_chord, 1., self.NINPUT-2)])
+            blade['ctrl_pts']['update_r_in'] = True
+        else:
+            # Control point grid is passed from the outside as r_in, no need to update it when chord changes
+            blade['ctrl_pts']['update_r_in'] = False
+        
+        blade['ctrl_pts']['r_in']         = r_in
+                
         # Fit control points to planform variables
         blade['ctrl_pts']['theta_in']     = remap2grid(blade['pf']['s'], blade['pf']['theta'], r_in)
         blade['ctrl_pts']['chord_in']     = remap2grid(blade['pf']['s'], blade['pf']['chord'], r_in)
@@ -1111,8 +1149,17 @@ class ReferenceBlade(object):
         blade['ctrl_pts']['sparT_in']     = remap2grid(grid_spar, vals_spar, r_in)
         blade['ctrl_pts']['teT_in']       = remap2grid(grid_te, vals_te, r_in)
 
+        # if self.le_var.lower() in [sec['name'].lower() for sec in blade['st']['layers']]:
+        #     idx_le    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.le_var.lower()][0]
+        #     grid_le   = blade['st']['layers'][idx_le]['thickness']['grid']
+        #     vals_le   = [0. if val==None else val for val in blade['st']['layers'][idx_le]['thickness']['values']]
+        #     blade['ctrl_pts']['leT_in']   = remap2grid(grid_le, vals_le, r_in)
+        # else:
+        #     layer_names         = [sec['name'].lower() for sec in blade['st']['layers']]
+        #     LE_variable_warning = "User supplied LE reinforcement layer variable name: '%s' not found. Section names include: %s" % (self.le_var, ", ".join(layer_names))
+        #     warnings.warn(LE_variable_warning)
+
         # Store additional rotorse variables
-        blade['ctrl_pts']['r_in']         = r_in
         blade['ctrl_pts']['r_cylinder']   = r_cylinder
         blade['ctrl_pts']['r_max_chord']  = r_max_chord
         # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
@@ -1126,10 +1173,16 @@ class ReferenceBlade(object):
     def update_planform(self, blade):
 
         af_ref = blade['AFref']
-
-        if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord'] and not blade['ctrl_pts']['Fix_r_in']:
-            # blade['ctrl_pts']['r_in'] = np.r_[[0.], [blade['ctrl_pts']['r_cylinder']], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)]
-            blade['ctrl_pts']['r_in'] = np.concatenate([[0.], np.linspace(blade['ctrl_pts']['r_cylinder'], blade['ctrl_pts']['r_max_chord'], num=3)[:-1], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-3)])
+        
+        if blade['ctrl_pts']['update_r_in']:
+            try:
+                blade['ctrl_pts']['r_in'] = np.hstack([0., blade['ctrl_pts']['r_cylinder'], np.linspace(blade['ctrl_pts']['r_max_chord'][0], 1., self.NINPUT-2)])
+            except:
+                blade['ctrl_pts']['r_in'] = np.hstack([0., blade['ctrl_pts']['r_cylinder'], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)])
+        
+        # if blade['ctrl_pts']['r_in'][3] != blade['ctrl_pts']['r_max_chord'] and not blade['ctrl_pts']['Fix_r_in']:
+            # # blade['ctrl_pts']['r_in'] = np.r_[[0.], [blade['ctrl_pts']['r_cylinder']], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-2)]
+            # blade['ctrl_pts']['r_in'] = np.concatenate([[0.], np.linspace(blade['ctrl_pts']['r_cylinder'], blade['ctrl_pts']['r_max_chord'], num=3)[:-1], np.linspace(blade['ctrl_pts']['r_max_chord'], 1., self.NINPUT-3)])
 
         self.s                  = blade['pf']['s'] # TODO: assumes the start and end points of composite sections does not change
         blade['pf']['chord']    = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['chord_in'], self.s)
@@ -1155,6 +1208,12 @@ class ReferenceBlade(object):
         idx_te    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.te_var.lower()][0]
         blade['st']['layers'][idx_te]['thickness']['grid']   = self.s.tolist()
         blade['st']['layers'][idx_te]['thickness']['values'] = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['teT_in'], self.s).tolist()
+
+        # if self.le_var != '' and self.le_var.lower() in [sec['name'].lower() for sec in blade['st']['layers']]:
+        #     idx_le    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.le_var.lower()][0]
+        #     blade['st']['layers'][idx_le]['thickness']['grid']   = self.s.tolist()
+        #     blade['st']['layers'][idx_le]['thickness']['values'] = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['leT_in'], self.s).tolist()
+
 
         # blade['pf']['rthick']   = remap2grid(blade['ctrl_pts']['r_in'], blade['ctrl_pts']['thickness_in'], self.s)
         # # update airfoil positions
@@ -1291,6 +1350,9 @@ class ReferenceBlade(object):
             blade['precomp'] = {}
 
         region_loc_vars = [self.te_var] + self.spar_var
+        # if self.le_var != '':
+        #     region_loc_vars += [self.le_var]
+
         region_loc_ss = {} # track precomp regions for user selected composite layers
         region_loc_ps = {}
         for var in region_loc_vars:
@@ -1340,7 +1402,7 @@ class ReferenceBlade(object):
             ## Profiles
             # rotate            
             profile_i = np.flip(copy.copy(blade['profile'][:,:,i]), axis=0)
-            profile_i_rot = np.column_stack(rotate(blade['pf']['p_le'][i], 0., profile_i[:,0], profile_i[:,1], -1.*np.radians(blade['pf']['theta'][i])))
+            profile_i_rot = np.column_stack(rotate(blade['pf']['p_le'][i], 0., profile_i[:,0], profile_i[:,1], np.radians(blade['pf']['theta'][i])))
             # normalize
             profile_i_rot[:,0] -= min(profile_i_rot[:,0])
             profile_i_rot = profile_i_rot/ max(profile_i_rot[:,0])
@@ -1411,6 +1473,8 @@ class ReferenceBlade(object):
                             if sec['start_nd_arc']['values'][i] < loc_LE:
                                 # ss_start_nd_arc.append(sec['start_nd_arc']['values'][i])
                                 ss_end_nd_arc_temp = float(spline_arc2xnd(sec['start_nd_arc']['values'][i]))
+                                if ss_end_nd_arc_temp > 1 or ss_end_nd_arc_temp < 0:
+                                    exit('Error in the definition of material ' + sec['name'] + '. It cannot fit in the section')
                                 if ss_end_nd_arc_temp == profile_i_rot[0,0] and profile_i_rot[0,0] != 1.:
                                     ss_end_nd_arc_temp = 1.
                                 ss_end_nd_arc.append(ss_end_nd_arc_temp)
@@ -1458,6 +1522,10 @@ class ReferenceBlade(object):
             # print(time1)
 
             # generate the Precomp composite stacks for chordwise regions
+            if np.min([ss_start_nd_arc, ss_end_nd_arc]) < 0 or np.max([ss_start_nd_arc, ss_end_nd_arc]) > 1:
+                print('Error in the layer definition at station number ' + str(i))
+                exit()
+            
             upperCS[i], region_loc_ss = region_stacking(i, ss_idx, ss_start_nd_arc, ss_end_nd_arc, blade, blade['precomp']['material_dict'], blade['precomp']['materials'], region_loc_ss)
             lowerCS[i], region_loc_ps = region_stacking(i, ps_idx, ps_start_nd_arc, ps_end_nd_arc, blade, blade['precomp']['material_dict'], blade['precomp']['materials'], region_loc_ps)
             if len(web_idx)>0 or flatback:
@@ -1481,7 +1549,11 @@ class ReferenceBlade(object):
         blade['precomp']['sector_idx_strain_te_ps']   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.te_var]]
         blade['precomp']['spar_var'] = self.spar_var
         blade['precomp']['te_var']   = self.te_var
-        
+        # if self.le_var != '':
+        #     blade['precomp']['sector_idx_strain_le_ss']   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ss[self.le_var]]
+        #     blade['precomp']['sector_idx_strain_le_ps']   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.le_var]]
+        #     blade['precomp']['le_var']   = self.le_var
+
         return blade
 
     def plot_design(self, blade, path, show_plots = True):
@@ -1490,97 +1562,141 @@ class ReferenceBlade(object):
         
         # Chord
         fc, axc  = plt.subplots(1,1,figsize=(5.3, 4))
-        axc.plot(blade['pf']['s'], blade['pf']['chord'])
-        axc.set(xlabel='r/R' , ylabel='Chord (m)')
+        axc.plot(blade['pf']['s'], blade['pf']['chord'],color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Chord [m]', fontsize=14, fontweight='bold')
         fig_name = 'init_chord.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         fc.savefig(path + fig_name)
         
         # Theta
         ft, axt  = plt.subplots(1,1,figsize=(5.3, 4))
-        axt.plot(blade['pf']['s'], blade['pf']['theta'])
-        axt.set(xlabel='r/R' , ylabel='Twist (deg)')
+        axt.plot(blade['pf']['s'], blade['pf']['theta'],color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Twist [deg]', fontsize=14, fontweight='bold')
         fig_name = 'init_theta.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         ft.savefig(path + fig_name)
         
         # Pitch axis
         fp, axp  = plt.subplots(1,1,figsize=(5.3, 4))
-        axp.plot(blade['pf']['s'], blade['pf']['p_le']*100.)
-        axp.set(xlabel='r/R' , ylabel='Pitch Axis (%)')
-        fig_name = 'init_p_le.png'
+        axp.plot(blade['pf']['s'], blade['pf']['p_le']*100.,color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Pitch Axis [%]', fontsize=14, fontweight='bold')
+        fig_name = 'init_pa.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         fp.savefig(path + fig_name)
         
+        fr, axr  = plt.subplots(1,1,figsize=(5.3, 4))
+        axr.plot(blade['pf']['s'], blade['pf']['rthick']*100.,color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Relative Thickness [%]', fontsize=14, fontweight='bold')
+        fig_name = 'init_rt.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        fr.savefig(path + fig_name)
         
-        # Planform
+        fa, axa  = plt.subplots(1,1,figsize=(5.3, 4))
+        axa.plot(blade['pf']['s'], blade['pf']['rthick']*blade['pf']['chord'],color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Absolute Thickness [m]', fontsize=14, fontweight='bold')
+        fig_name = 'init_at.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        fa.savefig(path + fig_name)
+        
+        fpb, axpb  = plt.subplots(1,1,figsize=(5.3, 4))
+        axpb.plot(blade['pf']['s'], blade['pf']['precurve'],color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Prebend [m]', fontsize=14, fontweight='bold')
+        fig_name = 'init_pb.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        fpb.savefig(path + fig_name)
         le = blade['pf']['p_le']*blade['pf']['chord']
         te = (1. - blade['pf']['p_le'])*blade['pf']['chord']
 
         fpl, axpl  = plt.subplots(1,1,figsize=(5.3, 4))
-        axpl.plot(blade['pf']['s'], -le)
-        axpl.plot(blade['pf']['s'], te)
-        axpl.set(xlabel='r/R' , ylabel='Planform (m)')
-        axpl.legend()
-        fig_name = 'init_planform.png'
+        axpl.plot(blade['pf']['s'], -le,color='royalblue')
+        axpl.plot(blade['pf']['s'], te,color='royalblue')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Planform [m]', fontsize=14, fontweight='bold')
+        fig_name = 'init_pl.png'
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         fpl.savefig(path + fig_name)
         
-        
-        
-        # Relative thickness
-        frt, axrt  = plt.subplots(1,1,figsize=(5.3, 4))
-        axrt.plot(blade['pf']['s'], blade['pf']['rthick']*100.)
-        axrt.set(xlabel='r/R' , ylabel='Relative Thickness (%)')
-        fig_name = 'init_rthick.png'
-        frt.savefig(path + fig_name)
-        
-        # Absolute thickness
-        fat, axat  = plt.subplots(1,1,figsize=(5.3, 4))
-        axat.plot(blade['pf']['s'], blade['pf']['rthick']*blade['pf']['chord'])
-        axat.set(xlabel='r/R' , ylabel='Absolute Thickness (m)')
-        fig_name = 'init_absthick.png'
-        fat.savefig(path + fig_name)
-        
-        # Prebend
-        fpb, axpb  = plt.subplots(1,1,figsize=(5.3, 4))
-        axpb.plot(blade['pf']['s'], blade['pf']['precurve'])
-        axpb.set(xlabel='r/R' , ylabel='Prebend (m)')
-        fig_name = 'init_prebend.png'
-        fpb.savefig(path + fig_name)
-        
-        # Sweep
-        fsw, axsw  = plt.subplots(1,1,figsize=(5.3, 4))
-        axsw.plot(blade['pf']['s'], blade['pf']['presweep'])
-        axsw.set(xlabel='r/R' , ylabel='Presweep (m)')
-        fig_name = 'init_presweep.png'
-        plt.subplots_adjust(left = 0.14)
-        fsw.savefig(path + fig_name)
-        
-        idx_spar  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.spar_var[0].lower()][0]
-        idx_te    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.te_var.lower()][0]
-        idx_skin  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()=='shell_skin'][0]
-        
-        # Spar caps thickness
+        idx_spar1  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.spar_var[0].lower()][0]
+        idx_spar2  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.spar_var[1].lower()][0]
         fsc, axsc  = plt.subplots(1,1,figsize=(5.3, 4))
-        axsc.plot(blade['st']['layers'][idx_spar]['thickness']['grid'], blade['st']['layers'][idx_spar]['thickness']['values'])
-        axsc.set(xlabel='r/R' , ylabel='Spar Caps Thickness (m)')
+        axsc.plot(blade['st']['layers'][idx_spar1]['thickness']['grid'], blade['st']['layers'][idx_spar1]['thickness']['values'],color='royalblue', label = 'Suction')
+        axsc.plot(blade['st']['layers'][idx_spar2]['thickness']['grid'], blade['st']['layers'][idx_spar2]['thickness']['values'],color='mediumseagreen', label = 'Pressure')
+        axsc.legend(fontsize=12)
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Spar Caps Thickness [m]', fontsize=14, fontweight='bold')
         fig_name = 'init_sc.png'
-        plt.subplots_adjust(left = 0.14)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
         fsc.savefig(path + fig_name)
         
-        # TE reinf thickness
-        fte, axte  = plt.subplots(1,1,figsize=(5.3, 4))
-        axte.plot(blade['st']['layers'][idx_te]['thickness']['grid'], blade['st']['layers'][idx_te]['thickness']['values'])
-        axte.set(xlabel='r/R' , ylabel='TE Reinf. Thickness (m)')
-        fig_name = 'init_te.png'
-        plt.subplots_adjust(left = 0.14)
-        fte.savefig(path + fig_name)
-        
-        # Skin
-        fsk, axsk  = plt.subplots(1,1,figsize=(5.3, 4))
-        axsk.plot(blade['st']['layers'][idx_skin]['thickness']['grid'], blade['st']['layers'][idx_skin]['thickness']['values'])
-        axsk.set(xlabel='r/R' , ylabel='Shell Skin Thickness (m)')
-        fig_name = 'init_skin.png'
-        fsk.savefig(path + fig_name)
+        npts   = len(np.array(blade['st']['layers'][idx_spar1]['width']['values']))
+        sc_le  = np.zeros(npts)
+        sc_te  = np.zeros(npts)
         
         
+        for i in range(npts):
+            if blade['st']['layers'][idx_spar1]['width']['values'][i] == None:
+                sc_le[i] = None
+                sc_te[i] = None
+            else:
+                sc_le[i] = blade['st']['layers'][idx_spar1]['offset_x_pa']['values'][i] - 0.5*blade['st']['layers'][idx_spar1]['width']['values'][i]
+                sc_te[i] = blade['st']['layers'][idx_spar1]['offset_x_pa']['values'][i] + 0.5*blade['st']['layers'][idx_spar1]['width']['values'][i]
+        
+        # print(blade['st']['layers'][idx_spar1]['width']['values'])
+        # print(blade['st']['layers'][idx_spar1]['offset_x_pa']['values'])
+        # print(sc_le)
+        # print(sc_te)
+        # exit()
+        
+        
+        fpl2, axpl2  = plt.subplots(1,1,figsize=(5.3, 4))
+        axpl2.plot(blade['pf']['s'], -le,color='royalblue')
+        axpl2.plot(blade['pf']['s'], te,color='royalblue')
+        axpl2.plot(blade['st']['layers'][idx_spar1]['thickness']['grid'], sc_le,color='mediumseagreen', label = 'Spar Caps')
+        axpl2.plot(blade['st']['layers'][idx_spar1]['thickness']['grid'], sc_te,color='mediumseagreen')
+        axpl2.plot(blade['st']['webs'][0]['offset_x_pa']['grid'], blade['st']['webs'][0]['offset_x_pa']['values'],color='darkorange',label = 'Webs')
+        axpl2.plot(blade['st']['webs'][1]['offset_x_pa']['grid'], blade['st']['webs'][1]['offset_x_pa']['values'],color='darkorange')
+        plt.xlabel('Blade Position [-]', fontsize=14, fontweight='bold')
+        plt.ylabel('Planform [m]', fontsize=14, fontweight='bold')
+        fig_name = 'init_pl_w_sc.png'
+        axpl2.legend(fontsize=12)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        fpl2.savefig(path + fig_name)
+        
+        
+        # idx_te    = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==self.te_var.lower()][0]
         if show_plots:
             plt.show()
         
@@ -1658,35 +1774,35 @@ class ReferenceBlade(object):
         fpb.savefig(path + fig_name)
         
         
-        # Relative thickness
-        r_thick_interp = abs_thick_int2 / chord_int2
-        r_thick_airfoils = np.array([0.18, 0.211, 0.241, 0.301, 0.36 , 0.50, 1.00])
-        f_interp1        = interp1d(r_thick_interp,s)
-        s_interp_rt      = f_interp1(r_thick_airfoils)
-        f_interp2        = PchipInterpolator(np.flip(s_interp_rt, axis=0),np.flip(r_thick_airfoils, axis=0))
-        r_thick_int2     = f_interp2(s)
+        # # Relative thickness
+        # r_thick_interp = abs_thick_int2 / chord_int2
+        # r_thick_airfoils = np.array([0.18, 0.211, 0.241, 0.301, 0.36 , 0.50, 1.00])
+        # f_interp1        = interp1d(r_thick_interp,s)
+        # s_interp_rt      = f_interp1(r_thick_airfoils)
+        # f_interp2        = PchipInterpolator(np.flip(s_interp_rt, axis=0),np.flip(r_thick_airfoils, axis=0))
+        # r_thick_int2     = f_interp2(s)
         
         
-        frt, axrt  = plt.subplots(1,1,figsize=(5.3, 4))
-        axrt.plot(blade['pf']['s'], blade['pf']['rthick']*100., c='k', label='Initial')
-        axrt.plot(blade['pf']['s'], r_thick_interp * 100., c='b', label='Interp')
-        axrt.plot(s_interp_rt, r_thick_airfoils * 100., 'og', label='Airfoils')
-        axrt.plot(blade['pf']['s'], r_thick_int2 * 100., c='g', label='Reconstructed')
-        axrt.set(xlabel='r/R' , ylabel='Relative Thickness (%)')
-        fig_name = 'interp_rthick.png'
-        axrt.legend()
-        frt.savefig(path + fig_name)
+        # frt, axrt  = plt.subplots(1,1,figsize=(5.3, 4))
+        # axrt.plot(blade['pf']['s'], blade['pf']['rthick']*100., c='k', label='Initial')
+        # axrt.plot(blade['pf']['s'], r_thick_interp * 100., c='b', label='Interp')
+        # axrt.plot(s_interp_rt, r_thick_airfoils * 100., 'og', label='Airfoils')
+        # axrt.plot(blade['pf']['s'], r_thick_int2 * 100., c='g', label='Reconstructed')
+        # axrt.set(xlabel='r/R' , ylabel='Relative Thickness (%)')
+        # fig_name = 'interp_rthick.png'
+        # axrt.legend()
+        # frt.savefig(path + fig_name)
 
         
-        fat, axat  = plt.subplots(1,1,figsize=(5.3, 4))
-        axat.plot(s, abs_thick_init, c='k', label='Initial')
-        axat.plot(s_interp_at, abs_thick_int1, 'ko', label='Interp Points')
-        axat.plot(s, abs_thick_int2, c='b', label='PCHIP')
-        axat.plot(s, r_thick_int2 * chord_int2, c='g', label='Reconstructed')
-        axat.set(xlabel='r/R' , ylabel='Absolute Thickness (m)')
-        fig_name = 'interp_abs_thick.png'
-        axat.legend()
-        fat.savefig(path + fig_name)
+        # fat, axat  = plt.subplots(1,1,figsize=(5.3, 4))
+        # axat.plot(s, abs_thick_init, c='k', label='Initial')
+        # axat.plot(s_interp_at, abs_thick_int1, 'ko', label='Interp Points')
+        # axat.plot(s, abs_thick_int2, c='b', label='PCHIP')
+        # axat.plot(s, r_thick_int2 * chord_int2, c='g', label='Reconstructed')
+        # axat.set(xlabel='r/R' , ylabel='Absolute Thickness (m)')
+        # fig_name = 'interp_abs_thick.png'
+        # axat.legend()
+        # fat.savefig(path + fig_name)
         
         
         # Pitch axis location
@@ -1755,6 +1871,7 @@ class ReferenceBlade(object):
         fig_name = 'interp_planform.png'
         fpl.savefig(path + fig_name)
         
+        # np.savetxt('temp.txt', le_int2/blade['pf']['chord'])
         
         
         
@@ -1770,8 +1887,7 @@ class ReferenceBlade(object):
 if __name__ == "__main__":
 
     ## File managment
-    # fname_input        = "turbine_inputs/nrel5mw_mod_update.yaml"
-    fname_input        = "/mnt/c/Users/egaertne/WISDEM/nrel15mw/design/turbine_inputs/NREL15MW_opt_v05.yaml"
+    fname_input        = "turbine_inputs/nrel5mw_mod_update.yaml"
     fname_output       = "turbine_inputs/testing_twist.yaml"
     flag_write_out     = False
     flag_write_precomp = False
@@ -1783,8 +1899,10 @@ if __name__ == "__main__":
     refBlade.verbose  = True
     refBlade.spar_var = ['Spar_cap_ss', 'Spar_cap_ps']
     refBlade.te_var   = 'TE_reinforcement'
-    refBlade.NINPUT       = 8
-    refBlade.NPITS        = 40
+    # refBlade.le_var   = 'LE_reinforcement'
+    refBlade.NINPUT   = 8
+    refBlade.NPTS     = 40
+    # refBlade.r_in     = np.linspace(0.,1.,refBlade.NINPUT)
     refBlade.validate = False
     refBlade.fname_schema = "turbine_inputs/IEAontology_schema.yaml"
 

@@ -10,7 +10,7 @@ Documentation for WISDEM using NREL CSM
 
 The following inputs and outputs are defined for WISDEM:
 
-.. literalinclude:: ../src/wisdem/lcoe/lcoe_csm_assembly.py
+.. literalinclude:: ../../../wisdem/assemblies/lcoe/lcoe_csm_assembly.py
     :language: python
     :start-after: lcoe_csm_assembly(Assembly)
     :end-before: def configure(self)
@@ -26,7 +26,7 @@ Documentation for WISDEM using NREL CSM with ECN Offshore Model
 
 The following inputs and outputs are defined for WISDEM:
 
-.. literalinclude:: ../src/wisdem/lcoe/lcoe_csm_ecn_assembly.py
+.. literalinclude:: ../../../wisdem/assemblies/lcoe/lcoe_csm_ecn_assembly.py
     :language: python
     :start-after: lcoe_csm_ecn_assembly(Assembly)
     :end-before: def __init__(self, ssfile_1)
@@ -43,7 +43,7 @@ Documentation for WISDEM using SE Models
 
 The following inputs and outputs are defined for WISDEM using SE models:
 
-.. literalinclude:: ../src/wisdem/lcoe/lcoe_se_assembly.py
+.. literalinclude:: ../../../wisdem/assemblies/lcoe/lcoe_se_assembly.py
     :language: python
     :start-after: lcoe_se_assembly(Assembly)
     :end-before: __init__(self, with_new_nacelle=False, with_landbos=False, flexible_blade=False, with_3pt_drive=False, with_ecn_opex=False, ecn_file=None)
@@ -79,7 +79,7 @@ For this assembly the configure process is handled in a separate function.  This
 
 For this case where there is only a turbine (and no cost models), the actual configure method in the assembly is very simple.  For the cost model additional configuration can be done after calling ``configure_turbine``.
 
-.. literalinclude:: ../src/wisdem/turbinese/turbine.py
+.. literalinclude:: ../../../wisdem/assemblies/land_based/land_based_noGenerator_noBOS_lcoe.py
     :start-after: TurbineSE(Assembly)
     :end-before: if __name__ == '__main__':
     :prepend: class TurbineSE(Assembly):

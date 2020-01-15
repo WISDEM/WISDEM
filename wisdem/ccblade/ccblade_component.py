@@ -30,8 +30,8 @@ class CCBladeGeometry(ExplicitComponent):
         
         self.Rtip           = inputs['Rtip']
         self.precone        = inputs['precone']
-
-        outputs['precurveTip']  = -inputs['precurve_in'][-1]
+        
+        outputs['precurveTip']  = inputs['precurve_in'][-1]
         outputs['presweepTip']  = inputs['presweep_in'][-1]
         self.precurveTip        = outputs['precurveTip']
         self.R = self.Rtip*cosd(self.precone) + self.precurveTip*sind(self.precone)

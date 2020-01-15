@@ -43,6 +43,7 @@ class GeometricConstraints(ExplicitComponent):
 
         self.add_output('weldability', np.zeros(nPoints-1))
         self.add_output('manufacturability', np.zeros(nPoints-1))
+        self.add_output('slope', np.zeros(nPoints-2))
 
         # Derivatives
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
@@ -64,6 +65,7 @@ class GeometricConstraints(ExplicitComponent):
         d_ratio = d[1:]/d[:-1]
         manufacturability = np.minimum(d_ratio, 1.0/d_ratio) - max_taper
         outputs['manufacturability'] = np.r_[manufacturability, manufacturability[-1]]
+        outputs['slope'] = d_ratio
 
     # def compute_partials(self, inputs, J):
 

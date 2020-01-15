@@ -12,18 +12,18 @@ class pyIECWind_extreme():
 
     def __init__(self):
 
-        self.Turbine_Class = 'I'     # IEC Wind Turbine Class
-        self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.Vert_Slope = 0          # Vertical slope of the wind inflow (deg)
-        self.Tstart = 30             # Time to start transient conditions (s)
-        self.dt = 0.05               # Transient wind time step (s)
-        self.dir_change = 'both'     # '+','-','both': sign for transient events in EDC, EWS
-        self.shear_orient = 'both'   # 'v','h','both': vertical or horizontal shear for EWS
-        self.z_hub = 90.             # wind turbine hub height (m)
-        self.D = 126.                # rotor diameter (m)
+        self.Turbine_Class    = 'I'    # IEC Wind Turbine Class
+        self.Turbulence_Class = 'B'    # IEC Turbulance Class
+        self.Vert_Slope       = 0      # Vertical slope of the wind inflow (deg)
+        self.TStart           = 30     # Time to start transient conditions (s)
+        self.dt               = 0.05   # Transient wind time step (s)
+        self.dir_change       = 'both' # '+','-','both': sign for transient events in EDC, EWS
+        self.shear_orient     = 'both' # 'v','h','both': vertical or horizontal shear for EWS
+        self.z_hub            = 90.    # wind turbine hub height (m)
+        self.D                = 126.   # rotor diameter (m)
         
-        self.T0 = 0.
-        self.TF = 630.
+        self.T0               = 0.
+        self.TF               = 630.
 
     def setup(self):
         # General turbulence parameters: 6.3
@@ -301,9 +301,10 @@ class pyIECWind_extreme():
         # Transcient
         shear_lin_p = np.zeros_like(t)
         shear_lin_n = np.zeros_like(t)
+
         for i, ti in enumerate(t):
-            shear_lin_p[i] = (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))
-            shear_lin_n[i] = -1*(2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))
+            shear_lin_p[i] = (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
+            shear_lin_n[i] = -1*(2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
 
         # Write Files
         self.fname_out = []
@@ -380,7 +381,7 @@ class pyIECWind_extreme():
             os.makedirs(self.outdir)
 
         # Move transcient event to user definted time
-        data[:,0] += self.Tstart
+        data[:,0] += self.TStart
         data = np.vstack((data[0,:], data, data[-1,:]))
         data[0,0] = self.T0
         data[-1,0] = self.TF
@@ -424,14 +425,14 @@ class pyIECWind_turb():
     def __init__(self):
 
         # Defaults
-        self.seed = np.random.uniform(1, 1e8)
+        self.seed             = np.random.uniform(1, 1e8)
         self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.z_hub = 90.             # wind turbine hub height (m)
-        self.D = 126.                # rotor diameter (m)
-        self.PLExp = 0.2
-        self.AnalysisTime = 630.
-        self.debug_level = 0
-        self.overwrite = True
+        self.z_hub            = 90.  # wind turbine hub height (m)
+        self.D                = 126. # rotor diameter (m)
+        self.PLExp            = 0.2
+        self.AnalysisTime     = 720.
+        self.debug_level      = 0
+        self.overwrite        = True
 
     def setup(self):
         turbsim_vt = turbsiminputs()
@@ -439,8 +440,8 @@ class pyIECWind_turb():
         turbsim_vt.runtime_options.WrADTWR    = False
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
         turbsim_vt.tmspecs.HubHt              = self.z_hub
-        turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.2)
-        turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.2)
+        turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.05)
+        turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.05)
         turbsim_vt.tmspecs.NumGrid_Z          = 21
         turbsim_vt.tmspecs.NumGrid_Y          = 21
         turbsim_vt.tmspecs.HFlowAng           = 0.0
@@ -449,7 +450,7 @@ class pyIECWind_turb():
         turbsim_vt.metboundconds.UserFile     = '"unused"'
         turbsim_vt.metboundconds.IECturbc     = self.Turbulence_Class
         turbsim_vt.metboundconds.IEC_WindType = self.IEC_WindType
-        turbsim_vt.metboundconds.ETMc         = 2.
+        turbsim_vt.metboundconds.ETMc         = '"default"'
         turbsim_vt.metboundconds.WindProfileType = '"PL"'
         turbsim_vt.metboundconds.ProfileFile  = '"unused"'
         turbsim_vt.metboundconds.RefHt        = self.z_hub
@@ -484,13 +485,16 @@ class pyIECWind_turb():
         # self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
         # self.case_name += '_U%d'%self.Uref + '_Seed%d.in'%self.seed
 
-        case_name = self.case_name + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
+        case_name = self.case_name + '_' + IEC_WindType + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
+        
         tsim_input_file = case_name + '.in'
         wind_file_out   = case_name + '.bts'
+        
+        wind_file_out_abs = os.path.realpath(os.path.normpath(os.path.join(self.outdir, wind_file_out)))
 
         # If wind file already exists and overwriting is turned off, skip wind file write
         if os.path.exists(os.path.join(self.outdir, wind_file_out)) and not self.overwrite:
-            return wind_file_out, 3
+            return wind_file_out_abs, 3
 
         # Run wind file generation
         else:
@@ -505,7 +509,7 @@ class pyIECWind_turb():
             wrapper.debug_level = self.debug_level
             wrapper.execute()
 
-            return wind_file_out, 3
+            return wind_file_out_abs, 3
 
 
 def example_ExtremeWind():
@@ -522,7 +526,7 @@ def example_ExtremeWind():
     iec.outdir = 'temp'
 
     V_hub = 25
-    iec.execute('EOG', V_hub)
+    iec.execute('EWS', V_hub)
 
 def example_TurbulentWind():
     iec = pyIECWind_turb()
@@ -545,5 +549,5 @@ def example_TurbulentWind():
 
 if __name__=="__main__":
 
-    # example_ExtremeWind()
-    example_TurbulentWind()
+    example_ExtremeWind()
+    # example_TurbulentWind()

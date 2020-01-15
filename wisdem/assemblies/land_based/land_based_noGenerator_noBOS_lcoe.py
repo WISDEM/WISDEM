@@ -35,6 +35,11 @@ class LandBasedTurbine(Group):
         
         RefBlade     = self.options['RefBlade']
         Nsection_Tow = self.options['Nsection_Tow']        
+        if 'Analysis_Level' in self.options['FASTpref']:
+            Analysis_Level = self.options['FASTpref']['Analysis_Level']
+        else:
+            Analysis_Level = 0
+        
         
         # Define all input variables from all models
         myIndeps = IndepVarComp()
@@ -88,14 +93,14 @@ class LandBasedTurbine(Group):
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,
                                               regulation_reg_III=False,
-                                              Analysis_Level=self.options['FASTpref']['Analysis_Level'],
+                                              Analysis_Level=Analysis_Level,
                                               FASTpref=self.options['FASTpref'],
                                               topLevelFlag=True), promotes=['*'])
         
         self.add_subsystem('drive', DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False),
-                           promotes=['machine_rating',
+                           promotes=['machine_rating', 'overhang',
                                      'hub_mass','bedplate_mass','gearbox_mass','generator_mass','hss_mass','hvac_mass','lss_mass','cover_mass',
                                      'pitch_system_mass','platforms_mass','spinner_mass','transformer_mass','vs_electronics_mass','yaw_mass'])
         
@@ -182,7 +187,7 @@ class LandBasedTurbine(Group):
         self.connect('annual_opex',         'plantfinancese.opex_per_kW')
     
 
-def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level, fst_vt):
+def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt = {}):
 
     prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level = Analysis_Level, fst_vt = fst_vt)
     
@@ -231,8 +236,8 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level, fst_vt):
     # Plant size
     prob['project_lifetime'] = prob['lifetime'] = 20.0    
     prob['number_of_turbines']             = 200. * 1.e+006 / prob['machine_rating']
-    prob['annual_opex']                    = 43.56 # $/kW/yr
-    prob['bos_costs']                      = 517.0 # $/kW
+    prob['annual_opex']                    = 44. # $/kW/yr
+    prob['bos_costs']                      = 332. + 127. # $/kW
     
     # For RNA
     prob['rna_weightM'] = True
@@ -254,7 +259,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level, fst_vt):
     prob['drive.shrink_disc_mass']  = 333.3 * prob['machine_rating'] / 1e6  # estimated
     prob['drive.carrier_mass']      = 8000.0  # estimated
     prob['drive.flange_length']     = 0.5
-    prob['drive.overhang']          = 5.0
+    prob['overhang']                = 5.0
     prob['drive.distance_hub2mb']   = 1.912  # length from hub center to main bearing, leave zero if unknown
     prob['drive.gearbox_input_xcm'] = 0.1
     prob['drive.hss_input_length']  = 1.5
@@ -265,7 +270,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level, fst_vt):
 
 if __name__ == "__main__":
     
-    optFlag = True
+    optFlag = False
 
 
 

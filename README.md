@@ -6,7 +6,7 @@ Author: [NREL WISDEM Team](mailto:systems.engineering@nrel.gov)
 
 ## Version
 
-This software is a version 1.0.0.
+This software is a version 2.0.1.
 
 ## Documentation
 
@@ -16,10 +16,10 @@ See local documentation in the `docs`-directory or access the online version at 
 
 WISDEM&reg; is a family of modules.  The core modules are:
 
+* _AeroelasticSE_ provides multi-fidelity capability for rotor analysis by calling [OpenFAST]<https://github.com/OpenFAST/openfast>
 * _CommonSE_ includes several libraries shared among modules
-* _DriveSE_ sizes the drive-train system
+* _DrivetrainSE_ sizes the drivetrain and generator systems (formerly DriveSE and GeneratorSE)
 * _FloatingSE_ works with the floating platforms
-* _GeneratorSE_ is a tool for generator design
 * _OffshoreBOS_ sizes the balance of systems for offshore plants
 * _Plant_FinanceSE_ runs the financial analysis of a wind plant
 * _RotorSE_ is a tool for rotor design
@@ -38,74 +38,48 @@ The core modules draw upon some utility packages, which are typically compiled c
 * _pyoptsparse_ provides some additional optimization algorithms to OpenMDAO
 
 
-## Installation (Anaconda)
+## Installation
 
 Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM&reg; requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).
 
 The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.
 
-1.  Setup and activate the Anaconda environment from a prompt
+1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
         conda config --add channels conda-forge
         conda create -y --name wisdem-env python=3.7
         conda activate wisdem-env
-
-
-2.  Install Anaconda package dependencies
-
-        conda install -y numpy scipy matplotlib conda-build six numpydoc networkx pyparsing packaging snowballstemmer pandas openpyxl xlrd jinja2 git imagesize idna docutils chardet babel alabaster sphinx sphinxcontrib ipython cython swig make sphinxcontrib-bibtex pydoe2
-
-    if sphinxcontrib-bibtex does not install correctly, it is not critical and you can press on.
     
-    on Windows add on:
-    
-        conda install -y m2w64-toolchain libpython
+    Note that older versions of anaconda on MacOS and Linux may require `source activate wisdem-env`
 
-    on MacOS add on:
-    
-        conda install -y compilers
-        xcode-select --install
+2.  FOR USERS (NOT DEVELOPERS): Install WISDEM and its dependencies
 
-    on Linux add on:
+        conda install -y wisdem
 
-        conda install -y compilers mpi4py petsc4py
+3.  To open up the WISDEM tutorials, navigate to a directory where you want to place WISDEM and all of its files.
 
-
-
-
-3.  Next install [OpenMDAO](http://openmdao.org), the glue code and optimization library for WISDEM&reg;
-
-        pip install OpenMDAO simpy jsonschema ruamel.yaml
-
-4.  Now navigate to a directory for WISDEM&reg; and all of its files.  This directory may be placed anywhere in the user's filesystem.
-
-5.  Git clone WISDEM&reg; 
-
+        conda install -y git jupyter
         git clone https://github.com/WISDEM/WISDEM.git
+        cd WISDEM/tutorial-notebooks
+        jupyter notebook
 
-6.  Now install all of the packages.  The instructions here assume that the user will be interacting with the source code and incorporating code updates frequently, so the python packages are set-up for development (`python setup.py develop`), instead of hard installs (`python setup.py install`).
+2.  FOR DEVELOPERS (NOT USERS): Use conda to install the build dependencies, but then install WISDEM from source.  Not the differences between Windows and Mac/Linux build systems
 
+        conda install -y wisdem git jupyter
+        conda remove --force wisdem
+        conda install compilers     # (Mac / Linux only)
+        conda install m2w64-toolchain libpython       # (Windows only)
+        git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
-        git checkout --track origin/openmdao2
-        python setup.py develop 
-        cd ..
+        python setup.py develop
 
 
-7. OPTIONAL: Install pyOptSparse, an package that provides a handful of additional optimization solvers and has OpenMDAO support:
+4. OPTIONAL: Install pyOptSparse, an package that provides a handful of additional optimization solvers and has OpenMDAO support:
 
         git clone https://github.com/evan-gaertner/pyoptsparse.git
         cd pyoptsparse
         python setup.py install
         cd ..
-
-
-## Installation (Linux or MacOS with package management)
-
-WISDEM&reg; can also be used with native or add-on package managers, instead of relying on the Anaconda system.  WISDEM&reg; installations have succeeded on Linux ([Ubuntu](https://www.ubuntu.com/), [Fedora](https://getfedora.org), etc), MacOS with [MacPorts](https://www.macports.org) or [Homebrew](https://brew.sh), and Windows with [Cygwin](http://cygwin.com).
-
-1. Obtain the local version of Python3 and the packages listed in Step 2 above.  Each package manager will have a different name for these packages.  If your package manager does not have a particular Python package, you can obtain it via `pip install` from the Python Package Index, [PyPI](https://pypi.org/).
-
-2. Continue with Anaconda Steps 3-6
 
 
 ## Run Unit Tests

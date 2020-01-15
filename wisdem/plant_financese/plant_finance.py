@@ -9,19 +9,19 @@ class PlantFinance(ExplicitComponent):
 
         # Inputs
         self.add_input('machine_rating',    val=0.0, units='kW',        desc='Rating of the turbine')
-        self.add_input('tcc_per_kW' ,       val=0.0, units='USD/kW',   desc='A wind turbine capital cost')
-        self.add_discrete_input('turbine_number',    val=0,                  desc='Number of turbines at plant')
-        self.add_input('bos_per_kW',        val=0.0, units='USD/kW',   desc='Balance of system costs of the turbine')
-        self.add_input('opex_per_kW',       val=0.0, units='USD/kW/yr',desc='Average annual operational expenditures of the turbine')
-        self.add_input('park_aep',          val=0.0, units='kW*h',  desc='Annual Energy Production of the wind plant')
-        self.add_input('turbine_aep',       val=0.0, units='kW*h',  desc='Annual Energy Production of the wind turbine')
+        self.add_input('tcc_per_kW' ,       val=0.0, units='USD/kW',    desc='A wind turbine capital cost')
+        self.add_discrete_input('turbine_number',    val=0,             desc='Number of turbines at plant')
+        self.add_input('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
+        self.add_input('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
+        self.add_input('park_aep',          val=0.0, units='kW*h',      desc='Annual Energy Production of the wind plant')
+        self.add_input('turbine_aep',       val=0.0, units='kW*h',      desc='Annual Energy Production of the wind turbine')
 
         # parameters
         self.add_input('wake_loss_factor',  val=0.15,                   desc='The losses in AEP due to waked conditions')
-        self.add_input('fixed_charge_rate', val=0.079216644,            desc = 'Fixed charge rate for coe calculation')
+        self.add_input('fixed_charge_rate', val=0.075,                  desc = 'Fixed charge rate for coe calculation')
 
         #Outputs
-        self.add_output('lcoe',             val=0.0, units='USD/kW/h',desc='Levelized cost of energy for the wind plant')
+        self.add_output('lcoe',             val=0.0, units='USD/kW/h',  desc='Levelized cost of energy for the wind plant')
 
         self.declare_partials('*','*')
         
@@ -77,7 +77,7 @@ class PlantFinance(ExplicitComponent):
         dnec_dtaep    = dpark_dtaep  / npr
         dnec_dpaep    = dpark_dpaep  / npr
         dnec_dnturb   = dpark_dnturb / npr - dnpr_dnturb   * nec / npr
-        dnec_dtrating =                               - dnpr_dtrating * nec / npr
+        dnec_dtrating =                    - dnpr_dtrating * nec / npr
         
         icc     = (c_turbine + c_bos_turbine) / t_rating #$/kW, changed per COE report
         c_opex  = (c_opex_turbine) / t_rating  # $/kW, changed per COE report
@@ -89,17 +89,17 @@ class PlantFinance(ExplicitComponent):
         #compute COE and LCOE values
         lcoe = ((icc * fcr + c_opex) / nec) # changed per COE report
         outputs['lcoe'] = lcoe
-        
+
         self.J = {}
-        self.J['lcoe', 'turbine_cost'            ] = dicc_dcturb*fcr /nec
-        self.J['lcoe', 'turbine_number'          ] = - dnec_dnturb*lcoe/nec
-        self.J['lcoe', 'turbine_bos_costs'       ] = dicc_dcbos *fcr /nec
-        self.J['lcoe', 'turbine_avg_annual_opex' ] = dcopex_dcopex   /nec
-        self.J['lcoe', 'fixed_charge_rate'       ] = icc / nec
-        self.J['lcoe', 'wake_loss_factor'        ] = -dnec_dwlf *lcoe/nec
-        self.J['lcoe', 'turbine_aep'             ] = -dnec_dtaep*lcoe/nec
-        self.J['lcoe', 'park_aep'                ] = -dnec_dpaep*lcoe/nec
-        self.J['lcoe', 'machine_rating'          ] = (dicc_dtrating*fcr + dcopex_dtrating)/nec - dnec_dtrating*lcoe/nec
+        self.J['lcoe', 'tcc_per_kW'       ] = dicc_dcturb*fcr /nec
+        self.J['lcoe', 'turbine_number'   ] = - dnec_dnturb*lcoe/nec
+        self.J['lcoe', 'bos_per_kW'       ] = dicc_dcbos *fcr /nec
+        self.J['lcoe', 'opex_per_kW'      ] = dcopex_dcopex   /nec
+        self.J['lcoe', 'fixed_charge_rate'] = icc / nec
+        self.J['lcoe', 'wake_loss_factor' ] = -dnec_dwlf *lcoe/nec
+        self.J['lcoe', 'turbine_aep'      ] = -dnec_dtaep*lcoe/nec
+        self.J['lcoe', 'park_aep'         ] = -dnec_dpaep*lcoe/nec
+        self.J['lcoe', 'machine_rating'   ] = (dicc_dtrating*fcr + dcopex_dtrating)/nec - dnec_dtrating*lcoe/nec
         
         if self.options['verbosity']:
             print('################################################')
@@ -117,7 +117,7 @@ class PlantFinance(ExplicitComponent):
             print('Total initial capital cost        %.2f M USD'      % (icc * n_turbine * t_rating * 1.e-006))  
             print('Opex costs of the park            %.2f M USD/yr'   % (c_opex_turbine * n_turbine * 1.e-006))              
             print('Net energy capture                %.2f MWh/MW/yr'  % nec)
-            print('LCoE                              %.2f USD/MW'     % (lcoe  * 1.e003)) #removed "coe", best to have only one metric for cost
+            print('LCoE                              %.2f USD/MWh'    % (lcoe  * 1.e003)) #removed "coe", best to have only one metric for cost
             print('################################################')
             
                     

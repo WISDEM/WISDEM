@@ -72,9 +72,15 @@ def convert_str(val):
         try:
             data_type(val)
             return True
-        except ValueError:
+        except:
             return False
 #        return isinstance(val, data_type)  ### this doesn't work b/c of numpy data types; they're not instances of base types
+    def try_list(val):
+        try:
+            val[0]
+            return True
+        except:
+            return False
 
     if try_type(val, int) and int(val) == float(val):
         return int(val)
@@ -84,6 +90,8 @@ def convert_str(val):
         return True
     elif val=='False':
         return False
+    # elif type(val)!=str and try_list(val):
+    #     return ", ".join(['{:}'.format(i) for i in val])
     else:
         return val
 
