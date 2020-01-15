@@ -101,3 +101,10 @@ Thumbs.db
 # VSCode #
 ##########
 .vscode/
+
+# Other file types #
+####################
+*.bak
+*.png
+*.pdf
+*.docx
