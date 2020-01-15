@@ -14,7 +14,8 @@ class EESG(ExplicitComponent):
     
     def setup(self):
         # EESG generator design inputs
-        self.add_input('r_s', val=0.0, units ='m', desc='airgap radius r_s')
+        #self.add_input('r_s', val=0.0, units ='m', desc='airgap radius r_s')
+        self.add_input('rad_ag', val=0.0, units ='m', desc='airgap radius')
         self.add_input('l_s', val=0.0, units ='m', desc='Stator core length l_s')
         self.add_input('h_s', val=0.0, units ='m', desc='Yoke height h_s')
         self.add_input('tau_p',val=0.0, units ='m', desc='Pole pitch self.tau_p')
@@ -124,7 +125,7 @@ class EESG(ExplicitComponent):
         
     def compute(self, inputs, outputs):
         # Unpack outputs
-        r_s               = inputs['r_s']
+        rad_ag               = inputs['rad_ag']
         l_s               = inputs['l_s']
         h_s               = inputs['h_s']
         tau_p             = inputs['tau_p']
@@ -156,8 +157,8 @@ class EESG(ExplicitComponent):
         g1     = 9.81                # m / s^2 acceleration due to gravity
         E      = 2e11                # N / m^2 young's modulus
         sigma  = 48.373e3            # shear stress
-        mu_0   = pi * 4e-7             # permeability of free space
-        phi    = 90 * 2*pi / 360
+        mu_0   = pi * 4e-7           # permeability of free space
+        phi    = radians(90)
         
         # Assign values to design constants
         h_w       = 0.005
@@ -181,19 +182,19 @@ class EESG(ExplicitComponent):
         t   = h_yr
         
         # Aspect ratio
-        K_rad = l_s / (2 * r_s)
+        K_rad = l_s / (2 * rad_ag)
         
         ###################################################### Electromagnetic design#############################################
         
         alpha_p = pi / 2 * .7 # (not used)
-        dia = 2 * r_s             # air gap diameter
+        dia = 2 * rad_ag             # air gap diameter
         
         # air gap length and minimum values
         g = 0.001 * dia       
         if(g < 0.005):
             g = 0.005
             
-        r_r = r_s - g                             # rotor radius
+        r_r = rad_ag - g                             # rotor radius
         d_se = dia + 2 * h_s + 2 * h_ys           # stator outer diameter (not used)
         p = np.round(pi * dia / (2 * tau_p))      # number of pole pairs
         S = 2 * p*q1 * m                          # number of slots of stator phase winding
@@ -223,7 +224,7 @@ class EESG(ExplicitComponent):
         
         # Slot fill factor according to air gap radius
         
-        if (2 * r_s>2):
+        if (2 * rad_ag>2):
             K_fills = 0.65
         else:
             K_fills = 0.4
@@ -231,30 +232,30 @@ class EESG(ExplicitComponent):
         # Calculating Stator winding factor    
         
         k_y1 = sin(y_tau_p * pi / 2)                        # chording factor
-        k_q1 = sin(pi / 6) / q1 / sin(pi / 6/q1)            # winding zone factor
+        k_q1 = sin(pi / 6) / q1 / sin(pi / 6 / q1)          # winding zone factor
         k_wd = k_y1 * k_q1
         
-        # Calculating stator winding conductor length, cross - section and resistance
+        # Calculating stator winding conductor length, cross-section and resistance
         
         shortpitch = 0
         l_Cus = 2 * N_s * (2 * (tau_p - shortpitch / m/q1) + l_s)   # length of winding
-        A_s = b_s * (h_s - h_w)
-        A_scalc = b_s * 1000 * (h_s * 1000 - h_w * 1000)            # cross section in mm^2
-        A_Cus = A_s * q1 * p*K_fills / N_s
-        A_Cuscalc = A_scalc * q1 * p*K_fills / N_s
+        A_s       = b_s        * (h_s - h_w)
+        A_scalc   = b_s * 1000 * (h_s - h_w) * 1000            # cross section in mm^2
+        A_Cus     = A_s     * q1 * p * K_fills / N_s
+        A_Cuscalc = A_scalc * q1 * p * K_fills / N_s
         R_s = l_Cus * rho_Cu / A_Cus
         
-        # field winding design, conductor lenght, cross - section and resistance
+        # field winding design, conductor lenght, cross-section and resistance
         
-        N_f = np.round(N_f)            # rounding the field winding turns to the nearest integer
-        I_srated = machine_rating / (sqrt(3) * 5000 * cos_phi)
-        l_pole = l_s - 0.05 + 0.120  # 50mm smaller than stator and 120mm longer to accommodate end stack
-        K_fe = 0.95                    
-        l_pfe = l_pole * K_fe
-        l_Cur = 4 * p*N_f * (l_pfe + b_pc + pi / 4 * (pi * (r_r - h_pc - h_ps) / p - b_pc))
-        A_Cur = k_fillr * h_pc * 0.5 / N_f * (pi * (r_r - h_pc - h_ps) / p - b_pc)
+        N_f       = np.round(N_f)            # rounding the field winding turns to the nearest integer
+        I_srated  = machine_rating / (sqrt(3) * 5000 * cos_phi)
+        l_pole    = l_s - 0.05 + 0.120  # 50mm smaller than stator and 120mm longer to accommodate end stack
+        K_fe      = 0.95                    
+        l_pfe     = l_pole * K_fe
+        l_Cur     = 4 * p*N_f * (l_pfe + b_pc + pi / 4 * (pi * (r_r - h_pc - h_ps) / p - b_pc))
+        A_Cur     = k_fillr * h_pc        * 0.5 / N_f * (pi * (r_r - h_pc - h_ps)        / p - b_pc)
         A_Curcalc = k_fillr * h_pc * 1000 * 0.5 / N_f * (pi * (r_r - h_pc - h_ps) * 1000 / p - b_pc * 1000)
-        Slot_Area = A_Cur * 2*N_f / k_fillr # (not used)
+        Slot_Area = A_Cur * 2 * N_f / k_fillr # (not used)
         R_r = rho_Cu * l_Cur / A_Cur
         
         # field winding current density
@@ -271,7 +272,7 @@ class EESG(ExplicitComponent):
         
         # calculating no-load voltage and stator current
         
-        E_s = 2 * N_s * l_s * r_s * k_wd * om_m * B_g / sqrt(2) # no-load voltage
+        E_s = 2 * N_s * l_s * rad_ag * k_wd * om_m * B_g / sqrt(2) # no-load voltage
         I_s = (E_s - (E_s**2 - 4 * R_s * machine_rating / m)**0.5) / (2 * R_s)
         
         # Calculating stator winding current density and specific current loading
@@ -291,9 +292,9 @@ class EESG(ExplicitComponent):
         
         # Calculating leakage inductances in the stator
         
-        L_ssigmas = 2 * mu_0 * l_s * N_s**2 / p/q1 * ((h_s - h_w) / (3 * b_s) + h_w / b_so)  # slot leakage inductance
-        L_ssigmaew = mu_0 * 1.2 * N_s**2 / p * 1.2 * (2 / 3 * tau_p + 0.01)                  # end winding leakage inductance
-        L_ssigmag = 2 * mu_0 * l_s * N_s**2 / p/q1 * (5 * (g / b_so) / (5 + 4 * (g / b_so))) # tooth tip leakage inductance
+        L_ssigmas = 2 * mu_0 * l_s * N_s**2 / p / q1 * ((h_s - h_w) / (3 * b_s) + h_w / b_so)  # slot leakage inductance
+        L_ssigmaew =    mu_0 * 1.2 * N_s**2 / p * 1.2 * (2 / 3 * tau_p + 0.01)                 # end winding leakage inductance
+        L_ssigmag = 2 * mu_0 * l_s * N_s**2 / p / q1 * (5 * (g / b_so) / (5 + 4 * (g / b_so))) # tooth tip leakage inductance
         L_ssigma = (L_ssigmas + L_ssigmaew + L_ssigmag)  # stator leakage inductance
         
         # Calculating effective air gap
@@ -313,15 +314,15 @@ class EESG(ExplicitComponent):
         At_pc = (h_pc + h_ps) * airGapFn(B_pc, h_pc + h_ps)
         At_ry = tau_p * 0.5 * airGapFn(B_rymax, tau_p/2)
         '''
-        At_g = g_1 * B_gfm / mu_0
-        At_t = h_s * (400 * B_tmax + 7 * (B_tmax)**13)
-        At_sy = tau_p * 0.5 * (400 * B_symax + 7 * (B_symax)**13)
-        At_pc = (h_pc + h_ps) * (400 * B_pc + 7 * (B_pc)**13)
-        At_ry = tau_p * 0.5 * (400 * B_rymax + 7 * (B_rymax)**13)
+        At_g  = g_1 * B_gfm / mu_0
+        At_t  = h_s           * (400 * B_tmax  + 7 * B_tmax**13)
+        At_sy = tau_p * 0.5   * (400 * B_symax + 7 * B_symax**13)
+        At_pc = (h_pc + h_ps) * (400 * B_pc    + 7 * B_pc**13)
+        At_ry = tau_p * 0.5   * (400 * B_rymax + 7 * B_rymax**13)
         g_eff = (At_g + At_t + At_sy + At_pc + At_ry) * g_1 / At_g
         
-        L_m = 6 * k_wd**2 * N_s**2 * mu_0 * r_s * l_s / pi / g_eff / p**2
-        B_r1 = (mu_0 * I_f * N_f * 4*sin(0.5 * (b_p / tau_p) * pi)) / g_eff / pi # (not used)
+        L_m = 6 * k_wd**2 * N_s**2 * mu_0 * rad_ag * l_s / pi / g_eff / p**2
+        B_r1 = (mu_0 * I_f * N_f * 4 * sin(0.5 * (b_p / tau_p) * pi)) / g_eff / pi # (not used)
         
         # Calculating direct axis and quadrature axes inductances
         L_dm = (b_p / tau_p +(1 / pi) * sin(pi * b_p / tau_p)) * L_m
@@ -338,11 +339,11 @@ class EESG(ExplicitComponent):
         # induced voltage
         
         E_p = om_e * L_dm * I_sd + sqrt(E_s**2 - (om_e * L_qm * I_sq)**2) # (not used)
-        # M_sf = mu_0 * 8*r_s * l_s * k_wd * N_s * N_f * sin(0.5 * b_p / tau_p * pi) / (p * g_eff * pi)
+        # M_sf = mu_0 * 8*rad_ag * l_s * k_wd * N_s * N_f * sin(0.5 * b_p / tau_p * pi) / (p * g_eff * pi)
         # I_f1 = sqrt(2) * (E_p) / (om_e * M_sf)
         # I_f2 = (E_p / E_s) * B_g * g_eff * pi / (4 * N_f * mu_0 * sin(pi * b_p / 2/tau_p))
-        # phi_max_stator = k_wd * N_s * pi * r_s * l_s * 2*mu_0 * N_f * I_f * 4*sin(0.5 * b_p / tau_p / pi) / (p * pi * g_eff * pi)
-        # M_sf = mu_0 * 8*r_s * l_s * k_wd * N_s * N_f * sin(0.5 * b_p / tau_p / pi) / (p * g_eff * pi)
+        # phi_max_stator = k_wd * N_s * pi * rad_ag * l_s * 2*mu_0 * N_f * I_f * 4*sin(0.5 * b_p / tau_p / pi) / (p * pi * g_eff * pi)
+        # M_sf = mu_0 * 8*rad_ag * l_s * k_wd * N_s * N_f * sin(0.5 * b_p / tau_p / pi) / (p * g_eff * pi)
         
         L_tot = l_s + 2 * tau_p
         
@@ -355,8 +356,8 @@ class EESG(ExplicitComponent):
         L_tot = l_s + 2 * tau_p # (not used)
         V_Cuss = m * l_Cus * A_Cus                                                     # volume of copper in stator
         V_Cusr = l_Cur * A_Cur                                                         # volume of copper in rotor
-        V_Fest = (l_s * pi * ((r_s + h_s)**2 - r_s**2) - 2 * m*q1 * p*b_s * h_s * l_s) # volume of iron in stator tooth
-        V_Fesy = l_s * pi * ((r_s + h_s + h_ys)**2 - (r_s + h_s)**2)                   # volume of iron in stator yoke
+        V_Fest = (l_s * pi * ((rad_ag + h_s)**2 - rad_ag**2) - 2 * m*q1 * p*b_s * h_s * l_s) # volume of iron in stator tooth
+        V_Fesy = l_s * pi * ((rad_ag + h_s + h_ys)**2 - (rad_ag + h_s)**2)                   # volume of iron in stator yoke
         V_Fert = 2 * p*l_pfe * (h_pc * b_pc + b_p * h_ps)                              # volume of iron in rotor pole
         V_Fery = l_pfe * pi * ((r_r - h_ps - h_pc)**2 - (r_r - h_ps - h_pc - h_yr)**2) # volume of iron in rotor yoke
         
@@ -415,7 +416,7 @@ class EESG(ExplicitComponent):
         q3          = B_g**2 / 2/mu_0           # normal component of Maxwell's stress
         #l           = l_s                       # l - stator core length - now using l_s everywhere
         l_b         = 2 * tau_p                 # end winding length # (not used)
-        l_e         = l_s + 2 * 0.001 * r_s     # equivalent core length # (not used)
+        l_e         = l_s + 2 * 0.001 * rad_ag     # equivalent core length # (not used)
         a_r         = (b_r * d_r) - ((b_r - 2 * t_wr) * (d_r - 2 * t_wr))  # cross-sectional area of rotor armms
         A_r         = l_s * t                   # cross-sectional area of rotor cylinder
         N_r         = np.round(n_r)
@@ -452,7 +453,7 @@ class EESG(ExplicitComponent):
         
         # Calculating torsional deflection of rotor structure
         
-        z_all_r     = 0.05 * 2*pi * R / 360  # allowable torsional deflection
+        z_all_r     = radians(0.05 * R)  # allowable torsional deflection
         z_A_r       = (2 * pi * (R - 0.5 * h_yr) * l_s / N_r) * sigma * (l_ir - 0.5 * h_yr)**3 / 3 / E / I_arm_tor_r # circumferential deflection
         
         # STATOR structure
@@ -464,7 +465,7 @@ class EESG(ExplicitComponent):
         I_st        = l_s * t_s**3 / 12
         I_arm_axi_s = ((b_st * d_s**3) - ((b_st - 2 * t_ws) * (d_s - 2 * t_ws)**3)) / 12  # second moment of area of stator arm
         I_arm_tor_s = ((d_s * b_st**3) - ((d_s - 2 * t_ws) * (b_st - 2 * t_ws)**3)) / 12  # second moment of area of rotot arm w.r.t torsion
-        R_st        = (r_s + h_s + h_ys * 0.5)
+        R_st        = rad_ag + h_s + h_ys * 0.5
         R_1s        = R_st - h_ys * 0.5
         k_2         = sqrt(I_st / A_st)
         m2          = (k_2 / R_st)**2
@@ -473,8 +474,8 @@ class EESG(ExplicitComponent):
         
         b_all_s   = 2 * pi * R_o / N_st
         u_all_s   = R_st / 10000
-        y_all     = 2 * l_s / 100    # allowable axial deflection
-        z_all_s   = 0.05 * 2*pi * R_st / 360  # allowable torsional deflection
+        y_all     = 2 * l_s / 100         # allowable axial     deflection
+        z_all_s   = radians(0.05 * R_st)  # allowable torsional deflection
         
         # Calculating radial deflection according to McDonald's
         

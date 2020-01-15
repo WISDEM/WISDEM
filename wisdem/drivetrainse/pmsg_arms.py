@@ -14,7 +14,8 @@ class PMSG_Arms(ExplicitComponent):
     def setup(self):
         
         # PMSG_arms generator design inputs
-        self.add_input('r_s', val=0.0, units ='m', desc='airgap radius r_s')
+        #self.add_input('r_s', val=0.0, units ='m', desc='airgap radius r_s')
+        self.add_input('rad_ag', val=0.0, units ='m', desc='airgap radius')
         self.add_input('l_s', val=0.0, units ='m', desc='Stator core length l_s')
         self.add_input('h_s', val=0.0, units ='m', desc='Yoke height h_s')
         self.add_input('tau_p', val=0.0, units ='m', desc='Pole pitch self.tau_p')
@@ -118,7 +119,8 @@ class PMSG_Arms(ExplicitComponent):
         
     def compute(self, inputs, outputs):
         # Unpack inputs
-        r_s               = inputs['r_s']
+        #r_s               = inputs['r_s']
+        rad_ag            = inputs['rad_ag']
         l_s               = inputs['l_s']
         h_s               = inputs['h_s']
         tau_p             = inputs['tau_p']
@@ -153,9 +155,9 @@ class PMSG_Arms(ExplicitComponent):
         E      = 2e11                # N / m^2 young's modulus
         sigma  = 40e3                # shear stress assumed
         ratio  = 0.7                 # ratio of magnet width to pole pitch(bm / tau_p)
-        mu_0   = pi * 4e-7         # permeability of free space
+        mu_0   = pi * 4e-7           # permeability of free space
         mu_r   = 1.06                # relative permeability 
-        phi    = 90 * 2*pi / 360     # tilt angle (rotor tilt -90 degrees during transportation)
+        phi    = radians(90)         # tilt angle (rotor tilt -90 degrees during transportation)
         cofi   = 0.85                # power factor
         
         # Assign values to design constants
@@ -180,20 +182,20 @@ class PMSG_Arms(ExplicitComponent):
         
         ###################################################### Electromagnetic design#############################################
         
-        K_rad = l_s / (2 * r_s)           # Aspect ratio
-        T     = Torque                    # rated torque
+        K_rad = l_s / (2 * rad_ag)           # Aspect ratio
+        #T     = Torque                    # rated torque
         l_u   = k_fes * l_s               # useful iron stack length
         We    = tau_p
         l_b   = 2 * tau_p                 # end winding length
-        l_e   = l_s + 2 * 0.001 * r_s     # equivalent core length
+        l_e   = l_s + 2 * 0.001 * rad_ag     # equivalent core length
         b_m   = 0.7 * tau_p               # magnet width     
         
         
         # Calculating air gap length
-        dia   =  2 * r_s                  # air gap diameter
-        g     =  0.001 * dia              # air gap length
-        r_m   =  r_s + h_ys + h_s         # magnet radius
-        r_r   =  r_s - g                  # rotor radius
+        dia   =  2 * rad_ag                  # air gap diameter
+        ag_len     =  0.001 * dia              # air gap length
+        r_m   =  rad_ag + h_ys + h_s         # magnet radius
+        r_r   =  rad_ag - ag_len                  # rotor radius
         
         p     =  np.round(pi * dia / (2 * tau_p))  # pole pairs
         f     =  n_nom * p / 60                    # outout frequency
@@ -206,9 +208,9 @@ class PMSG_Arms(ExplicitComponent):
         Slot_aspect_ratio = h_s / b_s
         
         # Calculating Carter factor for statorand effective air gap length
-        gamma  =  4 / pi * (b_so / 2/(g + h_m / mu_r) * atan(b_so / 2/(g + h_m / mu_r)) - log(sqrt(1 + (b_so / 2/(g + h_m / mu_r))**2)))
-        k_C    =  tau_s / (tau_s - gamma * (g + h_m / mu_r))   # carter coefficient
-        g_eff  =  k_C * (g + h_m / mu_r)
+        gamma  =  4 / pi * (b_so / 2/(ag_len + h_m / mu_r) * atan(b_so / 2/(ag_len + h_m / mu_r)) - log(sqrt(1 + (b_so / 2/(ag_len + h_m / mu_r))**2)))
+        k_C    =  tau_s / (tau_s - gamma * (ag_len + h_m / mu_r))   # carter coefficient
+        g_eff  =  k_C * (ag_len + h_m / mu_r)
         
         # angular frequency in radians
         om_m            =  2 * pi * n_nom / 60
@@ -229,33 +231,33 @@ class PMSG_Arms(ExplicitComponent):
         
         #l = L_t                          # length - now using L_t everywhere
         
-        # Calculating no - load voltage induced in the stator
-        E_p    = 2 * (N_s) * L_t * r_s * k_wd * om_m * B_g / sqrt(2)
-        
-        # Stator winding length ,cross - section and resistance
-        l_Cus     = 2 * (N_s) * (2 * tau_p + L_t)
-        A_s       = b_s * (h_s - h_w) * q1 * p
-        A_scalc   = b_s * 1000 * (h_s * 1000 - h_w * 1000) * q1 * p
-        A_Cus     = A_s * k_sfil / (N_s)
-        A_Cuscalc = A_scalc *k_sfil / (N_s)
+        # Stator winding length, cross-section and resistance
+        l_Cus     = 2 * N_s * (2 * tau_p + L_t)
+        A_s       = b_s        * (h_s - h_w)        * q1 * p
+        A_scalc   = b_s * 1000 * (h_s - h_w) * 1000 * q1 * p
+        A_Cus     = A_s * k_sfil / N_s
+        A_Cuscalc = A_scalc * k_sfil / N_s
         R_s       = l_Cus * rho_Cu / A_Cus
         
         # Calculating leakage inductance in  stator
-        L_m        = 2 * m*k_wd**2 * (N_s)**2 * mu_0 * tau_p * L_t / pi**2 / g_eff / p
-        L_ssigmas  =  2 * mu_0 * l_s * N_s**2 / p/q1 * ((h_s - h_w) / (3 * b_s) + h_w / b_so)              # slot leakage inductance
-        L_ssigmaew = (2 * mu_0 * l_s * N_s**2 / p/q1) * 0.34 * g*(l_e - 0.64 * tau_p * y_tau_p) / l_s     # end winding leakage inductance
-        L_ssigmag  =  2 * mu_0 * l_s * N_s**2 / p/q1 * (5 * (g * k_C / b_so) / (5 + 4 * (g * k_C / b_so))) # tooth tip leakage inductance
+        L_m        = 2 * mu_0 * N_s**2 / p * m * k_wd**2 * tau_p * L_t / pi**2 / g_eff
+        L_ssigmas  = 2 * mu_0 * N_s**2 / p / q1 * l_s  * ((h_s - h_w) / (3 * b_s) + h_w / b_so)                        # slot leakage inductance
+        L_ssigmaew = 2 * mu_0 * N_s**2 / p / q1 * l_s  * 0.34 * ag_len * (l_e - 0.64 * tau_p * y_tau_p) / l_s          # end winding leakage inductance
+        L_ssigmag  = 2 * mu_0 * N_s**2 / p / q1 * l_s  * (5 * (ag_len * k_C / b_so) / (5 + 4 * (ag_len * k_C / b_so))) # tooth tip leakage inductance
         L_ssigma   = L_ssigmas + L_ssigmaew + L_ssigmag
-        
         L_s  = L_m + L_ssigma
-        Z = (machine_rating / (m * E_p))        
-        G = (E_p**2 - (om_e * L_s * Z)**2)
+        
+        # Calculating no-load voltage induced in the stator
+        E_p    = 2 * N_s * L_t * rad_ag * k_wd * om_m * B_g / sqrt(2)
+        
+        Z = machine_rating / (m * E_p)        
+        G = E_p**2 - (om_e * L_s * Z)**2
 
         # Calculating stator current and electrical loading
         I_s     = sqrt(Z**2 + (((E_p - G**0.5) / (om_e * L_s)**2)**2))
         J_s     = I_s / A_Cuscalc
         A_1     = 6 * N_s * I_s / (pi * dia)
-        I_snom  = machine_rating / m / E_p / cofi # rated current                
+        I_snom  = machine_rating / (m * E_p * cofi) # rated current                
         I_qnom  = machine_rating / (m * E_p)
         X_snom  = om_e * (L_m + L_ssigma)
                 
@@ -264,9 +266,9 @@ class PMSG_Arms(ExplicitComponent):
         # Calculating Electromagnetically active mass
         
         V_Cus   = m * l_Cus * A_Cus              # copper volume
-        V_Fest  = L_t * 2*p * q1 * m*b_t * h_s   # volume of iron in stator tooth
+        V_Fest  = L_t * 2*p * q1 * m * b_t * h_s # volume of iron in stator tooth
         
-        V_Fesy  = L_t * pi * ((r_s + h_s + h_ys)**2 - (r_s + h_s)**2) # volume of iron in stator yoke
+        V_Fesy  = L_t * pi * ((rad_ag + h_s + h_ys)**2 - (rad_ag + h_s)**2) # volume of iron in stator yoke
         V_Fery  = L_t * pi * ((r_r - h_m)**2 - (r_r - h_m - h_yr)**2)
         Copper  = V_Cus * rho_Copper
 
@@ -282,18 +284,18 @@ class PMSG_Arms(ExplicitComponent):
         P_Cu        = m * I_snom**2 * R_s * K_R
 
         # Iron Losses ( from Hysteresis and eddy currents) 
-        P_Hyys    = M_Fesy * (B_symax / 1.5)**2 * (P_Fe0h * om_e / (2 * pi * 60))  # Hysteresis losses in stator yoke
-        P_Ftys    = M_Fesy * (B_symax / 1.5)**2 * (P_Fe0e * (om_e / (2 * pi * 60))**2) # Eddy losses in stator yoke
+        P_Hyys    = M_Fesy * (B_symax / 1.5)**2 * (P_Fe0h * om_e / (2 * pi * 60))      # Hysteresis losses in stator yoke
+        P_Ftys    = M_Fesy * (B_symax / 1.5)**2 * (P_Fe0e * (om_e / (2 * pi * 60))**2) # Eddy       losses in stator yoke
         P_Fesynom = P_Hyys + P_Ftys
         
-        P_Hyd     = M_Fest * (B_tmax / 1.5)**2 * (P_Fe0h * om_e / (2 * pi * 60))   # Hysteresis losses in stator teeth
-        P_Ftd     = M_Fest * (B_tmax / 1.5)**2 * (P_Fe0e * (om_e / (2 * pi * 60))**2)    # Eddy losses in stator teeth
+        P_Hyd     = M_Fest * (B_tmax / 1.5)**2 * (P_Fe0h * om_e / (2 * pi * 60))       # Hysteresis losses in stator teeth
+        P_Ftd     = M_Fest * (B_tmax / 1.5)**2 * (P_Fe0e * (om_e / (2 * pi * 60))**2)  # Eddy       losses in stator teeth
         P_Festnom = P_Hyd + P_Ftd
         
         # additional stray losses due to leakage flux
         P_ad = 0.2 * (P_Hyys + P_Ftys + P_Hyd + P_Ftd ) 
         pFtm = 300 # specific magnet loss
-        P_Ftm = pFtm * 2*p * b_m * l_s
+        P_Ftm = pFtm * 2 * p * b_m * l_s
         
         Losses = P_Cu + P_Festnom + P_Fesynom + P_ad + P_Ftm
         gen_eff = machine_rating * 100 / (machine_rating + Losses)
@@ -303,14 +305,14 @@ class PMSG_Arms(ExplicitComponent):
         ## Deflection Calculations ##
         # rotor structure calculations
         
-        a_r         = (b_r * d_r) - ((b_r - 2 * t_wr) * (d_r - 2 * t_wr))  # cross - sectional area of rotor arms
-        A_r         = L_t * t                                                # cross - sectional area of rotor cylinder
+        a_r         = (b_r * d_r) - ((b_r - 2 * t_wr) * (d_r - 2 * t_wr))  # cross-sectional area of rotor arms
+        A_r         = L_t * t                                              # cross-sectional area of rotor cylinder
         N_r         = np.round(n_r)                                        # rotor arms
         theta_r     = pi * 1 / N_r                                         # half angle between spokes
-        I_r         = L_t * t**3 / 12                                        # second moment of area of rotor cylinder
+        I_r         = L_t * t**3 / 12                                      # second moment of area of rotor cylinder
         I_arm_axi_r = ((b_r * d_r**3) - ((b_r - 2 * t_wr) * (d_r - 2 * t_wr)**3)) / 12  # second moment of area of rotor arm
         I_arm_tor_r = ((d_r * b_r**3) - ((d_r - 2 * t_wr) * (b_r - 2 * t_wr)**3)) / 12  # second moment of area of rotot arm w.r.t torsion
-        R           = r_s - g-h_m - 0.5 * t                                # Rotor mean radius
+        R           = rad_ag - ag_len - h_m - 0.5 * t                         # Rotor mean radius
         c           = R / 500                                              
         u_all_r     = c / 20                                               # allowable radial deflection
         R_1         = R - t * 0.5                                          # inner radius of rotor cylinder
@@ -321,8 +323,8 @@ class PMSG_Arms(ExplicitComponent):
         
         
         b_all_r     = 2 * pi * R_o / N_r                                   # allowable circumferential arm dimension for rotor
-        q3          = B_g**2 / 2/mu_0                                      # normal component of Maxwell stress
-        mass_PM     = (2 * pi * (R + 0.5 * t) * L_t * h_m * ratio * rho_PM)    # magnet mass
+        q3          = B_g**2 / 2 / mu_0                                    # normal component of Maxwell stress
+        mass_PM     = 2 * pi * (R + 0.5 * t) * L_t * h_m * ratio * rho_PM  # magnet mass
         
         # Calculating radial deflection of the rotor
         Numer = R**3 * ((0.25 * (sin(theta_r) - (theta_r * cos(theta_r))) / (sin(theta_r))**2) - (0.5 / sin(theta_r)) + (0.5 / theta_r))
@@ -330,37 +332,38 @@ class PMSG_Arms(ExplicitComponent):
         Qov   = R**3 / (2 * I_r * theta_r * (m1 + 1))
         Lov   = (R_1 - R_o) / a_r
         Denom = I_r * (Pov - Qov + Lov) # radial deflection % rotor        
-        u_Ar  = (q3 * R**2 / E/t) * (1 + Numer / Denom)
+        u_Ar  = (q3 * R**2 / E / t) * (1 + Numer / Denom)
         
         # Calculating axial deflection of the rotor under its own weight
         
         w_r         = rho_Fes * g1 * sin(phi) * a_r * N_r                     # uniformly distributed load of the weight of the rotor arm
-        mass_st_lam = rho_Fe * 2*pi * (R) * L_t * h_yr                            # mass of rotor yoke steel
-        W           = g1 * sin(phi) * (mass_st_lam / N_r + (mass_PM) / N_r)   # weight of 1 / nth of rotor cylinder
+        mass_st_lam = rho_Fe * 2*pi * R * L_t * h_yr                          # mass of rotor yoke steel
+        W           = g1 * sin(phi) * (mass_st_lam / N_r + mass_PM / N_r)     # weight of 1/nth of rotor cylinder
         
         y_a1 = W   * l_ir**3  / 12 / E / I_arm_axi_r                          # deflection from weight component of back iron
-        y_a2 = w_r * l_iir**4 / 24 / E / I_arm_axi_r                          # deflection from weight component of yhe arms
+        y_a2 = w_r * l_iir**4 / 24 / E / I_arm_axi_r                          # deflection from weight component of the arms
         y_Ar = y_a1 + y_a2 # axial deflection
         
         y_all     = 2 * L_t / 100    # allowable axial deflection
         
         # Calculating # circumferential deflection of the rotor
         
-        z_all_r     = 0.05 * 2*pi * R / 360                                                                                                                           # allowable torsional deflection
-        z_A_r       = (2 * pi * (R - 0.5 * t) * L_t / N_r) * sigma * (l_ir - 0.5 * t)**3 / 3/E / I_arm_tor_r       # circumferential deflection
+        z_all_r     = radians(0.05  * R)                                   # allowable torsional deflection
+        z_A_r       = (2 * pi * (R - 0.5 * t) * L_t / N_r) * sigma \
+                      * (l_ir - 0.5 * t)**3 / 3 / E / I_arm_tor_r          # circumferential deflection
         
-        val_str_rotor        = mass_PM + ((mass_st_lam) + (N_r * (R_1 - R_o) * a_r * rho_Fes))           # rotor mass
+        val_str_rotor = mass_PM + (mass_st_lam + (N_r * (R_1 - R_o) * a_r * rho_Fes))           # rotor mass
         
         # stator structure deflection calculation
-        a_s         = (b_st * d_s) - ((b_st - 2 * t_ws) * (d_s - 2 * t_ws)) # cross - sectional area of stator armms
-        A_st        = L_t * t_s                                               # cross - sectional area of stator cylinder
+        a_s         = (b_st * d_s) - ((b_st - 2 * t_ws) * (d_s - 2 * t_ws)) # cross-sectional area of stator armms
+        A_st        = L_t * t_s                                             # cross-sectional area of stator cylinder
         N_st        = np.round(n_s)                                         # stator arms
         theta_s     = pi * 1 / N_st                                         # half angle between spokes
-        I_st        = L_t * t_s**3 / 12                                       # second moment of area of stator cylinder
+        I_st        = L_t * t_s**3 / 12                                     # second moment of area of stator cylinder
         k_2         = sqrt(I_st / A_st)                                     # radius of gyration
         I_arm_axi_s = ((b_st * d_s**3) - ((b_st - 2 * t_ws) * (d_s - 2 * t_ws)**3)) / 12  # second moment of area of stator arm
         I_arm_tor_s = ((d_s * b_st**3) - ((d_s - 2 * t_ws) * (b_st - 2 * t_ws)**3)) / 12  # second moment of area of rotot arm w.r.t torsion
-        R_st        = r_s + h_s + h_ys * 0.5                                # stator cylinder mean radius
+        R_st        = rad_ag + h_s + h_ys * 0.5                                # stator cylinder mean radius
         R_1s        = R_st - t_s * 0.5                                      # inner radius of stator cylinder, m
         m2          = (k_2 / R_st)**2
         d_se        = dia + 2 * (h_ys + h_s + h_w)                          # stator outer diameter
@@ -374,7 +377,7 @@ class PMSG_Arms(ExplicitComponent):
         l_iiis  = l_is                    # distance at which the weight of the stator cylinder acts
         
         mass_st_lam_s = M_Fest + pi * L_t * rho_Fe * ((R_st + 0.5 * h_ys)**2 - (R_st - 0.5 * h_ys)**2)
-        W_is          = 0.5 * g1 * sin(phi) * (rho_Fes * L_t  *d_s**2)                          # length of stator arm beam at which self - weight acts
+        W_is          = 0.5 * g1 * sin(phi) * (rho_Fes * L_t  *d_s**2)                      # length of stator arm beam at which self-weight acts
         W_iis         = g1 * sin(phi) * (mass_st_lam_s + V_Cus * rho_Copper) / 2/N_st       # weight of stator cylinder and teeth
         w_s           = rho_Fes * g1 * sin(phi) * a_s * N_st                                # uniformly distributed load of the arms
                 
@@ -390,34 +393,34 @@ class PMSG_Arms(ExplicitComponent):
         u_As   = (q3 * R_st**2 / E / t_s) * (1 + Numers / Denoms)
 
         # Calculating axial deflection of the stator
-        X_comp1 = W_is  * l_is**3   / 12 / E / I_arm_axi_s  # deflection component due to stator arm beam at which self - weight acts
+        X_comp1 = W_is  * l_is**3   / 12 / E / I_arm_axi_s  # deflection component due to stator arm beam at which self-weight acts
         X_comp2 = W_iis * l_iis**4  / 24 / E / I_arm_axi_s  # deflection component due to 1 / nth of stator cylinder
         X_comp3 = w_s   * l_iiis**4 / 24 / E / I_arm_axi_s  # deflection component due to weight of arms
         y_As    = X_comp1 + X_comp2 + X_comp3               # axial deflection
         
         # Calculating circumferential deflection of the stator
         z_A_s   = 2 * pi * (R_st + 0.5 * t_s) * L_t / (2 * N_st) * sigma * (l_is + 0.5 * t_s)**3 / 3/E / I_arm_tor_s 
-        z_all_s = 0.05 * 2*pi * R_st / 360           # allowable torsional deflection
+        z_all_s = radians(0.05 * R_st)               # allowable torsional deflection
         b_all_s = 2 * pi * R_o / N_st                # allowable circumferential arm dimension
         
         val_str_stator = mass_stru_steel + mass_st_lam_s   
         val_str_mass   = val_str_rotor + val_str_stator
         
-        TC1 = T / (2 * pi * sigma)  # Desired shear stress
-        TC2 = R**2 * L_t              # Evaluating Torque constraint for rotor
-        TC3 = R_st**2 * L_t           # Evaluating Torque constraint for stator
+        TC1 = Torque / (2 * pi * sigma)  # Desired shear stress
+        TC2 = R**2 * L_t            # Evaluating Torque constraint for rotor
+        TC3 = R_st**2 * L_t         # Evaluating Torque constraint for stator
         
         Structural_mass = mass_stru_steel + (N_r * (R_1 - R_o) * a_r * rho_Fes)
         Stator = mass_st_lam_s + mass_stru_steel + Copper
-        Rotor = ((2 * pi * t*L_t * (R) * rho_Fe) + (N_r * (R_1 - R_o) * a_r * rho_Fes)) + mass_PM
+        Rotor = ((2 * pi * t*L_t * R * rho_Fe) + (N_r * (R_1 - R_o) * a_r * rho_Fes)) + mass_PM
         Mass = Stator + Rotor
         
         
         # Calculating mass moments of inertia and center of mass
         
         I = np.zeros(3)
-        I[0]   = (0.5 * Mass * R_out**2)
-        I[1]   = (0.25 * Mass * R_out**2 + (1 / 12) * Mass * l_s**2) 
+        I[0]   = 0.50 * Mass * R_out**2
+        I[1]   = 0.25 * Mass * R_out**2 + Mass * l_s**2 / 12
         I[2]   = I[1]
         cm = np.zeros(3)
         cm[0]  = shaft_cm[0] + shaft_length / 2. + l_s / 2
