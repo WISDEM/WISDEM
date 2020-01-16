@@ -41,7 +41,7 @@ config = {
 }
 
 LIB = os.path.abspath(os.path.join(os.path.abspath(__file__), "../data"))
-print(LIB)
+
 def test_initialize_library():
     library.initialize_library(None)
     assert os.environ["DATA_LIBRARY"]
