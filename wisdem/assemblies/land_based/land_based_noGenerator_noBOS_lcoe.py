@@ -25,8 +25,7 @@ from wisdem.commonse.mpi_tools import MPI
 class LandBasedTurbine(Group):
 
     def initialize(self):
-        self.options.declare('blade')
-        self.options.declare('materials')
+        self.options.declare('RefBlade')
         self.options.declare('FASTpref', default={})
         self.options.declare('Nsection_Tow', default = 6)
         self.options.declare('VerbosityCosts', default = True)
@@ -34,8 +33,7 @@ class LandBasedTurbine(Group):
         
     def setup(self):
         
-        blade        = self.options['blade']
-        materials    = self.options['materials']
+        RefBlade     = self.options['RefBlade']
         Nsection_Tow = self.options['Nsection_Tow']        
         if 'Analysis_Level' in self.options['FASTpref']:
             Analysis_Level = self.options['FASTpref']['Analysis_Level']
@@ -90,7 +88,7 @@ class LandBasedTurbine(Group):
 
         
         # Add components
-        self.add_subsystem('rotorse', RotorSE(blade=blade, materials=materials,
+        self.add_subsystem('rotorse', RotorSE(RefBlade=RefBlade,
                                               npts_coarse_power_curve=20,
                                               npts_spline_power_curve=200,
                                               regulation_reg_II5=True,

@@ -53,7 +53,7 @@ class TowerModes(ExplicitComponent):
 
         self.add_input('tower_freq', val=np.zeros(2), units='Hz', desc='First natural frequencies of tower (and substructure)')
         self.add_input('rotor_omega', val=0.0, units='rpm', desc='rated rotor rotation speed')
-        self.add_input('gamma_freq',  val=1.0, desc='partial safety factor for fatigue')
+        self.add_input('gamma_freq', val=0.0, desc='partial safety factor for fatigue')
         self.add_discrete_input('blade_number', 3, desc='number of rotor blades')
 
         self.add_output('frequencyNP_margin', val=np.zeros(2), desc='constraint on tower/structure frequency to blade passing frequency with margin')
@@ -75,34 +75,33 @@ class TowerModes(ExplicitComponent):
         outputs['frequency1P_margin'] = np.array([min([f-oneP_low, oneP_high-f]) for f in freq_struct]).flatten()
 
 
-class TipDeflectionConstraint(ExplicitComponent):
-    # OpenMDAO component that computes the undeflected tip-tower clearance and the ratio between the two including a safety factor (typically equal to 1.3)
+class MaxTipDeflection(ExplicitComponent):
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('nFullTow')
+        
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
-        blade_init_options   = wt_init_options['blade']
-        n_span               = blade_init_options['n_span']
-        tower_init_options   = wt_init_options['tower']
-        n_height_tow    = tower_init_options['n_height']
-        # Inputs
+        nFullTow = self.options['nFullTow']
+
         self.add_discrete_input('downwind',       val=False)
         self.add_input('tip_deflection', val=0.0,       units='m',  desc='Blade tip deflection in yaw x-direction')
         self.add_input('Rtip',           val=0.0,       units='m',  desc='Blade tip location in z_b')
-        self.add_input('ref_axis_blade', val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+        self.add_input('precurveTip',    val=0.0,       units='m',  desc='Blade tip location in x_b')
+        self.add_input('presweepTip',    val=0.0,       units='m',  desc='Blade tip location in y_b')
         self.add_input('precone',        val=0.0,       units='deg',desc='Rotor precone angle')
         self.add_input('tilt',           val=0.0,       units='deg',desc='Nacelle uptilt angle')
         self.add_input('overhang',       val=0.0,       units='m',  desc='Horizontal distance between hub and tower-top axis')
-        self.add_input('ref_axis_tower', val=np.zeros((n_height_tow,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-        self.add_input('d_full',         val=np.zeros(n_height_tow),units='m',  desc='Diameter of tower at fine-section nodes')
-        self.add_input('max_allowable_td_ratio',     val=1.3, desc='Safety factor of the tip deflection to stay within the tower clearance')
-        # Outputs
-        self.add_output('tip_deflection_ratio',      val=0.0,           desc='Ratio of blade tip deflection towards the tower and clearance between undeflected blade tip and tower')
+        self.add_input('z_full',         val=np.zeros(nFullTow),units='m',  desc='z-coordinates of tower at fine-section nodes')
+        self.add_input('d_full',         val=np.zeros(nFullTow),units='m',  desc='Diameter of tower at fine-section nodes')
+        self.add_input('gamma_m',        val=0.0, desc='safety factor on materials')
+
+        self.add_output('tip_deflection_ratio',      val=0.0,           desc='Ratio of blade tip deflectiion towardsa the tower and clearance between undeflected blade tip and tower')
         self.add_output('blade_tip_tower_clearance', val=0.0, units='m',desc='Clearance between undeflected blade tip and tower in x-direction of yaw c.s.')
+
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack variables
-        z_tower     = inputs['ref_axis_tower'][:,2]
+        z_tower     = inputs['z_full']
         d_tower     = inputs['d_full']
         overhang    = inputs['overhang']
         tt2hub      = overhang * np.sin(inputs['tilt'] / 180. * np.pi)
@@ -110,10 +109,9 @@ class TipDeflectionConstraint(ExplicitComponent):
         tilt        = inputs['tilt']
         delta       = inputs['tip_deflection']
         upwind      = not discrete_inputs['downwind']
-        prebend_tip =  inputs['ref_axis_blade'][-1,0] # Defined negative for a standard upwind blade
-        presweep_tip = inputs['ref_axis_blade'][-1,1] # Defined positive for a standard blade
+        
         # Coordinates of blade tip in yaw c.s.
-        blade_yaw = DirectionVector(prebend_tip, presweep_tip, inputs['Rtip']).\
+        blade_yaw = DirectionVector(inputs['precurveTip'], inputs['presweepTip'], inputs['Rtip']).\
                     bladeToAzimuth(precone).azimuthToHub(180.0).hubToYaw(tilt)
 
         # Find the radius of tower where blade passes
@@ -131,15 +129,16 @@ class TipDeflectionConstraint(ExplicitComponent):
         else:
             parked_margin = -overhang + blade_yaw.x - r_interp
         outputs['blade_tip_tower_clearance']   = parked_margin
-        outputs['tip_deflection_ratio']        = delta * inputs['max_allowable_td_ratio'] / parked_margin
+        outputs['tip_deflection_ratio']        = delta * inputs['gamma_m'] / parked_margin
 
     
 class TurbineConstraints(Group):
 
     def initialize(self):
-        self.options.declare('wt_init_options')
-    def setup(self):
-        wt_init_options = self.options['wt_init_options']
+        self.options.declare('nFull')
         
-        # self.add_subsystem('modes', TowerModes(), promotes=['*'])
-        self.add_subsystem('tipd', TipDeflectionConstraint(wt_init_options = wt_init_options), promotes=['*'])
+    def setup(self):
+        nFull = self.options['nFull']
+        
+        self.add_subsystem('modes', TowerModes(), promotes=['*'])
+        self.add_subsystem('tipd', MaxTipDeflection(nFullTow=nFull), promotes=['*'])
