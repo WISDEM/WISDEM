@@ -4,8 +4,7 @@ import jsonschema as json
 import time, copy
 from scipy.interpolate import PchipInterpolator, interp1d
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
-from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
-from wisdem.rotorse.rotor_geometry_yaml import trailing_edge_smoothing, remap2grid
+from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_smoothing, remap2grid
 from wisdem.commonse.utilities import arc_length
 
 def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
