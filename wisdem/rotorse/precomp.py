@@ -186,7 +186,7 @@ class PreComp():
             beam_x_ec[i] = results[12] - results[10]
             beam_y_ec[i] = results[13] - results[11]
             beam_rhoA[i] = results[14]
-            beam_rhoJ[i] = results[15] + results[16]  # perpendicular axis theorem
+            beam_rhoJ[i] = results[15] + results[16]  # perpindicular axis theorem
             beam_Tw_iner[i] = results[17]
 
             beam_flap_iner[i] = results[15]

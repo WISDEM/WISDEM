@@ -25,8 +25,7 @@ from wisdem.rotorse.rotor_fast import FASTLoadCases
 
 class RotorSE(Group):
     def initialize(self):
-        self.options.declare('blade')
-        self.options.declare('materials')
+        self.options.declare('RefBlade')
         self.options.declare('npts_coarse_power_curve', default=20)
         self.options.declare('npts_spline_power_curve', default=200)
         self.options.declare('regulation_reg_II5',      default=True)
@@ -45,8 +44,7 @@ class RotorSE(Group):
         self.options.declare('user_update_routine',     default=None)
     
     def setup(self):
-        blade                   = self.options['blade']
-        materials               = self.options['materials']
+        RefBlade                = self.options['RefBlade']
         npts_coarse_power_curve = self.options['npts_coarse_power_curve']
         npts_spline_power_curve = self.options['npts_spline_power_curve']
         regulation_reg_II5      = self.options['regulation_reg_II5']
@@ -62,7 +60,7 @@ class RotorSE(Group):
         rc_show_warnings        = self.options['rc_show_warnings'] 
         rc_discrete             = self.options['rc_discrete']
         user_update_routine     = self.options['user_update_routine']
-        NPTS                    = len(blade['pf']['s'])
+        NPTS                    = len(RefBlade['pf']['s'])
         
         rotorIndeps = IndepVarComp()
         rotorIndeps.add_discrete_output('tiploss',      True)
@@ -82,7 +80,7 @@ class RotorSE(Group):
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
                 
         # --- Rotor Aero & Power ---
-        self.add_subsystem('rg', RotorGeometry(RefBlade=blade,materials=materials, topLevelFlag=True,
+        self.add_subsystem('rg', RotorGeometry(RefBlade=RefBlade, topLevelFlag=True,
                                                verbosity=rc_verbosity,
                                                tex_table=rc_tex_table,
                                                generate_plots=rc_generate_plots,
@@ -90,14 +88,14 @@ class RotorSE(Group):
                                                show_warnings =rc_show_warnings ,
                                                discrete=rc_discrete,
                                                user_update_routine=user_update_routine), promotes=['*'])
-        self.add_subsystem('ra', RotorAeroPower(RefBlade=blade,
+        self.add_subsystem('ra', RotorAeroPower(RefBlade=RefBlade,
                                                 npts_coarse_power_curve=npts_coarse_power_curve,
                                                 npts_spline_power_curve=npts_spline_power_curve,
                                                 regulation_reg_II5=regulation_reg_II5,
                                                 regulation_reg_III=regulation_reg_III,
                                                 flag_Cp_Ct_Cq_Tables=flag_Cp_Ct_Cq_Tables,
                                                 topLevelFlag=False), promotes=['*'])
-        self.add_subsystem('rs', RotorStructure(RefBlade=blade,
+        self.add_subsystem('rs', RotorStructure(RefBlade=RefBlade,
                                                 topLevelFlag=False,
                                                 Analysis_Level=Analysis_Level),
                            promotes=['fst_vt_in','VfactorPC','turbulence_class','gust_stddev','pitch_extreme',
@@ -146,7 +144,7 @@ class RotorSE(Group):
         
         # Connections to AeroelasticSE
         if Analysis_Level>=1:
-            self.add_subsystem('aeroelastic', FASTLoadCases(RefBlade=blade,
+            self.add_subsystem('aeroelastic', FASTLoadCases(RefBlade=RefBlade,
                                                     npts_coarse_power_curve=npts_coarse_power_curve, 
                                                     npts_spline_power_curve=npts_spline_power_curve,
                                                     FASTpref=FASTpref), 
