@@ -116,6 +116,15 @@ class WindTurbineOntologyPython(object):
         wt_init_options['blade']['lofted_output'] = False
         wt_init_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
         
+        # Distributed aerodynamic control devices along blade
+        wt_init_options['blade']['te_flaps']  = False
+        if 'aerodynamic_control' in self.wt_init['components']['blade']:
+            if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
+                wt_init_options['blade']['te_flaps']   = True
+                wt_init_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
+            else:
+                exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
+
         # Tower 
         wt_init_options['tower']              = {}
         wt_init_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
@@ -257,13 +266,17 @@ class Blade(Group):
         
         # Import outer shape BEM
         self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
+        
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem('interp_airfoils', Blade_Interp_Airfoils(blade_init_options = blade_init_options, af_init_options = af_init_options))
+        
+        # Connections from oute_shape_bem to interp_airfoils
         self.connect('outer_shape_bem.s',           'interp_airfoils.s')
         self.connect('outer_shape_bem.chord',       'interp_airfoils.chord')
         self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils.pitch_axis')
         self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')
         self.connect('outer_shape_bem.af_position', 'interp_airfoils.af_position')
+        
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
         if blade_init_options['lofted_output'] == True:
             self.add_subsystem('blade_lofted',    Blade_Lofted_Shape(blade_init_options = blade_init_options, af_init_options = af_init_options))
@@ -271,10 +284,14 @@ class Blade(Group):
             self.connect('outer_shape_bem.twist',           'blade_lofted.twist')
             self.connect('outer_shape_bem.s',               'blade_lofted.s')
             self.connect('outer_shape_bem.ref_axis',        'blade_lofted.ref_axis')
+        
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
         self.connect('outer_shape_bem.twist',           'internal_structure_2d_fem.twist')
         self.connect('interp_airfoils.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
+
+        # Import trailing-edge flaps data
+        self.add_subsystem('dac_te_flaps', TE_Flaps(blade_init_options = blade_init_options))
 
 class Blade_Outer_Shape_BEM(ExplicitComponent):
     # Openmdao component with the blade outer shape data coming from the input yaml file.
@@ -627,6 +644,22 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         outputs['layer_start_nd'] = layer_start_nd
         outputs['layer_end_nd']   = layer_end_nd
 
+class TE_Flaps(ExplicitComponent):
+    # Openmdao component with the trailing edge flaps data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('blade_init_options')
+        
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        n_te_flaps = blade_init_options['n_te_flaps']
+
+        self.add_input('span_start', val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
+        self.add_input('span_end',   val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
+        self.add_input('chord_start',val=np.zeros(n_te_flaps),                  desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
+        self.add_input('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the positions along blade span where the trailing edge flap(s) start.')
+        self.add_input('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the positions along blade span where the trailing edge flap(s) start.')
+        self.add_discrete_input('num_delta',  val=np.zeros(n_te_flaps),         desc='1D array of the positions along blade span where the trailing edge flap(s) start.')
+
 class Hub(ExplicitComponent):
     # Openmdao component with the hub data coming from the input yaml file.
     def setup(self):
@@ -918,6 +951,7 @@ def assign_blade_values(wt_opt, wt_init_options, blade):
     # Function to assign values to the openmdao group Blade
     wt_opt = assign_outer_shape_bem_values(wt_opt, wt_init_options, blade['outer_shape_bem'])
     wt_opt = assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, blade['internal_structure_2d_fem'])
+    wt_opt = assign_te_flaps_values(wt_opt, wt_init_options, blade)
     
     return wt_opt
     
@@ -1109,6 +1143,18 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     
     return wt_opt
 
+def assign_te_flaps_values(wt_opt, wt_init_options, blade):
+    # Function to assign the trailing edge flaps data to the openmdao data structure
+    if wt_init_options['blade']['te_flaps']:   
+        n_te_flaps = wt_init_options['blade']['n_te_flaps']
+        for i in range(n_te_flaps):
+            wt_opt['blade.dac_te_flaps.span_start'][i]      = blade['aerodynamic_control']['te_flaps'][i]['span_start']
+            wt_opt['blade.dac_te_flaps.span_end'][i]        = blade['aerodynamic_control']['te_flaps'][i]['span_end']
+            wt_opt['blade.dac_te_flaps.chord_start'][i]     = blade['aerodynamic_control']['te_flaps'][i]['chord_start']
+            wt_opt['blade.dac_te_flaps.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
+            wt_opt['blade.dac_te_flaps.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
+            wt_opt['blade.dac_te_flaps.num_delta'][i]       = blade['aerodynamic_control']['te_flaps'][i]['num_delta']
+
 def assign_hub_values(wt_opt, hub):
 
     wt_opt['hub.diameter']    = hub['outer_shape_bem']['diameter']
@@ -1233,7 +1279,7 @@ def assign_airfoil_values(wt_opt, wt_init_options, airfoils):
         r_thick[i]  = airfoils[i]['relative_thickness']
         for j in range(len(airfoils[i]['polars'])):
             Re_all.append(airfoils[i]['polars'][j]['re'])
-    Re = sorted(np.unique(Re_all)) 
+    Re = np.array(sorted(np.unique(Re_all)))
     
     cl = np.zeros((n_af, n_aoa, n_Re, n_tab))
     cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
@@ -1241,22 +1287,35 @@ def assign_airfoil_values(wt_opt, wt_init_options, airfoils):
     
     coord_xy = np.zeros((n_af, n_xy, 2))
     
+    # Interp cl-cd-cm along predefined grid of angle of attack
     for i in range(n_af):
-        # for j in range(n_Re):
-        cl[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_l']['grid'], airfoils[i]['polars'][0]['c_l']['values'])
-        cd[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_d']['grid'], airfoils[i]['polars'][0]['c_d']['values'])
-        cm[i,:,0,0] = np.interp(aoa, airfoils[i]['polars'][0]['c_m']['grid'], airfoils[i]['polars'][0]['c_m']['values'])
+        n_Re_i = len(airfoils[i]['polars'])
+        Re_j = np.zeros(n_Re_i)
+        j_Re = np.zeros(n_Re_i, dtype=int)
+        for j in range(n_Re_i):
+            Re_j[j] = airfoils[i]['polars'][j]['re']
+            j_Re[j] = np.argmin(Re-Re_j)
+            cl[i,:,j_Re[j],0] = np.interp(aoa, airfoils[i]['polars'][j]['c_l']['grid'], airfoils[i]['polars'][j]['c_l']['values'])
+            cd[i,:,j_Re[j],0] = np.interp(aoa, airfoils[i]['polars'][j]['c_d']['grid'], airfoils[i]['polars'][j]['c_d']['values'])
+            cm[i,:,j_Re[j],0] = np.interp(aoa, airfoils[i]['polars'][j]['c_m']['grid'], airfoils[i]['polars'][j]['c_m']['values'])
     
-        if cl[i,0,0,0] != cl[i,-1,0,0]:
-            cl[i,0,0,0] = cl[i,-1,0,0]
-            print("Airfoil " + name[i] + ' has the lift coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
-        if cd[i,0,0,0] != cd[i,-1,0,0]:
-            cd[i,0,0,0] = cd[i,-1,0,0]
-            print("Airfoil " + name[i] + ' has the drag coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
-        if cm[i,0,0,0] != cm[i,-1,0,0]:
-            cm[i,0,0,0] = cm[i,-1,0,0]
-            print("Airfoil " + name[i] + ' has the moment coefficient different between + and - pi rad. This is fixed automatically, but please check the input data.')
+            if cl[i,0,j,0] != cl[i,-1,j,0]:
+                cl[i,0,j,0] = cl[i,-1,j,0]
+                print("Airfoil " + name[i] + ' has the lift coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
+            if cd[i,0,j,0] != cd[i,-1,j,0]:
+                cd[i,0,j,0] = cd[i,-1,j,0]
+                print("Airfoil " + name[i] + ' has the drag coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
+            if cm[i,0,j,0] != cm[i,-1,j,0]:
+                cm[i,0,j,0] = cm[i,-1,j,0]
+                print("Airfoil " + name[i] + ' has the moment coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
         
+        # Re-interpolate cl-cd-cm along the Re dimension if less than n_Re were provided in the input yaml (common condition)
+        for k in range(n_aoa):
+            cl[i,k,:,0] = np.interp(Re, Re_j, cl[i,k,j_Re,0])
+            cd[i,k,:,0] = np.interp(Re, Re_j, cd[i,k,j_Re,0])
+            cm[i,k,:,0] = np.interp(Re, Re_j, cm[i,k,j_Re,0])
+
+
         points = np.column_stack((airfoils[i]['coordinates']['x'], airfoils[i]['coordinates']['y']))
         # Check that airfoil points are declared from the TE suction side to TE pressure side
         idx_le = np.argmin(points[:,0])
@@ -1283,7 +1342,7 @@ def assign_airfoil_values(wt_opt, wt_init_options, airfoils):
         # plt.plot(af_points[:,0], af_points[:,1])
         # plt.show()
         
-        
+    # Assign to openmdao structure    
     wt_opt['airfoils.aoa']       = aoa
     wt_opt['airfoils.name']      = name
     wt_opt['airfoils.ac']        = ac
