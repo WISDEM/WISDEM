@@ -72,6 +72,8 @@ class WindTurbineOntologyPython(object):
         self.n_aoa           = 200         # Number of angles of attack used to define polars
         self.n_xy            = 200         # Number of angles of coordinate points used to discretize each airfoil
         self.n_span          = 30          # Number of spanwise stations used to define the blade properties
+
+        self.xfoil_path      = ''
         
     def initialize(self, fname_input):
         # Class instance to break the yaml into sub dictionaries
@@ -105,6 +107,7 @@ class WindTurbineOntologyPython(object):
         wt_init_options['airfoils']['n_Re']   = len(np.unique(Re_all))
         wt_init_options['airfoils']['n_tab']  = 1
         wt_init_options['airfoils']['n_xy']   = self.n_xy
+        wt_init_options['airfoils']['xfoil_path']   = self.xfoil_path
         
         # Blade
         wt_init_options['blade']              = {}
@@ -120,7 +123,8 @@ class WindTurbineOntologyPython(object):
         wt_init_options['blade']['n_te_flaps']= 0
         if 'aerodynamic_control' in self.wt_init['components']['blade']:
             if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
-                wt_init_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
+                wt_init_options['blade']['n_te_flaps']      = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
+                wt_init_options['blade']['num_delta_flaps'] = 3 
             else:
                 exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
@@ -657,7 +661,6 @@ class TE_Flaps(ExplicitComponent):
         self.add_output('chord_start',val=np.zeros(n_te_flaps),                  desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
         self.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
         self.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
-        # self.add_discrete_output('num_delta',  val=np.zeros(n_te_flaps),         desc='1D array of the number of points to discretize the polars between delta_max_neg and delta_max_pos.')
 
 class Hub(ExplicitComponent):
     # Openmdao component with the hub data coming from the input yaml file.
@@ -1152,7 +1155,33 @@ def assign_te_flaps_values(wt_opt, wt_init_options, blade):
             wt_opt['blade.dac_te_flaps.chord_start'][i]     = blade['aerodynamic_control']['te_flaps'][i]['chord_start']
             wt_opt['blade.dac_te_flaps.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
             wt_opt['blade.dac_te_flaps.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
-            # wt_opt['blade.dac_te_flaps.num_delta'][i]       = blade['aerodynamic_control']['te_flaps'][i]['num_delta']
+
+            # Checks for consistency
+            if blade['aerodynamic_control']['te_flaps'][i]['span_start'] < 0.:
+                exit('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is defined smaller than 0, which corresponds to blade root. Please check the yaml input.')
+            elif blade['aerodynamic_control']['te_flaps'][i]['span_start'] > 1.:
+                exit('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is defined bigger than 1, which corresponds to blade tip. Please check the yaml input.')
+            elif blade['aerodynamic_control']['te_flaps'][i]['span_end'] < 0.:
+                exit('Error: the end along blade span of the trailing edge flap number ' + str(i) + ' is defined smaller than 0, which corresponds to blade root. Please check the yaml input.')
+            elif blade['aerodynamic_control']['te_flaps'][i]['span_end'] > 1.:
+                exit('Error: the end along blade span of the trailing edge flap number ' + str(i) + ' is defined bigger than 1, which corresponds to blade tip. Please check the yaml input.')
+            elif blade['aerodynamic_control']['te_flaps'][i]['span_start'] == blade['aerodynamic_control']['te_flaps'][i]['span_end']:
+                exit('Error: the start and end along blade span of the trailing edge flap number ' + str(i) + ' are defined equal. Please check the yaml input.')
+            elif i > 0:
+                 if blade['aerodynamic_control']['te_flaps'][i]['span_start'] < blade['aerodynamic_control']['te_flaps'][i-1]['span_end']:
+                     exit('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is smaller than the end of the trailing edge flap number ' + str(i-1) + '. Please check the yaml input.')
+            elif wt_opt['blade.dac_te_flaps.chord_start'][i] < 0.2:
+                exit('Error: the start along the chord of the trailing edge flap number ' + str(i) + ' is smaller than 0.2, which is too close to the leading edge. Please check the yaml input.')
+            elif wt_opt['blade.dac_te_flaps.chord_start'][i] > 1.:
+                exit('Error: the end along the chord of the trailing edge flap number ' + str(i) + ' is larger than 1., which is beyond the trailing edge. Please check the yaml input.')
+            elif wt_opt['blade.dac_te_flaps.delta_max_pos'][i] > 30. / 180. * np.pi:
+                exit('Error: the max positive deflection of the trailing edge flap number ' + str(i) + ' is larger than 30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input.')
+            elif wt_opt['blade.dac_te_flaps.delta_max_neg'][i] < -30. / 180. * np.pi:
+                exit('Error: the max negative deflection of the trailing edge flap number ' + str(i) + ' is smaller than -30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input.')
+            elif wt_opt['blade.dac_te_flaps.delta_max_pos'][i] < wt_opt['blade.dac_te_flaps.delta_max_neg'][i]:
+                exit('Error: the max positive deflection of the trailing edge flap number ' + str(i) + ' is smaller than the max negative deflection. Please check the yaml input.')
+            else:
+                pass
 
     return wt_opt
 

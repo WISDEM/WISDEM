@@ -44,7 +44,7 @@ class RunPreComp(ExplicitComponent):
         self.add_input('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_input('precurve',      val=np.zeros(n_span),    units='m', desc='precurve at each section')
         self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
-        self.add_input('coord_xy_interp',  val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.')
+        self.add_input('coord_xy_interp',  val=np.zeros((n_span, n_xy, 2)), desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.')
 
         # Inner structure
         self.add_discrete_input('web_name', val=n_webs * [''],                          desc='1D array of the names of the shear webs defined in the blade structure.')
@@ -509,10 +509,6 @@ class RunPreComp(ExplicitComponent):
         
         outputs['total_blade_cost'] = blade_cost
         outputs['total_blade_mass'] = blade_mass
-
-
-
-
 
 class RunCurveFEM(ExplicitComponent):
     # OpenMDAO component that computes the natural frequencies for curved blades using _pBEAM

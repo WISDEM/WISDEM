@@ -47,7 +47,6 @@ class Opt_Data(object):
         self.opt_options['blade_struct']['n_opt_spar_ps'] = self.n_opt_spar_ps
 
 
-
         return self.opt_options
 
 class WT_RNTA(Group):
@@ -79,11 +78,19 @@ class WT_RNTA(Group):
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
         # Connections to rotorse and its subcomponents
         # Connections to blade parametrization
-        self.connect('blade.outer_shape_bem.s',    ['rotorse.pa.s', 'rotorse.ps.s','rotorse.rs.constr.s'])
+        self.connect('blade.outer_shape_bem.s',    ['rotorse.pa.s', 'rotorse.ps.s', 'rotorse.xf.s', 'rotorse.rs.constr.s'])
         self.connect('blade.outer_shape_bem.twist', 'rotorse.pa.twist_original')
         self.connect('blade.outer_shape_bem.chord', 'rotorse.pa.chord_original')
         self.connect('blade.internal_structure_2d_fem.layer_name',      'rotorse.ps.layer_name')
         self.connect('blade.internal_structure_2d_fem.layer_thickness', 'rotorse.ps.layer_thickness_original')
+        # Connections to run xfoil for te flaps
+        self.connect('blade.interp_airfoils.coord_xy_interp', 'rotorse.xf.coord_xy_interp')
+        self.connect('blade.dac_te_flaps.span_start',         'rotorse.xf.span_start')
+        self.connect('blade.dac_te_flaps.span_end',           'rotorse.xf.span_end')
+        self.connect('blade.dac_te_flaps.chord_start',        'rotorse.xf.chord_start')
+        self.connect('blade.dac_te_flaps.delta_max_pos',      'rotorse.xf.delta_max_pos')
+        self.connect('blade.dac_te_flaps.delta_max_neg',      'rotorse.xf.delta_max_neg')
+
         # Connections to rotor aeropower
         self.connect('wt_class.V_mean',         'rotorse.ra.cdf.xbar')
         self.connect('control.V_in' ,           'rotorse.ra.control_Vin')
@@ -247,7 +254,7 @@ class WindPark(Group):
         self.add_subsystem('wt',        WT_RNTA(wt_init_options = wt_init_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('financese', PlantFinance(verbosity=opt_options['costs_verbosity']))
         
-        # Input to plantfinancese from wt group
+        # Inputs to plantfinancese from wt group
         self.connect('rotorse.ra.AEP',          'financese.turbine_aep')
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
         # Inputs to plantfinancese from input yaml
@@ -325,6 +332,7 @@ if __name__ == "__main__":
     wt_initial               = WindTurbineOntologyPython()
     wt_initial.validate      = False
     wt_initial.fname_schema  = "wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
+    wt_initial.xfoil_path    = '/Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil'
     wt_init_options, wt_init = wt_initial.initialize(fname_input)
     
     # Optimization options

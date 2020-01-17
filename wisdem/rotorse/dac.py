@@ -150,82 +150,85 @@ def runXfoil(self, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0):
 class RunXFOIL(ExplicitComponent):
     # Openmdao component to run XFOIL and re-compute polars
     def initialize(self):
-        self.options.declare('blade_init_options')
+        self.options.declare('wt_init_options')
         
     def setup(self):
-        
-        blade_init_options = self.options['blade_init_options']
+        blade_init_options = self.options['wt_init_options']['blade']
         self.n_span        = n_span     = blade_init_options['n_span']
         self.n_te_flaps    = n_te_flaps = blade_init_options['n_te_flaps']
+        self.num_delta     = blade_init_options['num_delta_flaps']
+        af_init_options    = self.options['wt_init_options']['airfoils']
+        self.n_xy          = n_xy       = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        self.xfoil_path    = af_init_options['xfoil_path']
 
+        # Inputs blade outer shape
         self.add_input('s',          val=np.zeros(n_span),                      desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('coord_xy_interp',  val=np.zeros((n_span, n_xy, 2)),     desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.')
 
+        # Inputs flaps
         self.add_input('span_start', val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
         self.add_input('span_end',   val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
         self.add_input('chord_start',val=np.zeros(n_te_flaps),                  desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
         self.add_input('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
         self.add_input('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
-        self.add_discrete_input('num_delta',  val=np.zeros(n_te_flaps),         desc='1D array of the number of points to discretize the polars between delta_max_neg and delta_max_pos.')
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         
-        flap_profiles = self.n_span * []
+        flap_profiles = self.n_span * [{}]
         # Only if trailing edge flaps are present
-        if n_te_flaps > 0: 
-                for i in range(self.n_span):
-                    flap_profiles[i] = {}
-                    # Loop through the flaps specified in yaml file
-                    for k in range(n_te_flaps):
-                        # Only create flap geometries where the yaml file specifies there is a flap (Currently going to nearest blade station location)
-                        if inputs['s'][i] >= inputs['span_start'][k] and inputs['s'][i] <= inputs['span_end'][k]: 
-                            flap_profiles[i]['flap_angles']= []
-                            # Initialize the profile coordinates to zeros
-                            flap_profiles[i]['coords']     = np.zeros((len(blade['profile'][:,0,0]),len(blade['profile'][0,:,0]),discrete_inputs['num_delta'][k])) 
-                             # Ben:I am not going to force it to include delta=0.  If this is needed, a more complicated way of getting flap deflections to calculate is needed.
-                            flap_angles = np.linspace(discrete_inputs['delta_max_neg'][k],discrete_inputs['delta_max_pos'][k],discrete_inputs['num_delta'][k])
-                            # Loop through the flap angles
-                            for ind, fa in enumerate(flap_angles):
-                                # NOTE: negative flap angles are deflected to the suction side, i.e. positively along the positive z- (radial) axis
-                                af_flap = CCAirfoil(np.array([1,2,3]), np.array([100]), np.zeros(3), np.zeros(3), np.zeros(3), blade['profile'][:,0,i],blade['profile'][:,1,i], "Profile"+str(i)) # bem:I am creating an airfoil name based on index...this structure/naming convention is being assumed in CCAirfoil.runXfoil() via the naming convention used in CCAirfoil.af_flap_coords(). Note that all of the inputs besides profile coordinates and name are just dummy varaiables at this point.
-                                af_flap.af_flap_coords(xfoil_path, fa,  blade['aerodynamic_control']['te_flaps'][k]['chord_start'],0.5,200) #bem: the last number is the number of points in the profile.  It is currently being hard coded at 200 but should be changed to make sure it is the same number of points as the other profiles
-                                # blade['flap_profiles'][i]['coords'][:,0,ind] = af_flap.af_flap_xcoords # x-coords from xfoil file with flaps
-                                # blade['flap_profiles'][i]['coords'][:,1,ind] = af_flap.af_flap_ycoords # y-coords from xfoil file with flaps
-                                # blade['flap_profiles'][i]['coords'][:,0,ind] = af_flap.af_flap_xcoords  # x-coords from xfoil file with flaps and NO gaussian filter for smoothing
-                                # blade['flap_profiles'][i]['coords'][:,1,ind] = af_flap.af_flap_ycoords  # y-coords from xfoil file with flaps and NO gaussian filter for smoothing
-                                blade['flap_profiles'][i]['coords'][:,0,ind] = gaussian_filter(af_flap.af_flap_xcoords, sigma=1) # x-coords from xfoil file with flaps and gaussian filter for smoothing
-                                blade['flap_profiles'][i]['coords'][:,1,ind] = gaussian_filter(af_flap.af_flap_ycoords, sigma=1) # y-coords from xfoil file with flaps and gaussian filter for smoothing
+        if self.n_te_flaps > 0: 
+            for i in range(self.n_span):
+                # Loop through the flaps specified in yaml file
+                for k in range(self.n_te_flaps):
+                    # Only create flap geometries where the yaml file specifies there is a flap (Currently going to nearest blade station location)
+                    if inputs['s'][i] >= inputs['span_start'][k] and inputs['s'][i] <= inputs['span_end'][k]: 
+                        flap_profiles[i]['flap_angles']= []
+                        # Initialize the profile coordinates to zeros
+                        flap_profiles[i]['coords']     = np.zeros([self.n_xy,2,self.num_delta]) 
+                            # Ben:I am not going to force it to include delta=0.  If this is needed, a more complicated way of getting flap deflections to calculate is needed.
+                        flap_angles = np.linspace(inputs['delta_max_neg'][k],inputs['delta_max_pos'][k],self.num_delta) * 180. / np.pi
+                        # Loop through the flap angles
+                        for ind, fa in enumerate(flap_angles):
+                            # NOTE: negative flap angles are deflected to the suction side, i.e. positively along the positive z- (radial) axis
+                            af_flap = CCAirfoil(np.array([1,2,3]), np.array([100]), np.zeros(3), np.zeros(3), np.zeros(3), inputs['coord_xy_interp'][i,:,0], inputs['coord_xy_interp'][i,:,1], "Profile"+str(i)) # bem:I am creating an airfoil name based on index...this structure/naming convention is being assumed in CCAirfoil.runXfoil() via the naming convention used in CCAirfoil.af_flap_coords(). Note that all of the inputs besides profile coordinates and name are just dummy varaiables at this point.
+                            af_flap.af_flap_coords(self.xfoil_path, fa,  inputs['chord_start'][k],0.5,200) #bem: the last number is the number of points in the profile.  It is currently being hard coded at 200 but should be changed to make sure it is the same number of points as the other profiles
+                            # flap_profiles[i]['coords'][:,0,ind] = af_flap.af_flap_xcoords # x-coords from xfoil file with flaps
+                            # flap_profiles[i]['coords'][:,1,ind] = af_flap.af_flap_ycoords # y-coords from xfoil file with flaps
+                            # flap_profiles[i]['coords'][:,0,ind] = af_flap.af_flap_xcoords  # x-coords from xfoil file with flaps and NO gaussian filter for smoothing
+                            # flap_profiles[i]['coords'][:,1,ind] = af_flap.af_flap_ycoords  # y-coords from xfoil file with flaps and NO gaussian filter for smoothing
+                            flap_profiles[i]['coords'][:,0,ind] = gaussian_filter(af_flap.af_flap_xcoords, sigma=1) # x-coords from xfoil file with flaps and gaussian filter for smoothing
+                            flap_profiles[i]['coords'][:,1,ind] = gaussian_filter(af_flap.af_flap_ycoords, sigma=1) # y-coords from xfoil file with flaps and gaussian filter for smoothing
 
-                                blade['flap_profiles'][i]['flap_angles'].append([])
-                                blade['flap_profiles'][i]['flap_angles'][ind] = fa # Putting in flap angles to blade for each profile (can be used for debugging later)
+                            flap_profiles[i]['flap_angles'].append([])
+                            flap_profiles[i]['flap_angles'][ind] = fa # Putting in flap angles to blade for each profile (can be used for debugging later)
 
-                            # ** The code below will plot the first three flap deflection profiles (in the case where there are only 3 this will correspond to max negative, zero, and max positive deflection cases)
-                            # import matplotlib.pyplot as plt
-                            # font = {'family': 'Times New Roman',
-                            #         'weight': 'normal',
-                            #         'size': 18}
-                            # plt.rc('font', **font)
-                            # plt.figure
-                            # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-                            # # plt.plot(blade['flap_profiles'][i]['coords'][:,0,0], blade['flap_profiles'][i]['coords'][:,1,0], 'r',blade['flap_profiles'][i]['coords'][:,0,1], blade['flap_profiles'][i]['coords'][:,1,1], 'k',blade['flap_profiles'][i]['coords'][:,0,2], blade['flap_profiles'][i]['coords'][:,1,2], 'b')
-                            # plt.plot(blade['flap_profiles'][i]['coords'][:, 0, 0],
-                            #          blade['flap_profiles'][i]['coords'][:, 1, 0], 'r',
-                            #          blade['flap_profiles'][i]['coords'][:, 0, 2],
-                            #          blade['flap_profiles'][i]['coords'][:, 1, 2], 'b',
-                            #          blade['flap_profiles'][i]['coords'][:, 0, 1],
-                            #          blade['flap_profiles'][i]['coords'][:, 1, 1], 'k')
-                            #
-                            # # plt.xlabel('x')
-                            # # plt.ylabel('y')
-                            # plt.axis('equal')
-                            # plt.axis('off')
-                            # plt.tight_layout()
-                            # plt.show()
-                            # # plt.savefig('temp/airfoil_polars/NACA63-618_flap_profiles.png', dpi=300)
-                            # # plt.savefig('temp/airfoil_polars/FFA-W3-211_flap_profiles.png', dpi=300)
-                            # # plt.savefig('temp/airfoil_polars/FFA-W3-241_flap_profiles.png', dpi=300)
-                            # # plt.savefig('temp/airfoil_polars/FFA-W3-301_flap_profiles.png', dpi=300)
-
+                        # ** The code below will plot the first three flap deflection profiles (in the case where there are only 3 this will correspond to max negative, zero, and max positive deflection cases)
+                        import matplotlib.pyplot as plt
+                        font = {'family': 'Times New Roman',
+                                'weight': 'normal',
+                                'size': 18}
+                        plt.rc('font', **font)
+                        plt.figure
+                        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+                        # plt.plot(flap_profiles[i]['coords'][:,0,0], flap_profiles[i]['coords'][:,1,0], 'r',flap_profiles[i]['coords'][:,0,1], flap_profiles[i]['coords'][:,1,1], 'k',flap_profiles[i]['coords'][:,0,2], flap_profiles[i]['coords'][:,1,2], 'b')
+                        plt.plot(flap_profiles[i]['coords'][:, 0, 0],
+                                flap_profiles[i]['coords'][:, 1, 0], 'r',
+                                flap_profiles[i]['coords'][:, 0, 2],
+                                flap_profiles[i]['coords'][:, 1, 2], 'b',
+                                flap_profiles[i]['coords'][:, 0, 1],
+                                flap_profiles[i]['coords'][:, 1, 1], 'k')
+                        
+                        # plt.xlabel('x')
+                        # plt.ylabel('y')
+                        plt.axis('equal')
+                        plt.axis('off')
+                        plt.tight_layout()
+                        plt.show()
+                        # # plt.savefig('temp/airfoil_polars/NACA63-618_flap_profiles.png', dpi=300)
+                        # # plt.savefig('temp/airfoil_polars/FFA-W3-211_flap_profiles.png', dpi=300)
+                        # # plt.savefig('temp/airfoil_polars/FFA-W3-241_flap_profiles.png', dpi=300)
+                        # # plt.savefig('temp/airfoil_polars/FFA-W3-301_flap_profiles.png', dpi=300)
 
 
+        exit()
 
-        pass
