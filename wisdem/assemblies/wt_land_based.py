@@ -85,11 +85,21 @@ class WT_RNTA(Group):
         self.connect('blade.internal_structure_2d_fem.layer_thickness', 'rotorse.ps.layer_thickness_original')
         # Connections to run xfoil for te flaps
         self.connect('blade.interp_airfoils.coord_xy_interp', 'rotorse.xf.coord_xy_interp')
+        self.connect('airfoils.aoa',                          'rotorse.xf.aoa')
+        self.connect('assembly.r_blade',                      'rotorse.xf.r')
         self.connect('blade.dac_te_flaps.span_start',         'rotorse.xf.span_start')
         self.connect('blade.dac_te_flaps.span_end',           'rotorse.xf.span_end')
         self.connect('blade.dac_te_flaps.chord_start',        'rotorse.xf.chord_start')
         self.connect('blade.dac_te_flaps.delta_max_pos',      'rotorse.xf.delta_max_pos')
         self.connect('blade.dac_te_flaps.delta_max_neg',      'rotorse.xf.delta_max_neg')
+        self.connect('env.speed_sound_air',                   'rotorse.xf.speed_sound_air')
+        self.connect('env.rho_air',                           'rotorse.xf.rho_air')
+        self.connect('env.mu_air',                            'rotorse.xf.mu_air')
+        self.connect('control.rated_TSR',                     'rotorse.xf.rated_TSR')
+        self.connect('control.max_TS',                        'rotorse.xf.max_TS')
+        self.connect('blade.interp_airfoils.cl_interp',       'rotorse.xf.cl_interp')
+        self.connect('blade.interp_airfoils.cd_interp',       'rotorse.xf.cd_interp')
+        self.connect('blade.interp_airfoils.cm_interp',       'rotorse.xf.cm_interp')
 
         # Connections to rotor aeropower
         self.connect('wt_class.V_mean',         'rotorse.ra.cdf.xbar')
@@ -318,10 +328,10 @@ class Outputs_2_Screen(ExplicitComponent):
 if __name__ == "__main__":
 
     ## File management
-    # fname_input    = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    # fname_output   = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
-    fname_input    = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2010n.yaml"
-    fname_output   = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2011n.yaml"
+    fname_input    = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_output   = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    # fname_input    = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2010n.yaml"
+    # fname_output   = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2011n.yaml"
     folder_output  = 'it_1/'
     opt_flag_twist = False
     opt_flag_chord = False

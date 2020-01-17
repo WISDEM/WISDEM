@@ -126,7 +126,7 @@ class WT_Rotor(Group):
         # Connections from blade aero parametrization to rotorse
         self.connect('pa.twist_param',           ['ra.theta','rs.theta'])
         self.connect('pa.twist_param',            'rs.tip_pos.theta_tip',   src_indices=[-1])
-        self.connect('pa.chord_param',           ['ra.chord','rs.chord'])
+        self.connect('pa.chord_param',           ['xf.chord', 'ra.chord','rs.chord'])
 
         # Connections to blade struct parametrization
         self.connect('opt_var.spar_ss_opt_gain','ps.spar_ss_opt_gain')

@@ -120,11 +120,11 @@ class WindTurbineOntologyPython(object):
         wt_init_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
         
         # Distributed aerodynamic control devices along blade
-        wt_init_options['blade']['n_te_flaps']= 0
+        wt_init_options['blade']['n_te_flaps']      = 0
         if 'aerodynamic_control' in self.wt_init['components']['blade']:
             if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
-                wt_init_options['blade']['n_te_flaps']      = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
-                wt_init_options['blade']['num_delta_flaps'] = 3 
+                wt_init_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
+                wt_init_options['airfoils']['n_tab']   = 3
             else:
                 exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
@@ -849,6 +849,7 @@ class Environment(ExplicitComponent):
         self.add_output('rho_air',      val=1.225,        units='kg/m**3',    desc='Density of air')
         self.add_output('mu_air',       val=1.81e-5,      units='kg/(m*s)',   desc='Dynamic viscosity of air')
         self.add_output('weibull_k',    val=2.0,          desc='Shape parameter of the Weibull probability density function of the wind.')
+        self.add_output('speed_sound_air',  val=340.,     units='m/s',        desc='Speed of sound in air.')
 
 class Costs(ExplicitComponent):
     # Openmdao component with the cost parameters
@@ -1276,6 +1277,7 @@ def assign_environment_values(wt_opt, environment):
     wt_opt['env.rho_air']   = environment['air_density']
     wt_opt['env.mu_air']    = environment['air_dyn_viscosity']
     wt_opt['env.weibull_k'] = environment['weib_shape_parameter']
+    wt_opt['env.speed_sound_air'] = environment['air_speed_sound']
 
     return wt_opt
 
