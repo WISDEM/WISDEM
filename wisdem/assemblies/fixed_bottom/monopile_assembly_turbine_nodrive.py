@@ -88,7 +88,6 @@ class MonopileTurbine(Group):
         myIndeps.add_output('painting_cost_rate',   0.0, units='USD/m**2')
         myIndeps.add_discrete_output('number_of_turbines', 0)
         myIndeps.add_output('annual_opex',          0.0, units='USD/kW/yr') # TODO: Replace with output connection
-        myIndeps.add_output('bos_costs',            0.0, units='USD/kW') # TODO: Replace with output connection
         myIndeps.add_output('fixed_charge_rate',    0.0)
         myIndeps.add_output('wake_loss_factor',     0.0)
         
@@ -155,11 +154,34 @@ class MonopileTurbine(Group):
         # Turbine costs
         self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=self.options['VerbosityCosts'], topLevelFlag=False), promotes=['*'])
 
+        # Use ORBIT for BOS costs
+        self.add_subsystem('orbit', Orbit(), promotes=['wtiv', 'feeder', 'num_feeders', 'oss_install_vessel',
+                                                       'hub_height',
+                                                       'number_of_turbines',
+                                                       'tower_mass',
+                                                       'monopile_length',
+                                                       'monopile_mass',
+                                                       'transition_piece_mass',
+                                                       'site_distance',
+                                                       'site_distance_to_landfall',
+                                                       'site_distance_to_interconnection',
+                                                       'plant_turbine_spacing',
+                                                       'plant_row_spacing',
+                                                       'plant_substation_distance',
+                                                       'tower_deck_space',
+                                                       'nacelle_deck_space',
+                                                       'blade_deck_space',
+                                                       'port_cost_per_month',
+                                                       'monopile_deck_space',
+                                                       'transition_piece_deck_space',
+                                                       'commissioning_pct',
+                                                       'decommissioning_pct'])
+        
         # LCOE Calculation
         self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']), promotes=['machine_rating','lcoe'])
         
     
-        # Set up connections
+        # Set up connections        
 
         # Connections to DriveSE
         self.connect('Fxyz_total',      'rna.loads.F')
@@ -195,14 +217,24 @@ class MonopileTurbine(Group):
         self.connect('tow.post.structural_frequencies', 'tower_freq')        
                 
         # Connections to TurbineCostSE
-        self.connect('mass_one_blade',              'blade_mass')
+        self.connect('mass_one_blade',              ['blade_mass','orbit.blade_mass'])
         self.connect('total_blade_cost',            'blade_cost_external')
+
+        # Connections to ORBIT
+        self.connect('water_depth', 'orbit.site_depth')
+        self.connect('rs.gust.V_gust', 'orbit.site_mean_windspeed')
+        self.connect('machine_rating', 'orbit.turbine_rating')
+        self.connect('rated_V', 'orbit.turbine_rated_windspeed')
+        self.connect('turbine_cost_kW', 'orbit.turbine_capex')
+        self.connect('diameter', 'orbit.turbine_rotor_diameter')
+        self.connect('nac_mass', 'orbit.nacelle_mass')
+        self.connect('tower_outer_diameter', 'orbit.monopile_diameter', indices=[0])
         
         # Connections to PlantFinanceSE
         self.connect('AEP',                 'plantfinancese.turbine_aep')
         self.connect('turbine_cost_kW',     'plantfinancese.tcc_per_kW')
         self.connect('number_of_turbines',  'plantfinancese.turbine_number')
-        self.connect('bos_costs',           'plantfinancese.bos_per_kW')
+        self.connect('orbit.total_capex_kW','plantfinancese.bos_per_kW')
         self.connect('annual_opex',         'plantfinancese.opex_per_kW')
     
 
@@ -312,7 +344,7 @@ def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt =
 
 if __name__ == "__main__":
     
-    optFlag = True
+    optFlag = False #True
 
 
 
