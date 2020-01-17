@@ -311,8 +311,10 @@ class Outputs_2_Screen(ExplicitComponent):
 if __name__ == "__main__":
 
     ## File management
-    fname_input    = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_output   = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    # fname_input    = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    # fname_output   = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_input    = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2010n.yaml"
+    fname_output   = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2011n.yaml"
     folder_output  = 'it_1/'
     opt_flag_twist = False
     opt_flag_chord = False

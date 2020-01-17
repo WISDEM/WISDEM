@@ -117,10 +117,9 @@ class WindTurbineOntologyPython(object):
         wt_init_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
         
         # Distributed aerodynamic control devices along blade
-        wt_init_options['blade']['te_flaps']  = False
+        wt_init_options['blade']['n_te_flaps']= 0
         if 'aerodynamic_control' in self.wt_init['components']['blade']:
             if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
-                wt_init_options['blade']['te_flaps']   = True
                 wt_init_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
             else:
                 exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
@@ -653,12 +652,12 @@ class TE_Flaps(ExplicitComponent):
         blade_init_options = self.options['blade_init_options']
         n_te_flaps = blade_init_options['n_te_flaps']
 
-        self.add_input('span_start', val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
-        self.add_input('span_end',   val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
-        self.add_input('chord_start',val=np.zeros(n_te_flaps),                  desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
-        self.add_input('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the positions along blade span where the trailing edge flap(s) start.')
-        self.add_input('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the positions along blade span where the trailing edge flap(s) start.')
-        self.add_discrete_input('num_delta',  val=np.zeros(n_te_flaps),         desc='1D array of the positions along blade span where the trailing edge flap(s) start.')
+        self.add_output('span_start', val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
+        self.add_output('span_end',   val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
+        self.add_output('chord_start',val=np.zeros(n_te_flaps),                  desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
+        self.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
+        self.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
+        # self.add_discrete_output('num_delta',  val=np.zeros(n_te_flaps),         desc='1D array of the number of points to discretize the polars between delta_max_neg and delta_max_pos.')
 
 class Hub(ExplicitComponent):
     # Openmdao component with the hub data coming from the input yaml file.
@@ -1145,7 +1144,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
 
 def assign_te_flaps_values(wt_opt, wt_init_options, blade):
     # Function to assign the trailing edge flaps data to the openmdao data structure
-    if wt_init_options['blade']['te_flaps']:   
+    if wt_init_options['blade']['n_te_flaps'] > 0:   
         n_te_flaps = wt_init_options['blade']['n_te_flaps']
         for i in range(n_te_flaps):
             wt_opt['blade.dac_te_flaps.span_start'][i]      = blade['aerodynamic_control']['te_flaps'][i]['span_start']
@@ -1153,7 +1152,9 @@ def assign_te_flaps_values(wt_opt, wt_init_options, blade):
             wt_opt['blade.dac_te_flaps.chord_start'][i]     = blade['aerodynamic_control']['te_flaps'][i]['chord_start']
             wt_opt['blade.dac_te_flaps.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
             wt_opt['blade.dac_te_flaps.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
-            wt_opt['blade.dac_te_flaps.num_delta'][i]       = blade['aerodynamic_control']['te_flaps'][i]['num_delta']
+            # wt_opt['blade.dac_te_flaps.num_delta'][i]       = blade['aerodynamic_control']['te_flaps'][i]['num_delta']
+
+    return wt_opt
 
 def assign_hub_values(wt_opt, hub):
 

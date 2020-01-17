@@ -4,6 +4,7 @@ from openmdao.api import ExplicitComponent, Group, IndepVarComp
 from wisdem.rotorse.rotor_aeropower import RotorAeroPower
 from wisdem.rotorse.rotor_structure_simple import RotorStructure
 from wisdem.rotorse.rotor_cost import RotorCost
+from wisdem.rotorse.dac import RunXFOIL
 
 class ParametrizeBladeAero(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the outer shape of the wind turbine rotor blades
@@ -113,6 +114,7 @@ class WT_Rotor(Group):
         # Analysis components
         self.add_subsystem('pa',    ParametrizeBladeAero(blade_init_options = wt_init_options['blade'], opt_options = opt_options))
         self.add_subsystem('ps',    ParametrizeBladeStruct(blade_init_options = wt_init_options['blade'], opt_options = opt_options))
+        # self.add_subsystem('xf',    RunXFOIL(wt_init_options = wt_init_options))
         self.add_subsystem('ra',    RotorAeroPower(wt_init_options = wt_init_options))
         self.add_subsystem('rs',    RotorStructure(wt_init_options = wt_init_options, opt_options = opt_options))
         # self.add_subsystem('rc',    RotorCost(wt_init_options = wt_init_options, opt_options = opt_options))
