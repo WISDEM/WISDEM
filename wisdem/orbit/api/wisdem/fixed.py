@@ -29,10 +29,10 @@ class Orbit(om.Group):
         myIndeps.add_output('plant_row_spacing', 7)
         myIndeps.add_output('plant_substation_distance', 1, units='km')
         myIndeps.add_output('tower_deck_space', 0., units='m**2')
-        myIndeps.add_output('nacelle_deck_space', 0.units='m**2')
-        myIndeps.add_output('blade_deck_space', 0.units='m**2')
+        myIndeps.add_output('nacelle_deck_space', 0., units='m**2')
+        myIndeps.add_output('blade_deck_space', 0., units='m**2')
         myIndeps.add_output('port_cost_per_month', 2e6, units='USD/mo')
-        myIndeps.add_output('monopile_deck_space', 0.units='m**2')
+        myIndeps.add_output('monopile_deck_space', 0., units='m**2')
         myIndeps.add_output('transition_piece_deck_space', 0., units='m**2')
         myIndeps.add_output('commissioning_pct', 0.01)
         myIndeps.add_output('decommissioning_pct', 0.15)
@@ -162,7 +162,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 
                 'blade': {
                     'type': 'Blade',
-                    'number': float(inputs['number_of_blades']),
+                    'number': float(discrete_inputs['number_of_blades']),
                     'deck_space': float(inputs['blade_deck_space']),
                     'weight': float(inputs['blade_mass'])
                 }
@@ -253,7 +253,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
 
         outputs['bos_capex'] = project.bos_capex
         outputs['total_capex'] = project.total_capex
-        outputs['total_capex_kW'] = project.total_capex / (1e3*inputs['turbine_rating'] * inputs['number_of_turbines'])
+        outputs['total_capex_kW'] = project.total_capex / (1e3*inputs['turbine_rating'] * discrete_inputs['number_of_turbines'])
         outputs['installation_time'] = project.installation_time
         outputs['installation_capex'] = project.installation_capex
 

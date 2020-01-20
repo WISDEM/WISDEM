@@ -1,9 +1,9 @@
 import unittest
 
-from . import test_towerse
+from wisdem.test.test_towerse import test_tower
 
 def suite():
-    suite = unittest.TestSuite( (test_towerse.suite(),
+    suite = unittest.TestSuite( (test_tower.suite(),
     ) )
     return suite
 

@@ -516,7 +516,6 @@ class TowerLeanSE(Group):
         towerIndeps.add_output('gravity_foundation_mass', 0.0, units='kg')
         towerIndeps.add_output('transition_piece_mass', 0.0, units='kg')
         towerIndeps.add_output('transition_piece_height', 0.0, units='m')
-        towerIndeps.add_output('foundation_height', 0.0, units='m')
         towerIndeps.add_output('suctionpile_depth', 0.0, units='m')
         self.add_subsystem('towerIndepsLean', towerIndeps, promotes=['*'])
 
@@ -525,6 +524,7 @@ class TowerLeanSE(Group):
             sharedIndeps = IndepVarComp()
             sharedIndeps.add_output('hub_height', 0.0, units='m')
             sharedIndeps.add_output('material_density', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('foundation_height', 0.0, units='m')
             self.add_subsystem('sharedIndepsLean', sharedIndeps, promotes=['*'])
         
         # All the static components
