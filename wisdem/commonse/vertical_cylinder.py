@@ -201,16 +201,16 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('t', np.zeros(npts-1), units='m', desc='effective shell thickness for section')
 
         # spring reaction data.  Use global RIGID for rigid constraints.
-        self.add_input('kidx', np.zeros(nK), desc='indices of z where external stiffness reactions should be applied.')
-        self.add_input('kx', np.zeros(nK), units='m', desc='spring stiffness in x-direction')
-        self.add_input('ky', np.zeros(nK), units='m', desc='spring stiffness in y-direction')
-        self.add_input('kz', np.zeros(nK), units='m', desc='spring stiffness in z-direction')
-        self.add_input('ktx', np.zeros(nK), units='m', desc='spring stiffness in theta_x-rotation')
-        self.add_input('kty', np.zeros(nK), units='m', desc='spring stiffness in theta_y-rotation')
-        self.add_input('ktz', np.zeros(nK), units='m', desc='spring stiffness in theta_z-rotation')
+        self.add_discrete_input('kidx', np.zeros(nK, dtype=np.int_), desc='indices of z where external stiffness reactions should be applied.')
+        self.add_input('kx', np.zeros(nK), units='N/m', desc='spring stiffness in x-direction')
+        self.add_input('ky', np.zeros(nK), units='N/m', desc='spring stiffness in y-direction')
+        self.add_input('kz', np.zeros(nK), units='N/m', desc='spring stiffness in z-direction')
+        self.add_input('ktx', np.zeros(nK), units='N/m', desc='spring stiffness in theta_x-rotation')
+        self.add_input('kty', np.zeros(nK), units='N/m', desc='spring stiffness in theta_y-rotation')
+        self.add_input('ktz', np.zeros(nK), units='N/m', desc='spring stiffness in theta_z-rotation')
 
         # extra mass
-        self.add_input('midx', np.zeros(nMass), desc='indices where added mass should be applied.')
+        self.add_discrete_input('midx', np.zeros(nMass, dtype=np.int_), desc='indices where added mass should be applied.')
         self.add_input('m', np.zeros(nMass), units='kg', desc='added mass')
         self.add_input('mIxx', np.zeros(nMass), units='kg*m**2', desc='x mass moment of inertia about some point p')
         self.add_input('mIyy', np.zeros(nMass), units='kg*m**2', desc='y mass moment of inertia about some point p')
@@ -224,7 +224,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_discrete_input('addGravityLoadForExtraMass', True, desc='add gravitational load')
 
         # point loads (if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also)
-        self.add_input('plidx', np.zeros(nPL), desc='indices where point loads should be applied.')
+        self.add_discrete_input('plidx', np.zeros(nPL, dtype=np.int_), desc='indices where point loads should be applied.')
         self.add_input('Fx', np.zeros(nPL), units='N', desc='point force in x-direction')
         self.add_input('Fy', np.zeros(nPL), units='N', desc='point force in y-direction')
         self.add_input('Fz', np.zeros(nPL), units='N', desc='point force in z-direction')
@@ -287,7 +287,7 @@ class CylinderFrame3DD(ExplicitComponent):
         # ------ reaction data ------------
 
         # rigid base
-        node = inputs['kidx'] + np.ones(len(inputs['kidx']))   # add one because 0-based index but 1-based node numbering
+        node = discrete_inputs['kidx'] + np.ones(len(discrete_inputs['kidx']))   # add one because 0-based index but 1-based node numbering
         rigid = RIGID
 
         reactions = frame3dd.ReactionData(node, inputs['kx'], inputs['ky'], inputs['kz'], inputs['ktx'], inputs['kty'], inputs['ktz'], rigid)
@@ -327,7 +327,7 @@ class CylinderFrame3DD(ExplicitComponent):
         # ------ add extra mass ------------
 
         # extra node inertia data
-        N = inputs['midx'] + np.ones(len(inputs['midx']))
+        N = discrete_inputs['midx'] + np.ones(len(discrete_inputs['midx']))
 
         cylinder.changeExtraNodeMass(N, inputs['m'], inputs['mIxx'], inputs['mIyy'], inputs['mIzz'], inputs['mIxy'], inputs['mIxz'], inputs['mIyz'],
             inputs['mrhox'], inputs['mrhoy'], inputs['mrhoz'], discrete_inputs['addGravityLoadForExtraMass'])
@@ -348,7 +348,7 @@ class CylinderFrame3DD(ExplicitComponent):
         load = frame3dd.StaticLoadCase(gx, gy, gz)
 
         # point loads
-        nF = inputs['plidx'] + np.ones(len(inputs['plidx']))
+        nF = discrete_inputs['plidx'] + np.ones(len(discrete_inputs['plidx']))
         load.changePointLoads(nF, inputs['Fx'], inputs['Fy'], inputs['Fz'], inputs['Mxx'], inputs['Myy'], inputs['Mzz'])
 
         # distributed loads
