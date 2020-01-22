@@ -408,14 +408,19 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
 
     def setup(self):
         wt_init_options = self.options['wt_init_options']
-        self.n_span        = n_span    = wt_init_options['blade']['n_span']
-        self.n_aoa         = n_aoa     = wt_init_options['airfoils']['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        
-        self.n_pitch = n_pitch     = 2 #self.options['n_pitch']
-        self.n_tsr   = n_tsr       = 2 #self.options['n_tsr']
-        self.n_U     = n_U         = 1 #self.options['n_U']
+        blade_init_options = wt_init_options['blade']
+        airfoils = wt_init_options['airfoils']
+        self.n_span        = n_span    = blade_init_options['n_span']
+        self.n_aoa         = n_aoa     = airfoils['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = airfoils['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = airfoils['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_pitch       = n_pitch   = blade_init_options['n_pitch']
+        self.n_tsr         = n_tsr     = blade_init_options['n_tsr']
+        self.n_U           = n_U       = blade_init_options['n_U']
+        self.min_TSR       = blade_init_options['min_TSR']
+        self.max_TSR       = blade_init_options['max_TSR']
+        self.min_pitch     = blade_init_options['min_pitch']
+        self.max_pitch     = blade_init_options['max_pitch']
         
         # parameters        
         self.add_input('control_Vin',   val=0.0,             units='m/s',       desc='cut-in wind speed')
@@ -467,12 +472,16 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         for i in range(self.n_span):
             af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
 
-        n_pitch  = self.n_pitch
-        n_tsr    = self.n_tsr
-        n_U      = self.n_U
-        U_vector = inputs['U_vector_in']
-        V_in     = inputs['control_Vin']
-        V_out    = inputs['control_Vout']
+        n_pitch    = self.n_pitch
+        n_tsr      = self.n_tsr
+        n_U        = self.n_U
+        min_TSR    = self.min_TSR
+        max_TSR    = self.max_TSR
+        min_pitch  = self.min_pitch
+        max_pitch  = self.max_pitch
+        U_vector   = inputs['U_vector_in']
+        V_in       = inputs['control_Vin']
+        V_out      = inputs['control_Vout']
         
         tsr_vector = inputs['tsr_vector_in']
         pitch_vector = inputs['pitch_vector_in']
@@ -482,9 +491,9 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         if max(U_vector) == 0.:
             U_vector    = np.linspace(V_in[0],V_out[0], n_U)
         if max(tsr_vector) == 0.:
-            tsr_vector = np.linspace(7.,11., n_tsr)
+            tsr_vector = np.linspace(min_TSR, max_TSR, n_tsr)
         if max(pitch_vector) == 0.:
-            pitch_vector = np.linspace(-5., 5., n_pitch)
+            pitch_vector = np.linspace(min_pitch, max_pitch, n_pitch)
 
         outputs['pitch_vector'] = pitch_vector
         outputs['tsr_vector']   = tsr_vector        

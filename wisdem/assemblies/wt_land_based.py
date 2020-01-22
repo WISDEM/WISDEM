@@ -260,6 +260,12 @@ class WT_RNTA(Group):
         self.connect('control.max_Omega',            'aeroelastic.control_maxOmega')
         self.connect('configuration.turb_class',     'aeroelastic.turbulence_class')
         self.connect('configuration.ws_class' ,      'aeroelastic.turbine_class')
+        self.connect('rotorse.ra.aeroperf_tables.pitch_vector', 'aeroelastic.pitch_vector')
+        self.connect('rotorse.ra.aeroperf_tables.tsr_vector', 'aeroelastic.tsr_vector')
+        self.connect('rotorse.ra.aeroperf_tables.U_vector', 'aeroelastic.U_vector')
+        self.connect('rotorse.ra.aeroperf_tables.Cp', 'aeroelastic.Cp_aero_table')
+        self.connect('rotorse.ra.aeroperf_tables.Ct', 'aeroelastic.Ct_aero_table')
+        self.connect('rotorse.ra.aeroperf_tables.Cq', 'aeroelastic.Cq_aero_table')
 
         # Temporary
         self.connect('rotorse.xf.Re_loc',           'aeroelastic.airfoils_Re_loc')
@@ -391,13 +397,13 @@ if __name__ == "__main__":
     wt_initial.validate         = False
     wt_initial.fname_schema     = "wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
     wt_initial.xfoil_path       = '/Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil'
-    wt_initial.Analysis_Level   = 1
+    wt_initial.Analysis_Level   = 2
     wt_initial.FAST_ver         = 'OpenFAST'
     wt_initial.dev_branch       = True
     wt_initial.FAST_exe         = '/Users/pbortolo/work/2_openfast/openfast/build/glue-codes/openfast/openfast'
     wt_initial.FAST_directory   = '/Users/pbortolo/work/2_openfast/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95'
     wt_initial.FAST_InputFile   = 'RotorSE_FAST_BAR_2010n_noRe.fst'
-    wt_initial.Turbsim_exe      = "/mnt/c/Material/Programs/TurbSim/TurbSim_glin64"
+    wt_initial.Turbsim_exe      = "/Users/pbortolo/work/2_openfast/TurbSim/bin/TurbSim_glin64"
     wt_initial.FAST_namingOut   = 'WISDEM_NREL5MW'
     wt_initial.FAST_runDirectory= 'temp/' + wt_initial.FAST_namingOut
     wt_initial.cores            = 1

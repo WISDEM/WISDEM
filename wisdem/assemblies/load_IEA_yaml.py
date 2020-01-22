@@ -77,6 +77,13 @@ class WindTurbineOntologyPython(object):
         self.n_span          = 30          # Number of spanwise stations used to define the blade properties
         self.n_pc            = 20          # Number of wind speeds to compute the power curve
         self.n_pc_spline     = 200         # Number of wind speeds to spline the power curve
+        self.n_pitch         = 2           # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
+        self.n_tsr           = 2           # Number of tsr values to determine the Cp-Ct-Cq-surfaces
+        self.n_U             = 1           # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
+        self.min_TSR         = 2.          # Min TSR of the Cp-Ct-Cq-surfaces
+        self.max_TSR         = 12.         # Max TSR of the Cp-Ct-Cq-surfaces
+        self.min_pitch       = -5.         # Min pitch angle of the Cp-Ct-Cq-surfaces
+        self.max_pitch       = 30.         # Max pitch angle of the Cp-Ct-Cq-surfaces
 
         # XFOIL path
         self.xfoil_path      = ''
@@ -164,8 +171,15 @@ class WindTurbineOntologyPython(object):
         wt_init_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
         wt_init_options['blade']['lofted_output'] = False
         wt_init_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
-        wt_init_options['blade']['n_pc']        = self.n_pc
+        wt_init_options['blade']['n_pc']      = self.n_pc
         wt_init_options['blade']['n_pc_spline'] = self.n_pc_spline
+        wt_init_options['blade']['n_pitch']   = self.n_pitch
+        wt_init_options['blade']['n_tsr']     = self.n_tsr
+        wt_init_options['blade']['n_U']       = self.n_U
+        wt_init_options['blade']['min_TSR']   = self.min_TSR
+        wt_init_options['blade']['max_TSR']   = self.max_TSR
+        wt_init_options['blade']['min_pitch'] = self.min_pitch
+        wt_init_options['blade']['max_pitch'] = self.max_pitch
         
         # Distributed aerodynamic control devices along blade
         wt_init_options['blade']['n_te_flaps']      = 0
