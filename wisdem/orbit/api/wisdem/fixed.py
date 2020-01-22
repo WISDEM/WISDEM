@@ -17,11 +17,11 @@ class Orbit(om.Group):
     def setup(self):
         
         # Define all input variables from all models
-        myIndeps = IndepVarComp()
+        myIndeps = om.IndepVarComp()
         myIndeps.add_discrete_output('wtiv', 'example_wtiv')
         myIndeps.add_discrete_output('feeder', 'example_feeder')
         myIndeps.add_discrete_output('num_feeders', 0)
-        myIndeps.add_discrete_output('oss_install_vessel')
+        myIndeps.add_discrete_output('oss_install_vessel', 'example_heavy_lift_vessel')
         myIndeps.add_output('site_distance', 0.0, units='km')
         myIndeps.add_output('site_distance_to_landfall', 40.0, units='km')
         myIndeps.add_output('site_distance_to_interconnection', 40.0, units='km')

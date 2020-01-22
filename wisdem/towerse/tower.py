@@ -524,7 +524,6 @@ class TowerLeanSE(Group):
             sharedIndeps = IndepVarComp()
             sharedIndeps.add_output('hub_height', 0.0, units='m')
             sharedIndeps.add_output('material_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('foundation_height', 0.0, units='m')
             self.add_subsystem('sharedIndepsLean', sharedIndeps, promotes=['*'])
         
         # All the static components
@@ -590,6 +589,7 @@ class TowerSE(Group):
         
         # Independent variables that are unique to TowerSE
         towerIndeps = IndepVarComp()
+        towerIndeps.add_output('foundation_height', 0.0, units='m')
         #towerIndeps.add_output('tower_M_DEL', np.zeros(nDEL))
         #towerIndeps.add_output('tower_z_DEL', np.zeros(nDEL), units='m')
         towerIndeps.add_output('tower_force_discretization', 5.0)

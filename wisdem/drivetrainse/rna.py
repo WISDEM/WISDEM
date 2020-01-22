@@ -292,6 +292,6 @@ class RNA(Group):
         self.add_subsystem('mass', RNAMass(), promotes=['*'])
         for k in range(nLC):
             lc = '' if nLC==1 else str(k+1)
-            self.add_subsystem('loads'+lc, RotorLoads(), promotes=['rna_mass','rna_cm','hub_cm','rna_weightM','downwind','tilt'])
+            self.add_subsystem('loads'+lc, RotorLoads(), promotes=['rna_mass','rna_cm','hub_cm','downwind','tilt'])
 
         
