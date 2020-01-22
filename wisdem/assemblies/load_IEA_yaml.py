@@ -6,6 +6,9 @@ from scipy.interpolate import PchipInterpolator, interp1d
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_smoothing, remap2grid
 from wisdem.commonse.utilities import arc_length
+from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
+
 
 def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
     # dimentional analysis that takes a rotation and offset from the pitch axis and calculates the airfoil intersection
@@ -72,9 +75,26 @@ class WindTurbineOntologyPython(object):
         self.n_aoa           = 200         # Number of angles of attack used to define polars
         self.n_xy            = 200         # Number of angles of coordinate points used to discretize each airfoil
         self.n_span          = 30          # Number of spanwise stations used to define the blade properties
+        self.n_pc            = 20          # Number of wind speeds to compute the power curve
+        self.n_pc_spline     = 200         # Number of wind speeds to spline the power curve
 
+        # XFOIL path
         self.xfoil_path      = ''
+
+        # OpenFAST paths
+        self.Analysis_Level             = 0
+        self.FAST_ver                   = 'OpenFAST'
+        self.dev_branch                 = True
+        self.FAST_exe                   = ''
+        self.FAST_directory             = ''
+        self.FAST_InputFile             = ''
+        self.Turbsim_exe                = ''
+        self.FAST_namingOut             = ''
+        self.FAST_runDirectory          = ''
+        self.cores                      = 1
+        self.debug_level                = 2
         
+
     def initialize(self, fname_input):
         # Class instance to break the yaml into sub dictionaries
         if self.verbose:
@@ -85,6 +105,32 @@ class WindTurbineOntologyPython(object):
         self.wt_init     = self.load_ontology(self.fname_input, validate=self.validate, fname_schema=self.fname_schema)
         self.wt_init_options = self.openmdao_vectors()        
         
+        # Initialize, read initial FAST files to avoid doing it iteratively
+        FASTpref                        = {}
+        FASTpref['Analysis_Level']      = self.Analysis_Level
+        FASTpref['FAST_ver']            = self.FAST_ver
+        FASTpref['dev_branch']          = self.dev_branch
+        FASTpref['FAST_exe']            = self.FAST_exe
+        FASTpref['FAST_directory']      = self.FAST_directory
+        FASTpref['FAST_InputFile']      = self.FAST_InputFile
+        FASTpref['Turbsim_exe']         = self.Turbsim_exe
+        FASTpref['FAST_namingOut']      = self.FAST_namingOut
+        FASTpref['FAST_runDirectory']   = self.FAST_runDirectory
+        FASTpref['cores']               = self.cores
+        FASTpref['debug_level']         = self.debug_level
+        FASTpref['DLC_gust']            = None      # Max deflection
+        FASTpref['DLC_extrm']           = None      # Max strain
+        FASTpref['DLC_turbulent']       = RotorSE_DLC_1_1_Turb
+        FASTpref['DLC_powercurve']      = power_curve      # AEP
+        self.FASTpref = FASTpref
+        fast = InputReader_OpenFAST(FAST_ver=self.FAST_ver, dev_branch=self.dev_branch)
+        fast.FAST_InputFile = self.FAST_InputFile
+        fast.FAST_directory = self.FAST_directory
+        fast.execute()
+        self.wt_init_options['openfast'] = {}
+        self.wt_init_options['openfast']['fst_vt']   = fast.fst_vt
+        self.wt_init_options['openfast']['FASTpref'] = self.FASTpref
+
         return self.wt_init_options, self.wt_init
 
     def openmdao_vectors(self):
@@ -118,6 +164,8 @@ class WindTurbineOntologyPython(object):
         wt_init_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
         wt_init_options['blade']['lofted_output'] = False
         wt_init_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
+        wt_init_options['blade']['n_pc']        = self.n_pc
+        wt_init_options['blade']['n_pc_spline'] = self.n_pc_spline
         
         # Distributed aerodynamic control devices along blade
         wt_init_options['blade']['n_te_flaps']      = 0
@@ -849,6 +897,7 @@ class Environment(ExplicitComponent):
         self.add_output('rho_air',      val=1.225,        units='kg/m**3',    desc='Density of air')
         self.add_output('mu_air',       val=1.81e-5,      units='kg/(m*s)',   desc='Dynamic viscosity of air')
         self.add_output('weibull_k',    val=2.0,          desc='Shape parameter of the Weibull probability density function of the wind.')
+        self.add_output('shear_exp',    val=0.2,          desc='Shear exponent of the wind.')
         self.add_output('speed_sound_air',  val=340.,     units='m/s',        desc='Speed of sound in air.')
 
 class Costs(ExplicitComponent):
@@ -1278,6 +1327,7 @@ def assign_environment_values(wt_opt, environment):
     wt_opt['env.mu_air']    = environment['air_dyn_viscosity']
     wt_opt['env.weibull_k'] = environment['weib_shape_parameter']
     wt_opt['env.speed_sound_air'] = environment['air_speed_sound']
+    wt_opt['env.shear_exp'] = environment['shear_exp']
 
     return wt_opt
 

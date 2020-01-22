@@ -56,8 +56,8 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.regulation_reg_III = True
         # naero       = self.naero = self.options['naero']
-        self.n_pc          = 20
-        self.n_pc_spline   = 200
+        self.n_pc          = wt_init_options['blade']['n_pc']
+        self.n_pc_spline   = wt_init_options['blade']['n_pc_spline']
         # n_aoa_grid  = self.options['n_aoa_grid']
         # n_Re_grid   = self.options['n_Re_grid']
 

@@ -693,6 +693,7 @@ environment:
     air_dyn_viscosity: 1.802e-5
     weib_shape_parameter: 2.
     air_speed_sound : 340.
+    shear_exp: 0.2
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075

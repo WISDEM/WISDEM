@@ -9,6 +9,7 @@ from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
+from wisdem.aeroelasticse.openmdao_openfast import FASTLoadCases
 
 class Opt_Data(object):
     # Pure python class to set the optimization parameters:
@@ -68,6 +69,8 @@ class WT_RNTA(Group):
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
         # self.add_subsystem('towerse',   TowerSE())
+        self.add_subsystem('aeroelastic',  FASTLoadCases(wt_init_options = wt_init_options))
+
         self.add_subsystem('tcons',     TurbineConstraints(wt_init_options = wt_init_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=opt_options['costs_verbosity'], topLevelFlag=False))
         # Post-processing
@@ -217,6 +220,51 @@ class WT_RNTA(Group):
         self.connect('nacelle.yaw_motors_number',  'drivese.yaw_motors_number')
         self.connect('nacelle.drivetrain_eff',     'drivese.drivetrain_efficiency')
         self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
+        
+        # Connections to aeroelasticse
+        # promotes=['fst_vt_in'])
+        self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
+        self.connect('assembly.r_blade',                'aeroelastic.r')
+        self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
+        self.connect('rotorse.pa.chord_param',          'aeroelastic.chord')
+        self.connect('rotorse.pa.twist_param',          'aeroelastic.theta')
+        self.connect('blade.interp_airfoils.coord_xy_interp', 'aeroelastic.coord_xy_interp')
+        self.connect('env.rho_air',                     'aeroelastic.rho')
+        self.connect('env.mu_air',                      'aeroelastic.mu')                    
+        self.connect('env.shear_exp',                   'aeroelastic.shearExp')                    
+        self.connect('assembly.rotor_radius',           'aeroelastic.Rtip')
+        self.connect('hub.radius',                      'aeroelastic.Rhub')
+        self.connect('assembly.hub_height',             'aeroelastic.hub_height')
+        # self.connect('hub.cone',                        'aeroelastic.precone')
+        # self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
+        self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
+        self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
+        self.connect('blade.interp_airfoils.cl_interp', 'aeroelastic.airfoils_cl')
+        self.connect('blade.interp_airfoils.cd_interp', 'aeroelastic.airfoils_cd')
+        self.connect('blade.interp_airfoils.cm_interp', 'aeroelastic.airfoils_cm')
+        self.connect('blade.interp_airfoils.r_thick_interp', 'aeroelastic.rthick')
+        self.connect('rotorse.rs.rhoA',                'aeroelastic.beam:rhoA')
+        self.connect('rotorse.rs.EIxx',                'aeroelastic.beam:EIxx')
+        self.connect('rotorse.rs.EIyy',                'aeroelastic.beam:EIyy')
+        self.connect('rotorse.rs.Tw_iner',             'aeroelastic.beam:Tw_iner')
+        self.connect('rotorse.rs.curvefem.modes_coef', 'aeroelastic.modes_coef_curvefem')
+        self.connect('rotorse.ra.powercurve.V',      'aeroelastic.U_init')
+        self.connect('rotorse.ra.powercurve.Omega',  'aeroelastic.Omega_init')
+        self.connect('rotorse.ra.powercurve.pitch',  'aeroelastic.pitch_init')
+        self.connect('rotorse.ra.powercurve.V_R25',  'aeroelastic.V_R25')
+        self.connect('rotorse.ra.powercurve.rated_V','aeroelastic.Vrated')
+        self.connect('rotorse.rs.gust.V_gust',       'aeroelastic.Vgust')
+        self.connect('wt_class.V_mean',              'aeroelastic.V_mean_iec')
+        self.connect('control.rated_power',          'aeroelastic.control_ratedPower')
+        self.connect('control.max_TS',               'aeroelastic.control_maxTS')
+        self.connect('control.max_Omega',            'aeroelastic.control_maxOmega')
+        self.connect('configuration.turb_class',     'aeroelastic.turbulence_class')
+        self.connect('configuration.ws_class' ,      'aeroelastic.turbine_class')
+
+        # Temporary
+        self.connect('rotorse.xf.Re_loc',           'aeroelastic.airfoils_Re_loc')
+        self.connect('rotorse.xf.Ma_loc',           'aeroelastic.airfoils_Ma_loc')
+        
         # Connections to turbine constraints
         self.connect('rotorse.rs.tip_pos.tip_deflection',   'tcons.tip_deflection')
         self.connect('assembly.rotor_radius',               'tcons.Rtip')
@@ -330,20 +378,31 @@ if __name__ == "__main__":
     ## File management
     fname_input    = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
     fname_output   = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
-    # fname_input    = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2010n.yaml"
-    # fname_output   = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2011n.yaml"
+    fname_input    = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2010n.yaml"
+    fname_output   = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2011n.yaml"
     folder_output  = 'it_1/'
     opt_flag_twist = False
     opt_flag_chord = False
-    opt_flag_spar_ss = True
-    opt_flag_spar_ps = True
+    opt_flag_spar_ss = False
+    opt_flag_spar_ps = False
     merit_figure     = 'Blade Mass' # 'AEP' - 'LCOE'
     # Load yaml data into a pure python data structure
-    wt_initial               = WindTurbineOntologyPython()
-    wt_initial.validate      = False
-    wt_initial.fname_schema  = "wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
-    wt_initial.xfoil_path    = '/Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil'
-    wt_init_options, wt_init = wt_initial.initialize(fname_input)
+    wt_initial                  = WindTurbineOntologyPython()
+    wt_initial.validate         = False
+    wt_initial.fname_schema     = "wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
+    wt_initial.xfoil_path       = '/Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil'
+    wt_initial.Analysis_Level   = 1
+    wt_initial.FAST_ver         = 'OpenFAST'
+    wt_initial.dev_branch       = True
+    wt_initial.FAST_exe         = '/Users/pbortolo/work/2_openfast/openfast/build/glue-codes/openfast/openfast'
+    wt_initial.FAST_directory   = '/Users/pbortolo/work/2_openfast/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95'
+    wt_initial.FAST_InputFile   = 'RotorSE_FAST_BAR_2010n_noRe.fst'
+    wt_initial.Turbsim_exe      = "/mnt/c/Material/Programs/TurbSim/TurbSim_glin64"
+    wt_initial.FAST_namingOut   = 'WISDEM_NREL5MW'
+    wt_initial.FAST_runDirectory= 'temp/' + wt_initial.FAST_namingOut
+    wt_initial.cores            = 1
+    wt_initial.debug_level      = 2
+    wt_init_options, wt_init    = wt_initial.initialize(fname_input)
     
     # Optimization options
     optimization_data       = Opt_Data()
@@ -367,6 +426,8 @@ if __name__ == "__main__":
 
     if opt_flag_twist or opt_flag_chord or opt_flag_spar_ss or opt_flag_spar_ps:
         opt_flag = True
+    else:
+        opt_flag = False
 
     opt_options = optimization_data.initialize()
     if not os.path.isdir(folder_output):
