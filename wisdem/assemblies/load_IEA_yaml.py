@@ -77,8 +77,8 @@ class WindTurbineOntologyPython(object):
         self.n_span          = 30          # Number of spanwise stations used to define the blade properties
         self.n_pc            = 20          # Number of wind speeds to compute the power curve
         self.n_pc_spline     = 200         # Number of wind speeds to spline the power curve
-        self.n_pitch         = 2           # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
-        self.n_tsr           = 2           # Number of tsr values to determine the Cp-Ct-Cq-surfaces
+        self.n_pitch         = 20          # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
+        self.n_tsr           = 20          # Number of tsr values to determine the Cp-Ct-Cq-surfaces
         self.n_U             = 1           # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
         self.min_TSR         = 2.          # Min TSR of the Cp-Ct-Cq-surfaces
         self.max_TSR         = 12.         # Max TSR of the Cp-Ct-Cq-surfaces
@@ -98,6 +98,7 @@ class WindTurbineOntologyPython(object):
         self.Turbsim_exe                = ''
         self.FAST_namingOut             = ''
         self.FAST_runDirectory          = ''
+        self.path2dll                   = ''
         self.cores                      = 1
         self.debug_level                = 2
         
@@ -114,6 +115,8 @@ class WindTurbineOntologyPython(object):
         
         # Initialize, read initial FAST files to avoid doing it iteratively
         FASTpref                        = {}
+        self.wt_init_options['openfast'] = {}
+        
         FASTpref['Analysis_Level']      = self.Analysis_Level
         FASTpref['FAST_ver']            = self.FAST_ver
         FASTpref['dev_branch']          = self.dev_branch
@@ -123,20 +126,23 @@ class WindTurbineOntologyPython(object):
         FASTpref['Turbsim_exe']         = self.Turbsim_exe
         FASTpref['FAST_namingOut']      = self.FAST_namingOut
         FASTpref['FAST_runDirectory']   = self.FAST_runDirectory
+        FASTpref['path2dll']            = self.path2dll
         FASTpref['cores']               = self.cores
         FASTpref['debug_level']         = self.debug_level
-        FASTpref['DLC_gust']            = None      # Max deflection
+        FASTpref['DLC_gust']            = RotorSE_DLC_1_4_Rated      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
-        FASTpref['DLC_turbulent']       = RotorSE_DLC_1_1_Turb
-        FASTpref['DLC_powercurve']      = power_curve      # AEP
-        self.FASTpref = FASTpref
-        fast = InputReader_OpenFAST(FAST_ver=self.FAST_ver, dev_branch=self.dev_branch)
-        fast.FAST_InputFile = self.FAST_InputFile
-        fast.FAST_directory = self.FAST_directory
-        fast.execute()
-        self.wt_init_options['openfast'] = {}
-        self.wt_init_options['openfast']['fst_vt']   = fast.fst_vt
-        self.wt_init_options['openfast']['FASTpref'] = self.FASTpref
+        FASTpref['DLC_turbulent']       = None
+        FASTpref['DLC_powercurve']      = None      # AEP
+        if self.Analysis_Level > 0:
+            fast = InputReader_OpenFAST(FAST_ver=self.FAST_ver, dev_branch=self.dev_branch)
+            fast.FAST_InputFile = self.FAST_InputFile
+            fast.FAST_directory = self.FAST_directory
+            fast.path2dll = self.path2dll
+            fast.execute()
+            self.wt_init_options['openfast']['fst_vt']   = fast.fst_vt
+        else:
+            self.wt_init_options['openfast']['fst_vt']   = {}
+        self.wt_init_options['openfast']['FASTpref'] = FASTpref
 
         return self.wt_init_options, self.wt_init
 

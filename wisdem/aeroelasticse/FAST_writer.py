@@ -1345,7 +1345,6 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_CornerFreq'], '! SD_CornerFreq', '- Cutoff Frequency for first order low-pass filter for blade pitch angle, [rad/s]\n'))
         f.write('\n!------- FLOATING -------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Kp'], '! Fl_Kp', '- Nacelle velocity proportional feedback gain [s]\n'))
-        f.write('\n')
         f.write('\n!------- FLAP ACTUATION -------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Angle'], '! Flp_Angle', '- Initial (Flp_Mode = 2) or steady state (Flp_Mode = 1) flap angle, [deg]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Kp'], '! Flp_Kp', '- PI flap controller proportional gain\n'))

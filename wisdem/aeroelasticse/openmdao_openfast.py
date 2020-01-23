@@ -519,7 +519,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['BlOutNd'] = [str(idx+1) for idx in idx_out]
         fst_vt['AeroDyn15']['NBlOuts'] = len(idx_out)
 
-        fst_vt['DISCON_in']['PerfFileName'] = self.writeCpsurfaces(inputs)
+        # fst_vt['DISCON_in']['PerfFileName'] = self.writeCpsurfaces(inputs)
 
         return fst_vt, R_out
 
@@ -910,6 +910,9 @@ class FASTLoadCases(ExplicitComponent):
         n_U     = len(inputs['U_vector'])
         
         file = open(file_name,'w')
+        file.write('# ------- Rotor performance tables ------- \n')
+        file.write('# ------------ Written using AeroElasticSE with data from CCBlade ------------\n')
+        file.write('\n')
         file.write('# Pitch angle vector - x axis (matrix columns) (deg)\n')
         for i in range(n_pitch):
             file.write('%.2f   ' % inputs['pitch_vector'][i])
