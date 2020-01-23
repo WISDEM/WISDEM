@@ -114,9 +114,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['k_monopile'] = np.zeros(6)
 
         myobj = tow.TowerPreFrame(nPoints=3, nFull=7, monopile=False)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        myobj.compute(self.inputs, self.outputs)
 
-        npt.assert_equal(self.discrete_outputs['kidx'], np.array([0]))
+        npt.assert_equal(self.outputs['kidx'], np.array([0]))
         npt.assert_equal(self.outputs['kx'], np.array([1e16]))
         npt.assert_equal(self.outputs['ky'], np.array([1e16]))
         npt.assert_equal(self.outputs['kz'], np.array([1e16]))
@@ -124,7 +124,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs['kty'], np.array([1e16]))
         npt.assert_equal(self.outputs['ktz'], np.array([1e16]))
 
-        npt.assert_equal(self.discrete_outputs['midx'], np.array([6, 0, 0]))
+        npt.assert_equal(self.outputs['midx'], np.array([6, 0, 0]))
         npt.assert_equal(self.outputs['m'], np.array([1e5, 0, 0]))
         npt.assert_equal(self.outputs['mrhox'], np.array([-3., 0., 0.]))
         npt.assert_equal(self.outputs['mrhoy'], np.array([0., 0., 0.]))
@@ -136,7 +136,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs['mIxz'], np.zeros(3))
         npt.assert_equal(self.outputs['mIyz'], np.zeros(3))
 
-        npt.assert_equal(self.discrete_outputs['plidx'], np.array([6]))
+        npt.assert_equal(self.outputs['plidx'], np.array([6]))
         npt.assert_equal(self.outputs['Fx'], np.array([2e5]))
         npt.assert_equal(self.outputs['Fy'], np.array([3e5]))
         npt.assert_equal(self.outputs['Fz'], np.array([4e5]))
@@ -156,9 +156,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['k_monopile'] = 20. + np.arange(6)
 
         myobj = tow.TowerPreFrame(nPoints=5, nFull=13, monopile=True)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        myobj.compute(self.inputs, self.outputs)
 
-        npt.assert_equal(self.discrete_outputs['kidx'], np.array([0, 1, 2, 3]))
+        npt.assert_equal(self.outputs['kidx'], np.array([0, 1, 2, 3]))
         npt.assert_equal(self.outputs['kx'], 20.*np.ones(4))
         npt.assert_equal(self.outputs['ky'], 22.*np.ones(4))
         npt.assert_equal(self.outputs['kz'], 24.*np.ones(4))
@@ -166,7 +166,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs['kty'], 23.*np.ones(4))
         npt.assert_equal(self.outputs['ktz'], 25.*np.ones(4))
 
-        npt.assert_equal(self.discrete_outputs['midx'], np.array([12, 7, 0]))
+        npt.assert_equal(self.outputs['midx'], np.array([12, 7, 0]))
         npt.assert_equal(self.outputs['m'], np.array([1e5, 1e3, 1e4]))
         npt.assert_equal(self.outputs['mrhox'], np.array([-3., 0., 0.]))
         npt.assert_equal(self.outputs['mrhoy'], np.array([0., 0., 0.]))
@@ -178,7 +178,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs['mIxz'], np.zeros(3))
         npt.assert_equal(self.outputs['mIyz'], np.zeros(3))
 
-        npt.assert_equal(self.discrete_outputs['plidx'], np.array([12]))
+        npt.assert_equal(self.outputs['plidx'], np.array([12]))
         npt.assert_equal(self.outputs['Fx'], np.array([2e5]))
         npt.assert_equal(self.outputs['Fy'], np.array([3e5]))
         npt.assert_equal(self.outputs['Fz'], np.array([4e5]))

@@ -162,6 +162,7 @@ class TowerMass(ExplicitComponent):
         outputs['monopile_cost']   = inputs['cylinder_cost']*outputs['monopile_mass']/inputs['cylinder_mass'].sum()
         outputs['monopile_mass']  += inputs['transition_piece_mass'] + inputs['gravity_foundation_mass']
         outputs['monopile_length'] = inputs['transition_piece_height'] - inputs['z_full'][0]
+        print(outputs['monopile_length'],outputs['monopile_mass'])
 
         self.J = {}
         self.J['monopile_mass', 'z_full'] = dydxp[0,:]
@@ -275,7 +276,7 @@ class TowerPreFrame(ExplicitComponent):
         
         # spring reaction data.  Use float('inf') for rigid constraints.
         nK = nRefine+1 if self.options['monopile'] else 1
-        self.add_discrete_output('kidx', np.zeros(nK, dtype=np.int_), desc='indices of z where external stiffness reactions should be applied.')
+        self.add_output('kidx', np.zeros(nK, dtype=np.int_), desc='indices of z where external stiffness reactions should be applied.')
         self.add_output('kx', np.zeros(nK), units='N/m', desc='spring stiffness in x-direction')
         self.add_output('ky', np.zeros(nK), units='N/m', desc='spring stiffness in y-direction')
         self.add_output('kz', np.zeros(nK), units='N/m', desc='spring stiffness in z-direction')
@@ -285,7 +286,7 @@ class TowerPreFrame(ExplicitComponent):
         
         # extra mass
         nMass = 3
-        self.add_discrete_output('midx', np.zeros(nMass, dtype=np.int_), desc='indices where added mass should be applied.')
+        self.add_output('midx', np.zeros(nMass, dtype=np.int_), desc='indices where added mass should be applied.')
         self.add_output('m', np.zeros(nMass), units='kg', desc='added mass')
         self.add_output('mIxx', np.zeros(nMass), units='kg*m**2', desc='x mass moment of inertia about some point p')
         self.add_output('mIyy', np.zeros(nMass), units='kg*m**2', desc='y mass moment of inertia about some point p')
@@ -299,7 +300,7 @@ class TowerPreFrame(ExplicitComponent):
 
         # point loads (if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also)
         nPL = 1
-        self.add_discrete_output('plidx', np.zeros(nPL, dtype=np.int_), desc='indices where point loads should be applied.')
+        self.add_output('plidx', np.zeros(nPL, dtype=np.int_), desc='indices where point loads should be applied.')
         self.add_output('Fx', np.zeros(nPL), units='N', desc='point force in x-direction')
         self.add_output('Fy', np.zeros(nPL), units='N', desc='point force in y-direction')
         self.add_output('Fz', np.zeros(nPL), units='N', desc='point force in z-direction')
@@ -313,7 +314,7 @@ class TowerPreFrame(ExplicitComponent):
         #self.declare_partials(['Mxx','Myy','Mzz'], 'rna_M')
 
         
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         nPoints = self.options['nPoints']
         nFull   = self.options['nFull']
         nRefine = int( (nFull-1)/(nPoints-1) )
@@ -327,7 +328,7 @@ class TowerPreFrame(ExplicitComponent):
         mgrav  = inputs['gravity_foundation_mass']
         Igrav  = mgrav*rgrav**2. * np.r_[0.25, 0.25, 0.5, np.zeros(3)] # disk
         # Note, need len()-1 because Frame3DD crashes if mass add at end
-        discrete_outputs['midx']  = np.array([ len(inputs['z'])-1, itrans, 0 ], dtype=np.int_)
+        outputs['midx']  = np.array([ len(inputs['z'])-1, itrans, 0 ], dtype=np.int_)
         outputs['m']     = np.array([ inputs['mass'],  mtrans,   mgrav ]).flatten()
         outputs['mIxx']  = np.array([ inputs['mI'][0], Itrans[0], Igrav[0] ]).flatten()
         outputs['mIyy']  = np.array([ inputs['mI'][1], Itrans[1], Igrav[1] ]).flatten()
@@ -340,7 +341,7 @@ class TowerPreFrame(ExplicitComponent):
         outputs['mrhoz'] = np.array([ inputs['mrho'][2], 0.0, 0.0 ]).flatten()
 
         # Prepare point forces at RNA node
-        discrete_outputs['plidx'] = np.array([ len(inputs['z'])-1 ], dtype=np.int_) # -1 b/c same reason as above
+        outputs['plidx'] = np.array([ len(inputs['z'])-1 ], dtype=np.int_) # -1 b/c same reason as above
         outputs['Fx']    = np.array([ inputs['rna_F'][0] ]).flatten()
         outputs['Fy']    = np.array([ inputs['rna_F'][1] ]).flatten()
         outputs['Fz']    = np.array([ inputs['rna_F'][2] ]).flatten()
@@ -353,7 +354,7 @@ class TowerPreFrame(ExplicitComponent):
             # Based on discretization, always same number of points in pile section
             kmono  = inputs['k_monopile']
             indvec = np.arange(0, nRefine+1, dtype=np.int_)
-            discrete_outputs['kidx'] = indvec
+            outputs['kidx'] = indvec
             outputs['kx']   = kmono[0]*np.ones(indvec.shape)
             outputs['ky']   = kmono[2]*np.ones(indvec.shape)
             outputs['kz']   = kmono[4]*np.ones(indvec.shape)
@@ -361,7 +362,7 @@ class TowerPreFrame(ExplicitComponent):
             outputs['kty']  = kmono[3]*np.ones(indvec.shape)
             outputs['ktz']  = kmono[5]*np.ones(indvec.shape)
         else:
-            discrete_outputs['kidx'] = np.array([ 0 ], dtype=np.int_)
+            outputs['kidx'] = np.array([ 0 ], dtype=np.int_)
             outputs['kx']   = np.array([ 1.e16 ])
             outputs['ky']   = np.array([ 1.e16 ])
             outputs['kz']   = np.array([ 1.e16 ])

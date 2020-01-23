@@ -213,7 +213,7 @@ class RotorLoads(ExplicitComponent):
         '''
         Fout = F
         Mout = M
-        
+
         # put back in array
         outputs['top_F'] = np.array([Fout.x, Fout.y, Fout.z])
         outputs['top_M'] = np.array([Mout.x, Mout.y, Mout.z])

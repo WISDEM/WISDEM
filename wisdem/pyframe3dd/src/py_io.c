@@ -995,8 +995,8 @@ int read_mass_data (
 
     *total_mass += NMs[jnt];
 
-    if ( NMs[jnt]==0 && NMx[jnt]==0 && NMy[jnt]==0 && NMz[jnt]==0 )
-      fprintf(stderr,"\n  Warning: All extra node inertia at node %d  are zero\n", jnt );
+    //if ( NMs[jnt]==0 && NMx[jnt]==0 && NMy[jnt]==0 && NMz[jnt]==0 )
+    //  fprintf(stderr,"\n  Warning: All extra node inertia at node %d  are zero\n", jnt );
   }
 
   /* number of frame elements with extra beam mass */
