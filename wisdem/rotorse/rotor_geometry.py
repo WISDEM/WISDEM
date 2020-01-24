@@ -167,6 +167,7 @@ class BladeGeometry(ExplicitComponent):
         refBlade.NINPUT              = len(outputs['r_in'])
         refBlade.NPTS                = len(blade['pf']['s'])
         refBlade.analysis_level      = blade['analysis_level']
+        refBlade.apply_stall_delay   = blade['apply_stall_delay']
         refBlade.user_update_routine = self.options['user_update_routine']
         if blade['analysis_level'] < 3:
             refBlade.spar_var        = blade['precomp']['spar_var']
