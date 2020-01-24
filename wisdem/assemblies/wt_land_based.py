@@ -1,10 +1,7 @@
 import numpy as np
-import os
-import matplotlib.pyplot as plt
-from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver, CaseReader
-from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyPython, WindTurbineOntologyOpenMDAO, yaml2openmdao
+from openmdao.api import ExplicitComponent, Group, Problem
+from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyOpenMDAO
 from wisdem.rotorse.rotor_geometry import TurbineClass
-# from wisdem.rotorse.wt_rotor import WT_Rotor
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
@@ -15,79 +12,38 @@ from wisdem.rotorse.dac import RunXFOIL
 from wisdem.rotorse.rotor_aeropower import RotorAeroPower
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
 from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains
-
-
-class Opt_Data(object):
-    # Pure python class to set the optimization parameters:
-
-    def __init__(self):
-        
-        self.opt_options = {}
-
-        # Save data
-        self.folder_output    = 'it_0/'
-        self.optimization_log = 'log_opt.sql'
-        self.costs_verbosity  = False
-        self.openfast         = False
-
-        # Blade aerodynamic optimization parameters
-        self.n_opt_twist   = 8
-        self.n_opt_chord   = 8
-        self.n_opt_spar_ss = 8
-        self.n_opt_spar_ps = 8
-
-    def initialize(self):
-
-        self.opt_options['folder_output']    = self.folder_output
-        self.opt_options['optimization_log'] = self.folder_output + self.optimization_log
-        self.opt_options['costs_verbosity']  = self.costs_verbosity
-        self.opt_options['openfast']         = self.openfast
-
-        self.opt_options['blade_aero'] = {}
-        self.opt_options['blade_aero']['n_opt_twist'] = self.n_opt_twist
-        self.opt_options['blade_aero']['n_opt_chord'] = self.n_opt_chord
-
-        self.opt_options['blade_struct'] = {}
-        self.opt_options['blade_struct']['te_ss_var']   = 'TE_reinforcement'
-        self.opt_options['blade_struct']['te_ps_var']   = 'TE_reinforcement'
-        self.opt_options['blade_struct']['spar_ss_var'] = 'Spar_Cap_SS'
-        self.opt_options['blade_struct']['spar_ps_var'] = 'Spar_Cap_PS'
-        self.opt_options['blade_struct']['n_opt_spar_ss'] = self.n_opt_spar_ss
-        self.opt_options['blade_struct']['n_opt_spar_ps'] = self.n_opt_spar_ps
-
-
-        return self.opt_options
+from wisdem.assemblies.run_tools import Outputs_2_Screen, Convergence_Trends_Opt
 
 class WT_RNTA(Group):
     # Openmdao group to run the analysis of the wind turbine
     
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         self.options.declare('opt_options')
         
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
+        analysis_options = self.options['analysis_options']
         opt_options     = self.options['opt_options']
 
         # Analysis components
-        self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(wt_init_options = wt_init_options), promotes=['*'])
+        self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(analysis_options = analysis_options), promotes=['*'])
         self.add_subsystem('wt_class',  TurbineClass())
-        self.add_subsystem('param',     WT_Parametrize(wt_init_options = wt_init_options, opt_options = opt_options))
-        self.add_subsystem('elastic',   RotorElasticity(wt_init_options = wt_init_options, opt_options = opt_options))
-        self.add_subsystem('xf',        RunXFOIL(wt_init_options = wt_init_options)) # Recompute polars with xfoil (for flaps)
-        self.add_subsystem('ra',        RotorAeroPower(wt_init_options = wt_init_options)) # Aero analysis
+        self.add_subsystem('param',     WT_Parametrize(analysis_options = analysis_options, opt_options = opt_options))
+        self.add_subsystem('elastic',   RotorElasticity(analysis_options = analysis_options, opt_options = opt_options))
+        self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options)) # Recompute polars with xfoil (for flaps)
+        self.add_subsystem('ra',        RotorAeroPower(analysis_options = analysis_options)) # Aero analysis
         
-        if opt_options['openfast'] == True:
-            self.add_subsystem('aeroelastic',  FASTLoadCases(wt_init_options = wt_init_options))
+        if analysis_options['openfast']['flag'] == True:
+            self.add_subsystem('aeroelastic',  FASTLoadCases(analysis_options = analysis_options))
         
-        self.add_subsystem('rlds',      RotorLoadsDeflStrains(wt_init_options = wt_init_options, opt_options = opt_options))
+        self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
         self.add_subsystem('drivese',   DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
         # self.add_subsystem('towerse',   TowerSE())
 
-        self.add_subsystem('tcons',     TurbineConstraints(wt_init_options = wt_init_options))
-        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=opt_options['costs_verbosity'], topLevelFlag=False))
+        self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
+        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
         self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
@@ -141,8 +97,8 @@ class WT_RNTA(Group):
         self.connect('materials.roll_mass',     'elastic.precomp.roll_mass')
 
         # Connections from blade struct parametrization to rotor load anlysis
-        self.connect('param.ps.s_opt_spar_ss',   'rlds.constr.s_opt_spar_ss')
-        self.connect('param.ps.s_opt_spar_ps',   'rlds.constr.s_opt_spar_ps')
+        self.connect('param.ps.s_opt_spar_cap_ss',   'rlds.constr.s_opt_spar_cap_ss')
+        self.connect('param.ps.s_opt_spar_cap_ps',   'rlds.constr.s_opt_spar_cap_ps')
 
         # Connection from ra to rs for the rated conditions
         # self.connect('ra.powercurve.rated_V',        'rlds.aero_rated.V_load')
@@ -288,7 +244,7 @@ class WT_RNTA(Group):
         
         # Connections to aeroelasticse
         # promotes=['fst_vt_in'])
-        if opt_options['openfast'] == True:
+        if analysis_options['openfast']['flag'] == True:
             self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             self.connect('assembly.r_blade',                'aeroelastic.r')
             self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
@@ -374,15 +330,15 @@ class WindPark(Group):
     # Openmdao group to run the cost analysis of a wind park
     
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         self.options.declare('opt_options')
         
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
+        analysis_options = self.options['analysis_options']
         opt_options     = self.options['opt_options']
 
-        self.add_subsystem('wt',        WT_RNTA(wt_init_options = wt_init_options, opt_options = opt_options), promotes=['*'])
-        self.add_subsystem('financese', PlantFinance(verbosity=opt_options['costs_verbosity']))
+        self.add_subsystem('wt',        WT_RNTA(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
+        self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
         
         # Inputs to plantfinancese from wt group
         self.connect('ra.AEP',          'financese.turbine_aep')
@@ -394,208 +350,3 @@ class WindPark(Group):
         self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
         self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
         self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
-
-class Convergence_Trends_Opt(ExplicitComponent):
-    def initialize(self):
-        
-        self.options.declare('opt_options')
-        
-    def compute(self, inputs, outputs):
-        
-        folder_output       = self.options['opt_options']['folder_output']
-        optimization_log    = self.options['opt_options']['optimization_log']
-
-        if os.path.exists(optimization_log):
-        
-            cr = CaseReader(optimization_log)
-            cases = cr.list_cases()
-            rec_data = {}
-            iterations = []
-            for i, casei in enumerate(cases):
-                iterations.append(i)
-                it_data = cr.get_case(casei)
-                
-                # parameters = it_data.get_responses()
-                for parameters in [it_data.get_responses(), it_data.get_design_vars()]:
-                    for j, param in enumerate(parameters.keys()):
-                        if i == 0:
-                            rec_data[param] = []
-                        rec_data[param].append(parameters[param])
-
-            for param in rec_data.keys():
-                fig, ax = plt.subplots(1,1,figsize=(5.3, 4))
-                ax.plot(iterations, rec_data[param])
-                ax.set(xlabel='Number of Iterations' , ylabel=param)
-                fig_name = 'Convergence_trend_' + param + '.png'
-                fig.savefig(folder_output + fig_name)
-                plt.close(fig)
-
-class Outputs_2_Screen(ExplicitComponent):
-    # Class to print outputs on screen
-    def setup(self):
-        
-        self.add_input('AEP', val=0.0, units = 'GW * h')
-        self.add_input('blade_mass', val=0.0, units = 'kg')
-        self.add_input('lcoe', val=0.0, units = 'USD/kW/h')
-    def compute(self, inputs, outputs):
-        print('########################################')
-        print('Objectives')
-        print('AEP:         {:8.10f} GWh'.format(inputs['AEP'][0]))
-        print('Blade Mass:  {:8.10f} kg'.format(inputs['blade_mass'][0]))
-        print('LCOE:        {:8.10f} $/kWh'.format(inputs['lcoe'][0]))
-        print('########################################')
-
-if __name__ == "__main__":
-
-    ## File management
-    fname_input    = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_output   = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
-    # fname_input    = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2010n.yaml"
-    # fname_output   = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2011n.yaml"
-    folder_output  = 'it_1/'
-    opt_flag_twist = False
-    opt_flag_chord = False
-    opt_flag_spar_ss = False
-    opt_flag_spar_ps = False
-    merit_figure     = 'Blade Mass' # 'AEP' - 'LCOE'
-    # Optimization options
-    optimization_data       = Opt_Data()
-    optimization_data.folder_output = folder_output
-    optimization_data.openfast = True
-    
-    
-    
-    # Load yaml data into a pure python data structure
-    wt_initial                  = WindTurbineOntologyPython()
-    wt_initial.validate         = False
-    wt_initial.fname_schema     = "wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
-    if optimization_data.openfast == True:
-        wt_initial.xfoil_path       = '/Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil'
-        wt_initial.Analysis_Level   = 1
-        wt_initial.FAST_ver         = 'OpenFAST'
-        wt_initial.dev_branch       = True
-        wt_initial.FAST_exe         = '/Users/pbortolo/work/2_openfast/openfast/build/glue-codes/openfast/openfast'
-        wt_initial.FAST_directory   = '/Users/pbortolo/work/2_openfast/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95'
-        wt_initial.FAST_InputFile   = 'RotorSE_FAST_BAR_2010n_noRe.fst'
-        wt_initial.path2dll         = '/Users/pbortolo/work/2_openfast/ROSCO_w_flaps/build/libdiscon.dylib'
-        wt_initial.Turbsim_exe      = "/Users/pbortolo/work/2_openfast/TurbSim/bin/TurbSim_glin64"
-        wt_initial.FAST_namingOut   = 'WISDEM_NREL5MW'
-        wt_initial.FAST_runDirectory= 'temp/' + wt_initial.FAST_namingOut
-        wt_initial.cores            = 1
-        wt_initial.debug_level      = 2
-        wt_initial.n_pitch          = 20
-        wt_initial.n_tsr            = 20
-    wt_init_options, wt_init    = wt_initial.initialize(fname_input)
-    
-    if opt_flag_twist == True:
-        optimization_data.n_opt_twist = 8
-    else:
-        optimization_data.n_opt_twist = wt_initial.n_span
-    if opt_flag_chord == True:
-        optimization_data.n_opt_chord = 8
-    else:
-        optimization_data.n_opt_chord = wt_initial.n_span
-    if opt_flag_spar_ss == True:
-        optimization_data.n_opt_spar_ss = 8
-    else:
-        optimization_data.n_opt_spar_ss = wt_initial.n_span
-    if opt_flag_spar_ps == True:
-        optimization_data.n_opt_spar_ps = 8
-    else:
-        optimization_data.n_opt_spar_ps = wt_initial.n_span
-
-    if opt_flag_twist or opt_flag_chord or opt_flag_spar_ss or opt_flag_spar_ps:
-        opt_flag = True
-    else:
-        opt_flag = False
-
-    opt_options = optimization_data.initialize()
-
-    if not os.path.isdir(folder_output):
-        os.mkdir(folder_output)
-
-    # Initialize openmdao problem
-    wt_opt          = Problem()
-    wt_opt.model    = WindPark(wt_init_options = wt_init_options, opt_options = opt_options)
-    wt_opt.model.approx_totals(method='fd')
-    
-    if opt_flag == True:
-        # Set optimization solver and options
-        wt_opt.driver  = ScipyOptimizeDriver()
-        wt_opt.driver.options['optimizer'] = 'SLSQP'
-        wt_opt.driver.options['tol']       = 1.e-6
-        wt_opt.driver.options['maxiter']   = 15
-
-        # Set merit figure
-        if merit_figure == 'AEP':
-            wt_opt.model.add_objective('ra.AEP', scaler = -1.e-6)
-        elif merit_figure == 'Blade Mass':
-            wt_opt.model.add_objective('rlds.blade_mass', scaler = 1.e-4)
-        elif merit_figure == 'LCOE':
-            wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
-        else:
-            exit('The merit figure ' + merit_figure + ' is not supported.')
-        
-        # Set optimization variables
-        if opt_flag_twist == True:
-            indices        = range(2,opt_options['blade_aero']['n_opt_twist'])
-            wt_opt.model.add_design_var('param.opt_var.twist_opt_gain', indices = indices, lower=0., upper=1.)
-        if opt_flag_chord == True:
-            indices  = range(2,opt_options['blade_aero']['n_opt_chord'] - 1)
-            wt_opt.model.add_design_var('param.opt_var.chord_opt_gain', indices = indices, lower=0.5, upper=1.5)
-        if opt_flag_spar_ss == True:
-            indices  = range(2,opt_options['blade_struct']['n_opt_spar_ss'] - 1)
-            wt_opt.model.add_design_var('param.opt_var.spar_ss_opt_gain', indices = indices, lower=0.5, upper=1.5)
-        if opt_flag_spar_ps == True:
-            indices  = range(2,opt_options['blade_struct']['n_opt_spar_ps'] - 1)
-            wt_opt.model.add_design_var('param.opt_var.spar_ps_opt_gain', indices = indices, lower=0.5, upper=1.5)
-
-        # Set non-linear constraints
-        wt_opt.model.add_constraint('rlds.pbeam.strainU_spar', upper= 1.) 
-        wt_opt.model.add_constraint('rlds.pbeam.strainL_spar', upper= 1.) 
-        wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
-        
-        # Set recorder
-        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
-        wt_opt.driver.recording_options['includes'] = ['ra.AEP, rlds.blade_mass, financese.lcoe']
-        wt_opt.driver.recording_options['record_objectives']  = True
-        wt_opt.driver.recording_options['record_constraints'] = True
-        wt_opt.driver.recording_options['record_desvars']     = True
-    
-    # Setup openmdao problem
-    wt_opt.setup()
-    
-    # Load initial wind turbine data from wt_initial to the openmdao problem
-    wt_opt = yaml2openmdao(wt_opt, wt_init_options, wt_init)
-    wt_opt['param.pa.s_opt_twist']   = np.linspace(0., 1., optimization_data.n_opt_twist)
-    wt_opt['param.pa.s_opt_chord']   = np.linspace(0., 1., optimization_data.n_opt_chord)
-    wt_opt['param.ps.s_opt_spar_ss'] = np.linspace(0., 1., optimization_data.n_opt_spar_ss)
-    wt_opt['param.ps.s_opt_spar_ps'] = np.linspace(0., 1., optimization_data.n_opt_spar_ps)
-    wt_opt['rlds.constr.min_strainU_spar'] = -0.003
-    wt_opt['rlds.constr.max_strainU_spar'] =  0.003
-    wt_opt['rlds.constr.min_strainL_spar'] = -0.003
-    wt_opt['rlds.constr.max_strainL_spar'] =  0.003
-
-    # Build and run openmdao problem
-    wt_opt.run_driver()
-
-    # Save data coming from openmdao to an output yaml file
-    wt_initial.write_ontology(wt_opt, fname_output)
-
-    # Printing and plotting results
-    print('AEP in GWh = ' + str(wt_opt['ra.AEP']*1.e-6))
-    print('Nat frequencies blades in Hz = ' + str(wt_opt['elastic.curvefem.freq']))
-    print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
-    print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
-
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_spar'], label='spar ss')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_spar'], label='spar ps')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_te'], label='te ss')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_te'], label='te ps')
-    plt.ylim([-5e-3, 5e-3])
-    plt.xlabel('r [m]')
-    plt.ylabel('strain [-]')
-    plt.legend()
-    plt.show()

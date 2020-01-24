@@ -78,12 +78,12 @@ class TowerModes(ExplicitComponent):
 class TipDeflectionConstraint(ExplicitComponent):
     # OpenMDAO component that computes the undeflected tip-tower clearance and the ratio between the two including a safety factor (typically equal to 1.3)
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
-        blade_init_options   = wt_init_options['blade']
+        analysis_options = self.options['analysis_options']
+        blade_init_options   = analysis_options['blade']
         n_span               = blade_init_options['n_span']
-        tower_init_options   = wt_init_options['tower']
+        tower_init_options   = analysis_options['tower']
         n_height_tow    = tower_init_options['n_height']
         # Inputs
         self.add_discrete_input('downwind',       val=False)
@@ -137,9 +137,9 @@ class TipDeflectionConstraint(ExplicitComponent):
 class TurbineConstraints(Group):
 
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
+        analysis_options = self.options['analysis_options']
         
         # self.add_subsystem('modes', TowerModes(), promotes=['*'])
-        self.add_subsystem('tipd', TipDeflectionConstraint(wt_init_options = wt_init_options), promotes=['*'])
+        self.add_subsystem('tipd', TipDeflectionConstraint(analysis_options = analysis_options), promotes=['*'])

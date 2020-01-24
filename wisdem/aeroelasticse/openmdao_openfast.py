@@ -195,11 +195,11 @@ def eval_unsteady(alpha, cl, cd, cm):
 
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options = self.options['wt_init_options']['blade']
+        blade_init_options = self.options['analysis_options']['blade']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_pc          = n_pc      = blade_init_options['n_pc']
         self.n_pitch       = n_pitch   = blade_init_options['n_pitch']
@@ -210,7 +210,7 @@ class FASTLoadCases(ExplicitComponent):
         # self.min_pitch     = blade_init_options['min_pitch']
         # self.max_pitch     = blade_init_options['max_pitch']
 
-        af_init_options    = self.options['wt_init_options']['airfoils']
+        af_init_options    = self.options['analysis_options']['airfoils']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
@@ -218,7 +218,7 @@ class FASTLoadCases(ExplicitComponent):
 
         
 
-        FASTpref                = self.options['wt_init_options']['openfast']['FASTpref']
+        FASTpref                = self.options['analysis_options']['openfast']['FASTpref']
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -390,7 +390,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Create instance of FAST reference model 
 
-        fst_vt = self.options['wt_init_options']['openfast']['fst_vt']
+        fst_vt = self.options['analysis_options']['openfast']['fst_vt']
 
         fst_vt['Fst']['OutFileFmt'] = 2
 
@@ -901,7 +901,7 @@ class FASTLoadCases(ExplicitComponent):
 
     def writeCpsurfaces(self, inputs):
         
-        FASTpref  = self.options['wt_init_options']['openfast']['FASTpref']
+        FASTpref  = self.options['analysis_options']['openfast']['FASTpref']
         file_name = os.path.join(FASTpref['FAST_runDirectory'], FASTpref['FAST_namingOut'] + '_Cp_Ct_Cq.dat')
         
         # Write Cp-Ct-Cq-TSR tables file

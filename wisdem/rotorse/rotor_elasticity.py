@@ -11,24 +11,24 @@ from wisdem.rotorse.rotor_cost import blade_cost_model
 class RunPreComp(ExplicitComponent):
     # Openmdao component to run precomp and generate the elastic properties of a wind turbine blade
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options = self.options['wt_init_options']['blade']
+        blade_init_options = self.options['analysis_options']['blade']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_webs        = n_webs    = blade_init_options['n_webs']
         self.n_layers      = n_layers  = blade_init_options['n_layers']
-        af_init_options    = self.options['wt_init_options']['airfoils']
+        af_init_options    = self.options['analysis_options']['airfoils']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        mat_init_options = self.options['wt_init_options']['materials']
+        mat_init_options = self.options['analysis_options']['materials']
         self.n_mat = n_mat = mat_init_options['n_mat']
 
         opt_options   = self.options['opt_options']
         self.te_ss_var   = opt_options['blade_struct']['te_ss_var']
         self.te_ps_var   = opt_options['blade_struct']['te_ps_var']
-        self.spar_ss_var = opt_options['blade_struct']['spar_ss_var']
-        self.spar_ps_var = opt_options['blade_struct']['spar_ps_var']
+        self.spar_cap_ss_var = opt_options['blade_struct']['spar_cap_ss_var']
+        self.spar_cap_ps_var = opt_options['blade_struct']['spar_cap_ps_var']
 
         # Outer geometry
         self.add_input('r',             val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
@@ -216,27 +216,27 @@ class RunPreComp(ExplicitComponent):
         # Check that the layer to be optimized actually exist
         te_ss_var_ok   = False
         te_ps_var_ok   = False
-        spar_ss_var_ok = False
-        spar_ps_var_ok = False
+        spar_cap_ss_var_ok = False
+        spar_cap_ps_var_ok = False
         for i_layer in range(self.n_layers):
             if discrete_inputs['layer_name'][i_layer] == self.te_ss_var:
                 te_ss_var_ok = True
             if discrete_inputs['layer_name'][i_layer] == self.te_ps_var:
                 te_ps_var_ok = True
-            if discrete_inputs['layer_name'][i_layer] == self.spar_ss_var:
-                spar_ss_var_ok = True
-            if discrete_inputs['layer_name'][i_layer] == self.spar_ps_var:
-                spar_ps_var_ok = True
+            if discrete_inputs['layer_name'][i_layer] == self.spar_cap_ss_var:
+                spar_cap_ss_var_ok = True
+            if discrete_inputs['layer_name'][i_layer] == self.spar_cap_ps_var:
+                spar_cap_ps_var_ok = True
 
         if te_ss_var_ok == False:
             print('The layer at the trailing edge suction side is set to be optimized, but does not exist in the input yaml. Please check.')
         if te_ps_var_ok == False:
             print('The layer at the trailing edge pressure side is set to be optimized, but does not exist in the input yaml. Please check.')
-        if spar_ss_var_ok == False:
+        if spar_cap_ss_var_ok == False:
             print('The layer at the spar cap suction side is set to be optimized, but does not exist in the input yaml. Please check.')
-        if spar_ps_var_ok == False:
+        if spar_cap_ps_var_ok == False:
             print('The layer at the spar cap pressure side is set to be optimized, but does not exist in the input yaml. Please check.')
-        region_loc_vars = [self.te_ss_var, self.te_ps_var, self.spar_ss_var, self.spar_ps_var]
+        region_loc_vars = [self.te_ss_var, self.te_ps_var, self.spar_cap_ss_var, self.spar_cap_ps_var]
 
         region_loc_ss = {} # track precomp regions for user selected composite layers
         region_loc_ps = {}
@@ -397,21 +397,21 @@ class RunPreComp(ExplicitComponent):
             else:
                 websCS[i] = CompositeSection([], [], [], [], [], [])
         
-        sector_idx_strain_spar_ss = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ss[self.spar_ss_var]]
-        sector_idx_strain_spar_ps = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.spar_ps_var]]
+        sector_idx_strain_spar_cap_ss = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ss[self.spar_cap_ss_var]]
+        sector_idx_strain_spar_cap_ps = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.spar_cap_ps_var]]
         sector_idx_strain_te_ss   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ss[self.te_ss_var]]
         sector_idx_strain_te_ps   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.te_ps_var]]
 
         # Get Beam Properties        
         beam = PreComp(inputs['r'], inputs['chord'], inputs['theta'], inputs['pitch_axis'], 
                        inputs['precurve'], inputs['presweep'], profile, materials, upperCS, lowerCS, websCS, 
-                       sector_idx_strain_spar_ps, sector_idx_strain_spar_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
+                       sector_idx_strain_spar_cap_ps, sector_idx_strain_spar_cap_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
         EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner = beam.sectionProperties()
 
-        # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_ss)
+        # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_cap_ss)
         # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_strain_te_ss)
 
-        xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = beam.criticalStrainLocations(sector_idx_strain_spar_ss, sector_idx_strain_spar_ps)
+        xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = beam.criticalStrainLocations(sector_idx_strain_spar_cap_ss, sector_idx_strain_spar_cap_ps)
         xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = beam.criticalStrainLocations(sector_idx_strain_te_ss, sector_idx_strain_te_ps)
         
         outputs['z']         = inputs['r']
@@ -506,10 +506,10 @@ class RunPreComp(ExplicitComponent):
 class RunCurveFEM(ExplicitComponent):
     # OpenMDAO component that computes the natural frequencies for curved blades using _pBEAM
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
-        blade_init_options = self.options['wt_init_options']['blade']
+        blade_init_options = self.options['analysis_options']['blade']
         self.n_span = n_span = blade_init_options['n_span']
         self.n_freq = n_freq = blade_init_options['n_freq']
 
@@ -640,13 +640,13 @@ class RunCurveFEM(ExplicitComponent):
 class RotorElasticity(Group):
     # OpenMDAO group to compute the blade elastic properties and natural frequencies
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         self.options.declare('opt_options')
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
+        analysis_options = self.options['analysis_options']
         opt_options     = self.options['opt_options']
 
         # Get elastic properties by running precomp
-        self.add_subsystem('precomp',   RunPreComp(wt_init_options = wt_init_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        self.add_subsystem('precomp',   RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
         # Compute frequencies
-        self.add_subsystem('curvefem', RunCurveFEM(wt_init_options = wt_init_options), promotes=['r','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        self.add_subsystem('curvefem', RunCurveFEM(analysis_options = analysis_options), promotes=['r','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])

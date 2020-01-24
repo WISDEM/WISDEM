@@ -1,7 +1,10 @@
+try:
+    from scipy.ndimage import gaussian_filter
+except:
+    pass
 import numpy as np
 import os
 from openmdao.api import ExplicitComponent
-# from scipy.ndimage import gaussian_filter
 from wisdem.ccblade import CCAirfoil
 from wisdem.ccblade.Polar import Polar
 import csv  # for exporting airfoil polar tables
@@ -154,13 +157,13 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
 class RunXFOIL(ExplicitComponent):
     # Openmdao component to run XFOIL and re-compute polars
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         
     def setup(self):
-        blade_init_options = self.options['wt_init_options']['blade']
+        blade_init_options = self.options['analysis_options']['blade']
         self.n_span        = n_span     = blade_init_options['n_span']
         self.n_te_flaps    = n_te_flaps = blade_init_options['n_te_flaps']
-        af_init_options    = self.options['wt_init_options']['airfoils']
+        af_init_options    = self.options['analysis_options']['airfoils']
         self.n_tab         = af_init_options['n_tab']
         self.n_aoa         = n_aoa      = af_init_options['n_aoa'] # Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1

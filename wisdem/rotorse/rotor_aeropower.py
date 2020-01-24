@@ -44,20 +44,20 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
         # self.options.declare('n_aoa_grid')
         # self.options.declare('n_Re_grid')
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
     
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
-        self.n_span        = n_span    = wt_init_options['blade']['n_span']
+        analysis_options = self.options['analysis_options']
+        self.n_span        = n_span    = analysis_options['blade']['n_span']
         # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
-        self.n_aoa         = n_aoa     = wt_init_options['airfoils']['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_aoa         = n_aoa     = analysis_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.regulation_reg_III = True
         # naero       = self.naero = self.options['naero']
-        self.n_pc          = wt_init_options['blade']['n_pc']
-        self.n_pc_spline   = wt_init_options['blade']['n_pc_spline']
+        self.n_pc          = analysis_options['blade']['n_pc']
+        self.n_pc_spline   = analysis_options['blade']['n_pc_spline']
         # n_aoa_grid  = self.options['n_aoa_grid']
         # n_Re_grid   = self.options['n_Re_grid']
 
@@ -398,7 +398,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         # self.options.declare('naero')
         # self.options.declare('n_pitch', default=20)
         # self.options.declare('n_tsr', default=20)
@@ -407,9 +407,9 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         # self.options.declare('n_Re_grid')
 
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
-        blade_init_options = wt_init_options['blade']
-        airfoils = wt_init_options['airfoils']
+        analysis_options = self.options['analysis_options']
+        blade_init_options = analysis_options['blade']
+        airfoils = analysis_options['airfoils']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_aoa         = n_aoa     = airfoils['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = airfoils['n_Re'] # Number of Reynolds, so far hard set at 1
@@ -511,15 +511,15 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
 class NoStallConstraint(ExplicitComponent):
     def initialize(self):
         
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
     
     def setup(self):
         
-        wt_init_options = self.options['wt_init_options']
-        self.n_span        = n_span    = wt_init_options['blade']['n_span']
-        self.n_aoa         = n_aoa     = wt_init_options['airfoils']['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        analysis_options = self.options['analysis_options']
+        self.n_span        = n_span    = analysis_options['blade']['n_span']
+        self.n_aoa         = n_aoa     = analysis_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         
         self.add_input('s',                     val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_input('stall_angle_along_span',val=np.zeros(n_span), units = 'deg', desc = 'Stall angle along blade span')
@@ -679,13 +679,13 @@ class OutputsAero(ExplicitComponent):
 class RotorAeroPower(Group):
     # Openmdao group for the aerodynamic only analysis of the wind turbine rotor
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
+        analysis_options = self.options['analysis_options']
 
-        self.add_subsystem('powercurve',        RegulatedPowerCurve(wt_init_options   = wt_init_options), promotes = ['control_Vin', 'control_Vout','control_ratedPower','control_minOmega','control_maxOmega','control_maxTS','control_tsr','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(wt_init_options   = wt_init_options), promotes = ['control_Vin', 'control_Vout','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-        self.add_subsystem('stall_check',       NoStallConstraint(wt_init_options   = wt_init_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
+        self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['control_Vin', 'control_Vout','control_ratedPower','control_minOmega','control_maxOmega','control_maxTS','control_tsr','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['control_Vin', 'control_Vout','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('stall_check',       NoStallConstraint(analysis_options   = analysis_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=200))
         self.add_subsystem('aep',               AEP(), promotes=['AEP'])
 
