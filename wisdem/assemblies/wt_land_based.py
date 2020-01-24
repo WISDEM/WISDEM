@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver, CaseReader
 from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyPython, WindTurbineOntologyOpenMDAO, yaml2openmdao
 from wisdem.rotorse.rotor_geometry import TurbineClass
-from wisdem.rotorse.wt_rotor import WT_Rotor
+# from wisdem.rotorse.wt_rotor import WT_Rotor
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance

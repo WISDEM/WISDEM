@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from openmdao.api import ExplicitComponent
-from scipy.ndimage import gaussian_filter
+# from scipy.ndimage import gaussian_filter
 from wisdem.ccblade import CCAirfoil
 from wisdem.ccblade.Polar import Polar
 import csv  # for exporting airfoil polar tables
