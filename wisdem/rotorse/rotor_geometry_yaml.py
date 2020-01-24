@@ -141,6 +141,9 @@ class ReferenceBlade(object):
         self.analysis_level  = 0           # 0: Precomp, 1: Precomp + write FAST model, 2: FAST/Elastodyn, 3: FAST/Beamdyn)
         self.verbose         = False
 
+        # Polars
+        self.apply_stall_delay = False     # apply Du-Selig stall delay model to interpolated spanwise airfoils
+
         # Precomp analyis
         self.spar_var        = ['']        # name of composite layer for RotorSE spar cap buckling analysis <---- SS first, then PS
         self.te_var          = ''          # name of composite layer for RotorSE trailing edge buckling analysis
@@ -174,7 +177,8 @@ class ReferenceBlade(object):
         blade = self.calc_composite_bounds(blade)
         blade = self.calc_control_points(blade, self.r_in)
         
-        blade['analysis_level'] = self.analysis_level
+        blade['analysis_level']    = self.analysis_level
+        blade['apply_stall_delay'] = self.apply_stall_delay
 
         if self.verbose:
             print('Complete: Geometry Analysis: \t%f s'%(time.time()-t1))
@@ -522,7 +526,7 @@ class ReferenceBlade(object):
     def remap_profiles(self, blade, AFref, spline=PchipInterpolator):
 
         # Option to correct trailing edge for closed to flatback transition
-        trailing_edge_correction = True
+        trailing_edge_correction = False
 
         # Get airfoil thicknesses in decending order and cooresponding airfoil names
         AFref_thk = [AFref[af]['relative_thickness'] for af in blade['outer_shape_bem']['airfoil_position']['labels']]
@@ -706,6 +710,20 @@ class ReferenceBlade(object):
             cl[:,:,j] = spline_cl(thk_span)
             cd[:,:,j] = spline_cd(thk_span)
             cm[:,:,j] = spline_cm(thk_span)
+
+        # stall delay
+        if self.apply_stall_delay:
+            for i in range(n_span):
+                for j in range(n_Re):
+                    if thk_span[i]<0.5:
+                        polar_ij     = Polar(Re[j], np.degrees(alpha), cl[:,i,j], cd[:,i,j], cm[:,i,j])
+                        r_over_R     = blade['pf']['s'][i]
+                        chord_over_r = blade['pf']['chord'][i]/blade['pf']['r'][i]
+                        tsr          = blade['config']['tsr']
+                        polar_ij_out = polar_ij.correction3D(r_over_R, chord_over_r, tsr, alpha_max_corr=30, alpha_linear_min=-5, alpha_linear_max=5)
+
+                        cl[:,i,j]    = polar_ij_out.cl
+                        cd[:,i,j]    = polar_ij_out.cd
 
         # CCBlade airfoil class instances
         # airfoils = [None]*n_span
@@ -1896,6 +1914,7 @@ if __name__ == "__main__":
     ## Load and Format Blade
     tt = time.time()
     refBlade = ReferenceBlade()
+    refBlade.apply_stall_delay = True
     refBlade.verbose  = True
     refBlade.spar_var = ['Spar_cap_ss', 'Spar_cap_ps']
     refBlade.te_var   = 'TE_reinforcement'
