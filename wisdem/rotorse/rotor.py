@@ -202,7 +202,8 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
     if 'hub_blade_distance' in blade['config'].keys():
         rotor['hubFraction']        = blade['config']['hub_blade_distance']/blade['ctrl_pts']['bladeLength']
     else:
-        rotor['hubFraction']        = blade['config']['hubD']/2./blade['ctrl_pts']['bladeLength'] # (Float): hub location as fraction of radius    rotor['bladeLength']        = blade['ctrl_pts']['bladeLength'] # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature
+        rotor['hubFraction']        = blade['config']['hubD']/2./blade['ctrl_pts']['bladeLength'] # (Float): hub location as fraction of radius
+    rotor['bladeLength']        = blade['ctrl_pts']['bladeLength'] # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature
     # rotor['delta_bladeLength'] = 0.0  # (Float, m): adjustment to blade length to account for curvature from loading
     rotor['precone']            = blade['config']['cone_angle']  # (Float, deg): precone angle
     rotor['tilt']               = blade['config']['tilt_angle']  # (Float, deg): shaft tilt
@@ -293,8 +294,9 @@ if __name__ == '__main__':
 
     # Turbine Ontology input
     fname_schema  = "turbine_inputs/IEAontology_schema.yaml"
-    # fname_input   = "turbine_inputs/nrel5mw_mod_update.yaml"
-    fname_input   = "/mnt/c/Users/egaertne/WISDEM2/wisdem/IEA-15-240-RWT/WISDEM/IEA-15-240-RWT.yaml"
+    fname_input   = "turbine_inputs/nrel5mw_mod_update.yaml"
+    # fname_input   = "/mnt/c/Users/egaertne/IEA-15-240-RWT/WISDEM/IEA-15-240-RWT.yaml"
+    # fname_input   = "/mnt/c/Users/egaertne/IEA-15-240-RWT/WISDEM/IEA-15-240-RWT_TipShape.yaml"
     output_folder = "test/"
     fname_output  = output_folder + 'test_out.yaml'
     
@@ -305,6 +307,7 @@ if __name__ == '__main__':
     refBlade.verbose      = True
     refBlade.NINPUT       = 8
     refBlade.NPTS         = 50
+    refBlade.apply_stall_delay = False
     refBlade.spar_var     = ['Spar_Cap_SS', 'Spar_Cap_PS'] # SS, then PS
     refBlade.te_var       = 'TE_reinforcement'
     # refBlade.le_var       = 'le_reinf'
