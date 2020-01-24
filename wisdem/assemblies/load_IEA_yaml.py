@@ -77,8 +77,8 @@ class WindTurbineOntologyPython(object):
         self.n_span          = 30          # Number of spanwise stations used to define the blade properties
         self.n_pc            = 20          # Number of wind speeds to compute the power curve
         self.n_pc_spline     = 200         # Number of wind speeds to spline the power curve
-        self.n_pitch         = 20          # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
-        self.n_tsr           = 20          # Number of tsr values to determine the Cp-Ct-Cq-surfaces
+        self.n_pitch         = 2           # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
+        self.n_tsr           = 2           # Number of tsr values to determine the Cp-Ct-Cq-surfaces
         self.n_U             = 1           # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
         self.min_TSR         = 2.          # Min TSR of the Cp-Ct-Cq-surfaces
         self.max_TSR         = 12.         # Max TSR of the Cp-Ct-Cq-surfaces
@@ -237,10 +237,10 @@ class WindTurbineOntologyPython(object):
         # Update blade outer shape
         self.wt_init['components']['blade']['outer_shape_bem']['chord']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         # self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.outer_shape_bem.chord'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['rotorse.pa.chord_param'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['param.pa.chord_param'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['twist']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         # self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['blade.outer_shape_bem.twist'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['rotorse.pa.twist_param'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['param.pa.twist_param'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['values']   = wt_opt['blade.outer_shape_bem.pitch_axis'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
@@ -271,7 +271,7 @@ class WindTurbineOntologyPython(object):
         # Structural layers
         for i in range(self.wt_init_options['blade']['n_layers']):
             self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
-            self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['rotorse.ps.layer_thickness_param'][i,:].tolist()
+            self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['param.ps.layer_thickness_param'][i,:].tolist()
             if wt_opt['blade.internal_structure_2d_fem.definition_layer'][i] < 7:
                 if 'start_nd_arc' not in self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]:
                     self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['start_nd_arc'] = {}

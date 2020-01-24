@@ -1,10 +1,6 @@
 import numpy as np
 import os
 from openmdao.api import ExplicitComponent, Group, IndepVarComp
-from wisdem.rotorse.rotor_aeropower import RotorAeroPower
-from wisdem.rotorse.rotor_structure_simple import RotorStructure
-from wisdem.rotorse.rotor_cost import RotorCost
-from wisdem.rotorse.dac import RunXFOIL
 
 class ParametrizeBladeAero(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the outer shape of the wind turbine rotor blades
@@ -92,8 +88,8 @@ class ParametrizeBladeStruct(ExplicitComponent):
 
             outputs['layer_thickness_param'][i,:] = inputs['layer_thickness_original'][i,:] * opt_gain_m_interp
 
-class WT_Rotor(Group):
-    # Openmdao group to run the aerostructural analysis of the wind turbine rotor
+class WT_Parametrize(Group):
+    # Openmdao group to parametrize the wind turbine based on the optimization variables
     
     def initialize(self):
         self.options.declare('wt_init_options')
@@ -114,32 +110,11 @@ class WT_Rotor(Group):
         # Analysis components
         self.add_subsystem('pa',    ParametrizeBladeAero(blade_init_options = wt_init_options['blade'], opt_options = opt_options)) # Parameterize aero (chord and twist)
         self.add_subsystem('ps',    ParametrizeBladeStruct(blade_init_options = wt_init_options['blade'], opt_options = opt_options)) # Parameterize struct (spar caps ss and ps)
-        self.add_subsystem('xf',    RunXFOIL(wt_init_options = wt_init_options)) # Recompute polars with xfoil (for flaps)
-        self.add_subsystem('ra',    RotorAeroPower(wt_init_options = wt_init_options)) # Aero analysis
-        self.add_subsystem('rs',    RotorStructure(wt_init_options = wt_init_options, opt_options = opt_options)) # Struct analysis
-        # self.add_subsystem('rc',    RotorCost(wt_init_options = wt_init_options, opt_options = opt_options))
 
         # Connections to blade aero parametrization
         self.connect('opt_var.twist_opt_gain',    'pa.twist_opt_gain')
         self.connect('opt_var.chord_opt_gain',    'pa.chord_opt_gain')
         
-        # Connections from blade aero parametrization to rotorse
-        self.connect('pa.twist_param',           ['ra.theta','rs.theta'])
-        self.connect('pa.twist_param',            'rs.tip_pos.theta_tip',   src_indices=[-1])
-        self.connect('pa.chord_param',           ['xf.chord', 'ra.chord','rs.chord'])
-
         # Connections to blade struct parametrization
         self.connect('opt_var.spar_ss_opt_gain','ps.spar_ss_opt_gain')
         self.connect('opt_var.spar_ps_opt_gain','ps.spar_ps_opt_gain')
-
-        # Connections from blade struct parametrization to rotorse
-        self.connect('ps.layer_thickness_param', 'rs.precomp.layer_thickness')
-        self.connect('ps.s_opt_spar_ss',   'rs.constr.s_opt_spar_ss')
-        self.connect('ps.s_opt_spar_ps',   'rs.constr.s_opt_spar_ps')
-
-        # Connection from ra to rs for the rated conditions
-        # self.connect('ra.powercurve.rated_V',        'rs.aero_rated.V_load')
-        self.connect('ra.powercurve.rated_V',        'rs.gust.V_hub')
-        self.connect('rs.gust.V_gust',              ['rs.aero_gust.V_load'])
-        self.connect('ra.powercurve.rated_Omega',   ['rs.Omega_load', 'rs.aeroloads_Omega', 'rs.curvefem.Omega', 'rs.constr.rated_Omega'])
-        self.connect('ra.powercurve.rated_pitch',   ['rs.pitch_load', 'rs.aeroloads_pitch'])
