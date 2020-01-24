@@ -46,10 +46,10 @@ class GustETM(ExplicitComponent):
 class BladeCurvature(ExplicitComponent):
     # OpenMDAO component that computes the 3D curvature of the blade
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
-        blade_init_options = self.options['wt_init_options']['blade']
+        blade_init_options = self.options['analysis_options']['blade']
         n_span    = blade_init_options['n_span']
 
         # Inputs
@@ -92,10 +92,10 @@ class BladeCurvature(ExplicitComponent):
 class TotalLoads(ExplicitComponent):
     # OpenMDAO component that takes as input the rotor configuration (tilt, cone), the blade twist and mass distributions, and the blade aerodynamic loading, and computes the total loading including gravity and centrifugal forces
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
-        blade_init_options = self.options['wt_init_options']['blade']
+        blade_init_options = self.options['analysis_options']['blade']
         n_span    = blade_init_options['n_span']
 
         # Inputs
@@ -189,10 +189,10 @@ class TotalLoads(ExplicitComponent):
 
 class RunpBEAM(ExplicitComponent):
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
-        blade_init_options = self.options['wt_init_options']['blade']
+        blade_init_options = self.options['analysis_options']['blade']
         self.n_span = n_span = blade_init_options['n_span']
         self.n_freq = n_freq = blade_init_options['n_freq']
 
@@ -379,16 +379,16 @@ class TipDeflection(ExplicitComponent):
 class DesignConstraints(ExplicitComponent):
     # OpenMDAO component that formulates constraints on user-defined maximum strains, frequencies   
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options = self.options['wt_init_options']['blade']
+        blade_init_options = self.options['analysis_options']['blade']
         self.n_span = n_span = blade_init_options['n_span']
         self.n_freq = n_freq = blade_init_options['n_freq']
         self.opt_options   = opt_options   = self.options['opt_options']
-        self.n_opt_spar_ss = n_opt_spar_ss = opt_options['blade_struct']['n_opt_spar_ss']
-        self.n_opt_spar_ps = n_opt_spar_ps = opt_options['blade_struct']['n_opt_spar_ps']
+        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options['blade_struct']['n_opt_spar_cap_ss']
+        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options['blade_struct']['n_opt_spar_cap_ps']
         # Inputs strains
         self.add_input('strainU_spar',     val=np.zeros(n_span), desc='strain in spar cap on upper surface at location xu,yu_strain with loads P_strain')
         self.add_input('strainL_spar',     val=np.zeros(n_span), desc='strain in spar cap on lower surface at location xl,yl_strain with loads P_strain')
@@ -399,8 +399,8 @@ class DesignConstraints(ExplicitComponent):
         self.add_input('max_strainL_spar', val=0.0, desc='maximum strain in spar cap pressure side')
         
         self.add_input('s',                     val=np.zeros(n_span),       desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
-        self.add_input('s_opt_spar_ss',         val=np.zeros(n_opt_spar_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
-        self.add_input('s_opt_spar_ps',         val=np.zeros(n_opt_spar_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
+        self.add_input('s_opt_spar_cap_ss',         val=np.zeros(n_opt_spar_cap_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
+        self.add_input('s_opt_spar_cap_ps',         val=np.zeros(n_opt_spar_cap_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
 
         # Input frequencies
         self.add_input('rated_Omega', val=0.0,                units='rpm', desc='rotor rotation speed at rated')
@@ -408,10 +408,10 @@ class DesignConstraints(ExplicitComponent):
         self.add_input('freq',        val=np.zeros(n_freq),   units='Hz',  desc='first nF natural frequencies')
 
         # Outputs
-        self.add_output('constr_min_strainU_spar',     val=np.zeros(n_opt_spar_ss), desc='constraint for minimum strain in spar cap suction side')
-        self.add_output('constr_max_strainU_spar',     val=np.zeros(n_opt_spar_ss), desc='constraint for maximum strain in spar cap suction side')
-        self.add_output('constr_min_strainL_spar',     val=np.zeros(n_opt_spar_ps), desc='constraint for minimum strain in spar cap pressure side')
-        self.add_output('constr_max_strainL_spar',     val=np.zeros(n_opt_spar_ps), desc='constraint for maximum strain in spar cap pressure side')
+        self.add_output('constr_min_strainU_spar',     val=np.zeros(n_opt_spar_cap_ss), desc='constraint for minimum strain in spar cap suction side')
+        self.add_output('constr_max_strainU_spar',     val=np.zeros(n_opt_spar_cap_ss), desc='constraint for maximum strain in spar cap suction side')
+        self.add_output('constr_min_strainL_spar',     val=np.zeros(n_opt_spar_cap_ps), desc='constraint for minimum strain in spar cap pressure side')
+        self.add_output('constr_max_strainL_spar',     val=np.zeros(n_opt_spar_cap_ps), desc='constraint for maximum strain in spar cap pressure side')
         self.add_output('constr_flap_f_above_3P',      val=0.0,                     desc='constraint on flap blade frequency to stay above 3P + delta')
         self.add_output('constr_edge_f_above_3P',      val=0.0,                     desc='constraint on edge blade frequency to stay above 3P + delta')
 
@@ -419,8 +419,8 @@ class DesignConstraints(ExplicitComponent):
         
         # Constraints on blade strains
         s               = inputs['s']
-        s_opt_spar_ss   = inputs['s_opt_spar_ss']
-        s_opt_spar_ps   = inputs['s_opt_spar_ps']
+        s_opt_spar_cap_ss   = inputs['s_opt_spar_cap_ss']
+        s_opt_spar_cap_ps   = inputs['s_opt_spar_cap_ps']
         
         strainU_spar    = inputs['strainU_spar']
         strainL_spar    = inputs['strainL_spar']
@@ -429,10 +429,10 @@ class DesignConstraints(ExplicitComponent):
         min_strainL_spar= inputs['min_strainL_spar']
         max_strainL_spar= inputs['max_strainL_spar']
         
-        outputs['constr_min_strainU_spar'] = abs(np.interp(s_opt_spar_ss, s, strainU_spar)) / abs(min_strainU_spar)
-        outputs['constr_max_strainU_spar'] = abs(np.interp(s_opt_spar_ss, s, strainU_spar)) / max_strainU_spar
-        outputs['constr_min_strainL_spar'] = abs(np.interp(s_opt_spar_ps, s, strainL_spar)) / abs(min_strainL_spar)
-        outputs['constr_max_strainL_spar'] = abs(np.interp(s_opt_spar_ps, s, strainL_spar)) / max_strainL_spar
+        outputs['constr_min_strainU_spar'] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / abs(min_strainU_spar)
+        outputs['constr_max_strainU_spar'] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / max_strainU_spar
+        outputs['constr_min_strainL_spar'] = abs(np.interp(s_opt_spar_cap_ps, s, strainL_spar)) / abs(min_strainL_spar)
+        outputs['constr_max_strainL_spar'] = abs(np.interp(s_opt_spar_cap_ps, s, strainL_spar)) / max_strainL_spar
 
         # Constraints on blade frequencies
         threeP = 3. * inputs['rated_Omega'] / 60.
@@ -445,31 +445,31 @@ class DesignConstraints(ExplicitComponent):
 class RotorLoadsDeflStrains(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         self.options.declare('opt_options')
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
+        analysis_options = self.options['analysis_options']
         opt_options     = self.options['opt_options']
 
         # Load blade with rated conditions and compute aerodynamic forces
         promoteListAeroLoads =  ['r', 'theta', 'chord', 'Rtip', 'Rhub', 'hub_height', 'precone', 'tilt', 'airfoils_aoa', 'airfoils_Re', 'airfoils_cl', 'airfoils_cd', 'airfoils_cm', 'nBlades', 'rho', 'mu', 'Omega_load','pitch_load']
-        # self.add_subsystem('aero_rated',        CCBladeLoads(wt_init_options = wt_init_options), promotes=promoteListAeroLoads)
+        # self.add_subsystem('aero_rated',        CCBladeLoads(analysis_options = analysis_options), promotes=promoteListAeroLoads)
         self.add_subsystem('gust',              GustETM())
-        self.add_subsystem('aero_gust',         CCBladeLoads(wt_init_options = wt_init_options), promotes=promoteListAeroLoads)
-        # self.add_subsystem('aero_storm_1yr',    CCBladeLoads(wt_init_options = wt_init_options), promotes=promoteListAeroLoads)
-        # self.add_subsystem('aero_storm_50yr',   CCBladeLoads(wt_init_options = wt_init_options), promotes=promoteListAeroLoads)
+        self.add_subsystem('aero_gust',         CCBladeLoads(analysis_options = analysis_options), promotes=promoteListAeroLoads)
+        # self.add_subsystem('aero_storm_1yr',    CCBladeLoads(analysis_options = analysis_options), promotes=promoteListAeroLoads)
+        # self.add_subsystem('aero_storm_50yr',   CCBladeLoads(analysis_options = analysis_options), promotes=promoteListAeroLoads)
         # Add centrifugal and gravity loading to aero loading
         promotes=['tilt','theta','rhoA','z','totalCone','z_az']
-        self.add_subsystem('curvature',         BladeCurvature(wt_init_options = wt_init_options),  promotes=['r','precone','precurve','presweep','3d_curv','z_az'])
+        self.add_subsystem('curvature',         BladeCurvature(analysis_options = analysis_options),  promotes=['r','precone','precurve','presweep','3d_curv','z_az'])
         promoteListTotalLoads = ['r', 'theta', 'tilt', 'rhoA', '3d_curv', 'z_az', 'aeroloads_Omega', 'aeroloads_pitch']
-        # self.add_subsystem('tot_loads_rated',       TotalLoads(wt_init_options = wt_init_options),      promotes=promoteListTotalLoads)
-        self.add_subsystem('tot_loads_gust',        TotalLoads(wt_init_options = wt_init_options),      promotes=promoteListTotalLoads)
-        # self.add_subsystem('tot_loads_storm_1yr',   TotalLoads(wt_init_options = wt_init_options),      promotes=promoteListTotalLoads)
-        # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(wt_init_options = wt_init_options),      promotes=promoteListTotalLoads)
+        # self.add_subsystem('tot_loads_rated',       TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
+        self.add_subsystem('tot_loads_gust',        TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
+        # self.add_subsystem('tot_loads_storm_1yr',   TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
+        # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
         promoteListpBeam = ['r','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te','blade_mass']
-        self.add_subsystem('pbeam',     RunpBEAM(wt_init_options = wt_init_options),      promotes=promoteListpBeam)
+        self.add_subsystem('pbeam',     RunpBEAM(analysis_options = analysis_options),      promotes=promoteListpBeam)
         self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
-        self.add_subsystem('constr',    DesignConstraints(wt_init_options = wt_init_options, opt_options = opt_options))
+        self.add_subsystem('constr',    DesignConstraints(analysis_options = analysis_options, opt_options = opt_options))
 
         # Aero loads to total loads
         # self.connect('aero_rated.loads_Px',     'tot_loads_rated.aeroloads_Px')

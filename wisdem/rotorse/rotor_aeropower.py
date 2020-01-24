@@ -32,6 +32,7 @@ import time
 # ---------------------
 
 
+
 class OutputsAero(ExplicitComponent):
     def initialize(self):
         self.options.declare('npts_coarse_power_curve')

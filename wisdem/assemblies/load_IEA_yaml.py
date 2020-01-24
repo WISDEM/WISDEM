@@ -57,7 +57,7 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
 
 class WindTurbineOntologyPython(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
-    #   - wt_init_options: dictionary with all the inputs that will be passed as options to the openmdao components, such as the length of the arrays
+    #   - analysis_options: dictionary with all the inputs that will be passed as options to the openmdao components, such as the length of the arrays
     #   - blade: dictionary representing the entry blade in the yaml file
     #   - tower: dictionary representing the entry tower in the yaml file
     #   - nacelle: dictionary representing the entry nacelle in the yaml file
@@ -103,106 +103,110 @@ class WindTurbineOntologyPython(object):
         self.debug_level                = 2
         
 
-    def initialize(self, fname_input):
+    def initialize(self, fname_input_wt, fname_input_analysis):
         # Class instance to break the yaml into sub dictionaries
-        if self.verbose:
-            print('Running initialization: %s' % fname_input)
+        
+        analysis_options = self.load_yaml(fname_input_analysis)
 
-        # Load input
-        self.fname_input = fname_input
-        self.wt_init     = self.load_ontology(self.fname_input, validate=self.validate, fname_schema=self.fname_schema)
-        self.wt_init_options = self.openmdao_vectors()        
+        # Load wind turbine yaml input
+        self.fname_input = fname_input_wt
+        self.wt_init     = self.load_ontology(self.fname_input, validate=analysis_options['yaml']['validate'], fname_schema=analysis_options['yaml']['path2schema'])
+        self.analysis_options = self.openmdao_vectors()        
         
-        # Initialize, read initial FAST files to avoid doing it iteratively
+        # General options
+        self.analysis_options['general'] = {}
+        self.analysis_options['general']['verbosity'] = analysis_options['general']['verbosity']
+        
+        # Openfast
+        self.analysis_options['openfast'] = {}
+        self.analysis_options['openfast']['flag'] = analysis_options['openfast']['run_openfast']
         FASTpref                        = {}
-        self.wt_init_options['openfast'] = {}
-        
-        FASTpref['Analysis_Level']      = self.Analysis_Level
-        FASTpref['FAST_ver']            = self.FAST_ver
-        FASTpref['dev_branch']          = self.dev_branch
-        FASTpref['FAST_exe']            = self.FAST_exe
-        FASTpref['FAST_directory']      = self.FAST_directory
-        FASTpref['FAST_InputFile']      = self.FAST_InputFile
-        FASTpref['Turbsim_exe']         = self.Turbsim_exe
-        FASTpref['FAST_namingOut']      = self.FAST_namingOut
-        FASTpref['FAST_runDirectory']   = self.FAST_runDirectory
-        FASTpref['path2dll']            = self.path2dll
-        FASTpref['cores']               = self.cores
-        FASTpref['debug_level']         = self.debug_level
+        FASTpref['Analysis_Level']      = analysis_options['openfast']['Analysis_Level']
+        FASTpref['FAST_ver']            = analysis_options['openfast']['FAST_ver']
+        FASTpref['dev_branch']          = analysis_options['openfast']['dev_branch']
+        FASTpref['FAST_exe']            = analysis_options['openfast']['FAST_exe']
+        FASTpref['FAST_directory']      = analysis_options['openfast']['FAST_directory']
+        FASTpref['FAST_InputFile']      = analysis_options['openfast']['FAST_InputFile']
+        FASTpref['Turbsim_exe']         = analysis_options['openfast']['Turbsim_exe']
+        FASTpref['FAST_namingOut']      = analysis_options['openfast']['FAST_namingOut']
+        FASTpref['FAST_runDirectory']   = analysis_options['openfast']['FAST_runDirectory']
+        FASTpref['path2dll']            = analysis_options['openfast']['path2dll']
+        FASTpref['cores']               = analysis_options['openfast']['cores']
+        FASTpref['debug_level']         = analysis_options['openfast']['debug_level']
         FASTpref['DLC_gust']            = RotorSE_DLC_1_4_Rated      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
         FASTpref['DLC_turbulent']       = None
         FASTpref['DLC_powercurve']      = None      # AEP
-        if self.Analysis_Level > 0:
-            fast = InputReader_OpenFAST(FAST_ver=self.FAST_ver, dev_branch=self.dev_branch)
-            fast.FAST_InputFile = self.FAST_InputFile
-            fast.FAST_directory = self.FAST_directory
-            fast.path2dll = self.path2dll
+        if FASTpref['Analysis_Level'] > 0:
+            fast = InputReader_OpenFAST(FAST_ver=FASTpref['FAST_ver'], dev_branch=FASTpref['dev_branch'])
+            fast.FAST_InputFile = FASTpref['FAST_InputFile']
+            fast.FAST_directory = FASTpref['FAST_directory']
+            fast.path2dll = FASTpref['path2dll']
             fast.execute()
-            self.wt_init_options['openfast']['fst_vt']   = fast.fst_vt
+            self.analysis_options['openfast']['fst_vt']   = fast.fst_vt
         else:
-            self.wt_init_options['openfast']['fst_vt']   = {}
-        self.wt_init_options['openfast']['FASTpref'] = FASTpref
+            self.analysis_options['openfast']['fst_vt']   = {}
+        self.analysis_options['openfast']['FASTpref'] = FASTpref
 
-        return self.wt_init_options, self.wt_init
+        return self.analysis_options, self.wt_init
 
     def openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
-        wt_init_options = {}
+        analysis_options = {}
         
         # Materials
-        wt_init_options['materials']          = {}
-        wt_init_options['materials']['n_mat'] = len(self.wt_init['materials'])
+        analysis_options['materials']          = {}
+        analysis_options['materials']['n_mat'] = len(self.wt_init['materials'])
         
         # Airfoils
-        wt_init_options['airfoils']           = {}
-        wt_init_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
-        wt_init_options['airfoils']['n_aoa']  = self.n_aoa
-        wt_init_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(wt_init_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(wt_init_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(wt_init_options['airfoils']['n_aoa'] / 4. + 1))]))
+        analysis_options['airfoils']           = {}
+        analysis_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
+        analysis_options['airfoils']['n_aoa']  = self.n_aoa
+        analysis_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(analysis_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(analysis_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(analysis_options['airfoils']['n_aoa'] / 4. + 1))]))
         Re_all = []
-        for i in range(wt_init_options['airfoils']['n_af']):
+        for i in range(analysis_options['airfoils']['n_af']):
             for j in range(len(self.wt_init['airfoils'][i]['polars'])):
                 Re_all.append(self.wt_init['airfoils'][i]['polars'][j]['re'])
-        wt_init_options['airfoils']['n_Re']   = len(np.unique(Re_all))
-        wt_init_options['airfoils']['n_tab']  = 1
-        wt_init_options['airfoils']['n_xy']   = self.n_xy
-        wt_init_options['airfoils']['xfoil_path']   = self.xfoil_path
+        analysis_options['airfoils']['n_Re']   = len(np.unique(Re_all))
+        analysis_options['airfoils']['n_tab']  = 1
+        analysis_options['airfoils']['n_xy']   = self.n_xy
+        analysis_options['airfoils']['xfoil_path']   = self.xfoil_path
         
         # Blade
-        wt_init_options['blade']              = {}
-        wt_init_options['blade']['n_span']    = self.n_span
-        wt_init_options['blade']['nd_span']   = np.linspace(0., 1., wt_init_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
-        wt_init_options['blade']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
-        wt_init_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
-        wt_init_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
-        wt_init_options['blade']['lofted_output'] = False
-        wt_init_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
-        wt_init_options['blade']['n_pc']      = self.n_pc
-        wt_init_options['blade']['n_pc_spline'] = self.n_pc_spline
-        wt_init_options['blade']['n_pitch']   = self.n_pitch
-        wt_init_options['blade']['n_tsr']     = self.n_tsr
-        wt_init_options['blade']['n_U']       = self.n_U
-        wt_init_options['blade']['min_TSR']   = self.min_TSR
-        wt_init_options['blade']['max_TSR']   = self.max_TSR
-        wt_init_options['blade']['min_pitch'] = self.min_pitch
-        wt_init_options['blade']['max_pitch'] = self.max_pitch
+        analysis_options['blade']              = {}
+        analysis_options['blade']['n_span']    = self.n_span
+        analysis_options['blade']['nd_span']   = np.linspace(0., 1., analysis_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
+        analysis_options['blade']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+        analysis_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
+        analysis_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
+        analysis_options['blade']['lofted_output'] = False
+        analysis_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
+        analysis_options['blade']['n_pc']      = self.n_pc
+        analysis_options['blade']['n_pc_spline'] = self.n_pc_spline
+        analysis_options['blade']['n_pitch']   = self.n_pitch
+        analysis_options['blade']['n_tsr']     = self.n_tsr
+        analysis_options['blade']['n_U']       = self.n_U
+        analysis_options['blade']['min_TSR']   = self.min_TSR
+        analysis_options['blade']['max_TSR']   = self.max_TSR
+        analysis_options['blade']['min_pitch'] = self.min_pitch
+        analysis_options['blade']['max_pitch'] = self.max_pitch
         
         # Distributed aerodynamic control devices along blade
-        wt_init_options['blade']['n_te_flaps']      = 0
+        analysis_options['blade']['n_te_flaps']      = 0
         if 'aerodynamic_control' in self.wt_init['components']['blade']:
             if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
-                wt_init_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
-                wt_init_options['airfoils']['n_tab']   = 3
+                analysis_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
+                analysis_options['airfoils']['n_tab']   = 3
             else:
                 exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
         # Tower 
-        wt_init_options['tower']              = {}
-        wt_init_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
-        wt_init_options['tower']['nd_height'] = np.linspace(0., 1., wt_init_options['tower']['n_height']) # Equally spaced non-dimensional grid along tower height
-        wt_init_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
+        analysis_options['tower']              = {}
+        analysis_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
+        analysis_options['tower']['nd_height'] = np.linspace(0., 1., analysis_options['tower']['n_height']) # Equally spaced non-dimensional grid along tower height
+        analysis_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
 
-        return wt_init_options
+        return analysis_options
 
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
         """ Load inputs IEA turbine ontology yaml inputs, optional validation """
@@ -232,6 +236,14 @@ class WindTurbineOntologyPython(object):
         
         return yaml.load(inputs)
     
+    def load_yaml(self, fname_input):
+        """ Load optimization options """
+        with open(fname_input, 'r') as myfile:
+            inputs = myfile.read()
+        yaml = ry.YAML()
+        
+        return yaml.load(inputs)
+
     def write_ontology(self, wt_opt, fname_output):
 
         # Update blade outer shape
@@ -254,7 +266,7 @@ class WindTurbineOntologyPython(object):
         # Reference axis from blade outer shape
         self.wt_init['components']['blade']['internal_structure_2d_fem']['reference_axis'] = self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']
         # Webs positions
-        for i in range(self.wt_init_options['blade']['n_webs']):
+        for i in range(self.analysis_options['blade']['n_webs']):
             self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['rotation']['grid']   = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
             self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['rotation']['values'] = wt_opt['blade.internal_structure_2d_fem.web_rotation'][i,:].tolist()
             self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['offset_y_pa']['grid']   = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
@@ -269,7 +281,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['end_nd_arc']['values']   = wt_opt['blade.internal_structure_2d_fem.web_end_nd'][i,:].tolist()
 
         # Structural layers
-        for i in range(self.wt_init_options['blade']['n_layers']):
+        for i in range(self.analysis_options['blade']['n_layers']):
             self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
             self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['param.ps.layer_thickness_param'][i,:].tolist()
             if wt_opt['blade.internal_structure_2d_fem.definition_layer'][i] < 7:
@@ -310,7 +322,7 @@ class WindTurbineOntologyPython(object):
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['tower.ref_axis'][:,0].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['tower.ref_axis'][:,1].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['tower.ref_axis'][:,2].tolist()
-        for i in range(self.wt_init_options['tower']['n_layers']):
+        for i in range(self.analysis_options['tower']['n_layers']):
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower.s'].tolist()
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['tower.layer_thickness'][i,:].tolist()
 
@@ -963,22 +975,22 @@ class WindTurbineOntologyOpenMDAO(Group):
     # Openmdao group with all wind turbine data
     
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
-        self.add_subsystem('materials', Materials(mat_init_options = wt_init_options['materials']))
-        self.add_subsystem('airfoils',  Airfoils(af_init_options   = wt_init_options['airfoils']))
+        analysis_options = self.options['analysis_options']
+        self.add_subsystem('materials', Materials(mat_init_options = analysis_options['materials']))
+        self.add_subsystem('airfoils',  Airfoils(af_init_options   = analysis_options['airfoils']))
         
-        self.add_subsystem('blade',         Blade(blade_init_options   = wt_init_options['blade'], af_init_options   = wt_init_options['airfoils']))
+        self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils']))
         self.add_subsystem('hub',           Hub())
         self.add_subsystem('nacelle',       Nacelle())
-        self.add_subsystem('tower',         Tower(tower_init_options   = wt_init_options['tower']))
+        self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
         self.add_subsystem('foundation',    Foundation())
         self.add_subsystem('control',       Control())
         self.add_subsystem('configuration', Configuration())
         self.add_subsystem('env',           Environment())
-        self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = wt_init_options['blade']))
+        self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = analysis_options['blade']))
         self.add_subsystem('costs',         Costs())
 
         self.connect('airfoils.name',    'blade.interp_airfoils.name')
@@ -994,7 +1006,7 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.connect('tower.height',                    'assembly.tower_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
         
-def yaml2openmdao(wt_opt, wt_init_options, wt_init):
+def yaml2openmdao(wt_opt, analysis_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
     
     blade           = wt_init['components']['blade']
@@ -1009,32 +1021,32 @@ def yaml2openmdao(wt_opt, wt_init_options, wt_init):
     airfoils        = wt_init['airfoils']
     materials       = wt_init['materials']
     
-    wt_opt = assign_blade_values(wt_opt, wt_init_options, blade)
+    wt_opt = assign_blade_values(wt_opt, analysis_options, blade)
     wt_opt = assign_hub_values(wt_opt, hub)
     wt_opt = assign_nacelle_values(wt_opt, nacelle)
-    wt_opt = assign_tower_values(wt_opt, wt_init_options, tower)
+    wt_opt = assign_tower_values(wt_opt, analysis_options, tower)
     wt_opt = assign_foundation_values(wt_opt, foundation)
     wt_opt = assign_control_values(wt_opt, control)
     wt_opt = assign_configuration_values(wt_opt, assembly)
     wt_opt = assign_environment_values(wt_opt, environment)
     wt_opt = assign_costs_values(wt_opt, costs)
-    wt_opt = assign_airfoil_values(wt_opt, wt_init_options, airfoils)
-    wt_opt = assign_material_values(wt_opt, wt_init_options, materials)
+    wt_opt = assign_airfoil_values(wt_opt, analysis_options, airfoils)
+    wt_opt = assign_material_values(wt_opt, analysis_options, materials)
 
     return wt_opt
     
-def assign_blade_values(wt_opt, wt_init_options, blade):
+def assign_blade_values(wt_opt, analysis_options, blade):
     # Function to assign values to the openmdao group Blade
-    wt_opt = assign_outer_shape_bem_values(wt_opt, wt_init_options, blade['outer_shape_bem'])
-    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, blade['internal_structure_2d_fem'])
-    wt_opt = assign_te_flaps_values(wt_opt, wt_init_options, blade)
+    wt_opt = assign_outer_shape_bem_values(wt_opt, analysis_options, blade['outer_shape_bem'])
+    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, analysis_options, blade['internal_structure_2d_fem'])
+    wt_opt = assign_te_flaps_values(wt_opt, analysis_options, blade)
     
     return wt_opt
     
-def assign_outer_shape_bem_values(wt_opt, wt_init_options, outer_shape_bem):
+def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
     
-    nd_span     = wt_init_options['blade']['nd_span']
+    nd_span     = analysis_options['blade']['nd_span']
     
     wt_opt['blade.outer_shape_bem.af_used']     = outer_shape_bem['airfoil_position']['labels']
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
@@ -1050,11 +1062,11 @@ def assign_outer_shape_bem_values(wt_opt, wt_init_options, outer_shape_bem):
     
     return wt_opt
     
-def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_structure_2d_fem):
+def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_structure_2d_fem):
     # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
     
-    n_span          = wt_init_options['blade']['n_span']
-    n_webs          = wt_init_options['blade']['n_webs']
+    n_span          = analysis_options['blade']['n_span']
+    n_webs          = analysis_options['blade']['n_webs']
     
     web_name        = n_webs * ['']
     web_rotation    = np.zeros((n_webs, n_span))
@@ -1078,7 +1090,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
         else:
             exit('Webs definition not supported. Please check the yaml input.')
     
-    n_layers        = wt_init_options['blade']['n_layers']
+    n_layers        = analysis_options['blade']['n_layers']
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
     thickness       = np.zeros((n_layers, n_span))
@@ -1219,10 +1231,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, wt_init_options, internal_st
     
     return wt_opt
 
-def assign_te_flaps_values(wt_opt, wt_init_options, blade):
+def assign_te_flaps_values(wt_opt, analysis_options, blade):
     # Function to assign the trailing edge flaps data to the openmdao data structure
-    if wt_init_options['blade']['n_te_flaps'] > 0:   
-        n_te_flaps = wt_init_options['blade']['n_te_flaps']
+    if analysis_options['blade']['n_te_flaps'] > 0:   
+        n_te_flaps = analysis_options['blade']['n_te_flaps']
         for i in range(n_te_flaps):
             wt_opt['blade.dac_te_flaps.span_start'][i]      = blade['aerodynamic_control']['te_flaps'][i]['span_start']
             wt_opt['blade.dac_te_flaps.span_end'][i]        = blade['aerodynamic_control']['te_flaps'][i]['span_end']
@@ -1287,11 +1299,11 @@ def assign_nacelle_values(wt_opt, nacelle):
 
     return wt_opt
 
-def assign_tower_values(wt_opt, wt_init_options, tower):
+def assign_tower_values(wt_opt, analysis_options, tower):
     # Function to assign values to the openmdao component Tower
-    n_height        = wt_init_options['tower']['n_height'] # Number of points along tower height
-    nd_height       = wt_init_options['tower']['nd_height']# Non-dimensional height coordinate
-    n_layers        = wt_init_options['tower']['n_layers']
+    n_height        = analysis_options['tower']['n_height'] # Number of points along tower height
+    nd_height       = analysis_options['tower']['nd_height']# Non-dimensional height coordinate
+    n_layers        = analysis_options['tower']['n_layers']
     
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
@@ -1369,15 +1381,15 @@ def assign_costs_values(wt_opt, costs):
 
     return wt_opt 
 
-def assign_airfoil_values(wt_opt, wt_init_options, airfoils):
+def assign_airfoil_values(wt_opt, analysis_options, airfoils):
     # Function to assign values to the openmdao component Airfoils
     
-    n_af  = wt_init_options['airfoils']['n_af']
-    n_aoa = wt_init_options['airfoils']['n_aoa']
-    aoa   = wt_init_options['airfoils']['aoa']
-    n_Re  = wt_init_options['airfoils']['n_Re']
-    n_tab = wt_init_options['airfoils']['n_tab']
-    n_xy  = wt_init_options['airfoils']['n_xy']
+    n_af  = analysis_options['airfoils']['n_af']
+    n_aoa = analysis_options['airfoils']['n_aoa']
+    aoa   = analysis_options['airfoils']['aoa']
+    n_Re  = analysis_options['airfoils']['n_Re']
+    n_tab = analysis_options['airfoils']['n_tab']
+    n_xy  = analysis_options['airfoils']['n_xy']
     
     name    = n_af * ['']
     ac      = np.zeros(n_af)
@@ -1467,10 +1479,10 @@ def assign_airfoil_values(wt_opt, wt_init_options, airfoils):
      
     return wt_opt
     
-def assign_material_values(wt_opt, wt_init_options, materials):
+def assign_material_values(wt_opt, analysis_options, materials):
     # Function to assign values to the openmdao component Materials
     
-    n_mat = wt_init_options['materials']['n_mat']
+    n_mat = analysis_options['materials']['n_mat']
     
     name        = n_mat * ['']
     orth        = np.zeros(n_mat)
@@ -1558,14 +1570,14 @@ if __name__ == "__main__":
     wt_initial               = WindTurbineOntologyPython()
     wt_initial.validate      = False
     wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
-    wt_init_options, wt_init = wt_initial.initialize(fname_input)
+    analysis_options, wt_init = wt_initial.initialize(fname_input)
     
     # Initialize openmdao problem
     wt_opt          = Problem()
-    wt_opt.model    = WindTurbineOntologyOpenMDAO(wt_init_options = wt_init_options)
+    wt_opt.model    = WindTurbineOntologyOpenMDAO(analysis_options = analysis_options)
     wt_opt.setup()
     # Load wind turbine data from wt_initial to the openmdao problem
-    wt_opt = yaml2openmdao(wt_opt, wt_init_options, wt_init)
+    wt_opt = yaml2openmdao(wt_opt, analysis_options, wt_init)
     wt_opt.run_driver()
     
     # Save data coming from openmdao to an output yaml file
