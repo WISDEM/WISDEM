@@ -433,6 +433,11 @@ control:
     tsr: 7.01754386
     pitch: 0.
     maxTS: 80.
+    # Controller parameters 
+    PC_zeta: 0.7                   # Pitch controller desired damping ratio [-]
+    PC_omega: 0.5                   # Pitch controller desired natural frequency [rad/s]
+    VS_zeta: 0.7                   # Torque controller desired damping ratio [-]
+    VS_omega: 0.2                   # Torque controller desired natural frequency [rad/s]
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5
