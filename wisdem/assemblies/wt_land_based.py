@@ -12,7 +12,7 @@ from wisdem.commonse.turbine_constraints  import TurbineConstraints
 from wisdem.aeroelasticse.openmdao_openfast import FASTLoadCases
 from wisdem.assemblies.parametrize_wt import WT_Parametrize
 from wisdem.rotorse.dac import RunXFOIL
-from wisdem.rotorse.rotor_aeropower import RotorAeroPower
+from wisdem.servose.servose import ServoSE
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
 from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains
 
@@ -75,7 +75,7 @@ class WT_RNTA(Group):
         self.add_subsystem('param',     WT_Parametrize(wt_init_options = wt_init_options, opt_options = opt_options))
         self.add_subsystem('elastic',   RotorElasticity(wt_init_options = wt_init_options, opt_options = opt_options))
         self.add_subsystem('xf',        RunXFOIL(wt_init_options = wt_init_options)) # Recompute polars with xfoil (for flaps)
-        self.add_subsystem('ra',        RotorAeroPower(wt_init_options = wt_init_options)) # Aero analysis
+        self.add_subsystem('sse',       ServoSE(wt_init_options = wt_init_options)) # Aero analysis
         
         if opt_options['openfast'] == True:
             self.add_subsystem('aeroelastic',  FASTLoadCases(wt_init_options = wt_init_options))
@@ -103,9 +103,9 @@ class WT_RNTA(Group):
         self.connect('blade.internal_structure_2d_fem.layer_thickness', 'param.ps.layer_thickness_original')
 
         # Connections from blade aero parametrization to other modules
-        self.connect('param.pa.twist_param',           ['ra.theta','elastic.theta','rlds.theta'])
+        self.connect('param.pa.twist_param',           ['sse.theta','elastic.theta','rlds.theta'])
         self.connect('param.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
-        self.connect('param.pa.chord_param',           ['xf.chord', 'elastic.chord', 'ra.chord','rlds.chord'])
+        self.connect('param.pa.chord_param',           ['xf.chord', 'elastic.chord', 'sse.chord','rlds.chord'])
 
 
         # Connections from blade struct parametrization to rotor elasticity
@@ -145,11 +145,11 @@ class WT_RNTA(Group):
         self.connect('param.ps.s_opt_spar_ps',   'rlds.constr.s_opt_spar_ps')
 
         # Connection from ra to rs for the rated conditions
-        # self.connect('ra.powercurve.rated_V',        'rlds.aero_rated.V_load')
-        self.connect('ra.powercurve.rated_V',        'rlds.gust.V_hub')
+        # self.connect('sse.powercurve.rated_V',        'rlds.aero_rated.V_load')
+        self.connect('sse.powercurve.rated_V',        'rlds.gust.V_hub')
         self.connect('rlds.gust.V_gust',              ['rlds.aero_gust.V_load'])
-        self.connect('ra.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.aeroloads_Omega', 'elastic.curvefem.Omega', 'rlds.constr.rated_Omega'])
-        self.connect('ra.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.aeroloads_pitch'])
+        self.connect('sse.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.aeroloads_Omega', 'elastic.curvefem.Omega', 'rlds.constr.rated_Omega'])
+        self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.aeroloads_pitch'])
         
 
         
@@ -171,33 +171,42 @@ class WT_RNTA(Group):
         self.connect('blade.interp_airfoils.cd_interp',       'xf.cd_interp')
         self.connect('blade.interp_airfoils.cm_interp',       'xf.cm_interp')
 
-        # Connections to rotor aeropower
-        self.connect('wt_class.V_mean',         'ra.cdf.xbar')
-        self.connect('control.V_in' ,           'ra.control_Vin')
-        self.connect('control.V_out' ,          'ra.control_Vout')
-        self.connect('control.rated_power' ,    'ra.control_ratedPower')
-        self.connect('control.min_Omega' ,      'ra.control_minOmega')
-        self.connect('control.max_Omega' ,      'ra.control_maxOmega')
-        self.connect('control.max_TS' ,         'ra.control_maxTS')
-        self.connect('control.rated_TSR' ,      'ra.control_tsr')
-        self.connect('control.rated_pitch' ,        'ra.control_pitch')
-        self.connect('configuration.gearbox_type' , 'ra.drivetrainType')
-        self.connect('assembly.r_blade',            'ra.r')
-        self.connect('assembly.rotor_radius',       'ra.Rtip')
-        self.connect('hub.radius',                  'ra.Rhub')
-        self.connect('assembly.hub_height',         'ra.hub_height')
-        self.connect('hub.cone',                    'ra.precone')
-        self.connect('nacelle.uptilt',              'ra.tilt')
-        self.connect('airfoils.aoa',                    'ra.airfoils_aoa')
-        self.connect('airfoils.Re',                     'ra.airfoils_Re')
-        self.connect('blade.interp_airfoils.cl_interp', 'ra.airfoils_cl')
-        self.connect('blade.interp_airfoils.cd_interp', 'ra.airfoils_cd')
-        self.connect('blade.interp_airfoils.cm_interp', 'ra.airfoils_cm')
-        self.connect('configuration.n_blades',          'ra.nBlades')
-        self.connect('blade.outer_shape_bem.s',         'ra.stall_check.s')
-        self.connect('env.rho_air',                     'ra.rho')
-        self.connect('env.mu_air',                      'ra.mu')
-        self.connect('env.weibull_k',                   'ra.cdf.k')
+        # Connections to ServoSE
+        self.connect('wt_class.V_mean',         'sse.cdf.xbar')
+        self.connect('control.V_in' ,           'sse.v_min')
+        self.connect('control.V_out' ,          'sse.v_max')
+        self.connect('control.rated_power' ,    'sse.rated_power')
+        self.connect('control.minOmega' ,      'sse.omega_min')
+        self.connect('control.maxOmega' ,      'sse.omega_max')
+        self.connect('control.max_TS' ,         'sse.control_maxTS')
+        self.connect('control.rated_TSR' ,      'sse.tsr_operational')
+        self.connect('control.rated_pitch' ,    'sse.control_pitch')
+        self.connect('nacelle.gear_ratio',      'sse.tune_rosco.gear_ratio')
+        self.connect('assembly.rotor_radius',   'sse.tune_rosco.R')
+        # self.connect('elastic.rotor_inertia',   'sse.tune_rosco.rotor_inertia')
+
+        self.connect('control.PC_omega',        'sse.tune_rosco.PC_omega')
+        self.connect('control.PC_zeta',         'sse.tune_rosco.PC_zeta')
+        self.connect('control.VS_omega',        'sse.tune_rosco.VS_omega')
+        self.connect('control.VS_zeta',         'sse.tune_rosco.VS_zeta')
+
+        self.connect('configuration.gearbox_type' , 'sse.drivetrainType')
+        self.connect('assembly.r_blade',            'sse.r')
+        self.connect('assembly.rotor_radius',       'sse.Rtip')
+        self.connect('hub.radius',                  'sse.Rhub')
+        self.connect('assembly.hub_height',         'sse.hub_height')
+        self.connect('hub.cone',                    'sse.precone')
+        self.connect('nacelle.uptilt',              'sse.tilt')
+        self.connect('airfoils.aoa',                    'sse.airfoils_aoa')
+        self.connect('airfoils.Re',                     'sse.airfoils_Re')
+        self.connect('blade.interp_airfoils.cl_interp', 'sse.airfoils_cl')
+        self.connect('blade.interp_airfoils.cd_interp', 'sse.airfoils_cd')
+        self.connect('blade.interp_airfoils.cm_interp', 'sse.airfoils_cm')
+        self.connect('configuration.n_blades',          'sse.nBlades')
+        self.connect('blade.outer_shape_bem.s',         'sse.stall_check.s')
+        self.connect('env.rho_air',                     'sse.rho')
+        self.connect('env.mu_air',                      'sse.mu')
+        self.connect('env.weibull_k',                   'sse.cdf.k')
         
         
 
@@ -265,8 +274,8 @@ class WT_RNTA(Group):
         self.connect('nacelle.overhang',           'drivese.overhang') 
         self.connect('nacelle.uptilt',             'drivese.shaft_angle')
         self.connect('configuration.n_blades',     'drivese.number_of_blades') 
-        self.connect('ra.powercurve.rated_Q',         'drivese.rotor_torque')
-        self.connect('ra.powercurve.rated_Omega',     'drivese.rotor_rpm')
+        self.connect('sse.powercurve.rated_Q',         'drivese.rotor_torque')
+        self.connect('sse.powercurve.rated_Omega',     'drivese.rotor_rpm')
         # self.connect('rlds.Fxyz_total',      'drivese.Fxyz')
         # self.connect('rlds.Mxyz_total',      'drivese.Mxyz')
         # self.connect('rlds.I_all_blades',    'drivese.blades_I')
@@ -314,24 +323,24 @@ class WT_RNTA(Group):
             self.connect('elastic.EIyy',                'aeroelastic.beam:EIyy')
             self.connect('elastic.Tw_iner',             'aeroelastic.beam:Tw_iner')
             self.connect('elastic.curvefem.modes_coef', 'aeroelastic.modes_coef_curvefem')
-            self.connect('ra.powercurve.V',      'aeroelastic.U_init')
-            self.connect('ra.powercurve.Omega',  'aeroelastic.Omega_init')
-            self.connect('ra.powercurve.pitch',  'aeroelastic.pitch_init')
-            self.connect('ra.powercurve.V_R25',  'aeroelastic.V_R25')
-            self.connect('ra.powercurve.rated_V','aeroelastic.Vrated')
+            self.connect('sse.powercurve.V',      'aeroelastic.U_init')
+            self.connect('sse.powercurve.Omega',  'aeroelastic.Omega_init')
+            self.connect('sse.powercurve.pitch',  'aeroelastic.pitch_init')
+            self.connect('sse.powercurve.V_R25',  'aeroelastic.V_R25')
+            self.connect('sse.powercurve.rated_V','aeroelastic.Vrated')
             self.connect('rlds.gust.V_gust',       'aeroelastic.Vgust')
             self.connect('wt_class.V_mean',              'aeroelastic.V_mean_iec')
             self.connect('control.rated_power',          'aeroelastic.control_ratedPower')
             self.connect('control.max_TS',               'aeroelastic.control_maxTS')
-            self.connect('control.max_Omega',            'aeroelastic.control_maxOmega')
+            self.connect('control.maxOmega',            'aeroelastic.control_maxOmega')
             self.connect('configuration.turb_class',     'aeroelastic.turbulence_class')
             self.connect('configuration.ws_class' ,      'aeroelastic.turbine_class')
-            self.connect('ra.aeroperf_tables.pitch_vector', 'aeroelastic.pitch_vector')
-            self.connect('ra.aeroperf_tables.tsr_vector', 'aeroelastic.tsr_vector')
-            self.connect('ra.aeroperf_tables.U_vector', 'aeroelastic.U_vector')
-            self.connect('ra.aeroperf_tables.Cp', 'aeroelastic.Cp_aero_table')
-            self.connect('ra.aeroperf_tables.Ct', 'aeroelastic.Ct_aero_table')
-            self.connect('ra.aeroperf_tables.Cq', 'aeroelastic.Cq_aero_table')
+            self.connect('sse.aeroperf_tables.pitch_vector', 'aeroelastic.pitch_vector')
+            self.connect('sse.aeroperf_tables.tsr_vector', 'aeroelastic.tsr_vector')
+            self.connect('sse.aeroperf_tables.U_vector', 'aeroelastic.U_vector')
+            self.connect('sse.aeroperf_tables.Cp', 'aeroelastic.Cp_aero_table')
+            self.connect('sse.aeroperf_tables.Ct', 'aeroelastic.Ct_aero_table')
+            self.connect('sse.aeroperf_tables.Cq', 'aeroelastic.Cq_aero_table')
 
             # Temporary
             self.connect('xf.Re_loc',           'aeroelastic.airfoils_Re_loc')
@@ -366,7 +375,7 @@ class WT_RNTA(Group):
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
         # self.connect('towerse.tower_mass',          'tcc.tower_mass')
         # Connections to outputs
-        self.connect('ra.AEP',          'outputs_2_screen.AEP')
+        self.connect('sse.AEP',          'outputs_2_screen.AEP')
         self.connect('rlds.blade_mass',   'outputs_2_screen.blade_mass')
         # self.connect('financese.lcoe',          'outputs_2_screen.lcoe')
 
@@ -385,7 +394,7 @@ class WindPark(Group):
         self.add_subsystem('financese', PlantFinance(verbosity=opt_options['costs_verbosity']))
         
         # Inputs to plantfinancese from wt group
-        self.connect('ra.AEP',          'financese.turbine_aep')
+        self.connect('sse.AEP',          'financese.turbine_aep')
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
         # Inputs to plantfinancese from input yaml
         self.connect('control.rated_power',     'financese.machine_rating')
@@ -474,8 +483,8 @@ if __name__ == "__main__":
     wt_initial.FAST_ver         = 'OpenFAST'
     wt_initial.dev_branch       = True
     wt_initial.FAST_exe         = 'openfast_dev'
-    wt_initial.FAST_directory   = '/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95'
-    wt_initial.FAST_InputFile   = 'RotorSE_FAST_BAR_2010n_noRe.fst'
+    wt_initial.FAST_directory   = '/Users/nabbas/Documents/TurbineModels/NREL_5MW/5MW_Land/'
+    wt_initial.FAST_InputFile   = '5MW_Land.fst'
     wt_initial.Turbsim_exe      = "turbsim_dev"
     wt_initial.FAST_namingOut   = 'WISDEM_NREL5MW'
     wt_initial.FAST_runDirectory= 'temp/' + wt_initial.FAST_namingOut
@@ -524,7 +533,7 @@ if __name__ == "__main__":
 
         # Set merit figure
         if merit_figure == 'AEP':
-            wt_opt.model.add_objective('ra.AEP', scaler = -1.e-6)
+            wt_opt.model.add_objective('sse.AEP', scaler = -1.e-6)
         elif merit_figure == 'Blade Mass':
             wt_opt.model.add_objective('rlds.blade_mass', scaler = 1.e-4)
         elif merit_figure == 'LCOE':
@@ -553,7 +562,7 @@ if __name__ == "__main__":
         
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
-        wt_opt.driver.recording_options['includes'] = ['ra.AEP, rlds.blade_mass, financese.lcoe']
+        wt_opt.driver.recording_options['includes'] = ['sse.AEP, rlds.blade_mass, financese.lcoe']
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
         wt_opt.driver.recording_options['record_desvars']     = True
@@ -572,26 +581,26 @@ if __name__ == "__main__":
     wt_opt['rlds.constr.min_strainL_spar'] = -0.003
     wt_opt['rlds.constr.max_strainL_spar'] =  0.003
 
-    # Build and run openmdao problem
-    wt_opt.run_driver()
+    # # Build and run openmdao problem
+    # # wt_opt.run_driver()
 
-    # Save data coming from openmdao to an output yaml file
-    wt_initial.write_ontology(wt_opt, fname_output)
+    # # Save data coming from openmdao to an output yaml file
+    # wt_initial.write_ontology(wt_opt, fname_output)
 
-    # Printing and plotting results
-    print('AEP in GWh = ' + str(wt_opt['ra.AEP']*1.e-6))
-    print('Nat frequencies blades in Hz = ' + str(wt_opt['elastic.curvefem.freq']))
-    print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
-    print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
+    # # Printing and plotting results
+    # print('AEP in GWh = ' + str(wt_opt['sse.AEP']*1.e-6))
+    # print('Nat frequencies blades in Hz = ' + str(wt_opt['elastic.curvefem.freq']))
+    # print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
+    # print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
 
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_spar'], label='spar ss')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_spar'], label='spar ps')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_te'], label='te ss')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_te'], label='te ps')
-    plt.ylim([-5e-3, 5e-3])
-    plt.xlabel('r [m]')
-    plt.ylabel('strain [-]')
-    plt.legend()
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.figure()
+    # plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_spar'], label='spar ss')
+    # plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_spar'], label='spar ps')
+    # plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_te'], label='te ss')
+    # plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_te'], label='te ps')
+    # plt.ylim([-5e-3, 5e-3])
+    # plt.xlabel('r [m]')
+    # plt.ylabel('strain [-]')
+    # plt.legend()
+    # plt.show()
