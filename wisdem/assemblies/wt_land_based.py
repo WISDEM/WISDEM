@@ -376,10 +376,10 @@ class Outputs_2_Screen(ExplicitComponent):
 if __name__ == "__main__":
 
     ## File management
-    fname_input    = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_output   = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
-    fname_input    = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2010n.yaml"
-    fname_output   = "wisdem/wisdem/assemblies/reference_turbines/bar/BAR2011n.yaml"
+    fname_input    = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_output   = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    # fname_input    = "reference_turbines/bar/BAR2010n.yaml"
+    # fname_output   = "reference_turbines/bar/BAR2011n.yaml"
     folder_output  = 'it_1/'
     opt_flag_twist = False
     opt_flag_chord = False
@@ -391,13 +391,13 @@ if __name__ == "__main__":
     wt_initial.validate         = False
     wt_initial.fname_schema     = "wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml"
     wt_initial.xfoil_path       = '/Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil'
-    wt_initial.Analysis_Level   = 1
+    wt_initial.Analysis_Level   = 0
     wt_initial.FAST_ver         = 'OpenFAST'
     wt_initial.dev_branch       = True
-    wt_initial.FAST_exe         = '/Users/pbortolo/work/2_openfast/openfast/build/glue-codes/openfast/openfast'
-    wt_initial.FAST_directory   = '/Users/pbortolo/work/2_openfast/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95'
+    wt_initial.FAST_exe         = 'openfast_dev'
+    wt_initial.FAST_directory   = '/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95'
     wt_initial.FAST_InputFile   = 'RotorSE_FAST_BAR_2010n_noRe.fst'
-    wt_initial.Turbsim_exe      = "/mnt/c/Material/Programs/TurbSim/TurbSim_glin64"
+    wt_initial.Turbsim_exe      = "turbsim_dev"
     wt_initial.FAST_namingOut   = 'WISDEM_NREL5MW'
     wt_initial.FAST_runDirectory= 'temp/' + wt_initial.FAST_namingOut
     wt_initial.cores            = 1
