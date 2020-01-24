@@ -202,12 +202,21 @@ class FASTLoadCases(ExplicitComponent):
         blade_init_options = self.options['wt_init_options']['blade']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_pc          = n_pc      = blade_init_options['n_pc']
-        
+        self.n_pitch       = n_pitch   = blade_init_options['n_pitch']
+        self.n_tsr         = n_tsr     = blade_init_options['n_tsr']
+        self.n_U           = n_U       = blade_init_options['n_U']
+        # self.min_TSR       = blade_init_options['min_TSR']
+        # self.max_TSR       = blade_init_options['max_TSR']
+        # self.min_pitch     = blade_init_options['min_pitch']
+        # self.max_pitch     = blade_init_options['max_pitch']
+
         af_init_options    = self.options['wt_init_options']['airfoils']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+
+        
 
         FASTpref                = self.options['wt_init_options']['openfast']['FASTpref']
         
@@ -259,6 +268,13 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('V_out',         val=np.zeros(n_pc), units='m/s', desc='wind speeds to output powercurve')
         self.add_input('V',             val=np.zeros(n_pc), units='m/s',  desc='wind vector')
 
+        # Cp-Ct-Cq surfaces
+        self.add_input('Cp_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero power coefficient')
+        self.add_input('Ct_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero thrust coefficient')
+        self.add_input('Cq_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero torque coefficient')
+        self.add_input('pitch_vector',  val=np.zeros(n_pitch), units='deg',  desc='Pitch vector used')
+        self.add_input('tsr_vector',    val=np.zeros(n_tsr),                 desc='TSR vector used')
+        self.add_input('U_vector',      val=np.zeros(n_U),     units='m/s',  desc='Wind speed vector used')
 
         # Environmental conditions 
         self.add_input('Vrated',    val=0.0, units='m/s', desc='rated wind speed')
@@ -502,6 +518,8 @@ class FASTLoadCases(ExplicitComponent):
         
         fst_vt['AeroDyn15']['BlOutNd'] = [str(idx+1) for idx in idx_out]
         fst_vt['AeroDyn15']['NBlOuts'] = len(idx_out)
+
+        # fst_vt['DISCON_in']['PerfFileName'] = self.writeCpsurfaces(inputs)
 
         return fst_vt, R_out
 
@@ -881,7 +899,60 @@ class FASTLoadCases(ExplicitComponent):
                 Extreme_Outputs = True
 
 
+    def writeCpsurfaces(self, inputs):
+        
+        FASTpref  = self.options['wt_init_options']['openfast']['FASTpref']
+        file_name = os.path.join(FASTpref['FAST_runDirectory'], FASTpref['FAST_namingOut'] + '_Cp_Ct_Cq.dat')
+        
+        # Write Cp-Ct-Cq-TSR tables file
+        n_pitch = len(inputs['pitch_vector'])
+        n_tsr   = len(inputs['tsr_vector'])
+        n_U     = len(inputs['U_vector'])
+        
+        file = open(file_name,'w')
+        file.write('# ------- Rotor performance tables ------- \n')
+        file.write('# ------------ Written using AeroElasticSE with data from CCBlade ------------\n')
+        file.write('\n')
+        file.write('# Pitch angle vector - x axis (matrix columns) (deg)\n')
+        for i in range(n_pitch):
+            file.write('%.2f   ' % inputs['pitch_vector'][i])
+        file.write('\n# TSR vector - y axis (matrix rows) (-)\n')
+        for i in range(n_tsr):
+            file.write('%.2f   ' % inputs['tsr_vector'][i])
+        file.write('\n# Wind speed vector - z axis (m/s)\n')
+        for i in range(n_U):
+            file.write('%.2f   ' % inputs['U_vector'][i])
+        file.write('\n')
+        
+        file.write('\n# Power coefficient\n\n')
+        
+        for i in range(n_U):
+            for j in range(n_tsr):
+                for k in range(n_pitch):
+                    file.write('%.5f   ' % inputs['Cp_aero_table'][j,k,i])
+                file.write('\n')
+            file.write('\n')
+        
+        file.write('\n#  Thrust coefficient\n\n')
+        for i in range(n_U):
+            for j in range(n_tsr):
+                for k in range(n_pitch):
+                    file.write('%.5f   ' % inputs['Ct_aero_table'][j,k,i])
+                file.write('\n')
+            file.write('\n')
+        
+        file.write('\n# Torque coefficient\n\n')
+        for i in range(n_U):
+            for j in range(n_tsr):
+                for k in range(n_pitch):
+                    file.write('%.5f   ' % inputs['Cq_aero_table'][j,k,i])
+                file.write('\n')
+            file.write('\n')
+            
+        file.close()
 
+
+        return file_name
 
 
                 

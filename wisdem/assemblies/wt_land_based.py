@@ -22,6 +22,7 @@ class Opt_Data(object):
         self.folder_output    = 'it_0/'
         self.optimization_log = 'log_opt.sql'
         self.costs_verbosity  = False
+        self.openfast         = False
 
         # Blade aerodynamic optimization parameters
         self.n_opt_twist   = 8
@@ -34,6 +35,7 @@ class Opt_Data(object):
         self.opt_options['folder_output']    = self.folder_output
         self.opt_options['optimization_log'] = self.folder_output + self.optimization_log
         self.opt_options['costs_verbosity']  = self.costs_verbosity
+        self.opt_options['openfast']         = self.openfast
 
         self.opt_options['blade_aero'] = {}
         self.opt_options['blade_aero']['n_opt_twist'] = self.n_opt_twist
@@ -69,7 +71,8 @@ class WT_RNTA(Group):
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
         # self.add_subsystem('towerse',   TowerSE())
-        self.add_subsystem('aeroelastic',  FASTLoadCases(wt_init_options = wt_init_options))
+        if opt_options['openfast'] == True:
+            self.add_subsystem('aeroelastic',  FASTLoadCases(wt_init_options = wt_init_options))
 
         self.add_subsystem('tcons',     TurbineConstraints(wt_init_options = wt_init_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=opt_options['costs_verbosity'], topLevelFlag=False))
@@ -223,47 +226,54 @@ class WT_RNTA(Group):
         
         # Connections to aeroelasticse
         # promotes=['fst_vt_in'])
-        self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
-        self.connect('assembly.r_blade',                'aeroelastic.r')
-        self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
-        self.connect('rotorse.pa.chord_param',          'aeroelastic.chord')
-        self.connect('rotorse.pa.twist_param',          'aeroelastic.theta')
-        self.connect('blade.interp_airfoils.coord_xy_interp', 'aeroelastic.coord_xy_interp')
-        self.connect('env.rho_air',                     'aeroelastic.rho')
-        self.connect('env.mu_air',                      'aeroelastic.mu')                    
-        self.connect('env.shear_exp',                   'aeroelastic.shearExp')                    
-        self.connect('assembly.rotor_radius',           'aeroelastic.Rtip')
-        self.connect('hub.radius',                      'aeroelastic.Rhub')
-        self.connect('assembly.hub_height',             'aeroelastic.hub_height')
-        # self.connect('hub.cone',                        'aeroelastic.precone')
-        # self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
-        self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
-        self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
-        self.connect('blade.interp_airfoils.cl_interp', 'aeroelastic.airfoils_cl')
-        self.connect('blade.interp_airfoils.cd_interp', 'aeroelastic.airfoils_cd')
-        self.connect('blade.interp_airfoils.cm_interp', 'aeroelastic.airfoils_cm')
-        self.connect('blade.interp_airfoils.r_thick_interp', 'aeroelastic.rthick')
-        self.connect('rotorse.rs.rhoA',                'aeroelastic.beam:rhoA')
-        self.connect('rotorse.rs.EIxx',                'aeroelastic.beam:EIxx')
-        self.connect('rotorse.rs.EIyy',                'aeroelastic.beam:EIyy')
-        self.connect('rotorse.rs.Tw_iner',             'aeroelastic.beam:Tw_iner')
-        self.connect('rotorse.rs.curvefem.modes_coef', 'aeroelastic.modes_coef_curvefem')
-        self.connect('rotorse.ra.powercurve.V',      'aeroelastic.U_init')
-        self.connect('rotorse.ra.powercurve.Omega',  'aeroelastic.Omega_init')
-        self.connect('rotorse.ra.powercurve.pitch',  'aeroelastic.pitch_init')
-        self.connect('rotorse.ra.powercurve.V_R25',  'aeroelastic.V_R25')
-        self.connect('rotorse.ra.powercurve.rated_V','aeroelastic.Vrated')
-        self.connect('rotorse.rs.gust.V_gust',       'aeroelastic.Vgust')
-        self.connect('wt_class.V_mean',              'aeroelastic.V_mean_iec')
-        self.connect('control.rated_power',          'aeroelastic.control_ratedPower')
-        self.connect('control.max_TS',               'aeroelastic.control_maxTS')
-        self.connect('control.max_Omega',            'aeroelastic.control_maxOmega')
-        self.connect('configuration.turb_class',     'aeroelastic.turbulence_class')
-        self.connect('configuration.ws_class' ,      'aeroelastic.turbine_class')
+        if opt_options['openfast'] == True:
+            self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
+            self.connect('assembly.r_blade',                'aeroelastic.r')
+            self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
+            self.connect('rotorse.pa.chord_param',          'aeroelastic.chord')
+            self.connect('rotorse.pa.twist_param',          'aeroelastic.theta')
+            self.connect('blade.interp_airfoils.coord_xy_interp', 'aeroelastic.coord_xy_interp')
+            self.connect('env.rho_air',                     'aeroelastic.rho')
+            self.connect('env.mu_air',                      'aeroelastic.mu')                    
+            self.connect('env.shear_exp',                   'aeroelastic.shearExp')                    
+            self.connect('assembly.rotor_radius',           'aeroelastic.Rtip')
+            self.connect('hub.radius',                      'aeroelastic.Rhub')
+            self.connect('assembly.hub_height',             'aeroelastic.hub_height')
+            # self.connect('hub.cone',                        'aeroelastic.precone')
+            # self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
+            self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
+            self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
+            self.connect('blade.interp_airfoils.cl_interp', 'aeroelastic.airfoils_cl')
+            self.connect('blade.interp_airfoils.cd_interp', 'aeroelastic.airfoils_cd')
+            self.connect('blade.interp_airfoils.cm_interp', 'aeroelastic.airfoils_cm')
+            self.connect('blade.interp_airfoils.r_thick_interp', 'aeroelastic.rthick')
+            self.connect('rotorse.rs.rhoA',                'aeroelastic.beam:rhoA')
+            self.connect('rotorse.rs.EIxx',                'aeroelastic.beam:EIxx')
+            self.connect('rotorse.rs.EIyy',                'aeroelastic.beam:EIyy')
+            self.connect('rotorse.rs.Tw_iner',             'aeroelastic.beam:Tw_iner')
+            self.connect('rotorse.rs.curvefem.modes_coef', 'aeroelastic.modes_coef_curvefem')
+            self.connect('rotorse.ra.powercurve.V',      'aeroelastic.U_init')
+            self.connect('rotorse.ra.powercurve.Omega',  'aeroelastic.Omega_init')
+            self.connect('rotorse.ra.powercurve.pitch',  'aeroelastic.pitch_init')
+            self.connect('rotorse.ra.powercurve.V_R25',  'aeroelastic.V_R25')
+            self.connect('rotorse.ra.powercurve.rated_V','aeroelastic.Vrated')
+            self.connect('rotorse.rs.gust.V_gust',       'aeroelastic.Vgust')
+            self.connect('wt_class.V_mean',              'aeroelastic.V_mean_iec')
+            self.connect('control.rated_power',          'aeroelastic.control_ratedPower')
+            self.connect('control.max_TS',               'aeroelastic.control_maxTS')
+            self.connect('control.max_Omega',            'aeroelastic.control_maxOmega')
+            self.connect('configuration.turb_class',     'aeroelastic.turbulence_class')
+            self.connect('configuration.ws_class' ,      'aeroelastic.turbine_class')
+            self.connect('rotorse.ra.aeroperf_tables.pitch_vector', 'aeroelastic.pitch_vector')
+            self.connect('rotorse.ra.aeroperf_tables.tsr_vector', 'aeroelastic.tsr_vector')
+            self.connect('rotorse.ra.aeroperf_tables.U_vector', 'aeroelastic.U_vector')
+            self.connect('rotorse.ra.aeroperf_tables.Cp', 'aeroelastic.Cp_aero_table')
+            self.connect('rotorse.ra.aeroperf_tables.Ct', 'aeroelastic.Ct_aero_table')
+            self.connect('rotorse.ra.aeroperf_tables.Cq', 'aeroelastic.Cq_aero_table')
 
-        # Temporary
-        self.connect('rotorse.xf.Re_loc',           'aeroelastic.airfoils_Re_loc')
-        self.connect('rotorse.xf.Ma_loc',           'aeroelastic.airfoils_Ma_loc')
+            # Temporary
+            self.connect('rotorse.xf.Re_loc',           'aeroelastic.airfoils_Re_loc')
+            self.connect('rotorse.xf.Ma_loc',           'aeroelastic.airfoils_Ma_loc')
         
         # Connections to turbine constraints
         self.connect('rotorse.rs.tip_pos.tip_deflection',   'tcons.tip_deflection')
