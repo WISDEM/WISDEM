@@ -162,7 +162,6 @@ class TowerMass(ExplicitComponent):
         outputs['monopile_cost']   = inputs['cylinder_cost']*outputs['monopile_mass']/inputs['cylinder_mass'].sum()
         outputs['monopile_mass']  += inputs['transition_piece_mass'] + inputs['gravity_foundation_mass']
         outputs['monopile_length'] = inputs['transition_piece_height'] - inputs['z_full'][0]
-        print(outputs['monopile_length'],outputs['monopile_mass'])
 
         self.J = {}
         self.J['monopile_mass', 'z_full'] = dydxp[0,:]
