@@ -11,22 +11,11 @@ import copy
 import numpy as np
 import pytest
 
+from wisdem.orbit.library import initialize_library, extract_library_specs
 from wisdem.orbit.phases.design import ExportSystemDesign
 
-config = {
-    "site": {
-        "depth": 20,
-        "distance_to_interconnection": 3,
-        "distance_to_landfall": 30,
-    },
-    "plant": {"num_turbines": 50},
-    "turbine": {"turbine_rating": 7},
-    "export_system_design": {
-        "cables": "XLPE_500mm_132kV",
-        "percent_redundant": 0.0,
-        "percent_added_length": 0.01,
-    },
-}
+initialize_library(pytest.library)
+config = extract_library_specs("config", "export_design")
 
 
 def test_export_system_creation():
@@ -45,15 +34,14 @@ def test_number_cables():
     export = ExportSystemDesign(config)
     export.run()
 
-    assert export.num_cables == 3
+    assert export.num_cables == 11
 
 
 def test_cable_length():
     export = ExportSystemDesign(config)
     export.run()
 
-    length = 0.02 + 3 + 30
-    length += length * 0.01
+    length = (0.02 + 3 + 30) * 1.01
     assert export.length == length
 
 
@@ -61,8 +49,7 @@ def test_cable_mass():
     export = ExportSystemDesign(config)
     export.run()
 
-    length = 0.02 + 3 + 30
-    length += length * 0.01
+    length = (0.02 + 3 + 30) * 1.01
     mass = length * export.cable.linear_density
     assert export.mass == mass
 
@@ -74,8 +61,8 @@ def test_total_cable():
     length = 0.02 + 3 + 30
     length += length * 0.01
     mass = length * export.cable.linear_density
-    assert export.total_mass == pytest.approx(mass * 3, abs=1e-10)
-    assert export.total_length == pytest.approx(length * 3, abs=1e-10)
+    assert export.total_mass == pytest.approx(mass * 11, abs=1e-10)
+    assert export.total_length == pytest.approx(length * 11, abs=1e-10)
 
 
 def test_cables_property():
@@ -91,7 +78,6 @@ def test_cable_lengths_property():
     export = ExportSystemDesign(config)
     export.run()
 
-    cable_len = export.length
     cable_name = export.cable.name
     assert (
         export.cable_lengths_by_type[cable_name] == export.length

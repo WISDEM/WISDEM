@@ -28,7 +28,7 @@ config_fully_defined = {
         "design_time": 500,
         "soil_friction_angle": 33.0,
         "scour_depth_equilibrium": 1.2,
-        "scour_protection_depth": 0.3
+        "scour_protection_depth": 0.3,
     },
 }
 
@@ -57,10 +57,8 @@ def test_fully_defined_setup():
 
 @pytest.mark.parametrize(
     "config,expected",
-    (
-        (config_fully_defined, 1141),
-        (config_min_defined, 3852),
-    ),
+    ((config_fully_defined, 1141), (config_min_defined, 3852),),
+    ids=["fully_defined", "minimally_defined"],
 )
 def test_tonnes_per_substructure(config, expected):
     scour = ScourProtectionDesign(config)
@@ -69,7 +67,11 @@ def test_tonnes_per_substructure(config, expected):
     assert scour.scour_protection_tonnes == expected
 
 
-@pytest.mark.parametrize("config", (config_fully_defined, config_min_defined))
+@pytest.mark.parametrize(
+    "config",
+    (config_fully_defined, config_min_defined),
+    ids=["fully_defined", "minimally_defined"],
+)
 def test_total_cost(config):
     scour = ScourProtectionDesign(config_min_defined)
     scour.run()

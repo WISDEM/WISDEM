@@ -423,7 +423,9 @@ class CableSystem(DesignPhase):
              - <`cable_type`>_system: dict
                 - cables: dict
                     - `Cable.name`: dict
-                        - sections: [(length of unique section, number of sections)],
+                        - sections: [
+                            (length of unique section, number of sections)
+                          ],
                         - linear_density: `Cable.linear_density`
         """
 
@@ -435,14 +437,16 @@ class CableSystem(DesignPhase):
         _temp = output[system]["cables"]
 
         for name, cable in self.cables.items():
-            _temp[name] = {}
             try:
                 sections = self.cable_lengths_by_type_speed[name]
             except AttributeError:
                 sections = self.cable_lengths_by_type[name]
 
             sections = [(*el[:-1], el[-1]) for el in Counter(sections).items()]
-            _temp[name]["cable_sections"] = sections
-            _temp[name]["linear_density"] = cable.linear_density
+            if sections:
+                _temp[name] = {
+                    "cable_sections": sections,
+                    "linear_density": cable.linear_density,
+                }
 
         return output

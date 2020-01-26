@@ -16,17 +16,12 @@ import copy
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
+from wisdem.orbit.library import initialize_library, extract_library_specs
 from wisdem.orbit.vessels.tasks import defaults
 from wisdem.orbit.phases.install import ScourProtectionInstallation
 
-config = {
-    "scour_protection_install_vessel": "example_scour_protection_vessel",
-    "scour_protection": {"tonnes_per_substructure": 2000},
-    "plant": {"num_turbines": 50, "turbine_spacing": 5},
-    "site": {"depth": 40, "turbine_spacing": 50, "distance": 30},
-    "turbine": {"rotor_diameter": 154},
-    "port": {"num_cranes": 1, "monthly_rate": 100000},
-}
+initialize_library(pytest.library)
+config = extract_library_specs("config", "scour_protection_install")
 
 
 def test_simulation_creation():
@@ -64,13 +59,17 @@ def test_scour_protection_creation():
         )
 
 
-@pytest.mark.parametrize("level,expected", (("INFO", 20), ("DEBUG", 10)))
+@pytest.mark.parametrize(
+    "level,expected", (("INFO", 20), ("DEBUG", 10)), ids=["info", "debug"]
+)
 def test_logger_creation(level, expected):
     sim = ScourProtectionInstallation(config, log_level=level)
     assert sim.env.logger.level == expected
 
 
-@pytest.mark.parametrize("weather", (None, test_weather))
+@pytest.mark.parametrize(
+    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
+)
 def test_full_run_completes(weather):
     sim = ScourProtectionInstallation(
         config, weather=weather, log_level="DEBUG"
@@ -81,7 +80,9 @@ def test_full_run_completes(weather):
     assert complete > 0
 
 
-@pytest.mark.parametrize("weather", (None, test_weather))
+@pytest.mark.parametrize(
+    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
+)
 def test_full_run_is_valid(weather):
     sim = ScourProtectionInstallation(
         config, weather=weather, log_level="INFO"
@@ -95,7 +96,9 @@ def test_full_run_is_valid(weather):
         assert df[df.action == action].shape[0] == sim.num_turbines
 
 
-@pytest.mark.parametrize("weather", (None, test_weather))
+@pytest.mark.parametrize(
+    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
+)
 def test_full_run_logging(weather):
     sim = ScourProtectionInstallation(
         config, weather=weather, log_level="INFO"

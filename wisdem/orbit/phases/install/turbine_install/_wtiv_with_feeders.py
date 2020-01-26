@@ -11,14 +11,14 @@ from wisdem.orbit.simulation.logic import (
     prep_for_site_operations,
 )
 from wisdem.orbit.phases.install.turbine_install._common import (
-    install_tower,
     install_nacelle,
+    install_tower_section,
     install_turbine_blade,
 )
 
 
 def install_turbine_components_from_queue(
-    env, wtiv, queue, number, distance, **kwargs
+    env, wtiv, queue, component_list, number, distance, **kwargs
 ):
     """
     Logic that a Wind Turbine Installation Vessel (WTIV) uses to install
@@ -32,6 +32,8 @@ def install_turbine_components_from_queue(
         Vessel object that represents the WTIV.
     queue : simpy.Resource
         Queue object to interact with active feeder barge.
+    component_list : dict
+        Turbine components to retrieve and install.
     number : int
         Total turbine component sets to install.
     distance : int | float
@@ -40,6 +42,9 @@ def install_turbine_components_from_queue(
 
     transit_time = wtiv.transit_time(distance)
     reequip_time = wtiv.crane.reequip(**kwargs)
+    tower_sections = len(
+        [v for v in component_list if v["type"] == "Tower Section"]
+    )
 
     transit = {
         "agent": wtiv.name,
@@ -48,6 +53,15 @@ def install_turbine_components_from_queue(
         "action": "Transit",
         "duration": transit_time,
         **wtiv.transit_limits,
+    }
+
+    reequip = {
+        "agent": wtiv.name,
+        "type": "Operations",
+        "location": "Site",
+        "duration": reequip_time,
+        "action": "CraneReequip",
+        **wtiv.operational_limits,
     }
 
     n = 0
@@ -64,25 +78,28 @@ def install_turbine_components_from_queue(
 
                 # Prep for turbine install
                 yield env.process(
-                    prep_for_site_operations(
-                        env, wtiv, survey_required=False, **kwargs
-                    )
+                    prep_for_site_operations(env, wtiv, **kwargs)
                 )
 
-                # Get tower
-                tower = yield env.process(
-                    get_item_from_storage(
-                        env=env,
-                        vessel=queue.vessel,
-                        item_type="Tower",
-                        action_vessel=wtiv,
-                        release=False,
-                        **kwargs,
+                for i in range(tower_sections):
+                    # Get tower section
+                    section = yield env.process(
+                        get_item_from_storage(
+                            env,
+                            queue.vessel,
+                            item_type="Tower Section",
+                            action_vessel=wtiv,
+                            **kwargs,
+                        )
                     )
-                )
 
-                # Install tower
-                yield env.process(install_tower(env, wtiv, tower, **kwargs))
+                    # Install tower section
+                    height = section["length"] * (i + 1)
+                    yield env.process(
+                        install_tower_section(
+                            env, wtiv, section, height, **kwargs
+                        )
+                    )
 
                 # Get turbine nacelle
                 nacelle = yield env.process(
@@ -100,15 +117,6 @@ def install_turbine_components_from_queue(
                 yield env.process(
                     install_nacelle(env, wtiv, nacelle, **kwargs)
                 )
-
-                reequip = {
-                    "agent": wtiv.name,
-                    "type": "Operations",
-                    "location": "Site",
-                    "duration": reequip_time,
-                    "action": "CraneReequip",
-                    **wtiv.operational_limits,
-                }
 
                 yield env.process(env.task_handler(reequip))
 

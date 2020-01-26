@@ -38,8 +38,8 @@ def vessel_fasten_time(item, **kwargs):
     elif item["type"] == "Nacelle":
         fasten_time = tasks.fasten_nacelle(**kwargs)
 
-    elif item["type"] == "Tower":
-        fasten_time = tasks.fasten_tower(**kwargs)
+    elif item["type"] == "Tower Section":
+        fasten_time = tasks.fasten_tower_section(**kwargs)
 
     elif item["type"] == "Monopile":
         fasten_time = tasks.fasten_monopile(**kwargs)

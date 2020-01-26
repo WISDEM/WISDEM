@@ -30,9 +30,9 @@ def release_map(key, **kwargs):
         release_time = tasks.release_transition_piece(**kwargs)
         action = "ReleaseTP"
 
-    elif key == "Tower":
-        release_time = tasks.release_tower(**kwargs)
-        action = "ReleaseTower"
+    elif key == "Tower Section":
+        release_time = tasks.release_tower_section(**kwargs)
+        action = "ReleaseTowerSection"
 
     elif key == "Nacelle":
         release_time = tasks.release_nacelle(**kwargs)

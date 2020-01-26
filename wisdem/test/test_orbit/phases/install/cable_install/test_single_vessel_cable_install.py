@@ -9,68 +9,38 @@ __maintainer__ = "Rob Hammond"
 __email__ = "robert.hammond@nrel.gov"
 
 
-import itertools
 from copy import deepcopy
 
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
+from wisdem.orbit.library import initialize_library, extract_library_specs
 from wisdem.orbit.vessels.tasks import defaults
 from wisdem.orbit.phases.install import ArrayCableInstallation as ArrInstall
 from wisdem.orbit.phases.install import ExportCableInstallation as ExpInstall
 
-config = {
-    "port": {"num_cranes": 1},
-    "array_cable_lay_vessel": "example_cable_lay_vessel",
-    "export_cable_lay_vessel": "example_cable_lay_vessel",
-    "trench_dig_vessel": "example_trench_dig_vessel",
-    "site": {
-        "distance": 50,
-        "depth": 20,
-        "distance_to_landfall": 30,
-        "distance_to_beach": 0.0,
-        "distance_to_interconnection": 3,
-    },
-    "plant": {"layout": "grid", "turbine_spacing": 5, "num_turbines": 40},
-    "turbine": {"rotor_diameter": 154, "turbine_rating": 9},
-    "array_system": {
-        "strategy": "lay_bury",
-        "cables": {
-            "XLPE_400mm_36kV": {
-                "cable_sections": [(0.81, 28)],
-                "linear_density": 34.56,
-            },
-            "XLPE_630mm_36kV": {
-                "cable_sections": [
-                    (3.3644031043, 2),
-                    (0.81, 8),
-                    (2.3293745871000002, 2),
-                    (1.3647580911000001, 2),
-                ],
-                "linear_density": 43.29,
-            },
-        },
-    },
-    "export_system": {
-        "strategy": "lay_bury",
-        "cables": {
-            "XLPE_300mm_36kV": {
-                "cable_sections": [(33.3502, 10)],
-                "linear_density": 50.0,
-            }
-        },
-    },
-}
+initialize_library(pytest.library)
+config_array = extract_library_specs("config", "array_cable_install")
+config_export = extract_library_specs("config", "export_cable_install")
 
-installs = (ArrInstall, ExpInstall)
+installs = ((ArrInstall, config_array), (ExpInstall, config_export))
 weather = (None, test_weather)
-strategies = ("lay_bury", "lay", "bury")
+strategies = ("simultaneous", "separate", "lay", "bury")
+strategies_keys = (
+    ("simultaneous", "cable_lay_bury_speed"),
+    ("separate", "cable_lay_speed|cable_bury_speed"),
+    ("lay", "cable_lay_speed"),
+    ("bury", "cable_bury_speed"),
+)
 
 
 @pytest.mark.parametrize(
-    "CableInstall,weather", itertools.product(installs, weather)
+    "CableInstall,config", installs, ids=["array", "export"]
 )
-def test_creation(CableInstall, weather):
+@pytest.mark.parametrize(
+    "weather", weather, ids=["no_weather", "test_weather"]
+)
+def test_creation(CableInstall, config, weather):
     sim = CableInstall(config, weather=weather, print_logs=False)
 
     assert sim.config == config
@@ -79,21 +49,49 @@ def test_creation(CableInstall, weather):
 
 
 @pytest.mark.parametrize(
-    "CableInstall,weather", itertools.product(installs, weather)
+    "CableInstall,config", installs, ids=["array", "export"]
 )
-def test_vessel_creation(CableInstall, weather):
-    sim = CableInstall(config, weather=weather, log_level="INFO")
+@pytest.mark.parametrize(
+    "weather", weather, ids=["no_weather", "test_weather"]
+)
+@pytest.mark.parametrize("strategy", strategies)
+def test_vessel_creation(CableInstall, config, weather, strategy):
 
-    assert sim.cable_lay_vessel
-    assert sim.cable_lay_vessel.storage.deck_space == 0
-    assert sim.cable_lay_vessel.at_port
-    assert not sim.cable_lay_vessel.at_site
+    print(config.keys())
+
+    _config = deepcopy(config)
+    try:
+        _config["array_system"]["strategy"] = strategy
+    except KeyError:
+        pass
+
+    try:
+        _config["export_system"]["strategy"] = strategy
+    except KeyError:
+        pass
+
+    sim = CableInstall(_config, weather=weather, log_level="INFO")
+
+    if strategy in ("lay", "simultaneous", "separate"):
+        assert sim.cable_lay_vessel
+        assert sim.cable_lay_vessel.storage.deck_space == 0
+        assert sim.cable_lay_vessel.at_port
+        assert not sim.cable_lay_vessel.at_site
+
+    if strategy in ("bury", "separate"):
+        assert sim.cable_bury_vessel
+        assert sim.cable_bury_vessel.storage.deck_space == 0
+        assert sim.cable_bury_vessel.at_port
+        assert not sim.cable_bury_vessel.at_site
 
 
 @pytest.mark.parametrize(
-    "CableInstall,weather", itertools.product(installs, weather)
+    "CableInstall,config", installs, ids=["array", "export"]
 )
-def test_carousel_system_creation(CableInstall, weather):
+@pytest.mark.parametrize(
+    "weather", weather, ids=["no_weather", "test_weather"]
+)
+def test_carousel_system_creation(CableInstall, config, weather):
     sim = CableInstall(config, weather=weather, log_level="INFO")
 
     for carousel in sim.carousels.carousels.values():
@@ -103,56 +101,72 @@ def test_carousel_system_creation(CableInstall, weather):
 
 
 @pytest.mark.parametrize(
-    "CableInstall,weather,log_level,expected",
-    (
-        (c, w, l, n)
-        for c in (ArrInstall, ExpInstall)
-        for w in (None, test_weather)
-        for l, n in (("INFO", 20), ("DEBUG", 10))
-    ),
+    "CableInstall,config", installs, ids=["array", "export"]
 )
-def test_logger_creation(CableInstall, weather, log_level, expected):
+@pytest.mark.parametrize(
+    "weather", weather, ids=["no_weather", "test_weather"]
+)
+@pytest.mark.parametrize(
+    "log_level,expected", (("INFO", 20), ("DEBUG", 10)), ids=["info", "debug"]
+)
+def test_logger_creation(CableInstall, config, weather, log_level, expected):
     sim = CableInstall(config, weather=weather, log_level=log_level)
     assert sim.env.logger.level == expected
 
 
 @pytest.mark.parametrize(
-    "CableInstall,strategy,weather",
-    itertools.product(installs, strategies, weather),
+    "CableInstall,config", installs, ids=["array", "export"]
 )
-def test_full_run_completes(CableInstall, strategy, weather):
+@pytest.mark.parametrize(
+    "weather", weather, ids=["no_weather", "test_weather"]
+)
+@pytest.mark.parametrize(
+    "strategy", strategies, ids=["simultaneous", "separate", "lay", "bury"]
+)
+def test_full_run_completes(CableInstall, config, weather, strategy):
     strategy_config = deepcopy(config)
-    strategy_config["array_system"]["strategy"] = strategy
-    strategy_config["export_system"]["strategy"] = strategy
+    if "array_system" in strategy_config:
+        strategy_config["array_system"]["strategy"] = strategy
+    elif "export_system" in strategy_config:
+        strategy_config["export_system"]["strategy"] = strategy
 
     sim = CableInstall(strategy_config, weather=weather, log_level="DEBUG")
     sim.run()
 
-    assert float(sim.logs[sim.logs.action == "Complete"]["time"]) > 0
+    for t in sim.logs[sim.logs.action == "Complete"]["time"]:
+        assert float(t) > 0
 
 
 @pytest.mark.parametrize(
-    "CableInstall,weather", itertools.product(installs, weather)
+    "CableInstall,config", installs, ids=["array", "export"]
 )
-def test_full_run_is_valid(CableInstall, weather):
+@pytest.mark.parametrize(
+    "weather", weather, ids=["no_weather", "test_weather"]
+)
+def test_full_run_is_valid(CableInstall, config, weather):
     sim = CableInstall(config, weather=weather, log_level="INFO")
     sim.run()
     n_complete = sim.logs[sim.logs.action == "TestCable"].shape[0] / 2
     assert n_complete == sim.num_sections
 
 
-@pytest.mark.parametrize("weather", (None, test_weather))
+@pytest.mark.parametrize(
+    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
+)
 def test_trench_install_creation(weather):
-    sim = ExpInstall(config, weather=weather, print_logs=False)
+    sim = ExpInstall(config_export, weather=weather, print_logs=False)
     sim.run()
 
     assert "DigTrench" in sim.phase_dataframe.action.tolist()
 
 
 @pytest.mark.parametrize(
-    "CableInstall,weather", itertools.product(installs, weather)
+    "CableInstall,config", installs, ids=["array", "export"]
 )
-def test_full_run_logging(CableInstall, weather):
+@pytest.mark.parametrize(
+    "weather", weather, ids=["no_weather", "test_weather"]
+)
+def test_full_run_logging(CableInstall, config, weather):
     sim = CableInstall(config, weather=weather, log_level="INFO")
     sim.run()
 
@@ -164,51 +178,50 @@ def test_full_run_logging(CableInstall, weather):
     assert (df.duration - df["shift"]).max() == pytest.approx(0, abs=1e-9)
 
 
-def test_for_array_install_efficiencies():
+@pytest.mark.parametrize(
+    "CableInstall,config", installs, ids=["array", "export"]
+)
+def test_for_array_install_efficiencies(CableInstall, config):
 
-    sim = ArrInstall(config)
+    sim = CableInstall(config)
     sim.run()
 
-    assert (
-        0
-        <= sim.detailed_output[
-            "Array Cable Installation Vessel_operational_efficiency"
-        ]
-        <= 1
-    )
-    assert (
-        0
-        <= sim.detailed_output[
-            "Array Cable Installation Vessel_cargo_weight_utilization"
-        ]
-        <= 1
-    )
+    vessel = sim.cable_lay_vessel.name
+    assert 0 <= sim.detailed_output[f"{vessel}_operational_efficiency"] <= 1
+    assert 0 <= sim.detailed_output[f"{vessel}_cargo_weight_utilization"] <= 1
 
 
-def test_for_export_install_efficiencies():
+@pytest.mark.parametrize(
+    "CableInstall,config", installs, ids=["array", "export"]
+)
+@pytest.mark.parametrize(
+    "strategy,key",
+    strategies_keys,
+    ids=["simultaneous", "separate", "lay", "bury"],
+)
+def test_strategy_kwargs(CableInstall, config, strategy, key):
+    strategy_config = deepcopy(config)
+    if "array_system" in strategy_config:
+        strategy_config["array_system"]["strategy"] = strategy
+    elif "export_system" in strategy_config:
+        strategy_config["export_system"]["strategy"] = strategy
 
-    sim = ExpInstall(config)
+    sim = CableInstall(strategy_config, log_level="DEBUG")
     sim.run()
+    baseline = sim.total_phase_time
 
-    assert (
-        0
-        <= sim.detailed_output[
-            "Export Cable Installation Vessel_operational_efficiency"
-        ]
-        <= 1
-    )
-    assert (
-        0
-        <= sim.detailed_output[
-            "Export Cable Installation Vessel_cargo_weight_utilization"
-        ]
-        <= 1
-    )
+    for _key in key.split("|"):
+        kwargs = {_key: defaults[_key] * 0.1}
+        sim = CableInstall(strategy_config, log_level="DEBUG", **kwargs)
+        sim.run()
+        updated = sim.total_phase_time
+
+        assert updated > baseline
 
 
 def test_kwargs_for_array_install():
 
-    sim = ArrInstall(config, log_level="INFO", print_logs=False)
+    sim = ArrInstall(config_array, log_level="INFO", print_logs=False)
     sim.run()
     baseline = sim.total_phase_time
 
@@ -220,14 +233,6 @@ def test_kwargs_for_array_install():
         "cable_lower_time",
         "cable_pull_in_time",
         "cable_termination_time",
-        # "cable_lay_speed",
-        "cable_lay_bury_speed",
-        # "cable_bury_speed",
-        # "cable_splice_time",
-        # "tow_plow_speed",
-        # "pull_winch_speed",
-        # "cable_raise_time",
-        # "trench_dig_speed",
     ]
 
     failed = []
@@ -235,20 +240,10 @@ def test_kwargs_for_array_install():
     for kw in keywords:
 
         default = defaults[kw]
-
-        if "speed" in kw:
-            _new = default - 0.05
-
-            if _new <= 0:
-                raise Exception(f"'{kw}' is less than 0.")
-
-            kwargs = {kw: _new}
-
-        else:
-            kwargs = {kw: default + 2}
+        kwargs = {kw: default + 2}
 
         new_sim = ArrInstall(
-            config, log_level="INFO", print_logs=False, **kwargs
+            config_array, log_level="INFO", print_logs=False, **kwargs
         )
         new_sim.run()
         new_time = new_sim.total_phase_time
@@ -269,10 +264,10 @@ def test_kwargs_for_array_install():
 def test_kwargs_for_export_install():
 
     new_export_system = {
-        "strategy": "lay_bury",
+        "strategy": "simultaneous",
         "cables": {
             "XLPE_300mm_36kV": {
-                "cable_sections": [(88.02, 10)],
+                "cable_sections": [(1000, 1)],
                 "linear_density": 50.0,
             }
         },
@@ -285,7 +280,7 @@ def test_kwargs_for_export_install():
         "distance_to_interconnection": 4,  # landfall to interconnection, km
     }
 
-    new_config = deepcopy(config)
+    new_config = deepcopy(config_export)
     new_config["export_system"] = new_export_system
     new_config["site"] = new_site
 
@@ -301,9 +296,6 @@ def test_kwargs_for_export_install():
         "cable_lower_time",
         "cable_pull_in_time",
         "cable_termination_time",
-        # "cable_lay_speed",
-        "cable_lay_bury_speed",
-        # "cable_bury_speed",
         "cable_splice_time",
         "tow_plow_speed",
         "pull_winch_speed",

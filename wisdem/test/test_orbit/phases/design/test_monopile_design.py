@@ -6,8 +6,10 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
-import itertools
 from copy import deepcopy
+from itertools import product
+
+import pytest
 
 from wisdem.orbit.phases.design import MonopileDesign
 
@@ -22,86 +24,40 @@ base = {
 }
 
 turbines = [
-    {"rotor_diam": 155, "hub_height": 100, "rated_ws": 12},
-    {"rotor_diam": 180, "hub_height": 112, "rated_ws": 12},
-    {"rotor_diam": 205, "hub_height": 125, "rated_ws": 12},
-    {"rotor_diam": 222, "hub_height": 136, "rated_ws": 12},
-    {"rotor_diam": 248, "hub_height": 149, "rated_ws": 12},
+    {"rotor_diameter": 155, "hub_height": 100, "rated_windspeed": 12},
+    {"rotor_diameter": 180, "hub_height": 112, "rated_windspeed": 12},
+    {"rotor_diameter": 205, "hub_height": 125, "rated_windspeed": 12},
+    {"rotor_diameter": 222, "hub_height": 136, "rated_windspeed": 12},
+    {"rotor_diameter": 248, "hub_height": 149, "rated_windspeed": 12},
 ]
 
 
-def test_paramater_sweep():
+@pytest.mark.parametrize(
+    "depth,mean_ws,turbine",
+    product(range(10, 51, 10), range(8, 13, 1), turbines),
+)
+def test_paramater_sweep(depth, mean_ws, turbine):
 
-    config = deepcopy(base)
+    config = {
+        "site": {"depth": depth, "mean_windspeed": mean_ws},
+        "plant": {"num_turbines": 20},
+        "turbine": turbine,
+    }
 
-    inputs = []
-    lengths = []
-    diameters = []
-    weights = []
+    m = MonopileDesign(config)
+    m.run()
 
-    for i in itertools.product(
-        range(10, 51, 10),
-        range(8, 13, 1),
-        turbines,  # Depth  # Mean windspeed, site
-    ):
+    # Check valid monopile length
+    assert 10 < m._outputs["monopile"]["length"] < 130
 
-        config["site"]["depth"] = i[0]
-        config["site"]["mean_windspeed"] = i[1]
+    # Check valid monopile diameter
+    assert 4 < m._outputs["monopile"]["diameter"] < 12
 
-        _turb = i[2]
-        config["turbine"]["rotor_diameter"] = _turb["rotor_diam"]
-        config["turbine"]["hub_height"] = _turb["hub_height"]
-        config["turbine"]["rated_windspeed"] = _turb["rated_ws"]
+    # Check valid monopile weight
+    assert 200 < m._outputs["monopile"]["weight"] < 2000
 
-        m = MonopileDesign(config)
-        m.run()
-
-        # Monopile
-        if not 10 < m._outputs["monopile"]["length"] < 130:
-            print(
-                f"Invalid monopile length encountered: {m._outputs['monopile']['length']}"
-            )
-            print(
-                f"\tInputs: Depth: {i[0]}m, Windspeed: {i[1]}, Turbine: {i[2]}"
-            )
-            assert False
-
-        if not 4 < m._outputs["monopile"]["diameter"] < 12:
-            print(
-                f"Invalid monopile diameter encountered: {m._outputs['monopile']['diameter']}"
-            )
-            print(
-                f"\tInputs: Depth: {i[0]}m, Windspeed: {i[1]}, Turbine: {i[2]}"
-            )
-            assert False
-
-        if not 200 < m._outputs["monopile"]["weight"] < 2000:
-            print(
-                f"Invalid monopile weight encountered: {m._outputs['monopile']['weight']}"
-            )
-            print(
-                f"\tInputs: Depth: {i[0]}m, Windspeed: {i[1]}, Turbine: {i[2]}"
-            )
-            assert False
-
-        # Transition Piece
-        if not 4 < m._outputs["transition_piece"]["diameter"] < 12:
-            print(
-                f"Invalid transition piece diameter encountered: {m._outputs['transition_piece']['diameter']}"
-            )
-            print(
-                f"\tInputs: Depth: {i[0]}m, Windspeed: {i[1]}, Turbine: {i[2]}"
-            )
-            assert False
-
-        if not 100 < m._outputs["transition_piece"]["weight"] < 800:
-            print(
-                f"Invalid transition piece weight encountered: {m._outputs['transition_piece']['weight']}"
-            )
-            print(
-                f"\tInputs: Depth: {i[0]}m, Windspeed: {i[1]}, Turbine: {i[2]}"
-            )
-            assert False
+    # Check valid transition piece diameter
+    assert 4 < m._outputs["transition_piece"]["diameter"] < 12
 
 
 def test_monopile_kwargs():

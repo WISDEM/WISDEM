@@ -12,40 +12,12 @@ import pytest
 
 from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
+from wisdem.orbit.library import initialize_library, extract_library_specs
 from wisdem.orbit.manager import PhaseNotFound, WeatherProfileError
-from wisdem.test.test_orbit.vessels import WTIV_SPECS
 from wisdem.orbit.simulation.exceptions import MissingInputs
 
-SPECIFIC_WTIV = deepcopy(WTIV_SPECS)
-SPECIFIC_WTIV["name"] = "Phase Specific WTIV"
-
-
-config = {
-    "wtiv": WTIV_SPECS,
-    "site": {"distance": 50, "depth": 15},
-    "plant": {"num_turbines": 10},
-    "turbine": {
-        "hub_height": 100,
-        "tower": {"type": "Tower", "deck_space": 100, "weight": 400},
-        "nacelle": {"type": "Nacelle", "deck_space": 200, "weight": 400},
-        "blade": {"type": "Blade", "deck_space": 100, "weight": 100},
-    },
-    "MonopileInstallation": {"wtiv": SPECIFIC_WTIV, "site": {"distance": 500}},
-    "port": {"num_cranes": 1, "monthly_rate": 10000},
-    "monopile": {
-        "type": "Monopile",
-        "length": 50,
-        "diameter": 10,
-        "deck_space": 500,
-        "weight": 350,
-    },
-    "transition_piece": {
-        "type": "Transition Piece",
-        "deck_space": 250,
-        "weight": 350,
-    },
-    "install_phases": ["MonopileInstallation", "TurbineInstallation"],
-}
+initialize_library(pytest.library)
+config = extract_library_specs("config", "project_manager")
 
 
 def test_for_required_phase_structure():
@@ -139,19 +111,10 @@ def test_expected_config_merging():
     }
 
 
-def test_complete_run():
+@pytest.mark.parametrize("weather", (None, test_weather))
+def test_complete_run(weather):
 
-    project = ProjectManager(config)
-    project.run_project()
-
-    assert len(project._output_dfs) == 2
-    assert isinstance(project.project_dataframe, pd.DataFrame)
-
-    phases = ["MonopileInstallation", "TurbineInstallation"]
-    assert all(p in list(project.project_dataframe["phase"]) for p in phases)
-
-    # With weather
-    project = ProjectManager(config, weather=test_weather)
+    project = ProjectManager(config, weather=weather)
     project.run_project()
 
     assert len(project._output_dfs) == 2
@@ -246,7 +209,7 @@ def test_duplicate_phase_simulations():
 
     assert df.loc[("MonopileInstallation_1", "DriveMonopile")] == 5
     assert df.loc[("MonopileInstallation_2", "DriveMonopile")] == 5
-    assert df.loc[("TurbineInstallation", "AttachTower")] == 10
+    assert df.loc[("TurbineInstallation", "AttachTowerSection")] == 10
 
 
 def test_design_phases():

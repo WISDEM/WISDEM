@@ -41,9 +41,9 @@ defaults = {
     "drop_rocks_time": 10,  # hr
     "load_rocks_time": 4,  # hr
     # Turbines
-    "tower_fasten_time": 4,  # hr
-    "tower_release_time": 3,  # hr
-    "tower_attach_time": 6,  # hr
+    "tower_section_fasten_time": 4,  # hr, applies to all sections
+    "tower_section_release_time": 3,  # hr, applies to all sections
+    "tower_section_attach_time": 6,  # hr, applies to all sections
     "nacelle_fasten_time": 4,  # hr
     "nacelle_release_time": 3,  # hr
     "nacelle_attach_time": 6,  # hr

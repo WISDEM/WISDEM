@@ -9,7 +9,7 @@ from copy import deepcopy
 from wisdem.orbit import ProjectManager
 
 config = {
-    "wtiv": "example_wtiv",
+    "wtiv": "test_wtiv",
     "site": {"depth": 20, "distance": 20, "mean_windspeed": 9},
     "plant": {"num_turbines": 20},
     "turbine": {

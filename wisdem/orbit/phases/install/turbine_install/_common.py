@@ -9,7 +9,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 from wisdem.orbit.vessels import tasks
 
 
-def install_tower(env, vessel, tower, **kwargs):
+def install_tower_section(env, vessel, section, height, **kwargs):
     """
     Process logic for installing a tower at site.
 
@@ -26,9 +26,8 @@ def install_tower(env, vessel, tower, **kwargs):
     tower : dict
     """
 
-    reequip_time = vessel.crane.reequip(**kwargs)
-    lift_time = tasks.lift_tower(vessel, **kwargs)
-    attach_time = tasks.attach_tower(vessel, **kwargs)
+    lift_time = tasks.lift_tower_section(vessel, height, **kwargs)
+    attach_time = tasks.attach_tower_section(vessel, **kwargs)
 
     _shared = {
         "agent": vessel.name,
@@ -38,9 +37,8 @@ def install_tower(env, vessel, tower, **kwargs):
     }
 
     task_list = [
-        {"action": "CraneReequip", "duration": reequip_time, **_shared},
-        {"action": "LiftTower", "duration": lift_time, **_shared},
-        {"action": "AttachTower", "duration": attach_time, **_shared},
+        {"action": "LiftTowerSection", "duration": lift_time, **_shared},
+        {"action": "AttachTowerSection", "duration": attach_time, **_shared},
     ]
 
     yield env.process(env.task_handler(task_list))

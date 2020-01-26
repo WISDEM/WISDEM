@@ -19,6 +19,10 @@ export_system_design_time: 1000               # hrs
 oss_design_time: 1000                         # hrs
 onshore_trans_design_time: 1000               # hrs
 
+# Substructure costs
+monopile_steel_cost: 3000                     # USD/t
+tp_steel_cost: 3000                           # USD/t
+
 # Port properties
 port_cost_per_month: 2e6                      # USD/month
 

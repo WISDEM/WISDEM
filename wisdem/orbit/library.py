@@ -63,6 +63,7 @@ loader.add_implicit_resolver(
 
 
 def clean_warning(message, category, filename, lineno, file=None, line=""):
+    """Formats the standard warning output."""
     return f"{category.__name__}: {filename}:{lineno}\n{message}"
 
 
@@ -251,7 +252,9 @@ PATH_LIBRARY = {
     "defaults": "defaults",
     # vessels
     "array_cable_lay_vessel": "vessels",
+    "array_cable_bury_vessel": "vessels",
     "export_cable_lay_vessel": "vessels",
+    "export_cable_bury_vessel": "vessels",
     "oss_install_vessel": "vessels",
     "scour_protection_install_vessel": "vessels",
     "trench_dig_vessel": "vessels",

@@ -243,6 +243,7 @@ class CarouselSystem:
             max_cable_len_per_carousel = (
                 self.max_cargo_weight / cable["linear_density"]
             )
-            self._create_cable_carousel(
-                name, max_cable_len_per_carousel, i + 1
-            )
+            if cable["cable_sections"]:
+                self._create_cable_carousel(
+                    name, max_cable_len_per_carousel, i + 1
+                )

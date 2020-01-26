@@ -12,27 +12,13 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
+from wisdem.orbit.library import initialize_library, extract_library_specs
 from wisdem.orbit.phases.design import ArraySystemDesign, CustomArraySystemDesign
 from wisdem.orbit.simulation.exceptions import LibraryItemNotFoundError
 
-_ = os.environ.pop("DATA_LIBRARY", None)
+initialize_library(pytest.library)
 
-
-ROOT = os.path.abspath(os.path.join(os.path.abspath(__file__), "../../.."))
-TEST_LIBRARY = os.path.join(ROOT, "data", "library")
-
-config_full_ring = {
-    "site": {"depth": 20},
-    "plant": {
-        "layout": "ring",
-        "row_spacing": 7,
-        "turbine_spacing": 5,
-        "num_turbines": 40,
-        "substation_distance": 1,
-    },
-    "turbine": {"rotor_diameter": 154, "turbine_rating": 10},
-    "array_system_design": {"cables": ["XLPE_400mm_33kV", "XLPE_630mm_33kV"]},
-}
+config_full_ring = extract_library_specs("config", "array_design_full_ring")
 
 config_partial_ring = deepcopy(config_full_ring)
 config_partial_ring["plant"]["num_turbines"] = 49
@@ -74,15 +60,13 @@ config_duplicate_coordinates["array_system_design"][
 
 
 def test_array_system_creation():
-    array = ArraySystemDesign(config_full_grid, library_path=TEST_LIBRARY)
+    array = ArraySystemDesign(config_full_grid)
     array.run()
     assert array
 
 
 def test_cable_not_found():
-    array = ArraySystemDesign(
-        config_cables_from_file_fail, library_path=TEST_LIBRARY
-    )
+    array = ArraySystemDesign(config_cables_from_file_fail)
     with pytest.raises(LibraryItemNotFoundError):
         array.run()
 
@@ -95,6 +79,7 @@ def test_cable_not_found():
         (config_full_grid, 10, 0, 4, 0),
         (config_partial_grid, 12, 1, 4, 1),
     ),
+    ids=["full_ring", "partial_ring", "full_grid", "partial_grid"],
 )
 def test_string_creation(
     config,
@@ -103,7 +88,7 @@ def test_string_creation(
     num_turbines_full_string,
     num_turbines_partial_string,
 ):
-    array = ArraySystemDesign(config, library_path=TEST_LIBRARY)
+    array = ArraySystemDesign(config)
     array.run()
 
     assert array
@@ -126,7 +111,7 @@ def test_max_turbines_per_cable(turbine_rating, expected):
     config = deepcopy(config_full_grid)
     config["array_system_design"]["cables"] = "XLPE_630mm_33kV"
     config["turbine"]["turbine_rating"] = turbine_rating
-    array = ArraySystemDesign(config, library_path=TEST_LIBRARY)
+    array = ArraySystemDesign(config)
     array.run()
     assert array.cables["XLPE_630mm_33kV"].max_turbines == expected
 
@@ -139,9 +124,10 @@ def test_max_turbines_per_cable(turbine_rating, expected):
         (config_full_grid, (10, 4), 0),
         (config_partial_grid, (13, 4), 3),
     ),
+    ids=["full_ring", "partial_ring", "full_grid", "partial_grid"],
 )
 def test_grid_creation(config, shape, num_null):
-    array = ArraySystemDesign(config, library_path=TEST_LIBRARY)
+    array = ArraySystemDesign(config)
     array.run()
 
     assert array.turbines_x.shape == shape
@@ -165,9 +151,10 @@ def test_grid_creation(config, shape, num_null):
         (config_full_grid, 53.29),
         (config_partial_grid, 77.0),
     ),
+    ids=["full_ring", "partial_ring", "full_grid", "partial_grid"],
 )
 def test_total_cable_length(config, total_length):
-    array = ArraySystemDesign(config, library_path=TEST_LIBRARY)
+    array = ArraySystemDesign(config)
     array.run()
 
     val = round(
@@ -190,50 +177,35 @@ def test_total_cable_length(config, total_length):
 
 
 def test_missing_columns():
-    os.environ.pop("DATA_LIBRARY")
-    array = CustomArraySystemDesign(
-        config_missing_col, library_path=TEST_LIBRARY
-    )
+    array = CustomArraySystemDesign(config_missing_col)
 
     with pytest.raises(ValueError):
         array.run()
 
 
 def test_duplicate_turbine_coordinates():
-    _ = os.environ.pop("DATA_LIBRARY", None)
-    array = CustomArraySystemDesign(
-        config_duplicate_coordinates, library_path=TEST_LIBRARY
-    )
+    array = CustomArraySystemDesign(config_duplicate_coordinates)
 
     with pytest.raises(ValueError):
         array.run()
 
 
 def test_incomplete_required_columns():
-    _ = os.environ.pop("DATA_LIBRARY", None)
-    array = CustomArraySystemDesign(
-        config_incomplete_required, library_path=TEST_LIBRARY
-    )
+    array = CustomArraySystemDesign(config_incomplete_required)
 
     with pytest.raises(ValueError):
         array.run()
 
 
 def test_incomplete_optional_columns():
-    _ = os.environ.pop("DATA_LIBRARY", None)
-    array = CustomArraySystemDesign(
-        config_incomplete_optional, library_path=TEST_LIBRARY
-    )
+    array = CustomArraySystemDesign(config_incomplete_optional)
 
     with pytest.warns(UserWarning):
         array.run()
 
 
 def test_correct_turbines():
-    _ = os.environ.pop("DATA_LIBRARY", None)
-    array = CustomArraySystemDesign(
-        config_incorrect_turbines, library_path=TEST_LIBRARY
-    )
+    array = CustomArraySystemDesign(config_incorrect_turbines)
 
     with pytest.raises(ValueError):
         array.run()

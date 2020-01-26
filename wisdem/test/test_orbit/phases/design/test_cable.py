@@ -132,6 +132,7 @@ def test_power_factor():
         plant_config_distance_provided_ring,
         plant_config_distance_provided_grid,
     ),
+    ids=["calculate_ring", "calculate_grid", "provided_ring", "provided_grid"],
 )
 def test_plant_creation(config):
     plant = Plant(config)

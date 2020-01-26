@@ -514,8 +514,8 @@ def lay_bury_full_array_cable_section(
     cable_mass_tonnes : int or float
         Mass of cable, tonnes.
     strategy : str
-        One of "lay", "bury", "lay_bury" to indicate which of the two (or both)
-        processes will be completed in the subprocess.
+        One of "lay", "bury", "simultaneous" to indicate which of the two
+        (or both) processes will be completed in the subprocess.
     """
 
     # Position at site
@@ -527,7 +527,7 @@ def lay_bury_full_array_cable_section(
     # Lower cable
     yield env.process(lower_cable(env, vessel, **kwargs))
 
-    if strategy == "lay_bury":
+    if strategy == "simultaneous":
         yield env.process(
             lay_bury_cable_section(
                 env, vessel, cable_len_km, cable_mass_tonnes, **kwargs
@@ -637,7 +637,13 @@ def onshore_work(
 
 
 def lay_array_cables(
-    env, vessel, port, num_cables, distance_to_site, strategy, **kwargs
+    env,
+    cable_lay_vessel,
+    port,
+    num_cables,
+    distance_to_site,
+    strategy,
+    **kwargs,
 ):
     """
     Simulation of the installation of array cables.
@@ -647,7 +653,7 @@ def lay_array_cables(
     ----------
     env : Simpy.Environment
         Simulation environment.
-    vessel : Vessel
+    cable_lay_vessel : Vessel
         Cable laying vessel.
     port : Simpy.FilterStore
         Simulation port object.
@@ -656,7 +662,7 @@ def lay_array_cables(
     distance_to_site : int or float
         Distance between port and offshore wind site.
     strategy : str
-        One of "lay" or "lay_bury" to indicate if the cable will be buried
+        One of "lay" or "simultaneous" to indicate if the cable will be buried
         at the same time as laying it.
 
     Raises
@@ -666,21 +672,28 @@ def lay_array_cables(
     """
 
     while num_cables:
-        if vessel.at_port:
+        if cable_lay_vessel.at_port:
             yield env.process(
-                get_carousel_from_port(env, vessel, port, **kwargs)
+                get_carousel_from_port(env, cable_lay_vessel, port, **kwargs)
             )
-            vessel.update_trip_data(deck=False, items=False)
+            cable_lay_vessel.update_trip_data(deck=False, items=False)
             yield env.process(
-                transport(env, vessel, distance_to_site, False, True, **kwargs)
+                transport(
+                    env,
+                    cable_lay_vessel,
+                    distance_to_site,
+                    False,
+                    True,
+                    **kwargs,
+                )
             )
-        elif vessel.at_site:
-            while vessel.carousel.section_lengths:
+        elif cable_lay_vessel.at_site:
+            while cable_lay_vessel.carousel.section_lengths:
 
                 # Retrieve the cable section length and mass and install
-                _len = vessel.carousel.section_lengths.pop(0)
-                _mass = vessel.carousel.section_masses.pop(0)
-                _speed = vessel.carousel.section_bury_speeds.pop(0)
+                _len = cable_lay_vessel.carousel.section_lengths.pop(0)
+                _mass = cable_lay_vessel.carousel.section_masses.pop(0)
+                _speed = cable_lay_vessel.carousel.section_bury_speeds.pop(0)
                 if _speed == -1:
                     kw = {**kwargs}
                 else:
@@ -688,7 +701,7 @@ def lay_array_cables(
 
                 yield env.process(
                     lay_bury_full_array_cable_section(
-                        env, vessel, _len, _mass, strategy, **kw
+                        env, cable_lay_vessel, _len, _mass, strategy, **kw
                     )
                 )
 
@@ -696,17 +709,24 @@ def lay_array_cables(
 
             # Go back to port once the carousel is depleted.
             yield env.process(
-                transport(env, vessel, distance_to_site, True, False, **kwargs)
+                transport(
+                    env,
+                    cable_lay_vessel,
+                    distance_to_site,
+                    True,
+                    False,
+                    **kwargs,
+                )
             )
 
         else:
             raise Exception("Vessel is lost at sea.")
 
-    _strategy = strategy.replace("_", " and ").replace("y", "ying")
+    _strategy = "laying and burying"
     env.logger.debug(
         f"Array cable {_strategy} complete!",
         extra={
-            "agent": vessel.name,
+            "agent": cable_lay_vessel.name,
             "time": env.now,
             "type": "Status",
             "action": "Complete",
@@ -715,7 +735,7 @@ def lay_array_cables(
 
 
 def bury_cables(
-    env, vessel, port, num_cables, distance_to_site, system, **kwargs
+    env, cable_bury_vessel, num_cables, distance_to_site, system, **kwargs
 ):
     """
     Simulation of the burying of array cables.
@@ -727,12 +747,12 @@ def bury_cables(
     ----------
     env : Simpy.Environment
         Simulation environment.
-    cable_vessel : Vessel
+    cable_bury_vessel : Vessel
         Cable laying vessel.
-    port : Simpy.FilterStore
-        Simulation port object.
     num_cables : int
         Number of cable sections to be installed.
+    system : str
+        One of "array" or "export".
     distance_to_site : int or float
         Distance between port and offshore wind site.
 
@@ -743,31 +763,45 @@ def bury_cables(
     """
 
     while num_cables:
-        if vessel.at_port:
-            vessel.update_trip_data(deck=False, items=False)
+        if cable_bury_vessel.at_port:
+            cable_bury_vessel.update_trip_data(deck=False, items=False)
             yield env.process(
-                transport(env, vessel, distance_to_site, False, True, **kwargs)
+                transport(
+                    env,
+                    cable_bury_vessel,
+                    distance_to_site,
+                    False,
+                    True,
+                    **kwargs,
+                )
             )
-        elif vessel.at_site:
-            while vessel.carousel.section_lengths:
+        elif cable_bury_vessel.at_site:
+            while cable_bury_vessel.carousel.section_lengths:
 
                 # Retrieve the cable section length and mass and install
-                _len = vessel.carousel.section_lengths.pop(0)
-                _speed = vessel.carousel.section_bury_speeds.pop(0)
+                _len = cable_bury_vessel.carousel.section_lengths.pop(0)
+                _speed = cable_bury_vessel.carousel.section_bury_speeds.pop(0)
                 if _speed == -1:
                     kw = {**kwargs}
                 else:
                     kw = {**kwargs, "cable_bury_speed": _speed}
 
                 yield env.process(
-                    bury_full_cable_section(env, vessel, _len, **kw)
+                    bury_full_cable_section(env, cable_bury_vessel, _len, **kw)
                 )
 
                 num_cables -= 1
 
             # Go back to port once the carousel is depleted.
             yield env.process(
-                transport(env, vessel, distance_to_site, True, False, **kwargs)
+                transport(
+                    env,
+                    cable_bury_vessel,
+                    distance_to_site,
+                    True,
+                    False,
+                    **kwargs,
+                )
             )
 
         else:
@@ -776,11 +810,73 @@ def bury_cables(
     env.logger.debug(
         f"{system.title()} cable burying complete!",
         extra={
-            "agent": vessel.name,
+            "agent": cable_bury_vessel.name,
             "time": env.now,
             "type": "Status",
             "action": "Complete",
         },
+    )
+
+
+def separate_lay_bury_array(
+    env,
+    cable_lay_vessel,
+    cable_bury_vessel,
+    port,
+    num_cables,
+    distance_to_site,
+    strategy,
+    system,
+    **kwargs,
+):
+    """Performs the laying and burying of array cables by calling both
+    `lay_array_cables` and `bury_cables`.
+
+    Parameters
+    ----------
+    env : Simpy.Environment
+        Simpy environment where the simulation will be run.
+    cable_lay_vessel : ORBIT.Vessel
+        Cable laying vessel.
+    cable_bury_vessel : ORBIT.Vessel
+        Cable burying vessel.
+    port : ORBIT.Port
+        Port where carousels will be loaded onto the cable laying vessel.
+    num_cables : int
+        Number of cables to be laid.
+    distance_to_site : int | float
+        Distance between port and the windfarm.
+    strategy : str
+        Should be "separate". Not actually used.
+    system : str
+        Should be "array".
+
+    Yields
+    -------
+    [type]
+        [description]
+    """
+    strategy = "lay"
+    yield env.process(
+        lay_array_cables(
+            env,
+            cable_lay_vessel,
+            port,
+            num_cables,
+            distance_to_site,
+            strategy,
+            **kwargs,
+        )
+    )
+    yield env.process(
+        bury_cables(
+            env,
+            cable_bury_vessel,
+            num_cables,
+            distance_to_site,
+            system,
+            **kwargs,
+        )
     )
 
 
@@ -802,7 +898,7 @@ def install_trench(env, vessel, trench_length, **kwargs):
 
 def lay_export_cables(
     env,
-    vessel,
+    cable_lay_vessel,
     trench_vessel,
     port,
     cable_length,
@@ -818,7 +914,7 @@ def lay_export_cables(
     ----------
     env : Simpy.Environment
         Simulation environment
-    vessel : Vessel
+    cable_lay_vessel : Vessel
         Cable laying vessel.
     trench_vessel : Vessel
         Trench digging operation.
@@ -841,7 +937,7 @@ def lay_export_cables(
         interconnection : int or float
             Distance between landfall and the onshore substation, km.
     strategy : str
-        One of "lay" or "lay_bury" to indicate if the export cable is being
+        One of "lay" or "simultaneous" to indicate if the export cable is being
         laid only or laid and buried simultaneously.
 
     Raises
@@ -851,7 +947,7 @@ def lay_export_cables(
     """
 
     STRATEGY_MAP = {
-        "lay_bury": lay_bury_cable_section,
+        "simultaneous": lay_bury_cable_section,
         "lay": lay_cable_section,
     }
 
@@ -868,20 +964,27 @@ def lay_export_cables(
     new_start = True
 
     while num_sections:  # floats aren't exact
-        if vessel.at_port:
+        if cable_lay_vessel.at_port:
             yield env.process(
-                get_carousel_from_port(env, vessel, port, **kwargs)
+                get_carousel_from_port(env, cable_lay_vessel, port, **kwargs)
             )
-            vessel.update_trip_data(deck=False, items=False)
+            cable_lay_vessel.update_trip_data(deck=False, items=False)
             yield env.process(
-                transport(env, vessel, distances.site, False, True, **kwargs)
+                transport(
+                    env,
+                    cable_lay_vessel,
+                    distances.site,
+                    False,
+                    True,
+                    **kwargs,
+                )
             )
-        elif vessel.at_site:
-            while vessel.carousel.section_lengths:
+        elif cable_lay_vessel.at_site:
+            while cable_lay_vessel.carousel.section_lengths:
 
                 # Retrieve the cable section length and mass and install
-                _len = vessel.carousel.section_lengths.pop(0)
-                _mass = vessel.carousel.section_masses.pop(0)
+                _len = cable_lay_vessel.carousel.section_lengths.pop(0)
+                _mass = cable_lay_vessel.carousel.section_masses.pop(0)
                 num_sections -= 1
 
                 if new_start:
@@ -893,7 +996,7 @@ def lay_export_cables(
                     yield env.process(
                         onshore_work(
                             env,
-                            vessel,
+                            cable_lay_vessel,
                             distances.beach,
                             distances.interconnection,
                             _mass * _pct_to_install,
@@ -914,7 +1017,7 @@ def lay_export_cables(
                         yield env.process(
                             STRATEGY_MAP[strategy](
                                 env,
-                                vessel,
+                                cable_lay_vessel,
                                 _len_remaining,
                                 _mass_remaining,
                                 **kwargs,
@@ -927,11 +1030,13 @@ def lay_export_cables(
                         # for the remaing cable
                         if round(remaining_connection_len, 10) == 0:
                             yield env.process(
-                                position_onsite(env, vessel, **kwargs)
+                                position_onsite(
+                                    env, cable_lay_vessel, **kwargs
+                                )
                             )
                             yield env.process(
                                 connect_cable_section_to_target(
-                                    env, vessel, **kwargs
+                                    env, cable_lay_vessel, **kwargs
                                 )
                             )
                             new_start = True
@@ -940,7 +1045,7 @@ def lay_export_cables(
                             yield env.process(
                                 transport(
                                     env,
-                                    vessel,
+                                    cable_lay_vessel,
                                     distances.site,
                                     True,
                                     False,
@@ -952,7 +1057,7 @@ def lay_export_cables(
                         yield env.process(
                             transport(
                                 env,
-                                vessel,
+                                cable_lay_vessel,
                                 distances.site,
                                 True,
                                 False,
@@ -962,22 +1067,22 @@ def lay_export_cables(
 
                 elif splice_required:
                     yield env.process(
-                        splice_cable_process(env, vessel, **kwargs)
+                        splice_cable_process(env, cable_lay_vessel, **kwargs)
                     )
                     yield env.process(
                         STRATEGY_MAP[strategy](
-                            env, vessel, _len, _mass, **kwargs
+                            env, cable_lay_vessel, _len, _mass, **kwargs
                         )
                     )
                     remaining_connection_len -= _len
 
                     if round(remaining_connection_len, 10) == 0:
                         yield env.process(
-                            position_onsite(env, vessel, **kwargs)
+                            position_onsite(env, cable_lay_vessel, **kwargs)
                         )
                         yield env.process(
                             connect_cable_section_to_target(
-                                env, vessel, **kwargs
+                                env, cable_lay_vessel, **kwargs
                             )
                         )
                         new_start = True
@@ -992,13 +1097,25 @@ def lay_export_cables(
                     # go back to port
                     yield env.process(
                         transport(
-                            env, vessel, distances.site, True, False, **kwargs
+                            env,
+                            cable_lay_vessel,
+                            distances.site,
+                            True,
+                            False,
+                            **kwargs,
                         )
                     )
 
             # go back to port
             yield env.process(
-                transport(env, vessel, distances.site, True, False, **kwargs)
+                transport(
+                    env,
+                    cable_lay_vessel,
+                    distances.site,
+                    True,
+                    False,
+                    **kwargs,
+                )
             )
 
         else:
@@ -1008,9 +1125,50 @@ def lay_export_cables(
     env.logger.debug(
         f"Export cable {_strategy} complete!",
         extra={
-            "agent": vessel.name,
+            "agent": cable_lay_vessel.name,
             "time": env.now,
             "type": "Status",
             "action": "Complete",
         },
+    )
+
+
+def separate_lay_bury_export(
+    env,
+    cable_lay_vessel,
+    cable_bury_vessel,
+    trench_vessel,
+    port,
+    cable_length,
+    num_sections,
+    distances,
+    strategy,
+    system,
+    distance_to_site,
+    num_cables,
+    **kwargs,
+):
+    strategy = "lay"
+    yield env.process(
+        lay_export_cables(
+            env,
+            cable_lay_vessel,
+            trench_vessel,
+            port,
+            cable_length,
+            num_sections,
+            distances,
+            strategy,
+            **kwargs,
+        )
+    )
+    yield env.process(
+        bury_cables(
+            env,
+            cable_bury_vessel,
+            num_cables,
+            distance_to_site,
+            system,
+            **kwargs,
+        )
     )

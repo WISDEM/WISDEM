@@ -22,8 +22,8 @@ config = {
         "nacelle": {"type": "Nacelle", "deck_space": 200, "weight": 400},
         "blade": {"type": "Blade", "deck_space": 100, "weight": 100},
     },
-    "MonopileInstallation": {"wtiv": "example_wtiv"},
-    "TurbineInstallation": {"wtiv": "example_wtiv"},
+    "MonopileInstallation": {"wtiv": "test_wtiv"},
+    "TurbineInstallation": {"wtiv": "test_wtiv"},
     "port": {"num_cranes": 1, "monthly_rate": 10000},
     "monopile": {
         "type": "Monopile",
@@ -40,19 +40,18 @@ config = {
     "install_phases": ["MonopileInstallation", "TurbineInstallation"],
 }
 
-LIB = os.path.abspath(os.path.join(os.path.abspath(__file__), "../data"))
 
 def test_initialize_library():
     library.initialize_library(None)
     assert os.environ["DATA_LIBRARY"]
 
     _ = os.environ.pop("DATA_LIBRARY")
-    library.initialize_library(LIB)
-    assert os.environ["DATA_LIBRARY"] == LIB
+    library.initialize_library(pytest.library)
+    assert os.environ["DATA_LIBRARY"] == pytest.library
 
 
 def test_extract_library_specs_fail():
-    library.initialize_library(LIB)
+    library.initialize_library(pytest.library)
     with pytest.raises(LibraryItemNotFoundError):
         library.extract_library_specs("turbine", "unknown.yaml")
 

@@ -11,32 +11,25 @@ from copy import deepcopy
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.test.test_orbit.vessels import WTIV_SPECS, FEEDER_SPECS
+from wisdem.orbit.library import initialize_library, extract_library_specs
 from wisdem.orbit.vessels.tasks import defaults
 from wisdem.orbit.phases.install import OffshoreSubstationInstallation
 
-config = {
-    "oss_install_vessel": "example_heavy_lift_vessel",
-    "feeder": "example_feeder",
-    "num_feeders": 1,
-    "num_substations": 1,
-    "port": {"monthly_rate": 100000, "num_cranes": 1},
-    "site": {"distance": 40, "depth": 15},
-    "offshore_substation_topside": {
-        "type": "Topside",
-        "deck_space": 200,
-        "weight": 400,
-    },
-    "offshore_substation_substructure": {
-        "type": "Monopile",
-        "deck_space": 200,
-        "weight": 400,
-        "length": 50,
-    },
-}
+initialize_library(pytest.library)
+config_single = extract_library_specs("config", "oss_install")
+config_multi = extract_library_specs("config", "oss_install")
+config_multi["num_feeders"] = 2
+
+WTIV_SPECS = extract_library_specs("wtiv", "test_wtiv")
+FEEDER_SPECS = extract_library_specs("feeder", "test_feeder")
 
 
-def test_creation():
+@pytest.mark.parametrize(
+    "config",
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
+)
+def test_creation(config):
 
     sim = OffshoreSubstationInstallation(config)
     assert sim.config == config
@@ -44,7 +37,12 @@ def test_creation():
     assert sim.env.logger
 
 
-def test_port_creation():
+@pytest.mark.parametrize(
+    "config",
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
+)
+def test_port_creation(config):
 
     sim = OffshoreSubstationInstallation(config)
     assert sim.port
@@ -55,13 +53,16 @@ def test_port_creation():
     "oss_vessel, feeder",
     [
         (WTIV_SPECS, FEEDER_SPECS),  # Passing in dictionaries
-        ("example_wtiv", "example_feeder")  # Passing in vessel names to be
-        # pulled from vessel library
+        (
+            "test_wtiv",
+            "test_feeder",
+        ),  # Passing names to be pulled from library
     ],
+    ids=["dictionary", "names"],
 )
 def test_vessel_creation(oss_vessel, feeder):
 
-    _config = deepcopy(config)
+    _config = deepcopy(config_single)
     _config["oss_install_vessel"] = oss_vessel
     _config["feeder"] = feeder
 
@@ -78,8 +79,8 @@ def test_vessel_creation(oss_vessel, feeder):
 
 def test_component_creation():
 
-    sim = OffshoreSubstationInstallation(config)
-    assert sim.num_substations == config["num_substations"]
+    sim = OffshoreSubstationInstallation(config_single)
+    assert sim.num_substations == config_single["num_substations"]
 
     mp = len([item for item in sim.port.items if item["type"] == "Monopile"])
     assert sim.num_substations == mp
@@ -88,85 +89,70 @@ def test_component_creation():
     assert sim.num_substations == ts
 
 
-def test_logger_creation():
+@pytest.mark.parametrize(
+    "config",
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
+)
+@pytest.mark.parametrize(
+    "log_level,expected", (("INFO", 20), ("DEBUG", 10)), ids=["info", "debug"]
+)
+def test_logger_creation(config, log_level, expected):
 
-    sim = OffshoreSubstationInstallation(config)
-    assert sim.env.logger.level == 20
-
-    sim = OffshoreSubstationInstallation(config, log_level="DEBUG")
-    assert sim.env.logger.level == 10
+    sim = OffshoreSubstationInstallation(config, log_level=log_level)
+    assert sim.env.logger.level == expected
 
 
-def test_full_run():
+@pytest.mark.parametrize(
+    "config",
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
+)
+@pytest.mark.parametrize(
+    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
+)
+def test_full_run(config, weather):
 
-    sim = OffshoreSubstationInstallation(config, log_level="INFO")
+    sim = OffshoreSubstationInstallation(
+        config, weather=weather, log_level="INFO"
+    )
     sim.run()
 
     complete = float(sim.logs["time"].max())
 
     assert complete > 0
 
-    sim = OffshoreSubstationInstallation(
-        config, weather=test_weather, log_level="INFO"
-    )
-    sim.run()
 
-    with_weather = float(sim.logs["time"].max())
-
-    assert with_weather >= complete
-
-
-def test_for_complete_logging():
+@pytest.mark.parametrize(
+    "config",
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
+)
+@pytest.mark.parametrize(
+    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
+)
+def test_for_complete_logging(weather, config):
 
     # No weather
-    sim = OffshoreSubstationInstallation(config, log_level="INFO")
-    sim.run()
-    df = sim.phase_dataframe.copy()
-    df = df.loc[~df["agent"].isin(["Port"])]
-
-    for vessel in df["agent"].unique():
-
-        vl = df[df["agent"] == vessel].copy()
-        vl = vl.assign(shift=(vl["time"] - vl["time"].shift(1)))
-
-        assert (vl["shift"] - vl["duration"]).abs().max() < 1e-9
-
-    # With weather
     sim = OffshoreSubstationInstallation(
-        config, weather=test_weather, log_level="INFO"
+        config, weather=weather, log_level="INFO"
     )
     sim.run()
     df = sim.phase_dataframe.copy()
-    df = df.loc[~df["agent"].isin(["Port"])]
+    df = df.loc[~df["agent"].isin(["Port", "Test Port"])]
 
     for vessel in df["agent"].unique():
-
-        vl = df[df["agent"] == vessel].copy()
-        vl = vl.assign(shift=(vl["time"] - vl["time"].shift(1)))
-
-        assert (vl["shift"] - vl["duration"]).abs().max() < 1e-9
-
-    # With weather, multiple feeders
-    config_multiple_feeders = deepcopy(config)
-    config_multiple_feeders["num_feeders"] = 2
-    config_multiple_feeders["num_substations"] = 2
-
-    sim = OffshoreSubstationInstallation(
-        config, weather=test_weather, log_level="INFO"
-    )
-    sim.run()
-    df = sim.phase_dataframe.copy()
-    df = df.loc[~df["agent"].isin(["Port"])]
-
-    for vessel in df["agent"].unique():
-
-        vl = df[df["agent"] == vessel].copy()
-        vl = vl.assign(shift=(vl["time"] - vl["time"].shift(1)))
-
-        assert (vl["shift"] - vl["duration"]).abs().max() < 1e-9
+        _df = df[df["agent"] == vessel].copy()
+        _df = _df.assign(shift=(_df["time"] - _df["time"].shift(1)))
+        assert (_df["shift"] - _df["duration"]).abs().max() < 1e-9
 
 
-def test_for_efficiencies():
+@pytest.mark.parametrize(
+    "config",
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
+)
+def test_for_efficiencies(config):
 
     sim = OffshoreSubstationInstallation(config)
     sim.run()
@@ -176,16 +162,39 @@ def test_for_efficiencies():
         <= sim.detailed_output["Heavy Lift Vessel_operational_efficiency"]
         <= 1
     )
-
-    assert 0 <= sim.detailed_output["Feeder 0_operational_efficiency"] <= 1
-    assert 0 <= sim.detailed_output["Feeder 0_cargo_weight_utilization"] <= 1
-    assert 0 <= sim.detailed_output["Feeder 0_deck_space_utilization"] <= 1
+    if sim.feeders is None:
+        assert (
+            0
+            <= sim.detailed_output[
+                "Heavy Lift Vessel_cargo_weight_utilization"
+            ]
+            <= 1
+        )
+        assert (
+            0
+            <= sim.detailed_output["Heavy Lift Vessel_deck_space_utilization"]
+            <= 1
+        )
+    else:
+        for feeder in sim.feeders:
+            name = feeder.name
+            assert (
+                0 <= sim.detailed_output[f"{name}_operational_efficiency"] <= 1
+            )
+            assert (
+                0
+                <= sim.detailed_output[f"{name}_cargo_weight_utilization"]
+                <= 1
+            )
+            assert (
+                0 <= sim.detailed_output[f"{name}_deck_space_utilization"] <= 1
+            )
 
 
 def test_kwargs():
 
     sim = OffshoreSubstationInstallation(
-        config, log_level="INFO", print_logs=False
+        config_single, log_level="INFO", print_logs=False
     )
     sim.run()
     baseline = sim.total_phase_time
@@ -223,7 +232,7 @@ def test_kwargs():
             kwargs = {kw: default + 2}
 
         new_sim = OffshoreSubstationInstallation(
-            config, log_level="INFO", print_logs=False, **kwargs
+            config_single, log_level="INFO", print_logs=False, **kwargs
         )
         new_sim.run()
         new_time = new_sim.total_phase_time

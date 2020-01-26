@@ -6,6 +6,9 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
+from copy import deepcopy
+from math import ceil
+
 import numpy as np
 import simpy
 
@@ -50,6 +53,8 @@ class TurbineInstallation(InstallPhase):
                 "type": "Tower",
                 "deck_space": "float",
                 "weight": "float",
+                "length": "float",
+                "sections": "int (optional)",
             },
             "nacelle": {
                 "type": "Nacelle",
@@ -122,6 +127,7 @@ class TurbineInstallation(InstallPhase):
                 vessel=self.wtiv,
                 port=self.port,
                 distance=site_distance,
+                component_list=self.component_list,
                 number=self.num_turbines,
                 site_depth=site_depth,
                 hub_height=hub_height,
@@ -145,19 +151,14 @@ class TurbineInstallation(InstallPhase):
                 queue=self.active_feeder,
                 site_depth=site_depth,
                 distance=site_distance,
+                component_list=self.component_list,
                 number=self.num_turbines,
                 hub_height=hub_height,
                 **kwargs,
             )
         )
 
-        component_list = [
-            ("type", "Tower"),
-            ("type", "Nacelle"),
-            ("type", "Blade"),
-            ("type", "Blade"),
-            ("type", "Blade"),
-        ]
+        rule_list = [("type", v["type"]) for v in self.component_list]
 
         for feeder in self.feeders:
             self.env.process(
@@ -167,7 +168,7 @@ class TurbineInstallation(InstallPhase):
                     port=self.port,
                     queue=self.active_feeder,
                     distance=site_distance,
-                    items=component_list,
+                    items=rule_list,
                     **kwargs,
                 )
             )
@@ -239,14 +240,25 @@ class TurbineInstallation(InstallPhase):
         Initializes turbine components at port.
         """
 
-        component_list = [
-            self.config["turbine"]["tower"],
+        tower = deepcopy(self.config["turbine"]["tower"])
+        num_sections = tower.get("sections", 1)
+
+        section = {"type": "Tower Section"}
+        for k in ["length", "deck_space", "weight"]:
+            try:
+                section[k] = ceil(tower.get(k) / num_sections)
+
+            except TypeError:
+                pass
+
+        self.component_list = [
+            *np.repeat(section, num_sections),
             self.config["turbine"]["nacelle"],
             *np.repeat(self.config["turbine"]["blade"], 3),
         ]
 
         for _ in range(self.num_turbines):
-            for item in component_list:
+            for item in self.component_list:
                 self.port.put(item)
 
     def initialize_queue(self):

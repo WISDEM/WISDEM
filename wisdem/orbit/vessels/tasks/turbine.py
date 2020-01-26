@@ -206,98 +206,97 @@ def release_turbine_blade(**kwargs):
     return blade_release_time
 
 
-def lift_tower(vessel, **kwargs):
+def lift_tower_section(vessel, height, **kwargs):
     """
-    Calculates time required to lift tower at site.
+    Calculates time required to lift tower section at site.
 
     Parameters
     ----------
     vessel : Vessel
         Vessel to perform action.
-    hub_height : int | float
-        Hub height above MSL (m).
+    height : int | float
+        Height above MSL (m) required for lift.
 
     Returns
     -------
-    tower_lift_time : float
-        Time required to lift tower (h).
+    section_lift_time : float
+        Time required to lift tower section (h).
     """
 
     crane = getattr(vessel, "crane", None)
     if crane is None:
-        raise MissingComponent(vessel, "crane", "Lift Tower")
+        raise MissingComponent(vessel, "crane", "Lift Tower Section")
 
-    hub_height = kwargs.get("hub_height", None)
     crane_rate = crane.crane_rate(**kwargs)
-    tower_lift_time = hub_height / crane_rate
+    section_lift_time = height / crane_rate
 
-    return tower_lift_time
+    return section_lift_time
 
 
-def attach_tower(vessel, **kwargs):
+def attach_tower_section(vessel, **kwargs):
     """
-    Returns time required to attach tower at site.
+    Returns time required to attach tower section at site.
 
     Parameters
     ----------
     vessel : Vessel
         Vessel to perform action.
-    tower_attach_time : int | float
-        Time required to attach tower.
+    section_attach_time : int | float
+        Time required to attach tower section (h).
 
     Returns
     -------
-    tower_attach_time : float
-        Time required to attach tower (h).
+    section_attach_time : float
+        Time required to attach tower section (h).
     """
 
     crane = getattr(vessel, "crane", None)
     if crane is None:
-        raise MissingComponent(vessel, "crane", "Attach Tower")
+        raise MissingComponent(vessel, "crane", "Attach Tower Section")
 
-    key = "tower_attach_time"
-    tower_attach_time = kwargs.get(key, defaults[key])
+    key = "tower_section_attach_time"
+    section_attach_time = kwargs.get(key, defaults[key])
 
-    return tower_attach_time
+    return section_attach_time
 
 
-def fasten_tower(**kwargs):
+def fasten_tower_section(**kwargs):
     """
-    Returns time required to fasten a tower at port.
+    Returns time required to fasten a tower section at port.
 
     Parameters
     ----------
-    tower_fasten_time : int | float
-        Time required to fasten a tower.
+    section_fasten_time : int | float
+        Time required to fasten a tower section (h).
 
     Returns
     -------
-    tower_fasten_time : float
-        Time required to fasten tower (h).
+    section_fasten_time : float
+        Time required to fasten tower section (h).
     """
 
-    key = "tower_fasten_time"
-    tower_fasten_time = kwargs.get(key, defaults[key])
+    key = "tower_section_fasten_time"
+    section_fasten_time = kwargs.get(key, defaults[key])
 
-    return tower_fasten_time
+    return section_fasten_time
 
 
-def release_tower(**kwargs):
+def release_tower_section(**kwargs):
     """
-    Returns time required to release tower from fastening.
+    Returns time required to release tower section from fastenings.
 
     Parameters
     ----------
-    tower_release_time : int | float
-        Time required to release tower.
+    tower_section_release_time : int | float
+        Time required to release tower section (h).
 
     Returns
     -------
-    tower_release_time : float
-        Time required to release tower (h).
+    section_release_time : float
+        Time required to release tower section (h).
     """
 
-    key = "tower_release_time"
+    key = "tower_section_release_time"
     tower_release_time = kwargs.get(key, defaults[key])
 
     return tower_release_time

@@ -16,18 +16,26 @@ from wisdem.orbit.simulation import Environment, VesselStorageContainer
 from wisdem.orbit.phases.install import InstallPhase
 from wisdem.orbit.vessels.components import Carousel, CarouselSystem
 
-from .process import bury_cables, lay_array_cables, lay_export_cables
+from .process import (
+    bury_cables,
+    lay_array_cables,
+    lay_export_cables,
+    separate_lay_bury_array,
+    separate_lay_bury_export,
+)
 
 STRATEGY_MAP = {
     "array": {
-        "lay_bury": lay_array_cables,
+        "simultaneous": lay_array_cables,
         "lay": lay_array_cables,
         "bury": bury_cables,
+        "separate": separate_lay_bury_array,
     },
     "export": {
-        "lay_bury": lay_export_cables,
+        "simultaneous": lay_export_cables,
         "lay": lay_export_cables,
         "bury": bury_cables,
+        "separate": separate_lay_bury_export,
     },
 }
 
@@ -109,10 +117,13 @@ class CableInstallation(InstallPhase):
         self._system = system.lower()
         config = self.initialize_library(config, **kwargs)
         self.config = self.validate_config(config)
-        self.strategy = config[f"{self._system}_system"]["strategy"].lower()
-        if self.strategy not in ("lay", "bury", "lay_bury"):
-            raise ValueError(
-                f'{self._system.title()} system strategy must be one of "lay", "bury", or "lay_bury".'
+        self.strategy = config[f"{self._system}_system"].get(
+            "strategy", "separate"
+        )
+        if self.strategy not in ("lay", "bury", "simultaneous", "separate"):
+            self.strategy = "separate"
+            print(
+                "Invalid strategy provided, `separate` lay and burial processes will be used."
             )
 
         self.extract_phase_kwargs(**kwargs)
@@ -121,38 +132,44 @@ class CableInstallation(InstallPhase):
         self.init_logger(**kwargs)
         self.setup_simulation(**kwargs)
 
-    def initialize_cable_installation_vessel(self):
+    def create_installation_vessel(self, vessel_specs):
         """
         Creates a cable installation vessel.
+
+        Parameters
+        ----------
+        vessel_config : dict
+            Vessel configuration dictionary.
+        system : str
+            One of "array" or "export".
+        vessel_type : str
+            One of "lay" or "bury".
+                Lay : used for laying or simultaneous lay and bury strategies.
+                Bury : used for bury strategies.
         """
 
-        # Get vessel specs
-        try:
-            cable_lay_specs = self.config[f"{self._system}_cable_lay_vessel"]
-        except KeyError:
-            raise Exception(f'"{self._system}_cable_lay_vessel" is undefined.')
-
         # Vessel name and costs
-        name = f"{self._system.title()} Cable Installation Vessel"
-        cost = cable_lay_specs["vessel_specs"].get(
+        name = vessel_specs.get(
+            "name", f"{self._system.title()} Cable Installation Vessel"
+        )
+        cost = vessel_specs.get(
             "day_rate", self.defaults[f"{self._system}_cable_install_day_rate"]
         )
-        self.agent_costs[name] = cost
 
         # Vessel storage
         try:
-            storage_specs = cable_lay_specs["storage_specs"]
+            storage_specs = vessel_specs["storage_specs"]
         except KeyError:
             raise Exception(f"Storage specifications must be set for {name}")
 
-        self.cable_lay_vessel = Vessel(name, cable_lay_specs)
-        self.cable_lay_vessel.storage = VesselStorageContainer(
-            self.env, **storage_specs
-        )
+        vessel = Vessel(name, vessel_specs)
+        vessel.storage = VesselStorageContainer(self.env, **storage_specs)
 
         # Vessel starting location
-        self.cable_lay_vessel.at_port = True
-        self.cable_lay_vessel.at_site = False
+        vessel.at_port = True
+        vessel.at_site = False
+
+        return vessel, cost
 
     def initialize_carousels(self):
         """
@@ -192,10 +209,11 @@ class ArrayCableInstallation(CableInstallation):
             "monthly_rate": "int | float (optional)",
         },
         "array_cable_lay_vessel": "str",
+        "array_cable_bury_vessel": "str",
         "site": {"distance": "int | float"},
         "plant": {"num_turbines": "int"},
         "array_system": {
-            "strategy": "str",
+            "strategy": "str (optional)",
             "cables": {
                 "name (variable)": {
                     "linear_density": "int | float",
@@ -214,9 +232,10 @@ class ArrayCableInstallation(CableInstallation):
         config : dict
             Configuration dictionary
         strategy : str, optional
-            [description], by default "lay_bury"
-        weather : [type], optional
-            [description], by default None
+            How the installation is performed, by default "separate". Must be
+            one of "separate", "simultaneous", "lay", or "bury".
+        weather : str, optional
+            Name of the weather profile file name being used, by default None.
         """
 
         super().__init__(config, "array", weather, **kwargs)
@@ -231,21 +250,37 @@ class ArrayCableInstallation(CableInstallation):
         """
 
         self.initialize_port()
-        self.initialize_cable_installation_vessel()
-        if self.strategy == "bury":
-            self.cable_lay_vessel.carousel = extract_cable_bury_speeds(
+
+        if self.strategy in ("lay", "simultaneous", "separate"):
+            v, c = self.create_installation_vessel(
+                self.config["array_cable_lay_vessel"]
+            )
+            self.cable_lay_vessel = v
+            self.agent_costs[v.name] = c
+            self.initialize_carousels()
+
+        if self.strategy in ("bury", "separate"):
+            v, c = self.create_installation_vessel(
+                self.config["array_cable_bury_vessel"]
+            )
+            self.cable_bury_vessel = v
+            self.agent_costs[v.name] = c
+
+            carousel = extract_cable_bury_speeds(
                 self.config["array_system"]["cables"]
             )
-            self.num_sections = len(
-                self.cable_lay_vessel.carousel.section_lengths
-            )
-        else:
-            self.initialize_carousels()
+            self.cable_bury_vessel.carousel = carousel
+            self.num_sections = len(carousel.section_lengths)
+
+        # Make sure these are created even if not being used to prevent failure
+        self.cable_lay_vessel = getattr(self, "cable_lay_vessel", None)
+        self.cable_bury_vessel = getattr(self, "cable_bury_vessel", None)
 
         self.env.process(
             STRATEGY_MAP["array"][self.strategy](
                 env=self.env,
-                vessel=self.cable_lay_vessel,
+                cable_lay_vessel=self.cable_lay_vessel,
+                cable_bury_vessel=self.cable_bury_vessel,
                 port=self.port,
                 num_cables=self.num_sections,
                 distance_to_site=self.config["site"]["distance"],
@@ -264,6 +299,7 @@ class ExportCableInstallation(CableInstallation):
             "monthly_rate": "int | float (optional)",
         },
         "export_cable_lay_vessel": "str",
+        "export_cable_bury_vessel": "str",
         "trench_dig_vessel": "str | dict",
         "site": {
             "distance": "int",
@@ -272,7 +308,7 @@ class ExportCableInstallation(CableInstallation):
             "distance_to_interconnection": "float",
         },
         "export_system": {
-            "strategy": "str",
+            "strategy": "str (optional)",
             "cables": {
                 "name (variable)": {
                     "linear_density": "int | float",
@@ -318,18 +354,32 @@ class ExportCableInstallation(CableInstallation):
         """
 
         self.initialize_port()
-        self.initialize_cable_installation_vessel()
         self.intialize_trench_dig_vessel()
 
-        if self.strategy == "bury":
-            self.cable_lay_vessel.carousel = extract_cable_bury_speeds(
+        if self.strategy in ("lay", "simultaneous", "separate"):
+            v, c = self.create_installation_vessel(
+                self.config["export_cable_lay_vessel"]
+            )
+            self.cable_lay_vessel = v
+            self.agent_costs[v.name] = c
+            self.initialize_carousels()
+
+        if self.strategy in ("bury", "separate"):
+            v, c = self.create_installation_vessel(
+                self.config["export_cable_bury_vessel"]
+            )
+            self.cable_bury_vessel = v
+            self.agent_costs[v.name] = c
+
+            carousel = extract_cable_bury_speeds(
                 self.config["export_system"]["cables"]
             )
-            self.num_sections = len(
-                self.cable_lay_vessel.carousel.section_lengths
-            )
-        else:
-            self.initialize_carousels()
+            self.cable_bury_vessel.carousel = carousel
+            self.num_sections = len(carousel.section_lengths)
+
+        # Make sure these are created even if not being used to prevent failure
+        self.cable_lay_vessel = getattr(self, "cable_lay_vessel", None)
+        self.cable_bury_vessel = getattr(self, "cable_bury_vessel", None)
 
         cable = self.config["export_system"]["cables"][
             [*self.config["export_system"]["cables"]][0]
@@ -353,7 +403,8 @@ class ExportCableInstallation(CableInstallation):
         self.env.process(
             STRATEGY_MAP["export"][self.strategy](
                 env=self.env,
-                vessel=self.cable_lay_vessel,
+                cable_lay_vessel=self.cable_lay_vessel,
+                cable_bury_vessel=self.cable_bury_vessel,
                 trench_vessel=self.trench_dig_vessel,
                 port=self.port,
                 cable_length=self.cable_length,
@@ -365,12 +416,4 @@ class ExportCableInstallation(CableInstallation):
                 num_cables=self.num_sections,
                 **kwargs,
             )
-            # env=self.env,
-            # vessel=self.cable_lay_vessel,
-            # port=self.port,
-            # num_cables=self.num_sections,
-            # distance_to_site=self.config["site"]["distance"],
-            # strategy=self.strategy,
-            # system=self._system,
-            # **kwargs,
         )

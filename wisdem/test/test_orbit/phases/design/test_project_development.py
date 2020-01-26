@@ -8,11 +8,10 @@ __email__ = "jake.nunemaker@nrel.gov"
 import os
 from copy import deepcopy
 
+import pytest
+
 from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.phases.design import ProjectDevelopment
-
-ROOT = os.path.abspath(os.path.join(os.path.abspath(__file__), "../../.."))
-TEST_LIBRARY = os.path.join(ROOT, "data", "library")
 
 base = {
     "project_development": {
@@ -45,7 +44,7 @@ def test_defaults():
         _config = deepcopy(base)
         _config["project_development"].pop(k)
 
-        dev = ProjectDevelopment(_config, library_path=TEST_LIBRARY)
+        dev = ProjectDevelopment(_config, library_path=pytest.library)
         dev.run()
 
         defaults = extract_library_specs("defaults", "project")

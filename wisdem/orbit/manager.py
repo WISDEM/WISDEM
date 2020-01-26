@@ -87,6 +87,7 @@ class ProjectManager:
         self.phase_times = {}
         self.phase_costs = {}
         self._output_dfs = {}
+        self._phases = {}
 
         self.design_results = {}
         self.detailed_outputs = {}
@@ -384,6 +385,8 @@ class ProjectManager:
         phase = _class(_config, weather=weather, phase_name=name, **kwargs)
         phase.run()
 
+        self._phases[name] = phase
+
         time = phase.total_phase_time
         cost = phase.total_phase_cost
         df = phase.phase_dataframe
@@ -439,6 +442,8 @@ class ProjectManager:
 
         phase = _class(_config)
         phase.run()
+
+        self._phases[name] = phase
 
         self.phase_costs[name] = phase.total_phase_cost
         self.phase_times[name] = phase.total_phase_time

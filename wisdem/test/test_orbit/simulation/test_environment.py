@@ -22,13 +22,19 @@ logger = logging.Logger("TestLogger", level=logging.INFO)
 _shared = {"agent": "TestSetup", "action": "Test"}
 
 
-def test_weather_assignment():
+def test_weather_default():
     """
     Tests Environment creation and weather assignment.
     """
 
     env = Environment()
     assert isinstance(env._weather, type(None))
+
+
+def test_weather_assignment():
+    """
+    Tests Environment creation and weather assignment.
+    """
 
     env = Environment(weather=test_weather)
     assert isinstance(env._weather, pd.DataFrame)

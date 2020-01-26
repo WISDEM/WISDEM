@@ -4,8 +4,10 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "Jake.Nunemaker@nrel.gov"
 
 
-import itertools
 from copy import deepcopy
+from itertools import product
+
+import pytest
 
 from wisdem.orbit.phases.design import OffshoreSubstationDesign
 
@@ -17,58 +19,35 @@ base = {
 }
 
 
-def test_parameter_sweep():
+@pytest.mark.parametrize(
+    "depth,num_turbines,turbine_rating",
+    product(range(10, 51, 10), range(3, 13, 1), range(20, 80, 10)),
+)
+def test_parameter_sweep(depth, num_turbines, turbine_rating):
 
-    config = deepcopy(base)
+    config = {
+        "site": {"depth": depth},
+        "plant": {"num_turbines": num_turbines},
+        "turbine": {"turbine_rating": turbine_rating},
+        "substation_design": {},
+    }
 
-    for i in itertools.product(
-        range(10, 51, 10), range(3, 13, 1), range(20, 80, 10)
-    ):
+    o = OffshoreSubstationDesign(config)
+    o.run()
 
-        config["site"]["depth"] = i[0]
-        config["plant"]["num_turbines"] = i[2]
-        config["turbine"]["turbine_rating"] = i[1]
+    # Check valid substructure length
+    assert 10 <= o._outputs["offshore_substation_substructure"]["length"] <= 80
 
-        o = OffshoreSubstationDesign(config)
-        o.run()
+    # Check valid substructure weight
+    assert (
+        200 <= o._outputs["offshore_substation_substructure"]["weight"] <= 2500
+    )
 
-        # Substructure length
-        if (
-            not 10
-            <= o._outputs["offshore_substation_substructure"]["length"]
-            <= 80
-        ):
-            print(
-                f"Invalid substructure length encountered: f{o._outputs['offshore_substation_substructure']['length']}"
-            )
-            assert False
+    # Check valid topside weight
+    assert 200 <= o._outputs["offshore_substation_topside"]["weight"] <= 5000
 
-        # Substructure mass
-        if (
-            not 200
-            <= o._outputs["offshore_substation_substructure"]["weight"]
-            <= 2500
-        ):
-            print(
-                f"Invalid substructure weight encountered: f{o._outputs['offshore_substation_substructure']['weight']}"
-            )
-            assert False
-
-        # Topside mass
-        if (
-            not 200
-            <= o._outputs["offshore_substation_topside"]["weight"]
-            <= 5000
-        ):
-            print(
-                f"Invalid topside weight encountered: f{o._outputs['offshore_substation_topside']['weight']}"
-            )
-            assert False
-
-        # Substation cost
-        if not 1e6 <= o.total_phase_cost <= 300e6:
-            print(f"Invalid substation cost: f{o.total_phase_cost}")
-            assert False
+    # Check valid substation cost
+    assert 1e6 <= o.total_phase_cost <= 300e6
 
 
 def test_oss_kwargs():

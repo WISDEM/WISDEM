@@ -12,7 +12,8 @@ name: SWT-6MW-154
 rotor_diameter: 154   # m
 tower:
   deck_space: 36      # m^2
-  sections: 1         # n
+  sections: 2         # n
+  length: 110         # m
   type: Tower
   weight: 150         # t
 turbine_rating: 6     # MW

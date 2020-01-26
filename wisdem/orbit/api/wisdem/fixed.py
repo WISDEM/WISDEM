@@ -51,7 +51,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
 
         # Vessels
         self.add_discrete_input('wtiv', 'example_wtiv', desc='Vessel configuration to use for installation of foundations and turbines.')
-        self.add_discrete_input('feeder', 'example_feeder', desc='Vessel configuration to use for (optional) feeder barges.')
+        self.add_discrete_input('feeder', 'future_feeder', desc='Vessel configuration to use for (optional) feeder barges.')
         self.add_discrete_input('num_feeders', 0, desc='Number of feeder barges to use for installation of foundations and turbines.')
         self.add_discrete_input('oss_install_vessel', 'example_heavy_lift_vessel', desc='Vessel configuration to use for installation of offshore substations.')
 
@@ -75,6 +75,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
         self.add_input('hub_height', 100., units='m', desc='Turbine hub height.')
         self.add_input('turbine_rotor_diameter', 130, units='m', desc='Turbine rotor diameter.')
         self.add_input('tower_mass', 400., units='t', desc='Weight of the total tower.')
+        self.add_input('tower_length', 100., units='m', desc='Total length of the tower.')
         self.add_input('tower_deck_space', 0., units='m**2', desc='Deck space required to transport the tower. Defaults to 0 in order to not be a constraint on installation.')
         self.add_input('nacelle_mass', 500., units='t', desc='Weight of the rotor nacelle assembly (RNA).')
         self.add_input('nacelle_deck_space', 0., units='m**2', desc='Deck space required to transport the rotor nacelle assembly (RNA). Defaults to 0 in order to not be a constraint on installation.')
@@ -117,7 +118,9 @@ class OrbitWisdemFixed(om.ExplicitComponent):
             'scour_protection_install_vessel': 'example_scour_protection_vessel',
             'trench_dig_vessel': 'example_trench_dig_vessel',
             'array_cable_lay_vessel': 'example_cable_lay_vessel',
+            'array_cable_bury_vessel': 'example_cable_lay_vessel',
             'export_cable_lay_vessel': 'example_cable_lay_vessel',
+            'export_cable_bury_vessel': 'example_cable_lay_vessel',
             
             # Site/plant
             'site': {
@@ -151,7 +154,8 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 'tower': {
                     'type': 'Tower',
                     'deck_space': float(inputs['tower_deck_space']),
-                    'weight': float(inputs['tower_mass'])
+                    'weight': float(inputs['tower_mass']),
+                    'length': float(inputs['tower_length'])
                 },
                 
                 'nacelle': {
@@ -191,27 +195,16 @@ class OrbitWisdemFixed(om.ExplicitComponent):
             'array_system_design': {
                 'cables': ['XLPE_400mm_33kV', 'XLPE_630mm_33kV']
             },
-            
-            "array_system": {
-                "strategy": "lay_bury"
-            },
 
-            "export_system": {
-                "strategy": "lay_bury"
-            },
-            
             'export_system_design': {
                 'cables': 'XLPE_500mm_132kV',
                 'percent_added_length': .1
             },
             
-            "substation_design": {},
-            "monopile_design": {},
-            
             # Phase Specific
             "OffshoreSubstationInstallation": {
                 "oss_install_vessel": 'example_heavy_lift_vessel',
-                "feeder": "example_heavy_feeder",
+                "feeder": "future_feeder",
                 "num_feeders": 1
             },
 
