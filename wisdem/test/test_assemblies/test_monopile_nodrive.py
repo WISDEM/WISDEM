@@ -98,7 +98,7 @@ class TestRegression(unittest.TestCase):
 
         # Offshore BOS
         prob['wtiv'] = 'example_wtiv'
-        prob['feeder'] = 'example_heavy_feeder'
+        prob['feeder'] = 'future_feeder'
         prob['num_feeders'] = 1
         prob['oss_install_vessel'] = 'example_heavy_lift_vessel'
         prob['site_distance'] = 40.0
@@ -131,15 +131,15 @@ class TestRegression(unittest.TestCase):
         prob['material_cost_rate']   = 2.0
         prob['painting_cost_rate']   = 28.8
 
-        # Gearbox
-        prob['tilt']       = 6.0
-        prob['overhang']                = 11.014
+        # Drivetrain
+        prob['tilt']                    = 6.0
+        prob['overhang']                = 11.075
         prob['hub_cm']                  = np.array([-10.685, 0.0, 5.471])
         prob['nac_cm']                  = np.array([-5.718, 0.0, 4.048])
         prob['hub_I']                   = np.array([1382171.187, 2169261.099, 2160636.794, 0.0, 0.0, 0.0])
         prob['nac_I']                   = np.array([13442265.552, 21116729.439, 18382414.385, 0.0, 0.0, 0.0])
-        prob['hub_mass']                = 140e3
-        prob['nac_mass']                = 797.275e3
+        prob['hub_mass']                = 190e3
+        prob['nac_mass']                = 797.275e3-190e3
         prob['hss_mass']                = 0.0
         prob['lss_mass']                = 19.504e3
         prob['cover_mass']              = 0.0
