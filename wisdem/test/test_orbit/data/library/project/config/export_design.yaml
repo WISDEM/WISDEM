@@ -1,0 +1,12 @@
+export_system_design:
+  cables: XLPE_300mm_33kV
+  percent_added_length: 0.01
+  percent_redundant: 0.0
+plant:
+  num_turbines: 50
+site:
+  depth: 20
+  distance_to_interconnection: 3
+  distance_to_landfall: 30
+turbine:
+  turbine_rating: 7

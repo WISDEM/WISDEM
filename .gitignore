@@ -1,7 +1,11 @@
 *.py[cod]
 
+# Emacs
+*~
 
+# WISDEM
 wisdem/Design_Opt
+outlist.map.sum
 
 # OpenMDAO
 openmdao_log.txt

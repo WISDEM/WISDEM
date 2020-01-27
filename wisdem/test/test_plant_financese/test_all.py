@@ -1,6 +1,6 @@
 import unittest
 
-from . import test_plantfinancese
+from wisdem.test.test_plant_financese import test_plantfinancese
 
 def suite():
     suite = unittest.TestSuite( (test_plantfinancese.suite(),

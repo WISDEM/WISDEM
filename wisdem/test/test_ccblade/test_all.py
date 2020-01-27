@@ -1,6 +1,6 @@
 import unittest
 
-from . import test_ccblade
+from wisdem.test.test_ccblade import test_ccblade
 
 def suite():
     suite = unittest.TestSuite( (test_ccblade.suite(),
