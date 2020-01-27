@@ -9,10 +9,10 @@ from wisdem.assemblies.wt_land_based import WindPark
 if __name__ == "__main__":
 
     ## File management
-    fname_wt_input         = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_analysis_options = "wisdem/assemblies/reference_turbines/analysis_options.yaml"
-    fname_opt_options      = "wisdem/assemblies/reference_turbines/optimization_options.yaml"
-    fname_wt_output        = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_wt_input         = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_analysis_options = "wisdem/wisdem/assemblies/reference_turbines/analysis_options.yaml"
+    fname_opt_options      = "wisdem/wisdem/assemblies/reference_turbines/optimization_options.yaml"
+    fname_wt_output        = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output          = 'temp/'
 
     # Optimization options
@@ -29,19 +29,19 @@ if __name__ == "__main__":
     if opt_options['blade_aero']['opt_twist'] == True:
         opt_flag = True
     else:
-        opt_options['blade_aero']['n_opt_twist'] = wt_initial.n_span
+        opt_options['blade_aero']['n_opt_twist'] = analysis_options['rotorse']['n_span']
     if opt_options['blade_aero']['opt_chord'] == True:
         opt_flag = True
     else:
-        opt_options['blade_aero']['n_opt_chord'] = wt_initial.n_span
+        opt_options['blade_aero']['n_opt_chord'] = analysis_options['rotorse']['n_span']
     if opt_options['blade_struct']['opt_spar_cap_ss'] == True:
         opt_flag = True
     else:
-        opt_options['blade_aero']['n_opt_spar_cap_ss'] = wt_initial.n_span
+        opt_options['blade_aero']['n_opt_spar_cap_ss'] = analysis_options['rotorse']['n_span']
     if opt_options['blade_struct']['opt_spar_cap_ps'] == True:
         opt_flag = True
     else:
-        opt_options['blade_aero']['n_opt_spar_cap_ps'] = wt_initial.n_span
+        opt_options['blade_aero']['n_opt_spar_cap_ps'] = analysis_options['rotorse']['n_span']
 
     if not os.path.isdir(folder_output):
         os.mkdir(folder_output)

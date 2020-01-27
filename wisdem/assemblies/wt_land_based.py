@@ -33,7 +33,7 @@ class WT_RNTA(Group):
         self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options)) # Recompute polars with xfoil (for flaps)
         self.add_subsystem('ra',        RotorAeroPower(analysis_options = analysis_options)) # Aero analysis
         
-        if analysis_options['openfast']['flag'] == True:
+        if analysis_options['openfast']['run_openfast'] == True:
             self.add_subsystem('aeroelastic',  FASTLoadCases(analysis_options = analysis_options))
         
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
@@ -244,7 +244,7 @@ class WT_RNTA(Group):
         
         # Connections to aeroelasticse
         # promotes=['fst_vt_in'])
-        if analysis_options['openfast']['flag'] == True:
+        if analysis_options['openfast']['run_openfast'] == True:
             self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             self.connect('assembly.r_blade',                'aeroelastic.r')
             self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')

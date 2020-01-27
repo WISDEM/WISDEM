@@ -199,12 +199,13 @@ class FASTLoadCases(ExplicitComponent):
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
+        blade_init_options   = self.options['analysis_options']['blade']
+        servose_init_options = self.options['analysis_options']['servose']
         self.n_span        = n_span    = blade_init_options['n_span']
-        self.n_pc          = n_pc      = blade_init_options['n_pc']
-        self.n_pitch       = n_pitch   = blade_init_options['n_pitch']
-        self.n_tsr         = n_tsr     = blade_init_options['n_tsr']
-        self.n_U           = n_U       = blade_init_options['n_U']
+        self.n_pc          = n_pc      = servose_init_options['n_pc']
+        self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
+        self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
+        self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
         # self.min_TSR       = blade_init_options['min_TSR']
         # self.max_TSR       = blade_init_options['max_TSR']
         # self.min_pitch     = blade_init_options['min_pitch']

@@ -23,6 +23,7 @@ class RunPreComp(ExplicitComponent):
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         mat_init_options = self.options['analysis_options']['materials']
         self.n_mat = n_mat = mat_init_options['n_mat']
+        self.verbosity     = self.options['analysis_options']['general']['verbosity']
 
         opt_options   = self.options['opt_options']
         self.te_ss_var   = opt_options['blade_struct']['te_ss_var']
@@ -438,7 +439,7 @@ class RunPreComp(ExplicitComponent):
         outputs['yl_strain_te']   = yl_strain_te
 
         # Placeholder - rotor cost
-        bcm             = blade_cost_model(verbosity = True)
+        bcm             = blade_cost_model(verbosity = self.verbosity)
         bcm.name        = ''
         bcm.materials   = {}
         bcm.mat_options = {}

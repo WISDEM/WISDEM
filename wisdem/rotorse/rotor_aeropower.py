@@ -56,8 +56,8 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.regulation_reg_III = True
         # naero       = self.naero = self.options['naero']
-        self.n_pc          = analysis_options['blade']['n_pc']
-        self.n_pc_spline   = analysis_options['blade']['n_pc_spline']
+        self.n_pc          = analysis_options['servose']['n_pc']
+        self.n_pc_spline   = analysis_options['servose']['n_pc_spline']
         # n_aoa_grid  = self.options['n_aoa_grid']
         # n_Re_grid   = self.options['n_Re_grid']
 
@@ -408,19 +408,20 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
 
     def setup(self):
         analysis_options = self.options['analysis_options']
-        blade_init_options = analysis_options['blade']
+        blade_init_options   = analysis_options['blade']
+        servose_init_options = analysis_options['servose']
         airfoils = analysis_options['airfoils']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_aoa         = n_aoa     = airfoils['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = airfoils['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = airfoils['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_pitch       = n_pitch   = blade_init_options['n_pitch']
-        self.n_tsr         = n_tsr     = blade_init_options['n_tsr']
-        self.n_U           = n_U       = blade_init_options['n_U']
-        self.min_TSR       = blade_init_options['min_TSR']
-        self.max_TSR       = blade_init_options['max_TSR']
-        self.min_pitch     = blade_init_options['min_pitch']
-        self.max_pitch     = blade_init_options['max_pitch']
+        self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
+        self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
+        self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
+        self.min_TSR       = servose_init_options['min_tsr_perf_surfaces']
+        self.max_TSR       = servose_init_options['max_tsr_perf_surfaces']
+        self.min_pitch     = servose_init_options['min_pitch_perf_surfaces']
+        self.max_pitch     = servose_init_options['max_pitch_perf_surfaces']
         
         # parameters        
         self.add_input('control_Vin',   val=0.0,             units='m/s',       desc='cut-in wind speed')

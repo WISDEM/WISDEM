@@ -64,75 +64,30 @@ class WindTurbineOntologyPython(object):
     #   - materials: dictionary representing the entry materials in the yaml file
     #   - airfoils: dictionary representing the entry airfoils in the yaml file
 
-    def __init__(self):
-
-        # Validate input file against JSON schema
-        self.validate        = True        # (bool) run IEA turbine ontology JSON validation
-        self.fname_schema    = ''          # IEA turbine ontology JSON schema file
-
-        self.verbose         = False
-        
-        self.n_aoa           = 200         # Number of angles of attack used to define polars
-        self.n_xy            = 200         # Number of angles of coordinate points used to discretize each airfoil
-        self.n_span          = 30          # Number of spanwise stations used to define the blade properties
-        self.n_pc            = 20          # Number of wind speeds to compute the power curve
-        self.n_pc_spline     = 200         # Number of wind speeds to spline the power curve
-        self.n_pitch         = 2           # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
-        self.n_tsr           = 2           # Number of tsr values to determine the Cp-Ct-Cq-surfaces
-        self.n_U             = 1           # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
-        self.min_TSR         = 2.          # Min TSR of the Cp-Ct-Cq-surfaces
-        self.max_TSR         = 12.         # Max TSR of the Cp-Ct-Cq-surfaces
-        self.min_pitch       = -5.         # Min pitch angle of the Cp-Ct-Cq-surfaces
-        self.max_pitch       = 30.         # Max pitch angle of the Cp-Ct-Cq-surfaces
-
-        # XFOIL path
-        self.xfoil_path      = ''
-
-        # OpenFAST paths
-        self.Analysis_Level             = 0
-        self.FAST_ver                   = 'OpenFAST'
-        self.dev_branch                 = True
-        self.FAST_exe                   = ''
-        self.FAST_directory             = ''
-        self.FAST_InputFile             = ''
-        self.Turbsim_exe                = ''
-        self.FAST_namingOut             = ''
-        self.FAST_runDirectory          = ''
-        self.path2dll                   = ''
-        self.cores                      = 1
-        self.debug_level                = 2
-        
-
     def initialize(self, fname_input_wt, fname_input_analysis):
         # Class instance to break the yaml into sub dictionaries
         
-        analysis_options = self.load_yaml(fname_input_analysis)
+        self.analysis_options = self.load_yaml(fname_input_analysis)
 
         # Load wind turbine yaml input
         self.fname_input = fname_input_wt
-        self.wt_init     = self.load_ontology(self.fname_input, validate=analysis_options['yaml']['validate'], fname_schema=analysis_options['yaml']['path2schema'])
-        self.analysis_options = self.openmdao_vectors()        
-        
-        # General options
-        self.analysis_options['general'] = {}
-        self.analysis_options['general']['verbosity'] = analysis_options['general']['verbosity']
+        self.wt_init     = self.load_ontology(self.fname_input, validate=self.analysis_options['yaml']['validate'], fname_schema=self.analysis_options['yaml']['path2schema'])
+        self.openmdao_vectors()
         
         # Openfast
-        self.analysis_options['openfast'] = {}
-        self.analysis_options['openfast']['flag'] = analysis_options['openfast']['run_openfast']
         FASTpref                        = {}
-        FASTpref['Analysis_Level']      = analysis_options['openfast']['Analysis_Level']
-        FASTpref['FAST_ver']            = analysis_options['openfast']['FAST_ver']
-        FASTpref['dev_branch']          = analysis_options['openfast']['dev_branch']
-        FASTpref['FAST_exe']            = analysis_options['openfast']['FAST_exe']
-        FASTpref['FAST_directory']      = analysis_options['openfast']['FAST_directory']
-        FASTpref['FAST_InputFile']      = analysis_options['openfast']['FAST_InputFile']
-        FASTpref['Turbsim_exe']         = analysis_options['openfast']['Turbsim_exe']
-        FASTpref['FAST_namingOut']      = analysis_options['openfast']['FAST_namingOut']
-        FASTpref['FAST_runDirectory']   = analysis_options['openfast']['FAST_runDirectory']
-        FASTpref['path2dll']            = analysis_options['openfast']['path2dll']
-        FASTpref['cores']               = analysis_options['openfast']['cores']
-        FASTpref['debug_level']         = analysis_options['openfast']['debug_level']
+        FASTpref['Analysis_Level']      = self.analysis_options['openfast']['Analysis_Level']
+        FASTpref['FAST_ver']            = self.analysis_options['openfast']['FAST_ver']
+        FASTpref['dev_branch']          = self.analysis_options['openfast']['dev_branch']
+        FASTpref['FAST_exe']            = self.analysis_options['openfast']['FAST_exe']
+        FASTpref['FAST_directory']      = self.analysis_options['openfast']['FAST_directory']
+        FASTpref['FAST_InputFile']      = self.analysis_options['openfast']['FAST_InputFile']
+        FASTpref['Turbsim_exe']         = self.analysis_options['openfast']['Turbsim_exe']
+        FASTpref['FAST_namingOut']      = self.analysis_options['openfast']['FAST_namingOut']
+        FASTpref['FAST_runDirectory']   = self.analysis_options['openfast']['FAST_runDirectory']
+        FASTpref['path2dll']            = self.analysis_options['openfast']['path2dll']
+        FASTpref['cores']               = self.analysis_options['openfast']['cores']
+        FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
         FASTpref['DLC_gust']            = RotorSE_DLC_1_4_Rated      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
         FASTpref['DLC_turbulent']       = None
@@ -152,61 +107,51 @@ class WindTurbineOntologyPython(object):
 
     def openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
-        analysis_options = {}
+        # ==analysis_options = {}
         
         # Materials
-        analysis_options['materials']          = {}
-        analysis_options['materials']['n_mat'] = len(self.wt_init['materials'])
+        self.analysis_options['materials']          = {}
+        self.analysis_options['materials']['n_mat'] = len(self.wt_init['materials'])
         
         # Airfoils
-        analysis_options['airfoils']           = {}
-        analysis_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
-        analysis_options['airfoils']['n_aoa']  = self.n_aoa
-        analysis_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(analysis_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(analysis_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(analysis_options['airfoils']['n_aoa'] / 4. + 1))]))
+        self.analysis_options['airfoils']           = {}
+        self.analysis_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
+        self.analysis_options['airfoils']['n_aoa']  = self.analysis_options['rotorse']['n_aoa']
+        self.analysis_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(self.analysis_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(self.analysis_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(self.analysis_options['airfoils']['n_aoa'] / 4. + 1))]))
         Re_all = []
-        for i in range(analysis_options['airfoils']['n_af']):
+        for i in range(self.analysis_options['airfoils']['n_af']):
             for j in range(len(self.wt_init['airfoils'][i]['polars'])):
                 Re_all.append(self.wt_init['airfoils'][i]['polars'][j]['re'])
-        analysis_options['airfoils']['n_Re']   = len(np.unique(Re_all))
-        analysis_options['airfoils']['n_tab']  = 1
-        analysis_options['airfoils']['n_xy']   = self.n_xy
-        analysis_options['airfoils']['xfoil_path']   = self.xfoil_path
+        self.analysis_options['airfoils']['n_Re']   = len(np.unique(Re_all))
+        self.analysis_options['airfoils']['n_tab']  = 1
+        self.analysis_options['airfoils']['n_xy']   = self.analysis_options['rotorse']['n_xy']
+        self.analysis_options['airfoils']['xfoil_path']   = self.analysis_options['xfoil']['path']
         
         # Blade
-        analysis_options['blade']              = {}
-        analysis_options['blade']['n_span']    = self.n_span
-        analysis_options['blade']['nd_span']   = np.linspace(0., 1., analysis_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
-        analysis_options['blade']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
-        analysis_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
-        analysis_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
-        analysis_options['blade']['lofted_output'] = False
-        analysis_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
-        analysis_options['blade']['n_pc']      = self.n_pc
-        analysis_options['blade']['n_pc_spline'] = self.n_pc_spline
-        analysis_options['blade']['n_pitch']   = self.n_pitch
-        analysis_options['blade']['n_tsr']     = self.n_tsr
-        analysis_options['blade']['n_U']       = self.n_U
-        analysis_options['blade']['min_TSR']   = self.min_TSR
-        analysis_options['blade']['max_TSR']   = self.max_TSR
-        analysis_options['blade']['min_pitch'] = self.min_pitch
-        analysis_options['blade']['max_pitch'] = self.max_pitch
+        self.analysis_options['blade']              = {}
+        self.analysis_options['blade']['n_span']    = self.analysis_options['rotorse']['n_span']
+        self.analysis_options['blade']['nd_span']   = np.linspace(0., 1., self.analysis_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
+        self.analysis_options['blade']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+        self.analysis_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
+        self.analysis_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
+        self.analysis_options['blade']['lofted_output'] = False
+        self.analysis_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
         
         # Distributed aerodynamic control devices along blade
-        analysis_options['blade']['n_te_flaps']      = 0
+        self.analysis_options['blade']['n_te_flaps']      = 0
         if 'aerodynamic_control' in self.wt_init['components']['blade']:
             if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
-                analysis_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
-                analysis_options['airfoils']['n_tab']   = 3
+                self.analysis_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
+                self.analysis_options['airfoils']['n_tab']   = 3
             else:
                 exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
         # Tower 
-        analysis_options['tower']              = {}
-        analysis_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
-        analysis_options['tower']['nd_height'] = np.linspace(0., 1., analysis_options['tower']['n_height']) # Equally spaced non-dimensional grid along tower height
-        analysis_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
+        self.analysis_options['tower']              = {}
+        self.analysis_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
+        self.analysis_options['tower']['nd_height'] = np.linspace(0., 1., self.analysis_options['tower']['n_height']) # Equally spaced non-dimensional grid along tower height
+        self.analysis_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
 
-        return analysis_options
 
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
         """ Load inputs IEA turbine ontology yaml inputs, optional validation """
@@ -225,12 +170,12 @@ class WindTurbineOntologyPython(object):
             json.validate(yaml.load(inputs), yaml.load(schema))
 
             t_validate = time.time()-t_validate
-            if self.verbose:
+            if self.analysis_options['general']['verbosity']:
                 print('Complete: Schema "%s" validation: \t%f s'%(fname_schema, t_validate))
         else:
             t_validate = 0.
 
-        if self.verbose:
+        if self.analysis_options['general']['verbosity']:
             t_load = time.time() - t_load - t_validate
             print('Complete: Load Input File: \t%f s'%(t_load))
         
