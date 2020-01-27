@@ -358,7 +358,7 @@ class LinearWaves(WaveBase):
 
 
 class TowerSoil(ExplicitComponent):
-    """Soil stiffness method from Arya, Suresh C., Michael W. O'Neill, and George Pincus. Design of structures and foundations for vibrating machines. Gulf Pub Co, 1979."""
+    """textbook soil stiffness method"""
     def setup(self):
         super(TowerSoil, self).setup()
 
@@ -395,7 +395,6 @@ class TowerSoil(ExplicitComponent):
 
         # torsional
         k_phi = 16.0*G*r0**3/3.0
-        
         outputs['k'] = np.array([k_x, k_thetax, k_x, k_thetax, k_z, k_phi]).flatten()
         ind = np.nonzero(inputs['k_usr'] >= 0.0)[0]
         outputs['k'][ind] = inputs['k_usr'][ind]

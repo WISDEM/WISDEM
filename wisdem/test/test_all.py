@@ -1,7 +1,5 @@
 import unittest
-import pytest
 
-import wisdem.test.test_assemblies as test_assemblies
 import wisdem.test.test_airfoilprep as test_airfoilprep
 import wisdem.test.test_ccblade as test_ccblade
 import wisdem.test.test_commonse as test_commonse
@@ -19,7 +17,6 @@ import wisdem.test.test_wisdem as test_wisdem
 
 def suite():
     suite = unittest.TestSuite( (
-        test_assemblies.test_all.suite(),
         test_airfoilprep.test_all.suite(),
         test_ccblade.test_all.suite(),
         test_commonse.test_all.suite(),
@@ -31,7 +28,7 @@ def suite():
         test_pyframe3dd.test_all.suite(),
         #test_pymap.test_all.suite(),
         #test_rotorse.test_all.suite(),
-        test_towerse.test_all.suite(),
+        #test_towerse.test_all.suite(),
         test_turbinecostsse.test_all.suite()
         #test_wisdem.test_all.suite()                                 
     ) )
@@ -39,21 +36,4 @@ def suite():
 
 
 if __name__ == '__main__':
-    valid_tests = ['test_orbit',
-                   'test_assemblies',
-                   'test_airfoilprep',
-                   'test_ccblade',
-                   'test_commonse',
-                   'test_floatingse',
-                   'test_pbeam',
-                   'test_plant_financese',
-                   'test_pyframe3dd',
-                   'test_towerse',
-                   #'test_drivetrainse',
-                   #'test_nrelcsm',
-                   #'test_pymap',
-                   #'test_rotorse',
-                   #'test_wisdem',
-                   'test_turbinecostsse']
-    pytest.main(valid_tests)
-    #unittest.TextTestRunner().run(suite())
+    unittest.TextTestRunner().run(suite())

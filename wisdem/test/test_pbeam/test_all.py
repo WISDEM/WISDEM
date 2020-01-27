@@ -1,6 +1,6 @@
 import unittest
 
-from wisdem.test.test_pbeam import test_pybeam
+from . import test_pybeam
 
 def suite():
     suite = unittest.TestSuite( (test_pybeam.suite() ) )

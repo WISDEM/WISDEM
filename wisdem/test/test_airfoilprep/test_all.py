@@ -1,6 +1,6 @@
 import unittest
 
-from wisdem.test.test_airfoilprep import test_airfoilprep
+from . import test_airfoilprep
 
 def suite():
     suite = unittest.TestSuite( (test_airfoilprep.suite(),

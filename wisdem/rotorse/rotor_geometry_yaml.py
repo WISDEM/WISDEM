@@ -10,11 +10,7 @@ except:
     except:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
-<<<<<<< HEAD
-from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d, RectBivariateSpline
-=======
 from scipy.interpolate import PchipInterpolator
->>>>>>> IEAontology4all
 import numpy as np
 import jsonschema as json
 
@@ -196,15 +192,10 @@ class ReferenceBlade(object):
 
             # 
             pass
-<<<<<<< HEAD
-
-        return blade
-=======
         
         materials = self.wt_ref['materials']
         
         return blade, materials
->>>>>>> IEAontology4all
 
     def update(self, blade):
         t1 = time.time()

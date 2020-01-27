@@ -2,12 +2,13 @@ from __future__ import print_function
 
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.interpolate import PchipInterpolator
 import os, copy
-from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ExecComp
+from openmdao.api import ExplicitComponent
 from wisdem.ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
 from wisdem.commonse import gravity, NFREQ
 from wisdem.commonse.csystem import DirectionVector
-from wisdem.commonse.utilities import trapz_deriv, interp_with_deriv
+from wisdem.commonse.utilities import trapz_deriv, interp_with_deriv, rotate, arc_length
 from wisdem.commonse.akima import Akima, akima_interp_with_derivs
 import wisdem.pBeam._pBEAM as _pBEAM
 import wisdem.ccblade._bem as _bem
@@ -15,8 +16,9 @@ import wisdem.ccblade._bem as _bem
 from wisdem.rotorse import RPM2RS, RS2RPM
 from wisdem.rotorse.rotor_geometry import RotorGeometry
 from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
-from wisdem.rotorse.precomp import _precomp
-        
+from wisdem.rotorse.precomp import PreComp, Profile, Orthotropic2DMaterial, CompositeSection, _precomp, PreCompWriter
+from wisdem.rotorse.rotor_cost import blade_cost_model
+
 # ---------------------
 # Components
 # ---------------------
@@ -1427,18 +1429,18 @@ class ExtremeLoads(ExplicitComponent):
 
 class GustETM(ExplicitComponent):
     def setup(self):
-        # variables
+        variables
         self.add_input('V_mean', val=0.0, units='m/s', desc='IEC average wind speed for turbine class')
         self.add_input('V_hub', val=0.0, units='m/s', desc='hub height wind speed')
 
-        # parameters
+        parameters
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
         self.add_discrete_input('std', val=3, desc='number of standard deviations for strength of gust')
 
-        # out
+        out
         self.add_output('V_gust', val=0.0, units='m/s', desc='gust wind speed')
 
-        #self.declare_partials(['V_gust'], ['V_mean', 'V_hub'])
+        self.declare_partials(['V_gust'], ['V_mean', 'V_hub'])
 
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -1844,7 +1846,6 @@ class OutputsStructures(ExplicitComponent):
         J['Pitch', 'Pitch_in'] = 1
         # J = self.J
         '''        
-
 
 
 class RotorStructure(Group):
