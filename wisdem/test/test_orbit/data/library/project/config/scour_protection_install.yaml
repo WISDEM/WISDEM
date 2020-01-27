@@ -1,0 +1,15 @@
+plant:
+  num_turbines: 50
+  turbine_spacing: 5
+port:
+  monthly_rate: 100000
+  num_cranes: 1
+scour_protection:
+  tonnes_per_substructure: 2000
+scour_protection_install_vessel: test_scour_protection_vessel
+site:
+  depth: 40
+  distance: 30
+  turbine_spacing: 50
+turbine:
+  rotor_diameter: 154

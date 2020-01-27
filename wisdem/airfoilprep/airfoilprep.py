@@ -149,7 +149,8 @@ class Polar(object):
         b = 1
         d = 1
         lam = tsr/(1+tsr**2)**0.5  # modified tip speed ratio
-        expon = d/lam/r_over_R
+        expon   = d/lam/r_over_R
+        expon_d = d/lam/r_over_R/2.
 
         # find linear region
         idx = np.logical_and(alpha >= alpha_linear_min,
@@ -160,6 +161,7 @@ class Polar(object):
 
         # correction factor
         fcl = 1.0/m*(1.6*chord_over_r/0.1267*(a-chord_over_r**expon)/(b+chord_over_r**expon)-1)
+        fcd = 1.0/m*(1.6*chord_over_r/0.1267*(a-chord_over_r**expon_d)/(b+chord_over_r**expon_d)-1)
 
         # not sure where this adjustment comes from (besides AirfoilPrep spreadsheet of course)
         adj = ((pi/2-alpha)/(pi/2-alpha_max_corr))**2
@@ -169,11 +171,16 @@ class Polar(object):
         cl_linear = m*(alpha-alpha0)
         cl_3d = cl_2d + fcl*(cl_linear-cl_2d)*adj
 
-        # Eggers 2003 correction for drag
-        delta_cl = cl_3d-cl_2d
+        # Du-Selig correction for drag
+        cd0 = np.interp(0., alpha, cd_2d)
+        dcd = cd_2d - cd0
+        cd_3d = cd_2d + fcd*dcd
 
-        delta_cd = delta_cl*(np.sin(alpha) - 0.12*np.cos(alpha))/(np.cos(alpha) + 0.12*np.sin(alpha))
-        cd_3d = cd_2d + delta_cd
+        # # Eggers 2003 correction for drag
+        # delta_cl = cl_3d-cl_2d
+
+        # delta_cd = delta_cl*(np.sin(alpha) - 0.12*np.cos(alpha))/(np.cos(alpha) + 0.12*np.sin(alpha))
+        # cd_3d2 = cd_2d + delta_cd
 
         return type(self)(self.Re, np.degrees(alpha), cl_3d, cd_3d, self.cm)
 

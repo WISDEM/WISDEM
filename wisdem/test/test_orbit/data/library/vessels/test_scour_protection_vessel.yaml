@@ -1,0 +1,15 @@
+name: Example Scour Protection Install Vessel
+storage_specs:
+  max_cargo: 32000      # t
+  max_deck_load: 8      # t/m^2
+  max_deck_space: 600   # m^2
+transport_specs:
+  max_waveheight: 1.5   # m
+  max_windspeed: 25     # m/s
+  transit_speed: 11.5   # km/hr
+vessel_specs:
+  beam_length: 35       # m
+  day_rate: 50000       # USD/day
+  max_draft: 5          # m
+  min_draft: 4          # m
+  overall_length: 60    # m

@@ -71,7 +71,9 @@ TEST_CASE( "curvefem_fixed_beam_n_1" ){
     presweep.setZero();
     
     CurveFEM mycurve = CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, true);
-    Vector freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ);
+    Vector freq(nodes*6);
+    Matrix eig_vec(nodes*6,nodes*6);
+    mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, freq, eig_vec);
 
     Vector truth(nodes*6);
     truth << 0.012572866969753228, 0.012591740426479996, 0.015715395588976708, 0.015715395588976708, 0.02528529867098764, 0.02528529867098764, 0.06883002554331129, 0.06893334807998643, 0.09116741813672731, 0.09116741813672731, 0.1548391375450802, 0.1548391375450802;
@@ -142,7 +144,9 @@ TEST_CASE( "curvefem_fixed_beam_n_2" ){
     presweep.setZero();
     
     CurveFEM mycurve = CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, true);
-    Vector freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ);
+    Vector freq(nodes*6);
+    Matrix eig_vec(nodes*6,nodes*6);
+    mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, freq, eig_vec);
 
     Vector truth(nodes*6);
     truth << 0.003912151523474228, 0.003912151523474228, 0.005852976699216038, 0.012582302518525731, 0.02044674778626943, 0.02471287957376343, 0.02471287957376343, 0.025285550340850595, 0.025285550340850595, 0.032042058241816634, 0.06888168035399123, 0.0835842095344649, 0.0835842095344649, 0.09116764495898616, 0.09116764495898616, 0.11193550172703298, 0.24259762924185935, 0.24259762924185935;
@@ -213,7 +217,9 @@ TEST_CASE( "curvefem_fixed_beam_n_3" ){
     presweep.setZero();
     
     CurveFEM mycurve = CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, true);
-    Vector freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ);
+    Vector freq(nodes*6);
+    Matrix eig_vec(nodes*6,nodes*6);
+    mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, freq, eig_vec);
 
     Vector truth(nodes*6);
     truth << 0.0017380701632556908, 0.0017380701632562416, 0.003847212436706601, 0.010926964080897513, 0.010926964080897626, 0.012576854615234626, 0.012587751208210572, 0.02106152327278283, 0.02282612879817582, 0.02528527062288509, 0.02528527062288511, 0.03087567297329799, 0.030875672973298095, 0.06885185586578292, 0.06891150914730364, 0.06953079721389932, 0.06953079721389936, 0.09116748336205782, 0.09116748336205784, 0.12496139758839682, 0.1308572353442806, 0.13085723534428065, 0.2608788373591399, 0.2608788373591401;
@@ -282,7 +288,9 @@ TEST_CASE( "curvefem_free_beam_n_1" ){
     presweep.setZero();
     
     CurveFEM mycurve = CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, false);
-    Vector freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ);
+    Vector freq(nodes*6);
+    Matrix eig_vec(nodes*6,nodes*6);
+    mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, freq, eig_vec);
 
     double m = rho * A;
     double alpha = m * pow(n*L, 4) / (840.0 * E * I);
@@ -356,7 +364,9 @@ TEST_CASE( "curvefem_free_beam_n_2" ){
     presweep.setZero();
     
     CurveFEM mycurve = CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, false);
-    Vector freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ);
+    Vector freq(nodes*6);
+    Matrix eig_vec(nodes*6,nodes*6);
+    mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, freq, eig_vec);
 
     double m = rho * A;
     double alpha = m * pow(n*L, 4) / (840.0 * E * I);
@@ -436,7 +446,9 @@ TEST_CASE( "curvefem_free_beam_n_3" ){
     presweep.setZero();
     
     CurveFEM mycurve = CurveFEM(omegaRPM, theta, z, precurv, presweep, rhoA, false);
-    Vector freq = mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ);
+    Vector freq(nodes*6);
+    Matrix eig_vec(nodes*6,nodes*6);
+    mycurve.frequencies(EA, EIx, EIy, GJ, rhoJ, freq, eig_vec);
 
     double m = rho * A;
     double alpha = m * pow(n*L, 4) / (840.0 * E * I);
