@@ -1,0 +1,24 @@
+feeder: test_feeder
+monopile:
+  deck_space: 500
+  diameter: 10
+  length: 50
+  type: Monopile
+  weight: 350
+num_feeders: 1
+plant:
+  num_turbines: 20
+port:
+  monthly_rate: 100000
+  name: Test Port
+  num_cranes: 1
+site:
+  depth: 40
+  distance: 50
+transition_piece:
+  deck_space: 250
+  type: Transition Piece
+  weight: 350
+turbine:
+  hub_height: 100
+wtiv: test_wtiv

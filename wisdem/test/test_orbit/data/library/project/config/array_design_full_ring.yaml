@@ -1,0 +1,15 @@
+array_system_design:
+  cables:
+  - XLPE_400mm_33kV
+  - XLPE_630mm_33kV
+plant:
+  layout: ring
+  num_turbines: 40
+  row_spacing: 7
+  substation_distance: 1
+  turbine_spacing: 5
+site:
+  depth: 20
+turbine:
+  rotor_diameter: 154
+  turbine_rating: 10
