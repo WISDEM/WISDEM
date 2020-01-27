@@ -904,8 +904,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAMod'], 'UAMod', "Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minemma/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]\n"))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['FLookup'], 'FLookup', "Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]\n"))
         f.write('======  Airfoil Information =========================================================================\n')
-        if (self.dev_branch):
-            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AFTabMod'], 'AFTabMod', '- Interpolation method for multiple airfoil tables {1=1D interpolation on AoA (first table only); 2=2D interpolation on AoA and Re; 3=2D interpolation on AoA and UserProp} (-)\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AFTabMod'], 'AFTabMod', '- Interpolation method for multiple airfoil tables {1=1D interpolation on AoA (first table only); 2=2D interpolation on AoA and Re; 3=2D interpolation on AoA and UserProp} (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['InCol_Alfa'], 'InCol_Alfa', '- The column in the airfoil tables that contains the angle of attack (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['InCol_Cl'], 'InCol_Cl', '- The column in the airfoil tables that contains the lift coefficient (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['InCol_Cd'], 'InCol_Cd', '- The column in the airfoil tables that contains the drag coefficient (-)\n'))
@@ -999,75 +998,92 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write('! line\n')
             f.write('! line\n')
             f.write('! ------------------------------------------------------------------------------\n')
-            f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
-            f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
+            f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
+            f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
             # f.write('@"AF{:02d}_Coords.txt"       {:<11} {:}'.format(afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             f.write('{:<22d}       {:<11} {:}'.format(0, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             # f.write('AF{:02d}_BL.txt              {:<11} {:}'.format(afi, 'BL_file', '! The file name including the boundary layer characteristics of the profile. Ignored if the aeroacoustic module is not called.\n'))
-            f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['NumTabs'], 'NumTabs', '! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
-            f.write('! ------------------------------------------------------------------------------\n')
-            f.write('! data for table 1\n')
-            f.write('! ------------------------------------------------------------------------------\n')
-            f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Re'], 'Re', '! Reynolds number in millions\n'))
-            f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Ctrl'], 'Ctrl', '! Control setting (must be 0 for current AirfoilInfo)\n'))
-            f.write('{!s:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['InclUAdata'], 'InclUAdata', '! Is unsteady aerodynamics data included in this table? If TRUE, then include 30 UA coefficients below this line\n'))
-            f.write('!........................................\n')
-            if self.fst_vt['AeroDyn15']['af_data'][afi]['InclUAdata']:
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['alpha0'], 'alpha0', '! 0-lift angle of attack, depends on airfoil.\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['alpha1'], 'alpha1', '! Angle of attack at f=0.7, (approximately the stall angle) for AOA>alpha0. (deg)\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['alpha2'], 'alpha2', '! Angle of attack at f=0.7, (approximately the stall angle) for AOA<alpha0. (deg)\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['eta_e'], 'eta_e', '! Recovery factor in the range [0.85 - 0.95] used only for UAMOD=1, it is set to 1 in the code when flookup=True. (-)\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['C_nalpha'], 'C_nalpha', '! Slope of the 2D normal force coefficient curve. (1/rad)\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['T_f0']) + '   {:<11} {:}'.format('T_f0', '! Initial value of the time constant associated with Df in the expression of Df and f''. [default = 3]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['T_V0']) + '   {:<11} {:}'.format('T_V0', '! Initial value of the time constant associated with the vortex lift decay process; it is used in the expression of Cvn. It depends on Re,M, and airfoil class. [default = 6]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['T_p']) + '   {:<11} {:}'.format('T_p', '! Boundary-layer,leading edge pressure gradient time constant in the expression of Dp. It should be tuned based on airfoil experimental data. [default = 1.7]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['T_VL']) + '   {:<11} {:}'.format('T_VL', '! Initial value of the time constant associated with the vortex advection process; it represents the non-dimensional time in semi-chords, needed for a vortex to travel from LE to trailing edge (TE); it is used in the expression of Cvn. It depends on Re, M (weakly), and airfoil. [valid range = 6 - 13, default = 11]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['b1']) + '   {:<11} {:}'.format('b1', '! Constant in the expression of phi_alpha^c and phi_q^c.  This value is relatively insensitive for thin airfoils, but may be different for turbine airfoils. [from experimental results, defaults to 0.14]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['b2']) + '   {:<11} {:}'.format('b2', '! Constant in the expression of phi_alpha^c and phi_q^c.  This value is relatively insensitive for thin airfoils, but may be different for turbine airfoils. [from experimental results, defaults to 0.53]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['b5']) + '   {:<11} {:}'.format('b5', "! Constant in the expression of K'''_q,Cm_q^nc, and k_m,q.  [from  experimental results, defaults to 5]\n"))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['A1']) + '   {:<11} {:}'.format('A1', '! Constant in the expression of phi_alpha^c and phi_q^c.  This value is relatively insensitive for thin airfoils, but may be different for turbine airfoils. [from experimental results, defaults to 0.3]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['A2']) + '   {:<11} {:}'.format('A2', '! Constant in the expression of phi_alpha^c and phi_q^c.  This value is relatively insensitive for thin airfoils, but may be different for turbine airfoils. [from experimental results, defaults to 0.7]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['A5']) + '   {:<11} {:}'.format('A5', "! Constant in the expression of K'''_q,Cm_q^nc, and k_m,q. [from experimental results, defaults to 1]\n"))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['S1'], 'S1', '! Constant in the f curve best-fit for alpha0<=AOA<=alpha1; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['S2'], 'S2', '! Constant in the f curve best-fit for         AOA> alpha1; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['S3'], 'S3', '! Constant in the f curve best-fit for alpha2<=AOA< alpha0; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['S4'], 'S4', '! Constant in the f curve best-fit for         AOA< alpha2; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Cn1'], 'Cn1', '! Critical value of C0n at leading edge separation. It should be extracted from airfoil data at a given Mach and Reynolds number. It can be calculated from the static value of Cn at either the break in the pitching moment or the loss of chord force at the onset of stall. It is close to the condition of maximum lift of the airfoil at low Mach numbers.\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Cn2'], 'Cn2', '! As Cn1 for negative AOAs.\n'))
-                # f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['St_sh'], 'St_sh', "! Strouhal's shedding frequency constant.  [default = 0.19]\n"))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['St_sh']) + '   {:<11} {:}'.format('St_sh', "! Strouhal's shedding frequency constant.  [default = 0.19]\n"))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Cd0'], 'Cd0', '! 2D drag coefficient value at 0-lift.\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['Cm0'], 'Cm0', '! 2D pitching moment coefficient about 1/4-chord location, at 0-lift, positive if nose up. [If the aerodynamics coefficients table does not include a column for Cm, this needs to be set to 0.0]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['k0'], 'k0', '! Constant in the \\hat(x)_cp curve best-fit; = (\\hat(x)_AC-0.25).  [ignored if UAMod<>1]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['k1'], 'k1', '! Constant in the \\hat(x)_cp curve best-fit.  [ignored if UAMod<>1]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['k2'], 'k2', '! Constant in the \\hat(x)_cp curve best-fit.  [ignored if UAMod<>1]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['k3'], 'k3', '! Constant in the \\hat(x)_cp curve best-fit.  [ignored if UAMod<>1]\n'))
-                f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['k1_hat'], 'k1_hat', '! Constant in the expression of Cc due to leading edge vortex effects.  [ignored if UAMod<>1]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['x_cp_bar']) + '   {:<11} {:}'.format('x_cp_bar', '! Constant in the expression of \\hat(x)_cp^v. [ignored if UAMod<>1, default = 0.2]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['UACutout']) + '   {:<11} {:}'.format('UACutout', '! Angle of attack above which unsteady aerodynamics are disabled (deg). [Specifying the string "Default" sets UACutout to 45 degrees]\n'))
-                f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi]['filtCutOff']) + '   {:<11} {:}'.format('filtCutOff', '! Cut-off frequency (-3 dB corner frequency) for low-pass filtering the AoA input to UA, as well as the 1st and 2nd derivatives (Hz) [default = 20]\n'))
-
-            f.write('!........................................\n')
-            f.write('! Table of aerodynamics coefficients\n')
-            f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['NumAlf'], 'NumAlf', '! Number of data lines in the following table\n'))
-            f.write('!    Alpha      Cl      Cd        Cm\n')
-            f.write('!    (deg)      (-)     (-)       (-)\n')
-
-            polar_map = [self.fst_vt['AeroDyn15']['InCol_Alfa'], self.fst_vt['AeroDyn15']['InCol_Cl'], self.fst_vt['AeroDyn15']['InCol_Cd'], self.fst_vt['AeroDyn15']['InCol_Cm'], self.fst_vt['AeroDyn15']['InCol_Cpmin']]
-            polar_map.remove(0)
-            polar_map = [i-1 for i in polar_map]
-
-            alpha = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi]['Alpha'])
-            cl = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi]['Cl'])
-            cd = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi]['Cd'])
-            cm = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi]['Cm'])
-            cpmin = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi]['Cpmin'])
-            polar = np.column_stack((alpha, cl, cd, cm, cpmin))
-            polar = polar[:,polar_map]
+            # f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'], 'NumTabs', '! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
 
 
-            for row in polar:
-                f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
+            # check if airfoils with multiple flaps exists.
+            # if yes, allocate the number of airfoils to the respective radial stations
+            if self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'] > 1:
+                # for tab_orig in range(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'] - 1):
+                if self.fst_vt['AeroDyn15']['af_data'][afi][0]['Ctrl'] == self.fst_vt['AeroDyn15']['af_data'][afi][1]['Ctrl']:
+                    num_tab = 1  # assume that all Ctrl angles of the flaps are identical if the first two are -> no flaps!
+                else:
+                    num_tab = self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs']
+            else:
+                num_tab = 1
+            # f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'], 'NumTabs','! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
+            f.write('{:<22d}   {:<11} {:}'.format(num_tab, 'NumTabs','! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
+
+            # for tab in range(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs']): # For writting multiple tables (different Re or Ctrl values)
+            for tab in range(num_tab): # For writting multiple tables (different Re or Ctrl values)
+                f.write('! ------------------------------------------------------------------------------\n')
+                f.write("! data for table %i \n" % (tab + 1))
+                f.write('! ------------------------------------------------------------------------------\n')
+                f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Re'], 'Re', '! Reynolds number in millions\n'))
+                f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Ctrl'], 'Ctrl', '! Control setting (must be 0 for current AirfoilInfo)\n'))
+                f.write('{!s:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['InclUAdata'], 'InclUAdata', '! Is unsteady aerodynamics data included in this table? If TRUE, then include 30 UA coefficients below this line\n'))
+                f.write('!........................................\n')
+                if self.fst_vt['AeroDyn15']['af_data'][afi][tab]['InclUAdata']:
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['alpha0'], 'alpha0', '! 0-lift angle of attack, depends on airfoil.\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['alpha1'], 'alpha1', '! Angle of attack at f=0.7, (approximately the stall angle) for AOA>alpha0. (deg)\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['alpha2'], 'alpha2', '! Angle of attack at f=0.7, (approximately the stall angle) for AOA<alpha0. (deg)\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['eta_e'], 'eta_e', '! Recovery factor in the range [0.85 - 0.95] used only for UAMOD=1, it is set to 1 in the code when flookup=True. (-)\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['C_nalpha'], 'C_nalpha', '! Slope of the 2D normal force coefficient curve. (1/rad)\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['T_f0']) + '   {:<11} {:}'.format('T_f0', '! Initial value of the time constant associated with Df in the expression of Df and f''. [default = 3]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['T_V0']) + '   {:<11} {:}'.format('T_V0', '! Initial value of the time constant associated with the vortex lift decay process; it is used in the expression of Cvn. It depends on Re,M, and airfoil class. [default = 6]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['T_p']) + '   {:<11} {:}'.format('T_p', '! Boundary-layer,leading edge pressure gradient time constant in the expression of Dp. It should be tuned based on airfoil experimental data. [default = 1.7]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['T_VL']) + '   {:<11} {:}'.format('T_VL', '! Initial value of the time constant associated with the vortex advection process; it represents the non-dimensional time in semi-chords, needed for a vortex to travel from LE to trailing edge (TE); it is used in the expression of Cvn. It depends on Re, M (weakly), and airfoil. [valid range = 6 - 13, default = 11]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['b1']) + '   {:<11} {:}'.format('b1', '! Constant in the expression of phi_alpha^c and phi_q^c.  This value is relatively insensitive for thin airfoils, but may be different for turbine airfoils. [from experimental results, defaults to 0.14]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['b2']) + '   {:<11} {:}'.format('b2', '! Constant in the expression of phi_alpha^c and phi_q^c.  This value is relatively insensitive for thin airfoils, but may be different for turbine airfoils. [from experimental results, defaults to 0.53]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['b5']) + '   {:<11} {:}'.format('b5', "! Constant in the expression of K'''_q,Cm_q^nc, and k_m,q.  [from  experimental results, defaults to 5]\n"))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['A1']) + '   {:<11} {:}'.format('A1', '! Constant in the expression of phi_alpha^c and phi_q^c.  This value is relatively insensitive for thin airfoils, but may be different for turbine airfoils. [from experimental results, defaults to 0.3]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['A2']) + '   {:<11} {:}'.format('A2', '! Constant in the expression of phi_alpha^c and phi_q^c.  This value is relatively insensitive for thin airfoils, but may be different for turbine airfoils. [from experimental results, defaults to 0.7]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['A5']) + '   {:<11} {:}'.format('A5', "! Constant in the expression of K'''_q,Cm_q^nc, and k_m,q. [from experimental results, defaults to 1]\n"))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['S1'], 'S1', '! Constant in the f curve best-fit for alpha0<=AOA<=alpha1; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['S2'], 'S2', '! Constant in the f curve best-fit for         AOA> alpha1; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['S3'], 'S3', '! Constant in the f curve best-fit for alpha2<=AOA< alpha0; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['S4'], 'S4', '! Constant in the f curve best-fit for         AOA< alpha2; by definition it depends on the airfoil. [ignored if UAMod<>1]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cn1'], 'Cn1', '! Critical value of C0n at leading edge separation. It should be extracted from airfoil data at a given Mach and Reynolds number. It can be calculated from the static value of Cn at either the break in the pitching moment or the loss of chord force at the onset of stall. It is close to the condition of maximum lift of the airfoil at low Mach numbers.\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cn2'], 'Cn2', '! As Cn1 for negative AOAs.\n'))
+                    # f.write('{: 22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi]['St_sh'], 'St_sh', "! Strouhal's shedding frequency constant.  [default = 0.19]\n"))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['St_sh']) + '   {:<11} {:}'.format('St_sh', "! Strouhal's shedding frequency constant.  [default = 0.19]\n"))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cd0'], 'Cd0', '! 2D drag coefficient value at 0-lift.\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cm0'], 'Cm0', '! 2D pitching moment coefficient about 1/4-chord location, at 0-lift, positive if nose up. [If the aerodynamics coefficients table does not include a column for Cm, this needs to be set to 0.0]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['k0'], 'k0', '! Constant in the \\hat(x)_cp curve best-fit; = (\\hat(x)_AC-0.25).  [ignored if UAMod<>1]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['k1'], 'k1', '! Constant in the \\hat(x)_cp curve best-fit.  [ignored if UAMod<>1]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['k2'], 'k2', '! Constant in the \\hat(x)_cp curve best-fit.  [ignored if UAMod<>1]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['k3'], 'k3', '! Constant in the \\hat(x)_cp curve best-fit.  [ignored if UAMod<>1]\n'))
+                    f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['k1_hat'], 'k1_hat', '! Constant in the expression of Cc due to leading edge vortex effects.  [ignored if UAMod<>1]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['x_cp_bar']) + '   {:<11} {:}'.format('x_cp_bar', '! Constant in the expression of \\hat(x)_cp^v. [ignored if UAMod<>1, default = 0.2]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['UACutout']) + '   {:<11} {:}'.format('UACutout', '! Angle of attack above which unsteady aerodynamics are disabled (deg). [Specifying the string "Default" sets UACutout to 45 degrees]\n'))
+                    f.write(float_default_out(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['filtCutOff']) + '   {:<11} {:}'.format('filtCutOff', '! Cut-off frequency (-3 dB corner frequency) for low-pass filtering the AoA input to UA, as well as the 1st and 2nd derivatives (Hz) [default = 20]\n'))
+
+                f.write('!........................................\n')
+                f.write('! Table of aerodynamics coefficients\n')
+                f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['NumAlf'], 'NumAlf', '! Number of data lines in the following table\n'))
+                f.write('!    Alpha      Cl      Cd        Cm\n')
+                f.write('!    (deg)      (-)     (-)       (-)\n')
+
+                polar_map = [self.fst_vt['AeroDyn15']['InCol_Alfa'], self.fst_vt['AeroDyn15']['InCol_Cl'], self.fst_vt['AeroDyn15']['InCol_Cd'], self.fst_vt['AeroDyn15']['InCol_Cm'], self.fst_vt['AeroDyn15']['InCol_Cpmin']]
+                polar_map.remove(0)
+                polar_map = [i-1 for i in polar_map]
+
+                alpha = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Alpha'])
+                cl = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cl'])
+                cd = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cd'])
+                cm = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cm'])
+                cpmin = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cpmin'])
+                polar = np.column_stack((alpha, cl, cd, cm, cpmin))
+                polar = polar[:,polar_map]
+
+
+                for row in polar:
+                    f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
             
             f.close()
             
@@ -1242,6 +1258,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PS_Mode'], '! PS_Mode', '- Peak shaving mode {0: no peak shaving, 1: implement peak shaving}\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_Mode'], '! SD_Mode', '- Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Mode'], '! Fl_Mode', '- Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Mode'],'! Flp_Mode','- Distributed aerodynamic control mode {0: no flap actuation, 1: steady state flap angle, 2: Flap angle PI Control}\n'))
         f.write('\n!------- FILTERS ----------------------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFCornerFreq'], '! F_LPFCornerFreq', '- Corner frequency (-3dB point) in the low-pass filters, [rad/s]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFDamping'], '! F_LPFDamping', '- Damping coefficient [used only when F_FilterType = 2]\n'))
@@ -1249,6 +1266,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_NotchBetaNumDen']]), '! F_NotchBetaNumDen', '- Two notch damping values (numerator and denominator, resp) - determines the width and depth of the notch, [-]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_SSCornerFreq'], '! F_SSCornerFreq', '- Corner frequency (-3dB point) in the first order low pass filter for the setpoint smoother, [rad/s].\n'))
         f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_FlCornerFreq']]), '! F_FlCornerFreq', '- Corner frequency and damping in the second order low pass filter of the tower-top fore-aft motion for floating feedback control [rad/s, -]\n'))
+        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_FlpCornerFreq']]), '! F_FlpCornerFreq', '- Corner frequency and damping in the second order low pass filter of the blade root bending moment for flap control [rad/s, -].\n'))
         f.write('\n!------- BLADE PITCH CONTROL ----------------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_GS_n'], '! PC_GS_n', '- Amount of gain-scheduling table entries\n'))
         f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PC_GS_angles']]), '! PC_GS_angles', '- Gain-schedule table: pitch angles\n'))
@@ -1325,8 +1343,12 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('\n!------- SHUTDOWN -------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_MaxPit'], '! SD_MaxPit', '- Maximum blade pitch angle to initiate shutdown, [rad]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_CornerFreq'], '! SD_CornerFreq', '- Cutoff Frequency for first order low-pass filter for blade pitch angle, [rad/s]\n'))
-        f.write('\n!------- Floating -------------------------------------------\n')
+        f.write('\n!------- FLOATING -------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Kp'], '! Fl_Kp', '- Nacelle velocity proportional feedback gain [s]\n'))
+        f.write('\n!------- FLAP ACTUATION -------------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Angle'], '! Flp_Angle', '- Initial (Flp_Mode = 2) or steady state (Flp_Mode = 1) flap angle, [deg]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Kp'], '! Flp_Kp', '- PI flap controller proportional gain\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Ki'], '! Flp_Ki', '- PI flap controller integral gain\n'))
 
         f.close()
 

@@ -332,6 +332,47 @@ materials:
       rho: 1220.0
       orth: 1
       nu: [0.27, 0.27, 0.27]
+<<<<<<< HEAD:wisdem/rotorse/turbine_inputs/nrel5mw_mod_update.yaml
+=======
+      unit_cost: 30.00
+      waste: 0.05
+      fiber_density: 1800.
+      area_density_dry: 1.000
+      component_id: 4
+   -  name: resin
+      description: epoxy
+      E: 1.e+6
+      rho: 1150.
+      orth: 0
+assembly:
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+control:
+    rated_power: 5.e+6
+    Vin: 3.0
+    Vout: 25.0
+    minOmega: 0.72256
+    maxOmega: 1.26711
+    tsr: 7.01754386
+    pitch: 0.
+    maxTS: 80.
+environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.2
+costs:
+    wake_loss_factor: 0.15
+    fixed_charge_rate: 0.075
+    bos_per_kW: 2979.
+    opex_per_kW: 144.
+    turbine_number: 120
+    
+>>>>>>> IEAontology4all:wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml
 
 assembly:
     global:

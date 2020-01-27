@@ -222,6 +222,7 @@ class CCBladePower(ExplicitComponent):
     
 class CCBladeLoads(ExplicitComponent):
     def initialize(self):
+<<<<<<< HEAD
         self.options.declare('naero')
         self.options.declare('npower')
 
@@ -234,6 +235,17 @@ class CCBladeLoads(ExplicitComponent):
         n_aoa_grid = self.options['n_aoa_grid']
         n_Re_grid  = self.options['n_Re_grid']
         """blade element momentum code"""
+=======
+        self.options.declare('analysis_options')
+        
+    def setup(self):
+        blade_init_options = self.options['analysis_options']['blade']
+        self.n_span        = n_span    = blade_init_options['n_span']
+        af_init_options = self.options['analysis_options']['airfoils']
+        self.n_aoa         = n_aoa     = af_init_options['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+>>>>>>> IEAontology4all
 
         # inputs
         self.add_input('V_load', val=0.0, units='m/s', desc='hub height wind speed')

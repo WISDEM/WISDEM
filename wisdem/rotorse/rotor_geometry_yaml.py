@@ -10,7 +10,11 @@ except:
     except:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
+<<<<<<< HEAD
 from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d, RectBivariateSpline
+=======
+from scipy.interpolate import PchipInterpolator
+>>>>>>> IEAontology4all
 import numpy as np
 import jsonschema as json
 
@@ -21,7 +25,7 @@ from wisdem.airfoilprep.airfoilprep import Airfoil, Polar
 from wisdem.rotorse.precomp import Profile, Orthotropic2DMaterial, CompositeSection, _precomp, PreCompWriter
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, Curve
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 def remap2grid(x_ref, y_ref, x, spline=PchipInterpolator):
 
@@ -192,8 +196,15 @@ class ReferenceBlade(object):
 
             # 
             pass
+<<<<<<< HEAD
 
         return blade
+=======
+        
+        materials = self.wt_ref['materials']
+        
+        return blade, materials
+>>>>>>> IEAontology4all
 
     def update(self, blade):
         t1 = time.time()

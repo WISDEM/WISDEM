@@ -77,11 +77,22 @@ class TowerModes(ExplicitComponent):
 
 class MaxTipDeflection(ExplicitComponent):
     def initialize(self):
+<<<<<<< HEAD
         self.options.declare('nFullTow')
         
     def setup(self):
         nFullTow = self.options['nFullTow']
 
+=======
+        self.options.declare('analysis_options')
+    def setup(self):
+        analysis_options = self.options['analysis_options']
+        blade_init_options   = analysis_options['blade']
+        n_span               = blade_init_options['n_span']
+        tower_init_options   = analysis_options['tower']
+        n_height_tow    = tower_init_options['n_height']
+        # Inputs
+>>>>>>> IEAontology4all
         self.add_discrete_input('downwind',       val=False)
         self.add_input('tip_deflection', val=0.0,       units='m',  desc='Blade tip deflection in yaw x-direction')
         self.add_input('Rtip',           val=0.0,       units='m',  desc='Blade tip location in z_b')
@@ -135,6 +146,7 @@ class MaxTipDeflection(ExplicitComponent):
 class TurbineConstraints(Group):
 
     def initialize(self):
+<<<<<<< HEAD
         self.options.declare('nFull')
         
     def setup(self):
@@ -142,3 +154,11 @@ class TurbineConstraints(Group):
         
         self.add_subsystem('modes', TowerModes(), promotes=['*'])
         self.add_subsystem('tipd', MaxTipDeflection(nFullTow=nFull), promotes=['*'])
+=======
+        self.options.declare('analysis_options')
+    def setup(self):
+        analysis_options = self.options['analysis_options']
+        
+        # self.add_subsystem('modes', TowerModes(), promotes=['*'])
+        self.add_subsystem('tipd', TipDeflectionConstraint(analysis_options = analysis_options), promotes=['*'])
+>>>>>>> IEAontology4all

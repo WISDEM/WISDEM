@@ -56,6 +56,7 @@ class InputReader_Common(object):
         self.dev_branch = False      # branch: pullrequest/ganesh : 5b78391
         self.FAST_InputFile = None   # FAST input file (ext=.fst)
         self.FAST_directory = None   # Path to fst directory files
+        self.path2dll       = None   # Path to dll file
         self.fst_vt = FstModel
 
         # Optional population class attributes from key word arguments
@@ -1025,8 +1026,7 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Airfoil Information
         f.readline()
-        if (self.dev_branch):
-            self.fst_vt['AeroDyn15']['AFTabMod']         = int(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['AFTabMod']         = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Alfa']       = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Cl']         = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Cd']         = int(f.readline().split()[0])
@@ -1138,66 +1138,69 @@ class InputReader_OpenFAST(InputReader_Common):
             polar['NonDimArea']     = int_read(readline_filterComments(f).split()[0])
             polar['NumCoords']      = readline_filterComments(f).split()[0]
             polar['NumTabs']        = int_read(readline_filterComments(f).split()[0])
-            polar['Re']             = float_read(readline_filterComments(f).split()[0])
-            polar['Ctrl']           = int_read(readline_filterComments(f).split()[0])
-            polar['InclUAdata']     = bool_read(readline_filterComments(f).split()[0])
+            self.fst_vt['AeroDyn15']['af_data'][afi] = [None]*polar['NumTabs']
 
-            # Unsteady Aero Data
-            if polar['InclUAdata']:
-                polar['alpha0']     = float_read(readline_filterComments(f).split()[0])
-                polar['alpha1']     = float_read(readline_filterComments(f).split()[0])
-                polar['alpha2']     = float_read(readline_filterComments(f).split()[0])
-                polar['eta_e']      = float_read(readline_filterComments(f).split()[0])
-                polar['C_nalpha']   = float_read(readline_filterComments(f).split()[0])
-                polar['T_f0']       = float_read(readline_filterComments(f).split()[0])
-                polar['T_V0']       = float_read(readline_filterComments(f).split()[0])
-                polar['T_p']        = float_read(readline_filterComments(f).split()[0])
-                polar['T_VL']       = float_read(readline_filterComments(f).split()[0])
-                polar['b1']         = float_read(readline_filterComments(f).split()[0])
-                polar['b2']         = float_read(readline_filterComments(f).split()[0])
-                polar['b5']         = float_read(readline_filterComments(f).split()[0])
-                polar['A1']         = float_read(readline_filterComments(f).split()[0])
-                polar['A2']         = float_read(readline_filterComments(f).split()[0])
-                polar['A5']         = float_read(readline_filterComments(f).split()[0])
-                polar['S1']         = float_read(readline_filterComments(f).split()[0])
-                polar['S2']         = float_read(readline_filterComments(f).split()[0])
-                polar['S3']         = float_read(readline_filterComments(f).split()[0])
-                polar['S4']         = float_read(readline_filterComments(f).split()[0])
-                polar['Cn1']        = float_read(readline_filterComments(f).split()[0])
-                polar['Cn2']        = float_read(readline_filterComments(f).split()[0])
-                polar['St_sh']      = float_read(readline_filterComments(f).split()[0])
-                polar['Cd0']        = float_read(readline_filterComments(f).split()[0])
-                polar['Cm0']        = float_read(readline_filterComments(f).split()[0])
-                polar['k0']         = float_read(readline_filterComments(f).split()[0])
-                polar['k1']         = float_read(readline_filterComments(f).split()[0])
-                polar['k2']         = float_read(readline_filterComments(f).split()[0])
-                polar['k3']         = float_read(readline_filterComments(f).split()[0])
-                polar['k1_hat']     = float_read(readline_filterComments(f).split()[0])
-                polar['x_cp_bar']   = float_read(readline_filterComments(f).split()[0])
-                polar['UACutout']   = float_read(readline_filterComments(f).split()[0])
-                polar['filtCutOff'] = float_read(readline_filterComments(f).split()[0])
+            for tab in range(polar['NumTabs']): # For multiple tables
+                polar['Re']             = float_read(readline_filterComments(f).split()[0])
+                polar['Ctrl']           = int_read(readline_filterComments(f).split()[0])
+                polar['InclUAdata']     = bool_read(readline_filterComments(f).split()[0])
 
-            # Polar Data
-            polar['NumAlf']         = int_read(readline_filterComments(f).split()[0])
-            polar['Alpha']          = [None]*polar['NumAlf']
-            polar['Cl']             = [None]*polar['NumAlf']
-            polar['Cd']             = [None]*polar['NumAlf']
-            polar['Cm']             = [None]*polar['NumAlf']
-            polar['Cpmin']          = [None]*polar['NumAlf']
-            for i in range(polar['NumAlf']):
-                data = [float(val) for val in readline_filterComments(f).split()]
-                if self.fst_vt['AeroDyn15']['InCol_Alfa'] > 0:
-                    polar['Alpha'][i] = data[self.fst_vt['AeroDyn15']['InCol_Alfa']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cl'] > 0:
-                    polar['Cl'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cl']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cd'] > 0:
-                    polar['Cd'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cd']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cm'] > 0:
-                    polar['Cm'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cm']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cpmin'] > 0:
-                    polar['Cpmin'][i] = data[self.fst_vt['AeroDyn15']['InCol_Cpmin']-1]
+                # Unsteady Aero Data
+                if polar['InclUAdata']:
+                    polar['alpha0']     = float_read(readline_filterComments(f).split()[0])
+                    polar['alpha1']     = float_read(readline_filterComments(f).split()[0])
+                    polar['alpha2']     = float_read(readline_filterComments(f).split()[0])
+                    polar['eta_e']      = float_read(readline_filterComments(f).split()[0])
+                    polar['C_nalpha']   = float_read(readline_filterComments(f).split()[0])
+                    polar['T_f0']       = float_read(readline_filterComments(f).split()[0])
+                    polar['T_V0']       = float_read(readline_filterComments(f).split()[0])
+                    polar['T_p']        = float_read(readline_filterComments(f).split()[0])
+                    polar['T_VL']       = float_read(readline_filterComments(f).split()[0])
+                    polar['b1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['b2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['b5']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A5']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S3']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S4']         = float_read(readline_filterComments(f).split()[0])
+                    polar['Cn1']        = float_read(readline_filterComments(f).split()[0])
+                    polar['Cn2']        = float_read(readline_filterComments(f).split()[0])
+                    polar['St_sh']      = float_read(readline_filterComments(f).split()[0])
+                    polar['Cd0']        = float_read(readline_filterComments(f).split()[0])
+                    polar['Cm0']        = float_read(readline_filterComments(f).split()[0])
+                    polar['k0']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k3']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k1_hat']     = float_read(readline_filterComments(f).split()[0])
+                    polar['x_cp_bar']   = float_read(readline_filterComments(f).split()[0])
+                    polar['UACutout']   = float_read(readline_filterComments(f).split()[0])
+                    polar['filtCutOff'] = float_read(readline_filterComments(f).split()[0])
 
-            self.fst_vt['AeroDyn15']['af_data'][afi] = polar
+                # Polar Data
+                polar['NumAlf']         = int_read(readline_filterComments(f).split()[0])
+                polar['Alpha']          = [None]*polar['NumAlf']
+                polar['Cl']             = [None]*polar['NumAlf']
+                polar['Cd']             = [None]*polar['NumAlf']
+                polar['Cm']             = [None]*polar['NumAlf']
+                polar['Cpmin']          = [None]*polar['NumAlf']
+                for i in range(polar['NumAlf']):
+                    data = [float(val) for val in readline_filterComments(f).split()]
+                    if self.fst_vt['AeroDyn15']['InCol_Alfa'] > 0:
+                        polar['Alpha'][i] = data[self.fst_vt['AeroDyn15']['InCol_Alfa']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cl'] > 0:
+                        polar['Cl'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cl']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cd'] > 0:
+                        polar['Cd'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cd']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cm'] > 0:
+                        polar['Cm'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cm']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cpmin'] > 0:
+                        polar['Cpmin'][i] = data[self.fst_vt['AeroDyn15']['InCol_Cpmin']-1]
+
+                self.fst_vt['AeroDyn15']['af_data'][afi][tab] = polar # For multiple tables
             
             f.close()
 
@@ -1294,7 +1297,11 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Bladed Interface and Torque-Speed Look-Up Table (bladed_interface)
         f.readline()
-        self.fst_vt['ServoDyn']['DLL_FileName'] = os.path.abspath(os.path.normpath(os.path.join(os.path.split(sd_file)[0], f.readline().split()[0][1:-1])))
+        if self.path2dll == '':
+            self.fst_vt['ServoDyn']['DLL_FileName'] = os.path.abspath(os.path.normpath(os.path.join(os.path.split(sd_file)[0], f.readline().split()[0][1:-1])))
+        else:
+            f.readline()
+            self.fst_vt['ServoDyn']['DLL_FileName'] = self.path2dll
         self.fst_vt['ServoDyn']['DLL_InFile']   = f.readline().split()[0][1:-1]
         self.fst_vt['ServoDyn']['DLL_ProcName'] = f.readline().split()[0][1:-1]
         dll_dt_line = f.readline().split()[0]
@@ -1380,6 +1387,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['PS_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['SD_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['Fl_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Mode']          = int_read(f.readline().split()[0])
             f.readline()
             f.readline()
 
@@ -1390,6 +1398,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['F_NotchBetaNumDen'] = [float(idx.strip()) for idx in f.readline().strip().split('F_NotchBetaNumDen')[0].split() if idx.strip() != '!']
             self.fst_vt['DISCON_in']['F_SSCornerFreq']    = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['F_FlCornerFreq']    = [float(idx.strip()) for idx in f.readline().strip().split('F_FlCornerFreq')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_FlpCornerFreq']   = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
             f.readline()
             f.readline()
 
@@ -1496,8 +1505,16 @@ class InputReader_OpenFAST(InputReader_Common):
             f.readline()
             f.readline()
 
-            # Floating
+            # FLOATING
             self.fst_vt['DISCON_in']['Fl_Kp']             = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # DISTRIBUTED AERODYNAMIC CONTROL
+            self.fst_vt['DISCON_in']['Flp_Angle']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Kp']            = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Ki']            = float_read(f.readline().split()[0])
+
 
             f.close()
 
