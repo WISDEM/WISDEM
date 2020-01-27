@@ -1,6 +1,6 @@
 import unittest
 
-from wisdem.test.test_turbinecostsse import test_turbine_costsse_2015
+from . import test_turbine_costsse_2015
 
 
 def suite():
