@@ -56,11 +56,14 @@ class ServoSE(Group):
 
         # Connect ROSCO for Rotor Performance tables
         self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
+        self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
+        self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
         self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
         self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
         self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
 
         self.test = 5.0
+
 
 class TuneROSCO(ExplicitComponent):
     def initialize(self):
@@ -101,10 +104,17 @@ class TuneROSCO(ExplicitComponent):
         self.controller_params['SD_Mode'] = self.wt_init_options['controller']['SD_Mode']
         self.controller_params['Fl_Mode'] = self.wt_init_options['controller']['Fl_Mode']
 
-        # self.controller_params['zeta_pc'] = None
-        # self.controller_params['omega_pc'] = None
-        # self.controller_params['zeta_vs'] = None
-        # self.controller_params['omega_vs'] = None
+        # Additional controller parameters
+        # -- NJA these can be optional inputs in the yaml or changed to inputs - not sure yet
+        self.controller_params['max_pitch'] = self.wt_init_options['controller']['max_pitch']
+        self.controller_params['min_pitch'] = self.wt_init_options['controller']['min_pitch']
+        self.controller_params['vs_minspd'] = self.wt_init_options['controller']['vs_minspd']
+        self.controller_params['ss_cornerfreq'] = self.wt_init_options['controller']['ss_cornerfreq']
+        self.controller_params['ss_vsgain'] = self.wt_init_options['controller']['ss_vsgain']
+        self.controller_params['ss_pcgain'] = self.wt_init_options['controller']['ss_pcgain']
+        self.controller_params['ps_percent'] = self.wt_init_options['controller']['ps_percent']
+        self.controller_params['sd_maxpit'] = self.wt_init_options['controller']['sd_maxpit']
+        self.controller_params['sd_cornerfreq'] = self.wt_init_options['controller']['sd_cornerfreq']
 
         # Necessary parameters
         # Turbine parameters
@@ -129,10 +139,58 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('tsr_vector',        val=np.zeros(n_tsr),                                desc='TSR vector used')
         self.add_input('U_vector',          val=np.zeros(n_U),                  units='m/s',    desc='Wind speed vector used')
 
+        # Controller Parameters
         self.add_input('PC_zeta',           val=0.0,                                desc='Pitch controller damping ratio')
         self.add_input('PC_omega',          val=0.0,        units='rad/s',          desc='Pitch controller natural frequency')
         self.add_input('VS_zeta',           val=0.0,                                desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',          desc='Generator torque controller natural frequency')
+
+
+        # -- Necessary outputs for DISCON.IN -- THESE NEED UNITS!!!
+        # Controller Flags
+        self.add_output(['logging_level'],         val=0.0,                         desc='Debug mode')
+        self.add_output(['F_LPFType'],             val=0.0,                         desc='')
+        self.add_output(['F_NotchType'],           val=0.0,                         desc='')    
+        self.add_output(['IPC_ControlMode'],       val=0.0,                         desc='')        
+        self.add_output(['VS_ControlMode'],        val=0.0,                         desc='')        
+        self.add_output(['PC_ControlMode'],        val=0.0,                         desc='')        
+        self.add_output(['Y_ControlMode'],         val=0.0,                         desc='')    
+        self.add_output(['SS_Mode'],               val=0.0,                         desc='')
+        self.add_output(['WE_Mode'],               val=0.0,                         desc='')
+        self.add_output(['PS_Mode'],               val=0.0,                         desc='')
+        self.add_output(['SD_Mode'],               val=0.0,                         desc='')
+        self.add_output(['Fl_Mode'],               val=0.0,                         desc='')
+        # Filters
+        self.add_output(['F_LPFDamping'],          val=0.0,                         desc='')
+        self.add_output(['ss_cornerfreq'],         val=0.0,    units='rad/s',       desc='')
+        # Blade pitch control
+        self.add_output(['pc_gain_schedule_Kp'],   val=0.0,    units='s',           desc='')         # needs sizes
+        self.add_output(['pc_gain_schedule_Ki'],   val=0.0,                         desc='')        # needs sizes
+        self.add_output(['max_pitch'],             val=0.0,    units='rad',         desc='')
+        self.add_output(['min_pitch'],             val=0.0,    units='rad',         desc='')
+        # VS control
+        self.add_output(['vs_min_speed'],          val=0.0,    units='rad/s',               desc='')
+        self.add_output(['vs_rgn2K'],              val=0.0,    units='N*m/(rad/s)**2',      desc='')
+        self.add_output(['vs_gain_schedule_Kp'],   val=0.0,    units='N*m/(rad/s)',         desc='')
+        self.add_output(['vs_gain_schedule_Ki'],   val=0.0,    units='N*m/(rad)',           desc='')
+        # Setpoint Smoother
+        self.add_output(['ss_vsgain'],             val=0.0,                         desc='')
+        self.add_output(['ss_pcgain'],             val=0.0,                         desc='')
+        # Wind Speed Estimator
+        self.add_output(['perf_tablesize'],        val=np.zeros(1,2),                       desc='')        
+        self.add_output(['WE_Poles_v'],            val=0.0,    units='m/s',                 desc='')        # needs sizes
+        self.add_output(['WE_Poles'],              val=0.0,    units='1/(m*s*rad)',         desc='')        # needs sizes
+        # Minimum Pitch Saturation
+        self.add_output(['ps_min_pitch_n'],        val=0.0,                                 desc='')        
+        self.add_output(['ps_wind_speeds'],        val=0.0,    units='m/s',                 desc='')        # needs sizes
+        self.add_output(['ps_min_bld_pitch'],      val=0.0,    units='rad/s',               desc='')        # needs sizes
+        # Shutdown
+        self.add_output(['sd_maxpit'],             val=0.0,    units='rad',                 desc='')        
+        self.add_output(['sd_corner_freq'],        val=0.0,    units='rad/s',               desc='')        
+        # Floating
+        self.add_output(['Kpf'],                   val=0.0,    units='s',                   desc='') 
+
+
 
     def computes(self,inputs,outputs):
         '''
@@ -145,26 +203,69 @@ class TuneROSCO(ExplicitComponent):
         self.wt_init_options['controller']['omega_vs']  = inputs['VS_omega']
         self.wt_init_options['controller']['zeta_vs']   = inputs['VS_zeta']
 
-        turbine.v_min = inputs['v_min']
-        turbine.rotor_inertia = inputs['rotor_inertia']
-        turbine.rho = inputs['rho']
-        turbine.R = inputs['R']
-        turbine.gear_ratio = inputs['gear_ratio']
-        turbine.rated_rotor_speed = inputs['rated_rotor_speed']
-        turbine.v_rated = inputs['v_rated']
-        turbine.v_min = inputs['v_min']
-        turbine.v_max = inputs['v_max']
-        turbine.TSR_operational = inputs['TSR_operational']
+        # Define necessary turbine parameters (I think this is the right data structure...)
+        WISDEM_turbine = type('', (), {})()
+        WISDEM_turbine.v_min = inputs['v_min']
+        WISDEM_turbine.rotor_inertia = inputs['rotor_inertia']
+        WISDEM_turbine.rho = inputs['rho']
+        WISDEM_turbine.R = inputs['R']
+        WISDEM_turbine.gear_ratio = inputs['gear_ratio']
+        WISDEM_turbine.rated_rotor_speed = inputs['rated_rotor_speed']
+        WISDEM_turbine.v_rated = inputs['v_rated']
+        WISDEM_turbine.v_min = inputs['v_min']
+        WISDEM_turbine.v_max = inputs['v_max']
+        WISDEM_turbine.TSR_operational = inputs['TSR_operational']
+
+        # Load Cp tabls
+        self.Cp_table = inputs['Cp']
+        self.pitch_vector = inputs['pitch_vector']
+        self.tsr_vector = inputs['tsr_vector']
 
         RotorPerformance = ROSCO_turbine.RotorPerfomance()
-        self.Cp = RotorPerformance(self.Cp_table,self.pitch_initial_rad,self.TSR_initial)
-        self.Ct = RotorPerformance(self.Ct_table,self.pitch_initial_rad,self.TSR_initial)
-        self.Cq = RotorPerformance(self.Cq_table,self.pitch_initial_rad,self.TSR_initial)
+        WISDEM_turbine.Cp = RotorPerformance(self.Cp_table,self.pitch_vector,self.tsr_vector)
+        WISDEM_turbine.Ct = RotorPerformance(self.Ct_table,self.pitch_vector,self.tsr_vector)
+        WISDEM_turbine.Cq = RotorPerformance(self.Cq_table,self.pitch_initial_rad,self.TSR_initial)
 
-        # ROSCO_controller.controller(wt_init_options['controller'])
-        # Need to define a turbine class with parameters necessary the controller tuning
-        # turbine = load_turbine():
+        # initialize and tune controller
+        controller = ROSCO_controller.controller(wt_init_options['controller'])
+        controller.tune_controller(WISDEM_turbine)
 
+
+        # Outputs
+        outputs['logging_level'] = controller.logging_level
+        outputs['F_LPFType'] = controller.F_LPFType
+        outputs['F_NotchType'] = controller.F_NotchType
+        outputs['IPC_ControlMode'] = controller.IPC_ControlMode
+        outputs['VS_ControlMode'] = controller.VS_ControlMode
+        outputs['PC_ControlMode'] = controller.PC_ControlMode
+        outputs['Y_ControlMode'] = controller.Y_ControlMode
+        outputs['SS_Mode'] = controller.SS_Mode
+        outputs['WE_Mode'] = controller.WE_Mode
+        outputs['PS_Mode'] = controller.PS_Mode
+        outputs['SD_Mode'] = controller.SD_Mode
+        outputs['Fl_Mode'] = controller.Fl_Mode
+        outputs['F_LPFDamping'] = controller.F_LPFDamping
+        outputs['ss_cornerfreq'] = controller.ss_cornerfreq
+        outputs['pc_gain_schedule_Kp'] = controller.pc_gain_schedule_Kp
+        outputs['pc_gain_schedule_Ki'] = controller.pc_gain_schedule_Ki
+        outputs['max_pitch'] = controller.max_pitch
+        outputs['min_pitch'] = controller.min_pitch
+        outputs['vs_min_speed'] = controller.vs_min_speed
+        outputs['vs_rgn2K'] = controller.vs_rgn2K
+        outputs['vs_gain_schedule_Kp'] = controller.vs_gain_schedule_Kp
+        outputs['vs_gain_schedule_Ki'] = controller.vs_gain_schedule_Ki
+        outputs['TSR_operational'] = controller.TSR_operational
+        outputs['ss_vsgain'] = controller.ss_vsgain
+        outputs['ss_pcgain'] = controller.ss_pcgain
+        outputs['perf_tablesize'] = controller.perf_tablesize
+        outputs['WE_Poles_v'] = controller.WE_Poles_v
+        outputs['WE_Poles'] = controller.WE_Poles
+        outputs['ps_min_pitch_n'] = controller.ps_min_pitch_n
+        outputs['ps_wind_speeds'] = controller.ps_wind_speeds
+        outputs['ps_min_bld_pitch'] = controller.ps_min_bld_pitch
+        outputs['sd_maxpit'] = controller.sd_maxpit
+        outputs['sd_corner_freq'] = controller.sd_corner_freq
+        outputs['Kpf'] = controller.Kpf
 
     # def load_turbine(self):
     #     '''

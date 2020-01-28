@@ -13,11 +13,11 @@ openfast:
     Analysis_Level: 1
     FAST_ver: OpenFAST
     dev_branch: True
-    FAST_exe: /Users/pbortolo/work/2_openfast/openfast/build/glue-codes/openfast/openfast
-    FAST_directory: /Users/pbortolo/work/2_openfast/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95
-    FAST_InputFile: RotorSE_FAST_BAR_2010n_noRe.fst
-    path2dll: /Users/pbortolo/work/2_openfast/ROSCO_w_flaps/build/libdiscon.dylib
-    Turbsim_exe: "/Users/pbortolo/work/2_openfast/TurbSim/bin/TurbSim_glin64"
+    FAST_exe: "openfast_dev"
+    FAST_directory: /Users/nabbas/Documents/TurbineModels/NREL_5MW/5MW_Land
+    FAST_InputFile: 5MW_Land.fst
+    path2dll: /Users/nabbas/Documents/TurbineModels/TurbineControllers/FortranControllers/ROSCO/build/libdiscon.dylib
+    Turbsim_exe: "turbsim_dev"
     FAST_namingOut: WISDEM_NREL5MW
     FAST_runDirectory: temp/ + wt_initial.FAST_namingOut
     cores: 1

@@ -9,10 +9,10 @@ from wisdem.assemblies.wt_land_based import WindPark
 if __name__ == "__main__":
 
     ## File management
-    fname_wt_input         = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_analysis_options = "wisdem/assemblies/reference_turbines/analysis_options.yaml"
-    fname_opt_options      = "wisdem/assemblies/reference_turbines/optimization_options.yaml"
-    fname_wt_output        = "wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_wt_input         = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_analysis_options = "reference_turbines/analysis_options.yaml"
+    fname_opt_options      = "reference_turbines/optimization_options.yaml"
+    fname_wt_output        = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output          = 'temp/'
 
     # Optimization options
