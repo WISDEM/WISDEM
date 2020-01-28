@@ -1,10 +1,10 @@
 import unittest
 
-from . import test_column
-from . import test_map_mooring
-from . import test_loading
-from . import test_substructure
-from . import test_floating
+from wisdem.test.test_floatingse import test_column
+from wisdem.test.test_floatingse import test_map_mooring
+from wisdem.test.test_floatingse import test_loading
+from wisdem.test.test_floatingse import test_substructure
+from wisdem.test.test_floatingse import test_floating
 
 def suite():
     suite = unittest.TestSuite( (test_column.suite(),

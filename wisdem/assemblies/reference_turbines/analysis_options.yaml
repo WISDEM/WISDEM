@@ -8,6 +8,11 @@ yaml:
 xfoil:
     path       : /Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil
 
+rotorse:
+    n_aoa: 200        # Number of angles of attack used to define polars
+    n_xy: 200         # Number of angles of coordinate points used to discretize each airfoil
+    n_span: 30        # Number of spanwise stations used to define the blade properties
+
 openfast:
     run_openfast: True
     Analysis_Level: 1
@@ -23,13 +28,16 @@ openfast:
     cores: 1
     debug_level: 2
     
-rosco:
-    n_pitch_perf_surfaces: 20
-    min_pitch_perf_surfaces: -5.
-    max_pitch_perf_surfaces: 30.
-    n_tsr_perf_surfaces: 20
-    min_tsr_perf_surfaces: 2.
-    max_tsr_perf_surfaces: 12.
+servose:
+    n_pc: 20                        # Number of wind speeds to compute the power curve
+    n_pc_spline: 200                # Number of wind speeds to spline the power curve 
+    n_pitch_perf_surfaces: 20       # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
+    min_pitch_perf_surfaces: -5.    # Min pitch angle of the Cp-Ct-Cq-surfaces
+    max_pitch_perf_surfaces: 30.    # Max pitch angle of the Cp-Ct-Cq-surfaces
+    n_tsr_perf_surfaces: 20         # Number of tsr values to determine the Cp-Ct-Cq-surfaces
+    min_tsr_perf_surfaces: 2.       # Min TSR of the Cp-Ct-Cq-surfaces
+    max_tsr_perf_surfaces: 12.      # Max TSR of the Cp-Ct-Cq-surfaces
+    n_U_perf_surfaces: 1            # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
     LoggingLevel: 1 # {0: write no debug files, 1: write standard output .dbg-file, 2: write standard output .dbg-file and complete avrSWAP-array .dbg2-file
     F_LPFType: 1 # {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals)
     F_NotchType: 0 # Notch filter on generator speed and/or tower fore-aft motion (for floating) {0: disable, 1: generator speed, 2: tower-top fore-aft motion, 3: generator speed and tower-top fore-aft motion}

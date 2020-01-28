@@ -33,7 +33,7 @@ class WT_RNTA(Group):
         self.add_subsystem('xf',        RunXFOIL(wt_init_options = wt_init_options)) # Recompute polars with xfoil (for flaps)
         self.add_subsystem('sse',       ServoSE(wt_init_options = wt_init_options)) # Aero analysis
         
-        if analysis_options['openfast']['flag'] == True:
+        if analysis_options['openfast']['run_openfast'] == True:
             self.add_subsystem('aeroelastic',  FASTLoadCases(analysis_options = analysis_options))
         
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
@@ -44,9 +44,6 @@ class WT_RNTA(Group):
 
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
-        # Post-processing
-        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
-        self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
 
         # Connections to wind turbine class
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
@@ -253,7 +250,7 @@ class WT_RNTA(Group):
         
         # Connections to aeroelasticse
         # promotes=['fst_vt_in'])
-        if analysis_options['openfast']['flag'] == True:
+        if analysis_options['openfast']['run_openfast'] == True:
             self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             self.connect('assembly.r_blade',                'aeroelastic.r')
             self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
@@ -330,10 +327,6 @@ class WT_RNTA(Group):
         self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
         # self.connect('towerse.tower_mass',          'tcc.tower_mass')
-        # Connections to outputs
-        self.connect('sse.AEP',          'outputs_2_screen.AEP')
-        self.connect('rlds.blade_mass',   'outputs_2_screen.blade_mass')
-        # self.connect('financese.lcoe',          'outputs_2_screen.lcoe')
 
 class WindPark(Group):
     # Openmdao group to run the cost analysis of a wind park
@@ -348,7 +341,10 @@ class WindPark(Group):
 
         self.add_subsystem('wt',        WT_RNTA(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
-        
+        # Post-processing
+        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
+        self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
+
         # Inputs to plantfinancese from wt group
         self.connect('sse.AEP',          'financese.turbine_aep')
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
@@ -358,4 +354,4 @@ class WindPark(Group):
         self.connect('costs.bos_per_kW',        'financese.bos_per_kW')
         self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
         self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
-        self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
+

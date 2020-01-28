@@ -3445,7 +3445,7 @@ class blade_cost_model(object):
             tex_table_file.write('\\centering\n')
             tex_table_file.write('\\begin{tabular}{l c}\n')
             tex_table_file.write('\\toprule\n')
-            tex_table_file.write('       & Cost [\$]\\\\ \n')
+            tex_table_file.write('       & Cost [\\$]\\\\ \n')
             tex_table_file.write('\\midrule\n')
             tex_table_file.write('Material cost       & %.2f \\\\ \n' % (self.total_blade_mat_cost_w_waste))
             tex_table_file.write('Labor cost          & %.2f \\\\ \n' % (self.total_cost_labor))
@@ -3475,7 +3475,7 @@ class blade_cost_model(object):
             ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
             for i in range(len(texts)):
                 texts[i].set_fontsize(10)
-            fig1.savefig('Plots\Total_' + self.name +'.png')
+            fig1.savefig('Plots/Total_' + self.name +'.png')
             if self.options['show_plots'] == True:    
                 plt.show()
                 

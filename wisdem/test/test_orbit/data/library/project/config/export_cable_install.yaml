@@ -1,0 +1,26 @@
+export_cable_lay_vessel: test_cable_lay_vessel
+export_cable_bury_vessel: test_cable_lay_vessel
+export_system:
+  cables:
+    XLPE_500mm_132kV:
+      cable_sections:
+      - - 33.3502
+        - 10
+      linear_density: 50.0
+  strategy: separate
+plant:
+  layout: grid
+  num_turbines: 40
+  turbine_spacing: 5
+port:
+  num_cranes: 1
+site:
+  depth: 20
+  distance: 50
+  distance_to_beach: 0.0
+  distance_to_interconnection: 3
+  distance_to_landfall: 30
+trench_dig_vessel: test_trench_dig_vessel
+turbine:
+  rotor_diameter: 154
+  turbine_rating: 9

@@ -6,15 +6,9 @@ from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyPython, WindTurbi
 from wisdem.assemblies.run_tools import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
 from wisdem.assemblies.wt_land_based import WindPark
 
-if __name__ == "__main__":
-
-    ## File management
-    fname_wt_input         = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_analysis_options = "reference_turbines/analysis_options.yaml"
-    fname_opt_options      = "reference_turbines/optimization_options.yaml"
-    fname_wt_output        = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
-    folder_output          = 'temp/'
-
+def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output):
+    # Main to run a wind turbine wisdem assembly
+    
     # Optimization options
     optimization_data       = Opt_Data()
     optimization_data.fname_opt_options = fname_opt_options
@@ -29,19 +23,19 @@ if __name__ == "__main__":
     if opt_options['blade_aero']['opt_twist'] == True:
         opt_flag = True
     else:
-        opt_options['blade_aero']['n_opt_twist'] = wt_initial.n_span
+        opt_options['blade_aero']['n_opt_twist'] = analysis_options['rotorse']['n_span']
     if opt_options['blade_aero']['opt_chord'] == True:
         opt_flag = True
     else:
-        opt_options['blade_aero']['n_opt_chord'] = wt_initial.n_span
+        opt_options['blade_aero']['n_opt_chord'] = analysis_options['rotorse']['n_span']
     if opt_options['blade_struct']['opt_spar_cap_ss'] == True:
         opt_flag = True
     else:
-        opt_options['blade_aero']['n_opt_spar_cap_ss'] = wt_initial.n_span
+        opt_options['blade_aero']['n_opt_spar_cap_ss'] = analysis_options['rotorse']['n_span']
     if opt_options['blade_struct']['opt_spar_cap_ps'] == True:
         opt_flag = True
     else:
-        opt_options['blade_aero']['n_opt_spar_cap_ps'] = wt_initial.n_span
+        opt_options['blade_aero']['n_opt_spar_cap_ps'] = analysis_options['rotorse']['n_span']
 
     if not os.path.isdir(folder_output):
         os.mkdir(folder_output)
@@ -113,6 +107,19 @@ if __name__ == "__main__":
 
     # Save data coming from openmdao to an output yaml file
     wt_initial.write_ontology(wt_opt, fname_wt_output)
+
+    return wt_opt, analysis_options, opt_options
+
+
+if __name__ == "__main__":
+    ## File management
+    fname_wt_input         = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_analysis_options = "wisdem/wisdem/assemblies/reference_turbines/analysis_options.yaml"
+    fname_opt_options      = "wisdem/wisdem/assemblies/reference_turbines/optimization_options.yaml"
+    fname_wt_output        = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    folder_output          = 'temp/'
+
+    wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
 
     # Printing and plotting results
     print('AEP in GWh = ' + str(wt_opt['ra.AEP']*1.e-6))

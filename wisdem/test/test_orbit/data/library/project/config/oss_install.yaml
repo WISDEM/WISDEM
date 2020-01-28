@@ -1,0 +1,19 @@
+feeder: test_feeder
+num_feeders: 1
+num_substations: 1
+offshore_substation_substructure:
+  deck_space: 200
+  length: 50
+  type: Monopile
+  weight: 400
+offshore_substation_topside:
+  deck_space: 200
+  type: Topside
+  weight: 400
+oss_install_vessel: test_heavy_lift_vessel
+port:
+  monthly_rate: 100000
+  num_cranes: 1
+site:
+  depth: 15
+  distance: 40

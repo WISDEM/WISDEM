@@ -280,6 +280,7 @@ class AirfoilShape(Curve):
         self.points[:iLE, 1] = yp
         self.initialize(self.points)
 
+
 def remap2grid(x_ref, y_ref, x, spline=PchipInterpolator):
 
 
@@ -344,4 +345,3 @@ def trailing_edge_smoothing(data):
     data[idx_95_100_PS,1] = y_corrected_PS
 
     return data
-
