@@ -254,6 +254,8 @@ class WT_RNTA(Group):
             self.connect('assembly.rotor_radius',           'aeroelastic.Rtip')
             self.connect('hub.radius',                      'aeroelastic.Rhub')
             self.connect('assembly.hub_height',             'aeroelastic.hub_height')
+            self.connect('tower.height',                    'aeroelastic.tower_height')
+            self.connect('foundation.height',               'aeroelastic.tower_base_height')
             # self.connect('hub.cone',                        'aeroelastic.precone')
             # self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
