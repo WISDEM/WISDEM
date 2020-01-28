@@ -44,9 +44,6 @@ class WT_RNTA(Group):
 
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
-        # Post-processing
-        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
-        self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
 
         # Connections to wind turbine class
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
@@ -321,10 +318,6 @@ class WT_RNTA(Group):
         self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
         # self.connect('towerse.tower_mass',          'tcc.tower_mass')
-        # Connections to outputs
-        self.connect('ra.AEP',          'outputs_2_screen.AEP')
-        self.connect('rlds.blade_mass',   'outputs_2_screen.blade_mass')
-        # self.connect('financese.lcoe',          'outputs_2_screen.lcoe')
 
 class WindPark(Group):
     # Openmdao group to run the cost analysis of a wind park
@@ -339,7 +332,10 @@ class WindPark(Group):
 
         self.add_subsystem('wt',        WT_RNTA(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
-        
+        # Post-processing
+        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
+        self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
+
         # Inputs to plantfinancese from wt group
         self.connect('ra.AEP',          'financese.turbine_aep')
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
@@ -350,3 +346,8 @@ class WindPark(Group):
         self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
         self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
         self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
+
+        # Connections to outputs
+        self.connect('ra.AEP',          'outputs_2_screen.AEP')
+        self.connect('rlds.blade_mass', 'outputs_2_screen.blade_mass')
+        self.connect('financese.lcoe',  'outputs_2_screen.lcoe')
