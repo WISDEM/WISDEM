@@ -1241,6 +1241,17 @@ class InputWriter_OpenFAST(InputWriter_Common):
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
         f = open(discon_in_file, 'w')
 
+        # Error handling for different commits of Rosco that added features/lines.  This can probably be removed in the future
+        if self.fst_vt['DISCON_in']['Fl_Mode'] in ['0', 0]:
+            Fl_Mode  = False
+        else:
+            Fl_Mode  = True
+        if self.fst_vt['DISCON_in']['Flp_Mode'] in ['0', 0]:
+            Flp_Mode = False
+        else:
+            Flp_Mode = True
+
+
         f.write('! Controller parameter input file\n')
         f.write('!    - File written using NREL Reference OpenSource Controller tuning logic on 11/01/19\n')
         f.write('! Generated with AeroElasticSE FAST driver\n')
@@ -1257,16 +1268,20 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_Mode'], '! WE_Mode', '- Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PS_Mode'], '! PS_Mode', '- Peak shaving mode {0: no peak shaving, 1: implement peak shaving}\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_Mode'], '! SD_Mode', '- Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Mode'], '! Fl_Mode', '- Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Mode'],'! Flp_Mode','- Distributed aerodynamic control mode {0: no flap actuation, 1: steady state flap angle, 2: Flap angle PI Control}\n'))
+        if Fl_Mode:
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Mode'], '! Fl_Mode', '- Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}\n'))
+        if Flp_Mode:
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Mode'],'! Flp_Mode','- Distributed aerodynamic control mode {0: no flap actuation, 1: steady state flap angle, 2: Flap angle PI Control}\n'))
         f.write('\n!------- FILTERS ----------------------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFCornerFreq'], '! F_LPFCornerFreq', '- Corner frequency (-3dB point) in the low-pass filters, [rad/s]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFDamping'], '! F_LPFDamping', '- Damping coefficient [used only when F_FilterType = 2]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_NotchCornerFreq'], '! F_NotchCornerFreq', '- Natural frequency of the notch filter, [rad/s]\n'))
         f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_NotchBetaNumDen']]), '! F_NotchBetaNumDen', '- Two notch damping values (numerator and denominator, resp) - determines the width and depth of the notch, [-]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_SSCornerFreq'], '! F_SSCornerFreq', '- Corner frequency (-3dB point) in the first order low pass filter for the setpoint smoother, [rad/s].\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_FlCornerFreq']]), '! F_FlCornerFreq', '- Corner frequency and damping in the second order low pass filter of the tower-top fore-aft motion for floating feedback control [rad/s, -]\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_FlpCornerFreq']]), '! F_FlpCornerFreq', '- Corner frequency and damping in the second order low pass filter of the blade root bending moment for flap control [rad/s, -].\n'))
+        if Fl_Mode:
+            f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_FlCornerFreq']]), '! F_FlCornerFreq', '- Corner frequency and damping in the second order low pass filter of the tower-top fore-aft motion for floating feedback control [rad/s, -]\n'))
+        if Flp_Mode:
+            f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_FlpCornerFreq']]), '! F_FlpCornerFreq', '- Corner frequency and damping in the second order low pass filter of the blade root bending moment for flap control [rad/s, -].\n'))
         f.write('\n!------- BLADE PITCH CONTROL ----------------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_GS_n'], '! PC_GS_n', '- Amount of gain-scheduling table entries\n'))
         f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PC_GS_angles']]), '! PC_GS_angles', '- Gain-schedule table: pitch angles\n'))
@@ -1343,12 +1358,14 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('\n!------- SHUTDOWN -------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_MaxPit'], '! SD_MaxPit', '- Maximum blade pitch angle to initiate shutdown, [rad]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_CornerFreq'], '! SD_CornerFreq', '- Cutoff Frequency for first order low-pass filter for blade pitch angle, [rad/s]\n'))
-        f.write('\n!------- FLOATING -------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Kp'], '! Fl_Kp', '- Nacelle velocity proportional feedback gain [s]\n'))
-        f.write('\n!------- FLAP ACTUATION -------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Angle'], '! Flp_Angle', '- Initial (Flp_Mode = 2) or steady state (Flp_Mode = 1) flap angle, [deg]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Kp'], '! Flp_Kp', '- PI flap controller proportional gain\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Ki'], '! Flp_Ki', '- PI flap controller integral gain\n'))
+        if Fl_Mode:
+            f.write('\n!------- FLOATING -------------------------------------------\n')
+            f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Kp'], '! Fl_Kp', '- Nacelle velocity proportional feedback gain [s]\n'))
+        if Flp_Mode:
+            f.write('\n!------- FLAP ACTUATION -------------------------------------------\n')
+            f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Angle'], '! Flp_Angle', '- Initial (Flp_Mode = 2) or steady state (Flp_Mode = 1) flap angle, [deg]\n'))
+            f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Kp'], '! Flp_Kp', '- PI flap controller proportional gain\n'))
+            f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Flp_Ki'], '! Flp_Ki', '- PI flap controller integral gain\n'))
 
         f.close()
 

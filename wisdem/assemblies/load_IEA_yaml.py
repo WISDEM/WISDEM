@@ -795,6 +795,8 @@ class Materials(ExplicitComponent):
         self.add_output('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
         self.add_output('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
         self.add_output('nu',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
+        self.add_output('Xt',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+        self.add_output('Xc',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
         self.add_output('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
         self.add_output('unit_cost',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
         self.add_output('waste',         val=np.zeros(n_mat),                      desc='1D array of the non-dimensional waste fraction of the materials.')
@@ -1430,6 +1432,8 @@ def assign_material_values(wt_opt, analysis_options, materials):
     E           = np.zeros([n_mat, 3])
     G           = np.zeros([n_mat, 3])
     nu          = np.zeros([n_mat, 3])
+    Xt          = np.zeros([n_mat, 3])
+    Xc          = np.zeros([n_mat, 3])
     rho_fiber   = np.zeros(n_mat)
     rho_area_dry= np.zeros(n_mat)
     fvf         = np.zeros(n_mat)
@@ -1456,10 +1460,17 @@ def assign_material_values(wt_opt, analysis_options, materials):
                 G[i,:]  = np.ones(3) * materials[i]['E']/(2*(1+materials[i]['nu'])) # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
                 warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
                 print(warning_shear_modulus_isotropic)
+            if 'Xt' in materials[i]:
+                Xt[i,:] = np.ones(3) * materials[i]['Xt']
+            if 'Xc' in materials[i]:
+                Xc[i,:] = np.ones(3) * materials[i]['Xc']
         elif orth[i] == 1:
             E[i,:]  = materials[i]['E']
             G[i,:]  = materials[i]['G']
             nu[i,:] = materials[i]['nu']
+            Xt[i,:] = materials[i]['Xt']
+            Xc[i,:] = materials[i]['Xc']
+
         else:
             exit('The flag orth must be set to either 0 or 1. Error in material ' + name[i])
         if 'fiber_density' in materials[i]:
@@ -1486,6 +1497,8 @@ def assign_material_values(wt_opt, analysis_options, materials):
     wt_opt['materials.component_id']= component_id
     wt_opt['materials.E']        = E
     wt_opt['materials.G']        = G
+    wt_opt['materials.Xt']       = Xt
+    wt_opt['materials.Xc']       = Xc
     wt_opt['materials.nu']       = nu
     wt_opt['materials.rho_fiber']      = rho_fiber
     wt_opt['materials.rho_area_dry']   = rho_area_dry

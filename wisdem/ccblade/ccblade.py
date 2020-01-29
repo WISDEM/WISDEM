@@ -1604,7 +1604,7 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(tsr, CP, 'k')
-    plt.xlabel('$\lambda$')
+    plt.xlabel('$/lambda$')
     plt.ylabel('$c_p$')
 
     plt.show()

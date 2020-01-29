@@ -353,6 +353,8 @@ materials:
       rho: 1235.0
       orth: 0
       nu: 0.3
+      Xt: 74.e+006
+      Xc: 87.e+006
       unit_cost: 7.23
       ply_t: 0.00051
       waste: 0.25
@@ -363,6 +365,8 @@ materials:
       rho: 1920.0
       orth: 1
       nu: [0.28, 0.28, 0.28]
+      Xt: [1060.0e+006, 66.3e+006, 26.6e+006]
+      Xc: [826.0e+006, 196.0e+006, 197.0e+006]
       unit_cost: 1.87
       waste: 0.05
       fiber_density: 2600.
@@ -374,6 +378,8 @@ materials:
       rho: 1850.0
       orth: 1
       nu: [0.39, 0.39, 0.39]
+      Xt: [54.5e+006, 54.5e+006, 26.6e+006]
+      Xc: [74.1e+006, 74.1e+006, 197.0e+006]
       unit_cost: 2.86
       waste: 0.15
       fiber_density: 2600.
@@ -386,6 +392,8 @@ materials:
       rho: 1780.0
       orth: 1
       nu: [0.49, 0.49, 0.49]
+      Xt: [54.47e+006, 54.47e+006, 26.6e+006]
+      Xc: [74.1e+006, 74.1e+006, 197.0e+006]
       unit_cost: 3.00
       waste: 0.15
       fiber_density: 2600.
@@ -398,6 +406,8 @@ materials:
       rho: 200.0
       orth: 0
       nu: 0.3
+      Xt: 6.04e+006
+      Xc: 5.10e+006
       component_id: 1
       waste: 0.2
       unit_cost: 13
@@ -408,6 +418,8 @@ materials:
       rho: 1220.0
       orth: 1
       nu: [0.27, 0.27, 0.27]
+      Xt: [2236.0e+006, 0.00, 0.00]
+      Xc: [1528.0e+006, 0.00, 0.00]
       unit_cost: 30.00
       waste: 0.05
       fiber_density: 1800.
@@ -417,6 +429,9 @@ materials:
       description: epoxy
       E: 1.e+6
       rho: 1150.
+      nu: 0.30  
+      Xt: 61.51e+006
+      Xc: 65.36e+006
       orth: 0
 assembly:
     turbine_class: I
