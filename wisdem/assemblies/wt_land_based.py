@@ -296,6 +296,7 @@ class WT_RNTA(Group):
             self.connect('sse.aeroperf_tables.Cp', 'aeroelastic.Cp_aero_table')
             self.connect('sse.aeroperf_tables.Ct', 'aeroelastic.Ct_aero_table')
             self.connect('sse.aeroperf_tables.Cq', 'aeroelastic.Cq_aero_table')
+            self.connect('sse.tune_rosco.Kp_flap',  'aeroelastic.Kp_flap')
 
             # Temporary
             self.connect('xf.Re_loc',           'aeroelastic.airfoils_Re_loc')

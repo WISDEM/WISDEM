@@ -132,8 +132,8 @@ class TuneROSCO(ExplicitComponent):
 
 
         # Optimization parameters to output
-        #       - Note, passing all of the other DISCON variables in an analysis_options dictionary to easy things temporarily
-        self.add_output('Kpf',                   val=0.0,    units='s',                   desc='') 
+        #       - Note, passing all of the other DISCON variables in analysis_options['openfast']['fst_vt']['DISCON_in']
+        self.add_output('Kp_flap',                   val=0.0,    units='s',                   desc='Flap actuation gain') 
 
     def computes(self,inputs,outputs):
         '''
