@@ -29,17 +29,18 @@ from wisdem.rotorse.rotor_fast import eval_unsteady
 
 class ServoSE(Group):
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
+        self.options.declare('opt_options')
 
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
+        analysis_options = self.options['analysis_options']
 
-        self.add_subsystem('powercurve',        RegulatedPowerCurve(wt_init_options   = wt_init_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(wt_init_options   = wt_init_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-        self.add_subsystem('stall_check',       NoStallConstraint(wt_init_options   = wt_init_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
+        self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('stall_check',       NoStallConstraint(analysis_options   = analysis_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=200))
         self.add_subsystem('aep',               AEP(), promotes=['AEP'])
-        self.add_subsystem('tune_rosco',        TuneROSCO(wt_init_options = wt_init_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational'])
+        self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational'])
         # Connections to the stall check
         self.connect('powercurve.aoa_cutin','stall_check.aoa_along_span')
 
@@ -64,57 +65,41 @@ class ServoSE(Group):
 
         self.test = 5.0
 
-
 class TuneROSCO(ExplicitComponent):
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
-        self.wt_init_options = self.options['wt_init_options']
-        blade_init_options = self.wt_init_options['blade']
+        self.analysis_options = self.options['analysis_options']
+        servose_init_options = self.analysis_options['servose']
 
-        # Controller flags 
-        self.wt_init_options['controller'] = {}
-        self.wt_init_options['controller']['LoggingLevel'] =       1                     # {0: write no debug files, 1: write standard output .dbg-file, 2: write standard output .dbg-file and complete avrSWAP-array .dbg2-file
-        self.wt_init_options['controller']['F_LPFType'] =          1                     # {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals)
-        self.wt_init_options['controller']['F_NotchType'] =        0                     # Notch filter on generator speed and/or tower fore-aft motion (for floating) {0: disable, 1: generator speed, 2: tower-top fore-aft motion, 3: generator speed and tower-top fore-aft motion}
-        self.wt_init_options['controller']['IPC_ControlMode'] =    0                     # Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0: off, 1: 1P reductions, 2: 1P+2P reductions}
-        self.wt_init_options['controller']['VS_ControlMode'] =     2                     # Generator torque control mode in above rated conditions {0: constant torque, 1: constant power, 2: TSR tracking PI control}
-        self.wt_init_options['controller']['PC_ControlMode'] =     1                     # Blade pitch control mode {0: No pitch, fix to fine pitch, 1: active PI blade pitch control}
-        self.wt_init_options['controller']['Y_ControlMode'] =      0                     # Yaw control mode {0: no yaw control, 1: yaw rate control, 2: yaw-by-IPC}
-        self.wt_init_options['controller']['SS_Mode'] =            1                     # Setpoint Smoother mode {0: no setpoint smoothing, 1: introduce setpoint smoothing}
-        self.wt_init_options['controller']['WE_Mode'] =            2                     # Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}
-        self.wt_init_options['controller']['PS_Mode'] =            1                     # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
-        self.wt_init_options['controller']['SD_Mode'] =            0                     # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
-        self.wt_init_options['controller']['Fl_Mode'] =            1                     # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}
-    
-        # Input parameters that we need from a .yaml file (set to none for now...)
+        # Input parameters
         self.controller_params = {}
         # Controller Flags
-        self.controller_params['LoggingLevel'] = self.wt_init_options['controller']['LoggingLevel']
-        self.controller_params['F_LPFType'] = self.wt_init_options['controller']['F_LPFType']
-        self.controller_params['F_NotchType'] = self.wt_init_options['controller']['F_NotchType']
-        self.controller_params['IPC_ControlMode'] = self.wt_init_options['controller']['IPC_ControlMode']
-        self.controller_params['VS_ControlMode'] = self.wt_init_options['controller']['VS_ControlMode']
-        self.controller_params['PC_ControlMode'] = self.wt_init_options['controller']['PC_ControlMode']
-        self.controller_params['Y_ControlMode'] = self.wt_init_options['controller']['Y_ControlMode']
-        self.controller_params['SS_Mode'] = self.wt_init_options['controller']['SS_Mode']
-        self.controller_params['WE_Mode'] = self.wt_init_options['controller']['WE_Mode']
-        self.controller_params['PS_Mode'] = self.wt_init_options['controller']['PS_Mode']
-        self.controller_params['SD_Mode'] = self.wt_init_options['controller']['SD_Mode']
-        self.controller_params['Fl_Mode'] = self.wt_init_options['controller']['Fl_Mode']
+        self.controller_params['LoggingLevel'] = self.analysis_options['servose']['LoggingLevel']
+        self.controller_params['F_LPFType'] = self.analysis_options['servose']['F_LPFType']
+        self.controller_params['F_NotchType'] = self.analysis_options['servose']['F_NotchType']
+        self.controller_params['IPC_ControlMode'] = self.analysis_options['servose']['IPC_ControlMode']
+        self.controller_params['VS_ControlMode'] = self.analysis_options['servose']['VS_ControlMode']
+        self.controller_params['PC_ControlMode'] = self.analysis_options['servose']['PC_ControlMode']
+        self.controller_params['Y_ControlMode'] = self.analysis_options['servose']['Y_ControlMode']
+        self.controller_params['SS_Mode'] = self.analysis_options['servose']['SS_Mode']
+        self.controller_params['WE_Mode'] = self.analysis_options['servose']['WE_Mode']
+        self.controller_params['PS_Mode'] = self.analysis_options['servose']['PS_Mode']
+        self.controller_params['SD_Mode'] = self.analysis_options['servose']['SD_Mode']
+        self.controller_params['Fl_Mode'] = self.analysis_options['servose']['Fl_Mode']
 
-        # Additional controller parameters
-        # -- NJA these can be optional inputs in the yaml or changed to inputs - not sure yet
-        self.controller_params['max_pitch'] = self.wt_init_options['controller']['max_pitch']
-        self.controller_params['min_pitch'] = self.wt_init_options['controller']['min_pitch']
-        self.controller_params['vs_minspd'] = self.wt_init_options['controller']['vs_minspd']
-        self.controller_params['ss_cornerfreq'] = self.wt_init_options['controller']['ss_cornerfreq']
-        self.controller_params['ss_vsgain'] = self.wt_init_options['controller']['ss_vsgain']
-        self.controller_params['ss_pcgain'] = self.wt_init_options['controller']['ss_pcgain']
-        self.controller_params['ps_percent'] = self.wt_init_options['controller']['ps_percent']
-        self.controller_params['sd_maxpit'] = self.wt_init_options['controller']['sd_maxpit']
-        self.controller_params['sd_cornerfreq'] = self.wt_init_options['controller']['sd_cornerfreq']
+        # # Additional controller parameters
+        # # -- NJA these can be optional inputs in the yaml or changed to inputs - not sure yet
+        # self.controller_params['max_pitch'] = self.analysis_options['controller']['max_pitch']
+        # self.controller_params['min_pitch'] = self.analysis_options['controller']['min_pitch']
+        # self.controller_params['vs_minspd'] = self.analysis_options['controller']['vs_minspd']
+        # self.controller_params['ss_cornerfreq'] = self.analysis_options['controller']['ss_cornerfreq']
+        # self.controller_params['ss_vsgain'] = self.analysis_options['controller']['ss_vsgain']
+        # self.controller_params['ss_pcgain'] = self.analysis_options['controller']['ss_pcgain']
+        # self.controller_params['ps_percent'] = self.analysis_options['controller']['ps_percent']
+        # self.controller_params['sd_maxpit'] = self.analysis_options['controller']['sd_maxpit']
+        # self.controller_params['sd_cornerfreq'] = self.analysis_options['controller']['sd_cornerfreq']
 
         # Necessary parameters
         # Turbine parameters
@@ -129,9 +114,9 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('tsr_operational',   val=0.0,                                desc='Operational tip-speed ratio')
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         # Rotor Power
-        self.n_pitch    = n_pitch   = blade_init_options['n_pitch']
-        self.n_tsr      = n_tsr     = blade_init_options['n_tsr']
-        self.n_U        = n_U       = blade_init_options['n_U']
+        self.n_pitch    = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
+        self.n_tsr      = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
+        self.n_U        = n_U       = servose_init_options['n_U_perf_surfaces']
         self.add_input('Cp_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero power coefficient')
         self.add_input('Ct_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero thrust coefficient')
         self.add_input('Cq_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero torque coefficient')
@@ -198,10 +183,10 @@ class TuneROSCO(ExplicitComponent):
         '''
 
         # Add control tuning parameters to dictionary
-        self.wt_init_options['controller']['omega_pc']  = inputs['PC_omega']
-        self.wt_init_options['controller']['zeta_pc']   = inputs['PC_zeta']
-        self.wt_init_options['controller']['omega_vs']  = inputs['VS_omega']
-        self.wt_init_options['controller']['zeta_vs']   = inputs['VS_zeta']
+        self.analysis_options['controller']['omega_pc']  = inputs['PC_omega']
+        self.analysis_options['controller']['zeta_pc']   = inputs['PC_zeta']
+        self.analysis_options['controller']['omega_vs']  = inputs['VS_omega']
+        self.analysis_options['controller']['zeta_vs']   = inputs['VS_zeta']
 
         # Define necessary turbine parameters (I think this is the right data structure...)
         WISDEM_turbine = type('', (), {})()
@@ -355,7 +340,6 @@ class TuneROSCO(ExplicitComponent):
     #     self.add_output('Fl_Kp',    val=controller.pc_gain_schedule.KpFl,       units="rad/(N*m)",       desc="Proportional gain for flap controller")     
     #     # etc...
 
-
 class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
     def initialize(self):
@@ -368,20 +352,20 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
         # self.options.declare('n_aoa_grid')
         # self.options.declare('n_Re_grid')
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
     
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
-        self.n_span        = n_span    = wt_init_options['blade']['n_span']
+        analysis_options = self.options['analysis_options']
+        self.n_span        = n_span    = analysis_options['blade']['n_span']
         # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
-        self.n_aoa         = n_aoa     = wt_init_options['airfoils']['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_aoa         = n_aoa     = analysis_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.regulation_reg_III = True
         # naero       = self.naero = self.options['naero']
-        self.n_pc          = wt_init_options['blade']['n_pc']
-        self.n_pc_spline   = wt_init_options['blade']['n_pc_spline']
+        self.n_pc          = analysis_options['servose']['n_pc']
+        self.n_pc_spline   = analysis_options['servose']['n_pc_spline']
         # n_aoa_grid  = self.options['n_aoa_grid']
         # n_Re_grid   = self.options['n_Re_grid']
 
@@ -720,7 +704,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
         # self.options.declare('naero')
         # self.options.declare('n_pitch', default=20)
         # self.options.declare('n_tsr', default=20)
@@ -729,20 +713,21 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         # self.options.declare('n_Re_grid')
 
     def setup(self):
-        wt_init_options = self.options['wt_init_options']
-        blade_init_options = wt_init_options['blade']
-        airfoils = wt_init_options['airfoils']
+        analysis_options = self.options['analysis_options']
+        blade_init_options = analysis_options['blade']
+        servose_init_options = analysis_options['servose']
+        airfoils = analysis_options['airfoils']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_aoa         = n_aoa     = airfoils['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = airfoils['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = airfoils['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_pitch       = n_pitch   = blade_init_options['n_pitch']
-        self.n_tsr         = n_tsr     = blade_init_options['n_tsr']
-        self.n_U           = n_U       = blade_init_options['n_U']
-        self.min_TSR       = blade_init_options['min_TSR']
-        self.max_TSR       = blade_init_options['max_TSR']
-        self.min_pitch     = blade_init_options['min_pitch']
-        self.max_pitch     = blade_init_options['max_pitch']
+        self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
+        self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
+        self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
+        self.min_TSR       = servose_init_options['min_tsr_perf_surfaces']
+        self.max_TSR       = servose_init_options['max_tsr_perf_surfaces']
+        self.min_pitch     = servose_init_options['min_pitch_perf_surfaces']
+        self.max_pitch     = servose_init_options['max_pitch_perf_surfaces']
         
         # parameters        
         self.add_input('v_min',   val=0.0,             units='m/s',       desc='cut-in wind speed')
@@ -833,15 +818,15 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
 class NoStallConstraint(ExplicitComponent):
     def initialize(self):
         
-        self.options.declare('wt_init_options')
+        self.options.declare('analysis_options')
     
     def setup(self):
         
-        wt_init_options = self.options['wt_init_options']
-        self.n_span        = n_span    = wt_init_options['blade']['n_span']
-        self.n_aoa         = n_aoa     = wt_init_options['airfoils']['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = wt_init_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = wt_init_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        analysis_options = self.options['analysis_options']
+        self.n_span        = n_span    = analysis_options['blade']['n_span']
+        self.n_aoa         = n_aoa     = analysis_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         
         self.add_input('s',                     val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_input('stall_angle_along_span',val=np.zeros(n_span), units = 'deg', desc = 'Stall angle along blade span')
