@@ -848,18 +848,28 @@ class Control(ExplicitComponent):
     # Openmdao component with the wind turbine controller data coming from the input yaml file.
     def setup(self):
 
-        self.add_output('rated_power',    val=0.0, units='W',       desc='Electrical rated power of the generator.')
-        self.add_output('V_in',           val=0.0, units='m/s',     desc='Cut in wind speed. This is the wind speed where region II begins.')
-        self.add_output('V_out',          val=0.0, units='m/s',     desc='Cut out wind speed. This is the wind speed where region III ends.')
-        self.add_output('minOmega',      val=0.0, units='rad/s',   desc='Minimum allowed rotor speed.')
-        self.add_output('maxOmega',      val=0.0, units='rad/s',   desc='Maximum allowed rotor speed.')
-        self.add_output('max_TS',         val=0.0, units='m/s',     desc='Maximum allowed blade tip speed.')
-        self.add_output('rated_TSR',      val=0.0,                  desc='Constant tip speed ratio in region II.')
-        self.add_output('rated_pitch',    val=0.0, units='rad',     desc='Constant pitch angle in region II.')
-        self.add_output('PC_omega',       val=0.0, units='rad/s',   desc='Pitch controller natural frequency')
-        self.add_output('PC_zeta',        val=0.0,                  desc='Pitch controller damping ratio')
-        self.add_output('VS_omega',       val=0.0, units='rad/s',   desc='Generator torque controller natural frequency')
-        self.add_output('VS_zeta',        val=0.0,                  desc='Generator torque controller damping ratio')
+        self.add_output('rated_power',      val=0.0, units='W',           desc='Electrical rated power of the generator.')
+        self.add_output('V_in',             val=0.0, units='m/s',         desc='Cut in wind speed. This is the wind speed where region II begins.')
+        self.add_output('V_out',            val=0.0, units='m/s',         desc='Cut out wind speed. This is the wind speed where region III ends.')
+        self.add_output('minOmega',         val=0.0, units='rad/s',        desc='Minimum allowed rotor speed.')
+        self.add_output('maxOmega',         val=0.0, units='rad/s',        desc='Maximum allowed rotor speed.')
+        self.add_output('max_TS',           val=0.0, units='m/s',         desc='Maximum allowed blade tip speed.')
+        self.add_output('rated_TSR',        val=0.0,                      desc='Constant tip speed ratio in region II.')
+        self.add_output('rated_pitch',      val=0.0, units='rad',         desc='Constant pitch angle in region II.')
+        self.add_output('PC_omega',         val=0.0, units='rad/s',       desc='Pitch controller natural frequency')
+        self.add_output('PC_zeta',          val=0.0,                      desc='Pitch controller damping ratio')
+        self.add_output('VS_omega',         val=0.0, units='rad/s',       desc='Generator torque controller natural frequency')
+        self.add_output('VS_zeta',          val=0.0,                      desc='Generator torque controller damping ratio')
+        # optional inputs - not connected right now!!
+        self.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
+        self.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
+        self.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
+        self.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
+        self.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
+        self.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
+        self.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
+        self.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
+        self.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
         
 class Configuration(ExplicitComponent):
     # Openmdao component with the wind turbine configuration data (class, number of blades, upwind vs downwind, ...) coming from the input yaml file.
@@ -1290,10 +1300,20 @@ def assign_control_values(wt_opt, control):
     wt_opt['control.rated_pitch']   = control['pitch']
     wt_opt['control.max_TS']        = control['maxTS']
     # ROSCO tuning parameters
-    wt_opt['control.PC_omega']       = control['PC_omega']
-    wt_opt['control.PC_zeta']        = control['PC_zeta']
-    wt_opt['control.VS_omega']       = control['VS_omega']
-    wt_opt['control.VS_zeta']        = control['VS_zeta']
+    wt_opt['control.PC_omega']      = control['PC_omega']
+    wt_opt['control.PC_zeta']       = control['PC_zeta']
+    wt_opt['control.VS_omega']      = control['VS_omega']
+    wt_opt['control.VS_zeta']       = control['VS_zeta']
+    # other optional parameters
+    wt_opt['max_pitch']             = control['max_pitch']
+    wt_opt['min_pitch']             = control['min_pitch']
+    wt_opt['vs_minspd']             = control['vs_minspd']
+    wt_opt['ss_cornerfreq']         = control['ss_cornerfreq']    
+    wt_opt['ss_vsgain']             = control['ss_vsgain']
+    wt_opt['ss_pcgain']             = control['ss_pcgain']
+    wt_opt['ps_percent']            = control['ps_percent']
+    wt_opt['sd_maxpit']             = control['sd_maxpit']
+    wt_opt['sd_cornerfreq']         = control['sd_cornerfreq']    
     return wt_opt
 
 def assign_configuration_values(wt_opt, assembly):
