@@ -339,7 +339,7 @@ class RunPreComp(ExplicitComponent):
                                 # ss_start_nd_arc.append(sec['start_nd_arc']['values'][i])
                                 ss_end_nd_arc_temp = float(spline_arc2xnd(inputs['layer_start_nd'][idx_sec,i]))
                                 if ss_end_nd_arc_temp > 1 or ss_end_nd_arc_temp < 0:
-                                    exit('Error in the definition of material ' + discrete_inputs['layer_name'][idx_sec] + '. It cannot fit in the section')
+                                    exit('Error in the definition of material ' + discrete_inputs['layer_name'][idx_sec] + '. It cannot fit in the section number ' + str(i) + ' at span location ' + str(inputs['r'][i]/inputs['r'][-1]*100.) + ' %.')
                                 if ss_end_nd_arc_temp == profile_i_rot[0,0] and profile_i_rot[0,0] != 1.:
                                     ss_end_nd_arc_temp = 1.
                                 ss_end_nd_arc.append(ss_end_nd_arc_temp)
