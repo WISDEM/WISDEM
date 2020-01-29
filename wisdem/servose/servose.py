@@ -170,132 +170,61 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.Cq = RotorPerformance(self.Cq_table,self.pitch_initial_rad,self.TSR_initial)
 
         # initialize and tune controller
-        controller = ROSCO_controller.controller(analysis_options['controller'])
+        controller = ROSCO_controller.controller(analysis_options['servose'])
         controller.tune_controller(WISDEM_turbine)
 
-        # Outputs
-        analysis_options['DISCON']['logging_level'] = controller.logging_level
-        analysis_options['DISCON']['F_LPFType'] = controller.F_LPFType
-        analysis_options['DISCON']['F_NotchType'] = controller.F_NotchType
-        analysis_options['DISCON']['IPC_ControlMode'] = controller.IPC_ControlMode
-        analysis_options['DISCON']['VS_ControlMode'] = controller.VS_ControlMode
-        analysis_options['DISCON']['PC_ControlMode'] = controller.PC_ControlMode
-        analysis_options['DISCON']['Y_ControlMode'] = controller.Y_ControlMode
-        analysis_options['DISCON']['SS_Mode'] = controller.SS_Mode
-        analysis_options['DISCON']['WE_Mode'] = controller.WE_Mode
-        analysis_options['DISCON']['PS_Mode'] = controller.PS_Mode
-        analysis_options['DISCON']['SD_Mode'] = controller.SD_Mode
-        analysis_options['DISCON']['Fl_Mode'] = controller.Fl_Mode
-        analysis_options['DISCON']['F_LPFDamping'] = controller.F_LPFDamping
-        analysis_options['DISCON']['ss_cornerfreq'] = controller.ss_cornerfreq
-        analysis_options['DISCON']['pc_gain_schedule_Kp'] = controller.pc_gain_schedule_Kp
-        analysis_options['DISCON']['pc_gain_schedule_Ki'] = controller.pc_gain_schedule_Ki
-        analysis_options['DISCON']['max_pitch'] = controller.max_pitch
-        analysis_options['DISCON']['min_pitch'] = controller.min_pitch
-        analysis_options['DISCON']['vs_min_speed'] = controller.vs_min_speed
-        analysis_options['DISCON']['vs_rgn2K'] = controller.vs_rgn2K
-        analysis_options['DISCON']['vs_gain_schedule_Kp'] = controller.vs_gain_schedule_Kp
-        analysis_options['DISCON']['vs_gain_schedule_Ki'] = controller.vs_gain_schedule_Ki
-        analysis_options['DISCON']['TSR_operational'] = controller.TSR_operational
-        analysis_options['DISCON']['ss_vsgain'] = controller.ss_vsgain
-        analysis_options['DISCON']['ss_pcgain'] = controller.ss_pcgain
-        analysis_options['DISCON']['perf_tablesize'] = controller.perf_tablesize
-        analysis_options['DISCON']['WE_Poles_v'] = controller.WE_Poles_v
-        analysis_options['DISCON']['WE_Poles'] = controller.WE_Poles
-        analysis_options['DISCON']['ps_min_pitch_n'] = controller.ps_min_pitch_n
-        analysis_options['DISCON']['ps_wind_speeds'] = controller.ps_wind_speeds
-        analysis_options['DISCON']['ps_min_bld_pitch'] = controller.ps_min_bld_pitch
-        analysis_options['DISCON']['sd_maxpit'] = controller.sd_maxpit
-        analysis_options['DISCON']['sd_corner_freq'] = controller.sd_corner_freq
-        outputs['Kpf'] = controller.Kpf
-
-    # def load_turbine(self):
-    #     '''
-    #     Some notes on this 
-    #         - I'm not sure this should all be in a function. Just putting things here to get stuff down. Definitely won't work
-
-    #     '''
-
-    #     self.TurbineName = None
-
-    #     self.rotor_performance_filename = perf_filename
-
-    #     
-    #     
-    #     
-    #     
-    #     
-    #     
-    #     
-    #     
-    #     
-    #     turbine.TowerHt # only for floating
-    #     turbine.twr_freq # only for floating
-    #     turbine.ptfm_freq # only for floating
-
-
-    #     # Load Cp, Ct, Cq tables
-    #     self.pitch_initial_rad = Cp_Ct_Cq_Tables.compute.pitch_vector   # This is probably wrong, but similar
-    #     self.TSR_initial = Cp_Ct_Cq_Tables.compute.tsr_vector           # This is probably wrong, but similar
-    #     self.Cp_table = Cp_Ct_Cq_Tables.ccblade.Cp                      # This is probably wrong, but similar
-    #     self.Ct_table = Cp_Ct_Cq_Tables.ccblade.Ct                      # This is probably wrong, but similar 
-    #     self.Cq_table = Cp_Ct_Cq_Tables.ccblade.Cq                      # This is probably wrong, but similar
-
-    #     # Parse rotor performance data
-    #     RotorPerformance = ROSCO_turbine.RotorPerformance()
-    #     self.Cp = RotorPerformance(self.Cp_table,self.pitch_initial_rad,self.TSR_initial)
-    #     self.Ct = RotorPerformance(self.Ct_table,self.pitch_initial_rad,self.TSR_initial)
-    #     self.Cq = RotorPerformance(self.Cq_table,self.pitch_initial_rad,self.TSR_initial)
-
-    #     # Grab general turbine parameters
-    #     #       - These are probably inputs?
-    #     self.TipRad = None
-    #     self.Rhub =  None
-    #     self.hubHt = None
-    #     self.NumBl = None
-    #     self.TowerHt = None
-    #     self.shearExpNone
-    #     self.rho = None
-    #     self.mu = None
-    #     self.Ng = None
-    #     self.GenEff = None
-    #     self.DTTorSpr = None
-    #     self.generator_inertia = None
-    #     self.tilt = None
-    #     self.precone = None
-    #     self.yaw = 0.0
-    #     self.rotor_inertia = None
-    #     self.generator_inertia = None
-    #     self.J = self.rotor_inertia + self.generator_inertia * self.Ng**2
-    #     self.rated_torque = self.rated_power/(self.GenEff/100*self.rated_rotor_speed*self.Ng)
-    #     self.max_torque = self.rated_torque * 1.1
-    #     self.rotor_radius = self.TipRad
-    #     # self.omega_dt = np.sqrt(self.DTTorSpr/self.J)
-
-
-    #     # Define operational TSR
-    #     #       - NJA - not sure exactly how to handle this. From .yaml?
-    #     if not self.TSR_operational:
-    #         self.TSR_operational = self.Cp.TSR_opt
-
-    # def TuneROSCO(self,turbine):
-    #     '''
-    #     What need to happen to tune rosco - again, probably doesn't need to be in a function like this
-    #     '''
-
-    #     # Initialize controller class with controller parameters 
-    #     controller = ROSCO_controller.Controller(self.controller_params)
-
-    #     # Tune the controller
-    #     controller.tune_controller(turbine)
-
-    #     # Pull out data to pass to OpenMDAO components (Or something like this...)
-    #     #       -- some of these are arrays - not sure how to deal with this
-    #     self.add_output('PC_Kp',    val=controller.pc_gain_schedule.Kp,       units="s",       desc="Proportional controller gain schedule for pitch controller")     
-    #     self.add_output('PC_Ki',    val=controller.pc_gain_schedule.Ki,       units="-",       desc="Integral controller gain schedule for pitch controller")     
-    #     # THIS TUNING DOES NOT EXIST YET, BUT WILL!!!!
-    #     self.add_output('Fl_Kp',    val=controller.pc_gain_schedule.KpFl,       units="rad/(N*m)",       desc="Proportional gain for flap controller")     
-    #     # etc...
+        # DISCON Parameters
+        #   - controller
+        analysis_options['openfast']['fst_vt']['DISCON_in']['LoggingLevel'] = controller.LoggingLevel
+        analysis_options['openfast']['fst_vt']['DISCON_in']['F_LPFType'] = controller.F_LPFType
+        analysis_options['openfast']['fst_vt']['DISCON_in']['F_NotchType'] = controller.F_NotchType
+        analysis_options['openfast']['fst_vt']['DISCON_in']['IPC_ControlMode'] = controller.IPC_ControlMode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['VS_ControlMode'] = controller.VS_ControlMode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['PC_ControlMode'] = controller.PC_ControlMode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['Y_ControlMode'] = controller.Y_ControlMode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['SS_Mode'] = controller.SS_Mode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['WE_Mode'] = controller.WE_Mode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['PS_Mode'] = controller.PS_Mode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['SD_Mode'] = controller.SD_Mode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['Fl_Mode'] = controller.Fl_Mode
+        analysis_options['openfast']['fst_vt']['DISCON_in']['F_LPFDamping'] = controller.F_LPFDamping
+        analysis_options['openfast']['fst_vt']['DISCON_in']['ss_cornerfreq'] = controller.ss_cornerfreq
+        analysis_options['openfast']['fst_vt']['DISCON_in']['pitch_op_pc'] = controller.pitch_op_pc
+        analysis_options['openfast']['fst_vt']['DISCON_in']['pc_gain_schedule_Kp'] = controller.pc_gain_schedule.Kp
+        analysis_options['openfast']['fst_vt']['DISCON_in']['pc_gain_schedule_Ki'] = controller.pc_gain_schedule.Ki
+        analysis_options['openfast']['fst_vt']['DISCON_in']['max_pitch'] = controller.max_pitch
+        analysis_options['openfast']['fst_vt']['DISCON_in']['min_pitch'] = controller.min_pitch
+        analysis_options['openfast']['fst_vt']['DISCON_in']['vs_min_speed'] = controller.vs_min_speed
+        analysis_options['openfast']['fst_vt']['DISCON_in']['vs_rgn2K'] = controller.vs_rgn2K
+        analysis_options['openfast']['fst_vt']['DISCON_in']['vs_gain_schedule_Kp'] = controller.vs_gain_schedule.Kp
+        analysis_options['openfast']['fst_vt']['DISCON_in']['vs_gain_schedule_Ki'] = controller.vs_gain_schedule.Ki
+        analysis_options['openfast']['fst_vt']['DISCON_in']['ss_vsgain'] = controller.ss_vsgain
+        analysis_options['openfast']['fst_vt']['DISCON_in']['ss_pcgain'] = controller.ss_pcgain
+        analysis_options['openfast']['fst_vt']['DISCON_in']['WE_FOPoles_N'] = controller.v
+        analysis_options['openfast']['fst_vt']['DISCON_in']['WE_FOPoles_v'] = controller.A
+        analysis_options['openfast']['fst_vt']['DISCON_in']['ps_wind_speeds'] = controller.ps_wind_speeds
+        analysis_options['openfast']['fst_vt']['DISCON_in']['ps_min_bld_pitch'] = controller.ps_min_bld_pitch
+        analysis_options['openfast']['fst_vt']['DISCON_in']['sd_maxpit'] = controller.sd_maxpit
+        analysis_options['openfast']['fst_vt']['DISCON_in']['sd_corner_freq'] = controller.sd_corner_freq
+        # - turbine
+        analysis_options['openfast']['fst_vt']['DISCON_in']['bld_edgweise_freq'] = inputs(['edge_freq']) * 2 * np.pi
+        analysis_options['openfast']['fst_vt']['DISCON_in']['twr_freq'] = 0.0 # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
+        analysis_options['openfast']['fst_vt']['DISCON_in']['ptfm_freq'] = 0.0 # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM
+        analysis_options['openfast']['fst_vt']['DISCON_in']['max_pitch_rate'] = WISDEM_turbine.max_pitch_rate
+        analysis_options['openfast']['fst_vt']['DISCON_in']['min_pitch_rate'] = -WISDEM_turbine.max_pitch_rate
+        analysis_options['openfast']['fst_vt']['DISCON_in']['rated_rotor_speed'] = inputs(['rated_rotor_speed'])
+        analysis_options['openfast']['fst_vt']['DISCON_in']['rated_torque'] = WISDEM_turbine.rated_torque
+        analysis_options['openfast']['fst_vt']['DISCON_in']['TSR_operational'] = WISDEM_turbine.TSR_operational
+        analysis_options['openfast']['fst_vt']['DISCON_in']['rho'] = WISDEM_turbine.rho
+        analysis_options['openfast']['fst_vt']['DISCON_in']['Ng'] = inputs(['gear_ratio'])
+        analysis_options['openfast']['fst_vt']['DISCON_in']['rotor_inertia'] = WISDEM_turbine.rotor_inertia
+        analysis_options['openfast']['fst_vt']['DISCON_in']['Cp_pitch_initial_rad'] = self.pitch_vector
+        analysis_options['openfast']['fst_vt']['DISCON_in']['Cp_TSR_initial'] = self.tsr_vector
+        analysis_options['openfast']['fst_vt']['DISCON_in']['Cp'] = WISDEM_turbine.Cp
+        analysis_options['openfast']['fst_vt']['DISCON_in']['Ct'] = WISDEM_turbine.Ct
+        analysis_options['openfast']['fst_vt']['DISCON_in']['Cq'] = WISDEM_turbine.Cq
+        # Optimization outputs
+        outputs['Kp_flap'] = controller.Kp_flap
 
 class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
