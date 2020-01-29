@@ -1294,6 +1294,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
         turbine.Cq_table = self.fst_vt['DISCON_in']['Cq']
         turbine.Cp.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
         turbine.Cp.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.Ct.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.Ct.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.Cq.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.Cq.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
 
         
         # Write DISCON infiles
