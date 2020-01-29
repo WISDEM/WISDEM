@@ -88,7 +88,6 @@ class TuneROSCO(ExplicitComponent):
         self.controller_params['PS_Mode'] = self.analysis_options['servose']['PS_Mode']
         self.controller_params['SD_Mode'] = self.analysis_options['servose']['SD_Mode']
         self.controller_params['Fl_Mode'] = self.analysis_options['servose']['Fl_Mode']
-
         # # Additional controller parameters
         # # -- NJA these can be optional inputs in the yaml or changed to inputs - not sure yet
         # self.controller_params['max_pitch'] = self.analysis_options['controller']['max_pitch']
@@ -108,11 +107,16 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('R',                 val=0.0,        units='m',              desc='Rotor Radius')              
         self.add_input('gear_ratio',        val=0.0,                                desc='Gearbox Ratio')        
         self.add_input('rated_rotor_speed', val=0.0,        units='rad/s',          desc='Rated rotor speed')                    
+        self.add_input('rated_power',       val=0.0,        units='W',              desc='Rated power')                    
         self.add_input('v_rated',           val=0.0,        units='m/s',            desc='Rated wind speed')
         self.add_input('v_min',             val=0.0,        units='m/s',            desc='Minimum wind speed (cut-in)')
         self.add_input('v_max',             val=0.0,        units='m/s',            desc='Maximum wind speed (cut-out)')
+        self.add_input('max_pitch_rate',    val=0.0,        units='rad/s',          desc='Maximum allowed blade pitch rate')
         self.add_input('tsr_operational',   val=0.0,                                desc='Operational tip-speed ratio')
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
+        self.add_input('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
+        self.add_input('gen_eff',           val=0.0,                                desc='Drivetrain efficiency')
+        
         # Rotor Power
         self.n_pitch    = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
         self.n_tsr      = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
@@ -141,10 +145,10 @@ class TuneROSCO(ExplicitComponent):
         '''
 
         # Add control tuning parameters to dictionary
-        self.analysis_options['controller']['omega_pc']  = inputs['PC_omega']
-        self.analysis_options['controller']['zeta_pc']   = inputs['PC_zeta']
-        self.analysis_options['controller']['omega_vs']  = inputs['VS_omega']
-        self.analysis_options['controller']['zeta_vs']   = inputs['VS_zeta']
+        self.analysis_options['servose']['omega_pc']  = inputs['PC_omega']
+        self.analysis_options['servose']['zeta_pc']   = inputs['PC_zeta']
+        self.analysis_options['servose']['omega_vs']  = inputs['VS_omega']
+        self.analysis_options['servose']['zeta_vs']   = inputs['VS_zeta']
 
         # Define necessary turbine parameters (I think this is the right data structure...)
         WISDEM_turbine = type('', (), {})()
@@ -152,14 +156,19 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rotor_inertia = inputs['rotor_inertia']
         WISDEM_turbine.rho = inputs['rho']
         WISDEM_turbine.R = inputs['R']
-        WISDEM_turbine.gear_ratio = inputs['gear_ratio']
+        WISDEM_turbine.Ng = inputs['gear_ratio']
         WISDEM_turbine.rated_rotor_speed = inputs['rated_rotor_speed']
+        WISDEM_turbine.rated_power = inputs['rated_power']
+        WISDEM_turbine.gen_eff = inputs['gen_eff']
         WISDEM_turbine.v_rated = inputs['v_rated']
         WISDEM_turbine.v_min = inputs['v_min']
         WISDEM_turbine.v_max = inputs['v_max']
+        WISDEM_turbine.max_pitch_rate = inputs['max_pitch_rate']
         WISDEM_turbine.TSR_operational = inputs['TSR_operational']
 
-        # Load Cp tabls
+        # Calculate a few other necessary parameters
+        WISDEM_turbine.rated_torque = WISDEM_turbine.rated_power/(WISDEM_turbine.gen_eff/100*WISDEM_turbine.rated_rotor_speed*WISDEM_turbine.Ng)
+        # Load Cp tables
         self.Cp_table = inputs['Cp']
         self.pitch_vector = inputs['pitch_vector']
         self.tsr_vector = inputs['tsr_vector']

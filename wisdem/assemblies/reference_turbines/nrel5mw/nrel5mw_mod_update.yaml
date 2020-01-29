@@ -433,6 +433,7 @@ control:
     tsr: 7.01754386
     pitch: 0.
     maxTS: 80.
+    max_pitch_rate: 0.1745 
     # Controller parameters 
     PC_zeta: 0.7                   # Pitch controller desired damping ratio [-]
     PC_omega: 0.5                   # Pitch controller desired natural frequency [rad/s]
