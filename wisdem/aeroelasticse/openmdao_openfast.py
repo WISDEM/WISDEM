@@ -256,6 +256,8 @@ class FASTLoadCases(ExplicitComponent):
         
         # Turbine level inputs
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
+        self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
+        self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
         self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
@@ -399,7 +401,8 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip'][0]
         fst_vt['ElastoDyn']['HubRad'] = inputs['Rhub'][0]
         tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
-        fst_vt['ElastoDyn']['TowerHt'] = inputs['hub_height'][0]
+        fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][0] + inputs['tower_base_height'][0] # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+        fst_vt['ElastoDyn']['TowerBsHt'] = inputs['tower_base_height'][0] # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
 
         # Update Inflowwind
         fst_vt['InflowWind']['RefHt'] = inputs['hub_height'][0]

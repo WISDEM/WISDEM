@@ -826,7 +826,7 @@ class Materials(ExplicitComponent):
                 fvf[i]  = (outputs['rho'][i] - density_resin) / (outputs['rho_fiber'][i] - density_resin) 
                 if outputs['fvf'][i] > 0.:
                     if abs(fvf[i] - outputs['fvf'][i]) > 1e-3:
-                        exit('Error: the fvf of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fvf'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fvf[i]*100.) + '%')
+                        exit('Error: the fvf of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fvf'][i] * 100) + '%, but this value is not compatible to the other values provided. Given the fiber, laminate and resin densities, it should instead be equal to ' + str(fvf[i]*100.) + '%.')
                 else:
                     outputs['fvf'][i] = fvf[i]
                 # Formula to estimate the fiber weight fraction fwf from the fiber volume fraction and the fiber densities
@@ -839,7 +839,7 @@ class Materials(ExplicitComponent):
                 # Formula to estimate the plyt thickness ply_t of a laminate from the aerial density, the laminate density and the fiber weight fraction
                 ply_t[i] = outputs['rho_area_dry'][i] / outputs['rho'][i] / outputs['fwf'][i]
                 if outputs['ply_t'][i] > 0.:
-                    if abs(ply_t[i] - outputs['ply_t'][i]) > 1.e-3:
+                    if abs(ply_t[i] - outputs['ply_t'][i]) > 1.e-4:
                         exit('Error: the ply_t of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['ply_t'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm')
                 else:
                     outputs['ply_t'][i] = ply_t[i]      
@@ -911,7 +911,8 @@ class WT_Assembly(ExplicitComponent):
 
         self.add_input('blade_ref_axis',        val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
         self.add_input('hub_radius',            val=0.0, units='m',         desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
-        self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed its axis.')
+        self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed along its axis from tower base.')
+        self.add_input('foundation_height',     val=0.0,    units='m',      desc='Scalar of the foundation height computed along its axis.')
         self.add_input('distance_tt_hub',       val=0.0,    units='m',      desc='Vertical distance from tower top to hub center.')
 
         self.add_output('r_blade',              val=np.zeros(n_span), units='m',      desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
@@ -924,7 +925,7 @@ class WT_Assembly(ExplicitComponent):
         outputs['r_blade']        = inputs['blade_ref_axis'][:,2] + inputs['hub_radius']
         outputs['rotor_radius']   = outputs['r_blade'][-1]
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
-        outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub']
+        outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
 
 class WindTurbineOntologyOpenMDAO(Group):
     # Openmdao group with all wind turbine data
@@ -959,6 +960,7 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
         self.connect('hub.radius',                      'assembly.hub_radius')
         self.connect('tower.height',                    'assembly.tower_height')
+        self.connect('foundation.height',               'assembly.foundation_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
         
 def yaml2openmdao(wt_opt, analysis_options, wt_init):
