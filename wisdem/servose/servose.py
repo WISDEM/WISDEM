@@ -131,51 +131,9 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('VS_omega',          val=0.0,        units='rad/s',          desc='Generator torque controller natural frequency')
 
 
-        # -- Necessary outputs for DISCON.IN -- THESE NEED UNITS!!!
-        # Controller Flags
-        self.add_output(['logging_level'],         val=0.0,                         desc='Debug mode')
-        self.add_output(['F_LPFType'],             val=0.0,                         desc='')
-        self.add_output(['F_NotchType'],           val=0.0,                         desc='')    
-        self.add_output(['IPC_ControlMode'],       val=0.0,                         desc='')        
-        self.add_output(['VS_ControlMode'],        val=0.0,                         desc='')        
-        self.add_output(['PC_ControlMode'],        val=0.0,                         desc='')        
-        self.add_output(['Y_ControlMode'],         val=0.0,                         desc='')    
-        self.add_output(['SS_Mode'],               val=0.0,                         desc='')
-        self.add_output(['WE_Mode'],               val=0.0,                         desc='')
-        self.add_output(['PS_Mode'],               val=0.0,                         desc='')
-        self.add_output(['SD_Mode'],               val=0.0,                         desc='')
-        self.add_output(['Fl_Mode'],               val=0.0,                         desc='')
-        # Filters
-        self.add_output(['F_LPFDamping'],          val=0.0,                         desc='')
-        self.add_output(['ss_cornerfreq'],         val=0.0,    units='rad/s',       desc='')
-        # Blade pitch control
-        self.add_output(['pc_gain_schedule_Kp'],   val=0.0,    units='s',           desc='')         # needs sizes
-        self.add_output(['pc_gain_schedule_Ki'],   val=0.0,                         desc='')        # needs sizes
-        self.add_output(['max_pitch'],             val=0.0,    units='rad',         desc='')
-        self.add_output(['min_pitch'],             val=0.0,    units='rad',         desc='')
-        # VS control
-        self.add_output(['vs_min_speed'],          val=0.0,    units='rad/s',               desc='')
-        self.add_output(['vs_rgn2K'],              val=0.0,    units='N*m/(rad/s)**2',      desc='')
-        self.add_output(['vs_gain_schedule_Kp'],   val=0.0,    units='N*m/(rad/s)',         desc='')
-        self.add_output(['vs_gain_schedule_Ki'],   val=0.0,    units='N*m/(rad)',           desc='')
-        # Setpoint Smoother
-        self.add_output(['ss_vsgain'],             val=0.0,                         desc='')
-        self.add_output(['ss_pcgain'],             val=0.0,                         desc='')
-        # Wind Speed Estimator
-        self.add_output(['perf_tablesize'],        val=np.zeros(1,2),                       desc='')        
-        self.add_output(['WE_Poles_v'],            val=0.0,    units='m/s',                 desc='')        # needs sizes
-        self.add_output(['WE_Poles'],              val=0.0,    units='1/(m*s*rad)',         desc='')        # needs sizes
-        # Minimum Pitch Saturation
-        self.add_output(['ps_min_pitch_n'],        val=0.0,                                 desc='')        
-        self.add_output(['ps_wind_speeds'],        val=0.0,    units='m/s',                 desc='')        # needs sizes
-        self.add_output(['ps_min_bld_pitch'],      val=0.0,    units='rad/s',               desc='')        # needs sizes
-        # Shutdown
-        self.add_output(['sd_maxpit'],             val=0.0,    units='rad',                 desc='')        
-        self.add_output(['sd_corner_freq'],        val=0.0,    units='rad/s',               desc='')        
-        # Floating
-        self.add_output(['Kpf'],                   val=0.0,    units='s',                   desc='') 
-
-
+        # Optimization parameters to output
+        #       - Note, passing all of the other DISCON variables in an analysis_options dictionary to easy things temporarily
+        self.add_output('Kpf',                   val=0.0,    units='s',                   desc='') 
 
     def computes(self,inputs,outputs):
         '''
@@ -212,44 +170,43 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.Cq = RotorPerformance(self.Cq_table,self.pitch_initial_rad,self.TSR_initial)
 
         # initialize and tune controller
-        controller = ROSCO_controller.controller(wt_init_options['controller'])
+        controller = ROSCO_controller.controller(analysis_options['controller'])
         controller.tune_controller(WISDEM_turbine)
 
-
         # Outputs
-        outputs['logging_level'] = controller.logging_level
-        outputs['F_LPFType'] = controller.F_LPFType
-        outputs['F_NotchType'] = controller.F_NotchType
-        outputs['IPC_ControlMode'] = controller.IPC_ControlMode
-        outputs['VS_ControlMode'] = controller.VS_ControlMode
-        outputs['PC_ControlMode'] = controller.PC_ControlMode
-        outputs['Y_ControlMode'] = controller.Y_ControlMode
-        outputs['SS_Mode'] = controller.SS_Mode
-        outputs['WE_Mode'] = controller.WE_Mode
-        outputs['PS_Mode'] = controller.PS_Mode
-        outputs['SD_Mode'] = controller.SD_Mode
-        outputs['Fl_Mode'] = controller.Fl_Mode
-        outputs['F_LPFDamping'] = controller.F_LPFDamping
-        outputs['ss_cornerfreq'] = controller.ss_cornerfreq
-        outputs['pc_gain_schedule_Kp'] = controller.pc_gain_schedule_Kp
-        outputs['pc_gain_schedule_Ki'] = controller.pc_gain_schedule_Ki
-        outputs['max_pitch'] = controller.max_pitch
-        outputs['min_pitch'] = controller.min_pitch
-        outputs['vs_min_speed'] = controller.vs_min_speed
-        outputs['vs_rgn2K'] = controller.vs_rgn2K
-        outputs['vs_gain_schedule_Kp'] = controller.vs_gain_schedule_Kp
-        outputs['vs_gain_schedule_Ki'] = controller.vs_gain_schedule_Ki
-        outputs['TSR_operational'] = controller.TSR_operational
-        outputs['ss_vsgain'] = controller.ss_vsgain
-        outputs['ss_pcgain'] = controller.ss_pcgain
-        outputs['perf_tablesize'] = controller.perf_tablesize
-        outputs['WE_Poles_v'] = controller.WE_Poles_v
-        outputs['WE_Poles'] = controller.WE_Poles
-        outputs['ps_min_pitch_n'] = controller.ps_min_pitch_n
-        outputs['ps_wind_speeds'] = controller.ps_wind_speeds
-        outputs['ps_min_bld_pitch'] = controller.ps_min_bld_pitch
-        outputs['sd_maxpit'] = controller.sd_maxpit
-        outputs['sd_corner_freq'] = controller.sd_corner_freq
+        analysis_options['DISCON']['logging_level'] = controller.logging_level
+        analysis_options['DISCON']['F_LPFType'] = controller.F_LPFType
+        analysis_options['DISCON']['F_NotchType'] = controller.F_NotchType
+        analysis_options['DISCON']['IPC_ControlMode'] = controller.IPC_ControlMode
+        analysis_options['DISCON']['VS_ControlMode'] = controller.VS_ControlMode
+        analysis_options['DISCON']['PC_ControlMode'] = controller.PC_ControlMode
+        analysis_options['DISCON']['Y_ControlMode'] = controller.Y_ControlMode
+        analysis_options['DISCON']['SS_Mode'] = controller.SS_Mode
+        analysis_options['DISCON']['WE_Mode'] = controller.WE_Mode
+        analysis_options['DISCON']['PS_Mode'] = controller.PS_Mode
+        analysis_options['DISCON']['SD_Mode'] = controller.SD_Mode
+        analysis_options['DISCON']['Fl_Mode'] = controller.Fl_Mode
+        analysis_options['DISCON']['F_LPFDamping'] = controller.F_LPFDamping
+        analysis_options['DISCON']['ss_cornerfreq'] = controller.ss_cornerfreq
+        analysis_options['DISCON']['pc_gain_schedule_Kp'] = controller.pc_gain_schedule_Kp
+        analysis_options['DISCON']['pc_gain_schedule_Ki'] = controller.pc_gain_schedule_Ki
+        analysis_options['DISCON']['max_pitch'] = controller.max_pitch
+        analysis_options['DISCON']['min_pitch'] = controller.min_pitch
+        analysis_options['DISCON']['vs_min_speed'] = controller.vs_min_speed
+        analysis_options['DISCON']['vs_rgn2K'] = controller.vs_rgn2K
+        analysis_options['DISCON']['vs_gain_schedule_Kp'] = controller.vs_gain_schedule_Kp
+        analysis_options['DISCON']['vs_gain_schedule_Ki'] = controller.vs_gain_schedule_Ki
+        analysis_options['DISCON']['TSR_operational'] = controller.TSR_operational
+        analysis_options['DISCON']['ss_vsgain'] = controller.ss_vsgain
+        analysis_options['DISCON']['ss_pcgain'] = controller.ss_pcgain
+        analysis_options['DISCON']['perf_tablesize'] = controller.perf_tablesize
+        analysis_options['DISCON']['WE_Poles_v'] = controller.WE_Poles_v
+        analysis_options['DISCON']['WE_Poles'] = controller.WE_Poles
+        analysis_options['DISCON']['ps_min_pitch_n'] = controller.ps_min_pitch_n
+        analysis_options['DISCON']['ps_wind_speeds'] = controller.ps_wind_speeds
+        analysis_options['DISCON']['ps_min_bld_pitch'] = controller.ps_min_bld_pitch
+        analysis_options['DISCON']['sd_maxpit'] = controller.sd_maxpit
+        analysis_options['DISCON']['sd_corner_freq'] = controller.sd_corner_freq
         outputs['Kpf'] = controller.Kpf
 
     # def load_turbine(self):
