@@ -54,6 +54,7 @@ class ServoSE(Group):
         # Connect ROSCO Power curve
         self.connect('powercurve.rated_V',      'tune_rosco.v_rated')
         self.connect('powercurve.rated_Omega',  'tune_rosco.rated_rotor_speed')
+        self.connect('powercurve.rated_Q',      'tune_rosco.rated_torque')
 
         # Connect ROSCO for Rotor Performance tables
         self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
@@ -102,21 +103,29 @@ class TuneROSCO(ExplicitComponent):
 
         # Necessary parameters
         # Turbine parameters
-        self.add_input('rotor_inertia',     val=0.0,        units='kg*m**2',        desc='Rotor inertia') # hard code for now
+        self.add_input('rotor_inertia',     val=38677040.613,        units='kg*m**2',        desc='Rotor inertia') # hard code for now
         self.add_input('rho',               val=0.0,        units='kg/m**3',        desc='Air Density')
         self.add_input('R',                 val=0.0,        units='m',              desc='Rotor Radius')              
         self.add_input('gear_ratio',        val=0.0,                                desc='Gearbox Ratio')        
         self.add_input('rated_rotor_speed', val=0.0,        units='rad/s',          desc='Rated rotor speed')                    
-        self.add_input('rated_power',       val=0.0,        units='W',              desc='Rated power')                    
+        self.add_input('rated_power',       val=0.0,        units='W',              desc='Rated power')            
+        self.add_input('rated_torque',     val=0.0,                units='N*m', desc='rotor aerodynamic torque at rated')        
         self.add_input('v_rated',           val=0.0,        units='m/s',            desc='Rated wind speed')
         self.add_input('v_min',             val=0.0,        units='m/s',            desc='Minimum wind speed (cut-in)')
         self.add_input('v_max',             val=0.0,        units='m/s',            desc='Maximum wind speed (cut-out)')
         self.add_input('max_pitch_rate',    val=0.0,        units='rad/s',          desc='Maximum allowed blade pitch rate')
+        self.add_input('max_torque_rate',   val=0.0,        units='N*m/s',          desc='Maximum allowed generator torque rate')
         self.add_input('tsr_operational',   val=0.0,                                desc='Operational tip-speed ratio')
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_input('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
         self.add_input('gen_eff',           val=0.0,                                desc='Drivetrain efficiency')
-        
+        # 
+        self.add_input('max_pitch',         val=0.0,        units='rad',            desc='')
+        self.add_input('min_pitch',         val=0.0,        units='rad',            desc='')
+        self.add_input('vs_minspd',         val=0.0,        units='rad/s',          desc='') 
+        self.add_input('ss_vsgain',         val=0.0,                                desc='')
+        self.add_input('ss_pcgain',         val=0.0,                                desc='')
+        self.add_input('ps_percent',        val=0.0,                                desc='')
         # Rotor Power
         self.n_pitch    = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
         self.n_tsr      = n_tsr     = servose_init_options['n_tsr_perf_surfaces']

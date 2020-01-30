@@ -133,12 +133,21 @@ class WT_RNTA(Group):
         self.connect('control.maxOmega' ,       'sse.omega_max')
         self.connect('control.max_TS' ,         'sse.control_maxTS')
         self.connect('control.max_pitch_rate' , 'sse.tune_rosco.max_pitch_rate')
+        self.connect('control.max_torque_rate' , 'sse.tune_rosco.max_torque_rate')
         self.connect('control.rated_TSR' ,      'sse.tsr_operational')
         self.connect('control.rated_pitch' ,    'sse.control_pitch')
         self.connect('nacelle.gear_ratio',      'sse.tune_rosco.gear_ratio')
         self.connect('assembly.rotor_radius',   'sse.tune_rosco.R')
         self.connect('nacelle.drivetrain_eff',  'sse.tune_rosco.gen_eff')
         self.connect('elastic.curvefem.freq',   'sse.tune_rosco.edge_freq', src_indices=[1])
+        # options
+        self.connect('control.max_pitch',       'sse.tune_rosco.max_pitch') 
+        self.connect('control.min_pitch',       'sse.tune_rosco.min_pitch') 
+        self.connect('control.vs_minspd',       'sse.tune_rosco.vs_minspd') 
+        self.connect('control.ss_vsgain',       'sse.tune_rosco.ss_vsgain') 
+        self.connect('control.ss_pcgain',       'sse.tune_rosco.ss_pcgain') 
+        self.connect('control.ps_percent',      'sse.tune_rosco.ps_percent') 
+
 
         self.connect('control.PC_omega',        'sse.tune_rosco.PC_omega')
         self.connect('control.PC_zeta',         'sse.tune_rosco.PC_zeta')

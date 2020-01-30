@@ -854,7 +854,8 @@ class Control(ExplicitComponent):
         self.add_output('minOmega',         val=0.0, units='rad/s',        desc='Minimum allowed rotor speed.')
         self.add_output('maxOmega',         val=0.0, units='rad/s',        desc='Maximum allowed rotor speed.')
         self.add_output('max_TS',           val=0.0, units='m/s',         desc='Maximum allowed blade tip speed.')
-        self.add_output('max_pitch_rate',   val=0.0, units='rad/s',         desc='Maximum allowed blade pitch rate')
+        self.add_output('max_pitch_rate',   val=0.0, units='rad/s',        desc='Maximum allowed blade pitch rate')
+        self.add_output('max_torque_rate',  val=0.0, units='N*m/s',       desc='Maximum allowed generator torque rate')
         self.add_output('rated_TSR',        val=0.0,                      desc='Constant tip speed ratio in region II.')
         self.add_output('rated_pitch',      val=0.0, units='rad',         desc='Constant pitch angle in region II.')
         self.add_output('PC_omega',         val=0.0, units='rad/s',       desc='Pitch controller natural frequency')
@@ -1303,21 +1304,19 @@ def assign_control_values(wt_opt, control):
     wt_opt['control.rated_pitch']   = control['pitch']
     wt_opt['control.max_TS']        = control['maxTS']
     wt_opt['control.max_pitch_rate']= control['max_pitch_rate']
+    wt_opt['control.max_torque_rate']= control['max_torque_rate']
     # ROSCO tuning parameters
     wt_opt['control.PC_omega']      = control['PC_omega']
     wt_opt['control.PC_zeta']       = control['PC_zeta']
     wt_opt['control.VS_omega']      = control['VS_omega']
     wt_opt['control.VS_zeta']       = control['VS_zeta']
     # # other optional parameters
-    # wt_opt['max_pitch']             = control['max_pitch']
-    # wt_opt['min_pitch']             = control['min_pitch']
-    # wt_opt['vs_minspd']             = control['vs_minspd']
-    # wt_opt['ss_cornerfreq']         = control['ss_cornerfreq']    
-    # wt_opt['ss_vsgain']             = control['ss_vsgain']
-    # wt_opt['ss_pcgain']             = control['ss_pcgain']
-    # wt_opt['ps_percent']            = control['ps_percent']
-    # wt_opt['sd_maxpit']             = control['sd_maxpit']
-    # wt_opt['sd_cornerfreq']         = control['sd_cornerfreq']    
+    wt_opt['control.max_pitch']             = control['max_pitch']
+    wt_opt['control.min_pitch']             = control['min_pitch']
+    wt_opt['control.vs_minspd']             = control['vs_minspd']
+    wt_opt['control.ss_vsgain']             = control['ss_vsgain']
+    wt_opt['control.ss_pcgain']             = control['ss_pcgain']
+    wt_opt['control.ps_percent']            = control['ps_percent']
     return wt_opt
 
 def assign_configuration_values(wt_opt, assembly):
