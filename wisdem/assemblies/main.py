@@ -113,10 +113,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
 if __name__ == "__main__":
     ## File management
-    fname_wt_input         = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_analysis_options = "wisdem/wisdem/assemblies/reference_turbines/analysis_options.yaml"
-    fname_opt_options      = "wisdem/wisdem/assemblies/reference_turbines/optimization_options.yaml"
-    fname_wt_output        = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_wt_input         = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_analysis_options = "reference_turbines/analysis_options.yaml"
+    fname_opt_options      = "reference_turbines/optimization_options.yaml"
+    fname_wt_output        = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output          = 'temp/'
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)

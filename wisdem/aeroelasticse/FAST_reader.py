@@ -400,7 +400,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.read_AeroDyn15()
 
         self.read_ServoDyn()
-        self.read_DISCON_in()
+        # self.read_DISCON_in()
 
         if self.fst_vt['Fst']['CompHydro'] == 1: # SubDyn not yet implimented
             self.read_HydroDyn()
@@ -1386,30 +1386,10 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['WE_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['PS_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['SD_Mode']           = int_read(f.readline().split()[0])
-
-            # Error handling for different commits of Rosco that added features/lines.  This can probably be removed in the future
-            ln1 = f.readline().split()
-            Fl_Mode = False
-            if len(ln1) >= 2:
-                if ln1[2] == 'Fl_Mode':
-                    Fl_Mode = True
-            
-            ln2 = f.readline().split()
-            Flp_Mode = False
-            if len(ln2) >= 2:
-                if ln2[2] == 'Flp_Mode':
-                    Flp_Mode = True
-
-            if Fl_Mode:
-                self.fst_vt['DISCON_in']['Fl_Mode']       = int_read(f.readline().split()[0])
-                f.readline()
-            else:
-                self.fst_vt['DISCON_in']['Fl_Mode']       = 0
-            if Flp_Mode:
-                self.fst_vt['DISCON_in']['Flp_Mode']      = int_read(f.readline().split()[0])
-                f.readline()
-            else:
-                self.fst_vt['DISCON_in']['Flp_Mode']      = 0
+            self.fst_vt['DISCON_in']['Fl_Mode']           = int_read(f.readline().split()[0])
+            # self.fst_vt['DISCON_in']['Flp_Mode']          = int_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
 
             # FILTERS
             self.fst_vt['DISCON_in']['F_LPFCornerFreq']   = float_read(f.readline().split()[0])
@@ -1417,10 +1397,8 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['F_NotchCornerFreq'] = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['F_NotchBetaNumDen'] = [float(idx.strip()) for idx in f.readline().strip().split('F_NotchBetaNumDen')[0].split() if idx.strip() != '!']
             self.fst_vt['DISCON_in']['F_SSCornerFreq']    = float_read(f.readline().split()[0])
-            if Fl_Mode:
-                self.fst_vt['DISCON_in']['F_FlCornerFreq']  = [float(idx.strip()) for idx in f.readline().strip().split('F_FlCornerFreq')[0].split() if idx.strip() != '!']
-            if Flp_Mode:
-                self.fst_vt['DISCON_in']['F_FlpCornerFreq'] = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_FlCornerFreq']    = [float(idx.strip()) for idx in f.readline().strip().split('F_FlCornerFreq')[0].split() if idx.strip() != '!']
+            # self.fst_vt['DISCON_in']['F_FlpCornerFreq']   = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
             f.readline()
             f.readline()
 
@@ -1527,17 +1505,15 @@ class InputReader_OpenFAST(InputReader_Common):
             f.readline()
             f.readline()
 
-            if Fl_Mode:
-                # FLOATING
-                self.fst_vt['DISCON_in']['Fl_Kp']         = float_read(f.readline().split()[0])
-                f.readline()
-                f.readline()
+            # FLOATING
+            self.fst_vt['DISCON_in']['Fl_Kp']             = float_read(f.readline().split()[0])
+            f.readline()
+            # f.readline()
 
-            if Flp_Mode:
-                # DISTRIBUTED AERODYNAMIC CONTROL
-                self.fst_vt['DISCON_in']['Flp_Angle']     = float_read(f.readline().split()[0])
-                self.fst_vt['DISCON_in']['Flp_Kp']        = float_read(f.readline().split()[0])
-                self.fst_vt['DISCON_in']['Flp_Ki']        = float_read(f.readline().split()[0])
+            # # DISTRIBUTED AERODYNAMIC CONTROL
+            # self.fst_vt['DISCON_in']['Flp_Angle']         = float_read(f.readline().split()[0])
+            # self.fst_vt['DISCON_in']['Flp_Kp']            = float_read(f.readline().split()[0])
+            # self.fst_vt['DISCON_in']['Flp_Ki']            = float_read(f.readline().split()[0])
 
 
             f.close()
