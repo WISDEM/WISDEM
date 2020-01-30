@@ -1256,54 +1256,69 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.Fl_Mode = self.fst_vt['DISCON_in']['Fl_Mode']
         controller.F_LPFDamping = self.fst_vt['DISCON_in']['F_LPFDamping']
         controller.ss_cornerfreq = self.fst_vt['DISCON_in']['ss_cornerfreq']
+        controller.pitch_op_pc = self.fst_vt['DISCON_in']['pitch_op_pc']
         controller.pc_gain_schedule.Kp = self.fst_vt['DISCON_in']['pc_gain_schedule_Kp']
         controller.pc_gain_schedule.Ki = self.fst_vt['DISCON_in']['pc_gain_schedule_Ki']
         controller.max_pitch = self.fst_vt['DISCON_in']['max_pitch']
         controller.min_pitch = self.fst_vt['DISCON_in']['min_pitch']
-        controller.vs_min_speed = self.fst_vt['DISCON_in']['vs_min_speed']
+        controller.vs_minspd = self.fst_vt['DISCON_in']['vs_minspd']
         controller.vs_rgn2K = self.fst_vt['DISCON_in']['vs_rgn2K']
+        controller.vs_refspd = self.fst_vt['DISCON_in']['vs_refspd']
         controller.vs_gain_schedule.Kp = self.fst_vt['DISCON_in']['vs_gain_schedule_Kp']
         controller.vs_gain_schedule.Ki = self.fst_vt['DISCON_in']['vs_gain_schedule_Ki']
         controller.TSR_operational = self.fst_vt['DISCON_in']['TSR_operational']
         controller.ss_vsgain = self.fst_vt['DISCON_in']['ss_vsgain']
         controller.ss_pcgain = self.fst_vt['DISCON_in']['ss_pcgain']
-        controller.perf_tablesize = self.fst_vt['DISCON_in']['perf_tablesize']
         controller.v = self.fst_vt['DISCON_in']['WE_FOPoles_N']
         controller.A = self.fst_vt['DISCON_in']['WE_FOPoles_v']
         controller.ps_wind_speeds = self.fst_vt['DISCON_in']['ps_wind_speeds']
         controller.ps_min_bld_pitch = self.fst_vt['DISCON_in']['ps_min_bld_pitch']
         controller.sd_maxpit = self.fst_vt['DISCON_in']['sd_maxpit']
-        controller.sd_corner_freq = self.fst_vt['DISCON_in']['sd_corner_freq']
+        controller.sd_cornerfreq = self.fst_vt['DISCON_in']['sd_cornerfreq']
+        controller.Kp_float = self.fst_vt['DISCON_in']['Kp_float']
         controller.Kp_flap = self.fst_vt['DISCON_in']['Kp_flap']
         # - turbine
         turbine = type('', (), {})()
         turbine.Cp = type('', (), {})()
+        turbine.Ct = type('', (), {})()
+        turbine.Cq = type('', (), {})()
+        turbine.rotor_radius = self.fst_vt['DISCON_in']['rotor_radius']
+        turbine.v_rated = self.fst_vt['DISCON_in']['v_rated']
         turbine.bld_edgewise_freq = self.fst_vt['DISCON_in']['bld_edgweise_freq']
         turbine.twr_freq = self.fst_vt['DISCON_in']['twr_freq'] 
         turbine.ptfm_freq = self.fst_vt['DISCON_in']['ptfm_freq'] 
         turbine.max_pitch_rate = self.fst_vt['DISCON_in']['max_pitch_rate']
         turbine.min_pitch_rate = self.fst_vt['DISCON_in']['min_pitch_rate']
+        turbine.max_torque_rate = self.fst_vt['DISCON_in']['max_torque_rate']
         turbine.rated_rotor_speed = self.fst_vt['DISCON_in']['rated_rotor_speed']
+        turbine.rated_power = self.fst_vt['DISCON_in']['rated_power']
         turbine.rated_torque = self.fst_vt['DISCON_in']['rated_torque']
+        turbine.max_torque = self.fst_vt['DISCON_in']['max_torque']
         turbine.TSR_operational = self.fst_vt['DISCON_in']['TSR_operational']
         turbine.rho = self.fst_vt['DISCON_in']['rho']
         turbine.Ng = self.fst_vt['DISCON_in']['Ng']
+        turbine.GenEff = self.fst_vt['ServoDyn']['GenEff']
         turbine.J = self.fst_vt['DISCON_in']['rotor_inertia']
-        turbine.Cp_table = self.fst_vt['DISCON_in']['Cp']
-        turbine.Ct_table = self.fst_vt['DISCON_in']['Ct']
-        turbine.Cq_table = self.fst_vt['DISCON_in']['Cq']
+        turbine.Cp = self.fst_vt['DISCON_in']['Cp']
+        turbine.Ct = self.fst_vt['DISCON_in']['Ct']
+        turbine.Cq = self.fst_vt['DISCON_in']['Cq']
+        turbine.Cp_table = self.fst_vt['DISCON_in']['Cp_table']
+        turbine.Ct_table = self.fst_vt['DISCON_in']['Ct_table']
+        turbine.Cq_table = self.fst_vt['DISCON_in']['Cq_table']
+        turbine.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
         turbine.Cp.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
         turbine.Cp.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
         turbine.Ct.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
         turbine.Ct.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
         turbine.Cq.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
         turbine.Cq.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
-
+        turbine.TurbineName = self.fst_vt['description']
         
         # Write DISCON infiles
         self.fst_vt['ServoDyn']['DLL_InFile'] = 'DISCON.IN'
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
-        self.fst_vt['DISCON_in']['PerfFileName'] = self.FAST_namingOut + 'Cp_Ct_Cq.txt'
+        self.fst_vt['DISCON_in']['PerfFileName'] = self.FAST_namingOut + '.Cp_Ct_Cq.txt'
         file_processing = ROSCO_utilities.FileProcessing()
         file_processing.write_rotor_performance(turbine,self.fst_vt['DISCON_in']['PerfFileName'])
         file_processing.write_param_file(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
