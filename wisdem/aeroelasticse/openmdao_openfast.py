@@ -255,7 +255,10 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
         self.add_input('control_maxOmega',          val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
         self.add_input('control_maxTS',             val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
-        
+        self.add_input('cone',             val=0.0, units='deg',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
+        self.add_input('tilt',             val=0.0, units='deg',   desc='Nacelle uptilt angle. A standard machine has positive values.')
+        self.add_input('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
+
         # Initial conditions
         self.add_input('U_init',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
         self.add_input('Omega_init',    val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
@@ -391,6 +394,11 @@ class FASTLoadCases(ExplicitComponent):
         # Update ElastoDyn
         fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip'][0]
         fst_vt['ElastoDyn']['HubRad'] = inputs['Rhub'][0]
+        fst_vt['ElastoDyn']['PreCone(1)'] = -inputs['cone'][0]
+        fst_vt['ElastoDyn']['PreCone(2)'] = -inputs['cone'][0]
+        fst_vt['ElastoDyn']['PreCone(3)'] = -inputs['cone'][0]
+        fst_vt['ElastoDyn']['ShftTilt']   = -inputs['tilt'][0]
+        fst_vt['ElastoDyn']['OverHang']   = -inputs['overhang'][0]
         tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
         fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][0] + inputs['tower_base_height'][0] # Height of tower above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerBsHt'] = inputs['tower_base_height'][0] # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
