@@ -65,6 +65,8 @@ class WT_RNTA(Group):
         self.connect('param.ps.layer_thickness_param', 'elastic.precomp.layer_thickness')
 
         # Connections to rotor elastic and frequency analysis
+        self.connect('nacelle.uptilt',                                  'elastic.precomp.uptilt')
+        self.connect('configuration.n_blades',                          'elastic.precomp.n_blades')
         self.connect('assembly.r_blade',                                'elastic.r')
         self.connect('blade.outer_shape_bem.pitch_axis',                'elastic.precomp.pitch_axis')
         self.connect('blade.interp_airfoils.coord_xy_interp',           'elastic.precomp.coord_xy_interp')
@@ -132,8 +134,6 @@ class WT_RNTA(Group):
         self.connect('control.minOmega' ,       'sse.omega_min')
         self.connect('control.maxOmega' ,       'sse.omega_max')
         self.connect('control.max_TS' ,         'sse.control_maxTS')
-        self.connect('control.max_pitch_rate' , 'sse.tune_rosco.max_pitch_rate')
-        self.connect('control.max_torque_rate' , 'sse.tune_rosco.max_torque_rate')
         self.connect('control.rated_TSR' ,      'sse.tsr_operational')
         self.connect('control.rated_pitch' ,    'sse.control_pitch')
 
@@ -157,13 +157,16 @@ class WT_RNTA(Group):
         self.connect('env.weibull_k',                   'sse.cdf.k')
         
         if analysis_options['openfast']['run_openfast']:
-            self.connect('nacelle.gear_ratio',      'sse.tune_rosco.gear_ratio')
-            self.connect('assembly.rotor_radius',   'sse.tune_rosco.R')
+            self.connect('nacelle.gear_ratio',              'sse.tune_rosco.gear_ratio')
+            self.connect('assembly.rotor_radius',           'sse.tune_rosco.R')
+            self.connect('elastic.precomp.I_all_blades',    'sse.tune_rosco.rotor_inertia', src_indices=[0])
             self.connect('nacelle.drivetrain_eff',  'sse.tune_rosco.gen_eff')
             self.connect('elastic.curvefem.freq',   'sse.tune_rosco.flap_freq', src_indices=[0])
             self.connect('elastic.curvefem.freq',   'sse.tune_rosco.edge_freq', src_indices=[1])
             self.connect('control.max_pitch',       'sse.tune_rosco.max_pitch') 
-            self.connect('control.min_pitch',       'sse.tune_rosco.min_pitch') 
+            self.connect('control.min_pitch',       'sse.tune_rosco.min_pitch')
+            self.connect('control.max_pitch_rate' , 'sse.tune_rosco.max_pitch_rate')
+            self.connect('control.max_torque_rate' , 'sse.tune_rosco.max_torque_rate')
             self.connect('control.vs_minspd',       'sse.tune_rosco.vs_minspd') 
             self.connect('control.ss_vsgain',       'sse.tune_rosco.ss_vsgain') 
             self.connect('control.ss_pcgain',       'sse.tune_rosco.ss_pcgain') 
@@ -245,7 +248,7 @@ class WT_RNTA(Group):
         # self.connect('rlds.Fxyz_total',      'drivese.Fxyz')
         # self.connect('rlds.Mxyz_total',      'drivese.Mxyz')
         # self.connect('rlds.I_all_blades',    'drivese.blades_I')
-        self.connect('rlds.blade_mass',            'drivese.blade_mass')
+        self.connect('elastic.precomp.blade_mass', 'drivese.blade_mass')
         self.connect('param.pa.chord_param',       'drivese.blade_root_diameter', src_indices=[0])
         self.connect('blade.length',               'drivese.blade_length')
         self.connect('nacelle.gear_ratio',         'drivese.gear_ratio')
@@ -326,7 +329,7 @@ class WT_RNTA(Group):
 
         # Connections to turbine capital cost
         self.connect('control.rated_power',         'tcc.machine_rating')
-        self.connect('rlds.blade_mass',             'tcc.blade_mass')
+        self.connect('elastic.precomp.blade_mass',  'tcc.blade_mass')
         self.connect('drivese.hub_mass',            'tcc.hub_mass')
         self.connect('drivese.pitch_system_mass',   'tcc.pitch_system_mass')
         self.connect('drivese.spinner_mass',        'tcc.spinner_mass')

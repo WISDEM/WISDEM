@@ -222,8 +222,8 @@ class RunpBEAM(ExplicitComponent):
         self.add_input('y_ec',  val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
 
         # outputs
-        self.add_output('blade_mass',       val=0.0,              units='kg',       desc='mass of one blades')
-        self.add_output('blade_moment_of_inertia', val=0.0,       units='kg*m**2',  desc='out of plane moment of inertia of a blade')
+        # self.add_output('blade_mass',       val=0.0,              units='kg',       desc='mass of one blades')
+        # self.add_output('blade_moment_of_inertia', val=0.0,       units='kg*m**2',  desc='out of plane moment of inertia of a blade')
         self.add_output('freq_pbeam',       val=np.zeros(n_freq), units='Hz',       desc='first nF natural frequencies of blade')
         self.add_output('freq_distance',    val=0.0,              desc='ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise')
         self.add_output('dx',               val=np.zeros(n_span), desc='deflection of blade section in airfoil x-direction')
@@ -316,10 +316,11 @@ class RunpBEAM(ExplicitComponent):
         blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
         dx, dy, dz, dtheta_r1, dtheta_r2, dtheta_z = blade.displacement()
 
+        # now computed in rotor elasticity!
         # --- moments of inertia
-        blade_moment_of_inertia = blade.outOfPlaneMomentOfInertia()
-        # --- mass ---
-        blade_mass = blade.mass()
+        # blade_moment_of_inertia = blade.outOfPlaneMomentOfInertia()
+        # --- mass --- 
+        # blade_mass = blade.mass()
         # ----- natural frequencies ----
         freq = blade.naturalFrequencies(self.n_freq)
 
@@ -328,8 +329,6 @@ class RunpBEAM(ExplicitComponent):
         strainU_spar, strainL_spar = self.strain(blade, xu_strain_spar, yu_strain_spar, xl_strain_spar, yl_strain_spar)
         strainU_te, strainL_te = self.strain(blade, xu_strain_te, yu_strain_te, xl_strain_te, yl_strain_te)
 
-        outputs['blade_mass'] = blade_mass
-        outputs['blade_moment_of_inertia'] = blade_moment_of_inertia
         outputs['freq_pbeam'] = freq
         outputs['freq_distance'] = np.float(freq[1]/freq[0])
         outputs['dx'] = dx
@@ -466,7 +465,7 @@ class RotorLoadsDeflStrains(Group):
         self.add_subsystem('tot_loads_gust',        TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
         # self.add_subsystem('tot_loads_storm_1yr',   TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
         # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
-        promoteListpBeam = ['r','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te','blade_mass']
+        promoteListpBeam = ['r','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te']
         self.add_subsystem('pbeam',     RunpBEAM(analysis_options = analysis_options),      promotes=promoteListpBeam)
         self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
         self.add_subsystem('constr',    DesignConstraints(analysis_options = analysis_options, opt_options = opt_options))
