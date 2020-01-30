@@ -874,6 +874,8 @@ class Control(ExplicitComponent):
         self.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
         self.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
         self.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
+        self.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
+        self.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
         
 class Configuration(ExplicitComponent):
     # Openmdao component with the wind turbine configuration data (class, number of blades, upwind vs downwind, ...) coming from the input yaml file.
@@ -987,7 +989,7 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     wt_opt = assign_nacelle_values(wt_opt, nacelle)
     wt_opt = assign_tower_values(wt_opt, analysis_options, tower)
     wt_opt = assign_foundation_values(wt_opt, foundation)
-    wt_opt = assign_control_values(wt_opt, control)
+    wt_opt = assign_control_values(wt_opt, analysis_options, control)
     wt_opt = assign_configuration_values(wt_opt, assembly)
     wt_opt = assign_environment_values(wt_opt, environment)
     wt_opt = assign_costs_values(wt_opt, costs)
@@ -1295,7 +1297,7 @@ def assign_foundation_values(wt_opt, foundation):
 
     return wt_opt
 
-def assign_control_values(wt_opt, control):
+def assign_control_values(wt_opt, analysis_options, control):
     # Controller parameters
     wt_opt['control.rated_power']   = control['rated_power']
     wt_opt['control.V_in']          = control['Vin']
@@ -1313,12 +1315,17 @@ def assign_control_values(wt_opt, control):
     wt_opt['control.VS_omega']      = control['VS_omega']
     wt_opt['control.VS_zeta']       = control['VS_zeta']
     # # other optional parameters
-    wt_opt['control.max_pitch']             = control['max_pitch']
-    wt_opt['control.min_pitch']             = control['min_pitch']
-    wt_opt['control.vs_minspd']             = control['vs_minspd']
-    wt_opt['control.ss_vsgain']             = control['ss_vsgain']
-    wt_opt['control.ss_pcgain']             = control['ss_pcgain']
-    wt_opt['control.ps_percent']            = control['ps_percent']
+    wt_opt['control.max_pitch']     = control['max_pitch']
+    wt_opt['control.min_pitch']     = control['min_pitch']
+    wt_opt['control.vs_minspd']     = control['vs_minspd']
+    wt_opt['control.ss_vsgain']     = control['ss_vsgain']
+    wt_opt['control.ss_pcgain']     = control['ss_pcgain']
+    wt_opt['control.ps_percent']    = control['ps_percent']
+    if analysis_options['servose']['Flp_Mode'] == 1:
+        wt_opt['control.Kp_flap']       = control['Kp_flap']
+        wt_opt['control.Ki_flap']       = control['Ki_flap']
+    
+    
     return wt_opt
 
 def assign_configuration_values(wt_opt, assembly):

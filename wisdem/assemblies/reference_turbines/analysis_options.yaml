@@ -50,3 +50,4 @@ servose:
     PS_Mode: 1 # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
     SD_Mode: 0 # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
     Fl_Mode: 0 # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}
+    Flp_mode: 0

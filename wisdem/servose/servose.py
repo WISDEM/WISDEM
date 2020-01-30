@@ -38,9 +38,10 @@ class ServoSE(Group):
         self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         self.add_subsystem('stall_check',       NoStallConstraint(analysis_options   = analysis_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
-        self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=200))
+        self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=analysis_options['servose']['n_pc_spline']))
         self.add_subsystem('aep',               AEP(), promotes=['AEP'])
-        self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational'])
+        if analysis_options['openfast']['run_openfast'] == True:
+            self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational'])
         # Connections to the stall check
         self.connect('powercurve.aoa_cutin','stall_check.aoa_along_span')
 
@@ -51,20 +52,19 @@ class ServoSE(Group):
         self.connect('cdf.F',               'aep.CDF_V')
         self.connect('powercurve.P_spline', 'aep.P')   
 
-        # Connect ROSCO Power curve
-        self.connect('powercurve.rated_V',      'tune_rosco.v_rated')
-        self.connect('powercurve.rated_Omega',  'tune_rosco.rated_rotor_speed')
-        self.connect('powercurve.rated_Q',      'tune_rosco.rated_torque')
+        if analysis_options['openfast']['run_openfast'] == True:
+            # Connect ROSCO Power curve
+            self.connect('powercurve.rated_V',      'tune_rosco.v_rated')
+            self.connect('powercurve.rated_Omega',  'tune_rosco.rated_rotor_speed')
+            self.connect('powercurve.rated_Q',      'tune_rosco.rated_torque')
 
-        # Connect ROSCO for Rotor Performance tables
-        self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
-        self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
-        self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
-        self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
-        self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
-        self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
-
-        self.test = 5.0
+            # Connect ROSCO for Rotor Performance tables
+            self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
+            self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
+            self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
+            self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
+            self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
+            self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
 
 class TuneROSCO(ExplicitComponent):
     def initialize(self):
@@ -89,6 +89,7 @@ class TuneROSCO(ExplicitComponent):
         self.controller_params['PS_Mode'] = self.analysis_options['servose']['PS_Mode']
         self.controller_params['SD_Mode'] = self.analysis_options['servose']['SD_Mode']
         self.controller_params['Fl_Mode'] = self.analysis_options['servose']['Fl_Mode']
+        self.controller_params['Flp_Mode'] = self.analysis_options['servose']['Flp_Mode']
         # # Additional controller parameters
         # # -- NJA these can be optional inputs in the yaml or changed to inputs - not sure yet
         # self.controller_params['max_pitch'] = self.analysis_options['controller']['max_pitch']
@@ -117,6 +118,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('max_torque_rate',   val=0.0,        units='N*m/s',          desc='Maximum allowed generator torque rate')
         self.add_input('tsr_operational',   val=0.0,                                desc='Operational tip-speed ratio')
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
+        self.add_input('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
         self.add_input('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
         self.add_input('gen_eff',           val=0.0,                                desc='Drivetrain efficiency')
         # 
@@ -133,7 +135,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('Cp_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero power coefficient')
         self.add_input('Ct_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero thrust coefficient')
         self.add_input('Cq_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero torque coefficient')
-        self.add_input('pitch_vector',      val=np.zeros(n_pitch),              units='deg',    desc='Pitch vector used')
+        self.add_input('pitch_vector',      val=np.zeros(n_pitch),              units='rad',    desc='Pitch vector used')
         self.add_input('tsr_vector',        val=np.zeros(n_tsr),                                desc='TSR vector used')
         self.add_input('U_vector',          val=np.zeros(n_U),                  units='m/s',    desc='Wind speed vector used')
 
@@ -146,7 +148,8 @@ class TuneROSCO(ExplicitComponent):
 
         # Optimization parameters to output
         #       - Note, passing all of the other DISCON variables in analysis_options['openfast']['fst_vt']['DISCON_in']
-        self.add_output('Kp_flap',                   val=0.0,    units='s',                   desc='Flap actuation gain') 
+        self.add_input('Kp_flap',                   val=0.0,    units='s',                   desc='Flap actuation gain') 
+        self.add_input('Ki_flap',                   val=0.0,    desc='Flap actuation gain') 
 
     def compute(self,inputs,outputs):
         '''
@@ -206,6 +209,8 @@ class TuneROSCO(ExplicitComponent):
         # initialize and tune controller
         controller = ROSCO_controller.Controller(self.analysis_options['servose'])
         controller.tune_controller(WISDEM_turbine)
+        controller.Kp_flap = inputs['Kp_flap'][0]
+        controller.Ki_flap = inputs['Ki_flap'][0]
         # self.vs_minspd = np.maximum(self.vs_minspd, (turbine.TSR_operational * turbine.v_min / turbine.rotor_radius) * Ng)
         # DISCON Parameters
         #   - controller
@@ -242,10 +247,14 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['sd_maxpit'] = controller.sd_maxpit
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['sd_cornerfreq'] = controller.sd_cornerfreq
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Kp_float'] = controller.Kp_float
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Kp_flap'] = controller.Kp_flap
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Ki_flap'] = controller.Ki_flap
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['flp_angle'] = 0.
         # - turbine
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['rotor_radius'] = WISDEM_turbine.rotor_radius
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['v_rated'] = inputs['v_rated'][0]
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['bld_edgweise_freq'] = inputs['edge_freq'][0] * 2 * np.pi
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['bld_flapwise_freq']  = inputs['flap_freq'][0] * 2 * np.pi
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['bld_edgewise_freq']  = inputs['edge_freq'][0] * 2 * np.pi
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['twr_freq'] = 0.0 # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['ptfm_freq'] = 0.0 # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['max_pitch_rate'] = WISDEM_turbine.max_pitch_rate
@@ -267,8 +276,6 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Cp'] = WISDEM_turbine.Cp
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Ct'] = WISDEM_turbine.Ct
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Cq'] = WISDEM_turbine.Cq
-        # Optimization outputs
-        outputs['Kp_flap'] = 0.0 # controller.Kp_flap
 
 class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 

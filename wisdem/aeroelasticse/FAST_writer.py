@@ -1277,6 +1277,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.sd_cornerfreq = self.fst_vt['DISCON_in']['sd_cornerfreq']
         controller.Kp_float = self.fst_vt['DISCON_in']['Kp_float']
         controller.Kp_flap = self.fst_vt['DISCON_in']['Kp_flap']
+        controller.Ki_flap = self.fst_vt['DISCON_in']['Ki_flap']
+        controller.flp_angle = self.fst_vt['DISCON_in']['flp_angle']
         # - turbine
         turbine = type('', (), {})()
         turbine.Cp = type('', (), {})()
@@ -1284,7 +1286,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
         turbine.Cq = type('', (), {})()
         turbine.rotor_radius = self.fst_vt['DISCON_in']['rotor_radius']
         turbine.v_rated = self.fst_vt['DISCON_in']['v_rated']
-        turbine.bld_edgewise_freq = self.fst_vt['DISCON_in']['bld_edgweise_freq']
+        turbine.bld_flapwise_freq = self.fst_vt['DISCON_in']['bld_flapwise_freq']
+        turbine.bld_edgewise_freq = self.fst_vt['DISCON_in']['bld_edgewise_freq']
         turbine.twr_freq = self.fst_vt['DISCON_in']['twr_freq'] 
         turbine.ptfm_freq = self.fst_vt['DISCON_in']['ptfm_freq'] 
         turbine.max_pitch_rate = self.fst_vt['DISCON_in']['max_pitch_rate']
@@ -1318,9 +1321,9 @@ class InputWriter_OpenFAST(InputWriter_Common):
         # Write DISCON infiles
         self.fst_vt['ServoDyn']['DLL_InFile'] = 'DISCON.IN'
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
-        self.fst_vt['DISCON_in']['PerfFileName'] = self.FAST_namingOut + '.Cp_Ct_Cq.txt'
+        self.fst_vt['DISCON_in']['PerfFileName'] = os.path.join(self.FAST_runDirectory, self.FAST_namingOut + '_Cp_Ct_Cq.txt')
         file_processing = ROSCO_utilities.FileProcessing()
-        file_processing.write_rotor_performance(turbine,self.fst_vt['DISCON_in']['PerfFileName'])
+        file_processing.write_rotor_performance(turbine, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
         file_processing.write_param_file(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
         
         # f = open(discon_in_file, 'w')

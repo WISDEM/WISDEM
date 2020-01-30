@@ -54,7 +54,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
         # Set merit figure
         if opt_options['merit_figure'] == 'AEP':
-            wt_opt.model.add_objective('ra.AEP', scaler = -1.e-6)
+            wt_opt.model.add_objective('sse.AEP', scaler = -1.e-6)
         elif opt_options['merit_figure'] == 'blade_mass':
             wt_opt.model.add_objective('rlds.blade_mass', scaler = 1.e-4)
         elif opt_options['merit_figure'] == 'LCOE':
@@ -83,7 +83,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
-        wt_opt.driver.recording_options['includes'] = ['ra.AEP, rlds.blade_mass, financese.lcoe']
+        wt_opt.driver.recording_options['includes'] = ['sse.AEP, rlds.blade_mass, financese.lcoe']
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
         wt_opt.driver.recording_options['record_desvars']     = True
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
 
     # Printing and plotting results
-    print('AEP in GWh = ' + str(wt_opt['ra.AEP']*1.e-6))
+    print('AEP in GWh = ' + str(wt_opt['sse.AEP']*1.e-6))
     print('Nat frequencies blades in Hz = ' + str(wt_opt['elastic.curvefem.freq']))
     print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
     print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))

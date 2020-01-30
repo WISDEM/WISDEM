@@ -136,23 +136,6 @@ class WT_RNTA(Group):
         self.connect('control.max_torque_rate' , 'sse.tune_rosco.max_torque_rate')
         self.connect('control.rated_TSR' ,      'sse.tsr_operational')
         self.connect('control.rated_pitch' ,    'sse.control_pitch')
-        self.connect('nacelle.gear_ratio',      'sse.tune_rosco.gear_ratio')
-        self.connect('assembly.rotor_radius',   'sse.tune_rosco.R')
-        self.connect('nacelle.drivetrain_eff',  'sse.tune_rosco.gen_eff')
-        self.connect('elastic.curvefem.freq',   'sse.tune_rosco.edge_freq', src_indices=[1])
-        # options
-        self.connect('control.max_pitch',       'sse.tune_rosco.max_pitch') 
-        self.connect('control.min_pitch',       'sse.tune_rosco.min_pitch') 
-        self.connect('control.vs_minspd',       'sse.tune_rosco.vs_minspd') 
-        self.connect('control.ss_vsgain',       'sse.tune_rosco.ss_vsgain') 
-        self.connect('control.ss_pcgain',       'sse.tune_rosco.ss_pcgain') 
-        self.connect('control.ps_percent',      'sse.tune_rosco.ps_percent') 
-
-
-        self.connect('control.PC_omega',        'sse.tune_rosco.PC_omega')
-        self.connect('control.PC_zeta',         'sse.tune_rosco.PC_zeta')
-        self.connect('control.VS_omega',        'sse.tune_rosco.VS_omega')
-        self.connect('control.VS_zeta',         'sse.tune_rosco.VS_zeta')
 
         self.connect('configuration.gearbox_type' , 'sse.drivetrainType')
         self.connect('assembly.r_blade',            'sse.r')
@@ -162,6 +145,7 @@ class WT_RNTA(Group):
         self.connect('hub.cone',                    'sse.precone')
         self.connect('nacelle.uptilt',              'sse.tilt')
         self.connect('airfoils.aoa',                    'sse.airfoils_aoa')
+
         self.connect('airfoils.Re',                     'sse.airfoils_Re')
         self.connect('blade.interp_airfoils.cl_interp', 'sse.airfoils_cl')
         self.connect('blade.interp_airfoils.cd_interp', 'sse.airfoils_cd')
@@ -172,6 +156,24 @@ class WT_RNTA(Group):
         self.connect('env.mu_air',                      'sse.mu')
         self.connect('env.weibull_k',                   'sse.cdf.k')
         
+        if analysis_options['openfast']['run_openfast']:
+            self.connect('nacelle.gear_ratio',      'sse.tune_rosco.gear_ratio')
+            self.connect('assembly.rotor_radius',   'sse.tune_rosco.R')
+            self.connect('nacelle.drivetrain_eff',  'sse.tune_rosco.gen_eff')
+            self.connect('elastic.curvefem.freq',   'sse.tune_rosco.flap_freq', src_indices=[0])
+            self.connect('elastic.curvefem.freq',   'sse.tune_rosco.edge_freq', src_indices=[1])
+            self.connect('control.max_pitch',       'sse.tune_rosco.max_pitch') 
+            self.connect('control.min_pitch',       'sse.tune_rosco.min_pitch') 
+            self.connect('control.vs_minspd',       'sse.tune_rosco.vs_minspd') 
+            self.connect('control.ss_vsgain',       'sse.tune_rosco.ss_vsgain') 
+            self.connect('control.ss_pcgain',       'sse.tune_rosco.ss_pcgain') 
+            self.connect('control.ps_percent',      'sse.tune_rosco.ps_percent') 
+            self.connect('control.PC_omega',        'sse.tune_rosco.PC_omega')
+            self.connect('control.PC_zeta',         'sse.tune_rosco.PC_zeta')
+            self.connect('control.VS_omega',        'sse.tune_rosco.VS_omega')
+            self.connect('control.VS_zeta',         'sse.tune_rosco.VS_zeta')
+            self.connect('control.Kp_flap',         'sse.tune_rosco.Kp_flap')
+            self.connect('control.Ki_flap',         'sse.tune_rosco.Ki_flap')
         
 
         # Connections to rotor load analysis
@@ -307,7 +309,6 @@ class WT_RNTA(Group):
             self.connect('sse.aeroperf_tables.Cp', 'aeroelastic.Cp_aero_table')
             self.connect('sse.aeroperf_tables.Ct', 'aeroelastic.Ct_aero_table')
             self.connect('sse.aeroperf_tables.Cq', 'aeroelastic.Cq_aero_table')
-            self.connect('sse.tune_rosco.Kp_flap',  'aeroelastic.Kp_flap')
 
             # Temporary
             self.connect('xf.Re_loc',           'aeroelastic.airfoils_Re_loc')

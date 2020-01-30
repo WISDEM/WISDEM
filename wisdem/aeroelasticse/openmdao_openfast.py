@@ -255,9 +255,6 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
         self.add_input('control_maxOmega',          val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
         self.add_input('control_maxTS',             val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
-
-        # DISCON Inputs
-        self.add_input('Kp_flap',                   val=0.0,    units='s',  desc='Flap actuation gain') 
         
         # Initial conditions
         self.add_input('U_init',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
@@ -516,9 +513,6 @@ class FASTLoadCases(ExplicitComponent):
         
         fst_vt['AeroDyn15']['BlOutNd'] = [str(idx+1) for idx in idx_out]
         fst_vt['AeroDyn15']['NBlOuts'] = len(idx_out)
-
-        # Update DISCON
-        fst_vt['DISCON_in']['Kp_flap'] = inputs['Kp_flap']
 
         return fst_vt, R_out
 
