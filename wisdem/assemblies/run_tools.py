@@ -117,13 +117,13 @@ class Outputs_2_Screen(ExplicitComponent):
     # Class to print outputs on screen
     def setup(self):
         
-        self.add_input('AEP', val=0.0, units = 'GW * h')
+        self.add_input('aep', val=0.0, units = 'GW * h')
         self.add_input('blade_mass', val=0.0, units = 'kg')
-        self.add_input('lcoe', val=0.0, units = 'USD/kW/h')
+        self.add_input('lcoe', val=0.0, units = 'USD/MW/h')
     def compute(self, inputs, outputs):
         print('########################################')
         print('Objectives')
-        print('AEP:         {:8.10f} GWh'.format(inputs['AEP'][0]))
+        print('Turbine AEP: {:8.10f} GWh'.format(inputs['aep'][0]))
         print('Blade Mass:  {:8.10f} kg'.format(inputs['blade_mass'][0]))
-        print('LCOE:        {:8.10f} $/kWh'.format(inputs['lcoe'][0]))
+        print('LCOE:        {:8.10f} USD/MWh'.format(inputs['lcoe'][0]))
         print('########################################')

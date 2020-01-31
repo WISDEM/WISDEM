@@ -247,6 +247,7 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_input('airfoils_coord_y',  val=np.zeros((n_xy, n_span)), desc='y airfoil coordinate, spanwise')
         
         # Turbine level inputs
+        self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
         self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
         self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
@@ -394,11 +395,17 @@ class FASTLoadCases(ExplicitComponent):
         # Update ElastoDyn
         fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip'][0]
         fst_vt['ElastoDyn']['HubRad'] = inputs['Rhub'][0]
-        fst_vt['ElastoDyn']['PreCone(1)'] = -inputs['cone'][0]
-        fst_vt['ElastoDyn']['PreCone(2)'] = -inputs['cone'][0]
-        fst_vt['ElastoDyn']['PreCone(3)'] = -inputs['cone'][0]
-        fst_vt['ElastoDyn']['ShftTilt']   = -inputs['tilt'][0]
-        fst_vt['ElastoDyn']['OverHang']   = -inputs['overhang'][0]
+        if discrete_inputs['rotor_orientation'] == 'upwind':
+            k = -1.
+        else:
+            k = 1
+        fst_vt['ElastoDyn']['PreCone(1)'] = k*inputs['cone'][0]
+        fst_vt['ElastoDyn']['PreCone(2)'] = k*inputs['cone'][0]
+        fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
+        fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
+        fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
+        
+
         tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
         fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][0] + inputs['tower_base_height'][0] # Height of tower above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerBsHt'] = inputs['tower_base_height'][0] # Height of tower base above ground level [onshore] or MSL [offshore] (meters)

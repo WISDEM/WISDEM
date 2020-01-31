@@ -268,6 +268,7 @@ class WT_RNTA(Group):
         # promotes=['fst_vt_in'])
         if analysis_options['openfast']['run_openfast'] == True:
             self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
+            self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
             self.connect('assembly.r_blade',                'aeroelastic.r')
             self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
             self.connect('param.pa.chord_param',            'aeroelastic.chord')
@@ -321,6 +322,7 @@ class WT_RNTA(Group):
             self.connect('xf.Ma_loc',           'aeroelastic.airfoils_Ma_loc')
         
         # Connections to turbine constraints
+        self.connect('configuration.rotor_orientation', 'tcons.rotor_orientation')
         self.connect('rlds.tip_pos.tip_deflection',     'tcons.tip_deflection')
         self.connect('assembly.rotor_radius',           'tcons.Rtip')
         self.connect('blade.outer_shape_bem.ref_axis',  'tcons.ref_axis_blade')
@@ -367,7 +369,7 @@ class WindPark(Group):
         self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
 
         # Inputs to plantfinancese from wt group
-        self.connect('sse.AEP',          'financese.turbine_aep')
+        self.connect('sse.AEP',                 'financese.turbine_aep')
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
         # Inputs to plantfinancese from input yaml
         self.connect('control.rated_power',     'financese.machine_rating')
@@ -375,4 +377,10 @@ class WindPark(Group):
         self.connect('costs.bos_per_kW',        'financese.bos_per_kW')
         self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
         self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
+
+        # Connections to outputs to screen
+        self.connect('sse.AEP',                    'outputs_2_screen.aep')
+        self.connect('elastic.precomp.blade_mass', 'outputs_2_screen.blade_mass')
+        self.connect('financese.lcoe',             'outputs_2_screen.lcoe')
+
 

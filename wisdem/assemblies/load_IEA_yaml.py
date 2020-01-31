@@ -1333,7 +1333,7 @@ def assign_configuration_values(wt_opt, assembly):
     wt_opt['configuration.ws_class']   = assembly['turbine_class']
     wt_opt['configuration.turb_class']          = assembly['turbulence_class']
     wt_opt['configuration.gearbox_type']         = assembly['drivetrain']
-    wt_opt['configuration.rotor_orientation']     = assembly['rotor_orientation']
+    wt_opt['configuration.rotor_orientation']     = assembly['rotor_orientation'].lower()
     wt_opt['configuration.n_blades']     = assembly['number_of_blades']
 
     return wt_opt
