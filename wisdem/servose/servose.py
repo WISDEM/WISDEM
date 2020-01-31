@@ -41,7 +41,7 @@ class ServoSE(Group):
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=analysis_options['servose']['n_pc_spline']))
         self.add_subsystem('aep',               AEP(), promotes=['AEP'])
         if analysis_options['openfast']['run_openfast'] == True:
-            self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational'])
+            self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power'])
         # Connections to the stall check
         self.connect('powercurve.aoa_cutin','stall_check.aoa_along_span')
 
@@ -180,10 +180,10 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rho = inputs['rho'][0]
         WISDEM_turbine.rotor_radius = inputs['R'][0]
         WISDEM_turbine.Ng = inputs['gear_ratio'][0]
+        WISDEM_turbine.gen_eff = inputs['gen_eff'][0]
         WISDEM_turbine.rated_rotor_speed = inputs['rated_rotor_speed'][0]
         WISDEM_turbine.rated_power = inputs['rated_power'][0]
-        WISDEM_turbine.rated_torque = inputs['rated_torque'][0]
-        WISDEM_turbine.gen_eff = inputs['gen_eff'][0]
+        WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * WISDEM_turbine.gen_eff
         WISDEM_turbine.v_rated = inputs['v_rated'][0]
         WISDEM_turbine.v_min = inputs['v_min'][0]
         WISDEM_turbine.v_max = inputs['v_max'][0]
@@ -211,7 +211,7 @@ class TuneROSCO(ExplicitComponent):
         controller.tune_controller(WISDEM_turbine)
         controller.Kp_flap = inputs['Kp_flap'][0]
         controller.Ki_flap = inputs['Ki_flap'][0]
-        # self.vs_minspd = np.maximum(self.vs_minspd, (turbine.TSR_operational * turbine.v_min / turbine.rotor_radius) * Ng)
+
         # DISCON Parameters
         #   - controller
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['LoggingLevel'] = controller.LoggingLevel

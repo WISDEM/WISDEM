@@ -1318,12 +1318,14 @@ class InputWriter_OpenFAST(InputWriter_Common):
         turbine.Cq.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
         turbine.TurbineName = self.fst_vt['description']
         
-        # Write DISCON infiles
+        # Define DISCON infile paths
         self.fst_vt['ServoDyn']['DLL_InFile'] = 'DISCON.IN'
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
-        self.fst_vt['DISCON_in']['PerfFileName'] = os.path.join(self.FAST_runDirectory, self.FAST_namingOut + '_Cp_Ct_Cq.txt')
+        self.fst_vt['DISCON_in']['PerfFileName'] = self.FAST_namingOut + '_Cp_Ct_Cq.txt'
+        
+        # Write DISCON infiles
         file_processing = ROSCO_utilities.FileProcessing()
-        file_processing.write_rotor_performance(turbine, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
+        file_processing.write_rotor_performance(turbine, txt_filename=os.path.join(self.FAST_runDirectory, self.fst_vt['DISCON_in']['PerfFileName']))
         file_processing.write_param_file(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
         
         # f = open(discon_in_file, 'w')
