@@ -5,6 +5,8 @@ from functools import reduce
 import operator
 
 from wisdem.aeroelasticse.FAST_vars import FstModel
+from ROSCO_toolbox import turbine as ROSCO_turbine
+from ROSCO_toolbox import utilities as ROSCO_utilities
 
 
 def fix_path(name):
@@ -400,8 +402,24 @@ class InputReader_OpenFAST(InputReader_Common):
             self.read_AeroDyn15()
 
         self.read_ServoDyn()
-        # self.read_DISCON_in()
+        self.read_DISCON_in()
+        
+        pitch_vector, tsr_vector, Cp_table, Ct_table, Cq_table = ROSCO_utilities.load_from_txt(self.fst_vt['DISCON_in']['PerfFileName'])
 
+        RotorPerformance = ROSCO_turbine.RotorPerformance
+        Cp = RotorPerformance(Cp_table,pitch_vector,tsr_vector)
+        Ct = RotorPerformance(Ct_table,pitch_vector,tsr_vector)
+        Cq = RotorPerformance(Cq_table,pitch_vector,tsr_vector)
+        
+        self.fst_vt['DISCON_in']['Cp'] = Cp
+        self.fst_vt['DISCON_in']['Ct'] = Ct
+        self.fst_vt['DISCON_in']['Cq'] = Cq
+        self.fst_vt['DISCON_in']['Cp_pitch_initial_rad'] = pitch_vector
+        self.fst_vt['DISCON_in']['Cp_TSR_initial'] = tsr_vector
+        self.fst_vt['DISCON_in']['Cp_table'] = Cp_table
+        self.fst_vt['DISCON_in']['Ct_table'] = Ct_table
+        self.fst_vt['DISCON_in']['Cq_table'] = Cq_table
+        
         if self.fst_vt['Fst']['CompHydro'] == 1: # SubDyn not yet implimented
             self.read_HydroDyn()
         if self.fst_vt['Fst']['CompSub'] == 1: # SubDyn not yet implimented
@@ -1297,7 +1315,7 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Bladed Interface and Torque-Speed Look-Up Table (bladed_interface)
         f.readline()
-        if self.path2dll == '':
+        if self.path2dll == '' or self.path2dll == None:
             self.fst_vt['ServoDyn']['DLL_FileName'] = os.path.abspath(os.path.normpath(os.path.join(os.path.split(sd_file)[0], f.readline().split()[0][1:-1])))
         else:
             f.readline()
@@ -1387,7 +1405,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['PS_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['SD_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['Fl_Mode']           = int_read(f.readline().split()[0])
-            # self.fst_vt['DISCON_in']['Flp_Mode']          = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Mode']          = int_read(f.readline().split()[0])
             f.readline()
             f.readline()
 
@@ -1398,7 +1416,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['F_NotchBetaNumDen'] = [float(idx.strip()) for idx in f.readline().strip().split('F_NotchBetaNumDen')[0].split() if idx.strip() != '!']
             self.fst_vt['DISCON_in']['F_SSCornerFreq']    = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['F_FlCornerFreq']    = [float(idx.strip()) for idx in f.readline().strip().split('F_FlCornerFreq')[0].split() if idx.strip() != '!']
-            # self.fst_vt['DISCON_in']['F_FlpCornerFreq']   = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_FlpCornerFreq']   = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
             f.readline()
             f.readline()
 
@@ -1442,8 +1460,8 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['VS_RtTq']           = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['VS_RefSpd']         = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['VS_n']              = int_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['VS_KP']             = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['VS_KI']             = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_KP']             = [float_read(f.readline().split()[0])]
+            self.fst_vt['DISCON_in']['VS_KI']             = [float_read(f.readline().split()[0])]
             self.fst_vt['DISCON_in']['VS_TSRopt']         = float_read(f.readline().split()[0])
             f.readline()
             f.readline()
@@ -1508,18 +1526,55 @@ class InputReader_OpenFAST(InputReader_Common):
             # FLOATING
             self.fst_vt['DISCON_in']['Fl_Kp']             = float_read(f.readline().split()[0])
             f.readline()
-            # f.readline()
+            f.readline()
 
-            # # DISTRIBUTED AERODYNAMIC CONTROL
-            # self.fst_vt['DISCON_in']['Flp_Angle']         = float_read(f.readline().split()[0])
-            # self.fst_vt['DISCON_in']['Flp_Kp']            = float_read(f.readline().split()[0])
-            # self.fst_vt['DISCON_in']['Flp_Ki']            = float_read(f.readline().split()[0])
+            # DISTRIBUTED AERODYNAMIC CONTROL
+            self.fst_vt['DISCON_in']['Flp_Angle']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Kp']            = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Ki']            = float_read(f.readline().split()[0])
 
 
             f.close()
 
+            self.fst_vt['DISCON_in']['v_rated'] = 1.
+
         else:
             del self.fst_vt['DISCON_in']
+
+    # def read_CpSurfaces(self):
+        
+    #     cp_surf__in_file = self.fst_vt['DISCON_in']['PerfFileName']
+
+    #     if os.path.exists(cp_surf__in_file):
+
+    #         f = open(cp_surf__in_file)
+
+    #         f.readline()
+    #         f.readline()
+    #         f.readline()
+    #         f.readline()
+    #         pitch_vector = f.readline()
+    #         n_pitch = len(pitch_vector)
+    #         f.readline()
+    #         tsr_vector = f.readline()
+    #         n_tsr = len(tsr_vector)
+    #         U_vector = f.readline()
+    #         n_U = len(U_vector)
+
+    #         Cp_table = np.zeros(n_U, n_tsr, n_pitch)
+    #         Ct_table = np.zeros(n_U, n_tsr, n_pitch)
+    #         Cq_table = np.zeros(n_U, n_tsr, n_pitch)
+
+    #         f.readline()
+    #         f.readline()
+    #         f.readline()
+
+    #         for i_U in range(n_U):
+    #             for i_tsr in range(n_tsr):
+    #                 Cp_table[i_U, i_tsr,:] = [float(idx.strip()) for idx in f.readline().split('WE_FOPoles_v')[0].split() if idx.strip() != '!']
+
+
+
 
     def read_HydroDyn(self):
         # AeroDyn v2.03

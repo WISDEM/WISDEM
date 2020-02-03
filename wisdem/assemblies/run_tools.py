@@ -17,56 +17,63 @@ class Opt_Data(object):
 
     def initialize(self):
 
-        opt_data = self.load_yaml(self.fname_opt_options)
+        self.opt_options = self.load_yaml(self.fname_opt_options)
 
         self.opt_options['folder_output']    = self.folder_output
-        self.opt_options['optimization_log'] = self.folder_output + opt_data['recorder']['file_name']
+        self.opt_options['optimization_log'] = self.folder_output + self.opt_options['recorder']['file_name']
 
-        # Optimization variables
-        self.opt_options['blade_aero'] = {}
-        self.opt_options['blade_aero']['opt_twist']         = opt_data['optimization_variables']['twist']['flag']
-        self.opt_options['blade_aero']['n_opt_twist']       = opt_data['optimization_variables']['twist']['n_opt']
-        self.opt_options['blade_aero']['lower_bound_twist'] = opt_data['optimization_variables']['twist']['lower_bound']
-        self.opt_options['blade_aero']['upper_bound_twist'] = opt_data['optimization_variables']['twist']['upper_bound']
+        # # Optimization variables
+        # self.opt_options['blade_aero'] = {}
+        # self.opt_options['blade_aero']['opt_twist']         = opt_data['optimization_variables']['blade']['aero_shape']['twist']['flag']
+        # self.opt_options['blade_aero']['n_opt_twist']       = opt_data['optimization_variables']['blade']['aero_shape']['twist']['n_opt']
+        # self.opt_options['blade_aero']['lower_bound_twist'] = opt_data['optimization_variables']['blade']['aero_shape']['twist']['lower_bound']
+        # self.opt_options['blade_aero']['upper_bound_twist'] = opt_data['optimization_variables']['blade']['aero_shape']['twist']['upper_bound']
 
-        self.opt_options['blade_aero']['opt_chord']         = opt_data['optimization_variables']['chord']['flag']
-        self.opt_options['blade_aero']['n_opt_chord']       = opt_data['optimization_variables']['chord']['n_opt']
-        self.opt_options['blade_aero']['min_gain_chord']    = opt_data['optimization_variables']['chord']['min_gain']
-        self.opt_options['blade_aero']['max_gain_chord']    = opt_data['optimization_variables']['chord']['max_gain']
+        # self.opt_options['blade_aero']['opt_chord']         = opt_data['optimization_variables']['blade']['aero_shape']['chord']['flag']
+        # self.opt_options['blade_aero']['n_opt_chord']       = opt_data['optimization_variables']['blade']['aero_shape']['chord']['n_opt']
+        # self.opt_options['blade_aero']['min_gain_chord']    = opt_data['optimization_variables']['blade']['aero_shape']['chord']['min_gain']
+        # self.opt_options['blade_aero']['max_gain_chord']    = opt_data['optimization_variables']['blade']['aero_shape']['chord']['max_gain']
 
-        self.opt_options['blade_struct'] = {}
-        self.opt_options['blade_struct']['opt_spar_cap_ss']         = opt_data['optimization_variables']['spar_cap_ss']['flag']
-        self.opt_options['blade_struct']['n_opt_spar_cap_ss']       = opt_data['optimization_variables']['spar_cap_ss']['n_opt']
-        self.opt_options['blade_struct']['spar_cap_ss_var']         = opt_data['optimization_variables']['spar_cap_ss']['name']
-        self.opt_options['blade_struct']['min_gain_spar_cap_ss']    = opt_data['optimization_variables']['spar_cap_ss']['min_gain']
-        self.opt_options['blade_struct']['max_gain_spar_cap_ss']    = opt_data['optimization_variables']['spar_cap_ss']['max_gain']
+        # self.opt_options['blade_struct'] = {}
+        # self.opt_options['blade_struct']['opt_spar_cap_ss']         = opt_data['optimization_variables']['blade']['structure']['spar_cap_ss']['flag']
+        # self.opt_options['blade_struct']['n_opt_spar_cap_ss']       = opt_data['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']
+        # self.opt_options['blade_struct']['spar_cap_ss_var']         = opt_data['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
+        # self.opt_options['blade_struct']['min_gain_spar_cap_ss']    = opt_data['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain']
+        # self.opt_options['blade_struct']['max_gain_spar_cap_ss']    = opt_data['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain']
         
-        self.opt_options['blade_struct']['opt_spar_cap_ps']         = opt_data['optimization_variables']['spar_cap_ps']['flag']
-        self.opt_options['blade_struct']['n_opt_spar_cap_ps']       = opt_data['optimization_variables']['spar_cap_ps']['n_opt']
-        self.opt_options['blade_struct']['spar_cap_ps_var']         = opt_data['optimization_variables']['spar_cap_ps']['name']
-        self.opt_options['blade_struct']['min_gain_spar_cap_ps']    = opt_data['optimization_variables']['spar_cap_ps']['min_gain']
-        self.opt_options['blade_struct']['max_gain_spar_cap_ps']    = opt_data['optimization_variables']['spar_cap_ps']['max_gain']
+        # self.opt_options['blade_struct']['opt_spar_cap_ps']         = opt_data['optimization_variables']['blade']['structure']['spar_cap_ps']['flag']
+        # self.opt_options['blade_struct']['n_opt_spar_cap_ps']       = opt_data['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']
+        # self.opt_options['blade_struct']['spar_cap_ps_var']         = opt_data['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
+        # self.opt_options['blade_struct']['min_gain_spar_cap_ps']    = opt_data['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain']
+        # self.opt_options['blade_struct']['max_gain_spar_cap_ps']    = opt_data['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain']
 
-        self.opt_options['blade_struct']['te_ps_opt']         = opt_data['optimization_variables']['te_ps']['flag']
-        self.opt_options['blade_struct']['n_opt_te_ps']       = opt_data['optimization_variables']['te_ps']['n_opt']
-        self.opt_options['blade_struct']['te_ps_var']         = opt_data['optimization_variables']['te_ps']['name']
-        self.opt_options['blade_struct']['min_gain_te_ps']    = opt_data['optimization_variables']['te_ps']['min_gain']
-        self.opt_options['blade_struct']['max_gain_te_ps']    = opt_data['optimization_variables']['te_ps']['max_gain']
+        # self.opt_options['blade_struct']['te_ps_opt']         = opt_data['optimization_variables']['blade']['structure']['te_ps']['flag']
+        # self.opt_options['blade_struct']['n_opt_te_ps']       = opt_data['optimization_variables']['blade']['structure']['te_ps']['n_opt']
+        # self.opt_options['blade_struct']['te_ps_var']         = opt_data['optimization_variables']['blade']['structure']['te_ps']['name']
+        # self.opt_options['blade_struct']['min_gain_te_ps']    = opt_data['optimization_variables']['blade']['structure']['te_ps']['min_gain']
+        # self.opt_options['blade_struct']['max_gain_te_ps']    = opt_data['optimization_variables']['blade']['structure']['te_ps']['max_gain']
 
-        self.opt_options['blade_struct']['te_ss_opt']         = opt_data['optimization_variables']['te_ss']['flag']
-        self.opt_options['blade_struct']['n_opt_te_ss']       = opt_data['optimization_variables']['te_ss']['n_opt']
-        self.opt_options['blade_struct']['te_ss_var']         = opt_data['optimization_variables']['te_ss']['name']
-        self.opt_options['blade_struct']['min_gain_te_ss']    = opt_data['optimization_variables']['te_ss']['min_gain']
-        self.opt_options['blade_struct']['max_gain_te_ss']    = opt_data['optimization_variables']['te_ss']['max_gain']
+        # self.opt_options['blade_struct']['te_ss_opt']         = opt_data['optimization_variables']['blade']['structure']['te_ss']['flag']
+        # self.opt_options['blade_struct']['n_opt_te_ss']       = opt_data['optimization_variables']['blade']['structure']['te_ss']['n_opt']
+        # self.opt_options['blade_struct']['te_ss_var']         = opt_data['optimization_variables']['blade']['structure']['te_ss']['name']
+        # self.opt_options['blade_struct']['min_gain_te_ss']    = opt_data['optimization_variables']['blade']['structure']['te_ss']['min_gain']
+        # self.opt_options['blade_struct']['max_gain_te_ss']    = opt_data['optimization_variables']['blade']['structure']['te_ss']['max_gain']
 
-        # Merit figure
-        self.opt_options['merit_figure']    = opt_data['merit_figure']
+        # if 'dac' in opt_data['optimization_variables']['blade'].keys():
+        #     self.opt_options['dac']['te_ss_opt']         = opt_data['optimization_variables']['blade']['structure']['te_ss']['flag']
+        #     self.opt_options['dac']['n_opt_te_ss']       = opt_data['optimization_variables']['blade']['structure']['te_ss']['n_opt']
+        #     self.opt_options['dac']['te_ss_var']         = opt_data['optimization_variables']['blade']['structure']['te_ss']['name']
+        #     self.opt_options['dac']['min_gain_te_ss']    = opt_data['optimization_variables']['blade']['structure']['te_ss']['min_gain']
+        #     self.opt_options['dac']['max_gain_te_ss']    = opt_data['optimization_variables']['blade']['structure']['te_ss']['max_gain']
 
-        # Optimization driver options
-        self.opt_options['driver'] = {}
-        self.opt_options['driver']['solver']    = opt_data['driver']['solver']
-        self.opt_options['driver']['max_iter']  = opt_data['driver']['max_iter']
-        self.opt_options['driver']['tol']       = opt_data['driver']['tol']
+        # # Merit figure
+        # self.opt_options['merit_figure']    = opt_data['merit_figure']
+
+        # # Optimization driver options
+        # self.opt_options['driver'] = {}
+        # self.opt_options['driver']['solver']    = opt_data['driver']['solver']
+        # self.opt_options['driver']['max_iter']  = opt_data['driver']['max_iter']
+        # self.opt_options['driver']['tol']       = opt_data['driver']['tol']
 
         return self.opt_options
 

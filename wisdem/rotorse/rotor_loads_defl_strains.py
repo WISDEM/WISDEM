@@ -386,8 +386,8 @@ class DesignConstraints(ExplicitComponent):
         self.n_span = n_span = blade_init_options['n_span']
         self.n_freq = n_freq = blade_init_options['n_freq']
         self.opt_options   = opt_options   = self.options['opt_options']
-        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options['blade_struct']['n_opt_spar_cap_ss']
-        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options['blade_struct']['n_opt_spar_cap_ps']
+        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']
+        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']
         # Inputs strains
         self.add_input('strainU_spar',     val=np.zeros(n_span), desc='strain in spar cap on upper surface at location xu,yu_strain with loads P_strain')
         self.add_input('strainL_spar',     val=np.zeros(n_span), desc='strain in spar cap on lower surface at location xl,yl_strain with loads P_strain')
