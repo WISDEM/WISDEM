@@ -253,7 +253,7 @@ class TuneROSCO(ExplicitComponent):
         # - turbine
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['v_rated'] = inputs['v_rated'][0]
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq']  = inputs['flap_freq'][0] * 2 * np.pi
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq']  = [inputs['flap_freq'][0] * 2 * np.pi, 0.7]
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_LPFCornerFreq']  = inputs['edge_freq'][0] * 2 * np.pi / 4.
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['twr_freq'] = 0.0 # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['ptfm_freq'] = 0.0 # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM

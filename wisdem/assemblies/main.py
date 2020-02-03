@@ -59,7 +59,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if opt_options['merit_figure'] == 'AEP':
             wt_opt.model.add_objective('sse.AEP', scaler = -1.e-6)
         elif opt_options['merit_figure'] == 'blade_mass':
-            wt_opt.model.add_objective('rlds.blade_mass', scaler = 1.e-4)
+            wt_opt.model.add_objective('elastic.precomp.blade_mass', scaler = 1.e-4)
         elif opt_options['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
         else:
@@ -80,9 +80,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_design_var('param.opt_var.spar_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
         if 'dac' in opt_options['optimization_variables']['blade'].keys():
             if opt_options['optimization_variables']['blade']['dac']['te_flap_pos']['flag'] == True:
-                wt_opt.model.add_design_var('param.opt_var.te_flap_pos', lower=opt_options['blade']['dac']['te_flap_pos']['min_pos'], upper=opt_options['blade']['dac']['te_flap_pos']['max_pos'])
+                wt_opt.model.add_design_var('param.opt_var.te_flap_pos', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_pos']['min_pos'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_pos']['max_pos'])
             if opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['flag'] == True:
-                wt_opt.model.add_design_var('param.opt_var.te_flap_ext', lower=opt_options['blade']['dac']['te_flap_pos']['min_ext'], upper=opt_options['blade']['dac']['te_flap_pos']['max_ext'])
+                wt_opt.model.add_design_var('param.opt_var.te_flap_ext', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['min_ext'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['max_ext'])
         
 
         # Set non-linear constraints
@@ -92,7 +92,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['recorder']['file_name']))
-        wt_opt.driver.recording_options['includes'] = ['sse.AEP, rlds.blade_mass, financese.lcoe']
+        wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe']
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
         wt_opt.driver.recording_options['record_desvars']     = True

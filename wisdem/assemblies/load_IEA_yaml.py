@@ -681,9 +681,9 @@ class TE_Flaps(ExplicitComponent):
         blade_init_options = self.options['blade_init_options']
         n_te_flaps = blade_init_options['n_te_flaps']
 
-        self.add_output('span_start', val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
-        self.add_output('span_end',   val=np.zeros(n_te_flaps),                  desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
-        self.add_output('chord_start',val=np.zeros(n_te_flaps),                  desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
+        self.add_output('te_flap_pos',   val = np.zeros(n_te_flaps),             desc='1D array of the mid positions along blade span where the mid point of the trailing edge flap(s) are located. Only values between 0 and 1 are meaningful.')
+        self.add_output('te_flap_ext',   val = np.zeros(n_te_flaps),             desc='1D array of the span extension along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
+        self.add_output('chord_start',   val=np.zeros(n_te_flaps),               desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
         self.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
         self.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
 
@@ -1199,8 +1199,8 @@ def assign_te_flaps_values(wt_opt, analysis_options, blade):
     if analysis_options['blade']['n_te_flaps'] > 0:   
         n_te_flaps = analysis_options['blade']['n_te_flaps']
         for i in range(n_te_flaps):
-            wt_opt['blade.dac_te_flaps.span_start'][i]      = blade['aerodynamic_control']['te_flaps'][i]['span_start']
-            wt_opt['blade.dac_te_flaps.span_end'][i]        = blade['aerodynamic_control']['te_flaps'][i]['span_end']
+            wt_opt['blade.dac_te_flaps.te_flap_pos'][i]     = (blade['aerodynamic_control']['te_flaps'][i]['span_start'] + blade['aerodynamic_control']['te_flaps'][i]['span_end']) / 2.
+            wt_opt['blade.dac_te_flaps.te_flap_ext'][i]     = blade['aerodynamic_control']['te_flaps'][i]['span_end'] - blade['aerodynamic_control']['te_flaps'][i]['span_start']
             wt_opt['blade.dac_te_flaps.chord_start'][i]     = blade['aerodynamic_control']['te_flaps'][i]['chord_start']
             wt_opt['blade.dac_te_flaps.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
             wt_opt['blade.dac_te_flaps.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
@@ -1219,15 +1219,15 @@ def assign_te_flaps_values(wt_opt, analysis_options, blade):
             elif i > 0:
                  if blade['aerodynamic_control']['te_flaps'][i]['span_start'] < blade['aerodynamic_control']['te_flaps'][i-1]['span_end']:
                      exit('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is smaller than the end of the trailing edge flap number ' + str(i-1) + '. Please check the yaml input.')
-            elif wt_opt['blade.dac_te_flaps.chord_start'][i] < 0.2:
+            elif blade['aerodynamic_control']['te_flaps'][i]['chord_start'] < 0.2:
                 exit('Error: the start along the chord of the trailing edge flap number ' + str(i) + ' is smaller than 0.2, which is too close to the leading edge. Please check the yaml input.')
-            elif wt_opt['blade.dac_te_flaps.chord_start'][i] > 1.:
+            elif blade['aerodynamic_control']['te_flaps'][i]['chord_start'] > 1.:
                 exit('Error: the end along the chord of the trailing edge flap number ' + str(i) + ' is larger than 1., which is beyond the trailing edge. Please check the yaml input.')
-            elif wt_opt['blade.dac_te_flaps.delta_max_pos'][i] > 30. / 180. * np.pi:
+            elif blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos'] > 30. / 180. * np.pi:
                 exit('Error: the max positive deflection of the trailing edge flap number ' + str(i) + ' is larger than 30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input.')
-            elif wt_opt['blade.dac_te_flaps.delta_max_neg'][i] < -30. / 180. * np.pi:
+            elif blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg'] < -30. / 180. * np.pi:
                 exit('Error: the max negative deflection of the trailing edge flap number ' + str(i) + ' is smaller than -30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input.')
-            elif wt_opt['blade.dac_te_flaps.delta_max_pos'][i] < wt_opt['blade.dac_te_flaps.delta_max_neg'][i]:
+            elif blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos'] < blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']:
                 exit('Error: the max positive deflection of the trailing edge flap number ' + str(i) + ' is smaller than the max negative deflection. Please check the yaml input.')
             else:
                 pass
