@@ -1324,7 +1324,7 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.ss_vsgain']     = control['ss_vsgain']
     wt_opt['control.ss_pcgain']     = control['ss_pcgain']
     wt_opt['control.ps_percent']    = control['ps_percent']
-    if analysis_options['servose']['Flp_Mode'] == 1:
+    if analysis_options['servose']['Flp_Mode'] >= 1:
         wt_opt['control.Kp_flap']       = control['Kp_flap']
         wt_opt['control.Ki_flap']       = control['Ki_flap']
     

@@ -90,17 +90,6 @@ class TuneROSCO(ExplicitComponent):
         self.controller_params['SD_Mode'] = self.analysis_options['servose']['SD_Mode']
         self.controller_params['Fl_Mode'] = self.analysis_options['servose']['Fl_Mode']
         self.controller_params['Flp_Mode'] = self.analysis_options['servose']['Flp_Mode']
-        # # Additional controller parameters
-        # # -- NJA these can be optional inputs in the yaml or changed to inputs - not sure yet
-        # self.controller_params['max_pitch'] = self.analysis_options['controller']['max_pitch']
-        # self.controller_params['min_pitch'] = self.analysis_options['controller']['min_pitch']
-        # self.controller_params['vs_minspd'] = self.analysis_options['controller']['vs_minspd']
-        # self.controller_params['ss_cornerfreq'] = self.analysis_options['controller']['ss_cornerfreq']
-        # self.controller_params['ss_vsgain'] = self.analysis_options['controller']['ss_vsgain']
-        # self.controller_params['ss_pcgain'] = self.analysis_options['controller']['ss_pcgain']
-        # self.controller_params['ps_percent'] = self.analysis_options['controller']['ps_percent']
-        # self.controller_params['sd_maxpit'] = self.analysis_options['controller']['sd_maxpit']
-        # self.controller_params['sd_cornerfreq'] = self.analysis_options['controller']['sd_cornerfreq']
 
         # Necessary parameters
         # Turbine parameters
@@ -140,16 +129,12 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('U_vector',          val=np.zeros(n_U),                  units='m/s',    desc='Wind speed vector used')
 
         # Controller Parameters
-        self.add_input('PC_zeta',           val=0.0,                                desc='Pitch controller damping ratio')
-        self.add_input('PC_omega',          val=0.0,        units='rad/s',          desc='Pitch controller natural frequency')
-        self.add_input('VS_zeta',           val=0.0,                                desc='Generator torque controller damping ratio')
-        self.add_input('VS_omega',          val=0.0,        units='rad/s',          desc='Generator torque controller natural frequency')
-
-
-        # Optimization parameters to output
-        #       - Note, passing all of the other DISCON variables in analysis_options['openfast']['fst_vt']['DISCON_in']
-        self.add_input('Kp_flap',                   val=0.0,    units='s',                   desc='Flap actuation gain') 
-        self.add_input('Ki_flap',                   val=0.0,    desc='Flap actuation gain') 
+        self.add_input('PC_zeta',           val=0.0,                                            desc='Pitch controller damping ratio')
+        self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
+        self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
+        self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
+        self.add_input('Kp_flap',           val=0.0,        units='s',                          desc='Flap actuation gain') 
+        self.add_input('Ki_flap',           val=0.0,                                            desc='Flap actuation gain') 
 
     def compute(self,inputs,outputs):
         '''
