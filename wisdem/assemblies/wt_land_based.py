@@ -289,9 +289,9 @@ class WT_RNTA(Group):
             # self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
             self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
-            self.connect('blade.interp_airfoils.cl_interp', 'aeroelastic.airfoils_cl')
-            self.connect('blade.interp_airfoils.cd_interp', 'aeroelastic.airfoils_cd')
-            self.connect('blade.interp_airfoils.cm_interp', 'aeroelastic.airfoils_cm')
+            self.connect('xf.cl_interp_flaps',              'aeroelastic.airfoils_cl')
+            self.connect('xf.cd_interp_flaps',              'aeroelastic.airfoils_cd')
+            self.connect('xf.cm_interp_flaps',              'aeroelastic.airfoils_cm')
             self.connect('blade.interp_airfoils.r_thick_interp', 'aeroelastic.rthick')
             self.connect('elastic.rhoA',                'aeroelastic.beam:rhoA')
             self.connect('elastic.EIxx',                'aeroelastic.beam:EIxx')
@@ -320,6 +320,7 @@ class WT_RNTA(Group):
             # Temporary
             self.connect('xf.Re_loc',           'aeroelastic.airfoils_Re_loc')
             self.connect('xf.Ma_loc',           'aeroelastic.airfoils_Ma_loc')
+            self.connect('xf.flap_angles',      'aeroelastic.airfoils_Ctrl')
         
         # Connections to turbine constraints
         self.connect('configuration.rotor_orientation', 'tcons.rotor_orientation')

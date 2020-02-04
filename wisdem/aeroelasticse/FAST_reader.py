@@ -1218,7 +1218,7 @@ class InputReader_OpenFAST(InputReader_Common):
                     if self.fst_vt['AeroDyn15']['InCol_Cpmin'] > 0:
                         polar['Cpmin'][i] = data[self.fst_vt['AeroDyn15']['InCol_Cpmin']-1]
 
-                self.fst_vt['AeroDyn15']['af_data'][afi][tab] = polar # For multiple tables
+                self.fst_vt['AeroDyn15']['af_data'][afi][tab] = copy.copy(polar) # For multiple tables
             
             f.close()
 
