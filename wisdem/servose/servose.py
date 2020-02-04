@@ -207,10 +207,12 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.Cq = RotorPerformance(self.Cq_table,self.pitch_vector,self.tsr_vector)
 
         # initialize and tune controller
+        self.analysis_options['servose']['Flp_Mode'] = 0 # Don't do generic tuning for flaps right now
         controller = ROSCO_controller.Controller(self.analysis_options['servose'])
         controller.tune_controller(WISDEM_turbine)
-        controller.Kp_flap = inputs['Kp_flap'][0]
-        controller.Ki_flap = inputs['Ki_flap'][0]
+        if controller.Flp_Mode == 0:
+            controller.Kp_flap = np.array([0.0]) # inputs['Kp_flap'][0]
+            controller.Ki_flap = np.array([0.0]) # inputs['Ki_flap'][0]
 
         # DISCON Parameters
         #   - controller

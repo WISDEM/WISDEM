@@ -404,7 +404,8 @@ class InputReader_OpenFAST(InputReader_Common):
         self.read_ServoDyn()
         self.read_DISCON_in()
         
-        pitch_vector, tsr_vector, Cp_table, Ct_table, Cq_table = ROSCO_utilities.load_from_txt(self.fst_vt['DISCON_in']['PerfFileName'])
+        ROSCO_utilities.FileProcessing()
+        pitch_vector, tsr_vector, Cp_table, Ct_table, Cq_table = ROSCO_utilities.FileProcessing.load_from_txt(self.fst_vt['DISCON_in']['PerfFileName'])
 
         RotorPerformance = ROSCO_turbine.RotorPerformance
         Cp = RotorPerformance(Cp_table,pitch_vector,tsr_vector)
