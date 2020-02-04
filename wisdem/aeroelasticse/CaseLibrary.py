@@ -511,7 +511,7 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     iec.dlc_inputs['DLC']   = [1.1]
     iec.dlc_inputs['U']     = [[U]]
     # iec.dlc_inputs['Seeds'] = [[1]]
-    iec.dlc_inputs['Seeds'] = [[310414237, 1764051066, 1935526301, 333954657, -960771537, 714191176]] # nothing special about these seeds, randomly generated
+    iec.dlc_inputs['Seeds'] = [[1]] # nothing special about these seeds, randomly generated
     iec.dlc_inputs['Yaw']   = [[]]
     iec.transient_dir_change        = '-'  # '+','-','both': sign for transient events in EDC, EWS
     iec.transient_shear_orientation = 'v'  # 'v','h','both': vertical or horizontal shear for EWS
@@ -563,11 +563,11 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     case_inputs[("AeroDyn15","SkewMod")]     = {'vals':[1], 'group':0}
     case_inputs[("AeroDyn15","TipLoss")]     = {'vals':['True'], 'group':0}
     case_inputs[("AeroDyn15","HubLoss")]     = {'vals':['True'], 'group':0}
-    case_inputs[("AeroDyn15","TanInd")]      = {'vals':['True'], 'group':0}
-    case_inputs[("AeroDyn15","AIDrag")]      = {'vals':['True'], 'group':0}
-    case_inputs[("AeroDyn15","TIDrag")]      = {'vals':['True'], 'group':0}
-    case_inputs[("AeroDyn15","IndToler")]    = {'vals':[1.e-5], 'group':0}
-    case_inputs[("AeroDyn15","MaxIter")]     = {'vals':[5000], 'group':0}
+    # case_inputs[("AeroDyn15","TanInd")]      = {'vals':['True'], 'group':0}
+    # case_inputs[("AeroDyn15","AIDrag")]      = {'vals':['True'], 'group':0}
+    # case_inputs[("AeroDyn15","TIDrag")]      = {'vals':['True'], 'group':0}
+    # case_inputs[("AeroDyn15","IndToler")]    = {'vals':[1.e-5], 'group':0}
+    # case_inputs[("AeroDyn15","MaxIter")]     = {'vals':[5000], 'group':0}
     case_inputs[("AeroDyn15","UseBlCm")]     = {'vals':['True'], 'group':0}
     
     case_list, case_name_list = iec.execute(case_inputs=case_inputs)

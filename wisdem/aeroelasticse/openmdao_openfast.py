@@ -582,9 +582,9 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.DLC_turbulent != None:
             if self.mpi_run:
-                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
+                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
             else:
-                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores)
+                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores)
             list_cases        += list_cases_turb
             list_casenames    += list_casenames_turb
             required_channels += requited_channels_turb
