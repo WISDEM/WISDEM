@@ -88,22 +88,3 @@ class ParametrizeBladeStruct(ExplicitComponent):
 
             outputs['layer_thickness_param'][i,:] = inputs['layer_thickness_original'][i,:] * opt_gain_m_interp
 
-class ParametrizeBladeTEFlaps(ExplicitComponent):
-    # Openmdao component to optimize trailing edge flaps
-    def initialize(self):
-        self.options.declare('blade_init_options')
-        
-    def setup(self):
-
-        n_te_flaps = self.options['blade_init_options']['n_te_flaps']
-
-        self.add_input('te_flap_pos', val = np.zeros(n_te_flaps), desc='1D array of the mid positions along blade span where the mid point of the trailing edge flap(s) are located. Only values between 0 and 1 are meaningful.')
-        self.add_input('te_flap_ext', val = np.zeros(n_te_flaps), desc='1D array of the span extension along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-
-        self.add_output('span_start', val=np.zeros(n_te_flaps), desc='1D array of the positions along blade span where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
-        self.add_output('span_end',   val=np.zeros(n_te_flaps), desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
-
-    def compute(self, inputs, outputs):
-
-        outputs['span_start'] = inputs['te_flap_pos'] + inputs['te_flap_ext']
-        outputs['span_end']   = inputs['te_flap_pos'] - inputs['te_flap_ext']

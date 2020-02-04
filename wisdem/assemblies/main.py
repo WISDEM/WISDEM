@@ -37,7 +37,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     else:
         opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt'] = analysis_options['rotorse']['n_span']
     if 'dac' in opt_options['optimization_variables']['blade'].keys():
-        if opt_options['optimization_variables']['blade']['dac']['te_flap_pos']['flag'] == True or opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['flag'] == True:
+        if opt_options['optimization_variables']['blade']['dac']['te_flap_end']['flag'] == True or opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['flag'] == True:
             opt_flag = True
 
     if not os.path.isdir(folder_output):
@@ -79,8 +79,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             indices  = range(2,opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt'] - 1)
             wt_opt.model.add_design_var('param.opt_var.spar_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
         if 'dac' in opt_options['optimization_variables']['blade'].keys():
-            if opt_options['optimization_variables']['blade']['dac']['te_flap_pos']['flag'] == True:
-                wt_opt.model.add_design_var('param.opt_var.te_flap_pos', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_pos']['min_pos'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_pos']['max_pos'])
+            if opt_options['optimization_variables']['blade']['dac']['te_flap_end']['flag'] == True:
+                wt_opt.model.add_design_var('param.opt_var.te_flap_end', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['min_end'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['max_end'])
             if opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['flag'] == True:
                 wt_opt.model.add_design_var('param.opt_var.te_flap_ext', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['min_ext'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['max_ext'])
         

@@ -226,6 +226,7 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PS_Mode'] = controller.PS_Mode
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SD_Mode'] = controller.SD_Mode
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Fl_Mode'] = controller.Fl_Mode
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Mode'] = controller.Flp_Mode
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_LPFDamping'] = controller.F_LPFDamping
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_SSCornerFreq'] = controller.ss_cornerfreq
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_GS_angles'] = controller.pitch_op_pc
@@ -240,10 +241,11 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_KI'] = controller.vs_gain_schedule.Ki
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SS_VSGain'] = controller.ss_vsgain
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SS_PCGain'] = controller.ss_pcgain
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_FOPoles_N'] = controller.v
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_FOPoles_v'] = controller.A
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_FOPoles_N'] = len(controller.v)
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_FOPoles_v'] = controller.v
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_FOPoles'] = controller.A
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['ps_wind_speeds'] = controller.v
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['PS_BldPitchMin_N'] = controller.ps_min_bld_pitch
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['PS_BldPitchMin'] = controller.ps_min_bld_pitch
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SD_MaxPit'] = controller.sd_maxpit
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SD_CornerFreq'] = controller.sd_cornerfreq
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Fl_Kp'] = controller.Kp_float

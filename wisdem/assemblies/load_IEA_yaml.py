@@ -88,9 +88,9 @@ class WindTurbineOntologyPython(object):
         FASTpref['path2dll']            = self.analysis_options['openfast']['path2dll']
         FASTpref['cores']               = self.analysis_options['openfast']['cores']
         FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
-        FASTpref['DLC_gust']            = RotorSE_DLC_1_4_Rated      # Max deflection
+        FASTpref['DLC_gust']            = None      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
-        FASTpref['DLC_turbulent']       = None
+        FASTpref['DLC_turbulent']       = RotorSE_DLC_1_1_Turb
         FASTpref['DLC_powercurve']      = None      # AEP
         if FASTpref['Analysis_Level'] > 0:
             fast = InputReader_OpenFAST(FAST_ver=FASTpref['FAST_ver'], dev_branch=FASTpref['dev_branch'])
@@ -681,8 +681,8 @@ class TE_Flaps(ExplicitComponent):
         blade_init_options = self.options['blade_init_options']
         n_te_flaps = blade_init_options['n_te_flaps']
 
-        self.add_output('te_flap_pos',   val = np.zeros(n_te_flaps),             desc='1D array of the mid positions along blade span where the mid point of the trailing edge flap(s) are located. Only values between 0 and 1 are meaningful.')
-        self.add_output('te_flap_ext',   val = np.zeros(n_te_flaps),             desc='1D array of the span extension along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
+        self.add_output('te_flap_start', val=np.zeros(n_te_flaps),               desc='1D array of the start positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
+        self.add_output('te_flap_end',   val=np.zeros(n_te_flaps),               desc='1D array of the end positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
         self.add_output('chord_start',   val=np.zeros(n_te_flaps),               desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
         self.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
         self.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
@@ -1199,11 +1199,14 @@ def assign_te_flaps_values(wt_opt, analysis_options, blade):
     if analysis_options['blade']['n_te_flaps'] > 0:   
         n_te_flaps = analysis_options['blade']['n_te_flaps']
         for i in range(n_te_flaps):
-            wt_opt['blade.dac_te_flaps.te_flap_pos'][i]     = (blade['aerodynamic_control']['te_flaps'][i]['span_start'] + blade['aerodynamic_control']['te_flaps'][i]['span_end']) / 2.
-            wt_opt['blade.dac_te_flaps.te_flap_ext'][i]     = blade['aerodynamic_control']['te_flaps'][i]['span_end'] - blade['aerodynamic_control']['te_flaps'][i]['span_start']
+            wt_opt['blade.dac_te_flaps.te_flap_start'][i]   = blade['aerodynamic_control']['te_flaps'][i]['span_start']
+            wt_opt['blade.dac_te_flaps.te_flap_end'][i]     = blade['aerodynamic_control']['te_flaps'][i]['span_end']
             wt_opt['blade.dac_te_flaps.chord_start'][i]     = blade['aerodynamic_control']['te_flaps'][i]['chord_start']
             wt_opt['blade.dac_te_flaps.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
             wt_opt['blade.dac_te_flaps.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
+
+            wt_opt['param.opt_var.te_flap_ext'] = blade['aerodynamic_control']['te_flaps'][i]['span_end'] - blade['aerodynamic_control']['te_flaps'][i]['span_start']
+            wt_opt['param.opt_var.te_flap_end'] = blade['aerodynamic_control']['te_flaps'][i]['span_end']
 
             # Checks for consistency
             if blade['aerodynamic_control']['te_flaps'][i]['span_start'] < 0.:
