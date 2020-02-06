@@ -5,6 +5,8 @@ from functools import reduce
 import operator
 
 from wisdem.aeroelasticse.FAST_vars import FstModel
+from ROSCO_toolbox import turbine as ROSCO_turbine
+from ROSCO_toolbox import utilities as ROSCO_utilities
 
 
 def fix_path(name):
@@ -17,10 +19,13 @@ def fix_path(name):
 
 def bool_read(text):
     # convert true/false strings to boolean
-    if text.lower() == 'true':
-        return True
+    if 'default' in text.lower():
+        return str(text)
     else:
-        return False
+        if text.lower() == 'true':
+            return True
+        else:
+            return False
 
 def float_read(text):
     # return float with error handing for "default" values
@@ -53,6 +58,7 @@ class InputReader_Common(object):
         self.dev_branch = False      # branch: pullrequest/ganesh : 5b78391
         self.FAST_InputFile = None   # FAST input file (ext=.fst)
         self.FAST_directory = None   # Path to fst directory files
+        self.path2dll       = None   # Path to dll file
         self.fst_vt = FstModel
 
         # Optional population class attributes from key word arguments
@@ -384,6 +390,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.read_ElastoDynBlade()
         self.read_ElastoDynTower()
         self.read_InflowWind()
+        
         # if file_wind.split('.')[1] == 'wnd':
         #     self.WndWindReader(file_wind)
         # else:
@@ -393,11 +400,36 @@ class InputReader_OpenFAST(InputReader_Common):
             self.read_AeroDyn14()
         elif self.fst_vt['Fst']['CompAero'] == 2:
             self.read_AeroDyn15()
+
         self.read_ServoDyn()
+        self.read_DISCON_in()
+        
+        ROSCO_utilities.FileProcessing()
+        pitch_vector, tsr_vector, Cp_table, Ct_table, Cq_table = ROSCO_utilities.FileProcessing.load_from_txt(self.fst_vt['DISCON_in']['PerfFileName'])
+
+        RotorPerformance = ROSCO_turbine.RotorPerformance
+        Cp = RotorPerformance(Cp_table,pitch_vector,tsr_vector)
+        Ct = RotorPerformance(Ct_table,pitch_vector,tsr_vector)
+        Cq = RotorPerformance(Cq_table,pitch_vector,tsr_vector)
+        
+        self.fst_vt['DISCON_in']['Cp'] = Cp
+        self.fst_vt['DISCON_in']['Ct'] = Ct
+        self.fst_vt['DISCON_in']['Cq'] = Cq
+        self.fst_vt['DISCON_in']['Cp_pitch_initial_rad'] = pitch_vector
+        self.fst_vt['DISCON_in']['Cp_TSR_initial'] = tsr_vector
+        self.fst_vt['DISCON_in']['Cp_table'] = Cp_table
+        self.fst_vt['DISCON_in']['Ct_table'] = Ct_table
+        self.fst_vt['DISCON_in']['Cq_table'] = Cq_table
+        
         if self.fst_vt['Fst']['CompHydro'] == 1: # SubDyn not yet implimented
             self.read_HydroDyn()
+        if self.fst_vt['Fst']['CompSub'] == 1: # SubDyn not yet implimented
+            self.read_SubDyn()
         if self.fst_vt['Fst']['CompMooring'] == 1: # only MAP++ implimented for mooring models
             self.read_MAP()
+
+        if self.fst_vt['Fst']['CompElast'] == 2: # BeamDyn read assumes all 3 blades are the same
+            self.read_BeamDyn()
 
     def read_MainInput(self):
         # Main FAST v8.16-v8.17 Input File
@@ -434,9 +466,9 @@ class InputReader_OpenFAST(InputReader_Common):
         # Input Files (input_files)
         f.readline()
         self.fst_vt['Fst']['EDFile'] = f.readline().split()[0][1:-1]
-        self.fst_vt['Fst']['BDBldFile1'] = f.readline().split()[0][1:-1]
-        self.fst_vt['Fst']['BDBldFile2'] = f.readline().split()[0][1:-1]
-        self.fst_vt['Fst']['BDBldFile3'] = f.readline().split()[0][1:-1]
+        self.fst_vt['Fst']['BDBldFile(1)'] = f.readline().split()[0][1:-1]
+        self.fst_vt['Fst']['BDBldFile(2)'] = f.readline().split()[0][1:-1]
+        self.fst_vt['Fst']['BDBldFile(3)'] = f.readline().split()[0][1:-1]
         self.fst_vt['Fst']['InflowFile'] = f.readline().split()[0][1:-1]
         self.fst_vt['Fst']['AeroFile'] = f.readline().split()[0][1:-1]
         self.fst_vt['Fst']['ServoFile'] = f.readline().split()[0][1:-1]
@@ -655,6 +687,125 @@ class InputReader_OpenFAST(InputReader_Common):
 
         f.close()
 
+    def read_BeamDyn(self):
+        # BeamDyn Input File
+
+        bd_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['BDBldFile(1)'])
+        f = open(bd_file)
+
+        f.readline()
+        f.readline()
+        f.readline()
+        # ---------------------- SIMULATION CONTROL --------------------------------------
+        self.fst_vt['BeamDyn']['Echo']             = bool_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['QuasiStaticInit']  = bool_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['rhoinf']           = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['quadrature']       = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['refine']           = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['n_fact']           = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['DTBeam']            = float_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['load_retries']     = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['NRMax']            = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['stop_tol']         = float_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['tngt_stf_fd']      = bool_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['tngt_stf_comp']    = bool_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['tngt_stf_pert']    = float_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['tngt_stf_difftol'] = float_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['RotStates']        = bool_read(f.readline().split()[0])
+        f.readline()
+        #---------------------- GEOMETRY PARAMETER --------------------------------------
+        self.fst_vt['BeamDyn']['member_total']     = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['kp_total']         = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['members']          = []
+        for i in range(self.fst_vt['BeamDyn']['member_total']):
+            ln = f.readline().split()
+            n_pts_i                   = int(ln[1])
+            member_i                  = {}
+            member_i['kp_xr']         = [None]*n_pts_i
+            member_i['kp_yr']         = [None]*n_pts_i
+            member_i['kp_zr']         = [None]*n_pts_i
+            member_i['initial_twist'] = [None]*n_pts_i
+            f.readline()
+            f.readline()
+            for j in range(n_pts_i):
+                ln = f.readline().split()
+                member_i['kp_xr'][j]          = float(ln[0])
+                member_i['kp_yr'][j]          = float(ln[1])
+                member_i['kp_zr'][j]          = float(ln[2])
+                member_i['initial_twist'][j]  = float(ln[3])
+
+            self.fst_vt['BeamDyn']['members'].append(member_i)
+        #---------------------- MESH PARAMETER ------------------------------------------
+        f.readline()
+        self.fst_vt['BeamDyn']['order_elem']  = int_read(f.readline().split()[0])
+        #---------------------- MATERIAL PARAMETER --------------------------------------
+        f.readline()
+        self.fst_vt['BeamDyn']['BldFile']     = f.readline().split()[0].replace('"','').replace("'",'')
+        #---------------------- PITCH ACTUATOR PARAMETERS -------------------------------
+        f.readline()
+        self.fst_vt['BeamDyn']['UsePitchAct'] = bool_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['PitchJ']      = float_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['PitchK']      = float_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['PitchC']      = float_read(f.readline().split()[0])
+        #---------------------- OUTPUTS -------------------------------------------------
+        f.readline()
+        self.fst_vt['BeamDyn']['SumPrint']    = bool_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['OutFmt']      = f.readline().split()[0]
+        self.fst_vt['BeamDyn']['NNodeOuts']   = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['OutNd']       = [idx.strip() for idx in f.readline().split('NNodeOuts')[0].split(',')]
+        # BeamDyn Outlist
+        f.readline()
+        data = f.readline()
+        while data.split()[0] != 'END':
+            channels = data.split('"')
+            channel_list = channels[1].split(',')
+            self.set_outlist(self.fst_vt['outlist']['BeamDyn'], channel_list)
+            data = f.readline()
+
+        f.close()
+
+        self.read_BeamDynBlade()
+
+
+    def read_BeamDynBlade(self):
+        # BeamDyn Blade
+
+        beamdyn_blade_file = os.path.join(self.FAST_directory, self.fst_vt['BeamDyn']['BldFile'])
+        f = open(beamdyn_blade_file)
+        
+        f.readline()
+        f.readline()
+        f.readline()
+        #---------------------- BLADE PARAMETERS --------------------------------------
+        self.fst_vt['BeamDynBlade']['station_total'] = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDynBlade']['damp_type']     = int_read(f.readline().split()[0])
+        f.readline()
+        f.readline()
+        f.readline()
+        #---------------------- DAMPING COEFFICIENT------------------------------------
+        ln = f.readline().split()
+        self.fst_vt['BeamDynBlade']['mu1']           = float(ln[0])
+        self.fst_vt['BeamDynBlade']['mu2']           = float(ln[1])
+        self.fst_vt['BeamDynBlade']['mu3']           = float(ln[2])
+        self.fst_vt['BeamDynBlade']['mu4']           = float(ln[3])
+        self.fst_vt['BeamDynBlade']['mu5']           = float(ln[4])
+        self.fst_vt['BeamDynBlade']['mu6']           = float(ln[5])
+        f.readline()
+        #---------------------- DISTRIBUTED PROPERTIES---------------------------------
+        
+        self.fst_vt['BeamDynBlade']['radial_stations'] = np.zeros((self.fst_vt['BeamDynBlade']['station_total']))
+        self.fst_vt['BeamDynBlade']['beam_stiff']      = np.zeros((self.fst_vt['BeamDynBlade']['station_total'], 6, 6))
+        self.fst_vt['BeamDynBlade']['beam_inertia']    = np.zeros((self.fst_vt['BeamDynBlade']['station_total'], 6, 6))
+        for i in range(self.fst_vt['BeamDynBlade']['station_total']):
+            self.fst_vt['BeamDynBlade']['radial_stations'][i]  = float_read(f.readline().split()[0])
+            for j in range(6):
+                self.fst_vt['BeamDynBlade']['beam_stiff'][i,j,:] = np.array([float(val) for val in f.readline().strip().split()])
+            f.readline()
+            for j in range(6):
+                self.fst_vt['BeamDynBlade']['beam_inertia'][i,j,:] = np.array([float(val) for val in f.readline().strip().split()])
+            f.readline()
+
+        f.close()
 
     def read_InflowWind(self):
         # InflowWind v3.01
@@ -894,6 +1045,7 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Airfoil Information
         f.readline()
+        self.fst_vt['AeroDyn15']['AFTabMod']         = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Alfa']       = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Cl']         = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['InCol_Cd']         = int(f.readline().split()[0])
@@ -1005,66 +1157,69 @@ class InputReader_OpenFAST(InputReader_Common):
             polar['NonDimArea']     = int_read(readline_filterComments(f).split()[0])
             polar['NumCoords']      = readline_filterComments(f).split()[0]
             polar['NumTabs']        = int_read(readline_filterComments(f).split()[0])
-            polar['Re']             = float_read(readline_filterComments(f).split()[0])
-            polar['Ctrl']           = int_read(readline_filterComments(f).split()[0])
-            polar['InclUAdata']     = bool_read(readline_filterComments(f).split()[0])
+            self.fst_vt['AeroDyn15']['af_data'][afi] = [None]*polar['NumTabs']
 
-            # Unsteady Aero Data
-            if polar['InclUAdata']:
-                polar['alpha0']     = float_read(readline_filterComments(f).split()[0])
-                polar['alpha1']     = float_read(readline_filterComments(f).split()[0])
-                polar['alpha2']     = float_read(readline_filterComments(f).split()[0])
-                polar['eta_e']      = float_read(readline_filterComments(f).split()[0])
-                polar['C_nalpha']   = float_read(readline_filterComments(f).split()[0])
-                polar['T_f0']       = float_read(readline_filterComments(f).split()[0])
-                polar['T_V0']       = float_read(readline_filterComments(f).split()[0])
-                polar['T_p']        = float_read(readline_filterComments(f).split()[0])
-                polar['T_VL']       = float_read(readline_filterComments(f).split()[0])
-                polar['b1']         = float_read(readline_filterComments(f).split()[0])
-                polar['b2']         = float_read(readline_filterComments(f).split()[0])
-                polar['b5']         = float_read(readline_filterComments(f).split()[0])
-                polar['A1']         = float_read(readline_filterComments(f).split()[0])
-                polar['A2']         = float_read(readline_filterComments(f).split()[0])
-                polar['A5']         = float_read(readline_filterComments(f).split()[0])
-                polar['S1']         = float_read(readline_filterComments(f).split()[0])
-                polar['S2']         = float_read(readline_filterComments(f).split()[0])
-                polar['S3']         = float_read(readline_filterComments(f).split()[0])
-                polar['S4']         = float_read(readline_filterComments(f).split()[0])
-                polar['Cn1']        = float_read(readline_filterComments(f).split()[0])
-                polar['Cn2']        = float_read(readline_filterComments(f).split()[0])
-                polar['St_sh']      = float_read(readline_filterComments(f).split()[0])
-                polar['Cd0']        = float_read(readline_filterComments(f).split()[0])
-                polar['Cm0']        = float_read(readline_filterComments(f).split()[0])
-                polar['k0']         = float_read(readline_filterComments(f).split()[0])
-                polar['k1']         = float_read(readline_filterComments(f).split()[0])
-                polar['k2']         = float_read(readline_filterComments(f).split()[0])
-                polar['k3']         = float_read(readline_filterComments(f).split()[0])
-                polar['k1_hat']     = float_read(readline_filterComments(f).split()[0])
-                polar['x_cp_bar']   = float_read(readline_filterComments(f).split()[0])
-                polar['UACutout']   = float_read(readline_filterComments(f).split()[0])
-                polar['filtCutOff'] = float_read(readline_filterComments(f).split()[0])
+            for tab in range(polar['NumTabs']): # For multiple tables
+                polar['Re']             = float_read(readline_filterComments(f).split()[0])
+                polar['Ctrl']           = int_read(readline_filterComments(f).split()[0])
+                polar['InclUAdata']     = bool_read(readline_filterComments(f).split()[0])
 
-            # Polar Data
-            polar['NumAlf']         = int_read(readline_filterComments(f).split()[0])
-            polar['Alpha']          = [None]*polar['NumAlf']
-            polar['Cl']             = [None]*polar['NumAlf']
-            polar['Cd']             = [None]*polar['NumAlf']
-            polar['Cm']             = [None]*polar['NumAlf']
-            polar['Cpmin']          = [None]*polar['NumAlf']
-            for i in range(polar['NumAlf']):
-                data = [float(val) for val in readline_filterComments(f).split()]
-                if self.fst_vt['AeroDyn15']['InCol_Alfa'] > 0:
-                    polar['Alpha'][i] = data[self.fst_vt['AeroDyn15']['InCol_Alfa']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cl'] > 0:
-                    polar['Cl'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cl']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cd'] > 0:
-                    polar['Cd'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cd']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cm'] > 0:
-                    polar['Cm'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cm']-1]
-                if self.fst_vt['AeroDyn15']['InCol_Cpmin'] > 0:
-                    polar['Cpmin'][i] = data[self.fst_vt['AeroDyn15']['InCol_Cpmin']-1]
+                # Unsteady Aero Data
+                if polar['InclUAdata']:
+                    polar['alpha0']     = float_read(readline_filterComments(f).split()[0])
+                    polar['alpha1']     = float_read(readline_filterComments(f).split()[0])
+                    polar['alpha2']     = float_read(readline_filterComments(f).split()[0])
+                    polar['eta_e']      = float_read(readline_filterComments(f).split()[0])
+                    polar['C_nalpha']   = float_read(readline_filterComments(f).split()[0])
+                    polar['T_f0']       = float_read(readline_filterComments(f).split()[0])
+                    polar['T_V0']       = float_read(readline_filterComments(f).split()[0])
+                    polar['T_p']        = float_read(readline_filterComments(f).split()[0])
+                    polar['T_VL']       = float_read(readline_filterComments(f).split()[0])
+                    polar['b1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['b2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['b5']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['A5']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S3']         = float_read(readline_filterComments(f).split()[0])
+                    polar['S4']         = float_read(readline_filterComments(f).split()[0])
+                    polar['Cn1']        = float_read(readline_filterComments(f).split()[0])
+                    polar['Cn2']        = float_read(readline_filterComments(f).split()[0])
+                    polar['St_sh']      = float_read(readline_filterComments(f).split()[0])
+                    polar['Cd0']        = float_read(readline_filterComments(f).split()[0])
+                    polar['Cm0']        = float_read(readline_filterComments(f).split()[0])
+                    polar['k0']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k1']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k2']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k3']         = float_read(readline_filterComments(f).split()[0])
+                    polar['k1_hat']     = float_read(readline_filterComments(f).split()[0])
+                    polar['x_cp_bar']   = float_read(readline_filterComments(f).split()[0])
+                    polar['UACutout']   = float_read(readline_filterComments(f).split()[0])
+                    polar['filtCutOff'] = float_read(readline_filterComments(f).split()[0])
 
-            self.fst_vt['AeroDyn15']['af_data'][afi] = polar
+                # Polar Data
+                polar['NumAlf']         = int_read(readline_filterComments(f).split()[0])
+                polar['Alpha']          = [None]*polar['NumAlf']
+                polar['Cl']             = [None]*polar['NumAlf']
+                polar['Cd']             = [None]*polar['NumAlf']
+                polar['Cm']             = [None]*polar['NumAlf']
+                polar['Cpmin']          = [None]*polar['NumAlf']
+                for i in range(polar['NumAlf']):
+                    data = [float(val) for val in readline_filterComments(f).split()]
+                    if self.fst_vt['AeroDyn15']['InCol_Alfa'] > 0:
+                        polar['Alpha'][i] = data[self.fst_vt['AeroDyn15']['InCol_Alfa']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cl'] > 0:
+                        polar['Cl'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cl']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cd'] > 0:
+                        polar['Cd'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cd']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cm'] > 0:
+                        polar['Cm'][i]    = data[self.fst_vt['AeroDyn15']['InCol_Cm']-1]
+                    if self.fst_vt['AeroDyn15']['InCol_Cpmin'] > 0:
+                        polar['Cpmin'][i] = data[self.fst_vt['AeroDyn15']['InCol_Cpmin']-1]
+
+                self.fst_vt['AeroDyn15']['af_data'][afi][tab] = copy.copy(polar) # For multiple tables
             
             f.close()
 
@@ -1161,7 +1316,11 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Bladed Interface and Torque-Speed Look-Up Table (bladed_interface)
         f.readline()
-        self.fst_vt['ServoDyn']['DLL_FileName'] = os.path.abspath(os.path.normpath(os.path.join(os.path.split(sd_file)[0], f.readline().split()[0][1:-1])))
+        if self.path2dll == '' or self.path2dll == None:
+            self.fst_vt['ServoDyn']['DLL_FileName'] = os.path.abspath(os.path.normpath(os.path.join(os.path.split(sd_file)[0], f.readline().split()[0][1:-1])))
+        else:
+            f.readline()
+            self.fst_vt['ServoDyn']['DLL_FileName'] = self.path2dll
         self.fst_vt['ServoDyn']['DLL_InFile']   = f.readline().split()[0][1:-1]
         self.fst_vt['ServoDyn']['DLL_ProcName'] = f.readline().split()[0][1:-1]
         dll_dt_line = f.readline().split()[0]
@@ -1215,6 +1374,208 @@ class InputReader_OpenFAST(InputReader_Common):
             data = f.readline()
 
         f.close()
+
+    def read_DISCON_in(self):
+        # Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
+        # file version for NREL Reference OpenSource Controller tuning logic on 11/01/19
+
+        discon_in_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['ServoDyn']['DLL_InFile']))
+
+        if os.path.exists(discon_in_file):
+
+            f = open(discon_in_file)
+
+            f.readline()
+            f.readline()
+            f.readline()
+            f.readline()
+            # DEBUG
+            self.fst_vt['DISCON_in']['LoggingLevel']      = int_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # CONTROLLER FLAGS
+            self.fst_vt['DISCON_in']['F_LPFType']         = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_NotchType']       = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['IPC_ControlMode']   = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_ControlMode']    = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_ControlMode']    = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_ControlMode']     = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['SS_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PS_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['SD_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Fl_Mode']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Mode']          = int_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # FILTERS
+            self.fst_vt['DISCON_in']['F_LPFCornerFreq']   = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_LPFDamping']      = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_NotchCornerFreq'] = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_NotchBetaNumDen'] = [float(idx.strip()) for idx in f.readline().strip().split('F_NotchBetaNumDen')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_SSCornerFreq']    = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['F_FlCornerFreq']    = [float(idx.strip()) for idx in f.readline().strip().split('F_FlCornerFreq')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_FlpCornerFreq']   = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
+            f.readline()
+            f.readline()
+
+            # BLADE PITCH CONTROL
+            self.fst_vt['DISCON_in']['PC_GS_n']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_GS_angles']      = [float(idx.strip()) for idx in f.readline().split('PC_GS_angles')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_GS_KP']          = [float(idx.strip()) for idx in f.readline().split('PC_GS_KP')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_GS_KI']          = [float(idx.strip()) for idx in f.readline().split('PC_GS_KI')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_GS_KD']          = [float(idx.strip()) for idx in f.readline().split('PC_GS_KD')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_GS_TF']          = [float(idx.strip()) for idx in f.readline().split('PC_GS_TF')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PC_MaxPit']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_MinPit']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_MaxRat']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_MinRat']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_RefSpd']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_FinePit']        = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PC_Switch']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Z_EnableSine']      = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Z_PitchAmplitude']  = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Z_PitchFrequency']  = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # INDIVIDUAL PITCH CONTROL
+            self.fst_vt['DISCON_in']['IPC_IntSat']        = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['IPC_KI']            = [float(idx.strip()) for idx in f.readline().split('IPC_KI')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['IPC_aziOffset']     = [float(idx.strip()) for idx in f.readline().split('IPC_aziOffset')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['IPC_CornerFreqAct'] = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # VS TORQUE CONTROL
+            self.fst_vt['DISCON_in']['VS_GenEff']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_ArSatTq']        = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_MaxRat']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_MaxTq']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_MinTq']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_MinOMSpd']       = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_Rgn2K']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_RtPwr']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_RtTq']           = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_RefSpd']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_n']              = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['VS_KP']             = [float_read(f.readline().split()[0])]
+            self.fst_vt['DISCON_in']['VS_KI']             = [float_read(f.readline().split()[0])]
+            self.fst_vt['DISCON_in']['VS_TSRopt']         = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # SETPOINT SMOOTHER
+            self.fst_vt['DISCON_in']['SS_VSGain']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['SS_PCGain']         = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # WIND SPEED ESTIMATOR
+            self.fst_vt['DISCON_in']['WE_BladeRadius']    = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_CP_n']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_CP']             = [float(idx.strip()) for idx in f.readline().split('WE_CP')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['WE_Gamma']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_GearboxRatio']   = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_Jtot']           = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_RhoAir']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PerfFileName']      = os.path.abspath(os.path.join(self.FAST_directory, f.readline().split()[0][1:-1]))
+            self.fst_vt['DISCON_in']['PerfTableSize']     = [int(idx.strip()) for idx in f.readline().split('PerfTableSize')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['WE_FOPoles_N']      = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['WE_FOPoles_v']      = [float(idx.strip()) for idx in f.readline().split('WE_FOPoles_v')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['WE_FOPoles']        = [float(idx.strip()) for idx in f.readline().split('WE_FOPoles')[0].split() if idx.strip() != '!']
+            f.readline()
+            f.readline()
+
+            # YAW CONTROL
+            self.fst_vt['DISCON_in']['Y_ErrThresh']       = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_IntSat']      = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_n']           = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_KP']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_KI']          = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_omegaLP']     = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_IPC_zetaLP']      = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_MErrSet']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_omegaLPFast']     = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_omegaLPSlow']     = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Y_Rate']            = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # TOWER FORE-AFT DAMPING
+            self.fst_vt['DISCON_in']['FA_KI']             = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['FA_HPF_CornerFreq'] = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['FA_IntSat']         = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # MINIMUM PITCH SATURATION
+            self.fst_vt['DISCON_in']['PS_BldPitchMin_N']  = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['PS_WindSpeeds']     = [float(idx.strip()) for idx in f.readline().split('PS_WindSpeeds')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['PS_BldPitchMin']    = [float(idx.strip()) for idx in f.readline().split('PS_BldPitchMin')[0].split() if idx.strip() != '!']
+            f.readline()
+            f.readline()
+
+            # SHUTDOWN
+            self.fst_vt['DISCON_in']['SD_MaxPit']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['SD_CornerFreq']     = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # FLOATING
+            self.fst_vt['DISCON_in']['Fl_Kp']             = float_read(f.readline().split()[0])
+            f.readline()
+            f.readline()
+
+            # DISTRIBUTED AERODYNAMIC CONTROL
+            self.fst_vt['DISCON_in']['Flp_Angle']         = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Kp']            = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Ki']            = float_read(f.readline().split()[0])
+
+
+            f.close()
+
+            self.fst_vt['DISCON_in']['v_rated'] = 1.
+
+        else:
+            del self.fst_vt['DISCON_in']
+
+    # def read_CpSurfaces(self):
+        
+    #     cp_surf__in_file = self.fst_vt['DISCON_in']['PerfFileName']
+
+    #     if os.path.exists(cp_surf__in_file):
+
+    #         f = open(cp_surf__in_file)
+
+    #         f.readline()
+    #         f.readline()
+    #         f.readline()
+    #         f.readline()
+    #         pitch_vector = f.readline()
+    #         n_pitch = len(pitch_vector)
+    #         f.readline()
+    #         tsr_vector = f.readline()
+    #         n_tsr = len(tsr_vector)
+    #         U_vector = f.readline()
+    #         n_U = len(U_vector)
+
+    #         Cp_table = np.zeros(n_U, n_tsr, n_pitch)
+    #         Ct_table = np.zeros(n_U, n_tsr, n_pitch)
+    #         Cq_table = np.zeros(n_U, n_tsr, n_pitch)
+
+    #         f.readline()
+    #         f.readline()
+    #         f.readline()
+
+    #         for i_U in range(n_U):
+    #             for i_tsr in range(n_tsr):
+    #                 Cp_table[i_U, i_tsr,:] = [float(idx.strip()) for idx in f.readline().split('WE_FOPoles_v')[0].split() if idx.strip() != '!']
+
+
+
 
     def read_HydroDyn(self):
         # AeroDyn v2.03
@@ -1555,6 +1916,228 @@ class InputReader_OpenFAST(InputReader_Common):
             data = f.readline()
 
         f.close()
+
+    def read_SubDyn(self):
+        # SubDyn v1.01
+
+        sd_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['SubFile']))
+        f = open(sd_file)
+        f.readline()
+        f.readline()
+        f.readline()
+        # SIMULATION CONTROL
+        self.fst_vt['SubDyn']['Echo']      = bool_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['SDdeltaT']  = float_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['IntMethod'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['SttcSolve'] = bool_read(f.readline().split()[0])
+        f.readline()
+        # FEA and CRAIG-BAMPTON PARAMETERS
+        self.fst_vt['SubDyn']['FEMMod']    = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['NDiv']      = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['CBMod']     = bool_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['Nmodes']    = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['JDampings'] = int_read(f.readline().split()[0])
+        f.readline()
+        # STRUCTURE JOINTS
+        self.fst_vt['SubDyn']['NJoints']   = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['JointID']   = [None]*self.fst_vt['SubDyn']['NJoints']
+        self.fst_vt['SubDyn']['JointXss']  = [None]*self.fst_vt['SubDyn']['NJoints']
+        self.fst_vt['SubDyn']['JointYss']  = [None]*self.fst_vt['SubDyn']['NJoints']
+        self.fst_vt['SubDyn']['JointZss']  = [None]*self.fst_vt['SubDyn']['NJoints']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NJoints']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['JointID'][i]    = int(ln[0])
+            self.fst_vt['SubDyn']['JointXss'][i]   = float(ln[1])
+            self.fst_vt['SubDyn']['JointYss'][i]   = float(ln[2])
+            self.fst_vt['SubDyn']['JointZss'][i]   = float(ln[3])
+        f.readline()
+        # BASE REACTION JOINTS
+        self.fst_vt['SubDyn']['NReact']   = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['RJointID'] = [None]*self.fst_vt['SubDyn']['NReact']
+        self.fst_vt['SubDyn']['RctTDXss'] = [None]*self.fst_vt['SubDyn']['NReact']
+        self.fst_vt['SubDyn']['RctTDYss'] = [None]*self.fst_vt['SubDyn']['NReact']
+        self.fst_vt['SubDyn']['RctTDZss'] = [None]*self.fst_vt['SubDyn']['NReact']
+        self.fst_vt['SubDyn']['RctRDXss'] = [None]*self.fst_vt['SubDyn']['NReact']
+        self.fst_vt['SubDyn']['RctRDYss'] = [None]*self.fst_vt['SubDyn']['NReact']
+        self.fst_vt['SubDyn']['RctRDZss'] = [None]*self.fst_vt['SubDyn']['NReact']
+        self.fst_vt['SubDyn']['Rct_SoilFile'] = [None]*self.fst_vt['SubDyn']['NReact']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NReact']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['RJointID'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['RctTDXss'][i] = int(ln[1])
+            self.fst_vt['SubDyn']['RctTDYss'][i] = int(ln[2])
+            self.fst_vt['SubDyn']['RctTDZss'][i] = int(ln[3])
+            self.fst_vt['SubDyn']['RctRDXss'][i] = int(ln[4])
+            self.fst_vt['SubDyn']['RctRDYss'][i] = int(ln[5])
+            self.fst_vt['SubDyn']['RctRDZss'][i] = int(ln[6])
+            self.fst_vt['SubDyn']['Rct_SoilFile'][i] = ln[7]
+        f.readline()
+        # INTERFACE JOINTS
+        self.fst_vt['SubDyn']['NInterf']   = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['IJointID'] = [None]*self.fst_vt['SubDyn']['NInterf']
+        self.fst_vt['SubDyn']['ItfTDXss'] = [None]*self.fst_vt['SubDyn']['NInterf']
+        self.fst_vt['SubDyn']['ItfTDYss'] = [None]*self.fst_vt['SubDyn']['NInterf']
+        self.fst_vt['SubDyn']['ItfTDZss'] = [None]*self.fst_vt['SubDyn']['NInterf']
+        self.fst_vt['SubDyn']['ItfRDXss'] = [None]*self.fst_vt['SubDyn']['NInterf']
+        self.fst_vt['SubDyn']['ItfRDYss'] = [None]*self.fst_vt['SubDyn']['NInterf']
+        self.fst_vt['SubDyn']['ItfRDZss'] = [None]*self.fst_vt['SubDyn']['NInterf']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NInterf']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['IJointID'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['ItfTDXss'][i] = int(ln[1])
+            self.fst_vt['SubDyn']['ItfTDYss'][i] = int(ln[2])
+            self.fst_vt['SubDyn']['ItfTDZss'][i] = int(ln[3])
+            self.fst_vt['SubDyn']['ItfRDXss'][i] = int(ln[4])
+            self.fst_vt['SubDyn']['ItfRDYss'][i] = int(ln[5])
+            self.fst_vt['SubDyn']['ItfRDZss'][i] = int(ln[6])
+        f.readline()
+        # MEMBERS
+        self.fst_vt['SubDyn']['NMembers']    = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['MemberID']    = [None]*self.fst_vt['SubDyn']['NMembers']
+        self.fst_vt['SubDyn']['MJointID1']   = [None]*self.fst_vt['SubDyn']['NMembers']
+        self.fst_vt['SubDyn']['MJointID2']   = [None]*self.fst_vt['SubDyn']['NMembers']
+        self.fst_vt['SubDyn']['MPropSetID1'] = [None]*self.fst_vt['SubDyn']['NMembers']
+        self.fst_vt['SubDyn']['MPropSetID2'] = [None]*self.fst_vt['SubDyn']['NMembers']
+        self.fst_vt['SubDyn']['COSMID']      = [None]*self.fst_vt['SubDyn']['NMembers']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NMembers']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['MemberID'][i]    = int(ln[0])
+            self.fst_vt['SubDyn']['MJointID1'][i]   = int(ln[1])
+            self.fst_vt['SubDyn']['MJointID2'][i]   = int(ln[2])
+            self.fst_vt['SubDyn']['MPropSetID1'][i] = int(ln[3])
+            self.fst_vt['SubDyn']['MPropSetID2'][i] = int(ln[4])
+            if len(ln) > 5:
+                self.fst_vt['SubDyn']['COSMID'][i]  = int(ln[5])
+        f.readline()
+        # MEMBER X-SECTION PROPERTY data 1/2
+        self.fst_vt['SubDyn']['NPropSets'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['PropSetID1'] = [None]*self.fst_vt['SubDyn']['NPropSets']
+        self.fst_vt['SubDyn']['YoungE1']    = [None]*self.fst_vt['SubDyn']['NPropSets']
+        self.fst_vt['SubDyn']['ShearG1']    = [None]*self.fst_vt['SubDyn']['NPropSets']
+        self.fst_vt['SubDyn']['MatDens1']   = [None]*self.fst_vt['SubDyn']['NPropSets']
+        self.fst_vt['SubDyn']['XsecD']     = [None]*self.fst_vt['SubDyn']['NPropSets']
+        self.fst_vt['SubDyn']['XsecT']     = [None]*self.fst_vt['SubDyn']['NPropSets']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NPropSets']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['PropSetID1'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['YoungE1'][i]    = float(ln[1])
+            self.fst_vt['SubDyn']['ShearG1'][i]    = float(ln[2])
+            self.fst_vt['SubDyn']['MatDens1'][i]   = float(ln[3])
+            self.fst_vt['SubDyn']['XsecD'][i]     = float(ln[4])
+            self.fst_vt['SubDyn']['XsecT'][i]     = float(ln[5])
+        f.readline()
+        # MEMBER X-SECTION PROPERTY data 2/2
+        self.fst_vt['SubDyn']['NXPropSets'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['PropSetID2']  = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['YoungE2']     = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['ShearG2']     = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['MatDens2']    = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['XsecA']      = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['XsecAsx']    = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['XsecAsy']    = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['XsecJxx']    = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['XsecJyy']    = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        self.fst_vt['SubDyn']['XsecJ0']     = [None]*self.fst_vt['SubDyn']['NXPropSets']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NXPropSets']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['PropSetID2'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['YoungE2'][i]    = float(ln[1])
+            self.fst_vt['SubDyn']['ShearG2'][i]    = float(ln[2])
+            self.fst_vt['SubDyn']['MatDens2'][i]   = float(ln[3])
+            self.fst_vt['SubDyn']['XsecA'][i]     = float(ln[4])
+            self.fst_vt['SubDyn']['XsecAsx'][i]   = float(ln[5])
+            self.fst_vt['SubDyn']['XsecAsy'][i]   = float(ln[6])
+            self.fst_vt['SubDyn']['XsecJxx'][i]   = float(ln[7])
+            self.fst_vt['SubDyn']['XsecJyy'][i]   = float(ln[8])
+            self.fst_vt['SubDyn']['XsecJ0'][i]    = float(ln[9])
+        f.readline()
+        # MEMBER COSINE MATRICES
+        self.fst_vt['SubDyn']['NCOSMs'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['COSMID'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM11'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM12'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM13'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM21'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM22'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM23'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM31'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM32'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        self.fst_vt['SubDyn']['COSM33'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NCOSMs']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['COSMID'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['COSM11'][i] = float(ln[1])
+            self.fst_vt['SubDyn']['COSM12'][i] = float(ln[2])
+            self.fst_vt['SubDyn']['COSM13'][i] = float(ln[3])
+            self.fst_vt['SubDyn']['COSM21'][i] = float(ln[4])
+            self.fst_vt['SubDyn']['COSM22'][i] = float(ln[5])
+            self.fst_vt['SubDyn']['COSM23'][i] = float(ln[6])
+            self.fst_vt['SubDyn']['COSM31'][i] = float(ln[7])
+            self.fst_vt['SubDyn']['COSM32'][i] = float(ln[8])
+            self.fst_vt['SubDyn']['COSM33'][i] = float(ln[9])
+        f.readline()
+        # JOINT ADDITIONAL CONCENTRATED MASSES
+        self.fst_vt['SubDyn']['NCmass']    = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['CMJointID'] = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['JMass']     = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['JMXX']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['JMYY']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['JMZZ']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NCmass']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['CMJointID'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['JMass'][i]     = float(ln[1])
+            self.fst_vt['SubDyn']['JMXX'][i]      = float(ln[2])
+            self.fst_vt['SubDyn']['JMYY'][i]      = float(ln[3])
+            self.fst_vt['SubDyn']['JMZZ'][i]      = float(ln[4])
+        f.readline()
+        # OUTPUT
+        self.fst_vt['SubDyn']['SSSum']    = bool_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['OutCOSM']  = bool_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['OutAll']   = bool_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['OutSwtch'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['TabDelim'] = bool_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['OutDec']   = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['OutFmt']   = f.readline().split()[0]
+        self.fst_vt['SubDyn']['OutSFmt']  = f.readline().split()[0]
+        f.readline()
+        # MEMBER OUTPUT LIST
+        self.fst_vt['SubDyn']['NMOutputs']     = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['MemberID_out']  = [None]*self.fst_vt['SubDyn']['NMOutputs']
+        self.fst_vt['SubDyn']['NOutCnt']       = [None]*self.fst_vt['SubDyn']['NMOutputs']
+        self.fst_vt['SubDyn']['NodeCnt']       = [None]*self.fst_vt['SubDyn']['NMOutputs']
+        ln = f.readline().split()
+        ln = f.readline().split()
+        for i in range(self.fst_vt['SubDyn']['NMOutputs']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['MemberID_out'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['NOutCnt'][i]      = int(ln[1])
+            self.fst_vt['SubDyn']['NodeCnt'][i]      = int(ln[2])
+        f.readline()
+        # SSOutList
+        data = f.readline()
+        while data.split()[0] != 'END':
+            channels = data.split('"')
+            channel_list = channels[1].split(',')
+            self.set_outlist(self.fst_vt['outlist']['SubDyn'], channel_list)
+            data = f.readline()
+
 
     def read_MAP(self):
         # MAP++

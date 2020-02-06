@@ -1,7 +1,11 @@
 *.py[cod]
 
+# Emacs
+*~
 
+# WISDEM
 wisdem/Design_Opt
+outlist.map.sum
 
 # OpenMDAO
 openmdao_log.txt
@@ -101,3 +105,10 @@ Thumbs.db
 # VSCode #
 ##########
 .vscode/
+
+# Other file types #
+####################
+*.bak
+*.png
+*.pdf
+*.docx

@@ -1,13 +1,13 @@
 import unittest
 
-from . import test_WindWaveDrag
-from . import test_enum
-from . import test_environment
-from . import test_frustum
-from . import test_tube
-from . import test_utilities
-from . import test_utilizationSupplement
-from . import test_vertical_cylinder
+from wisdem.test.test_commonse import test_WindWaveDrag
+from wisdem.test.test_commonse import test_enum
+from wisdem.test.test_commonse import test_environment
+from wisdem.test.test_commonse import test_frustum
+from wisdem.test.test_commonse import test_tube
+from wisdem.test.test_commonse import test_utilities
+from wisdem.test.test_commonse import test_utilizationSupplement
+from wisdem.test.test_commonse import test_vertical_cylinder
 
 import numpy as np
 import numpy.testing as npt

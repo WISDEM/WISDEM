@@ -187,15 +187,17 @@ class RotorTorque(ExplicitComponent):
         self.add_input('max_tip_speed', 0.0, units='m/s', desc='Maximum allowable blade tip speed')
         self.add_input('max_efficiency', 0.0, desc='Maximum possible drivetrain efficiency')
 
+        self.add_output('rated_rpm', 0.0, units='rpm', desc = 'rpm of rotor at rated power') #JMF do we want this default?
         self.add_output('rotor_torque', 0.0, units='N*m', desc = 'torque from rotor at rated power') #JMF do we want this default?
 
     def compute(self, inputs, outputs):
         # Rotor force calculations for nacelle inputs
-        maxTipSpd = inputs['max_tip_speed']
+        maxTipSpd     = inputs['max_tip_speed']
         maxEfficiency = inputs['max_efficiency']
         
         ratedHubPower_W  = inputs['machine_rating']*1000. / maxEfficiency 
         rotorSpeed       = maxTipSpd / (0.5*inputs['rotor_diameter'])
+        outputs['rated_rpm']    = rotorSpeed / (2*np.pi) * 60.0
         outputs['rotor_torque'] = ratedHubPower_W / rotorSpeed
 # --------------------------------------------------------------------
 class GearboxMass(ExplicitComponent):
