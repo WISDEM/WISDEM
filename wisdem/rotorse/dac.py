@@ -439,7 +439,7 @@ class RunXFOIL(ExplicitComponent):
         # ------------------------------------------------------------ #
         # Determine airfoil polar tables for blade sections with flaps #
 
-        R        = inputs['r'][-1]  # blade (global) radial length
+        R        = inputs['r'][-1]  # Rotor radius in meters
         tsr      = inputs['rated_TSR']  # tip-speed ratio
         maxTS    = inputs['max_TS']  # max blade-tip speed (m/s) from yaml file
         KinVisc  = inputs['mu_air'] / inputs['rho_air']  # Kinematic viscosity (m^2/s) from yaml file
@@ -455,11 +455,12 @@ class RunXFOIL(ExplicitComponent):
                         # eta = (blade['pf']['r'][afi]/blade['pf']['r'][-1])
                         # eta = blade['outer_shape_bem']['chord']['grid'][afi]
                         c   = inputs['chord'][afi]  # blade chord length at cross section
-                        rR  = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
+                        s   = inputs['s'][afi]
+                        rR  = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section in the rotor coordinate system
                         Re_loc[afi,:,ind] = c*maxTS * rR / KinVisc
                         Ma_loc[afi,:,ind] = maxTS * rR / SpdSound
 
-                        print('Run xfoil for span section at r/R = ' + str(rR) + ' with ' + str(fa_control[afi,0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc[afi,0,ind]) + '; Ma equal to ' + str(Ma_loc[afi,0,ind]))
+                        print('Run xfoil for nondimensional blade span section s = ' + str(s) + ' with ' + str(fa_control[afi,0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc[afi,0,ind]) + '; Ma equal to ' + str(Ma_loc[afi,0,ind]))
                         # if  rR > 0.88:  # reduce AoAmin for (thinner) airfoil at the blade tip due to convergence reasons in XFoil
                         #     data = self.runXfoil(flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc[afi, j, ind], -13.5, 25., 0.5, Ma_loc[afi, j, ind])
                         # else:  # normal case
