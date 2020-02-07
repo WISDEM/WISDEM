@@ -738,7 +738,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
             for j in range(n_tsr):
                 k +=1
                 # if k/2. == int(k/2.) :
-                print('Cp-Ct-Cq surfaces completed at ' + str(k/(n_U*n_tsr)*100.) + ' %')
+                print('Cp-Ct-Cq surfaces completed at ' + str(int(k/(n_U*n_tsr)*100.)) + ' %')
                 U     =  U_vector[i] * np.ones(n_pitch)
                 Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
                 _, _, _, _, outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
