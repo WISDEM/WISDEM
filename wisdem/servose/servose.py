@@ -288,7 +288,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.n_Re          = n_Re      = analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        self.regulation_reg_III = True
+        self.regulation_reg_III = analysis_options['servose']['regulation_reg_III']
         # naero       = self.naero = self.options['naero']
         self.n_pc          = analysis_options['servose']['n_pc']
         self.n_pc_spline   = analysis_options['servose']['n_pc_spline']
