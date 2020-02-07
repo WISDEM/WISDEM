@@ -332,6 +332,7 @@ class FASTLoadCases(ExplicitComponent):
     
         self.add_output('root_bending_moment', val=0.0, units='N*m', desc='total magnitude of bending moment at root of blade 1')
         self.add_output('Mxyz',         val=np.array([0.0, 0.0, 0.0]), units='N*m', desc='individual moments [x,y,z] at the blade root in blade c.s.')
+        self.add_output('My_std',       val=0.0, units='N*m', desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         
         self.add_output('loads_r',      val=np.zeros(n_span), units='m', desc='radial positions along blade going toward tip')
         self.add_output('loads_Px',     val=np.zeros(n_span), units='N/m', desc='distributed loads in blade-aligned x-direction')
@@ -582,7 +583,24 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.DLC_turbulent != None:
             if self.mpi_run:
-                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
+                # list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
+                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt,
+                                                                                              self.FAST_runDirectory,
+                                                                                              self.FAST_namingOut, TMax,
+                                                                                              turbine_class,
+                                                                                              turbulence_class,
+                                                                                              12, #inputs['Vrated'][0],  #
+                                                                                              U_init=inputs['U_init'],
+                                                                                              Omega_init=inputs[
+                                                                                                  'Omega_init'],
+                                                                                              pitch_init=inputs[
+                                                                                                  'pitch_init'],
+                                                                                              Turbsim_exe=self.Turbsim_exe,
+                                                                                              debug_level=self.debug_level,
+                                                                                              cores=self.cores,
+                                                                                              mpi_run=self.mpi_run,
+                                                                                              mpi_comm_map_down=self.mpi_comm_map_down)
+
             else:
                 list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores)
             list_cases        += list_cases_turb
@@ -682,14 +700,23 @@ class FASTLoadCases(ExplicitComponent):
             root_bending_moment_idxmax    = [np.argmax(root_bending_moment_1), np.argmax(root_bending_moment_2), np.argmax(root_bending_moment_3)]
             blade_root_bending_moment_max = np.argmax(root_bending_moment_max)
 
-            outputs['root_bending_moment'] = root_bending_moment_max[blade_root_bending_moment_max]*1.e3
+            # output moments in Nm
+            outputs['root_bending_moment'] = root_bending_moment_max[blade_root_bending_moment_max]
             idx = root_bending_moment_idxmax[blade_root_bending_moment_max]
             if blade_root_bending_moment_max == 0:
                 outputs['Mxyz'] = np.array([data['RootMxc1'][idx_s+idx]*1.e3, data['RootMyc1'][idx_s+idx]*1.e3, data['RootMzc1'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc1'][idx_s:idx_e]*1.e3)
             elif blade_root_bending_moment_max == 1:
                 outputs['Mxyz'] = np.array([data['RootMxc2'][idx_s+idx]*1.e3, data['RootMyc2'][idx_s+idx]*1.e3, data['RootMzc2'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
             elif blade_root_bending_moment_max == 2:
                 outputs['Mxyz'] = np.array([data['RootMxc3'][idx_s+idx]*1.e3, data['RootMyc3'][idx_s+idx]*1.e3, data['RootMzc3'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
+
+
+            # import matplotlib.pyplot as plt
+            # plt.plot(data['RootMyc1'][idx_s:idx_e])
+
 
         def post_extreme(data, case_type):
 

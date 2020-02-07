@@ -1,7 +1,7 @@
-try:
-    from scipy.ndimage import gaussian_filter
-except:
-    pass
+# try:
+from scipy.ndimage import gaussian_filter
+# except:
+#     pass
 import numpy as np
 import os
 from openmdao.api import ExplicitComponent
@@ -112,11 +112,15 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
 
         # Run the XFoil calling command
         os.system(xfoil_path + " < xfoil_input.txt  > NUL") # <<< runs XFoil !
-        flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
+        try:
+            flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
+        except:
+            flap_polar = []  # in case no convergence was achieved
 
 
         # Error handling (re-run simulations with more panels if there is not enough data in polars)
-        if flap_polar.size < 3: # This case is if there are convergence issues at the lowest angles of attack
+        # if flap_polar.size < 3: # This case is if there are convergence issues at the lowest angles of attack
+        if np.size(flap_polar) < 3: # This case is if there are convergence issues at the lowest angles of attack
             plen = 0
             a0 = 0
             a1 = 0
@@ -235,16 +239,17 @@ class RunXFOIL(ExplicitComponent):
                             # flap_profiles[i]['coords'][:,1,ind] = af_flap.af_flap_ycoords # y-coords from xfoil file with flaps
                             # flap_profiles[i]['coords'][:,0,ind] = af_flap.af_flap_xcoords  # x-coords from xfoil file with flaps and NO gaussian filter for smoothing
                             # flap_profiles[i]['coords'][:,1,ind] = af_flap.af_flap_ycoords  # y-coords from xfoil file with flaps and NO gaussian filter for smoothing
-                            try:
-                                flap_profiles[i]['coords'][:,0,ind] = gaussian_filter(af_flap.af_flap_xcoords, sigma=1) # x-coords from xfoil file with flaps and gaussian filter for smoothing
-                                flap_profiles[i]['coords'][:,1,ind] = gaussian_filter(af_flap.af_flap_ycoords, sigma=1) # y-coords from xfoil file with flaps and gaussian filter for smoothing
-                            except:
-                                flap_profiles[i]['coords'][:,0,ind] = af_flap.af_flap_xcoords
-                                flap_profiles[i]['coords'][:,1,ind] = af_flap.af_flap_ycoords
+                            # try:
+                            flap_profiles[i]['coords'][:,0,ind] = gaussian_filter(af_flap.af_flap_xcoords, sigma=1) # x-coords from xfoil file with flaps and gaussian filter for smoothing
+                            flap_profiles[i]['coords'][:,1,ind] = gaussian_filter(af_flap.af_flap_ycoords, sigma=1) # y-coords from xfoil file with flaps and gaussian filter for smoothing
+                            # except:
+                            #     flap_profiles[i]['coords'][:,0,ind] = af_flap.af_flap_xcoords
+                            #     flap_profiles[i]['coords'][:,1,ind] = af_flap.af_flap_ycoords
                             flap_profiles[i]['flap_angles'].append([])
                             flap_profiles[i]['flap_angles'][ind] = fa # Putting in flap angles to blade for each profile (can be used for debugging later)
 
                         # # ** The code below will plot the first three flap deflection profiles (in the case where there are only 3 this will correspond to max negative, zero, and max positive deflection cases)
+                        # import matplotlib.pyplot as plt
                         # font = {'family': 'Times New Roman',
                         #         'weight': 'normal',
                         #         'size': 18}
@@ -253,12 +258,12 @@ class RunXFOIL(ExplicitComponent):
                         # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
                         # # plt.plot(flap_profiles[i]['coords'][:,0,0], flap_profiles[i]['coords'][:,1,0], 'r',flap_profiles[i]['coords'][:,0,1], flap_profiles[i]['coords'][:,1,1], 'k',flap_profiles[i]['coords'][:,0,2], flap_profiles[i]['coords'][:,1,2], 'b')
                         # plt.plot(flap_profiles[i]['coords'][:, 0, 0],
-                        #         flap_profiles[i]['coords'][:, 1, 0], 'r',
+                        #         flap_profiles[i]['coords'][:, 1, 0], '.r',
                         #         flap_profiles[i]['coords'][:, 0, 2],
-                        #         flap_profiles[i]['coords'][:, 1, 2], 'b',
+                        #         flap_profiles[i]['coords'][:, 1, 2], '.b',
                         #         flap_profiles[i]['coords'][:, 0, 1],
-                        #         flap_profiles[i]['coords'][:, 1, 1], 'k')
-                        
+                        #         flap_profiles[i]['coords'][:, 1, 1], '.k')
+                        #
                         # # plt.xlabel('x')
                         # # plt.ylabel('y')
                         # plt.axis('equal')
@@ -460,7 +465,7 @@ class RunXFOIL(ExplicitComponent):
                         Re_loc[afi,:,ind] = c*maxTS * rR / KinVisc
                         Ma_loc[afi,:,ind] = maxTS * rR / SpdSound
 
-                        print('Run xfoil for nondimensional blade span section s = ' + str(s) + ' with ' + str(fa_control[afi,0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc[afi,0,ind]) + '; Ma equal to ' + str(Ma_loc[afi,0,ind]))
+                        print('Run xfoil for nondimensional blade span section r/R = ' + str(s) + ' with ' + str(fa_control[afi,0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc[afi,0,ind]) + '; Ma equal to ' + str(Ma_loc[afi,0,ind]))
                         # if  rR > 0.88:  # reduce AoAmin for (thinner) airfoil at the blade tip due to convergence reasons in XFoil
                         #     data = self.runXfoil(flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc[afi, j, ind], -13.5, 25., 0.5, Ma_loc[afi, j, ind])
                         # else:  # normal case
@@ -489,9 +494,12 @@ class RunXFOIL(ExplicitComponent):
                     # plt.rc('font', **font)
                     # plt.figure
                     # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r', label='$\delta_{flap}$ = -10 deg')  # -10
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k', label='$\delta_{flap}$ = 0 deg')  # 0
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b', label='$\delta_{flap}$ = +10 deg')  # +10
+                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r', label='$\\delta_{flap}$ = -10 deg')  # -10
+                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k', label='$\\delta_{flap}$ = 0 deg')  # 0
+                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b', label='$\\delta_{flap}$ = +10 deg')  # +10
+                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r')  # -10
+                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k')  # 0
+                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b')  # +10
                     # plt.xlim(xmin=-15, xmax=15)
                     # plt.ylim(ymin=-1.7, ymax=2.2)
                     # plt.grid(True)
@@ -501,10 +509,11 @@ class RunXFOIL(ExplicitComponent):
                     # plt.legend(loc='lower right')
                     # plt.tight_layout()
                     # plt.show()
-                    # # # # plt.savefig('temp/airfoil_polars/NACA63-618_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('temp/airfoil_polars/FFA-W3-211_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('temp/airfoil_polars/FFA-W3-241_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('temp/airfoil_polars/FFA-W3-301_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/r_R_1_0_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/NACA63-618_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-211_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-241_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-301_cl_flaps.png', dpi=300)
 
 
 

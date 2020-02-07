@@ -74,10 +74,13 @@ class Outputs_2_Screen(ExplicitComponent):
         self.add_input('aep', val=0.0, units = 'GW * h')
         self.add_input('blade_mass', val=0.0, units = 'kg')
         self.add_input('lcoe', val=0.0, units = 'USD/MW/h')
+        self.add_input('My_std', val=0.0, units = 'N*m')
+
     def compute(self, inputs, outputs):
         print('########################################')
         print('Objectives')
         print('Turbine AEP: {:8.10f} GWh'.format(inputs['aep'][0]))
         print('Blade Mass:  {:8.10f} kg'.format(inputs['blade_mass'][0]))
         print('LCOE:        {:8.10f} USD/MWh'.format(inputs['lcoe'][0]))
+        print('Std(Myroot): {:8.10f} USD/MWh'.format(inputs['My_std'][0]))
         print('########################################')

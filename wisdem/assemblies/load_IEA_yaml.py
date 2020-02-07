@@ -7,7 +7,7 @@ from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_smoothing, remap2grid
 from wisdem.commonse.utilities import arc_length
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, RotorSE_predef_wind, power_curve
 
 
 def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
@@ -90,7 +90,7 @@ class WindTurbineOntologyPython(object):
         FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
         FASTpref['DLC_gust']            = None      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
-        FASTpref['DLC_turbulent']       = RotorSE_DLC_1_1_Turb
+        FASTpref['DLC_turbulent']       = RotorSE_predef_wind
         FASTpref['DLC_powercurve']      = None      # AEP
         if FASTpref['Analysis_Level'] > 0:
             fast = InputReader_OpenFAST(FAST_ver=FASTpref['FAST_ver'], dev_branch=FASTpref['dev_branch'])
@@ -275,6 +275,10 @@ class WindTurbineOntologyPython(object):
         for i in range(self.analysis_options['tower']['n_layers']):
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower.s'].tolist()
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['tower.layer_thickness'][i,:].tolist()
+
+        # Update Distributed Aerodynamic Controls
+        # self.wt_init
+
 
         # Write yaml with updated values
         f = open(fname_output, "w")
@@ -998,6 +1002,7 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     wt_opt = assign_configuration_values(wt_opt, assembly)
     wt_opt = assign_environment_values(wt_opt, environment)
     wt_opt = assign_costs_values(wt_opt, costs)
+    wt_opt = assign_airfoil_profiles(wt_opt, analysis_options, airfoils)
     wt_opt = assign_airfoil_values(wt_opt, analysis_options, airfoils)
     wt_opt = assign_material_values(wt_opt, analysis_options, materials)
 
@@ -1366,6 +1371,73 @@ def assign_costs_values(wt_opt, costs):
 
     return wt_opt 
 
+
+
+
+def assign_airfoil_profiles(wt_opt, analysis_options, AFref, spline=PchipInterpolator):
+
+    n_aoa = analysis_options['airfoils']['n_aoa']
+    n_af  = analysis_options['airfoils']['n_af']
+    n_xy  = analysis_options['airfoils']['n_xy']
+    coord_xy = np.zeros((n_af, n_xy, 2))
+
+    # Option to correct trailing edge for closed to flatback transition
+    trailing_edge_correction = True  # ToDO: we may want to have this feature again later on
+
+    # Get airfoil thicknesses in decending order and cooresponding airfoil names
+    # AFref_thk = np.zeros(len(AFref))
+    AFref_name = []  #np.zeros(len(blade['outer_shape_bem']['airfoil_position']['labels']))
+    for i in range(len(AFref)):
+        # AFref_thk[i] = AFref[i]['relative_thickness']
+        AFref_name.append(AFref[i]['name'])
+
+    # Build array of reference airfoil coordinates, remapped
+    AFref_n  = len(AFref_name)
+    AFref_xy = np.zeros((n_aoa, 2, AFref_n))
+
+    for afi, af_label in enumerate(AFref_name):
+        points = np.column_stack((AFref[afi]['coordinates']['x'], AFref[afi]['coordinates']['y']))
+
+        # check that airfoil points are declared from the TE suction side to TE pressure side
+        idx_le = np.argmin(AFref[afi]['coordinates']['x'])
+        if np.mean(AFref[afi]['coordinates']['y'][:idx_le]) > 0.:
+            points = np.flip(points, axis=0)
+
+        if afi == 0:
+            af = AirfoilShape(points=points)
+            af.redistribute(n_aoa, even=False, dLE=True)  # redistribute such that the points are more dense at the LE
+            s = af.s
+            af_points = af.points
+        else:
+            # remap profiles according to the x-coordinates of the first airfoil profile; i.e. afi = 0
+            af_points = np.column_stack((coord_xy[0,:,0], remapAirfoil(points[:,0], points[:,1], coord_xy[0,:,0])))
+
+        # --- CHECKS ---
+        # import matplotlib.pyplot as plt
+        # plt.plot(points[:,0], points[:,1], 'ob')
+        # plt.plot(af_points[:,0], af_points[:,1], '.r')
+        # plt.show()
+
+        if [1,0] not in af_points.tolist():
+            af_points[:,0] -= af_points[np.argmin(af_points[:,0]), 0]
+        c = max(af_points[:,0])-min(af_points[:,0])
+        af_points[:,:] /= c
+        coord_xy[afi, :, :] = af_points  # save airfoils in correct order
+
+    # Assign to openmdao structure
+    wt_opt['airfoils.coord_xy']  = coord_xy  # from  inboard to outboard
+
+    # --- CHECKS ---
+    # import matplotlib.pyplot as plt
+    # plt.plot(wt_opt['airfoils.coord_xy'][-1][:, 0], wt_opt['airfoils.coord_xy'][-1][:, 1], '.r')
+    # plt.show()
+
+    return wt_opt
+
+
+
+
+
 def assign_airfoil_values(wt_opt, analysis_options, airfoils):
     # Function to assign values to the openmdao component Airfoils
     
@@ -1392,7 +1464,7 @@ def assign_airfoil_values(wt_opt, analysis_options, airfoils):
     cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
     cm = np.zeros((n_af, n_aoa, n_Re, n_tab))
     
-    coord_xy = np.zeros((n_af, n_xy, 2))
+    # coord_xy = np.zeros((n_af, n_xy, 2))
     
     # Interp cl-cd-cm along predefined grid of angle of attack
     for i in range(n_af):
@@ -1423,31 +1495,34 @@ def assign_airfoil_values(wt_opt, analysis_options, airfoils):
             cm[i,k,:,0] = np.interp(Re, Re_j, cm[i,k,j_Re,0])
 
 
-        points = np.column_stack((airfoils[i]['coordinates']['x'], airfoils[i]['coordinates']['y']))
-        # Check that airfoil points are declared from the TE suction side to TE pressure side
-        idx_le = np.argmin(points[:,0])
-        if np.mean(points[:idx_le,1]) > 0.:
-            points = np.flip(points, axis=0)
-        
-        # Remap points using class AirfoilShape
-        af = AirfoilShape(points=points)
-        af.redistribute(n_xy, even=False, dLE=True)
-        s = af.s
-        af_points = af.points
-        
-        # Add trailing edge point if not defined
-        if [1,0] not in af_points.tolist():
-            af_points[:,0] -= af_points[np.argmin(af_points[:,0]), 0]
-        c = max(af_points[:,0])-min(af_points[:,0])
-        af_points[:,:] /= c
-        
-        coord_xy[i,:,:] = af_points
-        
-        # Plotting
-        # import matplotlib.pyplot as plt
-        # plt.plot(af_points[:,0], af_points[:,1], '.')
-        # plt.plot(af_points[:,0], af_points[:,1])
-        # plt.show()
+        # # -----------------------
+        # # --- Declare profile ---
+        # # -----------------------
+        # points = np.column_stack((airfoils[i]['coordinates']['x'], airfoils[i]['coordinates']['y']))
+        # # Check that airfoil points are declared from the TE suction side to TE pressure side
+        # idx_le = np.argmin(points[:, 0])
+        # if np.mean(points[:idx_le, 1]) > 0.:
+        #     points = np.flip(points, axis=0)
+        #
+        # # Remap points using class AirfoilShape
+        # af = AirfoilShape(points=points)
+        # af.redistribute(n_xy, even=False, dLE=True)
+        # s = af.s
+        # af_points = af.points
+        #
+        # # Add trailing edge point if not defined
+        # if [1, 0] not in af_points.tolist():
+        #     af_points[:, 0] -= af_points[np.argmin(af_points[:, 0]), 0]
+        # c = max(af_points[:, 0]) - min(af_points[:, 0])
+        # af_points[:, :] /= c
+        #
+        # coord_xy[i, :, :] = af_points
+        #
+        # # Plotting
+        # # import matplotlib.pyplot as plt
+        # # plt.plot(af_points[:,0], af_points[:,1], '.')
+        # # plt.plot(af_points[:,0], af_points[:,1])
+        # # plt.show()
         
     # Assign to openmdao structure    
     wt_opt['airfoils.aoa']       = aoa
@@ -1460,10 +1535,63 @@ def assign_airfoil_values(wt_opt, analysis_options, airfoils):
     wt_opt['airfoils.cd']        = cd
     wt_opt['airfoils.cm']        = cm
     
-    wt_opt['airfoils.coord_xy']  = coord_xy
+    # wt_opt['airfoils.coord_xy']  = coord_xy
      
     return wt_opt
-    
+
+def trailing_edge_smoothing(data):
+    # correction to trailing edge shape for interpolated airfoils that smooths out unrealistic geometric errors
+    # often brought about when transitioning between round, flatback, or sharp trailing edges
+
+    # correct for self cross of TE (rare interpolation error)
+    if data[-1,1] < data[0,1]:
+        temp = data[0,1]
+        data[0,1] = data[-1,1]
+        data[-1,1] = temp
+
+    # Find indices on Suction and Pressure side for last 85-95% and 95-100% chordwise
+    idx_85_95  = [i_x for i_x, xi in enumerate(data[:,0]) if xi>0.85 and xi < 0.95]
+    idx_95_100 = [i_x for i_x, xi in enumerate(data[:,0]) if xi>0.95 and xi < 1.]
+
+    idx_85_95_break = [i_idx for i_idx, d_idx in enumerate(np.diff(idx_85_95)) if d_idx > 1][0]+1
+    idx_85_95_SS    = idx_85_95[:idx_85_95_break]
+    idx_85_95_PS    = idx_85_95[idx_85_95_break:]
+
+    idx_95_100_break = [i_idx for i_idx, d_idx in enumerate(np.diff(idx_95_100)) if d_idx > 1][0]+1
+    idx_95_100_SS    = idx_95_100[:idx_95_100_break]
+    idx_95_100_PS    = idx_95_100[idx_95_100_break:]
+
+    # Interpolate the last 5% to the trailing edge
+    idx_in_PS = idx_85_95_PS+[-1]
+    x_corrected_PS = data[idx_95_100_PS,0]
+    y_corrected_PS = remap2grid(data[idx_in_PS,0], data[idx_in_PS,1], x_corrected_PS)
+
+    idx_in_SS = [0]+idx_85_95_SS
+    x_corrected_SS = data[idx_95_100_SS,0]
+    y_corrected_SS = remap2grid(data[idx_in_SS,0], data[idx_in_SS,1], x_corrected_SS)
+
+    # Overwrite profile with corrected TE
+    data[idx_95_100_SS,1] = y_corrected_SS
+    data[idx_95_100_PS,1] = y_corrected_PS
+
+    return data
+
+def remapAirfoil(x_ref, y_ref, x0):
+    # for interpolating airfoil surface
+    x = copy.copy(x_ref)
+    y = copy.copy(y_ref)
+    x_in = copy.copy(x0)
+
+    idx_le = np.argmin(x)
+    x[:idx_le] *= -1.
+
+    idx = [ix0 for ix0, dx0 in enumerate(np.diff(x_in)) if dx0 >0][0]
+    x_in[:idx] *= -1.
+
+    return remap2grid(x, y, x_in)
+
+
+
 def assign_material_values(wt_opt, analysis_options, materials):
     # Function to assign values to the openmdao component Materials
     

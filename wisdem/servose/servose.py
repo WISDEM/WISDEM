@@ -196,8 +196,8 @@ class TuneROSCO(ExplicitComponent):
         controller = ROSCO_controller.Controller(self.analysis_options['servose'])
         controller.tune_controller(WISDEM_turbine)
         if controller.Flp_Mode == 0:
-            controller.Kp_flap = np.array([0.0]) # inputs['Kp_flap'][0]
-            controller.Ki_flap = np.array([0.0]) # inputs['Ki_flap'][0]
+            controller.Kp_flap = np.array([1.e-7]) # inputs['Kp_flap'][0]
+            controller.Ki_flap = np.array([1.e-6]) # inputs['Ki_flap'][0]
 
         # DISCON Parameters
         #   - controller

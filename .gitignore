@@ -112,3 +112,8 @@ Thumbs.db
 *.png
 *.pdf
 *.docx
+
+
+# users
+#######
+*.idea/

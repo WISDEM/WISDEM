@@ -46,7 +46,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     # Initialize openmdao problem
     wt_opt          = Problem()
     wt_opt.model    = WindPark(analysis_options = analysis_options, opt_options = opt_options)
-    wt_opt.model.approx_totals(method='fd')
+    wt_opt.model.approx_totals(method='fd', step=opt_options['driver']['step_size'])
     
     if opt_flag == True:
         # Set optimization solver and options
@@ -55,19 +55,23 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         wt_opt.driver.options['tol']       = opt_options['driver']['tol']
         wt_opt.driver.options['maxiter']   = opt_options['driver']['max_iter']
 
-        # Set merit figure
+
+        # Set figure of merit
         if opt_options['merit_figure'] == 'AEP':
             wt_opt.model.add_objective('sse.AEP', scaler = -1.e-6)
         elif opt_options['merit_figure'] == 'blade_mass':
             wt_opt.model.add_objective('elastic.precomp.blade_mass', scaler = 1.e-4)
         elif opt_options['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
+        # NEW optimization objective for DAC design analysis
+        elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization
+            wt_opt.model.add_objective('aeroelastic.My_std', scaler = 1.e1)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
         
         # Set optimization variables
         if opt_options['optimization_variables']['blade']['aero_shape']['twist']['flag'] == True:
-            indices        = range(2,opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
+            indices  = range(2,opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
             wt_opt.model.add_design_var('param.opt_var.twist_opt_gain', indices = indices, lower=0., upper=1.)
         if opt_options['optimization_variables']['blade']['aero_shape']['chord']['flag'] == True:
             indices  = range(2,opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'] - 1)
@@ -91,8 +95,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
         
         # Set recorder
-        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['recorder']['file_name']))
-        wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe']
+        # wt_opt.driver.add_recorder(SqliteRecorder(opt_options['recorder']['file_name']))
+        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
+        wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe, aeroelastic.My_std']
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
         wt_opt.driver.recording_options['record_desvars']     = True
