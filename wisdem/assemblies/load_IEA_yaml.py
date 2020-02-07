@@ -745,11 +745,16 @@ class Tower(ExplicitComponent):
 
         self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
+        
+        self.add_output('mass',   val = 0.0,                  units='kg',  desc='Temporary tower mass')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
         outputs['height']   = outputs['ref_axis'][-1,2]
         outputs['length']   = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])[-1]
+
+        rhoA = np.pi * outputs['diameter'] * outputs['layer_thickness'][0,:]
+        outputs['mass'] = np.trapz(rhoA, outputs['ref_axis'][:,2]) * 8500.
 
 class Foundation(ExplicitComponent):
     # Openmdao component with the foundation data coming from the input yaml file.

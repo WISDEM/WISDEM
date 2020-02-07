@@ -88,10 +88,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         # Set non-linear constraints
         wt_opt.model.add_constraint('rlds.pbeam.strainU_spar', upper= 1.) 
         wt_opt.model.add_constraint('rlds.pbeam.strainL_spar', upper= 1.) 
-        wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
+        wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.) 
+        # wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
         
         # Set recorder
-        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['recorder']['file_name']))
+        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
         wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe']
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True

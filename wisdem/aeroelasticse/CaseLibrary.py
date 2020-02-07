@@ -486,7 +486,7 @@ def RotorSE_DLC_7_1_Steady(fst_vt, runDir, namebase, TMax, turbine_class, turbul
 def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_comm_map_down=[]):
     
     # Default Runtime
-    T      = 630.
+    T      = 60.
     TStart = 30.
     
     # Overwrite for testing
