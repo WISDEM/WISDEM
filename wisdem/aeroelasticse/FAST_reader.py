@@ -1405,7 +1405,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['WE_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['PS_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['SD_Mode']           = int_read(f.readline().split()[0])
-            
+
             # Error handling for different commits of Rosco that added features/lines.  This can probably be removed in the future
             ln1 = f.readline().split()
             Fl_Mode = False
@@ -1438,8 +1438,12 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['F_SSCornerFreq']    = float_read(f.readline().split()[0])
             if Fl_Mode:
                 self.fst_vt['DISCON_in']['F_FlCornerFreq']  = [float(idx.strip()) for idx in f.readline().strip().split('F_FlCornerFreq')[0].split() if idx.strip() != '!']
+            else:
+                self.fst_vt['DISCON_in']['F_FlCornerFreq']  = 0.
             if Flp_Mode:
                 self.fst_vt['DISCON_in']['F_FlpCornerFreq'] = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
+            else:
+                self.fst_vt['DISCON_in']['F_FlpCornerFreq'] = 0.
             f.readline()
             f.readline()
 
@@ -1551,13 +1555,18 @@ class InputReader_OpenFAST(InputReader_Common):
                 self.fst_vt['DISCON_in']['Fl_Kp']         = float_read(f.readline().split()[0])
                 f.readline()
                 f.readline()
+            else:
+                self.fst_vt['DISCON_in']['Fl_Kp']         = 0.
 
             if Flp_Mode:
                 # DISTRIBUTED AERODYNAMIC CONTROL
                 self.fst_vt['DISCON_in']['Flp_Angle']     = float_read(f.readline().split()[0])
                 self.fst_vt['DISCON_in']['Flp_Kp']        = float_read(f.readline().split()[0])
                 self.fst_vt['DISCON_in']['Flp_Ki']        = float_read(f.readline().split()[0])
-
+            else:
+                self.fst_vt['DISCON_in']['Flp_Angle']     = 0.
+                self.fst_vt['DISCON_in']['Flp_Kp']        = 0.
+                self.fst_vt['DISCON_in']['Flp_Ki']        = 0.
 
             f.close()
 
