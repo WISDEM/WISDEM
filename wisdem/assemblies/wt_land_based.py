@@ -263,6 +263,8 @@ class WT_RNTA(Group):
         self.connect('nacelle.yaw_motors_number',  'drivese.yaw_motors_number')
         self.connect('nacelle.drivetrain_eff',     'drivese.drivetrain_efficiency')
         self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
+
+        # Connections to TowerSE
         
         # Connections to aeroelasticse
         # promotes=['fst_vt_in'])
