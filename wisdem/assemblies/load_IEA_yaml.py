@@ -125,7 +125,12 @@ class WindTurbineOntologyPython(object):
         self.analysis_options['airfoils']           = {}
         self.analysis_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
         self.analysis_options['airfoils']['n_aoa']  = self.analysis_options['rotorse']['n_aoa']
-        self.analysis_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(self.analysis_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(self.analysis_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(self.analysis_options['airfoils']['n_aoa'] / 4. + 1))]))
+        if self.analysis_options['airfoils']['n_aoa'] / 4. == int(self.analysis_options['airfoils']['n_aoa'] / 4.):
+            # One fourth of the angles of attack from -pi to -pi/6, half between -pi/6 to pi/6, and one fourth from pi/6 to pi 
+            self.analysis_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(self.analysis_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(self.analysis_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(self.analysis_options['airfoils']['n_aoa'] / 4. + 1))]))
+        else:
+            self.analysis_options['airfoils']['aoa']    = np.linspace(-np.pi, np.pi, self.analysis_options['airfoils']['n_aoa'])
+            print('If you like a grid of angles of attack more refined between +- 30 deg, please choose a n_aoa in the analysis option input file that is a multiple of 4. The current value of ' + str(self.analysis_options['airfoils']['n_aoa']) + ' is not a multiple of 4 and an equally spaced grid is adopted.')
         Re_all = []
         for i in range(self.analysis_options['airfoils']['n_af']):
             for j in range(len(self.wt_init['airfoils'][i]['polars'])):
@@ -748,11 +753,16 @@ class Tower(ExplicitComponent):
 
         self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
+        
+        self.add_output('mass',   val = 0.0,                  units='kg',  desc='Temporary tower mass')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
         outputs['height']   = outputs['ref_axis'][-1,2]
         outputs['length']   = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])[-1]
+
+        rhoA = np.pi * outputs['diameter'] * outputs['layer_thickness'][0,:]
+        outputs['mass'] = np.trapz(rhoA, outputs['ref_axis'][:,2]) * 8500.
 
 class Foundation(ExplicitComponent):
     # Openmdao component with the foundation data coming from the input yaml file.
@@ -1332,7 +1342,7 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.ss_vsgain']     = control['ss_vsgain']
     wt_opt['control.ss_pcgain']     = control['ss_pcgain']
     wt_opt['control.ps_percent']    = control['ps_percent']
-    if analysis_options['servose']['Flp_Mode'] == 1:
+    if analysis_options['servose']['Flp_Mode'] >= 1:
         wt_opt['control.Kp_flap']       = control['Kp_flap']
         wt_opt['control.Ki_flap']       = control['Ki_flap']
     
@@ -1409,13 +1419,13 @@ def assign_airfoil_values(wt_opt, analysis_options, airfoils):
             cd[i,:,j_Re[j],0] = np.interp(aoa, airfoils[i]['polars'][j]['c_d']['grid'], airfoils[i]['polars'][j]['c_d']['values'])
             cm[i,:,j_Re[j],0] = np.interp(aoa, airfoils[i]['polars'][j]['c_m']['grid'], airfoils[i]['polars'][j]['c_m']['values'])
     
-            if cl[i,0,j,0] != cl[i,-1,j,0]:
+            if abs(cl[i,0,j,0] - cl[i,-1,j,0]) > 1.e-5:
                 cl[i,0,j,0] = cl[i,-1,j,0]
                 print("Airfoil " + name[i] + ' has the lift coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
-            if cd[i,0,j,0] != cd[i,-1,j,0]:
+            if abs(cd[i,0,j,0] - cd[i,-1,j,0]) > 1.e-5:
                 cd[i,0,j,0] = cd[i,-1,j,0]
                 print("Airfoil " + name[i] + ' has the drag coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
-            if cm[i,0,j,0] != cm[i,-1,j,0]:
+            if abs(cm[i,0,j,0] - cm[i,-1,j,0]) > 1.e-5:
                 cm[i,0,j,0] = cm[i,-1,j,0]
                 print("Airfoil " + name[i] + ' has the moment coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
         

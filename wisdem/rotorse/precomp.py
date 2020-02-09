@@ -219,16 +219,19 @@ class PreComp():
             idx_ss = sector_idx_strain_ss[i]
             idx_ps = sector_idx_strain_ps[i]
 
-            if idx_ss == None:
-                xun[i] = 0.
+            if idx_ps == None:
                 xln[i] = 0.
-                yun[i] = 0.
                 yln[i] = 0.
             else:
-                xun[i] = 0.5*(csU.loc[idx_ss] + csU.loc[idx_ss+1])
                 xln[i] = 0.5*(csL.loc[idx_ps] + csL.loc[idx_ps+1])
-                yun[i] = np.interp(xun[i], pf.x, pf.yu)
                 yln[i] = np.interp(xln[i], pf.x, pf.yl)
+            
+            if idx_ss == None:
+                xun[i] = 0.
+                yun[i] = 0.
+            else:
+                xun[i] = 0.5*(csU.loc[idx_ss] + csU.loc[idx_ss+1])
+                yun[i] = np.interp(xun[i], pf.x, pf.yu)
 
         # make dimensional and define relative to elastic center
         xu = xun*self.chord - self.x_ec_nose

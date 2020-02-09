@@ -206,7 +206,7 @@ class RunXFOIL(ExplicitComponent):
         self.add_output('cl_interp_flaps',  val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         self.add_output('cd_interp_flaps',  val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
         self.add_output('cm_interp_flaps',  val=np.zeros((n_span, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_output('flap_angles',      val=np.zeros((n_span, n_Re, n_tab)),   desc='3D array with the flap angles of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the Reynolds number, dimension 2 is along the number of tabs, which may describe multiple sets at the same station.')
+        self.add_output('flap_angles',      val=np.zeros((n_span, n_Re, n_tab)), units = 'deg',   desc='3D array with the flap angles of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the Reynolds number, dimension 2 is along the number of tabs, which may describe multiple sets at the same station.')
         self.add_output('Re_loc',           val=np.zeros((n_span, n_Re, n_tab)),   desc='3D array with the Re. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the Reynolds number, dimension 2 is along the number of tabs, which may describe multiple sets at the same station.')
         self.add_output('Ma_loc',           val=np.zeros((n_span, n_Re, n_tab)),   desc='3D array with the Mach number. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the Reynolds number, dimension 2 is along the number of tabs, which may describe multiple sets at the same station.')
 
@@ -439,7 +439,7 @@ class RunXFOIL(ExplicitComponent):
         # ------------------------------------------------------------ #
         # Determine airfoil polar tables for blade sections with flaps #
 
-        R        = inputs['r'][-1]  # blade (global) radial length
+        R        = inputs['r'][-1]  # Rotor radius in meters
         tsr      = inputs['rated_TSR']  # tip-speed ratio
         maxTS    = inputs['max_TS']  # max blade-tip speed (m/s) from yaml file
         KinVisc  = inputs['mu_air'] / inputs['rho_air']  # Kinematic viscosity (m^2/s) from yaml file
@@ -455,11 +455,12 @@ class RunXFOIL(ExplicitComponent):
                         # eta = (blade['pf']['r'][afi]/blade['pf']['r'][-1])
                         # eta = blade['outer_shape_bem']['chord']['grid'][afi]
                         c   = inputs['chord'][afi]  # blade chord length at cross section
-                        rR  = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
+                        s   = inputs['s'][afi]
+                        rR  = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section in the rotor coordinate system
                         Re_loc[afi,:,ind] = c*maxTS * rR / KinVisc
                         Ma_loc[afi,:,ind] = maxTS * rR / SpdSound
 
-                        print('Run xfoil for span section at r/R = ' + str(rR) + ' with ' + str(fa_control[afi,0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc[afi,0,ind]) + '; Ma equal to ' + str(Ma_loc[afi,0,ind]))
+                        print('Run xfoil for nondimensional blade span section s = ' + str(s) + ' with ' + str(fa_control[afi,0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc[afi,0,ind]) + '; Ma equal to ' + str(Ma_loc[afi,0,ind]))
                         # if  rR > 0.88:  # reduce AoAmin for (thinner) airfoil at the blade tip due to convergence reasons in XFoil
                         #     data = self.runXfoil(flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc[afi, j, ind], -13.5, 25., 0.5, Ma_loc[afi, j, ind])
                         # else:  # normal case

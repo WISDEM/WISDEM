@@ -102,7 +102,7 @@ class WT_RNTA(Group):
         # Connection from ra to rs for the rated conditions
         # self.connect('sse.powercurve.rated_V',        'rlds.aero_rated.V_load')
         self.connect('sse.powercurve.rated_V',        'rlds.gust.V_hub')
-        self.connect('rlds.gust.V_gust',              ['rlds.aero_gust.V_load'])
+        self.connect('rlds.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
         self.connect('sse.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.aeroloads_Omega', 'elastic.curvefem.Omega', 'rlds.constr.rated_Omega'])
         self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.aeroloads_pitch'])
         
@@ -215,6 +215,7 @@ class WT_RNTA(Group):
         self.connect('configuration.n_blades',          'rlds.nBlades')
         self.connect('env.rho_air',                     'rlds.rho')
         self.connect('env.mu_air',                      'rlds.mu')
+        self.connect('env.shear_exp',                   'rlds.aero_hub_loads.shearExp')
         # Connections to rotorse-rs-gustetm
         self.connect('wt_class.V_mean',                 'rlds.gust.V_mean')
         self.connect('configuration.turb_class',        'rlds.gust.turbulence_class')
@@ -245,9 +246,9 @@ class WT_RNTA(Group):
         self.connect('configuration.n_blades',     'drivese.number_of_blades') 
         self.connect('sse.powercurve.rated_Q',         'drivese.rotor_torque')
         self.connect('sse.powercurve.rated_Omega',     'drivese.rotor_rpm')
-        # self.connect('rlds.Fxyz_total',      'drivese.Fxyz')
-        # self.connect('rlds.Mxyz_total',      'drivese.Mxyz')
-        # self.connect('rlds.I_all_blades',    'drivese.blades_I')
+        self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.Fxyz')
+        self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.Mxyz')
+        self.connect('elastic.precomp.I_all_blades',   'drivese.blades_I')
         self.connect('elastic.precomp.blade_mass', 'drivese.blade_mass')
         self.connect('param.pa.chord_param',       'drivese.blade_root_diameter', src_indices=[0])
         self.connect('blade.length',               'drivese.blade_length')
@@ -267,7 +268,6 @@ class WT_RNTA(Group):
         # Connections to TowerSE
         
         # Connections to aeroelasticse
-        # promotes=['fst_vt_in'])
         if analysis_options['openfast']['run_openfast'] == True:
             self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
@@ -283,17 +283,15 @@ class WT_RNTA(Group):
             self.connect('hub.radius',                      'aeroelastic.Rhub')
             self.connect('hub.cone',                        'aeroelastic.cone')
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
-            self.connect('nacelle.overhang',                  'aeroelastic.overhang')
+            self.connect('nacelle.overhang',                'aeroelastic.overhang')
             self.connect('assembly.hub_height',             'aeroelastic.hub_height')
             self.connect('tower.height',                    'aeroelastic.tower_height')
             self.connect('foundation.height',               'aeroelastic.tower_base_height')
-            # self.connect('hub.cone',                        'aeroelastic.precone')
-            # self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
             self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
-            self.connect('blade.interp_airfoils.cl_interp', 'aeroelastic.airfoils_cl')
-            self.connect('blade.interp_airfoils.cd_interp', 'aeroelastic.airfoils_cd')
-            self.connect('blade.interp_airfoils.cm_interp', 'aeroelastic.airfoils_cm')
+            self.connect('xf.cl_interp_flaps',              'aeroelastic.airfoils_cl')
+            self.connect('xf.cd_interp_flaps',              'aeroelastic.airfoils_cd')
+            self.connect('xf.cm_interp_flaps',              'aeroelastic.airfoils_cm')
             self.connect('blade.interp_airfoils.r_thick_interp', 'aeroelastic.rthick')
             self.connect('elastic.rhoA',                'aeroelastic.beam:rhoA')
             self.connect('elastic.EIxx',                'aeroelastic.beam:EIxx')
@@ -322,6 +320,7 @@ class WT_RNTA(Group):
             # Temporary
             self.connect('xf.Re_loc',           'aeroelastic.airfoils_Re_loc')
             self.connect('xf.Ma_loc',           'aeroelastic.airfoils_Ma_loc')
+            self.connect('xf.flap_angles',      'aeroelastic.airfoils_Ctrl')
         
         # Connections to turbine constraints
         self.connect('configuration.rotor_orientation', 'tcons.rotor_orientation')
@@ -337,11 +336,13 @@ class WT_RNTA(Group):
         # Connections to turbine capital cost
         self.connect('control.rated_power',         'tcc.machine_rating')
         self.connect('elastic.precomp.blade_mass',  'tcc.blade_mass')
+        self.connect('elastic.precomp.total_blade_cost',  'tcc.blade_cost_external')
         self.connect('drivese.hub_mass',            'tcc.hub_mass')
         self.connect('drivese.pitch_system_mass',   'tcc.pitch_system_mass')
         self.connect('drivese.spinner_mass',        'tcc.spinner_mass')
         self.connect('drivese.lss_mass',            'tcc.lss_mass')
         self.connect('drivese.mainBearing.mb_mass', 'tcc.main_bearing_mass')
+        self.connect('drivese.gearbox_mass',        'tcc.gearbox_mass')
         self.connect('drivese.hss_mass',            'tcc.hss_mass')
         self.connect('drivese.generator_mass',      'tcc.generator_mass')
         self.connect('drivese.bedplate_mass',       'tcc.bedplate_mass')
@@ -351,7 +352,8 @@ class WT_RNTA(Group):
         self.connect('drivese.cover_mass',          'tcc.cover_mass')
         self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
-        # self.connect('towerse.tower_mass',          'tcc.tower_mass')
+        # Temporary
+        self.connect('tower.mass',                  'tcc.tower_mass')
 
 class WindPark(Group):
     # Openmdao group to run the cost analysis of a wind park
@@ -379,6 +381,7 @@ class WindPark(Group):
         self.connect('costs.bos_per_kW',        'financese.bos_per_kW')
         self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
         self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
+        self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
 
         # Connections to outputs to screen
         self.connect('sse.AEP',                    'outputs_2_screen.aep')

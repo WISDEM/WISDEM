@@ -1,41 +1,44 @@
 optimization_variables:
-    twist:
-      flag: False
-      n_opt: 8
-      lower_bound: -5. # non-dimensional
-      upper_bound: 20. # non-dimensional
-    chord:
-      flag: False
-      n_opt: 8
-      min_gain: 0.2 # non-dimensional
-      max_gain: 2.0 # non-dimensional
-    spar_cap_ss:
-      flag: False
-      name: Spar_Cap_SS
-      n_opt: 8
-      min_gain: 0.2 # non-dimensional
-      max_gain: 2.0 # non-dimensional
-    spar_cap_ps:
-      flag: False
-      name: Spar_Cap_PS
-      n_opt: 8
-      min_gain: 0.2 # non-dimensional
-      max_gain: 2.0 # non-dimensional
-    te_ss:
-      flag: False
-      name: TE_reinforcement
-      n_opt: 8
-      min_gain: 0.2 # non-dimensional
-      max_gain: 2.0 # non-dimensional
-    te_ps:
-      flag: False
-      name: TE_reinforcement
-      n_opt: 8
-      min_gain: 0.2 # non-dimensional
-      max_gain: 2.0 # non-dimensional
+  blade:
+    aero_shape:
+      twist:
+        flag: True
+        n_opt: 8
+        lower_bound: -5. # non-dimensional
+        upper_bound: 20. # non-dimensional
+      chord:
+        flag: True
+        n_opt: 8
+        min_gain: 0.2 # non-dimensional
+        max_gain: 2.0 # non-dimensional
+    structure:
+      spar_cap_ss:
+        flag: True
+        name: 5-Spar-Cap-SS_UD-0620-Carbon
+        n_opt: 8
+        min_gain: 0.2 # non-dimensional
+        max_gain: 2.0 # non-dimensional
+      spar_cap_ps:
+        flag: True
+        name: 5-Spar-Cap-PS_UD-0620-Carbon
+        n_opt: 8
+        min_gain: 0.2 # non-dimensional
+        max_gain: 2.0 # non-dimensional
+      te_ss:
+        flag: False
+        name: 6-TE-UD-SS_UD-1200-H
+        n_opt: 8
+        min_gain: 0.2 # non-dimensional
+        max_gain: 2.0 # non-dimensional
+      te_ps:
+        flag: False
+        name: 6-TE-UD-PS_UD-1200-H
+        n_opt: 8
+        min_gain: 0.2 # non-dimensional
+        max_gain: 2.0 # non-dimensional
 
 
-merit_figure: blade_mass # 'AEP' - 'LCOE'
+merit_figure: LCOE # 'AEP' - 'LCOE'
 
 constraints:
 

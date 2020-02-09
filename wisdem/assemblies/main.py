@@ -74,10 +74,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_design_var('param.opt_var.chord_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['aero_shape']['chord']['min_gain'], upper=opt_options['optimization_variables']['blade']['aero_shape']['chord']['max_gain'])
         if opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['flag'] == True:
             indices  = range(2,opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'] - 1)
-            wt_opt.model.add_design_var('param.opt_var.spar_ss_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain'])
+            wt_opt.model.add_design_var('param.opt_var.spar_cap_ss_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain'])
         if opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['flag'] == True:
             indices  = range(2,opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt'] - 1)
-            wt_opt.model.add_design_var('param.opt_var.spar_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
+            wt_opt.model.add_design_var('param.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
         if 'dac' in opt_options['optimization_variables']['blade'].keys():
             if opt_options['optimization_variables']['blade']['dac']['te_flap_end']['flag'] == True:
                 wt_opt.model.add_design_var('param.opt_var.te_flap_end', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['min_end'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['max_end'])
@@ -86,12 +86,15 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
 
         # Set non-linear constraints
-        wt_opt.model.add_constraint('rlds.pbeam.strainU_spar', upper= 1.) 
-        wt_opt.model.add_constraint('rlds.pbeam.strainL_spar', upper= 1.) 
-        wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
+        wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.) 
+        wt_opt.model.add_constraint('rlds.constr.constr_min_strainU_spar', upper= 1.) 
+        wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.) 
+        wt_opt.model.add_constraint('rlds.constr.constr_min_strainL_spar', upper= 1.) 
+        wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.) 
+        # wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
         
         # Set recorder
-        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['recorder']['file_name']))
+        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
         wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe']
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
