@@ -352,7 +352,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.n_Re          = n_Re      = analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        self.regulation_reg_III = True
+        self.regulation_reg_III = analysis_options['servose']['regulation_reg_III']
         # naero       = self.naero = self.options['naero']
         self.n_pc          = analysis_options['servose']['n_pc']
         self.n_pc_spline   = analysis_options['servose']['n_pc_spline']
@@ -802,7 +802,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
             for j in range(n_tsr):
                 k +=1
                 # if k/2. == int(k/2.) :
-                print('Cp-Ct-Cq surfaces completed at ' + str(k/(n_U*n_tsr)*100.) + ' %')
+                print('Cp-Ct-Cq surfaces completed at ' + str(int(k/(n_U*n_tsr)*100.)) + ' %')
                 U     =  U_vector[i] * np.ones(n_pitch)
                 Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
                 _, _, _, _, outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
