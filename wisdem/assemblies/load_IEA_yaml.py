@@ -1339,6 +1339,12 @@ def assign_control_values(wt_opt, analysis_options, control):
         wt_opt['control.Ki_flap']       = control['Ki_flap']
     
     
+    # Check for proper Flp_Mode, print warning
+    if analysis_options['airfoils']['n_tab'] > 1 and analysis_options['servose']['Flp_Mode'] == 0:
+            print('WARNING: servose.Flp_Mode should be >= 1 for aerodynamic control.')
+    if analysis_options['airfoils']['n_tab'] == 1 and analysis_options['servose']['Flp_Mode'] > 0:
+            print('WARNING: servose.Flp_Mode should be = 0 for no aerodynamic control.')
+            
     return wt_opt
 
 def assign_configuration_values(wt_opt, assembly):
