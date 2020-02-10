@@ -175,8 +175,6 @@ class WT_RNTA(Group):
             self.connect('control.PC_zeta',         'sse.tune_rosco.PC_zeta')
             self.connect('control.VS_omega',        'sse.tune_rosco.VS_omega')
             self.connect('control.VS_zeta',         'sse.tune_rosco.VS_zeta')
-            self.connect('control.Kp_flap',         'sse.tune_rosco.Kp_flap')
-            self.connect('control.Ki_flap',         'sse.tune_rosco.Ki_flap')
         
 
         # Connections to rotor load analysis

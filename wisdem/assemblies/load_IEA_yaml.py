@@ -1334,11 +1334,6 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.ss_vsgain']     = control['ss_vsgain']
     wt_opt['control.ss_pcgain']     = control['ss_pcgain']
     wt_opt['control.ps_percent']    = control['ps_percent']
-    if analysis_options['servose']['Flp_Mode'] >= 1:
-        wt_opt['control.Kp_flap']       = control['Kp_flap']
-        wt_opt['control.Ki_flap']       = control['Ki_flap']
-    
-    
     # Check for proper Flp_Mode, print warning
     if analysis_options['airfoils']['n_tab'] > 1 and analysis_options['servose']['Flp_Mode'] == 0:
             print('WARNING: servose.Flp_Mode should be >= 1 for aerodynamic control.')
