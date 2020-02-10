@@ -11,7 +11,6 @@ import datetime
 
 from ROSCO_toolbox import controller as ROSCO_controller
 from ROSCO_toolbox import turbine as ROSCO_turbine
-from ROSCO_toolbox import sim as ROSCO_sim
 from ROSCO_toolbox import utilities as ROSCO_utilities
 
 import numpy as np
@@ -41,7 +40,7 @@ class ServoSE(Group):
         self.add_subsystem('aep',               AEP(), promotes=['AEP'])
         if analysis_options['openfast']['run_openfast'] == True:
             self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-            self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power'])
+            self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         # Connections to the stall check
         self.connect('powercurve.aoa_cutin','stall_check.aoa_along_span')
 
@@ -128,6 +127,40 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('tsr_vector',        val=np.zeros(n_tsr),                                desc='TSR vector used')
         self.add_input('U_vector',          val=np.zeros(n_U),                  units='m/s',    desc='Wind speed vector used')
 
+        # For cc-blade & flaps tuning
+        self.n_span     = n_span       = self.analysis_options['blade']['n_span']
+        # self.n_af       = n_af         = af_init_options['n_af'] # Number of airfoils
+        self.n_aoa      = n_aoa        = self.analysis_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re       = n_Re         = self.analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab      = n_tab        = self.analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.add_input('r',         val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
+        self.add_input('chord',     val=np.zeros(n_span), units='m',   desc='chord length at each section')
+        self.add_input('theta',     val=np.zeros(n_span), units='deg', desc='twist angle at each section (positive decreases angle of attack)')
+        self.add_input('Rhub',      val=0.0,             units='m',   desc='hub radius')
+        self.add_input('Rtip',      val=0.0,             units='m',   desc='tip radius')
+        self.add_input('hub_height',val=0.0,             units='m',   desc='hub height')
+        self.add_input('precone',   val=0.0,             units='deg', desc='precone angle', )
+        self.add_input('tilt',      val=0.0,             units='deg', desc='shaft tilt', )
+        self.add_input('yaw',       val=0.0,             units='deg', desc='yaw error', )
+        self.add_input('precurve',      val=np.zeros(n_span),    units='m', desc='precurve at each section')
+        self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
+        self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
+        self.add_input('presweepTip',   val=0.0,                units='m', desc='presweep at tip')
+        self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
+        self.add_input('airfoils_Ctrl',     val=np.zeros((n_span, n_Re, n_tab)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
+        self.add_discrete_input('nBlades',         val=0,                              desc='number of blades')
+        self.add_input('mu',        val=1.81e-5,      units='kg/(m*s)',   desc='dynamic viscosity of air')
+        self.add_input('shearExp',  val=0.0,                            desc='shear exponent')
+        self.add_discrete_input('nSector',   val=4,                         desc='number of sectors to divide rotor face into in computing thrust and power')
+        self.add_discrete_input('tiploss',   val=True,                      desc='include Prandtl tip loss model')
+        self.add_discrete_input('hubloss',   val=True,                      desc='include Prandtl hub loss model')
+        self.add_discrete_input('wakerotation', val=True,                   desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
+        self.add_discrete_input('usecd',     val=True,                      desc='use drag coefficient in computing induction factors')
+
         # Controller Parameters
         self.add_input('PC_zeta',           val=0.0,                                            desc='Pitch controller damping ratio')
         self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
@@ -136,7 +169,7 @@ class TuneROSCO(ExplicitComponent):
         # self.add_input('Kp_flap',           val=0.0,        units='s',                          desc='Flap actuation gain') 
         # self.add_input('Ki_flap',           val=0.0,                                            desc='Flap actuation gain') 
 
-    def compute(self,inputs,outputs):
+    def compute(self,inputs,outputs, discrete_inputs, discrete_outputs):
         '''
         Call ROSCO toolbox to define controller
         '''
@@ -191,8 +224,45 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.Ct = RotorPerformance(self.Ct_table,self.pitch_vector,self.tsr_vector)
         WISDEM_turbine.Cq = RotorPerformance(self.Cq_table,self.pitch_vector,self.tsr_vector)
 
-        # initialize and tune controller
-        self.analysis_options['servose']['Flp_Mode'] = 0 # Don't do generic tuning for flaps right now
+        # Load blade info if flap controller needed
+        if self.analysis_options['servose']['Flp_Mode'] >= 1:
+            # Initialize CCBlade as cc_rotor object 
+            # Create Airfoil class instances
+            af = [None]*self.n_span
+            for i in range(self.n_span):
+                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
+        
+            WISDEM_turbine.cc_rotor = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
+
+            WISDEM_turbine.af_data = [[{}]*self.n_span for i in range(self.n_tab)]
+            for i in range(self.n_tab):
+                for j in range(self.n_span):
+                    WISDEM_turbine.af_data[i][j]['Ctrl']    = inputs['airfoils_Ctrl'][j,0,i]
+                    WISDEM_turbine.af_data[i][j]['Alpha']   = np.ndarray.tolist(inputs['airfoils_aoa'])
+                    WISDEM_turbine.af_data[i][j]['Cl']      = np.ndarray.tolist(inputs['airfoils_cl'][j,:,0,i])
+                    WISDEM_turbine.af_data[i][j]['Cd']      = np.ndarray.tolist(inputs['airfoils_cd'][j,:,0,i])
+                    WISDEM_turbine.af_data[i][j]['Cm']      = np.ndarray.tolist(inputs['airfoils_cm'][j,:,0,i])
+
+                    # Check number of flaps for each airfoil section
+                    if self.n_tab > 1:
+                        if inputs['airfoils_Ctrl'][j,0,0] == inputs['airfoils_Ctrl'][j,0,1]:
+                            n_tabs = 1  # If all Ctrl angles of the flaps are identical then no flaps
+                        else:
+                            n_tabs = self.n_tab
+                    else:
+                        n_tabs = 1
+                    
+                    WISDEM_turbine.af_data[i][j]['NumTabs'] = n_tabs
+
+            WISDEM_turbine.span = inputs['r'] 
+            WISDEM_turbine.chord = inputs['chord']
+            WISDEM_turbine.twist = inputs['theta']
+            # HARD CODING - NOT SURE HOW TO GET THIS (might be ok)
+            WISDEM_turbine.bld_flapwise_freq = inputs['flap_freq'][0]
+            WISDEM_turbine.bld_flapwise_damp = 0.477465
+
+
+        # self.analysis_options['servose']['Flp_Mode'] = 0 # Don't do generic tuning for flaps right now
         controller = ROSCO_controller.Controller(self.analysis_options['servose'])
         controller.tune_controller(WISDEM_turbine)
 
