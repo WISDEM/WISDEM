@@ -15,16 +15,16 @@ rotorse:
 
 openfast:
     run_openfast: True
-    Analysis_Level: 1
+    Analysis_Level: 2
     FAST_ver: OpenFAST
     dev_branch: True
-    FAST_exe: "openfast_dev"
-    FAST_directory: /Users/nabbas/Documents/TurbineModels/NREL_5MW/5MW_Land
-    FAST_InputFile: 5MW_Land.fst
-    path2dll: /Users/nabbas/Documents/TurbineModels/TurbineControllers/FortranControllers/ROSCO/build/libdiscon.dylib
-    Turbsim_exe: "turbsim_dev"
+    FAST_exe: "/Users/nabbas/openfast/install/bin/openfast_dev"
+    FAST_directory: "/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95"
+    FAST_InputFile: "RotorSE_FAST_BAR_2010n_noRe.fst"
+    path2dll: "/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/ROSCO/build/libdiscon_flaps.dylib"
+    Turbsim_exe: "/Users/nabbas/openfast/install/bin/turbsim_dev"
     FAST_namingOut: WISDEM_NREL5MW
-    FAST_runDirectory: temp/ + wt_initial.FAST_namingOut
+    FAST_runDirectory: temp_bar
     cores: 1
     debug_level: 2
     
@@ -47,7 +47,7 @@ servose:
     Y_ControlMode: 0 # Yaw control mode {0: no yaw control, 1: yaw rate control, 2: yaw-by-IPC}
     SS_Mode: 1 # Setpoint Smoother mode {0: no setpoint smoothing, 1: introduce setpoint smoothing}
     WE_Mode: 2 # Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}
-    PS_Mode: 1 # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
+    PS_Mode: 0 # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
     SD_Mode: 0 # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
     Fl_Mode: 0 # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}
-    Flp_mode: 0
+    Flp_Mode: 0
