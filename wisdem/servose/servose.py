@@ -133,8 +133,8 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
         self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
-        self.add_input('Kp_flap',           val=0.0,        units='s',                          desc='Flap actuation gain') 
-        self.add_input('Ki_flap',           val=0.0,                                            desc='Flap actuation gain') 
+        # self.add_input('Kp_flap',           val=0.0,        units='s',                          desc='Flap actuation gain') 
+        # self.add_input('Ki_flap',           val=0.0,                                            desc='Flap actuation gain') 
 
     def compute(self,inputs,outputs):
         '''
@@ -195,9 +195,6 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['servose']['Flp_Mode'] = 0 # Don't do generic tuning for flaps right now
         controller = ROSCO_controller.Controller(self.analysis_options['servose'])
         controller.tune_controller(WISDEM_turbine)
-        if controller.Flp_Mode == 0:
-            controller.Kp_flap = np.array([0.0]) # inputs['Kp_flap'][0]
-            controller.Ki_flap = np.array([0.0]) # inputs['Ki_flap'][0]
 
         # DISCON Parameters
         #   - controller
