@@ -145,7 +145,8 @@ class WT_RNTA(Group):
         self.connect('hub.cone',                    'sse.precone')
         self.connect('nacelle.uptilt',              'sse.tilt')
         self.connect('airfoils.aoa',                    'sse.airfoils_aoa')
-
+            
+        self.connect('xf.flap_angles',                  'sse.airfoils_Ctrl')
         self.connect('airfoils.Re',                     'sse.airfoils_Re')
         self.connect('blade.interp_airfoils.cl_interp', 'sse.airfoils_cl')
         self.connect('blade.interp_airfoils.cd_interp', 'sse.airfoils_cd')
