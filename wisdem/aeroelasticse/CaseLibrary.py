@@ -607,7 +607,8 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
 
     iec.dlc_inputs = {}
     iec.dlc_inputs['DLC'] = [1.1]
-    iec.dlc_inputs['U'] = [[U]]
+    # iec.dlc_inputs['U'] = [[U]]
+    iec.dlc_inputs['U'] = [[12]]
     # iec.dlc_inputs['Seeds'] = [[1]]
     iec.dlc_inputs['Seeds'] = [[13428]]  # nothing special about these seeds, randomly generated
     iec.dlc_inputs['Yaw'] = [[]]

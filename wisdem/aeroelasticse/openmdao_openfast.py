@@ -589,12 +589,10 @@ class FASTLoadCases(ExplicitComponent):
                                                                                               self.FAST_namingOut, TMax,
                                                                                               turbine_class,
                                                                                               turbulence_class,
-                                                                                              12, #inputs['Vrated'][0],  #
+                                                                                              inputs['Vrated'][0],  #
                                                                                               U_init=inputs['U_init'],
-                                                                                              Omega_init=inputs[
-                                                                                                  'Omega_init'],
-                                                                                              pitch_init=inputs[
-                                                                                                  'pitch_init'],
+                                                                                              Omega_init=inputs['Omega_init'],
+                                                                                              pitch_init=inputs['pitch_init'],
                                                                                               Turbsim_exe=self.Turbsim_exe,
                                                                                               debug_level=self.debug_level,
                                                                                               cores=self.cores,

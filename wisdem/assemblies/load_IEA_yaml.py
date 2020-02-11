@@ -9,6 +9,7 @@ from wisdem.commonse.utilities import arc_length
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, RotorSE_predef_wind, power_curve
 
+import scipy.interpolate.ndgriddata as gd
 
 def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
     # dimentional analysis that takes a rotation and offset from the pitch axis and calculates the airfoil intersection
@@ -134,8 +135,8 @@ class WindTurbineOntologyPython(object):
         
         # Blade
         self.analysis_options['blade']              = {}
-        self.analysis_options['blade']['n_span']    = self.analysis_options['rotorse']['n_span']
-        self.analysis_options['blade']['nd_span']   = np.linspace(0., 1., self.analysis_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
+        self.analysis_options['blade']['n_span'] = self.analysis_options['rotorse']['n_span']
+
         self.analysis_options['blade']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
         self.analysis_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
         self.analysis_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
@@ -925,6 +926,7 @@ class WT_Assembly(ExplicitComponent):
         n_span             = self.options['blade_init_options']['n_span']
 
         self.add_input('blade_ref_axis',        val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+
         self.add_input('hub_radius',            val=0.0, units='m',         desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
         self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed along its axis from tower base.')
         self.add_input('foundation_height',     val=0.0,    units='m',      desc='Scalar of the foundation height computed along its axis.')
@@ -1010,28 +1012,83 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     
 def assign_blade_values(wt_opt, analysis_options, blade):
     # Function to assign values to the openmdao group Blade
-    wt_opt = assign_outer_shape_bem_values(wt_opt, analysis_options, blade['outer_shape_bem'])
-    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, analysis_options, blade['internal_structure_2d_fem'])
     wt_opt = assign_te_flaps_values(wt_opt, analysis_options, blade)
+    wt_opt = assign_outer_shape_bem_values(wt_opt, analysis_options, blade) #['outer_shape_bem'])
+    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, analysis_options, blade['internal_structure_2d_fem'])
+
     
     return wt_opt
     
-def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
+def assign_outer_shape_bem_values(wt_opt, analysis_options, blade):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
     
-    nd_span     = analysis_options['blade']['nd_span']
-    
-    wt_opt['blade.outer_shape_bem.af_used']     = outer_shape_bem['airfoil_position']['labels']
-    wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
+    # nd_span     = analysis_options['blade']['nd_span']
+
+    nd_span = np.linspace(0., 1., analysis_options['blade']['n_span'])  # Equally spaced non-dimensional spanwise grid
+
+    # modify grid to airfoil radial stations
+    af_loc = blade['outer_shape_bem']['airfoil_position']['grid']
+    for afi in range(len(af_loc)):
+        idx_af_loc = np.where(np.abs(nd_span - af_loc[afi]) == (np.abs(nd_span - af_loc[afi])).min())
+        nd_span[idx_af_loc] = af_loc[afi]
+
+    flap_start = wt_opt['param.opt_var.te_flap_end'] - wt_opt['param.opt_var.te_flap_ext']
+    print(flap_start)
+    flap_end = wt_opt['param.opt_var.te_flap_end']
+    print(flap_end)
+
+    # modify grid at flap start and end position
+    if 'aerodynamic_control' in blade:
+        # flap start
+        idx_flap_start = np.where(np.abs(nd_span - flap_start) == (np.abs(nd_span - flap_start)).min())
+        nd_span[idx_flap_start] = flap_start
+        # flap end
+        idx_flap_end = np.where(np.abs(nd_span - flap_end) == (np.abs(nd_span - flap_end)).min())
+        nd_span[idx_flap_end] = flap_end
+
+
+    #
+    # self.analysis_options['blade']['nd_span'] = np.linspace(0., 1., self.analysis_options['blade']['n_span'])  # Equally spaced non-dimensional spanwise grid
+    #
+    # # modify grid to airfoil radial stations
+    # af_loc = self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']
+    # for afi in range(len(af_loc)):
+    #     idx_af_loc = np.where(np.abs(self.analysis_options['blade']['nd_span'] - af_loc[afi]) == (
+    #         np.abs(self.analysis_options['blade']['nd_span'] - af_loc[afi])).min())
+    #     self.analysis_options['blade']['nd_span'][idx_af_loc] = af_loc[afi]
+    #
+    # # modify grid at flap start and end position
+    # if 'aerodynamic_control' in self.wt_init['components']['blade']:
+    #     # flap start
+    #     idx_flap_start = np.where(np.abs(self.analysis_options['blade']['nd_span'] -
+    #                                      self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'][0][
+    #                                          'span_start']) ==
+    #                               (np.abs(self.analysis_options['blade']['nd_span'] -
+    #                                       self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'][0][
+    #                                           'span_start'])).min())
+    #     self.analysis_options['blade']['nd_span'][idx_flap_start] = \
+    #     self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'][0]['span_start']
+    #     # flap end
+    #     idx_flap_end = np.where(np.abs(self.analysis_options['blade']['nd_span'] -
+    #                                    self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'][0][
+    #                                        'span_end']) ==
+    #                             (np.abs(self.analysis_options['blade']['nd_span'] -
+    #                                     self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'][0][
+    #                                         'span_end'])).min())
+    #     self.analysis_options['blade']['nd_span'][idx_flap_end] = \
+    #     self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'][0]['span_end']
+
+    wt_opt['blade.outer_shape_bem.af_used']     = blade['outer_shape_bem']['airfoil_position']['labels']
+    wt_opt['blade.outer_shape_bem.af_position'] = blade['outer_shape_bem']['airfoil_position']['grid']
     
     wt_opt['blade.outer_shape_bem.s']           = nd_span
-    wt_opt['blade.outer_shape_bem.chord']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])
-    wt_opt['blade.outer_shape_bem.twist']       = np.interp(nd_span, outer_shape_bem['twist']['grid'], outer_shape_bem['twist']['values'])
-    wt_opt['blade.outer_shape_bem.pitch_axis']  = np.interp(nd_span, outer_shape_bem['pitch_axis']['grid'], outer_shape_bem['pitch_axis']['values'])
+    wt_opt['blade.outer_shape_bem.chord']       = np.interp(nd_span, blade['outer_shape_bem']['chord']['grid'], blade['outer_shape_bem']['chord']['values'])
+    wt_opt['blade.outer_shape_bem.twist']       = np.interp(nd_span, blade['outer_shape_bem']['twist']['grid'], blade['outer_shape_bem']['twist']['values'])
+    wt_opt['blade.outer_shape_bem.pitch_axis']  = np.interp(nd_span, blade['outer_shape_bem']['pitch_axis']['grid'], blade['outer_shape_bem']['pitch_axis']['values'])
     
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,0]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['x']['grid'], blade['outer_shape_bem']['reference_axis']['x']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,1]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['y']['grid'], blade['outer_shape_bem']['reference_axis']['y']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,2]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['z']['grid'], blade['outer_shape_bem']['reference_axis']['z']['values'])
     
     return wt_opt
     

@@ -383,5 +383,6 @@ class WindPark(Group):
         self.connect('sse.AEP',                    'outputs_2_screen.aep')
         self.connect('elastic.precomp.blade_mass', 'outputs_2_screen.blade_mass')
         self.connect('financese.lcoe',             'outputs_2_screen.lcoe')
+        self.connect('aeroelastic.My_std',         'outputs_2_screen.My_std')
 
 
