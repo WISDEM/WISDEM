@@ -12,8 +12,8 @@ class ParametrizeBladeAero(ExplicitComponent):
         blade_init_options = self.options['blade_init_options']
         opt_options        = self.options['opt_options']
         n_span             = blade_init_options['n_span']
-        self.n_opt_twist   = n_opt_twist = opt_options['optimization_variables']['twist']['n_opt']
-        self.n_opt_chord   = n_opt_chord = opt_options['optimization_variables']['chord']['n_opt']
+        self.n_opt_twist   = n_opt_twist = opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']
+        self.n_opt_chord   = n_opt_chord = opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']
         
         # Inputs
         self.add_input('s',               val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
@@ -54,8 +54,8 @@ class ParametrizeBladeStruct(ExplicitComponent):
         self.opt_options   = opt_options   = self.options['opt_options']
         self.n_span        = n_span        = blade_init_options['n_span']
         self.n_layers      = n_layers      = blade_init_options['n_layers']
-        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options['optimization_variables']['spar_cap_ss']['n_opt']
-        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options['optimization_variables']['spar_cap_ps']['n_opt']
+        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']
+        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']
 
         # Inputs
         self.add_input('s',                         val=np.zeros(n_span),       desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
@@ -73,8 +73,8 @@ class ParametrizeBladeStruct(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
-        spar_cap_ss_name = self.opt_options['optimization_variables']['spar_cap_ss']['name']
-        spar_cap_ps_name = self.opt_options['optimization_variables']['spar_cap_ps']['name']
+        spar_cap_ss_name = self.opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
+        spar_cap_ps_name = self.opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
         for i in range(self.n_layers):
             if discrete_inputs['layer_name'][i] == spar_cap_ss_name:

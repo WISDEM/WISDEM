@@ -27,10 +27,10 @@ class RunPreComp(ExplicitComponent):
         self.verbosity     = self.options['analysis_options']['general']['verbosity']
 
         opt_options   = self.options['opt_options']
-        self.te_ss_var   = opt_options['optimization_variables']['te_ss']['name']
-        self.te_ps_var   = opt_options['optimization_variables']['te_ps']['name']
-        self.spar_cap_ss_var = opt_options['optimization_variables']['spar_cap_ss']['name']
-        self.spar_cap_ps_var = opt_options['optimization_variables']['spar_cap_ps']['name']
+        self.te_ss_var   = opt_options['optimization_variables']['blade']['structure']['te_ss']['name']
+        self.te_ps_var   = opt_options['optimization_variables']['blade']['structure']['te_ps']['name']
+        self.spar_cap_ss_var = opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
+        self.spar_cap_ps_var = opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
         # Outer geometry
         self.add_input('r',             val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
