@@ -695,7 +695,10 @@ control:
     PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
     VS_zeta: 0.7                      # Torque controller desired damping ratio [-]
     VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
-    # 
+    # Only needed if Flp_Mode > 0
+    Flp_zeta: 0.5                     # Flap controller desired damping ratio [-]
+    Flp_omega: 0.1                    # Flap controller desired natural frequency [rad/s]
+    #
     max_pitch: 90                     # Maximum pitch angle [rad], {default = 90 degrees}
     min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
     vs_minspd: 0                      # Minimum rotor speed [rad/s], {default = 0 rad/s}
