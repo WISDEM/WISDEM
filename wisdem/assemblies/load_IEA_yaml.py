@@ -1329,7 +1329,7 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.PC_zeta']       = control['PC_zeta']
     wt_opt['control.VS_omega']      = control['VS_omega']
     wt_opt['control.VS_zeta']       = control['VS_zeta']
-    if analysis_options['servose']['Flp_Mode']:
+    if analysis_options['servose']['Flp_Mode'] > 0:
         wt_opt['control.VS_omega']      = control['Flp_omega']
         wt_opt['control.VS_zeta']       = control['Flp_zeta']
     # # other optional parameters

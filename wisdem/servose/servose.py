@@ -166,7 +166,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
         self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
-        if self.analysis_options['servose']['Flp_Mode']:
+        if self.analysis_options['servose']['Flp_Mode'] > 0:
             self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
 
@@ -181,9 +181,12 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['servose']['zeta_pc']     = inputs['PC_zeta']
         self.analysis_options['servose']['omega_vs']    = inputs['VS_omega']
         self.analysis_options['servose']['zeta_vs']     = inputs['VS_zeta']
-        if self.analysis_options['servose']['Flp_Mode']:
-            self.analysis_options['servose']['omega_flp']    = inputs['Flp_omega']
-            self.analysis_options['servose']['zeta_flp']     = inputs['Flp_zeta']
+        if self.analysis_options['servose']['Flp_Mode'] > 0:
+            self.analysis_options['servose']['omega_flp'] = inputs['Flp_omega']
+            self.analysis_options['servose']['zeta_flp']  = inputs['Flp_zeta']
+        else:
+            self.analysis_options['servose']['omega_flp'] = 0.0
+            self.analysis_options['servose']['zeta_flp']  = 0.0
         #
         self.analysis_options['servose']['max_pitch']   = inputs['max_pitch'][0]
         self.analysis_options['servose']['min_pitch']   = inputs['min_pitch'][0]
