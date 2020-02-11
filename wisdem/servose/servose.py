@@ -222,36 +222,37 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.Ct   = RotorPerformance(self.Ct_table,self.pitch_vector,self.tsr_vector)
         WISDEM_turbine.Cq   = RotorPerformance(self.Cq_table,self.pitch_vector,self.tsr_vector)
 
-        # Load blade info if flap controller needed
+        # Load blade info to pass to flap controller tuning process
         if self.analysis_options['servose']['Flp_Mode'] >= 1:
-            # Initialize CCBlade as cc_rotor object 
-            # Create Airfoil class instances
+            # Create airfoils
             af = [None]*self.n_span
             for i in range(self.n_span):
                 af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
-        
+            # Initialize CCBlade as cc_rotor object 
             WISDEM_turbine.cc_rotor = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
-
-            WISDEM_turbine.af_data = [[{}]*self.n_span for i in range(self.n_tab)]
-            for i in range(self.n_tab):
-                for j in range(self.n_span):
-                    WISDEM_turbine.af_data[i][j]['Ctrl']    = inputs['airfoils_Ctrl'][j,0,i]
-                    WISDEM_turbine.af_data[i][j]['Alpha']   = np.ndarray.tolist(inputs['airfoils_aoa'])
-                    WISDEM_turbine.af_data[i][j]['Cl']      = np.ndarray.tolist(inputs['airfoils_cl'][j,:,0,i])
-                    WISDEM_turbine.af_data[i][j]['Cd']      = np.ndarray.tolist(inputs['airfoils_cd'][j,:,0,i])
-                    WISDEM_turbine.af_data[i][j]['Cm']      = np.ndarray.tolist(inputs['airfoils_cm'][j,:,0,i])
-
-                    # Check number of flaps for each airfoil section
-                    if self.n_tab > 1:
-                        if inputs['airfoils_Ctrl'][j,0,0] == inputs['airfoils_Ctrl'][j,0,1]:
-                            n_tabs = 1  # If all Ctrl angles of the flaps are identical then no flaps
-                        else:
-                            n_tabs = self.n_tab
+        
+            # Load aerodynamic performance data for blades
+            WISDEM_turbine.af_data = [{} for i in range(self.n_span)]
+            for i in range(self.n_span):
+                # Check number of flap positions for each airfoil section
+                if self.n_tab > 1:
+                    if inputs['airfoils_Ctrl'][i,0,0] == inputs['airfoils_Ctrl'][i,0,1]:
+                        n_tabs = 1  # If all Ctrl angles of the flaps are identical then no flaps
                     else:
-                        n_tabs = 1
-                    
+                        n_tabs = self.n_tab
+                else:
+                    n_tabs = 1
+                # Save data for each flap position
+                for j in range(n_tabs):
+                    WISDEM_turbine.af_data[i][j] = {}
                     WISDEM_turbine.af_data[i][j]['NumTabs'] = n_tabs
-
+                    WISDEM_turbine.af_data[i][j]['Ctrl']    = inputs['airfoils_Ctrl'][i,0,j]
+                    WISDEM_turbine.af_data[i][j]['Alpha']   = np.array(inputs['airfoils_aoa']).flatten().tolist()
+                    WISDEM_turbine.af_data[i][j]['Cl']      = np.array(inputs['airfoils_cl'][i,:,0,j]).flatten().tolist()
+                    WISDEM_turbine.af_data[i][j]['Cd']      = np.array(inputs['airfoils_cd'][i,:,0,j]).flatten().tolist()
+                    WISDEM_turbine.af_data[i][j]['Cm']      = np.array(inputs['airfoils_cm'][i,:,0,j]).flatten().tolist()
+   
+            # Save some more airfoil info
             WISDEM_turbine.span     = inputs['r'] 
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
