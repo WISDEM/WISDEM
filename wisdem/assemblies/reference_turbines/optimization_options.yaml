@@ -36,7 +36,17 @@ optimization_variables:
         n_opt: 8
         min_gain: 0.2 # non-dimensional
         max_gain: 2.0 # non-dimensional
-
+    dac:
+      te_flap_ext:
+        flag: False
+        #flap_ext: 0.1
+        min_ext: 0.0
+        max_ext: 0.3
+      te_flap_end:
+        flag: True
+        #flap_end: 0.8
+        min_end: 0.3
+        max_end: 1.0
 
 merit_figure: LCOE # 'AEP' - 'LCOE'
 
