@@ -6,7 +6,7 @@ yaml:
     path2schema: wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml
 
 xfoil:
-    path       : /Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil
+    path       : "wine /Users/nabbas/Documents/WindEnergyToolbox/XFOIL_exe/xfoil.exe"
 
 rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
@@ -15,7 +15,7 @@ rotorse:
 
 openfast:
     run_openfast: True
-    Analysis_Level: 2
+    Analysis_Level: 1
     FAST_ver: OpenFAST
     dev_branch: True
     FAST_exe: "/Users/nabbas/openfast/install/bin/openfast_dev"
@@ -51,4 +51,4 @@ servose:
     PS_Mode: 0 # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
     SD_Mode: 0 # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
     Fl_Mode: 0 # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}
-    Flp_Mode: 0
+    Flp_Mode: 2
