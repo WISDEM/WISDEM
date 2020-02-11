@@ -6,7 +6,7 @@ yaml:
     path2schema: wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml
 
 xfoil:
-    path       : /Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil
+    path       : "wine /Users/nabbas/Documents/WindEnergyToolbox/XFOIL_exe/xfoil.exe"
 
 rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
@@ -15,7 +15,7 @@ rotorse:
 
 openfast:
     run_openfast: True
-    Analysis_Level: 2
+    Analysis_Level: 1
     FAST_ver: OpenFAST
     dev_branch: True
     FAST_exe: "/Users/nabbas/openfast/install/bin/openfast_dev"
@@ -39,16 +39,16 @@ servose:
     max_tsr_perf_surfaces: 12.      # Max TSR of the Cp-Ct-Cq-surfaces
     n_U_perf_surfaces: 1            # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
     regulation_reg_III: False       # Flag to derive the regulation trajectory in region III in terms of pitch and TSR
-    LoggingLevel: 1 # {0: write no debug files, 1: write standard output .dbg-file, 2: write standard output .dbg-file and complete avrSWAP-array .dbg2-file
-    F_LPFType: 1 # {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals)
-    F_NotchType: 0 # Notch filter on generator speed and/or tower fore-aft motion (for floating) {0: disable, 1: generator speed, 2: tower-top fore-aft motion, 3: generator speed and tower-top fore-aft motion}
-    IPC_ControlMode: 0 # Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0: off, 1: 1P reductions, 2: 1P+2P reductions}
-    VS_ControlMode: 2 # Generator torque control mode in above rated conditions {0: constant torque, 1: constant power, 2: TSR tracking PI control}
-    PC_ControlMode: 1 # Blade pitch control mode {0: No pitch, fix to fine pitch, 1: active PI blade pitch control}
-    Y_ControlMode: 0 # Yaw control mode {0: no yaw control, 1: yaw rate control, 2: yaw-by-IPC}
-    SS_Mode: 1 # Setpoint Smoother mode {0: no setpoint smoothing, 1: introduce setpoint smoothing}
-    WE_Mode: 2 # Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}
-    PS_Mode: 0 # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
-    SD_Mode: 0 # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
-    Fl_Mode: 0 # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}
-    Flp_Mode: 0
+    LoggingLevel: 1                 # {0: write no debug files, 1: write standard output .dbg-file, 2: write standard output .dbg-file and complete avrSWAP-array .dbg2-file
+    F_LPFType: 1                    # {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals)
+    F_NotchType: 0                  # Notch filter on generator speed and/or tower fore-aft motion (for floating) {0: disable, 1: generator speed, 2: tower-top fore-aft motion, 3: generator speed and tower-top fore-aft motion}
+    IPC_ControlMode: 0              # Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0: off, 1: 1P reductions, 2: 1P+2P reductions}
+    VS_ControlMode: 2               # Generator torque control mode in above rated conditions {0: constant torque, 1: constant power, 2: TSR tracking PI control}
+    PC_ControlMode: 1               # Blade pitch control mode {0: No pitch, fix to fine pitch, 1: active PI blade pitch control}
+    Y_ControlMode: 0                # Yaw control mode {0: no yaw control, 1: yaw rate control, 2: yaw-by-IPC}
+    SS_Mode: 1                      # Setpoint Smoother mode {0: no setpoint smoothing, 1: introduce setpoint smoothing}
+    WE_Mode: 2                      # Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}
+    PS_Mode: 0                      # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
+    SD_Mode: 0                      # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
+    Fl_Mode: 0                      # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}
+    Flp_Mode: 2                     # Flap control mode {0: no flap control, 1: steady state flap angle, 2: Proportional flap control}
