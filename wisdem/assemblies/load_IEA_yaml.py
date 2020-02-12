@@ -860,20 +860,22 @@ class Control(ExplicitComponent):
     # Openmdao component with the wind turbine controller data coming from the input yaml file.
     def setup(self):
 
-        self.add_output('rated_power',      val=0.0, units='W',           desc='Electrical rated power of the generator.')
-        self.add_output('V_in',             val=0.0, units='m/s',         desc='Cut in wind speed. This is the wind speed where region II begins.')
-        self.add_output('V_out',            val=0.0, units='m/s',         desc='Cut out wind speed. This is the wind speed where region III ends.')
-        self.add_output('minOmega',         val=0.0, units='rad/s',        desc='Minimum allowed rotor speed.')
-        self.add_output('maxOmega',         val=0.0, units='rad/s',        desc='Maximum allowed rotor speed.')
-        self.add_output('max_TS',           val=0.0, units='m/s',         desc='Maximum allowed blade tip speed.')
-        self.add_output('max_pitch_rate',   val=0.0, units='rad/s',        desc='Maximum allowed blade pitch rate')
-        self.add_output('max_torque_rate',  val=0.0, units='N*m/s',       desc='Maximum allowed generator torque rate')
-        self.add_output('rated_TSR',        val=0.0,                      desc='Constant tip speed ratio in region II.')
-        self.add_output('rated_pitch',      val=0.0, units='rad',         desc='Constant pitch angle in region II.')
-        self.add_output('PC_omega',         val=0.0, units='rad/s',       desc='Pitch controller natural frequency')
-        self.add_output('PC_zeta',          val=0.0,                      desc='Pitch controller damping ratio')
-        self.add_output('VS_omega',         val=0.0, units='rad/s',       desc='Generator torque controller natural frequency')
-        self.add_output('VS_zeta',          val=0.0,                      desc='Generator torque controller damping ratio')
+        self.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
+        self.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
+        self.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
+        self.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
+        self.add_output('maxOmega',         val=0.0, units='rad/s',     desc='Maximum allowed rotor speed.')
+        self.add_output('max_TS',           val=0.0, units='m/s',       desc='Maximum allowed blade tip speed.')
+        self.add_output('max_pitch_rate',   val=0.0, units='rad/s',     desc='Maximum allowed blade pitch rate')
+        self.add_output('max_torque_rate',  val=0.0, units='N*m/s',     desc='Maximum allowed generator torque rate')
+        self.add_output('rated_TSR',        val=0.0,                    desc='Constant tip speed ratio in region II.')
+        self.add_output('rated_pitch',      val=0.0, units='rad',       desc='Constant pitch angle in region II.')
+        self.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
+        self.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
+        self.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
+        self.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
+        self.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
+        self.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
         # optional inputs - not connected right now!!
         self.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
         self.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
@@ -1327,6 +1329,9 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.PC_zeta']       = control['PC_zeta']
     wt_opt['control.VS_omega']      = control['VS_omega']
     wt_opt['control.VS_zeta']       = control['VS_zeta']
+    if analysis_options['servose']['Flp_Mode'] > 0:
+        wt_opt['control.VS_omega']      = control['Flp_omega']
+        wt_opt['control.VS_zeta']       = control['Flp_zeta']
     # # other optional parameters
     wt_opt['control.max_pitch']     = control['max_pitch']
     wt_opt['control.min_pitch']     = control['min_pitch']
@@ -1334,11 +1339,12 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.ss_vsgain']     = control['ss_vsgain']
     wt_opt['control.ss_pcgain']     = control['ss_pcgain']
     wt_opt['control.ps_percent']    = control['ps_percent']
-    if analysis_options['servose']['Flp_Mode'] >= 1:
-        wt_opt['control.Kp_flap']       = control['Kp_flap']
-        wt_opt['control.Ki_flap']       = control['Ki_flap']
-    
-    
+    # Check for proper Flp_Mode, print warning
+    if analysis_options['airfoils']['n_tab'] > 1 and analysis_options['servose']['Flp_Mode'] == 0:
+            print('WARNING: servose.Flp_Mode should be >= 1 for aerodynamic control.')
+    if analysis_options['airfoils']['n_tab'] == 1 and analysis_options['servose']['Flp_Mode'] > 0:
+            print('WARNING: servose.Flp_Mode should be = 0 for no aerodynamic control.')
+            
     return wt_opt
 
 def assign_configuration_values(wt_opt, assembly):
