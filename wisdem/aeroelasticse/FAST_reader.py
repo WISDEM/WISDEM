@@ -1527,8 +1527,8 @@ class InputReader_OpenFAST(InputReader_Common):
             f.readline()
             f.readline()
             self.fst_vt['DISCON_in']['Flp_Angle']     = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Flp_Kp']        = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Flp_Ki']        = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Kp']        = np.array([float_read(f.readline().split()[0])])
+            self.fst_vt['DISCON_in']['Flp_Ki']        = np.array([float_read(f.readline().split()[0])])
 
             # if Fl_Mode:
             #     # FLOATING
