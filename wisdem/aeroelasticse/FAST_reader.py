@@ -666,14 +666,12 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['ElastoDyn']['TwrGagNd'] = twrg
             self.fst_vt['ElastoDyn']['TwrGagNd'][-1]  = self.fst_vt['ElastoDyn']['TwrGagNd'][-1][:-1]
         self.fst_vt['ElastoDyn']['NBlGages'] = int(f.readline().split()[0])
-        blg = f.readline().split(',')
         if self.fst_vt['ElastoDyn']['NBlGages'] != 0:
-            for i in range(self.fst_vt['ElastoDyn']['NBlGages']):
-                self.fst_vt['ElastoDyn']['BldGagNd'].append(blg[i])
-            self.fst_vt['ElastoDyn']['BldGagNd'][-1]  = self.fst_vt['ElastoDyn']['BldGagNd'][-1][:-1]
+            self.fst_vt['ElastoDyn']['BldGagNd'] = f.readline().strip().split()[:self.fst_vt['ElastoDyn']['NBlGages']]
+            for i, bldgag in enumerate(self.fst_vt['ElastoDyn']['BldGagNd']):
+                self.fst_vt['ElastoDyn']['BldGagNd'][i] = int(bldgag.strip(','))
         else:
-            self.fst_vt['ElastoDyn']['BldGagNd'] = blg
-            self.fst_vt['ElastoDyn']['BldGagNd'][-1]  = self.fst_vt['ElastoDyn']['BldGagNd'][-1][:-1]
+            self.fst_vt['ElastoDyn']['BldGagNd'] = 0
 
         # Loop through output channel lines
         f.readline()
