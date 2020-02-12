@@ -55,10 +55,10 @@ class WT_RNTA(Group):
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
         
         # Connections from input yaml to parametrization
-        self.connect('blade.re_interp_bem.s',        ['param.pa.s', 'xf.s'])
+        self.connect('blade.outer_shape_bem.s',        ['param.pa.s', 'xf.s'])
         self.connect('blade.outer_shape_bem.s',        'param.ps.s')        # keep the s coordinate for the structural components at the ref definition, e.g. linspace
-        self.connect('blade.re_interp_bem.twist', 'param.pa.twist_original')
-        self.connect('blade.re_interp_bem.chord', 'param.pa.chord_original')
+        self.connect('blade.outer_shape_bem.twist', 'param.pa.twist_original')
+        self.connect('blade.outer_shape_bem.chord', 'param.pa.chord_original')
         self.connect('blade.internal_structure_2d_fem.layer_name',      'param.ps.layer_name')
         self.connect('blade.internal_structure_2d_fem.layer_thickness', 'param.ps.layer_thickness_original')
 
@@ -114,8 +114,8 @@ class WT_RNTA(Group):
         self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.aeroloads_pitch'])
         
         # Connections to Update blade grid (s-coordinate)
-        self.connect('opt_var_flap.te_flap_end',             'blade.re_interp_bem.span_end')
-        self.connect('opt_var_flap.te_flap_ext',             'blade.re_interp_bem.span_ext')
+        # self.connect('opt_var_flap.te_flap_end',             'blade.re_interp_bem.span_end')
+        # self.connect('opt_var_flap.te_flap_ext',             'blade.re_interp_bem.span_ext')
         
         # Connections to run xfoil for te flaps
         self.connect('blade.interp_airfoils.coord_xy_interp', 'xf.coord_xy_interp')
@@ -161,7 +161,7 @@ class WT_RNTA(Group):
         self.connect('xf.cd_interp_flaps',          'sse.airfoils_cd')
         self.connect('xf.cm_interp_flaps',          'sse.airfoils_cm')
         self.connect('configuration.n_blades',      'sse.nBlades')
-        self.connect('blade.re_interp_bem.s',       'sse.stall_check.s')
+        self.connect('blade.outer_shape_bem.s',       'sse.stall_check.s')
         self.connect('env.rho_air',                 'sse.rho')
         self.connect('env.mu_air',                  'sse.mu')
         self.connect('env.weibull_k',               'sse.cdf.k')
@@ -278,10 +278,10 @@ class WT_RNTA(Group):
         
         # Connections to aeroelasticse
         if analysis_options['openfast']['run_openfast'] == True:
-            self.connect('blade.re_interp_bem.ref_axis',  'aeroelastic.ref_axis_blade')
+            self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
             self.connect('assembly.r_blade',                'aeroelastic.r')
-            self.connect('blade.re_interp_bem.pitch_axis','aeroelastic.le_location')
+            self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
             self.connect('param.pa.chord_param',            'aeroelastic.chord')
             self.connect('param.pa.twist_param',            'aeroelastic.theta')
             self.connect('blade.interp_airfoils.coord_xy_interp', 'aeroelastic.coord_xy_interp')
@@ -335,7 +335,7 @@ class WT_RNTA(Group):
         self.connect('configuration.rotor_orientation', 'tcons.rotor_orientation')
         self.connect('rlds.tip_pos.tip_deflection',     'tcons.tip_deflection')
         self.connect('assembly.rotor_radius',           'tcons.Rtip')
-        self.connect('blade.re_interp_bem.ref_axis',  'tcons.ref_axis_blade')
+        self.connect('blade.outer_shape_bem.ref_axis',  'tcons.ref_axis_blade')
         self.connect('hub.cone',                        'tcons.precone')
         self.connect('nacelle.uptilt',                  'tcons.tilt')
         self.connect('nacelle.overhang',                'tcons.overhang')

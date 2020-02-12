@@ -304,7 +304,7 @@ class Blade(Group):
         self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
 
         # Re-interpolate outer shape BEM
-        self.add_subsystem('re_interp_bem', Re_Interp_BEM(blade_init_options = blade_init_options))
+        # self.add_subsystem('re_interp_bem', Re_Interp_BEM(blade_init_options = blade_init_options))
 
 
         # Interpolate airfoil profiles and coordinates
@@ -312,17 +312,17 @@ class Blade(Group):
 
 
         # Connections from outer_shape_bem to re_interp_bem
-        self.connect('outer_shape_bem.s',           're_interp_bem.s_')
-        self.connect('outer_shape_bem.chord',       're_interp_bem.chord_')
-        self.connect('outer_shape_bem.pitch_axis',  're_interp_bem.pitch_axis_')
-        # self.connect('outer_shape_bem.af_used',     're_interp_bem.af_used_')
-        # self.connect('outer_shape_bem.af_position', 're_interp_bem.af_position_')
-        self.connect('outer_shape_bem.ref_axis', 're_interp_bem.ref_axis_')
+        # self.connect('outer_shape_bem.s',           're_interp_bem.s_')
+        # self.connect('outer_shape_bem.chord',       're_interp_bem.chord_')
+        # self.connect('outer_shape_bem.pitch_axis',  're_interp_bem.pitch_axis_')
+        # # self.connect('outer_shape_bem.af_used',     're_interp_bem.af_used_')
+        # # self.connect('outer_shape_bem.af_position', 're_interp_bem.af_position_')
+        # self.connect('outer_shape_bem.ref_axis', 're_interp_bem.ref_axis_')
 
         # Connections from outer_shape_bem to interp_airfoils
-        self.connect('re_interp_bem.s',           'interp_airfoils.s')
-        self.connect('re_interp_bem.chord',       'interp_airfoils.chord')
-        self.connect('re_interp_bem.pitch_axis',  'interp_airfoils.pitch_axis')
+        self.connect('outer_shape_bem.s',           'interp_airfoils.s')
+        self.connect('outer_shape_bem.chord',       'interp_airfoils.chord')
+        self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils.pitch_axis')
         self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')  # <<<
         self.connect('outer_shape_bem.af_position', 'interp_airfoils.af_position')  # <<<
         
@@ -330,13 +330,13 @@ class Blade(Group):
         if blade_init_options['lofted_output'] == True:
             self.add_subsystem('blade_lofted',    Blade_Lofted_Shape(blade_init_options = blade_init_options, af_init_options = af_init_options))
             self.connect('interp_airfoils.coord_xy_dim',    'blade_lofted.coord_xy_dim')
-            self.connect('re_interp_bem.twist',           'blade_lofted.twist')
-            self.connect('re_interp_bem.s',               'blade_lofted.s')
-            self.connect('re_interp_bem.ref_axis',        'blade_lofted.ref_axis')
+            self.connect('outer_shape_bem.twist',           'blade_lofted.twist')
+            self.connect('outer_shape_bem.s',               'blade_lofted.s')
+            self.connect('outer_shape_bem.ref_axis',        'blade_lofted.ref_axis')
         
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
-        # self.connect('re_interp_bem.twist',           'internal_structure_2d_fem.twist')
+        # self.connect('outer_shape_bem.twist',           'internal_structure_2d_fem.twist')
         self.connect('outer_shape_bem.twist',           'internal_structure_2d_fem.twist')
         self.connect('interp_airfoils.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
 
@@ -1080,7 +1080,7 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
         self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
 
-        self.connect('blade.re_interp_bem.ref_axis',  'assembly.blade_ref_axis')
+        self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
         self.connect('hub.radius',                      'assembly.hub_radius')
         self.connect('tower.height',                    'assembly.tower_height')
         self.connect('foundation.height',               'assembly.foundation_height')
