@@ -65,7 +65,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
         # NEW optimization objective for DAC design analysis
         elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization
-            wt_opt.model.add_objective('aeroelastic.My_std', scaler = 1.e1)
+            wt_opt.model.add_objective('aeroelastic.My_std', scaler = 1.e-8)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
         
@@ -84,9 +84,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_design_var('param.opt_var.spar_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
         if 'dac' in opt_options['optimization_variables']['blade'].keys():
             if opt_options['optimization_variables']['blade']['dac']['te_flap_end']['flag'] == True:
-                wt_opt.model.add_design_var('param.opt_var.te_flap_end', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['min_end'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['max_end'])
+                wt_opt.model.add_design_var('opt_var_flap.te_flap_end', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['min_end'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['max_end'])
             if opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['flag'] == True:
-                wt_opt.model.add_design_var('param.opt_var.te_flap_ext', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['min_ext'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['max_ext'])
+                wt_opt.model.add_design_var('opt_var_flap.te_flap_ext', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['min_ext'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['max_ext'])
         
 
         # Set non-linear constraints
@@ -101,7 +101,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
         wt_opt.driver.recording_options['record_desvars']     = True
-    
+
+
     # Setup openmdao problem
     wt_opt.setup()
     

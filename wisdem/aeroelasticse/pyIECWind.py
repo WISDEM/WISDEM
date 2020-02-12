@@ -442,8 +442,8 @@ class pyIECWind_turb():
         turbsim_vt.tmspecs.HubHt              = self.z_hub
         turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.05)
         turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.05)
-        turbsim_vt.tmspecs.NumGrid_Z          = 31
-        turbsim_vt.tmspecs.NumGrid_Y          = 31
+        turbsim_vt.tmspecs.NumGrid_Z          = 21
+        turbsim_vt.tmspecs.NumGrid_Y          = 21
         turbsim_vt.tmspecs.HFlowAng           = 0.0
         turbsim_vt.tmspecs.VFlowAng           = 0.0
         turbsim_vt.metboundconds.TurbModel    = '"IECKAI"'

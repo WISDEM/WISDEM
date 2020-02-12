@@ -1406,7 +1406,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['PS_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['SD_Mode']           = int_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['Fl_Mode']           = int_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Flp_Mode']          = int_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Mode']           = int_read(f.readline().split()[0])
             f.readline()
             f.readline()
 
@@ -1416,8 +1416,8 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['F_NotchCornerFreq'] = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['F_NotchBetaNumDen'] = [float(idx.strip()) for idx in f.readline().strip().split('F_NotchBetaNumDen')[0].split() if idx.strip() != '!']
             self.fst_vt['DISCON_in']['F_SSCornerFreq']    = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['F_FlCornerFreq']    = [float(idx.strip()) for idx in f.readline().strip().split('F_FlCornerFreq')[0].split() if idx.strip() != '!']
-            self.fst_vt['DISCON_in']['F_FlpCornerFreq']   = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_FlCornerFreq']  = [float(idx.strip()) for idx in f.readline().strip().split('F_FlCornerFreq')[0].split() if idx.strip() != '!']
+            self.fst_vt['DISCON_in']['F_FlpCornerFreq'] = [float(idx.strip()) for idx in f.readline().strip().split('F_FlpCornerFreq')[0].split() if idx.strip() != '!']
             f.readline()
             f.readline()
 

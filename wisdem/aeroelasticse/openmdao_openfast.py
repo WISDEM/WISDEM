@@ -699,7 +699,7 @@ class FASTLoadCases(ExplicitComponent):
             blade_root_bending_moment_max = np.argmax(root_bending_moment_max)
 
             # output moments in Nm
-            outputs['root_bending_moment'] = root_bending_moment_max[blade_root_bending_moment_max]
+            outputs['root_bending_moment'] = root_bending_moment_max[blade_root_bending_moment_max]*1.e3
             idx = root_bending_moment_idxmax[blade_root_bending_moment_max]
             if blade_root_bending_moment_max == 0:
                 outputs['Mxyz'] = np.array([data['RootMxc1'][idx_s+idx]*1.e3, data['RootMyc1'][idx_s+idx]*1.e3, data['RootMzc1'][idx_s+idx]*1.e3])

@@ -119,7 +119,6 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
 
 
         # Error handling (re-run simulations with more panels if there is not enough data in polars)
-        # if flap_polar.size < 3: # This case is if there are convergence issues at the lowest angles of attack
         if np.size(flap_polar) < 3: # This case is if there are convergence issues at the lowest angles of attack
             plen = 0
             a0 = 0

@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.interpolate import PchipInterpolator
 from openmdao.api import ExplicitComponent, Group
-from wisdem.ccblade.ccblade_component import CCBladeLoads
+from wisdem.ccblade.ccblade_component import CCBladeLoads, AeroHubLoads
 import wisdem.ccblade._bem as _bem
 from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.commonse.akima import Akima
@@ -468,6 +468,7 @@ class RotorLoadsDeflStrains(Group):
         promoteListpBeam = ['r','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te']
         self.add_subsystem('pbeam',     RunpBEAM(analysis_options = analysis_options),      promotes=promoteListpBeam)
         self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
+        self.add_subsystem('aero_hub_loads', AeroHubLoads(analysis_options = analysis_options), promotes = promoteListAeroLoads)
         self.add_subsystem('constr',    DesignConstraints(analysis_options = analysis_options, opt_options = opt_options))
 
         # Aero loads to total loads

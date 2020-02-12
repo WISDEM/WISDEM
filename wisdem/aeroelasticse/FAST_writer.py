@@ -1240,84 +1240,103 @@ class InputWriter_OpenFAST(InputWriter_Common):
         # Fill controller and turbine objects for ROSCO tuning
         # - controller
         controller = type('', (), {})()
-        controller.pc_gain_schedule = type('', (), {})()
-        controller.vs_gain_schedule = type('', (), {})()
-        controller.LoggingLevel = self.fst_vt['DISCON_in']['LoggingLevel']
-        controller.F_LPFType = self.fst_vt['DISCON_in']['F_LPFType']
-        controller.F_NotchType = self.fst_vt['DISCON_in']['F_NotchType']
-        controller.IPC_ControlMode = self.fst_vt['DISCON_in']['IPC_ControlMode']
-        controller.VS_ControlMode = self.fst_vt['DISCON_in']['VS_ControlMode']
-        controller.PC_ControlMode = self.fst_vt['DISCON_in']['PC_ControlMode']
-        controller.Y_ControlMode = self.fst_vt['DISCON_in']['Y_ControlMode']
-        controller.SS_Mode = self.fst_vt['DISCON_in']['SS_Mode']
-        controller.WE_Mode = self.fst_vt['DISCON_in']['WE_Mode']
-        controller.PS_Mode = self.fst_vt['DISCON_in']['PS_Mode']
-        controller.SD_Mode = self.fst_vt['DISCON_in']['SD_Mode']
-        controller.Fl_Mode = self.fst_vt['DISCON_in']['Fl_Mode']
-        controller.Flp_Mode = self.fst_vt['DISCON_in']['Flp_Mode']
-        controller.F_LPFDamping = self.fst_vt['DISCON_in']['F_LPFDamping']
-        controller.ss_cornerfreq = self.fst_vt['DISCON_in']['F_SSCornerFreq']
-        controller.pitch_op_pc = self.fst_vt['DISCON_in']['PC_GS_angles']
-        controller.pc_gain_schedule.Kp = self.fst_vt['DISCON_in']['PC_GS_KP']
-        controller.pc_gain_schedule.Ki = self.fst_vt['DISCON_in']['PC_GS_KI']
-        controller.max_pitch = self.fst_vt['DISCON_in']['PC_MaxPit']
-        controller.min_pitch = self.fst_vt['DISCON_in']['PC_MinPit']
-        controller.vs_minspd = self.fst_vt['DISCON_in']['VS_MinOMSpd']
-        controller.vs_rgn2K = self.fst_vt['DISCON_in']['VS_Rgn2K']
-        controller.vs_refspd = self.fst_vt['DISCON_in']['VS_RefSpd']
-        controller.vs_gain_schedule.Kp = self.fst_vt['DISCON_in']['VS_KP']
-        controller.vs_gain_schedule.Ki = self.fst_vt['DISCON_in']['VS_KI']
-        controller.TSR_operational = self.fst_vt['DISCON_in']['VS_TSRopt']
-        controller.ss_vsgain = self.fst_vt['DISCON_in']['SS_VSGain']
-        controller.ss_pcgain = self.fst_vt['DISCON_in']['SS_PCGain']
-        controller.v = self.fst_vt['DISCON_in']['WE_FOPoles_v']
-        controller.A = self.fst_vt['DISCON_in']['WE_FOPoles']
+        controller.pc_gain_schedule     = type('', (), {})()
+        controller.vs_gain_schedule     = type('', (), {})()
+        controller.LoggingLevel         = self.fst_vt['DISCON_in']['LoggingLevel']
+        controller.F_LPFType            = self.fst_vt['DISCON_in']['F_LPFType']
+        controller.F_NotchType          = self.fst_vt['DISCON_in']['F_NotchType']
+        controller.IPC_ControlMode      = self.fst_vt['DISCON_in']['IPC_ControlMode']
+        controller.VS_ControlMode       = self.fst_vt['DISCON_in']['VS_ControlMode']
+        controller.PC_ControlMode       = self.fst_vt['DISCON_in']['PC_ControlMode']
+        controller.Y_ControlMode        = self.fst_vt['DISCON_in']['Y_ControlMode']
+        controller.SS_Mode              = self.fst_vt['DISCON_in']['SS_Mode']
+        controller.WE_Mode              = self.fst_vt['DISCON_in']['WE_Mode']
+        controller.PS_Mode              = self.fst_vt['DISCON_in']['PS_Mode']
+        controller.SD_Mode              = self.fst_vt['DISCON_in']['SD_Mode']
+        try:
+            controller.Fl_Mode          = self.fst_vt['DISCON_in']['Fl_Mode']
+        except:
+            controller.Fl_Mode          = 0
+        try:
+            controller.Flp_Mode         = self.fst_vt['DISCON_in']['Flp_Mode']
+        except:
+            controller.Flp_Mode         = 0
+        controller.F_LPFDamping         = self.fst_vt['DISCON_in']['F_LPFDamping']
+        controller.ss_cornerfreq        = self.fst_vt['DISCON_in']['F_SSCornerFreq']
+        controller.pitch_op_pc          = self.fst_vt['DISCON_in']['PC_GS_angles']
+        controller.pc_gain_schedule.Kp  = self.fst_vt['DISCON_in']['PC_GS_KP']
+        controller.pc_gain_schedule.Ki  = self.fst_vt['DISCON_in']['PC_GS_KI']
+        controller.max_pitch            = self.fst_vt['DISCON_in']['PC_MaxPit']
+        controller.min_pitch            = self.fst_vt['DISCON_in']['PC_MinPit']
+        controller.vs_minspd            = self.fst_vt['DISCON_in']['VS_MinOMSpd']
+        controller.vs_rgn2K             = self.fst_vt['DISCON_in']['VS_Rgn2K']
+        controller.vs_refspd            = self.fst_vt['DISCON_in']['VS_RefSpd']
+        controller.vs_gain_schedule.Kp  = self.fst_vt['DISCON_in']['VS_KP']
+        controller.vs_gain_schedule.Ki  = self.fst_vt['DISCON_in']['VS_KI']
+        controller.TSR_operational      = self.fst_vt['DISCON_in']['VS_TSRopt']
+        controller.ss_vsgain            = self.fst_vt['DISCON_in']['SS_VSGain']
+        controller.ss_pcgain            = self.fst_vt['DISCON_in']['SS_PCGain']
+        controller.v                    = self.fst_vt['DISCON_in']['WE_FOPoles_v']
+        controller.A                    = self.fst_vt['DISCON_in']['WE_FOPoles']
         # controller.ps_wind_speeds = self.fst_vt['DISCON_in']['ps_wind_speeds']
-        controller.ps_min_bld_pitch = self.fst_vt['DISCON_in']['PS_BldPitchMin']
-        controller.sd_maxpit = self.fst_vt['DISCON_in']['SD_MaxPit']
-        controller.sd_cornerfreq = self.fst_vt['DISCON_in']['SD_CornerFreq']
-        controller.Kp_float = self.fst_vt['DISCON_in']['Fl_Kp']
-        controller.Kp_flap = self.fst_vt['DISCON_in']['Flp_Kp']
-        controller.Ki_flap = self.fst_vt['DISCON_in']['Flp_Ki']
-        controller.flp_angle = self.fst_vt['DISCON_in']['Flp_Angle']
-        # - turbine
+        controller.ps_min_bld_pitch     = self.fst_vt['DISCON_in']['PS_BldPitchMin']
+        controller.sd_maxpit            = self.fst_vt['DISCON_in']['SD_MaxPit']
+        controller.sd_cornerfreq        = self.fst_vt['DISCON_in']['SD_CornerFreq']
+        try:
+            controller.Kp_float         = self.fst_vt['DISCON_in']['Fl_Kp']
+        except:
+            controller.Kp_float         = 0.
+        try:
+            controller.Kp_flap          = self.fst_vt['DISCON_in']['Flp_Kp']
+            controller.Ki_flap          = self.fst_vt['DISCON_in']['Flp_Ki']
+            controller.flp_angle        = self.fst_vt['DISCON_in']['Flp_Angle']
+        except:
+            controller.Kp_flap          = 0.
+            controller.Ki_flap          = 0.
+            controller.flp_angle        = 0.
         turbine = type('', (), {})()
         turbine.Cp = type('', (), {})()
         turbine.Ct = type('', (), {})()
         turbine.Cq = type('', (), {})()
-        turbine.rotor_radius = self.fst_vt['DISCON_in']['WE_BladeRadius']
-        turbine.v_rated = self.fst_vt['DISCON_in']['v_rated']
-        turbine.bld_flapwise_freq = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0]
-        turbine.bld_edgewise_freq = self.fst_vt['DISCON_in']['F_LPFCornerFreq'] * 4.
-        turbine.twr_freq = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
-        turbine.ptfm_freq = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
-        turbine.max_pitch_rate = self.fst_vt['DISCON_in']['PC_MaxRat']
-        turbine.min_pitch_rate = self.fst_vt['DISCON_in']['PC_MinRat']
-        turbine.max_torque_rate = self.fst_vt['DISCON_in']['VS_MaxRat']
-        turbine.rated_rotor_speed = self.fst_vt['DISCON_in']['PC_RefSpd'] / self.fst_vt['DISCON_in']['WE_GearboxRatio']
-        turbine.rated_power = self.fst_vt['DISCON_in']['VS_RtPwr']
-        turbine.rated_torque = self.fst_vt['DISCON_in']['VS_RtTq']
-        turbine.max_torque = self.fst_vt['DISCON_in']['VS_MaxTq']
-        turbine.TSR_operational = self.fst_vt['DISCON_in']['VS_TSRopt']
-        turbine.rho = self.fst_vt['DISCON_in']['WE_RhoAir']
-        turbine.Ng = self.fst_vt['DISCON_in']['WE_GearboxRatio']
-        turbine.GenEff = self.fst_vt['ServoDyn']['GenEff']
-        turbine.J = self.fst_vt['DISCON_in']['WE_Jtot']
-        turbine.Cp = self.fst_vt['DISCON_in']['Cp']
-        turbine.Ct = self.fst_vt['DISCON_in']['Ct']
-        turbine.Cq = self.fst_vt['DISCON_in']['Cq']
-        turbine.Cp_table = self.fst_vt['DISCON_in']['Cp_table']
-        turbine.Ct_table = self.fst_vt['DISCON_in']['Ct_table']
-        turbine.Cq_table = self.fst_vt['DISCON_in']['Cq_table']
-        turbine.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
-        turbine.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
-        turbine.Cp.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
-        turbine.Cp.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
-        turbine.Ct.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
-        turbine.Ct.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
-        turbine.Cq.pitch_initial_rad = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
-        turbine.Cq.TSR_initial = self.fst_vt['DISCON_in']['Cp_TSR_initial']
-        turbine.TurbineName = self.fst_vt['description']
+        turbine.rotor_radius            = self.fst_vt['DISCON_in']['WE_BladeRadius']
+        turbine.v_rated                 = self.fst_vt['DISCON_in']['v_rated']
+        try:
+            turbine.bld_flapwise_freq   = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0]
+        except:
+            turbine.bld_flapwise_freq   = 0.
+        turbine.bld_edgewise_freq       = self.fst_vt['DISCON_in']['F_LPFCornerFreq'] * 4.
+        turbine.twr_freq                = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
+        try:
+            turbine.ptfm_freq           = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
+        except:
+            turbine.ptfm_freq           = 0.
+        turbine.max_pitch_rate          = self.fst_vt['DISCON_in']['PC_MaxRat']
+        turbine.min_pitch_rate          = self.fst_vt['DISCON_in']['PC_MinRat']
+        turbine.max_torque_rate         = self.fst_vt['DISCON_in']['VS_MaxRat']
+        turbine.rated_rotor_speed       = self.fst_vt['DISCON_in']['PC_RefSpd'] / self.fst_vt['DISCON_in']['WE_GearboxRatio']
+        turbine.rated_power             = self.fst_vt['DISCON_in']['VS_RtPwr']
+        turbine.rated_torque            = self.fst_vt['DISCON_in']['VS_RtTq']
+        turbine.max_torque              = self.fst_vt['DISCON_in']['VS_MaxTq']
+        turbine.TSR_operational         = self.fst_vt['DISCON_in']['VS_TSRopt']
+        turbine.rho                     = self.fst_vt['DISCON_in']['WE_RhoAir']
+        turbine.Ng                      = self.fst_vt['DISCON_in']['WE_GearboxRatio']
+        turbine.GenEff                  = self.fst_vt['ServoDyn']['GenEff']
+        turbine.J                       = self.fst_vt['DISCON_in']['WE_Jtot']
+        turbine.Cp                      = self.fst_vt['DISCON_in']['Cp']
+        turbine.Ct                      = self.fst_vt['DISCON_in']['Ct']
+        turbine.Cq                      = self.fst_vt['DISCON_in']['Cq']
+        turbine.Cp_table                = self.fst_vt['DISCON_in']['Cp_table']
+        turbine.Ct_table                = self.fst_vt['DISCON_in']['Ct_table']
+        turbine.Cq_table                = self.fst_vt['DISCON_in']['Cq_table']
+        turbine.pitch_initial_rad       = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.TSR_initial             = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.Cp.pitch_initial_rad    = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.Cp.TSR_initial          = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.Ct.pitch_initial_rad    = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.Ct.TSR_initial          = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.Cq.pitch_initial_rad    = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.Cq.TSR_initial          = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.TurbineName             = self.fst_vt['description']
         
         # Define DISCON infile paths
         self.fst_vt['ServoDyn']['DLL_InFile'] = 'DISCON.IN'

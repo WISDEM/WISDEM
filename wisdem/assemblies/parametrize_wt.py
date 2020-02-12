@@ -20,8 +20,6 @@ class WT_Parametrize(Group):
         opt_var.add_output('chord_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
         opt_var.add_output('spar_cap_ss_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']))
         opt_var.add_output('spar_cap_ps_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']))
-        opt_var.add_output('te_flap_end', val = np.ones(analysis_options['blade']['n_te_flaps']))
-        opt_var.add_output('te_flap_ext', val = np.ones(analysis_options['blade']['n_te_flaps']))
         
         self.add_subsystem('opt_var',opt_var)
 
