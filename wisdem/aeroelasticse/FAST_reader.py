@@ -672,6 +672,7 @@ class InputReader_OpenFAST(InputReader_Common):
                 self.fst_vt['ElastoDyn']['BldGagNd'][i] = int(bldgag.strip(','))
         else:
             self.fst_vt['ElastoDyn']['BldGagNd'] = 0
+            f.readline()
 
         # Loop through output channel lines
         f.readline()
