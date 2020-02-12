@@ -146,7 +146,6 @@ class WT_RNTA(Group):
         self.connect('nacelle.uptilt',              'sse.tilt')
         self.connect('airfoils.aoa',                'sse.airfoils_aoa')
             
-        self.connect('xf.flap_angles',              'sse.airfoils_Ctrl')
         self.connect('airfoils.Re',                 'sse.airfoils_Re')
         self.connect('xf.cl_interp_flaps',          'sse.airfoils_cl')
         self.connect('xf.cd_interp_flaps',          'sse.airfoils_cd')
@@ -158,6 +157,7 @@ class WT_RNTA(Group):
         self.connect('env.weibull_k',               'sse.cdf.k')
         
         if analysis_options['openfast']['run_openfast']:
+            self.connect('xf.flap_angles',              'sse.airfoils_Ctrl')
             self.connect('nacelle.gear_ratio',              'sse.tune_rosco.gear_ratio')
             self.connect('assembly.rotor_radius',           'sse.tune_rosco.R')
             self.connect('elastic.precomp.I_all_blades',    'sse.tune_rosco.rotor_inertia', src_indices=[0])
