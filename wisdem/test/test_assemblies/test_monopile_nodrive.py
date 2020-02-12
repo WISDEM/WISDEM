@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import numpy.testing as npt
 import unittest
@@ -10,12 +11,14 @@ nSec = 4
 nSecTow = 3
 NPTS = 100
 
+mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
+
 class TestRegression(unittest.TestCase):
     
     def testAssembly(self):
         # Global inputs and outputs
-        fname_schema  = 'IEAontology_schema.yaml'
-        fname_input   = 'IEA-15-240-RWT.yaml'
+        fname_schema  = mydir + os.sep + 'IEAontology_schema.yaml'
+        fname_input   = mydir + os.sep + 'IEA-15-240-RWT.yaml'
 
         # Initialize blade design
         refBlade = ReferenceBlade()
@@ -155,6 +158,8 @@ class TestRegression(unittest.TestCase):
         prob['main_bearing_mass']       = 4.699e3
 
         prob.run_model()
+        # Make sure we get here
+        self.assertTrue(True)
         
 def suite():
     suite = unittest.TestSuite()
