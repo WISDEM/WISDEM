@@ -2,11 +2,11 @@ from wisdem.assemblies.main import run_wisdem
 
 
 ## File management
-fname_wt_input         = "/Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/BAR2011n_noRe.yaml"
-fname_analysis_options = "/Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/analysis_options.yaml"
-fname_opt_options      = "/Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/optimization_options.yaml"
-fname_wt_output        = "/Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/BAR2011n_noRe_out.yaml"
-folder_output          = '/Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/it_0/'
+fname_wt_input         = "/Users/rfeil/work/1_WISDEM/WISDEM_IEA4all/wisdem/assemblies/reference_turbines/bar/BAR2011n_noRe.yaml"
+fname_analysis_options = "/Users/rfeil/work/1_WISDEM/WISDEM_IEA4all/wisdem/assemblies/reference_turbines/bar/analysis_options.yaml"
+fname_opt_options      = "/Users/rfeil/work/1_WISDEM/WISDEM_IEA4all/wisdem/assemblies/reference_turbines/bar/optimization_options.yaml"
+fname_wt_output        = "/Users/rfeil/work/1_WISDEM/WISDEM_IEA4all/wisdem/assemblies/reference_turbines/bar/BAR2011n_noRe_out.yaml"
+folder_output          = '/Users/rfeil/work/1_WISDEM/WISDEM_IEA4all/wisdem/assemblies/reference_turbines/bar/it_0/'
 
 wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
 

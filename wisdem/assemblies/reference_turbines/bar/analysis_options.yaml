@@ -20,12 +20,12 @@ openfast:
     FAST_ver: OpenFAST
     dev_branch: True
     FAST_exe: /Users/rfeil/work/2_OpenFAST/openfast-distributed_aero_control/build/glue-codes/openfast/openfast
-    FAST_directory: /Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_825_mexhat_orig
+    FAST_directory: /Users/rfeil/work/1_WISDEM/WISDEM_IEA4all/wisdem/assemblies/reference_turbines/bar/RotorSE_FAST_BAR_2010n_noRe
     FAST_InputFile: RotorSE_FAST_BAR_2010n_noRe.fst
     path2dll: /Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/controller/libdiscon.dylib
     Turbsim_exe: "/Users/rfeil/work/5_TurbSim/TurbSim/bin/TurbSim_glin64"
-    FAST_namingOut: OpenFAST_BAR_2010n
-    FAST_runDirectory: /Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_825_mexhat_orig_temp
+    FAST_namingOut: OpenFAST_BAR_2011n_out
+    FAST_runDirectory: /Users/rfeil/work/1_WISDEM/WISDEM_IEA4all/wisdem/assemblies/reference_turbines/bar/RotorSE_FAST_BAR_2011n_noRe_temp
     cores: 1
     debug_level: 2
     

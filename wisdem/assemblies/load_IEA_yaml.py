@@ -304,7 +304,7 @@ class Blade(Group):
         self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
 
         # Re-interpolate outer shape BEM
-        # self.add_subsystem('re_interp_bem', Re_Interp_BEM(blade_init_options = blade_init_options))
+        self.add_subsystem('re_interp_bem', Re_Interp_BEM(blade_init_options = blade_init_options))
 
 
         # Interpolate airfoil profiles and coordinates
@@ -312,17 +312,17 @@ class Blade(Group):
 
 
         # Connections from outer_shape_bem to re_interp_bem
-        # self.connect('outer_shape_bem.s',           're_interp_bem.s_')
-        # self.connect('outer_shape_bem.chord',       're_interp_bem.chord_')
-        # self.connect('outer_shape_bem.pitch_axis',  're_interp_bem.pitch_axis_')
-        # # self.connect('outer_shape_bem.af_used',     're_interp_bem.af_used_')
-        # # self.connect('outer_shape_bem.af_position', 're_interp_bem.af_position_')
-        # self.connect('outer_shape_bem.ref_axis', 're_interp_bem.ref_axis_')
+        self.connect('outer_shape_bem.s',           're_interp_bem.s_')
+        self.connect('outer_shape_bem.chord',       're_interp_bem.chord_')
+        self.connect('outer_shape_bem.pitch_axis',  're_interp_bem.pitch_axis_')
+        # self.connect('outer_shape_bem.af_used',     're_interp_bem.af_used_')
+        # self.connect('outer_shape_bem.af_position', 're_interp_bem.af_position_')
+        self.connect('outer_shape_bem.ref_axis', 're_interp_bem.ref_axis_')
 
         # Connections from outer_shape_bem to interp_airfoils
-        self.connect('outer_shape_bem.s',           'interp_airfoils.s')
-        self.connect('outer_shape_bem.chord',       'interp_airfoils.chord')
-        self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils.pitch_axis')
+        self.connect('re_interp_bem.s',           'interp_airfoils.s')
+        self.connect('re_interp_bem.chord',       'interp_airfoils.chord')
+        self.connect('re_interp_bem.pitch_axis',  'interp_airfoils.pitch_axis')
         self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')  # <<<
         self.connect('outer_shape_bem.af_position', 'interp_airfoils.af_position')  # <<<
         
@@ -330,13 +330,13 @@ class Blade(Group):
         if blade_init_options['lofted_output'] == True:
             self.add_subsystem('blade_lofted',    Blade_Lofted_Shape(blade_init_options = blade_init_options, af_init_options = af_init_options))
             self.connect('interp_airfoils.coord_xy_dim',    'blade_lofted.coord_xy_dim')
-            self.connect('outer_shape_bem.twist',           'blade_lofted.twist')
-            self.connect('outer_shape_bem.s',               'blade_lofted.s')
-            self.connect('outer_shape_bem.ref_axis',        'blade_lofted.ref_axis')
+            self.connect('re_interp_bem.twist',           'blade_lofted.twist')
+            self.connect('re_interp_bem.s',               'blade_lofted.s')
+            self.connect('re_interp_bem.ref_axis',        'blade_lofted.ref_axis')
         
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
-        # self.connect('outer_shape_bem.twist',           'internal_structure_2d_fem.twist')
+        # self.connect('re_interp_bem.twist',           'internal_structure_2d_fem.twist')
         self.connect('outer_shape_bem.twist',           'internal_structure_2d_fem.twist')
         self.connect('interp_airfoils.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
 
@@ -403,59 +403,58 @@ class Re_Interp_BEM(ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        print('Dummy')
 
 # ---------------
-#         n_span = len(inputs['s_'])
-#         # First - interpolate grid back to reference grid, e.g. the linspace option
-#         # This is needed during iterative calls while optimizing in order to only pertubate the necessary grid locations but not to drag along changes iteratively
-#         # nd_span_orig = np.linspace(0., 1.,analysis_options['blade']['n_span'])  # Equally spaced non-dimensional spanwise grid
-#         nd_span_orig = np.linspace(0., 1.,n_span)  # Equally spaced non-dimensional spanwise grid
+        n_span = len(inputs['s_'])
+        # First - interpolate grid back to reference grid, e.g. the linspace option
+        # This is needed during iterative calls while optimizing in order to only pertubate the necessary grid locations but not to drag along changes iteratively
+        # nd_span_orig = np.linspace(0., 1.,analysis_options['blade']['n_span'])  # Equally spaced non-dimensional spanwise grid
+        nd_span_orig = np.linspace(0., 1.,n_span)  # Equally spaced non-dimensional spanwise grid
+
+        outputs['chord'] = np.interp(nd_span_orig, inputs['s_'],inputs['chord_'])
+        outputs['twist'] = np.interp(nd_span_orig, inputs['s_'],inputs['twist_'])
+        outputs['pitch_axis'] = np.interp(nd_span_orig, inputs['s_'],inputs['pitch_axis_'])
+
+        outputs['ref_axis'][:, 0] = np.interp(nd_span_orig,inputs['s_'],inputs['ref_axis_'][:, 0])
+        outputs['ref_axis'][:, 1] = np.interp(nd_span_orig,inputs['s_'],inputs['ref_axis_'][:, 1])
+        outputs['ref_axis'][:, 2] = np.interp(nd_span_orig,inputs['s_'],inputs['ref_axis_'][:, 2])
+
+
+        # Second - modify grid to airfoil radial stations
+        # Account for blade airfoil radial locations
+#         # af_loc = blade['outer_shape_bem']['airfoil_position']['grid']
+#         # for afi in range(len(af_loc)):
+#         #     idx_af_loc = np.where(np.abs(nd_span - af_loc[afi]) == (np.abs(nd_span - af_loc[afi])).min())
+#         #     nd_span[idx_af_loc] = af_loc[afi]
 #
-#         outputs['chord'] = np.interp(nd_span_orig, inputs['s_'],inputs['chord_'])
-#         outputs['twist'] = np.interp(nd_span_orig, inputs['s_'],inputs['twist_'])
-#         outputs['pitch_axis'] = np.interp(nd_span_orig, inputs['s_'],inputs['pitch_axis_'])
+        outputs['s'] = copy.copy(nd_span_orig)
+
+
+        # Account for blade flap start and end positions
+        flap_start = inputs['span_end'] - inputs['span_ext']
+        print(flap_start)
+        # print(['Flap start = ' + flap_start])
+        flap_end = inputs['span_end']
+        print(flap_end)
+        # print(['Flap end = ' + flap_end])
 #
-#         outputs['ref_axis'][:, 0] = np.interp(nd_span_orig,inputs['s_'],inputs['ref_axis_'][:, 0])
-#         outputs['ref_axis'][:, 1] = np.interp(nd_span_orig,inputs['s_'],inputs['ref_axis_'][:, 1])
-#         outputs['ref_axis'][:, 2] = np.interp(nd_span_orig,inputs['s_'],inputs['ref_axis_'][:, 2])
-#
-#
-#         # Second - modify grid to airfoil radial stations
-#         # Account for blade airfoil radial locations
-# #         # af_loc = blade['outer_shape_bem']['airfoil_position']['grid']
-# #         # for afi in range(len(af_loc)):
-# #         #     idx_af_loc = np.where(np.abs(nd_span - af_loc[afi]) == (np.abs(nd_span - af_loc[afi])).min())
-# #         #     nd_span[idx_af_loc] = af_loc[afi]
-# #
-#         outputs['s'] = copy.copy(nd_span_orig)
-#
-#
-#         # Account for blade flap start and end positions
-#         flap_start = inputs['span_end'] - inputs['span_ext']
-#         print(flap_start)
-#         # print(['Flap start = ' + flap_start])
-#         flap_end = inputs['span_end']
-#         print(flap_end)
-#         # print(['Flap end = ' + flap_end])
-# #
-# #         # modify grid at flap start and end position
-# #         # if 'aerodynamic_control' in blade:
-# #         # flap start
-#         idx_flap_start = np.where(np.abs(inputs['s_'] - flap_start) == (np.abs(inputs['s_'] - flap_start)).min())
-#         outputs['s'][idx_flap_start[0][0]] = flap_start
-#         # flap end
-#         idx_flap_end = np.where(np.abs(inputs['s_'] - flap_end) == (np.abs(inputs['s_'] - flap_end)).min())
-#         outputs['s'][idx_flap_end[0][0]] = flap_end
-#
-#
-#         outputs['chord'] = np.interp(outputs['s'], nd_span_orig,inputs['chord_'])
-#         outputs['twist'] = np.interp(outputs['s'], nd_span_orig,inputs['twist_'])
-#         outputs['pitch_axis'] = np.interp(outputs['s'], nd_span_orig,inputs['pitch_axis_'])
-#
-#         outputs['ref_axis'][:, 0] = np.interp(outputs['s'],nd_span_orig,inputs['ref_axis_'][:, 0])
-#         outputs['ref_axis'][:, 1] = np.interp(outputs['s'],nd_span_orig,inputs['ref_axis_'][:, 1])
-#         outputs['ref_axis'][:, 2] = np.interp(outputs['s'],nd_span_orig,inputs['ref_axis_'][:, 2])
+#         # modify grid at flap start and end position
+#         # if 'aerodynamic_control' in blade:
+#         # flap start
+        idx_flap_start = np.where(np.abs(inputs['s_'] - flap_start) == (np.abs(inputs['s_'] - flap_start)).min())
+        outputs['s'][idx_flap_start[0][0]] = flap_start
+        # flap end
+        idx_flap_end = np.where(np.abs(inputs['s_'] - flap_end) == (np.abs(inputs['s_'] - flap_end)).min())
+        outputs['s'][idx_flap_end[0][0]] = flap_end
+
+
+        outputs['chord'] = np.interp(outputs['s'], nd_span_orig,inputs['chord_'])
+        outputs['twist'] = np.interp(outputs['s'], nd_span_orig,inputs['twist_'])
+        outputs['pitch_axis'] = np.interp(outputs['s'], nd_span_orig,inputs['pitch_axis_'])
+
+        outputs['ref_axis'][:, 0] = np.interp(outputs['s'],nd_span_orig,inputs['ref_axis_'][:, 0])
+        outputs['ref_axis'][:, 1] = np.interp(outputs['s'],nd_span_orig,inputs['ref_axis_'][:, 1])
+        outputs['ref_axis'][:, 2] = np.interp(outputs['s'],nd_span_orig,inputs['ref_axis_'][:, 2])
 
 
 class Blade_Interp_Airfoils(ExplicitComponent):
@@ -1080,7 +1079,7 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
         self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
 
-        self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
+        self.connect('blade.re_interp_bem.ref_axis',  'assembly.blade_ref_axis')
         self.connect('hub.radius',                      'assembly.hub_radius')
         self.connect('tower.height',                    'assembly.tower_height')
         self.connect('foundation.height',               'assembly.foundation_height')
