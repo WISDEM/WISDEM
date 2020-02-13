@@ -19,26 +19,26 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     analysis_options, wt_init    = wt_initial.initialize(fname_wt_input, fname_analysis_options)
     
     opt_options = optimization_data.initialize()
-    opt_flag    = False
+    opt_options['opt_flag']    = False
     if opt_options['optimization_variables']['blade']['aero_shape']['twist']['flag'] == True:
-        opt_flag = True
+        opt_options['opt_flag'] = True
     else:
         opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'] = analysis_options['rotorse']['n_span']
     if opt_options['optimization_variables']['blade']['aero_shape']['chord']['flag'] == True:
-        opt_flag = True
+        opt_options['opt_flag'] = True
     else:
         opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'] = analysis_options['rotorse']['n_span']
     if opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['flag'] == True:
-        opt_flag = True
+        opt_options['opt_flag'] = True
     else:
         opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'] = analysis_options['rotorse']['n_span']
     if opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['flag'] == True:
-        opt_flag = True
+        opt_options['opt_flag'] = True
     else:
         opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt'] = analysis_options['rotorse']['n_span']
     if 'dac' in opt_options['optimization_variables']['blade'].keys():
         if opt_options['optimization_variables']['blade']['dac']['te_flap_end']['flag'] == True or opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['flag'] == True:
-            opt_flag = True
+            opt_options['opt_flag'] = True
 
     if not os.path.isdir(folder_output):
         os.mkdir(folder_output)
@@ -48,7 +48,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     wt_opt.model    = WindPark(analysis_options = analysis_options, opt_options = opt_options)
     wt_opt.model.approx_totals(method='fd')
     
-    if opt_flag == True:
+    if opt_options['opt_flag'] == True:
         # Set optimization solver and options
         wt_opt.driver  = ScipyOptimizeDriver()
         wt_opt.driver.options['optimizer'] = opt_options['driver']['solver']

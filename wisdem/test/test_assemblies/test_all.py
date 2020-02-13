@@ -1,9 +1,9 @@
 import unittest
 
-from wisdem.test.test_assemblies import test_monopile_nodrive
+from wisdem.test.test_assemblies import test_assembly
 
 def suite():
-    suite = unittest.TestSuite( (test_monopile_nodrive.suite(),
+    suite = unittest.TestSuite( (test_assembly.suite(),
     ) )
     return suite
 

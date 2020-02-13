@@ -1,8 +1,8 @@
 import unittest
 import pytest
 
-# import wisdem.test.test_assemblies as test_assemblies
-# import wisdem.test.test_airfoilprep as test_airfoilprep
+import wisdem.test.test_assemblies as test_assemblies
+import wisdem.test.test_airfoilprep as test_airfoilprep
 import wisdem.test.test_ccblade as test_ccblade
 import wisdem.test.test_commonse as test_commonse
 import wisdem.test.test_drivetrainse as test_drivetrainse
@@ -19,7 +19,7 @@ import wisdem.test.test_wisdem as test_wisdem
 
 def suite():
     suite = unittest.TestSuite( (
-        # test_assemblies.test_all.suite(),
+        test_assemblies.test_all.suite(),
         # test_airfoilprep.test_all.suite(),
         test_ccblade.test_all.suite(),
         test_commonse.test_all.suite(),

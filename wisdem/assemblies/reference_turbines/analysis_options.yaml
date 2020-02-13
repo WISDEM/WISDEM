@@ -14,8 +14,8 @@ rotorse:
     n_span: 30        # Number of spanwise stations used to define the blade properties
 
 openfast:
-    run_openfast: True
-    Analysis_Level: 1
+    run_openfast: False
+    Analysis_Level: 0
     FAST_ver: OpenFAST
     dev_branch: True
     FAST_exe: "/Users/nabbas/openfast/install/bin/openfast_dev"
@@ -51,4 +51,4 @@ servose:
     PS_Mode: 0                      # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
     SD_Mode: 0                      # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
     Fl_Mode: 0                      # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}
-    Flp_Mode: 2                     # Flap control mode {0: no flap control, 1: steady state flap angle, 2: Proportional flap control}
+    Flp_Mode: 0                     # Flap control mode {0: no flap control, 1: steady state flap angle, 2: Proportional flap control}

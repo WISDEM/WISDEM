@@ -370,7 +370,8 @@ class WindPark(Group):
         self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
-        self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
+        if opt_options['opt_flag']:
+            self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
 
         # Inputs to plantfinancese from wt group
         self.connect('sse.AEP',                 'financese.turbine_aep')
