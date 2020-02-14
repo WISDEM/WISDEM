@@ -1434,9 +1434,6 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['PC_RefSpd']         = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['PC_FinePit']        = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['PC_Switch']         = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Z_EnableSine']      = int_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Z_PitchAmplitude']  = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Z_PitchFrequency']  = float_read(f.readline().split()[0])
             f.readline()
             f.readline()
 
