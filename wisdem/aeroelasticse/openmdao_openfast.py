@@ -215,9 +215,11 @@ class FASTLoadCases(ExplicitComponent):
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
-        self.add_input('r',                     val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location \
-            while r[-1] should be the blade tip. Any number \
-            of locations can be specified between these in ascending order.')
+
+        self.add_input('s_ref', val=np.zeros(n_span), desc='Global reference grid! Nondim blade span positions; starting from the root cutout s_ref[0] to the blade tip s_ref[-1]. Same number of locatons as r in the following ')
+        # The following r- coordinates are modified s_ref coordinates for Aerodyn puposes
+        self.add_input('r',                     val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location while r[-1] should be the blade tip. Any number of locations can be specified between these in ascending order.')
+
         self.add_input('le_location',           val=np.zeros(n_span), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
         self.add_input('beam:Tw_iner',          val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
         self.add_input('beam:rhoA',             val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
@@ -416,10 +418,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
 
         # Update ElastoDyn Blade Input File
-        fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
-        fst_vt['ElastoDynBlade']['BlFract']    = (inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])
-        fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
-        fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
+        fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['s_ref'])
+        fst_vt['ElastoDynBlade']['BlFract']    = inputs['s_ref']  #(inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])
+        # fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
+        # fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
         fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location']
         # fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['beam:Tw_iner']
         fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['theta'] # to do: structural twist is not nessessarily (nor likely to be) the same as aero twist

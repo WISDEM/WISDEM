@@ -412,7 +412,6 @@ class Re_Interp_BEM(ExplicitComponent):
         n_span = len(inputs['s_'])
         # First - interpolate grid back to reference grid, e.g. the linspace option
         # This is needed during iterative calls while optimizing in order to only pertubate the necessary grid locations but not to drag along changes iteratively
-        # nd_span_orig = np.linspace(0., 1.,analysis_options['blade']['n_span'])  # Equally spaced non-dimensional spanwise grid
         nd_span_orig = np.linspace(0., 1.,n_span)  # Equally spaced non-dimensional spanwise grid
 
         outputs['chord'] = np.interp(nd_span_orig, inputs['s_'],inputs['chord_'])
@@ -423,27 +422,21 @@ class Re_Interp_BEM(ExplicitComponent):
         outputs['ref_axis'][:, 1] = np.interp(nd_span_orig,inputs['s_'],inputs['ref_axis_'][:, 1])
         outputs['ref_axis'][:, 2] = np.interp(nd_span_orig,inputs['s_'],inputs['ref_axis_'][:, 2])
 
-
         # Second - modify grid to airfoil radial stations
         # Account for blade airfoil radial locations
 #         # af_loc = blade['outer_shape_bem']['airfoil_position']['grid']
 #         # for afi in range(len(af_loc)):
 #         #     idx_af_loc = np.where(np.abs(nd_span - af_loc[afi]) == (np.abs(nd_span - af_loc[afi])).min())
 #         #     nd_span[idx_af_loc] = af_loc[afi]
-#
-        outputs['s'] = copy.copy(nd_span_orig)
 
+        outputs['s'] = copy.copy(nd_span_orig)
 
         # Account for blade flap start and end positions
         flap_start = inputs['span_end'] - inputs['span_ext']
-        print(flap_start)
-        # print(['Flap start = ' + flap_start])
         flap_end = inputs['span_end']
-        print(flap_end)
-        # print(['Flap end = ' + flap_end])
-#
+
 #         # modify grid at flap start and end position
-#         # if 'aerodynamic_control' in blade:
+#         # ToDO - include if 'aerodynamic_control' in blade:
 #         # flap start
         idx_flap_start = np.where(np.abs(inputs['s_'] - flap_start) == (np.abs(inputs['s_'] - flap_start)).min())
         outputs['s'][idx_flap_start[0][0]] = flap_start

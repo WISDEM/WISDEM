@@ -279,8 +279,10 @@ class WT_RNTA(Group):
         # Connections to aeroelasticse
         if analysis_options['openfast']['run_openfast'] == True:
             self.connect('blade.re_interp_bem.ref_axis',  'aeroelastic.ref_axis_blade')
+            # self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
             self.connect('assembly.r_blade',                'aeroelastic.r')
+            self.connect('blade.outer_shape_bem.s',         'aeroelastic.s_ref')
             self.connect('blade.re_interp_bem.pitch_axis','aeroelastic.le_location')
             self.connect('param.pa.chord_param',            'aeroelastic.chord')
             self.connect('param.pa.twist_param',            'aeroelastic.theta')

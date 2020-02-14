@@ -585,7 +585,7 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
 
 def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_comm_map_down=[]):
     # Default Runtime
-    T = 40.
+    T = 130.  # 630
     TStart = 30.
 
     # Overwrite for testing
@@ -606,9 +606,9 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     iec.z_hub = fst_vt['InflowWind']['RefHt']
 
     iec.dlc_inputs = {}
-    iec.dlc_inputs['DLC'] = [1.1]
+    iec.dlc_inputs['DLC'] = [1.1]  # [1.1]
     # iec.dlc_inputs['U'] = [[U]]
-    iec.dlc_inputs['U'] = [[12]]
+    iec.dlc_inputs['U'] = [[10]]
     # iec.dlc_inputs['Seeds'] = [[1]]
     iec.dlc_inputs['Seeds'] = [[13428]]  # nothing special about these seeds, randomly generated
     iec.dlc_inputs['Yaw'] = [[]]
@@ -616,7 +616,7 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     iec.transient_shear_orientation = 'v'  # 'v','h','both': vertical or horizontal shear for EWS
 
     iec.wind_dir = runDir
-    iec.case_name_base = namebase + '_turb'
+    iec.case_name_base = namebase + '_DAC'  # distributed aerodynamic control
     iec.Turbsim_exe = Turbsim_exe
     iec.debug_level = debug_level
     iec.cores = cores
@@ -636,7 +636,7 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     case_inputs = {}
     case_inputs[("Fst", "TMax")] = {'vals': [T], 'group': 0}
     case_inputs[("Fst", "TStart")] = {'vals': [TStart], 'group': 0}
-    case_inputs[("Fst", "OutFileFmt")] = {'vals': [2], 'group': 0}
+    case_inputs[("Fst", "OutFileFmt")] = {'vals': [3], 'group': 0}
 
     case_inputs[("ElastoDyn", "YawDOF")] = {'vals': ['True'], 'group': 0}
     case_inputs[("ElastoDyn", "FlapDOF1")] = {'vals': ['True'], 'group': 0}

@@ -65,7 +65,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
         # NEW optimization objective for DAC design analysis
         elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization
-            wt_opt.model.add_objective('aeroelastic.My_std', scaler = 1.e-8)
+            wt_opt.model.add_objective('aeroelastic.My_std', scaler = 1.)  #1.e-8)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
         
