@@ -133,6 +133,7 @@ class TuneROSCO(ExplicitComponent):
         self.n_aoa      = n_aoa        = self.analysis_options['airfoils']['n_aoa']# Number of angle of attacks
         self.n_Re       = n_Re         = self.analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab      = n_tab        = self.analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_te_flaps = n_te_flaps   = self.analysis_options['blade']['n_te_flaps']
         self.add_input('r',             val=np.zeros(n_span),               units='m',          desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
         self.add_input('chord',         val=np.zeros(n_span),               units='m',          desc='chord length at each section')
         self.add_input('theta',         val=np.zeros(n_span),               units='deg',        desc='twist angle at each section (positive decreases angle of attack)')
@@ -155,6 +156,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_discrete_input('nBlades',         val=0,                                       desc='number of blades')
         self.add_input('mu',            val=1.81e-5,                        units='kg/(m*s)',   desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                                desc='shear exponent')
+        self.add_input('delta_max_pos', val=np.zeros(n_te_flaps),           units='rad',        desc='1D array of the max angle of the trailing edge flaps.')
         self.add_discrete_input('nSector',      val=4,                                          desc='number of sectors to divide rotor face into in computing thrust and power')
         self.add_discrete_input('tiploss',      val=True,                                       desc='include Prandtl tip loss model')
         self.add_discrete_input('hubloss',      val=True,                                       desc='include Prandtl hub loss model')
@@ -194,6 +196,7 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['servose']['ss_vsgain']   = inputs['ss_vsgain'][0]
         self.analysis_options['servose']['ss_pcgain']   = inputs['ss_pcgain'][0]
         self.analysis_options['servose']['ps_percent']  = inputs['ps_percent'][0]
+        self.analysis_options['servose']['flp_maxpit']  = inputs['delta_max_pos'][0]
         #
         self.analysis_options['servose']['ss_cornerfreq']   = None
         self.analysis_options['servose']['sd_maxpit']       = None
@@ -266,7 +269,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.span     = inputs['r'] 
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
-            WISDEM_turbine.bld_flapwise_freq = inputs['flap_freq'][0]
+            WISDEM_turbine.bld_flapwise_freq = inputs['flap_freq'][0] * 2*np.pi
             # HARD CODING - NOT SURE HOW TO GET THIS (might be ok)
             WISDEM_turbine.bld_flapwise_damp = 0.477465
 
@@ -313,6 +316,7 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Fl_Kp'] = controller.Kp_float
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Kp'] = controller.Kp_flap
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Ki'] = controller.Ki_flap
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_MaxPit'] = controller.flp_maxpit
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Angle'] = 0.
         # - turbine
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
