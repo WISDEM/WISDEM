@@ -60,15 +60,17 @@ def save_case_matrix(matrix_out, change_vars, dir_matrix):
         ofh.write(row)
     ofh.close()
 
-def save_case_matrix_yaml(matrix_out, change_vars, dir_matrix):
+def save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_names):
 
     matrix_out_yaml = {}
     for var in change_vars:
         matrix_out_yaml[var] = []
     matrix_out_yaml['Case_ID'] = []
+    matrix_out_yaml['Case_Name'] = []
 
     for i, row in enumerate(matrix_out):
         matrix_out_yaml['Case_ID'].append(i)        
+        matrix_out_yaml['Case_Name'].append(case_names[i])
         for val, var in zip(row, change_vars):
             if type(val) == np.float64:
                 val = float(val)
@@ -145,12 +147,15 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
     matrix_out = np.asarray(matrix_out)
     n_cases = np.shape(matrix_out)[0]
 
+    # case naming
+    case_name = case_naming(n_cases, namebase=namebase)
+    
     # Save case matrix
     if save_matrix:
         if not dir_matrix:
             dir_matrix = os.getcwd()
         save_case_matrix(matrix_out, change_vars, dir_matrix)
-        save_case_matrix_yaml(matrix_out, change_vars, dir_matrix)
+        save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name)
 
     case_list = []
     for i in range(n_cases):
@@ -159,8 +164,6 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
             case_list_i[var] = convert_str(matrix_out[i,j])
         case_list.append(case_list_i)
 
-    # case naming
-    case_name = case_naming(n_cases, namebase=namebase)
 
     return case_list, case_name
 
