@@ -162,8 +162,12 @@ class WindTurbineOntologyPython(object):
         # Tower 
         self.analysis_options['tower']              = {}
         self.analysis_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
-        self.analysis_options['tower']['nd_height'] = np.linspace(0., 1., self.analysis_options['tower']['n_height']) # Equally spaced non-dimensional grid along tower height
         self.analysis_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
+
+        # Monopile 
+        self.analysis_options['monopile']              = {}
+        self.analysis_options['monopile']['n_height']  = len(self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid'])
+        self.analysis_options['monopile']['n_layers']  = len(self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'])
 
 
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
@@ -272,8 +276,8 @@ class WindTurbineOntologyPython(object):
         self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub'] = float(wt_opt['nacelle.distance_tt_hub'])
 
         # Update tower
-        self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']      = wt_opt['tower.s'].tolist()
-        self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['values']    = wt_opt['tower.diameter'].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['tower.s'].tolist()
+        self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['tower.diameter'].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['tower.s'].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['tower.s'].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['tower.s'].tolist()
@@ -283,6 +287,19 @@ class WindTurbineOntologyPython(object):
         for i in range(self.analysis_options['tower']['n_layers']):
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower.s'].tolist()
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['tower.layer_thickness'][i,:].tolist()
+
+        # Update monopile
+        self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['monopile.s'].tolist()
+        self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['monopile.diameter'].tolist()
+        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['monopile.s'].tolist()
+        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['monopile.s'].tolist()
+        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['monopile.s'].tolist()
+        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['monopile.ref_axis'][:,0].tolist()
+        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['monopile.ref_axis'][:,1].tolist()
+        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['monopile.ref_axis'][:,2].tolist()
+        for i in range(self.analysis_options['monopile']['n_layers']):
+            self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['monopile.s'].tolist()
+            self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['monopile.layer_thickness'][i,:].tolist()
 
         # Write yaml with updated values
         f = open(fname_output, "w")
@@ -741,28 +758,64 @@ class Tower(ExplicitComponent):
         tower_init_options = self.options['tower_init_options']
         n_height           = tower_init_options['n_height']
         n_layers           = tower_init_options['n_layers']
-                
+
         self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
         self.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
-        self.add_output('drag',     val=np.zeros(n_height),                 desc='1D array of the drag coefficients defined along the tower axis.')
         self.add_output('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
 
         self.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
         self.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-        self.add_output('layer_thickness',     val=np.zeros((n_layers, n_height)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each entry along the tower axis.')
+        self.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
 
         self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
-        
-        self.add_output('mass',   val = 0.0,                  units='kg',  desc='Temporary tower mass')
+        self.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
 
+        
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
         outputs['height']   = outputs['ref_axis'][-1,2]
-        outputs['length']   = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])[-1]
+        myarc               = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])
+        outputs['length']   = myarc[-1]
+        outputs['s']        = myarc / myarc[-1]
+        
 
-        rhoA = np.pi * outputs['diameter'] * outputs['layer_thickness'][0,:]
-        outputs['mass'] = np.trapz(rhoA, outputs['ref_axis'][:,2]) * 8500.
+class Monopile(ExplicitComponent):
+    # Openmdao component with the tower data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('monopile_init_options')
+        
+    def setup(self):
+        monopile_init_options = self.options['monopile_init_options']
+        n_height           = tower_init_options['n_height']
+        n_layers           = tower_init_options['n_layers']
+
+        self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
+        self.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
+        self.add_output('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+
+        self.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
+        self.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
+        self.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
+
+        self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
+        self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
+
+        self.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
+
+        self.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
+        self.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
+        self.add_output('gravity_foundation_mass', val = 0.0, units='kg', desc='extra mass of gravity foundation')
+        self.add_output('suctionpile_depth',       val = 0.0, units='m',  desc='depth of foundation in the soil')
+
+        
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        # Compute tower height and tower length (a straight tower will be high as long)
+        outputs['height']   = outputs['ref_axis'][-1,2]
+        myarc               = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])
+        outputs['length']   = myarc[-1]
+        outputs['s']        = myarc / myarc[-1]
+
 
 class Foundation(ExplicitComponent):
     # Openmdao component with the foundation data coming from the input yaml file.
@@ -966,6 +1019,7 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.add_subsystem('hub',           Hub())
         self.add_subsystem('nacelle',       Nacelle())
         self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
+        self.add_subsystem('monopile',      Monopile(monopile_init_options   = analysis_options['monopile']))
         self.add_subsystem('foundation',    Foundation())
         self.add_subsystem('control',       Control())
         self.add_subsystem('configuration', Configuration())
@@ -994,6 +1048,7 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     hub             = wt_init['components']['hub']
     nacelle         = wt_init['components']['nacelle']
     tower           = wt_init['components']['tower']
+    monopile        = wt_init['components']['monopile']
     foundation      = wt_init['components']['foundation']
     control         = wt_init['control']
     assembly        = wt_init['assembly']
@@ -1006,6 +1061,7 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     wt_opt = assign_hub_values(wt_opt, hub)
     wt_opt = assign_nacelle_values(wt_opt, nacelle)
     wt_opt = assign_tower_values(wt_opt, analysis_options, tower)
+    wt_opt = assign_monopile_values(wt_opt, analysis_options, monopile)
     wt_opt = assign_foundation_values(wt_opt, foundation)
     wt_opt = assign_control_values(wt_opt, analysis_options, control)
     wt_opt = assign_configuration_values(wt_opt, assembly)
@@ -1286,16 +1342,14 @@ def assign_nacelle_values(wt_opt, nacelle):
 def assign_tower_values(wt_opt, analysis_options, tower):
     # Function to assign values to the openmdao component Tower
     n_height        = analysis_options['tower']['n_height'] # Number of points along tower height
-    nd_height       = analysis_options['tower']['nd_height']# Non-dimensional height coordinate
     n_layers        = analysis_options['tower']['n_layers']
     
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
     thickness       = np.zeros((n_layers, n_height))
 
-    wt_opt['tower.s']          = nd_height
+    nd_height = wt_opt['tower.s']
     wt_opt['tower.diameter']   = np.interp(nd_height, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
-    wt_opt['tower.drag']       = np.interp(nd_height, tower['outer_shape_bem']['drag_coefficient']['grid'], tower['outer_shape_bem']['drag_coefficient']['values'])
     
     wt_opt['tower.ref_axis'][:,0]  = np.interp(nd_height, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
     wt_opt['tower.ref_axis'][:,1]  = np.interp(nd_height, tower['outer_shape_bem']['reference_axis']['y']['grid'], tower['outer_shape_bem']['reference_axis']['y']['values'])
@@ -1309,7 +1363,42 @@ def assign_tower_values(wt_opt, analysis_options, tower):
     wt_opt['tower.layer_name']        = layer_name
     wt_opt['tower.layer_mat']         = layer_mat
     wt_opt['tower.layer_thickness']   = thickness
+    
+    wt_opt['tower.outfitting_factor'] = tower['outfitting_factor']    
+    
+    return wt_opt
 
+def assign_monopile_values(wt_opt, analysis_options, monopile):
+    # Function to assign values to the openmdao component Monopile
+    n_height        = analysis_options['monopile']['n_height'] # Number of points along monopile height
+    n_layers        = analysis_options['monopile']['n_layers']
+    
+    layer_name      = n_layers * ['']
+    layer_mat       = n_layers * ['']
+    thickness       = np.zeros((n_layers, n_height))
+
+    nd_height = wt_opt['monopile.s']
+    wt_opt['monopile.diameter']   = np.interp(nd_height, monopile['outer_shape_bem']['outer_diameter']['grid'], monopile['outer_shape_bem']['outer_diameter']['values'])
+    
+    wt_opt['monopile.ref_axis'][:,0]  = np.interp(nd_height, monopile['outer_shape_bem']['reference_axis']['x']['grid'], monopile['outer_shape_bem']['reference_axis']['x']['values'])
+    wt_opt['monopile.ref_axis'][:,1]  = np.interp(nd_height, monopile['outer_shape_bem']['reference_axis']['y']['grid'], monopile['outer_shape_bem']['reference_axis']['y']['values'])
+    wt_opt['monopile.ref_axis'][:,2]  = np.interp(nd_height, monopile['outer_shape_bem']['reference_axis']['z']['grid'], monopile['outer_shape_bem']['reference_axis']['z']['values'])
+
+    for i in range(n_layers):
+        layer_name[i]  = monopile['internal_structure_2d_fem']['layers'][i]['name']
+        layer_mat[i]   = monopile['internal_structure_2d_fem']['layers'][i]['material']
+        thickness[i]   = np.interp(nd_height, monopile['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], monopile['internal_structure_2d_fem']['layers'][i]['thickness']['values'], left=0., right=0.)
+
+    wt_opt['monopile.layer_name']        = layer_name
+    wt_opt['monopile.layer_mat']         = layer_mat
+    wt_opt['monopile.layer_thickness']   = thickness
+
+    wt_opt['monopile.outfitting_factor']          = monopile['outfitting_factor']    
+    wt_opt['monopile.transition_piece_height']    = monopile['transition_piece_height']
+    wt_opt['monopile.transition_piece_mass']      = monopile['transition_piece_mass']
+    wt_opt['monopile.gravity_foundation_mass']    = monopile['gravity_foundation_mass']
+    wt_opt['monopile.suctionpile_depth']          = monopile['suctionpile_depth']
+    
     return wt_opt
 
 def assign_foundation_values(wt_opt, foundation):

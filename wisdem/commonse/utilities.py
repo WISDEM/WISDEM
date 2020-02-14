@@ -19,16 +19,12 @@ def rotate(xo, yo, xp, yp, angle):
     return qx, qy
 
 def arc_length(x, y, z=[]):
-    npts = len(x)
-    arc = np.array([0.]*npts)
     if len(z) == len(x):
-        for k in range(1, npts):
-            arc[k] = arc[k-1] + np.sqrt((x[k] - x[k-1])**2 + (y[k] - y[k-1])**2 + (z[k] - z[k-1])**2)
+        arc = np.sqrt( np.diff(x)**2 + np.diff(y)**2 + np.diff(z)**2 )
     else:
-        for k in range(1, npts):
-            arc[k] = arc[k-1] + np.sqrt((x[k] - x[k-1])**2 + (y[k] - y[k-1])**2)
-
-    return arc
+        arc = np.sqrt( np.diff(x)**2 + np.diff(y)**2 )
+    
+    return np.r_[0.0, np.cumsum(arc)]
 
 def cosd(value):
     """cosine of value where value is given in degrees"""

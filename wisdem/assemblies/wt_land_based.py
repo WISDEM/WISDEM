@@ -40,7 +40,7 @@ class WT_RNTA(Group):
         self.add_subsystem('drivese',   DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
-        # self.add_subsystem('towerse',   TowerSE())
+        self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
 
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
@@ -266,7 +266,33 @@ class WT_RNTA(Group):
         self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
 
         # Connections to TowerSE
-        
+        self.connect('drivese.top_F',                 'towerse.pre.rna_F')
+        self.connect('drivese.top_M',                 'towerse.pre.rna_M')
+        self.connect('drivese.rna_I_TT',             ['towerse.rna_I','towerse.pre.mI'])
+        self.connect('drivese.rna_cm',               ['towerse.rna_cg','towerse.pre.mrho'])
+        self.connect('drivese.rna_mass',             ['towerse.rna_mass','towerse.pre.mass'])
+        self.connect('rlds.gust.V_gust',              'towerse.wind.Uref')
+        self.connect('hub_height',                    'towerse.wind.zref')  # TODO- environment
+        self.connect('wind_bottom_height',            'towerse.wind.z0') # TODO- environment
+        self.connect('env.rho_air',                   'towerse.rho_air')
+        self.connect('env.mu_air',                    'towerse.mu_air')                    
+        self.connect('env.shear_exp',                 'towerse.shearExp')                    
+        self.connect('assembly.hub_height',           'towerse.hub_height')
+        self.connect('foundation.height',             'towerse.foundation_height')
+        self.connect('tower.diameter',                'towerse.tower_outer_diameter')
+        self.connect('tower.height',                  'towerse.height')
+        self.connect('tower.s',                       'towerse.s')
+        self.connect('tower.layer_thickness',         'towerse.layer_thickness')
+        self.connect('tower.outfitting_factor',       'towerse.tower_outfitting_factor')
+        self.connect('tower.transition_piece_height', 'towerse.transition_piece_height')
+        self.connect('tower.transition_piece_mass',   'towerse.transition_piece_maxx')
+        self.connect('tower.gravity_foundation_mass', 'towerse.gravity_foundation_mass')
+        self.connect('tower.suctionpile_depth',       'towerse.suctionpile_depth')
+
+        self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
+        self.connect('max_taper_ratio',         'max_taper') # TODO- 
+        self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
+          
         # Connections to aeroelasticse
         if analysis_options['openfast']['run_openfast'] == True:
             self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')

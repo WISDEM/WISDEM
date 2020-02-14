@@ -174,6 +174,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.options.declare('nK')
         self.options.declare('nMass')
         self.options.declare('nPL')
+        self.options.declare('frame3dd_opt')
         
     def setup(self):
         npts  = self.options['npts']
@@ -239,14 +240,14 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('qdyn', np.zeros(npts), units='N/m**2', desc='dynamic pressure')
 
         # options
-        self.add_discrete_input('shear', True, desc='include shear deformation')
-        self.add_discrete_input('geom', False, desc='include geometric stiffness')
-        self.add_input('dx', 5.0, desc='z-axis increment for internal forces')
-        self.add_discrete_input('nM', 2, desc='number of desired dynamic modes of vibration (below only necessary if nM > 0)')
-        self.add_discrete_input('Mmethod', 1, desc='1: subspace Jacobi, 2: Stodola')
-        self.add_discrete_input('lump', 0, desc='0: consistent mass, 1: lumped mass matrix')
-        self.add_input('tol', 1e-9, desc='mode shape tolerance')
-        self.add_input('shift', 0.0, desc='shift value ... for unrestrained structures')
+        #self.add_discrete_input('shear', True, desc='include shear deformation')
+        #self.add_discrete_input('geom', False, desc='include geometric stiffness')
+        #self.add_input('dx', 5.0, desc='z-axis increment for internal forces')
+        #self.add_discrete_input('nM', 2, desc='number of desired dynamic modes of vibration (below only necessary if nM > 0)')
+        #self.add_discrete_input('Mmethod', 1, desc='1: subspace Jacobi, 2: Stodola')
+        #self.add_discrete_input('lump', 0, desc='0: consistent mass, 1: lumped mass matrix')
+        #self.add_input('tol', 1e-9, desc='mode shape tolerance')
+        #self.add_input('shift', 0.0, desc='shift value ... for unrestrained structures')
 
         # outputs
         self.add_output('mass', 0.0)
@@ -273,6 +274,8 @@ class CylinderFrame3DD(ExplicitComponent):
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        frame3dd_opt = self.options['frame3dd_opt']
+        
         # ------- node data ----------------
         z = inputs['z']
         n = len(z)
@@ -317,7 +320,7 @@ class CylinderFrame3DD(ExplicitComponent):
 
 
         # ------ options ------------
-        options = frame3dd.Options(discrete_inputs['shear'], discrete_inputs['geom'], float(inputs['dx']))
+        options = frame3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
         # -----------------------------------
 
         # initialize frame3dd object
@@ -330,12 +333,12 @@ class CylinderFrame3DD(ExplicitComponent):
         N = inputs['midx'] + np.ones(len(inputs['midx']))
 
         cylinder.changeExtraNodeMass(N, inputs['m'], inputs['mIxx'], inputs['mIyy'], inputs['mIzz'], inputs['mIxy'], inputs['mIxz'], inputs['mIyz'],
-            inputs['mrhox'], inputs['mrhoy'], inputs['mrhoz'], discrete_inputs['addGravityLoadForExtraMass'])
+            inputs['mrhox'], inputs['mrhoy'], inputs['mrhoz'], frame3dd_opt['addGravityLoadForExtraMass'])
 
         # ------------------------------------
 
         # ------- enable dynamic analysis ----------
-        cylinder.enableDynamics(discrete_inputs['nM'], discrete_inputs['Mmethod'], discrete_inputs['lump'], float(inputs['tol']), float(inputs['shift']))
+        cylinder.enableDynamics(frame3dd_opt['nM'], frame3dd_opt['Mmethod'], frame3dd_opt['lump'], float(frame3dd_opt['tol']), float(frame3dd_opt['shift']))
         # ----------------------------
 
         # ------ static load case 1 ------------

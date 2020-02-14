@@ -55,7 +55,7 @@ class WaveBase(ExplicitComponent):
         npts = self.options['nPoints']
 
         # variables
-        self.add_input('rho', 0.0, units='kg/m**3', desc='water density')
+        self.add_input('rho_water', 0.0, units='kg/m**3', desc='water density')
         self.add_input('z', np.zeros(npts), units='m', desc='heights where wave speed should be computed')
         self.add_input('z_surface', 0.0, units='m', desc='vertical location of water surface')
         self.add_input('z_floor', 0.0, units='m', desc='vertical location of sea floor')
@@ -242,8 +242,8 @@ class LinearWaves(WaveBase):
         self.add_input('Uc', 0.0, units='m/s', desc='mean current speed')
 
         # parameters
-        self.add_input('hmax', 0.0, units='m', desc='maximum wave height (crest-to-trough)')
-        self.add_input('T', 0.0, units='s', desc='period of maximum wave height')
+        self.add_input('hmax_wave', 0.0, units='m', desc='maximum wave height (crest-to-trough)')
+        self.add_input('T_wave', 0.0, units='s', desc='period of maximum wave height')
 
         # For Ansys AQWA connection
         self.add_output('phase_speed', val=0.0, units='m/s', desc='phase speed of wave')
@@ -265,10 +265,10 @@ class LinearWaves(WaveBase):
         if d == 0.0: return
         
         # design wave height
-        h = inputs['hmax']
+        h = inputs['hmax_wave']
 
         # circular frequency
-        omega = 2.0*math.pi/inputs['T']
+        omega = 2.0*math.pi/inputs['T_wave']
 
         # compute wave number from dispersion relationship
         k = brentq(lambda k: omega**2 - gravity*k*math.tanh(d*k), 0, 1e3*omega**2/gravity)
@@ -295,7 +295,7 @@ class LinearWaves(WaveBase):
         # Hydrostatic is simple rho * g * z
         # Dynamic is from standard solution to Airy (Potential Flow) Wave theory
         # Full pressure would also include standard dynamic head (0.5*rho*V^2)
-        outputs['p'] = inputs['rho'] * gravity * (a * np.cosh(k*(z_rel + d)) / np.cosh(k*d) - z_rel)
+        outputs['p'] = inputs['rho_water'] * gravity * (a * np.cosh(k*(z_rel + d)) / np.cosh(k*d) - z_rel)
 
         # check heights
         idx = np.logical_or(inputs['z'] < z_floor, inputs['z'] > inputs['z_surface'])
@@ -311,8 +311,8 @@ class LinearWaves(WaveBase):
         if z_floor > 0.0: z_floor *= -1.0
         z = inputs['z']
         d = inputs['z_surface']-z_floor
-        h = inputs['hmax']
-        omega = 2.0*math.pi/inputs['T']
+        h = inputs['hmax_wave']
+        omega = 2.0*math.pi/inputs['T_wave']
         k = self.k
         z_rel = z - inputs['z_surface']
 
@@ -324,7 +324,7 @@ class LinearWaves(WaveBase):
         dV_dUc = 0.5/outputs['V']*(2*outputs['U']*dU_dUc)
         dA_dz = omega*dU_dz
         dA_dUc = 0.0 #omega*dU_dUc
-        dp_dz = inputs['rho'] * gravity * (a*np.sinh(k*(z_rel + d))*k / np.cosh(k*d) - 1.0)
+        dp_dz = inputs['rho_water'] * gravity * (a*np.sinh(k*(z_rel + d))*k / np.cosh(k*d) - 1.0)
 
         idx = np.logical_or(z < z_floor, z > inputs['z_surface'])
         dU_dz[idx] = 0.0
