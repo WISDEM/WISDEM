@@ -1,5 +1,6 @@
 import os, itertools
 import numpy as np
+from wisdem.aeroelasticse.Util.FileTools import save_yaml
 
 def save_case_matrix_direct(case_list, dir_matrix):
     ### assumes all elements of the list are dict for that case that has the same keys!
@@ -58,6 +59,25 @@ def save_case_matrix(matrix_out, change_vars, dir_matrix):
     for row in text_out:
         ofh.write(row)
     ofh.close()
+
+def save_case_matrix_yaml(matrix_out, change_vars, dir_matrix):
+
+    matrix_out_yaml = {}
+    for var in change_vars:
+        matrix_out_yaml[var] = []
+    matrix_out_yaml['Case_ID'] = []
+
+    for i, row in enumerate(matrix_out):
+        matrix_out_yaml['Case_ID'].append(i)        
+        for val, var in zip(row, change_vars):
+            if type(val) == np.float64:
+                val = float(val)
+            matrix_out_yaml[var].append(val)
+
+    if not os.path.exists(dir_matrix):
+        os.makedirs(dir_matrix)
+
+    save_yaml(dir_matrix, 'case_matrix.yaml', matrix_out_yaml)
 
 def case_naming(n_cases, namebase=None):
     # case naming
@@ -130,6 +150,7 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
         if not dir_matrix:
             dir_matrix = os.getcwd()
         save_case_matrix(matrix_out, change_vars, dir_matrix)
+        save_case_matrix_yaml(matrix_out, change_vars, dir_matrix)
 
     case_list = []
     for i in range(n_cases):
