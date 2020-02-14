@@ -1330,8 +1330,8 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.VS_omega']      = control['VS_omega']
     wt_opt['control.VS_zeta']       = control['VS_zeta']
     if analysis_options['servose']['Flp_Mode'] > 0:
-        wt_opt['control.VS_omega']      = control['Flp_omega']
-        wt_opt['control.VS_zeta']       = control['Flp_zeta']
+        wt_opt['control.Flp_omega']      = control['Flp_omega']
+        wt_opt['control.Flp_zeta']       = control['Flp_zeta']
     # # other optional parameters
     wt_opt['control.max_pitch']     = control['max_pitch']
     wt_opt['control.min_pitch']     = control['min_pitch']
