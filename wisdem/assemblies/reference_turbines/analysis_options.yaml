@@ -19,11 +19,11 @@ openfast:
     FAST_ver: OpenFAST
     dev_branch: True
     FAST_exe: "/Users/nabbas/openfast/install/bin/openfast_dev"
-    FAST_directory: "/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95"
-    FAST_InputFile: "RotorSE_FAST_BAR_2010n_noRe.fst"
+    FAST_directory: "/Users/nabbas/Documents/TurbineModels/BAR/WISDEM_BAR2011n/"
+    FAST_InputFile: "WISDEM_BAR2011n.fst"
     path2dll: "/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/ROSCO/build/libdiscon_flaps.dylib"
     Turbsim_exe: "/Users/nabbas/openfast/install/bin/turbsim_dev"
-    FAST_namingOut: WISDEM_NREL5MW
+    FAST_namingOut: WISDEM_BAR2011n
     FAST_runDirectory: temp_bar
     cores: 1
     debug_level: 2
@@ -40,7 +40,7 @@ servose:
     n_U_perf_surfaces: 1            # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
     regulation_reg_III: False       # Flag to derive the regulation trajectory in region III in terms of pitch and TSR
     LoggingLevel: 1                 # {0: write no debug files, 1: write standard output .dbg-file, 2: write standard output .dbg-file and complete avrSWAP-array .dbg2-file
-    F_LPFType: 1                    # {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals)
+    F_LPFType: 2                    # {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals)
     F_NotchType: 0                  # Notch filter on generator speed and/or tower fore-aft motion (for floating) {0: disable, 1: generator speed, 2: tower-top fore-aft motion, 3: generator speed and tower-top fore-aft motion}
     IPC_ControlMode: 0              # Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0: off, 1: 1P reductions, 2: 1P+2P reductions}
     VS_ControlMode: 2               # Generator torque control mode in above rated conditions {0: constant torque, 1: constant power, 2: TSR tracking PI control}

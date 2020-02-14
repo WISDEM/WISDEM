@@ -125,10 +125,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
 if __name__ == "__main__":
     ## File management
-    fname_wt_input         = "reference_turbines/bar/BAR2010n.yaml"
+    fname_wt_input         = "reference_turbines/bar/BAR2011n_noRe.yaml"
     fname_analysis_options = "reference_turbines/analysis_options.yaml"
     fname_opt_options      = "reference_turbines/optimization_options.yaml"
-    fname_wt_output        = "reference_turbines/bar/BAR2010n_output.yaml"
+    fname_wt_output        = "reference_turbines/bar/BAR2010n_noRE_output.yaml"
     folder_output          = 'temp/'
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
