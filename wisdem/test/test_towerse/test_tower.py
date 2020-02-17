@@ -21,7 +21,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['tower_wall_thickness'] = 0.1*np.ones(2)
         self.inputs['suctionpile_depth'] = 0.0
         self.inputs['foundation_height'] = 0.0
-        myobj = tow.MonopileFoundation(nPoints=3, monopile=False)
+        myobj = tow.MonopileFoundation(n_height=3, monopile=False)
         myobj.compute(self.inputs, self.outputs)
         npt.assert_equal(self.outputs['section_height_out'], self.inputs['tower_section_height'])
         npt.assert_equal(self.outputs['outer_diameter_out'], self.inputs['tower_outer_diameter'])
@@ -39,7 +39,7 @@ class TestTowerSE(unittest.TestCase):
         # Test monopile with pile
         self.inputs['suctionpile_depth'] = 10.0
         self.inputs['foundation_height'] = -30.0
-        myobj = tow.MonopileFoundation(nPoints=3, monopile=True)
+        myobj = tow.MonopileFoundation(n_height=3, monopile=True)
         myobj.compute(self.inputs, self.outputs)
         npt.assert_equal(self.outputs['section_height_out'], np.array([10., 2., 2.]))
         npt.assert_equal(self.outputs['outer_diameter_out'], 3.*np.ones(4))
@@ -48,7 +48,7 @@ class TestTowerSE(unittest.TestCase):
         
         # Test monopile with gravity
         self.inputs['suctionpile_depth'] = 0.0
-        myobj = tow.MonopileFoundation(nPoints=3, monopile=True)
+        myobj = tow.MonopileFoundation(n_height=3, monopile=True)
         myobj.compute(self.inputs, self.outputs)
         npt.assert_equal(self.outputs['section_height_out'], np.array([0.1, 2., 2.]))
         npt.assert_equal(self.outputs['outer_diameter_out'], 3.*np.ones(4))
@@ -60,13 +60,13 @@ class TestTowerSE(unittest.TestCase):
         # Test Land
         self.inputs['hub_height'] = 100.0
         self.inputs['z_param'] = np.array([0., 40., 80.])
-        myobj = tow.TowerDiscretization(nPoints=3)
+        myobj = tow.TowerDiscretization(n_height=3)
         myobj.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs['height_constraint'], 20.0)
         
         # Test monopile 
         self.inputs['z_param'] = np.array([-50., -30, 0.0, 40., 80.])
-        myobj = tow.TowerDiscretization(nPoints=5)
+        myobj = tow.TowerDiscretization(n_height=5)
         myobj.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs['height_constraint'], 20.0)
 
@@ -84,7 +84,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['gravity_foundation_mass'] = 1e2
         self.inputs['foundation_height'] = -30.
         
-        myobj = tow.TowerMass(nFull=5)
+        myobj = tow.TowerMass(n_height=5)
         myobj.compute(self.inputs, self.outputs)
         
         self.assertEqual(self.outputs['tower_raw_cost'], self.inputs['cylinder_cost'])
@@ -113,7 +113,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['rna_M'] = 1e6*np.array([2., 3., 4.,])
         self.inputs['k_monopile'] = np.zeros(6)
 
-        myobj = tow.TowerPreFrame(nPoints=3, nFull=7, monopile=False)
+        myobj = tow.TowerPreFrame(n_height=3, monopile=False)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs['kidx'], np.array([0]))
@@ -155,7 +155,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['rna_M'] = 1e6*np.array([2., 3., 4.,])
         self.inputs['k_monopile'] = 20. + np.arange(6)
 
-        myobj = tow.TowerPreFrame(nPoints=5, nFull=13, monopile=True)
+        myobj = tow.TowerPreFrame(n_height=5, monopile=True)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs['kidx'], np.array([0, 1, 2, 3]))
@@ -188,11 +188,38 @@ class TestTowerSE(unittest.TestCase):
 
 
     def testProblemLand(self):
+
+        # Store analysis options
+        analysis_options = {}
+        analysis_options['tower'] = {}
+        analysis_options['tower']['buckling_length'] = 20.0
+        analysis_options['tower']['monopile'] = False
+        analysis_options['tower']['n_height'] = 3
+        analysis_options['tower']['wind'] = 'PowerWind'
+        analysis_options['tower']['nLC'] = 1
+
+        analysis_options['tower']['gamma_f'] = 1.0
+        analysis_options['tower']['gamma_m'] = 1.0
+        analysis_options['tower']['gamma_n'] = 1.0
+        analysis_options['tower']['gamma_b'] = 1.0
+        analysis_options['tower']['gamma_fatigue'] = 1.0
+
+        analysis_options['tower']['frame3dd_options']            = {}
+        analysis_options['tower']['frame3dd_options']['DC']      = 80.0
+        analysis_options['tower']['frame3dd_options']['shear']   = True
+        analysis_options['tower']['frame3dd_options']['geom']    = True
+        analysis_options['tower']['frame3dd_options']['dx']      = 5.0
+        analysis_options['tower']['frame3dd_options']['nM']      = 2
+        analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd_options']['lump']    = 0
+        analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd_options']['shift']   = 0.0
+        analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+
         prob = om.Problem()
-        prob.model = tow.TowerSE(nLC=1, nPoints=3, nFull=7, wind='PowerWind', topLevelFlag=True, monopile=False)
+        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
         prob.setup()
 
-        prob['shearExp'] = 0.2
         prob['hub_height'] = 80.0
         prob['foundation_height'] = 0.0
         prob['transition_piece_height'] = 0.0
@@ -201,12 +228,11 @@ class TestTowerSE(unittest.TestCase):
         prob['tower_section_height'] = 40.0*np.ones(2)
         prob['tower_outer_diameter'] = 10.0*np.ones(3)
         prob['tower_wall_thickness'] = 0.1*np.ones(2)
-        prob['tower_buckling_length'] = 20.0
-        prob['tower_outfitting_factor'] = 1.0
+        prob['outfitting_factor'] = 1.0
         prob['yaw'] = 0.0
         prob['suctionpile_depth'] = 0.0
-        prob['soil_G'] = 1e7
-        prob['soil_nu'] = 0.5
+        prob['G_soil'] = 1e7
+        prob['nu_soil'] = 0.5
         prob['E'] = 1e9
         prob['G'] = 1e8
         prob['material_density'] = 1e4
@@ -217,27 +243,14 @@ class TestTowerSE(unittest.TestCase):
         prob['wind_reference_height'] = 80.0
         prob['wind_z0'] = 0.0
         prob['cd_usr'] = -1.
-        prob['air_density'] = 1.225
-        prob['air_viscosity'] = 1.7934e-5
-        prob['water_density'] = 1025.0
-        prob['water_viscosity'] = 1.3351e-3
-        prob['wind_beta'] = prob['wave_beta'] = 0.0
-        prob['significant_wave_height'] = 0.0
-        prob['significant_wave_period'] = 1e3
-        prob['gamma_f'] = 1.0
-        prob['gamma_m'] = 1.0
-        prob['gamma_n'] = 1.0
-        prob['gamma_b'] = 1.0
-        prob['gamma_fatigue'] = 1.0
-        prob['DC'] = 80.0
-        prob['shear'] = True
-        prob['geom'] = True
-        prob['tower_force_discretization'] = 5.0
-        prob['nM'] = 2
-        prob['Mmethod'] = 1
-        prob['lump'] = 0
-        prob['tol'] = 1e-9
-        prob['shift'] = 0.0
+        prob['rho_air'] = 1.225
+        prob['mu_air'] = 1.7934e-5
+        prob['shearExp'] = 0.2
+        prob['rho_water'] = 1025.0
+        prob['mu_water'] = 1.3351e-3
+        prob['beta_wind'] = prob['beta_wave'] = 0.0
+        prob['hsig_wave'] = 0.0
+        prob['Tsig_wave'] = 1e3
         prob['min_d_to_t'] = 120.0
         prob['max_taper'] = 0.2
         prob['wind.Uref'] = 15.0
@@ -293,11 +306,38 @@ class TestTowerSE(unittest.TestCase):
 
 
     def testProblemFixedPile(self):
+
+        # Store analysis options
+        analysis_options = {}
+        analysis_options['tower'] = {}
+        analysis_options['tower']['buckling_length'] = 20.0
+        analysis_options['tower']['monopile'] = True
+        analysis_options['tower']['n_height'] = 4
+        analysis_options['tower']['wind'] = 'PowerWind'
+        analysis_options['tower']['nLC'] = 1
+
+        analysis_options['tower']['gamma_f'] = 1.0
+        analysis_options['tower']['gamma_m'] = 1.0
+        analysis_options['tower']['gamma_n'] = 1.0
+        analysis_options['tower']['gamma_b'] = 1.0
+        analysis_options['tower']['gamma_fatigue'] = 1.0
+
+        analysis_options['tower']['frame3dd_options']            = {}
+        analysis_options['tower']['frame3dd_options']['DC']      = 80.0
+        analysis_options['tower']['frame3dd_options']['shear']   = True
+        analysis_options['tower']['frame3dd_options']['geom']    = True
+        analysis_options['tower']['frame3dd_options']['dx']      = 5.0
+        analysis_options['tower']['frame3dd_options']['nM']      = 2
+        analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd_options']['lump']    = 0
+        analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd_options']['shift']   = 0.0
+        analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+
         prob = om.Problem()
-        prob.model = tow.TowerSE(nLC=1, nPoints=4, nFull=10, wind='PowerWind', topLevelFlag=True, monopile=True)
+        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
         prob.setup()
 
-        prob['shearExp'] = 0.2
         prob['hub_height'] = 80.0
         prob['foundation_height'] = -30.0
         prob['transition_piece_height'] = 15.0
@@ -306,12 +346,11 @@ class TestTowerSE(unittest.TestCase):
         prob['tower_section_height'] = 30.0*np.ones(3)
         prob['tower_outer_diameter'] = 10.0*np.ones(4)
         prob['tower_wall_thickness'] = 0.1*np.ones(3)
-        prob['tower_buckling_length'] = 20.0
-        prob['tower_outfitting_factor'] = 1.0
-        prob['yaw'] = 0.0
         prob['suctionpile_depth'] = 15.0
-        prob['soil_G'] = 1e7
-        prob['soil_nu'] = 0.5
+        prob['outfitting_factor'] = 1.0
+        prob['yaw'] = 0.0
+        prob['G_soil'] = 1e7
+        prob['nu_soil'] = 0.5
         prob['E'] = 1e9
         prob['G'] = 1e8
         prob['material_density'] = 1e4
@@ -322,33 +361,21 @@ class TestTowerSE(unittest.TestCase):
         prob['wind_reference_height'] = 80.0
         prob['wind_z0'] = 0.0
         prob['cd_usr'] = -1.
-        prob['air_density'] = 1.225
-        prob['air_viscosity'] = 1.7934e-5
-        prob['water_density'] = 1025.0
-        prob['water_viscosity'] = 1.3351e-3
-        prob['wind_beta'] = prob['wave_beta'] = 0.0
-        prob['significant_wave_height'] = 0.0
-        prob['significant_wave_period'] = 1e3
-        prob['gamma_f'] = 1.0
-        prob['gamma_m'] = 1.0
-        prob['gamma_n'] = 1.0
-        prob['gamma_b'] = 1.0
-        prob['gamma_fatigue'] = 1.0
-        prob['DC'] = 80.0
-        prob['shear'] = True
-        prob['geom'] = True
-        prob['tower_force_discretization'] = 5.0
-        prob['nM'] = 2
-        prob['Mmethod'] = 1
-        prob['lump'] = 0
-        prob['tol'] = 1e-9
-        prob['shift'] = 0.0
+        prob['rho_air'] = 1.225
+        prob['mu_air'] = 1.7934e-5
+        prob['shearExp'] = 0.2
+        prob['rho_water'] = 1025.0
+        prob['mu_water'] = 1.3351e-3
+        prob['beta_wind'] = prob['beta_wave'] = 0.0
+        prob['hsig_wave'] = 0.0
+        prob['Tsig_wave'] = 1e3
         prob['min_d_to_t'] = 120.0
         prob['max_taper'] = 0.2
         prob['wind.Uref'] = 15.0
         prob['pre.rna_F'] = 1e3*np.array([2., 3., 4.,])
         prob['pre.rna_M'] = 1e4*np.array([2., 3., 4.,])
         prob.run_model()
+
 
         # All other tests from above
         mass_dens = 1e4*(5.**2-4.9**2)*np.pi
@@ -404,11 +431,38 @@ class TestTowerSE(unittest.TestCase):
         
 
     def testAddedMassForces(self):
+
+        # Store analysis options
+        analysis_options = {}
+        analysis_options['tower'] = {}
+        analysis_options['tower']['buckling_length'] = 20.0
+        analysis_options['tower']['monopile'] = True
+        analysis_options['tower']['n_height'] = 4
+        analysis_options['tower']['wind'] = 'PowerWind'
+        analysis_options['tower']['nLC'] = 1
+
+        analysis_options['tower']['gamma_f'] = 1.0
+        analysis_options['tower']['gamma_m'] = 1.0
+        analysis_options['tower']['gamma_n'] = 1.0
+        analysis_options['tower']['gamma_b'] = 1.0
+        analysis_options['tower']['gamma_fatigue'] = 1.0
+
+        analysis_options['tower']['frame3dd_options']            = {}
+        analysis_options['tower']['frame3dd_options']['DC']      = 80.0
+        analysis_options['tower']['frame3dd_options']['shear']   = True
+        analysis_options['tower']['frame3dd_options']['geom']    = True
+        analysis_options['tower']['frame3dd_options']['dx']      = 5.0
+        analysis_options['tower']['frame3dd_options']['nM']      = 2
+        analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd_options']['lump']    = 0
+        analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd_options']['shift']   = 0.0
+        analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+
         prob = om.Problem()
-        prob.model = tow.TowerSE(nLC=1, nPoints=4, nFull=10, wind='PowerWind', topLevelFlag=True, monopile=True)
+        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
         prob.setup()
 
-        prob['shearExp'] = 0.2
         prob['hub_height'] = 80.0
         prob['foundation_height'] = -30.0
         prob['transition_piece_height'] = 15.0
@@ -417,12 +471,11 @@ class TestTowerSE(unittest.TestCase):
         prob['tower_section_height'] = 30.0*np.ones(3)
         prob['tower_outer_diameter'] = 10.0*np.ones(4)
         prob['tower_wall_thickness'] = 0.1*np.ones(3)
-        prob['tower_buckling_length'] = 20.0
-        prob['tower_outfitting_factor'] = 1.0
-        prob['yaw'] = 0.0
         prob['suctionpile_depth'] = 15.0
-        prob['soil_G'] = 1e7
-        prob['soil_nu'] = 0.5
+        prob['outfitting_factor'] = 1.0
+        prob['yaw'] = 0.0
+        prob['G_soil'] = 1e7
+        prob['nu_soil'] = 0.5
         prob['E'] = 1e9
         prob['G'] = 1e8
         prob['material_density'] = 1e4
@@ -433,27 +486,14 @@ class TestTowerSE(unittest.TestCase):
         prob['wind_reference_height'] = 80.0
         prob['wind_z0'] = 0.0
         prob['cd_usr'] = -1.
-        prob['air_density'] = 1.225
-        prob['air_viscosity'] = 1.7934e-5
-        prob['water_density'] = 1025.0
-        prob['water_viscosity'] = 1.3351e-3
-        prob['wind_beta'] = prob['wave_beta'] = 0.0
-        prob['significant_wave_height'] = 0.0
-        prob['significant_wave_period'] = 1e3
-        prob['gamma_f'] = 1.0
-        prob['gamma_m'] = 1.0
-        prob['gamma_n'] = 1.0
-        prob['gamma_b'] = 1.0
-        prob['gamma_fatigue'] = 1.0
-        prob['DC'] = 80.0
-        prob['shear'] = True
-        prob['geom'] = True
-        prob['tower_force_discretization'] = 5.0
-        prob['nM'] = 2
-        prob['Mmethod'] = 1
-        prob['lump'] = 0
-        prob['tol'] = 1e-9
-        prob['shift'] = 0.0
+        prob['rho_air'] = 1.225
+        prob['mu_air'] = 1.7934e-5
+        prob['shearExp'] = 0.2
+        prob['rho_water'] = 1025.0
+        prob['mu_water'] = 1.3351e-3
+        prob['beta_wind'] = prob['beta_wave'] = 0.0
+        prob['hsig_wave'] = 0.0
+        prob['Tsig_wave'] = 1e3
         prob['min_d_to_t'] = 120.0
         prob['max_taper'] = 0.2
         prob['wind.Uref'] = 15.0
@@ -477,7 +517,224 @@ class TestTowerSE(unittest.TestCase):
         prob.run_model()
         #myFz[3] -= 1e3*g
         npt.assert_almost_equal(prob['post.Fz'], myFz)
+
         
+    def testExampleRegression(self):
+        # --- geometry ----
+        h_param = np.diff(np.array([0.0, 43.8, 87.6]))
+        d_param = np.array([6.0, 4.935, 3.87])
+        t_param = 1.3*np.array([0.025, 0.021])
+        z_foundation = 0.0
+        theta_stress = 0.0
+        yaw = 0.0
+        Koutfitting = 1.07
+
+        # --- material props ---
+        E = 210e9
+        G = 80.8e9
+        rho = 8500.0
+        sigma_y = 450.0e6
+
+        # --- extra mass ----
+        m = np.array([285598.8])
+        mIxx = 1.14930678e+08
+        mIyy = 2.20354030e+07
+        mIzz = 1.87597425e+07
+        mIxy = 0.0
+        mIxz = 5.03710467e+05
+        mIyz = 0.0
+        mI = np.array([mIxx, mIyy, mIzz, mIxy, mIxz, mIyz])
+        mrho = np.array([-1.13197635, 0.0, 0.50875268])
+        # -----------
+
+        # --- wind ---
+        wind_zref = 90.0
+        wind_z0 = 0.0
+        shearExp = 0.2
+        cd_usr = -1.
+        # ---------------
+
+        # --- wave ---
+        hmax = 0.0
+        T = 1.0
+        cm = 1.0
+        suction_depth = 0.0
+        soilG = 140e6
+        soilnu = 0.4
+        # ---------------
+
+        # --- costs ---
+        material_cost = 5.0
+        labor_cost    = 100.0/60.0
+        painting_cost = 30.0
+        # ---------------
+
+        # two load cases.  TODO: use a case iterator
+
+        # # --- loading case 1: max Thrust ---
+        wind_Uref1 = 11.73732
+        Fx1 = 1284744.19620519
+        Fy1 = 0.
+        Fz1 = -2914124.84400512 + m*g
+        Mxx1 = 3963732.76208099
+        Myy1 = -2275104.79420872
+        Mzz1 = -346781.68192839
+        # # ---------------
+
+        # # --- loading case 2: max wind speed ---
+        wind_Uref2 = 70.0
+        Fx2 = 930198.60063279
+        Fy2 = 0.
+        Fz2 = -2883106.12368949 + m*g
+        Mxx2 = -1683669.22411597
+        Myy2 = -2522475.34625363
+        Mzz2 = 147301.97023764
+        # # ---------------
+
+        # Store analysis options
+        analysis_options = {}
+        analysis_options['tower'] = {}
+        analysis_options['tower']['buckling_length'] = 30.0
+        analysis_options['tower']['monopile'] = False
+
+        # --- safety factors ---
+        analysis_options['tower']['gamma_f'] = 1.35
+        analysis_options['tower']['gamma_m'] = 1.3
+        analysis_options['tower']['gamma_n'] = 1.0
+        analysis_options['tower']['gamma_b'] = 1.1
+        # ---------------
+
+        # --- fatigue ---
+        analysis_options['tower']['gamma_fatigue'] = 1.35*1.3*1.0
+        life = 20.0
+        # ---------------
+
+        # -----Frame3DD------
+        analysis_options['tower']['frame3dd_options']            = {}
+        analysis_options['tower']['frame3dd_options']['DC']      = 80.0
+        analysis_options['tower']['frame3dd_options']['shear']   = True
+        analysis_options['tower']['frame3dd_options']['geom']    = True
+        analysis_options['tower']['frame3dd_options']['dx']      = 5.0
+        analysis_options['tower']['frame3dd_options']['nM']      = 2
+        analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd_options']['lump']    = 0
+        analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd_options']['shift']   = 0.0
+        analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+        # ---------------
+
+        # --- constraints ---
+        min_d_to_t   = 120.0
+        max_taper    = 0.2
+        # ---------------
+
+        analysis_options['tower']['n_height'] = len(d_param)
+        analysis_options['tower']['wind'] = 'PowerWind'
+        analysis_options['tower']['nLC'] = 2
+
+        prob = om.Problem()
+        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+        prob.setup()
+
+        if analysis_options['tower']['wind'] == 'PowerWind':
+            prob['shearExp'] = shearExp
+
+        # assign values to params
+
+        # --- geometry ----
+        prob['hub_height'] = h_param.sum()
+        prob['foundation_height'] = 0.0
+        prob['tower_section_height'] = h_param
+        prob['tower_outer_diameter'] = d_param
+        prob['tower_wall_thickness'] = t_param
+        prob['outfitting_factor'] = Koutfitting
+        prob['yaw'] = yaw
+        prob['suctionpile_depth'] = suction_depth
+        prob['G_soil'] = soilG
+        prob['nu_soil'] = soilnu
+        # --- material props ---
+        prob['E'] = E
+        prob['G'] = G
+        prob['material_density'] = rho
+        prob['sigma_y'] = sigma_y
+
+        # --- extra mass ----
+        prob['rna_mass'] = m
+        prob['rna_I'] = mI
+        prob['rna_cg'] = mrho
+        # -----------
+
+        # --- costs ---
+        prob['material_cost_rate'] = material_cost
+        prob['labor_cost_rate']    = labor_cost
+        prob['painting_cost_rate'] = painting_cost
+        # -----------
+
+        # --- wind & wave ---
+        prob['wind_reference_height'] = wind_zref
+        prob['wind_z0'] = wind_z0
+        prob['cd_usr'] = cd_usr
+        prob['rho_air'] = 1.225
+        prob['mu_air'] = 1.7934e-5
+        prob['rho_water'] = 1025.0
+        prob['mu_water'] = 1.3351e-3
+        prob['beta_wind'] = prob['beta_wave'] = 0.0
+        prob['hsig_wave'] = hmax
+        prob['Tsig_wave'] = T
+
+        # --- fatigue ---
+        prob['life'] = life
+        # ---------------
+
+        # --- constraints ---
+        prob['min_d_to_t'] = min_d_to_t
+        prob['max_taper'] = max_taper
+        # ---------------
+
+        # # --- loading case 1: max Thrust ---
+        prob['wind1.Uref'] = wind_Uref1
+
+        prob['pre1.rna_F'] = np.array([Fx1, Fy1, Fz1])
+        prob['pre1.rna_M'] = np.array([Mxx1, Myy1, Mzz1])
+        # # ---------------
+
+        # # --- loading case 2: max Wind Speed ---
+        prob['wind2.Uref'] = wind_Uref2
+
+        prob['pre2.rna_F'] = np.array([Fx2, Fy2, Fz2])
+        prob['pre2.rna_M' ] = np.array([Mxx2, Myy2, Mzz2])
+
+        # # --- run ---
+        prob.run_model()
+
+        npt.assert_almost_equal(prob['z_full'], [ 0.,  14.6, 29.2, 43.8, 58.4, 73.,  87.6])
+        npt.assert_almost_equal(prob['d_full'], [6.,    5.645, 5.29,  4.935, 4.58,  4.225, 3.87 ])
+        npt.assert_almost_equal(prob['t_full'], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
+        
+        npt.assert_almost_equal(prob['tower_mass'], [370541.14008246])
+        npt.assert_almost_equal(prob['tower_center_of_mass'], [38.78441074])
+        npt.assert_almost_equal(prob['weldability'], [-0.40192308, -0.34386447])
+        npt.assert_almost_equal(prob['manufacturability'], [0.60521262, 0.60521262])
+        npt.assert_almost_equal(prob['wind1.Uref'], [11.73732])
+        npt.assert_almost_equal(prob['tower1.f1'], [0.33214436])
+        npt.assert_almost_equal(prob['post1.top_deflection'], [0.69728181])
+        npt.assert_almost_equal(prob['post1.stress'], [0.45829084, 0.41279851, 0.35017739, 0.31497515, 0.17978168, 0.12035124])
+        npt.assert_almost_equal(prob['post1.global_buckling'], [0.50459926, 0.47009267, 0.42172339, 0.40495796, 0.29807777, 0.25473308])
+        npt.assert_almost_equal(prob['post1.shell_buckling'], [0.32499642, 0.25914569, 0.18536257, 0.17036815, 0.06343523, 0.03259229])
+        npt.assert_almost_equal(prob['wind2.Uref'], [70.])
+        npt.assert_almost_equal(prob['tower2.f1'], [0.33218936])
+        npt.assert_almost_equal(prob['post2.top_deflection'], [0.64374406])
+        npt.assert_almost_equal(prob['post2.stress'], [0.44627896, 0.38220803, 0.30583361, 0.25654412, 0.13137214, 0.10615505])
+        npt.assert_almost_equal(prob['post2.global_buckling'], [0.49412205, 0.4442257,  0.38450749, 0.35599809, 0.25784865, 0.24625576])
+        npt.assert_almost_equal(prob['post2.shell_buckling'], [0.31189934, 0.22790801, 0.14712692, 0.12152703, 0.03909944, 0.02623264])
+        npt.assert_almost_equal(prob['tower1.base_F'], [ 1.29980269e+06,  1.39698386e-09, -6.31005811e+06], 2)
+        npt.assert_almost_equal(prob['tower1.base_M'], [ 4.14769959e+06,  1.10756769e+08, -3.46781682e+05], 0)
+        npt.assert_almost_equal(prob['tower2.base_F'], [ 1.61668069e+06,  6.98491931e-10, -6.27903939e+06], 2)
+        npt.assert_almost_equal(prob['tower2.base_M'], [-1.76118035e+06,  1.12568312e+08,  1.47301970e+05], 0)
+
+
+
+    
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestTowerSE))

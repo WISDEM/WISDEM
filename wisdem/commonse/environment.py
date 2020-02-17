@@ -242,8 +242,8 @@ class LinearWaves(WaveBase):
         self.add_input('Uc', 0.0, units='m/s', desc='mean current speed')
 
         # parameters
-        self.add_input('hmax_wave', 0.0, units='m', desc='maximum wave height (crest-to-trough)')
-        self.add_input('T_wave', 0.0, units='s', desc='period of maximum wave height')
+        self.add_input('hsig_wave', 0.0, units='m', desc='maximum wave height (crest-to-trough)')
+        self.add_input('Tsig_wave', 0.0, units='s', desc='period of maximum wave height')
 
         # For Ansys AQWA connection
         self.add_output('phase_speed', val=0.0, units='m/s', desc='phase speed of wave')
@@ -265,10 +265,10 @@ class LinearWaves(WaveBase):
         if d == 0.0: return
         
         # design wave height
-        h = inputs['hmax_wave']
+        h = inputs['hsig_wave']
 
         # circular frequency
-        omega = 2.0*math.pi/inputs['T_wave']
+        omega = 2.0*math.pi/inputs['Tsig_wave']
 
         # compute wave number from dispersion relationship
         k = brentq(lambda k: omega**2 - gravity*k*math.tanh(d*k), 0, 1e3*omega**2/gravity)
@@ -311,8 +311,8 @@ class LinearWaves(WaveBase):
         if z_floor > 0.0: z_floor *= -1.0
         z = inputs['z']
         d = inputs['z_surface']-z_floor
-        h = inputs['hmax_wave']
-        omega = 2.0*math.pi/inputs['T_wave']
+        h = inputs['hsig_wave']
+        omega = 2.0*math.pi/inputs['Tsig_wave']
         k = self.k
         z_rel = z - inputs['z_surface']
 

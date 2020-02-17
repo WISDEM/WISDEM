@@ -175,6 +175,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.options.declare('nMass')
         self.options.declare('nPL')
         self.options.declare('frame3dd_opt')
+        self.options.declare('buckling_length')
         
     def setup(self):
         npts  = self.options['npts']
@@ -195,7 +196,6 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('G', val=0.0, units='N/m**2', desc='shear modulus')
         self.add_input('rho', val=0.0, units='kg/m**3', desc='material density')
         self.add_input('sigma_y', val=0.0, units='N/m**2', desc='yield stress')
-        self.add_input('L_reinforced', val=0.0, units='m')
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
         self.add_input('d', np.zeros(npts), units='m', desc='effective cylinder diameter for section')
@@ -222,7 +222,6 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('mrhox', np.zeros(nMass), units='m', desc='x-location of p relative to node')
         self.add_input('mrhoy', np.zeros(nMass), units='m', desc='y-location of p relative to node')
         self.add_input('mrhoz', np.zeros(nMass), units='m', desc='z-location of p relative to node')
-        self.add_discrete_input('addGravityLoadForExtraMass', True, desc='add gravitational load')
 
         # point loads (if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also)
         self.add_input('plidx', np.zeros(nPL, dtype=np.int_), desc='indices where point loads should be applied.')
@@ -238,16 +237,6 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('Py', np.zeros(npts), units='N/m', desc='force per unit length in y-direction')
         self.add_input('Pz', np.zeros(npts), units='N/m', desc='force per unit length in z-direction')
         self.add_input('qdyn', np.zeros(npts), units='N/m**2', desc='dynamic pressure')
-
-        # options
-        #self.add_discrete_input('shear', True, desc='include shear deformation')
-        #self.add_discrete_input('geom', False, desc='include geometric stiffness')
-        #self.add_input('dx', 5.0, desc='z-axis increment for internal forces')
-        #self.add_discrete_input('nM', 2, desc='number of desired dynamic modes of vibration (below only necessary if nM > 0)')
-        #self.add_discrete_input('Mmethod', 1, desc='1: subspace Jacobi, 2: Stodola')
-        #self.add_discrete_input('lump', 0, desc='0: consistent mass, 1: lumped mass matrix')
-        #self.add_input('tol', 1e-9, desc='mode shape tolerance')
-        #self.add_input('shift', 0.0, desc='shift value ... for unrestrained structures')
 
         # outputs
         self.add_output('mass', 0.0)
@@ -272,7 +261,7 @@ class CylinderFrame3DD(ExplicitComponent):
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
         
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
 
         frame3dd_opt = self.options['frame3dd_opt']
         
@@ -333,7 +322,7 @@ class CylinderFrame3DD(ExplicitComponent):
         N = inputs['midx'] + np.ones(len(inputs['midx']))
 
         cylinder.changeExtraNodeMass(N, inputs['m'], inputs['mIxx'], inputs['mIyy'], inputs['mIzz'], inputs['mIxy'], inputs['mIxz'], inputs['mIyz'],
-            inputs['mrhox'], inputs['mrhoy'], inputs['mrhoz'], frame3dd_opt['addGravityLoadForExtraMass'])
+            inputs['mrhox'], inputs['mrhoy'], inputs['mrhoz'], frame3dd_opt['add_gravity'])
 
         # ------------------------------------
 
@@ -424,7 +413,7 @@ class CylinderFrame3DD(ExplicitComponent):
         outputs['shear_stress'] = 2. * np.sqrt(Vx**2+Vy**2) / inputs['Az'] # coefficient of 2 for a hollow circular section, but should be conservative for other shapes
 
         # hoop_stress (Eurocode method)
-        L_reinforced = inputs['L_reinforced'] * np.ones(Fz.shape)
+        L_reinforced = self.options['buckling_length'] * np.ones(Fz.shape)
         outputs['hoop_stress_euro'] = hoopStressEurocode(inputs['z'], d, inputs['t'], L_reinforced, qdyn)
 
         # Simpler hoop stress used in API calculations

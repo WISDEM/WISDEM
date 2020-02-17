@@ -3,6 +3,7 @@ from openmdao.api import ExplicitComponent, Group, Problem
 from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyOpenMDAO
 from wisdem.rotorse.rotor_geometry import TurbineClass
 from wisdem.drivetrainse.drivese_omdao import DriveSE
+from wisdem.towerse.tower import TowerSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
@@ -274,22 +275,31 @@ class WT_RNTA(Group):
         self.connect('drivese.rna_cm',               ['towerse.rna_cg','towerse.pre.mrho'])
         self.connect('drivese.rna_mass',             ['towerse.rna_mass','towerse.pre.mass'])
         self.connect('rlds.gust.V_gust',              'towerse.wind.Uref')
-        self.connect('hub_height',                    'towerse.wind.zref')  # TODO- environment
-        self.connect('wind_bottom_height',            'towerse.wind.z0') # TODO- environment
+        self.connect('assembly.hub_height',           'towerse.wind.zref')  # TODO- environment
+        self.connect('foundation.height',             'towerse.wind.z0') # TODO- environment
         self.connect('env.rho_air',                   'towerse.rho_air')
         self.connect('env.mu_air',                    'towerse.mu_air')                    
         self.connect('env.shear_exp',                 'towerse.shearExp')                    
+        self.connect('env.rho_water',                 'towerse.rho_water')
+        self.connect('env.mu_water',                  'towerse.mu_water')                    
+        self.connect('env.G_soil',                    'towerse.G_soil')                    
+        self.connect('env.nu_soil',                   'towerse.nu_soil')                    
         self.connect('assembly.hub_height',           'towerse.hub_height')
         self.connect('foundation.height',             'towerse.foundation_height')
-        self.connect('tower.diameter',                'towerse.tower_outer_diameter')
+        self.connect('tower.diameter',                'towerse.tower_outer_diameter_in')
         self.connect('tower.height',                  'towerse.height')
         self.connect('tower.s',                       'towerse.s')
         self.connect('tower.layer_thickness',         'towerse.layer_thickness')
         self.connect('tower.outfitting_factor',       'towerse.tower_outfitting_factor')
-        self.connect('tower.transition_piece_height', 'towerse.transition_piece_height')
-        self.connect('tower.transition_piece_mass',   'towerse.transition_piece_maxx')
-        self.connect('tower.gravity_foundation_mass', 'towerse.gravity_foundation_mass')
-        self.connect('tower.suctionpile_depth',       'towerse.suctionpile_depth')
+        self.connect('monopile.diameter',                'towerse.monopile_outer_diameter_in')
+        self.connect('monopile.height',                  'towerse.monopile_height')
+        self.connect('monopile.s',                       'towerse.monopile_s')
+        self.connect('monopile.layer_thickness',         'towerse.monopile_layer_thickness')
+        self.connect('monopile.outfitting_factor',       'towerse.monopile_outfitting_factor')
+        self.connect('monopile.transition_piece_height', 'towerse.transition_piece_height')
+        self.connect('monopile.transition_piece_mass',   'towerse.transition_piece_maxx')
+        self.connect('monopile.gravity_foundation_mass', 'towerse.gravity_foundation_mass')
+        self.connect('monopile.suctionpile_depth',       'towerse.suctionpile_depth')
 
         self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
         self.connect('max_taper_ratio',         'max_taper') # TODO- 
