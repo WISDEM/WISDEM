@@ -740,6 +740,7 @@ class TowerSE(Group):
             self.connect('tower'+lc+'.top_deflection', 'post'+lc+'.top_deflection_in')
         
             # connections to wind, wave
+            self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
             if topLevelFlag:
                 self.connect('wind_reference_height', 'wind'+lc+'.zref')
                 self.connect('wind_z0', 'wind'+lc+'.z0')
@@ -763,7 +764,6 @@ class TowerSE(Group):
                 self.connect('significant_wave_period', 'wave'+lc+'.T')
                 self.connect('foundation_height', 'z_floor')
                     
-                self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
                 self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
                 self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
                 self.connect('wave'+lc+'.p', 'waveLoads'+lc+'.p')
@@ -1016,7 +1016,7 @@ if __name__ == '__main__':
 
     z,_ = nodal2sectional(prob['z_full'])
 
-    print('zs=', z)
+    print('zs=', prob['z_full'])
     print('ds=', prob['d_full'])
     print('ts=', prob['t_full'])
     print('mass (kg) =', prob['tower_mass'])
