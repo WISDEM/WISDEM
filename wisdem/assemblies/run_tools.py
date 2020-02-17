@@ -1,4 +1,10 @@
-import ruamel_yaml as ry
+try:
+    import ruamel_yaml as ry
+except:
+    try:
+        import ruamel.yaml as ry
+    except:
+        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 import numpy as np
 import os
 import matplotlib.pyplot as plt

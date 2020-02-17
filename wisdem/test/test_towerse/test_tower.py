@@ -14,6 +14,9 @@ class TestTowerSE(unittest.TestCase):
         self.discrete_outputs = {}
 
         
+#    def testDiscYAML(self):
+#        self.inputs
+        
     def testMonopileFoundation(self):
         # Test Land
         self.inputs['tower_section_height'] = 2.*np.ones(2)
@@ -204,17 +207,17 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['gamma_b'] = 1.0
         analysis_options['tower']['gamma_fatigue'] = 1.0
 
-        analysis_options['tower']['frame3dd_options']            = {}
-        analysis_options['tower']['frame3dd_options']['DC']      = 80.0
-        analysis_options['tower']['frame3dd_options']['shear']   = True
-        analysis_options['tower']['frame3dd_options']['geom']    = True
-        analysis_options['tower']['frame3dd_options']['dx']      = 5.0
-        analysis_options['tower']['frame3dd_options']['nM']      = 2
-        analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
-        analysis_options['tower']['frame3dd_options']['lump']    = 0
-        analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
-        analysis_options['tower']['frame3dd_options']['shift']   = 0.0
-        analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+        analysis_options['tower']['frame3dd']            = {}
+        analysis_options['tower']['frame3dd']['DC']      = 80.0
+        analysis_options['tower']['frame3dd']['shear']   = True
+        analysis_options['tower']['frame3dd']['geom']    = True
+        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['nM']      = 2
+        analysis_options['tower']['frame3dd']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd']['lump']    = 0
+        analysis_options['tower']['frame3dd']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd']['shift']   = 0.0
+        analysis_options['tower']['frame3dd']['add_gravity'] = True
 
         prob = om.Problem()
         prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
@@ -322,17 +325,17 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['gamma_b'] = 1.0
         analysis_options['tower']['gamma_fatigue'] = 1.0
 
-        analysis_options['tower']['frame3dd_options']            = {}
-        analysis_options['tower']['frame3dd_options']['DC']      = 80.0
-        analysis_options['tower']['frame3dd_options']['shear']   = True
-        analysis_options['tower']['frame3dd_options']['geom']    = True
-        analysis_options['tower']['frame3dd_options']['dx']      = 5.0
-        analysis_options['tower']['frame3dd_options']['nM']      = 2
-        analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
-        analysis_options['tower']['frame3dd_options']['lump']    = 0
-        analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
-        analysis_options['tower']['frame3dd_options']['shift']   = 0.0
-        analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+        analysis_options['tower']['frame3dd']            = {}
+        analysis_options['tower']['frame3dd']['DC']      = 80.0
+        analysis_options['tower']['frame3dd']['shear']   = True
+        analysis_options['tower']['frame3dd']['geom']    = True
+        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['nM']      = 2
+        analysis_options['tower']['frame3dd']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd']['lump']    = 0
+        analysis_options['tower']['frame3dd']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd']['shift']   = 0.0
+        analysis_options['tower']['frame3dd']['add_gravity'] = True
 
         prob = om.Problem()
         prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
@@ -447,17 +450,17 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['gamma_b'] = 1.0
         analysis_options['tower']['gamma_fatigue'] = 1.0
 
-        analysis_options['tower']['frame3dd_options']            = {}
-        analysis_options['tower']['frame3dd_options']['DC']      = 80.0
-        analysis_options['tower']['frame3dd_options']['shear']   = True
-        analysis_options['tower']['frame3dd_options']['geom']    = True
-        analysis_options['tower']['frame3dd_options']['dx']      = 5.0
-        analysis_options['tower']['frame3dd_options']['nM']      = 2
-        analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
-        analysis_options['tower']['frame3dd_options']['lump']    = 0
-        analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
-        analysis_options['tower']['frame3dd_options']['shift']   = 0.0
-        analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+        analysis_options['tower']['frame3dd']            = {}
+        analysis_options['tower']['frame3dd']['DC']      = 80.0
+        analysis_options['tower']['frame3dd']['shear']   = True
+        analysis_options['tower']['frame3dd']['geom']    = True
+        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['nM']      = 2
+        analysis_options['tower']['frame3dd']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd']['lump']    = 0
+        analysis_options['tower']['frame3dd']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd']['shift']   = 0.0
+        analysis_options['tower']['frame3dd']['add_gravity'] = True
 
         prob = om.Problem()
         prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
@@ -610,17 +613,17 @@ class TestTowerSE(unittest.TestCase):
         # ---------------
 
         # -----Frame3DD------
-        analysis_options['tower']['frame3dd_options']            = {}
-        analysis_options['tower']['frame3dd_options']['DC']      = 80.0
-        analysis_options['tower']['frame3dd_options']['shear']   = True
-        analysis_options['tower']['frame3dd_options']['geom']    = True
-        analysis_options['tower']['frame3dd_options']['dx']      = 5.0
-        analysis_options['tower']['frame3dd_options']['nM']      = 2
-        analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
-        analysis_options['tower']['frame3dd_options']['lump']    = 0
-        analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
-        analysis_options['tower']['frame3dd_options']['shift']   = 0.0
-        analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+        analysis_options['tower']['frame3dd']            = {}
+        analysis_options['tower']['frame3dd']['DC']      = 80.0
+        analysis_options['tower']['frame3dd']['shear']   = True
+        analysis_options['tower']['frame3dd']['geom']    = True
+        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['nM']      = 2
+        analysis_options['tower']['frame3dd']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd']['lump']    = 0
+        analysis_options['tower']['frame3dd']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd']['shift']   = 0.0
+        analysis_options['tower']['frame3dd']['add_gravity'] = True
         # ---------------
 
         # --- constraints ---

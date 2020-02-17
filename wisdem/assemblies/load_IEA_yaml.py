@@ -160,15 +160,17 @@ class WindTurbineOntologyPython(object):
                 exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
         # Tower 
-        self.analysis_options['tower']              = {}
         self.analysis_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
         self.analysis_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
 
         # Monopile 
         self.analysis_options['monopile']              = {}
-        self.analysis_options['monopile']['n_height']  = len(self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid'])
-        self.analysis_options['monopile']['n_layers']  = len(self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'])
-
+        self.analysis_options['tower']['monopile']  = 'monopile' in self.wt_init['components']
+        if self.analysis_options['tower']['monopile']:
+            self.analysis_options['monopile']['n_height']  = len(self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid'])
+            self.analysis_options['monopile']['n_layers']  = len(self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'])
+        print(self.analysis_options['tower'])
+        
 
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
         """ Load inputs IEA turbine ontology yaml inputs, optional validation """
@@ -787,8 +789,8 @@ class Monopile(ExplicitComponent):
         
     def setup(self):
         monopile_init_options = self.options['monopile_init_options']
-        n_height           = tower_init_options['n_height']
-        n_layers           = tower_init_options['n_layers']
+        n_height           = monopile_init_options['n_height']
+        n_layers           = monopile_init_options['n_layers']
 
         self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
         self.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
@@ -969,6 +971,13 @@ class Environment(ExplicitComponent):
         self.add_output('weibull_k',    val=2.0,          desc='Shape parameter of the Weibull probability density function of the wind.')
         self.add_output('shear_exp',    val=0.2,          desc='Shear exponent of the wind.')
         self.add_output('speed_sound_air',  val=340.,     units='m/s',        desc='Speed of sound in air.')
+        self.add_output('rho_water',      val=1025.,        units='kg/m**3',    desc='Density of ocean water')
+        self.add_output('mu_water',       val=1.3351e-3,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
+        self.add_output('G_soil',      val=1025.,        units='kg/m**3',    desc='Density of ocean water')
+        self.add_output('nu_soil',       val=1.3351e-3,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
+
+        wt_opt['env.G_soil'] = environment['soil_shear_modulus']
+    wt_opt['env.nu_soil'] = environment['soil_poisson']
 
 class Costs(ExplicitComponent):
     # Openmdao component with the cost parameters
@@ -1021,7 +1030,8 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.add_subsystem('hub',           Hub())
         self.add_subsystem('nacelle',       Nacelle())
         self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
-        self.add_subsystem('monopile',      Monopile(monopile_init_options   = analysis_options['monopile']))
+        if analysis_options['tower']['monopile']:
+            self.add_subsystem('monopile',      Monopile(monopile_init_options   = analysis_options['monopile']))
         self.add_subsystem('foundation',    Foundation())
         self.add_subsystem('control',       Control())
         self.add_subsystem('configuration', Configuration())
@@ -1458,9 +1468,13 @@ def assign_environment_values(wt_opt, environment):
 
     wt_opt['env.rho_air']   = environment['air_density']
     wt_opt['env.mu_air']    = environment['air_dyn_viscosity']
+    wt_opt['env.rho_water']   = environment['water_density']
+    wt_opt['env.mu_water']    = environment['water_dyn_viscosity']
     wt_opt['env.weibull_k'] = environment['weib_shape_parameter']
     wt_opt['env.speed_sound_air'] = environment['air_speed_sound']
     wt_opt['env.shear_exp'] = environment['shear_exp']
+    wt_opt['env.G_soil'] = environment['soil_shear_modulus']
+    wt_opt['env.nu_soil'] = environment['soil_poisson']
 
     return wt_opt
 

@@ -40,6 +40,7 @@ def get_npts(nFull):
 #  Components
 # -----------------
 
+
 class DiscretizationYAML(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('n_height_tower')
@@ -50,9 +51,14 @@ class DiscretizationYAML(om.ExplicitComponent):
     def setup(self):
         n_height_tow = self.options['n_height_tower']
         n_height_mon = self.options['n_height_monopile']
-        n_height     = n_height_tow + n_height_mon - 1 # Should have one overlapping point
         n_layers_tow = self.options['n_layers_tower']
         n_layers_mon = self.options['n_layers_monopile']
+        if n_height_mon > 0:
+            n_height           = n_height_tow + n_height_mon - 1 # Should have one overlapping point
+            n_height_mon_minus = n_height_mon - 1
+        else:
+            n_height           = n_height_tow
+            n_height_mon_minus = 0
 
         # Inputs here are the outputs from the Tower component in load_IEA_yaml
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
@@ -64,7 +70,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input('tower_outfitting_factor', val=0.0, desc='Multiplier that accounts for secondary structure mass inside of cylinder')
 
         self.add_input('monopile_s',        val=np.zeros(n_height_mon),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_input('monopile_layer_thickness',     val=np.zeros((n_layers_mon, n_height_mon-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
+        self.add_input('monopile_layer_thickness',     val=np.zeros((n_layers_mon, n_height_mon_minus)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
         self.add_input('monopile_height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_input('monopile_outer_diameter_in', np.zeros(n_height_tow), units='m', desc='cylinder diameter at corresponding locations')
         self.add_input('monopile_outfitting_factor', val=0.0, desc='Multiplier that accounts for secondary structure mass inside of cylinder')
@@ -76,7 +82,7 @@ class DiscretizationYAML(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         if self.options['n_layers'] > 1:
-            print('WARNING: Can only support a single material layer in tower sections')
+            print('WARNING: Can only support a single material layer in tower sections, so only using the first layer')
 
         # Unpack reused values
         h_mon = inputs['monopile_height']
@@ -577,10 +583,13 @@ class TowerLeanSE(om.Group):
             self.add_subsystem('sharedIndepsLean', sharedIndeps, promotes=['*'])
         else:
             # If using YAML for input, unpack to native variables
-            n_height_tow = toweropt['n_height_tower']
-            n_height_mon = toweropt['n_height_monopile']
+            n_height_tow = self.options['analysis_options']['tower']['n_height']
+            n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
             n_height     = n_height_tow + n_height_mon - 1 # Should have one overlapping point
-            self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon, n_layers_tower=toweropt['n_layers_tower'], n_layers_monopile=toweropt['n_layers_monopile']), promotes=['*'])
+            n_layers_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_layers']
+            self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon,
+                                                          n_layers_tower=toweropt['n_layers'], n_layers_monopile=n_layers_mon),
+                               promotes=['*'])
             
         # If doing fixed bottom monopile, we add an additional point for the pile (even for gravity foundations)
         self.add_subsystem('predisc', MonopileFoundation(monopile=monopile, n_height=n_height), promotes=['*'])
@@ -633,7 +642,7 @@ class TowerSE(om.Group):
         monopile = toweropt['monopile']
         nLC      = toweropt['nLC']
         wind     = toweropt['wind']
-        frame3dd_opt = toweropt['frame3dd_options']
+        frame3dd_opt = toweropt['frame3dd']
         nK       = NREFINE+1 if monopile else 1
         topLevelFlag = self.options['topLevelFlag']
         
@@ -664,13 +673,6 @@ class TowerSE(om.Group):
             sharedIndeps.add_output('life', 0.0)
             #sharedIndeps.add_output('m_SN', 0.0)
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
-        else:
-            # If using YAML for input, unpack to native variables
-            n_height_tow = toweropt['n_height_tower']
-            n_height_mon = toweropt['n_height_monopile']
-            n_height     = n_height_tow + n_height_mon - 1 # Should have one overlapping point
-            self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon, n_layers_tower=toweropt['n_layers_tower'], n_layers_monopile=toweropt['n_layers_monopile']), promotes=['*'])
-
 
         # Load baseline discretization
         self.add_subsystem('geom', TowerLeanSE(analysis_options=self.options['analysis_options'], topLevelFlag=topLevelFlag), promotes=['*'])
@@ -929,17 +931,17 @@ if __name__ == '__main__':
     # ---------------
     
     # -----Frame3DD------
-    analysis_options['tower']['frame3dd_options']            = {}
-    analysis_options['tower']['frame3dd_options']['DC']      = 80.0
-    analysis_options['tower']['frame3dd_options']['shear']   = True
-    analysis_options['tower']['frame3dd_options']['geom']    = True
-    analysis_options['tower']['frame3dd_options']['dx']      = 5.0
-    analysis_options['tower']['frame3dd_options']['nM']      = 2
-    analysis_options['tower']['frame3dd_options']['Mmethod'] = 1
-    analysis_options['tower']['frame3dd_options']['lump']    = 0
-    analysis_options['tower']['frame3dd_options']['tol']     = 1e-9
-    analysis_options['tower']['frame3dd_options']['shift']   = 0.0
-    analysis_options['tower']['frame3dd_options']['add_gravity'] = True
+    analysis_options['tower']['frame3dd']            = {}
+    analysis_options['tower']['frame3dd']['DC']      = 80.0
+    analysis_options['tower']['frame3dd']['shear']   = True
+    analysis_options['tower']['frame3dd']['geom']    = True
+    analysis_options['tower']['frame3dd']['dx']      = 5.0
+    analysis_options['tower']['frame3dd']['nM']      = 2
+    analysis_options['tower']['frame3dd']['Mmethod'] = 1
+    analysis_options['tower']['frame3dd']['lump']    = 0
+    analysis_options['tower']['frame3dd']['tol']     = 1e-9
+    analysis_options['tower']['frame3dd']['shift']   = 0.0
+    analysis_options['tower']['frame3dd']['add_gravity'] = True
     # ---------------
 
     # --- constraints ---

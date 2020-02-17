@@ -206,9 +206,6 @@ components:
             outer_diameter:
                 grid: *grid_tower
                 values: [6.   , 5.645, 5.29 , 4.935, 4.58 , 4.225, 3.87]
-            drag_coefficient:
-                grid: [0.0, 1.0]
-                values: [0.5, 0.5]
         internal_structure_2d_fem:
             reference_axis: *ref_axis_tower
             layers:
@@ -469,6 +466,8 @@ environment:
     weib_shape_parameter: 2.
     air_speed_sound: 340.
     shear_exp: 0.2
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075
