@@ -405,21 +405,24 @@ class InputReader_OpenFAST(InputReader_Common):
         self.read_DISCON_in()
         
         ROSCO_utilities.FileProcessing()
-        pitch_vector, tsr_vector, Cp_table, Ct_table, Cq_table = ROSCO_utilities.FileProcessing.load_from_txt(self.fst_vt['DISCON_in']['PerfFileName'])
+        try:
+            pitch_vector, tsr_vector, Cp_table, Ct_table, Cq_table = ROSCO_utilities.FileProcessing.load_from_txt(self.fst_vt['DISCON_in']['PerfFileName'])
 
-        RotorPerformance = ROSCO_turbine.RotorPerformance
-        Cp = RotorPerformance(Cp_table,pitch_vector,tsr_vector)
-        Ct = RotorPerformance(Ct_table,pitch_vector,tsr_vector)
-        Cq = RotorPerformance(Cq_table,pitch_vector,tsr_vector)
-        
-        self.fst_vt['DISCON_in']['Cp'] = Cp
-        self.fst_vt['DISCON_in']['Ct'] = Ct
-        self.fst_vt['DISCON_in']['Cq'] = Cq
-        self.fst_vt['DISCON_in']['Cp_pitch_initial_rad'] = pitch_vector
-        self.fst_vt['DISCON_in']['Cp_TSR_initial'] = tsr_vector
-        self.fst_vt['DISCON_in']['Cp_table'] = Cp_table
-        self.fst_vt['DISCON_in']['Ct_table'] = Ct_table
-        self.fst_vt['DISCON_in']['Cq_table'] = Cq_table
+            RotorPerformance = ROSCO_turbine.RotorPerformance
+            Cp = RotorPerformance(Cp_table,pitch_vector,tsr_vector)
+            Ct = RotorPerformance(Ct_table,pitch_vector,tsr_vector)
+            Cq = RotorPerformance(Cq_table,pitch_vector,tsr_vector)
+            
+            self.fst_vt['DISCON_in']['Cp'] = Cp
+            self.fst_vt['DISCON_in']['Ct'] = Ct
+            self.fst_vt['DISCON_in']['Cq'] = Cq
+            self.fst_vt['DISCON_in']['Cp_pitch_initial_rad'] = pitch_vector
+            self.fst_vt['DISCON_in']['Cp_TSR_initial'] = tsr_vector
+            self.fst_vt['DISCON_in']['Cp_table'] = Cp_table
+            self.fst_vt['DISCON_in']['Ct_table'] = Ct_table
+            self.fst_vt['DISCON_in']['Cq_table'] = Cq_table
+        except:
+            print('Unable to open {}, file may not exist.'.format(self.fst_vt['DISCON_in']['PerfFileName']))
         
         if self.fst_vt['Fst']['CompHydro'] == 1: # SubDyn not yet implimented
             self.read_HydroDyn()
