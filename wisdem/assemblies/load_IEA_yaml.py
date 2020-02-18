@@ -340,7 +340,6 @@ class Blade(Group):
         
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
-        # self.connect('re_interp_bem.twist',           'internal_structure_2d_fem.twist')
         self.connect('outer_shape_bem.twist',           'internal_structure_2d_fem.twist')
         self.connect('interp_airfoils_struct.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
 
@@ -1152,7 +1151,7 @@ class WindTurbineOntologyOpenMDAO(Group):
         analysis_options = self.options['analysis_options']
         self.add_subsystem('materials', Materials(mat_init_options = analysis_options['materials']))
         self.add_subsystem('airfoils',  Airfoils(af_init_options   = analysis_options['airfoils']))
-
+        
         self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils']))
         self.add_subsystem('hub',           Hub())
         self.add_subsystem('nacelle',       Nacelle())
@@ -1581,6 +1580,9 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.PC_zeta']       = control['PC_zeta']
     wt_opt['control.VS_omega']      = control['VS_omega']
     wt_opt['control.VS_zeta']       = control['VS_zeta']
+    if analysis_options['servose']['Flp_Mode'] > 0:
+        wt_opt['control.Flp_omega']      = control['Flp_omega']
+        wt_opt['control.Flp_zeta']       = control['Flp_zeta']
     # # other optional parameters
     wt_opt['control.max_pitch']     = control['max_pitch']
     wt_opt['control.min_pitch']     = control['min_pitch']

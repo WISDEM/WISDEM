@@ -133,6 +133,7 @@ class TuneROSCO(ExplicitComponent):
         self.n_aoa      = n_aoa        = self.analysis_options['airfoils']['n_aoa']# Number of angle of attacks
         self.n_Re       = n_Re         = self.analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab      = n_tab        = self.analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_te_flaps = n_te_flaps   = self.analysis_options['blade']['n_te_flaps']
         self.add_input('r',             val=np.zeros(n_span),               units='m',          desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
         self.add_input('chord',         val=np.zeros(n_span),               units='m',          desc='chord length at each section')
         self.add_input('theta',         val=np.zeros(n_span),               units='deg',        desc='twist angle at each section (positive decreases angle of attack)')
@@ -155,6 +156,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_discrete_input('nBlades',         val=0,                                       desc='number of blades')
         self.add_input('mu',            val=1.81e-5,                        units='kg/(m*s)',   desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                                desc='shear exponent')
+        self.add_input('delta_max_pos', val=np.zeros(n_te_flaps),           units='rad',        desc='1D array of the max angle of the trailing edge flaps.')
         self.add_discrete_input('nSector',      val=4,                                          desc='number of sectors to divide rotor face into in computing thrust and power')
         self.add_discrete_input('tiploss',      val=True,                                       desc='include Prandtl tip loss model')
         self.add_discrete_input('hubloss',      val=True,                                       desc='include Prandtl hub loss model')
@@ -194,6 +196,7 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['servose']['ss_vsgain']   = inputs['ss_vsgain'][0]
         self.analysis_options['servose']['ss_pcgain']   = inputs['ss_pcgain'][0]
         self.analysis_options['servose']['ps_percent']  = inputs['ps_percent'][0]
+        self.analysis_options['servose']['flp_maxpit']  = inputs['delta_max_pos'][0]
         #
         self.analysis_options['servose']['ss_cornerfreq']   = None
         self.analysis_options['servose']['sd_maxpit']       = None
@@ -237,8 +240,13 @@ class TuneROSCO(ExplicitComponent):
             # Create airfoils
             af = [None]*self.n_span
             for i in range(self.n_span):
-                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
-            # Initialize CCBlade as cc_rotor object 
+                if self.n_tab > 1:
+                    ref_tab = int(np.floor(self.n_tab / 2))
+                    af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'],inputs['airfoils_cl'][i, :, :, ref_tab], inputs['airfoils_cd'][i, :, :, ref_tab],inputs['airfoils_cm'][i, :, :, ref_tab])
+                else:
+                    af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i, :, :, 0], inputs['airfoils_cd'][i, :, :, 0], inputs['airfoils_cm'][i, :, :, 0])
+
+            # Initialize CCBlade as cc_rotor object
             WISDEM_turbine.cc_rotor = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
         
             # Load aerodynamic performance data for blades
@@ -266,7 +274,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.span     = inputs['r'] 
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
-            WISDEM_turbine.bld_flapwise_freq = inputs['flap_freq'][0]
+            WISDEM_turbine.bld_flapwise_freq = inputs['flap_freq'][0] * 2*np.pi
             # HARD CODING - NOT SURE HOW TO GET THIS (might be ok)
             WISDEM_turbine.bld_flapwise_damp = 0.477465
 
@@ -313,6 +321,7 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Fl_Kp'] = controller.Kp_float
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Kp'] = controller.Kp_flap
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Ki'] = controller.Ki_flap
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_MaxPit'] = controller.flp_maxpit
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Angle'] = 0.
         # - turbine
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
@@ -395,7 +404,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
         self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
         self.add_input('presweepTip',   val=0.0,                units='m', desc='presweep at tip')
-        
+
         # self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
         self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
@@ -444,10 +453,18 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Create Airfoil class instances
-        af = [None]*self.n_span
+        # af = [None]*self.n_span
+        # for i in range(self.n_span):
+        #     af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
+
+        af = [None] * self.n_span
         for i in range(self.n_span):
-            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
-        
+            if self.n_tab > 1:
+                ref_tab = int(np.floor(self.n_tab / 2))
+                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i, :, :, ref_tab],inputs['airfoils_cd'][i, :, :, ref_tab], inputs['airfoils_cm'][i, :, :, ref_tab])
+            else:
+                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i, :, :, 0],inputs['airfoils_cd'][i, :, :, 0], inputs['airfoils_cm'][i, :, :, 0])
+
 
         self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
 
@@ -776,9 +793,25 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Create Airfoil class instances
-        af = [None]*self.n_span
+        af = [None] * self.n_span
         for i in range(self.n_span):
-            af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
+            if self.n_tab > 1:
+                ref_tab = int(np.floor(self.n_tab / 2))
+                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i, :, :, ref_tab],inputs['airfoils_cd'][i, :, :, ref_tab], inputs['airfoils_cm'][i, :, :, ref_tab])
+            else:
+                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i, :, :, 0],inputs['airfoils_cd'][i, :, :, 0], inputs['airfoils_cm'][i, :, :, 0])
+
+
+
+
+        # af = [None] * self.n_span
+        # for i in range(self.n_span):
+        #     if self.n_tab > 1:
+        #         ref_tab = int(np.floor(self.n_tab / 2))
+        #         af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i, :, :, ref_tab],inputs['airfoils_cd'][i, :, :, ref_tab], inputs['airfoils_cm'][i, :, :, ref_tab])
+        #     else:
+        #         af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i, :, :, 0],inputs['airfoils_cd'][i, :, :, 0], inputs['airfoils_cm'][i, :, :, 0])
+
 
         n_pitch    = self.n_pitch
         n_tsr      = self.n_tsr

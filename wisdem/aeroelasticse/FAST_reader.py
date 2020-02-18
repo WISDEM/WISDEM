@@ -666,14 +666,13 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['ElastoDyn']['TwrGagNd'] = twrg
             self.fst_vt['ElastoDyn']['TwrGagNd'][-1]  = self.fst_vt['ElastoDyn']['TwrGagNd'][-1][:-1]
         self.fst_vt['ElastoDyn']['NBlGages'] = int(f.readline().split()[0])
-        blg = f.readline().split(',')
         if self.fst_vt['ElastoDyn']['NBlGages'] != 0:
-            for i in range(self.fst_vt['ElastoDyn']['NBlGages']):
-                self.fst_vt['ElastoDyn']['BldGagNd'].append(blg[i])
-            self.fst_vt['ElastoDyn']['BldGagNd'][-1]  = self.fst_vt['ElastoDyn']['BldGagNd'][-1][:-1]
+            self.fst_vt['ElastoDyn']['BldGagNd'] = f.readline().strip().split()[:self.fst_vt['ElastoDyn']['NBlGages']]
+            for i, bldgag in enumerate(self.fst_vt['ElastoDyn']['BldGagNd']):
+                self.fst_vt['ElastoDyn']['BldGagNd'][i] = int(bldgag.strip(','))
         else:
-            self.fst_vt['ElastoDyn']['BldGagNd'] = blg
-            self.fst_vt['ElastoDyn']['BldGagNd'][-1]  = self.fst_vt['ElastoDyn']['BldGagNd'][-1][:-1]
+            self.fst_vt['ElastoDyn']['BldGagNd'] = 0
+            f.readline()
 
         # Loop through output channel lines
         f.readline()
@@ -1435,9 +1434,6 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['PC_RefSpd']         = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['PC_FinePit']        = float_read(f.readline().split()[0])
             self.fst_vt['DISCON_in']['PC_Switch']         = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Z_EnableSine']      = int_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Z_PitchAmplitude']  = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Z_PitchFrequency']  = float_read(f.readline().split()[0])
             f.readline()
             f.readline()
 
@@ -1523,17 +1519,25 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['DISCON_in']['SD_CornerFreq']     = float_read(f.readline().split()[0])
             f.readline()
             f.readline()
-
-            # FLOATING
-            self.fst_vt['DISCON_in']['Fl_Kp']             = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Fl_Kp']         = float_read(f.readline().split()[0])
             f.readline()
             f.readline()
+            self.fst_vt['DISCON_in']['Flp_Angle']     = float_read(f.readline().split()[0])
+            self.fst_vt['DISCON_in']['Flp_Kp']        = np.array([float_read(f.readline().split()[0])])
+            self.fst_vt['DISCON_in']['Flp_Ki']        = np.array([float_read(f.readline().split()[0])])
+            self.fst_vt['DISCON_in']['Flp_MaxPit']    = np.array([float_read(f.readline().split()[0])])
 
-            # DISTRIBUTED AERODYNAMIC CONTROL
-            self.fst_vt['DISCON_in']['Flp_Angle']         = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Flp_Kp']            = float_read(f.readline().split()[0])
-            self.fst_vt['DISCON_in']['Flp_Ki']            = float_read(f.readline().split()[0])
+            # if Fl_Mode:
+            #     # FLOATING
+            # else:
+            #     self.fst_vt['DISCON_in']['Fl_Kp']         = 0.
 
+            # if Flp_Mode:
+            #     # DISTRIBUTED AERODYNAMIC CONTROL
+            # else:
+            #     self.fst_vt['DISCON_in']['Flp_Angle']     = 0.
+            #     self.fst_vt['DISCON_in']['Flp_Kp']        = 0.
+            #     self.fst_vt['DISCON_in']['Flp_Ki']        = 0.
 
             f.close()
 

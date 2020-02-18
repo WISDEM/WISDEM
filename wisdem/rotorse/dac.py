@@ -515,7 +515,6 @@ class RunXFOIL(ExplicitComponent):
                     # # # # plt.savefig('airfoil_polars_check/FFA-W3-301_cl_flaps.png', dpi=300)
 
 
-
                 else:  # no flap at specific radial location (but in general 'aerodynamic_control' is defined in blade from yaml)
                     # for j in range(n_Re): # ToDo incorporade variable Re capability
                     for ind in range(self.n_tab):  # fill all self.n_tab slots even though no flaps exist at current radial position
@@ -523,6 +522,26 @@ class RunXFOIL(ExplicitComponent):
                         rR = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
                         Re_loc[afi, :, ind] = c * maxTS * rR / KinVisc
                         Ma_loc[afi, :, ind] = maxTS * rR / SpdSound
+
+                        for j in range(self.n_Re):
+                            cl_interp_flaps[afi, :, j, ind] = cl_interp_flaps[afi, :, j, 0]
+                            cd_interp_flaps[afi, :, j, ind] = cd_interp_flaps[afi, :, j, 0]
+                            cm_interp_flaps[afi, :, j, ind] = cm_interp_flaps[afi, :, j, 0]
+
+
+
+                # else:  # no flap at specific radial location (but in general 'aerodynamic_control' is defined in blade from yaml)
+                #     # for j in range(n_Re): # ToDo incorporade variable Re capability
+                #     for ind in range(self.n_tab):  # fill all self.n_tab slots even though no flaps exist at current radial position
+                #         c = inputs['chord'][afi]  # blade chord length at cross section
+                #         rR = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
+                #         Re_loc[afi, :, ind] = c * maxTS * rR / KinVisc
+                #         Ma_loc[afi, :, ind] = maxTS * rR / SpdSound
+                #         for j in range(self.n_Re):
+                #             cl_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
+                #             cd_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
+                #             cm_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
+
 
         else:
             for afi in range(self.n_span):

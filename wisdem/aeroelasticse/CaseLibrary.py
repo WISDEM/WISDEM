@@ -585,8 +585,8 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
 
 def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_comm_map_down=[]):
     # Default Runtime
-    T = 130.  # 630
-    TStart = 30.
+    T = 600.  # 630
+    TStart = 0.
 
     # Overwrite for testing
     if TMax < T:
@@ -600,6 +600,8 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     iec.init_cond[("ElastoDyn", "BlPitch1")]['val'] = pitch_init
     iec.init_cond[("ElastoDyn", "BlPitch2")] = iec.init_cond[("ElastoDyn", "BlPitch1")]
     iec.init_cond[("ElastoDyn", "BlPitch3")] = iec.init_cond[("ElastoDyn", "BlPitch1")]
+
+
     iec.Turbine_Class = turbine_class
     iec.Turbulence_Class = turbulence_class
     iec.D = fst_vt['ElastoDyn']['TipRad'] * 2.
@@ -638,7 +640,7 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     case_inputs[("Fst", "TStart")] = {'vals': [TStart], 'group': 0}
     case_inputs[("Fst", "OutFileFmt")] = {'vals': [3], 'group': 0}
 
-    case_inputs[("ElastoDyn", "YawDOF")] = {'vals': ['True'], 'group': 0}
+    case_inputs[("ElastoDyn", "YawDOF")] = {'vals': ['False'], 'group': 0}
     case_inputs[("ElastoDyn", "FlapDOF1")] = {'vals': ['True'], 'group': 0}
     case_inputs[("ElastoDyn", "FlapDOF2")] = {'vals': ['True'], 'group': 0}
     case_inputs[("ElastoDyn", "EdgeDOF")] = {'vals': ['True'], 'group': 0}
@@ -651,7 +653,7 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
 
     case_inputs[("ServoDyn", "PCMode")] = {'vals': [5], 'group': 0}
     case_inputs[("ServoDyn", "VSContrl")] = {'vals': [5], 'group': 0}
-    case_inputs[("ServoDyn", "YCMode")] = {'vals': [5], 'group': 0}
+    case_inputs[("ServoDyn", "YCMode")] = {'vals': [0], 'group': 0}
 
     case_inputs[("AeroDyn15", "WakeMod")] = {'vals': [1], 'group': 0}
     case_inputs[("AeroDyn15", "AFAeroMod")] = {'vals': [2], 'group': 0}
@@ -659,7 +661,7 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     case_inputs[("AeroDyn15", "TwrShadow")] = {'vals': ['False'], 'group': 0}
     case_inputs[("AeroDyn15", "TwrAero")] = {'vals': ['False'], 'group': 0}
 
-    case_inputs[("AeroDyn15", "SkewMod")] = {'vals': [1], 'group': 0}
+    case_inputs[("AeroDyn15", "SkewMod")] = {'vals': [2], 'group': 0}
     case_inputs[("AeroDyn15", "TipLoss")] = {'vals': ['True'], 'group': 0}
     case_inputs[("AeroDyn15", "HubLoss")] = {'vals': ['True'], 'group': 0}
     # case_inputs[("AeroDyn15","TanInd")]      = {'vals':['True'], 'group':0}
@@ -678,6 +680,10 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
 
     channels += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
     channels += ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
+
+    channels += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
+    channels += ["BLFLAP1", "BLFLAP2", "BLFLAP3"]
+
 
     return case_list, case_name_list, channels
 
