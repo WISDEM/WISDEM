@@ -1376,7 +1376,7 @@ def assign_tower_values(wt_opt, analysis_options, tower):
     for i in range(n_layers):
         layer_name[i]  = tower['internal_structure_2d_fem']['layers'][i]['name']
         layer_mat[i]   = tower['internal_structure_2d_fem']['layers'][i]['material']
-        thickness[i]   = tower['internal_structure_2d_fem']['layers'][i]['thickness']['values']
+        thickness[i]   = np.interp(svec, tower['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], tower['internal_structure_2d_fem']['layers'][i]['thickness']['values'])[0: -1]
 
     wt_opt['tower.layer_name']        = layer_name
     wt_opt['tower.layer_mat']         = layer_mat
