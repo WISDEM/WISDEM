@@ -398,6 +398,16 @@ materials:
       area_density_dry: 1.112
       component_id: 3
       roll_mass: 181.4368
+   -  E: 2.0e11
+      name: steel
+      G: 7.93e10
+      rho: 7850.0
+      orth: 0
+      sigma_y: 450e6
+      nu: 0.265
+      Xt: 1.12e9
+      Xc: 2.16e9
+      unit_cost: 5.0
    -  E: 98460000.0
       name: FOAM
       G: 98460000.0

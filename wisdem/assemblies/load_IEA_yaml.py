@@ -290,17 +290,18 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['tower.layer_thickness'][i,:].tolist()
 
         # Update monopile
-        self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['monopile.s'].tolist()
-        self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['monopile.diameter'].tolist()
-        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['monopile.s'].tolist()
-        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['monopile.s'].tolist()
-        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['monopile.s'].tolist()
-        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['monopile.ref_axis'][:,0].tolist()
-        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['monopile.ref_axis'][:,1].tolist()
-        self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['monopile.ref_axis'][:,2].tolist()
-        for i in range(self.analysis_options['monopile']['n_layers']):
-            self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['monopile.s'].tolist()
-            self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['monopile.layer_thickness'][i,:].tolist()
+        if self.analysis_options['tower']['monopile']:
+            self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['monopile.s'].tolist()
+            self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['monopile.diameter'].tolist()
+            self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['monopile.s'].tolist()
+            self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['monopile.s'].tolist()
+            self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['monopile.s'].tolist()
+            self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['monopile.ref_axis'][:,0].tolist()
+            self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['monopile.ref_axis'][:,1].tolist()
+            self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['monopile.ref_axis'][:,2].tolist()
+            for i in range(self.analysis_options['monopile']['n_layers']):
+                self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['monopile.s'].tolist()
+                self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['monopile.layer_thickness'][i,:].tolist()
 
         # Write yaml with updated values
         f = open(fname_output, "w")
@@ -869,8 +870,9 @@ class Materials(ExplicitComponent):
         self.add_output('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
         self.add_output('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
         self.add_output('nu',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
-        self.add_output('Xt',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
-        self.add_output('Xc',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
+        self.add_output('Xt',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+        self.add_output('Xc',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
+        self.add_output('sigma_y',       val=np.zeros(n_mat),      units='Pa',     desc='Yield stress of the material (in the principle direction for composites).')
         self.add_output('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
         self.add_output('unit_cost',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
         self.add_output('waste',         val=np.zeros(n_mat),                      desc='1D array of the non-dimensional waste fraction of the materials.')
@@ -1604,6 +1606,7 @@ def assign_material_values(wt_opt, analysis_options, materials):
     orth        = np.zeros(n_mat)
     component_id= -np.ones(n_mat)
     rho         = np.zeros(n_mat)
+    sigma_y     = np.zeros(n_mat)
     E           = np.zeros([n_mat, 3])
     G           = np.zeros([n_mat, 3])
     nu          = np.zeros([n_mat, 3])
@@ -1619,9 +1622,9 @@ def assign_material_values(wt_opt, analysis_options, materials):
     waste       = np.zeros(n_mat)
     
     for i in range(n_mat):
-        name[i] =  materials[i]['name']
-        orth[i] =  materials[i]['orth']
-        rho[i]  =  materials[i]['rho']
+        name[i]    =  materials[i]['name']
+        orth[i]    =  materials[i]['orth']
+        rho[i]     =  materials[i]['rho']
         if 'component_id' in materials[i]:
             component_id[i] = materials[i]['component_id']
         if orth[i] == 0:
@@ -1664,11 +1667,14 @@ def assign_material_values(wt_opt, analysis_options, materials):
             unit_cost[i] = materials[i]['unit_cost']
         if 'waste' in materials[i]:
             waste[i] = materials[i]['waste']
-            
+        if 'sigma_y' in materials[i]:
+            sigma_y[i] =  materials[i]['sigma_y']
+
             
     wt_opt['materials.name']     = name
     wt_opt['materials.orth']     = orth
     wt_opt['materials.rho']      = rho
+    wt_opt['materials.sigma_y']  = sigma_y
     wt_opt['materials.component_id']= component_id
     wt_opt['materials.E']        = E
     wt_opt['materials.G']        = G

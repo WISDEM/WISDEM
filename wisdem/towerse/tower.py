@@ -82,7 +82,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_discrete_input('material_names', val=n_mat * [''],                         desc='1D array of names of materials.')
         self.add_input('E_mat',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
         self.add_input('G_mat',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
-        self.add_input('sigma_y_mat',            val=np.zeros([n_mat, 3]),            desc='2D array of the yield strength of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+        self.add_input('sigma_y_mat',       val=np.zeros(n_mat),      units='Pa',     desc='2D array of the yield strength of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
         self.add_input('rho_mat',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
         self.add_input('unit_cost_mat',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
 
@@ -114,7 +114,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         lmat_mon = discrete_inputs['monopile_layer_materials']
         lmat_tow = discrete_inputs['tower_layer_materials']
         
-        if n_height_monopile > 0:
+        if n_height_mon > 0:
             # Last monopile point and first tower point are the same
             outputs['tower_section_height'] = np.r_[ np.diff( h_mon * inputs['monopile_s'] ),
                                                      np.diff( h_tow * inputs['tower_s'] ) ]
@@ -125,7 +125,7 @@ class DiscretizationYAML(om.ExplicitComponent):
 
             # Combine layers into one structure
             layer_mat = []
-            for k in n_layers_mon:
+            for k in range(n_layers_mon):
                 ilayer = np.zeros(n_height)
 
                 ilayer[:n_height_mon] = lthick_mon[k,:]
@@ -148,7 +148,7 @@ class DiscretizationYAML(om.ExplicitComponent):
 
             # If there any uncounted tower layers, add them in
             n_layers_tow = len(lmat_tow)
-            for k in n_layers_tow:
+            for k in range(n_layers_tow):
                 ilayer = np.zeros(n_height)
                 ilayer[n_height_mon:] = lthick_tow[k,:]
                 twall  = np.hstack( (twall, ilayer) )
@@ -169,7 +169,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         # Convert to isotropic material
         E    = np.mean(inputs['E_mat'], axis=1)
         G    = np.mean(inputs['G_mat'], axis=1)
-        sigy = np.mean(inputs['sigma_y_mat'], axis=1)
+        sigy = inputs['sigma_y_mat']
         rho  = inputs['rho_mat']
         cost = inputs['unit_cost_mat']
         mat_names = discrete_inputs['material_names']
@@ -181,7 +181,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         sigy_param = myzeros.copy()
         rho_param  = myzeros.copy()
         cost_param = myzeros.copy()
-        for k in len(layer_mat):
+        for k in range(len(layer_mat)):
             # Get the material name for this layer
             iname = layer_mat[k]
 
@@ -726,7 +726,7 @@ class TowerLeanSE(om.Group):
             n_layers_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_layers']
             self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon,
                                                           n_layers_tower=toweropt['n_layers'], n_layers_monopile=n_layers_mon,
-                                                          n_mat=self.options['analysis_options']['material']['n_mat']),
+                                                          n_mat=self.options['analysis_options']['materials']['n_mat']),
                                promotes=['*'])
             
         # If doing fixed bottom monopile, we add an additional point for the pile (even for gravity foundations)
