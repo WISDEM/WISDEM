@@ -680,12 +680,13 @@ class InputReader_OpenFAST(InputReader_Common):
         # Loop through output channel lines
         f.readline()
         data = f.readline()
-        while data.split()[0] != 'END':
-            channels = data.split('"')
-            channel_list = channels[1].split(',')
-            self.set_outlist(self.fst_vt['outlist']['ElastoDyn'], channel_list)
+        if data != '':
+            while data.split()[0] != 'END':
+                channels = data.split('"')
+                channel_list = channels[1].split(',')
+                self.set_outlist(self.fst_vt['outlist']['ElastoDyn'], channel_list)
 
-            data = f.readline()
+                data = f.readline()
 
         f.close()
 

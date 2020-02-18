@@ -30,7 +30,7 @@ install:
   - cd ROSCO_toolbox
   - git submodule init
   - git submodule update
-  - git checkout f/flaps
+  - git checkout develop
   - python setup.py install
   - cd ..
 
