@@ -2122,6 +2122,11 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['MAP']['Option']   = [str(val) for val in f.readline().strip().split()]
 
     def read_MoorDyn(self):
+
+        moordyn_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['MooringFile']))
+
+        f = open(moordyn_file)
+
         # MoorDyn
         f.readline()
         f.readline()
