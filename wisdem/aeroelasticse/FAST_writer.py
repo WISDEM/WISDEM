@@ -1818,6 +1818,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(m)', '(kg/m)', '(N)', '(N-s/-)', '(-)', '(-)', '(-)', '(-)']])+'\n')
         for i in range(self.fst_vt['MoorDyn']['NTypes']):
             ln = []
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Name'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Diam'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['MassDen'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['EA'][i]))

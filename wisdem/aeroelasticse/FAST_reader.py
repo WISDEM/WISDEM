@@ -2135,7 +2135,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['MoorDyn']['NTypes']   = int_read(f.readline().split()[0])
         f.readline()
         f.readline()
-        self.fst_vt['MoorDyn']['LineType'] = []
+        self.fst_vt['MoorDyn']['Name'] = []
         self.fst_vt['MoorDyn']['Diam']     = []
         self.fst_vt['MoorDyn']['MassDen']  = []
         self.fst_vt['MoorDyn']['EA']       = []
@@ -2146,7 +2146,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['MoorDyn']['Cdt']      = []
         for i in range(self.fst_vt['MoorDyn']['NTypes']):
             data_line = f.readline().strip().split()
-            self.fst_vt['MoorDyn']['LineType'].append(str(data_line[0]))
+            self.fst_vt['MoorDyn']['Name'].append(str(data_line[0]))
             self.fst_vt['MoorDyn']['Diam'].append(float(data_line[1]))
             self.fst_vt['MoorDyn']['MassDen'].append(float(data_line[2]))
             self.fst_vt['MoorDyn']['EA'].append(float(data_line[3]))
@@ -2186,7 +2186,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['MoorDyn']['CdA'].append(float(data_line[10]))
             self.fst_vt['MoorDyn']['CA'].append(float(data_line[11]))
         f.readline()
-        self.fst_vt['MoorDyn']['NConnects'] = int_read(f.readline().split()[0])
+        self.fst_vt['MoorDyn']['NLines'] = int_read(f.readline().split()[0])
         f.readline()
         f.readline()
         self.fst_vt['MoorDyn']['Line']          = []
@@ -2196,7 +2196,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['MoorDyn']['NodeAnch']      = []
         self.fst_vt['MoorDyn']['NodeFair']      = []
         self.fst_vt['MoorDyn']['Flags_Outputs'] = []
-        for i in range(self.fst_vt['MoorDyn']['NConnects']):
+        for i in range(self.fst_vt['MoorDyn']['NLines']):
             data_line = f.readline().strip().split()
             self.fst_vt['MoorDyn']['Line'].append(int(data_line[0]))
             self.fst_vt['MoorDyn']['LineType'].append(str(data_line[1]))
@@ -2217,8 +2217,8 @@ class InputReader_OpenFAST(InputReader_Common):
 
         data = f.readline()
         while data.split()[0] != 'END':
-            channels = data.split('"')
-            channel_list = channels[1].split(',')
+            channels = data.strip().strip('"').strip("'")
+            channel_list = channels.split(',')
             self.set_outlist(self.fst_vt['outlist']['MoorDyn'], channel_list)
             data = f.readline()
 
