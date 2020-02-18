@@ -1253,14 +1253,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.WE_Mode              = self.fst_vt['DISCON_in']['WE_Mode']
         controller.PS_Mode              = self.fst_vt['DISCON_in']['PS_Mode']
         controller.SD_Mode              = self.fst_vt['DISCON_in']['SD_Mode']
-        try:
-            controller.Fl_Mode          = self.fst_vt['DISCON_in']['Fl_Mode']
-        except:
-            controller.Fl_Mode          = 0
-        try:
-            controller.Flp_Mode         = self.fst_vt['DISCON_in']['Flp_Mode']
-        except:
-            controller.Flp_Mode         = 0
+        controller.Fl_Mode              = self.fst_vt['DISCON_in']['Fl_Mode']
+        controller.Flp_Mode             = self.fst_vt['DISCON_in']['Flp_Mode']
         controller.F_LPFDamping         = self.fst_vt['DISCON_in']['F_LPFDamping']
         controller.ss_cornerfreq        = self.fst_vt['DISCON_in']['F_SSCornerFreq']
         controller.pitch_op_pc          = self.fst_vt['DISCON_in']['PC_GS_angles']
@@ -1282,34 +1276,22 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.ps_min_bld_pitch     = self.fst_vt['DISCON_in']['PS_BldPitchMin']
         controller.sd_maxpit            = self.fst_vt['DISCON_in']['SD_MaxPit']
         controller.sd_cornerfreq        = self.fst_vt['DISCON_in']['SD_CornerFreq']
-        try:
-            controller.Kp_float         = self.fst_vt['DISCON_in']['Fl_Kp']
-        except:
-            controller.Kp_float         = 0.
-        try:
-            controller.Kp_flap          = self.fst_vt['DISCON_in']['Flp_Kp']
-            controller.Ki_flap          = self.fst_vt['DISCON_in']['Flp_Ki']
-            controller.flp_angle        = self.fst_vt['DISCON_in']['Flp_Angle']
-        except:
-            controller.Kp_flap          = 0.
-            controller.Ki_flap          = 0.
-            controller.flp_angle        = 0.
+        controller.Kp_float             = self.fst_vt['DISCON_in']['Fl_Kp']
+        controller.Kp_flap              = self.fst_vt['DISCON_in']['Flp_Kp']
+        controller.Ki_flap              = self.fst_vt['DISCON_in']['Flp_Ki']
+        controller.flp_angle            = self.fst_vt['DISCON_in']['Flp_Angle']
+        controller.flp_maxpit           = self.fst_vt['DISCON_in']['Flp_MaxPit']
+
         turbine = type('', (), {})()
         turbine.Cp = type('', (), {})()
         turbine.Ct = type('', (), {})()
         turbine.Cq = type('', (), {})()
         turbine.rotor_radius            = self.fst_vt['DISCON_in']['WE_BladeRadius']
         turbine.v_rated                 = self.fst_vt['DISCON_in']['v_rated']
-        try:
-            turbine.bld_flapwise_freq   = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0]
-        except:
-            turbine.bld_flapwise_freq   = 0.
+        turbine.bld_flapwise_freq       = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0]
         turbine.bld_edgewise_freq       = self.fst_vt['DISCON_in']['F_LPFCornerFreq'] * 4.
         turbine.twr_freq                = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
-        try:
-            turbine.ptfm_freq           = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
-        except:
-            turbine.ptfm_freq           = 0.
+        turbine.ptfm_freq               = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
         turbine.max_pitch_rate          = self.fst_vt['DISCON_in']['PC_MaxRat']
         turbine.min_pitch_rate          = self.fst_vt['DISCON_in']['PC_MinRat']
         turbine.max_torque_rate         = self.fst_vt['DISCON_in']['VS_MaxRat']
