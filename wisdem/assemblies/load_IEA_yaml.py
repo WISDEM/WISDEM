@@ -169,7 +169,6 @@ class WindTurbineOntologyPython(object):
         if self.analysis_options['tower']['monopile']:
             self.analysis_options['monopile']['n_height']  = len(self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid'])
             self.analysis_options['monopile']['n_layers']  = len(self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'])
-        print(self.analysis_options['tower'])
         
 
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
@@ -779,7 +778,8 @@ class Tower(ExplicitComponent):
         outputs['height']   = outputs['ref_axis'][-1,2]
         myarc               = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])
         outputs['length']   = myarc[-1]
-        outputs['s']        = myarc / myarc[-1]
+        if myarc[-1] > 0.0:
+            outputs['s']    = myarc / myarc[-1]
         
 
 class Monopile(ExplicitComponent):
@@ -816,7 +816,8 @@ class Monopile(ExplicitComponent):
         outputs['height']   = outputs['ref_axis'][-1,2]
         myarc               = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])
         outputs['length']   = myarc[-1]
-        outputs['s']        = myarc / myarc[-1]
+        if myarc[-1] > 0.0:
+            outputs['s']    = myarc / myarc[-1]
 
 
 class Foundation(ExplicitComponent):
@@ -973,11 +974,8 @@ class Environment(ExplicitComponent):
         self.add_output('speed_sound_air',  val=340.,     units='m/s',        desc='Speed of sound in air.')
         self.add_output('rho_water',      val=1025.,        units='kg/m**3',    desc='Density of ocean water')
         self.add_output('mu_water',       val=1.3351e-3,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
-        self.add_output('G_soil',      val=1025.,        units='kg/m**3',    desc='Density of ocean water')
-        self.add_output('nu_soil',       val=1.3351e-3,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
-
-        wt_opt['env.G_soil'] = environment['soil_shear_modulus']
-    wt_opt['env.nu_soil'] = environment['soil_poisson']
+        self.add_output('G_soil',      val=140e6,        units='kg/m**3',    desc='Density of ocean water')
+        self.add_output('nu_soil',       val=0.4,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
 
 class Costs(ExplicitComponent):
     # Openmdao component with the cost parameters
@@ -1060,7 +1058,6 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     hub             = wt_init['components']['hub']
     nacelle         = wt_init['components']['nacelle']
     tower           = wt_init['components']['tower']
-    monopile        = wt_init['components']['monopile']
     foundation      = wt_init['components']['foundation']
     control         = wt_init['control']
     assembly        = wt_init['assembly']
@@ -1073,7 +1070,9 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     wt_opt = assign_hub_values(wt_opt, hub)
     wt_opt = assign_nacelle_values(wt_opt, nacelle)
     wt_opt = assign_tower_values(wt_opt, analysis_options, tower)
-    wt_opt = assign_monopile_values(wt_opt, analysis_options, monopile)
+    if analysis_options['tower']['monopile']:
+        monopile = wt_init['components']['monopile']
+        wt_opt   = assign_monopile_values(wt_opt, analysis_options, monopile)
     wt_opt = assign_foundation_values(wt_opt, foundation)
     wt_opt = assign_control_values(wt_opt, analysis_options, control)
     wt_opt = assign_configuration_values(wt_opt, assembly)
@@ -1358,19 +1357,24 @@ def assign_tower_values(wt_opt, analysis_options, tower):
     
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
-    thickness       = np.zeros((n_layers, n_height))
+    thickness       = np.zeros((n_layers, n_height-1))
 
-    nd_height = wt_opt['tower.s']
-    wt_opt['tower.diameter']   = np.interp(nd_height, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
+    svec = np.unique( np.r_[tower['outer_shape_bem']['outer_diameter']['grid'],
+                            tower['outer_shape_bem']['reference_axis']['x']['grid'],
+                            tower['outer_shape_bem']['reference_axis']['y']['grid'],
+                            tower['outer_shape_bem']['reference_axis']['z']['grid']] )
     
-    wt_opt['tower.ref_axis'][:,0]  = np.interp(nd_height, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
-    wt_opt['tower.ref_axis'][:,1]  = np.interp(nd_height, tower['outer_shape_bem']['reference_axis']['y']['grid'], tower['outer_shape_bem']['reference_axis']['y']['values'])
-    wt_opt['tower.ref_axis'][:,2]  = np.interp(nd_height, tower['outer_shape_bem']['reference_axis']['z']['grid'], tower['outer_shape_bem']['reference_axis']['z']['values'])
+    wt_opt['tower.s'] = svec
+    wt_opt['tower.diameter']   = np.interp(svec, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
+    
+    wt_opt['tower.ref_axis'][:,0]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
+    wt_opt['tower.ref_axis'][:,1]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['y']['grid'], tower['outer_shape_bem']['reference_axis']['y']['values'])
+    wt_opt['tower.ref_axis'][:,2]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['z']['grid'], tower['outer_shape_bem']['reference_axis']['z']['values'])
 
     for i in range(n_layers):
         layer_name[i]  = tower['internal_structure_2d_fem']['layers'][i]['name']
         layer_mat[i]   = tower['internal_structure_2d_fem']['layers'][i]['material']
-        thickness[i]   = np.interp(nd_height, tower['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], tower['internal_structure_2d_fem']['layers'][i]['thickness']['values'], left=0., right=0.)
+        thickness[i]   = tower['internal_structure_2d_fem']['layers'][i]['thickness']['values']
 
     wt_opt['tower.layer_name']        = layer_name
     wt_opt['tower.layer_mat']         = layer_mat
@@ -1387,19 +1391,24 @@ def assign_monopile_values(wt_opt, analysis_options, monopile):
     
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
-    thickness       = np.zeros((n_layers, n_height))
+    thickness       = np.zeros((n_layers, n_height-1))
 
-    nd_height = wt_opt['monopile.s']
-    wt_opt['monopile.diameter']   = np.interp(nd_height, monopile['outer_shape_bem']['outer_diameter']['grid'], monopile['outer_shape_bem']['outer_diameter']['values'])
+    svec = np.unique( np.r_[monopile['outer_shape_bem']['outer_diameter']['grid'],
+                            monopile['outer_shape_bem']['reference_axis']['x']['grid'],
+                            monopile['outer_shape_bem']['reference_axis']['y']['grid'],
+                            monopile['outer_shape_bem']['reference_axis']['z']['grid']] )
     
-    wt_opt['monopile.ref_axis'][:,0]  = np.interp(nd_height, monopile['outer_shape_bem']['reference_axis']['x']['grid'], monopile['outer_shape_bem']['reference_axis']['x']['values'])
-    wt_opt['monopile.ref_axis'][:,1]  = np.interp(nd_height, monopile['outer_shape_bem']['reference_axis']['y']['grid'], monopile['outer_shape_bem']['reference_axis']['y']['values'])
-    wt_opt['monopile.ref_axis'][:,2]  = np.interp(nd_height, monopile['outer_shape_bem']['reference_axis']['z']['grid'], monopile['outer_shape_bem']['reference_axis']['z']['values'])
+    wt_opt['monopile.s'] = svec
+    wt_opt['monopile.diameter']   = np.interp(svec, monopile['outer_shape_bem']['outer_diameter']['grid'], monopile['outer_shape_bem']['outer_diameter']['values'])
+    
+    wt_opt['monopile.ref_axis'][:,0]  = np.interp(svec, monopile['outer_shape_bem']['reference_axis']['x']['grid'], monopile['outer_shape_bem']['reference_axis']['x']['values'])
+    wt_opt['monopile.ref_axis'][:,1]  = np.interp(svec, monopile['outer_shape_bem']['reference_axis']['y']['grid'], monopile['outer_shape_bem']['reference_axis']['y']['values'])
+    wt_opt['monopile.ref_axis'][:,2]  = np.interp(svec, monopile['outer_shape_bem']['reference_axis']['z']['grid'], monopile['outer_shape_bem']['reference_axis']['z']['values'])
 
     for i in range(n_layers):
         layer_name[i]  = monopile['internal_structure_2d_fem']['layers'][i]['name']
         layer_mat[i]   = monopile['internal_structure_2d_fem']['layers'][i]['material']
-        thickness[i]   = np.interp(nd_height, monopile['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], monopile['internal_structure_2d_fem']['layers'][i]['thickness']['values'], left=0., right=0.)
+        thickness[i]   = monopile['internal_structure_2d_fem']['layers'][i]['thickness']['values']
 
     wt_opt['monopile.layer_name']        = layer_name
     wt_opt['monopile.layer_mat']         = layer_mat

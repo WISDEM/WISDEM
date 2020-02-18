@@ -19,59 +19,47 @@ class TestTowerSE(unittest.TestCase):
         
     def testMonopileFoundation(self):
         # Test Land
-        self.inputs['tower_section_height'] = 2.*np.ones(2)
-        self.inputs['tower_outer_diameter'] = 3.*np.ones(3)
-        self.inputs['tower_wall_thickness'] = 0.1*np.ones(2)
         self.inputs['suctionpile_depth'] = 0.0
         self.inputs['foundation_height'] = 0.0
-        myobj = tow.MonopileFoundation(n_height=3, monopile=False)
+        myobj = tow.MonopileFoundation(monopile=False)
         myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs['section_height_out'], self.inputs['tower_section_height'])
-        npt.assert_equal(self.outputs['outer_diameter_out'], self.inputs['tower_outer_diameter'])
-        npt.assert_equal(self.outputs['wall_thickness_out'], self.inputs['tower_wall_thickness'])
-        npt.assert_equal(self.outputs['foundation_height_out'], self.inputs['foundation_height'])
+        npt.assert_equal(self.outputs['z_start'], self.inputs['foundation_height'])
 
         # Test Land with bad suctionpile input
         self.inputs['suctionpile_depth'] = 10.0
         myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs['section_height_out'], self.inputs['tower_section_height'])
-        npt.assert_equal(self.outputs['outer_diameter_out'], self.inputs['tower_outer_diameter'])
-        npt.assert_equal(self.outputs['wall_thickness_out'], self.inputs['tower_wall_thickness'])
-        npt.assert_equal(self.outputs['foundation_height_out'], self.inputs['foundation_height'])
+        npt.assert_equal(self.outputs['z_start'], self.inputs['foundation_height'])
         
         # Test monopile with pile
         self.inputs['suctionpile_depth'] = 10.0
         self.inputs['foundation_height'] = -30.0
-        myobj = tow.MonopileFoundation(n_height=3, monopile=True)
+        myobj = tow.MonopileFoundation(monopile=True)
         myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs['section_height_out'], np.array([10., 2., 2.]))
-        npt.assert_equal(self.outputs['outer_diameter_out'], 3.*np.ones(4))
-        npt.assert_equal(self.outputs['wall_thickness_out'], 0.1*np.ones(3))
-        npt.assert_equal(self.outputs['foundation_height_out'], self.inputs['foundation_height']-self.inputs['suctionpile_depth'])
+        npt.assert_equal(self.outputs['z_start'], -40.0)
+
+        self.inputs['suctionpile_depth'] = -10.0
+        myobj.compute(self.inputs, self.outputs)
+        npt.assert_equal(self.outputs['z_start'], -40.0)
         
         # Test monopile with gravity
         self.inputs['suctionpile_depth'] = 0.0
-        myobj = tow.MonopileFoundation(n_height=3, monopile=True)
+        myobj = tow.MonopileFoundation(monopile=True)
         myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs['section_height_out'], np.array([0.1, 2., 2.]))
-        npt.assert_equal(self.outputs['outer_diameter_out'], 3.*np.ones(4))
-        npt.assert_equal(self.outputs['wall_thickness_out'], 0.1*np.ones(3))
-        npt.assert_equal(self.outputs['foundation_height_out'], self.inputs['foundation_height']-0.1)
+        npt.assert_equal(self.outputs['z_start'], self.inputs['foundation_height'])
 
         
     def testTowerDisc(self):
         # Test Land
         self.inputs['hub_height'] = 100.0
         self.inputs['z_param'] = np.array([0., 40., 80.])
+        self.inputs['z_full'] = np.linspace(0., 80., 7)
+        self.inputs['rho'] = 1e3 * np.ones(2)
+        self.inputs['outfitting_factor'] = 1.1 * np.ones(2)
+        self.inputs['unit_cost'] = 5.0 * np.ones(2)
         myobj = tow.TowerDiscretization(n_height=3)
         myobj.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs['height_constraint'], 20.0)
         
-        # Test monopile 
-        self.inputs['z_param'] = np.array([-50., -30, 0.0, 40., 80.])
-        myobj = tow.TowerDiscretization(n_height=5)
-        myobj.compute(self.inputs, self.outputs)
-        self.assertEqual(self.outputs['height_constraint'], 20.0)
 
         
     def testTowerMass(self):
@@ -103,8 +91,9 @@ class TestTowerSE(unittest.TestCase):
     def testPreFrame(self):
         
         # Test Land 
-        self.inputs['z'] = 10. * np.arange(0,7)
-        self.inputs['d'] = 6. * np.ones(self.inputs['z'].shape)
+        self.inputs['z_param'] = 10. * np.array([0., 3., 6.])
+        self.inputs['z_full'] = 10. * np.arange(0,7)
+        self.inputs['d_full'] = 6. * np.ones(self.inputs['z_full'].shape)
         self.inputs['mass'] = 1e5
         self.inputs['mI']   = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         self.inputs['mrho'] = np.array([-3., 0.0, 1.0])
@@ -115,6 +104,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['rna_F'] = 1e5*np.array([2., 3., 4.,])
         self.inputs['rna_M'] = 1e6*np.array([2., 3., 4.,])
         self.inputs['k_monopile'] = np.zeros(6)
+        self.inputs['E'] = 1e9 * np.ones(2)
+        self.inputs['G'] = 1e8 * np.ones(2)
+        self.inputs['sigma_y'] = 1e8 * np.ones(2)
 
         myobj = tow.TowerPreFrame(n_height=3, monopile=False)
         myobj.compute(self.inputs, self.outputs)
@@ -148,8 +140,8 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs['Mzz'], np.array([4e6]))
 
         # Test Monopile 
-        self.inputs['z'] = 10. * np.arange(-6,7)
-        self.inputs['d'] = 6. * np.ones(self.inputs['z'].shape)
+        self.inputs['z_full'] = 10. * np.arange(-6,7)
+        self.inputs['d_full'] = 6. * np.ones(self.inputs['z_full'].shape)
         self.inputs['transition_piece_mass'] = 1e3
         self.inputs['transition_piece_height'] = 10.0
         self.inputs['gravity_foundation_mass'] = 1e4
@@ -161,13 +153,13 @@ class TestTowerSE(unittest.TestCase):
         myobj = tow.TowerPreFrame(n_height=5, monopile=True)
         myobj.compute(self.inputs, self.outputs)
 
-        npt.assert_equal(self.outputs['kidx'], np.array([0, 1, 2, 3]))
-        npt.assert_equal(self.outputs['kx'], 20.*np.ones(4))
-        npt.assert_equal(self.outputs['ky'], 22.*np.ones(4))
-        npt.assert_equal(self.outputs['kz'], 24.*np.ones(4))
-        npt.assert_equal(self.outputs['ktx'], 21.*np.ones(4))
-        npt.assert_equal(self.outputs['kty'], 23.*np.ones(4))
-        npt.assert_equal(self.outputs['ktz'], 25.*np.ones(4))
+        npt.assert_equal(self.outputs['kidx'], np.array([0]))
+        npt.assert_equal(self.outputs['kx'], 20.*np.ones(1))
+        npt.assert_equal(self.outputs['ky'], 22.*np.ones(1))
+        npt.assert_equal(self.outputs['kz'], 24.*np.ones(1))
+        npt.assert_equal(self.outputs['ktx'], 21.*np.ones(1))
+        npt.assert_equal(self.outputs['kty'], 23.*np.ones(1))
+        npt.assert_equal(self.outputs['ktz'], 25.*np.ones(1))
 
         npt.assert_equal(self.outputs['midx'], np.array([12, 7, 0]))
         npt.assert_equal(self.outputs['m'], np.array([1e5, 1e3, 1e4]))
@@ -238,7 +230,7 @@ class TestTowerSE(unittest.TestCase):
         prob['nu_soil'] = 0.5
         prob['E'] = 1e9
         prob['G'] = 1e8
-        prob['material_density'] = 1e4
+        prob['rho'] = 1e4
         prob['sigma_y'] = 1e8
         prob['rna_mass'] = 2e5
         prob['rna_I'] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
@@ -263,9 +255,7 @@ class TestTowerSE(unittest.TestCase):
 
         # All other tests from above
         mass_dens = 1e4*(5.**2-4.9**2)*np.pi
-        npt.assert_equal(prob['section_height_out'], prob['tower_section_height'])
-        npt.assert_equal(prob['outer_diameter_out'], prob['tower_outer_diameter'])
-        npt.assert_equal(prob['wall_thickness_out'], prob['tower_wall_thickness'])
+        npt.assert_equal(prob['z_start'], 0.0)
         npt.assert_equal(prob['z_param'], np.array([0., 40., 80.]))
         
         self.assertEqual(prob['height_constraint'], 0.0)
@@ -315,7 +305,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower'] = {}
         analysis_options['tower']['buckling_length'] = 20.0
         analysis_options['tower']['monopile'] = True
-        analysis_options['tower']['n_height'] = 4
+        analysis_options['tower']['n_height'] = 5
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
 
@@ -346,18 +336,18 @@ class TestTowerSE(unittest.TestCase):
         prob['transition_piece_height'] = 15.0
         prob['transition_piece_mass'] = 1e2
         prob['gravity_foundation_mass'] = 1e4
-        prob['tower_section_height'] = 30.0*np.ones(3)
-        prob['tower_outer_diameter'] = 10.0*np.ones(4)
-        prob['tower_wall_thickness'] = 0.1*np.ones(3)
+        prob['tower_section_height'] = np.r_[15.0, 30.0*np.ones(3)]
+        prob['tower_outer_diameter'] = 10.0*np.ones(5)
+        prob['tower_wall_thickness'] = 0.1*np.ones(4)
         prob['suctionpile_depth'] = 15.0
         prob['outfitting_factor'] = 1.0
         prob['yaw'] = 0.0
         prob['G_soil'] = 1e7
         prob['nu_soil'] = 0.5
-        prob['E'] = 1e9
-        prob['G'] = 1e8
-        prob['material_density'] = 1e4
-        prob['sigma_y'] = 1e8
+        prob['E'] = 1e9*np.ones(4)
+        prob['G'] = 1e8*np.ones(4)
+        prob['rho'] = 1e4*np.ones(4)
+        prob['sigma_y'] = 1e8*np.ones(4)
         prob['rna_mass'] = 2e5
         prob['rna_I'] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob['rna_cg'] = np.array([-3., 0.0, 1.0])
@@ -382,9 +372,7 @@ class TestTowerSE(unittest.TestCase):
 
         # All other tests from above
         mass_dens = 1e4*(5.**2-4.9**2)*np.pi
-        npt.assert_equal(prob['section_height_out'], np.r_[15., 30.*np.ones(3)])
-        npt.assert_equal(prob['outer_diameter_out'], 10.*np.ones(5))
-        npt.assert_equal(prob['wall_thickness_out'], 0.1*np.ones(4))
+        npt.assert_equal(prob['z_start'], -45.0)
         npt.assert_equal(prob['z_param'], np.array([-45., -30., 0., 30., 60.]))
         
         self.assertEqual(prob['height_constraint'], 20.0)
@@ -397,7 +385,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob['monopile_mass'], mass_dens*60.0 + 1e2+1e4)
         npt.assert_almost_equal(prob['tower_mass'], mass_dens*45.0)
 
-        npt.assert_equal(prob['pre.kidx'], np.array([0, 1, 2, 3], dtype=np.int_))
+        npt.assert_equal(prob['pre.kidx'], np.array([0], dtype=np.int_))
         npt.assert_array_less(prob['pre.kx'], 1e16)
         npt.assert_array_less(prob['pre.ky'], 1e16)
         npt.assert_array_less(prob['pre.kz'], 1e16)
@@ -440,7 +428,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower'] = {}
         analysis_options['tower']['buckling_length'] = 20.0
         analysis_options['tower']['monopile'] = True
-        analysis_options['tower']['n_height'] = 4
+        analysis_options['tower']['n_height'] = 5
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
 
@@ -471,18 +459,18 @@ class TestTowerSE(unittest.TestCase):
         prob['transition_piece_height'] = 15.0
         prob['transition_piece_mass'] = 0.0
         prob['gravity_foundation_mass'] = 0.0
-        prob['tower_section_height'] = 30.0*np.ones(3)
-        prob['tower_outer_diameter'] = 10.0*np.ones(4)
-        prob['tower_wall_thickness'] = 0.1*np.ones(3)
+        prob['tower_section_height'] = np.r_[15.0, 30.0*np.ones(3)]
+        prob['tower_outer_diameter'] = 10.0*np.ones(5)
+        prob['tower_wall_thickness'] = 0.1*np.ones(4)
         prob['suctionpile_depth'] = 15.0
         prob['outfitting_factor'] = 1.0
         prob['yaw'] = 0.0
         prob['G_soil'] = 1e7
         prob['nu_soil'] = 0.5
-        prob['E'] = 1e9
-        prob['G'] = 1e8
-        prob['material_density'] = 1e4
-        prob['sigma_y'] = 1e8
+        prob['E'] = 1e9*np.ones(4)
+        prob['G'] = 1e8*np.ones(4)
+        prob['rho'] = 1e4*np.ones(4)
+        prob['sigma_y'] = 1e8*np.ones(4)
         prob['rna_mass'] = 0.0
         prob['rna_I'] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob['rna_cg'] = np.array([-3., 0.0, 1.0])
@@ -508,17 +496,17 @@ class TestTowerSE(unittest.TestCase):
 
         prob['rna_mass'] = 1e4
         prob.run_model()
-        myFz[3:] -= 1e4*g
+        myFz -= 1e4*g
         npt.assert_almost_equal(prob['post.Fz'], myFz)
 
         prob['transition_piece_mass'] = 1e2
         prob.run_model()
-        myFz[3:7] -= 1e2*g
+        myFz[:7] -= 1e2*g
         npt.assert_almost_equal(prob['post.Fz'], myFz)
 
         prob['gravity_foundation_mass'] = 1e3
         prob.run_model()
-        #myFz[3] -= 1e3*g
+        #myFz[0] -= 1e3*g
         npt.assert_almost_equal(prob['post.Fz'], myFz)
 
         
@@ -530,13 +518,13 @@ class TestTowerSE(unittest.TestCase):
         z_foundation = 0.0
         theta_stress = 0.0
         yaw = 0.0
-        Koutfitting = 1.07
+        Koutfitting = 1.07 * np.ones(2)
 
         # --- material props ---
-        E = 210e9
-        G = 80.8e9
-        rho = 8500.0
-        sigma_y = 450.0e6
+        E = 210e9 * np.ones(2)
+        G = 80.8e9 * np.ones(2)
+        rho = 8500.0 * np.ones(2)
+        sigma_y = 450.0e6 * np.ones(2)
 
         # --- extra mass ----
         m = np.array([285598.8])
@@ -658,7 +646,7 @@ class TestTowerSE(unittest.TestCase):
         # --- material props ---
         prob['E'] = E
         prob['G'] = G
-        prob['material_density'] = rho
+        prob['rho'] = rho
         prob['sigma_y'] = sigma_y
 
         # --- extra mass ----
@@ -668,7 +656,7 @@ class TestTowerSE(unittest.TestCase):
         # -----------
 
         # --- costs ---
-        prob['material_cost_rate'] = material_cost
+        prob['unit_cost'] = material_cost
         prob['labor_cost_rate']    = labor_cost
         prob['painting_cost_rate'] = painting_cost
         # -----------

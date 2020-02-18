@@ -192,6 +192,7 @@ components:
           efficiency: 0.95
 
     tower:
+        outfitting_factor: 1.07
         outer_shape_bem:
             reference_axis: &ref_axis_tower
                 x:
@@ -213,7 +214,7 @@ components:
                   material: steel
                   thickness:
                     grid: *grid_tower
-                    values: [0.027 , 0.0254, 0.0238, 0.0222, 0.0206, 0.019, 0.019]
+                    values: [0.027, 0.0254, 0.0238, 0.0222, 0.0206, 0.019]
     foundation:
         height: 0.
 airfoils:
@@ -468,6 +469,9 @@ environment:
     shear_exp: 0.2
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140e6
+    soil_poisson: 0.4
+    
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075

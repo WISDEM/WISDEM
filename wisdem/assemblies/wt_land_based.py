@@ -280,18 +280,23 @@ class WT_RNTA(Group):
         self.connect('env.rho_air',                   'towerse.rho_air')
         self.connect('env.mu_air',                    'towerse.mu_air')                    
         self.connect('env.shear_exp',                 'towerse.shearExp')                    
-        self.connect('env.G_soil',                    'towerse.G_soil')                    
-        self.connect('env.nu_soil',                   'towerse.nu_soil')                    
         self.connect('assembly.hub_height',           'towerse.hub_height')
         self.connect('foundation.height',             'towerse.foundation_height')
         self.connect('tower.diameter',                'towerse.tower_outer_diameter_in')
-        self.connect('tower.height',                  'towerse.height')
-        self.connect('tower.s',                       'towerse.s')
-        self.connect('tower.layer_thickness',         'towerse.layer_thickness')
+        self.connect('tower.height',                  'towerse.tower_height')
+        self.connect('tower.s',                       'towerse.tower_s')
+        self.connect('tower.layer_thickness',         'towerse.tower_layer_thickness')
         self.connect('tower.outfitting_factor',       'towerse.tower_outfitting_factor')
+        self.connect('materials.name',                'towerse.material_names')
+        self.connect('materials.E',                   'towerse.E_mat')
+        self.connect('materials.G',                   'towerse.G_mat')
+        self.connect('materials.rho',                 'towerse.rho_mat')
+        self.connect('materials.unit_cost',           'towerse.unit_cost_mat')
         if analysis_options['tower']['monopile']:
             self.connect('env.rho_water',                 'towerse.rho_water')
             self.connect('env.mu_water',                  'towerse.mu_water')                    
+            self.connect('env.G_soil',                    'towerse.G_soil')                    
+            self.connect('env.nu_soil',                   'towerse.nu_soil')                    
             self.connect('monopile.diameter',                'towerse.monopile_outer_diameter_in')
             self.connect('monopile.height',                  'towerse.monopile_height')
             self.connect('monopile.s',                       'towerse.monopile_s')
@@ -302,9 +307,9 @@ class WT_RNTA(Group):
             self.connect('monopile.gravity_foundation_mass', 'towerse.gravity_foundation_mass')
             self.connect('monopile.suctionpile_depth',       'towerse.suctionpile_depth')
 
-        self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
-        self.connect('max_taper_ratio',         'max_taper') # TODO- 
-        self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
+        #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
+        #self.connect('max_taper_ratio',         'max_taper') # TODO- 
+        #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
           
         # Connections to aeroelasticse
         if analysis_options['openfast']['run_openfast'] == True:
@@ -392,7 +397,7 @@ class WT_RNTA(Group):
         self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
         # Temporary
-        self.connect('tower.mass',                  'tcc.tower_mass')
+        self.connect('towerse.tower_mass',                  'tcc.tower_mass')
 
 class WindPark(Group):
     # Openmdao group to run the cost analysis of a wind park
