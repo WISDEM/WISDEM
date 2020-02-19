@@ -5,9 +5,17 @@ from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, Sqlite
 from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyPython, WindTurbineOntologyOpenMDAO, yaml2openmdao
 from wisdem.assemblies.run_tools import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
 from wisdem.assemblies.wt_land_based import WindPark
+from wisdem.commonse.mpi_tools import MPI
+
 
 def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output):
     # Main to run a wind turbine wisdem assembly
+    
+    # Get the rank number for parallelization
+    if MPI:
+        rank = MPI.COMM_WORLD.Get_rank()
+    else:
+        rank = 0
     
     # Optimization options
     optimization_data       = Opt_Data()
@@ -44,16 +52,48 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         os.mkdir(folder_output)
 
     # Initialize openmdao problem
-    wt_opt          = Problem()
-    wt_opt.model    = WindPark(analysis_options = analysis_options, opt_options = opt_options)
-    wt_opt.model.approx_totals(method='fd')
+    if MPI:
+        num_par_fd = MPI.COMM_WORLD.Get_size()
+        wt_opt = Problem(model=Group(num_par_fd=num_par_fd))
+        wt_opt.model.add_subsystem('comp', WindPark(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
+    else:
+        wt_opt = Problem(model=WindPark(analysis_options = analysis_options, opt_options = opt_options))
+    
+    if 'step_size' in opt_options['driver']:
+        step_size = opt_options['driver']['step_size']
+    else:
+        step_size = 1.e-6
+    wt_opt.model.approx_totals(method='fd', step=step_size)    
     
     if opt_options['opt_flag'] == True:
         # Set optimization solver and options
-        wt_opt.driver  = ScipyOptimizeDriver()
-        wt_opt.driver.options['optimizer'] = opt_options['driver']['solver']
-        wt_opt.driver.options['tol']       = opt_options['driver']['tol']
-        wt_opt.driver.options['maxiter']   = opt_options['driver']['max_iter']
+        if opt_options['driver']['solver'] == 'SLSQP':
+            wt_opt.driver  = ScipyOptimizeDriver()
+            wt_opt.driver.options['optimizer'] = opt_options['driver']['solver']
+            wt_opt.driver.options['tol']       = opt_options['driver']['tol']
+            wt_opt.driver.options['maxiter']   = opt_options['driver']['max_iter']
+        elif opt_options['driver']['solver'] == 'CONMIN':
+            try:
+                from openmdao.api import pyOptSparseDriver
+            except:
+                exit('You requested the optimization solver CONMIN, but you have not installed the pyOptSparseDriver. Please do so and rerun.')
+            wt_opt.driver = pyOptSparseDriver()
+            wt_opt.driver.options['optimizer'] = opt_options['driver']['solver']
+            wt_opt.driver.opt_settings['ITMAX']= opt_options['driver']['max_iter']
+        elif opt_options['driver']['solver'] == 'SNOPT':
+            try:
+                from openmdao.api import pyOptSparseDriver
+            except:
+                exit('You requested the optimization solver SNOPT, but you have not installed the pyOptSparseDriver. Please do so and rerun.')
+            wt_opt.driver = pyOptSparseDriver()
+            try:    
+                wt_opt.driver.options['optimizer']                       = opt_options['driver']['solver']
+            except:
+                exit('You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun.')
+            wt_opt.driver.opt_settings['Major optimality tolerance'] = float(opt_options['driver']['tol'])
+            wt_opt.driver.opt_settings['Iterations limit']           = int(opt_options['driver']['max_iter'])
+        else:
+            exit('The optimizer ' + opt_options['driver']['solver'] + 'is not yet supported!')
 
         # Set merit figure
         if opt_options['merit_figure'] == 'AEP':
@@ -117,8 +157,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     # Build and run openmdao problem
     wt_opt.run_driver()
 
-    # Save data coming from openmdao to an output yaml file
-    wt_initial.write_ontology(wt_opt, fname_wt_output)
+    if rank == 0:
+        # Save data coming from openmdao to an output yaml file
+        wt_initial.write_ontology(wt_opt, fname_wt_output)
 
     return wt_opt, analysis_options, opt_options
 
@@ -133,20 +174,26 @@ if __name__ == "__main__":
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
 
-    # Printing and plotting results
-    print('AEP in GWh = ' + str(wt_opt['sse.AEP']*1.e-6))
-    print('Nat frequencies blades in Hz = ' + str(wt_opt['elastic.curvefem.freq']))
-    print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
-    print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
+        # Get the rank number for parallelization
+    if MPI:
+        rank = MPI.COMM_WORLD.Get_rank()
+    else:
+        rank = 0
+    if rank == 0:
+        # Printing and plotting results
+        print('AEP in GWh = ' + str(wt_opt['sse.AEP']*1.e-6))
+        print('Nat frequencies blades in Hz = ' + str(wt_opt['elastic.curvefem.freq']))
+        print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
+        print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
 
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_spar'], label='spar ss')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_spar'], label='spar ps')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_te'], label='te ss')
-    plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_te'], label='te ps')
-    plt.ylim([-5e-3, 5e-3])
-    plt.xlabel('r [m]')
-    plt.ylabel('strain [-]')
-    plt.legend()
-    plt.show()
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_spar'], label='spar ss')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_spar'], label='spar ps')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_te'], label='te ss')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_te'], label='te ps')
+        plt.ylim([-5e-3, 5e-3])
+        plt.xlabel('r [m]')
+        plt.ylabel('strain [-]')
+        plt.legend()
+        plt.show()
