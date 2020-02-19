@@ -442,8 +442,8 @@ class pyIECWind_turb():
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
         turbsim_vt.tmspecs.HubHt              = self.z_hub
         if self.flag_enlarge_grid:
-            turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.5)
-            turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.5)
+            turbsim_vt.tmspecs.GridHeight         = min([np.ceil(self.D*1.5), self.z_hub*1.99])
+            turbsim_vt.tmspecs.GridWidth          = min([np.ceil(self.D*1.5), self.z_hub*1.99])
             turbsim_vt.tmspecs.NumGrid_Z          = 31
             turbsim_vt.tmspecs.NumGrid_Y          = 31
         else:
