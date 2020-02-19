@@ -319,8 +319,8 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SD_MaxPit'] = controller.sd_maxpit
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SD_CornerFreq'] = controller.sd_cornerfreq
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Fl_Kp'] = controller.Kp_float
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Kp'] = controller.Kp_flap
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Ki'] = controller.Ki_flap
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Kp'] = np.ones(len(controller.Kp_flap)) * 0.00000010   # controller.Kp_flap
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Ki'] = np.ones(len(controller.Ki_flap)) * 0.00000200   # controller.Ki_flap
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_MaxPit'] = controller.flp_maxpit
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Angle'] = 0.
         # - turbine

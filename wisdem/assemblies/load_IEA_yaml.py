@@ -315,6 +315,7 @@ class Blade(Group):
         # Connections from outer_shape_bem to re_interp_bem
         self.connect('outer_shape_bem.s',           're_interp_bem.s_')
         self.connect('outer_shape_bem.chord',       're_interp_bem.chord_')
+        self.connect('outer_shape_bem.twist',       're_interp_bem.twist_')
         self.connect('outer_shape_bem.pitch_axis',  're_interp_bem.pitch_axis_')
         # self.connect('outer_shape_bem.af_used',     're_interp_bem.af_used_')
         # self.connect('outer_shape_bem.af_position', 're_interp_bem.af_position_')
