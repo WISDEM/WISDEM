@@ -125,36 +125,35 @@ class DiscretizationYAML(om.ExplicitComponent):
 
             # Combine layers into one structure
             layer_mat = []
+            twall     = np.zeros((1, n_height-1))
             for k in range(n_layers_mon):
-                ilayer = np.zeros(n_height)
+                ilayer = np.zeros(n_height-1)
 
-                ilayer[:n_height_mon] = lthick_mon[k,:]
+                ilayer[:(n_height_mon-1)] = lthick_mon[k,:]
 
                 imat_mon = lmat_mon[k]
                 layer_mat.append(imat_mon)
                 
                 if imat_mon in lmat_tow:
                     ktow = lmat_tow.index( imat_mon )
-                    ilayer[n_height_mon:] = lthick_tow[ktow,:]
+                    ilayer[(n_height_mon-1):] = lthick_tow[ktow,:]
 
                     # Remove from listing so we don't double count later
                     lmat_tow.pop( ktow )
                     lthick_tow = np.delete(lthick_tow, [ktow], axis=0)
 
-                if k == 0:
-                    twall = ilayer.copy()
-                else:
-                    twall = np.vstack( (twall, ilayer) )
+                twall = np.vstack( (twall, ilayer) )
 
             # If there any uncounted tower layers, add them in
             n_layers_tow = len(lmat_tow)
             for k in range(n_layers_tow):
-                ilayer = np.zeros(n_height)
-                ilayer[n_height_mon:] = lthick_tow[k,:]
-                twall  = np.hstack( (twall, ilayer) )
+                ilayer = np.zeros(n_height-1)
+                ilayer[(n_height_mon-1):] = lthick_tow[k,:]
+                twall  = np.vstack( (twall, ilayer) )
                 imat  = lmat_tow[k]
                 layer_mat.append(imat)
                 
+            twall = np.delete(twall, [0], axis=0)
             outputs['tower_wall_thickness'] = np.sum(twall, axis=0)
             
         else:
@@ -164,6 +163,14 @@ class DiscretizationYAML(om.ExplicitComponent):
             outputs['tower_outer_diameter'] = inputs['tower_outer_diameter_in']
             twall     = inputs['tower_layer_thickness']
             layer_mat = discrete_inputs['tower_layer_materials']
+
+        # Check to make sure we have good values
+        if np.any(outputs['tower_section_height'] <= 0.0):
+            raise ValueError('Section height values must be greater than zero, '+str(outputs['tower_section_height']))
+        if np.any(outputs['tower_wall_thickness'] <= 0.0):
+            raise ValueError('Wall thickness values must be greater than zero, '+str(outputs['tower_wall_thickness']))
+        if np.any(outputs['tower_outer_diameter'] <= 0.0):
+            raise ValueError('Diameter values must be greater than zero, '+str(outputs['tower_outer_diameter']))
 
         # DETERMINE MATERIAL PROPERTIES IN EACH SECTION
         # Convert to isotropic material

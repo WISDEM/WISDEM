@@ -46,6 +46,14 @@ class CylinderDiscretization(ExplicitComponent):
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
+        # Check to make sure we have good values
+        if np.any(inputs['section_height'] <= 0.0):
+            raise ValueError('Section height values must be greater than zero, '+str(inputs['section_height']))
+        if np.any(inputs['wall_thickness'] <= 0.0):
+            raise ValueError('Wall thickness values must be greater than zero, '+str(inputs['wall_thickness']))
+        if np.any(inputs['diameter'] <= 0.0):
+            raise ValueError('Diameter values must be greater than zero, '+str(inputs['diameter']))
+        
         nRefine = int(np.round( self.options['nRefine'] ))
         z_param = float(inputs['foundation_height']) + np.r_[0.0, np.cumsum(inputs['section_height'].flatten())]
         # Have to regine each element one at a time so that we preserve input nodes
