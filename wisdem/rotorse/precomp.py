@@ -153,7 +153,7 @@ class PreComp():
         for i in range(nsec):
             # print(i)
 
-            # xnode, ynode = profile[i]._preCompFormat()
+            xnode, ynode = profile[i]._preCompFormat()
             locU, n_laminaU, n_pliesU, tU, thetaU, mat_idxU = csU[i]._preCompFormat()
             locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL = csL[i]._preCompFormat()
             locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW = csW[i]._preCompFormat()
