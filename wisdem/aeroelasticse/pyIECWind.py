@@ -444,8 +444,8 @@ class pyIECWind_turb():
         if self.flag_enlarge_grid:
             turbsim_vt.tmspecs.GridHeight         = min([np.ceil(self.D*1.5), self.z_hub*1.99])
             turbsim_vt.tmspecs.GridWidth          = min([np.ceil(self.D*1.5), self.z_hub*1.99])
-            turbsim_vt.tmspecs.NumGrid_Z          = 31
-            turbsim_vt.tmspecs.NumGrid_Y          = 31
+            turbsim_vt.tmspecs.NumGrid_Z          = int(np.ceil(turbsim_vt.tmspecs.GridHeight/12.))
+            turbsim_vt.tmspecs.NumGrid_Y          = int(np.ceil(turbsim_vt.tmspecs.GridHeight/12.))
         else:
             turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.05)
             turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.05)
@@ -472,7 +472,13 @@ class pyIECWind_turb():
         turbsim_vt.noniecboundconds.PC_UV     = '"default"'
         turbsim_vt.noniecboundconds.PC_VW     = '"default"'
         
-        
+        turbsim_vt.spatialcoherance.SCMod1    = '"IEC"'
+        turbsim_vt.spatialcoherance.SCMod2    = '"IEC"'
+        turbsim_vt.spatialcoherance.SCMod3    = '"IEC"'
+        turbsim_vt.spatialcoherance.InCDec1   = '"default"'
+        turbsim_vt.spatialcoherance.InCDec2   = '"default"'
+        turbsim_vt.spatialcoherance.InCDec3   = '"default"'
+        turbsim_vt.spatialcoherance.CohExp    = '"default"'
         
         return turbsim_vt
 

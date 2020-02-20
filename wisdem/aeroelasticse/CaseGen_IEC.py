@@ -241,8 +241,11 @@ class CaseGen_IEC():
             case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
             case_inputs_i[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
 
+            print(self.dlc_inputs['Yaw'][i])
             if len(self.dlc_inputs['Yaw'][i]) > 0:
-                    case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':self.dlc_inputs['Yaw'][i], 'group':2}
+                case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':self.dlc_inputs['Yaw'][i], 'group':2}
+            else:
+                case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':[0.], 'group':0}
 
             # Set FAST variables from inital conditions
             if self.init_cond:
