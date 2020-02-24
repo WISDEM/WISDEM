@@ -6,14 +6,14 @@ import pandas as pd
 import wisdem.pBeam._pBEAM as _pBEAM
 
 # Inputs
-angle_deg               = 12.
+angle_deg               = 10.
 blade_length            = 100.
 lateral_clearance       = 6.7056 # 22 feet
 vertical_clearance      = 7.0104 # 23 feet
 n_points                = 10000
 max_strains             = 3500. * 1.e-6
 n_carts                 = 4
-n_opt                   = 10
+n_opt                   = 21
 max_LV                  = 0.5
 weight_car              = 217724.16
 max_root_rot_deg        = 20.
@@ -27,7 +27,7 @@ angle_rad    = angle_deg / 180. * np.pi
 radius = sp.constants.foot * 100. /(2.*np.sin(angle_rad/2.))
 
 filename = '/Users/pbortolo/work/3_projects/3_BAR/EC_rail_transport.xlsx'
-data=pd.read_excel(filename,sheet_name='BAR00_SNL')
+data=pd.read_excel(filename,sheet_name='BAR03')
 s = data._series['s [-]']
 r = np.array(s * blade_length)
 EIflap   = data._series['EIyy [Nm2]']
@@ -38,11 +38,14 @@ dist_ss  = data._series['A to EC [m]']
 dist_ps  = data._series['B to EC [m]']
 
 M        = np.array(max_strains * EIflap / dist_ss)
-V        = np.gradient(M,r)
-q        = np.gradient(V,r)    
+V        = -np.gradient(M,r)
+q        = -np.gradient(V,r)    
 
 r_opt    = np.linspace(0., blade_length, n_opt)
 r_carts  = np.linspace(0., blade_length, n_carts+1)
+id_carts = np.zeros_like(r_carts)
+for i in range(n_carts):
+    id_carts[i+1] = np.argmin(abs(r_carts[i+1] - r_opt))
 M_opt    = np.interp(r_opt, r, M)
 V_opt    = np.gradient(M_opt,r_opt)
 q_opt    = np.max([np.zeros(n_opt), np.gradient(V_opt,r_opt)], axis=0)
@@ -74,21 +77,28 @@ y_outer  = np.sqrt(r_outer**2. - (x_outer-r_midline)**2.)
 x_inner  = np.linspace(0.5*lateral_clearance, 2.*r_midline - 0.5*lateral_clearance, n_points)
 y_inner  = np.sqrt(r_inner**2. - (x_inner-r_midline)**2.)
 
-
+dist_ss_interp   = np.interp(r_opt, r, dist_ss)
+dist_ps_interp   = np.interp(r_opt, r, dist_ps)
+EIflap_interp    = np.interp(r_opt, r, EIflap)
+EIedge_interp    = np.interp(r_opt, r, EIedge)
+GJ_interp        = np.interp(r_opt, r, GJ)
+rhoA_interp      = np.interp(r_opt, r, rhoA)
+EA_interp        = EIedge_interp
+rhoJ_interp      = rhoA_interp
 
 def get_max_force(inputs):
     q_iter    = q_opt * inputs[:-1]
-    V_iter_0  = np.trapz(q_iter,r_opt)
-
-    q_iter_carts  = np.interp(r_carts, r_opt, q_iter)
+    V_iter    = np.zeros(n_opt)
+    for i in range(n_opt):
+        V_iter[i] = np.trapz(q_iter[i:],r_opt[i:])
     RF_iter_carts = np.zeros(n_carts)
     for i in range(n_carts):
-        RF_iter_carts[i] = np.trapz(q_iter_carts[i:i+2],r_carts[i:i+2])
+        RF_iter_carts[i] = V_iter[int(id_carts[i])] - V_iter[int(id_carts[i+1])]
 
     return max(RF_iter_carts)*1.e-5
 
 def get_constraints(inputs):
-    q_iter    = q_opt * inputs[:-1] #np.gradient(V_iter,r_opt)
+    q_iter = q_opt * inputs[:-1] #np.gradient(V_iter,r_opt)
     V_iter = np.zeros(n_opt)
     M_iter = np.zeros(n_opt)
     for i in range(n_opt):
@@ -98,11 +108,7 @@ def get_constraints(inputs):
 
     root_rot_rad_iter = inputs[-1]
 
-    
-    dist_ss_iter   = np.interp(r_opt, r, dist_ss)
-    dist_ps_iter   = np.interp(r_opt, r, dist_ps)
-    EIflap_iter    = np.interp(r_opt, r, EIflap)
-    eps            = M_iter * dist_ss_iter / EIflap_iter
+    eps            = M_iter * dist_ss_interp / EIflap_interp
     consts_strains = (max_strains - abs(eps))*1.e+3
 
     # fs=10
@@ -117,12 +123,9 @@ def get_constraints(inputs):
     # plt.subplots_adjust(bottom = 0.15, left = 0.18)
     # plt.show()
 
-    EIedge_iter  = np.interp(r_opt, r, EIedge)
-    GJ_iter      = np.interp(r_opt, r, GJ)
-    rhoA_iter    = np.interp(r_opt, r, rhoA)
-    EA_iter      = EIedge_iter
-    rhoJ_iter    = rhoA_iter
-    p_section    = _pBEAM.SectionData(n_opt, r_opt, EA_iter, EIedge_iter, EIflap_iter, GJ_iter, rhoA_iter, rhoJ_iter)
+    
+
+    p_section    = _pBEAM.SectionData(n_opt, r_opt, EA_interp, EIedge_interp, EIflap_interp, GJ_interp, rhoA_interp, rhoJ_interp)
     p_tip        = _pBEAM.TipData()  # no tip mass
     p_base       = _pBEAM.BaseData(np.ones(6), 1.0)  # rigid base
     p_loads      = _pBEAM.Loads(n_opt, q_iter, np.zeros_like(r_opt), np.zeros_like(r_opt))
@@ -132,8 +135,8 @@ def get_constraints(inputs):
     x_blade_transport = dx*blade_length/arc_length(r_opt, dx)[-1]
     y_blade_transport = r_opt*blade_length/arc_length(r_opt, dx)[-1]
 
-    ps_x = x_blade_transport + dist_ps_iter
-    ss_x = x_blade_transport - dist_ss_iter
+    ps_x = x_blade_transport + dist_ps_interp
+    ss_x = x_blade_transport - dist_ss_interp
     ps_y = ss_y = y_blade_transport
 
     ps_x_rot  = ps_x*np.cos(root_rot_rad_iter) - ps_y*np.sin(root_rot_rad_iter)
@@ -177,7 +180,7 @@ def get_constraints(inputs):
 
 x0    = np.hstack((np.ones(n_opt), 0.))
 
-bnds = ((0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(-max_root_rot_deg / 180. * np.pi, max_root_rot_deg / 180. * np.pi))
+bnds = ((0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(-max_root_rot_deg / 180. * np.pi, max_root_rot_deg / 180. * np.pi))
 const           = {}
 const['type']   = 'ineq'
 const['fun']    = get_constraints
@@ -200,26 +203,15 @@ else:
     print('The optimizer finds a solution!')
     print('Prescribed rotation angle: ' + str(root_rot_rad_final * 180. / np.pi) + ' deg')
     
-    q_carts = np.interp(r_carts, r_opt, q_final)
     RF_carts = np.zeros(n_carts)
     for i in range(n_carts):
-        RF_carts[i] = np.trapz(q_carts[i:i+2],r_carts[i:i+2])
-    
-
+        RF_carts[i] = V_final[int(id_carts[i])] - V_final[int(id_carts[i+1])]
 
     print('Max reaction force: ' + str(max(RF_carts*1.e-3)) + ' kN')
 
-    dist_ss_final  = np.interp(r_opt, r, dist_ss)
-    dist_ps_final  = np.interp(r_opt, r, dist_ps)
-    EIflap_final    = np.interp(r_opt, r, EIflap)
-    eps            = M_final * dist_ss_final / EIflap_final
+    eps            = M_final * dist_ss_interp / EIflap_interp
 
-    EIedge_final  = np.interp(r_opt, r, EIedge)
-    GJ_final      = np.interp(r_opt, r, GJ)
-    rhoA_final    = np.interp(r_opt, r, rhoA)
-    EA_final      = EIedge_final
-    rhoJ_final    = rhoA_final
-    p_section    = _pBEAM.SectionData(n_opt, r_opt, EA_final, EIedge_final, EIflap_final, GJ_final, rhoA_final, rhoJ_final)
+    p_section    = _pBEAM.SectionData(n_opt, r_opt, EA_interp, EIedge_interp, EIflap_interp, GJ_interp, rhoA_interp, rhoJ_interp)
     p_tip        = _pBEAM.TipData()  # no tip mass
     p_base       = _pBEAM.BaseData(np.ones(6), 1.0)  # rigid base
     p_loads      = _pBEAM.Loads(n_opt, q_final, np.zeros_like(r_opt), np.zeros_like(r_opt))
@@ -230,8 +222,8 @@ else:
     y_blade_transport = r_opt*blade_length/arc_length(r_opt, dx)[-1]
 
 
-    ps_x = x_blade_transport + dist_ps_final
-    ss_x = x_blade_transport - dist_ss_final
+    ps_x = x_blade_transport + dist_ps_interp
+    ss_x = x_blade_transport - dist_ss_interp
     ps_y = ss_y = y_blade_transport
 
     ps_x_rot  = ps_x*np.cos(root_rot_rad_final) - ps_y*np.sin(root_rot_rad_final)
@@ -245,6 +237,20 @@ else:
 
 
     fs=10
+
+    f, ax = plt.subplots(1,1,figsize=(5.3, 5.3))
+    ax.bar(np.array([1,2,3,4]), RF_carts*1.e-3)
+    plt.xlabel('Cart [-]', fontsize=fs+2, fontweight='bold')
+    plt.ylabel('Lateral Forces [kN]', fontsize=fs+2, fontweight='bold')
+    plt.xticks(fontsize=fs)
+    plt.yticks(fontsize=fs)
+    from matplotlib.ticker import MaxNLocator
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    plt.ylim(bottom=0, top=300)
+    plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+    plt.subplots_adjust(bottom = 0.15, left = 0.18)
+
+
     f, ax = plt.subplots(1,1,figsize=(5.3, 5.3))
     ax.plot(r_opt, eps)
     ax.legend(fontsize=fs)
@@ -277,7 +283,7 @@ else:
     axes[0].plot(r_opt, M_final * 1.e-6, 'r--', label = 'Final')
     axes[0].set_ylabel('Moment [MNm]')
     axes[0].legend(fontsize=fs)
-    axes[1].plot(r, V*1.e-6, 'b--', label = '3500 mu eps')
+    axes[1].plot(r, V*1.e-6, 'b-', label = '3500 mu eps')
     axes[1].plot(r_opt, V_final*1.e-6, 'r--', label = 'Final')
     axes[1].legend(fontsize=fs)
     axes[1].set_ylabel('Shear Forces [MN]')
