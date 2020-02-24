@@ -1,6 +1,6 @@
 """Provides the `Port` class."""
 
-__author__ = ["Jake Nunemaker", "Rob Hammond"]
+__author__ = "Jake Nunemaker"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
@@ -8,7 +8,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 import simpy
 
-from .exceptions import ItemNotFound
+from wisdem.orbit.core.exceptions import ItemNotFound
 
 
 class Port(simpy.FilterStore):
@@ -27,38 +27,39 @@ class Port(simpy.FilterStore):
         capacity = kwargs.get("capacity", float("inf"))
         super().__init__(env, capacity)
 
-    def get_item(self, rule):
+    def get_item(self, _type):
         """
-        Checks self.items for an item satisfying 'rule'. Returns item if found,
-        otherwise returns an error.
+        Checks self.items for an item satisfying `item.type = _type`, otherwise
+        returns `ItemNotFound`.
 
         Parameters
         ----------
-        rule : tuple
-            Tuple defining the rule to filter items by.
-            - ('key': 'value')
+        _type : str
+            Type of item to match. Checks `item.type`.
 
         Returns
         -------
-        res : FilterStoreGet
-            Response from underlying FilterStore. Call 'res.value' for the
-            underlying dictionary.
+        res.value : FilterStoreGet.value
+            Returned item.
+
+        Raises
+        ------
+        ItemNotFound
         """
 
-        _key, _value = rule
-
         target = None
-        for item in self.items:
+        for i in self.items:
             try:
-                if item[_key] == _value:
-                    target = item
+                if i.type == _type:
+                    target = i
+                    break
 
-            except KeyError:
-                pass
+            except AttributeError:
+                continue
 
         if not target:
-            raise ItemNotFound(rule)
+            raise ItemNotFound(_type)
 
         else:
             res = self.get(lambda x: x == target)
-            return res
+            return res.value

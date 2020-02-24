@@ -39,7 +39,7 @@ import yaml
 import pandas as pd
 from yaml import Dumper
 
-from wisdem.orbit.simulation.exceptions import LibraryItemNotFoundError
+from wisdem.orbit.core.exceptions import LibraryItemNotFoundError
 
 ROOT = os.path.abspath(os.path.join(os.path.abspath(__file__), "../.."))
 default_library = os.path.join(ROOT, "library")
@@ -251,12 +251,12 @@ PATH_LIBRARY = {
     # default data
     "defaults": "defaults",
     # vessels
-    "array_cable_lay_vessel": "vessels",
+    "array_cable_install_vessel": "vessels",
     "array_cable_bury_vessel": "vessels",
-    "export_cable_lay_vessel": "vessels",
+    "export_cable_install_vessel": "vessels",
     "export_cable_bury_vessel": "vessels",
     "oss_install_vessel": "vessels",
-    "scour_protection_install_vessel": "vessels",
+    "spi_vessel": "vessels",
     "trench_dig_vessel": "vessels",
     "feeder": "vessels",
     "wtiv": "vessels",

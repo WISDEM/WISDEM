@@ -5,4 +5,6 @@ __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Rob Hammond"
 __email__ = "robert.hammond@nrel.gov"
 
-from .cable_install import ArrayCableInstallation, ExportCableInstallation
+from .array import ArrayCableInstallation
+from .common import SimpleCable
+from .export import ExportCableInstallation
