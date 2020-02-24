@@ -1,7 +1,3 @@
-storage_specs:
-  max_cargo: 4000       # t
-  max_deck_load: 15     # t/m^2
-  max_deck_space: 1     # m^2 (for cable laying vessels, this is number of carousels)
 transport_specs:
   max_waveheight: 2.0   # m
   max_windspeed: 25     # m/s
@@ -11,3 +7,5 @@ vessel_specs:
   day_rate: 120000      # USD/day, cost of operating vessel with crew
   min_draft: 4.8        # m
   overall_length: 99.0  # m
+cable_storage:
+  max_mass: 4000      # t
