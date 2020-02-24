@@ -1,12 +1,38 @@
 """Custom exceptions used throughout ORBIT."""
 
-__author__ = ["Jake Nunemaker", "Rob Hammond"]
+__author__ = "Jake Nunemaker"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
 import os
+
+
+class MissingComponent(Exception):
+    """Error for a missing component on a vessel."""
+
+    def __init__(self, vessel, component):
+        """
+        Creates an instance of MissingComponent.
+
+        Parameters
+        ----------
+        vessel : Vessel
+        component : str
+            Missing required component.
+        """
+
+        self.vessel = vessel
+        self.component = component
+
+        self.message = (
+            f"{vessel} is missing required component(s) '{component}'."
+        )
+
+    def __str__(self):
+
+        return self.message
 
 
 class ItemNotFound(Exception):
@@ -23,28 +49,6 @@ class ItemNotFound(Exception):
         """
 
         self.message = f"No items found that satisfy: {rule}"
-
-    def __str__(self):
-        return self.message
-
-
-class IncorrectLogLevel(Exception):
-    """Error for incorrect log level."""
-
-    def __init__(self, input):
-        """
-        Creates an instance of IncorrectLogLevel.
-
-        Parameters
-        ----------
-        input : str
-            Log level passed in.
-        """
-
-        self.input = input
-        self.message = (
-            f"'{self.input}' does not match any python logging levels"
-        )
 
     def __str__(self):
         return self.message
@@ -77,34 +81,28 @@ class DeckSpaceExceeded(Exception):
         return self.message
 
 
-class CargoWeightExceeded(Exception):
-    """Error for exceeding vessel maximum cargo weight"""
+class CargoMassExceeded(Exception):
+    """Error for exceeding vessel maximum cargo mass"""
 
     def __init__(self, max, current, item):
         """
-        Creates an instance of CargoWeightExceeded.
+        Creates an instance of CargoMassExceeded.
 
         Parameters
         ----------
         max : int | float
-            Maximum vessel cargo weight (t).
+            Maximum vessel cargo mass (t).
         current : int | float
-            Vessel cargo weight currently in use (t).
+            Vessel cargo mass currently in use (t).
         item : dict or str
-            Item that exceeded cargo weight limit. Item can either be
+            Item that exceeded cargo mass limit. Item can either be
             a dictionary with a 'type' or the name of an item.
         """
 
         self.max = max
         self.current = current
         self.item = item
-
-        if isinstance(item, dict):
-            self.message = (
-                f"'{self.item['type']}' will exceed maximum cargo weight."
-            )
-        elif isinstance(item, str):
-            self.message = f"'{self.item}' will exceed maximum cargo weight."
+        self.message = f"'{self.item}' will exceed maximum cargo mass."
 
     def __str__(self):
         return self.message
@@ -159,6 +157,31 @@ class InsufficientAmount(Exception):
             f"Not enough '{self.item_type}' on vessel. At least "
             f"{required:.4e} more units required"
         )
+
+    def __str__(self):
+        return self.message
+
+
+class InsufficientCable(Exception):
+    """
+    Error raised when a Carousel doesn't have enough cable for next section.
+    """
+
+    def __init__(self, current_amount, amount_requested):
+        """
+        Creates an instance of InsufficientAmount.
+
+        Parameters
+        ----------
+        current_amount : int | float
+            Current length of cable.
+        amount_requested : dict or str
+            Amount of cable needed
+        """
+
+        self.current = current_amount
+        self.requested = amount_requested
+        self.message = f"Not enough cable on carousel."
 
     def __str__(self):
         return self.message
@@ -336,7 +359,7 @@ class VesselCapacityError(Exception):
 
         self.message = (
             f"Vessel {self.vessel} does not have the required "
-            "cargo weight or deck space capacity to transport a "
+            "cargo mass or deck space capacity to transport a "
             f"whole set of components: {self.items}"
         )
 

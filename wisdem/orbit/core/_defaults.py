@@ -7,10 +7,16 @@ This module contains default vessel process times.
 """
 
 
-defaults = {
-    # Cable Lay Vessel Processes
-    "carousel_lift_time": 1,  # hr
-    "carousel_fasten_time": 5,  # hr
+process_times = {
+    # Export Cable Installation
+    "onshore_construction_time": 48,  # hr
+    "trench_dig_speed": 0.1,  # km/hr
+    "pull_winch_speed": 5,  # km/hr
+    "tow_plow_speed": 5,  # km/hr
+    # Array Cable Installation
+    # General Cable Installation
+    "plgr_speed": 1,  # km/hr
+    "cable_load_time": 6,  # hr
     "cable_prep_time": 1,  # hr
     "cable_lower_time": 1,  # hr
     "cable_pull_in_time": 5.5,  # hr
@@ -19,10 +25,7 @@ defaults = {
     "cable_lay_bury_speed": 0.3,  # km/hr
     "cable_bury_speed": 0.5,  # km/hr
     "cable_splice_time": 48,  # hr
-    "tow_plow_speed": 5,  # km/hr
-    "pull_winch_speed": 5,  # km/hr
     "cable_raise_time": 0.5,  # hr
-    "trench_dig_speed": 0.1,  # km/hr
     # Offshore Substation
     "topside_fasten_time": 2,  # hr
     "topside_release_time": 2,  # hr

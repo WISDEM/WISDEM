@@ -17,52 +17,46 @@ class MonopileDesign(DesignPhase):
     """Monopile Design Class."""
 
     expected_config = {
-        "site": {"depth": "float", "mean_windspeed": "float"},
+        "site": {"depth": "m", "mean_windspeed": "m/s"},
         "plant": {"num_turbines": "int"},
         "turbine": {
-            "rotor_diameter": "float",
-            "hub_height": "float",
-            "rated_windspeed": "float",
+            "rotor_diameter": "m",
+            "hub_height": "m",
+            "rated_windspeed": "m/s",
         },
         "monopile_design": {
-            "yield_stress": "float (optional)",
+            "yield_stress": "Pa (optional)",
             "load_factor": "float (optional)",
             "material_factor": "float (optional)",
-            "monopile_density": "float (optional)",
-            "monopile_modulus": "float (optional)",
-            "monopile_tp_connection_thickness": "float (optional)",
-            "transition_piece_density": "float (optional)",
-            "transition_piece_thickness": "float (optional)",
-            "transition_piece_length": "float (optional)",
-            "soil_coefficient": "float (optional)",
-            "air_density": "float (optional)",
+            "monopile_density": "kg/m3 (optional)",
+            "monopile_modulus": "Pa (optional)",
+            "monopile_tp_connection_thickness": "m (optional)",
+            "transition_piece_density": "kg/m3 (optional)",
+            "transition_piece_thickness": "m (optional)",
+            "transition_piece_length": "m (optional)",
+            "soil_coefficient": "N/m3 (optional)",
+            "air_density": "kg/m3 (optional)",
             "weibull_scale_factor": "float (optional)",
             "weibull_shape_factor": "float (optional)",
-            "turb_length_scale": "float (optional)",
-            "design_time": "float (optional)",
-            "design_cost": "float (optional)",
-            "monopile_steel_cost": "float (optional)",
-            "tp_steel_cost": "float (optional)",
+            "turb_length_scale": "m (optional)",
+            "design_time": "h (optional)",
+            "design_cost": "USD (optional)",
+            "monopile_steel_cost": "USD/t (optional)",
+            "tp_steel_cost": "USD/t (optional)",
         },
     }
 
     output_config = {
         "monopile": {
-            "type": "Monopile",
-            "diameter": "float",
-            "thickness": "float",
-            "moment": "float",
-            "embedment_length": "float",
-            "length": "float",
-            "weight": "float",
-            "deck_space": "float",
+            "diameter": "m",
+            "thickness": "m",
+            "moment": "m4",
+            "embedment_length": "m",
+            "length": "m",
+            "mass": "t",
+            "deck_space": "m2",
         },
-        "transition_piece": {
-            "type": "Transition Piece",
-            "length": "float",
-            "weight": "float",
-            "deck_space": "float",
-        },
+        "transition_piece": {"length": "m", "mass": "t", "deck_space": "m2"},
     }
 
     def __init__(self, config, **kwargs):
@@ -139,7 +133,7 @@ class MonopileDesign(DesignPhase):
             - ``moment`` - Pile bending moment of inertia (m4)
             - ``embedment_length`` - Pile embedment length (m)
             - ``length`` - Total pile length (m)
-            - ``weight`` - Pile weight (t)
+            - ``mass`` - Pile mass (t)
             - ``type`` - `'Monopile'`
 
         References
@@ -179,7 +173,7 @@ class MonopileDesign(DesignPhase):
         # Total length
         airgap = kwargs.get("airgap", 10)  # m
         sizing["length"] = sizing["embedment_length"] + site_depth + airgap
-        sizing["weight"] = self.pile_mass(
+        sizing["mass"] = self.pile_mass(
             Dp=sizing["diameter"],
             tp=sizing["thickness"],
             Lt=sizing["length"],
@@ -188,9 +182,6 @@ class MonopileDesign(DesignPhase):
 
         # Deck space
         sizing["deck_space"] = sizing["diameter"] ** 2
-
-        # Required for simulation
-        sizing["type"] = "Monopile"
 
         self.monopile_sizing = sizing
 
@@ -228,10 +219,9 @@ class MonopileDesign(DesignPhase):
         ) / 907.185  # t
 
         tp_design = {
-            "type": "Transition Piece",
             "thickness": t_tp,
             "diameter": D_tp,
-            "weight": m_tp,
+            "mass": m_tp,
             "length": L_tp,
             "deck_space": D_tp ** 2,
         }
@@ -271,7 +261,16 @@ class MonopileDesign(DesignPhase):
     def detailed_output(self):
         """Returns detailed phase information."""
 
-        return {}
+        _outputs = {
+            "total_monopile_mass": self.total_monopile_mass,
+            "total_monopile_cost": self.material_cost["monopile"],
+            "total_transition_piece_mass": self.total_tp_mass,
+            "total_transition_piece_cost": self.material_cost[
+                "transition_piece"
+            ],
+        }
+
+        return _outputs
 
     @property
     def material_cost(self):
@@ -280,16 +279,34 @@ class MonopileDesign(DesignPhase):
         if not self._outputs:
             raise Exception("Has MonopileDesign been ran yet?")
 
-        num_turbines = self.config["plant"]["num_turbines"]
-        mono_weight = self._outputs["monopile"]["weight"] * num_turbines
-        tp_weight = self._outputs["transition_piece"]["weight"] * num_turbines
-
         out = {
-            "monopile": mono_weight * self.monopile_steel_cost,
-            "transition_piece": tp_weight * self.tp_steel_cost,
+            "monopile": self.total_monopile_mass * self.monopile_steel_cost,
+            "transition_piece": self.total_tp_mass * self.tp_steel_cost,
         }
 
         return out
+
+    @property
+    def total_monopile_mass(self):
+        """Returns total mass of all monopiles."""
+
+        if not self._outputs:
+            raise Exception("Has MonopileDesign been ran yet?")
+
+        num_turbines = self.config["plant"]["num_turbines"]
+
+        return self._outputs["monopile"]["mass"] * num_turbines
+
+    @property
+    def total_tp_mass(self):
+        """Returns total mass of all transition pieces."""
+
+        if not self._outputs:
+            raise Exception("Has MonopileDesign been ran yet?")
+
+        num_turbines = self.config["plant"]["num_turbines"]
+
+        return self._outputs["transition_piece"]["mass"] * num_turbines
 
     @property
     def monopile_steel_cost(self):

@@ -59,7 +59,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
         self.add_input('site_depth', 40., units='m', desc='Site depth.')
         self.add_input('site_distance', 40., units='km', desc='Distance from site to installation port.')
         self.add_input('site_distance_to_landfall', 50., units='km', desc='Distance from site to landfall for export cable.')
-        self.add_input('site_distance_to_interconnection', 3., units='km', desc='Distance from landfall to interconnection.')
+        self.add_input('interconnection_distance', 3., units='km', desc='Distance from landfall to interconnection.')
         self.add_input('site_mean_windspeed', 9., units='m/s', desc='Mean windspeed of the site.')
 
         # Plant
@@ -74,13 +74,13 @@ class OrbitWisdemFixed(om.ExplicitComponent):
         self.add_input('turbine_capex', 1100, units='USD/kW', desc='Turbine CAPEX')
         self.add_input('hub_height', 100., units='m', desc='Turbine hub height.')
         self.add_input('turbine_rotor_diameter', 130, units='m', desc='Turbine rotor diameter.')
-        self.add_input('tower_mass', 400., units='t', desc='Weight of the total tower.')
+        self.add_input('tower_mass', 400., units='t', desc='mass of the total tower.')
         self.add_input('tower_length', 100., units='m', desc='Total length of the tower.')
         self.add_input('tower_deck_space', 0., units='m**2', desc='Deck space required to transport the tower. Defaults to 0 in order to not be a constraint on installation.')
-        self.add_input('nacelle_mass', 500., units='t', desc='Weight of the rotor nacelle assembly (RNA).')
+        self.add_input('nacelle_mass', 500., units='t', desc='mass of the rotor nacelle assembly (RNA).')
         self.add_input('nacelle_deck_space', 0., units='m**2', desc='Deck space required to transport the rotor nacelle assembly (RNA). Defaults to 0 in order to not be a constraint on installation.')
         self.add_discrete_input('number_of_blades', 3, desc='Number of blades per turbine.')
-        self.add_input('blade_mass', 50., units='t', desc='Weight of an individual blade.')
+        self.add_input('blade_mass', 50., units='t', desc='mass of an individual blade.')
         self.add_input('blade_deck_space', 0., units='m**2', desc='Deck space required to transport a blade. Defaults to 0 in order to not be a constraint on installation.')
 
         # Port
@@ -89,9 +89,9 @@ class OrbitWisdemFixed(om.ExplicitComponent):
         # Monopile
         self.add_input('monopile_length', 100., units='m', desc='Length of monopile.')
         self.add_input('monopile_diameter', 7., units='m', desc='Diameter of monopile.')
-        self.add_input('monopile_mass', 900., units='t', desc='Weight of an individual monopile.')
+        self.add_input('monopile_mass', 900., units='t', desc='mass of an individual monopile.')
         self.add_input('monopile_deck_space', 0., units='m**2', desc='Deck space required to transport a monopile. Defaults to 0 in order to not be a constraint on installation.')
-        self.add_input('transition_piece_mass', 250., units='t', desc='Weight of an individual transition piece.')
+        self.add_input('transition_piece_mass', 250., units='t', desc='mass of an individual transition piece.')
         self.add_input('transition_piece_deck_space', 0., units='m**2', desc='Deck space required to transport a transition piece. Defaults to 0 in order to not be a constraint on installation.')
 
         # Other
@@ -115,11 +115,10 @@ class OrbitWisdemFixed(om.ExplicitComponent):
             'wtiv': discrete_inputs['wtiv'],
             'feeder': discrete_inputs['feeder'],
             'num_feeders': discrete_inputs['num_feeders'],
-            'scour_protection_install_vessel': 'example_scour_protection_vessel',
-            'trench_dig_vessel': 'example_trench_dig_vessel',
-            'array_cable_lay_vessel': 'example_cable_lay_vessel',
+            'spi_vessel': 'example_scour_protection_vessel',
+            'array_cable_install_vessel': 'example_cable_lay_vessel',
             'array_cable_bury_vessel': 'example_cable_lay_vessel',
-            'export_cable_lay_vessel': 'example_cable_lay_vessel',
+            'export_cable_install_vessel': 'example_cable_lay_vessel',
             'export_cable_bury_vessel': 'example_cable_lay_vessel',
             
             # Site/plant
@@ -127,9 +126,11 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 'depth': float(inputs['site_depth']),
                 'distance': float(inputs['site_distance']),
                 'distance_to_landfall': float(inputs['site_distance_to_landfall']),
-                'distance_to_beach': 0,
-                'distance_to_interconnection': float(inputs['site_distance_to_interconnection']),
                 'mean_windspeed': float(inputs['site_mean_windspeed'])
+            },
+
+            'landfall': {
+                'interconnection_distance': float(inputs['interconnection_distance']),
             },
             
             'plant': {
@@ -154,21 +155,21 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 'tower': {
                     'type': 'Tower',
                     'deck_space': float(inputs['tower_deck_space']),
-                    'weight': float(inputs['tower_mass']),
+                    'mass': float(inputs['tower_mass']),
                     'length': float(inputs['tower_length'])
                 },
                 
                 'nacelle': {
                     'type': 'Nacelle',
                     'deck_space': float(inputs['nacelle_deck_space']),
-                    'weight': float(inputs['nacelle_mass'])
+                    'mass': float(inputs['nacelle_mass'])
                 },
                 
                 'blade': {
                     'type': 'Blade',
                     'number': float(discrete_inputs['number_of_blades']),
                     'deck_space': float(inputs['blade_deck_space']),
-                    'weight': float(inputs['blade_mass'])
+                    'mass': float(inputs['blade_mass'])
                 }
             },
 
@@ -178,13 +179,13 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 'length': float(inputs['monopile_length']),
                 'diameter': float(inputs['monopile_diameter']),
                 'deck_space': float(inputs['monopile_deck_space']),
-                'weight': float(inputs['monopile_mass'])
+                'mass': float(inputs['monopile_mass'])
             },
             
             'transition_piece': {
                 'type': 'Transition Piece',
                 'deck_space': float(inputs['transition_piece_deck_space']),
-                'weight': float(inputs['transition_piece_mass'])
+                'mass': float(inputs['transition_piece_mass'])
             },
             
             'scour_protection_design': {
@@ -246,7 +247,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
 
         outputs['bos_capex'] = project.bos_capex
         outputs['total_capex'] = project.total_capex
-        outputs['total_capex_kW'] = project.total_capex / (1e3*inputs['turbine_rating'] * discrete_inputs['number_of_turbines'])
+        outputs['total_capex_kW'] = project.total_capex_per_kw
         outputs['installation_time'] = project.installation_time
         outputs['installation_capex'] = project.installation_capex
 
