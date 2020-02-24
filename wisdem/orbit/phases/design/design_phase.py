@@ -14,7 +14,6 @@ from wisdem.orbit.phases import BasePhase
 class DesignPhase(BasePhase):
     """BasePhase subclass for design modules."""
 
-    _design_phase = True
     expected_config = None
     output_config = None
 

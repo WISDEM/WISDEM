@@ -34,7 +34,7 @@ class Cable:
     capacitance : float
         Cable capacitance, :math:`\\frac{nF}{km}`.
     linear_density : float
-        Dry weight per kilometer, :math:`\\frac{tonnes}{km}`.
+        Dry mass per kilometer, :math:`\\frac{tonnes}{km}`.
     cost_per_km : int
         Cable cost per kilometer, :math:`\\frac{USD}{km}`.
     char_impedance : float
@@ -159,31 +159,18 @@ class Plant:
         in custom layouts.
     """
 
-    __slots__ = [
-        "num_turbines",
-        "layout",
-        "site_depth",
-        "row_distance",
-        "turbine_distance",
-        "substation_distance",
-        "turbine_rating",
-    ]
-
     expected_config = {
         "plant": {
-            "num_turbines": "int",  # Number of turbines
-            "layout": "str",  # Windfarm layout
-            "turbine_distance": "float (optional)",  # User set distance, km
-            "turbine_spacing": "float",  # Number of rotor diameters
-            "row_spacing": "float (optional)",  # Number of rotor diameters
-            "row_distance": "float (optional)",  # User set distance, km
-            "substation_distance": "float",  # User set distance, km
+            "num_turbines": "int",
+            "layout": "str",
+            "turbine_distance": "km (optional)",
+            "turbine_spacing": "rotor diameters",
+            "row_spacing": "rotor diameters (optional)",
+            "row_distance": "km (optional)",
+            "substation_distance": "km",
         },
-        "site": {"depth": "int"},  # Average site depth, m
-        "turbine": {
-            "turbine_rating": "int",  # Rating of single turbine, MW
-            "rotor_diameter": "int",  # Diameter of turbine blades, m
-        },
+        "site": {"depth": "m"},
+        "turbine": {"turbine_rating": "MW", "rotor_diameter": "m"},
     }
 
     def __init__(self, config):
