@@ -6,7 +6,7 @@ import pandas as pd
 import wisdem.pBeam._pBEAM as _pBEAM
 
 # Inputs
-angle_deg               = 15.
+angle_deg               = 12.
 blade_length            = 100.
 lateral_clearance       = 6.7056 # 22 feet
 vertical_clearance      = 7.0104 # 23 feet
@@ -16,7 +16,7 @@ n_carts                 = 4
 n_opt                   = 10
 max_LV                  = 0.5
 weight_car              = 217724.16
-max_root_rot_deg        = 10.
+max_root_rot_deg        = 20.
 #########
 
 def arc_length(x, y):
@@ -42,9 +42,10 @@ V        = np.gradient(M,r)
 q        = np.gradient(V,r)    
 
 r_opt    = np.linspace(0., blade_length, n_opt)
+r_carts  = np.linspace(0., blade_length, n_carts+1)
 M_opt    = np.interp(r_opt, r, M)
 V_opt    = np.gradient(M_opt,r_opt)
-q_opt    = np.gradient(V_opt,r_opt)   
+q_opt    = np.max([np.zeros(n_opt), np.gradient(V_opt,r_opt)], axis=0)
 
 # f, axes = plt.subplots(3,1,figsize=(5.3, 5.3))
 # axes[0].plot(r, M * 1.e-6)
@@ -73,32 +74,27 @@ y_outer  = np.sqrt(r_outer**2. - (x_outer-r_midline)**2.)
 x_inner  = np.linspace(0.5*lateral_clearance, 2.*r_midline - 0.5*lateral_clearance, n_points)
 y_inner  = np.sqrt(r_inner**2. - (x_inner-r_midline)**2.)
 
-r_carts = np.linspace(0., blade_length, n_carts+1)
+
 
 def get_max_force(inputs):
-    
-    M_iter    = M_opt * inputs[:-1]
-    V_iter    = np.gradient(M_iter,r_opt)
-    q_iter    = np.gradient(V_iter,r_opt)
-    
-    fine_grid = np.unique(np.hstack((r, r_carts)))
-    fine_q    = np.interp(fine_grid, r_opt, q_iter)
+    q_iter    = q_opt * inputs[:-1]
+    V_iter_0  = np.trapz(q_iter,r_opt)
 
-    cart_id = np.zeros_like(r_carts)
-    for i in range(n_carts+1):
-        cart_id[i]   = np.argmin(abs(fine_grid - r_carts[i]))
-
-    reaction_carts = np.zeros(n_carts)
+    q_iter_carts  = np.interp(r_carts, r_opt, q_iter)
+    RF_iter_carts = np.zeros(n_carts)
     for i in range(n_carts):
-        reaction_carts[i] = np.trapz(fine_q[int(cart_id[i]):int(cart_id[i+1])], fine_grid[int(cart_id[i]):int(cart_id[i+1])])
+        RF_iter_carts[i] = np.trapz(q_iter_carts[i:i+2],r_carts[i:i+2])
 
-    return np.max(abs(reaction_carts))*1.e-5
+    return max(RF_iter_carts)*1.e-5
 
 def get_constraints(inputs):
-    
-    M_iter    = M_opt * inputs[:-1]
-    V_iter    = np.gradient(M_iter,r_opt)
-    q_iter    = np.gradient(V_iter,r_opt)
+    q_iter    = q_opt * inputs[:-1] #np.gradient(V_iter,r_opt)
+    V_iter = np.zeros(n_opt)
+    M_iter = np.zeros(n_opt)
+    for i in range(n_opt):
+        V_iter[i] = np.trapz(q_iter[i:],r_opt[i:])
+    for i in range(n_opt):
+        M_iter[i]    = np.trapz(V_iter[i:],r_opt[i:])
 
     root_rot_rad_iter = inputs[-1]
 
@@ -121,8 +117,6 @@ def get_constraints(inputs):
     # plt.subplots_adjust(bottom = 0.15, left = 0.18)
     # plt.show()
 
-    V_iter = np.gradient(M_iter,r_opt)
-    q_iter = np.gradient(V_iter,r_opt)
     EIedge_iter  = np.interp(r_opt, r, EIedge)
     GJ_iter      = np.interp(r_opt, r, GJ)
     rhoA_iter    = np.interp(r_opt, r, rhoA)
@@ -152,11 +146,7 @@ def get_constraints(inputs):
     id_inner = np.zeros(n_opt, dtype = int)
     for i in range(n_opt):
         id_outer[i] = np.argmin(abs(y_outer[:int(np.ceil(n_points*0.5))] - ps_y_rot[i]))
-        # if x_blade_transport_rot[i] < x_outer[int(id_outer[i])]:
-        #     print('Blade breaks outer envelope at station ' + str(i))
         id_inner[i] = np.argmin(abs(y_inner[:int(np.ceil(n_points*0.5))]  - ss_y_rot[i]))
-        # if x_blade_transport_rot[i] > x_inner[int(id_inner[i])]:
-        #     print('Blade breaks inner envelope at station ' + str(i))
 
     consts_envelope_outer = ss_x_rot - x_outer[id_outer]
     consts_envelope_inner = x_inner[id_outer] - ps_x_rot
@@ -169,7 +159,8 @@ def get_constraints(inputs):
     # ax.plot(x_outer, y_outer, color=[0.8,0.8,0.8], linestyle=':', label='clearance envelope')
     # ax.plot(x_inner, y_inner, color=[0.8,0.8,0.8], linestyle=':')
     # ax.plot(x_blade_transport, y_blade_transport, label='blade max strains')
-    # ax.plot(x_blade_transport_rot, y_blade_transport_rot, label='blade max strains rotated')
+    # ax.plot(ps_x_rot, ps_y_rot, label='pressured side')
+    # ax.plot(ss_x_rot, ss_y_rot, label='suction side')
     # plt.xlim(left=-10, right=110)
     # plt.ylim(bottom=0, top=120)
     # ax.legend(fontsize=fs)
@@ -195,26 +186,34 @@ res    = minimize(get_max_force, x0, method='SLSQP', bounds=bnds, constraints=co
 if res.success == False:
     exit('The optimization cannot satisfy the constraint on max strains of 3500 mu eps')
 else:
-
-    get_constraints(res.x)
     
-    M_final    = M_opt * res.x[:-1]
-    V_final    = np.gradient(M_final,r_opt)
-    q_final    = np.gradient(V_final,r_opt)
-
+    q_final    = q_opt * res.x[:-1]
+    V_final    = np.zeros(n_opt)
+    M_final    = np.zeros(n_opt)
+    for i in range(n_opt):
+        V_final[i] = np.trapz(q_final[i:],r_opt[i:])
+    for i in range(n_opt):
+        M_final[i] = np.trapz(V_final[i:],r_opt[i:])
+    
     root_rot_rad_final = res.x[-1]
 
     print('The optimizer finds a solution!')
     print('Prescribed rotation angle: ' + str(root_rot_rad_final * 180. / np.pi) + ' deg')
-    print('Max reaction force: ' + str(get_max_force(res.x)*10.) + ' MN')
+    
+    q_carts = np.interp(r_carts, r_opt, q_final)
+    RF_carts = np.zeros(n_carts)
+    for i in range(n_carts):
+        RF_carts[i] = np.trapz(q_carts[i:i+2],r_carts[i:i+2])
+    
+
+
+    print('Max reaction force: ' + str(max(RF_carts*1.e-3)) + ' kN')
 
     dist_ss_final  = np.interp(r_opt, r, dist_ss)
     dist_ps_final  = np.interp(r_opt, r, dist_ps)
     EIflap_final    = np.interp(r_opt, r, EIflap)
     eps            = M_final * dist_ss_final / EIflap_final
 
-    V_final = np.gradient(M_final,r_opt)
-    q_final = np.gradient(V_final,r_opt)
     EIedge_final  = np.interp(r_opt, r, EIedge)
     GJ_final      = np.interp(r_opt, r, GJ)
     rhoA_final    = np.interp(r_opt, r, rhoA)
@@ -274,14 +273,17 @@ else:
     plt.subplots_adjust(bottom = 0.15, left = 0.18)
     
     f, axes = plt.subplots(3,1,figsize=(5.3, 5.3))
-    axes[0].plot(r, M * 1.e-6, 'b-')
-    axes[0].plot(r_opt, M_final * 1.e-6, 'r--')
+    axes[0].plot(r, M * 1.e-6, 'b-', label = '3500 mu eps')
+    axes[0].plot(r_opt, M_final * 1.e-6, 'r--', label = 'Final')
     axes[0].set_ylabel('Moment [MNm]')
-    axes[1].plot(r, V*1.e-6), 'b-'
-    axes[1].plot(r_opt, V_final*1.e-6, 'r--')
+    axes[0].legend(fontsize=fs)
+    axes[1].plot(r, V*1.e-6, 'b--', label = '3500 mu eps')
+    axes[1].plot(r_opt, V_final*1.e-6, 'r--', label = 'Final')
+    axes[1].legend(fontsize=fs)
     axes[1].set_ylabel('Shear Forces [MN]')
-    axes[2].plot(r, q*1.e-3, 'b-')
-    axes[2].plot(r_opt, q_final*1.e-3, 'r--')
+    axes[2].plot(r, q*1.e-3, 'b-', label = '3500 mu eps')
+    axes[2].plot(r_opt, q_final*1.e-3, 'r--', label = 'Final')
     axes[2].set_ylabel('Distributed Forces [kN/m]')
+    axes[2].legend(fontsize=fs)
     plt.xlabel("Blade span [m]")
     plt.show()
