@@ -36,6 +36,11 @@ optimization_variables:
         n_opt: 8
         min_gain: 0.2 # non-dimensional
         max_gain: 2.0 # non-dimensional
+  control:
+    tsr:
+      flag: False
+      min_gain: 0.9 # non-dimensional
+      max_gain: 1.1 # non-dimensional
     dac:
       te_flap_ext:
         flag: False

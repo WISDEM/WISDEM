@@ -182,7 +182,6 @@ class WindTurbineOntologyPython(object):
             self.analysis_options['monopile']['n_height']  = len(self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid'])
             self.analysis_options['monopile']['n_layers']  = len(self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'])
         
-
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
         """ Load inputs IEA turbine ontology yaml inputs, optional validation """
         # Read IEA turbine ontology yaml input file
@@ -223,10 +222,8 @@ class WindTurbineOntologyPython(object):
 
         # Update blade outer shape
         self.wt_init['components']['blade']['outer_shape_bem']['chord']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        # self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.outer_shape_bem.chord'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.pa.chord_param'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['twist']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        # self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['blade.outer_shape_bem.twist'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['blade.pa.twist_param'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['values']   = wt_opt['blade.outer_shape_bem.pitch_axis'].tolist()
@@ -607,24 +604,6 @@ class Blade_Lofted_Shape(ExplicitComponent):
         ax = fig.add_subplot(111, projection='3d')
         ax.plot(outputs['3D_shape'][:,1],outputs['3D_shape'][:,2],outputs['3D_shape'][:,3])
         plt.show()
-
-
-# class Initialize_Discrete_Outputs_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
-#     # Openmdao component with the blade internal structure data coming from the input yaml file.
-#     def initialize(self):
-#         self.options.declare('blade_init_options')
-        
-#     def setup(self):
-#         blade_init_options = self.options['blade_init_options']
-#         self.n_webs        = n_webs    = blade_init_options['n_webs']
-#         self.n_layers      = n_layers  = blade_init_options['n_layers']
-        
-#         self.add_discrete_output('definition_web',  val=np.zeros(n_webs), desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
-#         self.add_discrete_output('layer_mat',       val=n_layers * [''],  desc='1D array of the names of the materials of each layer modeled in the blade structure.')
-#         self.add_discrete_output('layer_name',      val=n_layers * [''],  desc='1D array of the names of the layers modeled in the blade structure.')
-#         self.add_discrete_output('layer_web',       val=n_layers * [''],  desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
-#         self.add_discrete_output('web_name',        val=n_webs * [''],    desc='1D array of the names of the shear webs defined in the blade structure.')
-
 
 class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
     # Openmdao component with the blade internal structure data coming from the input yaml file.
@@ -1078,6 +1057,20 @@ class WT_Assembly(ExplicitComponent):
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
         outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
 
+class Parametrize_Control(ExplicitComponent):
+    # Openmdao component that multiplies the initial tsr with the tsr gain
+
+    def setup(self):
+        # Inputs
+        self.add_input('tsr_original',  val=0.0,    desc='Tip speed ratio defined in the yaml.')
+        self.add_input('tsr_gain',      val=1.0,    desc='Tip speed ratio gain optimized by the optimization solver.')
+        # Outputs
+        self.add_output('tsr_opt',      val=0.0,    desc='Optimized tip speed ratio')
+
+    def compute(self, inputs, outputs):
+        
+        outputs['tsr_opt'] = inputs['tsr_original'] * inputs['tsr_gain']
+
 class WindTurbineOntologyOpenMDAO(Group):
     # Openmdao group with all wind turbine data
     
@@ -1118,7 +1111,14 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.connect('tower.height',                    'assembly.tower_height')
         self.connect('foundation.height',               'assembly.foundation_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
-        
+
+        opt_var = IndepVarComp()
+        opt_var.add_output('tsr_opt_gain',   val = 1.0)
+        self.add_subsystem('opt_var',opt_var)
+        self.add_subsystem('pc', Parametrize_Control())
+        self.connect('opt_var.tsr_opt_gain', 'pc.tsr_gain')
+        self.connect('control.rated_TSR',    'pc.tsr_original')
+
 def yaml2openmdao(wt_opt, analysis_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
     

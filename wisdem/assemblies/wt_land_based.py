@@ -8,7 +8,6 @@ from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
 from wisdem.aeroelasticse.openmdao_openfast import FASTLoadCases
-from wisdem.assemblies.parametrize_wt import WT_Parametrize
 from wisdem.rotorse.dac import RunXFOIL
 from wisdem.servose.servose import ServoSE
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
@@ -29,7 +28,6 @@ class WT_RNTA(Group):
         # Analysis components
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('wt_class',  TurbineClass())
-        # self.add_subsystem('param',     WT_Parametrize(analysis_options = analysis_options, opt_options = opt_options))
         self.add_subsystem('elastic',   RotorElasticity(analysis_options = analysis_options, opt_options = opt_options))
         self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options)) # Recompute polars with xfoil (for flaps)
         self.add_subsystem('sse',       ServoSE(analysis_options = analysis_options)) # Aero analysis
@@ -110,7 +108,7 @@ class WT_RNTA(Group):
         self.connect('env.speed_sound_air',                   'xf.speed_sound_air')
         self.connect('env.rho_air',                           'xf.rho_air')
         self.connect('env.mu_air',                            'xf.mu_air')
-        self.connect('control.rated_TSR',                     'xf.rated_TSR')
+        self.connect('pc.tsr_opt',                            'xf.rated_TSR')
         self.connect('control.max_TS',                        'xf.max_TS')
         self.connect('blade.interp_airfoils.cl_interp',       'xf.cl_interp')
         self.connect('blade.interp_airfoils.cd_interp',       'xf.cd_interp')
@@ -124,7 +122,7 @@ class WT_RNTA(Group):
         self.connect('control.minOmega' ,           'sse.omega_min')
         self.connect('control.maxOmega' ,           'sse.omega_max')
         self.connect('control.max_TS' ,             'sse.control_maxTS')
-        self.connect('control.rated_TSR' ,          'sse.tsr_operational')
+        self.connect('pc.tsr_opt' ,                 'sse.tsr_operational')
         self.connect('control.rated_pitch' ,        'sse.control_pitch')
 
         self.connect('configuration.gearbox_type' , 'sse.drivetrainType')
