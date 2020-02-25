@@ -4,8 +4,8 @@ optimization_variables:
       twist:
         flag: False
         n_opt: 8
-        lower_bound: -5. # non-dimensional
-        upper_bound: 20. # non-dimensional
+        lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647] # dimensional [rad]
+        upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # dimensional [rad]
       chord:
         flag: False
         n_opt: 8
