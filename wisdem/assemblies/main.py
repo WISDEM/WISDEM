@@ -113,30 +113,30 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         # Set optimization variables
         if opt_options['optimization_variables']['blade']['aero_shape']['twist']['flag'] == True:
             indices        = range(2,opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
-            wt_opt.model.add_design_var('param.opt_var.twist_opt_gain', indices = indices, lower=0., upper=1.)
+            wt_opt.model.add_design_var('blade.opt_var.twist_opt_gain', indices = indices, lower=0., upper=1.)
         if opt_options['optimization_variables']['blade']['aero_shape']['chord']['flag'] == True:
             indices  = range(2,opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'] - 1)
-            wt_opt.model.add_design_var('param.opt_var.chord_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['aero_shape']['chord']['min_gain'], upper=opt_options['optimization_variables']['blade']['aero_shape']['chord']['max_gain'])
+            wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['aero_shape']['chord']['min_gain'], upper=opt_options['optimization_variables']['blade']['aero_shape']['chord']['max_gain'])
         if opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['flag'] == True:
             indices  = range(1,opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'] - 1)
-            wt_opt.model.add_design_var('param.opt_var.spar_cap_ss_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain'])
+            wt_opt.model.add_design_var('blade.opt_var.spar_cap_ss_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain'])
         if opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['flag'] == True:
             indices  = range(1,opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt'] - 1)
-            wt_opt.model.add_design_var('param.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
+            wt_opt.model.add_design_var('blade.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
         if 'dac' in opt_options['optimization_variables']['blade'].keys():
             if opt_options['optimization_variables']['blade']['dac']['te_flap_end']['flag'] == True:
-                wt_opt.model.add_design_var('param.opt_var.te_flap_end', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['min_end'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['max_end'])
+                wt_opt.model.add_design_var('blade.opt_var.te_flap_end', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['min_end'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_end']['max_end'])
             if opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['flag'] == True:
-                wt_opt.model.add_design_var('param.opt_var.te_flap_ext', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['min_ext'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['max_ext'])
+                wt_opt.model.add_design_var('blade.opt_var.te_flap_ext', lower=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['min_ext'], upper=opt_options['optimization_variables']['blade']['dac']['te_flap_ext']['max_ext'])
         
 
         # Set non-linear constraints
-        wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.) 
+        # wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.) 
         # wt_opt.model.add_constraint('rlds.constr.constr_min_strainU_spar', upper= 1.) 
-        wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.) 
+        # wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.) 
         # wt_opt.model.add_constraint('rlds.constr.constr_min_strainL_spar', upper= 1.) 
-        wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.) 
-        # wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
+        # wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.) 
+        wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
         
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
@@ -150,17 +150,17 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     
     # Load initial wind turbine data from wt_initial to the openmdao problem
     wt_opt = yaml2openmdao(wt_opt, analysis_options, wt_init)
-    wt_opt['param.pa.s_opt_twist']   = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
+    wt_opt['blade.pa.s_opt_twist']   = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
     if opt_options['optimization_variables']['blade']['aero_shape']['twist']['flag'] == True:
-        init_twist_opt = np.interp(wt_opt['param.pa.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
+        init_twist_opt = np.interp(wt_opt['blade.pa.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
         lb_twist = np.array(opt_options['optimization_variables']['blade']['aero_shape']['twist']['lower_bound'])
         ub_twist = np.array(opt_options['optimization_variables']['blade']['aero_shape']['twist']['upper_bound'])
-        wt_opt['param.opt_var.twist_opt_gain']    = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
-        if max(wt_opt['param.opt_var.twist_opt_gain']) > 1. or min(wt_opt['param.opt_var.twist_opt_gain']) < 0.:
+        wt_opt['blade.opt_var.twist_opt_gain']    = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
+        if max(wt_opt['blade.opt_var.twist_opt_gain']) > 1. or min(wt_opt['blade.opt_var.twist_opt_gain']) < 0.:
             print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
-    wt_opt['param.pa.s_opt_chord']       = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'])
-    wt_opt['param.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
-    wt_opt['param.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
+    wt_opt['blade.pa.s_opt_chord']       = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'])
+    wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
+    wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
     # wt_opt['rlds.constr.min_strainU_spar'] = -0.003
     wt_opt['rlds.constr.max_strainU_spar'] =  0.0025
     # wt_opt['rlds.constr.min_strainL_spar'] = -0.003

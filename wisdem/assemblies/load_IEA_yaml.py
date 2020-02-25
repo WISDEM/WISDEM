@@ -13,6 +13,7 @@ import time, copy
 from scipy.interpolate import PchipInterpolator, interp1d
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_smoothing, remap2grid
+from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.commonse.utilities import arc_length
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
@@ -150,6 +151,17 @@ class WindTurbineOntologyPython(object):
         self.analysis_options['blade']['lofted_output'] = False
         self.analysis_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
         
+        self.analysis_options['blade']['layer_name'] = self.analysis_options['blade']['n_layers'] * ['']
+        self.analysis_options['blade']['layer_mat']  = self.analysis_options['blade']['n_layers'] * ['']
+        for i in range(self.analysis_options['blade']['n_layers']):
+            self.analysis_options['blade']['layer_name'][i]  = self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['name']
+            self.analysis_options['blade']['layer_mat'][i]   = self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['material']
+
+
+        self.analysis_options['blade']['web_name']  = self.analysis_options['blade']['n_webs'] * ['']
+        for i in range(self.analysis_options['blade']['n_webs']):
+            self.analysis_options['blade']['web_name'][i]  = self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['name']
+
         # Distributed aerodynamic control devices along blade
         self.analysis_options['blade']['n_te_flaps']      = 0
         if 'aerodynamic_control' in self.wt_init['components']['blade']:
@@ -212,10 +224,10 @@ class WindTurbineOntologyPython(object):
         # Update blade outer shape
         self.wt_init['components']['blade']['outer_shape_bem']['chord']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         # self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.outer_shape_bem.chord'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['param.pa.chord_param'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.pa.chord_param'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['twist']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         # self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['blade.outer_shape_bem.twist'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['param.pa.twist_param'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['blade.pa.twist_param'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['values']   = wt_opt['blade.outer_shape_bem.pitch_axis'].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
@@ -246,7 +258,7 @@ class WindTurbineOntologyPython(object):
         # Structural layers
         for i in range(self.analysis_options['blade']['n_layers']):
             self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
-            self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['param.ps.layer_thickness_param'][i,:].tolist()
+            self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['blade.ps.layer_thickness_param'][i,:].tolist()
             if wt_opt['blade.internal_structure_2d_fem.definition_layer'][i] < 7:
                 if 'start_nd_arc' not in self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]:
                     self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['start_nd_arc'] = {}
@@ -318,21 +330,45 @@ class Blade(Group):
     def initialize(self):
         self.options.declare('blade_init_options')
         self.options.declare('af_init_options')
+        self.options.declare('opt_options')
                 
     def setup(self):
         # Options
         blade_init_options = self.options['blade_init_options']
         af_init_options    = self.options['af_init_options']
+        opt_options        = self.options['opt_options']
         
         # Import outer shape BEM
         self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
         
+        # Optimization parameters initialized as indipendent variable component
+        opt_var = IndepVarComp()
+        opt_var.add_output('twist_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
+        opt_var.add_output('chord_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
+        opt_var.add_output('spar_cap_ss_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']))
+        opt_var.add_output('spar_cap_ps_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']))
+        opt_var.add_output('te_flap_end', val = np.ones(blade_init_options['n_te_flaps']))
+        opt_var.add_output('te_flap_ext', val = np.ones(blade_init_options['n_te_flaps']))
+
+        self.add_subsystem('opt_var',opt_var)
+
+        # Parametrize blade outer shape
+        self.add_subsystem('pa',    ParametrizeBladeAero(blade_init_options = blade_init_options, opt_options = opt_options)) # Parameterize aero (chord and twist)
+
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem('interp_airfoils', Blade_Interp_Airfoils(blade_init_options = blade_init_options, af_init_options = af_init_options))
         
+        # Connections to blade aero parametrization
+        self.connect('opt_var.twist_opt_gain',    'pa.twist_opt_gain')
+        self.connect('opt_var.chord_opt_gain',    'pa.chord_opt_gain')
+
+        self.connect('outer_shape_bem.s',           'pa.s')
+        self.connect('outer_shape_bem.twist',       'pa.twist_original')
+        self.connect('outer_shape_bem.chord',       'pa.chord_original')
+
         # Connections from oute_shape_bem to interp_airfoils
         self.connect('outer_shape_bem.s',           'interp_airfoils.s')
-        self.connect('outer_shape_bem.chord',       'interp_airfoils.chord')
+        self.connect('pa.chord_param',              'interp_airfoils.chord')
         self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils.pitch_axis')
         self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')
         self.connect('outer_shape_bem.af_position', 'interp_airfoils.af_position')
@@ -341,14 +377,23 @@ class Blade(Group):
         if blade_init_options['lofted_output'] == True:
             self.add_subsystem('blade_lofted',    Blade_Lofted_Shape(blade_init_options = blade_init_options, af_init_options = af_init_options))
             self.connect('interp_airfoils.coord_xy_dim',    'blade_lofted.coord_xy_dim')
-            self.connect('outer_shape_bem.twist',           'blade_lofted.twist')
+            self.connect('pa.twist_param',                  'blade_lofted.twist')
             self.connect('outer_shape_bem.s',               'blade_lofted.s')
             self.connect('outer_shape_bem.ref_axis',        'blade_lofted.ref_axis')
         
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
-        self.connect('outer_shape_bem.twist',           'internal_structure_2d_fem.twist')
+        self.connect('pa.twist_param',                  'internal_structure_2d_fem.twist')
         self.connect('interp_airfoils.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
+
+        self.add_subsystem('ps',    ParametrizeBladeStruct(blade_init_options = blade_init_options, opt_options = opt_options)) # Parameterize struct (spar caps ss and ps)
+
+        # Connections to blade struct parametrization
+        self.connect('opt_var.spar_cap_ss_opt_gain','ps.spar_cap_ss_opt_gain')
+        self.connect('opt_var.spar_cap_ps_opt_gain','ps.spar_cap_ps_opt_gain')
+        self.connect('outer_shape_bem.s',     'ps.s')
+        # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
+        self.connect('internal_structure_2d_fem.layer_thickness', 'ps.layer_thickness_original')
 
         # Import trailing-edge flaps data
         self.add_subsystem('dac_te_flaps', TE_Flaps(blade_init_options = blade_init_options))
@@ -562,7 +607,25 @@ class Blade_Lofted_Shape(ExplicitComponent):
         ax = fig.add_subplot(111, projection='3d')
         ax.plot(outputs['3D_shape'][:,1],outputs['3D_shape'][:,2],outputs['3D_shape'][:,3])
         plt.show()
-     
+
+
+# class Initialize_Discrete_Outputs_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
+#     # Openmdao component with the blade internal structure data coming from the input yaml file.
+#     def initialize(self):
+#         self.options.declare('blade_init_options')
+        
+#     def setup(self):
+#         blade_init_options = self.options['blade_init_options']
+#         self.n_webs        = n_webs    = blade_init_options['n_webs']
+#         self.n_layers      = n_layers  = blade_init_options['n_layers']
+        
+#         self.add_discrete_output('definition_web',  val=np.zeros(n_webs), desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
+#         self.add_discrete_output('layer_mat',       val=n_layers * [''],  desc='1D array of the names of the materials of each layer modeled in the blade structure.')
+#         self.add_discrete_output('layer_name',      val=n_layers * [''],  desc='1D array of the names of the layers modeled in the blade structure.')
+#         self.add_discrete_output('layer_web',       val=n_layers * [''],  desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
+#         self.add_discrete_output('web_name',        val=n_webs * [''],    desc='1D array of the names of the shear webs defined in the blade structure.')
+
+
 class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
     # Openmdao component with the blade internal structure data coming from the input yaml file.
     def initialize(self):
@@ -580,18 +643,14 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         
         self.add_input('coord_xy_dim',     val=np.zeros((n_span, n_xy, 2)),units = 'm',  desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
         self.add_input('twist',            val=np.zeros(n_span),           units='rad',  desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
-        
-        self.add_discrete_output('web_name', val=n_webs * [''],                          desc='1D array of the names of the shear webs defined in the blade structure.')
-        
+                
         self.add_output('s',              val=np.zeros(n_span),                          desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_output('web_rotation',   val=np.zeros((n_webs, n_span)),  units='rad',  desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
         self.add_output('web_offset_y_pa',val=np.zeros((n_webs, n_span)),  units='m',    desc='2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.')
         self.add_output('web_start_nd',   val=np.zeros((n_webs, n_span)),                desc='2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
         self.add_output('web_end_nd',     val=np.zeros((n_webs, n_span)),                desc='2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
         
-        self.add_discrete_output('layer_name', val=n_layers * [''],                      desc='1D array of the names of the layers modeled in the blade structure.')
-        self.add_discrete_output('layer_mat',  val=n_layers * [''],                      desc='1D array of the names of the materials of each layer modeled in the blade structure.')
-        self.add_discrete_output('layer_web',  val=n_layers * [''],                      desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
+        self.add_output('layer_web',      val=np.zeros(n_layers),                        desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.')
         
         self.add_output('layer_thickness',   val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_output('layer_rotation',    val=np.zeros((n_layers, n_span)), units='rad',  desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
@@ -603,7 +662,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.add_output('layer_end_nd',      val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         
         self.add_discrete_output('definition_web',   val=np.zeros(n_webs),                   desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
-        self.add_discrete_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+        self.add_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
         self.add_discrete_output('index_layer_start',    val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
         self.add_discrete_output('index_layer_end',      val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
     
@@ -616,6 +675,10 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         web_end_nd      = np.zeros((self.n_webs, self.n_span))
         layer_start_nd  = np.zeros((self.n_layers, self.n_span))
         layer_end_nd    = np.zeros((self.n_layers, self.n_span))
+
+        layer_name      = self.options['blade_init_options']['layer_name']
+        layer_mat       = self.options['blade_init_options']['layer_mat']
+        web_name        = self.options['blade_init_options']['web_name']
 
         # Loop through spanwise stations
         for i in range(self.n_span):
@@ -635,21 +698,21 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     web_rotation[j,i] = - outputs['web_rotation'][j,i]
                     web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
                     if i == 0:
-                        print('The web ' + discrete_outputs['web_name'][j] + ' is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition.')
+                        print('The web ' + web_name[j] + ' is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition.')
                     if web_start_nd[j,i] < 0. or web_start_nd[j,i] > 1.:
-                        exit('Blade web ' + discrete_outputs['web_name'][j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. start point outside the TE. Please check the yaml input file.')
+                        exit('Blade web ' + web_name[j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. start point outside the TE. Please check the yaml input file.')
                     if web_end_nd[j,i] < 0. or web_end_nd[j,i] > 1.:
-                        exit('Blade web ' + discrete_outputs['web_name'][j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. end point outside the TE. Please check the yaml input file.')
+                        exit('Blade web ' + web_name[j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. end point outside the TE. Please check the yaml input file.')
                 else:
-                    exit('Blade web ' + discrete_outputs['web_name'][j] + ' not described correctly. Please check the yaml input file.')
+                    exit('Blade web ' + web_name[j] + ' not described correctly. Please check the yaml input file.')
                     
             # Loop through the layers and compute non-dimensional start and end positions along the profile for the different layer definitions
             for j in range(self.n_layers):
-                if discrete_outputs['definition_layer'][j] == 1: # All around
+                if outputs['definition_layer'][j] == 1: # All around
                     layer_start_nd[j,i] = 0.
                     layer_end_nd[j,i]   = 1.
-                elif discrete_outputs['definition_layer'][j] == 2 or discrete_outputs['definition_layer'][j] == 3: # Midpoint and width
-                    if discrete_outputs['definition_layer'][j] == 2:
+                elif outputs['definition_layer'][j] == 2 or outputs['definition_layer'][j] == 3: # Midpoint and width
+                    if outputs['definition_layer'][j] == 2:
                         layer_rotation[j,i] = - inputs['twist'][i]
                     else:
                         layer_rotation[j,i] = - outputs['layer_rotation'][j,i]
@@ -657,44 +720,44 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-                elif discrete_outputs['definition_layer'][j] == 4: # Midpoint and width
+                elif outputs['definition_layer'][j] == 4: # Midpoint and width
                     midpoint = 1. 
                     outputs['layer_midpoint_nd'][j,i] = midpoint
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = width/arc_L_i/2.
-                elif discrete_outputs['definition_layer'][j] == 5: # Midpoint and width
+                elif outputs['definition_layer'][j] == 5: # Midpoint and width
                     midpoint = LE_loc
                     outputs['layer_midpoint_nd'][j,i] = midpoint
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
-                elif discrete_outputs['definition_layer'][j] == 6: # Start and end locked to other element
+                elif outputs['definition_layer'][j] == 6: # Start and end locked to other element
                     # if outputs['layer_start_nd'][j,i] > 1:
                     layer_start_nd[j,i] = layer_end_nd[int(discrete_outputs['index_layer_start'][j]),i]
                     # if outputs['layer_end_nd'][j,i] > 1:
                     layer_end_nd[j,i]   = layer_start_nd[int(discrete_outputs['index_layer_end'][j]),i]
-                elif discrete_outputs['definition_layer'][j] == 7: # Start nd and width
+                elif outputs['definition_layer'][j] == 7: # Start nd and width
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = outputs['layer_start_nd'][j,i]
                     layer_end_nd[j,i]   = layer_start_nd[j,i] + width/arc_L_i
-                elif discrete_outputs['definition_layer'][j] == 8: # End nd and width
+                elif outputs['definition_layer'][j] == 8: # End nd and width
                     width    = outputs['layer_width'][j,i]
                     layer_end_nd[j,i]   = outputs['layer_end_nd'][j,i]
                     layer_start_nd[j,i] = layer_end_nd[j,i] - width/arc_L_i
-                elif discrete_outputs['definition_layer'][j] == 9: # Start and end nd positions
+                elif outputs['definition_layer'][j] == 9: # Start and end nd positions
                     layer_start_nd[j,i] = outputs['layer_start_nd'][j,i]
                     layer_end_nd[j,i]   = outputs['layer_end_nd'][j,i]
-                elif discrete_outputs['definition_layer'][j] == 10: # Web layer
+                elif outputs['definition_layer'][j] == 10: # Web layer
                     pass
-                elif discrete_outputs['definition_layer'][j] == 11: # Start nd arc locked to LE
+                elif outputs['definition_layer'][j] == 11: # Start nd arc locked to LE
                     layer_start_nd[j,i] = LE_loc + 1.e-6
                     layer_end_nd[j,i]   = layer_start_nd[int(discrete_outputs['index_layer_end'][j]),i]
-                elif discrete_outputs['definition_layer'][j] == 12: # End nd arc locked to LE
+                elif outputs['definition_layer'][j] == 12: # End nd arc locked to LE
                     layer_end_nd[j,i] = LE_loc - 1.e-6
                     layer_start_nd[j,i] = layer_end_nd[int(discrete_outputs['index_layer_start'][j]),i]
                 else:
-                    exit('Blade layer ' + str(discrete_outputs['layer_name'][j]) + ' not described correctly. Please check the yaml input file.')
+                    exit('Blade layer ' + str(layer_name[j]) + ' not described correctly. Please check the yaml input file.')
         
         # Assign openmdao outputs
         outputs['web_rotation']   = web_rotation
@@ -1020,13 +1083,16 @@ class WindTurbineOntologyOpenMDAO(Group):
     
     def initialize(self):
         self.options.declare('analysis_options')
+        self.options.declare('opt_options')
         
     def setup(self):
         analysis_options = self.options['analysis_options']
+        opt_options      = self.options['opt_options']
+        
         self.add_subsystem('materials', Materials(mat_init_options = analysis_options['materials']))
         self.add_subsystem('airfoils',  Airfoils(af_init_options   = analysis_options['airfoils']))
         
-        self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils']))
+        self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils'], opt_options = opt_options))
         self.add_subsystem('hub',           Hub())
         self.add_subsystem('nacelle',       Nacelle())
         self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
@@ -1118,7 +1184,6 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     n_span          = analysis_options['blade']['n_span']
     n_webs          = analysis_options['blade']['n_webs']
     
-    web_name        = n_webs * ['']
     web_rotation    = np.zeros((n_webs, n_span))
     web_offset_y_pa = np.zeros((n_webs, n_span))
     definition_web  = np.zeros(n_webs)
@@ -1126,13 +1191,12 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     
     # Loop through the webs and interpolate spanwise the values
     for i in range(n_webs):
-        web_name[i] = internal_structure_2d_fem['webs'][i]['name']
         if 'rotation' in internal_structure_2d_fem['webs'][i] and 'offset_y_pa' in internal_structure_2d_fem['webs'][i]:
             if 'fixed' in internal_structure_2d_fem['webs'][i]['rotation'].keys():
                 if internal_structure_2d_fem['webs'][i]['rotation']['fixed'] == 'twist':
                     definition_web[i] = 1
                 else:
-                    exit('Invalid rotation reference for web ' + web_name[i] + '. Please check the yaml input file')
+                    exit('Invalid rotation reference for web ' + self.analysis_options['blade']['web_name'][i] + '. Please check the yaml input file')
             else:
                 web_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['rotation']['grid'], internal_structure_2d_fem['webs'][i]['rotation']['values'], left=0., right=0.)
                 definition_web[i] = 2
@@ -1151,7 +1215,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     layer_midpoint_nd  = np.zeros((n_layers, n_span))
     layer_start_nd  = np.zeros((n_layers, n_span))
     layer_end_nd    = np.zeros((n_layers, n_span))
-    layer_web       = n_layers * ['']
+    layer_web       = np.zeros(n_layers)
     layer_side      = n_layers * ['']
     definition_layer= np.zeros(n_layers)
     index_layer_start= np.zeros(n_layers)
@@ -1160,8 +1224,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     
     # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
     for i in range(n_layers):
-        layer_name[i]  = internal_structure_2d_fem['layers'][i]['name']
-        layer_mat[i]   = internal_structure_2d_fem['layers'][i]['material']
+        layer_name[i]  = analysis_options['blade']['layer_name'][i]
+        layer_mat[i]   = analysis_options['blade']['layer_mat'][i]
         thickness[i]   = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['thickness']['grid'], internal_structure_2d_fem['layers'][i]['thickness']['values'], left=0., right=0.)
         if 'rotation' not in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' not in internal_structure_2d_fem['layers'][i] and 'width' not in internal_structure_2d_fem['layers'][i] and 'start_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'end_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'web' not in internal_structure_2d_fem['layers'][i]:
             definition_layer[i] = 1
@@ -1253,18 +1317,19 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
                 definition_layer[i] = 9
 
         if 'web' in internal_structure_2d_fem['layers'][i]:
-            layer_web[i] = internal_structure_2d_fem['layers'][i]['web']
+            web_name_i = internal_structure_2d_fem['layers'][i]['web']
+            for j in range(analysis_options['blade']['n_webs']):
+                if web_name_i == analysis_options['blade']['web_name'][j]:
+                    k = j+1
+                    break
+            layer_web[i] = k
             definition_layer[i] = 10
     
     
     # Assign the openmdao values
-    wt_opt['blade.internal_structure_2d_fem.web_name']          = web_name
     wt_opt['blade.internal_structure_2d_fem.s']                 = nd_span
     wt_opt['blade.internal_structure_2d_fem.web_rotation']      = web_rotation
     wt_opt['blade.internal_structure_2d_fem.web_offset_y_pa']   = web_offset_y_pa
-    
-    wt_opt['blade.internal_structure_2d_fem.layer_name']        = layer_name
-    wt_opt['blade.internal_structure_2d_fem.layer_mat']         = layer_mat
     wt_opt['blade.internal_structure_2d_fem.layer_side']        = layer_side
     wt_opt['blade.internal_structure_2d_fem.layer_thickness']   = thickness
     wt_opt['blade.internal_structure_2d_fem.layer_rotation']    = layer_rotation
@@ -1292,8 +1357,8 @@ def assign_te_flaps_values(wt_opt, analysis_options, blade):
             wt_opt['blade.dac_te_flaps.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
             wt_opt['blade.dac_te_flaps.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
 
-            wt_opt['param.opt_var.te_flap_ext'] = blade['aerodynamic_control']['te_flaps'][i]['span_end'] - blade['aerodynamic_control']['te_flaps'][i]['span_start']
-            wt_opt['param.opt_var.te_flap_end'] = blade['aerodynamic_control']['te_flaps'][i]['span_end']
+            wt_opt['blade.opt_var.te_flap_ext'] = blade['aerodynamic_control']['te_flaps'][i]['span_end'] - blade['aerodynamic_control']['te_flaps'][i]['span_start']
+            wt_opt['blade.opt_var.te_flap_end'] = blade['aerodynamic_control']['te_flaps'][i]['span_end']
 
             # Checks for consistency
             if blade['aerodynamic_control']['te_flaps'][i]['span_start'] < 0.:
