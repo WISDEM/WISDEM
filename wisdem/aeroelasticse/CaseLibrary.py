@@ -585,8 +585,8 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
 
 def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_comm_map_down=[]):
     # Default Runtime
-    T = 600.  # 630
-    TStart = 0.
+    T = 150. # 600.  # 150. # 630.
+    TStart = 30. #0.  # 30.
 
     # Overwrite for testing
     if TMax < T:
@@ -643,7 +643,7 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     case_inputs[("ElastoDyn", "YawDOF")] = {'vals': ['False'], 'group': 0}
     case_inputs[("ElastoDyn", "FlapDOF1")] = {'vals': ['True'], 'group': 0}
     case_inputs[("ElastoDyn", "FlapDOF2")] = {'vals': ['True'], 'group': 0}
-    case_inputs[("ElastoDyn", "EdgeDOF")] = {'vals': ['True'], 'group': 0}
+    case_inputs[("ElastoDyn", "EdgeDOF")] = {'vals': ['False'], 'group': 0}  # <<< set to FALSE for now
     case_inputs[("ElastoDyn", "DrTrDOF")] = {'vals': ['False'], 'group': 0}
     case_inputs[("ElastoDyn", "GenDOF")] = {'vals': ['True'], 'group': 0}
     case_inputs[("ElastoDyn", "TwFADOF1")] = {'vals': ['False'], 'group': 0}

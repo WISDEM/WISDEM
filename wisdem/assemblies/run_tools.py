@@ -76,6 +76,7 @@ class Outputs_2_Screen(ExplicitComponent):
         self.add_input('lcoe', val=0.0, units = 'USD/MW/h')
         self.add_input('Mxyz', val=0.0, units = 'N*m')
         self.add_input('My_std', val=0.0, units = 'N*m')
+        self.add_input('flp1_std', val=0.0, units = 'deg')
 
     def compute(self, inputs, outputs):
         print('########################################')
@@ -84,4 +85,5 @@ class Outputs_2_Screen(ExplicitComponent):
         print('Blade Mass:  {:8.10f} kg'.format(inputs['blade_mass'][0]))
         print('LCOE:        {:8.10f} USD/MWh'.format(inputs['lcoe'][0]))
         print('Std(Myroot): {:8.10f} Nm'.format(inputs['My_std'][0]))
+        print('Std(FLAP1):  {:8.10f} deg'.format(inputs['flp1_std'][0]))
         print('########################################')

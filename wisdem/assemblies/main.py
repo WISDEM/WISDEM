@@ -6,6 +6,8 @@ from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyPython, WindTurbi
 from wisdem.assemblies.run_tools import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
 from wisdem.assemblies.wt_land_based import WindPark
 
+from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
+
 def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output):
     # Main to run a wind turbine wisdem assembly
     
@@ -46,14 +48,26 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     # Initialize openmdao problem
     wt_opt          = Problem()
     wt_opt.model    = WindPark(analysis_options = analysis_options, opt_options = opt_options)
-    wt_opt.model.approx_totals(method='fd', step=opt_options['driver']['step_size'])
+    wt_opt.model.approx_totals(method='fd', step=opt_options['driver']['step_size'])  # <<< use for SLSQP optimizer
+    # wt_opt.model.approx_totals()  #method='fd', step=opt_options['driver']['step_size'])
     
     if opt_flag == True:
         # Set optimization solver and options
-        wt_opt.driver  = ScipyOptimizeDriver()
-        wt_opt.driver.options['optimizer'] = opt_options['driver']['solver']
-        wt_opt.driver.options['tol']       = opt_options['driver']['tol']
-        wt_opt.driver.options['maxiter']   = opt_options['driver']['max_iter']
+
+        # SLSQP
+        # wt_opt.driver  = ScipyOptimizeDriver()
+        # wt_opt.driver.options['optimizer'] = opt_options['driver']['solver']
+        # wt_opt.driver.options['tol']       = opt_options['driver']['tol']
+        # wt_opt.driver.options['maxiter']   = opt_options['driver']['max_iter']
+        # SNOPT
+        wt_opt.driver = pyOptSparseDriver()
+        wt_opt.driver.options['optimizer'] = "SNOPT"
+        wt_opt.driver.opt_settings['Major feasibility tolerance'] = 1e-2
+        wt_opt.driver.opt_settings['Major iterations limit'] = 4 # 4
+        wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
+        wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
+        wt_opt.driver.opt_settings['Major step limit'] = 0.1
+
 
 
         # Set figure of merit
@@ -64,8 +78,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         elif opt_options['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
         # NEW optimization objective for DAC design analysis
-        elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization
+        elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-fla-bending moments
             wt_opt.model.add_objective('aeroelastic.My_std', scaler = 1.)  #1.e-8)
+        elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQU 2020 paper (need to define time constant in ROSCO)
+            wt_opt.model.add_objective('aeroelastic.flp1_std', scaler = 1.)  #1.e-8)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
         
@@ -90,12 +106,12 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
 
         # Set non-linear constraints
-        wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.) 
-        wt_opt.model.add_constraint('rlds.constr.constr_min_strainU_spar', upper= 1.) 
-        wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.) 
-        wt_opt.model.add_constraint('rlds.constr.constr_min_strainL_spar', upper= 1.) 
-        wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.) 
-        # wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
+        # wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.)
+        # wt_opt.model.add_constraint('rlds.constr.constr_min_strainU_spar', upper= 1.)
+        # wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.)
+        # wt_opt.model.add_constraint('rlds.constr.constr_min_strainL_spar', upper= 1.)
+        # wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.)
+        wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0)
         
         # Set recorder
         # wt_opt.driver.add_recorder(SqliteRecorder(opt_options['recorder']['file_name']))

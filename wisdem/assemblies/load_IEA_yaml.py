@@ -212,6 +212,11 @@ class WindTurbineOntologyPython(object):
         self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['blade.outer_shape_bem.ref_axis'][:,1].tolist()
         self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['blade.outer_shape_bem.ref_axis'][:,2].tolist()
 
+        # Update Distributed Aerodynamic Controls
+        self.wt_init['components']['blade']['aerodynamic_control']['te_flaps']['span_start'] = str(wt_opt['opt_var_flap.te_flap_end'] - wt_opt['opt_var_flap.te_flap_ext'])
+        self.wt_init['components']['blade']['aerodynamic_control']['te_flaps']['span_end'] = str(wt_opt['opt_var_flap.te_flap_end'])
+
+
         # Update blade structure
         # Reference axis from blade outer shape
         self.wt_init['components']['blade']['internal_structure_2d_fem']['reference_axis'] = self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']
@@ -432,8 +437,13 @@ class Re_Interp_BEM(ExplicitComponent):
         outputs['s'] = copy.copy(nd_span_orig)
 
         # Account for blade flap start and end positions
-        flap_start = inputs['span_end'] - inputs['span_ext']
-        flap_end = inputs['span_end']
+        if inputs['span_end'] >= 0.98:
+            flap_start = 0.98 - inputs['span_ext']
+            flap_end = 0.98
+            print('span_end optimization variable reached limits and was set to r/R = 0.98 when running XFoil')
+        else:
+            flap_start = inputs['span_end'] - inputs['span_ext']
+            flap_end = inputs['span_end']
 
 #         # modify grid at flap start and end position
 #         # ToDO - include if 'aerodynamic_control' in blade:
@@ -441,6 +451,7 @@ class Re_Interp_BEM(ExplicitComponent):
         idx_flap_start = np.where(np.abs(inputs['s_'] - flap_start) == (np.abs(inputs['s_'] - flap_start)).min())
         outputs['s'][idx_flap_start[0][0]] = flap_start
         # flap end
+
         idx_flap_end = np.where(np.abs(inputs['s_'] - flap_end) == (np.abs(inputs['s_'] - flap_end)).min())
         outputs['s'][idx_flap_end[0][0]] = flap_end
 
@@ -1129,11 +1140,14 @@ class WT_Assembly(ExplicitComponent):
         self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed along its axis from tower base.')
         self.add_input('foundation_height',     val=0.0,    units='m',      desc='Scalar of the foundation height computed along its axis.')
         self.add_input('distance_tt_hub',       val=0.0,    units='m',      desc='Vertical distance from tower top to hub center.')
+        self.add_input('s_ref',                val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
 
         self.add_output('r_blade',              val=np.zeros(n_span), units='m',      desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
+        self.add_output('r_blade_ref',              val=np.zeros(n_span), units='m',      desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
         self.add_output('rotor_radius',         val=0.0,    units='m',      desc='Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
         self.add_output('rotor_diameter',       val=0.0,    units='m',      desc='Scalar of the rotor diameter, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
         self.add_output('hub_height',           val=0.0,    units='m',      desc='Height of the hub in the global reference system, i.e. distance rotor center to ground.')
+
 
     def compute(self, inputs, outputs):
         
@@ -1141,6 +1155,8 @@ class WT_Assembly(ExplicitComponent):
         outputs['rotor_radius']   = outputs['r_blade'][-1]
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
         outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
+
+        outputs['r_blade_ref']    = inputs['s_ref'] * (outputs['rotor_radius'] - inputs['hub_radius']) + inputs['hub_radius']
 
 class WindTurbineOntologyOpenMDAO(Group):
     # Openmdao group with all wind turbine data
@@ -1177,6 +1193,7 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.connect('tower.height',                    'assembly.tower_height')
         self.connect('foundation.height',               'assembly.foundation_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
+        self.connect('blade.outer_shape_bem.s',         'assembly.s_ref')
         
 def yaml2openmdao(wt_opt, analysis_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components

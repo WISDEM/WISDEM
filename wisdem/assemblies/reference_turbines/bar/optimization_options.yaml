@@ -45,17 +45,17 @@ optimization_variables:
       te_flap_end:
         flag: True
         #flap_end: 0.8
-        min_end: 0.3
+        min_end: 0.25
         max_end: 1.0
 
-merit_figure: My_std  #blade_mass # 'AEP' - 'LCOE'
+merit_figure: flp1_std   # My_std  #blade_mass # 'AEP' - 'LCOE'
 
 constraints:
 
-driver:
-    tol: 1.e-6
+driver:  # not used if SNOPT activated in main.py
+    tol: 1.e-3  # 1.e-6
     max_iter: 10
-    step_size: 1.e-2 #1.e-6
+    step_size: 1.e-1 #1.e-6
     solver: SLSQP
 
 recorder:

@@ -319,14 +319,15 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SD_MaxPit'] = controller.sd_maxpit
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['SD_CornerFreq'] = controller.sd_cornerfreq
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Fl_Kp'] = controller.Kp_float
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Kp'] = np.ones(len(controller.Kp_flap)) * 0.00000010   # controller.Kp_flap
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Ki'] = np.ones(len(controller.Ki_flap)) * 0.00000200   # controller.Ki_flap
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Kp'] = controller.Kp_flap
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Ki'] = controller.Ki_flap
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_MaxPit'] = controller.flp_maxpit
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Flp_Angle'] = 0.
         # - turbine
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['v_rated'] = inputs['v_rated'][0]
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq']  = [inputs['flap_freq'][0] * 2 * np.pi, 0.7]
+        # self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq']  = [inputs['flap_freq'][0] * 2 * np.pi, 0.7]
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq'] = [inputs['flap_freq'][0] * 2 * np.pi / 3.0, 0.7]
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_LPFCornerFreq']  = inputs['edge_freq'][0] * 2 * np.pi / 4.
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['twr_freq'] = 0.0 # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['ptfm_freq'] = 0.0 # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM

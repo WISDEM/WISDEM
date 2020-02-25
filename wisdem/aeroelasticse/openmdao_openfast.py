@@ -14,6 +14,7 @@ from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_py
 # from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
 from wisdem.aeroelasticse.FAST_post import return_timeseries
 
+import os
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -335,6 +336,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('root_bending_moment', val=0.0, units='N*m', desc='total magnitude of bending moment at root of blade 1')
         self.add_output('Mxyz',         val=np.array([0.0, 0.0, 0.0]), units='N*m', desc='individual moments [x,y,z] at the blade root in blade c.s.')
         self.add_output('My_std',       val=0.0, units='N*m', desc='standard deviation of blade root flap bending moment in out-of-plane direction')
+        self.add_output('flp1_std',       val=0.0, units='deg', desc='standard deviation of trailing-edge flap angle')
         
         self.add_output('loads_r',      val=np.zeros(n_span), units='m', desc='radial positions along blade going toward tip')
         self.add_output('loads_Px',     val=np.zeros(n_span), units='N/m', desc='distributed loads in blade-aligned x-direction')
@@ -645,6 +647,8 @@ class FASTLoadCases(ExplicitComponent):
 
         self.fst_vt = fst_vt
 
+
+
         return FAST_Output
 
     def write_FAST(self, fst_vt, discrete_outputs):
@@ -713,6 +717,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['Mxyz'] = np.array([data['RootMxc3'][idx_s+idx]*1.e3, data['RootMyc3'][idx_s+idx]*1.e3, data['RootMzc3'][idx_s+idx]*1.e3])
                 outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
 
+            outputs['flp1_std'] = np.std(data['BLFLAP1'])
 
             # import matplotlib.pyplot as plt
             # plt.plot(data['RootMyc1'][idx_s:idx_e])

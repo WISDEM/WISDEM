@@ -28,8 +28,8 @@ components:
           values: [0.0, 1.9999253561681682, 3.9998507123363365, 5.999776068504504, 7.999701424672673, 9.999626780840842, 11.999552137009008, 13.999477493177178, 15.999402849345346, 17.99932820551351, 19.937942683339866, 21.876557161166218, 23.81517163899257, 25.753786116818922, 27.69240059464527, 29.631015072471627, 31.491870519188982, 33.35272596590634, 35.2135814126237, 37.07443685934105, 38.93529230605841, 40.79614775277577, 42.657003199493126, 44.51785864621048, 46.37871409292784, 48.23956953964519, 50.25503560149709, 52.27050166334898, 54.28596772520088, 56.30143378705277, 58.316899848904676, 60.332365910756565, 62.34783197260846, 64.36329803446036, 66.37876409631225, 68.39423015816413, 70.40969622001603, 72.42516228186794, 74.44062834371984, 76.45609440557173, 79.99701424672674, 82.40861190458908, 84.82020956245144, 87.2318072203138, 89.17296901973235, 91.11413081915089, 93.05529261856942, 94.99645441798798, 97.49636111319819, 99.9962678084084]
     aerodynamic_control:
       te_flaps:
-        - span_start: 0.5
-          span_end: 0.51  # 0.825, 0.951  or 0.801, 0.825, 0.85, 0.90, 0.951
+        - span_start: 0.40
+          span_end: 0.65  # 0.825, 0.951  or 0.801, 0.825, 0.85, 0.90, 0.951
           chord_start: 0.8
           delta_max_pos: 0.17453292519943295 # 10 deg
           delta_max_neg: -0.17453292519943295 # -10 deg
@@ -648,13 +648,15 @@ control:
     max_pitch_rate: 0.03488888888888889 # 2 deg/s
     max_torque_rate: 1500000.
     # Controller parameters 
-    PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
-    PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
-    VS_zeta: 0.7                      # Torque controller desired damping ratio [-]
-    VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
+    PC_zeta: 1.4                      # 1.2       Pitch controller desired damping ratio [-]
+    PC_omega: 0.12                    # 0.1       Pitch controller desired natural frequency [rad/s]
+    VS_zeta: 1.0                      # 0.7       Torque controller desired damping ratio [-]
+    VS_omega: 0.05                    # 0.2      Torque controller desired natural frequency [rad/s]
     # Only needed if Flp_Mode > 0
-    Flp_zeta: 0.5                     # Flap controller desired damping ratio [-]
-    Flp_omega: 0.1                    # Flap controller desired natural frequency [rad/s]
+    Flp_zeta: 0.7                     # Flap controller desired damping ratio [-]
+#    Flp_omega: 2.5                # 5 % Flap    # Flap controller desired natural frequency [rad/s]
+#    Flp_omega: 2.6285714285       # 15 % Flap    # Flap controller desired natural frequency [rad/s]
+    Flp_omega: 2.76      # used: 2.72          # 25 % Flap    # Flap controller desired natural frequency [rad/s]
     #
     max_pitch: 90                     # Maximum pitch angle [rad], {default = 90 degrees}
     min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}

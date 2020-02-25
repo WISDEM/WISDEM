@@ -63,18 +63,25 @@ class WT_RNTA(Group):
         self.connect('blade.internal_structure_2d_fem.layer_thickness', 'param.ps.layer_thickness_original')
 
         # Connections from blade aero parametrization to other modules
-        self.connect('param.pa.twist_param',           ['sse.theta','elastic.theta','rlds.theta'])
+        # self.connect('param.pa.twist_param',           ['sse.theta','elastic.theta','rlds.theta'])
+        # self.connect('param.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
+        # self.connect('param.pa.chord_param',           ['xf.chord', 'elastic.chord', 'sse.chord','rlds.chord'])
+
+        self.connect('blade.outer_shape_bem.twist',     ['elastic.theta','rlds.theta'])
+        self.connect('param.pa.twist_param',            ['sse.theta'])
         self.connect('param.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
-        self.connect('param.pa.chord_param',           ['xf.chord', 'elastic.chord', 'sse.chord','rlds.chord'])
+        self.connect('blade.outer_shape_bem.chord',     ['elastic.chord', 'rlds.chord'])
+        self.connect('param.pa.chord_param',            ['xf.chord', 'sse.chord'])
 
 
         # Connections from blade struct parametrization to rotor elasticity
         self.connect('param.ps.layer_thickness_param', 'elastic.precomp.layer_thickness')
 
-        # Connections to rotor elastic and frequency analysis
+        # Connections to rotor elastic and frequency analysis  (in non-dynamic _ref grid system)
         self.connect('nacelle.uptilt',                                  'elastic.precomp.uptilt')
         self.connect('configuration.n_blades',                          'elastic.precomp.n_blades')
-        self.connect('assembly.r_blade',                                'elastic.r')
+        # self.connect('assembly.r_blade',                                'elastic.r')
+        self.connect('assembly.r_blade_ref',                                'elastic.r')
         self.connect('blade.outer_shape_bem.pitch_axis',                'elastic.precomp.pitch_axis')
         self.connect('blade.interp_airfoils_struct.coord_xy_interp',    'elastic.precomp.coord_xy_interp')
         self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'elastic.precomp.layer_start_nd')
@@ -117,7 +124,7 @@ class WT_RNTA(Group):
         self.connect('opt_var_flap.te_flap_end',             'blade.re_interp_bem.span_end')
         self.connect('opt_var_flap.te_flap_ext',             'blade.re_interp_bem.span_ext')
         
-        # Connections to run xfoil for te flaps
+        # Connections to run xfoil for te flaps  (in dynamic grid system)
         self.connect('blade.interp_airfoils_aero.coord_xy_interp', 'xf.coord_xy_interp')
         self.connect('airfoils.aoa',                          'xf.aoa')
         self.connect('assembly.r_blade',                      'xf.r')
@@ -135,7 +142,7 @@ class WT_RNTA(Group):
         self.connect('blade.interp_airfoils_aero.cd_interp',       'xf.cd_interp')
         self.connect('blade.interp_airfoils_aero.cm_interp',       'xf.cm_interp')
 
-        # Connections to ServoSE
+        # Connections to ServoSE  (in dynamic grid system)
         self.connect('wt_class.V_mean',             'sse.cdf.xbar')
         self.connect('control.V_in' ,               'sse.v_min')
         self.connect('control.V_out' ,              'sse.v_max')
@@ -210,10 +217,10 @@ class WT_RNTA(Group):
         self.connect('elastic.precomp.yl_strain_te',   'rlds.yl_strain_te')
         self.connect('blade.outer_shape_bem.s','rlds.constr.s')
 
-        # Frequencies from curvefem to constraint
+        # Frequencies from curvefem to constraint (in non-dynamic _ref grid system)
         self.connect('elastic.curvefem.freq',   'rlds.constr.freq') 
 
-        self.connect('assembly.r_blade',                'rlds.r')
+        self.connect('assembly.r_blade_ref',                'rlds.r')
         self.connect('assembly.rotor_radius',           'rlds.Rtip')
         self.connect('hub.radius',                      'rlds.Rhub')
         self.connect('assembly.hub_height',             'rlds.hub_height')
@@ -277,7 +284,7 @@ class WT_RNTA(Group):
         self.connect('nacelle.drivetrain_eff',     'drivese.drivetrain_efficiency')
         self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
         
-        # Connections to aeroelasticse
+        # Connections to aeroelasticse  (in non-dynamic _ref and dynamic grid system, depending on whether it is structure or aero related)
         if analysis_options['openfast']['run_openfast'] == True:
             self.connect('blade.re_interp_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             # self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
@@ -400,5 +407,6 @@ class WindPark(Group):
         self.connect('elastic.precomp.blade_mass', 'outputs_2_screen.blade_mass')
         self.connect('financese.lcoe',             'outputs_2_screen.lcoe')
         self.connect('aeroelastic.My_std',         'outputs_2_screen.My_std')
+        self.connect('aeroelastic.flp1_std',       'outputs_2_screen.flp1_std')
 
 
