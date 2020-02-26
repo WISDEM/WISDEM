@@ -174,8 +174,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     wt_opt['blade.pa.s_opt_chord']       = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
-    wt_opt['rlds.constr.max_strainU_spar'] =  opt_options['constraints']['blade']['strains_spar_cap_ss']['max']
-    wt_opt['rlds.constr.max_strainL_spar'] =  opt_options['constraints']['blade']['strains_spar_cap_ps']['max']
+    wt_opt['rlds.constr.max_strainU_spar'] = opt_options['constraints']['blade']['strains_spar_cap_ss']['max']
+    wt_opt['rlds.constr.max_strainL_spar'] = opt_options['constraints']['blade']['strains_spar_cap_ps']['max']
+    wt_opt['sse.stall_check.stall_margin'] = opt_options['constraints']['blade']['stall']['margin'] * 180. / np.pi
 
     # Build and run openmdao problem
     wt_opt.run_driver()
