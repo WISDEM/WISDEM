@@ -54,6 +54,22 @@ optimization_variables:
 merit_figure: LCOE # 'AEP' - 'LCOE'
 
 constraints:
+  blade:
+    strains_spar_cap_ss:
+      flag: False
+      max:  3500.e-6
+    strains_spar_cap_ps:
+      flag: False
+      max:  3500.e-6
+    tip_deflection:
+      flag: False
+    rail_transport:
+      flag: False
+      8_axle: False
+      4_axle: False
+    stall:
+      flag: False
+      margin: 0.05233 # 3 deg
 
 driver:
     tol: 1.e-6

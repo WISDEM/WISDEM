@@ -69,7 +69,6 @@ class ParametrizeBladeStruct(ExplicitComponent):
         # Inputs
         self.add_input('s',                         val=np.zeros(n_span),       desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         # Blade spar suction side
-        self.add_discrete_input('layer_name',       val=n_layers * [''],        desc='1D array of the names of the layers modeled in the blade structure.')
         self.add_input('layer_thickness_original',  val=np.zeros((n_layers, n_span)), units='m',desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_output('s_opt_spar_cap_ss',        val=np.zeros(n_opt_spar_cap_ss),desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side')
         self.add_input('spar_cap_ss_opt_gain',      val=np.ones(n_opt_spar_cap_ss), desc='1D array of the non-dimensional gains to optimize the blade spanwise distribution of the spar caps suction side')
@@ -80,16 +79,18 @@ class ParametrizeBladeStruct(ExplicitComponent):
         # Outputs
         self.add_output('layer_thickness_param', val=np.zeros((n_layers, n_span)), units='m',desc='2D array of the thickness of the layers of the blade structure after the parametrization. The first dimension represents each layer, the second dimension represents each entry along blade span.')
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         
         spar_cap_ss_name = self.opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
         spar_cap_ps_name = self.opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
+        layer_name = self.options['blade_init_options']['layer_name']
+
         for i in range(self.n_layers):
-            if discrete_inputs['layer_name'][i] == spar_cap_ss_name:
+            if layer_name[i] == spar_cap_ss_name:
                 spar_cap_ss_opt_gain_nd = inputs['spar_cap_ss_opt_gain']
                 opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_cap_ss'], spar_cap_ss_opt_gain_nd)
-            elif discrete_inputs['layer_name'][i] == spar_cap_ps_name:
+            elif layer_name[i] == spar_cap_ps_name:
                 spar_cap_ps_opt_gain_nd = inputs['spar_cap_ps_opt_gain']
                 opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_cap_ps'], spar_cap_ps_opt_gain_nd)
             else:

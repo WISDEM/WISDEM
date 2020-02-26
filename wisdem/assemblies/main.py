@@ -65,7 +65,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         step_size = opt_options['driver']['step_size']
     else:
         step_size = 1.e-6
-    wt_opt.model.approx_totals(method='fd', step=step_size)    
+    wt_opt.model.approx_totals(method='fd', step=step_size, form='central')    
     
     if opt_options['opt_flag'] == True:
         # Set optimization solver and options
@@ -135,12 +135,21 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
 
         # Set non-linear constraints
-        wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.) 
-        # wt_opt.model.add_constraint('rlds.constr.constr_min_strainU_spar', upper= 1.) 
-        wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.) 
-        # wt_opt.model.add_constraint('rlds.constr.constr_min_strainL_spar', upper= 1.) 
-        wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.) 
-        # wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
+        if opt_options['constraints']['blade']['strains_spar_cap_ss']['flag']:
+            wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.)
+        if opt_options['constraints']['blade']['strains_spar_cap_ps']['flag']:
+            wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.)
+        if opt_options['constraints']['blade']['stall']['flag']:
+            wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.) 
+        if opt_options['constraints']['blade']['tip_deflection']['flag']:
+            wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
+        if opt_options['constraints']['blade']['rail_transport']['flag']:
+            if opt_options['constraints']['blade']['rail_transport']['8_axle']:
+                wt_opt.model.add_constraint('elastic.rail.LV_constraint_8axle',    upper= 1.0)
+            elif opt_options['constraints']['blade']['rail_transport']['4_axle']:
+                wt_opt.model.add_constraint('elastic.rail.LV_constraint_4axle',    upper= 1.0)
+            else:
+                exit('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
         
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
@@ -165,10 +174,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     wt_opt['blade.pa.s_opt_chord']       = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
-    # wt_opt['rlds.constr.min_strainU_spar'] = -0.003
-    wt_opt['rlds.constr.max_strainU_spar'] =  0.0025
-    # wt_opt['rlds.constr.min_strainL_spar'] = -0.003
-    wt_opt['rlds.constr.max_strainL_spar'] =  0.0025
+    wt_opt['rlds.constr.max_strainU_spar'] =  opt_options['constraints']['blade']['strains_spar_cap_ss']['max']
+    wt_opt['rlds.constr.max_strainL_spar'] =  opt_options['constraints']['blade']['strains_spar_cap_ps']['max']
 
     # Build and run openmdao problem
     wt_opt.run_driver()

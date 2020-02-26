@@ -8,6 +8,7 @@ from wisdem.rotorse.precomp import PreComp, Profile, Orthotropic2DMaterial, Comp
 import wisdem.pBeam._pBEAM as _pBEAM
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse.rotor_cost import blade_cost_model
+from wisdem.rotorse.rail_transport import RailTransport
 
 class RunPreComp(ExplicitComponent):
     # Openmdao component to run precomp and generate the elastic properties of a wind turbine blade
@@ -75,6 +76,10 @@ class RunPreComp(ExplicitComponent):
         self.add_output('Tw_iner',      val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
         self.add_output('x_ec',         val=np.zeros(n_span), units='m',      desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
         self.add_output('y_ec',         val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
+
+        self.add_output('x_ec_abs',     val=np.zeros(n_span), units='m',      desc='x coordinate of the elastic center in the non-dimensional airfoil coordinate system')
+        self.add_output('y_ec_abs',     val=np.zeros(n_span), units='m',      desc='y coordinate of the elastic center in the non-dimensional airfoil coordinate system')
+
         self.add_output('flap_iner',    val=np.zeros(n_span), units='kg/m',   desc='Section flap inertia about the Y_G axis per unit length.')
         self.add_output('edge_iner',    val=np.zeros(n_span), units='kg/m',   desc='Section lag inertia about the X_G axis per unit length')
         # self.add_output('eps_crit_spar',    val=np.zeros(n_span), desc='critical strain in spar from panel buckling calculation')
@@ -412,6 +417,9 @@ class RunPreComp(ExplicitComponent):
                        sector_idx_strain_spar_cap_ps, sector_idx_strain_spar_cap_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
         EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner = beam.sectionProperties()
 
+        outputs['x_ec_abs'] = beam.x_ec_nose - inputs['pitch_axis'] * inputs['chord']
+        outputs['y_ec_abs'] = beam.y_ec_nose
+
         # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_cap_ss)
         # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_strain_te_ss)
 
@@ -673,6 +681,9 @@ class RotorElasticity(Group):
         opt_options     = self.options['opt_options']
 
         # Get elastic properties by running precomp
-        self.add_subsystem('precomp',   RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep','x_ec_abs', 'y_ec_abs'])
         # Compute frequencies
         self.add_subsystem('curvefem', RunCurveFEM(analysis_options = analysis_options), promotes=['r','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        # Check rail transportabiliy
+        if opt_options['constraints']['blade']['rail_transport']['flag']:
+            self.add_subsystem('rail',     RailTransport(analysis_options = analysis_options), promotes=['EA','EIxx','EIyy','GJ','rhoA','rhoJ','x_ec_abs', 'y_ec_abs'])

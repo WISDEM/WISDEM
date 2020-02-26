@@ -84,6 +84,15 @@ class WT_RNTA(Group):
         self.connect('materials.fwf',           'elastic.precomp.fwf')
         self.connect('materials.roll_mass',     'elastic.precomp.roll_mass')
 
+        # Conncetions to rail transport module
+        if opt_options['constraints']['blade']['rail_transport']['flag']:
+            self.connect('blade.pa.twist_param',                    'elastic.rail.theta')
+            self.connect('blade.pa.chord_param',                    'elastic.rail.chord')
+            self.connect('blade.outer_shape_bem.pitch_axis',        'elastic.rail.pitch_axis')
+            self.connect('blade.outer_shape_bem.ref_axis',          'elastic.rail.blade_ref_axis')
+            self.connect('blade.interp_airfoils.coord_xy_dim',      'elastic.rail.coord_xy_dim')
+            self.connect('blade.interp_airfoils.coord_xy_interp',   'elastic.rail.coord_xy_interp')
+
         # Connections from blade struct parametrization to rotor load anlysis
         self.connect('blade.ps.s_opt_spar_cap_ss',   'rlds.constr.s_opt_spar_cap_ss')
         self.connect('blade.ps.s_opt_spar_cap_ps',   'rlds.constr.s_opt_spar_cap_ps')

@@ -824,7 +824,6 @@ class Tower(ExplicitComponent):
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]
         
-
 class Monopile(ExplicitComponent):
     # Openmdao component with the tower data coming from the input yaml file.
     def initialize(self):
@@ -861,7 +860,6 @@ class Monopile(ExplicitComponent):
         outputs['length']   = myarc[-1]
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]
-
 
 class Foundation(ExplicitComponent):
     # Openmdao component with the foundation data coming from the input yaml file.
