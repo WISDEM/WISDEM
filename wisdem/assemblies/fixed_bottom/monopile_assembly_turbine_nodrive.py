@@ -1,17 +1,9 @@
 
 from __future__ import print_function
 import numpy as np
-from pprint import pprint
-from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem, ScipyOptimizeDriver, SqliteRecorder, NonlinearRunOnce, DirectSolver
-try:
-    from openmdao.api import pyOptSparseDriver
-except:
-    pass
-from wisdem.rotorse.rotor import RotorSE, Init_RotorSE_wRefBlade
-from wisdem.rotorse.rotor_geometry_yaml import ReferenceBlade
+import openmdao.api as om
+from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
-from wisdem.commonse import NFREQ
-from wisdem.commonse.environment import PowerWind, LogWind
 from wisdem.commonse.turbine_constraints import TurbineConstraints
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
@@ -22,7 +14,7 @@ from wisdem.commonse.mpi_tools import MPI
 # np.seterr(all ='raise')
         
 # Group to link the openmdao components
-class MonopileTurbine(Group):
+class MonopileTurbine(om.Group):
 
     def initialize(self):
         self.options.declare('RefBlade')
@@ -43,7 +35,7 @@ class MonopileTurbine(Group):
             Analysis_Level  = 0
         
         # Define all input variables from all models
-        myIndeps = IndepVarComp()
+        myIndeps = om.IndepVarComp()
         myIndeps.add_discrete_output('crane',    False)
 
         # Turbine Costs
