@@ -1173,6 +1173,46 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     wt_opt['blade.outer_shape_bem.ref_axis'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
     wt_opt['blade.outer_shape_bem.ref_axis'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
     wt_opt['blade.outer_shape_bem.ref_axis'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
+
+    # # Smoothing of the shapes
+    # # Chord
+    # chord_init      = wt_opt['blade.outer_shape_bem.chord']
+    # s_interp_c      = np.array([0.0, 0.05, 0.3, 0.6, 0.8, 0.9, 1.0 ])
+    # f_interp1       = interp1d(nd_span,chord_init)
+    # chord_int1      = f_interp1(s_interp_c)
+    # f_interp2       = PchipInterpolator(s_interp_c,chord_int1)
+    # chord_int2      = f_interp2(nd_span)
+    
+    # import matplotlib.pyplot as plt
+    # fc, axc  = plt.subplots(1,1,figsize=(5.3, 4))
+    # axc.plot(nd_span, chord_init, c='k', label='Initial')
+    # axc.plot(s_interp_c, chord_int1, 'ko', label='Interp Points')
+    # axc.plot(nd_span, chord_int2, c='b', label='PCHIP')
+    # axc.set(xlabel='r/R' , ylabel='Chord (m)')
+    # fig_name = 'interp_chord.png'
+    # axc.legend()
+
+    # # Planform
+    # le_init = wt_opt['blade.outer_shape_bem.pitch_axis']*wt_opt['blade.outer_shape_bem.chord']
+    # te_init = (1. - wt_opt['blade.outer_shape_bem.pitch_axis'])*wt_opt['blade.outer_shape_bem.chord']
+    
+    # s_interp_le     = np.array([0.0, 0.5, 0.8, 1.0])
+    # f_interp1       = interp1d(wt_opt['blade.outer_shape_bem.s'],le_init)
+    # le_int1         = f_interp1(s_interp_le)
+    # f_interp2       = PchipInterpolator(s_interp_le,le_int1)
+    # le_int2         = f_interp2(wt_opt['blade.outer_shape_bem.s'])
+    
+    # fpl, axpl  = plt.subplots(1,1,figsize=(5.3, 4))
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], -le_init, c='k', label='LE init')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], -le_int2, c='b', label='LE smooth old pa')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], te_init, c='k', label='TE init')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], wt_opt['blade.outer_shape_bem.chord'] - le_int2, c='b', label='TE smooth old pa')
+    # axpl.set(xlabel='r/R' , ylabel='Planform (m)')
+    # axpl.legend()
+    # plt.show()
+    # np.savetxt('temp.txt', le_int2/wt_opt['blade.outer_shape_bem.chord'])
+    # exit()
+
     
     return wt_opt
     

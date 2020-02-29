@@ -93,7 +93,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             except:
                 exit('You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun.')
             wt_opt.driver.opt_settings['Major optimality tolerance'] = float(opt_options['driver']['tol'])
-            wt_opt.driver.opt_settings['Major iterations limit']           = int(opt_options['driver']['max_iter'])
+            wt_opt.driver.opt_settings['Iterations limit']           = int(opt_options['driver']['max_iter'])
             # wt_opt.driver.opt_settings['Major feasibility tolerance'] = 1e-7
             # wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
             # wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
