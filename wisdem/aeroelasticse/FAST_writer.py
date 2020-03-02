@@ -1288,7 +1288,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         turbine.Cq = type('', (), {})()
         turbine.rotor_radius            = self.fst_vt['DISCON_in']['WE_BladeRadius']
         turbine.v_rated                 = self.fst_vt['DISCON_in']['v_rated']
-        turbine.bld_flapwise_freq       = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0]
+        turbine.bld_flapwise_freq       = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0] * 3.
         turbine.bld_edgewise_freq       = self.fst_vt['DISCON_in']['F_LPFCornerFreq'] * 4.
         turbine.twr_freq                = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
         turbine.ptfm_freq               = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
