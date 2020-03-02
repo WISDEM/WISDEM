@@ -1325,10 +1325,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
         self.fst_vt['DISCON_in']['PerfFileName'] = self.FAST_namingOut + '_Cp_Ct_Cq.txt'
         
-        # Write DISCON infiles
+        # Write DISCON input files
         file_processing = ROSCO_utilities.FileProcessing()
         file_processing.write_rotor_performance(turbine, txt_filename=os.path.join(self.FAST_runDirectory, self.fst_vt['DISCON_in']['PerfFileName']))
-        file_processing.write_param_file(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
+        file_processing.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
 
     def write_HydroDyn(self):
 
