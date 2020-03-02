@@ -6,6 +6,8 @@ import operator
 
 from wisdem.aeroelasticse.FAST_vars import FstModel
 
+from ROSCO_toolbox import turbine as ROSCO_turbine
+from ROSCO_toolbox import utilities as ROSCO_utilities
 
 def fix_path(name):
     """ split a path, then reconstruct it using os.path.join """

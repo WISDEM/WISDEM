@@ -7,6 +7,8 @@ from functools import reduce
 from wisdem.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from wisdem.aeroelasticse.FAST_vars import FstModel
 
+from ROSCO_toolbox import turbine as ROSCO_turbine
+from ROSCO_toolbox import utilities as ROSCO_utilities
 
 
 # Builder
