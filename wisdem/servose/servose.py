@@ -336,7 +336,7 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_MaxRat'] = WISDEM_turbine.max_pitch_rate
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_MinRat'] = -WISDEM_turbine.max_pitch_rate
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_MaxRat'] = WISDEM_turbine.max_torque_rate
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['rated_rotor_speed'] = WISDEM_turbine.rated_rotor_speed
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_RefSpd'] = WISDEM_turbine.rated_rotor_speed
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_RtPwr'] = WISDEM_turbine.rated_power
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_RtTq'] = WISDEM_turbine.rated_torque
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_MaxTq'] = WISDEM_turbine.rated_torque * 1.1
