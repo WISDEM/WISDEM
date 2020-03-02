@@ -30,6 +30,7 @@ class ParametrizeBladeAero(ExplicitComponent):
         # Outputs
         self.add_output('twist_param',    val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is the result of the parameterization.')
         self.add_output('chord_param',    val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span. The chord is the result of the parameterization.')
+        self.add_output('max_chord_constr',val=np.zeros(n_opt_chord),           desc='1D array of the ratio between chord values and maximum chord along blade span.')
 
     def compute(self, inputs, outputs):
         
@@ -48,9 +49,14 @@ class ParametrizeBladeAero(ExplicitComponent):
             outputs['twist_param']  = twist_spline(inputs['s'])
         else:
             outputs['twist_param']  = inputs['twist_original']
-
+        
         chord_spline            = spline(inputs['s_opt_chord'], inputs['chord_opt_gain'])
         outputs['chord_param']  = inputs['chord_original'] * chord_spline(inputs['s'])
+        
+        chord_opt = spline(inputs['s'], outputs['chord_param'])
+        max_chord = self.opt_options['constraints']['blade']['chord']['max']
+        outputs['max_chord_constr'] = chord_opt(inputs['s_opt_chord']) / max_chord
+
 
 class ParametrizeBladeStruct(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the structural design of the wind turbine rotor blades
@@ -88,11 +94,12 @@ class ParametrizeBladeStruct(ExplicitComponent):
 
         for i in range(self.n_layers):
             if layer_name[i] == spar_cap_ss_name:
-                spar_cap_ss_opt_gain_nd = inputs['spar_cap_ss_opt_gain']
-                opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_cap_ss'], spar_cap_ss_opt_gain_nd)
+                opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_cap_ss'], inputs['spar_cap_ss_opt_gain'])
             elif layer_name[i] == spar_cap_ps_name:
-                spar_cap_ps_opt_gain_nd = inputs['spar_cap_ps_opt_gain']
-                opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_cap_ps'], spar_cap_ps_opt_gain_nd)
+                if self.opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['equal_to_suction'] == False:
+                    opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_cap_ps'], inputs['spar_cap_ps_opt_gain'])
+                else:
+                    opt_gain_m_interp   = np.interp(inputs['s'], outputs['s_opt_spar_cap_ss'], inputs['spar_cap_ss_opt_gain'])
             else:
                 opt_gain_m_interp = np.ones(self.n_span)
 

@@ -21,6 +21,7 @@ optimization_variables:
       spar_cap_ps:
         flag: False
         name: Spar_Cap_PS
+        equal_to_suction: True
         n_opt: 8
         min_gain: 0.2 # non-dimensional
         max_gain: 2.0 # non-dimensional
@@ -70,6 +71,9 @@ constraints:
     stall:
       flag: False
       margin: 0.05233 # 3 deg
+    chord:
+      flag: False
+      max: 4.75
 
 driver:
     tol: 1.e-6

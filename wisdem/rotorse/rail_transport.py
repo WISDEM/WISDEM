@@ -205,6 +205,7 @@ class RailTransport(ExplicitComponent):
         q        = -np.gradient(V,r)    
 
         r_opt    = np.linspace(0., blade_length, n_opt)
+        pb_opt   = np.interp(r_opt, r, inputs['blade_ref_axis'][:,0])
         M_opt_h  = np.interp(r_opt, r, M)
         V_opt_h  = np.gradient(M_opt_h,r_opt)
         q_opt_h  = np.max([np.zeros(n_opt), np.gradient(V_opt_h,r_opt)], axis=0)
@@ -253,7 +254,7 @@ class RailTransport(ExplicitComponent):
             for i in range(n_opt):
                 M_iter[i] = np.trapz(V_iter[i:],r_opt[i:])
             
-            RF_flatcar_1 = V_iter[0] + M_iter[0] / (flatcar_tc_length * 0.5)
+            RF_flatcar_1 = 0.5 * V_iter[0] + M_iter[0] / flatcar_tc_length
 
             return RF_flatcar_1*1.e-5
 
@@ -292,7 +293,7 @@ class RailTransport(ExplicitComponent):
             blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
             dx, dy, dz, dtheta_r1, dtheta_r2, dtheta_z = blade.displacement()
 
-            x_blade_transport = dx*blade_length/arc_length(r_opt, dx)[-1]
+            x_blade_transport = (dx + pb_opt)*blade_length/arc_length(r_opt, dx)[-1]
             y_blade_transport = r_opt*blade_length/arc_length(r_opt, dx)[-1]
 
             ps_x = x_blade_transport + dist_ps_interp
@@ -334,6 +335,7 @@ class RailTransport(ExplicitComponent):
             # plt.grid(color=[0.8,0.8,0.8], linestyle='--')
             # plt.subplots_adjust(bottom = 0.15, left = 0.18)
             # plt.show()
+            # exit()
 
 
             return consts
@@ -365,14 +367,14 @@ class RailTransport(ExplicitComponent):
             # print('The optimizer finds a solution for the lateral curves!')
             # print('Prescribed rotation angle: ' + str(root_rot_rad_final * 180. / np.pi) + ' deg')
             
-            RF_flatcar_1 = V_final[0] + M_final[0] / (flatcar_tc_length * 0.5)
+            RF_flatcar_1 = 0.5 * V_final[0] + M_final[0] / flatcar_tc_length
 
             # print('Max reaction force lateral turn: ' + str(RF_flatcar_1) + ' N')
 
-            outputs['LV_constraint_8axle'] = (RF_flatcar_1 / (weight_car_8axle * gravity)) / max_LV
-            outputs['LV_constraint_4axle'] = (RF_flatcar_1 / (weight_car_4axle * gravity)) / max_LV
+            outputs['LV_constraint_8axle'] = (RF_flatcar_1 / (0.5 * weight_car_8axle * gravity)) / max_LV
+            outputs['LV_constraint_4axle'] = (RF_flatcar_1 / (0.5 * weight_car_4axle * gravity)) / max_LV
 
-            # print('L/V constraint 8-axle: ' + str(outputs['LV_constraint_8axle']))
+            print('L/V constraint 8-axle: ' + str(outputs['LV_constraint_8axle']))
             # print('L/V constraint 4-axle: ' + str(outputs['LV_constraint_4axle']))
 
             eps            = M_final * dist_ss_interp / EIflap_interp
@@ -384,7 +386,7 @@ class RailTransport(ExplicitComponent):
             blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
             dx, dy, dz, dtheta_r1, dtheta_r2, dtheta_z = blade.displacement()
 
-            x_blade_transport = dx*blade_length/arc_length(r_opt, dx)[-1]
+            x_blade_transport = (dx +  + pb_opt)*blade_length/arc_length(r_opt, dx)[-1]
             y_blade_transport = r_opt*blade_length/arc_length(r_opt, dx)[-1]
 
 

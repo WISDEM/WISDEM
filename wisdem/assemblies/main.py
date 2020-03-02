@@ -93,8 +93,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             except:
                 exit('You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun.')
             wt_opt.driver.opt_settings['Major optimality tolerance'] = float(opt_options['driver']['tol'])
-            wt_opt.driver.opt_settings['Iterations limit']           = int(opt_options['driver']['max_iter'])
-            # wt_opt.driver.opt_settings['Major feasibility tolerance'] = 1e-7
+            wt_opt.driver.opt_settings['Major iterations limit']           = int(opt_options['driver']['max_iter'])
+            wt_opt.driver.opt_settings['Major feasibility tolerance']= float(opt_options['driver']['tol'])
             # wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
             # wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
             # wt_opt.driver.opt_settings['Major step limit'] = opt_options['driver']['step_size']
@@ -111,7 +111,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
-        
+
         # Set optimization variables
         if opt_options['optimization_variables']['blade']['aero_shape']['twist']['flag'] == True:
             indices        = range(2,opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
@@ -122,7 +122,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['flag'] == True:
             indices  = range(1,opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ss_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain'])
-        if opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['flag'] == True:
+        if opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['flag'] == True and 'equal_to_suction' not in opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']:
             indices  = range(1,opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
         if opt_options['optimization_variables']['control']['tsr']['flag'] == True:
@@ -143,6 +143,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.) 
         if opt_options['constraints']['blade']['tip_deflection']['flag']:
             wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
+        if opt_options['constraints']['blade']['chord']['flag']:
+            wt_opt.model.add_constraint('blade.pa.max_chord_constr',     upper= 1.0) 
         if opt_options['constraints']['blade']['rail_transport']['flag']:
             if opt_options['constraints']['blade']['rail_transport']['8_axle']:
                 wt_opt.model.add_constraint('elastic.rail.LV_constraint_8axle',    upper= 1.0)
@@ -173,7 +175,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
     wt_opt['blade.pa.s_opt_chord']       = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
-    wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'])
+    wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt'])
     wt_opt['rlds.constr.max_strainU_spar'] = opt_options['constraints']['blade']['strains_spar_cap_ss']['max']
     wt_opt['rlds.constr.max_strainL_spar'] = opt_options['constraints']['blade']['strains_spar_cap_ps']['max']
     wt_opt['sse.stall_check.stall_margin'] = opt_options['constraints']['blade']['stall']['margin'] * 180. / np.pi
