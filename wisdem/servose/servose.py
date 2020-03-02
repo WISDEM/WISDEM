@@ -196,8 +196,11 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['servose']['ss_vsgain']   = inputs['ss_vsgain'][0]
         self.analysis_options['servose']['ss_pcgain']   = inputs['ss_pcgain'][0]
         self.analysis_options['servose']['ps_percent']  = inputs['ps_percent'][0]
-        self.analysis_options['servose']['flp_maxpit']  = inputs['delta_max_pos'][0]
-        #
+        if self.analysis_options['servose']['Flp_Mode'] > 0:
+            self.analysis_options['servose']['flp_maxpit']  = inputs['delta_max_pos'][0]
+        else:
+            self.analysis_options['servose']['flp_maxpit']  = None
+
         self.analysis_options['servose']['ss_cornerfreq']   = None
         self.analysis_options['servose']['sd_maxpit']       = None
         self.analysis_options['servose']['sd_cornerfreq']   = None
