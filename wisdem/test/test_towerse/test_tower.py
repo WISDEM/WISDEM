@@ -14,8 +14,189 @@ class TestTowerSE(unittest.TestCase):
         self.discrete_outputs = {}
 
         
-#    def testDiscYAML(self):
-#        self.inputs
+    def testDiscYAML_Land_1Material(self):
+
+        # Test land based, 1 material
+        self.inputs['tower_s'] = np.linspace(0, 1, 5)
+        self.inputs['tower_layer_thickness'] = 0.25*np.ones((1,4))
+        self.inputs['tower_height'] = 1e2
+        self.inputs['tower_outer_diameter_in'] = 8*np.ones(5)
+        self.inputs['tower_outfitting_factor'] = 1.1
+        self.discrete_inputs['tower_layer_materials'] = ['steel']
+        self.inputs['monopile_s'] = np.empty(0)
+        self.inputs['monopile_layer_thickness'] = np.empty((0,0))
+        self.inputs['monopile_height'] = 0.
+        self.inputs['monopile_outer_diameter_in'] = np.empty(0)
+        self.inputs['monopile_outfitting_factor'] = 0.0
+        self.discrete_inputs['monopile_layer_materials'] = ['']
+        self.inputs['E_mat'] = 1e9*np.ones((1,3))
+        self.inputs['G_mat'] = 1e8*np.ones((1,3))
+        self.inputs['sigma_y_mat'] = np.array([1e7])
+        self.inputs['rho_mat'] = np.array([1e4])
+        self.inputs['unit_cost_mat'] = np.array([1e1])
+        self.discrete_inputs['material_names'] = ['steel']
+        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=0,
+                                       n_layers_tower=1, n_layers_monopile=0, n_mat=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        
+        npt.assert_equal(self.outputs['tower_section_height'], 25.*np.ones(4))
+        npt.assert_equal(self.outputs['tower_outer_diameter'], self.inputs['tower_outer_diameter_in'])
+        npt.assert_equal(self.outputs['tower_wall_thickness'], 0.25*np.ones(4))
+        npt.assert_equal(self.outputs['outfitting_factor'], 1.1*np.ones(4))
+        npt.assert_equal(self.outputs['E'],             1e9*np.ones(4))
+        npt.assert_equal(self.outputs['G'],             1e8*np.ones(4))
+        npt.assert_equal(self.outputs['sigma_y'],       1e7*np.ones(4))
+        npt.assert_equal(self.outputs['rho'],           1e4*np.ones(4))
+        npt.assert_equal(self.outputs['unit_cost'],     1e1*np.ones(4))
+        
+    def testDiscYAML_Land_2Materials(self):
+        # Test land based, 2 materials
+        self.inputs['tower_s'] = np.linspace(0, 1, 5)
+        self.inputs['tower_layer_thickness'] = np.array([[0.25, 0.25, 0.0, 0.0],[0.0, 0.0, 0.1, 0.1]])
+        self.inputs['tower_height'] = 1e2
+        self.inputs['tower_outer_diameter_in'] = 8*np.ones(5)
+        self.inputs['tower_outfitting_factor'] = 1.1
+        self.discrete_inputs['tower_layer_materials'] = ['steel','other']
+        self.inputs['monopile_s'] = np.empty(0)
+        self.inputs['monopile_layer_thickness'] = np.empty((0,0))
+        self.inputs['monopile_height'] = 0.
+        self.inputs['monopile_outer_diameter_in'] = np.empty(0)
+        self.inputs['monopile_outfitting_factor'] = 0.0
+        self.discrete_inputs['monopile_layer_materials'] = ['']
+        self.inputs['E_mat'] = 1e9*np.vstack( (np.ones((1,3)), 2*np.ones((1,3)) ) )
+        self.inputs['G_mat'] = 1e8*np.vstack( (np.ones((1,3)), 2*np.ones((1,3)) ) )
+        self.inputs['sigma_y_mat'] = np.array([1e7, 2e7])
+        self.inputs['rho_mat'] = np.array([1e4, 2e4])
+        self.inputs['unit_cost_mat'] = np.array([1e1, 2e1])
+        self.discrete_inputs['material_names'] = ['steel','other']
+        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=0,
+                                       n_layers_tower=1, n_layers_monopile=0, n_mat=2)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        
+        npt.assert_equal(self.outputs['tower_section_height'], 25.*np.ones(4))
+        npt.assert_equal(self.outputs['tower_outer_diameter'], self.inputs['tower_outer_diameter_in'])
+        npt.assert_equal(self.outputs['tower_wall_thickness'], np.array([0.25, 0.25, 0.1, 0.1]))
+        npt.assert_equal(self.outputs['outfitting_factor'], 1.1*np.ones(4))
+        npt.assert_equal(self.outputs['E'],             1e9*np.array([1,1,2,2]))
+        npt.assert_equal(self.outputs['G'],             1e8*np.array([1,1,2,2]))
+        npt.assert_equal(self.outputs['sigma_y'],       1e7*np.array([1,1,2,2]))
+        npt.assert_equal(self.outputs['rho'],           1e4*np.array([1,1,2,2]))
+        npt.assert_equal(self.outputs['unit_cost'],     1e1*np.array([1,1,2,2]))
+        
+    def testDiscYAML_Monopile_1Material(self):
+        self.inputs['tower_s'] = np.linspace(0, 1, 5)
+        self.inputs['tower_layer_thickness'] = 0.25*np.ones((1,4))
+        self.inputs['tower_height'] = 1e2
+        self.inputs['tower_outer_diameter_in'] = 8*np.ones(5)
+        self.inputs['tower_outfitting_factor'] = 1.1
+        self.discrete_inputs['tower_layer_materials'] = ['steel']
+        self.inputs['monopile_s'] = np.linspace(0, 1, 5)
+        self.inputs['monopile_layer_thickness'] = 0.5*np.ones((1,4))
+        self.inputs['monopile_height'] = 50.
+        self.inputs['monopile_outer_diameter_in'] = 10*np.ones(5)
+        self.inputs['monopile_outer_diameter_in'][-1] = 8
+        self.inputs['monopile_outfitting_factor'] = 1.2
+        self.discrete_inputs['monopile_layer_materials'] = ['steel']
+        self.inputs['E_mat'] = 1e9*np.ones((1,3))
+        self.inputs['G_mat'] = 1e8*np.ones((1,3))
+        self.inputs['sigma_y_mat'] = np.array([1e7])
+        self.inputs['rho_mat'] = np.array([1e4])
+        self.inputs['unit_cost_mat'] = np.array([1e1])
+        self.discrete_inputs['material_names'] = ['steel']
+        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=5,
+                                       n_layers_tower=1, n_layers_monopile=1, n_mat=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        
+        npt.assert_equal(self.outputs['tower_section_height'], np.r_[12.5*np.ones(4), 25*np.ones(4)])
+        npt.assert_equal(self.outputs['tower_outer_diameter'], np.r_[10*np.ones(4), 8*np.ones(5)])
+        npt.assert_equal(self.outputs['tower_wall_thickness'], np.r_[0.5*np.ones(4), 0.25*np.ones(4)])
+        npt.assert_equal(self.outputs['outfitting_factor'], np.r_[1.2*np.ones(4), 1.1*np.ones(4)])
+        npt.assert_equal(self.outputs['E'],             1e9*np.ones(8))
+        npt.assert_equal(self.outputs['G'],             1e8*np.ones(8))
+        npt.assert_equal(self.outputs['sigma_y'],       1e7*np.ones(8))
+        npt.assert_equal(self.outputs['rho'],           1e4*np.ones(8))
+        npt.assert_equal(self.outputs['unit_cost'],     1e1*np.ones(8))
+        
+    def testDiscYAML_Monopile_DifferentMaterials(self):
+        self.inputs['tower_s'] = np.linspace(0, 1, 5)
+        self.inputs['tower_layer_thickness'] = 0.25*np.ones((1,4))
+        self.inputs['tower_height'] = 1e2
+        self.inputs['tower_outer_diameter_in'] = 8*np.ones(5)
+        self.inputs['tower_outfitting_factor'] = 1.1
+        self.discrete_inputs['tower_layer_materials'] = ['steel']
+        self.inputs['monopile_s'] = np.linspace(0, 1, 5)
+        self.inputs['monopile_layer_thickness'] = 0.5*np.ones((1,4))
+        self.inputs['monopile_height'] = 50.
+        self.inputs['monopile_outer_diameter_in'] = 10*np.ones(5)
+        self.inputs['monopile_outer_diameter_in'][-1] = 8
+        self.inputs['monopile_outfitting_factor'] = 1.2
+        self.discrete_inputs['monopile_layer_materials'] = ['other']
+        self.inputs['E_mat'] = 1e9*np.vstack( (np.ones((1,3)), 2*np.ones((1,3)) ) )
+        self.inputs['G_mat'] = 1e8*np.vstack( (np.ones((1,3)), 2*np.ones((1,3)) ) )
+        self.inputs['sigma_y_mat'] = np.array([1e7, 2e7])
+        self.inputs['rho_mat'] = np.array([1e4, 2e4])
+        self.inputs['unit_cost_mat'] = np.array([1e1, 2e1])
+        self.discrete_inputs['material_names'] = ['steel','other']
+        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=5,
+                                       n_layers_tower=1, n_layers_monopile=1, n_mat=2)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        
+        npt.assert_equal(self.outputs['tower_section_height'], np.r_[12.5*np.ones(4), 25*np.ones(4)])
+        npt.assert_equal(self.outputs['tower_outer_diameter'], np.r_[10*np.ones(4), 8*np.ones(5)])
+        npt.assert_equal(self.outputs['tower_wall_thickness'], np.r_[0.5*np.ones(4), 0.25*np.ones(4)])
+        npt.assert_equal(self.outputs['outfitting_factor'], np.r_[1.2*np.ones(4), 1.1*np.ones(4)])
+        npt.assert_equal(self.outputs['E'],             1e9*np.r_[2*np.ones(4), np.ones(4)])
+        npt.assert_equal(self.outputs['G'],             1e8*np.r_[2*np.ones(4), np.ones(4)])
+        npt.assert_equal(self.outputs['sigma_y'],       1e7*np.r_[2*np.ones(4), np.ones(4)])
+        npt.assert_equal(self.outputs['rho'],           1e4*np.r_[2*np.ones(4), np.ones(4)])
+        npt.assert_equal(self.outputs['unit_cost'],     1e1*np.r_[2*np.ones(4), np.ones(4)])
+        
+    def testDiscYAML_Bad_Inputs(self):
+        self.inputs['tower_s'] = np.linspace(0, 1, 5)
+        self.inputs['tower_layer_thickness'] = 0.25*np.ones((1,4))
+        self.inputs['tower_height'] = 1e2
+        self.inputs['tower_outer_diameter_in'] = 8*np.ones(5)
+        self.inputs['tower_outfitting_factor'] = 1.1
+        self.discrete_inputs['tower_layer_materials'] = ['steel']
+        self.inputs['monopile_s'] = np.empty(0)
+        self.inputs['monopile_layer_thickness'] = np.empty((0,0))
+        self.inputs['monopile_height'] = 0.
+        self.inputs['monopile_outer_diameter_in'] = np.empty(0)
+        self.inputs['monopile_outfitting_factor'] = 0.0
+        self.discrete_inputs['monopile_layer_materials'] = ['']
+        self.inputs['E_mat'] = 1e9*np.ones((1,3))
+        self.inputs['G_mat'] = 1e8*np.ones((1,3))
+        self.inputs['sigma_y_mat'] = np.array([1e7])
+        self.inputs['rho_mat'] = np.array([1e4])
+        self.inputs['unit_cost_mat'] = np.array([1e1])
+        self.discrete_inputs['material_names'] = ['steel']
+        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=0,
+                                       n_layers_tower=1, n_layers_monopile=0, n_mat=1)
+
+        try:
+            self.inputs['tower_layer_thickness'][0,-1] = 0.0
+            myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+            self.assertTrue(False) # Shouldn't get here
+        except ValueError:
+            self.assertTrue(True)
+
+        try:
+            self.inputs['tower_layer_thickness'][0,-1] = 0.25
+            self.inputs['tower_outer_diameter_in'][-1] = -1.0
+            myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+            self.assertTrue(False) # Shouldn't get here
+        except ValueError:
+            self.assertTrue(True)
+
+        try:
+            self.inputs['tower_layer_thickness'][0,-1] = 0.25
+            self.inputs['tower_outer_diameter_in'][-1] = 8.0
+            self.inputs['tower_s'][-1] = self.inputs['tower_s'][-2]
+            myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+            self.assertTrue(False) # Shouldn't get here
+        except ValueError:
+            self.assertTrue(True)
+        
         
     def testMonopileFoundation(self):
         # Test Land

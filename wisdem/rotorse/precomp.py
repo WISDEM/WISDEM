@@ -107,6 +107,12 @@ class PreComp():
         beam_rhoA = np.zeros(nsec)
         beam_rhoJ = np.zeros(nsec)
         beam_Tw_iner = np.zeros(nsec)
+        # AE = np.zeros(nsec)
+        # DE = np.zeros(nsec)
+        # EC = np.zeros(nsec)
+        # EB = np.zeros(nsec)
+        # x_ec = np.zeros(nsec)
+        # y_ec = np.zeros(nsec)
 
         beam_flap_iner = np.zeros(nsec)
         beam_edge_iner = np.zeros(nsec)
@@ -163,13 +169,6 @@ class PreComp():
                 thetaW = [0]
                 mat_idxW = [0]
 
-            # print(np.c_[xnode, ynode])
-            # import matplotlib.pyplot as plt
-            # plt.plot(xnode, ynode, '.')
-            # plt.plot(xnode, ynode)
-            # plt.show()
-            # if i == 2:
-            #     exit()
 
             results = _precomp.properties(self.chord[i], self.theta[i],
                 self.th_prime[i], self.leLoc[i],
@@ -194,6 +193,58 @@ class PreComp():
 
             self.x_ec_nose[i] = results[13] + self.leLoc[i]*self.chord[i]
             self.y_ec_nose[i] = results[12]  # switch b.c of coordinate system used
+
+            # xnode_pa       = xnode - self.leLoc[i]
+            # theta_rad      = self.theta[i] * np.pi / 180.
+
+            # xnode_no_theta = xnode_pa * np.cos(-theta_rad) - ynode * np.sin(-theta_rad)
+            # ynode_no_theta = xnode_pa * np.sin(-theta_rad) + ynode * np.cos(-theta_rad)
+
+            # xnode_dim_no_theta = xnode_no_theta * self.chord[i]
+            # ynode_dim_no_theta = ynode_no_theta * self.chord[i]
+
+            # xnode_dim = xnode_dim_no_theta * np.cos(theta_rad) - ynode_dim_no_theta * np.sin(theta_rad)
+            # ynode_dim = xnode_dim_no_theta * np.sin(theta_rad) + ynode_dim_no_theta * np.cos(theta_rad)
+
+            # import matplotlib.pyplot as plt
+            # plt.figure()
+            # plt.plot(xnode, ynode, label='original')
+            # # plt.plot(xnode_no_theta, ynode_no_theta, label='original no twist')
+            # plt.plot(0.,0., 'ro', label='PA')
+            # plt.plot(xnode_dim, ynode_dim, label='Profile around pa')
+            # plt.plot(xnode_dim_no_theta, ynode_dim_no_theta, label='Profile around pa no twist')
+            # plt.xlabel('x')
+            # plt.ylabel('y')
+            # plt.axis('equal')
+            # plt.legend()
+
+            # plt.show()
+
+            # x_ec[i] = results[13]
+            # y_ec[i] = results[12]
+
+            # AE[i] = max(ynode_dim) - y_ec[i]
+            # EB[i] = y_ec[i] - min(ynode_dim)
+            # EC[i] = max(xnode_dim) - x_ec[i]
+            # DE[i] = x_ec[i] - min(xnode_dim)
+
+            # import matplotlib.pyplot as plt
+            # plt.figure()
+            # plt.plot(xnode_dim, ynode_dim, label='Profile around pa')
+            # plt.plot(0.,0., 'ro', label='PA')
+            # plt.plot(x_ec[i],y_ec[i], 'r*', label='EC')
+            # plt.plot(x_ec[i],y_ec[i] + AE[i], 'g+', label='A')
+            # plt.plot(x_ec[i],y_ec[i] - EB[i], 'go', label='B')
+            # plt.plot(x_ec[i] + EC[i],y_ec[i], 'gv', label='C')
+            # plt.plot(x_ec[i] - DE[i],y_ec[i], 'g*', label='D')
+            # plt.xlabel('x')
+            # plt.ylabel('y')
+            # plt.axis('equal')
+            # plt.legend()
+
+            # plt.show()
+
+        # np.savetxt('temp.txt', np.array([self.r, self.chord, self.leLoc, self.theta, beam_EIxx, beam_EIyy, beam_GJ, beam_rhoA, x_ec, y_ec, AE, EB, DE, EC]).T)
 
         return beam_EIxx, beam_EIyy, beam_GJ, beam_EA, beam_EIxy, beam_x_ec, beam_y_ec, beam_rhoA, beam_rhoJ, beam_Tw_iner, beam_flap_iner, beam_edge_iner
 
