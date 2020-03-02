@@ -155,9 +155,9 @@ class CylinderWindDrag(ExplicitComponent):
         self.add_input('d', np.zeros(nPoints), units='m', desc='corresponding diameter of cylinder section')
 
         # parameters
-        self.add_input('beta', 0.0, units='deg', desc='corresponding wind angles relative to inertial coordinate system')
-        self.add_input('rho', 0.0, units='kg/m**3', desc='air density')
-        self.add_input('mu', 0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
+        self.add_input('beta_wind', 0.0, units='deg', desc='corresponding wind angles relative to inertial coordinate system')
+        self.add_input('rho_air', 0.0, units='kg/m**3', desc='air density')
+        self.add_input('mu_air', 0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         #TODO not sure what to do here?
         self.add_input('cd_usr', -1., desc='User input drag coefficient to override Reynolds number based one')
 
@@ -179,11 +179,11 @@ class CylinderWindDrag(ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        rho = inputs['rho']
+        rho = inputs['rho_air']
         U = inputs['U']
         d = inputs['d']
-        mu = inputs['mu']
-        beta = inputs['beta']
+        mu = inputs['mu_air']
+        beta = inputs['beta_wind']
 
         # dynamic pressure
         q = 0.5*rho*U**2
@@ -215,11 +215,11 @@ class CylinderWindDrag(ExplicitComponent):
     def compute_partials(self, inputs, J):
 
         # rename
-        rho = inputs['rho']
+        rho = inputs['rho_air']
         U = inputs['U']
         d = inputs['d']
-        mu = inputs['mu']
-        beta = inputs['beta']
+        mu = inputs['mu_air']
+        beta = inputs['beta_wind']
 
         # dynamic pressure
         q = 0.5*rho*U**2
@@ -292,10 +292,10 @@ class CylinderWaveDrag(ExplicitComponent):
 
         # parameters
         #self.add_input('wlevel', 0.0, units='m', desc='Water Level, to assess z w.r.t. MSL')
-        self.add_input('beta', 0.0, units='deg', desc='corresponding wave angles relative to inertial coordinate system')
+        self.add_input('beta_wave', 0.0, units='deg', desc='corresponding wave angles relative to inertial coordinate system')
         #self.add_input('beta0', 0.0, units='deg', desc='corresponding wave angles relative to inertial coordinate system at z=0 MSL')
-        self.add_input('rho', 0.0, units='kg/m**3', desc='water density')
-        self.add_input('mu', 0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
+        self.add_input('rho_water', 0.0, units='kg/m**3', desc='water density')
+        self.add_input('mu_water', 0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
         self.add_input('cm', 0.0, desc='mass coefficient')
         #TODO not sure what to do here?
         self.add_input('cd_usr', -1., desc='User input drag coefficient to override Reynolds number based one')
@@ -322,13 +322,13 @@ class CylinderWaveDrag(ExplicitComponent):
         #wlevel = inputs['wlevel']
         #if wlevel > 0.0: wlevel *= -1.0
         
-        rho = inputs['rho']
+        rho = inputs['rho_water']
         U = inputs['U']
         #U0 = inputs['U0']
         d = inputs['d']
         #zrel= inputs['z']-wlevel
-        mu = inputs['mu']
-        beta = inputs['beta']
+        mu = inputs['mu_water']
+        beta = inputs['beta_wave']
         #beta0 = inputs['beta0']
 
         # dynamic pressure
@@ -395,13 +395,13 @@ class CylinderWaveDrag(ExplicitComponent):
         #wlevel = inputs['wlevel']
         #if wlevel > 0.0: wlevel *= -1.0
         
-        rho = inputs['rho']
+        rho = inputs['rho_water']
         U = inputs['U']
         #U0 = inputs['U0']
         d = inputs['d']
         #zrel= inputs['z']-wlevel
-        mu = inputs['mu']
-        beta = inputs['beta']
+        mu = inputs['mu_water']
+        beta = inputs['beta_wave']
         #beta0 = inputs['beta0']
 
         # dynamic pressure
