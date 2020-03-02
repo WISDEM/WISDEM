@@ -1233,11 +1233,9 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.close()
 
     def write_DISCON_in(self):
-
         # Generate Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
-        # file version for NREL Reference OpenSource Controller v1.0.0
 
-        # Fill controller and turbine objects for ROSCO tuning
+        # Fill controller and turbine objects for ROSCO 
         # - controller
         controller = type('', (), {})()
         controller.pc_gain_schedule     = type('', (), {})()
