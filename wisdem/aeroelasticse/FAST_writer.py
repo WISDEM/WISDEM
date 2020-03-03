@@ -1236,28 +1236,26 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.close()
 
     def write_DISCON_in(self):
-
         # Generate Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
-        # file version for NREL Reference OpenSource Controller v1.0.0
 
-        # Fill controller and turbine objects for ROSCO tuning
+        # Fill controller and turbine objects for ROSCO 
         # - controller
         controller = type('', (), {})()
         controller.pc_gain_schedule     = type('', (), {})()
         controller.vs_gain_schedule     = type('', (), {})()
         controller.LoggingLevel         = self.fst_vt['DISCON_in']['LoggingLevel']
-        controller.F_LPFType            = self.fst_vt['DISCON_in']['F_LPFType']
-        controller.F_NotchType          = self.fst_vt['DISCON_in']['F_NotchType']
-        controller.IPC_ControlMode      = self.fst_vt['DISCON_in']['IPC_ControlMode']
-        controller.VS_ControlMode       = self.fst_vt['DISCON_in']['VS_ControlMode']
-        controller.PC_ControlMode       = self.fst_vt['DISCON_in']['PC_ControlMode']
-        controller.Y_ControlMode        = self.fst_vt['DISCON_in']['Y_ControlMode']
-        controller.SS_Mode              = self.fst_vt['DISCON_in']['SS_Mode']
-        controller.WE_Mode              = self.fst_vt['DISCON_in']['WE_Mode']
-        controller.PS_Mode              = self.fst_vt['DISCON_in']['PS_Mode']
-        controller.SD_Mode              = self.fst_vt['DISCON_in']['SD_Mode']
-        controller.Fl_Mode              = self.fst_vt['DISCON_in']['Fl_Mode']
-        controller.Flp_Mode             = self.fst_vt['DISCON_in']['Flp_Mode']
+        controller.F_LPFType            = int(self.fst_vt['DISCON_in']['F_LPFType'])
+        controller.F_NotchType          = int(self.fst_vt['DISCON_in']['F_NotchType'])
+        controller.IPC_ControlMode      = int(self.fst_vt['DISCON_in']['IPC_ControlMode'])
+        controller.VS_ControlMode       = int(self.fst_vt['DISCON_in']['VS_ControlMode'])
+        controller.PC_ControlMode       = int(self.fst_vt['DISCON_in']['PC_ControlMode'])
+        controller.Y_ControlMode        = int(self.fst_vt['DISCON_in']['Y_ControlMode'])
+        controller.SS_Mode              = int(self.fst_vt['DISCON_in']['SS_Mode'])
+        controller.WE_Mode              = int(self.fst_vt['DISCON_in']['WE_Mode'])
+        controller.PS_Mode              = int(self.fst_vt['DISCON_in']['PS_Mode'])
+        controller.SD_Mode              = int(self.fst_vt['DISCON_in']['SD_Mode'])
+        controller.Fl_Mode              = int(self.fst_vt['DISCON_in']['Fl_Mode'])
+        controller.Flp_Mode             = int(self.fst_vt['DISCON_in']['Flp_Mode'])
         controller.F_LPFDamping         = self.fst_vt['DISCON_in']['F_LPFDamping']
         controller.ss_cornerfreq        = self.fst_vt['DISCON_in']['F_SSCornerFreq']
         controller.pitch_op_pc          = self.fst_vt['DISCON_in']['PC_GS_angles']
@@ -1291,7 +1289,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         turbine.Cq = type('', (), {})()
         turbine.rotor_radius            = self.fst_vt['DISCON_in']['WE_BladeRadius']
         turbine.v_rated                 = self.fst_vt['DISCON_in']['v_rated']
-        turbine.bld_flapwise_freq       = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0]
+        turbine.bld_flapwise_freq       = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0] * 3.
         turbine.bld_edgewise_freq       = self.fst_vt['DISCON_in']['F_LPFCornerFreq'] * 4.
         turbine.twr_freq                = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
         turbine.ptfm_freq               = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
@@ -1328,10 +1326,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
         self.fst_vt['DISCON_in']['PerfFileName'] = self.FAST_namingOut + '_Cp_Ct_Cq.txt'
         
-        # Write DISCON infiles
+        # Write DISCON input files
         file_processing = ROSCO_utilities.FileProcessing()
         file_processing.write_rotor_performance(turbine, txt_filename=os.path.join(self.FAST_runDirectory, self.fst_vt['DISCON_in']['PerfFileName']))
-        file_processing.write_param_file(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
+        file_processing.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
 
     def write_HydroDyn(self):
 
