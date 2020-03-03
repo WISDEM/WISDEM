@@ -71,9 +71,11 @@ class RunPreComp(ExplicitComponent):
         self.add_output('GJ',           val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
         self.add_output('rhoA',         val=np.zeros(n_span), units='kg/m',   desc='mass per unit length')
         self.add_output('rhoJ',         val=np.zeros(n_span), units='kg*m',   desc='polar mass moment of inertia per unit length')
-        self.add_output('Tw_iner',      val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_output('Tw_iner',      val=np.zeros(n_span), units='m',      desc='orientation of the section principal inertia axes with respect the blade reference plane')
         self.add_output('x_ec',         val=np.zeros(n_span), units='m',      desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
         self.add_output('y_ec',         val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_output('x_tc',         val=np.zeros(n_span), units='m',      desc='x-distance to the neutral axis (torsion center)')
+        self.add_output('y_tc',         val=np.zeros(n_span), units='m',      desc='y-distance to the neutral axis (torsion center)')
         self.add_output('flap_iner',    val=np.zeros(n_span), units='kg/m',   desc='Section flap inertia about the Y_G axis per unit length.')
         self.add_output('edge_iner',    val=np.zeros(n_span), units='kg/m',   desc='Section lag inertia about the X_G axis per unit length')
         # self.add_output('eps_crit_spar',    val=np.zeros(n_span), desc='critical strain in spar from panel buckling calculation')
@@ -104,6 +106,10 @@ class RunPreComp(ExplicitComponent):
         self.add_output('total_blade_mass', val=0.0, units='USD', desc='total blade cost')
 
 
+        self.add_output('sc_ss_mats', val=np.zeros((n_span, n_mat)), desc="spar cap, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_output('sc_ps_mats', val=np.zeros((n_span, n_mat)), desc="spar cap, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_output('te_ss_mats', val=np.zeros((n_span, n_mat)), desc="trailing edge reinforcement, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_output('te_ps_mats', val=np.zeros((n_span, n_mat)), desc="trailing edge reinforcement, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
 
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -407,13 +413,29 @@ class RunPreComp(ExplicitComponent):
         beam = PreComp(inputs['r'], inputs['chord'], inputs['theta'], inputs['pitch_axis'], 
                        inputs['precurve'], inputs['presweep'], profile, materials, upperCS, lowerCS, websCS, 
                        sector_idx_strain_spar_cap_ps, sector_idx_strain_spar_cap_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
-        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner = beam.sectionProperties()
+        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner, x_tc, y_tc = beam.sectionProperties()
 
         # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_cap_ss)
         # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_strain_te_ss)
 
         xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = beam.criticalStrainLocations(sector_idx_strain_spar_cap_ss, sector_idx_strain_spar_cap_ps)
         xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = beam.criticalStrainLocations(sector_idx_strain_te_ss, sector_idx_strain_te_ps)
+
+        # Store what materials make up the composites for SC/TE
+        for i in range(self.n_span):
+            for j in range(self.n_mat):
+                if sector_idx_strain_spar_cap_ss[i]:
+                    if j in upperCS[i].mat_idx[sector_idx_strain_spar_cap_ss[i]]:
+                        outputs['sc_ss_mats'][i,j] = 1.
+                if sector_idx_strain_spar_cap_ps[i]:
+                    if j in lowerCS[i].mat_idx[sector_idx_strain_spar_cap_ps[i]]:
+                        outputs['sc_ps_mats'][i,j] = 1.
+                if sector_idx_strain_te_ss[i]:
+                    if j in upperCS[i].mat_idx[sector_idx_strain_te_ss[i]]:
+                        outputs['te_ss_mats'][i,j] = 1.
+                if sector_idx_strain_te_ps[i]:
+                    if j in lowerCS[i].mat_idx[sector_idx_strain_te_ps[i]]:
+                        outputs['te_ps_mats'][i,j] = 1.
         
         outputs['z']         = inputs['r']
         outputs['EIxx']      = EIxx
@@ -423,6 +445,8 @@ class RunPreComp(ExplicitComponent):
         outputs['EIxy']      = EIxy
         outputs['x_ec']      = x_ec
         outputs['y_ec']      = y_ec
+        outputs['x_tc']      = x_tc
+        outputs['y_tc']      = y_tc
         outputs['rhoA']      = rhoA
         outputs['rhoJ']      = rhoJ
         outputs['Tw_iner']   = Tw_iner
@@ -648,6 +672,7 @@ class RotorElasticity(Group):
         opt_options     = self.options['opt_options']
 
         # Get elastic properties by running precomp
-        self.add_subsystem('precomp',   RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        self.add_subsystem('precomp',   RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep','sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats'])
         # Compute frequencies
         self.add_subsystem('curvefem', RunCurveFEM(analysis_options = analysis_options), promotes=['r','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+

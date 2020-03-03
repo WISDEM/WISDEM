@@ -281,15 +281,21 @@ class AirfoilShape(Curve):
         self.initialize(self.points)
 
 
-def remap2grid(x_ref, y_ref, x, spline=PchipInterpolator):
+def remap2grid(x_ref, y_ref, x, spline=PchipInterpolator, axis=-1):
 
 
     try:
-        spline_y = spline(x_ref, y_ref)
+        if axis != -1:
+            spline_y = spline(x_ref, y_ref, axis=axis)
+        else:    
+            spline_y = spline(x_ref, y_ref)
     except:
         x_ref = np.flip(x_ref, axis=0)
         y_ref = np.flip(y_ref, axis=0)
-        spline_y = spline(x_ref, y_ref)
+        if axis != -1:
+            spline_y = spline(x_ref, y_ref, axis=axis)
+        else:    
+            spline_y = spline(x_ref, y_ref)
 
     # error handling for x[-1] - x_ref[-1] > 0 and x[-1]~x_ref[-1]
     try:
@@ -304,8 +310,8 @@ def remap2grid(x_ref, y_ref, x, spline=PchipInterpolator):
 
     y_out = spline_y(x)
 
-    np.place(y_out, y_out < min(y_ref), min(y_ref))
-    np.place(y_out, y_out > max(y_ref), max(y_ref))
+    np.place(y_out, y_out < np.min(y_ref), np.min(y_ref))
+    np.place(y_out, y_out > np.max(y_ref), np.max(y_ref))
 
     return y_out
 

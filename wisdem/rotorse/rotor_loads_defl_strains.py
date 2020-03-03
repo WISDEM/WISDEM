@@ -5,12 +5,19 @@ from scipy.interpolate import PchipInterpolator
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade_component import CCBladeLoads
 import wisdem.ccblade._bem as _bem
+from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.commonse.akima import Akima
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse import RPM2RS, RS2RPM
 import wisdem.pBeam._pBEAM as _pBEAM
+from wisdem.aeroelasticse.Util.FileTools import load_yaml
+
+from wisdem.rotorse.geometry_tools.geometry import remap2grid
+
+def RayleighCDF(x, xbar=10.):
+    return 1.0 - np.exp(-np.pi/4.0*(x/xbar)**2)
 
 class GustETM(ExplicitComponent):
     # OpenMDAO component that generates an "equivalent gust" wind speed by summing an user-defined wind speed at hub height with 3 times sigma. sigma is the turbulent wind speed standard deviation for the extreme turbulence model, see IEC-61400-1 Eq. 19 paragraph 6.3.2.3
@@ -281,7 +288,6 @@ class RunpBEAM(ExplicitComponent):
         y = -xl*self.sa + yl*self.ca
 
         strainL = -(M1/self.EI11*y - M2/self.EI22*x + Fz/self.EA)
-
         return strainU, strainL
 
     def compute(self, inputs, outputs):
@@ -441,6 +447,242 @@ class DesignConstraints(ExplicitComponent):
         delta  = inputs['delta_f']
         outputs['constr_flap_f_above_3P'] = (threeP * delta) / flap_f
         outputs['constr_edge_f_above_3P'] = (threeP * delta) / edge_f
+
+class BladeFatigue(ExplicitComponent):
+    # OpenMDAO component that calculates the Miner's Rule cummulative fatigue damage, given precalculated rainflow counting of bending moments
+
+    def initialize(self):
+        self.options.declare('analysis_options')
+        self.options.declare('opt_options')
+
+
+    def setup(self):
+        blade_init_options   = self.options['analysis_options']['blade']
+        mat_init_options     = self.options['analysis_options']['materials']
+
+        self.n_span          = n_span   = blade_init_options['n_span']
+        self.n_mat           = n_mat    = mat_init_options['n_mat']
+        self.n_layers        = n_layers = blade_init_options['n_layers']
+        self.FatigueFile     = self.options['analysis_options']['rotorse']['FatigueFile']
+
+        self.te_ss_var       = self.options['opt_options']['blade_struct']['te_ss_var']
+        self.te_ps_var       = self.options['opt_options']['blade_struct']['te_ps_var']
+        self.spar_cap_ss_var = self.options['opt_options']['blade_struct']['spar_cap_ss_var']
+        self.spar_cap_ps_var = self.options['opt_options']['blade_struct']['spar_cap_ps_var']
+
+        self.add_input('r',            val=np.zeros(n_span), units='m',      desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
+        self.add_input('chord',        val=np.zeros(n_span), units='m',      desc='chord length at each section')
+        self.add_input('pitch_axis',   val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+        self.add_input('rthick',       val=np.zeros(n_span),                 desc='relative thickness of airfoil distribution')
+        
+        self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
+        self.add_input('gamma_m',      val=1.1,                              desc='safety factor on materials')
+        self.add_input('E',            val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
+        self.add_input('Xt',           val=np.zeros([n_mat, 3]),             desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+        self.add_input('Xc',           val=np.zeros([n_mat, 3]),             desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
+        self.add_input('m',            val=np.zeros([n_mat]),                desc='2D array of the S-N fatigue slope exponent for the materials') 
+
+        self.add_input('x_tc',         val=np.zeros(n_span), units='m',      desc='x-distance to the neutral axis (torsion center)')
+        self.add_input('y_tc',         val=np.zeros(n_span), units='m',      desc='y-distance to the neutral axis (torsion center)')
+        self.add_input('EIxx',         val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+        self.add_input('EIyy',         val=np.zeros(n_span), units='N*m**2', desc='flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+
+        self.add_input('sc_ss_mats',   val=np.zeros((n_span, n_mat)),        desc="spar cap, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_input('sc_ps_mats',   val=np.zeros((n_span, n_mat)),        desc="spar cap, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_input('te_ss_mats',   val=np.zeros((n_span, n_mat)),        desc="trailing edge reinforcement, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_input('te_ps_mats',   val=np.zeros((n_span, n_mat)),        desc="trailing edge reinforcement, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+
+        self.add_discrete_input('layer_web',        val=n_layers * [''],     desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
+        self.add_discrete_input('layer_name',       val=n_layers * [''],     desc='1D array of the names of the layers modeled in the blade structure.')
+        self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
+        self.add_discrete_input('definition_layer', val=np.zeros(n_layers),  desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+
+        self.add_output('C_miners_SC_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, suction side")
+        self.add_output('C_miners_SC_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, pressure side")
+        self.add_output('C_miners_TE_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, suction side")
+        self.add_output('C_miners_TE_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, pressure side")
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        
+        rainflow = load_yaml(self.FatigueFile, package=1)
+
+        U       = list(rainflow['cases'].keys())
+        Seeds   = list(rainflow['cases'][U[0]].keys())
+        chans   = list(rainflow['cases'][U[0]][Seeds[0]].keys())
+        r_gage  = np.r_[0., rainflow['r_gage']]
+        simtime = rainflow['simtime']
+        n_seeds = float(len(Seeds))
+        n_gage  = len(r_gage)
+
+        r       = (inputs['r']-inputs['r'][0])/(inputs['r'][-1]-inputs['r'][0])
+        m_default = 10. # assume default m=10  (8 or 12 also reasonable)
+        m       = [mi if mi > 0. else m_default for mi in inputs['m']]  # Assumption: if no S-N slope is given for a material, use default value TODO: input['m'] is not connected, only using the default currently
+
+        eps_uts = inputs['Xt'][:,0]/inputs['E'][:,0]
+        eps_ucs = inputs['Xc'][:,0]/inputs['E'][:,0]
+        gamma_m = inputs['gamma_m']
+        gamma_f = inputs['gamma_f']
+        yrs     = 20.  # TODO
+        t_life  = 60.*60.*24*365.24*yrs
+        U_bar   = 10.  # TODO
+
+        # pdf of wind speeds
+        binwidth = np.diff(U)
+        U_bins   = np.r_[[U[0] - binwidth[0]/2.], [np.mean([U[i-1], U[i]]) for i in range(1,len(U))], [U[-1] + binwidth[-1]/2.]]
+        pdf = np.diff(RayleighCDF(U_bins, xbar=U_bar))
+        if sum(pdf) < 0.9:
+            print('Warning: Cummulative probability of wind speeds in rotor_loads_defl_strains.BladeFatigue is low, sum of weights: %f' % sum(pdf))
+            print('Mean winds speed: %f' % U_bar)
+            print('Simulated wind speeds: ', U)
+
+        # Materials of analysis layers
+        te_ss_var_ok       = False
+        te_ps_var_ok       = False
+        spar_cap_ss_var_ok = False
+        spar_cap_ps_var_ok = False
+        for i_layer in range(self.n_layers):
+            if self.te_ss_var in discrete_inputs['layer_name']:
+                te_ss_var_ok        = True
+            if self.te_ps_var in discrete_inputs['layer_name']:
+                te_ps_var_ok        = True
+            if self.spar_cap_ss_var in discrete_inputs['layer_name']:
+                spar_cap_ss_var_ok  = True
+            if self.spar_cap_ps_var in discrete_inputs['layer_name']:
+                spar_cap_ps_var_ok  = True
+
+        if te_ss_var_ok == False:
+            print('The layer at the trailing edge suction side is set for Fatigue Analysis, but "%s" does not exist in the input yaml. Please check.'%self.te_ss_var)
+        if te_ps_var_ok == False:
+            print('The layer at the trailing edge pressure side is set for Fatigue Analysis, but "%s" does not exist in the input yaml. Please check.'%self.te_ps_var)
+        if spar_cap_ss_var_ok == False:
+            print('The layer at the spar cap suction side is set for Fatigue Analysis, but "%s" does not exist in the input yaml. Please check.'%self.spar_cap_ss_var)
+        if spar_cap_ps_var_ok == False:
+            print('The layer at the spar cap pressure side is set for Fatigue Analysis, but "%s" does not exist in the input yaml. Please check.'%self.spar_cap_ps_var)
+
+        # Get blade properties at gage locations
+        y_tc       = remap2grid(r, inputs['y_tc'], r_gage)
+        x_tc       = remap2grid(r, inputs['x_tc'], r_gage)
+        chord      = remap2grid(r, inputs['x_tc'], r_gage)
+        rthick     = remap2grid(r, inputs['rthick'], r_gage)
+        pitch_axis = remap2grid(r, inputs['pitch_axis'], r_gage)
+        EIyy       = remap2grid(r, inputs['EIyy'], r_gage)
+        EIxx       = remap2grid(r, inputs['EIxx'], r_gage)
+
+        te_ss_mats = np.floor(remap2grid(r, inputs['te_ss_mats'], r_gage, axis=0)) # materials is section
+        te_ps_mats = np.floor(remap2grid(r, inputs['te_ps_mats'], r_gage, axis=0))
+        sc_ss_mats = np.floor(remap2grid(r, inputs['sc_ss_mats'], r_gage, axis=0))
+        sc_ps_mats = np.floor(remap2grid(r, inputs['sc_ps_mats'], r_gage, axis=0))
+
+        c_TE       = chord*(1.-pitch_axis) + y_tc
+        c_SC       = chord*rthick + x_tc #this is overly simplistic, using maximum thickness point, should use the actual profiles
+
+        C_miners_SC_SS_gage = np.zeros((n_gage, self.n_mat, 2))
+        C_miners_SC_PS_gage = np.zeros((n_gage, self.n_mat, 2))
+        C_miners_TE_SS_gage = np.zeros((n_gage, self.n_mat, 2))
+        C_miners_TE_PS_gage = np.zeros((n_gage, self.n_mat, 2))
+
+        # Map channels to output matrix
+        chan_map   = {}
+        for i_var, var in enumerate(chans):
+            # Determine spanwise position
+            if 'Root' in var:
+                i_span = 0
+            elif 'Spn' in var and 'M' in var:
+                i_span = int(var.strip('Spn').split('M')[0])
+            else:
+                # not a spanwise output channel, skip
+                print('Fatigue Model: Skipping channel: %s, not a spanwise moment' % var)
+                chans.remove(var)
+                continue
+            # Determine if edgewise of flapwise moment
+            if 'M' in var and 'x' in var:
+                # Edgewise
+                axis = 0
+            elif 'M' in var and 'y' in var:
+                # Flapwise
+                axis = 1
+            else:
+                # not an edgewise / flapwise moment, skip
+                print('Fatigue Model: Skipping channel: "%s", not an edgewise/flapwise moment' % var)
+                continue
+
+            chan_map[var] = {}
+            chan_map[var]['i_gage'] = i_span
+            chan_map[var]['axis']   = axis
+
+        # Map composite sections
+        composite_map = [['TE', 'SS', te_ss_var_ok],
+                         ['TE', 'PS', te_ps_var_ok],
+                         ['SC', 'SS', spar_cap_ss_var_ok],
+                         ['SC', 'PS', spar_cap_ps_var_ok]]
+
+        ########
+        # Loop through composite sections, materials, output channels, and simulations (wind speeds * seeds)
+        for comp_i in composite_map:
+
+            #skip this composite section?
+            if not comp_i[2]:
+                continue
+
+            #
+            C_miners = np.zeros((n_gage, self.n_mat, 2))
+            if comp_i[0]       == 'TE':
+                c = c_TE
+                if comp_i[1]   == 'SS':
+                    mats = te_ss_mats
+                elif comp_i[1] == 'PS':
+                    mats = te_ps_mats
+            elif comp_i[0]     == 'SC':
+                c = c_SC
+                if comp_i[1]   == 'SS':
+                    mats = sc_ss_mats
+                elif comp_i[1] == 'PS':
+                    mats = sc_ps_mats
+
+            for i_mat in range(self.n_mat):
+
+                for i_var, var in enumerate(chans):
+                    i_gage = chan_map[var]['i_gage']
+                    axis   = chan_map[var]['axis']
+
+                    # skip if material at this spanwise location is not included in the composite section
+                    if mats[i_gage, i_mat] == 0.:
+                        continue
+
+                    # Determine if edgewise of flapwise moment
+                    pitch_axis_i = pitch_axis[i_gage]
+                    chord_i      = chord[i_gage]
+                    c_i          = c[i_gage]
+                    if axis == 0:
+                        EI_i     = EIyy[i_gage]
+                    else:
+                        EI_i     = EIxx[i_gage]
+
+                    for i_u, u in enumerate(U):
+                        for i_s, seed in enumerate(Seeds):
+                            M_mean = np.array(rainflow['cases'][u][seed][var]['rf_mean']) * 1.e3
+                            M_amp  = np.array(rainflow['cases'][u][seed][var]['rf_amp']) * 1.e3
+
+                            for M_mean_i, M_amp_i in zip(M_mean, M_amp):
+                                n_cycles = 1.
+                                eps_mean = M_mean_i*c_i/EI_i 
+                                eps_amp  = M_amp_i*c_i/EI_i
+
+                                Nf = ((eps_uts[i_mat] + np.abs(eps_ucs[i_mat]) - np.abs(2.*eps_mean*gamma_m*gamma_f - eps_uts[i_mat] + np.abs(eps_ucs[i_mat]))) / (2.*eps_amp*gamma_m*gamma_f))**m[i_mat]
+                                n  = n_cycles * t_life * pdf[i_u] / (simtime * n_seeds)
+                                C_miners[i_gage, i_mat, axis]  += n/Nf
+
+            # Assign outputs
+            if comp_i[0] == 'SC' and comp_i[1] == 'SS':
+                outputs['C_miners_SC_SS'] = remap2grid(r_gage, C_miners, r, axis=0)
+            elif comp_i[0] == 'SC' and comp_i[1] == 'PS':
+                outputs['C_miners_SC_PS'] = remap2grid(r_gage, C_miners, r, axis=0)
+            elif comp_i[0] == 'TE' and comp_i[1] == 'SS':
+                outputs['C_miners_TE_SS'] = remap2grid(r_gage, C_miners, r, axis=0)
+            elif comp_i[0] == 'TE' and comp_i[1] == 'PS':
+                outputs['C_miners_TE_PS'] = remap2grid(r_gage, C_miners, r, axis=0)
+
+
         
 class RotorLoadsDeflStrains(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
@@ -449,7 +691,7 @@ class RotorLoadsDeflStrains(Group):
         self.options.declare('opt_options')
     def setup(self):
         analysis_options = self.options['analysis_options']
-        opt_options     = self.options['opt_options']
+        opt_options      = self.options['opt_options']
 
         # Load blade with rated conditions and compute aerodynamic forces
         promoteListAeroLoads =  ['r', 'theta', 'chord', 'Rtip', 'Rhub', 'hub_height', 'precone', 'tilt', 'airfoils_aoa', 'airfoils_Re', 'airfoils_cl', 'airfoils_cd', 'airfoils_cm', 'nBlades', 'rho', 'mu', 'Omega_load','pitch_load']
@@ -470,6 +712,12 @@ class RotorLoadsDeflStrains(Group):
         self.add_subsystem('pbeam',     RunpBEAM(analysis_options = analysis_options),      promotes=promoteListpBeam)
         self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
         self.add_subsystem('constr',    DesignConstraints(analysis_options = analysis_options, opt_options = opt_options))
+
+        # Fatigue analysis
+
+        if self.options['analysis_options']['rotorse']['FatigueMode'] == 1:
+            promoteListFatigue = ['r', 'gamma_f', 'gamma_m', 'E', 'Xt', 'Xc', 'x_tc', 'y_tc', 'EIxx', 'EIyy', 'pitch_axis', 'chord', 'layer_name', 'layer_mat', 'definition_layer', 'sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats','rthick']
+            self.add_subsystem('fatigue', BladeFatigue(analysis_options = analysis_options, opt_options = opt_options), promotes=promoteListFatigue)
 
         # Aero loads to total loads
         # self.connect('aero_rated.loads_Px',     'tot_loads_rated.aeroloads_Px')
@@ -499,5 +747,3 @@ class RotorLoadsDeflStrains(Group):
         # Strains from pbeam to constraint
         self.connect('pbeam.strainU_spar', 'constr.strainU_spar')
         self.connect('pbeam.strainL_spar', 'constr.strainL_spar')
-
-         

@@ -3,27 +3,29 @@ general:
 
 yaml:
     validate: False
-    path2schema: wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml
+    path2schema: assemblies/reference_turbines/IEAontology_schema.yaml
 
 xfoil:
-    path       : /Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil
+    path       : 
 
 rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
     n_xy: 200         # Number of angles of coordinate points used to discretize each airfoil
     n_span: 30        # Number of spanwise stations used to define the blade properties
+    FatigueMode: 1    # Run Fatigue analysis: 0-Off, 1-Run Fatigue Analysis, (Future: 2-Rerun FAST simulations + Fatigue Analysis)
+    FatigueFile: /mnt/c/Users/egaertne/Projects/BAR_Fatigue/results/test/rainflow.yaml     # Needed if FatigueMode=1, File containing the rainflow counts of OpenFAST outputs, Generated with Utility: 
 
 openfast:
     run_openfast: True
     Analysis_Level: 1
     FAST_ver: OpenFAST
     dev_branch: True
-    FAST_exe: /Users/pbortolo/work/2_openfast/openfast/build/glue-codes/openfast/openfast
-    FAST_directory: /Users/pbortolo/work/2_openfast/BAR/OpenFAST_Models/RotorSE_FAST_BAR_2010n_noRe_0_70_to_0_95
-    FAST_InputFile: RotorSE_FAST_BAR_2010n_noRe.fst
-    path2dll: /Users/pbortolo/work/2_openfast/ROSCO_w_flaps/build/libdiscon.dylib
-    Turbsim_exe: "/Users/pbortolo/work/2_openfast/TurbSim/bin/TurbSim_glin64"
-    FAST_namingOut: WISDEM_NREL5MW
+    FAST_exe: openfast
+    FAST_directory: /mnt/c/Users/egaertne/Projects/BAR_Fatigue/BAR/OpenFAST_Models/BAR_00
+    FAST_InputFile: OpenFAST_BAR_00.fst
+    path2dll: /mnt/c/Users/egaertne/Projects/BAR_Fatigue/BAR/OpenFAST_Models/BAR_00/ServoData/DISCON_BAR_005a.dll
+    Turbsim_exe: "turbsim"
+    FAST_namingOut: Testing_Fatigue_BAR_00
     FAST_runDirectory: temp/ + wt_initial.FAST_namingOut
     cores: 1
     debug_level: 2

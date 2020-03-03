@@ -113,10 +113,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
 if __name__ == "__main__":
     ## File management
-    fname_wt_input         = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    fname_analysis_options = "wisdem/wisdem/assemblies/reference_turbines/analysis_options.yaml"
-    fname_opt_options      = "wisdem/wisdem/assemblies/reference_turbines/optimization_options.yaml"
-    fname_wt_output        = "wisdem/wisdem/assemblies/reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
+    fname_wt_input         = "/mnt/c/Users/egaertne/WISDEM4all_fat/wisdem/Design_Opt/BAR/BAR_00/BAR0011s.yaml"
+    # fname_wt_input         = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
+    fname_analysis_options = "reference_turbines/analysis_options_emg.yaml"
+    fname_opt_options      = "reference_turbines/optimization_options.yaml"
+    fname_wt_output        = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
     folder_output          = 'temp/'
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
@@ -137,4 +138,19 @@ if __name__ == "__main__":
     plt.xlabel('r [m]')
     plt.ylabel('strain [-]')
     plt.legend()
+
+    if analysis_options['rotorse']['FatigueMode'] == 1:
+        plt.figure()
+        for i in range(np.shape(wt_opt['rlds.fatigue.C_miners_SC_SS'])[1]):
+            for j in range(np.shape(wt_opt['rlds.fatigue.C_miners_SC_SS'])[2]):
+                plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.fatigue.C_miners_SC_SS'][:,i,j])#, label='spar ss')
+                plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.fatigue.C_miners_SC_PS'][:,i,j])#, label='spar ps')
+                plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.fatigue.C_miners_TE_SS'][:,i,j])#, label='te ss')
+                plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.fatigue.C_miners_TE_PS'][:,i,j])#, label='te ps')
+        # plt.ylim([-5e-3, 5e-3])
+        plt.xlabel('r [m]')
+        plt.ylabel("miner accumulated damage")
+        plt.legend(['spar ss', 'spar ps', 'te ss', 'te ps'])
+    
     plt.show()
+

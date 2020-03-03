@@ -11,7 +11,7 @@ from wisdem.assemblies.parametrize_wt import WT_Parametrize
 from wisdem.rotorse.dac import RunXFOIL
 from wisdem.rotorse.rotor_aeropower import RotorAeroPower
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
-from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains
+from wisdem.rotorse.rotor_loads_defl_strains_emg import RotorLoadsDeflStrains
 from wisdem.assemblies.run_tools import Outputs_2_Screen, Convergence_Trends_Opt
 
 class WT_RNTA(Group):
@@ -152,7 +152,23 @@ class WT_RNTA(Group):
         self.connect('env.mu_air',                      'ra.mu')
         self.connect('env.weibull_k',                   'ra.cdf.k')
         
-        
+        if analysis_options['rotorse']['FatigueMode'] == 1:
+            self.connect('elastic.precomp.x_tc',                            'rlds.x_tc')
+            self.connect('elastic.precomp.y_tc',                            'rlds.y_tc')
+            self.connect('materials.E',                                     'rlds.E')
+            self.connect('materials.Xt',                                    'rlds.Xt')
+            self.connect('materials.Xc',                                    'rlds.Xc')
+            self.connect('blade.outer_shape_bem.pitch_axis',                'rlds.pitch_axis')
+            self.connect('elastic.sc_ss_mats',                              'rlds.sc_ss_mats')
+            self.connect('elastic.sc_ps_mats',                              'rlds.sc_ps_mats')
+            self.connect('elastic.te_ss_mats',                              'rlds.te_ss_mats')
+            self.connect('elastic.te_ps_mats',                              'rlds.te_ps_mats')
+            self.connect('blade.interp_airfoils.r_thick_interp',            'rlds.rthick')
+            self.connect('blade.internal_structure_2d_fem.layer_name',      'rlds.layer_name')
+            self.connect('blade.internal_structure_2d_fem.layer_mat',       'rlds.layer_mat')
+            self.connect('blade.internal_structure_2d_fem.definition_layer','rlds.definition_layer')
+            # self.connect('gamma_m',     'rlds.gamma_m')
+            # self.connect('gamma_f',     'rlds.gamma_f') # TODO
 
         # Connections to rotor load analysis
         self.connect('elastic.EA',   'rlds.EA')

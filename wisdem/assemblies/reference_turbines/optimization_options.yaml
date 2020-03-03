@@ -11,13 +11,13 @@ optimization_variables:
       max_gain: 2.0 # non-dimensional
     spar_cap_ss:
       flag: False
-      name: Spar_Cap_SS
+      name: Spar_cap_ss
       n_opt: 8
       min_gain: 0.2 # non-dimensional
       max_gain: 2.0 # non-dimensional
     spar_cap_ps:
       flag: False
-      name: Spar_Cap_PS
+      name: Spar_cap_ps
       n_opt: 8
       min_gain: 0.2 # non-dimensional
       max_gain: 2.0 # non-dimensional
