@@ -4,10 +4,6 @@ The Wind-Plant Integrated System Design and Engineering Model (WISDEM&reg;) is a
 
 Author: [NREL WISDEM Team](mailto:systems.engineering@nrel.gov) 
 
-## Version
-
-This software is a version 2.0.1.
-
 ## Documentation
 
 See local documentation in the `docs`-directory or access the online version at <http://wisdem.github.io/WISDEM/>
@@ -55,6 +51,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 2.  FOR USERS (NOT DEVELOPERS): Install WISDEM and its dependencies
 
         conda install -y wisdem
+        pip install simpy marmot-agents
 
 3.  To open up the WISDEM tutorials, navigate to a directory where you want to place WISDEM and all of its files.
 
@@ -69,6 +66,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda remove --force wisdem
         conda install compilers     # (Mac / Linux only)
         conda install m2w64-toolchain libpython       # (Windows only)
+        pip install simpy marmot-agents
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
         python setup.py develop

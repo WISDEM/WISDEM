@@ -425,14 +425,15 @@ class pyIECWind_turb():
     def __init__(self):
 
         # Defaults
-        self.seed             = np.random.uniform(1, 1e8)
-        self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.z_hub            = 90.  # wind turbine hub height (m)
-        self.D                = 126. # rotor diameter (m)
-        self.PLExp            = 0.2
-        self.AnalysisTime     = 720.
-        self.debug_level      = 0
-        self.overwrite        = True
+        self.seed              = np.random.uniform(1, 1e8)
+        self.Turbulence_Class  = 'B'  # IEC Turbulance Class
+        self.z_hub             = 90.  # wind turbine hub height (m)
+        self.D                 = 126. # rotor diameter (m)
+        self.PLExp             = 0.2
+        self.AnalysisTime      = 720.
+        self.debug_level       = 0
+        self.overwrite         = True
+        self.flag_enlarge_grid = False
 
     def setup(self):
         turbsim_vt = turbsiminputs()
@@ -440,10 +441,16 @@ class pyIECWind_turb():
         turbsim_vt.runtime_options.WrADTWR    = False
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
         turbsim_vt.tmspecs.HubHt              = self.z_hub
-        turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.05)
-        turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.05)
-        turbsim_vt.tmspecs.NumGrid_Z          = 21
-        turbsim_vt.tmspecs.NumGrid_Y          = 21
+        if self.flag_enlarge_grid:
+            turbsim_vt.tmspecs.GridHeight         = min([np.ceil(self.D*1.5), self.z_hub*1.99])
+            turbsim_vt.tmspecs.GridWidth          = min([np.ceil(self.D*1.5), self.z_hub*1.99])
+            turbsim_vt.tmspecs.NumGrid_Z          = int(np.ceil(turbsim_vt.tmspecs.GridHeight/12.))
+            turbsim_vt.tmspecs.NumGrid_Y          = int(np.ceil(turbsim_vt.tmspecs.GridHeight/12.))
+        else:
+            turbsim_vt.tmspecs.GridHeight         = np.ceil(self.D*1.05)
+            turbsim_vt.tmspecs.GridWidth          = np.ceil(self.D*1.05)
+            turbsim_vt.tmspecs.NumGrid_Z          = 21
+            turbsim_vt.tmspecs.NumGrid_Y          = 21
         turbsim_vt.tmspecs.HFlowAng           = 0.0
         turbsim_vt.tmspecs.VFlowAng           = 0.0
         turbsim_vt.metboundconds.TurbModel    = '"IECKAI"'
@@ -465,7 +472,13 @@ class pyIECWind_turb():
         turbsim_vt.noniecboundconds.PC_UV     = '"default"'
         turbsim_vt.noniecboundconds.PC_VW     = '"default"'
         
-        
+        turbsim_vt.spatialcoherance.SCMod1    = '"IEC"'
+        turbsim_vt.spatialcoherance.SCMod2    = '"IEC"'
+        turbsim_vt.spatialcoherance.SCMod3    = '"IEC"'
+        turbsim_vt.spatialcoherance.InCDec1   = '"default"'
+        turbsim_vt.spatialcoherance.InCDec2   = '"default"'
+        turbsim_vt.spatialcoherance.InCDec3   = '"default"'
+        turbsim_vt.spatialcoherance.CohExp    = '"default"'
         
         return turbsim_vt
 

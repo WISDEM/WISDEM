@@ -153,9 +153,6 @@ class RotorLoads(ExplicitComponent):
         self.add_input('rna_mass', 0.0, units='kg', desc='mass of rotor nacelle assembly')
         self.add_input('rna_cm', np.zeros(3), units='m', desc='location of RNA center of mass relative to tower top in yaw-aligned c.s.')
 
-        self.add_discrete_input('rna_weightM', True, desc='Flag to indicate whether or not the RNA weight should be considered.\
-                          An upwind overhang may lead to unconservative estimates due to the P-Delta effect(suggest not using). For downwind turbines set to True. ')
-
         # # These are used for backwards compatibility - do not use
         # T = Float(iotype='in', desc='thrust in hub-aligned coordinate system')  # THIS MEANS STILL YAWED THOUGH (Shaft tilt)
         # Q = Float(iotype='in', desc='torque in hub-aligned coordinate system')
@@ -196,7 +193,10 @@ class RotorLoads(ExplicitComponent):
         M = M + hub_cm.cross(F)
         self.saveF = F
 
-
+        '''
+        Removing this permanently gbarter 1/2020 because of too much confusion in TowerSE and Frame3DD
+        From now on TowerSE will always add to loading of added mass items, including RNA
+        
         # add weight loads
         F_w = DirectionVector(0.0, 0.0, -float(inputs['rna_mass'])*gravity)
         M_w = rna_cm.cross(F_w)
@@ -210,6 +210,9 @@ class RotorLoads(ExplicitComponent):
             Mout = M
             #REMOVE WEIGHT EFFECT TO ACCOUNT FOR P-Delta Effect
             print("!!!! No weight effect on rotor moments -TowerSE  !!!!")
+        '''
+        Fout = F
+        Mout = M
 
         # put back in array
         outputs['top_F'] = np.array([Fout.x, Fout.y, Fout.z])
@@ -245,14 +248,16 @@ class RotorLoads(ExplicitComponent):
         dtopM_dF = hstack([dtopM_dFx, dtopM_dFy, dtopM_dFz])
         dtopM_dr = np.array([dMxcross['dr'], dMycross['dr'], dMzcross['dr']])
 
-        dMx_w_cross, dMy_w_cross, dMz_w_cross = self.save_rcm.cross_deriv(self.saveF_w, 'dr', 'dF')
+        #dMx_w_cross, dMy_w_cross, dMz_w_cross = self.save_rcm.cross_deriv(self.saveF_w, 'dr', 'dF')
 
-        if discrete_inputs['rna_weightM']:
-            dtopM_drnacm = np.array([dMx_w_cross['dr'], dMy_w_cross['dr'], dMz_w_cross['dr']])
-            dtopM_dF_w = np.array([dMx_w_cross['dF'], dMy_w_cross['dF'], dMz_w_cross['dF']])
-        else:
-            dtopM_drnacm = np.zeros((3, 3))
-            dtopM_dF_w = np.zeros((3, 3))
+        #if discrete_inputs['rna_weightM']:
+        #    dtopM_drnacm = np.array([dMx_w_cross['dr'], dMy_w_cross['dr'], dMz_w_cross['dr']])
+        #    dtopM_dF_w = np.array([dMx_w_cross['dF'], dMy_w_cross['dF'], dMz_w_cross['dF']])
+        #else:
+        #    dtopM_drnacm = np.zeros((3, 3))
+        #    dtopM_dF_w = np.zeros((3, 3))
+        dtopM_drnacm = np.zeros((3, 3))
+        dtopM_dF_w = np.zeros((3, 3))
         dtopM_dm = np.dot(dtopM_dF_w, dtopF_w_dm)
 
         if discrete_inputs['downwind']:
@@ -287,6 +292,6 @@ class RNA(Group):
         self.add_subsystem('mass', RNAMass(), promotes=['*'])
         for k in range(nLC):
             lc = '' if nLC==1 else str(k+1)
-            self.add_subsystem('loads'+lc, RotorLoads(), promotes=['rna_mass','rna_cm','hub_cm','rna_weightM','downwind','tilt'])
+            self.add_subsystem('loads'+lc, RotorLoads(), promotes=['rna_mass','rna_cm','hub_cm','downwind','tilt'])
 
         

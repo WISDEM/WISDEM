@@ -24,7 +24,7 @@ class FloatingSE(Group):
         nFullSec = nRefine*nSection+1
         nFullTow = nRefine*nTower  +1
 
-        self.add_subsystem('tow', TowerLeanSE(nPoints=nTower+1, nFull=nFullTow, topLevelFlag=True), promotes=['material_density','tower_section_height',
+        self.add_subsystem('tow', TowerLeanSE(nPoints=nTower+1, nFull=nFullTow, topLevelFlag=False), promotes=['material_density','tower_section_height',
                                                                         'tower_outer_diameter','tower_wall_thickness','tower_outfitting_factor',
                                                                         'tower_buckling_length','max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                                                         'tower_mass','tower_I_base','hub_height',#'tip_position','hub_cm','downwind',
@@ -60,8 +60,8 @@ class FloatingSE(Group):
         # Independent variables that may be duplicated at higher levels of aggregation
         if topLevelFlag:
             sharedIndeps = IndepVarComp()
-            #sharedIndeps.add_output('hub_height', 0.0, units='m')
-            #sharedIndeps.add_output('material_density', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('hub_height', 0.0, units='m')
+            sharedIndeps.add_output('material_density', 0.0, units='kg/m**3')
             sharedIndeps.add_output('air_density', 0.0, units='kg/m**3')
             sharedIndeps.add_output('air_viscosity', 0.0, units='kg/m/s')
             sharedIndeps.add_output('shearExp', 0.0)

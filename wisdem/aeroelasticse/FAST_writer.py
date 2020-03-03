@@ -342,6 +342,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
             self.write_SubDyn()
         if self.fst_vt['Fst']['CompMooring'] == 1:
             self.write_MAP()
+        elif self.fst_vt['Fst']['CompMooring'] == 3:
+            self.write_MoorDyn()
 
         if self.fst_vt['Fst']['CompElast'] == 2:
             self.write_BeamDyn()
@@ -1786,9 +1788,81 @@ class InputWriter_OpenFAST(InputWriter_Common):
 
         f.close()
 
-        # f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MAP'][''], '', '- \n'))
-        # f.write('\n')
-        
+    def write_MoorDyn(self):
+
+        self.fst_vt['Fst']['MooringFile'] = self.FAST_namingOut + '_MoorDyn.dat'
+        moordyn_file = os.path.join(self.FAST_runDirectory, self.fst_vt['Fst']['MooringFile'])
+        f = open(moordyn_file, 'w')
+
+        f.write('--------------------- MoorDyn Input File ------------------------------------\n')
+        f.write('Generated with AeroElasticSE FAST driver\n')
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['Echo'], 'Echo', '- echo the input file data (flag)\n'))
+        f.write('----------------------- LINE TYPES ------------------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NTypes'], 'NTypes', '- number of LineTypes\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Name', 'Diam', 'MassDen', 'EA', 'BA/-zeta', 'Can', 'Cat', 'Cdn', 'Cdt']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(m)', '(kg/m)', '(N)', '(N-s/-)', '(-)', '(-)', '(-)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NTypes']):
+            ln = []
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Name'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Diam'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['MassDen'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['EA'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['BA_zeta'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Can'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cat'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cdn'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cdt'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- CONNECTION PROPERTIES --------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NConnects'], 'NConnects', '- number of connections including anchors and fairleads\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Node', 'Type', 'X', 'Y', 'Z', 'M', 'V', 'FX', 'FY', 'FZ', 'CdA', 'CA']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(m)', '(m)', '(kg)', '(m^3)', '(kN)', '(kN)', '(kN)', '(m^2)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NConnects']):
+            ln = []
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Node'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Type'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['X'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Y'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Z'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['M'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['V'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FX'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FY'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FZ'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CdA'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CA'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- LINE PROPERTIES --------------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NLines'], 'NLines', '- number of line objects\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'UnstrLen', 'NumSegs', 'NodeAnch', 'NodeFair', 'Flags/Outputs']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(-)', '(-)', '(-)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NLines']):
+            ln = []
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Line'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['LineType'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['UnstrLen'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NumSegs'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeAnch'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeFair'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Flags_Outputs'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- SOLVER OPTIONS ---------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['dtM'], 'dtM', '- time step to use in mooring integration (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['kbot'], 'kbot', '- bottom stiffness (Pa/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['cbot'], 'cbot', '- bottom damping (Pa-s/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['dtIC'], 'dtIC', '- time interval for analyzing convergence during IC gen (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['TmaxIC'], 'TmaxIC', '- max time for ic gen (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['CdScaleIC'], 'CdScaleIC', '- factor by which to scale drag coefficients during dynamic relaxation (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['threshIC'], 'threshIC', '- threshold for IC convergence (-)\n'))
+        f.write('------------------------ OUTPUTS --------------------------------------------\n')
+        outlist = self.get_outlist(self.fst_vt['outlist'], ['MoorDyn'])
+        for channel_list in outlist:
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
+        f.write('END\n')
+        f.write('------------------------- need this line --------------------------------------\n')
+
+        f.close()
 
 class InputWriter_FAST7(InputWriter_Common):
 

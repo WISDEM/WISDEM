@@ -47,13 +47,13 @@ pymapExt   = Extension('wisdem.pymap._libmap', sources=glob.glob(os.path.join('w
 # Top-level setup
 setup(
     name             = 'WISDEM',
-    version          = '2.0.1',
+    version          = '2.1.2',
     description      = 'Wind-Plant Integrated System Design & Engineering Model',
     long_description =  'WISDEM is a Python package for conducting multidisciplinary analysis and optimization of wind turbines and plants',
     url              = 'https://github.com/WISDEM/WISDEM',
     author           = 'NREL WISDEM Team',
     author_email     = 'systems.engineering@nrel.gov',
-    install_requires = ['openmdao>= 2.0','numpy','scipy','pandas','simpy'],
+    install_requires = ['openmdao>= 2.0','numpy','scipy','pandas','simpy','geopy','pytest','pyyaml','matplotlib','jsonschema', 'marmot-agents'],
     package_data     =  {'wisdem': []},
     #package_dir      = {'': 'wisdem'},
     packages         = find_packages(exclude=['docs', 'tests', 'ext']),

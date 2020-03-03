@@ -1,3 +1,4 @@
+from wisdem.aeroelasticse.FAST_reader import float_read
 from turbsim_vartrees import turbsiminputs
 
 class turbsimReader(object):
@@ -73,10 +74,22 @@ class turbsimReader(object):
         self.turbsim_vt.spatialcoherance.SCMod1 = inpf.readline().split()[0]
         self.turbsim_vt.spatialcoherance.SCMod2 = inpf.readline().split()[0]
         self.turbsim_vt.spatialcoherance.SCMod3 = inpf.readline().split()[0]
-        self.turbsim_vt.spatialcoherance.InCDec1 = inpf.readline()[1:-2].split()
-        self.turbsim_vt.spatialcoherance.InCDec2 = inpf.readline()[1:-2].split()
-        self.turbsim_vt.spatialcoherance.InCDec3 = inpf.readline()[1:-2].split()
-        self.turbsim_vt.spatialcoherance.CohExp = inpf.readline().split()[0]
+        ln = inpf.readline().strip().split()
+        if 'default' in ln[0].lower():
+            self.turbsim_vt.spatialcoherance.InCDec1 = '"default"'
+        else:
+            self.turbsim_vt.spatialcoherance.InCDec1 = [float(ln[0]), float(ln[1])]
+        ln = inpf.readline().strip().split()
+        if 'default' in ln[0].lower():
+            self.turbsim_vt.spatialcoherance.InCDec2 = '"default"'
+        else:
+            self.turbsim_vt.spatialcoherance.InCDec2 = [float(ln[0]), float(ln[1])]
+        ln = inpf.readline().strip().split()
+        if 'default' in ln[0].lower():
+            self.turbsim_vt.spatialcoherance.InCDec3 = '"default"'
+        else:
+            self.turbsim_vt.spatialcoherance.InCDec3 = [float(ln[0]), float(ln[1])]
+        self.turbsim_vt.spatialcoherance.CohExp = float_read(inpf.readline().split()[0])
 
         # Spatial Coherence Parameters
         inpf.readline()

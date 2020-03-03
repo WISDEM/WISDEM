@@ -22,8 +22,8 @@ install:
   # Create environment and install dependences dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - conda activate test-environment
-  - conda install -q --yes compilers matplotlib pytest pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy
-  - pip install simpy
+  - conda install -q --yes compilers matplotlib pytest pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy pytest
+  - pip install simpy marmot-agents
 
   # install pyoptsparse
   #- git clone https://github.com/OpenMDAO/pyoptsparse.git;

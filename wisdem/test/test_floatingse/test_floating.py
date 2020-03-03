@@ -8,7 +8,7 @@ nSec = 4
 nSecTow = 3
 NPTS = 100
 
-class TestOC3Mass(unittest.TestCase):
+class TestRegression(unittest.TestCase):
     def setUp(self):
         self.myfloat = Problem()
         self.myfloat.model=FloatingSE()
@@ -28,6 +28,13 @@ class TestOC3Mass(unittest.TestCase):
         self.myfloat['air_viscosity']  = 1.78e-5 # Viscosity of air [kg/m/s]
         self.myfloat['water_density']      = 1025.0  # Density of water [kg/m^3]
         self.myfloat['water_viscosity']  = 1.08e-3 # Viscosity of water [kg/m/s]
+        self.myfloat['shearExp']    = 0.11   # Shear exponent in wind power law
+        self.myfloat['cm']          = 2.0    # Added mass coefficient
+        self.myfloat['Uc']          = 0.0    # Mean current speed
+        self.myfloat['wind_z0']          = 0.0    # Water line
+        self.myfloat['yaw']         = 0.0    # Turbine yaw angle
+        self.myfloat['beta']        = 0.0    # Wind beta angle
+        self.myfloat['cd_usr']      = -1.0 # Compute drag coefficient
 
         # Material properties
         self.myfloat['material_density'] = self.myfloat['main.material_density'] = self.myfloat['off.material_density'] = 7850.0          # Steel [kg/m^3]
@@ -57,6 +64,37 @@ class TestOC3Mass(unittest.TestCase):
         self.myfloat['gamma_n'] = 1.0  # Safety factor on consequence of failure
         self.myfloat['gamma_fatigue'] = 1.0 # Not used
 
+        # Properties of rotor-nacelle-assembly (RNA)
+        self.myfloat['rna_mass']   = 350e3 # Mass [kg]
+        self.myfloat['rna_I']      = 1e5*np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
+        self.myfloat['rna_cg']     = np.zeros(3)
+        self.myfloat['rna_force']  = np.zeros(3)
+        self.myfloat['rna_moment'] = np.zeros(3)
+
+        # Mooring constraints
+        self.myfloat['max_offset'] = 0.1*self.myfloat['water_depth'] # Max surge/sway offset [m]      
+        self.myfloat['max_survival_heel']   = 10.0 # Max heel (pitching) angle [deg]
+        self.myfloat['operational_heel']   = 5.0 # Max heel (pitching) angle [deg]
+
+        # Design constraints
+        self.myfloat['max_draft'] = 200.0                # For manufacturability of rolling steel
+        self.myfloat['max_taper_ratio'] = 0.4                # For manufacturability of rolling steel
+        self.myfloat['min_diameter_thickness_ratio'] = 120.0 # For weld-ability
+
+        # API 2U flag
+        self.myfloat['loading'] = 'axial' #'hydrostatic'
+
+        # Porperties of turbine tower
+        self.myfloat['hub_height']              = 77.6                              # Length from tower main to top (not including freeboard) [m]
+        self.myfloat['tower_section_height']    = 77.6/nSecTow * np.ones(nSecTow) # Length of each tower section [m]
+        self.myfloat['tower_outer_diameter']    = np.linspace(6.5, 3.87, nSecTow+1) # Diameter at each tower section node (linear lofting between) [m]
+        self.myfloat['tower_wall_thickness']    = np.linspace(0.027, 0.019, nSecTow) # Diameter at each tower section node (linear lofting between) [m]
+        self.myfloat['tower_buckling_length']   = 30.0                              # Tower buckling reinforcement spacing [m]
+        self.myfloat['tower_outfitting_factor'] = 1.07                              # Scaling for unaccounted tower mass in outfitting
+
+        
+        
+    def testMassPropertiesSpar(self):
         # Column geometry
         self.myfloat['main.permanent_ballast_height'] = 0.0 # Height above keel for permanent ballast [m]
         self.myfloat['main.freeboard']                = 10.0 # Height extension above waterline [m]
@@ -87,19 +125,6 @@ class TestOC3Mass(unittest.TestCase):
         self.myfloat['fairlead_support_outer_diameter'] = 3.2    # Diameter of all fairlead support elements [m]
         self.myfloat['fairlead_support_wall_thickness'] = 0.0175 # Thickness of all fairlead support elements [m]
 
-        # Mooring constraints
-        self.myfloat['max_offset'] = 0.1*self.myfloat['water_depth'] # Max surge/sway offset [m]      
-        self.myfloat['max_survival_heel']   = 10.0 # Max heel (pitching) angle [deg]
-        self.myfloat['operational_heel']   = 5.0 # Max heel (pitching) angle [deg]
-
-        # Design constraints
-        self.myfloat['max_draft'] = 200.0                # For manufacturability of rolling steel
-        self.myfloat['max_taper_ratio'] = 0.4                # For manufacturability of rolling steel
-        self.myfloat['min_diameter_thickness_ratio'] = 120.0 # For weld-ability
-
-        # API 2U flag
-        self.myfloat['loading'] = 'axial' #'hydrostatic'
-
         # Other variables to avoid divide by zeros, even though it won't matter
         self.myfloat['radius_to_offset_column'] = 15.0
         self.myfloat['off.section_height'] = 1.0 * np.ones(nSec)
@@ -121,31 +146,7 @@ class TestOC3Mass(unittest.TestCase):
         self.myfloat['significant_wave_period']           = 1e3    # Wave period [s]
         self.myfloat['wind_reference_speed']        = 0.0    # Wind reference speed [m/s]
         self.myfloat['wind_reference_height']        = 119.0  # Wind reference height [m]
-        self.myfloat['shearExp']    = 0.11   # Shear exponent in wind power law
-        self.myfloat['cm']          = 2.0    # Added mass coefficient
-        self.myfloat['Uc']          = 0.0    # Mean current speed
-        self.myfloat['wind_z0']          = 0.0    # Water line
-        self.myfloat['yaw']         = 0.0    # Turbine yaw angle
-        self.myfloat['beta']        = 0.0    # Wind beta angle
-        self.myfloat['cd_usr']      = -1.0 # Compute drag coefficient
 
-        # Porperties of turbine tower
-        self.myfloat['hub_height']              = 77.6                              # Length from tower main to top (not including freeboard) [m]
-        self.myfloat['tower_section_height']    = 77.6/nSecTow * np.ones(nSecTow) # Length of each tower section [m]
-        self.myfloat['tower_outer_diameter']    = np.linspace(6.5, 3.87, nSecTow+1) # Diameter at each tower section node (linear lofting between) [m]
-        self.myfloat['tower_wall_thickness']    = np.linspace(0.027, 0.019, nSecTow) # Diameter at each tower section node (linear lofting between) [m]
-        self.myfloat['tower_buckling_length']   = 30.0                              # Tower buckling reinforcement spacing [m]
-        self.myfloat['tower_outfitting_factor'] = 1.07                              # Scaling for unaccounted tower mass in outfitting
-
-        # Properties of rotor-nacelle-assembly (RNA)
-        self.myfloat['rna_mass']   = 350e3 # Mass [kg]
-        self.myfloat['rna_I']      = 1e5*np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        self.myfloat['rna_cg']     = np.zeros(3)
-        self.myfloat['rna_force']  = np.zeros(3)
-        self.myfloat['rna_moment'] = np.zeros(3)
-        
-        
-    def testMassProperties(self):
         self.myfloat.run_model()
 
         m_top = np.pi*3.2**2.0*0.05*7850.0
@@ -166,10 +167,80 @@ class TestOC3Mass(unittest.TestCase):
         npt.assert_allclose(ansys_cg, self.myfloat['main.z_center_of_mass'], rtol=0.01)
         npt.assert_allclose(ansys_I, self.myfloat['main.I_column'], rtol=0.02)
 
+    def testSemiRuns(self):
+
+        # SEMI SPECIFIC OPTIONS
+        # Add in offset columns and truss elements
+        self.myfloat['number_of_offset_columns'] = 3
+        self.myfloat['cross_attachment_pontoons_int']   = 1 # Lower-Upper main-to-offset connecting cross braces
+        self.myfloat['lower_attachment_pontoons_int']   = 1 # Lower main-to-offset connecting pontoons
+        self.myfloat['upper_attachment_pontoons_int']   = 1 # Upper main-to-offset connecting pontoons
+        self.myfloat['lower_ring_pontoons_int']         = 1 # Lower ring of pontoons connecting offset columns
+        self.myfloat['upper_ring_pontoons_int']         = 1 # Upper ring of pontoons connecting offset columns
+        self.myfloat['outer_cross_pontoons_int']        = 1 # Auxiliary ring connecting V-cross braces
+
+        # Set environment to that used in OC4 testing campaign
+        self.myfloat['water_depth']             = 200.0  # Distance to sea floor [m]
+        self.myfloat['significant_wave_height'] = 10.8   # Significant wave height [m]
+        self.myfloat['significant_wave_period'] = 9.8    # Wave period [s]
+        self.myfloat['wind_reference_speed']    = 11.0   # Wind reference speed [m/s]
+        self.myfloat['wind_reference_height']   = 119.0  # Wind reference height [m]
+
+        # Column geometry
+        self.myfloat['main.permanent_ballast_height'] = 10.0 # Height above keel for permanent ballast [m]
+        self.myfloat['main.freeboard']                = 10.0 # Height extension above waterline [m]
+        self.myfloat['main.section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
+        self.myfloat['main.outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
+        self.myfloat['main.wall_thickness'] = 0.05 * np.ones(nSec)               # Shell thickness at each section node (linear lofting between) [m]
+        self.myfloat['main.bulkhead_thickness'] = 0.05*np.array([1, 1, 0, 1, 0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+
+        # Auxiliary column geometry
+        self.myfloat['radius_to_offset_column']         = 33.333 * np.cos(np.pi/6) # Centerline of main column to centerline of offset column [m]
+        self.myfloat['off.permanent_ballast_height'] = 0.1                      # Height above keel for permanent ballast [m]
+        self.myfloat['off.freeboard']                = 12.0                     # Height extension above waterline [m]
+        self.myfloat['off.section_height']           = np.array([6.0, 0.1, 15.9, 10]) # Length of each section [m]
+        self.myfloat['off.outer_diameter']           = np.array([24, 24, 12, 12, 12]) # Diameter at each section node (linear lofting between) [m]
+        self.myfloat['off.wall_thickness']           = 0.06 * np.ones(nSec)         # Shell thickness at each section node (linear lofting between) [m]
+
+        # Column ring stiffener parameters
+        self.myfloat['main.stiffener_web_height']       = 0.10 * np.ones(nSec) # (by section) [m]
+        self.myfloat['main.stiffener_web_thickness']    = 0.04 * np.ones(nSec) # (by section) [m]
+        self.myfloat['main.stiffener_flange_width']     = 0.10 * np.ones(nSec) # (by section) [m]
+        self.myfloat['main.stiffener_flange_thickness'] = 0.02 * np.ones(nSec) # (by section) [m]
+        self.myfloat['main.stiffener_spacing']          = 0.40 * np.ones(nSec) # (by section) [m]
+
+        # Auxiliary column ring stiffener parameters
+        self.myfloat['off.stiffener_web_height']       = 0.10 * np.ones(nSec) # (by section) [m]
+        self.myfloat['off.stiffener_web_thickness']    = 0.04 * np.ones(nSec) # (by section) [m]
+        self.myfloat['off.stiffener_flange_width']     = 0.01 * np.ones(nSec) # (by section) [m]
+        self.myfloat['off.stiffener_flange_thickness'] = 0.02 * np.ones(nSec) # (by section) [m]
+        self.myfloat['off.stiffener_spacing']          = 0.40 * np.ones(nSec) # (by section) [m]
+
+        # Pontoon parameters
+        self.myfloat['pontoon_outer_diameter']    = 3.2    # Diameter of all pontoon/truss elements [m]
+        self.myfloat['pontoon_wall_thickness']    = 0.0175 # Thickness of all pontoon/truss elements [m]
+        self.myfloat['main_pontoon_attach_lower'] = -20.0  # Lower z-coordinate on main where truss attaches [m]
+        self.myfloat['main_pontoon_attach_upper'] = 10.0   # Upper z-coordinate on main where truss attaches [m]
+
+        # Mooring parameters
+        self.myfloat['number_of_mooring_connections']    = 3             # Evenly spaced around structure
+        self.myfloat['mooring_lines_per_connection']    = 1             # Evenly spaced around structure
+        self.myfloat['mooring_type']               = 'chain'       # Options are chain, nylon, polyester, fiber, or iwrc
+        self.myfloat['anchor_type']                = 'suctionpile' # Options are SUCTIONPILE or DRAGEMBEDMENT
+        self.myfloat['mooring_diameter']           = 0.0766        # Diameter of mooring line/chain [m]
+        self.myfloat['fairlead']                   = 14.0          # Distance below waterline for attachment [m]
+        self.myfloat['fairlead_offset_from_shell'] = 0.5           # Offset from shell surface for mooring attachment [m]
+        self.myfloat['mooring_line_length']        = 835.5+300         # Unstretched mooring line length
+        self.myfloat['anchor_radius']              = 837.6+300.0         # Distance from centerline to sea floor landing [m]
+        self.myfloat['fairlead_support_outer_diameter'] = 3.2    # Diameter of all fairlead support elements [m]
+        self.myfloat['fairlead_support_wall_thickness'] = 0.0175 # Thickness of all fairlead support elements [m]
+        
+        self.myfloat.run_model()
+        self.assertTrue(True)
         
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestOC3Mass))
+    suite.addTest(unittest.makeSuite(TestRegression))
     return suite
 
 if __name__ == '__main__':

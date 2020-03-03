@@ -19,6 +19,14 @@ from wisdem.rotorse.rotor_cost import RotorCost
 from wisdem.rotorse import RPM2RS, RS2RPM
 from wisdem.rotorse.rotor_fast import FASTLoadCases
 
+from wisdem.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
+from wisdem.aeroelasticse.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
+from wisdem.aeroelasticse.FAST_wrapper import FastWrapper
+from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
+from wisdem.aeroelasticse.FAST_post import return_timeseries
+
+
 
 #from wisdem.rotorse.rotor_fast import FASTLoadCases
 
@@ -191,7 +199,10 @@ def Init_RotorSE_wRefBlade(rotor, blade, Analysis_Level = 0, fst_vt={}):
         rotor['drivetrainEff'] = fst_vt['ServoDyn']['GenEff']/100.
 
     # === blade grid ===
-    rotor['hubFraction']        = blade['config']['hubD']/2./blade['ctrl_pts']['bladeLength'] # (Float): hub location as fraction of radius
+    if 'hub_blade_distance' in blade['config'].keys():
+        rotor['hubFraction']        = blade['config']['hub_blade_distance']/blade['ctrl_pts']['bladeLength']
+    else:
+        rotor['hubFraction']        = blade['config']['hubD']/2./blade['ctrl_pts']['bladeLength'] # (Float): hub location as fraction of radius
     rotor['bladeLength']        = blade['ctrl_pts']['bladeLength'] # (Float, m): blade length (if not precurved or swept) otherwise length of blade before curvature
     # rotor['delta_bladeLength'] = 0.0  # (Float, m): adjustment to blade length to account for curvature from loading
     rotor['precone']            = blade['config']['cone_angle']  # (Float, deg): precone angle
@@ -283,8 +294,9 @@ if __name__ == '__main__':
 
     # Turbine Ontology input
     fname_schema  = "turbine_inputs/IEAontology_schema.yaml"
-    # fname_input   = "turbine_inputs/nrel5mw_mod_update.yaml"
-    fname_input   = "/mnt/c/Users/egaertne/WISDEM2/wisdem/IEA-15-240-RWT/WISDEM/IEA-15-240-RWT.yaml"
+    fname_input   = "turbine_inputs/nrel5mw_mod_update.yaml"
+    # fname_input   = "/mnt/c/Users/egaertne/IEA-15-240-RWT/WISDEM/IEA-15-240-RWT.yaml"
+    # fname_input   = "/mnt/c/Users/egaertne/IEA-15-240-RWT/WISDEM/IEA-15-240-RWT_TipShape.yaml"
     output_folder = "test/"
     fname_output  = output_folder + 'test_out.yaml'
     
@@ -295,6 +307,7 @@ if __name__ == '__main__':
     refBlade.verbose      = True
     refBlade.NINPUT       = 8
     refBlade.NPTS         = 50
+    refBlade.apply_stall_delay = False
     refBlade.spar_var     = ['Spar_Cap_SS', 'Spar_Cap_PS'] # SS, then PS
     refBlade.te_var       = 'TE_reinforcement'
     # refBlade.le_var       = 'le_reinf'

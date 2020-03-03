@@ -844,7 +844,7 @@ class ColumnProperties(ExplicitComponent):
 
         # Calculate diagonal entries of added mass matrix
         # Prep for integrals too
-        npts     = 1e2 * R_od.size
+        npts     = 100 * R_od.size
         zpts     = np.linspace(z_under[0], z_under[-1], npts)
         r_under  = np.interp(zpts, z_under, r_under)
         m_a      = np.zeros(6)
