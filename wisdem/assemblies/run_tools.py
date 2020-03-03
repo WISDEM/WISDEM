@@ -1,4 +1,10 @@
-import ruamel_yaml as ry
+try:
+    import ruamel_yaml as ry
+except:
+    try:
+        import ruamel.yaml as ry
+    except:
+        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -17,56 +23,10 @@ class Opt_Data(object):
 
     def initialize(self):
 
-        opt_data = self.load_yaml(self.fname_opt_options)
+        self.opt_options = self.load_yaml(self.fname_opt_options)
 
         self.opt_options['folder_output']    = self.folder_output
-        self.opt_options['optimization_log'] = self.folder_output + opt_data['recorder']['file_name']
-
-        # Optimization variables
-        self.opt_options['blade_aero'] = {}
-        self.opt_options['blade_aero']['opt_twist']         = opt_data['optimization_variables']['twist']['flag']
-        self.opt_options['blade_aero']['n_opt_twist']       = opt_data['optimization_variables']['twist']['n_opt']
-        self.opt_options['blade_aero']['lower_bound_twist'] = opt_data['optimization_variables']['twist']['lower_bound']
-        self.opt_options['blade_aero']['upper_bound_twist'] = opt_data['optimization_variables']['twist']['upper_bound']
-
-        self.opt_options['blade_aero']['opt_chord']         = opt_data['optimization_variables']['chord']['flag']
-        self.opt_options['blade_aero']['n_opt_chord']       = opt_data['optimization_variables']['chord']['n_opt']
-        self.opt_options['blade_aero']['min_gain_chord']    = opt_data['optimization_variables']['chord']['min_gain']
-        self.opt_options['blade_aero']['max_gain_chord']    = opt_data['optimization_variables']['chord']['max_gain']
-
-        self.opt_options['blade_struct'] = {}
-        self.opt_options['blade_struct']['opt_spar_cap_ss']         = opt_data['optimization_variables']['spar_cap_ss']['flag']
-        self.opt_options['blade_struct']['n_opt_spar_cap_ss']       = opt_data['optimization_variables']['spar_cap_ss']['n_opt']
-        self.opt_options['blade_struct']['spar_cap_ss_var']         = opt_data['optimization_variables']['spar_cap_ss']['name']
-        self.opt_options['blade_struct']['min_gain_spar_cap_ss']    = opt_data['optimization_variables']['spar_cap_ss']['min_gain']
-        self.opt_options['blade_struct']['max_gain_spar_cap_ss']    = opt_data['optimization_variables']['spar_cap_ss']['max_gain']
-        
-        self.opt_options['blade_struct']['opt_spar_cap_ps']         = opt_data['optimization_variables']['spar_cap_ps']['flag']
-        self.opt_options['blade_struct']['n_opt_spar_cap_ps']       = opt_data['optimization_variables']['spar_cap_ps']['n_opt']
-        self.opt_options['blade_struct']['spar_cap_ps_var']         = opt_data['optimization_variables']['spar_cap_ps']['name']
-        self.opt_options['blade_struct']['min_gain_spar_cap_ps']    = opt_data['optimization_variables']['spar_cap_ps']['min_gain']
-        self.opt_options['blade_struct']['max_gain_spar_cap_ps']    = opt_data['optimization_variables']['spar_cap_ps']['max_gain']
-
-        self.opt_options['blade_struct']['te_ps_opt']         = opt_data['optimization_variables']['te_ps']['flag']
-        self.opt_options['blade_struct']['n_opt_te_ps']       = opt_data['optimization_variables']['te_ps']['n_opt']
-        self.opt_options['blade_struct']['te_ps_var']         = opt_data['optimization_variables']['te_ps']['name']
-        self.opt_options['blade_struct']['min_gain_te_ps']    = opt_data['optimization_variables']['te_ps']['min_gain']
-        self.opt_options['blade_struct']['max_gain_te_ps']    = opt_data['optimization_variables']['te_ps']['max_gain']
-
-        self.opt_options['blade_struct']['te_ss_opt']         = opt_data['optimization_variables']['te_ss']['flag']
-        self.opt_options['blade_struct']['n_opt_te_ss']       = opt_data['optimization_variables']['te_ss']['n_opt']
-        self.opt_options['blade_struct']['te_ss_var']         = opt_data['optimization_variables']['te_ss']['name']
-        self.opt_options['blade_struct']['min_gain_te_ss']    = opt_data['optimization_variables']['te_ss']['min_gain']
-        self.opt_options['blade_struct']['max_gain_te_ss']    = opt_data['optimization_variables']['te_ss']['max_gain']
-
-        # Merit figure
-        self.opt_options['merit_figure']    = opt_data['merit_figure']
-
-        # Optimization driver options
-        self.opt_options['driver'] = {}
-        self.opt_options['driver']['solver']    = opt_data['driver']['solver']
-        self.opt_options['driver']['max_iter']  = opt_data['driver']['max_iter']
-        self.opt_options['driver']['tol']       = opt_data['driver']['tol']
+        self.opt_options['optimization_log'] = self.folder_output + self.opt_options['recorder']['file_name']
 
         return self.opt_options
 
@@ -117,13 +77,13 @@ class Outputs_2_Screen(ExplicitComponent):
     # Class to print outputs on screen
     def setup(self):
         
-        self.add_input('AEP', val=0.0, units = 'GW * h')
+        self.add_input('aep', val=0.0, units = 'GW * h')
         self.add_input('blade_mass', val=0.0, units = 'kg')
-        self.add_input('lcoe', val=0.0, units = 'USD/kW/h')
+        self.add_input('lcoe', val=0.0, units = 'USD/MW/h')
     def compute(self, inputs, outputs):
         print('########################################')
         print('Objectives')
-        print('AEP:         {:8.10f} GWh'.format(inputs['AEP'][0]))
+        print('Turbine AEP: {:8.10f} GWh'.format(inputs['aep'][0]))
         print('Blade Mass:  {:8.10f} kg'.format(inputs['blade_mass'][0]))
-        print('LCOE:        {:8.10f} $/kWh'.format(inputs['lcoe'][0]))
+        print('LCOE:        {:8.10f} USD/MWh'.format(inputs['lcoe'][0]))
         print('########################################')

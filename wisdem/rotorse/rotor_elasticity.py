@@ -6,6 +6,7 @@ from openmdao.api import ExplicitComponent, Group
 from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.rotorse.precomp import PreComp, Profile, Orthotropic2DMaterial, CompositeSection
 import wisdem.pBeam._pBEAM as _pBEAM
+from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse.rotor_cost import blade_cost_model
 
 class RunPreComp(ExplicitComponent):
@@ -26,10 +27,10 @@ class RunPreComp(ExplicitComponent):
         self.verbosity     = self.options['analysis_options']['general']['verbosity']
 
         opt_options   = self.options['opt_options']
-        self.te_ss_var   = opt_options['blade_struct']['te_ss_var']
-        self.te_ps_var   = opt_options['blade_struct']['te_ps_var']
-        self.spar_cap_ss_var = opt_options['blade_struct']['spar_cap_ss_var']
-        self.spar_cap_ps_var = opt_options['blade_struct']['spar_cap_ps_var']
+        self.te_ss_var   = opt_options['optimization_variables']['blade']['structure']['te_ss']['name']
+        self.te_ps_var   = opt_options['optimization_variables']['blade']['structure']['te_ps']['name']
+        self.spar_cap_ss_var = opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
+        self.spar_cap_ps_var = opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
         # Outer geometry
         self.add_input('r',             val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
@@ -39,6 +40,10 @@ class RunPreComp(ExplicitComponent):
         self.add_input('precurve',      val=np.zeros(n_span),    units='m', desc='precurve at each section')
         self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
         self.add_input('coord_xy_interp',  val=np.zeros((n_span, n_xy, 2)), desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.')
+
+        # Rotor configuration
+        self.add_input('uptilt',           val=0.0, units='deg',    desc='Nacelle uptilt angle. A standard machine has positive values.')
+        self.add_discrete_input('n_blades',val=3,                   desc='Number of blades of the rotor.')
 
         # Inner structure
         self.add_discrete_input('web_name', val=n_webs * [''],                          desc='1D array of the names of the shear webs defined in the blade structure.')
@@ -61,8 +66,7 @@ class RunPreComp(ExplicitComponent):
         self.add_input('nu',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
         self.add_input('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
 
-
-        # Outputs - Beam properties
+        # Outputs - Distributed beam properties
         self.add_output('z',            val=np.zeros(n_span), units='m',      desc='locations of properties along beam')
         self.add_output('EA',           val=np.zeros(n_span), units='N',      desc='axial stiffness')
         self.add_output('EIxx',         val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
@@ -89,6 +93,11 @@ class RunPreComp(ExplicitComponent):
         self.add_output('yu_strain_te',     val=np.zeros(n_span), desc='y-position of midpoint of trailing-edge panel on upper surface for strain calculation')
         self.add_output('yl_strain_te',     val=np.zeros(n_span), desc='y-position of midpoint of trailing-edge panel on lower surface for strain calculation')
 
+        # Outputs - Overall beam properties
+        self.add_output('blade_mass',                val=0.0, units='kg',        desc='mass of one blade')
+        self.add_output('blade_moment_of_inertia',   val=0.0, units='kg*m**2',   desc='mass moment of inertia of blade about hub')
+        self.add_output('mass_all_blades',           val=0.0, units='kg',        desc='mass of all blades')
+        self.add_output('I_all_blades',              shape=6, units='kg*m**2',   desc='mass moments of inertia of all blades in yaw c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz')
 
         # Placeholder - rotor cost
         self.add_discrete_input('component_id', val=np.zeros(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
@@ -461,6 +470,28 @@ class RunPreComp(ExplicitComponent):
         outputs['xl_strain_te']   = xl_strain_te
         outputs['yu_strain_te']   = yu_strain_te
         outputs['yl_strain_te']   = yl_strain_te
+
+        # Compute mass and inertia of blade and rotor
+        blade_mass = np.trapz(rhoA, inputs['r'])
+        blade_moment_of_inertia = np.trapz(rhoA * inputs['r']**2., inputs['r'])
+        tilt    = inputs['uptilt']
+        n_blades = discrete_inputs['n_blades']
+        mass_all_blades = n_blades * blade_mass
+        Ibeam = n_blades * blade_moment_of_inertia
+        Ixx = Ibeam
+        Iyy = Ibeam/2.0  # azimuthal average for 2 blades, exact for 3+
+        Izz = Ibeam/2.0
+        Ixy = 0.0
+        Ixz = 0.0
+        Iyz = 0.0  # azimuthal average for 2 blades, exact for 3+
+        # rotate to yaw c.s.
+        I = DirectionVector(Ixx, Iyy, Izz).hubToYaw(tilt)  # because off-diagonal components are all zero
+        I_all_blades = np.array([I.x, I.y, I.z, Ixy, Ixz, Iyz])
+
+        outputs['blade_mass']              = blade_mass
+        outputs['blade_moment_of_inertia'] = blade_moment_of_inertia
+        outputs['mass_all_blades']         = mass_all_blades
+        outputs['I_all_blades']            = I_all_blades
 
         # Placeholder - rotor cost
         bcm             = blade_cost_model(verbosity = self.verbosity)

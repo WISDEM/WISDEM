@@ -16,10 +16,13 @@ class WT_Parametrize(Group):
         
         # Optimization parameters initialized as indipendent variable component
         opt_var = IndepVarComp()
-        opt_var.add_output('twist_opt_gain',   val = 0.5 * np.ones(opt_options['blade_aero']['n_opt_twist']))
-        opt_var.add_output('chord_opt_gain',   val = np.ones(opt_options['blade_aero']['n_opt_chord']))
-        opt_var.add_output('spar_cap_ss_opt_gain', val = np.ones(opt_options['blade_struct']['n_opt_spar_cap_ss']))
-        opt_var.add_output('spar_cap_ps_opt_gain', val = np.ones(opt_options['blade_struct']['n_opt_spar_cap_ps']))
+        opt_var.add_output('twist_opt_gain',   val = 0.5 * np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
+        opt_var.add_output('chord_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
+        opt_var.add_output('spar_cap_ss_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']))
+        opt_var.add_output('spar_cap_ps_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']))
+        opt_var.add_output('te_flap_end', val = np.ones(analysis_options['blade']['n_te_flaps']))
+        opt_var.add_output('te_flap_ext', val = np.ones(analysis_options['blade']['n_te_flaps']))
+        
         self.add_subsystem('opt_var',opt_var)
 
         # Analysis components

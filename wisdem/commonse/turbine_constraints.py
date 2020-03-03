@@ -86,7 +86,7 @@ class TipDeflectionConstraint(ExplicitComponent):
         tower_init_options   = analysis_options['tower']
         n_height_tow    = tower_init_options['n_height']
         # Inputs
-        self.add_discrete_input('downwind',       val=False)
+        self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
         self.add_input('tip_deflection', val=0.0,       units='m',  desc='Blade tip deflection in yaw x-direction')
         self.add_input('Rtip',           val=0.0,       units='m',  desc='Blade tip location in z_b')
         self.add_input('ref_axis_blade', val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
@@ -109,12 +109,15 @@ class TipDeflectionConstraint(ExplicitComponent):
         precone     = inputs['precone']
         tilt        = inputs['tilt']
         delta       = inputs['tip_deflection']
-        upwind      = not discrete_inputs['downwind']
         prebend_tip =  inputs['ref_axis_blade'][-1,0] # Defined negative for a standard upwind blade
         presweep_tip = inputs['ref_axis_blade'][-1,1] # Defined positive for a standard blade
         # Coordinates of blade tip in yaw c.s.
-        blade_yaw = DirectionVector(prebend_tip, presweep_tip, inputs['Rtip']).\
-                    bladeToAzimuth(precone).azimuthToHub(180.0).hubToYaw(tilt)
+        if discrete_inputs['rotor_orientation'] == 'upwind':
+            blade_yaw = DirectionVector(prebend_tip, presweep_tip, inputs['Rtip']).\
+                        bladeToAzimuth(precone).azimuthToHub(180.0).hubToYaw(tilt)
+        else:
+            blade_yaw = DirectionVector(prebend_tip, presweep_tip, inputs['Rtip']).\
+                        bladeToAzimuth(-precone).azimuthToHub(180.0).hubToYaw(-tilt)
 
         # Find the radius of tower where blade passes
         z_interp = z_tower[-1] + tt2hub + blade_yaw.z
@@ -126,10 +129,10 @@ class TipDeflectionConstraint(ExplicitComponent):
         drinterp_dtowerd  = 0.5 * ddinterp_dtowerd
 
         # Max deflection before strike
-        if upwind:
+        if discrete_inputs['rotor_orientation'] == 'upwind':
             parked_margin = overhang - blade_yaw.x - r_interp
         else:
-            parked_margin = -overhang + blade_yaw.x - r_interp
+            parked_margin = overhang + blade_yaw.x - r_interp
         outputs['blade_tip_tower_clearance']   = parked_margin
         outputs['tip_deflection_ratio']        = delta * inputs['max_allowable_td_ratio'] / parked_margin
 

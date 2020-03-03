@@ -185,14 +185,6 @@ def eval_unsteady(alpha, cl, cd, cm):
     # plt.show()
 
 
-
-
-
-
-
-
-
-
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
         self.options.declare('analysis_options')
@@ -247,7 +239,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('airfoils_Re',       val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
         self.add_input('airfoils_Re_loc',   val=np.zeros((n_span, n_Re, n_tab)), desc='temporary - matrix of Re numbers')
         self.add_input('airfoils_Ma_loc',   val=np.zeros((n_span, n_Re, n_tab)), desc='temporary - matrix of Ma numbers')
-        self.add_input('airfoils_Ctrl',     val=np.zeros((n_span, n_tab)), units='deg',desc='Reynolds numbers of polars')
+        self.add_input('airfoils_Ctrl',     val=np.zeros((n_span, n_Re, n_tab)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
         
         # Airfoil coordinates
         self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
@@ -255,6 +247,7 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_input('airfoils_coord_y',  val=np.zeros((n_xy, n_span)), desc='y airfoil coordinate, spanwise')
         
         # Turbine level inputs
+        self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
         self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
         self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
@@ -263,6 +256,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
         self.add_input('control_maxOmega',          val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
         self.add_input('control_maxTS',             val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
+        self.add_input('cone',             val=0.0, units='deg',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
+        self.add_input('tilt',             val=0.0, units='deg',   desc='Nacelle uptilt angle. A standard machine has positive values.')
+        self.add_input('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
 
         # Initial conditions
         self.add_input('U_init',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
@@ -388,7 +384,6 @@ class FASTLoadCases(ExplicitComponent):
 
         #print(impl.world_comm().rank, 'Rotor_fast','end')
 
-
     def update_FAST_model(self, inputs, discrete_inputs):
 
         # Create instance of FAST reference model 
@@ -400,6 +395,17 @@ class FASTLoadCases(ExplicitComponent):
         # Update ElastoDyn
         fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip'][0]
         fst_vt['ElastoDyn']['HubRad'] = inputs['Rhub'][0]
+        if discrete_inputs['rotor_orientation'] == 'upwind':
+            k = -1.
+        else:
+            k = 1
+        fst_vt['ElastoDyn']['PreCone(1)'] = k*inputs['cone'][0]
+        fst_vt['ElastoDyn']['PreCone(2)'] = k*inputs['cone'][0]
+        fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
+        fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
+        fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
+        
+
         tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
         fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][0] + inputs['tower_base_height'][0] # Height of tower above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerBsHt'] = inputs['tower_base_height'][0] # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
@@ -463,8 +469,8 @@ class FASTLoadCases(ExplicitComponent):
                 if inputs['airfoils_Re_loc'][i][0][j] == 0:  # check if Re ws locally determined (e.g. for trailing edge flaps)
                     fst_vt['AeroDyn15']['af_data'][i][j]['Re']        =  0.75       # TODO: functionality for multiple Re tables
                 else:
-                    fst_vt['AeroDyn15']['af_data'][i][j]['Re'] = inputs['airfoils_Re_loc'][i][0][j]/1000000  # give in millions
-                fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = inputs['airfoils_Ctrl'][i][j]  # unsteady['Ctrl'] # added to unsteady function for variable flap controls at airfoils
+                    fst_vt['AeroDyn15']['af_data'][i][j]['Re'] = inputs['airfoils_Re_loc'][i,0,j]/1000000  # give in millions
+                fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = inputs['airfoils_Ctrl'][i,0,j]  # unsteady['Ctrl'] # added to unsteady function for variable flap controls at airfoils
 
                 fst_vt['AeroDyn15']['af_data'][i][j]['InclUAdata']= "True"
                 fst_vt['AeroDyn15']['af_data'][i][j]['alpha0']    = unsteady['alpha0']
@@ -523,8 +529,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['BlOutNd'] = [str(idx+1) for idx in idx_out]
         fst_vt['AeroDyn15']['NBlOuts'] = len(idx_out)
 
-        # fst_vt['DISCON_in']['PerfFileName'] = self.writeCpsurfaces(inputs)
-
         return fst_vt, R_out
 
     def DLC_creation(self, inputs, discrete_inputs, fst_vt):
@@ -578,9 +582,9 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.DLC_turbulent != None:
             if self.mpi_run:
-                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
+                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
             else:
-                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores)
+                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores)
             list_cases        += list_cases_turb
             list_casenames    += list_casenames_turb
             required_channels += requited_channels_turb
