@@ -7,8 +7,11 @@ from functools import reduce
 from wisdem.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from wisdem.aeroelasticse.FAST_vars import FstModel
 
-from ROSCO_toolbox import utilities as ROSCO_utilities
-
+try:
+    from ROSCO_toolbox import utilities as ROSCO_utilities
+    ROSCO = True
+except:
+    ROSCO = False
 
 # Builder
 
@@ -331,7 +334,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         elif self.fst_vt['Fst']['CompAero'] == 2:
             self.write_AeroDyn15()
         
-        if 'DISCON_in' in self.fst_vt:
+        if 'DISCON_in' in self.fst_vt and ROSCO:
             self.write_DISCON_in()
         self.write_ServoDyn()
         

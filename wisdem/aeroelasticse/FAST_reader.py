@@ -4,9 +4,12 @@ import numpy as np
 from functools import reduce
 import operator
 
-from wisdem.aeroelasticse.FAST_vars import FstModel
-from ROSCO_toolbox import turbine as ROSCO_turbine
-from ROSCO_toolbox import utilities as ROSCO_utilities
+try:
+    from ROSCO_toolbox import utilities as ROSCO_utilities
+    from ROSCO_toolbox import turbine as ROSCO_turbine
+    ROSCO = True
+except:
+    ROSCO = False
 
 
 def fix_path(name):
@@ -402,7 +405,8 @@ class InputReader_OpenFAST(InputReader_Common):
             self.read_AeroDyn15()
 
         self.read_ServoDyn()
-        self.read_DISCON_in()
+        if ROSCO:
+            self.read_DISCON_in()
     
         
         if self.fst_vt['Fst']['CompHydro'] == 1: # SubDyn not yet implimented
