@@ -4,6 +4,7 @@ import numpy as np
 from functools import reduce
 import operator
 
+from wisdem.aeroelasticse.FAST_vars import FstModel
 try:
     from ROSCO_toolbox import utilities as ROSCO_utilities
     from ROSCO_toolbox import turbine as ROSCO_turbine
