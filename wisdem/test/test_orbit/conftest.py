@@ -4,32 +4,70 @@
 import os
 
 import pytest
+from marmot import Environment
 
-from wisdem.orbit.library import initialize_library
-
-collect_ignore = ["setup.py"]
-
-
-def get_test_library_path():
-    """Retrieves the testing suite library path.
-
-    Returns
-    -------
-    str
-        Path to <path>/tests/data/library.
-    """
-    #repository = "ORBIT-dev"
-    #root = os.path.split(os.path.abspath(os.path.basename(__file__)))[0]
-    #cutoff = root.index(repository) + len(repository)
-    #repository = root[:cutoff]
-    #library_path = os.path.join(repository, "tests", "data", "library")
-    library_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'library')
-    return library_path
+from wisdem.orbit.core import Vessel
+from wisdem.test.test_orbit.data import test_weather
+from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.phases.install.cable_install import SimpleCable
 
 
 def pytest_configure():
     """Creates the default library for pytest testing suite and initializes it
     when required.
     """
-    pytest.library = get_test_library_path()
+
+    test_dir = os.path.split(os.path.abspath(__file__))[0]
+    pytest.library = os.path.join(test_dir, "data", "library")
     initialize_library(pytest.library)
+
+
+@pytest.fixture()
+def env():
+
+    return Environment("Test Environment", state=test_weather)
+
+
+@pytest.fixture()
+def wtiv():
+
+    specs = extract_library_specs("wtiv", "test_wtiv")
+    return Vessel("Test WTIV", specs)
+
+
+@pytest.fixture()
+def feeder():
+
+    specs = extract_library_specs("feeder", "test_feeder")
+    return Vessel("Test Feeder", specs)
+
+
+@pytest.fixture()
+def cable_vessel():
+
+    specs = extract_library_specs(
+        "array_cable_install_vessel", "test_cable_lay_vessel"
+    )
+    return Vessel("Test Cable Vessel", specs)
+
+
+@pytest.fixture()
+def heavy_lift():
+
+    specs = extract_library_specs(
+        "oss_install_vessel", "test_heavy_lift_vessel"
+    )
+    return Vessel("Test Heavy Vessel", specs)
+
+
+@pytest.fixture()
+def spi_vessel():
+
+    specs = extract_library_specs("spi_vessel", "test_scour_protection_vessel")
+    return Vessel("Test SPI Vessel", specs)
+
+
+@pytest.fixture()
+def simple_cable():
+
+    return SimpleCable(linear_density=50.0)

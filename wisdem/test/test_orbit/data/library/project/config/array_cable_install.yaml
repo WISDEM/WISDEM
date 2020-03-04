@@ -1,4 +1,4 @@
-array_cable_lay_vessel: test_cable_lay_vessel
+array_cable_install_vessel: test_cable_lay_vessel
 array_cable_bury_vessel: test_cable_lay_vessel
 array_system:
   cables:
@@ -18,13 +18,10 @@ array_system:
       - - 1.4
         - 2
       linear_density: 42.5
-  strategy: separate
 plant:
   layout: grid
   num_turbines: 40
   turbine_spacing: 5
-port:
-  num_cranes: 1
 site:
   depth: 20
   distance: 50

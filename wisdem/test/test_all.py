@@ -37,23 +37,23 @@ def suite():
     ) )
     return suite
 
+valid_tests = ['test_orbit',
+               'test_assemblies',
+               'test_airfoilprep',
+               'test_ccblade',
+               'test_commonse',
+               'test_floatingse',
+               'test_pbeam',
+               'test_plant_financese',
+               'test_pyframe3dd',
+               'test_towerse',
+               #'test_drivetrainse',
+               #'test_nrelcsm',
+               #'test_pymap',
+               #'test_rotorse',
+               #'test_wisdem',
+               'test_turbinecostsse']
 
 if __name__ == '__main__':
-    valid_tests = ['test_orbit',
-                   'test_assemblies',
-                   'test_airfoilprep',
-                   'test_ccblade',
-                   'test_commonse',
-                   'test_floatingse',
-                   'test_pbeam',
-                   'test_plant_financese',
-                   'test_pyframe3dd',
-                   'test_towerse',
-                   #'test_drivetrainse',
-                   #'test_nrelcsm',
-                   #'test_pymap',
-                   #'test_rotorse',
-                   #'test_wisdem',
-                   'test_turbinecostsse']
     pytest.main(valid_tests)
     #unittest.TextTestRunner().run(suite())
