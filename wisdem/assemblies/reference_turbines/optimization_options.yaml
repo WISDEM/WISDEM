@@ -52,7 +52,7 @@ optimization_variables:
         min_end: 0.3
         max_end: 1.0
 
-merit_figure: LCOE # 'AEP' - 'LCOE'
+merit_figure: LCOE # blade_mass - blade_tip_deflection - Cp - AEP - LCOE
 
 constraints:
   blade:

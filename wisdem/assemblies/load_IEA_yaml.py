@@ -529,16 +529,6 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         cm_spline = spline(r_thick_unique, cm_used[indices, :, :, :])        
         cm_interp = np.flip(cm_spline(np.flip(outputs['r_thick_interp'])), axis=0)
         
-        # Plot interpolated coordinates
-        # import matplotlib.pyplot as plt
-        # for i in range(self.n_span):    
-        #     plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
-        #     plt.plot(coord_xy_dim[i,:,0], coord_xy_dim[i,:,1], 'b', label = 'coord_xy_dim')
-        #     plt.axis('equal')
-        #     plt.title(i)
-        #     plt.legend()
-        #     plt.show()
-
         
         # Plot interpolated polars
         # for i in range(self.n_span):    
@@ -553,6 +543,59 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         outputs['cl_interp']       = cl_interp
         outputs['cd_interp']       = cd_interp
         outputs['cm_interp']       = cm_interp
+
+        # Plot interpolated coordinates
+        # import matplotlib.pyplot as plt
+        # for i in range(self.n_span):    
+        #     plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
+        #     plt.plot(coord_xy_dim[i,:,0], coord_xy_dim[i,:,1], 'b', label = 'coord_xy_dim')
+        #     plt.axis('equal')
+        #     plt.title(i)
+        #     plt.legend()
+        #     plt.show()
+
+
+        # # Smoothing
+        # import matplotlib.pyplot as plt
+        # # plt.plot(inputs['s'], inputs['chord'] * outputs['r_thick_interp'])
+        # # plt.show()
+
+        # # Absolute Thickness
+        # abs_thick_init  = outputs['r_thick_interp']*inputs['chord']
+        # s_interp_at     = np.array([0.0, 0.02,  0.1, 0.2, 0.8,  1.0 ])
+        # abs_thick_int1  = np.interp(s_interp_at, inputs['s'],abs_thick_init)
+        # f_interp2       = PchipInterpolator(s_interp_at,abs_thick_int1)
+        # abs_thick_int2  = f_interp2(inputs['s'])
+
+        # # # Relative thickness
+        # r_thick_interp   = abs_thick_int2 / inputs['chord']
+        # r_thick_airfoils = np.array([0.18, 0.211, 0.241, 0.301, 0.36 , 0.50, 1.00])
+        # s_interp_rt      = np.interp(r_thick_airfoils, np.flip(r_thick_interp),np.flip(inputs['s']))
+        # f_interp2        = PchipInterpolator(np.flip(s_interp_rt, axis=0),np.flip(r_thick_airfoils, axis=0))
+        # r_thick_int2     = f_interp2(inputs['s'])
+
+        
+        # frt, axrt  = plt.subplots(1,1,figsize=(5.3, 4))
+        # axrt.plot(inputs['s'], outputs['r_thick_interp']*100., c='k', label='Initial')
+        # # axrt.plot(inputs['s'], r_thick_interp * 100., c='b', label='Interp')
+        # # axrt.plot(s_interp_rt, r_thick_airfoils * 100., 'og', label='Airfoils')
+        # # axrt.plot(inputs['s'], r_thick_int2 * 100., c='g', label='Reconstructed')
+        # axrt.set(xlabel='r/R' , ylabel='Relative Thickness (%)')
+        # axrt.legend()
+        
+        # fat, axat  = plt.subplots(1,1,figsize=(5.3, 4))
+        # axat.plot(inputs['s'], abs_thick_init, c='k', label='Initial')
+        # # axat.plot(s_interp_at, abs_thick_int1, 'ko', label='Interp Points')
+        # # axat.plot(inputs['s'], abs_thick_int2, c='b', label='PCHIP')
+        # # axat.plot(inputs['s'], r_thick_int2 * inputs['chord'], c='g', label='Reconstructed')
+        # axat.set(xlabel='r/R' , ylabel='Absolute Thickness (m)')
+        # axat.legend()
+        # plt.show()
+        # print(np.flip(s_interp_rt))
+        # exit()
+
+
+
 
 class Blade_Lofted_Shape(ExplicitComponent):
     # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.
@@ -1177,7 +1220,7 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     # # Smoothing of the shapes
     # # Chord
     # chord_init      = wt_opt['blade.outer_shape_bem.chord']
-    # s_interp_c      = np.array([0.0, 0.05, 0.3, 0.6, 0.8, 0.9, 1.0 ])
+    # s_interp_c      = np.array([0.0, 0.05, 0.2, 0.35, 0.65, 0.9, 1.0 ])
     # f_interp1       = interp1d(nd_span,chord_init)
     # chord_int1      = f_interp1(s_interp_c)
     # f_interp2       = PchipInterpolator(s_interp_c,chord_int1)
@@ -1191,7 +1234,6 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     # axc.set(xlabel='r/R' , ylabel='Chord (m)')
     # fig_name = 'interp_chord.png'
     # axc.legend()
-
     # # Planform
     # le_init = wt_opt['blade.outer_shape_bem.pitch_axis']*wt_opt['blade.outer_shape_bem.chord']
     # te_init = (1. - wt_opt['blade.outer_shape_bem.pitch_axis'])*wt_opt['blade.outer_shape_bem.chord']
@@ -1210,7 +1252,7 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     # axpl.set(xlabel='r/R' , ylabel='Planform (m)')
     # axpl.legend()
     # plt.show()
-    # np.savetxt('temp.txt', le_int2/wt_opt['blade.outer_shape_bem.chord'])
+    # # np.savetxt('temp.txt', le_int2/wt_opt['blade.outer_shape_bem.chord'])
     # exit()
 
     

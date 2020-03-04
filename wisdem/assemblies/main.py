@@ -94,6 +94,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 exit('You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun.')
             wt_opt.driver.opt_settings['Major optimality tolerance'] = float(opt_options['driver']['tol'])
             wt_opt.driver.opt_settings['Major iterations limit']           = int(opt_options['driver']['max_iter'])
+            wt_opt.driver.opt_settings['Iterations limit']           = int(opt_options['driver']['max_function_calls'])
             wt_opt.driver.opt_settings['Major feasibility tolerance']= float(opt_options['driver']['tol'])
             # wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
             # wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
@@ -109,6 +110,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_objective('elastic.precomp.blade_mass', scaler = 1.e-4)
         elif opt_options['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
+        elif opt_options['merit_figure'] == 'blade_tip_deflection':
+            wt_opt.model.add_objective('tcons.tip_deflection_ratio')
+        elif opt_options['merit_figure'] == 'Cp':
+            wt_opt.model.add_objective('sse.powercurve.Cp_cutin', scaler = -1.)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
 

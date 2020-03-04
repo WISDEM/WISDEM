@@ -62,8 +62,8 @@ class RailTransport(ExplicitComponent):
         # Horizontal turns
         # Inputs
         blade_length            = inputs['blade_ref_axis'][-1,2]
-        if max(abs(inputs['blade_ref_axis'][:,1])) > 0. or max(abs(inputs['blade_ref_axis'][:,0])) > 0.:
-            print('The script currently only supports straight blades')
+        if max(abs(inputs['blade_ref_axis'][:,1])) > 0.:
+            exit('The script currently does not support swept blades')
 
         lateral_clearance       = inputs['lateral_clearance'][0]
         n_points                = 10000
@@ -351,7 +351,7 @@ class RailTransport(ExplicitComponent):
         if res.success == False:
             outputs['LV_constraint_8axle'] = 2.
             outputs['LV_constraint_4axle'] = 2.
-            print('The optimization cannot satisfy the constraint on max strains of 3500 mu eps')
+            exit('The optimization cannot satisfy the constraint on max strains of 3500 mu eps')
         else:
             
             q_final    = q_opt_h * res.x[:-1]
@@ -442,7 +442,7 @@ class RailTransport(ExplicitComponent):
             # # ax.plot(x_rail_h, y_rail_h,   color='dimgray', linestyle='--', label='Rail midline')
             # ax.plot(x_r_outer, y_r_outer,   color='dimgray', linestyle='--',linewidth=1., label='Railway')
             # ax.plot(x_r_inner, y_r_inner,   color='dimgray', linestyle='--',linewidth=1.,)
-            # ax.plot(x_outer, y_outer, color='dimgray', linestyle=':',linewidth=1., label='Lateral Clearance Envelope')
+            # ax.plot(x_outer, y_outer, color='dimgray', linestyle=':',linewidth=1., label='Lateral Clearance Profile')
             # ax.plot(x_inner, y_inner, color='dimgray', linestyle=':',linewidth=1.)
             # # ax.plot(x_blade_transport_rot, y_blade_transport_rot, label='Blade pitch axis')
             # ax.plot(ps_x_rot, ps_y_rot, color='tab:red', label='Blade Pressure Side')
@@ -797,7 +797,7 @@ class RailTransport(ExplicitComponent):
             # f, ax = plt.subplots(1,1,figsize=(5.3, 5.3))
             # ax.plot(x_rail_v*np.cos(ang) - y_rail_v*np.sin(ang) + off_x, y_rail_v*np.cos(ang) + x_rail_v*np.sin(ang) + off_y,   color='dimgray', linestyle='--', linewidth=1.,label='Railway')
             # ax.plot(x_deck_hill*np.cos(ang) - y_deck_hill*np.sin(ang) + off_x, y_deck_hill*np.cos(ang) + x_deck_hill*np.sin(ang) + off_y,   color='dimgray', linestyle=':',linewidth=1., label='Deck Line')
-            # ax.plot(x_upper_hill*np.cos(ang) - y_upper_hill*np.sin(ang) + off_x, y_upper_hill*np.cos(ang) + x_upper_hill*np.sin(ang) + off_y,   color='dimgray', linestyle='-.',linewidth=1., label='Vertical Clearance Envelope')
+            # ax.plot(x_upper_hill*np.cos(ang) - y_upper_hill*np.sin(ang) + off_x, y_upper_hill*np.cos(ang) + x_upper_hill*np.sin(ang) + off_y,   color='dimgray', linestyle='-.',linewidth=1., label='Vertical Clearance Profile')
             # ax.plot(le_x_transl*np.cos(ang) - le_y_transl*np.sin(ang) + off_x, le_y_transl*np.cos(ang) + le_x_transl*np.sin(ang) + off_y,   color='tab:red', label='Leading Edge')
             # ax.plot(te_x_transl*np.cos(ang) - te_y_transl*np.sin(ang) + off_x, te_y_transl*np.cos(ang) + te_x_transl*np.sin(ang) + off_y,   color='tab:blue', label='Trailing Edge')
             # plt.xlim(left=0, right=120)
@@ -811,7 +811,7 @@ class RailTransport(ExplicitComponent):
             # plt.subplots_adjust(bottom = 0.15, left = 0.18)
             # f.savefig('/Users/pbortolo/Dropbox/Writing/TORQUE2020/rail/' + 'v_hill_rot.pdf')
             # plt.show()
-            # # exit()
+            # exit()
 
             eps            = M_sag * dist_te_interp / EIedge_interp
 
@@ -871,7 +871,7 @@ class RailTransport(ExplicitComponent):
             # ax.plot(te_x_transl, te_y_transl, color='tab:blue', label='Trailing edge')
             # plt.xlim(left=-10, right=110)
             # plt.ylim(bottom=0, top=120)
-            # ax.legend(fontsize=fs)
+            # # ax.legend(fontsize=fs)
             # plt.xlabel('x [m]', fontsize=fs+2, fontweight='bold')
             # plt.ylabel('y [m]', fontsize=fs+2, fontweight='bold')
             # plt.xticks(fontsize=fs)
@@ -880,6 +880,7 @@ class RailTransport(ExplicitComponent):
             # plt.subplots_adjust(bottom = 0.15, left = 0.18)
             # f.savefig('/Users/pbortolo/Dropbox/Writing/TORQUE2020/rail/' + 'v_sag.pdf')
             # plt.show()
+            # exit()
 
             # ang = np.pi*0.53
             # off_y = 20
@@ -893,7 +894,7 @@ class RailTransport(ExplicitComponent):
             # ax.plot(te_x_transl*np.cos(ang) - te_y_transl*np.sin(ang) + off_x, te_y_transl*np.cos(ang) + te_x_transl*np.sin(ang) + off_y,   color='tab:blue', label='Trailing Edge')
             # plt.xlim(left=-20, right=100)
             # plt.ylim(bottom=0, top=120)
-            # ax.legend(fontsize=fs)
+            # # ax.legend(fontsize=fs)
             # plt.xlabel('x [m]', fontsize=fs+2, fontweight='bold')
             # plt.ylabel('y [m]', fontsize=fs+2, fontweight='bold')
             # plt.xticks(fontsize=fs)

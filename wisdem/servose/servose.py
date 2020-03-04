@@ -448,6 +448,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         self.add_output('ax_induct_cutin',   val=np.zeros(n_span),           desc='rotor axial induction at cut-in wind speed along blade span')
         self.add_output('tang_induct_cutin', val=np.zeros(n_span),           desc='rotor tangential induction at cut-in wind speed along blade span')
         self.add_output('aoa_cutin',val=np.zeros(n_span),       units='deg', desc='angle of attack distribution along blade span at cut-in wind speed')
+        self.add_output('Cp_cutin', val=0.0,                                 desc='power coefficient at cut-in wind speed')
         self.add_output('cl_cutin', val=np.zeros(n_span),                    desc='lift coefficient distribution along blade span at cut-in wind speed')
         self.add_output('cd_cutin', val=np.zeros(n_span),                    desc='drag coefficient distribution along blade span at cut-in wind speed')
 
@@ -716,6 +717,8 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         outputs['ax_induct_cutin']   = a_regII
         outputs['tang_induct_cutin'] = ap_regII
         outputs['aoa_cutin']         = alpha_regII
+        outputs['Cp_cutin']         = Cp_aero[0]
+        print(Cp_aero[0])
         outputs['cl_cutin']         = cl_regII
         outputs['cd_cutin']         = cd_regII
 
