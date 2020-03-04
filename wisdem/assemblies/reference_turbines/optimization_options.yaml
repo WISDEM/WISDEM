@@ -4,8 +4,8 @@ optimization_variables:
       twist:
         flag: False
         n_opt: 8
-        lower_bound: -5. # non-dimensional
-        upper_bound: 20. # non-dimensional
+        lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647] # dimensional [rad]
+        upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # dimensional [rad]
       chord:
         flag: False
         n_opt: 8
@@ -21,6 +21,7 @@ optimization_variables:
       spar_cap_ps:
         flag: False
         name: Spar_Cap_PS
+        equal_to_suction: True
         n_opt: 8
         min_gain: 0.2 # non-dimensional
         max_gain: 2.0 # non-dimensional
@@ -36,6 +37,11 @@ optimization_variables:
         n_opt: 8
         min_gain: 0.2 # non-dimensional
         max_gain: 2.0 # non-dimensional
+  control:
+    tsr:
+      flag: False
+      min_gain: 0.9 # non-dimensional
+      max_gain: 1.1 # non-dimensional
     dac:
       te_flap_ext:
         flag: False
@@ -46,9 +52,28 @@ optimization_variables:
         min_end: 0.3
         max_end: 1.0
 
-merit_figure: LCOE # 'AEP' - 'LCOE'
+merit_figure: LCOE # blade_mass - blade_tip_deflection - Cp - AEP - LCOE
 
 constraints:
+  blade:
+    strains_spar_cap_ss:
+      flag: False
+      max:  3500.e-6
+    strains_spar_cap_ps:
+      flag: False
+      max:  3500.e-6
+    tip_deflection:
+      flag: False
+    rail_transport:
+      flag: False
+      8_axle: False
+      4_axle: False
+    stall:
+      flag: False
+      margin: 0.05233 # 3 deg
+    chord:
+      flag: False
+      max: 4.75
 
 driver:
     tol: 1.e-6

@@ -8,6 +8,7 @@ from wisdem.rotorse.precomp import PreComp, Profile, Orthotropic2DMaterial, Comp
 import wisdem.pBeam._pBEAM as _pBEAM
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse.rotor_cost import blade_cost_model
+from wisdem.rotorse.rail_transport import RailTransport
 
 class RunPreComp(ExplicitComponent):
     # Openmdao component to run precomp and generate the elastic properties of a wind turbine blade
@@ -46,17 +47,14 @@ class RunPreComp(ExplicitComponent):
         self.add_discrete_input('n_blades',val=3,                   desc='Number of blades of the rotor.')
 
         # Inner structure
-        self.add_discrete_input('web_name', val=n_webs * [''],                          desc='1D array of the names of the shear webs defined in the blade structure.')
-        self.add_input('web_start_nd',   val=np.zeros((n_webs, n_span)),                desc='2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
-        self.add_input('web_end_nd',     val=np.zeros((n_webs, n_span)),                desc='2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
-        self.add_discrete_input('layer_web',  val=n_layers * [''],                      desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
-        self.add_discrete_input('layer_name', val=n_layers * [''],                      desc='1D array of the names of the layers modeled in the blade structure.')
-        self.add_discrete_input('layer_mat',  val=n_layers * [''],                      desc='1D array of the names of the materials of each layer modeled in the blade structure.')
-        self.add_discrete_input('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+        self.add_input('web_start_nd',      val=np.zeros((n_webs, n_span)),                 desc='2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
+        self.add_input('web_end_nd',        val=np.zeros((n_webs, n_span)),                 desc='2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
+        self.add_input('layer_web',         val=np.zeros(n_layers),                         desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0.')
+        self.add_input('definition_layer',  val=np.zeros(n_layers),                         desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
         self.add_input('layer_thickness',   val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_input('layer_start_nd',    val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_input('layer_end_nd',      val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_input('fiber_orientation',   val=np.zeros((n_layers, n_span)), units='deg',    desc='2D array of the orientation of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('fiber_orientation', val=np.zeros((n_layers, n_span)), units='deg',  desc='2D array of the orientation of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
 
         # Materials
         self.add_discrete_input('mat_name', val=n_mat * [''],                         desc='1D array of names of materials.')
@@ -78,6 +76,10 @@ class RunPreComp(ExplicitComponent):
         self.add_output('Tw_iner',      val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
         self.add_output('x_ec',         val=np.zeros(n_span), units='m',      desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
         self.add_output('y_ec',         val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
+
+        self.add_output('x_ec_abs',     val=np.zeros(n_span), units='m',      desc='x coordinate of the elastic center in the non-dimensional airfoil coordinate system')
+        self.add_output('y_ec_abs',     val=np.zeros(n_span), units='m',      desc='y coordinate of the elastic center in the non-dimensional airfoil coordinate system')
+
         self.add_output('flap_iner',    val=np.zeros(n_span), units='kg/m',   desc='Section flap inertia about the Y_G axis per unit length.')
         self.add_output('edge_iner',    val=np.zeros(n_span), units='kg/m',   desc='Section lag inertia about the X_G axis per unit length')
         # self.add_output('eps_crit_spar',    val=np.zeros(n_span), desc='critical strain in spar from panel buckling calculation')
@@ -216,7 +218,8 @@ class RunPreComp(ExplicitComponent):
             return sec
             ##############################
 
-
+        layer_name = self.options['analysis_options']['blade']['layer_name']
+        layer_mat  = self.options['analysis_options']['blade']['layer_mat']        
 
         upperCS = [None]*self.n_span
         lowerCS = [None]*self.n_span
@@ -229,13 +232,13 @@ class RunPreComp(ExplicitComponent):
         spar_cap_ss_var_ok = False
         spar_cap_ps_var_ok = False
         for i_layer in range(self.n_layers):
-            if discrete_inputs['layer_name'][i_layer] == self.te_ss_var:
+            if layer_name[i_layer] == self.te_ss_var:
                 te_ss_var_ok = True
-            if discrete_inputs['layer_name'][i_layer] == self.te_ps_var:
+            if layer_name[i_layer] == self.te_ps_var:
                 te_ps_var_ok = True
-            if discrete_inputs['layer_name'][i_layer] == self.spar_cap_ss_var:
+            if layer_name[i_layer] == self.spar_cap_ss_var:
                 spar_cap_ss_var_ok = True
-            if discrete_inputs['layer_name'][i_layer] == self.spar_cap_ps_var:
+            if layer_name[i_layer] == self.spar_cap_ps_var:
                 spar_cap_ps_var_ok = True
 
         if te_ss_var_ok == False:
@@ -340,7 +343,7 @@ class RunPreComp(ExplicitComponent):
 
             # time1 = time.time()
             for idx_sec in range(self.n_layers):            
-                if discrete_inputs['definition_layer'][idx_sec] != 10:
+                if inputs['definition_layer'][idx_sec] != 10:
                     if inputs['layer_thickness'][idx_sec,i] != 0.:
                         if inputs['layer_start_nd'][idx_sec,i] < loc_LE or inputs['layer_end_nd'][idx_sec,i] < loc_LE:
                             ss_idx.append(idx_sec)
@@ -348,7 +351,7 @@ class RunPreComp(ExplicitComponent):
                                 # ss_start_nd_arc.append(sec['start_nd_arc']['values'][i])
                                 ss_end_nd_arc_temp = float(spline_arc2xnd(inputs['layer_start_nd'][idx_sec,i]))
                                 if ss_end_nd_arc_temp > 1 or ss_end_nd_arc_temp < 0:
-                                    exit('Error in the definition of material ' + discrete_inputs['layer_name'][idx_sec] + '. It cannot fit in the section number ' + str(i) + ' at span location ' + str(inputs['r'][i]/inputs['r'][-1]*100.) + ' %.')
+                                    exit('Error in the definition of material ' + layer_name[idx_sec] + '. It cannot fit in the section number ' + str(i) + ' at span location ' + str(inputs['r'][i]/inputs['r'][-1]*100.) + ' %.')
                                 if ss_end_nd_arc_temp == profile_i_rot[0,0] and profile_i_rot[0,0] != 1.:
                                     ss_end_nd_arc_temp = 1.
                                 ss_end_nd_arc.append(ss_end_nd_arc_temp)
@@ -378,17 +381,13 @@ class RunPreComp(ExplicitComponent):
                             else:
                                 ps_start_nd_arc.append(float(spline_arc2xnd(inputs['layer_start_nd'][idx_sec,i])))
                 else: 
-                    target_name  = discrete_inputs['layer_web'][idx_sec]
-                    for i_web in range(self.n_webs):
-                        if target_name == discrete_inputs['web_name'][i_web]:
-                            target_idx = i_web
-                            break
+                    target_idx  = inputs['layer_web'][idx_sec] - 1
 
                     if inputs['layer_thickness'][idx_sec,i] != 0.:
                         web_idx.append(idx_sec)
 
-                        start_nd_arc = float(spline_arc2xnd(inputs['web_start_nd'][target_idx,i]))
-                        end_nd_arc   = float(spline_arc2xnd(inputs['web_end_nd'][target_idx,i]))
+                        start_nd_arc = float(spline_arc2xnd(inputs['web_start_nd'][int(target_idx),i]))
+                        end_nd_arc   = float(spline_arc2xnd(inputs['web_end_nd'][int(target_idx),i]))
 
                         web_start_nd_arc.append(start_nd_arc)
                         web_end_nd_arc.append(end_nd_arc)
@@ -400,10 +399,10 @@ class RunPreComp(ExplicitComponent):
             if np.min([ss_start_nd_arc, ss_end_nd_arc]) < 0 or np.max([ss_start_nd_arc, ss_end_nd_arc]) > 1:
                 print('Error in the layer definition at station number ' + str(i))
                 exit()
-            upperCS[i], region_loc_ss = region_stacking(i, ss_idx, ss_start_nd_arc, ss_end_nd_arc, discrete_inputs['layer_name'],inputs['layer_thickness'][:,i], inputs['fiber_orientation'][:,i], discrete_inputs['layer_mat'], material_dict, materials, region_loc_ss)
-            lowerCS[i], region_loc_ps = region_stacking(i, ps_idx, ps_start_nd_arc, ps_end_nd_arc, discrete_inputs['layer_name'],inputs['layer_thickness'][:,i], inputs['fiber_orientation'][:,i], discrete_inputs['layer_mat'], material_dict, materials, region_loc_ps)
+            upperCS[i], region_loc_ss = region_stacking(i, ss_idx, ss_start_nd_arc, ss_end_nd_arc, layer_name, inputs['layer_thickness'][:,i], inputs['fiber_orientation'][:,i], layer_mat, material_dict, materials, region_loc_ss)
+            lowerCS[i], region_loc_ps = region_stacking(i, ps_idx, ps_start_nd_arc, ps_end_nd_arc, layer_name, inputs['layer_thickness'][:,i], inputs['fiber_orientation'][:,i], layer_mat, material_dict, materials, region_loc_ps)
             if len(web_idx)>0 or flatback:
-                websCS[i] = web_stacking(i, web_idx, web_start_nd_arc, web_end_nd_arc, inputs['layer_thickness'][:,i], inputs['fiber_orientation'][:,i], discrete_inputs['layer_mat'], material_dict, materials, flatback, upperCS[i])
+                websCS[i] = web_stacking(i, web_idx, web_start_nd_arc, web_end_nd_arc, inputs['layer_thickness'][:,i], inputs['fiber_orientation'][:,i], layer_mat, material_dict, materials, flatback, upperCS[i])
             else:
                 websCS[i] = CompositeSection([], [], [], [], [], [])
         
@@ -417,6 +416,9 @@ class RunPreComp(ExplicitComponent):
                        inputs['precurve'], inputs['presweep'], profile, materials, upperCS, lowerCS, websCS, 
                        sector_idx_strain_spar_cap_ps, sector_idx_strain_spar_cap_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
         EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner = beam.sectionProperties()
+
+        outputs['x_ec_abs'] = beam.x_ec_nose - inputs['pitch_axis'] * inputs['chord']
+        outputs['y_ec_abs'] = beam.y_ec_nose
 
         # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_cap_ss)
         # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_strain_te_ss)
@@ -679,6 +681,9 @@ class RotorElasticity(Group):
         opt_options     = self.options['opt_options']
 
         # Get elastic properties by running precomp
-        self.add_subsystem('precomp',   RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep','x_ec_abs', 'y_ec_abs'])
         # Compute frequencies
         self.add_subsystem('curvefem', RunCurveFEM(analysis_options = analysis_options), promotes=['r','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        # Check rail transportabiliy
+        if opt_options['constraints']['blade']['rail_transport']['flag']:
+            self.add_subsystem('rail',     RailTransport(analysis_options = analysis_options), promotes=['EA','EIxx','EIyy','GJ','rhoA','rhoJ','x_ec_abs', 'y_ec_abs'])
