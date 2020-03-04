@@ -13,8 +13,13 @@ import pytest
 from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.library import initialize_library, extract_library_specs
-from wisdem.orbit.manager import PhaseNotFound, WeatherProfileError
-from wisdem.orbit.simulation.exceptions import MissingInputs
+from wisdem.orbit.core.exceptions import (
+    MissingInputs,
+    PhaseNotFound,
+    WeatherProfileError,
+)
+
+weather_df = pd.DataFrame(test_weather).set_index("datetime")
 
 initialize_library(pytest.library)
 config = extract_library_specs("config", "project_manager")
@@ -59,7 +64,7 @@ def test_exceptions():
     }
 
     with pytest.raises(WeatherProfileError):
-        project = ProjectManager(bad_dates, weather=test_weather)
+        project = ProjectManager(bad_dates, weather=weather_df)
         project.run_project()
 
 
@@ -111,17 +116,16 @@ def test_expected_config_merging():
     }
 
 
-@pytest.mark.parametrize("weather", (None, test_weather))
+@pytest.mark.parametrize("weather", (None, weather_df))
 def test_complete_run(weather):
 
     project = ProjectManager(config, weather=weather)
     project.run_project()
 
-    assert len(project._output_dfs) == 2
-    assert isinstance(project.project_dataframe, pd.DataFrame)
+    actions = pd.DataFrame(project.project_actions)
 
     phases = ["MonopileInstallation", "TurbineInstallation"]
-    assert all(p in list(project.project_dataframe["phase"]) for p in phases)
+    assert all(p in list(actions["phase"]) for p in phases)
 
 
 @pytest.mark.parametrize(
@@ -146,7 +150,7 @@ def test_phase_start_dates(m_start, t_start):
     project = ProjectManager(config_with_start_dates)
     project.run_project()
 
-    df = project.project_dataframe.copy()
+    df = pd.DataFrame(project.project_actions)
     _fmt = "%m/%d/%Y"
     _target_diff = (
         datetime.strptime(t_start, _fmt) - datetime.strptime(m_start, _fmt)
@@ -169,10 +173,10 @@ def test_phase_start_dates_with_weather():
         "TurbineInstallation": t_start,
     }
 
-    project = ProjectManager(config_with_start_dates, weather=test_weather)
+    project = ProjectManager(config_with_start_dates, weather=weather_df)
     project.run_project()
 
-    df = project.project_dataframe.copy()
+    df = pd.DataFrame(project.project_actions)
     _fmt = "%m/%d/%Y"
     _target_diff = (
         datetime.strptime(t_start, _fmt) - datetime.strptime(m_start, _fmt)
@@ -205,11 +209,15 @@ def test_duplicate_phase_simulations():
     project = ProjectManager(config_with_duplicates)
     project.run_project()
 
-    df = project.project_dataframe.groupby(["phase", "action"]).count()["time"]
+    df = (
+        pd.DataFrame(project.project_actions)
+        .groupby(["phase", "action"])
+        .count()["time"]
+    )
 
-    assert df.loc[("MonopileInstallation_1", "DriveMonopile")] == 5
-    assert df.loc[("MonopileInstallation_2", "DriveMonopile")] == 5
-    assert df.loc[("TurbineInstallation", "AttachTowerSection")] == 10
+    assert df.loc[("MonopileInstallation_1", "Drive Monopile")] == 5
+    assert df.loc[("MonopileInstallation_2", "Drive Monopile")] == 5
+    assert df.loc[("TurbineInstallation", "Attach Tower Section")] == 10
 
 
 def test_design_phases():
@@ -237,7 +245,7 @@ def test_design_phases():
         "TurbineInstallation": "05/01/2010",
     }
 
-    project = ProjectManager(config_with_design, weather=test_weather)
+    project = ProjectManager(config_with_design, weather=weather_df)
     project.run_project()
 
 
