@@ -305,8 +305,8 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_GS_angles'] = controller.pitch_op_pc
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_GS_KP'] = controller.pc_gain_schedule.Kp
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_GS_KI'] = controller.pc_gain_schedule.Ki
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_MaxRat'] = controller.max_pitch
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_MinRat'] = controller.min_pitch
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_MaxPit'] = controller.max_pitch
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_MinPit'] = controller.min_pitch
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_MinOMSpd'] = controller.vs_minspd
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_Rgn2K'] = controller.vs_rgn2K
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_RefSpd'] = controller.vs_refspd
@@ -331,8 +331,8 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['v_rated'] = inputs['v_rated'][0]
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq']  = [inputs['flap_freq'][0] * 2 * np.pi / 3., 0.7]
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_LPFCornerFreq']  = inputs['edge_freq'][0] * 2 * np.pi / 4.
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['twr_freq'] = 0.0 # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['ptfm_freq'] = 0.0 # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_NotchCornerFreq'] = 0.0    # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlCornerFreq'] = [0.0, 0.0] # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_MaxRat'] = WISDEM_turbine.max_pitch_rate
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['PC_MinRat'] = -WISDEM_turbine.max_pitch_rate
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['VS_MaxRat'] = WISDEM_turbine.max_torque_rate
