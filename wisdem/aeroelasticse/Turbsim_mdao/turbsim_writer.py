@@ -117,14 +117,34 @@ class TurbsimBuilder(turbsiminputs):
 
          # Spatial Coherence Parameters
          tsinp.write('\n')
-         tsinp.write('--------Spatial Coherence Parameters----------------------------\n')
-         tsinp.write('{!s:<12}   SCMod1           - u-component coherence model ("GENERAL", "IEC", "API", "NONE", or "default")\n'.format(self.turbsim_vt.spatialcoherance.SCMod1))
-         tsinp.write('{!s:<12}   SCMod2           - v-component coherence model ("GENERAL", "IEC", "NONE", or "default")\n'.format(self.turbsim_vt.spatialcoherance.SCMod2))
-         tsinp.write('{!s:<12}   SCMod3           - w-component coherence model ("GENERAL", "IEC", "NONE", or "default")\n'.format(self.turbsim_vt.spatialcoherance.SCMod3))
-         tsinp.write('{:<5.2f}  {:<5.2f}   InCDec1        - u-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(float(self.turbsim_vt.spatialcoherance.InCDec1[0]), float(self.turbsim_vt.spatialcoherance.InCDec1[1])))
-         tsinp.write('{:<5.2f}  {:<5.2f}   InCDec2        - v-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(float(self.turbsim_vt.spatialcoherance.InCDec2[0]), float(self.turbsim_vt.spatialcoherance.InCDec2[1])))
-         tsinp.write('{:<5.2f}  {:<5.2f}   InCDec3        - w-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(float(self.turbsim_vt.spatialcoherance.InCDec3[0]), float(self.turbsim_vt.spatialcoherance.InCDec3[1])))
-         tsinp.write('{!s:<12}   CohExp           - Coherence exponent for general model [-] (or "default")\n'.format(self.turbsim_vt.spatialcoherance.CohExp))
+         tsinp.write(
+             '--------Spatial Coherence Parameters----------------------------\n')
+         tsinp.write('{!s:<12}   SCMod1           - u-component coherence model ("GENERAL", "IEC", "API", "NONE", or "default")\n'.format(
+             self.turbsim_vt.spatialcoherance.SCMod1))
+         tsinp.write('{!s:<12}   SCMod2           - v-component coherence model ("GENERAL", "IEC", "NONE", or "default")\n'.format(
+             self.turbsim_vt.spatialcoherance.SCMod2))
+         tsinp.write('{!s:<12}   SCMod3           - w-component coherence model ("GENERAL", "IEC", "NONE", or "default")\n'.format(
+             self.turbsim_vt.spatialcoherance.SCMod3))
+         if not type(self.turbsim_vt.spatialcoherance.InCDec1) is str:
+            tsinp.write('{:<5.2f}  {:<5.2f}   InCDec1        - u-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(
+                float(self.turbsim_vt.spatialcoherance.InCDec1[0]), float(self.turbsim_vt.spatialcoherance.InCDec1[1])))
+         else:
+            tsinp.write('{!s:<12}   InCDec1        - u-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(
+                self.turbsim_vt.spatialcoherance.InCDec1))
+         if not type(self.turbsim_vt.spatialcoherance.InCDec2) is str:
+            tsinp.write('{:<5.2f}  {:<5.2f}   InCDec2        - v-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(
+                float(self.turbsim_vt.spatialcoherance.InCDec2[0]), float(self.turbsim_vt.spatialcoherance.InCDec2[1])))
+         else:
+            tsinp.write('{!s:<12}   InCDec2        - v-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(
+                self.turbsim_vt.spatialcoherance.InCDec2))
+         if not type(self.turbsim_vt.spatialcoherance.InCDec3) is str:
+            tsinp.write('{:<5.2f}  {:<5.2f}   InCDec3        - w-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(
+                float(self.turbsim_vt.spatialcoherance.InCDec3[0]), float(self.turbsim_vt.spatialcoherance.InCDec3[1])))
+         else:
+            tsinp.write('{!s:<12}   InCDec3        - w-component coherence parameters for general or IEC models [-, m^-1] (e.g. "10.0  0.3e-3" in quotes) (or "default")\n'.format(
+                self.turbsim_vt.spatialcoherance.InCDec3))
+         tsinp.write('{!s:<12}   CohExp           - Coherence exponent for general model [-] (or "default")\n'.format(
+             self.turbsim_vt.spatialcoherance.CohExp))
 
          # Coherent Turbulence Scaling Parameters
          tsinp.write('\n')
