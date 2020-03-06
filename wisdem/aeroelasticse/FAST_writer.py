@@ -1085,6 +1085,24 @@ class InputWriter_OpenFAST(InputWriter_Common):
                 cd = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cd'])
                 cm = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cm'])
                 cpmin = np.asarray(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Cpmin'])
+
+                if alpha[0] != -180.:
+                    print('Airfoil number ' + str(afi) + ' tab number ' + str(tab) + ' has the min angle of attack different than -180 deg, and equal to ' + str(alpha[0]) + ' deg. This is changed to -180 deg now.')
+                    alpha[0] = -180.
+                if alpha[-1] != 180.:
+                    print('Airfoil number ' + str(afi) + ' tab number ' + str(tab) + ' has the max angle of attack different than 180 deg, and equal to ' + str(alpha[0]) + ' deg. This is changed to 180 deg now.')
+                    alpha[-1] = 180.
+                if cl[0] != cl[-1]:
+                    print('Airfoil number ' + str(afi) + ' tab number ' + str(tab) + ' has the lift coefficient different between +-180 deg. This is changed to be the same now.')
+                    cl[0] = cl[-1]
+                if cd[0] != cd[-1]:
+                    print('Airfoil number ' + str(afi) + ' tab number ' + str(tab) + ' has the drag coefficient different between +-180 deg. This is changed to be the same now.')
+                    cd[0] = cd[-1]
+                if cm[0] != cm[-1]:
+                    print('Airfoil number ' + str(afi) + ' tab number ' + str(tab) + ' has the moment coefficient different between +-180 deg. This is changed to be the same now.')
+                    cm[0] = cm[-1]
+
+
                 polar = np.column_stack((alpha, cl, cd, cm, cpmin))
                 polar = polar[:,polar_map]
 
