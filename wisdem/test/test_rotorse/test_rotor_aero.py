@@ -5,6 +5,8 @@ import wisdem.rotorse.rotor_aeropower as ra
 import openmdao.api as om
 import copy
 import time
+import os
+ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'regulation.npz'
 
 class TestRotorAero(unittest.TestCase):
     def setUp(self):
@@ -15,7 +17,7 @@ class TestRotorAero(unittest.TestCase):
 
     def testRegulationTrajectory(self):
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load('regulation.npz')
+        npzfile = np.load(ARCHIVE)
         self.inputs['airfoils_aoa'] = npzfile['aoa']
         self.inputs['airfoils_Re'] = npzfile['Re']
         self.inputs['airfoils_cl'] = npzfile['cl']
@@ -232,7 +234,7 @@ class TestRotorAero(unittest.TestCase):
         
     def testRegulationTrajectoryNoRegion3(self):
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load('regulation.npz')
+        npzfile = np.load(ARCHIVE)
         self.inputs['airfoils_aoa'] = npzfile['aoa']
         self.inputs['airfoils_Re'] = npzfile['Re']
         self.inputs['airfoils_cl'] = npzfile['cl']
@@ -343,7 +345,7 @@ class TestRotorAero(unittest.TestCase):
         
     def testRegulationTrajectoryNEW(self):
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load('regulation.npz')
+        npzfile = np.load(ARCHIVE)
         self.inputs['airfoils_aoa'] = npzfile['aoa']
         self.inputs['airfoils_Re'] = npzfile['Re']
         self.inputs['airfoils_cl'] = npzfile['cl']
@@ -560,7 +562,7 @@ class TestRotorAero(unittest.TestCase):
         
     def testRegulationTrajectoryNEWNoRegion3(self):
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load('regulation.npz')
+        npzfile = np.load(ARCHIVE)
         self.inputs['airfoils_aoa'] = npzfile['aoa']
         self.inputs['airfoils_Re'] = npzfile['Re']
         self.inputs['airfoils_cl'] = npzfile['cl']
@@ -671,7 +673,7 @@ class TestRotorAero(unittest.TestCase):
 
     def test_timing_comparison(self):
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load('regulation.npz')
+        npzfile = np.load(ARCHIVE)
         self.inputs['airfoils_aoa'] = npzfile['aoa']
         self.inputs['airfoils_Re'] = npzfile['Re']
         self.inputs['airfoils_cl'] = npzfile['cl']
@@ -747,7 +749,7 @@ class TestRotorAero(unittest.TestCase):
 
     def test_simple_design_comparison(self):
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load('regulation.npz')
+        npzfile = np.load(ARCHIVE)
         self.inputs['airfoils_aoa'] = npzfile['aoa']
         self.inputs['airfoils_Re'] = npzfile['Re']
         self.inputs['airfoils_cl'] = npzfile['cl']
