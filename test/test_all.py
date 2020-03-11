@@ -11,4 +11,3 @@ mytests = [testpath + m for m in test_all.valid_tests]
 if __name__ == '__main__':
     pytest.main(mytests)
     #unittest.TextTestRunner().run(test_all.suite())
-

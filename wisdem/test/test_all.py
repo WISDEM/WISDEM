@@ -30,7 +30,7 @@ def suite():
         test_plant_financese.test_all.suite(),
         test_pyframe3dd.test_all.suite(),
         #test_pymap.test_all.suite(),
-        #test_rotorse.test_all.suite(),
+        test_rotorse.test_all.suite(),
         test_towerse.test_all.suite(),
         test_turbinecostsse.test_all.suite()
         #test_wisdem.test_all.suite()                                 
@@ -50,7 +50,7 @@ valid_tests = ['test_orbit',
                #'test_drivetrainse',
                #'test_nrelcsm',
                #'test_pymap',
-               #'test_rotorse',
+               'test_rotorse',
                #'test_wisdem',
                'test_turbinecostsse']
 
