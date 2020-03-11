@@ -121,9 +121,18 @@ class TurbsimBuilder(turbsiminputs):
          tsinp.write("{}\n".format(self.turbsim_vt.spatialcoherance.SCMod1))
          tsinp.write("{}\n".format(self.turbsim_vt.spatialcoherance.SCMod2))
          tsinp.write("{}\n".format(self.turbsim_vt.spatialcoherance.SCMod3))
-         tsinp.write('"%f %f"\n'%(float(self.turbsim_vt.spatialcoherance.InCDec1[0]), float(self.turbsim_vt.spatialcoherance.InCDec1[1])))
-         tsinp.write('"%f %f"\n'%(float(self.turbsim_vt.spatialcoherance.InCDec2[0]), float(self.turbsim_vt.spatialcoherance.InCDec2[1])))
-         tsinp.write('"%f %f"\n'%(float(self.turbsim_vt.spatialcoherance.InCDec3[0]), float(self.turbsim_vt.spatialcoherance.InCDec3[1])))
+         if not type(self.turbsim_vt.spatialcoherance.InCDec1) is str:
+             tsinp.write('"%f %f"\n'%(float(self.turbsim_vt.spatialcoherance.InCDec1[0]), float(self.turbsim_vt.spatialcoherance.InCDec1[1])))
+         else:
+             tsinp.write("{}\n".format(self.turbsim_vt.spatialcoherance.InCDec1))
+         if not type(self.turbsim_vt.spatialcoherance.InCDec2) is str:
+             tsinp.write('"%f %f"\n'%(float(self.turbsim_vt.spatialcoherance.InCDec2[0]), float(self.turbsim_vt.spatialcoherance.InCDec2[1])))
+         else:
+             tsinp.write("{}\n".format(self.turbsim_vt.spatialcoherance.InCDec2))
+         if not type(self.turbsim_vt.spatialcoherance.InCDec3) is str:
+             tsinp.write('"%f %f"\n'%(float(self.turbsim_vt.spatialcoherance.InCDec3[0]), float(self.turbsim_vt.spatialcoherance.InCDec3[1])))
+         else:
+             tsinp.write("{}\n".format(self.turbsim_vt.spatialcoherance.InCDec3))
          tsinp.write("{}\n".format(self.turbsim_vt.spatialcoherance.CohExp))
 
          # Coherent Turbulence Scaling Parameters

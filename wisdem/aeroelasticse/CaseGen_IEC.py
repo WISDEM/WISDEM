@@ -55,6 +55,7 @@ class CaseGen_IEC():
         self.parallel_windfile_gen       = False
         self.cores                       = 0
         self.overwrite                   = False
+        self.flag_enlarge_grid           = False
 
         self.mpi_run                     = False
         self.comm_map_down               = []
@@ -124,6 +125,7 @@ class CaseGen_IEC():
             iecwind.Turbsim_exe      = self.Turbsim_exe
             iecwind.debug_level      = self.debug_level
             iecwind.overwrite        = self.overwrite
+            iecwind.flag_enlarge_grid = self.flag_enlarge_grid
 
             # Set DLC specific settings
             iecwind_ex = pyIECWind_extreme()
@@ -239,8 +241,11 @@ class CaseGen_IEC():
             case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
             case_inputs_i[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
 
+            print(self.dlc_inputs['Yaw'][i])
             if len(self.dlc_inputs['Yaw'][i]) > 0:
-                    case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':self.dlc_inputs['Yaw'][i], 'group':2}
+                case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':self.dlc_inputs['Yaw'][i], 'group':2}
+            else:
+                case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':[0.], 'group':0}
 
             # Set FAST variables from inital conditions
             if self.init_cond:

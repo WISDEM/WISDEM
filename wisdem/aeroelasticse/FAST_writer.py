@@ -7,6 +7,12 @@ from functools import reduce
 from wisdem.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from wisdem.aeroelasticse.FAST_vars import FstModel
 
+try:
+    from ROSCO_toolbox import turbine as ROSCO_turbine
+    from ROSCO_toolbox import utilities as ROSCO_utilities
+    ROSCO = True
+except:
+    ROSCO = False
 
 
 # Builder
@@ -330,7 +336,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         elif self.fst_vt['Fst']['CompAero'] == 2:
             self.write_AeroDyn15()
         
-        if 'DISCON_in' in self.fst_vt:
+        if 'DISCON_in' in self.fst_vt and ROSCO:
             self.write_DISCON_in()
         self.write_ServoDyn()
         
@@ -340,6 +346,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
             self.write_SubDyn()
         if self.fst_vt['Fst']['CompMooring'] == 1:
             self.write_MAP()
+        elif self.fst_vt['Fst']['CompMooring'] == 3:
+            self.write_MoorDyn()
 
         if self.fst_vt['Fst']['CompElast'] == 2:
             self.write_BeamDyn()
@@ -1218,117 +1226,100 @@ class InputWriter_OpenFAST(InputWriter_Common):
     def write_DISCON_in(self):
 
         # Generate Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
-        # file version for NREL Reference OpenSource Controller tuning logic on 11/01/19
+        # file version for NREL Reference OpenSource Controller v1.0.0
 
-        # self.fst_vt['ServoDyn']['DLL_InFile'] = self.FAST_namingOut + '_DISCON.IN'
-        self.fst_vt['ServoDyn']['DLL_InFile'] = 'DISCON.IN'
+        # Fill controller and turbine objects for ROSCO
+        # - controller
+        controller = type('', (), {})()
+        controller.pc_gain_schedule     = type('', (), {})()
+        controller.vs_gain_schedule     = type('', (), {})()
+        controller.LoggingLevel         = self.fst_vt['DISCON_in']['LoggingLevel']
+        controller.F_LPFType            = int(self.fst_vt['DISCON_in']['F_LPFType'])
+        controller.F_NotchType          = int(self.fst_vt['DISCON_in']['F_NotchType'])
+        controller.IPC_ControlMode      = int(self.fst_vt['DISCON_in']['IPC_ControlMode'])
+        controller.VS_ControlMode       = int(self.fst_vt['DISCON_in']['VS_ControlMode'])
+        controller.PC_ControlMode       = int(self.fst_vt['DISCON_in']['PC_ControlMode'])
+        controller.Y_ControlMode        = int(self.fst_vt['DISCON_in']['Y_ControlMode'])
+        controller.SS_Mode              = int(self.fst_vt['DISCON_in']['SS_Mode'])
+        controller.WE_Mode              = int(self.fst_vt['DISCON_in']['WE_Mode'])
+        controller.PS_Mode              = int(self.fst_vt['DISCON_in']['PS_Mode'])
+        controller.SD_Mode              = int(self.fst_vt['DISCON_in']['SD_Mode'])
+        controller.Fl_Mode              = int(self.fst_vt['DISCON_in']['Fl_Mode'])
+        controller.Flp_Mode             = int(self.fst_vt['DISCON_in']['Flp_Mode'])
+        controller.F_LPFDamping         = self.fst_vt['DISCON_in']['F_LPFDamping']
+        controller.ss_cornerfreq        = self.fst_vt['DISCON_in']['F_SSCornerFreq']
+        controller.pitch_op_pc          = self.fst_vt['DISCON_in']['PC_GS_angles']
+        controller.pc_gain_schedule.Kp  = self.fst_vt['DISCON_in']['PC_GS_KP']
+        controller.pc_gain_schedule.Ki  = self.fst_vt['DISCON_in']['PC_GS_KI']
+        controller.max_pitch            = self.fst_vt['DISCON_in']['PC_MaxPit']
+        controller.min_pitch            = self.fst_vt['DISCON_in']['PC_MinPit']
+        controller.vs_minspd            = self.fst_vt['DISCON_in']['VS_MinOMSpd']
+        controller.vs_rgn2K             = self.fst_vt['DISCON_in']['VS_Rgn2K']
+        controller.vs_refspd            = self.fst_vt['DISCON_in']['VS_RefSpd']
+        controller.vs_gain_schedule.Kp  = self.fst_vt['DISCON_in']['VS_KP']
+        controller.vs_gain_schedule.Ki  = self.fst_vt['DISCON_in']['VS_KI']
+        controller.TSR_operational      = self.fst_vt['DISCON_in']['VS_TSRopt']
+        controller.ss_vsgain            = self.fst_vt['DISCON_in']['SS_VSGain']
+        controller.ss_pcgain            = self.fst_vt['DISCON_in']['SS_PCGain']
+        controller.v                    = self.fst_vt['DISCON_in']['WE_FOPoles_v']
+        controller.A                    = self.fst_vt['DISCON_in']['WE_FOPoles']
+        # controller.ps_wind_speeds = self.fst_vt['DISCON_in']['ps_wind_speeds']
+        controller.ps_min_bld_pitch     = self.fst_vt['DISCON_in']['PS_BldPitchMin']
+        controller.sd_maxpit            = self.fst_vt['DISCON_in']['SD_MaxPit']
+        controller.sd_cornerfreq        = self.fst_vt['DISCON_in']['SD_CornerFreq']
+        controller.Kp_float             = self.fst_vt['DISCON_in']['Fl_Kp']
+        controller.Kp_flap              = self.fst_vt['DISCON_in']['Flp_Kp']
+        controller.Ki_flap              = self.fst_vt['DISCON_in']['Flp_Ki']
+        controller.flp_angle            = self.fst_vt['DISCON_in']['Flp_Angle']
+        controller.flp_maxpit           = self.fst_vt['DISCON_in']['Flp_MaxPit']
+
+        turbine = type('', (), {})()
+        turbine.Cp = type('', (), {})()
+        turbine.Ct = type('', (), {})()
+        turbine.Cq = type('', (), {})()
+        turbine.rotor_radius            = self.fst_vt['DISCON_in']['WE_BladeRadius']
+        turbine.v_rated                 = self.fst_vt['DISCON_in']['v_rated']
+        turbine.bld_flapwise_freq       = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0] * 3.
+        turbine.bld_edgewise_freq       = self.fst_vt['DISCON_in']['F_LPFCornerFreq'] * 4.
+        turbine.twr_freq                = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
+        turbine.ptfm_freq               = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
+        turbine.max_pitch_rate          = self.fst_vt['DISCON_in']['PC_MaxRat']
+        turbine.min_pitch_rate          = self.fst_vt['DISCON_in']['PC_MinRat']
+        turbine.max_torque_rate         = self.fst_vt['DISCON_in']['VS_MaxRat']
+        turbine.rated_rotor_speed       = self.fst_vt['DISCON_in']['PC_RefSpd'] / self.fst_vt['DISCON_in']['WE_GearboxRatio']
+        turbine.rated_power             = self.fst_vt['DISCON_in']['VS_RtPwr']
+        turbine.rated_torque            = self.fst_vt['DISCON_in']['VS_RtTq']
+        turbine.max_torque              = self.fst_vt['DISCON_in']['VS_MaxTq']
+        turbine.TSR_operational         = self.fst_vt['DISCON_in']['VS_TSRopt']
+        turbine.rho                     = self.fst_vt['DISCON_in']['WE_RhoAir']
+        turbine.Ng                      = self.fst_vt['DISCON_in']['WE_GearboxRatio']
+        turbine.GenEff                  = self.fst_vt['ServoDyn']['GenEff']
+        turbine.J                       = self.fst_vt['DISCON_in']['WE_Jtot']
+        turbine.Cp                      = self.fst_vt['DISCON_in']['Cp']
+        turbine.Ct                      = self.fst_vt['DISCON_in']['Ct']
+        turbine.Cq                      = self.fst_vt['DISCON_in']['Cq']
+        turbine.Cp_table                = self.fst_vt['DISCON_in']['Cp_table']
+        turbine.Ct_table                = self.fst_vt['DISCON_in']['Ct_table']
+        turbine.Cq_table                = self.fst_vt['DISCON_in']['Cq_table']
+        turbine.pitch_initial_rad       = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.TSR_initial             = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.Cp.pitch_initial_rad    = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.Cp.TSR_initial          = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.Ct.pitch_initial_rad    = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.Ct.TSR_initial          = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.Cq.pitch_initial_rad    = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
+        turbine.Cq.TSR_initial          = self.fst_vt['DISCON_in']['Cp_TSR_initial']
+        turbine.TurbineName             = self.fst_vt['description']
+        
+        # Define DISCON infile paths
+        self.fst_vt['ServoDyn']['DLL_InFile'] = self.FAST_namingOut + '_DISCON.IN'
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
-        f = open(discon_in_file, 'w')
-
-        f.write('! Controller parameter input file\n')
-        f.write('!    - File written using NREL Reference OpenSource Controller tuning logic on 11/01/19\n')
-        f.write('! Generated with AeroElasticSE FAST driver\n')
-        f.write('!------- DEBUG ------------------------------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['LoggingLevel'], '! LoggingLevel', '- {0: write no debug files, 1: write standard output .dbg-file, 2: write standard output .dbg-file and complete avrSWAP-array .dbg2-file}\n'))
-        f.write('\n!------- CONTROLLER FLAGS -------------------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFType'], '! F_LPFType', '- {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_NotchType'], '! F_NotchType', '- Notch on the measured generator speed {0: disable, 1: enable}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['IPC_ControlMode'], '! IPC_ControlMode', '- Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0: off, 1: 1P reductions, 2: 1P+2P reductions}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_ControlMode'], '! VS_ControlMode', '- Generator torque control mode in above rated conditions {0: constant torque, 1: constant power, 2: TSR tracking PI control}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_ControlMode'], '! PC_ControlMode', '- Blade pitch control mode {0: No pitch, fix to fine pitch, 1: active PI blade pitch control}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_ControlMode'], '! Y_ControlMode', '- Yaw control mode {0: no yaw control, 1: yaw rate control, 2: yaw-by-IPC}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SS_Mode'], '! SS_Mode', '- Setpoint Smoother mode {0: no setpoint smoothing, 1: introduce setpoint smoothing}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_Mode'], '! WE_Mode', '- Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PS_Mode'], '! PS_Mode', '- Peak shaving mode {0: no peak shaving, 1: implement peak shaving}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_Mode'], '! SD_Mode', '- Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Mode'], '! Fl_Mode', '- Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}\n'))
-        f.write('\n!------- FILTERS ----------------------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFCornerFreq'], '! F_LPFCornerFreq', '- Corner frequency (-3dB point) in the low-pass filters, [rad/s]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_LPFDamping'], '! F_LPFDamping', '- Damping coefficient [used only when F_FilterType = 2]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_NotchCornerFreq'], '! F_NotchCornerFreq', '- Natural frequency of the notch filter, [rad/s]\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_NotchBetaNumDen']]), '! F_NotchBetaNumDen', '- Two notch damping values (numerator and denominator, resp) - determines the width and depth of the notch, [-]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['F_SSCornerFreq'], '! F_SSCornerFreq', '- Corner frequency (-3dB point) in the first order low pass filter for the setpoint smoother, [rad/s].\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['F_FlCornerFreq']]), '! F_FlCornerFreq', '- Corner frequency and damping in the second order low pass filter of the tower-top fore-aft motion for floating feedback control [rad/s, -]\n'))
-        f.write('\n!------- BLADE PITCH CONTROL ----------------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_GS_n'], '! PC_GS_n', '- Amount of gain-scheduling table entries\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PC_GS_angles']]), '! PC_GS_angles', '- Gain-schedule table: pitch angles\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PC_GS_KP']]), '! PC_GS_KP', '- Gain-schedule table: pitch controller kp gains\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PC_GS_KI']]), '! PC_GS_KI', '- Gain-schedule table: pitch controller ki gains\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PC_GS_KD']]), '! PC_GS_KD', '- Gain-schedule table: pitch controller kd gains\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PC_GS_TF']]), '! PC_GS_TF', '- Gain-schedule table: pitch controller tf gains (derivative filter)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_MaxPit'], '! PC_MaxPit', '- Maximum physical pitch limit, [rad].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_MinPit'], '! PC_MinPit', '- Minimum physical pitch limit, [rad].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_MaxRat'], '! PC_MaxRat', '- Maximum pitch rate (in absolute value) in pitch controller, [rad/s].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_MinRat'], '! PC_MinRat', '- Minimum pitch rate (in absolute value) in pitch controller, [rad/s].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_RefSpd'], '! PC_RefSpd', '- Desired (reference) HSS speed for pitch controller, [rad/s].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_FinePit'], '! PC_FinePit', '- Record 5: Below-rated pitch angle set-point, [rad]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PC_Switch'], '! PC_Switch', '- Angle above lowest minimum pitch angle for switch, [rad]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Z_EnableSine'], '! Z_EnableSine', '- Enable/disable sine pitch excitation, used to validate for dynamic induction control, will be removed later, [-]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Z_PitchAmplitude'], '! Z_PitchAmplitude', '- Amplitude of sine pitch excitation, [rad]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Z_PitchFrequency'], '! Z_PitchFrequency', '- Frequency of sine pitch excitation, [rad/s]\n'))
-        f.write('\n!------- INDIVIDUAL PITCH CONTROL -----------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['IPC_IntSat'], '! IPC_IntSat', '- Integrator saturation (maximum signal amplitude contribution to pitch from IPC), [rad]\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['IPC_KI']]), '! IPC_KI', '- Integral gain for the individual pitch controller: first parameter for 1P reductions, second for 2P reductions, [-]\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['IPC_aziOffset']]), '! IPC_aziOffset', '- Phase offset added to the azimuth angle for the individual pitch controller, [rad]. \n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['IPC_CornerFreqAct'], '! IPC_CornerFreqAct', '- Corner frequency of the first-order actuators model, to induce a phase lag in the IPC signal {0: Disable}, [rad/s]\n'))
-        f.write('\n!------- VS TORQUE CONTROL ------------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_GenEff'], '! VS_GenEff', '- Generator efficiency mechanical power -> electrical power, [should match the efficiency defined in the generator properties!], [-]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_ArSatTq'], '! VS_ArSatTq', '- Above rated generator torque PI control saturation, [Nm]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_MaxRat'], '! VS_MaxRat', '- Maximum torque rate (in absolute value) in torque controller, [Nm/s].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_MaxTq'], '! VS_MaxTq', '- Maximum generator torque in Region 3 (HSS side), [Nm].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_MinTq'], '! VS_MinTq', '- Minimum generator (HSS side), [Nm].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_MinOMSpd'], '! VS_MinOMSpd', '- Optimal mode minimum speed, cut-in speed towards optimal mode gain path, [rad/s]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_Rgn2K'], '! VS_Rgn2K', '- Generator torque constant in Region 2 (HSS side), [N-m/(rad/s)^2]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_RtPwr'], '! VS_RtPwr', '- Wind turbine rated power [W]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_RtTq'], '! VS_RtTq', '- Rated torque, [Nm].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_RefSpd'], '! VS_RefSpd', '- Rated generator speed [rad/s]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_n'], '! VS_n', '- Number of generator PI torque controller gains\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_KP'], '! VS_KP', '- Proportional gain for generator PI torque controller [1/(rad/s) Nm]. (Only used in the transitional 2.5 region if VS_ControlMode =/ 2)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_KI'], '! VS_KI', '- Integral gain for generator PI torque controller [1/rad Nm]. (Only used in the transitional 2.5 region if VS_ControlMode =/ 2)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['VS_TSRopt'], '! VS_TSRopt', '- Power-maximizing region 2 tip-speed-ratio [rad].\n'))
-        f.write('\n!------- SETPOINT SMOOTHER ---------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SS_VSGain'], '! SS_VSGain', '- Variable speed torque controller setpoint smoother gain, [-].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SS_PCGain'], '! SS_PCGain', '- Collective pitch controller setpoint smoother gain, [-].\n'))
-        f.write('\n!------- WIND SPEED ESTIMATOR ---------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_BladeRadius'], '! WE_BladeRadius', '- Blade length [m]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_CP_n'], '! WE_CP_n', '- Amount of parameters in the Cp array\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['WE_CP']]), '! WE_CP', '- Parameters that define the parameterized CP(lambda) function\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_Gamma'], '! WE_Gamma', '- Adaption gain of the wind speed estimator algorithm [m/rad]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_GearboxRatio'], '! WE_GearboxRatio', '- Gearbox ratio [>=1],  [-]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_Jtot'], '! WE_Jtot', '- Total drivetrain inertia, including blades, hub and casted generator inertia to LSS, [kg m^2]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_RhoAir'], '! WE_RhoAir', '- Air density, [kg m^-3]\n'))
-        f.write('{!s:<22} {:<11} {:}'.format('"'+self.fst_vt['DISCON_in']['PerfFileName']+'"', '! PerfFileName', '- File containing rotor performance tables (Cp,Ct,Cq)\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2d}'.format(val) for val in self.fst_vt['DISCON_in']['PerfTableSize']]), '! PerfTableSize', '- Size of rotor performance tables, first number refers to number of blade pitch angles, second number referse to number of tip-speed ratios\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['WE_FOPoles_N'], '! WE_FOPoles_N', '- Number of first-order system poles used in EKF\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['WE_FOPoles_v']]), '! WE_FOPoles_v', '- Wind speeds corresponding to first-order system poles [m/s]\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['WE_FOPoles']]), '! WE_FOPoles', '- First order system poles\n'))
-        f.write('\n!------- YAW CONTROL ------------------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_ErrThresh'], '! Y_ErrThresh', '- Yaw error threshold. Turbine begins to yaw when it passes this. [rad^2 s]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_IPC_IntSat'], '! Y_IPC_IntSat', '- Integrator saturation (maximum signal amplitude contribution to pitch from yaw-by-IPC), [rad]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_IPC_n'], '! Y_IPC_n', '- Number of controller gains (yaw-by-IPC)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_IPC_KP'], '! Y_IPC_KP', '- Yaw-by-IPC proportional controller gain Kp\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_IPC_KI'], '! Y_IPC_KI', '- Yaw-by-IPC integral controller gain Ki\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_IPC_omegaLP'], '! Y_IPC_omegaLP', '- Low-pass filter corner frequency for the Yaw-by-IPC controller to filtering the yaw alignment error, [rad/s].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_IPC_zetaLP'], '! Y_IPC_zetaLP', '- Low-pass filter damping factor for the Yaw-by-IPC controller to filtering the yaw alignment error, [-].\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_MErrSet'], '! Y_MErrSet', '- Yaw alignment error, set point [rad]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_omegaLPFast'], '! Y_omegaLPFast', '- Corner frequency fast low pass filter, 1.0 [Hz]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_omegaLPSlow'], '! Y_omegaLPSlow', '- Corner frequency slow low pass filter, 1/60 [Hz]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Y_Rate'], '! Y_Rate', '- Yaw rate [rad/s]\n'))
-        f.write('\n!------- TOWER FORE-AFT DAMPING -------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['FA_KI'], '! FA_KI', '- Integral gain for the fore-aft tower damper controller, -1 = off / >0 = on [rad s/m] - !NJA - Make this a flag\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['FA_HPF_CornerFreq'], '! FA_HPF_CornerFreq', '- Corner frequency (-3dB point) in the high-pass filter on the fore-aft acceleration signal [rad/s]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['FA_IntSat'], '! FA_IntSat', '- Integrator saturation (maximum signal amplitude contribution to pitch from FA damper), [rad]\n'))
-        f.write('\n!------- MINIMUM PITCH SATURATION -------------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['DISCON_in']['PS_BldPitchMin_N'], '! PS_BldPitchMin_N', '- Number of values in minimum blade pitch lookup table (should equal number of values in PS_WindSpeeds and PS_BldPitchMin)\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PS_WindSpeeds']]), '! PS_WindSpeeds', '- Wind speeds corresponding to minimum blade pitch angles [m/s]\n'))
-        f.write('{:<22} {:<11} {:}'.format(' '.join(['{: 2.14e}'.format(val) for val in self.fst_vt['DISCON_in']['PS_BldPitchMin']]), '! PS_BldPitchMin', '- Minimum blade pitch angles [rad]\n'))
-        f.write('\n!------- SHUTDOWN -------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_MaxPit'], '! SD_MaxPit', '- Maximum blade pitch angle to initiate shutdown, [rad]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['SD_CornerFreq'], '! SD_CornerFreq', '- Cutoff Frequency for first order low-pass filter for blade pitch angle, [rad/s]\n'))
-        f.write('\n!------- Floating -------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['DISCON_in']['Fl_Kp'], '! Fl_Kp', '- Nacelle velocity proportional feedback gain [s]\n'))
-
-        f.close()
+        self.fst_vt['DISCON_in']['PerfFileName'] = self.FAST_namingOut + '_Cp_Ct_Cq.txt'
+        
+        # Write DISCON input files
+        file_processing = ROSCO_utilities.FileProcessing()
+        file_processing.write_rotor_performance(turbine, txt_filename=os.path.join(self.FAST_runDirectory, self.fst_vt['DISCON_in']['PerfFileName']))
+        file_processing.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
 
     def write_HydroDyn(self):
 
@@ -1801,9 +1792,81 @@ class InputWriter_OpenFAST(InputWriter_Common):
 
         f.close()
 
-        # f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MAP'][''], '', '- \n'))
-        # f.write('\n')
-        
+    def write_MoorDyn(self):
+
+        self.fst_vt['Fst']['MooringFile'] = self.FAST_namingOut + '_MoorDyn.dat'
+        moordyn_file = os.path.join(self.FAST_runDirectory, self.fst_vt['Fst']['MooringFile'])
+        f = open(moordyn_file, 'w')
+
+        f.write('--------------------- MoorDyn Input File ------------------------------------\n')
+        f.write('Generated with AeroElasticSE FAST driver\n')
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['Echo'], 'Echo', '- echo the input file data (flag)\n'))
+        f.write('----------------------- LINE TYPES ------------------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NTypes'], 'NTypes', '- number of LineTypes\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Name', 'Diam', 'MassDen', 'EA', 'BA/-zeta', 'Can', 'Cat', 'Cdn', 'Cdt']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(m)', '(kg/m)', '(N)', '(N-s/-)', '(-)', '(-)', '(-)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NTypes']):
+            ln = []
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Name'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Diam'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['MassDen'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['EA'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['BA_zeta'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Can'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cat'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cdn'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cdt'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- CONNECTION PROPERTIES --------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NConnects'], 'NConnects', '- number of connections including anchors and fairleads\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Node', 'Type', 'X', 'Y', 'Z', 'M', 'V', 'FX', 'FY', 'FZ', 'CdA', 'CA']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(m)', '(m)', '(kg)', '(m^3)', '(kN)', '(kN)', '(kN)', '(m^2)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NConnects']):
+            ln = []
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Node'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Type'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['X'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Y'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Z'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['M'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['V'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FX'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FY'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FZ'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CdA'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CA'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- LINE PROPERTIES --------------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NLines'], 'NLines', '- number of line objects\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'UnstrLen', 'NumSegs', 'NodeAnch', 'NodeFair', 'Flags/Outputs']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(-)', '(-)', '(-)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NLines']):
+            ln = []
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Line'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['LineType'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['UnstrLen'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NumSegs'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeAnch'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeFair'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Flags_Outputs'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- SOLVER OPTIONS ---------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['dtM'], 'dtM', '- time step to use in mooring integration (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['kbot'], 'kbot', '- bottom stiffness (Pa/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['cbot'], 'cbot', '- bottom damping (Pa-s/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['dtIC'], 'dtIC', '- time interval for analyzing convergence during IC gen (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['TmaxIC'], 'TmaxIC', '- max time for ic gen (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['CdScaleIC'], 'CdScaleIC', '- factor by which to scale drag coefficients during dynamic relaxation (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['threshIC'], 'threshIC', '- threshold for IC convergence (-)\n'))
+        f.write('------------------------ OUTPUTS --------------------------------------------\n')
+        outlist = self.get_outlist(self.fst_vt['outlist'], ['MoorDyn'])
+        for channel_list in outlist:
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
+        f.write('END\n')
+        f.write('------------------------- need this line --------------------------------------\n')
+
+        f.close()
 
 class InputWriter_FAST7(InputWriter_Common):
 

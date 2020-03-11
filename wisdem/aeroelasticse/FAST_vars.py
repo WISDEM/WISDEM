@@ -1039,6 +1039,55 @@ MAP['Flags']                 = []
 # SOLVER OPTIONS
 MAP['Option']                = []
 
+# SOLVER OPTIONS
+MAP['Option']                = []
+
+## MoorDyn Input File
+MoorDyn = {}
+MoorDyn['Echo']          = False
+# LINE TYPES
+MoorDyn['NTypes']        = 0
+MoorDyn['LineType']      = []
+MoorDyn['Diam']          = []
+MoorDyn['MassDen']       = []
+MoorDyn['EA']            = []
+MoorDyn['BA_zeta']       = []
+MoorDyn['Can']           = []
+MoorDyn['Cat']           = []
+MoorDyn['Cdn']           = []
+MoorDyn['Cdt']           = []
+# CONNECTION PROPERTIES
+MoorDyn['NConnects']     = 0
+MoorDyn['Node']          = []
+MoorDyn['Type']          = []
+MoorDyn['X']             = []
+MoorDyn['Y']             = []
+MoorDyn['Z']             = []
+MoorDyn['M']             = []
+MoorDyn['V']             = []
+MoorDyn['FX']            = []
+MoorDyn['FY']            = []
+MoorDyn['FZ']            = []
+MoorDyn['CdA']           = []
+MoorDyn['CA']            = []
+# LINE PROPERTIES
+MoorDyn['NConnects']     = 0
+MoorDyn['Line']          = []
+MoorDyn['LineType']      = []
+MoorDyn['UnstrLen']      = []
+MoorDyn['NumSegs']       = []
+MoorDyn['NodeAnch']      = []
+MoorDyn['NodeFair']      = []
+MoorDyn['Flags_Outputs'] = []
+# SOLVER OPTIONS
+MoorDyn['dtM']           = 0.
+MoorDyn['kbot']          = 0.
+MoorDyn['cbot']          = 0.
+MoorDyn['dtIC']          = 0.
+MoorDyn['TmaxIC']        = 0.
+MoorDyn['CdScaleIC']     = 0.
+MoorDyn['threshIC']      = 0.
+
 # BeamDyn Input File
 # SIMULATION CONTROL
 BeamDyn = {}
@@ -1272,6 +1321,7 @@ FstModel['DISCON_in']         = DISCON_in
 FstModel['HydroDyn']          = HydroDyn
 FstModel['SubDyn']            = SubDyn
 FstModel['MAP']               = MAP
+FstModel['MoorDyn']           = MoorDyn
 FstModel['BeamDyn']           = BeamDyn
 FstModel['BeamDynBlade']      = BeamDynBlade
 FstModel['Fst7']              = Fst7

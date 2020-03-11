@@ -413,6 +413,7 @@ class TowerPostFrame(ExplicitComponent):
         self.add_input('axial_stress', val=np.zeros(nFull-1), units='N/m**2', desc='axial stress in tower elements')
         self.add_input('shear_stress', val=np.zeros(nFull-1), units='N/m**2', desc='shear stress in tower elements')
         self.add_input('hoop_stress' , val=np.zeros(nFull-1), units='N/m**2', desc='hoop stress in tower elements')
+        self.add_input('top_deflection_in', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
 
         # safety factors
         self.add_input('gamma_f', 1.35, desc='safety factor on loads')
@@ -462,6 +463,9 @@ class TowerPostFrame(ExplicitComponent):
         outputs['structural_frequencies'] = np.zeros(2)
         outputs['structural_frequencies'][0] = inputs['f1']
         outputs['structural_frequencies'][1] = inputs['f2']
+
+        # Deflection
+        outputs['top_deflection'] = inputs['top_deflection_in']
         
         # von mises stress
         outputs['stress'] = Util.vonMisesStressUtilization(axial_stress, hoop_stress, shear_stress,
@@ -733,8 +737,10 @@ class TowerSE(Group):
             self.connect('tower'+lc+'.axial_stress', 'post'+lc+'.axial_stress')
             self.connect('tower'+lc+'.shear_stress', 'post'+lc+'.shear_stress')
             self.connect('tower'+lc+'.hoop_stress_euro', 'post'+lc+'.hoop_stress')
+            self.connect('tower'+lc+'.top_deflection', 'post'+lc+'.top_deflection_in')
         
             # connections to wind, wave
+            self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
             if topLevelFlag:
                 self.connect('wind_reference_height', 'wind'+lc+'.zref')
                 self.connect('wind_z0', 'wind'+lc+'.z0')
@@ -756,9 +762,8 @@ class TowerSE(Group):
                 self.connect('wave_beta', 'waveLoads'+lc+'.beta')
                 self.connect('significant_wave_height', 'wave'+lc+'.hmax')
                 self.connect('significant_wave_period', 'wave'+lc+'.T')
-                self.connect('z_full', 'z_floor', src_indices=[0])
+                self.connect('foundation_height', 'z_floor')
                     
-                self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
                 self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
                 self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
                 self.connect('wave'+lc+'.p', 'waveLoads'+lc+'.p')
@@ -866,7 +871,7 @@ if __name__ == '__main__':
     wind_Uref1 = 11.73732
     Fx1 = 1284744.19620519
     Fy1 = 0.
-    Fz1 = -2914124.84400512
+    Fz1 = -2914124.84400512 + m*gravity
     Mxx1 = 3963732.76208099
     Myy1 = -2275104.79420872
     Mzz1 = -346781.68192839
@@ -876,7 +881,7 @@ if __name__ == '__main__':
     wind_Uref2 = 70.0
     Fx2 = 930198.60063279
     Fy2 = 0.
-    Fz2 = -2883106.12368949
+    Fz2 = -2883106.12368949 + m*gravity
     Mxx2 = -1683669.22411597
     Myy2 = -2522475.34625363
     Mzz2 = 147301.97023764
@@ -909,7 +914,7 @@ if __name__ == '__main__':
     # # .freq1p = V_max / (D/2) / (2*pi)  # convert to Hz
 
     nPoints = len(d_param)
-    nFull   = 5*(nPoints-1) + 1
+    nFull   = 3*(nPoints-1) + 1
     wind = 'PowerWind'
     nLC = 2
     
@@ -1011,7 +1016,7 @@ if __name__ == '__main__':
 
     z,_ = nodal2sectional(prob['z_full'])
 
-    print('zs=', z)
+    print('zs=', prob['z_full'])
     print('ds=', prob['d_full'])
     print('ts=', prob['t_full'])
     print('mass (kg) =', prob['tower_mass'])

@@ -625,69 +625,9 @@ class pyMAP(object):
             sys.exit('MAP terminated premature.')    
 
     def read_file( self, fileName ):
-        f           = open(fileName, 'r')
-        charptr     = POINTER(c_char)
-        line_offset = []
-        temp_str    = []
-        offset      = 0
-    
-        for line in f:
-            line_offset.append(offset)
-            offset += len(line)    
-        f.seek(0)
-        
-        i = 0
-        for line in f:
-            words = line.split()
-            if words[0] == "LineType":
-                next(f)
-                LineType_ref = i
-            elif words[0] == "Node":
-                next(f)
-                Node_ref = i
-            elif words[0] == "Line":
-                next(f)
-                Line_ref = i 
-            elif words[0] == "Option":
-                next(f)
-                Option_ref = i     
-            i+=1
-        
-        f.seek(line_offset[LineType_ref+2])         
-        for line in f:
-            if line[0] == "-":
-                break
-            else:
-                # create_string_buffer(line, 255).raw
-                self.f_type_init.contents.libraryInputLine = six.b( line+'\0' )
-                libexec.map_add_cable_library_input_text(self.f_type_init)
-   
-        f.seek(line_offset[Node_ref+3])
-        for line in f:
-            if line[0] == "-":
-                break
-            else:
-                self.f_type_init.contents.nodeInputLine = six.b( line+'\0' )
-                libexec.map_add_node_input_text(self.f_type_init)
-
-        f.seek(line_offset[Line_ref+4])
-        for line in f:
-            if line[0] == "-":
-                break
-            else:
-                self.f_type_init.contents.elementInputLine = six.b( line+'\0' )
-                libexec.map_add_line_input_text(self.f_type_init)
-                 
-        f.seek(line_offset[Option_ref+5])
-        for line in f:
-            if line[0]=="-":
-                break
-            elif line[0]=="!":
-                None
-            else:
-                self.f_type_init.contents.optionInputLine = six.b( line+'\0' )
-                libexec.map_add_options_input_text(self.f_type_init)            
-
+        with open(fileName) as f:
+            lines = f.read().splitlines()
+        self.read_list_input( lines )
                     
     def read_list_input(self, listIn):
         assert isinstance(listIn, list), 'Must input a python list of strings'
