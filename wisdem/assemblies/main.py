@@ -109,7 +109,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         elif opt_options['merit_figure'] == 'blade_mass':
             wt_opt.model.add_objective('elastic.precomp.blade_mass', scaler = 1.e-4)
         elif opt_options['merit_figure'] == 'LCOE':
-            wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
+            wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+1)
         elif opt_options['merit_figure'] == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons.tip_deflection_ratio')
         elif opt_options['merit_figure'] == 'Cp':
@@ -127,7 +127,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['flag'] == True:
             indices  = range(1,opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ss_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain'])
-        if opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['flag'] == True and 'equal_to_suction' not in opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']:
+        if opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['flag'] == True and opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['equal_to_suction'] == False:
             indices  = range(1,opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['max_gain'])
         if opt_options['optimization_variables']['control']['tsr']['flag'] == True:

@@ -498,17 +498,7 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         # print(self.ccblade.a)
         # import matplotlib.pyplot as plt
 
-        # # Induction
-        # ft, axt = plt.subplots(1,1,figsize=(5.3, 4))
-        # axt.plot(inputs['r'], self.ccblade.a)
-        # # axt.legend(fontsize=12)
-        # plt.xlabel('Blade Span [m]', fontsize=14, fontweight='bold')
-        # plt.ylabel('Induction [-]', fontsize=14, fontweight='bold')
-        # plt.xticks(fontsize=12)
-        # plt.yticks(fontsize=12)
-        # plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-        # plt.subplots_adjust(bottom = 0.15, left = 0.15)
-        # plt.show()
+        
         
         # exit()
         
@@ -718,7 +708,6 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
         outputs['tang_induct_cutin'] = ap_regII
         outputs['aoa_cutin']         = alpha_regII
         outputs['Cp_cutin']         = Cp_aero[0]
-        print(Cp_aero[0])
         outputs['cl_cutin']         = cl_regII
         outputs['cd_cutin']         = cd_regII
 

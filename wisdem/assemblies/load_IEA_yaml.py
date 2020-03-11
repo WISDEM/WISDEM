@@ -317,6 +317,10 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['monopile.s'].tolist()
                 self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['monopile.layer_thickness'][i,:].tolist()
 
+
+        # Update controller
+        self.wt_init['control']['tsr'] = float(wt_opt['pc.tsr_opt'])
+
         # Write yaml with updated values
         f = open(fname_output, "w")
         yaml=ry.YAML()
@@ -1260,6 +1264,23 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     # # np.savetxt('temp.txt', le_int2/wt_opt['blade.outer_shape_bem.chord'])
     # exit()
 
+    # # # Twist
+    # theta_init      = wt_opt['blade.outer_shape_bem.twist']
+    # s_interp      = np.array([0.0, 0.05, 0.1, 0.2, 0.35, 0.5, 0.7, 0.9, 1.0 ])
+    # f_interp1       = interp1d(nd_span,theta_init)
+    # theta_int1      = f_interp1(s_interp)
+    # f_interp2       = PchipInterpolator(s_interp,theta_int1)
+    # theta_int2      = f_interp2(nd_span)
+    
+    # import matplotlib.pyplot as plt
+    # fc, axc  = plt.subplots(1,1,figsize=(5.3, 4))
+    # axc.plot(nd_span, theta_init, c='k', label='Initial')
+    # axc.plot(s_interp, theta_int1, 'ko', label='Interp Points')
+    # axc.plot(nd_span, theta_int2, c='b', label='PCHIP')
+    # axc.set(xlabel='r/R' , ylabel='Twist (deg)')
+    # axc.legend()
+    # plt.show()
+    # exit()
     
     return wt_opt
     
