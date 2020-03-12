@@ -221,18 +221,19 @@ class WindTurbineOntologyPython(object):
     def write_ontology(self, wt_opt, fname_output):
 
         # Update blade outer shape
-        self.wt_init['components']['blade']['outer_shape_bem']['chord']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']   = wt_opt['blade.pa.chord_param'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['twist']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']   = wt_opt['blade.pa.twist_param'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['values']   = wt_opt['blade.outer_shape_bem.pitch_axis'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['blade.outer_shape_bem.s'].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['blade.outer_shape_bem.ref_axis'][:,0].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['blade.outer_shape_bem.ref_axis'][:,1].tolist()
-        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['blade.outer_shape_bem.ref_axis'][:,2].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = wt_opt['blade.opt_var.af_position'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['chord']['grid']                 = wt_opt['blade.outer_shape_bem.s'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['chord']['values']               = wt_opt['blade.pa.chord_param'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['twist']['grid']                 = wt_opt['blade.outer_shape_bem.s'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['twist']['values']               = wt_opt['blade.pa.twist_param'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['grid']            = wt_opt['blade.outer_shape_bem.s'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['pitch_axis']['values']          = wt_opt['blade.outer_shape_bem.pitch_axis'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['x']['grid']   = wt_opt['blade.outer_shape_bem.s'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['y']['grid']   = wt_opt['blade.outer_shape_bem.s'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['z']['grid']   = wt_opt['blade.outer_shape_bem.s'].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['x']['values'] = wt_opt['blade.outer_shape_bem.ref_axis'][:,0].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['y']['values'] = wt_opt['blade.outer_shape_bem.ref_axis'][:,1].tolist()
+        self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['z']['values'] = wt_opt['blade.outer_shape_bem.ref_axis'][:,2].tolist()
 
         # Update blade structure
         # Reference axis from blade outer shape
@@ -351,6 +352,7 @@ class Blade(Group):
         opt_var = IndepVarComp()
         opt_var.add_output('twist_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
         opt_var.add_output('chord_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
+        opt_var.add_output('af_position',      val = np.ones(blade_init_options['n_af_span']))
         opt_var.add_output('spar_cap_ss_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']))
         opt_var.add_output('spar_cap_ps_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']))
         opt_var.add_output('te_flap_end', val = np.ones(blade_init_options['n_te_flaps']))
@@ -377,7 +379,7 @@ class Blade(Group):
         self.connect('pa.chord_param',              'interp_airfoils.chord')
         self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils.pitch_axis')
         self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')
-        self.connect('outer_shape_bem.af_position', 'interp_airfoils.af_position')
+        self.connect('opt_var.af_position',         'interp_airfoils.af_position')
         
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
         if blade_init_options['lofted_output'] == True:
@@ -602,9 +604,6 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         # plt.show()
         # print(np.flip(s_interp_rt))
         # exit()
-
-
-
 
 class Blade_Lofted_Shape(ExplicitComponent):
     # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.
@@ -1216,6 +1215,7 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     
     wt_opt['blade.outer_shape_bem.af_used']     = outer_shape_bem['airfoil_position']['labels']
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
+    wt_opt['blade.opt_var.af_position']         = outer_shape_bem['airfoil_position']['grid']
     
     wt_opt['blade.outer_shape_bem.s']           = nd_span
     wt_opt['blade.outer_shape_bem.chord']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])

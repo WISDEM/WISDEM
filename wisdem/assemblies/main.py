@@ -36,6 +36,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         opt_options['opt_flag'] = True
     else:
         opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'] = analysis_options['rotorse']['n_span']
+    if opt_options['optimization_variables']['blade']['aero_shape']['af_positions']['flag'] == True:
+        opt_options['opt_flag'] = True
     if opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['flag'] == True:
         opt_options['opt_flag'] = True
     else:
@@ -124,6 +126,19 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if opt_options['optimization_variables']['blade']['aero_shape']['chord']['flag'] == True:
             indices  = range(2,opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['aero_shape']['chord']['min_gain'], upper=opt_options['optimization_variables']['blade']['aero_shape']['chord']['max_gain'])
+        if opt_options['optimization_variables']['blade']['aero_shape']['af_positions']['flag'] == True:
+            n_af = analysis_options['blade']['n_af_span']
+            indices  = range(opt_options['optimization_variables']['blade']['aero_shape']['af_positions']['af_start'],n_af - 1)
+            af_pos_init = wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']
+            lb_af    = np.zeros(n_af)
+            ub_af    = np.zeros(n_af)
+            for i in range(1,indices[0]):
+                lb_af[i]    = ub_af[i] = af_pos_init[i]
+            for i in indices:
+                lb_af[i]    = 0.5*(af_pos_init[i-1] + af_pos_init[i])
+                ub_af[i]    = 0.5*(af_pos_init[i+1] + af_pos_init[i])
+            lb_af[-1] = ub_af[-1] = 1.
+            wt_opt.model.add_design_var('blade.opt_var.af_position', indices = indices, lower=lb_af[indices], upper=ub_af[indices])
         if opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['flag'] == True:
             indices  = range(1,opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ss_opt_gain', indices = indices, lower=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain'], upper=opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain'])
@@ -197,11 +212,13 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
 if __name__ == "__main__":
     ## File management
-    fname_wt_input         = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
-    fname_analysis_options = "reference_turbines/analysis_options.yaml"
-    fname_opt_options      = "reference_turbines/optimization_options.yaml"
-    fname_wt_output        = "reference_turbines/bar/BAR2010n_noRE_output.yaml"
-    folder_output          = 'temp/'
+    
+    run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'assemblies' + os.sep + 'reference_turbines' + os.sep
+    fname_wt_input         = run_dir + "nrel5mw/nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    fname_analysis_options = run_dir + "analysis_options.yaml"
+    fname_opt_options      = run_dir + "optimization_options.yaml"
+    fname_wt_output        = run_dir + "nrel5mw/nrel5mw_mod_update_output.yaml"
+    folder_output          = run_dir + 'nrel5mw/'
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
 

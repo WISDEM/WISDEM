@@ -468,7 +468,10 @@ class RegulatedPowerCurve(ExplicitComponent): # Implicit COMPONENT
 
         self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
 
-        Uhub     = np.linspace(inputs['v_min'],inputs['v_max'], self.n_pc).flatten()
+
+        grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi/4.,np.pi/2.,self.n_pc + 1)))))
+        grid1 = (grid0 - grid0[0])/(grid0[-1]-grid0[0])
+        Uhub  = grid1 * (inputs['v_max'] - inputs['v_min']) + inputs['v_min']
         
         P_aero   = np.zeros_like(Uhub)
         Cp_aero  = np.zeros_like(Uhub)
