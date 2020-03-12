@@ -17,7 +17,7 @@ import numpy as np
 import os
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem
 from scipy import interpolate, gradient
-from scipy.optimize import minimize_scalar, minimize
+from scipy.optimize import minimize_scalar, minimize, brentq
 from scipy.interpolate import PchipInterpolator
 
 from wisdem.ccblade import CCAirfoil, CCBlade
@@ -446,7 +446,7 @@ class RegulatedPowerCurve(ExplicitComponent):
         pitch    = np.zeros( Uhub.shape ) + inputs['control_pitch']
 
         # Unpack variables
-        P_rated   = inputs['rated _power']
+        P_rated   = inputs['rated_power']
         R_tip     = inputs['Rtip']
         tsr       = inputs['tsr_operational']
         driveType = discrete_inputs['drivetrainType']
@@ -471,7 +471,7 @@ class RegulatedPowerCurve(ExplicitComponent):
         # Find Region 3 index
         region_bool = np.nonzero(P >= P_rated)[0]
         if len(region_bool)==0:
-            i_3     = npc
+            i_3     = self.n_pc
             region3 = False
         else:
             i_3     = region_bool[0] + 1
@@ -529,7 +529,7 @@ class RegulatedPowerCurve(ExplicitComponent):
             
         # Solve for rated velocity
         i = i_rated
-        if i < npc-1:
+        if i < self.n_pc-1:
             def const_Urated(x):
                 pitch   = x[0]           
                 Uhub_i  = x[1]
@@ -591,8 +591,8 @@ class RegulatedPowerCurve(ExplicitComponent):
 
             # Solve for Region 3 pitch
             options = {'disp':False}
-            if self.options['regulation_reg_III']:
-                for i in range(i_3, npc):
+            if self.regulation_reg_III:
+                for i in range(i_3, self.n_pc):
                     pitch0   = pitch[i-1]
                     try:
                         pitch[i] = brentq(lambda x: rated_power_dist(x, Uhub[i], Omega_rpm[i]), pitch0, pitch0+10.,
@@ -637,7 +637,7 @@ class RegulatedPowerCurve(ExplicitComponent):
         
         # Fit spline to powercurve for higher grid density
         spline   = PchipInterpolator(Uhub, P)
-        V_spline = np.linspace(inputs['control_Vin'], inputs['control_Vout'], self.options['n_pc_spline'])
+        V_spline = np.linspace(inputs['v_min'], inputs['v_max'], self.n_pc_spline)
         P_spline = spline(V_spline)
         
         # outputs
