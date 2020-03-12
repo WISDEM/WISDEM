@@ -14,7 +14,7 @@ from wisdem.orbit.library import (
     extract_library_data,
     extract_library_specs,
 )
-from wisdem.orbit.simulation.exceptions import MissingInputs
+from wisdem.orbit.core.exceptions import MissingInputs
 
 
 class BasePhase(ABC):

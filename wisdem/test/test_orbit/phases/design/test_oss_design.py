@@ -38,13 +38,13 @@ def test_parameter_sweep(depth, num_turbines, turbine_rating):
     # Check valid substructure length
     assert 10 <= o._outputs["offshore_substation_substructure"]["length"] <= 80
 
-    # Check valid substructure weight
+    # Check valid substructure mass
     assert (
-        200 <= o._outputs["offshore_substation_substructure"]["weight"] <= 2500
+        200 <= o._outputs["offshore_substation_substructure"]["mass"] <= 2500
     )
 
-    # Check valid topside weight
-    assert 200 <= o._outputs["offshore_substation_topside"]["weight"] <= 5000
+    # Check valid topside mass
+    assert 200 <= o._outputs["offshore_substation_topside"]["mass"] <= 5000
 
     # Check valid substation cost
     assert 1e6 <= o.total_phase_cost <= 300e6

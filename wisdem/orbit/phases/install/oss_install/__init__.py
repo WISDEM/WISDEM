@@ -4,4 +4,4 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
-from .wtiv_with_feeders import OffshoreSubstationInstallation
+from .standard import OffshoreSubstationInstallation

@@ -1,23 +1,22 @@
 """
-Provides a testing framework for the `ScourProtectionInstallation`.
+Testing framework for the `ScourProtectionInstallation` class.
 """
 
 __author__ = "Rob Hammond"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
-__credits__ = ["Jake Nunemaker"]
-__version__ = "0.0.1"
-__maintainer__ = "Rob Hammond"
-__email__ = "robert.hammond@nrel.gov"
-__status__ = "Development"
+__maintainer__ = "Jake Nunemaker"
+__email__ = "Jake.Nunemaker@nrel.gov"
 
 
 import copy
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.library import initialize_library, extract_library_specs
-from wisdem.orbit.vessels.tasks import defaults
+from wisdem.orbit.core._defaults import process_times as pt
 from wisdem.orbit.phases.install import ScourProtectionInstallation
 
 initialize_library(pytest.library)
@@ -25,98 +24,36 @@ config = extract_library_specs("config", "scour_protection_install")
 
 
 def test_simulation_creation():
-    sim = ScourProtectionInstallation(config, print_logs=False)
+    sim = ScourProtectionInstallation(config)
 
     assert sim.config == config
     assert sim.env
-    assert sim.env.logger
     assert sim.port
-    assert sim.scour_vessel
+    assert sim.spi_vessel
     assert sim.num_turbines
-    assert sim.scour_protection_tonnes_to_install
-
-
-def test_port_creation():
-    sim = ScourProtectionInstallation(config, print_logs=False)
-
-    assert sim.port
-    assert sim.port.crane.capacity == config["port"]["num_cranes"]
-
-
-def test_scour_protection_creation():
-    sim = ScourProtectionInstallation(config, print_logs=False)
-
-    assert sim.num_turbines == config["plant"]["num_turbines"]
-
-    _items = [
-        item for item in sim.port.items if item["type"] == "Scour Protection"
-    ]
-    assert len(_items) == sim.num_turbines
-
-    for _item in _items:
-        assert _item["weight"] == pytest.approx(
-            sim.scour_protection_tonnes_to_install, rel=1e-6
-        )
-
-
-@pytest.mark.parametrize(
-    "level,expected", (("INFO", 20), ("DEBUG", 10)), ids=["info", "debug"]
-)
-def test_logger_creation(level, expected):
-    sim = ScourProtectionInstallation(config, log_level=level)
-    assert sim.env.logger.level == expected
-
-
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
-def test_full_run_completes(weather):
-    sim = ScourProtectionInstallation(
-        config, weather=weather, log_level="DEBUG"
-    )
-    sim.run()
-
-    complete = float(sim.logs[sim.logs.action == "Complete"]["time"])
-    assert complete > 0
-
-
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
-def test_full_run_is_valid(weather):
-    sim = ScourProtectionInstallation(
-        config, weather=weather, log_level="INFO"
-    )
-    sim.run()
-
-    df = sim.phase_dataframe[
-        ~sim.phase_dataframe.agent.isin(["Director", "Port"])
-    ]
-    for action in ("FastenItem", "DropRocks"):
-        assert df[df.action == action].shape[0] == sim.num_turbines
+    assert sim.tons_per_substructure
 
 
 @pytest.mark.parametrize(
     "weather", (None, test_weather), ids=["no_weather", "test_weather"]
 )
 def test_full_run_logging(weather):
-    sim = ScourProtectionInstallation(
-        config, weather=weather, log_level="INFO"
-    )
+    sim = ScourProtectionInstallation(config, weather=weather)
     sim.run()
 
-    df = sim.phase_dataframe[
-        ~sim.phase_dataframe.agent.isin(["Director", "Port"])
-    ]
+    df = pd.DataFrame(sim.env.actions)
     df = df.assign(shift=(df.time - df.time.shift(1)))
-    assert (df.duration - df["shift"]).max() == pytest.approx(0, abs=1e-9)
+    assert (df.duration - df["shift"]).fillna(0.0).abs().max() < 1e-9
+    assert df[df.action == "Drop SP Material"].shape[0] == sim.num_turbines
+
+    assert ~df["cost"].isnull().any()
+    _ = sim.agent_efficiencies
+    _ = sim.detailed_output
 
 
 def test_kwargs():
 
-    sim = ScourProtectionInstallation(
-        config, log_level="INFO", print_logs=False
-    )
+    sim = ScourProtectionInstallation(config)
     sim.run()
     baseline = sim.total_phase_time
 
@@ -126,12 +63,10 @@ def test_kwargs():
 
     for kw in keywords:
 
-        default = defaults[kw]
+        default = pt[kw]
         kwargs = {kw: default + 2}
 
-        new_sim = ScourProtectionInstallation(
-            config, log_level="INFO", print_logs=False, **kwargs
-        )
+        new_sim = ScourProtectionInstallation(config, **kwargs)
         new_sim.run()
         new_time = new_sim.total_phase_time
 
