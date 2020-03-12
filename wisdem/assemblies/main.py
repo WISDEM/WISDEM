@@ -115,7 +115,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         elif opt_options['merit_figure'] == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons.tip_deflection_ratio')
         elif opt_options['merit_figure'] == 'Cp':
-            wt_opt.model.add_objective('sse.powercurve.Cp_cutin', scaler = -1.)
+            wt_opt.model.add_objective('sse.powercurve.Cp_regII', scaler = -1.)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
 
