@@ -16,18 +16,18 @@ class ProjectDevelopment(DesignPhase):
 
     expected_config = {
         "project_development": {
-            "site_auction_duration": "float (optional)",
-            "site_auction_price": "float (optional)",
-            "site_assessment_plan_duration": "float (optional)",
-            "site_assessment_plan_cost": "float (optional)",
-            "site_assessment_duration": "float (optional)",
-            "site_assessment_cost": "float (optional)",
-            "construction_operations_plan_duration": "float (optional)",
-            "construction_operations_plan_cost": "float (optional)",
-            "boem_review_duration": "float (optional)",
-            "boem_review_cost": "float (optional)",
-            "design_install_plan_duration": "float (optional)",
-            "design_install_plan_cost": "float (optional)",
+            "site_auction_duration": "h (optional)",
+            "site_auction_price": "USD(optional)",
+            "site_assessment_plan_duration": "h (optional)",
+            "site_assessment_plan_cost": "USD (optional)",
+            "site_assessment_duration": "h (optional)",
+            "site_assessment_cost": "USD (optional)",
+            "construction_operations_plan_duration": "h (optional)",
+            "construction_operations_plan_cost": "USD (optional)",
+            "boem_review_duration": "h (optional)",
+            "boem_review_cost": "USD (optional)",
+            "design_install_plan_duration": "h (optional)",
+            "design_install_plan_cost": "USD (optional)",
         }
     }
 

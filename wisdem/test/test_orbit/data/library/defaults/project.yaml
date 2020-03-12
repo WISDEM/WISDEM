@@ -26,6 +26,9 @@ tp_steel_cost: 3000                           # USD/t
 # Port properties
 port_cost_per_month: 2e6                      # USD/month
 
+# Export System Installation
+onshore_construction_rate: 50000              # USD/day
+
 # Vessel parameters
 wtiv_day_rate: 180000                         # USD/day
 feeder_day_rate: 75000                        # USD/day

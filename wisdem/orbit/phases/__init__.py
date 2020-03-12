@@ -9,3 +9,5 @@ __email__ = ["jake.nunemaker@nrel.gov" "robert.hammond@nrel.gov"]
 
 
 from .base import BasePhase
+from .design import DesignPhase
+from .install import InstallPhase

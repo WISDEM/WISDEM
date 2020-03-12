@@ -1,9 +1,3 @@
-name: Example Cable Lay Vessel
-storage_specs:
-  helideck: False
-  max_cargo: 6000       # t
-  max_deck_load: 1      # t/m^2 (for cable laying vessels this is arbitrary)
-  max_deck_space: 1     # m^2 (for cable laying vessels, this is number of carousels)
 transport_specs:
   cable_lay_speed: 0.5  # km/hr
   max_waveheight: 1.5   # m
@@ -14,3 +8,5 @@ vessel_specs:
   day_rate: 50000       # USD/day, cost of operating vessel with crew
   min_draft: 4.8        # m
   overall_length: 99.0  # m
+cable_storage:
+  max_mass: 6000

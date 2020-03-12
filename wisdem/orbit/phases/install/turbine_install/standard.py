@@ -1,4 +1,4 @@
-"""Provides the `TurbineInstallation` class."""
+"""`TurbineInstallation` class and related processes."""
 
 __author__ = "Jake Nunemaker"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
@@ -11,16 +11,24 @@ from math import ceil
 
 import numpy as np
 import simpy
+from marmot import process
 
-from wisdem.orbit.vessels import Vessel
-from wisdem.orbit.simulation import Environment, VesselStorage
-from wisdem.orbit.phases.install import InstallPhase
-from wisdem.orbit.simulation.logic import shuttle_items_to_queue
-from wisdem.orbit.phases.install.turbine_install._single_wtiv import (
-    solo_install_turbines,
+from wisdem.orbit.core import Vessel
+from wisdem.orbit.core.logic import (
+    shuttle_items_to_queue,
+    prep_for_site_operations,
+    get_list_of_items_from_port,
 )
-from wisdem.orbit.phases.install.turbine_install._wtiv_with_feeders import (
-    install_turbine_components_from_queue,
+from wisdem.orbit.phases.install import InstallPhase
+from wisdem.orbit.core.exceptions import ItemNotFound
+
+from .common import (
+    Blade,
+    Nacelle,
+    TowerSection,
+    install_nacelle,
+    install_tower_section,
+    install_turbine_blade,
 )
 
 
@@ -40,32 +48,23 @@ class TurbineInstallation(InstallPhase):
         "wtiv": "dict | str",
         "feeder": "dict | str (optional)",
         "num_feeders": "int (optional)",
-        "site": {"depth": "float", "distance": "float"},
+        "site": {"depth": "m", "distance": "km"},
         "plant": {"num_turbines": "int"},
         "port": {
             "num_cranes": "int",
-            "monthly_rate": "float (optional)",
+            "monthly_rate": "USD/mo (optional)",
             "name": "str (optional)",
         },
         "turbine": {
-            "hub_height": "float",
+            "hub_height": "m",
             "tower": {
-                "type": "Tower",
-                "deck_space": "float",
-                "weight": "float",
-                "length": "float",
+                "deck_space": "m2",
+                "mass": "t",
+                "length": "m",
                 "sections": "int (optional)",
             },
-            "nacelle": {
-                "type": "Nacelle",
-                "deck_space": "float",
-                "weight": "float",
-            },
-            "blade": {
-                "type": "Blade",
-                "deck_space": "float",
-                "weight": "float",
-            },
+            "nacelle": {"deck_space": "m2", "mass": "t"},
+            "blade": {"deck_space": "m2", "mass": "t"},
         },
     }
 
@@ -77,24 +76,19 @@ class TurbineInstallation(InstallPhase):
         ----------
         config : dict
             Simulation specific configuration.
-        weather : pd.DataFrame (optional)
+        weather : np.ndarray
             Weather profile at site.
-            Expects columns 'max_waveheight' and 'max_windspeed'.
         """
+
+        super().__init__(weather, **kwargs)
 
         config = self.initialize_library(config, **kwargs)
         self.config = self.validate_config(config)
-        self.env = Environment(weather)
-        self.init_logger(**kwargs)
-        self.extract_phase_kwargs(**kwargs)
         self.extract_defaults()
 
         self.initialize_port()
         self.initialize_wtiv()
-
-        self.num_turbines = self.config["plant"]["num_turbines"]
         self.initialize_turbines()
-
         self.setup_simulation(**kwargs)
 
     def setup_simulation(self, **kwargs):
@@ -121,18 +115,16 @@ class TurbineInstallation(InstallPhase):
         site_depth = self.config["site"]["depth"]
         hub_height = self.config["turbine"]["hub_height"]
 
-        self.env.process(
-            solo_install_turbines(
-                env=self.env,
-                vessel=self.wtiv,
-                port=self.port,
-                distance=site_distance,
-                component_list=self.component_list,
-                number=self.num_turbines,
-                site_depth=site_depth,
-                hub_height=hub_height,
-                **kwargs,
-            )
+        solo_install_turbines(
+            self.wtiv,
+            port=self.port,
+            distance=site_distance,
+            turbines=self.num_turbines,
+            tower_sections=self.num_sections,
+            num_blades=3,
+            site_depth=site_depth,
+            hub_height=hub_height,
+            **kwargs,
         )
 
     def setup_simulation_with_feeders(self, **kwargs):
@@ -144,33 +136,26 @@ class TurbineInstallation(InstallPhase):
         site_depth = self.config["site"]["depth"]
         hub_height = self.config["turbine"]["hub_height"]
 
-        self.env.process(
-            install_turbine_components_from_queue(
-                env=self.env,
-                wtiv=self.wtiv,
-                queue=self.active_feeder,
-                site_depth=site_depth,
-                distance=site_distance,
-                component_list=self.component_list,
-                number=self.num_turbines,
-                hub_height=hub_height,
-                **kwargs,
-            )
+        install_turbine_components_from_queue(
+            self.wtiv,
+            queue=self.active_feeder,
+            distance=site_distance,
+            turbines=self.num_turbines,
+            tower_sections=self.num_sections,
+            num_blades=3,
+            site_depth=site_depth,
+            hub_height=hub_height,
+            **kwargs,
         )
 
-        rule_list = [("type", v["type"]) for v in self.component_list]
-
         for feeder in self.feeders:
-            self.env.process(
-                shuttle_items_to_queue(
-                    env=self.env,
-                    vessel=feeder,
-                    port=self.port,
-                    queue=self.active_feeder,
-                    distance=site_distance,
-                    items=rule_list,
-                    **kwargs,
-                )
+            shuttle_items_to_queue(
+                feeder,
+                port=self.port,
+                queue=self.active_feeder,
+                distance=site_distance,
+                items=self.component_list,
+                **kwargs,
             )
 
     def initialize_wtiv(self):
@@ -179,27 +164,16 @@ class TurbineInstallation(InstallPhase):
         """
 
         wtiv_specs = self.config.get("wtiv", None)
-
-        if wtiv_specs is None:
-            raise Exception("WTIV is not defined.")
-
         name = wtiv_specs.get("name", "WTIV")
-        cost = wtiv_specs["vessel_specs"].get(
-            "day_rate", self.defaults["wtiv_day_rate"]
-        )
 
-        self.wtiv = Vessel(name, wtiv_specs)
+        wtiv = Vessel(name, wtiv_specs)
+        self.env.register(wtiv)
 
-        _storage_specs = wtiv_specs.get("storage_specs", None)
-        if _storage_specs is None:
-            raise Exception("Storage specifications must be set for WTIV.")
-
-        self.wtiv.storage = VesselStorage(self.env, **_storage_specs)
-
-        self.wtiv.at_port = True
-        self.wtiv.at_site = False
-
-        self.agent_costs[name] = cost
+        wtiv.extract_vessel_specs()
+        wtiv.mobilize()
+        wtiv.at_port = True
+        wtiv.at_site = False
+        self.wtiv = wtiv
 
     def initialize_feeders(self):
         """
@@ -209,31 +183,19 @@ class TurbineInstallation(InstallPhase):
         number = self.config.get("num_feeders", None)
         feeder_specs = self.config.get("feeder", None)
 
-        if feeder_specs is None:
-            raise Exception("Feeder Barge is not defined.")
-
-        cost = feeder_specs["vessel_specs"].get(
-            "day_rate", self.defaults["feeder_day_rate"]
-        )
-
-        _storage_specs = feeder_specs.get("storage_specs", None)
-        if _storage_specs is None:
-            raise Exception(
-                "Storage specifications must be set in feeder_specs."
-            )
-
         self.feeders = []
         for n in range(number):
+            # TODO: Add in option for named feeders.
             name = "Feeder {}".format(n)
-            feeder = Vessel(name, feeder_specs)
-            feeder.storage = VesselStorage(self.env, **_storage_specs)
 
+            feeder = Vessel(name, feeder_specs)
+            self.env.register(feeder)
+
+            feeder.extract_vessel_specs()
+            feeder.mobilize()
             feeder.at_port = True
             feeder.at_site = False
-
             self.feeders.append(feeder)
-
-            self.agent_costs[name] = cost
 
     def initialize_turbines(self):
         """
@@ -241,25 +203,34 @@ class TurbineInstallation(InstallPhase):
         """
 
         tower = deepcopy(self.config["turbine"]["tower"])
-        num_sections = tower.get("sections", 1)
+        self.num_sections = tower.get("sections", 1)
 
-        section = {"type": "Tower Section"}
-        for k in ["length", "deck_space", "weight"]:
+        _section = {}
+        for k in ["length", "deck_space", "mass"]:
             try:
-                section[k] = ceil(tower.get(k) / num_sections)
+                _section[k] = ceil(tower.get(k) / self.num_sections)
 
             except TypeError:
                 pass
 
-        self.component_list = [
-            *np.repeat(section, num_sections),
-            self.config["turbine"]["nacelle"],
-            *np.repeat(self.config["turbine"]["blade"], 3),
+        section = TowerSection(**_section)
+        nacelle = Nacelle(**self.config["turbine"]["nacelle"])
+        blade = Blade(**self.config["turbine"]["blade"])
+
+        component_list = [
+            *np.repeat(section, self.num_sections),
+            nacelle,
+            # TODO: Add in configuration for number of blades.
+            *np.repeat(blade, 3),
         ]
 
+        self.num_turbines = self.config["plant"]["num_turbines"]
+
         for _ in range(self.num_turbines):
-            for item in self.component_list:
+            for item in component_list:
                 self.port.put(item)
+
+        self.component_list = [a.type for a in component_list]
 
     def initialize_queue(self):
         """
@@ -273,13 +244,7 @@ class TurbineInstallation(InstallPhase):
 
     @property
     def detailed_output(self):
-        """
-        Returns detailed outputs in a dictionary, including:
-
-        - Agent operational efficiencies, ``operations time / total time``
-        - Cargo weight efficiencies, ``highest weight used / maximum weight``
-        - Deck space efficiencies, ``highest space used / maximum space``
-        """
+        """Returns detailed outputs of the turbine installation."""
 
         if self.feeders:
             transport_vessels = [*self.feeders]
@@ -288,9 +253,223 @@ class TurbineInstallation(InstallPhase):
             transport_vessels = [self.wtiv]
 
         outputs = {
-            **self.agent_efficiencies,
-            **self.get_max_cargo_weight_utilzations(transport_vessels),
-            **self.get_max_deck_space_utilzations(transport_vessels),
+            self.phase: {
+                **self.agent_efficiencies,
+                **self.get_max_cargo_mass_utilzations(transport_vessels),
+                **self.get_max_deck_space_utilzations(transport_vessels),
+            }
         }
 
         return outputs
+
+
+@process
+def solo_install_turbines(
+    vessel, port, distance, turbines, tower_sections, num_blades, **kwargs
+):
+    """
+    Logic that a Wind Turbine Installation Vessel (WTIV) uses during a single
+    turbine installation process.
+
+    Parameters
+    ----------
+    vessel : vessels.Vessel
+        Vessel object that represents the WTIV.
+    distance : int | float
+        Distance between port and site (km).
+    component_list : dict
+        Turbine components to retrieve and install.
+    number : int
+        Total turbine component sets to install.
+    """
+
+    reequip_time = vessel.crane.reequip(**kwargs)
+
+    component_list = [
+        *np.repeat("TowerSection", tower_sections),
+        "Nacelle",
+        *np.repeat("Blade", num_blades),
+    ]
+
+    n = 0
+    while n < turbines:
+        if vessel.at_port:
+            try:
+                # Get turbine components
+                yield get_list_of_items_from_port(
+                    vessel, port, component_list, **kwargs
+                )
+
+            except ItemNotFound:
+                # If no items are at port and vessel.storage.items is empty,
+                # the job is done
+                if not vessel.storage.items:
+                    vessel.submit_debug_log(
+                        message="Item not found. Shutting down."
+                    )
+                    break
+
+            # Transit to site
+            vessel.update_trip_data()
+            vessel.at_port = False
+            yield vessel.transit(distance)
+            vessel.at_site = True
+
+        if vessel.at_site:
+
+            if vessel.storage.items:
+                yield prep_for_site_operations(vessel, **kwargs)
+
+                for i in range(tower_sections):
+                    # Get tower section
+                    section = yield vessel.get_item_from_storage(
+                        "TowerSection", **kwargs
+                    )
+
+                    # Install tower section
+                    height = section.length * (i + 1)
+                    yield install_tower_section(
+                        vessel, section, height, **kwargs
+                    )
+
+                # Get turbine nacelle
+                nacelle = yield vessel.get_item_from_storage(
+                    "Nacelle", **kwargs
+                )
+
+                # Install nacelle
+                yield vessel.task("Reequip", reequip_time)
+                yield install_nacelle(vessel, nacelle, **kwargs)
+
+                # Install turbine blades
+                yield vessel.task("Reequip", reequip_time)
+                for _ in range(num_blades):
+                    blade = yield vessel.get_item_from_storage(
+                        "Blade", **kwargs
+                    )
+
+                    yield install_turbine_blade(vessel, blade, **kwargs)
+
+                # Jack-down
+                site_depth = kwargs.get("site_depth", None)
+                extension = kwargs.get("extension", site_depth + 10)
+                jackdown_time = vessel.jacksys.jacking_time(
+                    extension, site_depth
+                )
+
+                yield vessel.task(
+                    "Jackdown",
+                    jackdown_time,
+                    constraints=vessel.transit_limits,
+                )
+
+                n += 1
+
+            else:
+                # Transit to port
+                vessel.at_site = False
+                yield vessel.transit(distance)
+                vessel.at_port = True
+
+    vessel.submit_debug_log(message="Turbine installation complete!")
+
+
+@process
+def install_turbine_components_from_queue(
+    wtiv, queue, distance, turbines, tower_sections, num_blades, **kwargs
+):
+    """
+    Logic that a Wind Turbine Installation Vessel (WTIV) uses to install
+    turbine componenets from a queue of feeder barges.
+
+    Parameters
+    ----------
+    env : simulation.Environment
+        SimPy environment that the simulation runs in.
+    wtiv : vessels.Vessel
+        Vessel object that represents the WTIV.
+    queue : simpy.Resource
+        Queue object to interact with active feeder barge.
+    component_list : dict
+        Turbine components to retrieve and install.
+    number : int
+        Total turbine component sets to install.
+    distance : int | float
+        Distance from site to port (km).
+    """
+
+    reequip_time = wtiv.crane.reequip(**kwargs)
+
+    n = 0
+    while n < turbines:
+        if wtiv.at_port:
+            # Transit to site
+            wtiv.at_port = False
+            yield wtiv.transit(distance)
+            wtiv.at_site = True
+
+        if wtiv.at_site:
+
+            if queue.vessel:
+
+                # Prep for turbine install
+                yield prep_for_site_operations(wtiv, **kwargs)
+
+                for i in range(tower_sections):
+                    # Get tower section
+                    section = yield wtiv.get_item_from_storage(
+                        "TowerSection", vessel=queue.vessel, **kwargs
+                    )
+
+                    # Install tower section
+                    height = section.length * (i + 1)
+                    yield install_tower_section(
+                        wtiv, section, height, **kwargs
+                    )
+
+                # Get turbine nacelle
+                nacelle = yield wtiv.get_item_from_storage(
+                    "Nacelle", vessel=queue.vessel, **kwargs
+                )
+
+                # Install nacelle
+                yield wtiv.task("Reequip", reequip_time)
+                yield install_nacelle(wtiv, nacelle, **kwargs)
+
+                # Install turbine blades
+                yield wtiv.task("Reequip", reequip_time)
+
+                for i in range(num_blades):
+                    release = True if i + 1 == num_blades else False
+
+                    blade = yield wtiv.get_item_from_storage(
+                        "Blade", vessel=queue.vessel, release=release, **kwargs
+                    )
+
+                    yield install_turbine_blade(wtiv, blade, **kwargs)
+
+                # Jack-down
+                site_depth = kwargs.get("site_depth", None)
+                extension = kwargs.get("extension", site_depth + 10)
+                jackdown_time = wtiv.jacksys.jacking_time(
+                    extension, site_depth
+                )
+
+                yield wtiv.task(
+                    "Jackdown", jackdown_time, constraints=wtiv.transit_limits
+                )
+
+                n += 1
+
+            else:
+                start = wtiv.env.now
+                yield queue.activate
+                delay_time = wtiv.env.now - start
+                wtiv.submit_action_log("Delay", delay_time, location="Site")
+
+    # Transit to port
+    wtiv.at_site = False
+    yield wtiv.transit(distance)
+    wtiv.at_port = True
+
+    wtiv.submit_debug_log(message="Turbine installation complete!")
