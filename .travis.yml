@@ -22,17 +22,18 @@ install:
   # Create environment and install dependences dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - conda activate test-environment
-  - conda install -q --yes compilers matplotlib pytest pip openmdao==2.8.0 jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy pytest
-  - pip install simpy numpy-financial marmot-agents
+  - conda install -q --yes compilers matplotlib pytest pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy pytest
+  - conda install -c nikhar-abbas rosco-toolbox
+  - pip install simpy marmot-agents
   
   # Install ROSCO_toolbox
-  - git clone https://github.com/NREL/ROSCO_toolbox.git
-  - cd ROSCO_toolbox
-  - git submodule init
-  - git submodule update
-  - git checkout develop
-  - python setup.py install
-  - cd ..
+  #- git clone https://github.com/NREL/ROSCO_toolbox.git
+  #- cd ROSCO_toolbox
+  #- git submodule init
+  #- git submodule update
+  #- git checkout develop
+  #- python setup.py install
+  #- cd ..
 
   # install pyoptsparse
   #- git clone https://github.com/OpenMDAO/pyoptsparse.git;
