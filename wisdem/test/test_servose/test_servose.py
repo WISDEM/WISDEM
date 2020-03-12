@@ -81,18 +81,23 @@ class TestServo(unittest.TestCase):
         myobj.n_pc   = n_pc
         myobj.n_pc_spline = n_pc
         myobj.regulation_reg_III = True
-        
+
+        grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi/4.,np.pi/2.,n_pc + 1)))))
+        grid1 = (grid0 - grid0[0])/(grid0[-1]-grid0[0])
+        V_expect0  = grid1 * (self.inputs['v_max'] - self.inputs['v_min']) + self.inputs['v_min']
+        V_spline = np.linspace(self.inputs['v_min'], self.inputs['v_max'], n_pc)
+        irated = 12
+
         # All reg 2: no maxTS, no max rpm, no power limit
         self.inputs['omega_max'] = 1e3
         self.inputs['control_maxTS'] = 1e5
         self.inputs['rated_power'] = 1e16
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        V_expect0 = np.linspace(4, 25, n_pc)
         V_expect1 = V_expect0.copy()
-        #V_expect1[7] = self.outputs['rated_V']
+        #V_expect1[irated] = self.outputs['rated_V']
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         npt.assert_equal(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_expect0)
+        npt.assert_equal(self.outputs['V_spline'], V_spline)
         npt.assert_allclose(self.outputs['Omega'], Omega_tsr)
         npt.assert_equal(self.outputs['pitch'], np.zeros( V_expect0.shape ) )
         npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
@@ -115,16 +120,15 @@ class TestServo(unittest.TestCase):
         self.inputs['control_maxTS'] = 1e5
         self.inputs['rated_power'] = 1e16
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        V_expect0 = np.linspace(4, 25, n_pc)
         V_expect1 = V_expect0.copy()
-        #V_expect1[7] = 15.*70*2*np.pi/(10.*60.)
+        #V_expect1[irated] = 15.*70*2*np.pi/(10.*60.)
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.minimum(Omega_tsr, 15.0)
         npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_expect0)
+        npt.assert_equal(self.outputs['V_spline'], V_spline)
         npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'][:7], 0.0 )
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][7:]))
+        npt.assert_equal(self.outputs['pitch'][:irated], 0.0 )
+        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][(irated+1):]))
         npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
         npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
         npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
@@ -133,24 +137,23 @@ class TestServo(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['rated_Omega'], 15.0)
         self.assertGreater(self.outputs['rated_pitch'], 0.0)
         myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
-        npt.assert_allclose(myCp[:7], myCp[0])
-        npt.assert_allclose(myCp[:7], self.outputs['Cp'][:7])
+        npt.assert_allclose(myCp[:irated], myCp[0])
+        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
 
         # Test maxTS, no max rpm, no power limit
         self.inputs['omega_max'] = 1e3
         self.inputs['control_maxTS'] = 105.0
         self.inputs['rated_power'] = 1e16
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        V_expect0 = np.linspace(4, 25, n_pc)
         V_expect1 = V_expect0.copy()
-        #V_expect1[7] = 105./10.
+        #V_expect1[irated] = 105./10.
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.minimum(Omega_tsr, 105./70./2/np.pi*60)
         npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_expect0)
+        npt.assert_equal(self.outputs['V_spline'], V_spline)
         npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'][:7], 0.0 )
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][7:]))
+        npt.assert_equal(self.outputs['pitch'][:irated], 0.0 )
+        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][irated:]))
         npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95) 
         npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
         npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
@@ -159,35 +162,34 @@ class TestServo(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['rated_Omega'], Omega_expect[-1])
         self.assertGreater(self.outputs['rated_pitch'], 0.0)
         myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
-        npt.assert_allclose(myCp[:7], myCp[0])
-        npt.assert_allclose(myCp[:7], self.outputs['Cp'][:7])
+        npt.assert_allclose(myCp[:irated], myCp[0])
+        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
 
         # Test no maxTS, no max rpm, power limit
         self.inputs['omega_max'] = 1e3
         self.inputs['control_maxTS'] = 1e4
         self.inputs['rated_power'] = 5e6
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        V_expect0 = np.linspace(4, 25, n_pc)
         V_expect1 = V_expect0.copy()
-        V_expect1[7] = self.outputs['rated_V']
+        V_expect1[irated] = self.outputs['rated_V']
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.minimum(Omega_tsr, self.outputs['rated_Omega'])
         npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_expect0)
+        npt.assert_equal(self.outputs['V_spline'], V_spline)
         npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'][:7], 0.0 )
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][8:]))
+        npt.assert_equal(self.outputs['pitch'][:irated], 0.0 )
+        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][(irated+1):]))
         npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
-        npt.assert_array_less(self.outputs['P'][:7], self.outputs['P'][1:8])
-        npt.assert_allclose(self.outputs['P'][7:], 5e6, rtol=1e-4, atol=0)
+        npt.assert_array_less(self.outputs['P'][:irated], self.outputs['P'][1:(irated+1)])
+        npt.assert_allclose(self.outputs['P'][irated:], 5e6, rtol=1e-4, atol=0)
         #npt.assert_array_less(self.outputs['Q'], self.outputs['Q'][1:])
-        npt.assert_array_less(self.outputs['T'], self.outputs['T'][7]+1e-1)
+        npt.assert_array_less(self.outputs['T'], self.outputs['T'][irated]+1e-1)
         #self.assertEqual(self.outputs['rated_V'], V_expect1[-1])
         self.assertAlmostEqual(self.outputs['rated_Omega'], Omega_expect[-1])
         self.assertEqual(self.outputs['rated_pitch'], 0.0)
         myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
-        npt.assert_allclose(myCp[:7], myCp[0])
-        npt.assert_allclose(myCp[:7], self.outputs['Cp'][:7])
+        npt.assert_allclose(myCp[:irated], myCp[0])
+        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
         
         # Test min & max rpm, no power limit
         self.inputs['omega_min'] = 7.0
@@ -195,13 +197,12 @@ class TestServo(unittest.TestCase):
         self.inputs['control_maxTS'] = 1e5
         self.inputs['rated_power'] = 1e16
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        V_expect0 = np.linspace(4, 25, n_pc)
         V_expect1 = V_expect0.copy()
-        #V_expect1[7] = 15.*70*2*np.pi/(10.*60.)
+        #V_expect1[irated] = 15.*70*2*np.pi/(10.*60.)
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.maximum( np.minimum(Omega_tsr, 15.0), 7.0)
         npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_expect0)
+        npt.assert_equal(self.outputs['V_spline'], V_spline)
         npt.assert_allclose(self.outputs['Omega'], Omega_expect)
         npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][Omega_expect != Omega_tsr]) )
         npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95) 
@@ -222,16 +223,15 @@ class TestServo(unittest.TestCase):
         self.inputs['rated_power'] = 1e16
         self.inputs['control_pitch'] = 5.0
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        V_expect0 = np.linspace(4, 25, n_pc)
         V_expect1 = V_expect0.copy()
-        #V_expect1[7] = 15.*70*2*np.pi/(10.*60.)
+        #V_expect1[irated] = 15.*70*2*np.pi/(10.*60.)
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.minimum(Omega_tsr, 15.0)
         npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_expect0)
+        npt.assert_equal(self.outputs['V_spline'], V_spline)
         npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'][:7], 5.0 )
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][7:]))
+        npt.assert_equal(self.outputs['pitch'][:irated], 5.0 )
+        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][irated:]))
         npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
         npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
         npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
@@ -240,8 +240,8 @@ class TestServo(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['rated_Omega'], 15.0)
         self.assertGreater(self.outputs['rated_pitch'], 5.0)
         myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
-        npt.assert_allclose(myCp[:7], myCp[0])
-        npt.assert_allclose(myCp[:7], self.outputs['Cp'][:7])
+        npt.assert_allclose(myCp[:irated], myCp[0])
+        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
 
         
         
@@ -311,18 +311,23 @@ class TestServo(unittest.TestCase):
         myobj.n_pc   = n_pc
         myobj.n_pc_spline = n_pc
         myobj.regulation_reg_III = False
+
+        grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi/4.,np.pi/2.,n_pc + 1)))))
+        grid1 = (grid0 - grid0[0])/(grid0[-1]-grid0[0])
+        V_expect0  = grid1 * (self.inputs['v_max'] - self.inputs['v_min']) + self.inputs['v_min']
+        V_spline = np.linspace(self.inputs['v_min'], self.inputs['v_max'], n_pc)
+        irated = 12
         
         # All reg 2: no maxTS, no max rpm, no power limit
         self.inputs['omega_max'] = 1e3
         self.inputs['control_maxTS'] = 1e5
         self.inputs['rated_power'] = 1e16
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        V_expect0 = np.linspace(4, 25, n_pc)
         V_expect1 = V_expect0.copy()
-        #V_expect1[7] = self.outputs['rated_V']
+        #V_expect1[irated] = self.outputs['rated_V']
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         npt.assert_equal(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_expect0)
+        npt.assert_equal(self.outputs['V_spline'], V_spline)
         npt.assert_allclose(self.outputs['Omega'], Omega_tsr)
         npt.assert_equal(self.outputs['pitch'], np.zeros( V_expect0.shape ) )
         npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
@@ -345,28 +350,27 @@ class TestServo(unittest.TestCase):
         self.inputs['control_maxTS'] = 1e4
         self.inputs['rated_power'] = 5e6
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        V_expect0 = np.linspace(4, 25, n_pc)
         V_expect1 = V_expect0.copy()
-        V_expect1[7] = self.outputs['rated_V']
+        V_expect1[irated] = self.outputs['rated_V']
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.minimum(Omega_tsr, self.outputs['rated_Omega'])
         npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_expect0)
+        npt.assert_equal(self.outputs['V_spline'], V_spline)
         npt.assert_allclose(self.outputs['Omega'], Omega_expect)
         npt.assert_equal(self.outputs['pitch'], 0.0 )
-        #npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][8:]))
-        npt.assert_allclose(self.outputs['Cp'][:8], self.outputs['Cp_aero'][:8]*0.95)
-        npt.assert_array_less(self.outputs['P'][:7], self.outputs['P'][1:8])
-        npt.assert_allclose(self.outputs['P'][7:], 5e6, rtol=1e-6, atol=0)
-        #npt.assert_equal(self.outputs['Q'][8:], self.outputs['Q'][7])
-        npt.assert_equal(self.outputs['T'][8:], 0.0)
-        npt.assert_array_less(self.outputs['T'], self.outputs['T'][7]+1e-1)
+        #npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][(irated+1):]))
+        npt.assert_allclose(self.outputs['Cp'][:(irated+1)], self.outputs['Cp_aero'][:(irated+1)]*0.95)
+        npt.assert_array_less(self.outputs['P'][:irated], self.outputs['P'][1:(irated+1)])
+        npt.assert_allclose(self.outputs['P'][irated:], 5e6, rtol=1e-6, atol=0)
+        #npt.assert_equal(self.outputs['Q'][(irated+1):], self.outputs['Q'][irated])
+        npt.assert_equal(self.outputs['T'][(irated+1):], 0.0)
+        npt.assert_array_less(self.outputs['T'], self.outputs['T'][irated]+1e-1)
         #self.assertEqual(self.outputs['rated_V'], V_expect1[-1])
         self.assertAlmostEqual(self.outputs['rated_Omega'], Omega_expect[-1])
         self.assertEqual(self.outputs['rated_pitch'], 0.0)
         myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
-        npt.assert_allclose(myCp[:7], myCp[0])
-        npt.assert_allclose(myCp[:7], self.outputs['Cp'][:7])
+        npt.assert_allclose(myCp[:irated], myCp[0])
+        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
 
         
 def suite():
