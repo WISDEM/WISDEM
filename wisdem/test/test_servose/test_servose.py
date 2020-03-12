@@ -20,16 +20,16 @@ class TestServo(unittest.TestCase):
         npzfile = np.load(ARCHIVE)
         self.inputs['airfoils_aoa'] = npzfile['aoa']
         self.inputs['airfoils_Re'] = npzfile['Re']
-        self.inputs['airfoils_cl'] = npzfile['cl']
-        self.inputs['airfoils_cd'] = npzfile['cd']
-        self.inputs['airfoils_cm'] = npzfile['cm']
+        self.inputs['airfoils_cl'] = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1)
+        self.inputs['airfoils_cd'] = np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1)
+        self.inputs['airfoils_cm'] = np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1)
         self.inputs['r'] = npzfile['r']
         self.inputs['chord'] = npzfile['chord']
         self.inputs['theta'] = npzfile['theta']
 
-        naero = self.inputs['r'].size
-        n_aoa_grid = self.inputs['airfoils_aoa'].size
-        n_Re_grid = self.inputs['airfoils_Re'].size
+        n_span = self.inputs['r'].size
+        n_aoa = self.inputs['airfoils_aoa'].size
+        n_Re = self.inputs['airfoils_Re'].size
         n_pc = 22
         
         # parameters
@@ -50,9 +50,9 @@ class TestServo(unittest.TestCase):
         self.inputs['precone'] = 0.
         self.inputs['tilt'] = 0.
         self.inputs['yaw'] = 0.
-        self.inputs['precurve'] = np.zeros(naero)
+        self.inputs['precurve'] = np.zeros(n_span)
         self.inputs['precurveTip'] = 0.
-        self.inputs['presweep'] = np.zeros(naero)
+        self.inputs['presweep'] = np.zeros(n_span)
         self.inputs['presweepTip'] = 0.
         
         self.discrete_inputs['nBlades'] = 3
@@ -67,16 +67,20 @@ class TestServo(unittest.TestCase):
 
         myopt = {}
         myopt['blade'] = {}
-        myopt['blade']['n_span'] = naero
-        myopt['blade']['n_aoa'] = n_aoa_grid
-        myopt['blade']['n_Re'] = n_Re_grid
+        myopt['blade']['n_span'] = n_span
+        myopt['blade']['n_aoa'] = n_aoa
+        myopt['blade']['n_Re'] = n_Re
         myopt['blade']['n_tab'] = 1
         myopt['servose'] = {}
         myopt['servose']['regulation_reg_III'] = True
         myopt['servose']['n_pc'] = n_pc
         myopt['servose']['n_pc_spline'] = n_pc
-        myobj = serv.RegulatedPowerCurve(myopt)
-        myobj.naero = naero
+        myobj = serv.RegulatedPowerCurve(analysis_options=myopt)
+        myobj.n_span = n_span
+        myobj.n_tab  = 1
+        myobj.n_pc   = n_pc
+        myobj.n_pc_spline = n_pc
+        myobj.regulation_reg_III = True
         
         # All reg 2: no maxTS, no max rpm, no power limit
         self.inputs['omega_max'] = 1e3
@@ -246,16 +250,16 @@ class TestServo(unittest.TestCase):
         npzfile = np.load(ARCHIVE)
         self.inputs['airfoils_aoa'] = npzfile['aoa']
         self.inputs['airfoils_Re'] = npzfile['Re']
-        self.inputs['airfoils_cl'] = npzfile['cl']
-        self.inputs['airfoils_cd'] = npzfile['cd']
-        self.inputs['airfoils_cm'] = npzfile['cm']
+        self.inputs['airfoils_cl'] = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1)
+        self.inputs['airfoils_cd'] = np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1)
+        self.inputs['airfoils_cm'] = np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1)
         self.inputs['r'] = npzfile['r']
         self.inputs['chord'] = npzfile['chord']
         self.inputs['theta'] = npzfile['theta']
 
-        naero = self.inputs['r'].size
-        n_aoa_grid = self.inputs['airfoils_aoa'].size
-        n_Re_grid = self.inputs['airfoils_Re'].size
+        n_span = self.inputs['r'].size
+        n_aoa = self.inputs['airfoils_aoa'].size
+        n_Re = self.inputs['airfoils_Re'].size
         n_pc = 22
         
         # parameters
@@ -276,9 +280,9 @@ class TestServo(unittest.TestCase):
         self.inputs['precone'] = 0.
         self.inputs['tilt'] = 0.
         self.inputs['yaw'] = 0.
-        self.inputs['precurve'] = np.zeros(naero)
+        self.inputs['precurve'] = np.zeros(n_span)
         self.inputs['precurveTip'] = 0.
-        self.inputs['presweep'] = np.zeros(naero)
+        self.inputs['presweep'] = np.zeros(n_span)
         self.inputs['presweepTip'] = 0.
         
         self.discrete_inputs['nBlades'] = 3
@@ -293,16 +297,20 @@ class TestServo(unittest.TestCase):
 
         myopt = {}
         myopt['blade'] = {}
-        myopt['blade']['n_span'] = naero
-        myopt['blade']['n_aoa'] = n_aoa_grid
-        myopt['blade']['n_Re'] = n_Re_grid
+        myopt['blade']['n_span'] = n_span
+        myopt['blade']['n_aoa'] = n_aoa
+        myopt['blade']['n_Re'] = n_Re
         myopt['blade']['n_tab'] = 1
         myopt['servose'] = {}
         myopt['servose']['regulation_reg_III'] = False
         myopt['servose']['n_pc'] = n_pc
         myopt['servose']['n_pc_spline'] = n_pc
-        myobj = serv.RegulatedPowerCurve(myopt)
-        myobj.naero = naero
+        myobj = serv.RegulatedPowerCurve(analysis_options=myopt)
+        myobj.n_span = n_span
+        myobj.n_tab  = 1
+        myobj.n_pc   = n_pc
+        myobj.n_pc_spline = n_pc
+        myobj.regulation_reg_III = False
         
         # All reg 2: no maxTS, no max rpm, no power limit
         self.inputs['omega_max'] = 1e3

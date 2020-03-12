@@ -21,7 +21,7 @@ import wisdem.test.test_wisdem as test_wisdem
 def suite():
     suite = unittest.TestSuite( (
         test_assemblies.test_all.suite(),
-        #test_airfoilprep.test_all.suite(),
+        test_airfoilprep.test_all.suite(),
         test_ccblade.test_all.suite(),
         test_commonse.test_all.suite(),
         #test_drivetrainse.test_all.suite(),
@@ -41,7 +41,7 @@ def suite():
 
 valid_tests = ['test_orbit',
                #    'test_assemblies',
-               #'test_airfoilprep',
+               'test_airfoilprep',
                'test_ccblade',
                'test_commonse',
                'test_floatingse',
