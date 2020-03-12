@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from openmdao.api import ExplicitComponent, Group, IndepVarComp
+from openmdao.api import ExplicitComponent, Group
 from scipy.interpolate import PchipInterpolator
 
 class ParametrizeBladeAero(ExplicitComponent):

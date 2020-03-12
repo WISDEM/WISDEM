@@ -11,6 +11,9 @@ optimization_variables:
         n_opt: 8
         min_gain: 0.2 # non-dimensional
         max_gain: 2.0 # non-dimensional
+      af_positions:
+        flag: False
+        af_start: 4
     structure:
       spar_cap_ss:
         flag: False
