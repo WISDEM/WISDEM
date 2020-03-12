@@ -5,13 +5,34 @@ import math
 from scipy.optimize import brentq
 from openmdao.api import ExplicitComponent
 
+### USING OLD NUMPY SRC FOR PMT-FUNCTION INSTEAD OF SWITCHING TO ANNOYING NUMPY-FINANCIAL
+_when_to_num = {'end':0, 'begin':1,
+                'e':0, 'b':1,
+                0:0, 1:1,
+                'beginning':1,
+                'start':1,
+                'finish':0}
 
-# Handle future deprication of np.pmt in numpy 1.20
-from packaging import version
-if version.parse(np.__version__) < version.parse('1.18'):
-    from numpy import pmt
-else:
-    from numpy_financial import pmt
+def _convert_when(when):
+    #Test to see if when has already been converted to ndarray
+    #This will happen if one function calls another, for example ppmt
+    if isinstance(when, np.ndarray):
+        return when
+    try:
+        return _when_to_num[when]
+    except (KeyError, TypeError):
+        return [_when_to_num[x] for x in when]
+    
+def pmt(rate, nper, pv, fv=0, when='end'):
+    when = _convert_when(when)
+    (rate, nper, pv, fv, when) = map(np.array, [rate, nper, pv, fv, when])
+    temp = (1 + rate)**nper
+    mask = (rate == 0)
+    masked_rate = np.where(mask, 1, rate)
+    fact = np.where(mask != 0, nper,
+                    (1 + masked_rate*when)*(temp - 1)/masked_rate)
+    return -(fv + pv*temp) / fact
+
 
 class blade_bom(object):
 
