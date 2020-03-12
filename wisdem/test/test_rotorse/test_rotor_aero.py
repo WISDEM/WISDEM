@@ -8,6 +8,15 @@ import time
 import os
 ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'regulation.npz'
         
+
+class TestRotorAero(unittest.TestCase):
+    def setUp(self):
+        self.inputs = {}
+        self.outputs = {}
+        self.discrete_inputs = {}
+        self.discrete_outputs = {}
+
+        
     def testRegulationTrajectory(self):
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(ARCHIVE)
@@ -58,7 +67,7 @@ ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'regulatio
         self.discrete_inputs['wakerotation'] = True
         self.discrete_inputs['usecd'] = True
 
-        myobj = ra.RegulatedPowerCurve_GB(naero=naero, n_aoa_grid=n_aoa_grid, n_Re_grid=n_Re_grid, n_pc=n_pc, n_pc_spline=n_pc,
+        myobj = ra.RegulatedPowerCurve(naero=naero, n_aoa_grid=n_aoa_grid, n_Re_grid=n_Re_grid, n_pc=n_pc, n_pc_spline=n_pc,
                                           regulation_reg_II5=True, regulation_reg_III=True)
         myobj.naero = naero
         
@@ -275,7 +284,7 @@ ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'regulatio
         self.discrete_inputs['wakerotation'] = True
         self.discrete_inputs['usecd'] = True
 
-        myobj = ra.RegulatedPowerCurve_GB(naero=naero, n_aoa_grid=n_aoa_grid, n_Re_grid=n_Re_grid, n_pc=n_pc, n_pc_spline=n_pc,
+        myobj = ra.RegulatedPowerCurve(naero=naero, n_aoa_grid=n_aoa_grid, n_Re_grid=n_Re_grid, n_pc=n_pc, n_pc_spline=n_pc,
                                           regulation_reg_II5=True, regulation_reg_III=False)
         myobj.naero = naero
         
