@@ -14,7 +14,7 @@ import pytest
 
 from wisdem.orbit.library import initialize_library, extract_library_specs
 from wisdem.orbit.phases.design import ArraySystemDesign, CustomArraySystemDesign
-from wisdem.orbit.simulation.exceptions import LibraryItemNotFoundError
+from wisdem.orbit.core.exceptions import LibraryItemNotFoundError
 
 initialize_library(pytest.library)
 

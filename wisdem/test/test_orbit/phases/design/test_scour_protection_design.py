@@ -57,7 +57,7 @@ def test_fully_defined_setup():
 
 @pytest.mark.parametrize(
     "config,expected",
-    ((config_fully_defined, 1141), (config_min_defined, 3852),),
+    ((config_fully_defined, 1141), (config_min_defined, 3852)),
     ids=["fully_defined", "minimally_defined"],
 )
 def test_tonnes_per_substructure(config, expected):
@@ -90,6 +90,6 @@ def test_design_result():
 
     assert scour.design_result == {
         "scour_protection": {
-            "tonnes_per_substructure": scour.scour_protection_tonnes
+            "tons_per_substructure": scour.scour_protection_tonnes
         }
     }
