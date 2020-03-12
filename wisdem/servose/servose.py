@@ -42,7 +42,7 @@ class ServoSE(Group):
             self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
             self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         # Connections to the stall check
-        self.connect('powercurve.aoa_cutin','stall_check.aoa_along_span')
+        self.connect('powercurve.aoa_regII','stall_check.aoa_along_span')
 
         # Connections to the Weibull CDF
         self.connect('powercurve.V_spline', 'cdf.x')
@@ -416,6 +416,38 @@ class RegulatedPowerCurve(ExplicitComponent):
         self.add_discrete_input('hubloss',   val=True,                      desc='include Prandtl hub loss model')
         self.add_discrete_input('wakerotation', val=True,                   desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
         self.add_discrete_input('usecd',     val=True,                      desc='use drag coefficient in computing induction factors')
+
+
+        # outputs
+        self.add_output('V',        val=np.zeros(self.n_pc), units='m/s',        desc='wind vector')
+        self.add_output('Omega',    val=np.zeros(self.n_pc), units='rpm',        desc='rotor rotational speed')
+        self.add_output('pitch',    val=np.zeros(self.n_pc), units='deg',        desc='rotor pitch schedule')
+        self.add_output('P',        val=np.zeros(self.n_pc), units='W',          desc='rotor electrical power')
+        self.add_output('T',        val=np.zeros(self.n_pc), units='N',          desc='rotor aerodynamic thrust')
+        self.add_output('Q',        val=np.zeros(self.n_pc), units='N*m',        desc='rotor aerodynamic torque')
+        self.add_output('M',        val=np.zeros(self.n_pc), units='N*m',        desc='blade root moment')
+        self.add_output('Cp',       val=np.zeros(self.n_pc),                     desc='rotor electrical power coefficient')
+        self.add_output('Cp_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic power coefficient')
+        self.add_output('Ct_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic thrust coefficient')
+        self.add_output('Cq_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic torque coefficient')
+        self.add_output('Cm_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic moment coefficient')
+        self.add_output('V_spline', val=np.zeros(self.n_pc_spline), units='m/s', desc='wind vector')
+        self.add_output('P_spline', val=np.zeros(self.n_pc_spline), units='W',   desc='rotor electrical power')
+        self.add_output('V_R25',       val=0.0,                units='m/s', desc='region 2.5 transition wind speed')
+        self.add_output('rated_V',     val=0.0,                units='m/s', desc='rated wind speed')
+        self.add_output('rated_Omega', val=0.0,                units='rpm', desc='rotor rotation speed at rated')
+        self.add_output('rated_pitch', val=0.0,                units='deg', desc='pitch setting at rated')
+        self.add_output('rated_T',     val=0.0,                units='N',   desc='rotor aerodynamic thrust at rated')
+        self.add_output('rated_Q',     val=0.0,                units='N*m', desc='rotor aerodynamic torque at rated')
+        self.add_output('ax_induct_regII',   val=np.zeros(n_span),           desc='rotor axial induction at cut-in wind speed along blade span')
+        self.add_output('tang_induct_regII', val=np.zeros(n_span),           desc='rotor tangential induction at cut-in wind speed along blade span')
+        self.add_output('aoa_regII',val=np.zeros(n_span),       units='deg', desc='angle of attack distribution along blade span at cut-in wind speed')
+        self.add_output('Cp_regII', val=0.0,                                 desc='power coefficient at cut-in wind speed')
+        self.add_output('cl_regII', val=np.zeros(n_span),                    desc='lift coefficient distribution along blade span at cut-in wind speed')
+        self.add_output('cd_regII', val=np.zeros(n_span),                    desc='drag coefficient distribution along blade span at cut-in wind speed')
+
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+
         
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -636,7 +668,9 @@ class RegulatedPowerCurve(ExplicitComponent):
         outputs['pitch']   = pitch
                 
         self.ccblade.induction_inflow = True
-        a_regII, ap_regII, alpha_regII, cl_regII, cd_regII = self.ccblade.distributedAeroLoads(Uhub[0], Omega_rpm[0], pitch[0], 0.0)
+        tsr_vec = Omega_rpm / 30. * np.pi *  R_tip / Uhub
+        id_regII = np.argmin(abs(tsr_vec - inputs['tsr_operational']))
+        a_regII, ap_regII, alpha_regII, cl_regII, cd_regII = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
         
         # Fit spline to powercurve for higher grid density
         spline   = PchipInterpolator(Uhub, P)
@@ -646,11 +680,12 @@ class RegulatedPowerCurve(ExplicitComponent):
         # outputs
         outputs['V_spline']          = V_spline.flatten()
         outputs['P_spline']          = P_spline.flatten()
-        outputs['ax_induct_cutin']   = a_regII
-        outputs['tang_induct_cutin'] = ap_regII
-        outputs['aoa_cutin']         = alpha_regII
-        outputs['cl_cutin']          = cl_regII
-        outputs['cd_cutin']          = cd_regII
+        outputs['ax_induct_regII']   = a_regII
+        outputs['tang_induct_regII'] = ap_regII
+        outputs['aoa_regII']         = alpha_regII
+        outputs['cl_regII']          = cl_regII
+        outputs['cd_regII']          = cd_regII
+        outputs['Cp_regII']          = Cp_aero[id_regII]
 
 
 class Cp_Ct_Cq_Tables(ExplicitComponent):

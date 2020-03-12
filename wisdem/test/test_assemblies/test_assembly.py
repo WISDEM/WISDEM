@@ -20,8 +20,8 @@ class TestRegression(unittest.TestCase):
         print(wt_opt['elastic.precomp.blade_mass'])
 
         self.assertAlmostEqual(wt_opt['elastic.precomp.blade_mass'][0], 16620.8374273702)
-        self.assertAlmostEqual(wt_opt['sse.AEP'][0]*1.e-6, 23.860510959408376)
-        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 104.06919557365639)
+        self.assertAlmostEqual(wt_opt['sse.AEP'][0]*1.e-6, 23.84091289784652)
+        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 104.15474347823192)
 
 def suite():
     suite = unittest.TestSuite()
