@@ -112,3 +112,7 @@ Thumbs.db
 *.png
 *.pdf
 *.docx
+
+# JetBrains Junk #
+##################
+.idea/
