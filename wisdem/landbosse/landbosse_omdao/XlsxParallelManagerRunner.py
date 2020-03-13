@@ -4,7 +4,7 @@ from concurrent import futures
 import pandas as pd
 
 from ..model import Manager
-from .XlsxFileOperations import XlsxFileOperations
+from .OpenMDAOFileOperations import OpenMDAOFileOperations
 from .XlsxReader import XlsxReader
 from .XlsxManagerRunner import XlsxManagerRunner
 from .XlsxDataframeCache import XlsxDataframeCache
@@ -53,7 +53,7 @@ class XlsxParallelManagerRunner(XlsxManagerRunner):
         extended_project_list_before_parameter_modifications = self.read_project_and_parametric_list_from_xlsx()
 
         # Prepare the file operations
-        file_ops = XlsxFileOperations()
+        file_ops = OpenMDAOFileOperations()
 
         # Instantiate an XlsxReader to handle the parametrics and master input
         # dictionaries

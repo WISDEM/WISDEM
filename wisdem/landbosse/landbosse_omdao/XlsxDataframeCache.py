@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from .XlsxFileOperations import XlsxFileOperations
+from .OpenMDAOFileOperations import OpenMDAOFileOperations
 
 class XlsxDataframeCache:
     """
@@ -65,7 +65,7 @@ class XlsxDataframeCache:
             original = cls._cache[xlsx_basename]
             return cls.copy_dataframes(original)
 
-        file_ops = XlsxFileOperations()
+        file_ops = OpenMDAOFileOperations()
 
         if xlsx_path is None:
             xlsx_filename = os.path.join(file_ops.landbosse_input_dir(), 'project_data', f'{xlsx_basename}.xlsx')

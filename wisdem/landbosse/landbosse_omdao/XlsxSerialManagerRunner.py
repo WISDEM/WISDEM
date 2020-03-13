@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 from ..model import Manager
-from .XlsxFileOperations import XlsxFileOperations
+from .OpenMDAOFileOperations import OpenMDAOFileOperations
 from .XlsxReader import XlsxReader
 from .XlsxManagerRunner import XlsxManagerRunner
 from .XlsxDataframeCache import XlsxDataframeCache
@@ -55,7 +55,7 @@ class XlsxSerialManagerRunner(XlsxManagerRunner):
         print('>>> Project and parametric lists loaded')
 
         # For file operations
-        file_ops = XlsxFileOperations()
+        file_ops = OpenMDAOFileOperations()
 
         # Get the output dictionary ready
         runs_dict = OrderedDict()

@@ -1,7 +1,7 @@
 import pandas as pd
 
 from .XlsxDataframeCache import XlsxDataframeCache
-from .XlsxFileOperations import XlsxFileOperations
+from .OpenMDAOFileOperations import OpenMDAOFileOperations
 from .XlsxReader import XlsxReader
 
 
@@ -21,12 +21,12 @@ class XlsxManagerRunner:
 
         Parameters
         ----------
-        file_ops : XlsxFileOperations
+        file_ops : OpenMDAOFileOperations
             The file operation instance used to create filenames. If this
             is left at the default of None, a new instance of
             XlsxFileOperations is created.
         """
-        self.file_ops = file_ops if file_ops is not None else XlsxFileOperations()
+        self.file_ops = file_ops if file_ops is not None else OpenMDAOFileOperations()
 
     def run_from_project_list_xlsx(self, projects_xlsx,  enable_cost_and_scaling_modifications=True):
         """
