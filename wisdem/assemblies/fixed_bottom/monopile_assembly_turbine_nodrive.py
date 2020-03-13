@@ -207,7 +207,7 @@ class MonopileTurbine(om.Group):
         # Connections to TurbineCostSE
         self.connect('mass_one_blade',              ['blade_mass','orbit.blade_mass'])
         self.connect('total_blade_cost',            'blade_cost_external')
-        self.connect('tow.tower_raw_cost',          'tower_cost_external')
+        self.connect('tower_raw_cost',          'tower_cost_external')
 
         # Connections to ORBIT
         self.connect('water_depth', 'orbit.site_depth')
