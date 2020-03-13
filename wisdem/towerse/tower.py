@@ -54,6 +54,7 @@ class MonopileFoundation(ExplicitComponent):
         self.add_input('tower_outer_diameter', np.zeros(nPoints), units='m', desc='cylinder diameter at corresponding locations')
         self.add_input('tower_wall_thickness', np.zeros(nPoints-1), units='m', desc='shell thickness at corresponding locations')
         self.add_input('suctionpile_depth', 0.0, units='m', desc='depth of foundation in the soil')
+        self.add_input('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
         self.add_input('foundation_height', 0.0, units='m', desc='height of foundation (0.0 for land, -water_depth for fixed bottom)')
 
         nadd = 1 if self.options['monopile'] else 0
@@ -64,8 +65,14 @@ class MonopileFoundation(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         if self.options['monopile']:
+            # Determine suction pile depth
+            pile = inputs['suctionpile_depth']
+            if pile == 0.0:
+                pile = inputs['suctionpile_depth_diam_ratio'] * inputs['tower_outer_diameter'][0]
+
             # Gravity foundations will have 0 suction depth, but we will still add an extra point for consistency
-            pile = np.maximum(0.1, inputs['suctionpile_depth'])
+            pile = np.maximum(0.1, pile)
+            
             outputs['section_height_out'] = np.r_[pile, inputs['tower_section_height']]
             outputs['outer_diameter_out'] = np.r_[inputs['tower_outer_diameter'][0], inputs['tower_outer_diameter']]
             outputs['wall_thickness_out'] = np.r_[inputs['tower_wall_thickness'][0], inputs['tower_wall_thickness']]
@@ -521,6 +528,7 @@ class TowerLeanSE(Group):
         towerIndeps.add_output('transition_piece_mass', 0.0, units='kg')
         towerIndeps.add_output('transition_piece_height', 0.0, units='m')
         towerIndeps.add_output('suctionpile_depth', 0.0, units='m')
+        towerIndeps.add_output('suctionpile_depth_diam_ratio', 0.0)
         self.add_subsystem('towerIndepsLean', towerIndeps, promotes=['*'])
 
         # Independent variables that may be duplicated at higher levels of aggregation
@@ -937,6 +945,7 @@ if __name__ == '__main__':
     prob['tower_outfitting_factor'] = Koutfitting
     prob['yaw'] = yaw
     prob['suctionpile_depth'] = suction_depth
+    prob['suctionpile_depth_diam_ratio'] = 3.35
     prob['soil_G'] = soilG
     prob['soil_nu'] = soilnu
     # --- material props ---
