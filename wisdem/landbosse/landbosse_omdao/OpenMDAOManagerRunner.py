@@ -5,13 +5,12 @@ import pandas as pd
 
 from ..model import Manager
 from .OpenMDAOFileOperations import OpenMDAOFileOperations
-from .XlsxReader import XlsxReader
-from .XlsxManagerRunner import XlsxManagerRunner
-from .OpenMDAODataframeCache import XlsxDataframeCache
+from .OpenMDAOInputDictGenerator import XlsxReader
 from .XlsxGenerator import XlsxGenerator
+from .OpenMDAODataframeCache import XlsxDataframeCache
 
 
-class XlsxSerialManagerRunner(XlsxManagerRunner):
+class XlsxSerialManagerRunner:
     """
     This subclass implementation of XlsxManagerRunner runs all projects
     in a serial loop.

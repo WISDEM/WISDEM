@@ -1,6 +1,9 @@
 import openmdao.api as om
 
 
+from .LandBOSSEComponent import LandBOSSEComponent
+
+
 class LandBOSSEGroup(om.Group):
     def initialize(self):
         self.options.declare('top_level_flag', default=True)
@@ -128,11 +131,13 @@ class LandBOSSEGroup(om.Group):
             val=None
         )
 
-        self.add_subsystem('management_cost', ManagementCostComponent(), promotes=['*'])
-        self.add_subsystem('erection_cost', ErectionCostComopnent(), promotes=['*'])
-        self.add_subsystem('foundation_cost', FoundationCostComponent(), promotes=['*'])
-        # self.add_subsystem('collection_cost', CollectionCostComponent(), promotes=['*'])
-        self.add_subsystem('site_preparation_cost', SitePreparationCostComponent(), promotes=['*'])
+        self.add_subsystem('landbosse', LandBOSSEComponent(), promotes=['*'])
+
+        # self.add_subsystem('management_cost', ManagementCostComponent(), promotes=['*'])
+        # self.add_subsystem('erection_cost', ErectionCostComopnent(), promotes=['*'])
+        # self.add_subsystem('foundation_cost', FoundationCostComponent(), promotes=['*'])
+        # # self.add_subsystem('collection_cost', CollectionCostComponent(), promotes=['*'])
+        # self.add_subsystem('site_preparation_cost', SitePreparationCostComponent(), promotes=['*'])
 
 # Calculate this input instead
 # self.add_input('project_size_megawatts', units='MW', desc='(Number of turbines) * (Turbine rating MW)', value=)
