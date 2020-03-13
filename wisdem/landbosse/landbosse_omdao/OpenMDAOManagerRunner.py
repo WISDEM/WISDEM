@@ -7,7 +7,7 @@ from ..model import Manager
 from .OpenMDAOFileOperations import OpenMDAOFileOperations
 from .XlsxReader import XlsxReader
 from .XlsxManagerRunner import XlsxManagerRunner
-from .XlsxDataframeCache import XlsxDataframeCache
+from .OpenMDAODataframeCache import XlsxDataframeCache
 from .XlsxGenerator import XlsxGenerator
 
 
