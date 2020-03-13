@@ -303,6 +303,7 @@ class WT_RNTA(Group):
             self.connect('monopile.transition_piece_mass',   'towerse.transition_piece_maxx')
             self.connect('monopile.gravity_foundation_mass', 'towerse.gravity_foundation_mass')
             self.connect('monopile.suctionpile_depth',       'towerse.suctionpile_depth')
+            self.connect('monopile.suctionpile_depth_diam_ratio',       'towerse.suctionpile_depth_diam_ratio')
 
         #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
         #self.connect('max_taper_ratio',         'max_taper') # TODO- 

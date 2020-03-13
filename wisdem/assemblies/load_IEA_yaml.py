@@ -902,6 +902,7 @@ class Monopile(ExplicitComponent):
         self.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
         self.add_output('gravity_foundation_mass', val = 0.0, units='kg', desc='extra mass of gravity foundation')
         self.add_output('suctionpile_depth',       val = 0.0, units='m',  desc='depth of foundation in the soil')
+        self.add_output('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -1592,6 +1593,7 @@ def assign_monopile_values(wt_opt, analysis_options, monopile):
     wt_opt['monopile.transition_piece_mass']      = monopile['transition_piece_mass']
     wt_opt['monopile.gravity_foundation_mass']    = monopile['gravity_foundation_mass']
     wt_opt['monopile.suctionpile_depth']          = monopile['suctionpile_depth']
+    wt_opt['monopile.suctionpile_depth_diam_ratio']          = monopile['suctionpile_depth_diam_ratio']
     
     return wt_opt
 
