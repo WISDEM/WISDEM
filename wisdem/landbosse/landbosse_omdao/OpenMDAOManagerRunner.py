@@ -17,6 +17,134 @@ class XlsxSerialManagerRunner(XlsxManagerRunner):
     in a serial loop.
     """
 
+    def __init__(self, file_ops=None):
+        """
+        The constructor simply creates an XlsxFileOperations instance
+        to live throughout the lifetime of the instance
+
+        Parameters
+        ----------
+        file_ops : OpenMDAOFileOperations
+            The file operation instance used to create filenames. If this
+            is left at the default of None, a new instance of
+            XlsxFileOperations is created.
+        """
+        self.file_ops = file_ops if file_ops is not None else OpenMDAOFileOperations()
+
+    def extract_module_type_operation_lists(self, runs_dict):
+        """
+        This method extract all the cost_by_module_type_operation lists for
+        output in an Excel file.
+
+        It finds values for the keys ending in '_module_type_operation'. It
+        then concatenates them
+        together so they can be easily written to a .csv or .xlsx
+
+        Parameters
+        ----------
+        runs_dict : dict
+            Values are the names of the projects. Keys are the lists of
+            dictionaries that are lines for the .csv
+
+        Returns
+        -------
+        list
+            List of dicts to write to the .csv.
+        """
+        result = []
+        for project_results in runs_dict.values():
+            for key, value in project_results.items():
+                if key.endswith('_module_type_operation'):
+                    result.extend(value)
+        return result
+
+    def extract_details_lists(self, runs_dict):
+        """
+        This method extract all .csv lists from the OrderDict of runs to output
+        into an Excel or .csv file.
+
+        It finds values for the keys ending in '_csv'. It then concatenates them
+        together so they can be easily written to a .csv, .xlsx or other
+        columnar format. (The actual writing is left to other functions.
+
+        Parameters
+        ----------
+        runs_dict : dict
+            Values are the names of the projects. Keys are the lists of
+            dictionaries that are lines for the .csv
+
+        Returns
+        -------
+        list
+            List of dicts to write to the .csv.
+        """
+        runs_for_csv = []
+        for project_results in runs_dict.values():
+            for key, value in project_results.items():
+                if key.endswith('_csv'):
+                    runs_for_csv.extend(value)
+        return runs_for_csv
+
+    def read_project_and_parametric_list_from_xlsx(self):
+        """
+        This method reads both the project and parametric list from the
+        project_list xlsx. It returns them as a tuple.
+
+        To ensure backward compatibility with project list spreadsheets
+        that contain only one sheet, the following actions take place
+
+        1. Project list spreadsheet contains one sheet: The only sheet
+        that is present is read as the project list, and a dataframe for
+        parametrics is returned that has all the columns but no rows so
+        it can be used in joins. It doe snot matter what the sheet name
+        is.
+
+        2. Project list spreadsheet contains two sheets: The sheet named
+        "Project list" is assumed to be the project list and the sheet
+        named "Parametric list" is assumed to be the specifications for
+        the parametric variables. If one or both of those tab names are
+        missing, an exception is raised
+
+        Returns
+        -------
+        pandas.DataFrame
+            The enhanced project list that has support for all parametric
+            adjustments for each step.
+
+        Raises
+        ------
+        KeyError
+            When the spreadsheet contains multiple sheets and one or
+            both of "Project list" or "Parametric list" are undefined.
+        """
+        path_to_project_list = self.file_ops.landbosse_input_dir()
+        sheets = XlsxDataframeCache.read_all_sheets_from_xlsx('project_list', path_to_project_list)
+
+        # If there is one sheet, make an empty dataframe as a placeholder.
+        if len(sheets.values()) == 1:
+            first_sheet = list(sheets.values())[0]
+            project_list = first_sheet
+            parametric_list = pd.DataFrame()
+
+        # If the parametric and project lists exist, read them
+        elif 'Parametric list' in sheets.keys() and 'Project list' in sheets.keys():
+            project_list = sheets['Project list']
+            parametric_list = sheets['Parametric list']
+
+        # Otherwise, raise an exception
+        else:
+            raise KeyError("Project list needs to have a single sheet or sheets named 'Project list' and 'Parametric list'.")
+
+        # Instantiate and XlsxReader to assemble master input dictionary
+        xlsx_reader = XlsxReader()
+
+        # Join in the parametric variable modifications
+        parametric_value_list = xlsx_reader.create_parametric_value_list(parametric_list)
+        extended_project_list = xlsx_reader.outer_join_projects_to_parametric_values(project_list,
+                                                                                 parametric_value_list)
+
+        return extended_project_list
+
     def run_from_project_list_xlsx(self, projects_xlsx, enable_cost_and_scaling_modifications=False):
         """
         This function runs all the scenarios in the projects_xlsx file. It creates
