@@ -232,14 +232,20 @@ class MonopileFoundation(om.ExplicitComponent):
     
     def setup(self):
         self.add_input('suctionpile_depth', 0.0, units='m', desc='depth of foundation in the soil')
+        self.add_input('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
         self.add_input('foundation_height', 0.0, units='m', desc='height of foundation (0.0 for land, -water_depth for fixed bottom)')
+        self.add_input('base_diameter', 0.0, units='m', desc='cylinder diameter at base')
 
         self.add_output('z_start', 0.0, units='m', desc='parameterized section heights along cylinder')
 
     def compute(self, inputs, outputs):
         outputs['z_start'] = inputs['foundation_height']
+
         if self.options['monopile']:
-            outputs['z_start'] -= np.abs(inputs['suctionpile_depth'])
+            pile = inputs['suctionpile_depth']
+            if pile == 0.0:
+                pile = inputs['suctionpile_depth_diam_ratio'] * inputs['base_diameter']
+            outputs['z_start'] -= np.abs(pile)
             
                                                  
 class TowerDiscretization(om.ExplicitComponent):
@@ -714,6 +720,7 @@ class TowerLeanSE(om.Group):
             sharedIndeps.add_output('transition_piece_mass', 0.0, units='kg')
             sharedIndeps.add_output('transition_piece_height', 0.0, units='m')
             sharedIndeps.add_output('suctionpile_depth', 0.0, units='m')
+            sharedIndeps.add_output('suctionpile_depth_diam_ratio', 0.0)
             sharedIndeps.add_output('tower_outer_diameter', np.zeros(n_height), units='m')
             sharedIndeps.add_output('tower_section_height', np.zeros(n_height-1), units='m')
             sharedIndeps.add_output('tower_wall_thickness', np.zeros(n_height-1), units='m')
@@ -760,6 +767,7 @@ class TowerLeanSE(om.Group):
         self.connect('z_start', 'geometry.foundation_height')
         self.connect('tower_section_height', 'geometry.section_height')
         self.connect('tower_outer_diameter', ['geometry.diameter', 'gc.d'])
+        self.connect('tower_outer_diameter', 'base_diameter', src_indices=[0])
         self.connect('tower_wall_thickness', ['geometry.wall_thickness', 'gc.t'])
 
         self.connect('rho_full', 'cm.rho')
@@ -1120,6 +1128,7 @@ if __name__ == '__main__':
     prob['outfitting_factor'] = Koutfitting
     prob['yaw'] = yaw
     prob['suctionpile_depth'] = suction_depth
+    prob['suctionpile_depth_diam_ratio'] = 3.25
     prob['G_soil'] = soilG
     prob['nu_soil'] = soilnu
     # --- material props ---
