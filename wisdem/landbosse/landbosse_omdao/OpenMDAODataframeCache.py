@@ -1,9 +1,13 @@
 import os
-import pandas as pd
+
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+    import pandas as pd
 
 from .OpenMDAOFileOperations import OpenMDAOFileOperations
 
-class XlsxDataframeCache:
+class OpenMDAODataframeCache:
     """
     This class does not need to be instantiated. This means that the
     cache is shared throughout all parts of the code that needs access
@@ -50,7 +54,7 @@ class XlsxDataframeCache:
             in the dictionary used to access all the sheets in the
             named .xlsx file.
 
-        xlsx_pathname : str
+        xlsx_path : str
             The path from which to read the .xlsx file. This parameter
             has the default value of
 
@@ -72,7 +76,9 @@ class XlsxDataframeCache:
         else:
             xlsx_filename = os.path.join(xlsx_path, f'{xlsx_basename}.xlsx')
 
-        xlsx = pd.ExcelFile(xlsx_filename)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
+            xlsx = pd.ExcelFile(xlsx_filename)
         sheets_dict = {sheet_name: xlsx.parse(sheet_name) for sheet_name in xlsx.sheet_names}
         cls._cache[xlsx_basename] = sheets_dict
         return cls.copy_dataframes(sheets_dict)
