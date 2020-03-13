@@ -1,12 +1,5 @@
 import openmdao.api as om
 
-from .DummyComponent import DummyComponent
-from .ManagementCostComponent import ManagementCostComponent
-from .ErectionCostComponent import ErectionCostComopnent
-from .FoundationCostComponent import FoundationCostComponent
-from .CollectionCostComponent import CollectionCostComponent
-from .SitePreparationComponent import SitePreparationCostComponent
-
 
 class LandBOSSEGroup(om.Group):
     def initialize(self):

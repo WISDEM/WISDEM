@@ -23,9 +23,6 @@ from wisdem.drivetrainse.drivese_omdao import DriveSE
 # Suppress the NumPy warning about incompatability. It is a false
 # positive.
 warnings.filterwarnings('ignore', 'numpy.ufunc size changed')
-from wisdem.landbosse.landbosse_omdao import LandBOSSEGroup
-from wisdem.landbosse.landbosse_omdao import DataframeCache
-from wisdem.landbosse.excelio.WeatherWindowCSVReader import read_weather_window
 
 from wisdem.commonse.mpi_tools import MPI
 
@@ -151,8 +148,8 @@ class LandBasedTurbine(Group):
         self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']),
                            promotes=['machine_rating', 'lcoe'])
 
-        # LandBOSSE
-        self.add_subsystem('landbosse', LandBOSSEGroup(), promotes=['*'])
+        # >>>> LandBOSSE subsystem here
+        # self.add_subsystem('landbosse', LandBOSSEGroup(), promotes=['*'])
 
         # Set up connections
 
@@ -288,78 +285,78 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
 
     # >>>>>>>>>>>>>>> LandBOSSE will go here <<<<<<<<<<<<<<<<<<<
 
-    # LandBOSSE: Overrides for default inputs
-    site_facility_building_area_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'site_facility_building_area'
-    )
-    prob['site_facility_building_area_df'] = site_facility_building_area_df
-
-    # This is the components dataframe that will need to be populated from
-    # the rest of this assembly.
-    components_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'components'
-    )
-    prob['components'] = components_df
-
-    crane_specs_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'crane_specs'
-    )
-    prob['crane_specs'] = crane_specs_df
-
-    raw_weather_window_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'weather_window'
-    )
-    weather_window_df = read_weather_window(raw_weather_window_df)
-    prob['weather_window'] = weather_window_df
-
-    crew_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'crew'
-    )
-    prob['crew'] = crew_df
-
-    crew_price_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'crew_price'
-    )
-    prob['crew_price'] = crew_price_df
-
-    equip_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'equip'
-    )
-    prob['equip'] = equip_df
-
-    equip_price_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'equip_price'
-    )
-    prob['equip_price'] = equip_price_df
-
-    material_price_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'material_price'
-    )
-    prob['material_price'] = material_price_df
-
-    rsmeans_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'rsmeans'
-    )
-    prob['rsmeans'] = rsmeans_df
-
-    cable_specs_df = DataframeCache.read_xlsx_sheet(
-        'foundation_validation_ge15',
-        'cable_specs'
-    )
-    prob['cable_specs'] = cable_specs_df
-
-    prob['project_value_usd'] = 5e7
-    prob['foundation_cost_usd'] = 1e7
+    # # LandBOSSE: Overrides for default inputs
+    # site_facility_building_area_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'site_facility_building_area'
+    # )
+    # prob['site_facility_building_area_df'] = site_facility_building_area_df
+    #
+    # # This is the components dataframe that will need to be populated from
+    # # the rest of this assembly.
+    # components_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'components'
+    # )
+    # prob['components'] = components_df
+    #
+    # crane_specs_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'crane_specs'
+    # )
+    # prob['crane_specs'] = crane_specs_df
+    #
+    # raw_weather_window_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'weather_window'
+    # )
+    # weather_window_df = read_weather_window(raw_weather_window_df)
+    # prob['weather_window'] = weather_window_df
+    #
+    # crew_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'crew'
+    # )
+    # prob['crew'] = crew_df
+    #
+    # crew_price_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'crew_price'
+    # )
+    # prob['crew_price'] = crew_price_df
+    #
+    # equip_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'equip'
+    # )
+    # prob['equip'] = equip_df
+    #
+    # equip_price_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'equip_price'
+    # )
+    # prob['equip_price'] = equip_price_df
+    #
+    # material_price_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'material_price'
+    # )
+    # prob['material_price'] = material_price_df
+    #
+    # rsmeans_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'rsmeans'
+    # )
+    # prob['rsmeans'] = rsmeans_df
+    #
+    # cable_specs_df = DataframeCache.read_xlsx_sheet(
+    #     'foundation_validation_ge15',
+    #     'cable_specs'
+    # )
+    # prob['cable_specs'] = cable_specs_df
+    #
+    # prob['project_value_usd'] = 5e7
+    # prob['foundation_cost_usd'] = 1e7
 
     return prob
 
