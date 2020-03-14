@@ -168,6 +168,35 @@ class LandBOSSEComponent(om.ExplicitComponent):
             A dictionary-like for non-numeric outputs (like
             pandas.DataFrame)
         """
+        master_output_dict = dict()
+        master_input_dict = self.prepare_master_input_dictionary(inputs, discrete_inputs)
+        manager = Manager(master_input_dict, master_output_dict)
+        result = manager.execute_landbosse('WISDEM')
+
+        if result != 0:
+            raise Exception("LandBOSSE didn't execute correctly")
+
+    def prepare_master_input_dictionary(self, inputs, discrete_inputs):
+        """
+        This prepares a master input dictionary by applying all the necessary
+        modifications to the inputs.
+
+        Parameters
+        ----------
+        inputs : openmdao.vectors.default_vector.DefaultVector
+            A dictionary-like object with NumPy arrays that hold float
+            inputs. Note that since these are NumPy arrays, they
+            need indexing to pull out simple float64 values.
+
+        discrete_inputs : openmdao.core.component._DictValues
+            A dictionary-like with the non-numeric inputs (like
+            pandas.DataFrame)
+
+        Returns
+        -------
+        dict
+            The prepared master input to go to the Manager.
+        """
         inputs_dict = {key: inputs[key][0] for key in inputs.keys()}
         discrete_inputs_dict = {key: value for key, value in discrete_inputs.items()}
         incomplete_input_dict = {**inputs_dict, **discrete_inputs_dict}
@@ -193,14 +222,8 @@ class LandBOSSEComponent(om.ExplicitComponent):
 
         defaults = DefaultMasterInputDict()
         master_input_dict = defaults.populate_input_dict(incomplete_input_dict)
-        master_output_dict = dict()
 
-        manager = Manager(master_input_dict, master_output_dict)
-        result = manager.execute_landbosse('WISDEM')
-        if result != 0:
-            raise Exception("LandBOSSE didn't execute correctly")
-
-        pass
+        return master_input_dict
 
     def print_verbose_module_type_operation(self, module_name, module_type_operation):
         """
@@ -225,26 +248,3 @@ class LandBOSSEComponent(om.ExplicitComponent):
             usd_per_kw = round(row['usd_per_kw_per_project'], 2)
             print(f'{operation_id}\t{type_of_cost}\t${cost_per_turbine}/turbine\t${cost_per_project}/project\t${usd_per_kw}/kW')
         print('################################################')
-
-    def print_verbose_details(self, module_name, details):
-        """
-        This method prints the verbose details output of a module.
-
-        Parameters
-        ----------
-        module_name : str
-            The name of the cost module reporting thee details
-
-        details : list[dict]
-            The list of dictionaries that contain the details to be
-            printed.
-        """
-        print('################################################')
-        print(f'LandBOSSE {module_name} detailed outputs')
-        for row in details:
-            unit = row['unit']
-            name = row['variable_df_key_col_name']
-            value = row['value']
-            print(f'{name}\t{unit}\t{value}')
-        print('################################################')
-

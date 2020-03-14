@@ -175,11 +175,6 @@ class OpenMDAOManagerRunner:
             # Append the modified project parameters
             extended_project_list_after_parameter_modifications.append(project_parameters)
 
-            # Write all project_data sheets
-            # parametric_project_data_path = \
-            #     os.path.join(file_ops.parametric_project_data_output_path(), f'{project_id_with_serial}_project_data.xlsx')
-            # XlsxGenerator.write_project_data(project_data_sheets, parametric_project_data_path)
-
             # Create the master input dictionary.
             master_input_dict = xlsx_reader.create_master_input_dictionary(project_data_sheets, project_parameters)
 
