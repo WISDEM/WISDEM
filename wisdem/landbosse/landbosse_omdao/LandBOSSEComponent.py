@@ -1,3 +1,5 @@
+from functools import reduce
+
 import openmdao.api as om
 import numpy as np
 
@@ -128,6 +130,12 @@ class LandBOSSEComponent(om.ExplicitComponent):
             val=None
         )
 
+        self.add_discrete_output(
+            'landbosse_costs_by_module_type_operation',
+            desc='The costs by module, type and operation',
+            val=None
+        )
+
     def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
         """
         This runs the ErectionCost module using the inputs and outputs into and
@@ -167,6 +175,9 @@ class LandBOSSEComponent(om.ExplicitComponent):
 
         if result != 0:
             raise Exception("LandBOSSE didn't execute correctly")
+
+        costs_by_module_type_operation = self.gather_costs_from_master_output_dict(master_output_dict)
+        discrete_outputs['landbosse_costs_by_module_type_operation'] = costs_by_module_type_operation
 
     def prepare_master_input_dictionary(self, inputs, discrete_inputs):
         """
@@ -216,6 +227,32 @@ class LandBOSSEComponent(om.ExplicitComponent):
         master_input_dict = defaults.populate_input_dict(incomplete_input_dict)
 
         return master_input_dict
+
+    def gather_costs_from_master_output_dict(self, master_output_dict):
+        """
+        This method extract all the cost_by_module_type_operation lists for
+        output in an Excel file.
+
+        It finds values for the keys ending in '_module_type_operation'. It
+        then concatenates them
+        together so they can be easily written to a .csv or .xlsx
+
+        Parameters
+        ----------
+        runs_dict : dict
+            Values are the names of the projects. Keys are the lists of
+            dictionaries that are lines for the .csv
+
+        Returns
+        -------
+        list
+            List of dicts to write to the .csv.
+        """
+        result = []
+        cost_lists = [value for key, value in master_output_dict.items() if key.endswith('_module_type_operation')]
+        for cost_list in cost_lists:
+            result.extend(cost_list)
+        return result
 
     def print_verbose_module_type_operation(self, module_name, module_type_operation):
         """
