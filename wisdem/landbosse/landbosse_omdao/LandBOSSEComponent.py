@@ -234,8 +234,17 @@ class LandBOSSEComponent(om.ExplicitComponent):
         output in an Excel file.
 
         It finds values for the keys ending in '_module_type_operation'. It
-        then concatenates them
-        together so they can be easily written to a .csv or .xlsx
+        then concatenates them together so they can be easily written to
+        a .csv or .xlsx
+
+        On every row, it includes the:
+            Rotor diameter m
+            Turbine rating MW
+            Number of turbines
+
+        This enables easy mapping of new columns if need be. The columns have
+        spaces in the names so that they can be easily written to a user-friendly
+        output.
 
         Parameters
         ----------
@@ -248,32 +257,29 @@ class LandBOSSEComponent(om.ExplicitComponent):
         list
             List of dicts to write to the .csv.
         """
-        result = []
+        line_items = []
+
+        # Gather the lists of costs
         cost_lists = [value for key, value in master_output_dict.items() if key.endswith('_module_type_operation')]
+
+        # Flatten the list of lists that is the result of the gathering
         for cost_list in cost_lists:
-            result.extend(cost_list)
-        return result
+            line_items.extend(cost_list)
 
-    def print_verbose_module_type_operation(self, module_name, module_type_operation):
-        """
-        This method prints the module_type_operation costs list for
-        verbose output.
+        # Filter out the keys needed and rename them to meaningful values
+        final_costs = []
+        for line_item in line_items:
+            item = {
+                'Module': line_item['module'],
+                'Type of cost': line_item['type_of_cost'],
+                'Cost / kW': line_item['usd_per_kw_per_project'],
+                'Cost / project': line_item['cost_per_project'],
+                'Cost / turbine': line_item['cost_per_turbine'],
+                'Number of turbines': line_item['num_turbines'],
+                'Rotor diameter (m)': line_item['rotor_diameter_m'],
+                'Turbine rating (MW)': line_item['turbine_rating_MW'],
+                'Project ID with serial': line_item['project_id_with_serial']
+            }
+            final_costs.append(item)
 
-        Parameters
-        ----------
-        module_name : str
-            The name of the LandBOSSE module being logged.
-
-        module_type_operation : list
-            The list of dictionaries of costs to print.
-        """
-        print('################################################')
-        print(f'LandBOSSE {module_name} costs by module, type and operation')
-        for row in module_type_operation:
-            operation_id = row['operation_id']
-            type_of_cost = row['type_of_cost']
-            cost_per_turbine = round(row['cost_per_turbine'], 2)
-            cost_per_project = round(row['cost_per_project'], 2)
-            usd_per_kw = round(row['usd_per_kw_per_project'], 2)
-            print(f'{operation_id}\t{type_of_cost}\t${cost_per_turbine}/turbine\t${cost_per_project}/project\t${usd_per_kw}/kW')
-        print('################################################')
+        return final_costs
