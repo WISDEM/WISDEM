@@ -76,7 +76,7 @@ class Manager:
             erection_cost.run_module()
             self.output_dict['erection_cost'] = erection_cost_output_dict
 
-
+            print('Debug me!')
 
             self.output_dict['actual_construction_months'] = self.output_dict['siteprep_construction_months'] + \
                                                              max(self.output_dict['erection_construction_months'],

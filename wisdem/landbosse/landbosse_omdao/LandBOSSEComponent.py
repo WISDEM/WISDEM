@@ -1,4 +1,5 @@
 import openmdao.api as om
+import numpy as np
 
 from ..model.Manager import Manager
 from ..model.DefaultMasterInputDict import DefaultMasterInputDict
@@ -87,6 +88,7 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_input('markup_overhead', desc='Markup overhead', val=0.05)
         self.add_input('markup_profit_margin', desc='Markup profit margin', val=0.05)
         self.add_input('Mass tonne', val=(1.,), desc='', units='t')
+        self.add_input('development_labor_cost_usd', desc='The cost of labor in the development phase', units='USD')
 
         self.add_discrete_input('site_facility_building_area_df', val=None, desc='site_facility_building_area DataFrame')
         self.add_discrete_input('components', val=None, desc='Dataframe of components for tower, blade, nacelle')
@@ -157,12 +159,28 @@ class LandBOSSEComponent(om.ExplicitComponent):
         """
         inputs_dict = {key: inputs[key][0] for key in inputs.keys()}
         discrete_inputs_dict = {key: value for key, value in discrete_inputs.items()}
-        incomplete_inputs_dict = {**inputs_dict, **discrete_inputs_dict}
-        defaults = DefaultMasterInputDict()
-        master_inputs_dict = defaults.populate_input_dict(incomplete_inputs_dict)
-        master_outputs_dict = dict()
+        incomplete_input_dict = {**inputs_dict, **discrete_inputs_dict}
 
-        manager = Manager(master_inputs_dict, master_outputs_dict)
+        # FoundationCost needs to have all the component data split into separate
+        # NumPy arrays.
+        incomplete_input_dict['component_data'] = discrete_inputs['components']
+        for component in incomplete_input_dict['component_data'].keys():
+            incomplete_input_dict[component] = np.array(incomplete_input_dict['component_data'][component])
+
+        # crew_price should be aliased as crew_cost because some of the code
+        # calls it crew_price
+        incomplete_input_dict['crew_cost'] = discrete_inputs['crew_price']
+
+        # read in RSMeans per diem:
+        crew_cost = discrete_inputs['crew_price']
+        crew_cost = crew_cost.set_index("Labor type ID", drop=False)
+        incomplete_input_dict['rsmeans_per_diem'] = crew_cost.loc['RSMeans', 'Per diem USD per day']
+
+        defaults = DefaultMasterInputDict()
+        master_input_dict = defaults.populate_input_dict(incomplete_input_dict)
+        master_output_dict = dict()
+
+        manager = Manager(master_input_dict, master_output_dict)
         result = manager.execute_landbosse('WISDEM')
         if result != 0:
             raise Exception("LandBOSSE didn't execute correctly")

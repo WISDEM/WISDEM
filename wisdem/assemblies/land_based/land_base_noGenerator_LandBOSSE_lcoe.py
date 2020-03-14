@@ -304,9 +304,11 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     prob['material_price'] = project_data_dfs['material_price']
     prob['rsmeans'] = project_data_dfs['rsmeans']
     prob['cable_specs'] = project_data_dfs['cable_specs']
+    prob['crew_price'] = project_data_dfs['crew_price']
 
     prob['project_value_usd'] = 5e7
     prob['foundation_cost_usd'] = 1e7
+    prob['development_labor_cost_usd'] = 1e6
 
     return prob
 
