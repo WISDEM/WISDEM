@@ -359,7 +359,14 @@ if __name__ == "__main__":
     print('###### LandBOSSE Details ########################################')
     for detail in landbosse_details_by_module:
         print(detail)
-    print('###############################################################')
+    print('#################################################################')
+
+    print('###### ErectionCost specific ####################################')
+    print('ErectionCost crane cost')
+    print(prob['erection_crane_choice'])
+    print('ErectionCost components top or base')
+    print(prob['erection_component_name_topvbase'])
+    print('#################################################################')
 
     # # Initialize OpenMDAO problem and FloatingSE Group
     # if MPI:

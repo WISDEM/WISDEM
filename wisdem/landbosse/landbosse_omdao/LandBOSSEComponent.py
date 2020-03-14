@@ -6,7 +6,6 @@ import numpy as np
 from ..model.Manager import Manager
 from ..model.DefaultMasterInputDict import DefaultMasterInputDict
 
-
 class LandBOSSEComponent(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('top_level_flag', default=True)
@@ -130,6 +129,8 @@ class LandBOSSEComponent(om.ExplicitComponent):
             val=None
         )
 
+        # OUTPUTS, EN MASSE
+
         self.add_discrete_output(
             'landbosse_costs_by_module_type_operation',
             desc='The costs by module, type and operation',
@@ -139,6 +140,20 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_discrete_output(
             'landbosse_details_by_module',
             desc='The details from the run of LandBOSSE. This includes some costs, but mostly other things',
+            val=None
+        )
+
+        # OUTPUTS, SPECIFIC
+
+        self.add_discrete_output(
+            'erection_crane_choice',
+            desc='The crane choices for erection.',
+            val=None
+        )
+
+        self.add_discrete_output(
+            'erection_component_name_topvbase',
+            desc='List of components and whether they are a topping or base operation',
             val=None
         )
 
@@ -174,19 +189,28 @@ class LandBOSSEComponent(om.ExplicitComponent):
             A dictionary-like for non-numeric outputs (like
             pandas.DataFrame)
         """
+
+        # Put the inputs together and run all the modules
         master_output_dict = dict()
         master_input_dict = self.prepare_master_input_dictionary(inputs, discrete_inputs)
         manager = Manager(master_input_dict, master_output_dict)
         result = manager.execute_landbosse('WISDEM')
 
+        # Check if everything executed correctly
         if result != 0:
             raise Exception("LandBOSSE didn't execute correctly")
+
+        # Gather the cost and detail outputs
 
         costs_by_module_type_operation = self.gather_costs_from_master_output_dict(master_output_dict)
         discrete_outputs['landbosse_costs_by_module_type_operation'] = costs_by_module_type_operation
 
         details = self.gather_details_from_master_output_dict(master_output_dict)
         discrete_outputs['landbosse_details_by_module'] = details
+
+        # Now get specific outputs. These have been refactored to methods that work
+        # with each module so as to keep this method as compact as possible.
+        self.gather_specific_erection_outputs(master_output_dict, outputs, discrete_outputs)
 
     def prepare_master_input_dictionary(self, inputs, discrete_inputs):
         """
@@ -318,3 +342,26 @@ class LandBOSSEComponent(om.ExplicitComponent):
             line_items.extend(details_list)
 
         return line_items
+
+    def gather_specific_erection_outputs(self, master_output_dict, outputs, discrete_outputs):
+        """
+        This method gathers specific outputs from the ErectionCost module and places
+        them on the outputs.
+
+        The method does not return anything. Rather, it places the outputs directly
+        on the continuous of discrete outputs.
+
+        Parameters
+        ----------
+        master_output_dict: dict
+            The master output dictionary out of LandBOSSE
+
+        outputs : openmdao.vectors.default_vector.DefaultVector
+            A dictionary-like object to store outputs.
+
+        discrete_outputs : openmdao.core.component._DictValues
+            A dictionary-like for non-numeric outputs (like
+            pandas.DataFrame)
+        """
+        discrete_outputs['erection_crane_choice'] = master_output_dict['crane_choice']
+        discrete_outputs['erection_component_name_topvbase'] = master_output_dict['component_name_topvbase']
