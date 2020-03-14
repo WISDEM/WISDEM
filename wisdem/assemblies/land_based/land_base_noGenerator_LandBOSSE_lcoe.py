@@ -355,6 +355,12 @@ if __name__ == "__main__":
         print(cost)
     print('###############################################################')
 
+    landbosse_details_by_module = prob['landbosse_details_by_module']
+    print('###### LandBOSSE Details ########################################')
+    for detail in landbosse_details_by_module:
+        print(detail)
+    print('###############################################################')
+
     # # Initialize OpenMDAO problem and FloatingSE Group
     # if MPI:
     #     num_par_fd = MPI.COMM_WORLD.Get_size()

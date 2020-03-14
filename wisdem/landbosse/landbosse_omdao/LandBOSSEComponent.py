@@ -136,6 +136,12 @@ class LandBOSSEComponent(om.ExplicitComponent):
             val=None
         )
 
+        self.add_discrete_output(
+            'landbosse_details_by_module',
+            desc='The details from the run of LandBOSSE. This includes some costs, but mostly other things',
+            val=None
+        )
+
     def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
         """
         This runs the ErectionCost module using the inputs and outputs into and
@@ -178,6 +184,9 @@ class LandBOSSEComponent(om.ExplicitComponent):
 
         costs_by_module_type_operation = self.gather_costs_from_master_output_dict(master_output_dict)
         discrete_outputs['landbosse_costs_by_module_type_operation'] = costs_by_module_type_operation
+
+        details = self.gather_details_from_master_output_dict(master_output_dict)
+        discrete_outputs['landbosse_details_by_module'] = details
 
     def prepare_master_input_dictionary(self, inputs, discrete_inputs):
         """
@@ -283,3 +292,29 @@ class LandBOSSEComponent(om.ExplicitComponent):
             final_costs.append(item)
 
         return final_costs
+
+    def gather_details_from_master_output_dict(self, master_output_dict):
+        """
+        This extracts the detail lists from all the modules to output
+        the detailed non-cost data from the model run.
+
+        Parameters
+        ----------
+        master_output_dict : dict
+            The master output dict with the finished module output in it.
+
+        Returns
+        -------
+        list
+            List of dicts with detailed data.
+        """
+        line_items = []
+
+        # Gather the lists of costs
+        details_lists = [value for key, value in master_output_dict.items() if key.endswith('_csv')]
+
+        # Flatten the list of lists
+        for details_list in details_lists:
+            line_items.extend(details_list)
+
+        return line_items
