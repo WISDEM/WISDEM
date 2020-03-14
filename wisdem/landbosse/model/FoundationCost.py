@@ -1,7 +1,11 @@
 import traceback
 import math
 
-import pandas as pd
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+    import pandas as pd
+
 import numpy as np
 import math
 from sympy.solvers import solve

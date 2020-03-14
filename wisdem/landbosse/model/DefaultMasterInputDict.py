@@ -36,7 +36,7 @@ class DefaultMasterInputDict:
         Returns
         -------
         dict
-            The fully populated output diction
+            The fully populated output dictionary
         """
         complete_dict = dict()
         for key, value in incomplete_input_dict.items():

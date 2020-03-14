@@ -4,8 +4,6 @@ import pandas as pd
 import os
 import traceback
 
-from .XlsxFileOperations import XlsxFileOperations
-
 
 class XlsxGenerator:
     """

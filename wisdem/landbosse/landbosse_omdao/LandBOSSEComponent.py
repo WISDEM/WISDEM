@@ -1,5 +1,8 @@
 import openmdao.api as om
 
+from ..model.Manager import Manager
+from ..model.DefaultMasterInputDict import DefaultMasterInputDict
+
 
 class LandBOSSEComponent(om.ExplicitComponent):
     """
@@ -152,12 +155,19 @@ class LandBOSSEComponent(om.ExplicitComponent):
             A dictionary-like for non-numeric outputs (like
             pandas.DataFrame)
         """
-
-        # Create real dictionaries to pass to the module
         inputs_dict = {key: inputs[key][0] for key in inputs.keys()}
         discrete_inputs_dict = {key: value for key, value in discrete_inputs.items()}
-        master_inputs_dict = {**inputs_dict, **discrete_inputs_dict}
+        incomplete_inputs_dict = {**inputs_dict, **discrete_inputs_dict}
+        defaults = DefaultMasterInputDict()
+        master_inputs_dict = defaults.populate_input_dict(incomplete_inputs_dict)
         master_outputs_dict = dict()
+
+        manager = Manager(master_inputs_dict, master_outputs_dict)
+        result = manager.execute_landbosse('WISDEM')
+        if result != 0:
+            raise Exception("LandBOSSE didn't execute correctly")
+
+        pass
 
     def print_verbose_module_type_operation(self, module_name, module_type_operation):
         """

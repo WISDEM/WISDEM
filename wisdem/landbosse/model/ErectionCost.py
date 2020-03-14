@@ -1,4 +1,8 @@
-import pandas as pd
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+    import pandas as pd
+
 import numpy as np
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon

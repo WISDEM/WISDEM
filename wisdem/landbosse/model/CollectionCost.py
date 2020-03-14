@@ -15,7 +15,11 @@ This module consists of two classes:
 import math
 import numpy as np
 import traceback
-import pandas as pd
+
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+    import pandas as pd
 
 from .CostModule import CostModule
 from .WeatherDelay import WeatherDelay as WD
