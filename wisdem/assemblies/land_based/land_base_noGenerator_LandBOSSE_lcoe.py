@@ -290,25 +290,27 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     # >>>>>>>>>>>>>>> LandBOSSE inputs will go here <<<<<<<<<<<<<<<<<<<
 
     # LandBOSSE: Overrides for default inputs
-    project_data_dfs = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundation_validation_ge15')
+    project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundation_validation_ge15')
 
-    prob['site_facility_building_area_df'] = project_data_dfs['site_facility_building_area']
-    prob['components'] = project_data_dfs['components']
-    prob['crane_specs'] = project_data_dfs['crane_specs']
-    weather_window_df = read_weather_window(project_data_dfs['weather_window'])
+    prob['site_facility_building_area_df'] = project_data['site_facility_building_area']
+    prob['components'] = project_data['components']
+    prob['crane_specs'] = project_data['crane_specs']
+    weather_window_df = read_weather_window(project_data['weather_window'])
     prob['weather_window'] = weather_window_df
-    prob['crew'] = project_data_dfs['crew']
-    prob['crew_price'] = project_data_dfs['crew_price']
-    prob['equip'] = project_data_dfs['equip']
-    prob['equip_price'] = project_data_dfs['equip_price']
-    prob['material_price'] = project_data_dfs['material_price']
-    prob['rsmeans'] = project_data_dfs['rsmeans']
-    prob['cable_specs'] = project_data_dfs['cable_specs']
-    prob['crew_price'] = project_data_dfs['crew_price']
+    prob['crew'] = project_data['crew']
+    prob['crew_price'] = project_data['crew_price']
+    prob['equip'] = project_data['equip']
+    prob['equip_price'] = project_data['equip_price']
+    prob['material_price'] = project_data['material_price']
+    prob['rsmeans'] = project_data['rsmeans']
+    prob['cable_specs'] = project_data['cable_specs']
+    prob['crew_price'] = project_data['crew_price']
+    prob['project_data'] = project_data
 
     prob['project_value_usd'] = 5e7
     prob['foundation_cost_usd'] = 1e7
     prob['development_labor_cost_usd'] = 1e6
+    prob['crane_breakdown_fraction'] = 0.0
 
     return prob
 

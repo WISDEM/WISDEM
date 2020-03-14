@@ -76,8 +76,6 @@ class Manager:
             erection_cost.run_module()
             self.output_dict['erection_cost'] = erection_cost_output_dict
 
-            print('Debug me!')
-
             self.output_dict['actual_construction_months'] = self.output_dict['siteprep_construction_months'] + \
                                                              max(self.output_dict['erection_construction_months'],
                                                              self.output_dict['foundation_construction_months'],
@@ -99,7 +97,12 @@ class Manager:
             total_costs = total_costs.append(self.output_dict['total_erection_cost'], sort=False)
             total_costs = total_costs.append(self.output_dict['total_development_cost'], sort=False)
 
-            self.input_dict['project_value_usd'] = total_costs.sum(numeric_only=True)[0]
+            # Original line that doesn't appear to work with OpenMDAO version
+            # self.input_dict['project_value_usd'] = total_costs.sum(numeric_only=True)[0]
+
+            # Works in OpenMDAO version
+            self.input_dict['project_value_usd'] = total_costs['Cost USD'].sum()
+
             self.input_dict['foundation_cost_usd'] = self.output_dict['total_foundation_cost'].sum(numeric_only=True)[0]
 
             management_cost = ManagementCost(input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name)

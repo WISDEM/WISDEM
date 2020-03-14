@@ -23,6 +23,9 @@ class LandBOSSEComponent(om.ExplicitComponent):
         #     shared_indeps.add_output('hub_height', val=0.0, units='m')
         #     self.add_subsystem('indeps', shared_indeps, promotes=['*'])
 
+        self.add_input('crane_breakdown_fraction', val=0.,
+                       desc='0 means the crane is never broken down. 1 means it is broken down every turbine.')
+
         self.add_input('project_value_usd', val=1, units='USD', desc='Project value in USD')
         self.add_input('construct_duration', val=9, desc='Total project construction time (months)')
         self.add_input('hub_height_meters', val=80, units='m', desc='Hub height m')
@@ -90,6 +93,9 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_input('Mass tonne', val=(1.,), desc='', units='t')
         self.add_input('development_labor_cost_usd', desc='The cost of labor in the development phase', units='USD')
 
+        self.add_discrete_input('user_defined_home_run_trench', val=1,
+                                desc='Flag for user-defined home run trench length (0 = no; 1 = yes)')
+
         self.add_discrete_input('site_facility_building_area_df', val=None, desc='site_facility_building_area DataFrame')
         self.add_discrete_input('components', val=None, desc='Dataframe of components for tower, blade, nacelle')
         self.add_discrete_input('crane_specs', val=None, desc='Dataframe of specifications of cranes')
@@ -100,6 +106,11 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_discrete_input('equip_price', val=None, desc='Prices for various type of equipment.')
         self.add_discrete_input('rsmeans', val=None, desc='RSMeans price data')
         self.add_discrete_input('cable_specs', val=None, desc='cable specs for collection system')
+
+        # This is a dictionary with values that are mostly the dataframes above
+        # This is somewhat redundant, but it is what many parts of the code rely
+        # on.
+        self.add_discrete_input('project_data', val=None, desc='Dictionary of all dataframes of data')
 
         self.add_discrete_input(
             'allow_same_flag',
@@ -167,14 +178,18 @@ class LandBOSSEComponent(om.ExplicitComponent):
         for component in incomplete_input_dict['component_data'].keys():
             incomplete_input_dict[component] = np.array(incomplete_input_dict['component_data'][component])
 
-        # crew_price should be aliased as crew_cost because some of the code
-        # calls it crew_price
+        # These are aliases because parts of the code call the same thing by
+        # difference names.
         incomplete_input_dict['crew_cost'] = discrete_inputs['crew_price']
+        incomplete_input_dict['cable_specs_pd'] = discrete_inputs['cable_specs']
 
         # read in RSMeans per diem:
         crew_cost = discrete_inputs['crew_price']
         crew_cost = crew_cost.set_index("Labor type ID", drop=False)
         incomplete_input_dict['rsmeans_per_diem'] = crew_cost.loc['RSMeans', 'Per diem USD per day']
+
+        # Calculate project size in megawatts
+        incomplete_input_dict['project_size_megawatts'] = float(inputs['num_turbines'] * inputs['turbine_rating_MW'])
 
         defaults = DefaultMasterInputDict()
         master_input_dict = defaults.populate_input_dict(incomplete_input_dict)
