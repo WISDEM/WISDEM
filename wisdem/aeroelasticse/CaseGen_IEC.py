@@ -2,7 +2,7 @@ import numpy as np
 import os, sys, copy, itertools
 import multiprocessing as mp
 
-from wisdem.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix
+from wisdem.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix, save_case_matrix_yaml
 from wisdem.aeroelasticse.pyIECWind import pyIECWind_extreme, pyIECWind_turb
 
 try:
@@ -301,6 +301,7 @@ class CaseGen_IEC():
         if not os.path.exists(self.run_dir):
             os.makedirs(self.run_dir)
         save_case_matrix(matrix_out, change_vars, self.run_dir)
+        save_case_matrix_yaml(matrix_out, change_vars, self.run_dir)
 
 
 
