@@ -252,12 +252,13 @@ class CaseGen_IEC():
             # Append current DLC to full list of cases
             case_list, case_name = CaseGen_General(case_inputs_i, self.run_dir, self.case_name_base)
             case_list_all = self.join_case_dicts(case_list_all, case_list)
+            case_names_all = [self.case_name_base +'_'+ ('%d'%i).zfill(len('%d'%(len(case_list_all)-1))) for i in range(len(case_list_all))]
             dlc_all.extend([dlc]*len(case_list))
 
         # Save case matrix file
-        self.save_joined_case_matrix(case_list_all, dlc_all)
+        self.save_joined_case_matrix(case_list_all, dlc_all, case_names_all)
 
-        return case_list_all, [self.case_name_base +'_'+ ('%d'%i).zfill(len('%d'%(len(case_list_all)-1))) for i in range(len(case_list_all))]
+        return case_list_all, 
 
 
     def join_case_dicts(self, caselist, caselist_add):
@@ -283,7 +284,7 @@ class CaseGen_IEC():
         else:
             return caselist_add
 
-    def save_joined_case_matrix(self, caselist, dlc_list):
+    def save_joined_case_matrix(self, caselist, dlc_list, case_names_all):
 
         change_vars = sorted(caselist[0].keys())
 
@@ -301,7 +302,7 @@ class CaseGen_IEC():
         if not os.path.exists(self.run_dir):
             os.makedirs(self.run_dir)
         save_case_matrix(matrix_out, change_vars, self.run_dir)
-        save_case_matrix_yaml(matrix_out, change_vars, self.run_dir)
+        save_case_matrix_yaml(matrix_out, change_vars, self.run_dir, case_names_all)
 
 
 
