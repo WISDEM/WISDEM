@@ -250,7 +250,7 @@ class CaseGen_IEC():
                         case_inputs_i[var] = {'vals':inital_cond_i, 'group':1}
             
             # Append current DLC to full list of cases
-            case_list, case_name = CaseGen_General(case_inputs_i, self.run_dir, self.case_name_base)
+            case_list, case_name = CaseGen_General(case_inputs_i, self.run_dir, self.case_name_base, save_matrix=False)
             case_list_all = self.join_case_dicts(case_list_all, case_list)
             case_names_all = [self.case_name_base +'_'+ ('%d'%i).zfill(len('%d'%(len(case_list_all)-1))) for i in range(len(case_list_all))]
             dlc_all.extend([dlc]*len(case_list))
@@ -258,7 +258,7 @@ class CaseGen_IEC():
         # Save case matrix file
         self.save_joined_case_matrix(case_list_all, dlc_all, case_names_all)
 
-        return case_list_all, 
+        return case_list_all, case_names_all
 
 
     def join_case_dicts(self, caselist, caselist_add):
