@@ -9,7 +9,8 @@ class PlantFinance(ExplicitComponent):
 
         # Inputs
         self.add_input('machine_rating',    val=0.0, units='kW',        desc='Rating of the turbine')
-        self.add_input('tcc_per_kW' ,       val=0.0, units='USD/kW',    desc='A wind turbine capital cost')
+        self.add_input('tcc_per_kW' ,       val=0.0, units='USD/kW',    desc='Turbine capital cost')
+        self.add_input('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
         self.add_discrete_input('turbine_number',    val=0,             desc='Number of turbines at plant')
         self.add_input('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
         self.add_input('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
@@ -30,7 +31,7 @@ class PlantFinance(ExplicitComponent):
         # Unpack parameters
         t_rating    = inputs['machine_rating']
         n_turbine   = discrete_inputs['turbine_number']
-        tcc_per_kW  = inputs['tcc_per_kW'] 
+        tcc_per_kW  = inputs['tcc_per_kW'] + inputs['offset_tcc_per_kW']
         bos_per_kW  = inputs['bos_per_kW'] 
         opex_per_kW = inputs['opex_per_kW'] 
         fcr         = inputs['fixed_charge_rate']
