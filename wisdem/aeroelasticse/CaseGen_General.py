@@ -69,11 +69,17 @@ def save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_names):
     matrix_out_yaml['Case_Name'] = []
 
     for i, row in enumerate(matrix_out):
-        matrix_out_yaml['Case_ID'].append(i)        
+        matrix_out_yaml['Case_ID'].append(i)
         matrix_out_yaml['Case_Name'].append(case_names[i])
         for val, var in zip(row, change_vars):
-            if type(val) == np.float64:
+            if type(val) in [np.float32, np.float64, np.single, np.double, np.longdouble]:
                 val = float(val)
+            elif type(val) in [np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64, np.intc, np.uintc, np.uint]:
+                val = int(val)
+            elif type(val) in [np.array]:
+                val = val.tolist()
+            elif type(val) in [np.str_]:
+                val = str(val)
             matrix_out_yaml[var].append(val)
 
     if not os.path.exists(dir_matrix):
