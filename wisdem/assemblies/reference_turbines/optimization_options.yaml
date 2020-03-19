@@ -77,6 +77,11 @@ constraints:
     chord:
       flag: False
       max: 4.75
+    frequency:
+      flap_above_3P: False
+      edge_above_3P: False
+      flap_below_3P: True
+      edge_below_3P: False
 
 driver:
     tol: 1.e-6

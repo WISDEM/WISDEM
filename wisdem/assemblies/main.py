@@ -135,8 +135,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             for i in range(1,indices[0]):
                 lb_af[i]    = ub_af[i] = af_pos_init[i]
             for i in indices:
-                lb_af[i]    = 0.5*(af_pos_init[i-1] + af_pos_init[i])
-                ub_af[i]    = 0.5*(af_pos_init[i+1] + af_pos_init[i])
+                lb_af[i]    = 0.5*(af_pos_init[i-1] + af_pos_init[i]) + step_size
+                ub_af[i]    = 0.5*(af_pos_init[i+1] + af_pos_init[i]) - step_size
             lb_af[-1] = ub_af[-1] = 1.
             wt_opt.model.add_design_var('blade.opt_var.af_position', indices = indices, lower=lb_af[indices], upper=ub_af[indices])
         if opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['flag'] == True:
@@ -164,7 +164,19 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if opt_options['constraints']['blade']['tip_deflection']['flag']:
             wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0) 
         if opt_options['constraints']['blade']['chord']['flag']:
-            wt_opt.model.add_constraint('blade.pa.max_chord_constr',     upper= 1.0) 
+            wt_opt.model.add_constraint('blade.pa.max_chord_constr',     upper= 1.0)
+        if opt_options['constraints']['blade']['frequency']['flap_above_3P']:
+            wt_opt.model.add_constraint('rlds.constr.constr_flap_f_above_3P',     upper= 1.0)
+        if opt_options['constraints']['blade']['frequency']['edge_above_3P']:
+            wt_opt.model.add_constraint('rlds.constr.constr_edge_f_above_3P',     upper= 1.0)
+        if opt_options['constraints']['blade']['frequency']['flap_below_3P']:
+            wt_opt.model.add_constraint('rlds.constr.constr_flap_f_below_3P',     upper= 1.0)
+        if opt_options['constraints']['blade']['frequency']['edge_below_3P']:
+            wt_opt.model.add_constraint('rlds.constr.constr_edge_f_below_3P',     upper= 1.0)
+        if opt_options['constraints']['blade']['frequency']['flap_above_3P'] and opt_options['constraints']['blade']['frequency']['flap_below_3P']:
+            exit('The blade flap frequency is constrained to be both above and below 3P. Please check the constraint flags.')
+        if opt_options['constraints']['blade']['frequency']['edge_above_3P'] and opt_options['constraints']['blade']['frequency']['edge_below_3P']:
+            exit('The blade edge frequency is constrained to be both above and below 3P. Please check the constraint flags.')
         if opt_options['constraints']['blade']['rail_transport']['flag']:
             if opt_options['constraints']['blade']['rail_transport']['8_axle']:
                 wt_opt.model.add_constraint('elastic.rail.LV_constraint_8axle',    upper= 1.0)
@@ -175,7 +187,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
-        wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe', 'rlds.constr.constr_max_strainU_spar', 'rlds.constr.constr_max_strainL_spar', 'tcons.tip_deflection_ratio', 'sse.stall_check.no_stall_constraint', 'pc.tsr_opt']
+        wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe', 'rlds.constr.constr_max_strainU_spar', 'rlds.constr.constr_max_strainL_spar', 'tcons.tip_deflection_ratio', 'sse.stall_check.no_stall_constraint', 'pc.tsr_opt', ]
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
         wt_opt.driver.recording_options['record_desvars']     = True

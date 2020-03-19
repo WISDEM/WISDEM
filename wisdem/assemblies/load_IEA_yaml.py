@@ -1077,6 +1077,7 @@ class Costs(ExplicitComponent):
 
         self.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
         self.add_output('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
+        self.add_output('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
         self.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
         self.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
         self.add_output('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
@@ -1669,6 +1670,8 @@ def assign_costs_values(wt_opt, costs):
     wt_opt['costs.opex_per_kW']         = costs['opex_per_kW']
     wt_opt['costs.wake_loss_factor']    = costs['wake_loss_factor']
     wt_opt['costs.fixed_charge_rate']   = costs['fixed_charge_rate']
+    if 'offset_tcc_per_kW' in costs:
+        wt_opt['costs.offset_tcc_per_kW']   = costs['offset_tcc_per_kW']
 
     return wt_opt 
 

@@ -433,6 +433,7 @@ class RegulatedPowerCurve(ExplicitComponent):
         self.add_output('Cm_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic moment coefficient')
         self.add_output('V_spline', val=np.zeros(self.n_pc_spline), units='m/s', desc='wind vector')
         self.add_output('P_spline', val=np.zeros(self.n_pc_spline), units='W',   desc='rotor electrical power')
+        self.add_output('Omega_spline', val=np.zeros(self.n_pc_spline), units='rpm',   desc='omega')
         self.add_output('V_R25',       val=0.0,                units='m/s', desc='region 2.5 transition wind speed')
         self.add_output('rated_V',     val=0.0,                units='m/s', desc='rated wind speed')
         self.add_output('rated_Omega', val=0.0,                units='rpm', desc='rotor rotation speed at rated')
@@ -676,10 +677,13 @@ class RegulatedPowerCurve(ExplicitComponent):
         spline   = PchipInterpolator(Uhub, P)
         V_spline = np.linspace(inputs['v_min'], inputs['v_max'], self.n_pc_spline)
         P_spline = spline(V_spline)
+        spline   = PchipInterpolator(Uhub, Omega)
+        Omega_spline = spline(V_spline)
         
         # outputs
         outputs['V_spline']          = V_spline.flatten()
         outputs['P_spline']          = P_spline.flatten()
+        outputs['Omega_spline']          = Omega_spline.flatten()
         outputs['ax_induct_regII']   = a_regII
         outputs['tang_induct_regII'] = ap_regII
         outputs['aoa_regII']         = alpha_regII
