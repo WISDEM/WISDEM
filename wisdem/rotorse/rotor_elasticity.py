@@ -76,6 +76,12 @@ class RunPreComp(ExplicitComponent):
         self.add_output('Tw_iner',      val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
         self.add_output('x_ec',         val=np.zeros(n_span), units='m',      desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
         self.add_output('y_ec',         val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_output('x_tc',         val=np.zeros(n_span), units='m',      desc='X-coordinate of the tension-center offset with respect to the XR-YR axes')
+        self.add_output('y_tc',         val=np.zeros(n_span), units='m',      desc='Chordwise offset of the section tension-center with respect to the XR-YR axes')
+        self.add_output('x_sc',         val=np.zeros(n_span), units='m',      desc='X-coordinate of the shear-center offset with respect to the XR-YR axes')
+        self.add_output('y_sc',         val=np.zeros(n_span), units='m',      desc='Chordwise offset of the section shear-center with respect to the reference frame, XR-YR')
+        self.add_output('x_cg',         val=np.zeros(n_span), units='m',      desc='X-coordinate of the center-of-mass offset with respect to the XR-YR axes')
+        self.add_output('y_cg',         val=np.zeros(n_span), units='m',      desc='Chordwise offset of the section center of mass with respect to the XR-YR axes')
 
         self.add_output('x_ec_abs',     val=np.zeros(n_span), units='m',      desc='x coordinate of the elastic center in the non-dimensional airfoil coordinate system')
         self.add_output('y_ec_abs',     val=np.zeros(n_span), units='m',      desc='y coordinate of the elastic center in the non-dimensional airfoil coordinate system')
@@ -412,10 +418,10 @@ class RunPreComp(ExplicitComponent):
         sector_idx_strain_te_ps   = [None if regs==None else regs[int(len(regs)/2)] for regs in region_loc_ps[self.te_ps_var]]
 
         # Get Beam Properties        
-        beam = PreComp(inputs['r'], inputs['chord'], inputs['theta'], inputs['pitch_axis'], 
+        beam = PreComp(inputs['r'], inputs['chord'], np.zeros_like(inputs['r']), inputs['pitch_axis'], 
                        inputs['precurve'], inputs['presweep'], profile, materials, upperCS, lowerCS, websCS, 
                        sector_idx_strain_spar_cap_ps, sector_idx_strain_spar_cap_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
-        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner = beam.sectionProperties()
+        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner, x_tc, y_tc, x_sc, y_sc, x_cg, y_cg = beam.sectionProperties()
 
         outputs['x_ec_abs'] = beam.x_ec_nose - inputs['pitch_axis'] * inputs['chord']
         outputs['y_ec_abs'] = beam.y_ec_nose
@@ -439,6 +445,13 @@ class RunPreComp(ExplicitComponent):
         outputs['Tw_iner']   = Tw_iner
         outputs['flap_iner'] = flap_iner
         outputs['edge_iner'] = edge_iner
+
+        outputs["x_tc"]      = x_tc
+        outputs["y_tc"]      = y_tc
+        outputs["x_sc"]      = x_sc
+        outputs["y_sc"]      = y_sc
+        outputs["x_cg"]      = x_cg
+        outputs["y_cg"]      = y_cg
 
         outputs['xu_strain_spar'] = xu_strain_spar
         outputs['xl_strain_spar'] = xl_strain_spar
@@ -566,7 +579,6 @@ class RunCurveFEM(ExplicitComponent):
 
 
     def compute(self, inputs, outputs):
-
         mycurve = _pBEAM.CurveFEM(inputs['Omega'], inputs['Tw_iner'], inputs['r'], inputs['precurve'], inputs['presweep'], inputs['rhoA'], True)
         freq, eig_vec = mycurve.frequencies(inputs['EA'], inputs['EIxx'], inputs['EIyy'], inputs['GJ'], inputs['rhoJ'], self.n_span)
         outputs['freq'] = freq[:self.n_freq]

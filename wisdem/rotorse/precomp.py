@@ -98,18 +98,25 @@ class PreComp():
         nsec = len(self.r)
 
         # initialize variables
-        beam_z = self.r
-        beam_EA = np.zeros(nsec)
-        beam_EIxx = np.zeros(nsec)
-        beam_EIyy = np.zeros(nsec)
-        beam_EIxy = np.zeros(nsec)
-        beam_GJ = np.zeros(nsec)
-        beam_rhoA = np.zeros(nsec)
-        beam_rhoJ = np.zeros(nsec)
-        beam_Tw_iner = np.zeros(nsec)
+        beam_z         = self.r
+        beam_EA        = np.zeros(nsec)
+        beam_EIxx      = np.zeros(nsec)
+        beam_EIyy      = np.zeros(nsec)
+        beam_EIxy      = np.zeros(nsec)
+        beam_GJ        = np.zeros(nsec)
+        beam_rhoA      = np.zeros(nsec)
+        beam_rhoJ      = np.zeros(nsec)
+        beam_Tw_iner   = np.zeros(nsec)
 
         beam_flap_iner = np.zeros(nsec)
         beam_edge_iner = np.zeros(nsec)
+
+        beam_x_sc      = np.zeros(nsec)
+        beam_y_sc      = np.zeros(nsec)
+        beam_x_tc      = np.zeros(nsec)
+        beam_y_tc      = np.zeros(nsec)
+        beam_x_cg      = np.zeros(nsec)
+        beam_y_cg      = np.zeros(nsec)
 
         # distance to elastic center from point about which structural properties are computed
         # using airfoil coordinate system
@@ -171,16 +178,22 @@ class PreComp():
                 locL, n_laminaL, n_pliesL, tL, thetaL, mat_idxL,
                 nwebs, locW, n_laminaW, n_pliesW, tW, thetaW, mat_idxW)
 
-            beam_EIxx[i] = results[1]  # EIedge
-            beam_EIyy[i] = results[0]  # EIflat
-            beam_GJ[i] = results[2]
-            beam_EA[i] = results[3]
-            beam_EIxy[i] = results[4]  # EIflapedge
-            beam_x_ec[i] = results[12] - results[10]
-            beam_y_ec[i] = results[13] - results[11]
-            beam_rhoA[i] = results[14]
-            beam_rhoJ[i] = results[15] + results[16]  # perpendicular axis theorem
-            beam_Tw_iner[i] = results[17]
+            beam_EIxx[i]      = results[1]  # EIedge
+            beam_EIyy[i]      = results[0]  # EIflat
+            beam_GJ[i]        = results[2]
+            beam_EA[i]        = results[3]
+            beam_EIxy[i]      = results[4]  # EIflapedge
+            beam_x_sc[i]      = results[10]
+            beam_y_sc[i]      = results[11]
+            beam_x_tc[i]      = results[12]
+            beam_y_tc[i]      = results[13]
+            beam_x_ec[i]      = results[12] - results[10]
+            beam_y_ec[i]      = results[13] - results[11]
+            beam_rhoA[i]      = results[14]
+            beam_rhoJ[i]      = results[15] + results[16]  # perpendicular axis theorem
+            beam_Tw_iner[i]   = results[17]
+            beam_x_cg[i]      = results[18]
+            beam_y_cg[i]      = results[19]
 
             beam_flap_iner[i] = results[15]
             beam_edge_iner[i] = results[16]
@@ -188,8 +201,7 @@ class PreComp():
             self.x_ec_nose[i] = results[13] + self.leLoc[i]*self.chord[i]
             self.y_ec_nose[i] = results[12]  # switch b.c of coordinate system used
 
-        return beam_EIxx, beam_EIyy, beam_GJ, beam_EA, beam_EIxy, beam_x_ec, beam_y_ec, beam_rhoA, beam_rhoJ, beam_Tw_iner, beam_flap_iner, beam_edge_iner
-
+        return beam_EIxx, beam_EIyy, beam_GJ, beam_EA, beam_EIxy, beam_x_ec, beam_y_ec, beam_rhoA, beam_rhoJ, beam_Tw_iner, beam_flap_iner, beam_edge_iner, beam_x_tc, beam_y_tc, beam_x_sc, beam_y_sc, beam_x_cg, beam_y_cg
 
     def criticalStrainLocations(self, sector_idx_strain_ss, sector_idx_strain_ps):
 
