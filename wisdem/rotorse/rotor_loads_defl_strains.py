@@ -442,8 +442,8 @@ class DesignConstraints(ExplicitComponent):
         delta  = inputs['delta_f']
         outputs['constr_flap_f_above_3P'] = (threeP * delta) / flap_f
         outputs['constr_edge_f_above_3P'] = (threeP * delta) / edge_f
-        outputs['constr_flap_f_below_3P'] = (threeP / delta) / flap_f
-        outputs['constr_edge_f_below_3P'] = (threeP / delta) / edge_f
+        outputs['constr_flap_f_below_3P'] = flap_f / (threeP * (1.- (delta - 1.)))
+        outputs['constr_edge_f_below_3P'] = edge_f / (threeP / (1.- (delta - 1.)))
         
         
 class RotorLoadsDeflStrains(Group):
