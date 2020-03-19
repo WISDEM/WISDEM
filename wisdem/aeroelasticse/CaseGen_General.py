@@ -161,7 +161,7 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
         if not dir_matrix:
             dir_matrix = os.getcwd()
         save_case_matrix(matrix_out, change_vars, dir_matrix)
-        # save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name)
+        save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name)
 
     case_list = []
     for i in range(n_cases):
