@@ -76,10 +76,12 @@ def save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_names):
                 val = float(val)
             elif type(val) in [np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64, np.intc, np.uintc, np.uint]:
                 val = int(val)
-            elif type(val) in [np.array]:
+            elif type(val) in [np.array, np.ndarray]:
                 val = val.tolist()
             elif type(val) in [np.str_]:
                 val = str(val)
+            # elif len(val) > 0:
+            #     val = val.tolist()
             matrix_out_yaml[var].append(val)
 
     if not os.path.exists(dir_matrix):
@@ -160,8 +162,11 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
     if save_matrix:
         if not dir_matrix:
             dir_matrix = os.getcwd()
-        save_case_matrix(matrix_out, change_vars, dir_matrix)
-        save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name)
+        try:
+            save_case_matrix(matrix_out, change_vars, dir_matrix)
+            save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name)
+        except: 
+            save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name)
 
     case_list = []
     for i in range(n_cases):
