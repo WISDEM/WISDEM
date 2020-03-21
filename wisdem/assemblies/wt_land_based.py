@@ -423,6 +423,7 @@ class WindPark(Group):
         self.connect('costs.turbine_number',    'financese.turbine_number')
         self.connect('costs.bos_per_kW',        'financese.bos_per_kW')
         self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
+        self.connect('costs.offset_tcc_per_kW', 'financese.offset_tcc_per_kW')
         self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
         self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
 

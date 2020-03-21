@@ -413,6 +413,8 @@ class DesignConstraints(ExplicitComponent):
         self.add_output('constr_max_strainL_spar',     val=np.zeros(n_opt_spar_cap_ps), desc='constraint for maximum strain in spar cap pressure side')
         self.add_output('constr_flap_f_above_3P',      val=0.0,                     desc='constraint on flap blade frequency to stay above 3P + delta')
         self.add_output('constr_edge_f_above_3P',      val=0.0,                     desc='constraint on edge blade frequency to stay above 3P + delta')
+        self.add_output('constr_flap_f_below_3P',      val=0.0,                     desc='constraint on flap blade frequency to stay below 3P + delta')
+        self.add_output('constr_edge_f_below_3P',      val=0.0,                     desc='constraint on edge blade frequency to stay below 3P + delta')
 
     def compute(self, inputs, outputs):
         
@@ -440,6 +442,9 @@ class DesignConstraints(ExplicitComponent):
         delta  = inputs['delta_f']
         outputs['constr_flap_f_above_3P'] = (threeP * delta) / flap_f
         outputs['constr_edge_f_above_3P'] = (threeP * delta) / edge_f
+        outputs['constr_flap_f_below_3P'] = flap_f / (threeP * (1.- (delta - 1.)))
+        outputs['constr_edge_f_below_3P'] = edge_f / (threeP / (1.- (delta - 1.)))
+        
         
 class RotorLoadsDeflStrains(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
