@@ -19,7 +19,7 @@ from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem
 from scipy import interpolate, gradient
 from scipy.optimize import minimize_scalar, minimize, brentq
 from scipy.interpolate import PchipInterpolator
-
+from wisdem.rotorse.rotor_elasticity import RunCurveFEM
 from wisdem.ccblade import CCAirfoil, CCBlade
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 from wisdem.commonse.utilities import vstack, trapz_deriv, linspace_with_deriv, smooth_min, smooth_abs
@@ -38,6 +38,8 @@ class ServoSE(Group):
         self.add_subsystem('stall_check',       NoStallConstraint(analysis_options   = analysis_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=analysis_options['servose']['n_pc_spline']))
         self.add_subsystem('aep',               AEP(), promotes=['AEP'])
+        # Compute blade frequencies at rated rotor speed
+        self.add_subsystem('curvefem_rated',    RunCurveFEM(analysis_options = analysis_options))
         if analysis_options['openfast']['run_openfast'] == True:
             self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
             self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
@@ -51,11 +53,18 @@ class ServoSE(Group):
         self.connect('cdf.F',               'aep.CDF_V')
         self.connect('powercurve.P_spline', 'aep.P')   
 
+        # Connections to CurvFEM
+        self.connect('powercurve.rated_Omega', 'curvefem_rated.Omega')
+
         if analysis_options['openfast']['run_openfast'] == True:
             # Connect ROSCO Power curve
             self.connect('powercurve.rated_V',      'tune_rosco.v_rated')
             self.connect('powercurve.rated_Omega',  'tune_rosco.rated_rotor_speed')
             self.connect('powercurve.rated_Q',      'tune_rosco.rated_torque')
+
+            # Connect freqs
+            self.connect('curvefem_rated.freq',           'tune_rosco.flap_freq', src_indices=[0])
+            self.connect('curvefem_rated.freq',           'tune_rosco.edge_freq', src_indices=[1])
 
             # Connect ROSCO for Rotor Performance tables
             self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')

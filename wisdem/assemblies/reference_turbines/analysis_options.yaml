@@ -48,6 +48,7 @@ openfast:
     FAST_runDirectory: temp_bar
     cores: 1
     debug_level: 2
+    update_hub_nacelle: True
     
 servose:
     n_pc: 20                        # Number of wind speeds to compute the power curve

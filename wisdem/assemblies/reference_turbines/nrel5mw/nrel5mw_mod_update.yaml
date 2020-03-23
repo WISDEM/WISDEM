@@ -173,11 +173,19 @@ components:
           diameter: 3.
           cone_angle: 0.04363
           drag_coefficient: 0.5
+        elastic_properties_mb:
+          system_mass: 24589.692742185867
+          system_inertia: [120668.15942377393, 120668.15942377393, 120668.15942377393, 0.0, 0.0, 0.0]
     nacelle:
         outer_shape_bem:
           uptilt_angle: 0.08726
           distance_tt_hub: 2.3
           overhang: 5.
+        elastic_properties_mb:
+          above_yaw_mass: 153039.3158216733
+          yaw_mass: 4932.772956565737
+          inertia: [65068.95854639532, 954681.9098782416, 889612.9513318462, 0.0, 3706.9558680524924, 0.0]
+          center_mass: [1.6458850626394252, 0.0, 0.37742536538194316]
         drivetrain:
           gear_ratio: 96
           shaft_ratio: 0.1

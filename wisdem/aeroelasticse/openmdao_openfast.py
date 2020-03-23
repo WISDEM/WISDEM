@@ -225,6 +225,18 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('beam:EIxx',             val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
         self.add_input('modes_coef_curvefem',   val=np.zeros((3, 5)), desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
 
+        # DriveSE quantities
+        self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
+        self.add_input('hub_system_I',    val=np.zeros(6),             units='kg*m**2', desc='mass moments of Inertia of hub [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass in yaw-aligned c.s.')
+        self.add_input('hub_system_mass', val=0.0,                     units='kg', desc='mass of hub system')
+        self.add_input('above_yaw_mass',  val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+        self.add_input('yaw_mass',        val=0.0, units='kg', desc='Mass of yaw system')
+        self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+        self.add_input('nacelle_I',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+
+
+
+
         # AeroDyn Inputs
         self.add_input('ref_axis_blade',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
         self.add_input('chord',             val=np.zeros(n_span), units='m', desc='chord at airfoil locations')
@@ -404,6 +416,20 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
         fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
         fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
+
+
+        # Masses from DriveSE
+        if self.options['analysis_options']['openfast']['update_hub_nacelle']:
+            fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
+            fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
+            fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
+            fst_vt['ElastoDyn']['NacMass']   = inputs['above_yaw_mass'][0]
+            fst_vt['ElastoDyn']['YawBrMass'] = inputs['yaw_mass'][0]
+            fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I'][2]
+            fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
+            fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
+            fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
+
         
 
         tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']

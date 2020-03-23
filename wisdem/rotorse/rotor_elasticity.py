@@ -695,7 +695,7 @@ class RotorElasticity(Group):
         # Get elastic properties by running precomp
         self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep','x_ec_abs', 'y_ec_abs'])
         # Compute frequencies
-        self.add_subsystem('curvefem', RunCurveFEM(analysis_options = analysis_options), promotes=['r','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        self.add_subsystem('curvefem_0rpm', RunCurveFEM(analysis_options = analysis_options), promotes=['r','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
         # Check rail transportabiliy
         if opt_options['constraints']['blade']['rail_transport']['flag']:
             self.add_subsystem('rail',     RailTransport(analysis_options = analysis_options), promotes=['EA','EIxx','EIyy','GJ','rhoA','rhoJ','x_ec_abs', 'y_ec_abs'])
