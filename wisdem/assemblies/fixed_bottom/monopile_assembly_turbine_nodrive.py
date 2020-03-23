@@ -129,9 +129,9 @@ class MonopileTurbine(om.Group):
                                      'transition_piece_mass','transition_piece_height',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_add_gravity','tower_mass','tower_I_base','hub_height',
-                                     'foundation_height','soil_G','soil_nu',
+                                     'foundation_height','soil_G','soil_nu','suctionpile_depth','suctionpile_depth_diam_ratio',
                                      'monopile_mass','monopile_cost','monopile_length','tower_raw_cost',
-                                     'suctionpile_depth','gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue',
+                                     'gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue',
                                      'labor_cost_rate','material_cost_rate','painting_cost_rate','z_full','d_full','t_full',
                                      'DC','shear','geom','tower_force_discretization','nM','Mmethod','lump','tol','shift'])
 
