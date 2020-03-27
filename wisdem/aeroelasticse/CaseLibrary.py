@@ -583,6 +583,113 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
     return case_list, case_name_list, channels
 
 
+def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_comm_map_down=[]):
+    # Default Runtime
+    T = 150. # 600.  # 150. # 630.
+    TStart = 30. #0.  # 30.
+
+    # Overwrite for testing
+    if TMax < T:
+        T = TMax
+        TStart = 0.
+
+    iec = CaseGen_IEC()
+    iec.init_cond[("ElastoDyn", "RotSpeed")] = {'U': U_init}
+    iec.init_cond[("ElastoDyn", "RotSpeed")]['val'] = [0.95 * omega_i for omega_i in Omega_init]
+    iec.init_cond[("ElastoDyn", "BlPitch1")] = {'U': U_init}
+    iec.init_cond[("ElastoDyn", "BlPitch1")]['val'] = pitch_init
+    iec.init_cond[("ElastoDyn", "BlPitch2")] = iec.init_cond[("ElastoDyn", "BlPitch1")]
+    iec.init_cond[("ElastoDyn", "BlPitch3")] = iec.init_cond[("ElastoDyn", "BlPitch1")]
+
+
+    iec.Turbine_Class = turbine_class
+    iec.Turbulence_Class = turbulence_class
+    iec.D = fst_vt['ElastoDyn']['TipRad'] * 2.
+    iec.z_hub = fst_vt['InflowWind']['RefHt']
+
+    iec.dlc_inputs = {}
+    iec.dlc_inputs['DLC'] = [1.1]  # [1.1]
+    # iec.dlc_inputs['U'] = [[U]]
+    iec.dlc_inputs['U'] = [[10]]
+    # iec.dlc_inputs['Seeds'] = [[1]]
+    iec.dlc_inputs['Seeds'] = [[13428]]  # nothing special about these seeds, randomly generated
+    iec.dlc_inputs['Yaw'] = [[]]
+    iec.transient_dir_change = '-'  # '+','-','both': sign for transient events in EDC, EWS
+    iec.transient_shear_orientation = 'v'  # 'v','h','both': vertical or horizontal shear for EWS
+
+    iec.wind_dir = runDir
+    iec.case_name_base = namebase + '_DAC'  # distributed aerodynamic control
+    iec.Turbsim_exe = Turbsim_exe
+    iec.debug_level = debug_level
+    iec.cores = cores
+    iec.run_dir = runDir
+    # iec.overwrite = True
+    iec.overwrite       = False
+    if cores > 1:
+        iec.parallel_windfile_gen = True
+    else:
+        iec.parallel_windfile_gen = False
+
+    # mpi_run = False
+    if mpi_run:
+        iec.mpi_run = mpi_run
+        iec.comm_map_down = mpi_comm_map_down
+
+    case_inputs = {}
+    case_inputs[("Fst", "TMax")] = {'vals': [T], 'group': 0}
+    case_inputs[("Fst", "TStart")] = {'vals': [TStart], 'group': 0}
+    case_inputs[("Fst", "OutFileFmt")] = {'vals': [3], 'group': 0}
+
+    case_inputs[("ElastoDyn", "YawDOF")] = {'vals': ['False'], 'group': 0}
+    case_inputs[("ElastoDyn", "FlapDOF1")] = {'vals': ['True'], 'group': 0}
+    case_inputs[("ElastoDyn", "FlapDOF2")] = {'vals': ['True'], 'group': 0}
+    case_inputs[("ElastoDyn", "EdgeDOF")] = {'vals': ['False'], 'group': 0}  # <<< set to FALSE for now
+    case_inputs[("ElastoDyn", "DrTrDOF")] = {'vals': ['False'], 'group': 0}
+    case_inputs[("ElastoDyn", "GenDOF")] = {'vals': ['True'], 'group': 0}
+    case_inputs[("ElastoDyn", "TwFADOF1")] = {'vals': ['False'], 'group': 0}
+    case_inputs[("ElastoDyn", "TwFADOF2")] = {'vals': ['False'], 'group': 0}
+    case_inputs[("ElastoDyn", "TwSSDOF1")] = {'vals': ['False'], 'group': 0}
+    case_inputs[("ElastoDyn", "TwSSDOF2")] = {'vals': ['False'], 'group': 0}
+
+    case_inputs[("ServoDyn", "PCMode")] = {'vals': [5], 'group': 0}
+    case_inputs[("ServoDyn", "VSContrl")] = {'vals': [5], 'group': 0}
+    case_inputs[("ServoDyn", "YCMode")] = {'vals': [0], 'group': 0}
+
+    case_inputs[("AeroDyn15", "WakeMod")] = {'vals': [1], 'group': 0}
+    case_inputs[("AeroDyn15", "AFAeroMod")] = {'vals': [2], 'group': 0}
+    case_inputs[("AeroDyn15", "TwrPotent")] = {'vals': [0], 'group': 0}
+    case_inputs[("AeroDyn15", "TwrShadow")] = {'vals': ['False'], 'group': 0}
+    case_inputs[("AeroDyn15", "TwrAero")] = {'vals': ['False'], 'group': 0}
+
+    case_inputs[("AeroDyn15", "SkewMod")] = {'vals': [2], 'group': 0}
+    case_inputs[("AeroDyn15", "TipLoss")] = {'vals': ['True'], 'group': 0}
+    case_inputs[("AeroDyn15", "HubLoss")] = {'vals': ['True'], 'group': 0}
+    # case_inputs[("AeroDyn15","TanInd")]      = {'vals':['True'], 'group':0}
+    # case_inputs[("AeroDyn15","AIDrag")]      = {'vals':['True'], 'group':0}
+    # case_inputs[("AeroDyn15","TIDrag")]      = {'vals':['True'], 'group':0}
+    # case_inputs[("AeroDyn15","IndToler")]    = {'vals':[1.e-5], 'group':0}
+    # case_inputs[("AeroDyn15","MaxIter")]     = {'vals':[5000], 'group':0}
+    case_inputs[("AeroDyn15", "UseBlCm")] = {'vals': ['True'], 'group': 0}
+
+    case_list, case_name_list = iec.execute(case_inputs=case_inputs)
+
+    channels = ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxc3", "TipDyc3", "TipDzc3"]
+    channels += ["RootMxc1", "RootMyc1", "RootMzc1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxc3", "RootMyc3", "RootMzc3"]
+    channels += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2", "RootFxc3", "RootFyc3", "RootFzc3"]
+    channels += ["RtAeroCp", "RotTorq", "RotThrust", "RotSpeed", "NacYaw"]
+
+    channels += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
+    channels += ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
+
+    channels += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
+    channels += ["BLFLAP1", "BLFLAP2", "BLFLAP3"]
+
+
+    return case_list, case_name_list, channels
+
+
+
+
 if __name__ == "__main__":
 
     # power_curve()

@@ -338,7 +338,8 @@ class TuneROSCO(ExplicitComponent):
         # - turbine
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['v_rated'] = inputs['v_rated'][0]
-        self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq']  = [inputs['flap_freq'][0] * 2 * np.pi / 3., 0.7]
+        # self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq']  = [inputs['flap_freq'][0] * 2 * np.pi, 0.7]
+        self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq'] = [inputs['flap_freq'][0] * 2 * np.pi / 3.0, 0.7]
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_LPFCornerFreq']  = inputs['edge_freq'][0] * 2 * np.pi / 4.
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_NotchCornerFreq'] = 0.0    # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_FlCornerFreq'] = [0.0, 0.0] # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM
@@ -409,7 +410,7 @@ class RegulatedPowerCurve(ExplicitComponent):
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
         self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
         self.add_input('presweepTip',   val=0.0,                units='m', desc='presweep at tip')
-        
+
         # self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
         self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
@@ -463,7 +464,11 @@ class RegulatedPowerCurve(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Create Airfoil class instances
-        af = [None]*self.n_span
+        # af = [None]*self.n_span
+        # for i in range(self.n_span):
+        #     af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
+
+        af = [None] * self.n_span
         for i in range(self.n_span):
             if self.n_tab > 1:
                 ref_tab = int(np.floor(self.n_tab/2))
@@ -774,7 +779,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Create Airfoil class instances
-        af = [None]*self.n_span
+        af = [None] * self.n_span
         for i in range(self.n_span):
             if self.n_tab > 1:
                 ref_tab = int(np.floor(self.n_tab/2))

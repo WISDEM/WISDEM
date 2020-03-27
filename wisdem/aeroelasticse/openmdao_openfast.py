@@ -14,6 +14,7 @@ from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_py
 # from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
 from wisdem.aeroelasticse.FAST_post import return_timeseries
 
+import os
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -215,9 +216,11 @@ class FASTLoadCases(ExplicitComponent):
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
-        self.add_input('r',                     val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location \
-            while r[-1] should be the blade tip. Any number \
-            of locations can be specified between these in ascending order.')
+
+        self.add_input('s_ref', val=np.zeros(n_span), desc='Global reference grid! Nondim blade span positions; starting from the root cutout s_ref[0] to the blade tip s_ref[-1]. Same number of locatons as r in the following ')
+        # The following r- coordinates are modified s_ref coordinates for Aerodyn puposes
+        self.add_input('r',                     val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location while r[-1] should be the blade tip. Any number of locations can be specified between these in ascending order.')
+
         self.add_input('le_location',           val=np.zeros(n_span), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
         self.add_input('beam:Tw_iner',          val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
         self.add_input('beam:rhoA',             val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
@@ -344,6 +347,8 @@ class FASTLoadCases(ExplicitComponent):
     
         self.add_output('root_bending_moment', val=0.0, units='N*m', desc='total magnitude of bending moment at root of blade 1')
         self.add_output('Mxyz',         val=np.array([0.0, 0.0, 0.0]), units='N*m', desc='individual moments [x,y,z] at the blade root in blade c.s.')
+        self.add_output('My_std',       val=0.0, units='N*m', desc='standard deviation of blade root flap bending moment in out-of-plane direction')
+        self.add_output('flp1_std',       val=0.0, units='deg', desc='standard deviation of trailing-edge flap angle')
         
         self.add_output('loads_r',      val=np.zeros(n_span), units='m', desc='radial positions along blade going toward tip')
         self.add_output('loads_Px',     val=np.zeros(n_span), units='N/m', desc='distributed loads in blade-aligned x-direction')
@@ -441,10 +446,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
 
         # Update ElastoDyn Blade Input File
-        fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
-        fst_vt['ElastoDynBlade']['BlFract']    = (inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])
-        fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
-        fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
+        fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['s_ref'])
+        fst_vt['ElastoDynBlade']['BlFract']    = inputs['s_ref']  #(inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])
+        # fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
+        # fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
         fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location']
         # fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['beam:Tw_iner']
         fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['theta'] # to do: structural twist is not nessessarily (nor likely to be) the same as aero twist
@@ -608,7 +613,22 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.DLC_turbulent != None:
             if self.mpi_run:
-                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
+                # list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
+                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt,
+                                                                                              self.FAST_runDirectory,
+                                                                                              self.FAST_namingOut, TMax,
+                                                                                              turbine_class,
+                                                                                              turbulence_class,
+                                                                                              inputs['Vrated'][0],  #
+                                                                                              U_init=inputs['U_init'],
+                                                                                              Omega_init=inputs['Omega_init'],
+                                                                                              pitch_init=inputs['pitch_init'],
+                                                                                              Turbsim_exe=self.Turbsim_exe,
+                                                                                              debug_level=self.debug_level,
+                                                                                              cores=self.cores,
+                                                                                              mpi_run=self.mpi_run,
+                                                                                              mpi_comm_map_down=self.mpi_comm_map_down)
+
             else:
                 list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores)
             list_cases        += list_cases_turb
@@ -652,6 +672,8 @@ class FASTLoadCases(ExplicitComponent):
                 FAST_Output = fastBatch.run_multi(self.cores)
 
         self.fst_vt = fst_vt
+
+
 
         return FAST_Output
 
@@ -708,14 +730,24 @@ class FASTLoadCases(ExplicitComponent):
             root_bending_moment_idxmax    = [np.argmax(root_bending_moment_1), np.argmax(root_bending_moment_2), np.argmax(root_bending_moment_3)]
             blade_root_bending_moment_max = np.argmax(root_bending_moment_max)
 
+            # output moments in Nm
             outputs['root_bending_moment'] = root_bending_moment_max[blade_root_bending_moment_max]*1.e3
             idx = root_bending_moment_idxmax[blade_root_bending_moment_max]
             if blade_root_bending_moment_max == 0:
                 outputs['Mxyz'] = np.array([data['RootMxc1'][idx_s+idx]*1.e3, data['RootMyc1'][idx_s+idx]*1.e3, data['RootMzc1'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc1'][idx_s:idx_e]*1.e3)
             elif blade_root_bending_moment_max == 1:
                 outputs['Mxyz'] = np.array([data['RootMxc2'][idx_s+idx]*1.e3, data['RootMyc2'][idx_s+idx]*1.e3, data['RootMzc2'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
             elif blade_root_bending_moment_max == 2:
                 outputs['Mxyz'] = np.array([data['RootMxc3'][idx_s+idx]*1.e3, data['RootMyc3'][idx_s+idx]*1.e3, data['RootMzc3'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
+
+            outputs['flp1_std'] = np.std(data['BLFLAP1'])
+
+            # import matplotlib.pyplot as plt
+            # plt.plot(data['RootMyc1'][idx_s:idx_e])
+
 
         def post_extreme(data, case_type):
 

@@ -8,6 +8,8 @@ from wisdem.assemblies.wt_land_based import WindPark
 from wisdem.commonse.mpi_tools import MPI
 
 
+from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
+
 def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output):
     # Main to run a wind turbine wisdem assembly
     
@@ -105,7 +107,23 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         else:
             exit('The optimizer ' + opt_options['driver']['solver'] + 'is not yet supported!')
 
-        # Set merit figure
+        # SLSQP
+        # wt_opt.driver  = ScipyOptimizeDriver()
+        # wt_opt.driver.options['optimizer'] = opt_options['driver']['solver']
+        # wt_opt.driver.options['tol']       = opt_options['driver']['tol']
+        # wt_opt.driver.options['maxiter']   = opt_options['driver']['max_iter']
+        # SNOPT
+        wt_opt.driver = pyOptSparseDriver()
+        wt_opt.driver.options['optimizer'] = "SNOPT"
+        wt_opt.driver.opt_settings['Major feasibility tolerance'] = 1e-2
+        wt_opt.driver.opt_settings['Major iterations limit'] = 4 # 4
+        wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
+        wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
+        wt_opt.driver.opt_settings['Major step limit'] = 0.1
+
+
+
+        # Set figure of merit
         if opt_options['merit_figure'] == 'AEP':
             wt_opt.model.add_objective('sse.AEP', scaler = -1.e-6)
         elif opt_options['merit_figure'] == 'blade_mass':
@@ -116,6 +134,12 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_objective('tcons.tip_deflection_ratio')
         elif opt_options['merit_figure'] == 'Cp':
             wt_opt.model.add_objective('sse.powercurve.Cp_regII', scaler = -1.)
+            wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+2)
+        # NEW optimization objective for DAC design analysis
+        elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-fla-bending moments
+            wt_opt.model.add_objective('aeroelastic.My_std', scaler = 1.)  #1.e-8)
+        elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQU 2020 paper (need to define time constant in ROSCO)
+            wt_opt.model.add_objective('aeroelastic.flp1_std', scaler = 1.)  #1.e-8)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
 
@@ -184,14 +208,16 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.model.add_constraint('elastic.rail.LV_constraint_4axle',    upper= 1.0)
             else:
                 exit('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
-        
+         wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0)
+
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
         wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe', 'rlds.constr.constr_max_strainU_spar', 'rlds.constr.constr_max_strainL_spar', 'tcons.tip_deflection_ratio', 'sse.stall_check.no_stall_constraint', 'pc.tsr_opt', ]
         wt_opt.driver.recording_options['record_objectives']  = True
         wt_opt.driver.recording_options['record_constraints'] = True
         wt_opt.driver.recording_options['record_desvars']     = True
-    
+
+
     # Setup openmdao problem
     wt_opt.setup()
     

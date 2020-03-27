@@ -582,7 +582,7 @@ class RunCurveFEM(ExplicitComponent):
         mycurve = _pBEAM.CurveFEM(inputs['Omega'], inputs['Tw_iner'], inputs['r'], inputs['precurve'], inputs['presweep'], inputs['rhoA'], True)
         freq, eig_vec = mycurve.frequencies(inputs['EA'], inputs['EIxx'], inputs['EIyy'], inputs['GJ'], inputs['rhoJ'], self.n_span)
         outputs['freq'] = freq[:self.n_freq]
-        
+
         # Parse eigen vectors
         R = inputs['r']
         R = np.asarray([(Ri-R[0])/(R[-1]-R[0]) for Ri in R])
