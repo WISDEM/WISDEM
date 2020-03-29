@@ -1,5 +1,6 @@
 import unittest
 import pytest
+import sys
 
 import wisdem.test.test_assemblies as test_assemblies
 import wisdem.test.test_airfoilprep as test_airfoilprep
@@ -39,7 +40,7 @@ def suite():
     ) )
     return suite
 
-valid_tests = ['test_orbit',
+valid_tests = [#'test_orbit',
                #    'test_assemblies',
                'test_airfoilprep',
                'test_ccblade',
@@ -58,5 +59,6 @@ valid_tests = ['test_orbit',
                'test_turbinecostsse']
 
 if __name__ == '__main__':
-    pytest.main(valid_tests)
     #unittest.TextTestRunner().run(suite())
+    ret = pytest.main(valid_tests)
+    sys.exit(ret)
