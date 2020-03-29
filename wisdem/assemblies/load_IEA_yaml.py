@@ -1388,21 +1388,30 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
 def assign_blade_values(wt_opt, analysis_options, blade):
     # Function to assign values to the openmdao group Blade
     wt_opt = assign_te_flaps_values(wt_opt, analysis_options, blade)
-    wt_opt = assign_outer_shape_bem_values(wt_opt, analysis_options, blade) #['outer_shape_bem'])
+    wt_opt = assign_outer_shape_bem_values(wt_opt, analysis_options, blade['outer_shape_bem']) #['outer_shape_bem'])
     wt_opt = assign_internal_structure_2d_fem_values(wt_opt, analysis_options, blade['internal_structure_2d_fem'])
 
     
     return wt_opt
     
-def assign_outer_shape_bem_values(wt_opt, analysis_options, blade):
+def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
 
+    nd_span     = analysis_options['blade']['nd_span']
+    
+    wt_opt['blade.outer_shape_bem.af_used']     = outer_shape_bem['airfoil_position']['labels']
+    wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
+    wt_opt['blade.opt_var.af_position']         = outer_shape_bem['airfoil_position']['grid']
     
     wt_opt['blade.outer_shape_bem.s']           = nd_span
-    wt_opt['blade.outer_shape_bem.chord']       = np.interp(nd_span, blade['outer_shape_bem']['chord']['grid'], blade['outer_shape_bem']['chord']['values'])
-    wt_opt['blade.outer_shape_bem.twist']       = np.interp(nd_span, blade['outer_shape_bem']['twist']['grid'], blade['outer_shape_bem']['twist']['values'])
-    wt_opt['blade.outer_shape_bem.pitch_axis']  = np.interp(nd_span, blade['outer_shape_bem']['pitch_axis']['grid'], blade['outer_shape_bem']['pitch_axis']['values'])
+    wt_opt['blade.outer_shape_bem.chord']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])
+    wt_opt['blade.outer_shape_bem.twist']       = np.interp(nd_span, outer_shape_bem['twist']['grid'], outer_shape_bem['twist']['values'])
+    wt_opt['blade.outer_shape_bem.pitch_axis']  = np.interp(nd_span, outer_shape_bem['pitch_axis']['grid'], outer_shape_bem['pitch_axis']['values'])
     
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
+
 
     
     return wt_opt
