@@ -111,8 +111,8 @@ class WT_RNTA(Group):
             self.connect('blade.pa.chord_param',                    'elastic.rail.chord')
             self.connect('blade.outer_shape_bem.pitch_axis',        'elastic.rail.pitch_axis')
             self.connect('blade.outer_shape_bem.ref_axis',          'elastic.rail.blade_ref_axis')
-            self.connect('blade.interp_airfoils.coord_xy_dim',      'elastic.rail.coord_xy_dim')
-            self.connect('blade.interp_airfoils.coord_xy_interp',   'elastic.rail.coord_xy_interp')
+            self.connect('blade.interp_airfoils_aero.coord_xy_dim',      'elastic.rail.coord_xy_dim')
+            self.connect('blade.interp_airfoils_aero.coord_xy_interp',   'elastic.rail.coord_xy_interp')
 
         # Connections from blade struct parametrization to rotor load anlysis
         self.connect('blade.ps.s_opt_spar_cap_ss',   'rlds.constr.s_opt_spar_cap_ss')
@@ -355,7 +355,7 @@ class WT_RNTA(Group):
             self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
             self.connect('blade.pa.chord_param',            'aeroelastic.chord')
             self.connect('blade.pa.twist_param',            'aeroelastic.theta')
-            self.connect('blade.interp_airfoils.coord_xy_interp', 'aeroelastic.coord_xy_interp')
+            self.connect('blade.interp_airfoils_struct.coord_xy_interp', 'aeroelastic.coord_xy_interp')
             self.connect('env.rho_air',                     'aeroelastic.rho')
             self.connect('env.mu_air',                      'aeroelastic.mu')                    
             self.connect('env.shear_exp',                   'aeroelastic.shearExp')                    

@@ -381,8 +381,8 @@ class Blade(Group):
         self.add_subsystem('pa',    ParametrizeBladeAero(blade_init_options = blade_init_options, opt_options = opt_options)) # Parameterize aero (chord and twist)
 
         # Interpolate airfoil profiles and coordinates
-        self.add_subsystem('interp_airfoils', Blade_Interp_Airfoils(blade_init_options = blade_init_options, af_init_options = af_init_options))
-        
+        self.add_subsystem('interp_airfoils_aero',  Blade_Interp_Airfoils_Aero(blade_init_options = blade_init_options, af_init_options = af_init_options))
+        self.add_subsystem('interp_airfoils_struct', Blade_Interp_Airfoils_Struct(blade_init_options = blade_init_options, af_init_options = af_init_options))
 
         # Connections from outer_shape_bem to re_interp_bem
         self.connect('outer_shape_bem.s',           're_interp_bem.s_')
@@ -414,7 +414,7 @@ class Blade(Group):
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
         if blade_init_options['lofted_output'] == True:
             self.add_subsystem('blade_lofted',    Blade_Lofted_Shape(blade_init_options = blade_init_options, af_init_options = af_init_options))
-            self.connect('interp_airfoils.coord_xy_dim',    'blade_lofted.coord_xy_dim')
+            self.connect('interp_airfoils_struct.coord_xy_dim',    'blade_lofted.coord_xy_dim')
             self.connect('pa.twist_param',                  'blade_lofted.twist')
             self.connect('outer_shape_bem.s',               'blade_lofted.s')
             self.connect('outer_shape_bem.ref_axis',        'blade_lofted.ref_axis')
@@ -422,7 +422,7 @@ class Blade(Group):
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
         self.connect('pa.twist_param',                  'internal_structure_2d_fem.twist')
-        self.connect('interp_airfoils.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
+        self.connect('interp_airfoils_struct.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
 
         self.add_subsystem('ps',    ParametrizeBladeStruct(blade_init_options = blade_init_options, opt_options = opt_options)) # Parameterize struct (spar caps ss and ps)
 
@@ -673,6 +673,98 @@ class Blade_Interp_Airfoils_Aero(ExplicitComponent):
         outputs['cd_interp']       = cd_interp
         outputs['cm_interp']       = cm_interp
 
+class Blade_Interp_Airfoils_Struct(ExplicitComponent):
+    # Openmdao component to interpolate airfoil coordinates and airfoil polars along the span of the blade for a predefined set of airfoils coming from component Airfoils.
+    def initialize(self):
+        self.options.declare('blade_init_options')
+        self.options.declare('af_init_options')
+        
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        self.n_af_span     = n_af_span = blade_init_options['n_af_span']
+        self.n_span        = n_span    = blade_init_options['n_span']
+        af_init_options    = self.options['af_init_options']
+        self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
+        self.n_aoa         = n_aoa     = af_init_options['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        
+        self.add_discrete_input('af_used', val=n_af_span * [''],              desc='1D array of names of the airfoils defined along blade span.')
+        
+        self.add_input('af_position',   val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_used defined along blade span.')
+        self.add_input('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+        self.add_input('chord',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
+        
+        # Airfoil properties
+        self.add_discrete_input('name', val=n_af * [''],                        desc='1D array of names of airfoils.')
+        self.add_input('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
+        
+        # Airfoil coordinates
+        self.add_input('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')
+        
+        # Polars and coordinates interpolated along span
+        self.add_output('coord_xy_interp',  val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
+        self.add_output('coord_xy_dim',     val=np.zeros((n_span, n_xy, 2)), units = 'm', desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
+        
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        
+        # Reconstruct the blade relative thickness along span with a pchip
+        r_thick_used    = np.zeros(self.n_af_span)
+        coord_xy_used   = np.zeros((self.n_af_span, self.n_xy, 2))
+        coord_xy_interp = np.zeros((self.n_span, self.n_xy, 2))
+        coord_xy_dim    = np.zeros((self.n_span, self.n_xy, 2))
+        
+        for i in range(self.n_af_span):
+            for j in range(self.n_af):
+                if discrete_inputs['af_used'][i] == discrete_inputs['name'][j]:                    
+                    r_thick_used[i]     = inputs['r_thick'][j]
+                    coord_xy_used[i,:,:]= inputs['coord_xy'][j]
+                    break
+        
+        spline         = PchipInterpolator
+        rthick_spline  = spline(inputs['af_position'], r_thick_used)
+        r_thick_interp = rthick_spline(inputs['s'])
+        
+        # Spanwise interpolation of the profile coordinates with a pchip
+        r_thick_unique, indices  = np.unique(r_thick_used, return_index = True)
+        profile_spline  = spline(r_thick_unique, coord_xy_used[indices, :, :])        
+        coord_xy_interp = np.flip(profile_spline(np.flip(r_thick_interp)), axis=0)
+        
+        
+        for i in range(self.n_span):
+            # Correction to move the leading edge (min x point) to (0,0)
+            af_le = coord_xy_interp[i, np.argmin(coord_xy_interp[i,:,0]),:]
+            coord_xy_interp[i,:,0] -= af_le[0]
+            coord_xy_interp[i,:,1] -= af_le[1]
+            c = max(coord_xy_interp[i,:,0]) - min(coord_xy_interp[i,:,0])
+            coord_xy_interp[i,:,:] /= c
+            # If the rel thickness is smaller than 0.4 apply a trailing ege smoothing step
+            if r_thick_interp[i] < 0.4: 
+                coord_xy_interp[i,:,:] = trailing_edge_smoothing(coord_xy_interp[i,:,:])
+            
+        pitch_axis = inputs['pitch_axis']
+        chord      = inputs['chord']
+
+        
+        coord_xy_dim = copy.copy(coord_xy_interp)
+        coord_xy_dim[:,:,0] -= pitch_axis[:, np.newaxis]
+        coord_xy_dim = coord_xy_dim*chord[:, np.newaxis, np.newaxis]
+   
+        # Plot interpolated coordinates
+        # import matplotlib.pyplot as plt
+        # for i in range(self.n_span):    
+        #     plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
+        #     plt.plot(coord_xy_dim[i,:,0], coord_xy_dim[i,:,1], 'b', label = 'coord_xy_dim')
+        #     plt.axis('equal')
+        #     plt.title(i)
+        #     plt.legend()
+        #     plt.show()
+
+            
+        outputs['coord_xy_interp'] = coord_xy_interp
+        outputs['coord_xy_dim']    = coord_xy_dim
 
 class Blade_Lofted_Shape(ExplicitComponent):
     # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.
