@@ -3,31 +3,52 @@ general:
 
 yaml:
     validate: False
-    path2schema: /Users/rfeil/work/1_WISDEM/WISDEM_IEAontology4all/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml
+    path2schema: wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml
 
 xfoil:
-    path       : /Users/rfeil/work/4_Xfoil/Xfoil.app/Contents/Resources/xfoil
-
+    path       : "wine /Users/nabbas/Documents/WindEnergyToolbox/XFOIL_exe/xfoil.exe"
 
 rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
     n_xy: 200         # Number of angles of coordinate points used to discretize each airfoil
-    n_span: 50        # Number of spanwise stations used to define the blade properties
+    n_span: 30        # Number of spanwise stations used to define the blade properties
+
+tower:
+  nLC: 1
+  wind: PowerWind
+  gamma_f: 1.35
+  gamma_m: 1.3
+  gamma_n: 1.0
+  gamma_b: 1.1
+  gamma_fatigue: 1.9305
+  buckling_length: 30
+  frame3dd:
+    DC: 80.0
+    shear: True
+    geom: True
+    dx: 5.0
+    nM: 2
+    Mmethod: 1
+    lump: 0
+    tol: 1e-9
+    shift: 0.0
+    add_gravity: True
 
 openfast:
     run_openfast: True
-    Analysis_Level: 2
+    Analysis_Level: 1
     FAST_ver: OpenFAST
     dev_branch: True
-    FAST_exe: /Users/rfeil/work/2_OpenFAST/openfast-distributed_aero_control/build/glue-codes/openfast/openfast
-    FAST_directory: /Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/RotorSE_FAST_BAR_2011n_noRe
-    FAST_InputFile: OpenFAST_BAR_2011n_noRe_DAC_0.fst
-    path2dll: /Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/controller/libdiscon.dylib
-    Turbsim_exe: "/Users/rfeil/work/5_TurbSim/TurbSim/bin/TurbSim_glin64"
-    FAST_namingOut: OpenFAST_BAR_2011n_noRe
-    FAST_runDirectory: /Users/rfeil/work/2_OpenFAST/00_analysis/00_wisdem_analysis/RotorSE_FAST_BAR_2011n_noRe_temp
+    FAST_exe: "/Users/nabbas/openfast/install/bin/openfast_dev"
+    FAST_directory: "/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/BAR_00"
+    FAST_InputFile: "OpenFAST_BAR_00.fst"
+    path2dll: "/Users/nabbas/Documents/TurbineModels/TurbineControllers/FortranControllers/ROSCO/build/libdiscon.dylib"
+    Turbsim_exe: "/Users/nabbas/openfast/install/bin/turbsim_dev"
+    FAST_namingOut: bar_testing
+    FAST_runDirectory: temp_bar
     cores: 1
     debug_level: 2
+    update_hub_nacelle: True
     
 servose:
     n_pc: 20                        # Number of wind speeds to compute the power curve
@@ -52,4 +73,4 @@ servose:
     PS_Mode: 0                      # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
     SD_Mode: 0                      # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
     Fl_Mode: 0                      # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}
-    Flp_Mode: 2                     # Flap control mode {0: no flap control, 1: steady state flap angle, 2: Proportional flap control}
+    Flp_Mode: 2                     # Flap control mode {0: no flap control, 1: steady state flap angle, 2: Proportional-Integral flap control}

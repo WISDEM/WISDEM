@@ -35,16 +35,16 @@ tower:
     add_gravity: True
 
 openfast:
-    run_openfast: False
-    Analysis_Level: 0
+    run_openfast: True
+    Analysis_Level: 1
     FAST_ver: OpenFAST
     dev_branch: True
     FAST_exe: "/Users/nabbas/openfast/install/bin/openfast_dev"
-    FAST_directory: "/Users/nabbas/Documents/TurbineModels/BAR/WISDEM_BAR2011n/"
-    FAST_InputFile: "WISDEM_BAR2011n.fst"
-    path2dll: "/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/ROSCO/build/libdiscon_flaps.dylib"
+    FAST_directory: "/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/BAR_00"
+    FAST_InputFile: "OpenFAST_BAR_00.fst"
+    path2dll: "/Users/nabbas/Documents/TurbineModels/TurbineControllers/FortranControllers/ROSCO/build/libdiscon.dylib"
     Turbsim_exe: "/Users/nabbas/openfast/install/bin/turbsim_dev"
-    FAST_namingOut: WISDEM_BAR2011n
+    FAST_namingOut: bar_testing
     FAST_runDirectory: temp_bar
     cores: 1
     debug_level: 2
