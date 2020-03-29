@@ -143,8 +143,8 @@ class WindTurbineOntologyPython(object):
         
         # Blade
         self.analysis_options['blade']              = {}
-        self.analysis_options['blade']['n_span'] = self.analysis_options['rotorse']['n_span']
-
+        self.analysis_options['blade']['n_span']    = self.analysis_options['rotorse']['n_span']
+        self.analysis_options['blade']['nd_span']   = np.linspace(0., 1., self.analysis_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
         self.analysis_options['blade']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
         self.analysis_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
         self.analysis_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
