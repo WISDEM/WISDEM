@@ -208,7 +208,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.model.add_constraint('elastic.rail.LV_constraint_4axle',    upper= 1.0)
             else:
                 exit('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
-         wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0)
+        wt_opt.model.add_constraint('tcons.tip_deflection_ratio',    upper= 1.0)
 
         # Set recorder
         wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
@@ -252,11 +252,11 @@ if __name__ == "__main__":
     ## File management
     
     run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'assemblies' + os.sep + 'reference_turbines' + os.sep
-    fname_wt_input         = run_dir + "nrel5mw/nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
-    fname_analysis_options = run_dir + "analysis_options.yaml"
-    fname_opt_options      = run_dir + "optimization_options.yaml"
-    fname_wt_output        = run_dir + "nrel5mw/nrel5mw_mod_update_output.yaml"
-    folder_output          = run_dir + 'nrel5mw/'
+    fname_wt_input         = run_dir + "bar/BAR10.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    fname_analysis_options = run_dir + "bar/analysis_options.yaml"
+    fname_opt_options      = run_dir + "bar/optimization_options.yaml"
+    fname_wt_output        = run_dir + "bar/BAR10_output.yaml"
+    folder_output          = run_dir + 'bar_temp/'
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
 
@@ -268,7 +268,7 @@ if __name__ == "__main__":
     if rank == 0:
         # Printing and plotting results
         print('AEP in GWh = ' + str(wt_opt['sse.AEP']*1.e-6))
-        print('Nat frequencies blades in Hz = ' + str(wt_opt['elastic.curvefem.freq']))
+        print('Nat frequencies blades in Hz = ' + str(wt_opt['sse.curvefem_rated.freq']))
         print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
         print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
 
