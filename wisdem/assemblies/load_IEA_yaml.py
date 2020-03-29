@@ -362,7 +362,10 @@ class Blade(Group):
         # Import outer shape BEM
         self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
         
-        # Optimization parameters initialized as indipendent variable component
+        # Re-interpolate outer shape BEM
+        self.add_subsystem('re_interp_bem', Re_Interp_BEM(blade_init_options = blade_init_options))
+
+        # Optimization parameters initialized as independent variable component
         opt_var = IndepVarComp()
         opt_var.add_output('twist_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
         opt_var.add_output('chord_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
@@ -380,6 +383,16 @@ class Blade(Group):
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem('interp_airfoils', Blade_Interp_Airfoils(blade_init_options = blade_init_options, af_init_options = af_init_options))
         
+
+        # Connections from outer_shape_bem to re_interp_bem
+        self.connect('outer_shape_bem.s',           're_interp_bem.s_')
+        self.connect('outer_shape_bem.chord',       're_interp_bem.chord_')
+        self.connect('outer_shape_bem.twist',       're_interp_bem.twist_')
+        self.connect('outer_shape_bem.pitch_axis',  're_interp_bem.pitch_axis_')
+        # self.connect('outer_shape_bem.af_used',     're_interp_bem.af_used_')
+        # self.connect('outer_shape_bem.af_position', 're_interp_bem.af_position_')
+        self.connect('outer_shape_bem.ref_axis', 're_interp_bem.ref_axis_')
+
         # Connections to blade aero parametrization
         self.connect('opt_var.twist_opt_gain',    'pa.twist_opt_gain')
         self.connect('opt_var.chord_opt_gain',    'pa.chord_opt_gain')
@@ -388,13 +401,16 @@ class Blade(Group):
         self.connect('outer_shape_bem.twist',       'pa.twist_original')
         self.connect('outer_shape_bem.chord',       'pa.chord_original')
 
-        # Connections from oute_shape_bem to interp_airfoils
-        self.connect('outer_shape_bem.s',           'interp_airfoils.s')
-        self.connect('pa.chord_param',              'interp_airfoils.chord')
-        self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils.pitch_axis')
-        self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')
-        self.connect('opt_var.af_position',         'interp_airfoils.af_position')
-        
+        # Connections from outer_shape_bem to interp_airfoils
+        self.connect('re_interp_bem.s',             'interp_airfoils_aero.s')
+        self.connect('outer_shape_bem.s',           'interp_airfoils_struct.s')
+        self.connect('re_interp_bem.chord',         'interp_airfoils_aero.chord')
+        self.connect('outer_shape_bem.chord',       'interp_airfoils_struct.chord')
+        self.connect('re_interp_bem.pitch_axis',    'interp_airfoils_aero.pitch_axis')
+        self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils_struct.pitch_axis')
+        self.connect('outer_shape_bem.af_used',     ['interp_airfoils_aero.af_used','interp_airfoils_struct.af_used'])  # <<<
+        self.connect('outer_shape_bem.af_position', ['interp_airfoils_aero.af_position','interp_airfoils_struct.af_position'])  # <<<
+         
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
         if blade_init_options['lofted_output'] == True:
             self.add_subsystem('blade_lofted',    Blade_Lofted_Shape(blade_init_options = blade_init_options, af_init_options = af_init_options))
