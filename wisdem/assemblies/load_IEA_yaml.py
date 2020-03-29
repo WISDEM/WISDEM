@@ -236,8 +236,11 @@ class WindTurbineOntologyPython(object):
         self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']['z']['values'] = wt_opt['blade.outer_shape_bem.ref_axis'][:,2].tolist()
 
         # Update Distributed Aerodynamic Controls
-        self.wt_init['components']['blade']['aerodynamic_control']['te_flaps']['span_start'] = str(wt_opt['opt_var_flap.te_flap_end'] - wt_opt['opt_var_flap.te_flap_ext'])
-        self.wt_init['components']['blade']['aerodynamic_control']['te_flaps']['span_end'] = str(wt_opt['opt_var_flap.te_flap_end'])
+        if self.analysis_options['blade']['n_te_flaps'] > 0:   
+            n_te_flaps = self.analysis_options['blade']['n_te_flaps']
+            for i in range(n_te_flaps):
+                self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'][i]['span_start'] = str(wt_opt['opt_var_flap.te_flap_end'] - wt_opt['opt_var_flap.te_flap_ext'])
+                self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'][i]['span_end'] = str(wt_opt['opt_var_flap.te_flap_end'])
 
 
         # Update blade structure
