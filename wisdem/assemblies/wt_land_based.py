@@ -118,6 +118,7 @@ class WT_RNTA(Group):
         self.connect('blade.interp_airfoils_aero.coord_xy_interp', 'xf.coord_xy_interp')
         self.connect('airfoils.aoa',                          'xf.aoa')
         self.connect('assembly.r_blade',                      'xf.r')
+        self.connect('blade.re_interp_bem.s',                 'xf.s')
         self.connect('blade.opt_var.te_flap_end',             'xf.span_end')
         self.connect('blade.opt_var.te_flap_ext',             'xf.span_ext')
         self.connect('blade.dac_te_flaps.chord_start',        'xf.chord_start')
@@ -152,7 +153,6 @@ class WT_RNTA(Group):
         self.connect('nacelle.uptilt',              'sse.tilt')
         self.connect('airfoils.aoa',                'sse.airfoils_aoa')
             
-        self.connect('xf.flap_angles',              'sse.airfoils_Ctrl')
         self.connect('airfoils.Re',                 'sse.airfoils_Re')
         self.connect('xf.cl_interp_flaps',          'sse.airfoils_cl')
         self.connect('xf.cd_interp_flaps',          'sse.airfoils_cd')
@@ -181,8 +181,6 @@ class WT_RNTA(Group):
             self.connect('assembly.rotor_radius',           'sse.tune_rosco.R')
             self.connect('elastic.precomp.I_all_blades',    'sse.tune_rosco.rotor_inertia', src_indices=[0])
             self.connect('nacelle.drivetrain_eff',          'sse.tune_rosco.gen_eff')
-            self.connect('elastic.curvefem.freq',           'sse.tune_rosco.flap_freq', src_indices=[0])
-            self.connect('elastic.curvefem.freq',           'sse.tune_rosco.edge_freq', src_indices=[1])
             self.connect('control.max_pitch',               'sse.tune_rosco.max_pitch') 
             self.connect('control.min_pitch',               'sse.tune_rosco.min_pitch')
             self.connect('control.max_pitch_rate' ,         'sse.tune_rosco.max_pitch_rate')
@@ -223,7 +221,7 @@ class WT_RNTA(Group):
         # Frequencies from curvefem to constraint
         self.connect('sse.curvefem_rated.freq',   'rlds.constr.freq') 
 
-        self.connect('assembly.r_blade_ref',                'rlds.r')
+        self.connect('assembly.r_blade',                'rlds.r')
         self.connect('assembly.rotor_radius',           'rlds.Rtip')
         self.connect('hub.radius',                      'rlds.Rhub')
         self.connect('assembly.hub_height',             'rlds.hub_height')
@@ -462,7 +460,9 @@ class WindPark(Group):
         self.connect('sse.AEP',                    'outputs_2_screen.aep')
         self.connect('elastic.precomp.blade_mass', 'outputs_2_screen.blade_mass')
         self.connect('financese.lcoe',             'outputs_2_screen.lcoe')
-        self.connect('aeroelastic.My_std',         'outputs_2_screen.My_std')
-        self.connect('aeroelastic.flp1_std',       'outputs_2_screen.flp1_std')
+
+        if analysis_options['openfast']['run_openfast'] == True:
+            self.connect('aeroelastic.My_std',         'outputs_2_screen.My_std')
+            self.connect('aeroelastic.flp1_std',       'outputs_2_screen.flp1_std')
 
 
