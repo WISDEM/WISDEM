@@ -523,22 +523,26 @@ class Re_Interp_BEM(ExplicitComponent):
         outputs['s'] = copy.copy(nd_span_orig)
 
         # Account for blade flap start and end positions
-        if inputs['span_end'] >= 0.98:
-            flap_start = 0.98 - inputs['span_ext']
-            flap_end = 0.98
-            print('span_end optimization variable reached limits and was set to r/R = 0.98 when running XFoil')
+        if len(inputs['span_end']) > 0 :
+            if inputs['span_end'] >= 0.98:
+                flap_start = 0.98 - inputs['span_ext']
+                flap_end = 0.98
+                print('span_end optimization variable reached limits and was set to r/R = 0.98 when running XFoil')
+            else:
+                flap_start = inputs['span_end'] - inputs['span_ext']
+                flap_end = inputs['span_end']
         else:
-            flap_start = inputs['span_end'] - inputs['span_ext']
-            flap_end = inputs['span_end']
+            flap_start = 0.0
+            flap_end = 0.0
 
 #         # modify grid at flap start and end position
 #         # ToDO - include if 'aerodynamic_control' in blade:
 #         # flap start
         idx_flap_start = np.where(np.abs(inputs['s_'] - flap_start) == (np.abs(inputs['s_'] - flap_start)).min())
-        outputs['s'][idx_flap_start[0][0]] = flap_start
-        # flap end
-
         idx_flap_end = np.where(np.abs(inputs['s_'] - flap_end) == (np.abs(inputs['s_'] - flap_end)).min())
+
+        
+        outputs['s'][idx_flap_start[0][0]] = flap_start
         outputs['s'][idx_flap_end[0][0]] = flap_end
 
 
@@ -1035,9 +1039,10 @@ class Tower(ExplicitComponent):
 
         self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
+        self.add_output('outfitting_factor',       val=0.0,
+                        desc='Multiplier that accounts for secondary structure mass inside of tower')
 
 
-        
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
         outputs['height']   = outputs['ref_axis'][-1,2]
