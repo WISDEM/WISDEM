@@ -1290,6 +1290,19 @@ class WT_Assembly(ExplicitComponent):
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
         outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
 
+class Parametrize_Control(ExplicitComponent):
+    # Openmdao component that multiplies the initial tsr with the tsr gain
+
+    def setup(self):
+        # Inputs
+        self.add_input('tsr_original',  val=0.0,    desc='Tip speed ratio defined in the yaml.')
+        self.add_input('tsr_gain',      val=1.0,    desc='Tip speed ratio gain optimized by the optimization solver.')
+        # Outputs
+        self.add_output('tsr_opt',      val=0.0,    desc='Optimized tip speed ratio')
+
+    def compute(self, inputs, outputs):
+        
+        outputs['tsr_opt'] = inputs['tsr_original'] * inputs['tsr_gain']
 
 class WindTurbineOntologyOpenMDAO(Group):
     # Openmdao group with all wind turbine data
@@ -1331,6 +1344,13 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.connect('tower.height',                    'assembly.tower_height')
         self.connect('foundation.height',               'assembly.foundation_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
+        
+        opt_var = IndepVarComp()
+        opt_var.add_output('tsr_opt_gain',   val = 1.0)
+        self.add_subsystem('opt_var',opt_var)
+        self.add_subsystem('pc', Parametrize_Control())
+        self.connect('opt_var.tsr_opt_gain', 'pc.tsr_gain')
+        self.connect('control.rated_TSR',    'pc.tsr_original')
 
 def yaml2openmdao(wt_opt, analysis_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
