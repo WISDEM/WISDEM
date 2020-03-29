@@ -53,25 +53,10 @@ class WT_RNTA(Group):
         # Connections to wind turbine class
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
         
-        # Connections from input yaml to parametrization
-        self.connect('blade.re_interp_bem.s',        ['param.pa.s', 'xf.s'])
-        self.connect('blade.outer_shape_bem.s',        'param.ps.s')        # keep the s coordinate for the structural components at the ref definition, e.g. linspace
-        self.connect('blade.re_interp_bem.twist', 'param.pa.twist_original')
-        self.connect('blade.re_interp_bem.chord', 'param.pa.chord_original')
-        self.connect('blade.internal_structure_2d_fem.layer_name',      'param.ps.layer_name')
-        self.connect('blade.internal_structure_2d_fem.layer_thickness', 'param.ps.layer_thickness_original')
-
         # Connections from blade aero parametrization to other modules
-        # self.connect('param.pa.twist_param',           ['sse.theta','elastic.theta','rlds.theta'])
-        # self.connect('param.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
-        # self.connect('param.pa.chord_param',           ['xf.chord', 'elastic.chord', 'sse.chord','rlds.chord'])
-
-        self.connect('blade.outer_shape_bem.twist',     ['elastic.theta','rlds.theta'])
-        self.connect('param.pa.twist_param',            ['sse.theta'])
-        self.connect('param.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
-        self.connect('blade.outer_shape_bem.chord',     ['elastic.chord', 'rlds.chord'])
-        self.connect('param.pa.chord_param',            ['xf.chord', 'sse.chord'])
-
+        self.connect('blade.pa.twist_param',           ['sse.theta','elastic.theta','rlds.theta'])
+        self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
+        self.connect('blade.pa.chord_param',           ['xf.chord', 'elastic.chord', 'sse.chord','rlds.chord'])
 
         # Connections from blade struct parametrization to rotor elasticity
         self.connect('blade.ps.layer_thickness_param', 'elastic.precomp.layer_thickness')
@@ -79,8 +64,8 @@ class WT_RNTA(Group):
         # Connections to rotor elastic and frequency analysis  (in non-dynamic _ref grid system)
         self.connect('nacelle.uptilt',                                  'elastic.precomp.uptilt')
         self.connect('configuration.n_blades',                          'elastic.precomp.n_blades')
-        # self.connect('assembly.r_blade',                                'elastic.r')
-        self.connect('assembly.r_blade_ref',                                'elastic.r')
+        self.connect('assembly.r_blade',                                'elastic.r')
+        # self.connect('assembly.r_blade_ref',                                'elastic.r')
         self.connect('blade.outer_shape_bem.pitch_axis',                'elastic.precomp.pitch_axis')
         self.connect('blade.interp_airfoils_struct.coord_xy_interp',    'elastic.precomp.coord_xy_interp')
         self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'elastic.precomp.layer_start_nd')
