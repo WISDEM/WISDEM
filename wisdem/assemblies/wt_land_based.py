@@ -111,8 +111,8 @@ class WT_RNTA(Group):
         self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.aeroloads_pitch'])
         
         # Connections to Update blade grid (s-coordinate)
-        self.connect('opt_var_flap.te_flap_end',             'blade.re_interp_bem.span_end')
-        self.connect('opt_var_flap.te_flap_ext',             'blade.re_interp_bem.span_ext')
+        self.connect('blade.opt_var.te_flap_end',             'blade.re_interp_bem.span_end')
+        self.connect('blade.opt_var.te_flap_ext',             'blade.re_interp_bem.span_ext')
         
         # Connections to run xfoil for te flaps  (in dynamic grid system)
         self.connect('blade.interp_airfoils_aero.coord_xy_interp', 'xf.coord_xy_interp')
