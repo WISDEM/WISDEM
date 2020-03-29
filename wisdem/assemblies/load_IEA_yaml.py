@@ -1595,6 +1595,8 @@ def assign_te_flaps_values(wt_opt, analysis_options, blade):
             wt_opt['blade.dac_te_flaps.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
             wt_opt['blade.dac_te_flaps.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
 
+            wt_opt['blade.opt_var.te_flap_ext'] = blade['aerodynamic_control']['te_flaps'][i]['span_end'] - blade['aerodynamic_control']['te_flaps'][i]['span_start']
+            wt_opt['blade.opt_var.te_flap_end'] = blade['aerodynamic_control']['te_flaps'][i]['span_end']
 
 
             # Checks for consistency
