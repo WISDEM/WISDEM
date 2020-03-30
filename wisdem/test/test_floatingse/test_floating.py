@@ -3,11 +3,13 @@ import numpy.testing as npt
 import unittest
 from openmdao.api import Problem
 from wisdem.floatingse.floating import FloatingSE
+import pytest
 
 nSec = 4
 nSecTow = 3
 NPTS = 100
 
+@pytest.mark.skip(reason='Not yet implemented in the ontology')
 class TestOC3Mass(unittest.TestCase):
     def setUp(self):
         self.myfloat = Problem()
