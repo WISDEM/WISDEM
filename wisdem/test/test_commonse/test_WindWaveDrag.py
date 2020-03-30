@@ -18,10 +18,10 @@ class TestDrag(unittest.TestCase):
         self.params['p'] = 3.0 * myones
         self.params['cm'] = 1.0
         self.params['d'] = 10.0 * myones
-        self.params['rho'] = 0.5
-        self.params['mu'] = 1e-3
+        self.params['rho_water'] = 0.5
+        self.params['mu_water'] = 1e-3
         self.params['z'] = -100.0 * myones
-        self.params['beta'] = 0.0
+        self.params['beta_wave'] = 0.0
         self.params['cd_usr'] = -1.0
         
         self.wave = wwd.CylinderWaveDrag(nPoints=npts)
