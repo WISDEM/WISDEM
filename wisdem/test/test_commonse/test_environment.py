@@ -48,8 +48,8 @@ class TestLinearWaves(unittest.TestCase):
         self.unknowns = {}
         self.resid = None
 
-        self.params['rho'] = 1e3
-        self.params['hmax'] = 2.0
+        self.params['rho_water'] = 1e3
+        self.params['hsig_wave'] = 2.0
         self.params['Uc'] = 5.0
         self.params['z_floor'] = -30.0
         self.params['z_surface'] = 0.0
@@ -61,10 +61,10 @@ class TestLinearWaves(unittest.TestCase):
         D = np.abs(self.params['z_floor'])
         k = 2.5
         omega = np.sqrt(g*k*np.tanh(k*D))
-        self.params['T'] = 2.0 * np.pi / omega
+        self.params['Tsig_wave'] = 2.0 * np.pi / omega
         
         self.wave.compute(self.params, self.unknowns)
-        a = 1.0 #0.5*hmax
+        a = 1.0 #0.5*hsig_wave
         z = -2.0
         rho = 1e3
         U_exp = 5 + omega*a*np.cosh(k*(z+D))/np.sinh(k*D)
@@ -89,7 +89,7 @@ class TestLinearWaves(unittest.TestCase):
         npt.assert_almost_equal(self.unknowns['p'], p_exp)
 
     def testPositiveZ(self):
-        self.params['T'] = 2.0 
+        self.params['Tsig_wave'] = 2.0 
         self.params['z'] = 2.0 * myones
         self.wave.compute(self.params, self.unknowns)
         npt.assert_equal(self.unknowns['U'], 0.0)
@@ -100,8 +100,8 @@ class TestLinearWaves(unittest.TestCase):
 
         
     def testQuiet(self):
-        self.params['hmax'] = 0.0 
-        self.params['T'] = 2.0
+        self.params['hsig_wave'] = 0.0 
+        self.params['Tsig_wave'] = 2.0
         self.wave.compute(self.params, self.unknowns)
         p_exp = 2e3*g
         npt.assert_equal(self.unknowns['U'], 5.0)

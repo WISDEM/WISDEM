@@ -61,7 +61,7 @@ class TestMass(unittest.TestCase):
         self.params['d_full'] = 2.0*10.0*myones
         self.params['t_full'] = 0.5*np.ones((npts-1,))
         self.params['z_full'] = np.linspace(0, 50.0, npts)
-        self.params['material_density'] = 5.0
+        self.params['rho'] = 5.0
         self.params['outfitting_factor'] = 1.5
         self.params['material_cost_rate'] = 1.5
         self.params['labor_cost_rate'] = 1.0
