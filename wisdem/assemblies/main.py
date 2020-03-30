@@ -116,6 +116,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_objective('tcons.tip_deflection_ratio')
         elif opt_options['merit_figure'] == 'Cp':
             wt_opt.model.add_objective('sse.powercurve.Cp_regII', scaler = -1.)
+        elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
+            wt_opt.model.add_objective('aeroelastic.My_std', scaler = 1.)  #1.e-8)
+        elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
+            wt_opt.model.add_objective('aeroelastic.flp1_std', scaler = 1.)  #1.e-8)
         else:
             exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
 

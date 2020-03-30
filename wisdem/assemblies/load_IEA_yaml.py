@@ -16,7 +16,7 @@ from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_s
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.commonse.utilities import arc_length
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_predef_wind
 
 
 def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
@@ -99,7 +99,7 @@ class WindTurbineOntologyPython(object):
         FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
         FASTpref['DLC_gust']            = None      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
-        FASTpref['DLC_turbulent']       = RotorSE_DLC_1_1_Turb
+        FASTpref['DLC_turbulent']       = RotorSE_predef_wind
         FASTpref['DLC_powercurve']      = None      # AEP
         if FASTpref['Analysis_Level'] > 0:
             fast = InputReader_OpenFAST(FAST_ver=FASTpref['FAST_ver'], dev_branch=FASTpref['dev_branch'])
@@ -139,6 +139,7 @@ class WindTurbineOntologyPython(object):
         self.analysis_options['airfoils']['n_Re']   = len(np.unique(Re_all))
         self.analysis_options['airfoils']['n_tab']  = 1
         self.analysis_options['airfoils']['n_xy']   = self.analysis_options['rotorse']['n_xy']
+        self.analysis_options['airfoils']['af_used']      = self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']
         self.analysis_options['airfoils']['xfoil_path']   = self.analysis_options['xfoil']['path']
         
         # Blade
@@ -351,9 +352,6 @@ class Blade(Group):
         af_init_options    = self.options['af_init_options']
         opt_options        = self.options['opt_options']
         
-        # Import outer shape BEM
-        self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
-        
         # Optimization parameters initialized as indipendent variable component
         opt_var = IndepVarComp()
         opt_var.add_output('twist_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
@@ -363,8 +361,10 @@ class Blade(Group):
         opt_var.add_output('spar_cap_ps_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']))
         opt_var.add_output('te_flap_end', val = np.ones(blade_init_options['n_te_flaps']))
         opt_var.add_output('te_flap_ext', val = np.ones(blade_init_options['n_te_flaps']))
-
         self.add_subsystem('opt_var',opt_var)
+
+        # Import outer shape BEM
+        self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
 
         # Parametrize blade outer shape
         self.add_subsystem('pa',    ParametrizeBladeAero(blade_init_options = blade_init_options, opt_options = opt_options)) # Parameterize aero (chord and twist)
@@ -372,6 +372,10 @@ class Blade(Group):
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem('interp_airfoils', Blade_Interp_Airfoils(blade_init_options = blade_init_options, af_init_options = af_init_options))
         
+        # Connections to outer_shape_bem
+        self.connect('opt_var.te_flap_end', 'outer_shape_bem.te_flap_span_end')
+        self.connect('opt_var.te_flap_ext', 'outer_shape_bem.te_flap_span_ext')
+
         # Connections to blade aero parametrization
         self.connect('opt_var.twist_opt_gain',    'pa.twist_opt_gain')
         self.connect('opt_var.chord_opt_gain',    'pa.chord_opt_gain')
@@ -384,7 +388,6 @@ class Blade(Group):
         self.connect('outer_shape_bem.s',           'interp_airfoils.s')
         self.connect('pa.chord_param',              'interp_airfoils.chord')
         self.connect('outer_shape_bem.pitch_axis',  'interp_airfoils.pitch_axis')
-        self.connect('outer_shape_bem.af_used',     'interp_airfoils.af_used')
         self.connect('opt_var.af_position',         'interp_airfoils.af_position')
         
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
@@ -420,10 +423,13 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
     def setup(self):
         blade_init_options = self.options['blade_init_options']
         n_af_span          = blade_init_options['n_af_span']
-        n_span             = blade_init_options['n_span']
-        
-        self.add_discrete_output('af_used', val=n_af_span * [''],              desc='1D array of names of the airfoils actually defined along blade span.')
-        
+        self.n_span        = n_span = blade_init_options['n_span']
+        self.n_te_flaps    = n_te_flaps = blade_init_options['n_te_flaps']
+
+        # Inputs flaps
+        self.add_input('te_flap_span_end', val=np.zeros(n_te_flaps),desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
+        self.add_input('te_flap_span_ext', val=np.zeros(n_te_flaps),desc='1D array of the extensions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
+                
         self.add_output('af_position',   val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_used defined along blade span.')
         self.add_output('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_output('chord',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
@@ -434,8 +440,49 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
         self.add_output('length',       val = 0.0,               units='m',    desc='Scalar of the 3D blade length computed along its axis.')
         self.add_output('length_z',     val = 0.0,               units='m',    desc='Scalar of the 1D blade length along z, i.e. the blade projection in the plane ignoring prebend and sweep. For a straight blade this is equal to length')
         
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         
+        # If DAC devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twsi, pitch axis, and reference axis
+        if self.n_te_flaps > 0:
+            nd_span_orig = np.linspace(0., 1.,self.n_span)
+
+            chord_orig      = np.interp(nd_span_orig, outputs['s'], outputs['chord'])
+            twist_orig      = np.interp(nd_span_orig, outputs['s'], outputs['twist'])
+            pitch_axis_orig = np.interp(nd_span_orig, outputs['s'], outputs['pitch_axis'])
+            ref_axis_orig   = np.zeros((self.n_span, 3))
+            ref_axis_orig[:, 0] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 0])
+            ref_axis_orig[:, 1] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 1])
+            ref_axis_orig[:, 2] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 2])
+
+            outputs['s'] = copy.copy(nd_span_orig)
+            
+            # Account for blade flap start and end positions
+            if len(inputs['te_flap_span_end']) > 0 :
+                if inputs['te_flap_span_end'] >= 0.98:
+                    flap_start = 0.98 - inputs['span_ext']
+                    flap_end = 0.98
+                    print('te_flap_span_end optimization variable reached limits and was set to r/R = 0.98 when running XFoil')
+                else:
+                    flap_start = inputs['te_flap_span_end'] - inputs['te_flap_span_ext']
+                    flap_end = inputs['te_flap_span_end']
+            else:
+                flap_start = 0.0
+                flap_end = 0.0
+
+            idx_flap_start = np.where(np.abs(nd_span_orig - flap_start) == (np.abs(nd_span_orig - flap_start)).min())[0][0]
+            idx_flap_end = np.where(np.abs(nd_span_orig - flap_end) == (np.abs(nd_span_orig - flap_end)).min())[0][0]
+            if idx_flap_start == idx_flap_end:
+                idx_flap_end += 1
+            outputs['s'][idx_flap_start] = flap_start
+            outputs['s'][idx_flap_end] = flap_end
+            outputs['chord'] = np.interp(outputs['s'], nd_span_orig, chord_orig)
+            outputs['twist'] = np.interp(outputs['s'], nd_span_orig, twist_orig)
+            outputs['pitch_axis'] = np.interp(outputs['s'], nd_span_orig, pitch_axis_orig)
+
+            outputs['ref_axis'][:, 0] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 0])
+            outputs['ref_axis'][:, 1] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 1])
+            outputs['ref_axis'][:, 2] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 2])
+
         outputs['length']   = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])[-1]
         outputs['length_z'] = outputs['ref_axis'][:,2][-1]
 
@@ -455,9 +502,8 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        
-        self.add_discrete_input('af_used', val=n_af_span * [''],              desc='1D array of names of the airfoils defined along blade span.')
-        
+        self.af_used       = af_init_options['af_used'] # Names of the airfoils adopted along blade span
+                
         self.add_input('af_position',   val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_used defined along blade span.')
         self.add_input('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_input('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
@@ -500,7 +546,7 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         
         for i in range(self.n_af_span):
             for j in range(self.n_af):
-                if discrete_inputs['af_used'][i] == discrete_inputs['name'][j]:                    
+                if self.af_used[i] == discrete_inputs['name'][j]:                    
                     r_thick_used[i]     = inputs['r_thick'][j]
                     coord_xy_used[i,:,:]= inputs['coord_xy'][j]
                     cl_used[i,:,:,:]    = inputs['cl'][j,:,:,:]
@@ -1231,7 +1277,6 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     
     nd_span     = analysis_options['blade']['nd_span']
     
-    wt_opt['blade.outer_shape_bem.af_used']     = outer_shape_bem['airfoil_position']['labels']
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
     wt_opt['blade.opt_var.af_position']         = outer_shape_bem['airfoil_position']['grid']
     

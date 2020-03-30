@@ -354,6 +354,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('loads_azimuth', val=0.0, units='deg', desc='azimuthal angle')
         self.add_discrete_output('model_updated', val=False, desc='boolean, Analysis Level 0: fast model written, but not run')
         self.add_discrete_output('FASTpref_updated', val={}, desc='updated fast preference dictionary')
+        self.add_output('My_std',       val=0.0, units='N*m', desc='standard deviation of blade root flap bending moment in out-of-plane direction')
+        self.add_output('flp1_std',     val=0.0, units='deg', desc='standard deviation of trailing-edge flap angle')
 
         self.add_output('P_out',        val=np.zeros(n_pc), units='W', desc='electrical power from rotor')
         self.add_output('P',            val=np.zeros(n_pc), units='W',    desc='rotor electrical power')
@@ -712,10 +714,15 @@ class FASTLoadCases(ExplicitComponent):
             idx = root_bending_moment_idxmax[blade_root_bending_moment_max]
             if blade_root_bending_moment_max == 0:
                 outputs['Mxyz'] = np.array([data['RootMxc1'][idx_s+idx]*1.e3, data['RootMyc1'][idx_s+idx]*1.e3, data['RootMzc1'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc1'][idx_s:idx_e]*1.e3)
             elif blade_root_bending_moment_max == 1:
                 outputs['Mxyz'] = np.array([data['RootMxc2'][idx_s+idx]*1.e3, data['RootMyc2'][idx_s+idx]*1.e3, data['RootMzc2'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
             elif blade_root_bending_moment_max == 2:
                 outputs['Mxyz'] = np.array([data['RootMxc3'][idx_s+idx]*1.e3, data['RootMyc3'][idx_s+idx]*1.e3, data['RootMzc3'][idx_s+idx]*1.e3])
+                outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
+
+            outputs['flp1_std'] = np.std(data['BLFLAP1'])
 
         def post_extreme(data, case_type):
 

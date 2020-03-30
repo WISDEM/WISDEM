@@ -429,9 +429,9 @@ class WindPark(Group):
         self.add_subsystem('wt',        WT_RNTA(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
         # Post-processing
-        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen())
+        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(analysis_options = analysis_options))
         if opt_options['opt_flag']:
-            self.add_subsystem('conv_plots',        Convergence_Trends_Opt(opt_options = opt_options))
+            self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # Inputs to plantfinancese from wt group
         self.connect('sse.AEP',                 'financese.turbine_aep')
@@ -449,5 +449,8 @@ class WindPark(Group):
         self.connect('sse.AEP',                    'outputs_2_screen.aep')
         self.connect('elastic.precomp.blade_mass', 'outputs_2_screen.blade_mass')
         self.connect('financese.lcoe',             'outputs_2_screen.lcoe')
+        if analysis_options['openfast']['run_openfast'] == True:
+            self.connect('aeroelastic.My_std',         'outputs_2_screen.My_std')
+            self.connect('aeroelastic.flp1_std',       'outputs_2_screen.flp1_std')
 
 
