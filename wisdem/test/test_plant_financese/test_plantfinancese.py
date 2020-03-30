@@ -12,6 +12,7 @@ class TestPlantFinance(unittest.TestCase):
 
         self.inputs['machine_rating'] = 1000.0
         self.inputs['tcc_per_kW'] = 1.2e3
+        self.inputs['offset_tcc_per_kW'] = 0.
         self.inputs['bos_per_kW'] = 7.7e3
         self.inputs['opex_per_kW'] = 7e2
         self.inputs['fixed_charge_rate'] = 0.12
