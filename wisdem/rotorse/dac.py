@@ -1,7 +1,3 @@
-try:
-    from scipy.ndimage import gaussian_filter
-except:
-    pass
 import numpy as np
 import os
 from openmdao.api import ExplicitComponent
@@ -112,11 +108,14 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
 
         # Run the XFoil calling command
         os.system(xfoil_path + " < xfoil_input.txt  > NUL") # <<< runs XFoil !
-        flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
+        try:
+            flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
+        except:
+            flap_polar = []  # in case no convergence was achieved
 
 
         # Error handling (re-run simulations with more panels if there is not enough data in polars)
-        if flap_polar.size < 3: # This case is if there are convergence issues at the lowest angles of attack
+        if np.size(flap_polar) < 3: # This case is if there are convergence issues at the lowest angles of attack
             plen = 0
             a0 = 0
             a1 = 0
@@ -215,7 +214,11 @@ class RunXFOIL(ExplicitComponent):
         # If trailing edge flaps are present, compute the perturbed profiles with XFOIL
         flap_profiles = [{} for i in range(self.n_span)]
         outputs['span_start'] = inputs['span_end'] - inputs['span_ext']
-        if self.n_te_flaps > 0: 
+        if self.n_te_flaps > 0:
+            try:
+                from scipy.ndimage import gaussian_filter
+            except:
+                print('Cannot import the library gaussian_filter from scipy. Please check the c onda environment and potential conflicts between numpy and scipy')
             for i in range(self.n_span):
                 # Loop through the flaps specified in yaml file
                 for k in range(self.n_te_flaps):
@@ -253,11 +256,11 @@ class RunXFOIL(ExplicitComponent):
                         # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
                         # # plt.plot(flap_profiles[i]['coords'][:,0,0], flap_profiles[i]['coords'][:,1,0], 'r',flap_profiles[i]['coords'][:,0,1], flap_profiles[i]['coords'][:,1,1], 'k',flap_profiles[i]['coords'][:,0,2], flap_profiles[i]['coords'][:,1,2], 'b')
                         # plt.plot(flap_profiles[i]['coords'][:, 0, 0],
-                        #         flap_profiles[i]['coords'][:, 1, 0], 'r',
+                        #         flap_profiles[i]['coords'][:, 1, 0], '.r',
                         #         flap_profiles[i]['coords'][:, 0, 2],
-                        #         flap_profiles[i]['coords'][:, 1, 2], 'b',
+                        #         flap_profiles[i]['coords'][:, 1, 2], '.b',
                         #         flap_profiles[i]['coords'][:, 0, 1],
-                        #         flap_profiles[i]['coords'][:, 1, 1], 'k')
+                        #         flap_profiles[i]['coords'][:, 1, 1], '.k')
                         
                         # # plt.xlabel('x')
                         # # plt.ylabel('y')
@@ -489,9 +492,12 @@ class RunXFOIL(ExplicitComponent):
                     # plt.rc('font', **font)
                     # plt.figure
                     # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r', label='$\delta_{flap}$ = -10 deg')  # -10
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k', label='$\delta_{flap}$ = 0 deg')  # 0
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b', label='$\delta_{flap}$ = +10 deg')  # +10
+                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r', label='$\\delta_{flap}$ = -10 deg')  # -10
+                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k', label='$\\delta_{flap}$ = 0 deg')  # 0
+                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b', label='$\\delta_{flap}$ = +10 deg')  # +10
+                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r')  # -10
+                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k')  # 0
+                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b')  # +10
                     # plt.xlim(xmin=-15, xmax=15)
                     # plt.ylim(ymin=-1.7, ymax=2.2)
                     # plt.grid(True)
@@ -501,10 +507,11 @@ class RunXFOIL(ExplicitComponent):
                     # plt.legend(loc='lower right')
                     # plt.tight_layout()
                     # plt.show()
-                    # # # # plt.savefig('temp/airfoil_polars/NACA63-618_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('temp/airfoil_polars/FFA-W3-211_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('temp/airfoil_polars/FFA-W3-241_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('temp/airfoil_polars/FFA-W3-301_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/r_R_1_0_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/NACA63-618_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-211_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-241_cl_flaps.png', dpi=300)
+                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-301_cl_flaps.png', dpi=300)
 
 
 
@@ -518,6 +525,25 @@ class RunXFOIL(ExplicitComponent):
                             cl_interp_flaps[afi,:,j,ind] = inputs['cl_interp'][afi,:,j,0]
                             cd_interp_flaps[afi,:,j,ind] = inputs['cd_interp'][afi,:,j,0]
                             cm_interp_flaps[afi,:,j,ind] = inputs['cm_interp'][afi,:,j,0]
+
+                        for j in range(self.n_Re):
+                            cl_interp_flaps[afi, :, j, ind] = cl_interp_flaps[afi, :, j, 0]
+                            cd_interp_flaps[afi, :, j, ind] = cd_interp_flaps[afi, :, j, 0]
+                            cm_interp_flaps[afi, :, j, ind] = cm_interp_flaps[afi, :, j, 0]
+
+
+
+                # else:  # no flap at specific radial location (but in general 'aerodynamic_control' is defined in blade from yaml)
+                #     # for j in range(n_Re): # ToDo incorporade variable Re capability
+                #     for ind in range(self.n_tab):  # fill all self.n_tab slots even though no flaps exist at current radial position
+                #         c = inputs['chord'][afi]  # blade chord length at cross section
+                #         rR = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
+                #         Re_loc[afi, :, ind] = c * maxTS * rR / KinVisc
+                #         Ma_loc[afi, :, ind] = maxTS * rR / SpdSound
+                #         for j in range(self.n_Re):
+                #             cl_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
+                #             cd_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
+                #             cm_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
 
         else:
             for afi in range(self.n_span):
