@@ -106,7 +106,7 @@ class CylinderMass(ExplicitComponent):
 
         # Total mass of cylinder
         V_shell = frustum.frustumShellVol(Rb, Rt, twall, H)
-        outputs['mass'] = coeff * rho * V_shell
+        mass = outputs['mass'] = coeff * rho * V_shell
         
         # Center of mass of each can/section
         cm_section = zz[:-1] + frustum.frustumShellCG(Rb, Rt, twall, H)
@@ -126,7 +126,7 @@ class CylinderMass(ExplicitComponent):
             R = np.array([0.0, 0.0, cm_section[k]])
             Icg = assembleI( [Ixx_section[k], Iyy_section[k], Izz_section[k], 0.0, 0.0, 0.0] )
 
-            I_base += Icg + V_shell[k]*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
+            I_base += Icg + mass[k]*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
             
         outputs['I_base'] = unassembleI(I_base)
         
