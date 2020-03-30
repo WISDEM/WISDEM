@@ -5,9 +5,9 @@ import sys
 import wisdem.test.test_assemblies as test_assemblies
 import wisdem.test.test_airfoilprep as test_airfoilprep
 import wisdem.test.test_ccblade as test_ccblade
-import wisdem.test.test_commonse as test_commonse
+# import wisdem.test.test_commonse as test_commonse
 import wisdem.test.test_drivetrainse as test_drivetrainse
-import wisdem.test.test_floatingse as test_floatingse
+# import wisdem.test.test_floatingse as test_floatingse
 import wisdem.test.test_nrelcsm as test_nrelcsm
 import wisdem.test.test_pbeam as test_pbeam
 import wisdem.test.test_plant_financese as test_plant_financese
