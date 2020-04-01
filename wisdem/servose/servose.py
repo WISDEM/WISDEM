@@ -296,6 +296,8 @@ class TuneROSCO(ExplicitComponent):
 
         # DISCON Parameters
         #   - controller
+        if 'DISCON_in' not in self.analysis_options['openfast']['fst_vt'].keys():
+            self.analysis_options['openfast']['fst_vt']['DISCON_in']  = {}
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['LoggingLevel'] = controller.LoggingLevel
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_LPFType'] = controller.F_LPFType
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['F_NotchType'] = controller.F_NotchType

@@ -246,7 +246,7 @@ if __name__ == "__main__":
     if rank == 0:
         # Printing and plotting results
         print('AEP in GWh = ' + str(wt_opt['sse.AEP']*1.e-6))
-        print('Nat frequencies blades in Hz = ' + str(wt_opt['elastic.curvefem.freq']))
+        print('Nat frequencies blades in Hz = ' + str(wt_opt['sse.curvefem_rated.freq']))
         print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
         print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
 
