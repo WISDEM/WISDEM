@@ -287,28 +287,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     prob['drive.hss_input_length'] = 1.5
     prob['drive.yaw_motors_number'] = 1
 
-    # >>>>>>>>>>>>>>> LandBOSSE inputs will go here <<<<<<<<<<<<<<<<<<<
-
-    # LandBOSSE: Overrides for default inputs
-    project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundation_validation_ge15')
-
-    # Components dataframe: This is where we can populate components from TowerSE, RotorSE, and DriveSE
-    components = project_data['components']
-
-    prob['site_facility_building_area_df'] = project_data['site_facility_building_area']
-    prob['components'] = components
-    prob['crane_specs'] = project_data['crane_specs']
-    weather_window_df = read_weather_window(project_data['weather_window'])
-    prob['weather_window'] = weather_window_df
-    prob['crew'] = project_data['crew']
-    prob['crew_price'] = project_data['crew_price']
-    prob['equip'] = project_data['equip']
-    prob['equip_price'] = project_data['equip_price']
-    prob['material_price'] = project_data['material_price']
-    prob['rsmeans'] = project_data['rsmeans']
-    prob['cable_specs'] = project_data['cable_specs']
-    prob['crew_price'] = project_data['crew_price']
-    prob['project_data'] = project_data
+    # >>>>>>>>>>>>>>> Generated component data for LandBOSSE will go here <<<<<<<<<<<<<<<<<<<
 
     return prob
 

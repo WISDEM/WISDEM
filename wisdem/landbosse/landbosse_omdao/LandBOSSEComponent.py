@@ -5,6 +5,11 @@ import numpy as np
 
 from ..model.Manager import Manager
 from ..model.DefaultMasterInputDict import DefaultMasterInputDict
+from .OpenMDAODataframeCache import OpenMDAODataframeCache
+from .WeatherWindowCSVReader import read_weather_window
+
+# Read in default sheets for project data
+default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundation_validation_ge15')
 
 
 class LandBOSSEComponent(om.ExplicitComponent):
@@ -132,35 +137,59 @@ class LandBOSSEComponent(om.ExplicitComponent):
     def setup_discrete_inputs_that_are_dataframes(self):
         """
         This sets up the default inputs that are dataframes. They are separate
-        because the way they handle their default data is different.
-
-        To get around the need to specify dataframes in the problem inputs,
-        these methods just populate needed dataframes (which may or may not
-        have been modified) as defaults. These inputs probably shouldn't be
-        promoted but we will worry about that later.
+        because they hold the project data and the way we need to hold their
+        data is different. They have defaults loaded at the top of the file
+        which can be overridden outside by setting the properties listed
+        below.
         """
-        self.add_discrete_input('site_facility_building_area_df', val=None,
+
+        self.add_discrete_input('site_facility_building_area_df',
+                                val=default_project_data['site_facility_building_area'],
                                 desc='site_facility_building_area DataFrame')
-        self.add_discrete_input('components', val=None, desc='Dataframe of components for tower, blade, nacelle')
-        self.add_discrete_input('crane_specs', val=None, desc='Dataframe of specifications of cranes')
-        self.add_discrete_input('weather_window', val=None, desc='Dataframe of wind toolkit data')
-        self.add_discrete_input('crew', val=None, desc='Dataframe of crew configurations')
-        self.add_discrete_input('crew_price', val=None, desc='Dataframe of costs per hour for each type of worker.')
-        self.add_discrete_input('equip', val=None, desc='Collections of equipment to perform erection operations.')
-        self.add_discrete_input('equip_price', val=None, desc='Prices for various type of equipment.')
-        self.add_discrete_input('rsmeans', val=None, desc='RSMeans price data')
-        self.add_discrete_input('cable_specs', val=None, desc='cable specs for collection system')
 
-        self.add_discrete_input(
-            'material_price',
-            desc='Prices of materials for foundations and roads',
-            val=None
-        )
+        self.add_discrete_input('components',
+                                val=default_project_data['components'],
+                                desc='Dataframe of components for tower, blade, nacelle')
 
-        # This is a dictionary with values that are mostly the dataframes above
-        # This is somewhat redundant, but it is what many parts of the code rely
-        # on.
-        self.add_discrete_input('project_data', val=None, desc='Dictionary of all dataframes of data')
+        self.add_discrete_input('crane_specs',
+                                val=default_project_data['crane_specs'],
+                                desc='Dataframe of specifications of cranes')
+
+        self.add_discrete_input('weather_window',
+                                val=read_weather_window(default_project_data['weather_window']),
+                                desc='Dataframe of wind toolkit data')
+
+        self.add_discrete_input('crew',
+                                val=default_project_data['crew'],
+                                desc='Dataframe of crew configurations')
+
+        self.add_discrete_input('crew_price',
+                                val=default_project_data['crew_price'],
+                                desc='Dataframe of costs per hour for each type of worker.')
+
+        self.add_discrete_input('equip',
+                                val=default_project_data['equip'],
+                                desc='Collections of equipment to perform erection operations.')
+
+        self.add_discrete_input('equip_price',
+                                val=default_project_data['equip_price'],
+                                desc='Prices for various type of equipment.')
+
+        self.add_discrete_input('rsmeans',
+                                val=default_project_data['rsmeans'],
+                                desc='RSMeans price data')
+
+        self.add_discrete_input('cable_specs',
+                                val=default_project_data['cable_specs'],
+                                desc='cable specs for collection system')
+
+        self.add_discrete_input('material_price',
+                                val=default_project_data['material_price'],
+                                desc='Prices of materials for foundations and roads')
+
+        self.add_discrete_input('project_data',
+                                val=default_project_data,
+                                desc='Dictionary of all dataframes of data')
 
     def setup_outputs(self):
         """
