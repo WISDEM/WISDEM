@@ -20,7 +20,6 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_input('crane_breakdown_fraction', val=0.0,
                        desc='0 means the crane is never broken down. 1 means it is broken down every turbine.')
 
-        self.add_input('project_value_usd', val=5e7, units='USD', desc='Project value in USD')
         self.add_input('construct_duration', val=9, desc='Total project construction time (months)')
         self.add_input('hub_height_meters', val=80, units='m', desc='Hub height m')
         self.add_input('rotor_diameter_m', val=77, units='m', desc='Rotor diameter m')
@@ -28,7 +27,6 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_input('turbine_rating_MW', val=1.5, units='MW', desc='Turbine rating MW')
         self.add_input('num_turbines', val=100, desc='Number of turbines in project')
         self.add_input('fuel_cost_usd_per_gal', val=1.0, desc='Fuel cost USD/gal')
-        self.add_input('foundation_cost_usd', val=1e7, units='USD', desc='Foundation cost, USD')
 
         self.add_input('breakpoint_between_base_and_topping_percent', val=70,
                        desc='Breakpoint between base and topping (percent)')
