@@ -401,6 +401,8 @@ class Blade(Group):
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
         self.connect('pa.twist_param',                  'internal_structure_2d_fem.twist')
+        self.connect('pa.chord_param',                  'internal_structure_2d_fem.chord')
+        self.connect('outer_shape_bem.pitch_axis',      'internal_structure_2d_fem.pitch_axis')
         self.connect('interp_airfoils.coord_xy_dim',    'internal_structure_2d_fem.coord_xy_dim')
 
         self.add_subsystem('ps',    ParametrizeBladeStruct(blade_init_options = blade_init_options, opt_options = opt_options)) # Parameterize struct (spar caps ss and ps)
@@ -723,8 +725,10 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
         
-        self.add_input('coord_xy_dim',     val=np.zeros((n_span, n_xy, 2)),units = 'm',  desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
-        self.add_input('twist',            val=np.zeros(n_span),           units='rad',  desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        self.add_input('coord_xy_dim',    val=np.zeros((n_span, n_xy, 2)),units = 'm',   desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
+        self.add_input('twist',           val=np.zeros(n_span),           units='rad',   desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        self.add_input('chord',           val=np.zeros(n_span),           units='m',     desc='1D array of the chord values defined along blade span.')
+        self.add_input('pitch_axis',      val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
                 
         self.add_output('s',              val=np.zeros(n_span),                          desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_output('web_rotation',   val=np.zeros((n_webs, n_span)),  units='rad',  desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
@@ -771,8 +775,26 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
             xy_arc_i    /= arc_L_i
             idx_le      = np.argmin(xy_coord_i[:,0])
             LE_loc      = xy_arc_i[idx_le]
+            chord       = inputs['chord'][i]
+            p_le_i      = inputs['pitch_axis'][i]
+            ratio_SCmax = 0.8
+            ratio_Websmax = 0.75
+
             # Loop through the webs and compute non-dimensional start and end positions along the profile
             for j in range(self.n_webs):
+
+                offset = outputs['web_offset_y_pa'][j,i]
+                # Geometry checks on webs                    
+                if offset < ratio_Websmax * (- chord * p_le_i) or offset > ratio_Websmax * (chord * (1. - p_le_i)):
+                    offset_old = copy.copy(offset)
+                    if offset_old <= 0.:
+                        offset = ratio_Websmax * (- chord * p_le_i)
+                    else:
+                        offset = ratio_Websmax * (chord * (1. - p_le_i))
+                    outputs['web_offset_y_pa'][j,i] = offset
+                    layer_resize_warning = 'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'%(web_name[j], offset_old, offset, outputs['s'][i], i)
+                    print(layer_resize_warning)
+
                 if discrete_outputs['definition_web'][j] == 1:
                     web_rotation[j,i] = - inputs['twist'][i]
                     web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
@@ -800,20 +822,48 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                         layer_rotation[j,i] = - outputs['layer_rotation'][j,i]
                     midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i], outputs['layer_offset_y_pa'][j,i], [0.,0.], [discrete_outputs['layer_side'][j]])[0]
                     width    = outputs['layer_width'][j,i]
+
+                    # Geometry check to make sure the spar caps does not exceed 80% of the chord
+                    offset = outputs['layer_offset_y_pa'][j,i]
+                    if offset + 0.5 * width > ratio_SCmax * chord * (1. - p_le_i) or offset - 0.5 * width < - ratio_SCmax * chord * p_le_i: # hitting TE or LE
+                        width_old = copy.copy(width)
+                        width     = 2. * min([ratio_SCmax * (chord * p_le_i ) , ratio_SCmax * (chord * (1. - p_le_i))])
+                        offset    = 0.0
+                        outputs['layer_width'][j,i]         = copy.copy(width)
+                        outputs['layer_offset_y_pa'][j,i]   = copy.copy(offset)
+                        layer_resize_warning = 'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'%(layer_name[j], offset, width_old, width, outputs['s'][i], i)
+                        print(layer_resize_warning)
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
+
                 elif outputs['definition_layer'][j] == 4: # Midpoint and width
                     midpoint = 1. 
                     outputs['layer_midpoint_nd'][j,i] = midpoint
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = width/arc_L_i/2.
+
+                    # Geometry check to prevent overlap between SC and TE reinf
+                    for k in range(self.n_layers):
+                        if outputs['definition_layer'][k] == 2 or outputs['definition_layer'][k] == 3:
+                            if layer_end_nd[j,i] > layer_start_nd[k,i] or layer_start_nd[j,i] < layer_end_nd[k,i]:
+                                exit('The trailing edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
+
                 elif outputs['definition_layer'][j] == 5: # Midpoint and width
                     midpoint = LE_loc
                     outputs['layer_midpoint_nd'][j,i] = midpoint
                     width    = outputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
+                    # Geometry check to prevent overlap between SC and LE reinf
+                    for k in range(self.n_layers):
+                        if outputs['definition_layer'][k] == 2 or outputs['definition_layer'][k] == 3:
+                            if discrete_outputs['layer_side'][k] == 'suction' and layer_start_nd[j,i] < layer_end_nd[k,i]:
+                                exit('The leading edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
+                            elif discrete_outputs['layer_side'][k] == 'pressure' and layer_end_nd[j,i] > layer_start_nd[k,i]:
+                                exit('The leading edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
+                            else:
+                                pass
                 elif outputs['definition_layer'][j] == 6: # Start and end locked to other element
                     # if outputs['layer_start_nd'][j,i] > 1:
                     layer_start_nd[j,i] = layer_end_nd[int(discrete_outputs['index_layer_start'][j]),i]
@@ -1072,7 +1122,7 @@ class Materials(ExplicitComponent):
                 ply_t[i] = outputs['rho_area_dry'][i] / outputs['rho'][i] / outputs['fwf'][i]
                 if outputs['ply_t'][i] > 0.:
                     if abs(ply_t[i] - outputs['ply_t'][i]) > 1.e-4:
-                        exit('Error: the ply_t of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['ply_t'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm')
+                        exit('Error: the ply_t of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['ply_t'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm. Alternatively, adjust the aerial density to ' + str(outputs['ply_t'][i] * outputs['rho'][i] * outputs['fwf'][i]) + ' kg/m2.')
                 else:
                     outputs['ply_t'][i] = ply_t[i]      
 
