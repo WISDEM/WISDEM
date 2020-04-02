@@ -292,16 +292,11 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     # LandBOSSE: Overrides for default inputs
     project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundation_validation_ge15')
 
-    prob['site_facility_building_area_df'] = project_data['site_facility_building_area']
-
     # Components dataframe: This is where we can populate components from TowerSE, RotorSE, and DriveSE
     components = project_data['components']
 
-    # Drop, add and modify rows in components here. Make sure the modifications are in place.
-
+    prob['site_facility_building_area_df'] = project_data['site_facility_building_area']
     prob['components'] = components
-
-
     prob['crane_specs'] = project_data['crane_specs']
     weather_window_df = read_weather_window(project_data['weather_window'])
     prob['weather_window'] = weather_window_df
@@ -314,11 +309,6 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     prob['cable_specs'] = project_data['cable_specs']
     prob['crew_price'] = project_data['crew_price']
     prob['project_data'] = project_data
-
-    prob['project_value_usd'] = 5e7
-    prob['foundation_cost_usd'] = 1e7
-    prob['development_labor_cost_usd'] = 1e6
-    prob['crane_breakdown_fraction'] = 0.0
 
     return prob
 

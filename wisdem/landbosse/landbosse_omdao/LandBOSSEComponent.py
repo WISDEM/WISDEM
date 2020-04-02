@@ -6,6 +6,7 @@ import numpy as np
 from ..model.Manager import Manager
 from ..model.DefaultMasterInputDict import DefaultMasterInputDict
 
+
 class LandBOSSEComponent(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('top_level_flag', default=True)
@@ -16,10 +17,10 @@ class LandBOSSEComponent(om.ExplicitComponent):
         #     shared_indeps.add_output('hub_height', val=0.0, units='m')
         #     self.add_subsystem('indeps', shared_indeps, promotes=['*'])
 
-        self.add_input('crane_breakdown_fraction', val=0.,
+        self.add_input('crane_breakdown_fraction', val=0.0,
                        desc='0 means the crane is never broken down. 1 means it is broken down every turbine.')
 
-        self.add_input('project_value_usd', val=1, units='USD', desc='Project value in USD')
+        self.add_input('project_value_usd', val=5e7, units='USD', desc='Project value in USD')
         self.add_input('construct_duration', val=9, desc='Total project construction time (months)')
         self.add_input('hub_height_meters', val=80, units='m', desc='Hub height m')
         self.add_input('rotor_diameter_m', val=77, units='m', desc='Rotor diameter m')
@@ -27,7 +28,7 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_input('turbine_rating_MW', val=1.5, units='MW', desc='Turbine rating MW')
         self.add_input('num_turbines', val=100, desc='Number of turbines in project')
         self.add_input('fuel_cost_usd_per_gal', val=1.0, desc='Fuel cost USD/gal')
-        self.add_input('foundation_cost_usd', val=1, units='USD', desc='Foundation cost, USD')
+        self.add_input('foundation_cost_usd', val=1e7, units='USD', desc='Foundation cost, USD')
 
         self.add_input('breakpoint_between_base_and_topping_percent', val=70,
                        desc='Breakpoint between base and topping (percent)')
@@ -84,7 +85,7 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_input('markup_overhead', desc='Markup overhead', val=0.05)
         self.add_input('markup_profit_margin', desc='Markup profit margin', val=0.05)
         self.add_input('Mass tonne', val=(1.,), desc='', units='t')
-        self.add_input('development_labor_cost_usd', desc='The cost of labor in the development phase', units='USD')
+        self.add_input('development_labor_cost_usd', val=1e6, desc='The cost of labor in the development phase', units='USD')
 
         self.add_discrete_input('user_defined_home_run_trench', val=1,
                                 desc='Flag for user-defined home run trench length (0 = no; 1 = yes)')
