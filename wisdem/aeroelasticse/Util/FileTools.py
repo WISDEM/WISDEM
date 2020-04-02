@@ -71,15 +71,15 @@ def load_yaml(fname_input, package=0):
 
     if package == 0:
         with open(fname_input) as f:
-            data = yaml.load(f)
+            data = yaml.safe_load(f)
         return data
 
     elif package == 1:
         with open(fname_input, 'r') as myfile:
             text_input = myfile.read()
         myfile.close()
-        yaml = ry.YAML()
-        return dict(yaml.load(text_input))
+        ryaml = ry.YAML()
+        return dict(ryaml.load(text_input))
 
 
 def save_yaml(outdir, fname, data_out):
