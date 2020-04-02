@@ -17,6 +17,14 @@ class LandBOSSEComponent(om.ExplicitComponent):
         #     shared_indeps.add_output('hub_height', val=0.0, units='m')
         #     self.add_subsystem('indeps', shared_indeps, promotes=['*'])
 
+        self.setup_inputs()
+        self.setup_discrete_inputs()
+        self.setup_discrete_outputs()
+
+    def setup_inputs(self):
+        """
+        This method sets up the inputs.
+        """
         self.add_input('crane_breakdown_fraction', val=0.0,
                        desc='0 means the crane is never broken down. 1 means it is broken down every turbine.')
 
@@ -50,14 +58,14 @@ class LandBOSSEComponent(om.ExplicitComponent):
 
         # Can't set units
         self.add_input('fraction_new_roads',
-                          desc='Percent of roads that will be constructed (0.0 - 1.0)', val=0.33)
+                       desc='Percent of roads that will be constructed (0.0 - 1.0)', val=0.33)
 
         self.add_input('road_quality', desc='Road Quality (0-1)', val=0.6)
         self.add_input('line_frequency_hz', units='Hz', desc='Line Frequency (Hz)', val=60)
 
         # Can't set units
         self.add_input('row_spacing_rotor_diameters',
-                          desc='Row spacing (times rotor diameter)', val=4)
+                       desc='Row spacing (times rotor diameter)', val=4)
 
         self.add_input(
             'user_defined_distance_to_grid_connection',
@@ -65,12 +73,15 @@ class LandBOSSEComponent(om.ExplicitComponent):
             val=False
         )
 
-        self.add_input('trench_len_to_substation_km', units='km', desc='Combined Homerun Trench Length to Substation (km)', val=50)
+        self.add_input('trench_len_to_substation_km', units='km',
+                       desc='Combined Homerun Trench Length to Substation (km)', val=50)
         self.add_input('distance_to_interconnect_mi', units='mi', desc='Distance to interconnect (miles)', val=5)
         self.add_input('interconnect_voltage_kV', units='kV', desc='Interconnect Voltage (kV)', val=130)
         self.add_input('new_switchyard', desc='New Switchyard (True or False)', val=True)
-        self.add_input('critical_speed_non_erection_wind_delays_m_per_s', units='m/s', desc='Non-Erection Wind Delay Critical Speed (m/s)', val=15)
-        self.add_input('critical_height_non_erection_wind_delays_m', units='m', desc='Non-Erection Wind Delay Critical Height (m)', val=10)
+        self.add_input('critical_speed_non_erection_wind_delays_m_per_s', units='m/s',
+                       desc='Non-Erection Wind Delay Critical Speed (m/s)', val=15)
+        self.add_input('critical_height_non_erection_wind_delays_m', units='m',
+                       desc='Non-Erection Wind Delay Critical Height (m)', val=10)
         self.add_input('road_width_ft', units='ft', desc='Road width (ft)', val=20)
         self.add_input('road_thickness', desc='Road thickness (in)', val=8)
         self.add_input('crane_width', units='m', desc='Crane width (m)', val=12.2)
@@ -83,12 +94,18 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.add_input('markup_overhead', desc='Markup overhead', val=0.05)
         self.add_input('markup_profit_margin', desc='Markup profit margin', val=0.05)
         self.add_input('Mass tonne', val=(1.,), desc='', units='t')
-        self.add_input('development_labor_cost_usd', val=1e6, desc='The cost of labor in the development phase', units='USD')
+        self.add_input('development_labor_cost_usd', val=1e6, desc='The cost of labor in the development phase',
+                       units='USD')
 
+    def setup_discrete_inputs(self):
+        """
+        This method sets up the discrete inputs.
+        """
         self.add_discrete_input('user_defined_home_run_trench', val=1,
                                 desc='Flag for user-defined home run trench length (0 = no; 1 = yes)')
 
-        self.add_discrete_input('site_facility_building_area_df', val=None, desc='site_facility_building_area DataFrame')
+        self.add_discrete_input('site_facility_building_area_df', val=None,
+                                desc='site_facility_building_area DataFrame')
         self.add_discrete_input('components', val=None, desc='Dataframe of components for tower, blade, nacelle')
         self.add_discrete_input('crane_specs', val=None, desc='Dataframe of specifications of cranes')
         self.add_discrete_input('weather_window', val=None, desc='Dataframe of wind toolkit data')
@@ -128,8 +145,18 @@ class LandBOSSEComponent(om.ExplicitComponent):
             val=None
         )
 
-        # OUTPUTS, EN MASSE
+    def setup_outputs(self):
+        """
+        This method sets up the outputs.
 
+        But wait--all outputs are discrete! So this method is simply blank.
+        """
+        pass
+
+    def setup_discrete_outputs(self):
+        """
+        This method sets up discrete outputs.
+        """
         self.add_discrete_output(
             'landbosse_costs_by_module_type_operation',
             desc='The costs by module, type and operation',

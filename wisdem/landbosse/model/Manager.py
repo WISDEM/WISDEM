@@ -6,7 +6,7 @@ from .FoundationCost import FoundationCost
 from .SubstationCost import SubstationCost
 from .GridConnectionCost import GridConnectionCost
 from .SitePreparationCost import SitePreparationCost
-from .CollectionCost import Cable, Array, ArraySystem
+from .CollectionCost import ArraySystem
 from .ErectionCost import ErectionCost
 from .DevelopmentCost import DevelopmentCost
 
