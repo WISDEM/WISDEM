@@ -131,7 +131,7 @@ class WindTurbineOntologyPython(object):
             self.analysis_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(self.analysis_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(self.analysis_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(self.analysis_options['airfoils']['n_aoa'] / 4. + 1))]))
         else:
             self.analysis_options['airfoils']['aoa']    = np.linspace(-np.pi, np.pi, self.analysis_options['airfoils']['n_aoa'])
-            print('If you like a grid of angles of attack more refined between +- 30 deg, please choose a n_aoa in the analysis option input file that is a multiple of 4. The current value of ' + str(self.analysis_options['airfoils']['n_aoa']) + ' is not a multiple of 4 and an equally spaced grid is adopted.')
+            print('WARNING: If you like a grid of angles of attack more refined between +- 30 deg, please choose a n_aoa in the analysis option input file that is a multiple of 4. The current value of ' + str(self.analysis_options['airfoils']['n_aoa']) + ' is not a multiple of 4 and an equally spaced grid is adopted.')
         Re_all = []
         for i in range(self.analysis_options['airfoils']['n_af']):
             for j in range(len(self.wt_init['airfoils'][i]['polars'])):
@@ -463,7 +463,7 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
                 if inputs['te_flap_span_end'] >= 0.98:
                     flap_start = 0.98 - inputs['span_ext']
                     flap_end = 0.98
-                    print('te_flap_span_end optimization variable reached limits and was set to r/R = 0.98 when running XFoil')
+                    print('WARNING: te_flap_span_end optimization variable reached limits and was set to r/R = 0.98 when running XFoil')
                 else:
                     flap_start = inputs['te_flap_span_end'] - inputs['te_flap_span_ext']
                     flap_end = inputs['te_flap_span_end']
@@ -802,11 +802,11 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     web_rotation[j,i] = - outputs['web_rotation'][j,i]
                     web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
                     if i == 0:
-                        print('The web ' + web_name[j] + ' is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition.')
+                        print('WARNING: The web ' + web_name[j] + ' is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition.')
                     if web_start_nd[j,i] < 0. or web_start_nd[j,i] > 1.:
-                        exit('Blade web ' + web_name[j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. start point outside the TE. Please check the yaml input file.')
+                        print('WARNING: Blade web ' + web_name[j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. start point outside the TE. Please check the yaml input file.')
                     if web_end_nd[j,i] < 0. or web_end_nd[j,i] > 1.:
-                        exit('Blade web ' + web_name[j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. end point outside the TE. Please check the yaml input file.')
+                        print('WARNING: Blade web ' + web_name[j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. end point outside the TE. Please check the yaml input file.')
                 else:
                     exit('Blade web ' + web_name[j] + ' not described correctly. Please check the yaml input file.')
                     
@@ -847,7 +847,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     for k in range(self.n_layers):
                         if outputs['definition_layer'][k] == 2 or outputs['definition_layer'][k] == 3:
                             if layer_end_nd[j,i] > layer_start_nd[k,i] or layer_start_nd[j,i] < layer_end_nd[k,i]:
-                                exit('The trailing edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
+                                print('WARNING: The trailing edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
 
                 elif outputs['definition_layer'][j] == 5: # Midpoint and width
                     midpoint = LE_loc
@@ -859,9 +859,9 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                     for k in range(self.n_layers):
                         if outputs['definition_layer'][k] == 2 or outputs['definition_layer'][k] == 3:
                             if discrete_outputs['layer_side'][k] == 'suction' and layer_start_nd[j,i] < layer_end_nd[k,i]:
-                                exit('The leading edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
+                                print('WARNING: The leading edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
                             elif discrete_outputs['layer_side'][k] == 'pressure' and layer_end_nd[j,i] > layer_start_nd[k,i]:
-                                exit('The leading edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
+                                print('WARNING: The leading edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
                             else:
                                 pass
                 elif outputs['definition_layer'][j] == 6: # Start and end locked to other element
@@ -1838,13 +1838,13 @@ def assign_airfoil_values(wt_opt, analysis_options, airfoils):
     
             if abs(cl[i,0,j,0] - cl[i,-1,j,0]) > 1.e-5:
                 cl[i,0,j,0] = cl[i,-1,j,0]
-                print("Airfoil " + name[i] + ' has the lift coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
+                print("WARNING: Airfoil " + name[i] + ' has the lift coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
             if abs(cd[i,0,j,0] - cd[i,-1,j,0]) > 1.e-5:
                 cd[i,0,j,0] = cd[i,-1,j,0]
-                print("Airfoil " + name[i] + ' has the drag coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
+                print("WARNING: Airfoil " + name[i] + ' has the drag coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
             if abs(cm[i,0,j,0] - cm[i,-1,j,0]) > 1.e-5:
                 cm[i,0,j,0] = cm[i,-1,j,0]
-                print("Airfoil " + name[i] + ' has the moment coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
+                print("WARNING: Airfoil " + name[i] + ' has the moment coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
         
         # Re-interpolate cl-cd-cm along the Re dimension if less than n_Re were provided in the input yaml (common condition)
         for k in range(n_aoa):
@@ -1933,7 +1933,7 @@ def assign_material_values(wt_opt, analysis_options, materials):
                 G[i,:]  = np.ones(3) * materials[i]['G']
             elif 'nu' in materials[i]:
                 G[i,:]  = np.ones(3) * materials[i]['E']/(2*(1+materials[i]['nu'])) # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
-                warning_shear_modulus_isotropic = 'Ontology input warning: No shear modulus, G, provided for material "%s".  Assuming 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
+                warning_shear_modulus_isotropic = 'WARNING: NO shear modulus, G, was provided for material "%s". The code assumes 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
                 print(warning_shear_modulus_isotropic)
             if 'Xt' in materials[i]:
                 Xt[i,:] = np.ones(3) * materials[i]['Xt']
