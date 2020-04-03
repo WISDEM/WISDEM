@@ -593,6 +593,7 @@ def RotorSE_DAC_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_
         TStart = 0.
 
     iec = CaseGen_IEC()
+    iec.TMax = T
     iec.init_cond[("ElastoDyn", "RotSpeed")] = {'U': U_init}
     iec.init_cond[("ElastoDyn", "RotSpeed")]['val'] = [0.95 * omega_i for omega_i in Omega_init]
     iec.init_cond[("ElastoDyn", "BlPitch1")] = {'U': U_init}
