@@ -492,7 +492,10 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
-                fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0          # TODO: link the airfoil profiles to this component and write the coordinate files (no need as of yet)
+                if self.options['analysis_options']['openfast']['generate_af_coords']:
+                    fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = i
+                else:
+                    fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
                 fst_vt['AeroDyn15']['af_data'][i][j]['NumTabs']   = self.n_tab
                 if inputs['airfoils_Re_loc'][i][0][j] == 0:  # check if Re ws locally determined (e.g. for trailing edge flaps)
                     fst_vt['AeroDyn15']['af_data'][i][j]['Re']        =  0.75       # TODO: functionality for multiple Re tables
