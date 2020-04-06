@@ -48,6 +48,7 @@ class CaseGen_IEC():
         self.dlc_inputs = {}
         self.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
         self.transient_shear_orientation = 'both'  # 'v','h','both': vertical or horizontal shear for EWS
+        self.PC_MaxRat                   = 5.      # (deg), maximum blade pitch rate, used for emergency stop, DLC 5.1
         self.TMax                        = 0.
         self.TStart                      = 30.
 
@@ -69,7 +70,7 @@ class CaseGen_IEC():
             case_inputs_i = copy.deepcopy(case_inputs)
 
             # DLC specific variable changes
-            if dlc == 1.1 or dlc == 1.2:
+            if dlc in [1.1, 1.2, 5.1]:
                 IEC_WindType = 'NTM'
                 alpha = 0.2
                 iecwind = pyIECWind_turb()
@@ -133,7 +134,20 @@ class CaseGen_IEC():
             iecwind_ex.setup()
             _, V_e50, V_e1, V_50, V_1   = iecwind_ex.EWM(0.)
 
-            if dlc == 6.1:
+
+            if dlc == 5.1:
+                case_inputs_i[("ServoDyn","TPitManS1")]  = {'vals':[self.TStart], 'group':0}
+                case_inputs_i[("ServoDyn","TPitManS2")]  = {'vals':[self.TStart], 'group':0}
+                case_inputs_i[("ServoDyn","TPitManS3")]  = {'vals':[self.TStart], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat1")] = {'vals':[self.PC_MaxRat], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat2")] = {'vals':[self.PC_MaxRat], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat3")] = {'vals':[self.PC_MaxRat], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF1")]  = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF2")]  = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF3")]  = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","GenTiStp")]   = {'vals':["True"], 'group':0}
+                case_inputs_i[("ServoDyn","TimGenOf")]   = {'vals':[self.TStart], 'group':0}
+            elif dlc == 6.1:
                 self.dlc_inputs['U'][i] = [V_50]
                 self.dlc_inputs['Yaw'][i] = [-8.,8.]
                 case_inputs_i[("ElastoDyn","GenDOF")]   = {'vals':["False"], 'group':0}
