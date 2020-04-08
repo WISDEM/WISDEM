@@ -147,7 +147,20 @@ class CaseGen_IEC():
                 case_inputs_i[("ServoDyn","BlPitchF3")]  = {'vals':[90.], 'group':0}
                 case_inputs_i[("ServoDyn","GenTiStp")]   = {'vals':["True"], 'group':0}
                 case_inputs_i[("ServoDyn","TimGenOf")]   = {'vals':[self.TStart], 'group':0}
-            elif dlc == 6.1:
+            else:
+                case_inputs_i[("ServoDyn","TPitManS1")]  = {'vals':[9999.9], 'group':0}
+                case_inputs_i[("ServoDyn","TPitManS2")]  = {'vals':[9999.9], 'group':0}
+                case_inputs_i[("ServoDyn","TPitManS3")]  = {'vals':[9999.9], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat1")] = {'vals':[2.], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat2")] = {'vals':[2.], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat3")] = {'vals':[2.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF1")]  = {'vals':[0.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF2")]  = {'vals':[0.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF3")]  = {'vals':[0.], 'group':0}
+                case_inputs_i[("ServoDyn","GenTiStp")]   = {'vals':["False"], 'group':0}
+                case_inputs_i[("ServoDyn","TimGenOf")]   = {'vals':[9999.9], 'group':0}
+
+            if dlc == 6.1:
                 self.dlc_inputs['U'][i] = [V_50]
                 self.dlc_inputs['Yaw'][i] = [-8.,8.]
                 case_inputs_i[("ElastoDyn","GenDOF")]   = {'vals':["False"], 'group':0}
@@ -157,7 +170,11 @@ class CaseGen_IEC():
                 case_inputs_i[("ElastoDyn","BlPitch2")] = {'vals':[90.], 'group':0}
                 case_inputs_i[("ElastoDyn","BlPitch3")] = {'vals':[90.], 'group':0}
                 case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[0], 'group':0}
-            elif dlc == 6.3:
+            else:
+                self.dlc_inputs['Yaw'][i] = [0.]
+                case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[5], 'group':0}
+
+            if dlc == 6.3:
                 self.dlc_inputs['U'][i] = [V_1]
                 self.dlc_inputs['Yaw'][i] = [-20.,20.]
                 case_inputs_i[("ElastoDyn","GenDOF")]   = {'vals':["False"], 'group':0}
@@ -167,6 +184,10 @@ class CaseGen_IEC():
                 case_inputs_i[("ElastoDyn","BlPitch2")] = {'vals':[90.], 'group':0}
                 case_inputs_i[("ElastoDyn","BlPitch3")] = {'vals':[90.], 'group':0}
                 case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[0], 'group':0}
+            else:
+                self.dlc_inputs['Yaw'][i] = [0.]
+                case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[5], 'group':0}
+
 
             # Matrix combining N dlc variables that affect wind file generation
             # Done so a single loop can be used for generating wind files in parallel instead of using nested loops

@@ -278,7 +278,7 @@ class pyIECWind_extreme():
         self.setup()
 
         T = 12
-        t = np.linspace(0, T, num=(T/self.dt+1))
+        t = np.linspace(0, T, num=(int(T/self.dt+1)))
 
         # constants from standard
         alpha = 0.2
