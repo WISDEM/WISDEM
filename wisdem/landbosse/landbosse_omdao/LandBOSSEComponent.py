@@ -206,8 +206,10 @@ class LandBOSSEComponent(om.ExplicitComponent):
                         desc='Total BOS CAPEX including management.')
         self.add_output('total_capex_kW', 0.0, units='USD/kW',
                         desc='Total BOS CAPEX including management.')
-        # self.add_output('installation_time', 0.0, units='h', desc='Total balance of system installation time.')
-        # self.add_output('installation_capex', 0.0, units='USD', desc='Total balance of system installation cost.')
+        self.add_output('installation_time_months', 0.0,
+                        desc='Total balance of system installation time (months).')
+        self.add_output('installation_capex', 0.0, units='USD',
+                        desc='Total foundation and erection cost.')
 
     def setup_discrete_outputs(self):
         """
@@ -295,7 +297,7 @@ class LandBOSSEComponent(om.ExplicitComponent):
         self.gather_specific_erection_outputs(master_output_dict, outputs, discrete_outputs)
 
         # Compute the total BOS costs
-        self.compute_total_bos_costs(costs_by_module_type_operation, outputs)
+        self.compute_total_bos_costs(costs_by_module_type_operation, master_output_dict, outputs)
 
     def prepare_master_input_dictionary(self, inputs, discrete_inputs):
         """
@@ -451,7 +453,7 @@ class LandBOSSEComponent(om.ExplicitComponent):
         discrete_outputs['erection_crane_choice'] = master_output_dict['crane_choice']
         discrete_outputs['erection_component_name_topvbase'] = master_output_dict['component_name_topvbase']
 
-    def compute_total_bos_costs(self, costs_by_module_type_operation, outputs):
+    def compute_total_bos_costs(self, costs_by_module_type_operation, master_output_dict, outputs):
         """
         This computes the total BOS costs from the master output dictionary
         and places them on the necessary outputs.
@@ -461,19 +463,30 @@ class LandBOSSEComponent(om.ExplicitComponent):
         costs_by_module_type_operation: List[Dict[str, Any]]
             The lists of costs by module, type and operation.
 
+        master_output_dict: Dict[str, Any]
+            The master output dictionary from the run. Used to obtain the
+            construction time,
+
         outputs : openmdao.vectors.default_vector.DefaultVector
             The outputs in which to place the results of the computations
         """
         total_capex_kW = 0.0
         total_capex = 0.0
         bos_capex = 0.0
+        installation_capex = 0.0
 
         for row in costs_by_module_type_operation:
             total_capex_kW += row['Cost / kW']
             total_capex += row['Cost / project']
             if row['Module'] != 'ManagementCost':
                 bos_capex += row['Cost / project']
+            if row['Module'] == 'ErectionCost' or row['Module'] == 'FoundationCost':
+                installation_capex += row['Cost / project']
+
+        actual_construction_months = master_output_dict['actual_construction_months']
 
         outputs['total_capex_kW'] = round(total_capex_kW, 0)
         outputs['total_capex'] = round(total_capex, 0)
         outputs['bos_capex'] = round(bos_capex, 0)
+        outputs['installation_capex'] = round(installation_capex, 0)
+        outputs['installation_time_months'] = round(actual_construction_months, 0)

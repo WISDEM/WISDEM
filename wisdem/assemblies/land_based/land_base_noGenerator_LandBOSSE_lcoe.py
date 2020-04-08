@@ -349,6 +349,7 @@ if __name__ == "__main__":
     print(f"total_capex_kW {prob['total_capex_kW']}")
     print(f"total_capex {prob['total_capex']}")
     print(f"bos_capex {prob['bos_capex']}")
+    print(f"installation_time_months {prob['installation_time_months']}")
     print('#################################################################')
 
     # # Initialize OpenMDAO problem and FloatingSE Group
