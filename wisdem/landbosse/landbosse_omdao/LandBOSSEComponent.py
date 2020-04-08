@@ -27,6 +27,7 @@ class LandBOSSEComponent(om.ExplicitComponent):
                                 desc='The input project data filename that has default project data.')
 
         self.setup_inputs()
+        self.setup_outputs()
         self.setup_discrete_outputs()
         self.setup_discrete_inputs_that_are_not_dataframes()
         self.setup_discrete_inputs_that_are_dataframes()
@@ -193,11 +194,20 @@ class LandBOSSEComponent(om.ExplicitComponent):
 
     def setup_outputs(self):
         """
-        This method sets up the outputs.
+        This method sets up the continuous outputs. This is where total costs
+        and installation times go.
 
-        But wait--all outputs are discrete! So this method is simply blank.
+        To see how cost totals are calculated see, the compute_total_bos_costs
+        method below.
         """
-        pass
+        self.add_output('bos_capex', 0.0, units='USD',
+                        desc='Total BOS CAPEX excluding management.')
+        self.add_output('total_capex', 0.0, units='USD',
+                        desc='Total BOS CAPEX including management.')
+        self.add_output('total_capex_kW', 0.0, units='USD/kW',
+                        desc='Total BOS CAPEX including management.')
+        # self.add_output('installation_time', 0.0, units='h', desc='Total balance of system installation time.')
+        # self.add_output('installation_capex', 0.0, units='USD', desc='Total balance of system installation cost.')
 
     def setup_discrete_outputs(self):
         """
@@ -283,6 +293,9 @@ class LandBOSSEComponent(om.ExplicitComponent):
         # Now get specific outputs. These have been refactored to methods that work
         # with each module so as to keep this method as compact as possible.
         self.gather_specific_erection_outputs(master_output_dict, outputs, discrete_outputs)
+
+        # Compute the total BOS costs
+        self.compute_total_bos_costs(costs_by_module_type_operation, outputs)
 
     def prepare_master_input_dictionary(self, inputs, discrete_inputs):
         """
@@ -437,3 +450,30 @@ class LandBOSSEComponent(om.ExplicitComponent):
         """
         discrete_outputs['erection_crane_choice'] = master_output_dict['crane_choice']
         discrete_outputs['erection_component_name_topvbase'] = master_output_dict['component_name_topvbase']
+
+    def compute_total_bos_costs(self, costs_by_module_type_operation, outputs):
+        """
+        This computes the total BOS costs from the master output dictionary
+        and places them on the necessary outputs.
+
+        Parameters
+        ----------
+        costs_by_module_type_operation: List[Dict[str, Any]]
+            The lists of costs by module, type and operation.
+
+        outputs : openmdao.vectors.default_vector.DefaultVector
+            The outputs in which to place the results of the computations
+        """
+        total_capex_kW = 0.0
+        total_capex = 0.0
+        bos_capex = 0.0
+
+        for row in costs_by_module_type_operation:
+            total_capex_kW += row['Cost / kW']
+            total_capex += row['Cost / project']
+            if row['Module'] != 'ManagementCost':
+                bos_capex += row['Cost / project']
+
+        outputs['total_capex_kW'] = round(total_capex_kW, 0)
+        outputs['total_capex'] = round(total_capex, 0)
+        outputs['bos_capex'] = round(bos_capex, 0)

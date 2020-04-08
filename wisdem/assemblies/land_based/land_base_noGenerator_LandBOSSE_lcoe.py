@@ -339,10 +339,16 @@ if __name__ == "__main__":
     print('#################################################################')
 
     print('###### ErectionCost specific ####################################')
-    print('ErectionCost crane cost')
+    print('ErectionCost crane choice')
     print(prob['erection_crane_choice'])
     print('ErectionCost components top or base')
     print(prob['erection_component_name_topvbase'])
+    print('#################################################################')
+
+    print('###### LandBOSSE totals #########################################')
+    print(f"total_capex_kW {prob['total_capex_kW']}")
+    print(f"total_capex {prob['total_capex']}")
+    print(f"bos_capex {prob['bos_capex']}")
     print('#################################################################')
 
     # # Initialize OpenMDAO problem and FloatingSE Group
