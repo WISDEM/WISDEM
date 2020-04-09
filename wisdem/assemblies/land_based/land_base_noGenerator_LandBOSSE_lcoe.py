@@ -20,7 +20,7 @@ from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 
-from wisdem.landbosse.landbosse_omdao.LandBOSSEComponent import LandBOSSEComponent
+from wisdem.landbosse.landbosse_omdao.LandBOSSE_API import LandBOSSE_API
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
 from wisdem.landbosse.landbosse_omdao.WeatherWindowCSVReader import read_weather_window
 
@@ -153,7 +153,7 @@ class LandBasedTurbine(Group):
                            promotes=['machine_rating', 'lcoe'])
 
         # >>>> LandBOSSE subsystem here
-        self.add_subsystem('landbosse', LandBOSSEComponent(), promotes=['*'])
+        self.add_subsystem('landbosse', LandBOSSE_API(), promotes=['*'])
 
         # Set up connections
 
