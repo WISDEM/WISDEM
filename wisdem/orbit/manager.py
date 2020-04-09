@@ -33,7 +33,11 @@ from wisdem.orbit.phases.install import (
     ScourProtectionInstallation,
     OffshoreSubstationInstallation,
 )
-from wisdem.orbit.core.exceptions import PhaseNotFound, WeatherProfileError
+from wisdem.orbit.core.exceptions import (
+    PhaseNotFound,
+    WeatherProfileError,
+    PhaseDependenciesInvalid,
+)
 
 
 class ProjectManager:
@@ -84,8 +88,9 @@ class ProjectManager:
             ],
         )
         self.config = self.resolve_project_capacity(config)
+        self.weather = self.transform_weather_input(weather)
 
-        self.weather = weather
+        self.phase_starts = {}
         self.phase_times = {}
         self.phase_costs = {}
         self._output_logs = []
@@ -123,7 +128,7 @@ class ProjectManager:
 
         self.run_all_design_phases(design_phases, **kwargs)
 
-        if isinstance(install_phases, list):
+        if isinstance(install_phases, (list, set)):
             self.run_multiple_phases_in_serial(install_phases, **kwargs)
 
         elif isinstance(install_phases, dict):
@@ -361,7 +366,7 @@ class ProjectManager:
 
         return phase_config
 
-    def run_install_phase(self, name, weather, **kwargs):
+    def run_install_phase(self, name, start, **kwargs):
         """
         Compiles the phase specific configuration input dictionary for input
         'name', checks the input against _class.expected_config and runs the
@@ -382,6 +387,12 @@ class ProjectManager:
         logs : list
             List of phase logs.
         """
+
+        if self.weather is not None:
+            weather = self.get_weather_profile(start)
+
+        else:
+            weather = None
 
         _catch = kwargs.get("catch_exceptions", False)
         _class = self.get_phase_class(name)
@@ -413,6 +424,7 @@ class ProjectManager:
         cost = phase.total_phase_cost
         logs = deepcopy(phase.env.logs)
 
+        self.phase_starts[name] = start
         self.phase_costs[name] = cost
         self.phase_times[name] = time
         self.detailed_outputs = self.merge_dicts(
@@ -507,16 +519,10 @@ class ProjectManager:
             List of installation phases to run.
         """
 
-        _start = 0
+        start = 0
 
         for name in phase_list:
-            if self.weather is not None:
-                weather = self.weather.iloc[ceil(_start) :].copy().to_records()
-
-            else:
-                weather = None
-
-            time, cost, logs = self.run_install_phase(name, weather, **kwargs)
+            cost, time, logs = self.run_install_phase(name, start, **kwargs)
 
             if logs is None:
                 continue
@@ -524,39 +530,31 @@ class ProjectManager:
             else:
                 for l in logs:
                     try:
-                        l["time"] += _start
+                        l["time"] += start
                     except KeyError:
                         pass
 
                 self._output_logs.extend(logs)
-                _start = ceil(_start + time)
+                start = ceil(start + time)
 
-    def run_multiple_phases_overlapping(self, phase_dict, **kwargs):
+    def run_multiple_phases_overlapping(self, phases, **kwargs):
         """
-        Runs multiple phases with defined start days in
-        self.config['install_phases'].
+        Runs multiple phases overlapping using a mixture of dates, indices or
+        dependencies.
 
         Parameters
         ----------
-        phase_dict : dict
-            Dictionary of phases to run with keys that indicate start date.
+        phases : dict
+            Dictionary of phases to run.
         """
 
-        start_dates = {
-            k: dt.datetime.strptime(v, self.date_format_short)
-            for k, v in phase_dict.items()
-        }
+        defined, variable = self._parse_install_phase_values(phases)
+        zero = min(defined.values())
 
-        _zero = min(start_dates.values())
+        # Run defined
+        for name, start in defined.items():
 
-        for name, start in start_dates.items():
-            if self.weather is not None:
-                weather = self.get_weather_profile(start)
-
-            else:
-                weather = None
-
-            time, cost, logs = self.run_install_phase(name, weather, **kwargs)
+            cost, time, logs = self.run_install_phase(name, start, **kwargs)
 
             if logs is None:
                 continue
@@ -564,11 +562,154 @@ class ProjectManager:
             else:
                 for l in logs:
                     try:
-                        l["time"] += (start - _zero).days * 24
+                        l["time"] += start - zero
                     except KeyError:
                         pass
 
                 self._output_logs.extend(logs)
+
+        # Run remaining phases
+        self.run_dependent_phases(variable, zero)
+
+    def run_dependent_phases(self, phases, zero, **kwargs):
+        """
+        Runs remaining phases that depend on other phase times.
+
+        Parameters
+        ----------
+        phases : dict
+            Dictionary of phases to run.
+        zero : int | float
+            Zero time for the simulation. Used to aggregate total logs.
+        """
+
+        while True:
+
+            progress = False
+            for name, (target, perc) in phases.items():
+
+                try:
+                    start = self.get_dependency_start_time(target, perc)
+                    cost, time, logs = self.run_install_phase(
+                        name, start, **kwargs
+                    )
+                    progress = True
+
+                    if logs is None:
+                        continue
+
+                    else:
+                        for l in logs:
+                            try:
+                                l["time"] += start - zero
+                            except KeyError:
+                                pass
+
+                        self._output_logs.extend(logs)
+
+                except KeyError:
+                    continue
+
+            if phases and progress is False:
+                raise PhaseDependenciesInvalid(phases)
+
+            else:
+                break
+
+    def get_dependency_start_time(self, target, perc):
+        """
+        Returns start time based on the `perc` complete of `target` phase.
+
+        Parameters
+        ----------
+        target : str
+            Phase that start time is dependent on.
+        perc : int | float
+            Percentage of the target phase completion time. `0`: starts at the
+            same time. `1`: starts when target phase is completed.
+        """
+
+        start = self.phase_starts[target]
+        elapsed = self.phase_times[target]
+
+        return start + elapsed * perc
+
+    @staticmethod
+    def transform_weather_input(weather):
+        """
+        Checks that an input weather profile matches the required format and
+        converts the index to a datetime index if necessary.
+
+        Parameters
+        ----------
+        weather : pd.DataFrame
+        """
+
+        if weather is None:
+            return None
+
+        else:
+            try:
+                weather = weather.set_index("datetime")
+                if not isinstance(weather.index, pd.DatetimeIndex):
+                    weather.index = pd.to_datetime(weather.index)
+
+            except KeyError:
+                pass
+
+            return weather
+
+    def _parse_install_phase_values(self, phases):
+        """
+        Parses the input dictionary `install_phases`, splitting them into
+        phases that have defined start times and ones that rely on other phases.
+
+        Parameters
+        ----------
+        phases : dict
+            Dictionary of installation phases to run.
+
+        Raises
+        ------
+        ValueError
+            Raised if no phases have a defined start date as the project can't
+            be tied to a specific part of the weather profile.
+        """
+
+        defined = {}
+        depends = {}
+
+        for k, v in phases.items():
+
+            if isinstance(v, (int, float)):
+                defined[k] = ceil(v)
+
+            elif isinstance(v, str):
+                _dt = dt.datetime.strptime(v, self.date_format_short)
+
+                try:
+                    i = self.weather.index.get_loc(_dt)
+                    defined[k] = i
+
+                except AttributeError:
+                    raise ValueError(
+                        f"No weather profile configured "
+                        f"for '{k}': '{v}' input type."
+                    )
+
+                except KeyError:
+                    raise WeatherProfileError(_dt, self.weather)
+
+            elif isinstance(v, tuple) and len(v) == 2:
+                depends[k] = v
+
+            else:
+                raise ValueError(f"Input type '{k}': '{v}' not recognized.")
+
+        if not defined:
+            raise ValueError("No phases have a defined start index/date.")
+
+        return defined, depends
 
     def get_weather_profile(self, start):
         """
@@ -586,15 +727,7 @@ class ProjectManager:
             Weather profile with first index at 'start'.
         """
 
-        if not isinstance(self.weather.index, pd.DatetimeIndex):
-            self.weather.index = pd.to_datetime(self.weather.index)
-
-        profile = self.weather.loc[start:].copy()
-
-        if profile.empty:
-            raise WeatherProfileError(start, self.weather)
-
-        return profile.to_records()
+        return self.weather.iloc[ceil(start) :].copy().to_records()
 
     @property
     def capacity(self):

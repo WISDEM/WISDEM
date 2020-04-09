@@ -182,7 +182,10 @@ def _extract_file(filepath):
     """
 
     if filepath.endswith("yaml"):
-        return yaml.load(open(filepath, "r"), Loader=loader)
+        f = open(filepath, "r")
+        fyaml = yaml.load(f, Loader=loader)
+        f.close()
+        return fyaml
 
     elif filepath.endswith("csv"):
         df = pd.read_csv(filepath, index_col=False)
@@ -237,9 +240,9 @@ def export_library_specs(key, filename, data, file_ext="yaml"):
         print("Cancelling save!")
         return
     if file_ext == "yaml":
-        yaml.dump(
-            data, open(data_path, "w"), Dumper=Dumper, default_flow_style=False
-        )
+        f = open(data_path, "w")
+        yaml.dump( data, f, Dumper=Dumper, default_flow_style=False )
+        f.close()
     elif file_ext == "csv":
         with open(data_path, "w") as f:
             writer = csv.writer(f)
@@ -253,8 +256,10 @@ PATH_LIBRARY = {
     # vessels
     "array_cable_install_vessel": "vessels",
     "array_cable_bury_vessel": "vessels",
+    "array_cable_trench_vessel": "vessels",
     "export_cable_install_vessel": "vessels",
     "export_cable_bury_vessel": "vessels",
+    "export_cable_trench_vessel": "vessels",
     "oss_install_vessel": "vessels",
     "spi_vessel": "vessels",
     "trench_dig_vessel": "vessels",

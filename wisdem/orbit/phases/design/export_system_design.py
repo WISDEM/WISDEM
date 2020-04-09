@@ -53,13 +53,14 @@ class ExportSystemDesign(CableSystem):
                 "linear_density": "t/km",
                 "number": "int",
                 "sections": "list",
+                "cable_power": "MW"
             }
         }
     }
 
     def __init__(self, config, **kwargs):
         """
-        Defines the cables and sections required to install an offwhore wind
+        Defines the cables and sections required to install an offshore wind
         farm.
 
         Parameters
@@ -218,6 +219,7 @@ class ExportSystemDesign(CableSystem):
                 "linear_density": cable.linear_density,
                 "sections": [self.length],
                 "number": self.num_cables,
+                "cable_power": cable.cable_power,
             }
 
         return output

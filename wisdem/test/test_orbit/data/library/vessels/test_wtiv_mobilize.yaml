@@ -1,3 +1,4 @@
+name: Example WTIV
 crane_specs:
   boom_length: 100        # m
   max_hook_height: 100    # m
@@ -23,9 +24,9 @@ transport_specs:
   transit_speed: 10       # km/h
 vessel_specs:
   beam_length: 50         # m
-  day_rate: 180000        # USD/day
+  day_rate: 250000        # USD/day
   max_draft: 6            # m
   min_draft: 5            # m
   overall_length: 150     # m
-  mobilization_days: 7    # days
-  mobilization_mult: 1  # Mobilization multiplier applied to 'day_rate'
+  mobilization_days: 14   # days
+  mobilization_mult: 1    #
