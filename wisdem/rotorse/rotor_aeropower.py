@@ -190,11 +190,10 @@ class RegulatedPowerCurve(ExplicitComponent):
 
         # Find rated index and guess at rated speed
         if P_aero[-1] > P_rated:
-            U_rated = np.interp(P_rated, P_aero, Uhub)
+            U_rated = np.interp(P_rated, P_aero*eff, Uhub)
         else:
             U_rated = Uhub[-1]
         i_rated = np.nonzero(U_rated <= Uhub)[0][0]
-
         
         # Function to be used inside of power maximization until Region 3
         def maximizePower(pitch, Uhub, Omega_rpm):
@@ -232,7 +231,7 @@ class RegulatedPowerCurve(ExplicitComponent):
             
         # Solve for rated velocity
         i = i_rated
-        if i < npc-1:
+        if i < npc-1 and self.options['regulation_reg_II5']:
             def const_Urated(x):
                 pitch   = x[0]           
                 Uhub_i  = x[1]
@@ -272,9 +271,9 @@ class RegulatedPowerCurve(ExplicitComponent):
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([U_rated], [Omega_rpm[i]], [pitch[i]], coefficients=True)
             P[i], eff    = CSMDrivetrain(P_aero[i], P_rated, driveType, driveEta)
             Cp[i]        = Cp_aero[i]*eff
-            P[i]         = P_rated
             
         # Store rated speed in array
+        P[i_rated]   = P_rated
         Uhub[i_rated] = U_rated
 
         # Store outputs
