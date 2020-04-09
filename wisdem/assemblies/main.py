@@ -277,8 +277,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     wt_opt['blade.pa.s_opt_chord']       = np.linspace(0., 1., blade_opt_options['aero_shape']['chord']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ss']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ps']['n_opt'])
-    # wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
-    # wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
+    wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
+    wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
     wt_opt['sse.stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
 
     if 'check_totals' in opt_options['driver']:
