@@ -343,10 +343,12 @@ if __name__ == "__main__":
     print('#################################################################')
 
     print('###### LandBOSSE totals #########################################')
-    print(f"total_capex_kW {prob['total_capex_kW']}")
-    print(f"total_capex {prob['total_capex']}")
     print(f"bos_capex {prob['bos_capex']}")
+    print(f"bos_capex_kW {prob['bos_capex_kW']}")
+    print(f"total_capex {prob['total_capex']}")
+    print(f"total_capex_kW {prob['total_capex_kW']}")
     print(f"installation_capex {prob['installation_capex']}")
+    print(f"installation_capex_kW {prob['installation_capex_kW']}")
     print(f"installation_time_months {prob['installation_time_months']}")
     print('#################################################################')
 

@@ -8,30 +8,47 @@ from .WeatherWindowCSVReader import read_weather_window
 
 # Read in default sheets for project data
 default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundation_validation_ge15')
+default_components_data = default_project_data["components"]
 
 
 class LandBOSSE(om.Group):
     def initialize(self):
-        self.options.declare('topLevelFlag')
+        self.options.declare('topLevelFlag', default=False)
 
     def setup(self):
+        # Define all input variables from all models
+        myIndeps = om.IndepVarComp()
+
+        myIndeps.add_output('plant_turbine_spacing', 7)
+        myIndeps.add_output('plant_row_spacing', 7)
+
+        myIndeps.add_output('commissioning_pct', 0.01)
+        myIndeps.add_output('decommissioning_pct', 0.15)
+
+        # myIndeps.add_output('blade_drag_coefficient', mydefaults['Drag Coefficient'].loc['Blade'], units='m')
+        # myIndeps.add_output('blade_lever_arm', mydefaults['Lever arm m'].loc['Blade'], units='m')
+        # myIndeps.add_output('blade_install_cycle_time', mydefaults['Cycle time installation hrs'].loc['Blade'],
+        #                     units='hr')
+        # myIndeps.add_output('blade_offload_hook_height', mydefaults['Offload hook height m'].loc['Blade'], units='m')
+        # myIndeps.add_output('blade_offload_cycle_time', mydefaults['Offload cycle time hrs'].loc['Blade'], units='hr')
+        # myIndeps.add_output('blade_drag_multiplier', mydefaults['Multplier drag rotor'].loc['Blade'])
+        # etc.
+
+        self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
+
+        if self.options['topLevelFlag']:
+            sharedIndeps = om.IndepVarComp()
+            sharedIndeps.add_output('hub_height', 0.0, units='m')
+            sharedIndeps.add_output('foundation_height', 0.0, units='m')
+            sharedIndeps.add_output('blade_mass', 0.0, units='kg')
+            sharedIndeps.add_output('nacelle_mass', 0.0, units='kg')
+            sharedIndeps.add_output('tower_mass', 0.0, units='kg')
+            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
         self.add_subsystem('landbosse', LandBOSSE_API(), promotes=['*'])
 
 
 class LandBOSSE_API(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare('top_level_flag', default=True)
-
     def setup(self):
-        # if self.options['top_level_flag']:
-        #     shared_indeps = om.IndepVarComp()
-        #     shared_indeps.add_output('hub_height', val=0.0, units='m')
-        #     self.add_subsystem('indeps', shared_indeps, promotes=['*'])
-
-        self.add_discrete_input('default_project_data_filename',
-                                val=None,
-                                desc='The input project data filename that has default project data.')
-
         self.setup_inputs()
         self.setup_outputs()
         self.setup_discrete_outputs()
@@ -113,6 +130,9 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('Mass tonne', val=(1.,), desc='', units='t')
         self.add_input('development_labor_cost_usd', val=1e6, desc='The cost of labor in the development phase',
                        units='USD')
+
+        self.add_input('commissioning_pct', 0.01)
+        self.add_input('decommissioning_pct', 0.15)
 
     def setup_discrete_inputs_that_are_not_dataframes(self):
         """
@@ -207,15 +227,19 @@ class LandBOSSE_API(om.ExplicitComponent):
         method below.
         """
         self.add_output('bos_capex', 0.0, units='USD',
-                        desc='Total BOS CAPEX excluding management.')
+                        desc='Total BOS CAPEX not including commissioning or decommissioning.')
+        self.add_output('bos_capex_kW', 0.0, units='USD/kW',
+                        desc='Total BOS CAPEX per kW not including commissioning or decommissioning.')
         self.add_output('total_capex', 0.0, units='USD',
-                        desc='Total BOS CAPEX including management.')
+                        desc='Total BOS CAPEX including commissioning and decommissioning.')
         self.add_output('total_capex_kW', 0.0, units='USD/kW',
-                        desc='Total BOS CAPEX including management.')
+                        desc='Total BOS CAPEX per kW including commissioning and decommissioning.')
+        self.add_output('installation_capex', 0.0, units='USD',
+                        desc='Total foundation and erection installation cost.')
+        self.add_output('installation_capex_kW', 0.0, units='USD',
+                        desc='Total foundation and erection installation cost per kW.')
         self.add_output('installation_time_months', 0.0,
                         desc='Total balance of system installation time (months).')
-        self.add_output('installation_capex', 0.0, units='USD',
-                        desc='Total foundation and erection cost.')
 
     def setup_discrete_outputs(self):
         """
@@ -303,7 +327,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.gather_specific_erection_outputs(master_output_dict, outputs, discrete_outputs)
 
         # Compute the total BOS costs
-        self.compute_total_bos_costs(costs_by_module_type_operation, master_output_dict, outputs)
+        self.compute_total_bos_costs(costs_by_module_type_operation, master_output_dict, inputs, outputs)
 
     def prepare_master_input_dictionary(self, inputs, discrete_inputs):
         """
@@ -459,7 +483,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         discrete_outputs['erection_crane_choice'] = master_output_dict['crane_choice']
         discrete_outputs['erection_component_name_topvbase'] = master_output_dict['component_name_topvbase']
 
-    def compute_total_bos_costs(self, costs_by_module_type_operation, master_output_dict, outputs):
+    def compute_total_bos_costs(self, costs_by_module_type_operation, master_output_dict, inputs, outputs):
         """
         This computes the total BOS costs from the master output dictionary
         and places them on the necessary outputs.
@@ -476,23 +500,34 @@ class LandBOSSE_API(om.ExplicitComponent):
         outputs : openmdao.vectors.default_vector.DefaultVector
             The outputs in which to place the results of the computations
         """
-        total_capex_kW = 0.0
-        total_capex = 0.0
-        bos_capex = 0.0
-        installation_capex = 0.0
+        bos_per_kw = 0.0
+        bos_per_project = 0.0
+        installation_per_project = 0.0
+        installation_per_kW = 0.0
 
         for row in costs_by_module_type_operation:
-            total_capex_kW += row['Cost / kW']
-            total_capex += row['Cost / project']
-            if row['Module'] != 'ManagementCost':
-                bos_capex += row['Cost / project']
-            if row['Module'] == 'ErectionCost' or row['Module'] == 'FoundationCost':
-                installation_capex += row['Cost / project']
+            bos_per_kw += row['Cost / kW']
+            bos_per_project += row['Cost / project']
+            if row['Module'] in ['ErectionCost', 'FoundationCost']:
+                installation_per_project += row['Cost / project']
+                installation_per_kW += row['Cost / kW']
+
+        commissioning_pct = inputs['commissioning_pct']
+        decommissioning_pct = inputs['decommissioning_pct']
+
+        commissioning_per_project = bos_per_project * commissioning_pct
+        decomissioning_per_project = bos_per_project * decommissioning_pct
+        commissioning_per_kW = bos_per_kw * commissioning_pct
+        decomissioning_per_kW = bos_per_kw * decommissioning_pct
+
+        outputs['total_capex_kW'] = \
+            np.round(bos_per_kw + commissioning_per_kW + decomissioning_per_kW, 0)
+        outputs['total_capex'] = \
+            np.round(bos_per_project + commissioning_per_project + decomissioning_per_project, 0)
+        outputs['bos_capex'] = round(bos_per_project, 0)
+        outputs['bos_capex_kW'] = round(bos_per_kw, 0)
+        outputs['installation_capex'] = round(installation_per_project, 0)
+        outputs['installation_capex_kW'] = round(installation_per_kW, 0)
 
         actual_construction_months = master_output_dict['actual_construction_months']
-
-        outputs['total_capex_kW'] = round(total_capex_kW, 0)
-        outputs['total_capex'] = round(total_capex, 0)
-        outputs['bos_capex'] = round(bos_capex, 0)
-        outputs['installation_capex'] = round(installation_capex, 0)
         outputs['installation_time_months'] = round(actual_construction_months, 0)
