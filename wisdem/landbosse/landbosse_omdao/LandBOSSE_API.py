@@ -10,6 +10,14 @@ from .WeatherWindowCSVReader import read_weather_window
 default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundation_validation_ge15')
 
 
+class LandBOSSE(om.Group):
+    def initialize(self):
+        self.options.declare('topLevelFlag')
+
+    def setup(self):
+        self.add_subsystem('landbosse', LandBOSSE_API(), promotes=['*'])
+
+
 class LandBOSSE_API(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('top_level_flag', default=True)
