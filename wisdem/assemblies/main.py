@@ -159,6 +159,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_objective('financese.lcoe', ref = 0.1)
         elif opt_options['merit_figure'] == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons.tip_deflection_ratio')
+        elif opt_options['merit_figure'] == 'tower_mass':
+            wt_opt.model.add_objective('towerse.tower_mass')
+        elif opt_options['merit_figure'] == 'tower_cost':
+            wt_opt.model.add_objective('tcc.tower_cost')
         elif opt_options['merit_figure'] == 'Cp':
             wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
         elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
