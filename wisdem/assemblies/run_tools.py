@@ -39,6 +39,11 @@ class Opt_Data(object):
         return yaml.load(inputs)
 
 class Convergence_Trends_Opt(ExplicitComponent):
+    """
+    JPJ note: this component needs to be redesigned or updated for
+    tower variables.
+    """
+    
     def initialize(self):
         
         self.options.declare('opt_options')
@@ -67,7 +72,7 @@ class Convergence_Trends_Opt(ExplicitComponent):
 
             for param in rec_data.keys():
                 fig, ax = plt.subplots(1,1,figsize=(5.3, 4))
-                ax.plot(iterations, rec_data[param])
+                ax.plot(np.squeeze(iterations), np.squeeze(rec_data[param]))
                 ax.set(xlabel='Number of Iterations' , ylabel=param)
                 fig_name = 'Convergence_trend_' + param + '.png'
                 fig.savefig(folder_output + fig_name)

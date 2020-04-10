@@ -36,7 +36,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     # optimization yaml
     opt_options['opt_flag']    = False
     
-    # Loop through all blade optimization options, setting opt_flag to true
+    # Loop through all blade optimization variables, setting opt_flag to true
     # if any of these variables are set to optimize. If it's not an optimization
     # DV, set the number of optimization points to be the same as the number
     # of discretization points. 
@@ -72,6 +72,19 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     if 'dac' in blade_opt_options:
         if blade_opt_options['dac']['te_flap_end']['flag'] or blade_opt_options['dac']['te_flap_ext']['flag']:
             opt_options['opt_flag'] = True
+            
+    # Loop through all tower optimization variables, setting opt_flag to true
+    # if any of these variables are set to optimize. If it's not an optimization
+    # DV, set the number of optimization points to be the same as the number
+    # of discretization points. 
+    tower_opt_options = opt_options['optimization_variables']['tower']
+    
+    if tower_opt_options['outer_diameter']['flag']:
+        opt_options['opt_flag'] = True
+        
+    if tower_opt_options['layer_thickness']['flag']:
+        opt_options['opt_flag'] = True
+    
         
     if not os.path.isdir(folder_output):
         os.mkdir(folder_output)
@@ -136,6 +149,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             # wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
             # wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
             # wt_opt.driver.opt_settings['Major step limit'] = opt_options['driver']['step_size']
+            wt_opt.driver.hist_file = 'tower_opt.db'
 
         else:
             exit('The optimizer ' + opt_options['driver']['solver'] + 'is not yet supported!')
@@ -162,7 +176,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         # Set optimization design variables.
         
         # JPJ note : why have range from (2, n_opt)? I'm just not familiar
-        # with the discretization settings.
+        # with the discretization settings. Keep the root and next node fixed?
         if blade_opt_options['aero_shape']['twist']['flag']:
             indices        = range(2, blade_opt_options['aero_shape']['twist']['n_opt'])
             wt_opt.model.add_design_var('blade.opt_var.twist_opt_gain', indices = indices, lower=0., upper=1.)
@@ -203,11 +217,18 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if opt_options['optimization_variables']['control']['tsr']['flag']:
             wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=opt_options['optimization_variables']['control']['tsr']['min_gain'], upper=opt_options['optimization_variables']['control']['tsr']['max_gain'])
             
-        if 'dac' in blade_opt_options.keys():
+        if 'dac' in blade_opt_options:
             if blade_opt_options['dac']['te_flap_end']['flag']:
                 wt_opt.model.add_design_var('blade.opt_var.te_flap_end', lower=blade_opt_options['dac']['te_flap_end']['min_end'], upper=blade_opt_options['dac']['te_flap_end']['max_end'])
             if blade_opt_options['dac']['te_flap_ext']['flag']:
                 wt_opt.model.add_design_var('blade.opt_var.te_flap_ext', lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], upper=blade_opt_options['dac']['te_flap_ext']['max_ext'])
+                
+        if tower_opt_options['outer_diameter']['flag']:
+            wt_opt.model.add_design_var('tower.diameter', lower=tower_opt_options['outer_diameter']['lower_bound'], upper=tower_opt_options['outer_diameter']['upper_bound'])
+            
+        if tower_opt_options['layer_thickness']['flag']:
+            wt_opt.model.add_design_var('tower.layer_thickness', lower=tower_opt_options['layer_thickness']['lower_bound'], upper=tower_opt_options['layer_thickness']['upper_bound'])
+        
 
         # Set non-linear constraints
         blade_constraints = opt_options['constraints']['blade']
@@ -251,6 +272,37 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.model.add_constraint('elastic.rail.LV_constraint_4axle', upper= 1.0)
             else:
                 exit('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
+                
+                
+        tower_constraints = opt_options['constraints']['tower']
+        if tower_constraints['height_constraint']['flag']:
+            wt_opt.model.add_constraint('towerse.height_constraint',
+                lower=tower_constraints['height_constraint']['lower_bound'],
+                upper=tower_constraints['height_constraint']['upper_bound'])
+                
+        if tower_constraints['stress']['flag']:
+            wt_opt.model.add_constraint('towerse.post.stress', upper=1.0)
+            
+        if tower_constraints['global_buckling']['flag']:
+            wt_opt.model.add_constraint('towerse.post.global_buckling', upper=1.0)
+            
+        if tower_constraints['shell_buckling']['flag']:
+            wt_opt.model.add_constraint('towerse.post.shell_buckling', upper=1.0)
+            
+        if tower_constraints['weldability']['flag']:
+            wt_opt.model.add_constraint('towerse.weldability', upper=0.0)
+            
+        if tower_constraints['manufacturability']['flag']:
+            wt_opt.model.add_constraint('towerse.manufacturability', lower=0.0)
+            
+        if tower_constraints['slope']['flag']:
+            wt_opt.model.add_constraint('towerse.slope', upper=1.0)
+            
+        if tower_constraints['frequency_1']['flag']:
+            wt_opt.model.add_constraint('towerse.tower.f1',
+                lower=tower_constraints['frequency_1']['lower_bound'],
+                upper=tower_constraints['frequency_1']['upper_bound'])
+            
         
         # Set recorder on the OpenMDAO driver level using the `optimization_log`
         # filename supplied in the optimization yaml
