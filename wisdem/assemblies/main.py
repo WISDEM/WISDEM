@@ -25,11 +25,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     optimization_data.folder_output     = folder_output    
     
     # Load yaml for turbine description into a pure python data structure.
-    # JPJ note : could this be combined into a single call with the __init__ definition?
     wt_initial                   = WindTurbineOntologyPython()
     analysis_options, wt_init    = wt_initial.initialize(fname_wt_input, fname_analysis_options)
     
-    # JPJ note : could this be combined as well?
     opt_options = optimization_data.initialize()
     
     # Assume we're not doing optimization unless an opt_flag is true in the
@@ -92,7 +90,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     # Initialize openmdao problem. If running with multiple processors in MPI,
     # use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally.
-    # JPJ note : can we change `wt_opt` to `prob` throughout to be consistent
     # with other OM problems?
     if MPI:
         num_par_fd = MPI.COMM_WORLD.Get_size()
@@ -111,7 +108,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     
     # After looping through the optimization options yaml above, if opt_flag
     # became true then we set up an optimization problem
-    # JPJ note : can we rename ['driver']['solver'] to ['driver']['optimizer'] or similar?
     # Solver has specific meaning in OpenMDAO
     if opt_options['opt_flag']:
         
@@ -155,7 +151,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             exit('The optimizer ' + opt_options['driver']['solver'] + 'is not yet supported!')
 
         # Set merit figure. Each objective has its own scaling.
-        # JPJ note : 'merit_figure' or 'objective'?
         if opt_options['merit_figure'] == 'AEP':
             wt_opt.model.add_objective('sse.AEP', ref = -1.e6)
         elif opt_options['merit_figure'] == 'blade_mass':
@@ -175,8 +170,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
         # Set optimization design variables.
         
-        # JPJ note : why have range from (2, n_opt)? I'm just not familiar
-        # with the discretization settings. Keep the root and next node fixed?
         if blade_opt_options['aero_shape']['twist']['flag']:
             indices        = range(2, blade_opt_options['aero_shape']['twist']['n_opt'])
             wt_opt.model.add_design_var('blade.opt_var.twist_opt_gain', indices = indices, lower=0., upper=1.)
@@ -186,8 +179,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             indices  = range(2, chord_options['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=chord_options['min_gain'], upper=chord_options['max_gain'])
             
-        # JPJ note : not sure what this section is doing. Why do we have
-        # the lower and upper bounds coming from some calculations instead of user-defined?
         if blade_opt_options['aero_shape']['af_positions']['flag']:
             n_af = analysis_options['blade']['n_af_span']
             indices  = range(blade_opt_options['aero_shape']['af_positions']['af_start'],n_af - 1)

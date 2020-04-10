@@ -433,9 +433,9 @@ class TurbineMass(om.ExplicitComponent):
         
 class TowerPreFrame(om.ExplicitComponent):
     """
-    JPJ note : most of this component doesn't need to exist. It can be recoded
-    to use src_indices for data-passing. At the very least, we can code the
-    sparse derivatives as-is for input-output relationships.
+    This component can be simplified by using src_indices for data-passing.
+    At the very least, we can code the sparse derivatives as-is for
+    input-output relationships.
     """
     def initialize(self):
         self.options.declare('n_height')

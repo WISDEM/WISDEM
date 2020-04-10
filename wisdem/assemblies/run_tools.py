@@ -40,8 +40,7 @@ class Opt_Data(object):
 
 class Convergence_Trends_Opt(ExplicitComponent):
     """
-    JPJ note: this component needs to be redesigned or updated for
-    tower variables.
+    Deprecating this for now and using OptView from PyOptSparse instead.
     """
     
     def initialize(self):
