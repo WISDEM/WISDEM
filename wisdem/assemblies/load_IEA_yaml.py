@@ -751,8 +751,8 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.add_discrete_output('index_layer_start',    val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
         self.add_discrete_output('index_layer_end',      val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
         
-        # These outputs don't depndent on anything and should be refactored to be
-        # inputs that come from an IndepVarComp.
+        # These outputs don't depend on anything and should be refactored to be
+        # outputs that come from an IndepVarComp.
         self.declare_partials('definition_layer', '*', dependent=False)
         self.declare_partials('layer_offset_y_pa', '*', dependent=False)
         self.declare_partials('layer_thickness', '*', dependent=False)

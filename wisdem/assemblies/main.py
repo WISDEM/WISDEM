@@ -187,7 +187,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=chord_options['min_gain'], upper=chord_options['max_gain'])
             
         # JPJ note : not sure what this section is doing. Why do we have
-        # the lower and upper bounds coming from some calculations?
+        # the lower and upper bounds coming from some calculations instead of user-defined?
         if blade_opt_options['aero_shape']['af_positions']['flag']:
             n_af = analysis_options['blade']['n_af_span']
             indices  = range(blade_opt_options['aero_shape']['af_positions']['af_start'],n_af - 1)

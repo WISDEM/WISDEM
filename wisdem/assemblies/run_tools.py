@@ -72,7 +72,7 @@ class Convergence_Trends_Opt(ExplicitComponent):
 
             for param in rec_data.keys():
                 fig, ax = plt.subplots(1,1,figsize=(5.3, 4))
-                ax.plot(np.squeeze(iterations), np.squeeze(rec_data[param]))
+                ax.plot(iterations, rec_data[param])
                 ax.set(xlabel='Number of Iterations' , ylabel=param)
                 fig_name = 'Convergence_trend_' + param + '.png'
                 fig.savefig(folder_output + fig_name)
