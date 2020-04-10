@@ -157,15 +157,15 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         # Set merit figure. Each objective has its own scaling.
         # JPJ note : 'merit_figure' or 'objective'?
         if opt_options['merit_figure'] == 'AEP':
-            wt_opt.model.add_objective('sse.AEP', scaler = -1.e-6)
+            wt_opt.model.add_objective('sse.AEP', ref = -1.e6)
         elif opt_options['merit_figure'] == 'blade_mass':
-            wt_opt.model.add_objective('elastic.precomp.blade_mass', scaler = 1.e-4)
+            wt_opt.model.add_objective('elastic.precomp.blade_mass', ref = 1.e4)
         elif opt_options['merit_figure'] == 'LCOE':
-            wt_opt.model.add_objective('financese.lcoe', scaler = 1.e+1)
+            wt_opt.model.add_objective('financese.lcoe', ref = 0.1)
         elif opt_options['merit_figure'] == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons.tip_deflection_ratio')
         elif opt_options['merit_figure'] == 'Cp':
-            wt_opt.model.add_objective('sse.powercurve.Cp_regII', scaler = -1.)
+            wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
         elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
             wt_opt.model.add_objective('aeroelastic.My_std')  #1.e-8)
         elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
@@ -224,10 +224,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.model.add_design_var('blade.opt_var.te_flap_ext', lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], upper=blade_opt_options['dac']['te_flap_ext']['max_ext'])
                 
         if tower_opt_options['outer_diameter']['flag']:
-            wt_opt.model.add_design_var('tower.diameter', lower=tower_opt_options['outer_diameter']['lower_bound'], upper=tower_opt_options['outer_diameter']['upper_bound'])
+            wt_opt.model.add_design_var('tower.diameter', lower=tower_opt_options['outer_diameter']['lower_bound'], upper=tower_opt_options['outer_diameter']['upper_bound'], ref=5.)
             
         if tower_opt_options['layer_thickness']['flag']:
-            wt_opt.model.add_design_var('tower.layer_thickness', lower=tower_opt_options['layer_thickness']['lower_bound'], upper=tower_opt_options['layer_thickness']['upper_bound'])
+            wt_opt.model.add_design_var('tower.layer_thickness', lower=tower_opt_options['layer_thickness']['lower_bound'], upper=tower_opt_options['layer_thickness']['upper_bound'], ref=1e-2)
         
 
         # Set non-linear constraints
