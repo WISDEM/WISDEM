@@ -957,11 +957,6 @@ class TowerSE(om.Group):
             self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
             if monopile:
                 # connections to waveLoads1
-                self.connect('water_density', ['wave'+lc+'.rho', 'waveLoads'+lc+'.rho'])
-                self.connect('water_viscosity', 'waveLoads'+lc+'.mu')
-                self.connect('wave_beta', 'waveLoads'+lc+'.beta')
-                self.connect('significant_wave_height', 'wave'+lc+'.hmax')
-                self.connect('significant_wave_period', 'wave'+lc+'.T')
                 self.connect('foundation_height', 'z_floor')
                 self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
                 self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
@@ -1255,7 +1250,7 @@ if __name__ == '__main__':
     
     z,_ = nodal2sectional(prob['z_full'])
 
-    print('zs=', prob['z_full'])
+    print('zs=', z)
     print('ds=', prob['d_full'])
     print('ts=', prob['t_full'])
     print('mass (kg) =', prob['tower_mass'])

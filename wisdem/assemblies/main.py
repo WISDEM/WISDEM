@@ -232,6 +232,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
         # Set non-linear constraints
         blade_constraints = opt_options['constraints']['blade']
+        print('ehy', blade_constraints)
         if blade_constraints['strains_spar_cap_ss']['flag']:
             wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
             
@@ -326,6 +327,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if max(wt_opt['blade.opt_var.twist_opt_gain']) > 1. or min(wt_opt['blade.opt_var.twist_opt_gain']) < 0.:
             print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
             
+    blade_constraints = opt_options['constraints']['blade']
     wt_opt['blade.pa.s_opt_chord']       = np.linspace(0., 1., blade_opt_options['aero_shape']['chord']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ss']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ps']['n_opt'])
