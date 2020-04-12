@@ -11,6 +11,7 @@ from wisdem.commonse.utilities import assembleI, unassembleI, sectionalInterp, n
 import wisdem.pyframe3dd.frame3dd as frame3dd
 
 RIGID = 1e30
+NFREQ = 6
 
 # -----------------
 #  Components
@@ -241,9 +242,13 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('qdyn', val=np.zeros(npts), units='N/m**2', desc='dynamic pressure')
 
         # outputs
+        NFREQ2 = int(NFREQ/2)
         self.add_output('mass', val=0.0, units='kg', desc='Structural mass computed by Frame3DD')
         self.add_output('f1', val=0.0, units='Hz', desc='First natural frequency')
         self.add_output('f2', val=0.0, units='Hz', desc='Second natural frequency')
+        self.add_output('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
+        self.add_output('x_mode_shapes', val=np.zeros((NFREQ2,7)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,7)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
         self.add_output('top_deflection', val=0.0, units='m', desc='Deflection of cylinder top in yaw-aligned +x direction')
         self.add_output('Fz_out', val=np.zeros(npts-1), units='N', desc='Axial foce in vertical z-direction in cylinder structure.')
         self.add_output('Vx_out', val=np.zeros(npts-1), units='N', desc='Shear force in x-direction in cylinder structure.')
@@ -329,7 +334,7 @@ class CylinderFrame3DD(ExplicitComponent):
         # ------------------------------------
 
         # ------- enable dynamic analysis ----------
-        cylinder.enableDynamics(frame3dd_opt['nM'], frame3dd_opt['Mmethod'], frame3dd_opt['lump'], float(frame3dd_opt['tol']), float(frame3dd_opt['shift']))
+        cylinder.enableDynamics(NFREQ, frame3dd_opt['Mmethod'], frame3dd_opt['lump'], float(frame3dd_opt['tol']), float(frame3dd_opt['shift']))
         # ----------------------------
 
         # ------ static load case 1 ------------
@@ -374,8 +379,28 @@ class CylinderFrame3DD(ExplicitComponent):
         outputs['mass'] = mass.struct_mass
 
         # natural frequncies
-        outputs['f1'] = modal.freq[0]
-        outputs['f2'] = modal.freq[1]
+        outputs['f1']    = modal.freq[0]
+        outputs['f2']    = modal.freq[1]
+        outputs['freqs'] = modal.freq
+
+        NFREQ2 = int(NFREQ/2)
+        mshapes_x = np.zeros((NFREQ2, 7))
+        mshapes_y = np.zeros((NFREQ2, 7))
+        ix = 0
+        iy = 0
+        for m in range(NFREQ):
+            if np.array([modal.xmpf[m], modal.ympf[m], modal.zmpf[m]]).max() < 1e-11: continue
+            print(modal.xmpf[m], modal.ympf[m], modal.zmpf[m], ix, iy)
+            if modal.xmpf[m] > modal.ympf[m] and modal.xmpf[m] > modal.zmpf[m]:
+                mshapes_x[ix,:] = np.polyfit(z, modal.xdsp[m,:], 6)
+                ix += 1
+            elif modal.ympf[m] > modal.xmpf[m] and modal.ympf[m] > modal.zmpf[m]:
+                mshapes_y[iy,:] = np.polyfit(z, modal.ydsp[m,:], 6)
+                iy += 1
+            else:
+                print('Warning: Unknown mode shape')
+        outputs['x_mode_shapes'] = mshapes_x
+        outputs['y_mode_shapes'] = mshapes_y
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs['top_deflection'] = displacements.dx[iCase, n-1]  # in yaw-aligned direction
