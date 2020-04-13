@@ -724,7 +724,6 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.n_layers      = n_layers  = blade_init_options['n_layers']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
-        
         self.add_input('coord_xy_dim',    val=np.zeros((n_span, n_xy, 2)),units = 'm',   desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
         self.add_input('twist',           val=np.zeros(n_span),           units='rad',   desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
         self.add_input('chord',           val=np.zeros(n_span),           units='m',     desc='1D array of the chord values defined along blade span.')
@@ -751,6 +750,24 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.add_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
         self.add_discrete_output('index_layer_start',    val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
         self.add_discrete_output('index_layer_end',      val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
+        
+        # These outputs don't depend on anything and should be refactored to be
+        # outputs that come from an IndepVarComp.
+        self.declare_partials('definition_layer', '*', dependent=False)
+        self.declare_partials('layer_offset_y_pa', '*', dependent=False)
+        self.declare_partials('layer_thickness', '*', dependent=False)
+        self.declare_partials('layer_web', '*', dependent=False)
+        self.declare_partials('layer_width', '*', dependent=False)
+        self.declare_partials('s', '*', dependent=False)
+        self.declare_partials('web_offset_y_pa', '*', dependent=False)
+        
+        self.declare_partials('layer_end_nd', ['coord_xy_dim', 'twist'], method='fd')
+        self.declare_partials('layer_midpoint_nd', ['coord_xy_dim'], method='fd')
+        self.declare_partials('layer_rotation', ['twist'], method='fd')
+        self.declare_partials('layer_start_nd', ['coord_xy_dim', 'twist'], method='fd')
+        self.declare_partials('web_end_nd', ['coord_xy_dim', 'twist'], method='fd')
+        self.declare_partials('web_rotation', ['twist'], method='fd')
+        self.declare_partials('web_start_nd', ['coord_xy_dim', 'twist'], method='fd')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         

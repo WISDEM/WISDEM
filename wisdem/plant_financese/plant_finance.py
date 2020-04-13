@@ -48,7 +48,7 @@ class PlantFinance(ExplicitComponent):
         
         if c_turbine == 0:
             exit('ERROR: The cost of the turbines in the plant is not initialized correctly and it is currently equal to 0 USD. Check the connections to Plant_FinanceSE')
-            
+        
         if c_bos_turbine == 0:
             print('WARNING: The BoS costs of the turbine are not initialized correctly and they are currently equal to 0 USD. Check the connections to Plant_FinanceSE')
         

@@ -39,6 +39,10 @@ class Opt_Data(object):
         return yaml.load(inputs)
 
 class Convergence_Trends_Opt(ExplicitComponent):
+    """
+    Deprecating this for now and using OptView from PyOptSparse instead.
+    """
+    
     def initialize(self):
         
         self.options.declare('opt_options')
