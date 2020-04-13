@@ -25,14 +25,17 @@ class LandBOSSE(om.Group):
         myIndeps.add_output('commissioning_pct', 0.01)
         myIndeps.add_output('decommissioning_pct', 0.15)
 
-        # myIndeps.add_output('blade_drag_coefficient', mydefaults['Drag Coefficient'].loc['Blade'], units='m')
-        # myIndeps.add_output('blade_lever_arm', mydefaults['Lever arm m'].loc['Blade'], units='m')
-        # myIndeps.add_output('blade_install_cycle_time', mydefaults['Cycle time installation hrs'].loc['Blade'],
-        #                     units='hr')
-        # myIndeps.add_output('blade_offload_hook_height', mydefaults['Offload hook height m'].loc['Blade'], units='m')
-        # myIndeps.add_output('blade_offload_cycle_time', mydefaults['Offload cycle time hrs'].loc['Blade'], units='hr')
-        # myIndeps.add_output('blade_drag_multiplier', mydefaults['Multplier drag rotor'].loc['Blade'])
-        # etc.
+        # Inputs for automatic component list generation of blades
+        # A default of -1.0 for any of these inputs means that the
+        # default value loaded above should be used. All blades are
+        # assumed to be the same.
+
+        myIndeps.add_output('blade_drag_coefficient', -1.0)                # Unitless
+        myIndeps.add_output('blade_lever_arm', -1.0, units='m')
+        myIndeps.add_output('blade_install_cycle_time', -1.0)              # Units are hours, but disallowed in OMDAO
+        myIndeps.add_output('blade_offload_hook_height', -1.0, units='m')
+        myIndeps.add_output('blade_offload_cycle_time', -1.0)              # Units are hours, but disallowed in OMDAO
+        myIndeps.add_output('blade_drag_multiplier', -1.0)                 # Unitless
 
         self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
 
@@ -354,6 +357,9 @@ class LandBOSSE_API(om.ExplicitComponent):
         discrete_inputs_dict = {key: value for key, value in discrete_inputs.items()}
         incomplete_input_dict = {**inputs_dict, **discrete_inputs_dict}
 
+        # Modify the component data if it is needed
+        self.modify_component_lists(inputs, discrete_inputs)
+
         # FoundationCost needs to have all the component data split into separate
         # NumPy arrays.
         incomplete_input_dict['component_data'] = discrete_inputs['components']
@@ -531,3 +537,49 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         actual_construction_months = master_output_dict['actual_construction_months']
         outputs['installation_time_months'] = round(actual_construction_months, 0)
+
+    # assumes $25k per tower section, 30m max length, 80t max section mass
+
+    def modify_component_lists(self, inputs, discrete_inputs):
+        """
+        This method modifies the previously loaded default component lists with
+        data about blades, tower sections, if they have been provided as input
+        to the component.
+
+        It only modifies the project component data if default data for the proper
+        inputs have been overridden.
+
+        The default blade data is assumed to be the first component that begins
+        with the word "Blade"
+
+        This should take mass from the tower in WISDEM. Ideally, this should have
+        an input for transportable tower 4.3, large diameter steel tower LDST 6.2m, or
+        unconstrained key stone tower. Or give warnings about the boundaries
+        that we assume.
+
+        Parameters
+        ----------
+        inputs : openmdao.vectors.default_vector.DefaultVector
+            A dictionary-like object with NumPy arrays that hold float
+            inputs. Note that since these are NumPy arrays, they
+            need indexing to pull out simple float64 values.
+
+        discrete_inputs : openmdao.core.component._DictValues
+            A dictionary-like with the non-numeric inputs (like
+            pandas.DataFrame)
+        """
+        # myIndeps.add_output('blade_drag_coefficient', -1.0)  # Unitless
+        # myIndeps.add_output('blade_lever_arm', -1.0, units='m')
+        # myIndeps.add_output('blade_install_cycle_time', -1.0, units='hr')
+        # myIndeps.add_output('blade_offload_hook_height', -1.0, units='m')
+        # myIndeps.add_output('blade_offload_cycle_time', -1.0, units='hr')
+        # myIndeps.add_output('blade_drag_multiplier', -1.0)  # Unitless
+
+        components = discrete_inputs['components']
+
+        if 'blade_drag_coefficient' in inputs:
+            blades = components[components['Component'].str.startswith('Blade')]
+            default_blade = blades.iloc[0]
+            print(default_blade)
+        else:
+            print('Blade modifications unspecifed')
