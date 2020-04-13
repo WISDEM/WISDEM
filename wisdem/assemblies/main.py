@@ -227,7 +227,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
         # Set non-linear constraints
         blade_constraints = opt_options['constraints']['blade']
-        print('ehy', blade_constraints)
         if blade_constraints['strains_spar_cap_ss']['flag']:
             wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
             
