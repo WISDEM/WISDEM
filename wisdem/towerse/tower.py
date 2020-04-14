@@ -17,7 +17,7 @@ from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, Cylin
 from wisdem.commonse.environment import WindBase, WaveBase, LinearWaves, TowerSoil, PowerWind, LogWind
 from wisdem.commonse.tube import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
-from wisdem.commonse import gravity, eps, NFREQ
+from wisdem.commonse import gravity, eps
 
 from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ
 
@@ -636,13 +636,13 @@ class TowerPostFrame(om.ExplicitComponent):
         # Frequencies
         NFREQ2 = int(NFREQ/2)
         self.add_input('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
-        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2,7)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
-        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2,7)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
         
         # outputs
         self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First and second natural frequency')
-        self.add_output('fore_aft_modes', np.zeros((NFREQ2,6)), desc='6-degree polynomial coefficients of mode shapes in the tower fore-aft direction (without constant term)')
-        self.add_output('side_side_modes', np.zeros((NFREQ2,6)), desc='6-degree polynomial coefficients of mode shapes in the tower side-side direction (without constant term)')
+        self.add_output('fore_aft_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower fore-aft direction (without constant term)')
+        self.add_output('side_side_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower side-side direction (without constant term)')
         self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
         self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
         self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
@@ -671,11 +671,11 @@ class TowerPostFrame(om.ExplicitComponent):
         gamma_n      = self.options['analysis_options']['gamma_n']
         gamma_b      = self.options['analysis_options']['gamma_b']
 
-        # Frequencies
+        # Frequencies and mode shapes (with x^2 term first)
         outputs['structural_frequencies'] = inputs['freqs']
-        outputs['fore_aft_modes']         = inputs['x_mode_shapes'][:,:-1]
-        outputs['side_side_modes']        = inputs['y_mode_shapes'][:,:-1]
-
+        outputs['fore_aft_modes']         = np.fliplr(inputs['x_mode_shapes'])
+        outputs['side_side_modes']        = np.fliplr(inputs['y_mode_shapes'])
+        print(inputs['x_mode_shapes'], outputs['fore_aft_modes'])
         # Tower top deflection
         outputs['top_deflection'] = inputs['top_deflection_in']
         

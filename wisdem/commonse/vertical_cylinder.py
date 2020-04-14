@@ -7,7 +7,7 @@ from wisdem.commonse import gravity, eps
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
-from wisdem.commonse.utilities import assembleI, unassembleI, sectionalInterp, nodal2sectional
+import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.frame3dd as frame3dd
 
 RIGID = 1e30
@@ -66,7 +66,7 @@ class CylinderDiscretization(ExplicitComponent):
         outputs['z_full']  = z_full
         outputs['d_full']  = np.interp(z_full, z_param, inputs['diameter'])
         z_section = 0.5*(z_full[:-1] + z_full[1:])
-        outputs['t_full']  = sectionalInterp(z_section, z_param, inputs['wall_thickness'])
+        outputs['t_full']  = util.sectionalInterp(z_section, z_param, inputs['wall_thickness'])
         outputs['z_param'] = z_param
 
 class CylinderMass(ExplicitComponent):
@@ -125,11 +125,11 @@ class CylinderMass(ExplicitComponent):
         I_base = np.zeros((3,3))
         for k in range(Izz_section.size):
             R = np.array([0.0, 0.0, cm_section[k]])
-            Icg = assembleI( [Ixx_section[k], Iyy_section[k], Izz_section[k], 0.0, 0.0, 0.0] )
+            Icg = util.assembleI( [Ixx_section[k], Iyy_section[k], Izz_section[k], 0.0, 0.0, 0.0] )
 
             I_base += Icg + mass[k]*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
             
-        outputs['I_base'] = unassembleI(I_base)
+        outputs['I_base'] = util.unassembleI(I_base)
         
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
@@ -247,8 +247,8 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_output('f1', val=0.0, units='Hz', desc='First natural frequency')
         self.add_output('f2', val=0.0, units='Hz', desc='Second natural frequency')
         self.add_output('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
-        self.add_output('x_mode_shapes', val=np.zeros((NFREQ2,7)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
-        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,7)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_output('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
         self.add_output('top_deflection', val=0.0, units='m', desc='Deflection of cylinder top in yaw-aligned +x direction')
         self.add_output('Fz_out', val=np.zeros(npts-1), units='N', desc='Axial foce in vertical z-direction in cylinder structure.')
         self.add_output('Vx_out', val=np.zeros(npts-1), units='N', desc='Shear force in x-direction in cylinder structure.')
@@ -383,19 +383,25 @@ class CylinderFrame3DD(ExplicitComponent):
         outputs['f2']    = modal.freq[1]
         outputs['freqs'] = modal.freq
 
-        NFREQ2 = int(NFREQ/2)
-        mshapes_x = np.zeros((NFREQ2, 7))
-        mshapes_y = np.zeros((NFREQ2, 7))
+        # Get mode shapes in batch
+        mpfs   = np.abs( np.c_[modal.xmpf, modal.ympf, modal.zmpf] )
+        polys  = util.get_modal_coefficients(z, np.vstack((modal.xdsp, modal.ydsp)).T, 6)
+        xpolys = polys[:,:NFREQ].T
+        ypolys = polys[:,NFREQ:].T
+        
+        NFREQ2    = int(NFREQ/2)
+        mshapes_x = np.zeros((NFREQ2, 5))
+        mshapes_y = np.zeros((NFREQ2, 5))
         ix = 0
         iy = 0
         for m in range(NFREQ):
-            if np.array([modal.xmpf[m], modal.ympf[m], modal.zmpf[m]]).max() < 1e-11: continue
-            print(modal.xmpf[m], modal.ympf[m], modal.zmpf[m], ix, iy)
-            if modal.xmpf[m] > modal.ympf[m] and modal.xmpf[m] > modal.zmpf[m]:
-                mshapes_x[ix,:] = np.polyfit(z, modal.xdsp[m,:], 6)
+            if mpfs[m,:].max() < 1e-11: continue
+            imode = np.argmax(mpfs[m,:])
+            if imode == 0:
+                mshapes_x[ix,:] = xpolys[m,:]
                 ix += 1
-            elif modal.ympf[m] > modal.xmpf[m] and modal.ympf[m] > modal.zmpf[m]:
-                mshapes_y[iy,:] = np.polyfit(z, modal.ydsp[m,:], 6)
+            elif imode == 1:
+                mshapes_y[iy,:] = ypolys[m,:]
                 iy += 1
             else:
                 print('Warning: Unknown mode shape')
@@ -426,8 +432,8 @@ class CylinderFrame3DD(ExplicitComponent):
         outputs['Mzz_out'] = Mzz
 
         # axial and shear stress
-        d,_    = nodal2sectional(inputs['d'])
-        qdyn,_ = nodal2sectional(inputs['qdyn'])
+        d,_    = util.nodal2sectional(inputs['d'])
+        qdyn,_ = util.nodal2sectional(inputs['qdyn'])
         
         ##R = self.d/2.0
         ##x_stress = R*np.cos(self.theta_stress)
