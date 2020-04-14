@@ -972,9 +972,9 @@ class Nacelle(ExplicitComponent):
         self.add_output('distance_hub2mb',  val=0.0, units='m')
         self.add_discrete_output('yaw_motors_number', val = 0)
         self.add_output('drivetrain_eff',   val=0.0)
-
-class Tower(ExplicitComponent):
-    # Openmdao component with the tower data coming from the input yaml file.
+        
+class Tower(Group):
+    
     def initialize(self):
         self.options.declare('tower_init_options')
         
@@ -982,30 +982,44 @@ class Tower(ExplicitComponent):
         tower_init_options = self.options['tower_init_options']
         n_height           = tower_init_options['n_height']
         n_layers           = tower_init_options['n_layers']
+        
+        ivc = self.add_subsystem('tower_indep_vars', IndepVarComp(), promotes=['*'])
+        ivc.add_output('ref_axis', val=np.zeros((n_height, 3)), units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
+        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
+        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
+        ivc.add_discrete_output('layer_name', val=[],         desc='1D array of the names of the layers modeled in the tower structure.')
+        ivc.add_discrete_output('layer_mat',  val=[],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
+        
+        self.add_subsystem('compute_tower_grid',
+            ComputeTowerGrid(tower_init_options=tower_init_options),
+            promotes=['*'])
 
+class ComputeTowerGrid(ExplicitComponent):
+    # Openmdao component with the tower data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('tower_init_options')
+        
+    def setup(self):
+        tower_init_options = self.options['tower_init_options']
+        n_height           = tower_init_options['n_height']
+
+        self.add_input('ref_axis', val=np.zeros((n_height, 3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        
         self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
-        self.add_output('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-
-        self.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
-        self.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-        self.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
-
         self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
-        self.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
 
-        
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
-        outputs['height']   = outputs['ref_axis'][-1,2]
-        myarc               = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])
+        outputs['height']   = inputs['ref_axis'][-1,2]
+        myarc               = arc_length(inputs['ref_axis'][:,0], inputs['ref_axis'][:,1], inputs['ref_axis'][:,2])
         outputs['length']   = myarc[-1]
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]
-        
-class Monopile(ExplicitComponent):
-    # Openmdao component with the tower data coming from the input yaml file.
+            
+class Monopile(Group):
+    
     def initialize(self):
         self.options.declare('monopile_init_options')
         
@@ -1013,31 +1027,42 @@ class Monopile(ExplicitComponent):
         monopile_init_options = self.options['monopile_init_options']
         n_height           = monopile_init_options['n_height']
         n_layers           = monopile_init_options['n_layers']
+        
+        ivc = self.add_subsystem('monopile_indep_vars', IndepVarComp(), promotes=['*'])
+        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
+        ivc.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
+        ivc.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
+        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
+        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
+        ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
+        ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
+        ivc.add_output('gravity_foundation_mass', val = 0.0, units='kg', desc='extra mass of gravity foundation')
+        ivc.add_output('suctionpile_depth',       val = 0.0, units='m',  desc='depth of foundation in the soil')
+        ivc.add_output('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
+        
+        self.add_subsystem('compute_monopile_grid',
+            ComputeMonopileGrid(monopile_init_options=monopile_init_options),
+            promotes=['*'])
+        
+class ComputeMonopileGrid(ExplicitComponent):
+    # Openmdao component with the tower data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('monopile_init_options')
+        
+    def setup(self):
+        monopile_init_options = self.options['monopile_init_options']
+        n_height           = monopile_init_options['n_height']
 
+        self.add_input('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        
         self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
-        self.add_output('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-
-        self.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
-        self.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-        self.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
-
         self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
 
-        self.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
-
-        self.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
-        self.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
-        self.add_output('gravity_foundation_mass', val = 0.0, units='kg', desc='extra mass of gravity foundation')
-        self.add_output('suctionpile_depth',       val = 0.0, units='m',  desc='depth of foundation in the soil')
-        self.add_output('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
-
-        
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
-        outputs['height']   = outputs['ref_axis'][-1,2]
-        myarc               = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])
+        outputs['height']   = inputs['ref_axis'][-1,2]
+        myarc               = arc_length(inputs['ref_axis'][:,0], inputs['ref_axis'][:,1], inputs['ref_axis'][:,2])
         outputs['length']   = myarc[-1]
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]
