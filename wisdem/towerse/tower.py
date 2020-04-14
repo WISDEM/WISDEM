@@ -663,7 +663,9 @@ class TowerPostFrame(om.ExplicitComponent):
         self.declare_partials('global_buckling', ['Fz', 'Mxx', 'Myy', 'd_full', 'sigma_y_full', 't_full', 'z_full'], method='fd')
         self.declare_partials('shell_buckling', ['axial_stress', 'd_full', 'hoop_stress', 'shear_stress', 'sigma_y_full', 't_full'], method='fd')
         self.declare_partials('stress', ['axial_stress', 'hoop_stress', 'shear_stress', 'sigma_y_full'], method='fd')
-        self.declare_partials('structural_frequencies', ['f1', 'f2'], method='fd')
+        self.declare_partials('structural_frequencies', ['freqs'], method='fd')
+        self.declare_partials('fore_aft_modes', ['x_mode_shapes'], method='fd')
+        self.declare_partials('side_side_modes', ['y_mode_shapes'], method='fd')
         self.declare_partials('top_deflection', ['top_deflection_in'], method='fd')
         self.declare_partials('turbine_F', [], method='fd')
         self.declare_partials('turbine_M', [], method='fd')
@@ -689,7 +691,7 @@ class TowerPostFrame(om.ExplicitComponent):
         outputs['structural_frequencies'] = inputs['freqs']
         outputs['fore_aft_modes']         = np.fliplr(inputs['x_mode_shapes'])
         outputs['side_side_modes']        = np.fliplr(inputs['y_mode_shapes'])
-        print(inputs['x_mode_shapes'], outputs['fore_aft_modes'])
+
         # Tower top deflection
         outputs['top_deflection'] = inputs['top_deflection_in']
         
@@ -1014,6 +1016,7 @@ if __name__ == '__main__':
     from wisdem.commonse.environment import LogWind
     
     plot = False
+    opt  = False
 
     # --- geometry ----
     n_control_points = 3
@@ -1139,33 +1142,34 @@ if __name__ == '__main__':
     prob = om.Problem()
     prob.model = TowerSE(analysis_options=analysis_options, topLevelFlag=True)
     
-    prob.driver = om.pyOptSparseDriver() #om.ScipyOptimizeDriver() # 
-    prob.driver.options['optimizer'] = 'SNOPT' #'SLSQP' #'CONMIN'
-    # prob.driver.opt_settings['Iterations limit'] = 10
-    prob.driver.opt_settings['Verify level'] = -1
-    # prob.driver.declare_coloring()
+    if opt:
+        prob.driver = om.pyOptSparseDriver() #om.ScipyOptimizeDriver() # 
+        prob.driver.options['optimizer'] = 'SNOPT' #'SLSQP' #'CONMIN'
+        # prob.driver.opt_settings['Iterations limit'] = 10
+        prob.driver.opt_settings['Verify level'] = -1
+        # prob.driver.declare_coloring()
 
-    # --- Objective ---
-    prob.model.add_objective('tower_mass', scaler=1e-6)
-    # ----------------------
+        # --- Objective ---
+        prob.model.add_objective('tower_mass', scaler=1e-6)
+        # ----------------------
 
-    prob.model.add_design_var('tower_outer_diameter', lower=3.87, upper=10.0)
-    prob.model.add_design_var('tower_wall_thickness', lower=4e-3, upper=2e-1)
-    
-    # --- Constraints ---
-    #prob.model.add_constraint('height_constraint',    lower=-1e-2,upper=1.e-2)
-    prob.model.add_constraint('post1.stress',          upper=1.0)
-    prob.model.add_constraint('post1.global_buckling', upper=1.0)
-    prob.model.add_constraint('post1.shell_buckling',  upper=1.0)
-    prob.model.add_constraint('post2.stress',          upper=1.0)
-    prob.model.add_constraint('post2.global_buckling', upper=1.0)
-    prob.model.add_constraint('post2.shell_buckling',  upper=1.0)
-    prob.model.add_constraint('weldability',          upper=0.0)
-    prob.model.add_constraint('manufacturability',    lower=0.0)
-    prob.model.add_constraint('slope',                upper=1.0)
-    prob.model.add_constraint('tower1.f1',             lower=0.13, upper=0.40)
-    prob.model.add_constraint('tower2.f1',             lower=0.13, upper=0.40)
-    # ----------------------
+        prob.model.add_design_var('tower_outer_diameter', lower=3.87, upper=10.0)
+        prob.model.add_design_var('tower_wall_thickness', lower=4e-3, upper=2e-1)
+
+        # --- Constraints ---
+        #prob.model.add_constraint('height_constraint',    lower=-1e-2,upper=1.e-2)
+        prob.model.add_constraint('post1.stress',          upper=1.0)
+        prob.model.add_constraint('post1.global_buckling', upper=1.0)
+        prob.model.add_constraint('post1.shell_buckling',  upper=1.0)
+        prob.model.add_constraint('post2.stress',          upper=1.0)
+        prob.model.add_constraint('post2.global_buckling', upper=1.0)
+        prob.model.add_constraint('post2.shell_buckling',  upper=1.0)
+        prob.model.add_constraint('weldability',          upper=0.0)
+        prob.model.add_constraint('manufacturability',    lower=0.0)
+        prob.model.add_constraint('slope',                upper=1.0)
+        prob.model.add_constraint('tower1.f1',             lower=0.13, upper=0.40)
+        prob.model.add_constraint('tower2.f1',             lower=0.13, upper=0.40)
+        # ----------------------
     
     prob.setup()
 
