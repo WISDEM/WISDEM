@@ -577,7 +577,9 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         components = discrete_inputs['components']
 
-        if 'blade_drag_coefficient' in inputs:
+        # Another way would be to look at topLevelFlag
+
+        if inputs['blade_drag_coefficient'] != -1:
             blades = components[components['Component'].str.startswith('Blade')]
             default_blade = blades.iloc[0]
             print(default_blade)

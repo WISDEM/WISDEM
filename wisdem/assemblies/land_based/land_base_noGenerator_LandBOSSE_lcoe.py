@@ -150,6 +150,7 @@ class LandBasedTurbine(Group):
         self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']),
                            promotes=['machine_rating', 'lcoe'])
 
+        # Because of the promotes=['*'] should not need the LandBOSSE prefix.
         self.add_subsystem('landbosse', LandBOSSE(), promotes=['*'])
 
         # Set up connections
@@ -284,7 +285,8 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     prob['drive.hss_input_length'] = 1.5
     prob['drive.yaw_motors_number'] = 1
 
-    # >>>>>>>>>>>>>>> Generated component data for LandBOSSE will go here <<<<<<<<<<<<<<<<<<<
+    # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<<<<<<<
+    prob['landbosse.blade_drag_coefficient'] = 0.1
 
     return prob
 
