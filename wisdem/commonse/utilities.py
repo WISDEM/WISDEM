@@ -11,6 +11,33 @@ from __future__ import print_function
 import numpy as np
 from scipy.linalg import solve_banded
 
+def get_modal_coefficients(x, y, deg=6):
+    '''Computes coefficients of x^6 though x^2 term for ElastoDyn'''
+    # Get constant and linear term to remove them
+    p1 = np.polynomial.polynomial.polyfit(x, y, 1)
+
+    # Evaluate constant linear term at x values
+    if y.ndim > 1:
+        y01 = np.zeros( y.shape )
+        for k in range( y.shape[1] ):
+            y01[:,k] = np.polyval(p1[:,k], x)
+    else:
+        y01 = np.polyval(p1, x)
+
+    # Get coefficients to 6th order polynomial
+    p6 = np.polynomial.polynomial.polyfit(x, y - y01, deg)
+
+    # Normalize for Elastodyn
+    if y.ndim > 1:
+        p6 = p6[:-2,:]
+        p6 /= p6.sum(axis=0)[np.newaxis,:]
+    else:
+        p6 = p6[:-2]
+        p6 /= p6.sum()
+    
+    return p6
+    
+
 def rotate(xo, yo, xp, yp, angle):
     ## Rotate a point clockwise by a given angle around a given origin.
     # angle *= -1.

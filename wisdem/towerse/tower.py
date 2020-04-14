@@ -19,7 +19,7 @@ from wisdem.commonse.tube import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
 from wisdem.commonse import gravity, eps
 
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ
 
 import wisdem.commonse.UtilizationSupplement as Util
 
@@ -643,11 +643,15 @@ class TowerPostFrame(om.ExplicitComponent):
         #self.add_input('M_DEL', np.zeros(nDEL), desc='fatigue parameters at corresponding z coordinates')
 
         # Frequencies
-        self.add_input('f1', 0.0, units='Hz', desc='First natural frequency')
-        self.add_input('f2', 0.0, units='Hz', desc='Second natural frequency')
+        NFREQ2 = int(NFREQ/2)
+        self.add_input('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
+        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
         
         # outputs
-        self.add_output('structural_frequencies', np.zeros(2), units='Hz', desc='First and second natural frequency')
+        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First and second natural frequency')
+        self.add_output('fore_aft_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower fore-aft direction (without constant term)')
+        self.add_output('side_side_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower side-side direction (without constant term)')
         self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
         self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
         self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
@@ -659,7 +663,9 @@ class TowerPostFrame(om.ExplicitComponent):
         self.declare_partials('global_buckling', ['Fz', 'Mxx', 'Myy', 'd_full', 'sigma_y_full', 't_full', 'z_full'], method='fd')
         self.declare_partials('shell_buckling', ['axial_stress', 'd_full', 'hoop_stress', 'shear_stress', 'sigma_y_full', 't_full'], method='fd')
         self.declare_partials('stress', ['axial_stress', 'hoop_stress', 'shear_stress', 'sigma_y_full'], method='fd')
-        self.declare_partials('structural_frequencies', ['f1', 'f2'], method='fd')
+        self.declare_partials('structural_frequencies', ['freqs'], method='fd')
+        self.declare_partials('fore_aft_modes', ['x_mode_shapes'], method='fd')
+        self.declare_partials('side_side_modes', ['y_mode_shapes'], method='fd')
         self.declare_partials('top_deflection', ['top_deflection_in'], method='fd')
         self.declare_partials('turbine_F', [], method='fd')
         self.declare_partials('turbine_M', [], method='fd')
@@ -681,10 +687,10 @@ class TowerPostFrame(om.ExplicitComponent):
         gamma_n      = self.options['analysis_options']['gamma_n']
         gamma_b      = self.options['analysis_options']['gamma_b']
 
-        # Frequencies
-        outputs['structural_frequencies'] = np.zeros(2)
-        outputs['structural_frequencies'][0] = inputs['f1']
-        outputs['structural_frequencies'][1] = inputs['f2']
+        # Frequencies and mode shapes (with x^2 term first)
+        outputs['structural_frequencies'] = inputs['freqs']
+        outputs['fore_aft_modes']         = np.fliplr(inputs['x_mode_shapes'])
+        outputs['side_side_modes']        = np.fliplr(inputs['y_mode_shapes'])
 
         # Tower top deflection
         outputs['top_deflection'] = inputs['top_deflection_in']
@@ -937,8 +943,9 @@ class TowerSE(om.Group):
             self.connect('pre'+lc+'.Mzz', 'tower'+lc+'.Mzz')
             self.connect('soil.k', 'pre'+lc+'.k_monopile')
 
-            self.connect('tower'+lc+'.f1', 'post'+lc+'.f1')
-            self.connect('tower'+lc+'.f2', 'post'+lc+'.f2')
+            self.connect('tower'+lc+'.freqs', 'post'+lc+'.freqs')
+            self.connect('tower'+lc+'.x_mode_shapes', 'post'+lc+'.x_mode_shapes')
+            self.connect('tower'+lc+'.y_mode_shapes', 'post'+lc+'.y_mode_shapes')
             self.connect('tower'+lc+'.Fz_out', 'post'+lc+'.Fz')
             self.connect('tower'+lc+'.Mxx_out', 'post'+lc+'.Mxx')
             self.connect('tower'+lc+'.Myy_out', 'post'+lc+'.Myy')
@@ -1009,6 +1016,7 @@ if __name__ == '__main__':
     from wisdem.commonse.environment import LogWind
     
     plot = False
+    opt  = False
 
     # --- geometry ----
     n_control_points = 3
@@ -1110,7 +1118,7 @@ if __name__ == '__main__':
     analysis_options['tower']['frame3dd']['shear']   = True
     analysis_options['tower']['frame3dd']['geom']    = True
     analysis_options['tower']['frame3dd']['dx']      = 5.0
-    analysis_options['tower']['frame3dd']['nM']      = 2
+    #analysis_options['tower']['frame3dd']['nM']      = 2
     analysis_options['tower']['frame3dd']['Mmethod'] = 1
     analysis_options['tower']['frame3dd']['lump']    = 0
     analysis_options['tower']['frame3dd']['tol']     = 1e-9
@@ -1134,33 +1142,34 @@ if __name__ == '__main__':
     prob = om.Problem()
     prob.model = TowerSE(analysis_options=analysis_options, topLevelFlag=True)
     
-    prob.driver = om.pyOptSparseDriver() #om.ScipyOptimizeDriver() # 
-    prob.driver.options['optimizer'] = 'SNOPT' #'SLSQP' #'CONMIN'
-    # prob.driver.opt_settings['Iterations limit'] = 10
-    prob.driver.opt_settings['Verify level'] = -1
-    # prob.driver.declare_coloring()
+    if opt:
+        prob.driver = om.pyOptSparseDriver() #om.ScipyOptimizeDriver() # 
+        prob.driver.options['optimizer'] = 'SNOPT' #'SLSQP' #'CONMIN'
+        # prob.driver.opt_settings['Iterations limit'] = 10
+        prob.driver.opt_settings['Verify level'] = -1
+        # prob.driver.declare_coloring()
 
-    # --- Objective ---
-    prob.model.add_objective('tower_mass', scaler=1e-6)
-    # ----------------------
+        # --- Objective ---
+        prob.model.add_objective('tower_mass', scaler=1e-6)
+        # ----------------------
 
-    prob.model.add_design_var('tower_outer_diameter', lower=3.87, upper=10.0)
-    prob.model.add_design_var('tower_wall_thickness', lower=4e-3, upper=2e-1)
-    
-    # --- Constraints ---
-    #prob.model.add_constraint('height_constraint',    lower=-1e-2,upper=1.e-2)
-    prob.model.add_constraint('post1.stress',          upper=1.0)
-    prob.model.add_constraint('post1.global_buckling', upper=1.0)
-    prob.model.add_constraint('post1.shell_buckling',  upper=1.0)
-    prob.model.add_constraint('post2.stress',          upper=1.0)
-    prob.model.add_constraint('post2.global_buckling', upper=1.0)
-    prob.model.add_constraint('post2.shell_buckling',  upper=1.0)
-    prob.model.add_constraint('weldability',          upper=0.0)
-    prob.model.add_constraint('manufacturability',    lower=0.0)
-    prob.model.add_constraint('slope',                upper=1.0)
-    prob.model.add_constraint('tower1.f1',             lower=0.13, upper=0.40)
-    prob.model.add_constraint('tower2.f1',             lower=0.13, upper=0.40)
-    # ----------------------
+        prob.model.add_design_var('tower_outer_diameter', lower=3.87, upper=10.0)
+        prob.model.add_design_var('tower_wall_thickness', lower=4e-3, upper=2e-1)
+
+        # --- Constraints ---
+        #prob.model.add_constraint('height_constraint',    lower=-1e-2,upper=1.e-2)
+        prob.model.add_constraint('post1.stress',          upper=1.0)
+        prob.model.add_constraint('post1.global_buckling', upper=1.0)
+        prob.model.add_constraint('post1.shell_buckling',  upper=1.0)
+        prob.model.add_constraint('post2.stress',          upper=1.0)
+        prob.model.add_constraint('post2.global_buckling', upper=1.0)
+        prob.model.add_constraint('post2.shell_buckling',  upper=1.0)
+        prob.model.add_constraint('weldability',          upper=0.0)
+        prob.model.add_constraint('manufacturability',    lower=0.0)
+        prob.model.add_constraint('slope',                upper=1.0)
+        prob.model.add_constraint('tower1.f1',             lower=0.13, upper=0.40)
+        prob.model.add_constraint('tower2.f1',             lower=0.13, upper=0.40)
+        # ----------------------
     
     prob.setup()
 
@@ -1258,14 +1267,18 @@ if __name__ == '__main__':
     print('weldability =', prob['weldability'])
     print('manufacturability =', prob['manufacturability'])
     print('\nwind: ', prob['wind1.Uref'])
-    print('f1 (Hz) =', prob['tower1.f1'])
+    print('freq (Hz) =', prob['post1.structural_frequencies'])
+    print('Fore-aft mode shapes:', prob['post1.fore_aft_modes'])
+    print('Side-side mode shapes:', prob['post1.side_side_modes'])
     print('top_deflection1 (m) =', prob['post1.top_deflection'])
     print('stress1 =', prob['post1.stress'])
     print('GL buckling =', prob['post1.global_buckling'])
     print('Shell buckling =', prob['post1.shell_buckling'])
     #print('damage =', prob['post1.damage'])
     print('\nwind: ', prob['wind2.Uref'])
-    print('f1 (Hz) =', prob['tower2.f1'])
+    print('freq (Hz) =', prob['post2.structural_frequencies'])
+    print('Fore-aft mode shapes:', prob['post2.fore_aft_modes'])
+    print('Side-side mode shapes:', prob['post2.side_side_modes'])
     print('top_deflection2 (m) =', prob['post2.top_deflection'])
     print('stress2 =', prob['post2.stress'])
     print('GL buckling =', prob['post2.global_buckling'])
