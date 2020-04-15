@@ -1109,9 +1109,9 @@ class Airfoils(ExplicitComponent):
         # Airfoil coordinates
         self.add_output('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')
 
-class Materials(ExplicitComponent):
+
+class ComputeMaterialsProperties(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
-    # JPJ: break up this component
     
     def initialize(self):
         self.options.declare('mat_init_options')
@@ -1121,22 +1121,14 @@ class Materials(ExplicitComponent):
         mat_init_options = self.options['mat_init_options']
         self.n_mat = n_mat = mat_init_options['n_mat']
         
-        self.add_discrete_output('name', val=n_mat * [''],                         desc='1D array of names of materials.')
-        self.add_discrete_output('orth', val=np.zeros(n_mat),                      desc='1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.')
-        self.add_discrete_output('component_id', val=-np.ones(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
-        
-        self.add_output('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
-        self.add_output('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
-        self.add_output('nu',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
-        self.add_output('Xt',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
-        self.add_output('Xc',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
-        self.add_output('sigma_y',       val=np.zeros(n_mat),      units='Pa',     desc='Yield stress of the material (in the principle direction for composites).')
-        self.add_output('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
-        self.add_output('unit_cost',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
-        self.add_output('waste',         val=np.zeros(n_mat),                      desc='1D array of the non-dimensional waste fraction of the materials.')
-        self.add_output('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the fibers of the materials.')
-        self.add_output('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
-        self.add_output('roll_mass',     val=np.zeros(n_mat),      units='kg',     desc='1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.')
+        self.add_discrete_input('name', val=n_mat * [''],                         desc='1D array of names of materials.')
+        self.add_discrete_input('component_id', val=-np.ones(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
+        self.add_input('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the fibers of the materials.')
+        self.add_input('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
+        self.add_input('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
+        self.add_input('ply_t_from_yaml',        val=np.zeros(n_mat),      units='m',      desc='1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
+        self.add_input('fvf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
+        self.add_input('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
         
         self.add_output('ply_t',        val=np.zeros(n_mat),      units='m',      desc='1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
         self.add_output('fvf',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
@@ -1146,8 +1138,8 @@ class Materials(ExplicitComponent):
         
         density_resin = 0.
         for i in range(self.n_mat):
-            if discrete_outputs['name'][i] == 'resin':
-                density_resin = outputs['rho'][i]
+            if discrete_inputs['name'][i] == 'resin':
+                density_resin = inputs['rho'][i]
                 id_resin = i
         if density_resin==0.:
             exit('Error: a material named resin must be defined in the input yaml')
@@ -1157,28 +1149,72 @@ class Materials(ExplicitComponent):
         ply_t = np.zeros(self.n_mat)
         
         for i in range(self.n_mat):
-            if discrete_outputs['component_id'][i] > 1: # It's a composite
+            if discrete_inputs['component_id'][i] > 1: # It's a composite
+            
                 # Formula to estimate the fiber volume fraction fvf from the laminate and the fiber densities
-                fvf[i]  = (outputs['rho'][i] - density_resin) / (outputs['rho_fiber'][i] - density_resin) 
-                if outputs['fvf'][i] > 0.:
-                    if abs(fvf[i] - outputs['fvf'][i]) > 1e-3:
-                        exit('Error: the fvf of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fvf'][i] * 100) + '%, but this value is not compatible to the other values provided. Given the fiber, laminate and resin densities, it should instead be equal to ' + str(fvf[i]*100.) + '%.')
+                fvf[i]  = (inputs['rho'][i] - density_resin) / (inputs['rho_fiber'][i] - density_resin) 
+                if inputs['fvf_from_yaml'][i] > 0.:
+                    if abs(fvf[i] - inputs['fvf_from_yaml'][i]) > 1e-3:
+                        exit('Error: the fvf of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['fvf_from_yaml'][i] * 100) + '%, but this value is not compatible to the other values provided. Given the fiber, laminate and resin densities, it should instead be equal to ' + str(fvf[i]*100.) + '%.')
+                    else:
+                        outputs['fvf'] = inputs['fvf_from_yaml']
                 else:
                     outputs['fvf'][i] = fvf[i]
+                    
                 # Formula to estimate the fiber weight fraction fwf from the fiber volume fraction and the fiber densities
-                fwf[i]  = outputs['rho_fiber'][i] * outputs['fvf'][i] / (density_resin + ((outputs['rho_fiber'][i] - density_resin) * outputs['fvf'][i]))
-                if outputs['fwf'][i] > 0.:
-                    if abs(fwf[i] - outputs['fwf'][i]) > 1e-3:
-                        exit('Error: the fwf of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fwf'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fwf[i]*100.) + '%')
+                fwf[i]  = inputs['rho_fiber'][i] * outputs['fvf'][i] / (density_resin + ((inputs['rho_fiber'][i] - density_resin) * outputs['fvf'][i]))
+                if inputs['fwf_from_yaml'][i] > 0.:
+                    if abs(fwf[i] - inputs['fwf_from_yaml'][i]) > 1e-3:
+                        exit('Error: the fwf of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['fwf_from_yaml'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fwf[i]*100.) + '%')
+                    else:
+                        outputs['fwf'] = inputs['fwf_from_yaml']
                 else:
                     outputs['fwf'][i] = fwf[i]
+                    
                 # Formula to estimate the plyt thickness ply_t of a laminate from the aerial density, the laminate density and the fiber weight fraction
-                ply_t[i] = outputs['rho_area_dry'][i] / outputs['rho'][i] / outputs['fwf'][i]
-                if outputs['ply_t'][i] > 0.:
-                    if abs(ply_t[i] - outputs['ply_t'][i]) > 1.e-4:
-                        exit('Error: the ply_t of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['ply_t'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm. Alternatively, adjust the aerial density to ' + str(outputs['ply_t'][i] * outputs['rho'][i] * outputs['fwf'][i]) + ' kg/m2.')
+                ply_t[i] = inputs['rho_area_dry'][i] / inputs['rho'][i] / outputs['fwf'][i]
+                if inputs['ply_t_from_yaml'][i] > 0.:
+                    if abs(ply_t[i] - inputs['ply_t_from_yaml'][i]) > 1.e-4:
+                        exit('Error: the ply_t of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['ply_t_from_yaml'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm. Alternatively, adjust the aerial density to ' + str(outputs['ply_t'][i] * inputs['rho'][i] * outputs['fwf'][i]) + ' kg/m2.')
+                    else:
+                        outputs['ply_t'] = inputs['ply_t_from_yaml']
                 else:
                     outputs['ply_t'][i] = ply_t[i]      
+    
+class Materials(Group):
+    # Openmdao group with the wind turbine materials coming from the input yaml file.
+    # The inputs and outputs are arrays where each entry represents a material
+    
+    def initialize(self):
+        self.options.declare('mat_init_options')
+    
+    def setup(self):
+        mat_init_options = self.options['mat_init_options']
+        self.n_mat = n_mat = mat_init_options['n_mat']
+        
+        ivc = self.add_subsystem('materials_indep_vars', IndepVarComp(), promotes=['*'])
+        
+        ivc.add_discrete_output('orth', val=np.zeros(n_mat),                      desc='1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.')
+        ivc.add_output('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
+        ivc.add_output('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
+        ivc.add_output('nu',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
+        ivc.add_output('Xt',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+        ivc.add_output('Xc',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
+        ivc.add_output('sigma_y',       val=np.zeros(n_mat),      units='Pa',     desc='Yield stress of the material (in the principle direction for composites).')
+        ivc.add_output('unit_cost',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
+        ivc.add_output('waste',         val=np.zeros(n_mat),                      desc='1D array of the non-dimensional waste fraction of the materials.')
+        ivc.add_output('roll_mass',     val=np.zeros(n_mat),      units='kg',     desc='1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.')
+        
+        ivc.add_discrete_output('name', val=n_mat * [''],                         desc='1D array of names of materials.')
+        ivc.add_discrete_output('component_id', val=-np.ones(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
+        ivc.add_output('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the fibers of the materials.')
+        ivc.add_output('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
+        ivc.add_output('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
+        ivc.add_output('ply_t_from_yaml',        val=np.zeros(n_mat),      units='m',      desc='1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
+        ivc.add_output('fvf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
+        ivc.add_output('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
+        
+        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options), promotes=['*'])
 
 class Control(ExplicitComponent):
     # Openmdao component with the wind turbine controller data coming from the input yaml file.
@@ -1250,7 +1286,6 @@ class Costs(ExplicitComponent):
 
 class WT_Assembly(ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
-    # Pietro TODO break this up
     def initialize(self):
         self.options.declare('blade_init_options')
 
@@ -2051,9 +2086,9 @@ def assign_material_values(wt_opt, analysis_options, materials):
     wt_opt['materials.nu']       = nu
     wt_opt['materials.rho_fiber']      = rho_fiber
     wt_opt['materials.rho_area_dry']   = rho_area_dry
-    wt_opt['materials.fvf']      = fvf
-    wt_opt['materials.fwf']      = fwf
-    wt_opt['materials.ply_t']    = ply_t
+    wt_opt['materials.fvf_from_yaml']      = fvf
+    wt_opt['materials.fwf_from_yaml']      = fwf
+    wt_opt['materials.ply_t_from_yaml']    = ply_t
     wt_opt['materials.roll_mass']= roll_mass
     wt_opt['materials.unit_cost']= unit_cost
     wt_opt['materials.waste']    = waste
