@@ -286,7 +286,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     prob['drive.yaw_motors_number'] = 1
 
     # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<<<<<<<
-    prob['landbosse.blade_drag_coefficient'] = 0.1
+    prob['blade_drag_coefficient'] = 0.1
 
     return prob
 
@@ -315,13 +315,13 @@ if __name__ == "__main__":
     # Create a problem for our LandBasedTurbine
     prob = Problem()
     prob.model = LandBasedTurbine(RefBlade=blade, Nsection_Tow=Nsection_Tow, VerbosityCosts=True)
+    prob.model.nonlinear_solver = NonlinearRunOnce()
+    prob.model.linear_solver = DirectSolver()
     prob.setup()
 
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
-    prob.model.nonlinear_solver = NonlinearRunOnce()
-    prob.model.linear_solver = DirectSolver()
 
-    prob.model.approx_totals()
+    #prob.model.approx_totals()
 
     prob.run_driver()
 
