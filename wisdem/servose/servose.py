@@ -936,6 +936,12 @@ def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
             constant = 0.00
             linear = 0.07
             quadratic = 0.0
+        elif drivetrainType == 'DIRECT DRIVE':
+            constant = 0.00
+            linear = 0.07
+            quadratic = 0.0
+        else:
+            exit('The drivetrain model is not supported! Please check servose.py')
         
         Pbar0 = aeroPower / ratedPower
 
