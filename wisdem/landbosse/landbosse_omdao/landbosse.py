@@ -47,10 +47,14 @@ class LandBOSSE(om.Group):
             sharedIndeps.add_output('nacelle_mass', 0.0, units='kg')
             sharedIndeps.add_output('tower_mass', 0.0, units='kg')
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
-        self.add_subsystem('landbosse', LandBOSSE_API(), promotes=['*'])
+            
+        self.add_subsystem('landbosse', LandBOSSE_API(topLevelFlag = self.options['topLevelFlag']), promotes=['*'])
 
 
 class LandBOSSE_API(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare('topLevelFlag', default=False)
+        
     def setup(self):
         self.setup_inputs()
         self.setup_outputs()
@@ -579,7 +583,7 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         # Another way would be to look at topLevelFlag
 
-        if inputs['blade_drag_coefficient'] != -1:
+        if self.options['topLevelFlag']:
             blades = components[components['Component'].str.startswith('Blade')]
             default_blade = blades.iloc[0]
             print(default_blade)
