@@ -415,12 +415,20 @@ class Blade(Group):
         self.connect('internal_structure_2d_fem.layer_thickness', 'ps.layer_thickness_original')
 
         # Import trailing-edge flaps data
-        self.add_subsystem('dac_te_flaps', TE_Flaps(blade_init_options = blade_init_options))
+        n_te_flaps = blade_init_options['n_te_flaps']
+        ivc = self.add_subsystem('dac_te_flaps', IndepVarComp())
+        ivc.add_output('te_flap_start', val=np.zeros(n_te_flaps),               desc='1D array of the start positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
+        ivc.add_output('te_flap_end',   val=np.zeros(n_te_flaps),               desc='1D array of the end positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
+        ivc.add_output('chord_start',   val=np.zeros(n_te_flaps),               desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
+        ivc.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
+        ivc.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
 
 class Blade_Outer_Shape_BEM(ExplicitComponent):
     # Openmdao component with the blade outer shape data coming from the input yaml file.
     # JPJ: unclear how to make this safe. output 's' is both an input and a
-    # computed quantity
+    # computed quantity.
+    # JPJ can't tackle this yet; need to better understand the structure
+    # and what's going on.
     # 
     def initialize(self):
         self.options.declare('blade_init_options')
@@ -961,22 +969,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         outputs['layer_start_nd'] = layer_start_nd
         outputs['layer_end_nd']   = layer_end_nd
 
-class TE_Flaps(Group):
-    # Openmdao component with the trailing edge flaps data coming from the input yaml file.
-    def initialize(self):
-        self.options.declare('blade_init_options')
-
-    def setup(self):
-        blade_init_options = self.options['blade_init_options']
-        n_te_flaps = blade_init_options['n_te_flaps']
-        ivc = self.add_subsystem('te_flaps_indep_vars', IndepVarComp(), promotes=['*'])
-
-        ivc.add_output('te_flap_start', val=np.zeros(n_te_flaps),               desc='1D array of the start positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-        ivc.add_output('te_flap_end',   val=np.zeros(n_te_flaps),               desc='1D array of the end positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-        ivc.add_output('chord_start',   val=np.zeros(n_te_flaps),               desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
-        ivc.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
-        ivc.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
-
 class Hub(Group):
     # Openmdao group with the hub data coming from the input yaml file.
     def setup(self):
@@ -991,33 +983,6 @@ class Hub(Group):
         
         exec_comp = ExecComp('radius = 0.5 * diameter', units='m', radius={'desc' : 'Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.'})
         self.add_subsystem('compute_radius', exec_comp, promotes=['*'])
-        
-class Nacelle(ExplicitComponent):
-    # JPJ break it up
-    # Openmdao component with the nacelle data coming from the input yaml file.
-    def setup(self):
-        # Outer shape bem
-        self.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
-        self.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
-        self.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
-        # MB properties
-        self.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-        self.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
-        self.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-        self.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
-        
-        # Drivetrain parameters
-        self.add_output('gear_ratio',       val=0.0)
-        self.add_output('shaft_ratio',      val=0.0)
-        self.add_discrete_output('planet_numbers',   val=np.zeros(3))
-        self.add_output('shrink_disc_mass', val=0.0, units='kg')
-        self.add_output('carrier_mass',     val=0.0, units='kg')
-        self.add_output('flange_length',    val=0.0, units='m')
-        self.add_output('gearbox_input_xcm',val=0.0, units='m')
-        self.add_output('hss_input_length', val=0.0, units='m')
-        self.add_output('distance_hub2mb',  val=0.0, units='m')
-        self.add_discrete_output('yaw_motors_number', val = 0)
-        self.add_output('drivetrain_eff',   val=0.0)
         
 class Tower(Group):
     
@@ -1310,21 +1275,6 @@ class WT_Assembly(ExplicitComponent):
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
         outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
 
-class Parametrize_Control(ExplicitComponent):
-    # Openmdao component that multiplies the initial tsr with the tsr gain
-    # JPJ make this into an ExecComp
-
-    def setup(self):
-        # Inputs
-        self.add_input('tsr_original',  val=0.0,    desc='Tip speed ratio defined in the yaml.')
-        self.add_input('tsr_gain',      val=1.0,    desc='Tip speed ratio gain optimized by the optimization solver.')
-        # Outputs
-        self.add_output('tsr_opt',      val=0.0,    desc='Optimized tip speed ratio')
-
-    def compute(self, inputs, outputs):
-        
-        outputs['tsr_opt'] = inputs['tsr_original'] * inputs['tsr_gain']
-
 class WindTurbineOntologyOpenMDAO(Group):
     # Openmdao group with all wind turbine data
     
@@ -1341,7 +1291,32 @@ class WindTurbineOntologyOpenMDAO(Group):
         
         self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils'], opt_options = opt_options))
         self.add_subsystem('hub',           Hub())
-        self.add_subsystem('nacelle',       Nacelle())
+        
+        # Add IVC for nacelle and add it to the group
+        nacelle = IndepVarComp()
+        # Outer shape bem
+        nacelle.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
+        nacelle.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
+        nacelle.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
+        # MB properties
+        nacelle.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+        nacelle.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
+        nacelle.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+        nacelle.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        # Drivetrain parameters
+        nacelle.add_output('gear_ratio',       val=0.0)
+        nacelle.add_output('shaft_ratio',      val=0.0)
+        nacelle.add_discrete_output('planet_numbers',   val=np.zeros(3))
+        nacelle.add_output('shrink_disc_mass', val=0.0, units='kg')
+        nacelle.add_output('carrier_mass',     val=0.0, units='kg')
+        nacelle.add_output('flange_length',    val=0.0, units='m')
+        nacelle.add_output('gearbox_input_xcm',val=0.0, units='m')
+        nacelle.add_output('hss_input_length', val=0.0, units='m')
+        nacelle.add_output('distance_hub2mb',  val=0.0, units='m')
+        nacelle.add_discrete_output('yaw_motors_number', val = 0)
+        nacelle.add_output('drivetrain_eff',   val=0.0)
+        self.add_subsystem('nacelle', nacelle)
+        
         self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
         if analysis_options['tower']['monopile']:
             self.add_subsystem('monopile',      Monopile(monopile_init_options   = analysis_options['monopile']))
@@ -1369,7 +1344,11 @@ class WindTurbineOntologyOpenMDAO(Group):
         opt_var = IndepVarComp()
         opt_var.add_output('tsr_opt_gain',   val = 1.0)
         self.add_subsystem('opt_var',opt_var)
-        self.add_subsystem('pc', Parametrize_Control())
+        
+        # Multiply the initial tsr with the tsr gain
+        exec_comp = ExecComp('tsr_opt = tsr_original * tsr_gain')
+        self.add_subsystem('pc', exec_comp)
+        
         self.connect('opt_var.tsr_opt_gain', 'pc.tsr_gain')
         self.connect('control.rated_TSR',    'pc.tsr_original')
 
