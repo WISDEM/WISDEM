@@ -50,6 +50,9 @@ class LandBOSSE(om.Group):
             
         self.add_subsystem('landbosse', LandBOSSE_API(topLevelFlag = self.options['topLevelFlag']), promotes=['*'])
 
+        if self.options['topLevelFlag']:
+            self.connect('hub_height','hub_height_meters')
+
 
 class LandBOSSE_API(om.ExplicitComponent):
     def initialize(self):

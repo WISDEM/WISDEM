@@ -317,11 +317,10 @@ if __name__ == "__main__":
     prob.model = LandBasedTurbine(RefBlade=blade, Nsection_Tow=Nsection_Tow, VerbosityCosts=True)
     prob.model.nonlinear_solver = NonlinearRunOnce()
     prob.model.linear_solver = DirectSolver()
+    #prob.model.approx_totals()
     prob.setup()
 
     prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
-
-    #prob.model.approx_totals()
 
     prob.run_driver()
 
