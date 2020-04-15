@@ -534,7 +534,7 @@ class RegulatedPowerCurve(ExplicitComponent):
 
         # Find rated index and guess at rated speed
         if P_aero[-1] > P_rated:
-            U_rated = np.interp(P_rated, P_aero, Uhub)
+            U_rated = np.interp(P_rated, P_aero*eff, Uhub)
         else:
             U_rated = Uhub[-1]
         i_rated = np.nonzero(U_rated <= Uhub)[0][0]
