@@ -365,7 +365,11 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Cq'] = WISDEM_turbine.Cq
 
 
+from time import time
 class RegulatedPowerCurve(ExplicitComponent):
+    """
+    Iteratively call CCBlade to compute the power curve.
+    """
     
     def initialize(self):
         self.options.declare('analysis_options')
@@ -463,7 +467,8 @@ class RegulatedPowerCurve(ExplicitComponent):
         
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
+        
+        s = time()
         # Create Airfoil class instances
         af = [None]*self.n_span
         for i in range(self.n_span):
@@ -472,10 +477,17 @@ class RegulatedPowerCurve(ExplicitComponent):
                 af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,ref_tab], inputs['airfoils_cd'][i,:,:,ref_tab], inputs['airfoils_cm'][i,:,:,ref_tab])
             else:
                 af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
+                
+        print(0, time() - s)
+        s = time()
 
         self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
+        
+        print(1, time() - s)
+        s = time()
 
-
+        # JPJ: what is this grid for? Seems to be a special distribution of velocities
+        # for the hub
         grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi/4.,np.pi/2.,self.n_pc + 1)))))
         grid1 = (grid0 - grid0[0])/(grid0[-1]-grid0[0])
         Uhub  = grid1 * (inputs['v_max'] - inputs['v_min']) + inputs['v_min']
@@ -539,6 +551,8 @@ class RegulatedPowerCurve(ExplicitComponent):
             U_rated = Uhub[-1]
         i_rated = np.nonzero(U_rated <= Uhub)[0][0]
 
+        print(2, time() - s)
+        s = time()
         
         # Function to be used inside of power maximization until Region 3
         def maximizePower(pitch, Uhub, Omega_rpm):
@@ -573,8 +587,10 @@ class RegulatedPowerCurve(ExplicitComponent):
                 i_rated = i
                 break
 
-            
+        print(3, time() - s)
+        s = time()
         # Solve for rated velocity
+        # JPJ: why rename i_rated to i here? It removes clarity in the following 50 lines that we're looking at the rated properties
         i = i_rated
         if i < self.n_pc-1:
             def const_Urated(x):
@@ -628,7 +644,10 @@ class RegulatedPowerCurve(ExplicitComponent):
         outputs['rated_T']     = T[i]
         outputs['rated_Q']     = Q[i]
 
-        
+        print(4, time() - s)
+        s = time()
+        # JPJ: this part can be converted into a BalanceComp with a solver.
+        # This will be less expensive and allow us to get derivatives through the process.
         if region3:
             # Function to be used to stay at rated power in Region 3
             def rated_power_dist(pitch, Uhub, Omega_rpm):
@@ -678,7 +697,9 @@ class RegulatedPowerCurve(ExplicitComponent):
         outputs['V']       = Uhub
         outputs['M']       = M
         outputs['pitch']   = pitch
-                
+        
+        print(5, time() - s)
+        s = time()
         self.ccblade.induction_inflow = True
         tsr_vec = Omega_rpm / 30. * np.pi *  R_tip / Uhub
         id_regII = np.argmin(abs(tsr_vec - inputs['tsr_operational']))
@@ -701,6 +722,9 @@ class RegulatedPowerCurve(ExplicitComponent):
         outputs['cl_regII']          = cl_regII
         outputs['cd_regII']          = cd_regII
         outputs['Cp_regII']          = Cp_aero[id_regII]
+        
+        print(6, time() - s)
+        s = time()
 
 
 class Cp_Ct_Cq_Tables(ExplicitComponent):

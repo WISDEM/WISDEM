@@ -419,8 +419,9 @@ class Blade(Group):
 
 class Blade_Outer_Shape_BEM(ExplicitComponent):
     # Openmdao component with the blade outer shape data coming from the input yaml file.
-    # JPJ: unclear how to make this safe. output 's' is both an inptu and a
+    # JPJ: unclear how to make this safe. output 's' is both an input and a
     # computed quantity
+    # 
     def initialize(self):
         self.options.declare('blade_init_options')
         
@@ -717,6 +718,7 @@ class Blade_Lofted_Shape(ExplicitComponent):
 
 class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
     # Openmdao component with the blade internal structure data coming from the input yaml file.
+    # TODO: Pietro tackle splitting this one up
     def initialize(self):
         self.options.declare('blade_init_options')
         self.options.declare('af_init_options')
@@ -923,6 +925,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
 
 class TE_Flaps(ExplicitComponent):
     # Openmdao component with the trailing edge flaps data coming from the input yaml file.
+    # TODO: Pietro, break this up
     def initialize(self):
         self.options.declare('blade_init_options')
         
@@ -952,6 +955,7 @@ class Hub(Group):
         self.add_subsystem('compute_radius', exec_comp, promotes=['*'])
         
 class Nacelle(ExplicitComponent):
+    # JPJ break it up
     # Openmdao component with the nacelle data coming from the input yaml file.
     def setup(self):
         # Outer shape bem
@@ -1243,6 +1247,7 @@ class Costs(ExplicitComponent):
 
 class WT_Assembly(ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
+    # Pietro TODO break this up
     def initialize(self):
         self.options.declare('blade_init_options')
 
@@ -1269,6 +1274,7 @@ class WT_Assembly(ExplicitComponent):
 
 class Parametrize_Control(ExplicitComponent):
     # Openmdao component that multiplies the initial tsr with the tsr gain
+    # JPJ make this into an ExecComp
 
     def setup(self):
         # Inputs
