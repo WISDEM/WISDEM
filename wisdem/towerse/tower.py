@@ -689,8 +689,8 @@ class TowerPostFrame(om.ExplicitComponent):
 
         # Frequencies and mode shapes (with x^2 term first)
         outputs['structural_frequencies'] = inputs['freqs']
-        outputs['fore_aft_modes']         = np.fliplr(inputs['x_mode_shapes'])
-        outputs['side_side_modes']        = np.fliplr(inputs['y_mode_shapes'])
+        outputs['fore_aft_modes']         = inputs['x_mode_shapes']
+        outputs['side_side_modes']        = inputs['y_mode_shapes']
 
         # Tower top deflection
         outputs['top_deflection'] = inputs['top_deflection_in']
