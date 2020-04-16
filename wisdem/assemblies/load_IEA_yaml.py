@@ -1135,7 +1135,6 @@ class Airfoils(ExplicitComponent):
         # Airfoil coordinates
         self.add_output('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')
 
-
 class ComputeMaterialsProperties(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
     
@@ -1241,39 +1240,6 @@ class Materials(Group):
         ivc.add_output('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
         
         self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options), promotes=['*'])
-
-class Control(ExplicitComponent):
-    # Openmdao component with the wind turbine controller data coming from the input yaml file.
-    def setup(self):
-
-        self.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
-        self.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
-        self.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
-        self.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
-        self.add_output('maxOmega',         val=0.0, units='rad/s',     desc='Maximum allowed rotor speed.')
-        self.add_output('max_TS',           val=0.0, units='m/s',       desc='Maximum allowed blade tip speed.')
-        self.add_output('max_pitch_rate',   val=0.0, units='rad/s',     desc='Maximum allowed blade pitch rate')
-        self.add_output('max_torque_rate',  val=0.0, units='N*m/s',     desc='Maximum allowed generator torque rate')
-        self.add_output('rated_TSR',        val=0.0,                    desc='Constant tip speed ratio in region II.')
-        self.add_output('rated_pitch',      val=0.0, units='rad',       desc='Constant pitch angle in region II.')
-        self.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
-        self.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
-        self.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
-        self.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
-        self.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
-        self.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
-        # optional inputs - not connected right now!!
-        self.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
-        self.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
-        self.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
-        self.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
-        self.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
-        self.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
-        self.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
-        self.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
-        self.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
-        self.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
-        self.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
         
 class Configuration(ExplicitComponent):
     # Openmdao component with the wind turbine configuration data (class, number of blades, upwind vs downwind, ...) coming from the input yaml file.
@@ -1347,13 +1313,19 @@ class WindTurbineOntologyOpenMDAO(Group):
         analysis_options = self.options['analysis_options']
         opt_options      = self.options['opt_options']
         
+        # Material dictionary inputs
         self.add_subsystem('materials', Materials(mat_init_options = analysis_options['materials']))
+        
+        # Airfoil dictionary inputs
         self.add_subsystem('airfoils',  Airfoils(af_init_options   = analysis_options['airfoils']))
         
+        # Blade inputs
         self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils'], opt_options = opt_options))
+        
+        # Hub inputs
         self.add_subsystem('hub',           Hub())
         
-        # Add IVC for nacelle and add it to the group
+        # Nacelle inputs
         nacelle = IndepVarComp()
         # Outer shape bem
         nacelle.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
@@ -1378,11 +1350,45 @@ class WindTurbineOntologyOpenMDAO(Group):
         nacelle.add_output('drivetrain_eff',   val=0.0)
         self.add_subsystem('nacelle', nacelle)
         
+        # Tower inputs
         self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
         if analysis_options['tower']['monopile']:
             self.add_subsystem('monopile',      Monopile(monopile_init_options   = analysis_options['monopile']))
+        
+        # Foundation inputs
         self.add_subsystem('foundation',    Foundation())
-        self.add_subsystem('control',       Control())
+
+        # Control inputs
+        c_ivc = self.add_subsystem('control', IndepVarComp())
+        c_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
+        c_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
+        c_ivc.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
+        c_ivc.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
+        c_ivc.add_output('maxOmega',         val=0.0, units='rad/s',     desc='Maximum allowed rotor speed.')
+        c_ivc.add_output('max_TS',           val=0.0, units='m/s',       desc='Maximum allowed blade tip speed.')
+        c_ivc.add_output('max_pitch_rate',   val=0.0, units='rad/s',     desc='Maximum allowed blade pitch rate')
+        c_ivc.add_output('max_torque_rate',  val=0.0, units='N*m/s',     desc='Maximum allowed generator torque rate')
+        c_ivc.add_output('rated_TSR',        val=0.0,                    desc='Constant tip speed ratio in region II.')
+        c_ivc.add_output('rated_pitch',      val=0.0, units='rad',       desc='Constant pitch angle in region II.')
+        c_ivc.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
+        c_ivc.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
+        c_ivc.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
+        c_ivc.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
+        c_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
+        c_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
+        # optional inputs - not connected right now!!
+        c_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
+        c_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
+        c_ivc.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
+        c_ivc.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
+        c_ivc.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
+        c_ivc.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
+        c_ivc.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
+        c_ivc.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
+        c_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
+        c_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
+        c_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
+
         self.add_subsystem('configuration', Configuration())
         self.add_subsystem('env',           Environment())
         self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = analysis_options['blade']))
