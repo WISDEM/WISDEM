@@ -11,7 +11,7 @@ import numpy as np
 import jsonschema as json
 import time, copy
 from scipy.interpolate import PchipInterpolator, interp1d
-from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem
+from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, ExecComp
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_smoothing, remap2grid
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.commonse.utilities import arc_length
@@ -400,6 +400,7 @@ class Blade(Group):
         
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
+        self.connect('outer_shape_bem.s',               'internal_structure_2d_fem.s')
         self.connect('pa.twist_param',                  'internal_structure_2d_fem.twist')
         self.connect('pa.chord_param',                  'internal_structure_2d_fem.chord')
         self.connect('outer_shape_bem.pitch_axis',      'internal_structure_2d_fem.pitch_axis')
@@ -410,18 +411,44 @@ class Blade(Group):
         # Connections to blade struct parametrization
         self.connect('opt_var.spar_cap_ss_opt_gain','ps.spar_cap_ss_opt_gain')
         self.connect('opt_var.spar_cap_ps_opt_gain','ps.spar_cap_ps_opt_gain')
-        self.connect('outer_shape_bem.s',     'ps.s')
+        self.connect('outer_shape_bem.s',           'ps.s')
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect('internal_structure_2d_fem.layer_thickness', 'ps.layer_thickness_original')
 
         # Import trailing-edge flaps data
-        self.add_subsystem('dac_te_flaps', TE_Flaps(blade_init_options = blade_init_options))
+        n_te_flaps = blade_init_options['n_te_flaps']
+        ivc = self.add_subsystem('dac_te_flaps', IndepVarComp())
+        ivc.add_output('te_flap_start', val=np.zeros(n_te_flaps),               desc='1D array of the start positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
+        ivc.add_output('te_flap_end',   val=np.zeros(n_te_flaps),               desc='1D array of the end positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
+        ivc.add_output('chord_start',   val=np.zeros(n_te_flaps),               desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
+        ivc.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
+        ivc.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
 
-class Blade_Outer_Shape_BEM(ExplicitComponent):
-    # Openmdao component with the blade outer shape data coming from the input yaml file.
+class Blade_Outer_Shape_BEM(Group):
+    # Openmdao group with the blade outer shape data coming from the input yaml file.
     def initialize(self):
         self.options.declare('blade_init_options')
+
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        n_af_span          = blade_init_options['n_af_span']
+        self.n_span        = n_span = blade_init_options['n_span']
         
+        ivc = self.add_subsystem('blade_outer_shape_indep_vars', IndepVarComp(), promotes=['*'])
+        ivc.add_output('af_position',        val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_used defined along blade span.')
+        ivc.add_output('s_default',          val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        ivc.add_output('chord_yaml',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
+        ivc.add_output('twist_yaml',         val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        ivc.add_output('pitch_axis_yaml',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+        ivc.add_output('ref_axis_yaml',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+
+        self.add_subsystem('compute_blade_outer_shape_bem', Compute_Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['*'])
+
+class Compute_Blade_Outer_Shape_BEM(ExplicitComponent):
+    # Openmdao group with the blade outer shape data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('blade_init_options')
+
     def setup(self):
         blade_init_options = self.options['blade_init_options']
         n_af_span          = blade_init_options['n_af_span']
@@ -431,30 +458,35 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
         # Inputs flaps
         self.add_input('te_flap_span_end', val=np.zeros(n_te_flaps),desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
         self.add_input('te_flap_span_ext', val=np.zeros(n_te_flaps),desc='1D array of the extensions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-                
-        self.add_output('af_position',   val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_used defined along blade span.')
+
+        self.add_input('s_default',        val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('chord_yaml',       val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
+        self.add_input('twist_yaml',       val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        self.add_input('pitch_axis_yaml',  val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+        self.add_input('ref_axis_yaml',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+
         self.add_output('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_output('chord',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
         self.add_output('twist',         val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
         self.add_output('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_output('ref_axis',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
-
+        
         self.add_output('length',       val = 0.0,               units='m',    desc='Scalar of the 3D blade length computed along its axis.')
         self.add_output('length_z',     val = 0.0,               units='m',    desc='Scalar of the 1D blade length along z, i.e. the blade projection in the plane ignoring prebend and sweep. For a straight blade this is equal to length')
         
     def compute(self, inputs, outputs):
         
-        # If DAC devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twsi, pitch axis, and reference axis
+        # If DAC devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
         if self.n_te_flaps > 0:
             nd_span_orig = np.linspace(0., 1.,self.n_span)
 
-            chord_orig      = np.interp(nd_span_orig, outputs['s'], outputs['chord'])
-            twist_orig      = np.interp(nd_span_orig, outputs['s'], outputs['twist'])
-            pitch_axis_orig = np.interp(nd_span_orig, outputs['s'], outputs['pitch_axis'])
+            chord_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['chord_yaml'])
+            twist_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['twist_yaml'])
+            pitch_axis_orig = np.interp(nd_span_orig, inputs['s_default'], inputs['pitch_axis_yaml'])
             ref_axis_orig   = np.zeros((self.n_span, 3))
-            ref_axis_orig[:, 0] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 0])
-            ref_axis_orig[:, 1] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 1])
-            ref_axis_orig[:, 2] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 2])
+            ref_axis_orig[:, 0] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 0])
+            ref_axis_orig[:, 1] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 1])
+            ref_axis_orig[:, 2] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 2])
 
             outputs['s'] = copy.copy(nd_span_orig)
             
@@ -484,12 +516,19 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
             outputs['ref_axis'][:, 0] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 0])
             outputs['ref_axis'][:, 1] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 1])
             outputs['ref_axis'][:, 2] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 2])
+        else:
+            outputs['s']            = inputs['s_default']
+            outputs['chord']        = inputs['chord_yaml']
+            outputs['twist']        = inputs['twist_yaml']
+            outputs['pitch_axis']   = inputs['pitch_axis_yaml']
+            outputs['ref_axis']     = inputs['ref_axis_yaml']
 
         outputs['length']   = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])[-1]
         outputs['length_z'] = outputs['ref_axis'][:,2][-1]
 
 class Blade_Interp_Airfoils(ExplicitComponent):
     # Openmdao component to interpolate airfoil coordinates and airfoil polars along the span of the blade for a predefined set of airfoils coming from component Airfoils.
+    # JPJ: can split this up into multiple components to ease derivative computation
     def initialize(self):
         self.options.declare('blade_init_options')
         self.options.declare('af_init_options')
@@ -556,6 +595,8 @@ class Blade_Interp_Airfoils(ExplicitComponent):
                     cm_used[i,:,:,:]    = inputs['cm'][j,:,:,:]
                     break
         
+        # Pchip does have an associated derivative method built-in:
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.derivative.html#scipy.interpolate.PchipInterpolator.derivative
         spline         = PchipInterpolator
         rthick_spline  = spline(inputs['af_position'], r_thick_used)
         outputs['r_thick_interp'] = rthick_spline(inputs['s'])
@@ -609,7 +650,7 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         outputs['cd_interp']       = cd_interp
         outputs['cm_interp']       = cm_interp
 
-        # Plot interpolated coordinates
+        # # Plot interpolated coordinates
         # import matplotlib.pyplot as plt
         # for i in range(self.n_span):    
         #     plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
@@ -710,12 +751,12 @@ class Blade_Lofted_Shape(ExplicitComponent):
         ax.plot(outputs['3D_shape'][:,1],outputs['3D_shape'][:,2],outputs['3D_shape'][:,3])
         plt.show()
 
-class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
-    # Openmdao component with the blade internal structure data coming from the input yaml file.
+class Blade_Internal_Structure_2D_FEM(Group):
+    # Openmdao group with the blade internal structure data coming from the input yaml file.
     def initialize(self):
         self.options.declare('blade_init_options')
         self.options.declare('af_init_options')
-        
+
     def setup(self):
         blade_init_options = self.options['blade_init_options']
         af_init_options    = self.options['af_init_options']
@@ -724,51 +765,89 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.n_layers      = n_layers  = blade_init_options['n_layers']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
-        self.add_input('coord_xy_dim',    val=np.zeros((n_span, n_xy, 2)),units = 'm',   desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
-        self.add_input('twist',           val=np.zeros(n_span),           units='rad',   desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
-        self.add_input('chord',           val=np.zeros(n_span),           units='m',     desc='1D array of the chord values defined along blade span.')
-        self.add_input('pitch_axis',      val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
-                
-        self.add_output('s',              val=np.zeros(n_span),                          desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
-        self.add_output('web_rotation',   val=np.zeros((n_webs, n_span)),  units='rad',  desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
-        self.add_output('web_offset_y_pa',val=np.zeros((n_webs, n_span)),  units='m',    desc='2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.')
-        self.add_output('web_start_nd',   val=np.zeros((n_webs, n_span)),                desc='2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
-        self.add_output('web_end_nd',     val=np.zeros((n_webs, n_span)),                desc='2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
+        ivc = self.add_subsystem('blade_2dfem_indep_vars', IndepVarComp(), promotes=['*'])
+        ivc.add_output('web_offset_y_pa',           val=np.zeros((n_webs, n_span)),  units='m',    desc='2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.')
+        ivc.add_output('layer_web',                 val=np.zeros(n_layers),                        desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.')
+        ivc.add_output('layer_thickness',           val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        ivc.add_output('layer_offset_y_pa',         val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        ivc.add_output('layer_width',               val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        ivc.add_output('layer_midpoint_nd',         val=np.zeros((n_layers, n_span)), desc='2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        ivc.add_discrete_output('layer_side',       val=n_layers * [''],              desc='1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.')
+        ivc.add_discrete_output('definition_web',   val=np.zeros(n_webs),             desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
+        ivc.add_discrete_output('definition_layer', val=np.zeros(n_layers),           desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+        ivc.add_discrete_output('index_layer_start',val=np.zeros(n_layers),           desc='Index used to fix a layer to another')
+        ivc.add_discrete_output('index_layer_end',  val=np.zeros(n_layers),           desc='Index used to fix a layer to another')
         
-        self.add_output('layer_web',      val=np.zeros(n_layers),                        desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.')
+        ivc.add_output('web_rotation_yaml',         val=np.zeros((n_webs, n_span)),  units='rad',  desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
+        ivc.add_output('layer_rotation_yaml',       val=np.zeros((n_layers, n_span)), units='rad', desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
+        ivc.add_output('layer_start_nd_yaml',       val=np.zeros((n_layers, n_span)), desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        ivc.add_output('layer_end_nd_yaml',         val=np.zeros((n_layers, n_span)), desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+
+        self.add_subsystem('compute_internal_structure_2d_fem', Compute_Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options), promotes = ['*'])
+
+class Compute_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
+
+    def initialize(self):
+        self.options.declare('blade_init_options')
+        self.options.declare('af_init_options')
+
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        af_init_options    = self.options['af_init_options']
+        self.n_span        = n_span    = blade_init_options['n_span']
+        self.n_webs        = n_webs    = blade_init_options['n_webs']
+        self.n_layers      = n_layers  = blade_init_options['n_layers']
+        self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
-        self.add_output('layer_thickness',   val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_output('layer_rotation',    val=np.zeros((n_layers, n_span)), units='rad',  desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
-        self.add_output('layer_offset_y_pa', val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_output('layer_width',       val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_output('layer_midpoint_nd', val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_discrete_output('layer_side',val=n_layers * [''],                           desc='1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.')
-        self.add_output('layer_start_nd',    val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_output('layer_end_nd',      val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+         # From user defined yaml
+        self.add_input('s',                     val=np.zeros(n_span),                          desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('web_rotation_yaml',     val=np.zeros((n_webs, n_span)),  units='rad',  desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
+        self.add_input('web_offset_y_pa',       val=np.zeros((n_webs, n_span)),  units='m',    desc='2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.')
+        self.add_input('layer_web',             val=np.zeros(n_layers),                        desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.')
+        self.add_input('layer_thickness',       val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('layer_rotation_yaml',   val=np.zeros((n_layers, n_span)), units='rad', desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
+        self.add_input('layer_offset_y_pa',     val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('layer_width',           val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('layer_midpoint_nd',     val=np.zeros((n_layers, n_span)),   desc='2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_discrete_input('layer_side',   val=n_layers * [''],                desc='1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.')
+        self.add_input('layer_start_nd_yaml',   val=np.zeros((n_layers, n_span)),   desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('layer_end_nd_yaml',      val=np.zeros((n_layers, n_span)),  desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_discrete_input('definition_web',   val=np.zeros(n_webs),           desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
+        self.add_discrete_input('definition_layer', val=np.zeros(n_layers),         desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+        self.add_discrete_input('index_layer_start',val=np.zeros(n_layers),         desc='Index used to fix a layer to another')
+        self.add_discrete_input('index_layer_end',  val=np.zeros(n_layers),         desc='Index used to fix a layer to another')
+
+        # From blade outer shape
+        self.add_input('coord_xy_dim',    val=np.zeros((n_span, n_xy, 2)), units = 'm', desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
+        self.add_input('twist',           val=np.zeros(n_span),            units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        self.add_input('chord',           val=np.zeros(n_span),            units='m',   desc='1D array of the chord values defined along blade span.')
+        self.add_input('pitch_axis',      val=np.zeros(n_span),                         desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+
+        self.add_output('web_rotation',   val=np.zeros((n_webs, n_span)),  units='rad', desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
+        self.add_output('web_start_nd',   val=np.zeros((n_webs, n_span)),               desc='2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
+        self.add_output('web_end_nd',     val=np.zeros((n_webs, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
+        self.add_output('layer_rotation', val=np.zeros((n_layers, n_span)),units='rad', desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
+        self.add_output('layer_start_nd', val=np.zeros((n_layers, n_span)),             desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_output('layer_end_nd',   val=np.zeros((n_layers, n_span)),             desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+
+        # # These outputs don't depend on anything and should be refactored to be
+        # # outputs that come from an IndepVarComp.
+        # self.declare_partials('definition_layer', '*', dependent=False)
+        # self.declare_partials('layer_offset_y_pa', '*', dependent=False)
+        # self.declare_partials('layer_thickness', '*', dependent=False)
+        # self.declare_partials('layer_web', '*', dependent=False)
+        # self.declare_partials('layer_width', '*', dependent=False)
+        # self.declare_partials('s', '*', dependent=False)
+        # self.declare_partials('web_offset_y_pa', '*', dependent=False)
         
-        self.add_discrete_output('definition_web',   val=np.zeros(n_webs),                   desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
-        self.add_output('definition_layer', val=np.zeros(n_layers),                 desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
-        self.add_discrete_output('index_layer_start',    val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
-        self.add_discrete_output('index_layer_end',      val=np.zeros(n_layers),             desc='Index used to fix a layer to another')
-        
-        # These outputs don't depend on anything and should be refactored to be
-        # outputs that come from an IndepVarComp.
-        self.declare_partials('definition_layer', '*', dependent=False)
-        self.declare_partials('layer_offset_y_pa', '*', dependent=False)
-        self.declare_partials('layer_thickness', '*', dependent=False)
-        self.declare_partials('layer_web', '*', dependent=False)
-        self.declare_partials('layer_width', '*', dependent=False)
-        self.declare_partials('s', '*', dependent=False)
-        self.declare_partials('web_offset_y_pa', '*', dependent=False)
-        
-        self.declare_partials('layer_end_nd', ['coord_xy_dim', 'twist'], method='fd')
-        self.declare_partials('layer_midpoint_nd', ['coord_xy_dim'], method='fd')
-        self.declare_partials('layer_rotation', ['twist'], method='fd')
-        self.declare_partials('layer_start_nd', ['coord_xy_dim', 'twist'], method='fd')
-        self.declare_partials('web_end_nd', ['coord_xy_dim', 'twist'], method='fd')
-        self.declare_partials('web_rotation', ['twist'], method='fd')
-        self.declare_partials('web_start_nd', ['coord_xy_dim', 'twist'], method='fd')
-    
+        # self.declare_partials('layer_end_nd', ['coord_xy_dim', 'twist'], method='fd')
+        # self.declare_partials('layer_midpoint_nd', ['coord_xy_dim'], method='fd')
+        # self.declare_partials('layer_rotation', ['twist'], method='fd')
+        # self.declare_partials('layer_start_nd', ['coord_xy_dim', 'twist'], method='fd')
+        # self.declare_partials('web_end_nd', ['coord_xy_dim', 'twist'], method='fd')
+        # self.declare_partials('web_rotation', ['twist'], method='fd')
+        # self.declare_partials('web_start_nd', ['coord_xy_dim', 'twist'], method='fd')
+
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
         # Initialize temporary arrays for the outputs
@@ -800,7 +879,7 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
             # Loop through the webs and compute non-dimensional start and end positions along the profile
             for j in range(self.n_webs):
 
-                offset = outputs['web_offset_y_pa'][j,i]
+                offset = inputs['web_offset_y_pa'][j,i]
                 # Geometry checks on webs                    
                 if offset < ratio_Websmax * (- chord * p_le_i) or offset > ratio_Websmax * (chord * (1. - p_le_i)):
                     offset_old = copy.copy(offset)
@@ -808,103 +887,105 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                         offset = ratio_Websmax * (- chord * p_le_i)
                     else:
                         offset = ratio_Websmax * (chord * (1. - p_le_i))
+                    
                     outputs['web_offset_y_pa'][j,i] = offset
                     layer_resize_warning = 'WARNING: Web "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'%(web_name[j], offset_old, offset, outputs['s'][i], i)
+
                     print(layer_resize_warning)
 
-                if discrete_outputs['definition_web'][j] == 1:
+                if discrete_inputs['definition_web'][j] == 1:
                     web_rotation[j,i] = - inputs['twist'][i]
-                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
-                elif discrete_outputs['definition_web'][j] == 2:
-                    web_rotation[j,i] = - outputs['web_rotation'][j,i]
-                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
+                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], inputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
+                elif discrete_inputs['definition_web'][j] == 2:
+                    web_rotation[j,i] = - inputs['web_rotation_yaml'][j,i]
+                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], inputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
                     if i == 0:
                         print('WARNING: The web ' + web_name[j] + ' is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition.')
                     if web_start_nd[j,i] < 0. or web_start_nd[j,i] > 1.:
-                        print('WARNING: Blade web ' + web_name[j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. start point outside the TE. Please check the yaml input file.')
+                        print('WARNING: Blade web ' + web_name[j] + ' at n.d. span position ' + str(inputs['s'][i]) + ' has the n.d. start point outside the TE. Please check the yaml input file.')
                     if web_end_nd[j,i] < 0. or web_end_nd[j,i] > 1.:
-                        print('WARNING: Blade web ' + web_name[j] + ' at n.d. span position ' + str(outputs['s'][i]) + ' has the n.d. end point outside the TE. Please check the yaml input file.')
+                        print('WARNING: Blade web ' + web_name[j] + ' at n.d. span position ' + str(inputs['s'][i]) + ' has the n.d. end point outside the TE. Please check the yaml input file.')
                 else:
                     exit('Blade web ' + web_name[j] + ' not described correctly. Please check the yaml input file.')
                     
             # Loop through the layers and compute non-dimensional start and end positions along the profile for the different layer definitions
             for j in range(self.n_layers):
-                if outputs['definition_layer'][j] == 1: # All around
+                if discrete_inputs['definition_layer'][j] == 1: # All around
                     layer_start_nd[j,i] = 0.
                     layer_end_nd[j,i]   = 1.
-                elif outputs['definition_layer'][j] == 2 or outputs['definition_layer'][j] == 3: # Midpoint and width
-                    if outputs['definition_layer'][j] == 2:
+                elif discrete_inputs['definition_layer'][j] == 2 or discrete_inputs['definition_layer'][j] == 3: # Midpoint and width
+                    if discrete_inputs['definition_layer'][j] == 2:
                         layer_rotation[j,i] = - inputs['twist'][i]
                     else:
-                        layer_rotation[j,i] = - outputs['layer_rotation'][j,i]
-                    midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i], outputs['layer_offset_y_pa'][j,i], [0.,0.], [discrete_outputs['layer_side'][j]])[0]
-                    width    = outputs['layer_width'][j,i]
+                        layer_rotation[j,i] = - inputs['layer_rotation_yaml'][j,i]
+                    midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i], inputs['layer_offset_y_pa'][j,i], [0.,0.], [discrete_inputs['layer_side'][j]])[0]
+                    width    = inputs['layer_width'][j,i]
 
                     # Geometry check to make sure the spar caps does not exceed 80% of the chord
-                    offset = outputs['layer_offset_y_pa'][j,i]
+                    offset = inputs['layer_offset_y_pa'][j,i]
                     if offset + 0.5 * width > ratio_SCmax * chord * (1. - p_le_i) or offset - 0.5 * width < - ratio_SCmax * chord * p_le_i: # hitting TE or LE
                         width_old = copy.copy(width)
                         width     = 2. * min([ratio_SCmax * (chord * p_le_i ) , ratio_SCmax * (chord * (1. - p_le_i))])
                         offset    = 0.0
-                        outputs['layer_width'][j,i]         = copy.copy(width)
-                        outputs['layer_offset_y_pa'][j,i]   = copy.copy(offset)
-                        layer_resize_warning = 'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'%(layer_name[j], offset, width_old, width, outputs['s'][i], i)
+                        inputs['layer_width'][j,i]         = copy.copy(width)
+                        inputs['layer_offset_y_pa'][j,i]   = copy.copy(offset)
+                        layer_resize_warning = 'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'%(layer_name[j], offset, width_old, width, inputs['s'][i], i)
                         print(layer_resize_warning)
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
 
-                elif outputs['definition_layer'][j] == 4: # Midpoint and width
+                elif discrete_inputs['definition_layer'][j] == 4: # Midpoint and width
                     midpoint = 1. 
-                    outputs['layer_midpoint_nd'][j,i] = midpoint
-                    width    = outputs['layer_width'][j,i]
+                    inputs['layer_midpoint_nd'][j,i] = midpoint
+                    width    = inputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = width/arc_L_i/2.
 
                     # Geometry check to prevent overlap between SC and TE reinf
                     for k in range(self.n_layers):
-                        if outputs['definition_layer'][k] == 2 or outputs['definition_layer'][k] == 3:
+                        if discrete_inputs['definition_layer'][k] == 2 or discrete_inputs['definition_layer'][k] == 3:
                             if layer_end_nd[j,i] > layer_start_nd[k,i] or layer_start_nd[j,i] < layer_end_nd[k,i]:
                                 print('WARNING: The trailing edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
 
-                elif outputs['definition_layer'][j] == 5: # Midpoint and width
+                elif discrete_inputs['definition_layer'][j] == 5: # Midpoint and width
                     midpoint = LE_loc
-                    outputs['layer_midpoint_nd'][j,i] = midpoint
-                    width    = outputs['layer_width'][j,i]
+                    inputs['layer_midpoint_nd'][j,i] = midpoint
+                    width    = inputs['layer_width'][j,i]
                     layer_start_nd[j,i] = midpoint-width/arc_L_i/2.
                     layer_end_nd[j,i]   = midpoint+width/arc_L_i/2.
                     # Geometry check to prevent overlap between SC and LE reinf
                     for k in range(self.n_layers):
-                        if outputs['definition_layer'][k] == 2 or outputs['definition_layer'][k] == 3:
-                            if discrete_outputs['layer_side'][k] == 'suction' and layer_start_nd[j,i] < layer_end_nd[k,i]:
+                        if discrete_inputs['definition_layer'][k] == 2 or discrete_inputs['definition_layer'][k] == 3:
+                            if discrete_inputs['layer_side'][k] == 'suction' and layer_start_nd[j,i] < layer_end_nd[k,i]:
                                 print('WARNING: The leading edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
-                            elif discrete_outputs['layer_side'][k] == 'pressure' and layer_end_nd[j,i] > layer_start_nd[k,i]:
+                            elif discrete_inputs['layer_side'][k] == 'pressure' and layer_end_nd[j,i] > layer_start_nd[k,i]:
                                 print('WARNING: The leading edge reinforcement extends above the spar caps at station ' + str(i) + '. Please reduce its width.')
                             else:
                                 pass
-                elif outputs['definition_layer'][j] == 6: # Start and end locked to other element
-                    # if outputs['layer_start_nd'][j,i] > 1:
-                    layer_start_nd[j,i] = layer_end_nd[int(discrete_outputs['index_layer_start'][j]),i]
-                    # if outputs['layer_end_nd'][j,i] > 1:
-                    layer_end_nd[j,i]   = layer_start_nd[int(discrete_outputs['index_layer_end'][j]),i]
-                elif outputs['definition_layer'][j] == 7: # Start nd and width
-                    width    = outputs['layer_width'][j,i]
-                    layer_start_nd[j,i] = outputs['layer_start_nd'][j,i]
+                elif discrete_inputs['definition_layer'][j] == 6: # Start and end locked to other element
+                    # if inputs['layer_start_nd'][j,i] > 1:
+                    layer_start_nd[j,i] = layer_end_nd[int(discrete_inputs['index_layer_start'][j]),i]
+                    # if inputs['layer_end_nd'][j,i] > 1:
+                    layer_end_nd[j,i]   = layer_start_nd[int(discrete_inputs['index_layer_end'][j]),i]
+                elif discrete_inputs['definition_layer'][j] == 7: # Start nd and width
+                    width    = inputs['layer_width'][j,i]
+                    layer_start_nd[j,i] = inputs['layer_start_nd_yaml'][j,i]
                     layer_end_nd[j,i]   = layer_start_nd[j,i] + width/arc_L_i
-                elif outputs['definition_layer'][j] == 8: # End nd and width
-                    width    = outputs['layer_width'][j,i]
-                    layer_end_nd[j,i]   = outputs['layer_end_nd'][j,i]
+                elif discrete_inputs['definition_layer'][j] == 8: # End nd and width
+                    width    = inputs['layer_width'][j,i]
+                    layer_end_nd[j,i]   = inputs['layer_end_nd_yaml'][j,i]
                     layer_start_nd[j,i] = layer_end_nd[j,i] - width/arc_L_i
-                elif outputs['definition_layer'][j] == 9: # Start and end nd positions
-                    layer_start_nd[j,i] = outputs['layer_start_nd'][j,i]
-                    layer_end_nd[j,i]   = outputs['layer_end_nd'][j,i]
-                elif outputs['definition_layer'][j] == 10: # Web layer
+                elif discrete_inputs['definition_layer'][j] == 9: # Start and end nd positions
+                    layer_start_nd[j,i] = inputs['layer_start_nd_yaml'][j,i]
+                    layer_end_nd[j,i]   = inputs['layer_end_nd_yaml'][j,i]
+                elif discrete_inputs['definition_layer'][j] == 10: # Web layer
                     pass
-                elif outputs['definition_layer'][j] == 11: # Start nd arc locked to LE
+                elif discrete_inputs['definition_layer'][j] == 11: # Start nd arc locked to LE
                     layer_start_nd[j,i] = LE_loc + 1.e-6
-                    layer_end_nd[j,i]   = layer_start_nd[int(discrete_outputs['index_layer_end'][j]),i]
-                elif outputs['definition_layer'][j] == 12: # End nd arc locked to LE
+                    layer_end_nd[j,i]   = layer_start_nd[int(discrete_inputs['index_layer_end'][j]),i]
+                elif discrete_inputs['definition_layer'][j] == 12: # End nd arc locked to LE
                     layer_end_nd[j,i] = LE_loc - 1.e-6
-                    layer_start_nd[j,i] = layer_end_nd[int(discrete_outputs['index_layer_start'][j]),i]
+                    layer_start_nd[j,i] = layer_end_nd[int(discrete_inputs['index_layer_start'][j]),i]
                 else:
                     exit('Blade layer ' + str(layer_name[j]) + ' not described correctly. Please check the yaml input file.')
         
@@ -916,65 +997,23 @@ class Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         outputs['layer_start_nd'] = layer_start_nd
         outputs['layer_end_nd']   = layer_end_nd
 
-class TE_Flaps(ExplicitComponent):
-    # Openmdao component with the trailing edge flaps data coming from the input yaml file.
-    def initialize(self):
-        self.options.declare('blade_init_options')
+class Hub(Group):
+    # Openmdao group with the hub data coming from the input yaml file.
+    def setup(self):
+        ivc = self.add_subsystem('hub_indep_vars', IndepVarComp(), promotes=['*'])
         
-    def setup(self):
-        blade_init_options = self.options['blade_init_options']
-        n_te_flaps = blade_init_options['n_te_flaps']
+        ivc.add_output('diameter',     val=0.0, units='m',     desc='Diameter of the hub. It is equal to two times the distance of the blade root from the rotor center along the coned line.')
+        ivc.add_output('cone',         val=0.0, units='rad',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
+        ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.')
 
-        self.add_output('te_flap_start', val=np.zeros(n_te_flaps),               desc='1D array of the start positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-        self.add_output('te_flap_end',   val=np.zeros(n_te_flaps),               desc='1D array of the end positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-        self.add_output('chord_start',   val=np.zeros(n_te_flaps),               desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
-        self.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
-        self.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
-
-class Hub(ExplicitComponent):
-    # Openmdao component with the hub data coming from the input yaml file.
-    def setup(self):
-        self.add_output('diameter',     val=0.0, units='m',     desc='Diameter of the hub. It is equal to two times the distance of the blade root from the rotor center along the coned line.')
-        self.add_output('cone',         val=0.0, units='rad',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
-        self.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.')
-
-        self.add_output('system_mass',  val=0.0,         units='kg',        desc='Mass of hub system')
-        self.add_output('system_I',     val=np.zeros(6), units='kg*m**2',   desc='Mass moments of Inertia of hub [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass in yaw-aligned c.s.')
-
-        self.add_output('radius',       val=0.0, units='m',     desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
-
-    def compute(self, inputs, outputs):
-
-        outputs['radius'] = 0.5 * outputs['diameter']
-
-class Nacelle(ExplicitComponent):
-    # Openmdao component with the nacelle data coming from the input yaml file.
-    def setup(self):
-        # Outer shape bem
-        self.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
-        self.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
-        self.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
-        # MB properties
-        self.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-        self.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
-        self.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-        self.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        ivc.add_output('system_mass',  val=0.0,         units='kg',        desc='Mass of hub system')
+        ivc.add_output('system_I',     val=np.zeros(6), units='kg*m**2',   desc='Mass moments of Inertia of hub [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass in yaw-aligned c.s.')
         
-        # Drivetrain parameters
-        self.add_output('gear_ratio',       val=0.0)
-        self.add_output('shaft_ratio',      val=0.0)
-        self.add_discrete_output('planet_numbers',   val=np.zeros(3))
-        self.add_output('shrink_disc_mass', val=0.0, units='kg')
-        self.add_output('carrier_mass',     val=0.0, units='kg')
-        self.add_output('flange_length',    val=0.0, units='m')
-        self.add_output('gearbox_input_xcm',val=0.0, units='m')
-        self.add_output('hss_input_length', val=0.0, units='m')
-        self.add_output('distance_hub2mb',  val=0.0, units='m')
-        self.add_discrete_output('yaw_motors_number', val = 0)
-        self.add_output('drivetrain_eff',   val=0.0)
-
-class Tower(ExplicitComponent):
-    # Openmdao component with the tower data coming from the input yaml file.
+        exec_comp = ExecComp('radius = 0.5 * diameter', units='m', radius={'desc' : 'Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.'})
+        self.add_subsystem('compute_radius', exec_comp, promotes=['*'])
+        
+class Tower(Group):
+    
     def initialize(self):
         self.options.declare('tower_init_options')
         
@@ -982,30 +1021,44 @@ class Tower(ExplicitComponent):
         tower_init_options = self.options['tower_init_options']
         n_height           = tower_init_options['n_height']
         n_layers           = tower_init_options['n_layers']
+        
+        ivc = self.add_subsystem('tower_indep_vars', IndepVarComp(), promotes=['*'])
+        ivc.add_output('ref_axis', val=np.zeros((n_height, 3)), units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
+        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
+        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
+        ivc.add_discrete_output('layer_name', val=[],         desc='1D array of the names of the layers modeled in the tower structure.')
+        ivc.add_discrete_output('layer_mat',  val=[],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
+        
+        self.add_subsystem('compute_tower_grid',
+            ComputeTowerGrid(tower_init_options=tower_init_options),
+            promotes=['*'])
 
+class ComputeTowerGrid(ExplicitComponent):
+    # Openmdao component with the tower data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('tower_init_options')
+        
+    def setup(self):
+        tower_init_options = self.options['tower_init_options']
+        n_height           = tower_init_options['n_height']
+
+        self.add_input('ref_axis', val=np.zeros((n_height, 3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        
         self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
-        self.add_output('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-
-        self.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
-        self.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-        self.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
-
         self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
-        self.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
 
-        
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
-        outputs['height']   = outputs['ref_axis'][-1,2]
-        myarc               = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])
+        outputs['height']   = inputs['ref_axis'][-1,2]
+        myarc               = arc_length(inputs['ref_axis'][:,0], inputs['ref_axis'][:,1], inputs['ref_axis'][:,2])
         outputs['length']   = myarc[-1]
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]
-        
-class Monopile(ExplicitComponent):
-    # Openmdao component with the tower data coming from the input yaml file.
+            
+class Monopile(Group):
+    
     def initialize(self):
         self.options.declare('monopile_init_options')
         
@@ -1013,67 +1066,47 @@ class Monopile(ExplicitComponent):
         monopile_init_options = self.options['monopile_init_options']
         n_height           = monopile_init_options['n_height']
         n_layers           = monopile_init_options['n_layers']
+        
+        ivc = self.add_subsystem('monopile_indep_vars', IndepVarComp(), promotes=['*'])
+        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
+        ivc.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
+        ivc.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
+        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
+        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
+        ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
+        ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
+        ivc.add_output('gravity_foundation_mass', val = 0.0, units='kg', desc='extra mass of gravity foundation')
+        ivc.add_output('suctionpile_depth',       val = 0.0, units='m',  desc='depth of foundation in the soil')
+        ivc.add_output('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
+        
+        self.add_subsystem('compute_monopile_grid',
+            ComputeMonopileGrid(monopile_init_options=monopile_init_options),
+            promotes=['*'])
+        
+class ComputeMonopileGrid(ExplicitComponent):
+    # Openmdao component with the tower data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('monopile_init_options')
+        
+    def setup(self):
+        monopile_init_options = self.options['monopile_init_options']
+        n_height           = monopile_init_options['n_height']
 
+        self.add_input('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        
         self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
-        self.add_output('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-
-        self.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the tower structure.')
-        self.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-        self.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
-
         self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
         self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
 
-        self.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
-
-        self.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
-        self.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
-        self.add_output('gravity_foundation_mass', val = 0.0, units='kg', desc='extra mass of gravity foundation')
-        self.add_output('suctionpile_depth',       val = 0.0, units='m',  desc='depth of foundation in the soil')
-        self.add_output('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
-
-        
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
-        outputs['height']   = outputs['ref_axis'][-1,2]
-        myarc               = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])
+        outputs['height']   = inputs['ref_axis'][-1,2]
+        myarc               = arc_length(inputs['ref_axis'][:,0], inputs['ref_axis'][:,1], inputs['ref_axis'][:,2])
         outputs['length']   = myarc[-1]
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]
 
-class Foundation(ExplicitComponent):
-    # Openmdao component with the foundation data coming from the input yaml file.
-    def setup(self):
-        self.add_output('height',           val=0.0, units='m',     desc='Foundation height in respect to the ground level.')
-
-class Airfoils(ExplicitComponent):
-    def initialize(self):
-        self.options.declare('af_init_options')
-    
-    def setup(self):
-        af_init_options = self.options['af_init_options']
-        n_af            = af_init_options['n_af'] # Number of airfoils
-        n_aoa           = af_init_options['n_aoa']# Number of angle of attacks
-        n_Re            = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
-        n_tab           = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        n_xy            = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        
-        # Airfoil properties
-        self.add_discrete_output('name', val=n_af * [''],                        desc='1D array of names of airfoils.')
-        self.add_output('ac',        val=np.zeros(n_af),                         desc='1D array of the aerodynamic centers of each airfoil.')
-        self.add_output('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
-        self.add_output('aoa',       val=np.zeros(n_aoa),        units='rad',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_output('Re',        val=np.zeros(n_Re),                         desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_output('tab',       val=np.zeros(n_tab),                        desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
-        self.add_output('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_output('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_output('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        
-        # Airfoil coordinates
-        self.add_output('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')
-
-class Materials(ExplicitComponent):
+class ComputeMaterialsProperties(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
     
     def initialize(self):
@@ -1084,22 +1117,14 @@ class Materials(ExplicitComponent):
         mat_init_options = self.options['mat_init_options']
         self.n_mat = n_mat = mat_init_options['n_mat']
         
-        self.add_discrete_output('name', val=n_mat * [''],                         desc='1D array of names of materials.')
-        self.add_discrete_output('orth', val=np.zeros(n_mat),                      desc='1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.')
-        self.add_discrete_output('component_id', val=-np.ones(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
-        
-        self.add_output('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
-        self.add_output('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
-        self.add_output('nu',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
-        self.add_output('Xt',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
-        self.add_output('Xc',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
-        self.add_output('sigma_y',       val=np.zeros(n_mat),      units='Pa',     desc='Yield stress of the material (in the principle direction for composites).')
-        self.add_output('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
-        self.add_output('unit_cost',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
-        self.add_output('waste',         val=np.zeros(n_mat),                      desc='1D array of the non-dimensional waste fraction of the materials.')
-        self.add_output('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the fibers of the materials.')
-        self.add_output('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
-        self.add_output('roll_mass',     val=np.zeros(n_mat),      units='kg',     desc='1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.')
+        self.add_discrete_input('name', val=n_mat * [''],                         desc='1D array of names of materials.')
+        self.add_discrete_input('component_id', val=-np.ones(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
+        self.add_input('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the fibers of the materials.')
+        self.add_input('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
+        self.add_input('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
+        self.add_input('ply_t_from_yaml',        val=np.zeros(n_mat),      units='m',      desc='1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
+        self.add_input('fvf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
+        self.add_input('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
         
         self.add_output('ply_t',        val=np.zeros(n_mat),      units='m',      desc='1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
         self.add_output('fvf',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
@@ -1109,8 +1134,8 @@ class Materials(ExplicitComponent):
         
         density_resin = 0.
         for i in range(self.n_mat):
-            if discrete_outputs['name'][i] == 'resin':
-                density_resin = outputs['rho'][i]
+            if discrete_inputs['name'][i] == 'resin':
+                density_resin = inputs['rho'][i]
                 id_resin = i
         if density_resin==0.:
             exit('Error: a material named resin must be defined in the input yaml')
@@ -1120,96 +1145,72 @@ class Materials(ExplicitComponent):
         ply_t = np.zeros(self.n_mat)
         
         for i in range(self.n_mat):
-            if discrete_outputs['component_id'][i] > 1: # It's a composite
+            if discrete_inputs['component_id'][i] > 1: # It's a composite
+            
                 # Formula to estimate the fiber volume fraction fvf from the laminate and the fiber densities
-                fvf[i]  = (outputs['rho'][i] - density_resin) / (outputs['rho_fiber'][i] - density_resin) 
-                if outputs['fvf'][i] > 0.:
-                    if abs(fvf[i] - outputs['fvf'][i]) > 1e-3:
-                        exit('Error: the fvf of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fvf'][i] * 100) + '%, but this value is not compatible to the other values provided. Given the fiber, laminate and resin densities, it should instead be equal to ' + str(fvf[i]*100.) + '%.')
+                fvf[i]  = (inputs['rho'][i] - density_resin) / (inputs['rho_fiber'][i] - density_resin) 
+                if inputs['fvf_from_yaml'][i] > 0.:
+                    if abs(fvf[i] - inputs['fvf_from_yaml'][i]) > 1e-3:
+                        exit('Error: the fvf of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['fvf_from_yaml'][i] * 100) + '%, but this value is not compatible to the other values provided. Given the fiber, laminate and resin densities, it should instead be equal to ' + str(fvf[i]*100.) + '%.')
+                    else:
+                        outputs['fvf'] = inputs['fvf_from_yaml']
                 else:
                     outputs['fvf'][i] = fvf[i]
+                    
                 # Formula to estimate the fiber weight fraction fwf from the fiber volume fraction and the fiber densities
-                fwf[i]  = outputs['rho_fiber'][i] * outputs['fvf'][i] / (density_resin + ((outputs['rho_fiber'][i] - density_resin) * outputs['fvf'][i]))
-                if outputs['fwf'][i] > 0.:
-                    if abs(fwf[i] - outputs['fwf'][i]) > 1e-3:
-                        exit('Error: the fwf of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['fwf'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fwf[i]*100.) + '%')
+                fwf[i]  = inputs['rho_fiber'][i] * outputs['fvf'][i] / (density_resin + ((inputs['rho_fiber'][i] - density_resin) * outputs['fvf'][i]))
+                if inputs['fwf_from_yaml'][i] > 0.:
+                    if abs(fwf[i] - inputs['fwf_from_yaml'][i]) > 1e-3:
+                        exit('Error: the fwf of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['fwf_from_yaml'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fwf[i]*100.) + '%')
+                    else:
+                        outputs['fwf'] = inputs['fwf_from_yaml']
                 else:
                     outputs['fwf'][i] = fwf[i]
+                    
                 # Formula to estimate the plyt thickness ply_t of a laminate from the aerial density, the laminate density and the fiber weight fraction
-                ply_t[i] = outputs['rho_area_dry'][i] / outputs['rho'][i] / outputs['fwf'][i]
-                if outputs['ply_t'][i] > 0.:
-                    if abs(ply_t[i] - outputs['ply_t'][i]) > 1.e-4:
-                        exit('Error: the ply_t of composite ' + discrete_outputs['name'][i] + ' specified in the yaml is equal to '+ str(outputs['ply_t'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm. Alternatively, adjust the aerial density to ' + str(outputs['ply_t'][i] * outputs['rho'][i] * outputs['fwf'][i]) + ' kg/m2.')
+                ply_t[i] = inputs['rho_area_dry'][i] / inputs['rho'][i] / outputs['fwf'][i]
+                if inputs['ply_t_from_yaml'][i] > 0.:
+                    if abs(ply_t[i] - inputs['ply_t_from_yaml'][i]) > 1.e-4:
+                        exit('Error: the ply_t of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['ply_t_from_yaml'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm. Alternatively, adjust the aerial density to ' + str(outputs['ply_t'][i] * inputs['rho'][i] * outputs['fwf'][i]) + ' kg/m2.')
+                    else:
+                        outputs['ply_t'] = inputs['ply_t_from_yaml']
                 else:
                     outputs['ply_t'][i] = ply_t[i]      
-
-class Control(ExplicitComponent):
-    # Openmdao component with the wind turbine controller data coming from the input yaml file.
+    
+class Materials(Group):
+    # Openmdao group with the wind turbine materials coming from the input yaml file.
+    # The inputs and outputs are arrays where each entry represents a material
+    
+    def initialize(self):
+        self.options.declare('mat_init_options')
+    
     def setup(self):
-
-        self.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
-        self.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
-        self.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
-        self.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
-        self.add_output('maxOmega',         val=0.0, units='rad/s',     desc='Maximum allowed rotor speed.')
-        self.add_output('max_TS',           val=0.0, units='m/s',       desc='Maximum allowed blade tip speed.')
-        self.add_output('max_pitch_rate',   val=0.0, units='rad/s',     desc='Maximum allowed blade pitch rate')
-        self.add_output('max_torque_rate',  val=0.0, units='N*m/s',     desc='Maximum allowed generator torque rate')
-        self.add_output('rated_TSR',        val=0.0,                    desc='Constant tip speed ratio in region II.')
-        self.add_output('rated_pitch',      val=0.0, units='rad',       desc='Constant pitch angle in region II.')
-        self.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
-        self.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
-        self.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
-        self.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
-        self.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
-        self.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
-        # optional inputs - not connected right now!!
-        self.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
-        self.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
-        self.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
-        self.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
-        self.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
-        self.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
-        self.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
-        self.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
-        self.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
-        self.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
-        self.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
+        mat_init_options = self.options['mat_init_options']
+        self.n_mat = n_mat = mat_init_options['n_mat']
         
-class Configuration(ExplicitComponent):
-    # Openmdao component with the wind turbine configuration data (class, number of blades, upwind vs downwind, ...) coming from the input yaml file.
-    def setup(self):
-
-        self.add_discrete_output('ws_class',            val='', desc='IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.')
-        self.add_discrete_output('turb_class',          val='', desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
-        self.add_discrete_output('gearbox_type',        val='geared', desc='Gearbox configuration (geared, direct-drive, etc.).')
-        self.add_discrete_output('rotor_orientation',   val='upwind', desc='Rotor orientation, either upwind or downwind.')
-        self.add_discrete_output('n_blades',            val=3,        desc='Number of blades of the rotor.')
-
-class Environment(ExplicitComponent):
-    # Openmdao component with the environmental parameters
-    def setup(self):
-
-        self.add_output('rho_air',      val=1.225,        units='kg/m**3',    desc='Density of air')
-        self.add_output('mu_air',       val=1.81e-5,      units='kg/(m*s)',   desc='Dynamic viscosity of air')
-        self.add_output('weibull_k',    val=2.0,          desc='Shape parameter of the Weibull probability density function of the wind.')
-        self.add_output('shear_exp',    val=0.2,          desc='Shear exponent of the wind.')
-        self.add_output('speed_sound_air',  val=340.,     units='m/s',        desc='Speed of sound in air.')
-        self.add_output('rho_water',      val=1025.,        units='kg/m**3',    desc='Density of ocean water')
-        self.add_output('mu_water',       val=1.3351e-3,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
-        self.add_output('G_soil',      val=140e6,        units='kg/m**3',    desc='Density of ocean water')
-        self.add_output('nu_soil',       val=0.4,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
-
-class Costs(ExplicitComponent):
-    # Openmdao component with the cost parameters
-    def setup(self):
-
-        self.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
-        self.add_output('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
-        self.add_output('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
-        self.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
-        self.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
-        self.add_output('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
+        ivc = self.add_subsystem('materials_indep_vars', IndepVarComp(), promotes=['*'])
+        
+        ivc.add_discrete_output('orth', val=np.zeros(n_mat),                      desc='1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.')
+        ivc.add_output('E',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
+        ivc.add_output('G',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
+        ivc.add_output('nu',            val=np.zeros([n_mat, 3]),                 desc='2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.')
+        ivc.add_output('Xt',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+        ivc.add_output('Xc',            val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
+        ivc.add_output('sigma_y',       val=np.zeros(n_mat),      units='Pa',     desc='Yield stress of the material (in the principle direction for composites).')
+        ivc.add_output('unit_cost',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
+        ivc.add_output('waste',         val=np.zeros(n_mat),                      desc='1D array of the non-dimensional waste fraction of the materials.')
+        ivc.add_output('roll_mass',     val=np.zeros(n_mat),      units='kg',     desc='1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.')
+        
+        ivc.add_discrete_output('name', val=n_mat * [''],                         desc='1D array of names of materials.')
+        ivc.add_discrete_output('component_id', val=-np.ones(n_mat),              desc='1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.')
+        ivc.add_output('rho_fiber',     val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the fibers of the materials.')
+        ivc.add_output('rho',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
+        ivc.add_output('rho_area_dry',  val=np.zeros(n_mat),      units='kg/m**2',desc='1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.')
+        ivc.add_output('ply_t_from_yaml',        val=np.zeros(n_mat),      units='m',      desc='1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.')
+        ivc.add_output('fvf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
+        ivc.add_output('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
+        
+        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options), promotes=['*'])
 
 class WT_Assembly(ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
@@ -1237,20 +1238,6 @@ class WT_Assembly(ExplicitComponent):
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
         outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
 
-class Parametrize_Control(ExplicitComponent):
-    # Openmdao component that multiplies the initial tsr with the tsr gain
-
-    def setup(self):
-        # Inputs
-        self.add_input('tsr_original',  val=0.0,    desc='Tip speed ratio defined in the yaml.')
-        self.add_input('tsr_gain',      val=1.0,    desc='Tip speed ratio gain optimized by the optimization solver.')
-        # Outputs
-        self.add_output('tsr_opt',      val=0.0,    desc='Optimized tip speed ratio')
-
-    def compute(self, inputs, outputs):
-        
-        outputs['tsr_opt'] = inputs['tsr_original'] * inputs['tsr_gain']
-
 class WindTurbineOntologyOpenMDAO(Group):
     # Openmdao group with all wind turbine data
     
@@ -1262,22 +1249,32 @@ class WindTurbineOntologyOpenMDAO(Group):
         analysis_options = self.options['analysis_options']
         opt_options      = self.options['opt_options']
         
+        # Material dictionary inputs
         self.add_subsystem('materials', Materials(mat_init_options = analysis_options['materials']))
-        self.add_subsystem('airfoils',  Airfoils(af_init_options   = analysis_options['airfoils']))
         
+        # Airfoil dictionary inputs
+        airfoils    = IndepVarComp()
+        af_init_options = analysis_options['airfoils']
+        n_af            = af_init_options['n_af'] # Number of airfoils
+        n_aoa           = af_init_options['n_aoa']# Number of angle of attacks
+        n_Re            = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        n_tab           = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        n_xy            = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        airfoils.add_discrete_output('name', val=n_af * [''],                        desc='1D array of names of airfoils.')
+        airfoils.add_output('ac',        val=np.zeros(n_af),                         desc='1D array of the aerodynamic centers of each airfoil.')
+        airfoils.add_output('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
+        airfoils.add_output('aoa',       val=np.zeros(n_aoa),        units='rad',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        airfoils.add_output('Re',        val=np.zeros(n_Re),                         desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        airfoils.add_output('tab',       val=np.zeros(n_tab),                        desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
+        airfoils.add_output('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        airfoils.add_output('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        airfoils.add_output('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        # Airfoil coordinates
+        airfoils.add_output('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')
+        self.add_subsystem('airfoils', airfoils)
+        
+        # Blade inputs and connections from airfoils
         self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils'], opt_options = opt_options))
-        self.add_subsystem('hub',           Hub())
-        self.add_subsystem('nacelle',       Nacelle())
-        self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
-        if analysis_options['tower']['monopile']:
-            self.add_subsystem('monopile',      Monopile(monopile_init_options   = analysis_options['monopile']))
-        self.add_subsystem('foundation',    Foundation())
-        self.add_subsystem('control',       Control())
-        self.add_subsystem('configuration', Configuration())
-        self.add_subsystem('env',           Environment())
-        self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = analysis_options['blade']))
-        self.add_subsystem('costs',         Costs())
-
         self.connect('airfoils.name',    'blade.interp_airfoils.name')
         self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
         self.connect('airfoils.coord_xy','blade.interp_airfoils.coord_xy')
@@ -1285,17 +1282,118 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.connect('airfoils.cl',      'blade.interp_airfoils.cl')
         self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
         self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
+        
+        # Hub inputs
+        self.add_subsystem('hub',           Hub())
+        
+        # Nacelle inputs
+        nacelle = IndepVarComp()
+        # Outer shape bem
+        nacelle.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
+        nacelle.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
+        nacelle.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
+        # Mulit-body properties
+        nacelle.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+        nacelle.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
+        nacelle.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+        nacelle.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        # Drivetrain parameters
+        nacelle.add_output('gear_ratio',       val=0.0)
+        nacelle.add_output('shaft_ratio',      val=0.0)
+        nacelle.add_discrete_output('planet_numbers',   val=np.zeros(3))
+        nacelle.add_output('shrink_disc_mass', val=0.0, units='kg')
+        nacelle.add_output('carrier_mass',     val=0.0, units='kg')
+        nacelle.add_output('flange_length',    val=0.0, units='m')
+        nacelle.add_output('gearbox_input_xcm',val=0.0, units='m')
+        nacelle.add_output('hss_input_length', val=0.0, units='m')
+        nacelle.add_output('distance_hub2mb',  val=0.0, units='m')
+        nacelle.add_discrete_output('yaw_motors_number', val = 0)
+        nacelle.add_output('drivetrain_eff',   val=0.0)
+        self.add_subsystem('nacelle', nacelle)
+        
+        # Tower inputs
+        self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
+        if analysis_options['tower']['monopile']:
+            self.add_subsystem('monopile',  Monopile(monopile_init_options   = analysis_options['monopile']))
+        
+        # Foundation inputs
+        foundation_ivc = self.add_subsystem('foundation', IndepVarComp())
+        foundation_ivc.add_output('height',     val=0.0, units='m',     desc='Foundation height in respect to the ground level.')
 
+        # Control inputs
+        ctrl_ivc = self.add_subsystem('control', IndepVarComp())
+        ctrl_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
+        ctrl_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
+        ctrl_ivc.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
+        ctrl_ivc.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
+        ctrl_ivc.add_output('maxOmega',         val=0.0, units='rad/s',     desc='Maximum allowed rotor speed.')
+        ctrl_ivc.add_output('max_TS',           val=0.0, units='m/s',       desc='Maximum allowed blade tip speed.')
+        ctrl_ivc.add_output('max_pitch_rate',   val=0.0, units='rad/s',     desc='Maximum allowed blade pitch rate')
+        ctrl_ivc.add_output('max_torque_rate',  val=0.0, units='N*m/s',     desc='Maximum allowed generator torque rate')
+        ctrl_ivc.add_output('rated_TSR',        val=0.0,                    desc='Constant tip speed ratio in region II.')
+        ctrl_ivc.add_output('rated_pitch',      val=0.0, units='rad',       desc='Constant pitch angle in region II.')
+        ctrl_ivc.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
+        ctrl_ivc.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
+        ctrl_ivc.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
+        ctrl_ivc.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
+        ctrl_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
+        ctrl_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
+        # optional inputs - not connected right now!!
+        ctrl_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
+        ctrl_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
+        ctrl_ivc.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
+        ctrl_ivc.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
+        ctrl_ivc.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
+        ctrl_ivc.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
+        ctrl_ivc.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
+        ctrl_ivc.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
+        ctrl_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
+        ctrl_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
+        ctrl_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
+
+        # Wind turbine configuration inputs
+        conf_ivc = self.add_subsystem('configuration', IndepVarComp())
+        conf_ivc.add_discrete_output('ws_class',            val='',         desc='IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.')
+        conf_ivc.add_discrete_output('turb_class',          val='',         desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
+        conf_ivc.add_discrete_output('gearbox_type',        val='geared',   desc='Gearbox configuration (geared, direct-drive, etc.).')
+        conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',   desc='Rotor orientation, either upwind or downwind.')
+        conf_ivc.add_discrete_output('n_blades',            val=3,          desc='Number of blades of the rotor.')
+
+        # Environment inputs
+        env_ivc = self.add_subsystem('env', IndepVarComp())
+        env_ivc.add_output('rho_air',      val=1.225,       units='kg/m**3',    desc='Density of air')
+        env_ivc.add_output('mu_air',       val=1.81e-5,     units='kg/(m*s)',   desc='Dynamic viscosity of air')
+        env_ivc.add_output('weibull_k',    val=2.0,                             desc='Shape parameter of the Weibull probability density function of the wind.')
+        env_ivc.add_output('shear_exp',    val=0.2,                             desc='Shear exponent of the wind.')
+        env_ivc.add_output('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
+        env_ivc.add_output('rho_water',    val=1025.,       units='kg/m**3',    desc='Density of ocean water')
+        env_ivc.add_output('mu_water',     val=1.3351e-3,   units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
+        env_ivc.add_output('G_soil',       val=140e6,       units='kg/m**3',    desc='Density of ocean water')
+        env_ivc.add_output('nu_soil',      val=0.4,         units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
+
+        # Cost analysis inputs
+        costs_ivc = self.add_subsystem('costs', IndepVarComp())
+        costs_ivc.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
+        costs_ivc.add_output('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
+        costs_ivc.add_output('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
+        costs_ivc.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
+        costs_ivc.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
+        costs_ivc.add_output('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
+        
+        # Assembly setup
+        self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = analysis_options['blade']))
         self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
         self.connect('hub.radius',                      'assembly.hub_radius')
         self.connect('tower.height',                    'assembly.tower_height')
         self.connect('foundation.height',               'assembly.foundation_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
 
-        opt_var = IndepVarComp()
+        # Setup TSR optimization
+        opt_var = self.add_subsystem('opt_var', IndepVarComp())
         opt_var.add_output('tsr_opt_gain',   val = 1.0)
-        self.add_subsystem('opt_var',opt_var)
-        self.add_subsystem('pc', Parametrize_Control())
+        # Multiply the initial tsr with the tsr gain
+        exec_comp = ExecComp('tsr_opt = tsr_original * tsr_gain')
+        self.add_subsystem('pc', exec_comp)
         self.connect('opt_var.tsr_opt_gain', 'pc.tsr_gain')
         self.connect('control.rated_TSR',    'pc.tsr_original')
 
@@ -1347,14 +1445,14 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
     wt_opt['blade.opt_var.af_position']         = outer_shape_bem['airfoil_position']['grid']
     
-    wt_opt['blade.outer_shape_bem.s']           = nd_span
-    wt_opt['blade.outer_shape_bem.chord']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])
-    wt_opt['blade.outer_shape_bem.twist']       = np.interp(nd_span, outer_shape_bem['twist']['grid'], outer_shape_bem['twist']['values'])
-    wt_opt['blade.outer_shape_bem.pitch_axis']  = np.interp(nd_span, outer_shape_bem['pitch_axis']['grid'], outer_shape_bem['pitch_axis']['values'])
+    wt_opt['blade.outer_shape_bem.s_default']        = nd_span
+    wt_opt['blade.outer_shape_bem.chord_yaml']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])
+    wt_opt['blade.outer_shape_bem.twist_yaml']       = np.interp(nd_span, outer_shape_bem['twist']['grid'], outer_shape_bem['twist']['values'])
+    wt_opt['blade.outer_shape_bem.pitch_axis_yaml']  = np.interp(nd_span, outer_shape_bem['pitch_axis']['grid'], outer_shape_bem['pitch_axis']['values'])
     
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
 
     # # Smoothing of the shapes
     # # Chord
@@ -1378,16 +1476,16 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     # te_init = (1. - wt_opt['blade.outer_shape_bem.pitch_axis'])*wt_opt['blade.outer_shape_bem.chord']
     
     # s_interp_le     = np.array([0.0, 0.5, 0.8, 1.0])
-    # f_interp1       = interp1d(wt_opt['blade.outer_shape_bem.s'],le_init)
+    # f_interp1       = interp1d(wt_opt['blade.outer_shape_bem.s_default'],le_init)
     # le_int1         = f_interp1(s_interp_le)
     # f_interp2       = PchipInterpolator(s_interp_le,le_int1)
-    # le_int2         = f_interp2(wt_opt['blade.outer_shape_bem.s'])
+    # le_int2         = f_interp2(wt_opt['blade.outer_shape_bem.s_default'])
     
     # fpl, axpl  = plt.subplots(1,1,figsize=(5.3, 4))
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], -le_init, c='k', label='LE init')
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], -le_int2, c='b', label='LE smooth old pa')
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], te_init, c='k', label='TE init')
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], wt_opt['blade.outer_shape_bem.chord'] - le_int2, c='b', label='TE smooth old pa')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], -le_init, c='k', label='LE init')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], -le_int2, c='b', label='LE smooth old pa')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], te_init, c='k', label='TE init')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], wt_opt['blade.outer_shape_bem.chord'] - le_int2, c='b', label='TE smooth old pa')
     # axpl.set(xlabel='r/R' , ylabel='Planform (m)')
     # axpl.legend()
     # plt.show()
@@ -1423,7 +1521,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     web_rotation    = np.zeros((n_webs, n_span))
     web_offset_y_pa = np.zeros((n_webs, n_span))
     definition_web  = np.zeros(n_webs)
-    nd_span         = wt_opt['blade.outer_shape_bem.s']
+    nd_span         = wt_opt['blade.outer_shape_bem.s_default']
     
     # Loop through the webs and interpolate spanwise the values
     for i in range(n_webs):
@@ -1563,22 +1661,22 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     
     
     # Assign the openmdao values
-    wt_opt['blade.internal_structure_2d_fem.s']                 = nd_span
-    wt_opt['blade.internal_structure_2d_fem.web_rotation']      = web_rotation
     wt_opt['blade.internal_structure_2d_fem.web_offset_y_pa']   = web_offset_y_pa
     wt_opt['blade.internal_structure_2d_fem.layer_side']        = layer_side
     wt_opt['blade.internal_structure_2d_fem.layer_thickness']   = thickness
-    wt_opt['blade.internal_structure_2d_fem.layer_rotation']    = layer_rotation
     wt_opt['blade.internal_structure_2d_fem.layer_offset_y_pa'] = layer_offset_y_pa
     wt_opt['blade.internal_structure_2d_fem.layer_width']       = layer_width
     wt_opt['blade.internal_structure_2d_fem.layer_midpoint_nd'] = layer_midpoint_nd
-    wt_opt['blade.internal_structure_2d_fem.layer_start_nd']    = layer_start_nd
-    wt_opt['blade.internal_structure_2d_fem.layer_end_nd']      = layer_end_nd
     wt_opt['blade.internal_structure_2d_fem.layer_web']         = layer_web
     wt_opt['blade.internal_structure_2d_fem.definition_web']    = definition_web
     wt_opt['blade.internal_structure_2d_fem.definition_layer']  = definition_layer
     wt_opt['blade.internal_structure_2d_fem.index_layer_start'] = index_layer_start
     wt_opt['blade.internal_structure_2d_fem.index_layer_end']   = index_layer_end
+
+    wt_opt['blade.internal_structure_2d_fem.web_rotation_yaml']     = web_rotation
+    wt_opt['blade.internal_structure_2d_fem.layer_start_nd_yaml']   = layer_start_nd
+    wt_opt['blade.internal_structure_2d_fem.layer_end_nd_yaml']     = layer_end_nd
+    wt_opt['blade.internal_structure_2d_fem.layer_rotation_yaml']   = layer_rotation
     
     return wt_opt
 
@@ -2011,9 +2109,9 @@ def assign_material_values(wt_opt, analysis_options, materials):
     wt_opt['materials.nu']       = nu
     wt_opt['materials.rho_fiber']      = rho_fiber
     wt_opt['materials.rho_area_dry']   = rho_area_dry
-    wt_opt['materials.fvf']      = fvf
-    wt_opt['materials.fwf']      = fwf
-    wt_opt['materials.ply_t']    = ply_t
+    wt_opt['materials.fvf_from_yaml']      = fvf
+    wt_opt['materials.fwf_from_yaml']      = fwf
+    wt_opt['materials.ply_t_from_yaml']    = ply_t
     wt_opt['materials.roll_mass']= roll_mass
     wt_opt['materials.unit_cost']= unit_cost
     wt_opt['materials.waste']    = waste

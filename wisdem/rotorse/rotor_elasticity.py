@@ -50,7 +50,7 @@ class RunPreComp(ExplicitComponent):
         self.add_input('web_start_nd',      val=np.zeros((n_webs, n_span)),                 desc='2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
         self.add_input('web_end_nd',        val=np.zeros((n_webs, n_span)),                 desc='2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
         self.add_input('layer_web',         val=np.zeros(n_layers),                         desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0.')
-        self.add_input('definition_layer',  val=np.zeros(n_layers),                         desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+        self.add_discrete_input('definition_layer',  val=np.zeros(n_layers),                         desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
         self.add_input('layer_thickness',   val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_input('layer_start_nd',    val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
         self.add_input('layer_end_nd',      val=np.zeros((n_layers, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
@@ -349,7 +349,7 @@ class RunPreComp(ExplicitComponent):
 
             # time1 = time.time()
             for idx_sec in range(self.n_layers):            
-                if inputs['definition_layer'][idx_sec] != 10:
+                if discrete_inputs['definition_layer'][idx_sec] != 10:
                     if inputs['layer_thickness'][idx_sec,i] != 0.:
                         if inputs['layer_start_nd'][idx_sec,i] < loc_LE or inputs['layer_end_nd'][idx_sec,i] < loc_LE:
                             ss_idx.append(idx_sec)
