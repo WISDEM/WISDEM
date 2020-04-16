@@ -400,6 +400,7 @@ class Blade(Group):
         
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
+        self.connect('outer_shape_bem.s',               'internal_structure_2d_fem.s')
         self.connect('pa.twist_param',                  'internal_structure_2d_fem.twist')
         self.connect('pa.chord_param',                  'internal_structure_2d_fem.chord')
         self.connect('outer_shape_bem.pitch_axis',      'internal_structure_2d_fem.pitch_axis')
@@ -410,7 +411,7 @@ class Blade(Group):
         # Connections to blade struct parametrization
         self.connect('opt_var.spar_cap_ss_opt_gain','ps.spar_cap_ss_opt_gain')
         self.connect('opt_var.spar_cap_ps_opt_gain','ps.spar_cap_ps_opt_gain')
-        self.connect('outer_shape_bem.s',     'ps.s')
+        self.connect('outer_shape_bem.s',           'ps.s')
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect('internal_structure_2d_fem.layer_thickness', 'ps.layer_thickness_original')
 
@@ -423,16 +424,31 @@ class Blade(Group):
         ivc.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
         ivc.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
 
-class Blade_Outer_Shape_BEM(ExplicitComponent):
-    # Openmdao component with the blade outer shape data coming from the input yaml file.
-    # JPJ: unclear how to make this safe. output 's' is both an input and a
-    # computed quantity.
-    # JPJ can't tackle this yet; need to better understand the structure
-    # and what's going on.
-    # 
+class Blade_Outer_Shape_BEM(Group):
+    # Openmdao group with the blade outer shape data coming from the input yaml file.
     def initialize(self):
         self.options.declare('blade_init_options')
+
+    def setup(self):
+        blade_init_options = self.options['blade_init_options']
+        n_af_span          = blade_init_options['n_af_span']
+        self.n_span        = n_span = blade_init_options['n_span']
         
+        ivc = self.add_subsystem('blade_outer_shape_indep_vars', IndepVarComp(), promotes=['*'])
+        ivc.add_output('af_position',        val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_used defined along blade span.')
+        ivc.add_output('s_default',          val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        ivc.add_output('chord_yaml',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
+        ivc.add_output('twist_yaml',         val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        ivc.add_output('pitch_axis_yaml',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+        ivc.add_output('ref_axis_yaml',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+
+        self.add_subsystem('compute_blade_outer_shape_bem', Compute_Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['*'])
+
+class Compute_Blade_Outer_Shape_BEM(ExplicitComponent):
+    # Openmdao group with the blade outer shape data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare('blade_init_options')
+
     def setup(self):
         blade_init_options = self.options['blade_init_options']
         n_af_span          = blade_init_options['n_af_span']
@@ -442,30 +458,35 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
         # Inputs flaps
         self.add_input('te_flap_span_end', val=np.zeros(n_te_flaps),desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
         self.add_input('te_flap_span_ext', val=np.zeros(n_te_flaps),desc='1D array of the extensions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-                
-        self.add_output('af_position',   val=np.zeros(n_af_span),              desc='1D array of the non dimensional positions of the airfoils af_used defined along blade span.')
+
+        self.add_input('s_default',        val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('chord_yaml',       val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
+        self.add_input('twist_yaml',       val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        self.add_input('pitch_axis_yaml',  val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+        self.add_input('ref_axis_yaml',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+
         self.add_output('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_output('chord',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
         self.add_output('twist',         val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
         self.add_output('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_output('ref_axis',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
-
+        
         self.add_output('length',       val = 0.0,               units='m',    desc='Scalar of the 3D blade length computed along its axis.')
         self.add_output('length_z',     val = 0.0,               units='m',    desc='Scalar of the 1D blade length along z, i.e. the blade projection in the plane ignoring prebend and sweep. For a straight blade this is equal to length')
         
     def compute(self, inputs, outputs):
         
-        # If DAC devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twsi, pitch axis, and reference axis
+        # If DAC devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
         if self.n_te_flaps > 0:
             nd_span_orig = np.linspace(0., 1.,self.n_span)
 
-            chord_orig      = np.interp(nd_span_orig, outputs['s'], outputs['chord'])
-            twist_orig      = np.interp(nd_span_orig, outputs['s'], outputs['twist'])
-            pitch_axis_orig = np.interp(nd_span_orig, outputs['s'], outputs['pitch_axis'])
+            chord_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['chord_yaml'])
+            twist_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['twist_yaml'])
+            pitch_axis_orig = np.interp(nd_span_orig, inputs['s_default'], inputs['pitch_axis_yaml'])
             ref_axis_orig   = np.zeros((self.n_span, 3))
-            ref_axis_orig[:, 0] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 0])
-            ref_axis_orig[:, 1] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 1])
-            ref_axis_orig[:, 2] = np.interp(nd_span_orig,outputs['s'],outputs['ref_axis'][:, 2])
+            ref_axis_orig[:, 0] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 0])
+            ref_axis_orig[:, 1] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 1])
+            ref_axis_orig[:, 2] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 2])
 
             outputs['s'] = copy.copy(nd_span_orig)
             
@@ -495,6 +516,12 @@ class Blade_Outer_Shape_BEM(ExplicitComponent):
             outputs['ref_axis'][:, 0] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 0])
             outputs['ref_axis'][:, 1] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 1])
             outputs['ref_axis'][:, 2] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 2])
+        else:
+            outputs['s']            = inputs['s_default']
+            outputs['chord']        = inputs['chord_yaml']
+            outputs['twist']        = inputs['twist_yaml']
+            outputs['pitch_axis']   = inputs['pitch_axis_yaml']
+            outputs['ref_axis']     = inputs['ref_axis_yaml']
 
         outputs['length']   = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])[-1]
         outputs['length_z'] = outputs['ref_axis'][:,2][-1]
@@ -623,7 +650,7 @@ class Blade_Interp_Airfoils(ExplicitComponent):
         outputs['cd_interp']       = cd_interp
         outputs['cm_interp']       = cm_interp
 
-        # Plot interpolated coordinates
+        # # Plot interpolated coordinates
         # import matplotlib.pyplot as plt
         # for i in range(self.n_span):    
         #     plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
@@ -739,7 +766,6 @@ class Blade_Internal_Structure_2D_FEM(Group):
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
         ivc = self.add_subsystem('blade_2dfem_indep_vars', IndepVarComp(), promotes=['*'])
-        ivc.add_output('s',                         val=np.zeros(n_span),                          desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         ivc.add_output('web_offset_y_pa',           val=np.zeros((n_webs, n_span)),  units='m',    desc='2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.')
         ivc.add_output('layer_web',                 val=np.zeros(n_layers),                        desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.')
         ivc.add_output('layer_thickness',           val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
@@ -774,35 +800,35 @@ class Compute_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         
          # From user defined yaml
-        self.add_input('s',              val=np.zeros(n_span),                          desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
-        self.add_input('web_rotation_yaml',   val=np.zeros((n_webs, n_span)),  units='rad',  desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
-        self.add_input('web_offset_y_pa',val=np.zeros((n_webs, n_span)),  units='m',    desc='2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.')
-        self.add_input('layer_web',      val=np.zeros(n_layers),                        desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.')
-        self.add_input('layer_thickness',   val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_input('layer_rotation_yaml',    val=np.zeros((n_layers, n_span)), units='rad',  desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
-        self.add_input('layer_offset_y_pa', val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_input('layer_width',       val=np.zeros((n_layers, n_span)), units='m',    desc='2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_input('layer_midpoint_nd', val=np.zeros((n_layers, n_span)),           desc='2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_discrete_input('layer_side',val=n_layers * [''],                       desc='1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.')
-        self.add_input('layer_start_nd_yaml',    val=np.zeros((n_layers, n_span)),           desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_input('layer_end_nd_yaml',      val=np.zeros((n_layers, n_span)),           desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_discrete_input('definition_web',   val=np.zeros(n_webs),               desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
-        self.add_discrete_input('definition_layer', val=np.zeros(n_layers),                      desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
-        self.add_discrete_input('index_layer_start',    val=np.zeros(n_layers),         desc='Index used to fix a layer to another')
-        self.add_discrete_input('index_layer_end',      val=np.zeros(n_layers),         desc='Index used to fix a layer to another')
+        self.add_input('s',                     val=np.zeros(n_span),                          desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
+        self.add_input('web_rotation_yaml',     val=np.zeros((n_webs, n_span)),  units='rad',  desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
+        self.add_input('web_offset_y_pa',       val=np.zeros((n_webs, n_span)),  units='m',    desc='2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span.')
+        self.add_input('layer_web',             val=np.zeros(n_layers),                        desc='1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero.')
+        self.add_input('layer_thickness',       val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('layer_rotation_yaml',   val=np.zeros((n_layers, n_span)), units='rad', desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
+        self.add_input('layer_offset_y_pa',     val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('layer_width',           val=np.zeros((n_layers, n_span)), units='m',   desc='2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('layer_midpoint_nd',     val=np.zeros((n_layers, n_span)),   desc='2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_discrete_input('layer_side',   val=n_layers * [''],                desc='1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.')
+        self.add_input('layer_start_nd_yaml',   val=np.zeros((n_layers, n_span)),   desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_input('layer_end_nd_yaml',      val=np.zeros((n_layers, n_span)),  desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_discrete_input('definition_web',   val=np.zeros(n_webs),           desc='1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation')
+        self.add_discrete_input('definition_layer', val=np.zeros(n_layers),         desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+        self.add_discrete_input('index_layer_start',val=np.zeros(n_layers),         desc='Index used to fix a layer to another')
+        self.add_discrete_input('index_layer_end',  val=np.zeros(n_layers),         desc='Index used to fix a layer to another')
 
         # From blade outer shape
-        self.add_input('coord_xy_dim',    val=np.zeros((n_span, n_xy, 2)),units = 'm',   desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
-        self.add_input('twist',           val=np.zeros(n_span),           units='rad',   desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
-        self.add_input('chord',           val=np.zeros(n_span),           units='m',     desc='1D array of the chord values defined along blade span.')
-        self.add_input('pitch_axis',      val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+        self.add_input('coord_xy_dim',    val=np.zeros((n_span, n_xy, 2)), units = 'm', desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
+        self.add_input('twist',           val=np.zeros(n_span),            units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
+        self.add_input('chord',           val=np.zeros(n_span),            units='m',   desc='1D array of the chord values defined along blade span.')
+        self.add_input('pitch_axis',      val=np.zeros(n_span),                         desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
 
-        self.add_output('web_rotation',   val=np.zeros((n_webs, n_span)),  units='rad',  desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
-        self.add_output('web_start_nd',   val=np.zeros((n_webs, n_span)),                desc='2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
-        self.add_output('web_end_nd',     val=np.zeros((n_webs, n_span)),                desc='2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
-        self.add_output('layer_rotation', val=np.zeros((n_layers, n_span)), units='rad',  desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
-        self.add_output('layer_start_nd', val=np.zeros((n_layers, n_span)),           desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
-        self.add_output('layer_end_nd',   val=np.zeros((n_layers, n_span)),           desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_output('web_rotation',   val=np.zeros((n_webs, n_span)),  units='rad', desc='2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight.')
+        self.add_output('web_start_nd',   val=np.zeros((n_webs, n_span)),               desc='2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
+        self.add_output('web_end_nd',     val=np.zeros((n_webs, n_span)),               desc='2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.')
+        self.add_output('layer_rotation', val=np.zeros((n_layers, n_span)),units='rad', desc='2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight.')
+        self.add_output('layer_start_nd', val=np.zeros((n_layers, n_span)),             desc='2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
+        self.add_output('layer_end_nd',   val=np.zeros((n_layers, n_span)),             desc='2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.')
 
         # # These outputs don't depend on anything and should be refactored to be
         # # outputs that come from an IndepVarComp.
@@ -1400,14 +1426,14 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
     wt_opt['blade.opt_var.af_position']         = outer_shape_bem['airfoil_position']['grid']
     
-    wt_opt['blade.outer_shape_bem.s']           = nd_span
-    wt_opt['blade.outer_shape_bem.chord']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])
-    wt_opt['blade.outer_shape_bem.twist']       = np.interp(nd_span, outer_shape_bem['twist']['grid'], outer_shape_bem['twist']['values'])
-    wt_opt['blade.outer_shape_bem.pitch_axis']  = np.interp(nd_span, outer_shape_bem['pitch_axis']['grid'], outer_shape_bem['pitch_axis']['values'])
+    wt_opt['blade.outer_shape_bem.s_default']        = nd_span
+    wt_opt['blade.outer_shape_bem.chord_yaml']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])
+    wt_opt['blade.outer_shape_bem.twist_yaml']       = np.interp(nd_span, outer_shape_bem['twist']['grid'], outer_shape_bem['twist']['values'])
+    wt_opt['blade.outer_shape_bem.pitch_axis_yaml']  = np.interp(nd_span, outer_shape_bem['pitch_axis']['grid'], outer_shape_bem['pitch_axis']['values'])
     
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
-    wt_opt['blade.outer_shape_bem.ref_axis'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
+    wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
 
     # # Smoothing of the shapes
     # # Chord
@@ -1431,16 +1457,16 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     # te_init = (1. - wt_opt['blade.outer_shape_bem.pitch_axis'])*wt_opt['blade.outer_shape_bem.chord']
     
     # s_interp_le     = np.array([0.0, 0.5, 0.8, 1.0])
-    # f_interp1       = interp1d(wt_opt['blade.outer_shape_bem.s'],le_init)
+    # f_interp1       = interp1d(wt_opt['blade.outer_shape_bem.s_default'],le_init)
     # le_int1         = f_interp1(s_interp_le)
     # f_interp2       = PchipInterpolator(s_interp_le,le_int1)
-    # le_int2         = f_interp2(wt_opt['blade.outer_shape_bem.s'])
+    # le_int2         = f_interp2(wt_opt['blade.outer_shape_bem.s_default'])
     
     # fpl, axpl  = plt.subplots(1,1,figsize=(5.3, 4))
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], -le_init, c='k', label='LE init')
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], -le_int2, c='b', label='LE smooth old pa')
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], te_init, c='k', label='TE init')
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s'], wt_opt['blade.outer_shape_bem.chord'] - le_int2, c='b', label='TE smooth old pa')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], -le_init, c='k', label='LE init')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], -le_int2, c='b', label='LE smooth old pa')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], te_init, c='k', label='TE init')
+    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], wt_opt['blade.outer_shape_bem.chord'] - le_int2, c='b', label='TE smooth old pa')
     # axpl.set(xlabel='r/R' , ylabel='Planform (m)')
     # axpl.legend()
     # plt.show()
@@ -1476,7 +1502,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     web_rotation    = np.zeros((n_webs, n_span))
     web_offset_y_pa = np.zeros((n_webs, n_span))
     definition_web  = np.zeros(n_webs)
-    nd_span         = wt_opt['blade.outer_shape_bem.s']
+    nd_span         = wt_opt['blade.outer_shape_bem.s_default']
     
     # Loop through the webs and interpolate spanwise the values
     for i in range(n_webs):
@@ -1616,7 +1642,6 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     
     
     # Assign the openmdao values
-    wt_opt['blade.internal_structure_2d_fem.s']                 = nd_span
     wt_opt['blade.internal_structure_2d_fem.web_offset_y_pa']   = web_offset_y_pa
     wt_opt['blade.internal_structure_2d_fem.layer_side']        = layer_side
     wt_opt['blade.internal_structure_2d_fem.layer_thickness']   = thickness
