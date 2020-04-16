@@ -324,17 +324,17 @@ if __name__ == "__main__":
 
     prob.run_driver()
 
-    landbosse_costs_by_module_type_operation = prob['landbosse_costs_by_module_type_operation']
-    print('###### LandBOSSE Costs ########################################')
-    for cost in landbosse_costs_by_module_type_operation:
-        print(cost)
-    print('###############################################################')
-
-    landbosse_details_by_module = prob['landbosse_details_by_module']
-    print('###### LandBOSSE Details ########################################')
-    for detail in landbosse_details_by_module:
-        print(detail)
-    print('#################################################################')
+    # landbosse_costs_by_module_type_operation = prob['landbosse_costs_by_module_type_operation']
+    # print('###### LandBOSSE Costs ########################################')
+    # for cost in landbosse_costs_by_module_type_operation:
+    #     print(cost)
+    # print('###############################################################')
+    #
+    # landbosse_details_by_module = prob['landbosse_details_by_module']
+    # print('###### LandBOSSE Details ########################################')
+    # for detail in landbosse_details_by_module:
+    #     print(detail)
+    # print('#################################################################')
 
     print('###### ErectionCost specific ####################################')
     print('ErectionCost crane choice')

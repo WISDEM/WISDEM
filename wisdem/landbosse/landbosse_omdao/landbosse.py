@@ -30,12 +30,12 @@ class LandBOSSE(om.Group):
         # default value loaded above should be used. All blades are
         # assumed to be the same.
 
-        myIndeps.add_output('blade_drag_coefficient', -1.0)                # Unitless
+        myIndeps.add_output('blade_drag_coefficient', -1.0)  # Unitless
         myIndeps.add_output('blade_lever_arm', -1.0, units='m')
-        myIndeps.add_output('blade_install_cycle_time', -1.0)              # Units are hours, but disallowed in OMDAO
+        myIndeps.add_output('blade_install_cycle_time', -1.0, units='h')
         myIndeps.add_output('blade_offload_hook_height', -1.0, units='m')
-        myIndeps.add_output('blade_offload_cycle_time', -1.0)              # Units are hours, but disallowed in OMDAO
-        myIndeps.add_output('blade_drag_multiplier', -1.0)                 # Unitless
+        myIndeps.add_output('blade_offload_cycle_time', -1.0, units='h')
+        myIndeps.add_output('blade_drag_multiplier', -1.0)  # Unitless
 
         self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
 
@@ -69,6 +69,21 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         This method sets up the inputs.
         """
+        self.add_input('plant_turbine_spacing', 7)
+        self.add_input('plant_row_spacing', 7)
+        self.add_input('blade_drag_coefficient', -1.0)  # Unitless
+        self.add_input('blade_lever_arm', -1.0, units='m')
+        self.add_input('blade_install_cycle_time', -1.0, units='h')
+        self.add_input('blade_offload_hook_height', -1.0, units='m')
+        self.add_input('blade_offload_cycle_time', -1.0, units='h')
+        self.add_input('blade_drag_multiplier', -1.0)  # Unitless
+
+        self.add_input('hub_height', 0.0, units='m')
+        self.add_input('foundation_height', 0.0, units='m')
+        self.add_input('blade_mass', 0.0, units='kg')
+        self.add_input('nacelle_mass', 0.0, units='kg')
+        self.add_input('tower_mass', 0.0, units='kg')
+
         self.add_input('crane_breakdown_fraction', val=0.0,
                        desc='0 means the crane is never broken down. 1 means it is broken down every turbine.')
 
@@ -586,9 +601,12 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         # Another way would be to look at topLevelFlag
 
-        if self.options['topLevelFlag']:
-            blades = components[components['Component'].str.startswith('Blade')]
-            default_blade = blades.iloc[0]
-            print(default_blade)
-        else:
-            print('Blade modifications unspecifed')
+        # if self.options['topLevelFlag']:
+        #     blades = components[components['Component'].str.startswith('Blade')]
+        #     default_blade = blades.iloc[0]
+        #     print(default_blade)
+        # else:
+        #     print('Blade modifications unspecifed')
+
+        if inputs['blade_drag_coefficient'] != -1.0:
+            print('>>>', inputs['blade_drag_coefficient'])
