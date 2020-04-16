@@ -286,7 +286,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     prob['drive.yaw_motors_number'] = 1
 
     # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<<<<<<<
-    prob['blade_drag_coefficient'] = 0.1
+    prob['blade_drag_coefficient'] = 0.567
 
     return prob
 

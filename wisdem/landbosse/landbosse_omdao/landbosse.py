@@ -1,5 +1,9 @@
 import openmdao.api as om
 import numpy as np
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+    import pandas as pd
 
 from ..model.Manager import Manager
 from ..model.DefaultMasterInputDict import DefaultMasterInputDict
@@ -9,6 +13,10 @@ from .WeatherWindowCSVReader import read_weather_window
 # Read in default sheets for project data
 default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundation_validation_ge15')
 default_components_data = default_project_data["components"]
+
+
+USE_DEFAULT_COMPONENT_DATA = -1.0
+NUMBER_OF_BLADES = 3
 
 
 class LandBOSSE(om.Group):
@@ -26,16 +34,16 @@ class LandBOSSE(om.Group):
         myIndeps.add_output('decommissioning_pct', 0.15)
 
         # Inputs for automatic component list generation of blades
-        # A default of -1.0 for any of these inputs means that the
+        # A default of USE_DEFAULT_COMPONENT_DATA for any of these inputs means that the
         # default value loaded above should be used. All blades are
         # assumed to be the same.
 
-        myIndeps.add_output('blade_drag_coefficient', -1.0)  # Unitless
-        myIndeps.add_output('blade_lever_arm', -1.0, units='m')
-        myIndeps.add_output('blade_install_cycle_time', -1.0, units='h')
-        myIndeps.add_output('blade_offload_hook_height', -1.0, units='m')
-        myIndeps.add_output('blade_offload_cycle_time', -1.0, units='h')
-        myIndeps.add_output('blade_drag_multiplier', -1.0)  # Unitless
+        myIndeps.add_output('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
+        myIndeps.add_output('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
+        myIndeps.add_output('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
+        myIndeps.add_output('blade_offload_hook_height', USE_DEFAULT_COMPONENT_DATA, units='m')
+        myIndeps.add_output('blade_offload_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
+        myIndeps.add_output('blade_drag_multiplier', USE_DEFAULT_COMPONENT_DATA)  # Unitless
 
         self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
 
@@ -71,12 +79,12 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         self.add_input('plant_turbine_spacing', 7)
         self.add_input('plant_row_spacing', 7)
-        self.add_input('blade_drag_coefficient', -1.0)  # Unitless
-        self.add_input('blade_lever_arm', -1.0, units='m')
-        self.add_input('blade_install_cycle_time', -1.0, units='h')
-        self.add_input('blade_offload_hook_height', -1.0, units='m')
-        self.add_input('blade_offload_cycle_time', -1.0, units='h')
-        self.add_input('blade_drag_multiplier', -1.0)  # Unitless
+        self.add_input('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
+        self.add_input('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
+        self.add_input('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
+        self.add_input('blade_offload_hook_height', USE_DEFAULT_COMPONENT_DATA, units='m')
+        self.add_input('blade_offload_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
+        self.add_input('blade_drag_multiplier', USE_DEFAULT_COMPONENT_DATA)  # Unitless
 
         self.add_input('hub_height', 0.0, units='m')
         self.add_input('foundation_height', 0.0, units='m')
@@ -590,14 +598,14 @@ class LandBOSSE_API(om.ExplicitComponent):
             A dictionary-like with the non-numeric inputs (like
             pandas.DataFrame)
         """
-        # myIndeps.add_output('blade_drag_coefficient', -1.0)  # Unitless
-        # myIndeps.add_output('blade_lever_arm', -1.0, units='m')
-        # myIndeps.add_output('blade_install_cycle_time', -1.0, units='hr')
-        # myIndeps.add_output('blade_offload_hook_height', -1.0, units='m')
-        # myIndeps.add_output('blade_offload_cycle_time', -1.0, units='hr')
-        # myIndeps.add_output('blade_drag_multiplier', -1.0)  # Unitless
+        # myIndeps.add_output('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
+        # myIndeps.add_output('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
+        # myIndeps.add_output('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='hr')
+        # myIndeps.add_output('blade_offload_hook_height', USE_DEFAULT_COMPONENT_DATA, units='m')
+        # myIndeps.add_output('blade_offload_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='hr')
+        # myIndeps.add_output('blade_drag_multiplier', USE_DEFAULT_COMPONENT_DATA)  # Unitless
 
-        components = discrete_inputs['components']
+        input_components = discrete_inputs['components']
 
         # Another way would be to look at topLevelFlag
 
@@ -608,5 +616,24 @@ class LandBOSSE_API(om.ExplicitComponent):
         # else:
         #     print('Blade modifications unspecifed')
 
-        if inputs['blade_drag_coefficient'] != -1.0:
-            print('>>>', inputs['blade_drag_coefficient'])
+        pd.set_option('display.max_columns', None)
+        print('>>>>>>>>>> UNMODIFIED COMPONENTS <<<<<<<<')
+        print(input_components)
+
+        blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0]
+
+        if inputs['blade_drag_coefficient'] != USE_DEFAULT_COMPONENT_DATA:
+            blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
+
+        output_components_list = []
+        # Assemble blades
+        for i in range(NUMBER_OF_BLADES):
+            component = f"Blade {i}"
+            blade_i = blade.copy()
+            blade_i['Component'] = component
+            output_components_list.append(blade_i)
+
+        output_components = pd.DataFrame(output_components_list)
+
+        print('>>>>>>>>>> MODIFIED COMPONENTS <<<<<<<<')
+        print(output_components)
