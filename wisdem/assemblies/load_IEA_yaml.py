@@ -887,8 +887,10 @@ class Compute_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                         offset = ratio_Websmax * (- chord * p_le_i)
                     else:
                         offset = ratio_Websmax * (chord * (1. - p_le_i))
-                    inputs['web_offset_y_pa'][j,i] = offset
-                    layer_resize_warning = 'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'%(web_name[j], offset_old, offset, inputs['s'][i], i)
+                    
+                    outputs['web_offset_y_pa'][j,i] = offset
+                    layer_resize_warning = 'WARNING: Web "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'%(web_name[j], offset_old, offset, outputs['s'][i], i)
+
                     print(layer_resize_warning)
 
                 if discrete_inputs['definition_web'][j] == 1:
@@ -1412,7 +1414,7 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     
     wt_opt = assign_blade_values(wt_opt, analysis_options, blade)
     wt_opt = assign_hub_values(wt_opt, hub)
-    wt_opt = assign_nacelle_values(wt_opt, nacelle)
+    wt_opt = assign_nacelle_values(wt_opt, assembly, nacelle)
     wt_opt = assign_tower_values(wt_opt, analysis_options, tower)
     if analysis_options['tower']['monopile']:
         monopile = wt_init['components']['monopile']
@@ -1588,8 +1590,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
         if 'start_nd_arc' in internal_structure_2d_fem['layers'][i] and definition_layer[i] == 0:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['start_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'TE':
-                    layer_start_nd[i,:] = np.ones(n_span)
-                    exit('No need to fix element to TE, set it to 0.')
+                    layer_start_nd[i,:] = np.zeros(n_span)
+                    # exit('No need to fix element to TE, set it to 0.')
                 elif internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'LE':
                     definition_layer[i] = 11
                 else:
@@ -1608,7 +1610,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
                 if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
                     if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
                         layer_end_nd[i,:] = np.ones(n_span)
-                        exit('No need to fix element to TE, set it to 0.')
+                        # exit('No need to fix element to TE, set it to 0.')
                     elif internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'LE':
                         definition_layer[i] = 12
                     else:
@@ -1628,7 +1630,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
             if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
                     layer_end_nd[i,:] = np.ones(n_span)
-                    exit('No need to fix element to TE, set it to 0.')
+                    # exit('No need to fix element to TE, set it to 0.')
                 elif internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'LE':
                     definition_layer[i] = 12
                 else:
@@ -1734,11 +1736,12 @@ def assign_hub_values(wt_opt, hub):
 
     return wt_opt
 
-def assign_nacelle_values(wt_opt, nacelle):
+def assign_nacelle_values(wt_opt, assembly, nacelle):
 
     wt_opt['nacelle.uptilt']            = nacelle['outer_shape_bem']['uptilt_angle']
     wt_opt['nacelle.distance_tt_hub']   = nacelle['outer_shape_bem']['distance_tt_hub']
     wt_opt['nacelle.overhang']          = nacelle['outer_shape_bem']['overhang']
+
 
     wt_opt['nacelle.above_yaw_mass']    = nacelle['elastic_properties_mb']['above_yaw_mass']
     wt_opt['nacelle.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
@@ -1746,16 +1749,29 @@ def assign_nacelle_values(wt_opt, nacelle):
     wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['inertia']
     
     wt_opt['nacelle.gear_ratio']        = nacelle['drivetrain']['gear_ratio']
-    wt_opt['nacelle.shaft_ratio']       = nacelle['drivetrain']['shaft_ratio']
-    wt_opt['nacelle.planet_numbers']    = nacelle['drivetrain']['planet_numbers']
-    wt_opt['nacelle.shrink_disc_mass']  = nacelle['drivetrain']['shrink_disc_mass']
-    wt_opt['nacelle.carrier_mass']      = nacelle['drivetrain']['carrier_mass']
-    wt_opt['nacelle.flange_length']     = nacelle['drivetrain']['flange_length']
-    wt_opt['nacelle.gearbox_input_xcm'] = nacelle['drivetrain']['gearbox_input_xcm']
-    wt_opt['nacelle.hss_input_length']  = nacelle['drivetrain']['hss_input_length']
-    wt_opt['nacelle.distance_hub2mb']   = nacelle['drivetrain']['distance_hub2mb']
-    wt_opt['nacelle.yaw_motors_number'] = nacelle['drivetrain']['yaw_motors_number']
     wt_opt['nacelle.drivetrain_eff']    = nacelle['drivetrain']['efficiency']
+    if assembly['drivetrain'].upper() != 'DIRECT DRIVE':
+        wt_opt['nacelle.shaft_ratio']       = nacelle['drivetrain']['shaft_ratio']
+        wt_opt['nacelle.planet_numbers']    = nacelle['drivetrain']['planet_numbers']
+        wt_opt['nacelle.shrink_disc_mass']  = nacelle['drivetrain']['shrink_disc_mass']
+        wt_opt['nacelle.carrier_mass']      = nacelle['drivetrain']['carrier_mass']
+        wt_opt['nacelle.flange_length']     = nacelle['drivetrain']['flange_length']
+        wt_opt['nacelle.gearbox_input_xcm'] = nacelle['drivetrain']['gearbox_input_xcm']
+        wt_opt['nacelle.hss_input_length']  = nacelle['drivetrain']['hss_input_length']
+        wt_opt['nacelle.distance_hub2mb']   = nacelle['drivetrain']['distance_hub2mb']
+        wt_opt['nacelle.yaw_motors_number'] = nacelle['drivetrain']['yaw_motors_number']
+    else:
+        print('DriveSE not yet supports direct drive configurations!!! Please do not trust the nacelle design and the lcoe analysis!')
+        wt_opt['nacelle.shaft_ratio']       = 0.1
+        wt_opt['nacelle.planet_numbers']    = [3, 3, 1]
+        wt_opt['nacelle.shrink_disc_mass']  = 1600
+        wt_opt['nacelle.carrier_mass']      = 8000
+        wt_opt['nacelle.flange_length']     = 0.5
+        wt_opt['nacelle.gearbox_input_xcm'] = 0.1
+        wt_opt['nacelle.hss_input_length']  = 1.5
+        wt_opt['nacelle.distance_hub2mb']   = 1.912
+        wt_opt['nacelle.yaw_motors_number'] = 1.
+
 
     return wt_opt
 

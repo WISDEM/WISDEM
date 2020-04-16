@@ -23,7 +23,16 @@ class TestAny(unittest.TestCase):
 
         y_expect = np.array([-1.0, -1.0, 1.0, -2.0, 2.0, 2.0, 2.0])
         npt.assert_array_equal(yi, y_expect)
-        
+
+    def testModalCoefficients(self):
+        # Test exact 6-deg polynomial
+        p = np.random.random((7,))
+        x = np.linspace(0,1)
+        y = np.polynomial.polynomial.polyval(x, p)
+
+        pp  = util.get_modal_coefficients(x, y)
+        npt.assert_almost_equal(p[2:]/p[2:].sum(), pp)
+
         
 def suite():
     suite = unittest.TestSuite()

@@ -539,7 +539,7 @@ class RegulatedPowerCurve(ExplicitComponent):
 
         # Find rated index and guess at rated speed
         if P_aero[-1] > P_rated:
-            U_rated = np.interp(P_rated, P_aero, Uhub)
+            U_rated = np.interp(P_rated, P_aero*eff, Uhub)
         else:
             U_rated = Uhub[-1]
         i_rated = np.nonzero(U_rated <= Uhub)[0][0]
@@ -941,6 +941,12 @@ def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
             constant = 0.00
             linear = 0.07
             quadratic = 0.0
+        elif drivetrainType == 'DIRECT DRIVE':
+            constant = 0.00
+            linear = 0.07
+            quadratic = 0.0
+        else:
+            exit('The drivetrain model is not supported! Please check servose.py')
         
         Pbar0 = aeroPower / ratedPower
 

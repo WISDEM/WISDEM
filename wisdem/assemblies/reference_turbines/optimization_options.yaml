@@ -94,7 +94,7 @@ constraints:
   tower:
     height_constraint:
       flag: False
-      lower_bound: 1e-2
+      lower_bound: 1.e-2
       upper_bound: 1.e-2
     stress:
       flag: False

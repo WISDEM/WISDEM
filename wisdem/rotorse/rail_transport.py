@@ -351,7 +351,7 @@ class RailTransport(ExplicitComponent):
         if res.success == False:
             outputs['LV_constraint_8axle'] = 2.
             outputs['LV_constraint_4axle'] = 2.
-            exit('The optimization cannot satisfy the constraint on max strains of 3500 mu eps')
+            print('The optimization cannot satisfy the constraint on max strains of 3500 mu eps')
         else:
             
             q_final    = q_opt_h * res.x[:-1]
@@ -437,6 +437,33 @@ class RailTransport(ExplicitComponent):
             x_r_inner  = np.linspace( 0.5*rail_spacing, 2.*r_midline - 0.5*rail_spacing, n_points)
             r_r_inner  = r_midline - 0.5*rail_spacing
             y_r_inner  = np.sqrt(r_r_inner**2. - (x_r_inner-r_midline)**2. + 1.e-5)
+
+
+            # from matplotlib.patches import Polygon
+            # from matplotlib.collections import PatchCollection
+            # fig = plt.figure(figsize=(3,7))
+            # ax  = fig.add_subplot(111)
+            
+            # clearance=np.vstack((np.vstack((np.hstack((x_outer , np.flip(x_inner))), np.hstack((y_outer , np.flip(y_inner))))).T, [x_outer[0], y_outer[0]]))
+            # clearance_poly = Polygon(clearance, True)
+            # ax.add_artist(clearance_poly)
+            # clearance_poly.set_facecolor(0.8*np.ones(3))
+            # clearance_poly.set_edgecolor(0.8*np.ones(3))
+            
+            # rails=np.vstack((np.vstack((np.hstack((x_r_outer , np.flip(x_r_inner))), np.hstack((y_r_outer , np.flip(y_r_inner))))).T, [x_r_outer[0], y_r_outer[0]]))
+            # rails_poly = Polygon(rails, True)
+            # ax.add_artist(rails_poly)
+            # rails_poly.set_facecolor(0.6*np.ones(3))
+            # rails_poly.set_edgecolor(0.6*np.ones(3))
+            # ax.plot(ps_x_rot, ps_y_rot, color='tab:red', linewidth=3)
+            # ax.plot(ss_x_rot, ss_y_rot, color='tab:green', linewidth=3)
+            # ax.set_aspect('equal', 'box')
+            # plt.axis('off')
+            # fig.savefig('rail_example.png',pad_inches=0.1,bbox_inches='tight',dpi=200)
+            # plt.show()
+            # exit()
+
+
 
             # f, ax = plt.subplots(1,1,figsize=(5.3, 5.3))
             # # ax.plot(x_rail_h, y_rail_h,   color='dimgray', linestyle='--', label='Rail midline')
@@ -811,6 +838,41 @@ class RailTransport(ExplicitComponent):
             # plt.subplots_adjust(bottom = 0.15, left = 0.18)
             # f.savefig('/Users/pbortolo/Dropbox/Writing/TORQUE2020/rail/' + 'v_hill_rot.pdf')
             # plt.show()
+
+            # from matplotlib.patches import Polygon
+            # from matplotlib.collections import PatchCollection
+            # fig = plt.figure(figsize=(3,7))
+            # ax  = fig.add_subplot(111)
+            # x1 = x_deck_hill*np.cos(ang) - y_deck_hill*np.sin(ang) + off_x
+            # x2 = x_upper_hill*np.cos(ang) - y_upper_hill*np.sin(ang) + off_x
+            # y1 = y_deck_hill*np.cos(ang) + x_deck_hill*np.sin(ang) + off_y
+            # y2 = y_upper_hill*np.cos(ang) + x_upper_hill*np.sin(ang) + off_y
+            # clearance=np.vstack((np.vstack((np.hstack((x1 , np.flip(x2))), np.hstack((y1 , np.flip(y2))))).T, [x1[0], y1[0]]))
+            # clearance_poly = Polygon(clearance, True)
+            # ax.add_artist(clearance_poly)
+            # clearance_poly.set_facecolor(0.8*np.ones(3))
+            # clearance_poly.set_edgecolor(0.8*np.ones(3))
+            # ax.plot(x_rail_v*np.cos(ang) - y_rail_v*np.sin(ang) + off_x, y_rail_v*np.cos(ang) + x_rail_v*np.sin(ang) + off_y,   color='dimgray', linestyle='--', linewidth=2.,label='Railway')
+            # # rails=np.vstack((np.vstack((np.hstack((x_r_outer , np.flip(x_r_inner))), np.hstack((y_r_outer , np.flip(y_r_inner))))).T, [x_r_outer[0], y_r_outer[0]]))
+            # # rails_poly = Polygon(rails, True)
+            # # ax.add_artist(rails_poly)
+            # # rails_poly.set_facecolor(0.6*np.ones(3))
+            # # rails_poly.set_edgecolor(0.6*np.ones(3))
+            # x3 = le_x_transl*np.cos(ang) - le_y_transl*np.sin(ang) + off_x
+            # y3 = le_y_transl*np.cos(ang) + le_x_transl*np.sin(ang) + off_y
+            # x4 = te_x_transl*np.cos(ang) - te_y_transl*np.sin(ang) + off_x
+            # y4 = te_y_transl*np.cos(ang) + te_x_transl*np.sin(ang) + off_y
+            # ax.plot(x3, y3, color='tab:red', linewidth=3)
+            # ax.plot(x4, y4, color='tab:green', linewidth=3)
+            # # ax.plot(ss_x_rot, ss_y_rot, color='tab:green', linewidth=3)
+            # ax.set_aspect('equal', 'box')
+            # plt.xlim(left=0, right=120)
+            # plt.ylim(bottom=0, top=120)
+            # plt.axis('off')
+            # fig.savefig('rail_example.pdf',pad_inches=0.1,bbox_inches='tight',dpi=200)
+            # plt.show()
+
+
             # exit()
 
             eps            = M_sag * dist_te_interp / EIedge_interp
@@ -903,6 +965,42 @@ class RailTransport(ExplicitComponent):
             # plt.subplots_adjust(bottom = 0.15, left = 0.18)
             # f.savefig('/Users/pbortolo/Dropbox/Writing/TORQUE2020/rail/' + 'v_sag_rot.pdf')
             # plt.show()
+            # exit()
+
+            # from matplotlib.patches import Polygon
+            # from matplotlib.collections import PatchCollection
+            # fig = plt.figure(figsize=(3,7))
+            # ax  = fig.add_subplot(111)
+            # x1 = x_deck_sag*np.cos(ang) - y_deck_sag*np.sin(ang) + off_x
+            # x2 = x_upper_sag*np.cos(ang) - y_upper_sag*np.sin(ang) + off_x
+            # y1 = y_deck_sag*np.cos(ang) + x_deck_sag*np.sin(ang) + off_y
+            # y2 = y_upper_sag*np.cos(ang) + x_upper_sag*np.sin(ang) + off_y
+            # clearance=np.vstack((np.vstack((np.hstack((x1 , np.flip(x2))), np.hstack((y1 , np.flip(y2))))).T, [x1[0], y1[0]]))
+            # clearance_poly = Polygon(clearance, True)
+            # ax.add_artist(clearance_poly)
+            # clearance_poly.set_facecolor(0.8*np.ones(3))
+            # clearance_poly.set_edgecolor(0.8*np.ones(3))
+            # ax.plot(x_rail_v*np.cos(ang) - y_rail_v*np.sin(ang) + off_x, y_rail_v*np.cos(ang) + x_rail_v*np.sin(ang) + off_y,   color='dimgray', linestyle='--', linewidth=2.,label='Railway')
+            # # rails=np.vstack((np.vstack((np.hstack((x_r_outer , np.flip(x_r_inner))), np.hstack((y_r_outer , np.flip(y_r_inner))))).T, [x_r_outer[0], y_r_outer[0]]))
+            # # rails_poly = Polygon(rails, True)
+            # # ax.add_artist(rails_poly)
+            # # rails_poly.set_facecolor(0.6*np.ones(3))
+            # # rails_poly.set_edgecolor(0.6*np.ones(3))
+            # x3 = le_x_transl*np.cos(ang) - le_y_transl*np.sin(ang) + off_x
+            # y3 = le_y_transl*np.cos(ang) + le_x_transl*np.sin(ang) + off_y
+            # x4 = te_x_transl*np.cos(ang) - te_y_transl*np.sin(ang) + off_x
+            # y4 = te_y_transl*np.cos(ang) + te_x_transl*np.sin(ang) + off_y
+            # ax.plot(x3, y3, color='tab:red', linewidth=3)
+            # ax.plot(x4, y4, color='tab:green', linewidth=3)
+            # # ax.plot(ss_x_rot, ss_y_rot, color='tab:green', linewidth=3)
+            # ax.set_aspect('equal', 'box')
+            # plt.xlim(left=0, right=120)
+            # plt.ylim(bottom=0, top=120)
+            # plt.axis('off')
+            # fig.savefig('rail_example.pdf',pad_inches=0.1,bbox_inches='tight',dpi=200)
+            # plt.show()
+
+
             # exit()
 
             # exit()
