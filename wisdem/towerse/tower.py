@@ -19,7 +19,7 @@ from wisdem.commonse.tube import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
 from wisdem.commonse import gravity, eps
 
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ, RIGID
 
 import wisdem.commonse.UtilizationSupplement as Util
 
@@ -585,12 +585,12 @@ class TowerPreFrame(om.ExplicitComponent):
             outputs['kty']  = np.array([ kmono[3] ])
             outputs['ktz']  = np.array([ kmono[5] ])
         else:
-            outputs['kx']   = np.array([ 1.e16 ])
-            outputs['ky']   = np.array([ 1.e16 ])
-            outputs['kz']   = np.array([ 1.e16 ])
-            outputs['ktx']  = np.array([ 1.e16 ])
-            outputs['kty']  = np.array([ 1.e16 ])
-            outputs['ktz']  = np.array([ 1.e16 ])
+            outputs['kx']   = np.array([ RIGID ])
+            outputs['ky']   = np.array([ RIGID ])
+            outputs['kz']   = np.array([ RIGID ])
+            outputs['ktx']  = np.array([ RIGID ])
+            outputs['kty']  = np.array([ RIGID ])
+            outputs['ktz']  = np.array([ RIGID ])
 
         # Material property discretization
         z_param   = inputs['z_param']
@@ -645,13 +645,17 @@ class TowerPostFrame(om.ExplicitComponent):
         # Frequencies
         NFREQ2 = int(NFREQ/2)
         self.add_input('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
-        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
-        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)')
+        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)')
+        self.add_input('x_mode_freqs', val=np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the x-direction')
+        self.add_input('y_mode_freqs', val=np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the y-direction')
         
         # outputs
         self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First and second natural frequency')
-        self.add_output('fore_aft_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower fore-aft direction (without constant term)')
-        self.add_output('side_side_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower side-side direction (without constant term)')
+        self.add_output('fore_aft_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower fore-aft direction (x^2..x^6, no linear or constant term)')
+        self.add_output('side_side_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower side-side direction (x^2..x^6, no linear or constant term)')
+        self.add_output('fore_aft_freqs', np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the tower fore-aft direction')
+        self.add_output('side_side_freqs', np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the tower side-side direction')
         self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
         self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
         self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')

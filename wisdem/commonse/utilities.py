@@ -34,6 +34,38 @@ def get_modal_coefficients(x, y, deg=6):
     
     return p6
     
+def get_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
+    # Number of frequencies and modes
+    nfreq = len(freqs)
+    
+    # Get mode shapes in batch
+    mpfs   = np.abs( np.c_[xmpf, ympf, zmpf] )
+    polys  = get_modal_coefficients(r, np.vstack((xdsp, ydsp)).T, 6)
+    xpolys = polys[:,:nfreq].T
+    ypolys = polys[:,nfreq:].T
+        
+    nfreq2    = int(nfreq/2)
+    mshapes_x = np.zeros((nfreq2, 5))
+    mshapes_y = np.zeros((nfreq2, 5))
+    freq_x    = np.zeros(nfreq2)
+    freq_y    = np.zeros(nfreq2)
+    ix = 0
+    iy = 0
+    for m in range(nfreq):
+        if mpfs[m,:].max() < 1e-11: continue
+        imode = np.argmax(mpfs[m,:])
+        if imode == 0:
+            mshapes_x[ix,:] = xpolys[m,:]
+            freq_x[   ix  ] = freqs[m]
+            ix += 1
+        elif imode == 1:
+            mshapes_y[iy,:] = ypolys[m,:]
+            freq_y[   iy  ] = freqs[m]
+            iy += 1
+        else:
+            print('Warning: Unknown mode shape')
+
+    return freq_x, freq_y, mshapes_x, mshapes_y
 
 def rotate(xo, yo, xp, yp, angle):
     ## Rotate a point clockwise by a given angle around a given origin.

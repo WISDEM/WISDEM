@@ -247,8 +247,10 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_output('f1', val=0.0, units='Hz', desc='First natural frequency')
         self.add_output('f2', val=0.0, units='Hz', desc='Second natural frequency')
         self.add_output('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
-        self.add_output('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
-        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_output('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)')
+        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)')
+        self.add_output('x_mode_freqs', val=np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the x-direction')
+        self.add_output('y_mode_freqs', val=np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the y-direction')
         self.add_output('top_deflection', val=0.0, units='m', desc='Deflection of cylinder top in yaw-aligned +x direction')
         self.add_output('Fz_out', val=np.zeros(npts-1), units='N', desc='Axial foce in vertical z-direction in cylinder structure.')
         self.add_output('Vx_out', val=np.zeros(npts-1), units='N', desc='Shear force in x-direction in cylinder structure.')
@@ -383,28 +385,10 @@ class CylinderFrame3DD(ExplicitComponent):
         outputs['f2']    = modal.freq[1]
         outputs['freqs'] = modal.freq
 
-        # Get mode shapes in batch
-        mpfs   = np.abs( np.c_[modal.xmpf, modal.ympf, modal.zmpf] )
-        polys  = util.get_modal_coefficients(z, np.vstack((modal.xdsp, modal.ydsp)).T, 6)
-        xpolys = polys[:,:NFREQ].T
-        ypolys = polys[:,NFREQ:].T
-        
-        NFREQ2    = int(NFREQ/2)
-        mshapes_x = np.zeros((NFREQ2, 5))
-        mshapes_y = np.zeros((NFREQ2, 5))
-        ix = 0
-        iy = 0
-        for m in range(NFREQ):
-            if mpfs[m,:].max() < 1e-11: continue
-            imode = np.argmax(mpfs[m,:])
-            if imode == 0:
-                mshapes_x[ix,:] = xpolys[m,:]
-                ix += 1
-            elif imode == 1:
-                mshapes_y[iy,:] = ypolys[m,:]
-                iy += 1
-            else:
-                print('Warning: Unknown mode shape')
+        # Get all mode shapes in batch
+        freq_x, freq_y, mshapes_x, mshapes_y = util.get_mode_shapes(z, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
+        outputs['x_mode_freqs']  = freq_x
+        outputs['y_mode_freqs']  = freq_y
         outputs['x_mode_shapes'] = mshapes_x
         outputs['y_mode_shapes'] = mshapes_y
 

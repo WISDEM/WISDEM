@@ -190,6 +190,7 @@ class WT_RNTA(Group):
         
 
         # Connections to rotor load analysis
+        self.connect('elastic.A',    'rlds.A')
         self.connect('elastic.EA',   'rlds.EA')
         self.connect('elastic.EIxx', 'rlds.EIxx')
         self.connect('elastic.EIyy', 'rlds.EIyy')

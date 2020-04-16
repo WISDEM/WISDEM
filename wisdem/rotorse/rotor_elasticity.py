@@ -66,6 +66,7 @@ class RunPreComp(ExplicitComponent):
 
         # Outputs - Distributed beam properties
         self.add_output('z',            val=np.zeros(n_span), units='m',      desc='locations of properties along beam')
+        self.add_output('A',            val=np.zeros(n_span), units='m**2',   desc='cross sectional area')
         self.add_output('EA',           val=np.zeros(n_span), units='N',      desc='axial stiffness')
         self.add_output('EIxx',         val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
         self.add_output('EIyy',         val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
@@ -421,7 +422,7 @@ class RunPreComp(ExplicitComponent):
         beam = PreComp(inputs['r'], inputs['chord'], np.zeros_like(inputs['r']), inputs['pitch_axis'], 
                        inputs['precurve'], inputs['presweep'], profile, materials, upperCS, lowerCS, websCS, 
                        sector_idx_strain_spar_cap_ps, sector_idx_strain_spar_cap_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
-        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner, x_tc, y_tc, x_sc, y_sc, x_cg, y_cg = beam.sectionProperties()
+        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, area, rhoJ, Tw_iner, flap_iner, edge_iner, x_tc, y_tc, x_sc, y_sc, x_cg, y_cg = beam.sectionProperties()
 
         outputs['x_ec_abs'] = beam.x_ec_nose - inputs['pitch_axis'] * inputs['chord']
         outputs['y_ec_abs'] = beam.y_ec_nose
@@ -441,6 +442,7 @@ class RunPreComp(ExplicitComponent):
         outputs['x_ec']      = x_ec
         outputs['y_ec']      = y_ec
         outputs['rhoA']      = rhoA
+        outputs['A']         = area
         outputs['rhoJ']      = rhoJ
         outputs['Tw_iner']   = Tw_iner
         outputs['flap_iner'] = flap_iner
