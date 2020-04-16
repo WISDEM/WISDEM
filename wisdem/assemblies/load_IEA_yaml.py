@@ -1104,37 +1104,6 @@ class ComputeMonopileGrid(ExplicitComponent):
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]
 
-class Foundation(ExplicitComponent):
-    # Openmdao component with the foundation data coming from the input yaml file.
-    def setup(self):
-        self.add_output('height',           val=0.0, units='m',     desc='Foundation height in respect to the ground level.')
-
-class Airfoils(ExplicitComponent):
-    def initialize(self):
-        self.options.declare('af_init_options')
-    
-    def setup(self):
-        af_init_options = self.options['af_init_options']
-        n_af            = af_init_options['n_af'] # Number of airfoils
-        n_aoa           = af_init_options['n_aoa']# Number of angle of attacks
-        n_Re            = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
-        n_tab           = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        n_xy            = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        
-        # Airfoil properties
-        self.add_discrete_output('name', val=n_af * [''],                        desc='1D array of names of airfoils.')
-        self.add_output('ac',        val=np.zeros(n_af),                         desc='1D array of the aerodynamic centers of each airfoil.')
-        self.add_output('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
-        self.add_output('aoa',       val=np.zeros(n_aoa),        units='rad',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_output('Re',        val=np.zeros(n_Re),                         desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-        self.add_output('tab',       val=np.zeros(n_tab),                        desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
-        self.add_output('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_output('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        self.add_output('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
-        
-        # Airfoil coordinates
-        self.add_output('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')
-
 class ComputeMaterialsProperties(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
     
@@ -1240,41 +1209,6 @@ class Materials(Group):
         ivc.add_output('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
         
         self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options), promotes=['*'])
-        
-class Configuration(ExplicitComponent):
-    # Openmdao component with the wind turbine configuration data (class, number of blades, upwind vs downwind, ...) coming from the input yaml file.
-    def setup(self):
-
-        self.add_discrete_output('ws_class',            val='', desc='IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.')
-        self.add_discrete_output('turb_class',          val='', desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
-        self.add_discrete_output('gearbox_type',        val='geared', desc='Gearbox configuration (geared, direct-drive, etc.).')
-        self.add_discrete_output('rotor_orientation',   val='upwind', desc='Rotor orientation, either upwind or downwind.')
-        self.add_discrete_output('n_blades',            val=3,        desc='Number of blades of the rotor.')
-
-class Environment(ExplicitComponent):
-    # Openmdao component with the environmental parameters
-    def setup(self):
-
-        self.add_output('rho_air',      val=1.225,        units='kg/m**3',    desc='Density of air')
-        self.add_output('mu_air',       val=1.81e-5,      units='kg/(m*s)',   desc='Dynamic viscosity of air')
-        self.add_output('weibull_k',    val=2.0,          desc='Shape parameter of the Weibull probability density function of the wind.')
-        self.add_output('shear_exp',    val=0.2,          desc='Shear exponent of the wind.')
-        self.add_output('speed_sound_air',  val=340.,     units='m/s',        desc='Speed of sound in air.')
-        self.add_output('rho_water',      val=1025.,        units='kg/m**3',    desc='Density of ocean water')
-        self.add_output('mu_water',       val=1.3351e-3,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
-        self.add_output('G_soil',      val=140e6,        units='kg/m**3',    desc='Density of ocean water')
-        self.add_output('nu_soil',       val=0.4,      units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
-
-class Costs(ExplicitComponent):
-    # Openmdao component with the cost parameters
-    def setup(self):
-
-        self.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
-        self.add_output('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
-        self.add_output('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
-        self.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
-        self.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
-        self.add_output('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
 
 class WT_Assembly(ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
@@ -1317,10 +1251,35 @@ class WindTurbineOntologyOpenMDAO(Group):
         self.add_subsystem('materials', Materials(mat_init_options = analysis_options['materials']))
         
         # Airfoil dictionary inputs
-        self.add_subsystem('airfoils',  Airfoils(af_init_options   = analysis_options['airfoils']))
+        airfoils    = IndepVarComp()
+        af_init_options = analysis_options['airfoils']
+        n_af            = af_init_options['n_af'] # Number of airfoils
+        n_aoa           = af_init_options['n_aoa']# Number of angle of attacks
+        n_Re            = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        n_tab           = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        n_xy            = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        airfoils.add_discrete_output('name', val=n_af * [''],                        desc='1D array of names of airfoils.')
+        airfoils.add_output('ac',        val=np.zeros(n_af),                         desc='1D array of the aerodynamic centers of each airfoil.')
+        airfoils.add_output('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
+        airfoils.add_output('aoa',       val=np.zeros(n_aoa),        units='rad',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        airfoils.add_output('Re',        val=np.zeros(n_Re),                         desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
+        airfoils.add_output('tab',       val=np.zeros(n_tab),                        desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
+        airfoils.add_output('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        airfoils.add_output('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        airfoils.add_output('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
+        # Airfoil coordinates
+        airfoils.add_output('coord_xy',  val=np.zeros((n_af, n_xy, 2)),              desc='3D array of the x and y airfoil coordinates of the n_af airfoils.')
+        self.add_subsystem('airfoils', airfoils)
         
-        # Blade inputs
+        # Blade inputs and connections from airfoils
         self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils'], opt_options = opt_options))
+        self.connect('airfoils.name',    'blade.interp_airfoils.name')
+        self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
+        self.connect('airfoils.coord_xy','blade.interp_airfoils.coord_xy')
+        self.connect('airfoils.aoa',     'blade.interp_airfoils.aoa')
+        self.connect('airfoils.cl',      'blade.interp_airfoils.cl')
+        self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
+        self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
         
         # Hub inputs
         self.add_subsystem('hub',           Hub())
@@ -1331,7 +1290,7 @@ class WindTurbineOntologyOpenMDAO(Group):
         nacelle.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
         nacelle.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
         nacelle.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
-        # MB properties
+        # Mulit-body properties
         nacelle.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
         nacelle.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
         nacelle.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
@@ -1353,69 +1312,86 @@ class WindTurbineOntologyOpenMDAO(Group):
         # Tower inputs
         self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
         if analysis_options['tower']['monopile']:
-            self.add_subsystem('monopile',      Monopile(monopile_init_options   = analysis_options['monopile']))
+            self.add_subsystem('monopile',  Monopile(monopile_init_options   = analysis_options['monopile']))
         
         # Foundation inputs
-        self.add_subsystem('foundation',    Foundation())
+        foundation_ivc = self.add_subsystem('foundation', IndepVarComp())
+        foundation_ivc.add_output('height',     val=0.0, units='m',     desc='Foundation height in respect to the ground level.')
 
         # Control inputs
-        c_ivc = self.add_subsystem('control', IndepVarComp())
-        c_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
-        c_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
-        c_ivc.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
-        c_ivc.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
-        c_ivc.add_output('maxOmega',         val=0.0, units='rad/s',     desc='Maximum allowed rotor speed.')
-        c_ivc.add_output('max_TS',           val=0.0, units='m/s',       desc='Maximum allowed blade tip speed.')
-        c_ivc.add_output('max_pitch_rate',   val=0.0, units='rad/s',     desc='Maximum allowed blade pitch rate')
-        c_ivc.add_output('max_torque_rate',  val=0.0, units='N*m/s',     desc='Maximum allowed generator torque rate')
-        c_ivc.add_output('rated_TSR',        val=0.0,                    desc='Constant tip speed ratio in region II.')
-        c_ivc.add_output('rated_pitch',      val=0.0, units='rad',       desc='Constant pitch angle in region II.')
-        c_ivc.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
-        c_ivc.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
-        c_ivc.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
-        c_ivc.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
-        c_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
-        c_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
+        ctrl_ivc = self.add_subsystem('control', IndepVarComp())
+        ctrl_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
+        ctrl_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
+        ctrl_ivc.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
+        ctrl_ivc.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
+        ctrl_ivc.add_output('maxOmega',         val=0.0, units='rad/s',     desc='Maximum allowed rotor speed.')
+        ctrl_ivc.add_output('max_TS',           val=0.0, units='m/s',       desc='Maximum allowed blade tip speed.')
+        ctrl_ivc.add_output('max_pitch_rate',   val=0.0, units='rad/s',     desc='Maximum allowed blade pitch rate')
+        ctrl_ivc.add_output('max_torque_rate',  val=0.0, units='N*m/s',     desc='Maximum allowed generator torque rate')
+        ctrl_ivc.add_output('rated_TSR',        val=0.0,                    desc='Constant tip speed ratio in region II.')
+        ctrl_ivc.add_output('rated_pitch',      val=0.0, units='rad',       desc='Constant pitch angle in region II.')
+        ctrl_ivc.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
+        ctrl_ivc.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
+        ctrl_ivc.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
+        ctrl_ivc.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
+        ctrl_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
+        ctrl_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
         # optional inputs - not connected right now!!
-        c_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
-        c_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
-        c_ivc.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
-        c_ivc.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
-        c_ivc.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
-        c_ivc.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
-        c_ivc.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
-        c_ivc.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
-        c_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
-        c_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
-        c_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
+        ctrl_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
+        ctrl_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
+        ctrl_ivc.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
+        ctrl_ivc.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
+        ctrl_ivc.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
+        ctrl_ivc.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
+        ctrl_ivc.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
+        ctrl_ivc.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
+        ctrl_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
+        ctrl_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
+        ctrl_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
 
-        self.add_subsystem('configuration', Configuration())
-        self.add_subsystem('env',           Environment())
+        # Wind turbine configuration inputs
+        conf_ivc = self.add_subsystem('configuration', IndepVarComp())
+        conf_ivc.add_discrete_output('ws_class',            val='',         desc='IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.')
+        conf_ivc.add_discrete_output('turb_class',          val='',         desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
+        conf_ivc.add_discrete_output('gearbox_type',        val='geared',   desc='Gearbox configuration (geared, direct-drive, etc.).')
+        conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',   desc='Rotor orientation, either upwind or downwind.')
+        conf_ivc.add_discrete_output('n_blades',            val=3,          desc='Number of blades of the rotor.')
+
+        # Environment inputs
+        env_ivc = self.add_subsystem('env', IndepVarComp())
+        env_ivc.add_output('rho_air',      val=1.225,       units='kg/m**3',    desc='Density of air')
+        env_ivc.add_output('mu_air',       val=1.81e-5,     units='kg/(m*s)',   desc='Dynamic viscosity of air')
+        env_ivc.add_output('weibull_k',    val=2.0,                             desc='Shape parameter of the Weibull probability density function of the wind.')
+        env_ivc.add_output('shear_exp',    val=0.2,                             desc='Shear exponent of the wind.')
+        env_ivc.add_output('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
+        env_ivc.add_output('rho_water',    val=1025.,       units='kg/m**3',    desc='Density of ocean water')
+        env_ivc.add_output('mu_water',     val=1.3351e-3,   units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
+        env_ivc.add_output('G_soil',       val=140e6,       units='kg/m**3',    desc='Density of ocean water')
+        env_ivc.add_output('nu_soil',      val=0.4,         units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
+
+        # Cost analysis inputs
+        costs_ivc = self.add_subsystem('costs', IndepVarComp())
+        costs_ivc.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
+        costs_ivc.add_output('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
+        costs_ivc.add_output('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
+        costs_ivc.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
+        costs_ivc.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
+        costs_ivc.add_output('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
+        
+        # Assembly setup
         self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = analysis_options['blade']))
-        self.add_subsystem('costs',         Costs())
-
-        self.connect('airfoils.name',    'blade.interp_airfoils.name')
-        self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
-        self.connect('airfoils.coord_xy','blade.interp_airfoils.coord_xy')
-        self.connect('airfoils.aoa',     'blade.interp_airfoils.aoa')
-        self.connect('airfoils.cl',      'blade.interp_airfoils.cl')
-        self.connect('airfoils.cd',      'blade.interp_airfoils.cd')
-        self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
-
         self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
         self.connect('hub.radius',                      'assembly.hub_radius')
         self.connect('tower.height',                    'assembly.tower_height')
         self.connect('foundation.height',               'assembly.foundation_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
 
-        opt_var = IndepVarComp()
+        # Setup TSR optimization
+        opt_var = self.add_subsystem('opt_var', IndepVarComp())
         opt_var.add_output('tsr_opt_gain',   val = 1.0)
-        self.add_subsystem('opt_var',opt_var)
-        
         # Multiply the initial tsr with the tsr gain
         exec_comp = ExecComp('tsr_opt = tsr_original * tsr_gain')
         self.add_subsystem('pc', exec_comp)
-        
         self.connect('opt_var.tsr_opt_gain', 'pc.tsr_gain')
         self.connect('control.rated_TSR',    'pc.tsr_original')
 
