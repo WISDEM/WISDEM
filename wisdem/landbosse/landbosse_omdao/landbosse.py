@@ -1,4 +1,5 @@
 import openmdao.api as om
+from math import ceil
 import numpy as np
 import warnings
 with warnings.catch_warnings():
@@ -38,6 +39,12 @@ class LandBOSSE(om.Group):
         # default value loaded above should be used. All blades are
         # assumed to be the same.
 
+        # Add a tower section height variable. The default value of 30 m is for
+        # transportable tower sections.
+
+        myIndeps.add_output('tower_section_length_m', 30.0, units='m',
+                            desc='The transportable length of a tower section.')
+
         myIndeps.add_output('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
         myIndeps.add_output('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
         myIndeps.add_output('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
@@ -59,7 +66,7 @@ class LandBOSSE(om.Group):
         self.add_subsystem('landbosse', LandBOSSE_API(topLevelFlag = self.options['topLevelFlag']), promotes=['*'])
 
         if self.options['topLevelFlag']:
-            self.connect('hub_height','hub_height_meters')
+            self.connect('hub_height', 'hub_height_meters')
 
 
 class LandBOSSE_API(om.ExplicitComponent):
@@ -86,8 +93,13 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('blade_offload_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
         self.add_input('blade_drag_multiplier', USE_DEFAULT_COMPONENT_DATA)  # Unitless
 
-        self.add_input('hub_height', 0.0, units='m')
+        # Even though LandBOSSE doesn't use foundation height, TowerSE does,
+        # and foundation height can be used with hub height to calculate
+        # tower height.
+
         self.add_input('foundation_height', 0.0, units='m')
+
+        self.add_input('tower_section_length_m', 30.0, units='m')
         self.add_input('blade_mass', 0.0, units='kg')
         self.add_input('nacelle_mass', 0.0, units='kg')
         self.add_input('tower_mass', 0.0, units='kg')
@@ -598,6 +610,14 @@ class LandBOSSE_API(om.ExplicitComponent):
             A dictionary-like with the non-numeric inputs (like
             pandas.DataFrame)
         """
+        input_components = discrete_inputs['components']
+
+        tower_section_length_m = inputs['tower_section_length_m'][0]
+        tower_height_m = inputs['hub_height_meters'][0] - inputs['foundation_height'][0]
+        complete_tower_sections = tower_height_m // tower_section_length_m
+        incomplete_tower_section_m = tower_height_m % tower_section_length_m
+        print('tower_height_m', tower_height_m)
+
         # myIndeps.add_output('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
         # myIndeps.add_output('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
         # myIndeps.add_output('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='hr')
@@ -605,16 +625,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         # myIndeps.add_output('blade_offload_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='hr')
         # myIndeps.add_output('blade_drag_multiplier', USE_DEFAULT_COMPONENT_DATA)  # Unitless
 
-        input_components = discrete_inputs['components']
-
         # Another way would be to look at topLevelFlag
-
-        # if self.options['topLevelFlag']:
-        #     blades = components[components['Component'].str.startswith('Blade')]
-        #     default_blade = blades.iloc[0]
-        #     print(default_blade)
-        # else:
-        #     print('Blade modifications unspecifed')
 
         pd.set_option('display.max_columns', None)
         print('>>>>>>>>>> UNMODIFIED COMPONENTS <<<<<<<<')
