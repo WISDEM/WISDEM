@@ -35,7 +35,7 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
     y_intersection = np.polyval(plane_intersection, xy_coord[:,0])
     
     idx_le = np.argmin(xy_coord[:,0])
-    xy_coord_arc = arc_length(xy_coord[:,0], xy_coord[:,1])
+    xy_coord_arc = arc_length(xy_coord)
     arc_L = xy_coord_arc[-1]
     xy_coord_arc /= arc_L
     
@@ -523,7 +523,7 @@ class Compute_Blade_Outer_Shape_BEM(ExplicitComponent):
             outputs['pitch_axis']   = inputs['pitch_axis_yaml']
             outputs['ref_axis']     = inputs['ref_axis_yaml']
 
-        outputs['length']   = arc_length(outputs['ref_axis'][:,0], outputs['ref_axis'][:,1], outputs['ref_axis'][:,2])[-1]
+        outputs['length']   = arc_length(outputs['ref_axis'])[-1]
         outputs['length_z'] = outputs['ref_axis'][:,2][-1]
 
 class Blade_Interp_Airfoils(ExplicitComponent):
@@ -866,7 +866,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
         for i in range(self.n_span):
             # Compute the arc length (arc_L_i), the non-dimensional arc coordinates (xy_arc_i), and the non dimensional position of the leading edge of the profile at position i
             xy_coord_i  = inputs['coord_xy_dim'][i,:,:]
-            xy_arc_i    = arc_length(xy_coord_i[:,0], xy_coord_i[:,1])
+            xy_arc_i    = arc_length(xy_coord_i)
             arc_L_i     = xy_arc_i[-1]
             xy_arc_i    /= arc_L_i
             idx_le      = np.argmin(xy_coord_i[:,0])
@@ -1052,7 +1052,7 @@ class ComputeTowerGrid(ExplicitComponent):
     def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
         outputs['height']   = inputs['ref_axis'][-1,2]
-        myarc               = arc_length(inputs['ref_axis'][:,0], inputs['ref_axis'][:,1], inputs['ref_axis'][:,2])
+        myarc               = arc_length(inputs['ref_axis'])
         outputs['length']   = myarc[-1]
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]
@@ -1101,7 +1101,7 @@ class ComputeMonopileGrid(ExplicitComponent):
     def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
         outputs['height']   = inputs['ref_axis'][-1,2]
-        myarc               = arc_length(inputs['ref_axis'][:,0], inputs['ref_axis'][:,1], inputs['ref_axis'][:,2])
+        myarc               = arc_length(inputs['ref_axis'])
         outputs['length']   = myarc[-1]
         if myarc[-1] > 0.0:
             outputs['s']    = myarc / myarc[-1]

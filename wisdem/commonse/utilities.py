@@ -42,13 +42,21 @@ def rotate(xo, yo, xp, yp, angle):
     qy = yo + np.sin(angle) * (xp - xo) + np.cos(angle) * (yp - yo)
     return qx, qy
 
-def arc_length(x, y, z=[]):
-    if len(z) == len(x):
-        arc = np.sqrt( np.diff(x)**2 + np.diff(y)**2 + np.diff(z)**2 )
-    else:
-        arc = np.sqrt( np.diff(x)**2 + np.diff(y)**2 )
-    
-    return np.r_[0.0, np.cumsum(arc)]
+def arc_length(points):
+    """
+    Parameters
+    ----------
+    points : numpy array[n_points, n_dimensions]
+        Array of coordinate points that we compute the arc distances for.
+    Returns
+    -------
+    arc_distances : numpy array[n_points]
+        Array, starting at 0, with the cumulative distance from the first
+        point in the points array along the arc.
+    """
+    cartesian_distances = np.sqrt(np.sum(np.diff(points, axis=0)**2, axis=1))
+    arc_distances = np.r_[0.0, np.cumsum(cartesian_distances)]
+    return arc_distances
 
 def cosd(value):
     """cosine of value where value is given in degrees"""
