@@ -55,10 +55,12 @@ def get_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
         if mpfs[m,:].max() < 1e-11: continue
         imode = np.argmax(mpfs[m,:])
         if imode == 0:
+            if ix >= nfreq2: continue
             mshapes_x[ix,:] = xpolys[m,:]
             freq_x[   ix  ] = freqs[m]
             ix += 1
         elif imode == 1:
+            if iy >= nfreq2: continue
             mshapes_y[iy,:] = ypolys[m,:]
             freq_y[   iy  ] = freqs[m]
             iy += 1

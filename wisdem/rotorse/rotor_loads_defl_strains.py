@@ -5,7 +5,7 @@ from scipy.interpolate import PchipInterpolator
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade_component import CCBladeLoads, AeroHubLoads
 import wisdem.ccblade._bem as _bem
-from wisdem.commonse.utilities import rotate, arc_length
+import wisdem.commonse.utilities as util
 from wisdem.commonse.akima import Akima
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
@@ -123,71 +123,41 @@ class TotalLoads(ExplicitComponent):
     def compute(self, inputs, outputs):
 
         dynamicFactor = inputs['dynamicFactor']
-        r = inputs['r']
-        theta = inputs['theta']
-        tilt = inputs['tilt']
-        totalCone = inputs['3d_curv']
-        z_az = inputs['z_az']
-        rhoA = inputs['rhoA']
-
-
-        # totalCone = precone
-        # z_az = r*cosd(precone)
-        totalCone = totalCone
-        z_az = z_az
+        r             = inputs['r']
+        theta         = inputs['theta']
+        tilt          = inputs['tilt']
+        totalCone     = inputs['3d_curv']
+        z_az          = inputs['z_az']
+        rhoA          = inputs['rhoA']
 
         # keep all in blade c.s. then rotate all at end
 
-        # rename
-        # aero = aeroloads
-
         # --- aero loads ---
-
-        # interpolate aerodynamic loads onto structural grid
         P_a = DirectionVector(0, 0, 0)
-        myakima = Akima(inputs['r'], inputs['aeroloads_Px'])
-        P_a.x, dPax_dr, dPax_daeror, dPax_daeroPx = myakima(r)
-
-        myakima = Akima(inputs['r'], inputs['aeroloads_Py'])
-        P_a.y, dPay_dr, dPay_daeror, dPay_daeroPy = myakima(r)
-
-        myakima = Akima(inputs['r'], inputs['aeroloads_Pz'])
-        P_a.z, dPaz_dr, dPaz_daeror, dPaz_daeroPz = myakima(r)
-
+        P_a.x, P_a.y, P_a.z = inputs['aeroloads_Px'], inputs['aeroloads_Py'], inputs['aeroloads_Pz']
 
         # --- weight loads ---
-
         # yaw c.s.
         weight = DirectionVector(0.0, 0.0, -rhoA*gravity)
-
-        P_w = weight.yawToHub(tilt).hubToAzimuth(inputs['aeroloads_azimuth'])\
-            .azimuthToBlade(totalCone)
-
+        P_w = weight.yawToHub(tilt).hubToAzimuth(inputs['aeroloads_azimuth']).azimuthToBlade(totalCone)
 
         # --- centrifugal loads ---
-
         # azimuthal c.s.
         Omega = inputs['aeroloads_Omega']*RPM2RS
         load = DirectionVector(0.0, 0.0, rhoA*Omega**2*z_az)
-
         P_c = load.azimuthToBlade(totalCone)
-
 
         # --- total loads ---
         P = P_a + P_w + P_c
 
         # rotate to airfoil c.s.
-        theta = np.array(theta) + inputs['aeroloads_pitch']
-        P = P.bladeToAirfoil(theta)
+        P = P.bladeToAirfoil(theta + inputs['aeroloads_pitch'])
 
-        Px_af = dynamicFactor * P.x
-        Py_af = dynamicFactor * P.y
-        Pz_af = dynamicFactor * P.z
+        outputs['Px_af'] = dynamicFactor * P.x
+        outputs['Py_af'] = dynamicFactor * P.y
+        outputs['Pz_af'] = dynamicFactor * P.z
 
-        outputs['Px_af'] = Px_af
-        outputs['Py_af'] = Py_af
-        outputs['Pz_af'] = Pz_af
-
+        
 class RunpBEAM(ExplicitComponent):
     def initialize(self):
         self.options.declare('analysis_options')
@@ -302,10 +272,10 @@ class RunpBEAM(ExplicitComponent):
 
         # outputs
         nsec = self.n_span
-        
+
         # create finite element objects
         p_section = _pBEAM.SectionData(nsec, inputs['r'], inputs['EA'], inputs['EIxx'],
-            inputs['EIyy'], inputs['GJ'], inputs['rhoA'], inputs['rhoJ'])
+                                       inputs['EIyy'], inputs['GJ'], inputs['rhoA'], inputs['rhoJ'])
         p_tip = _pBEAM.TipData()  # no tip mass
         p_base = _pBEAM.BaseData(np.ones(6), 1.0)  # rigid base
 
@@ -345,6 +315,7 @@ class RunpBEAM(ExplicitComponent):
 class RunFrame3DD(ExplicitComponent):
     def initialize(self):
         self.options.declare('analysis_options')
+        self.options.declare('pbeam',default=False) # Recover old pbeam c.s. and accuracy
 
     def setup(self):
         blade_init_options = self.options['analysis_options']['blade']
@@ -355,6 +326,7 @@ class RunFrame3DD(ExplicitComponent):
         self.add_input('x_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth x-coordinate system')
         self.add_input('y_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth y-coordinate system')
         self.add_input('z_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth z-coordinate system')
+        self.add_input('theta',    val=np.zeros(n_span),   units='deg',    desc='structural twist')
         
         # all inputs/outputs in airfoil coordinate system
         self.add_input('Px_af', val=np.zeros(n_span), desc='distributed load (force per unit length) in airfoil x-direction')
@@ -383,13 +355,14 @@ class RunFrame3DD(ExplicitComponent):
         self.add_input('y_ec',  val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
 
         # outputs
+        n_freq2 = int(n_freq/2)
         self.add_output('root_F', np.zeros(3), units='N',   desc='Blade root forces in blade c.s.')
         self.add_output('root_M', np.zeros(3), units='N*m', desc='Blade root moment in blade c.s.')
-        self.add_output('flap_mode_shapes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
-        self.add_output('edge_mode_shapes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-        self.add_output('flap_mode_freqs', np.zeros(NFREQ2), units='Hz', desc='Frequencies associated with mode shapes in the flap direction')
-        self.add_output('edge_mode_freqs', np.zeros(NFREQ2), units='Hz', desc='Frequencies associated with mode shapes in the edge direction')
-        self.add_output('freqs',            val=0.0,  units='Hz', desc='ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise')
+        self.add_output('flap_mode_shapes', np.zeros((n_freq2,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
+        self.add_output('edge_mode_shapes', np.zeros((n_freq2,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+        self.add_output('flap_mode_freqs', np.zeros(n_freq2), units='Hz', desc='Frequencies associated with mode shapes in the flap direction')
+        self.add_output('edge_mode_freqs', np.zeros(n_freq2), units='Hz', desc='Frequencies associated with mode shapes in the edge direction')
+        self.add_output('freqs',            val=np.zeros(n_freq),  units='Hz', desc='ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise')
         self.add_output('freq_distance',    val=0.0,              desc='ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise')
         self.add_output('dx',               val=np.zeros(n_span), units='m', desc='deflection of blade section in airfoil x-direction')
         self.add_output('dy',               val=np.zeros(n_span), units='m', desc='deflection of blade section in airfoil y-direction')
@@ -403,26 +376,32 @@ class RunFrame3DD(ExplicitComponent):
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        r    = inputs['r']
-        x_az = inputs['x_az']
-        y_az = inputs['y_az']
-        z_az = inputs['z_az']
-        x_ec = inputs['x_ec']
-        y_ec = inputs['y_ec']
-        A    = inputs['A']
-        EA   = inputs['EA']
-        EIxx = inputs['EIxx']
-        EIyy = inputs['EIyy']
-        EIxy = inputs['EIxy']
+        r     = inputs['r']
+        x_az  = inputs['x_az']
+        y_az  = inputs['y_az']
+        z_az  = inputs['z_az']
+        theta = inputs['theta']
+        x_ec  = inputs['x_ec']
+        y_ec  = inputs['y_ec']
+        A     = inputs['A']
+        rhoA  = inputs['rhoA']
+        rhoJ  = inputs['rhoJ']
+        GJ    = inputs['GJ']
+        EA    = inputs['EA']
+        EIxx  = inputs['EIxx']
+        EIyy  = inputs['EIyy']
+        EIxy  = inputs['EIxy']
+        Px_af = inputs['Px_af']
+        Py_af = inputs['Py_af']
+        Pz_af = inputs['Pz_af']
         xu_strain_spar = inputs['xu_strain_spar']
         xl_strain_spar = inputs['xl_strain_spar']
         yu_strain_spar = inputs['yu_strain_spar']
         yl_strain_spar = inputs['yl_strain_spar']
-        xu_strain_te = inputs['xu_strain_te']
-        xu_strain_te = inputs['xu_strain_te']
-        xl_strain_te = inputs['xl_strain_te']
-        yu_strain_te = inputs['yu_strain_te']
-        yl_strain_te = inputs['yl_strain_te']
+        xu_strain_te   = inputs['xu_strain_te']
+        xl_strain_te   = inputs['xl_strain_te']
+        yu_strain_te   = inputs['yu_strain_te']
+        yl_strain_te   = inputs['yl_strain_te']
 
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         EIxx_cs , EIyy_cs = EIyy.copy() , EIxx.copy()
@@ -447,37 +426,59 @@ class RunFrame3DD(ExplicitComponent):
         # ------- node data ----------------
         n     = len(z_az)
         rad   = np.zeros(n) # 'radius' of rigidity at node
-        node  = np.arange(1, n+1)
-        #nodes = frame3dd.NodeData(node, x_az, y_az, z_az, rad)
-        nodes = frame3dd.NodeData(node, np.zeros(n), np.zeros(n), r, rad)
-        L     = np.diff(r) #np.sqrt(np.diff(x_az)**2 + np.diff(y_az)**2 + np.diff(z_az)**2)
+        inode = 1 + np.arange(n)
+        if self.options['pbeam']:
+            nodes = frame3dd.NodeData(inode, np.zeros(n), np.zeros(n), r, rad)
+            L     = np.diff(r)
+        else:
+            nodes = frame3dd.NodeData(inode, x_az, y_az, z_az, rad)
+            L     = np.sqrt(np.diff(x_az)**2 + np.diff(y_az)**2 + np.diff(z_az)**2)
         # -----------------------------------
 
         # ------ reaction data ------------
-        node  = [1]
-        rigid = 1
-        reactions = frame3dd.ReactionData(node, [1], [1], [1], [1], [1], [1], rigid)
+        rnode = np.array([1])
+        rigid = np.array([1e16])
+        reactions = frame3dd.ReactionData(rnode, rigid, rigid, rigid, rigid, rigid, rigid, float(rigid))
         # -----------------------------------
 
         # ------ frame element data ------------
         elem = np.arange(1, n)
         N1   = np.arange(1, n)
         N2   = np.arange(2, n+1)
-        roll = np.zeros(n) #theta + alpha # Angle of element principal axes relative to global coordinate system
-        E    = EA   / A
-        rho  = rhoA / A
-        J    = rhoJ / rho
-        G    = GJ   / J
-        Ixx  = EIxx / E # SHIFT TO EI11 / E with roll #TODO check on xx=11 due to flipping
-        Iyy  = EIyy / E # SHIFT TO EI22 / E with roll #TODO check on yy=22 due to flipping
-        Asx  = Asy = 1e-6*np.ones(element.shape) # Unused
-        elements   = frame3dd.ElementData(elem, N1, N2, A, Asx, Asy, J, Ixx, Iyy, E, G, roll, rho)
+
+        E   = EA   / A
+        rho = rhoA / A
+        J   = rhoJ / rho
+        G   = GJ   / J
+        if self.options['pbeam']:
+            Ix  = EIyy / E
+            Iy  = EIxx / E
+        else:
+            Ix  = EI11 / E
+            Iy  = EI22 / E
+
+        Abar,_   = util.nodal2sectional(A)
+        Ebar,_   = util.nodal2sectional(E)
+        rhobar,_ = util.nodal2sectional(rho)
+        Jbar,_   = util.nodal2sectional(J)
+        Gbar,_   = util.nodal2sectional(G)
+        Ixbar,_  = util.nodal2sectional(Ix)
+        Iybar,_  = util.nodal2sectional(Iy)
+
+        if self.options['pbeam']:
+            roll = np.zeros(n-1)
+        else:
+            # Angle of element principal axes relative to global coordinate system
+            roll,_ = util.nodal2sectional(theta + np.rad2deg(alpha))
+            
+        Asx = Asy = 1e-6*np.ones(elem.shape) # Unused
+        elements   = frame3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
         # -----------------------------------
 
         # ------ options ------------
         shear   = False # If not false, have to compute Asx or Asy
-        geom    = True  # Must be true for spin-stiffening
-        dx      = 0.5*np.diff(z_az).min()
+        geom    = (not self.options['pbeam']) # Must be true for spin-stiffening
+        dx      = -1 #np.sum(L) #0.5*np.diff(z_az).min()
         options = frame3dd.Options(shear, geom, dx)
         # -----------------------------------
 
@@ -489,13 +490,15 @@ class RunFrame3DD(ExplicitComponent):
         lump    = 0 # 0= consistent mass matrix, 1= lumped mass matrix
         tol     = 1e-9 # frequency convergence tolerance
         shift   = 0.0 # frequency shift-factor for rigid body modes, make 0 for pos.def. [K]
-        nfreq   = 6
-        blade.enableDynamics(nfreq, Mmethod, lump, tol, shift)
+        blade.enableDynamics(self.n_freq, Mmethod, lump, tol, shift)
         # ----------------------------
 
         # ------ load case 1, blade 1 ------------
         # trapezoidally distributed loads- already has gravity, centrifugal, aero, etc.
-        Px, Py, Pz = inputs['Pz_af'], inputs['Py_af'], -inputs['Px_af']  # switch to local c.s.
+        gx = gy = gz = 0.0
+        load = frame3dd.StaticLoadCase(gx, gy, gz)
+
+        Px, Py, Pz = Pz_af, Py_af, -Px_af # switch to local c.s.
         xx1 = xy1 = xz1 = np.zeros(n-1)
         xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
         wx1 = Px[:-1]
@@ -518,33 +521,32 @@ class RunFrame3DD(ExplicitComponent):
         freq_x, freq_y, mshapes_x, mshapes_y = util.get_mode_shapes(r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
 
         # shear and bending, one per element (convert from local to global c.s.)
-        Fz = forces.Nx[iCase, 1::2]
-        Vy = forces.Vy[iCase, 1::2]
-        Vx = -forces.Vz[iCase, 1::2]
+        Fz = np.r_[-forces.Nx[iCase,0],  forces.Nx[iCase, 1::2]]
+        Vy = np.r_[-forces.Vy[iCase,0],  forces.Vy[iCase, 1::2]]
+        Vx = np.r_[ forces.Vz[iCase,0], -forces.Vz[iCase, 1::2]]
 
-        Tz = forces.Txx[iCase, 1::2]
-        My = forces.Myy[iCase, 1::2]
-        Mx = -forces.Mzz[iCase, 1::2]
-        
-        def strain(self, xu, yu, xl, yl):
+        Tz = np.r_[-forces.Txx[iCase,0],  forces.Txx[iCase, 1::2]]
+        My = np.r_[-forces.Myy[iCase,0],  forces.Myy[iCase, 1::2]]
+        Mx = np.r_[ forces.Mzz[iCase,0], -forces.Mzz[iCase, 1::2]]
+
+        def strain(xu, yu, xl, yl):
             # use profile c.s. to use Hansen's notation
-            Vx, Vy = Vy, Vx
-            Mx, My = My, Mx
-            xu, yu = yu, xu
-            xl, yl = yl, xl
+            Mxx, Myy = My, Mx
+            xuu, yuu = yu, xu
+            xll, yll = yl, xl
 
             # convert to principal axes
-            M1 =  Mx*ca + My*sa
-            M2 = -Mx*sa + My*ca
+            M1 =  Mxx*ca + Myy*sa
+            M2 = -Mxx*sa + Myy*ca
 
-            x =  xu*ca + yu*sa
-            y = -xu*sa + yu*ca
+            x =  xuu*ca + yuu*sa
+            y = -xuu*sa + yuu*ca
 
             # compute strain
             strainU = -(M1/EI11*y - M2/EI22*x + Fz/EA)  # negative sign because 3 is opposite of z
 
-            x =  xl*ca + yl*sa
-            y = -xl*sa + yl*ca
+            x =  xll*ca + yll*sa
+            y = -xll*sa + yll*ca
 
             strainL = -(M1/EI11*y - M2/EI22*x + Fz/EA)
 
@@ -729,6 +731,9 @@ class RotorLoadsDeflStrains(Group):
         self.connect('tot_loads_gust.Px_af', 'pbeam.Px_af')
         self.connect('tot_loads_gust.Py_af', 'pbeam.Py_af')
         self.connect('tot_loads_gust.Pz_af', 'pbeam.Pz_af')
+        self.connect('tot_loads_gust.Px_af', 'frame.Px_af')
+        self.connect('tot_loads_gust.Py_af', 'frame.Py_af')
+        self.connect('tot_loads_gust.Pz_af', 'frame.Pz_af')
 
         # Blade distributed deflections to tip deflection
         self.connect('pbeam.dx', 'tip_pos.dx_tip', src_indices=[-1])
