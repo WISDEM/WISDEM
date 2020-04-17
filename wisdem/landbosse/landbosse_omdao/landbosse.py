@@ -643,7 +643,7 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         # Tower sections
         kg_per_tonne = 1000
-        tower_mass_tonnes = inputs['tower_mass'] / kg_per_tonne
+        tower_mass_tonnes = inputs['tower_mass'][0] / kg_per_tonne
         tower_section_length_m = inputs['tower_section_length_m'][0]
         tower_height_m = inputs['hub_height_meters'][0] - inputs['foundation_height'][0]
         complete_tower_sections = int(tower_height_m // tower_section_length_m)
