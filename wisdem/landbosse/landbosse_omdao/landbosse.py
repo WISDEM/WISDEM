@@ -612,12 +612,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         input_components = discrete_inputs['components']
 
-        tower_section_length_m = inputs['tower_section_length_m'][0]
-        tower_height_m = inputs['hub_height_meters'][0] - inputs['foundation_height'][0]
-        complete_tower_sections = tower_height_m // tower_section_length_m
-        incomplete_tower_section_m = tower_height_m % tower_section_length_m
-        print('tower_height_m', tower_height_m)
-
         # myIndeps.add_output('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
         # myIndeps.add_output('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
         # myIndeps.add_output('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='hr')
@@ -631,19 +625,45 @@ class LandBOSSE_API(om.ExplicitComponent):
         print('>>>>>>>>>> UNMODIFIED COMPONENTS <<<<<<<<')
         print(input_components)
 
-        blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0]
-
-        if inputs['blade_drag_coefficient'] != USE_DEFAULT_COMPONENT_DATA:
-            blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
-
+        # Will modified output components
         output_components_list = []
-        # Assemble blades
+
+        # Make some blades
+        default_blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0]
+        if inputs['blade_drag_coefficient'] != USE_DEFAULT_COMPONENT_DATA:
+            default_blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
+
+        # What to do with the blade drag multipler? I don't see it in the component list
+
         for i in range(NUMBER_OF_BLADES):
             component = f"Blade {i}"
-            blade_i = blade.copy()
+            blade_i = default_blade.copy()
             blade_i['Component'] = component
             output_components_list.append(blade_i)
 
+        # Tower sections
+        kg_per_tonne = 1000
+        tower_mass_tonnes = inputs['tower_mass'] / kg_per_tonne
+        tower_section_length_m = inputs['tower_section_length_m'][0]
+        tower_height_m = inputs['hub_height_meters'][0] - inputs['foundation_height'][0]
+        complete_tower_sections = int(tower_height_m // tower_section_length_m)
+        incomplete_tower_section_m = tower_height_m % tower_section_length_m
+        tower_sections = [tower_section_length_m] * complete_tower_sections
+        if incomplete_tower_section_m > 0:
+            tower_sections.append(incomplete_tower_section_m)
+        tower_section_masses = [x / tower_height_m * tower_mass_tonnes for x in tower_sections]
+        tower_sections = np.array(tower_sections)
+        tower_lift_heights = tower_sections.cumsum()
+
+        default_tower_section = input_components[input_components['Component'].str.startswith('Tower')].iloc[0]
+        for i, (mass, lift_height) in enumerate(zip(tower_section_masses, tower_lift_heights)):
+            tower_section = default_tower_section.copy()
+            tower_section['Component'] = f'Tower section {i}'
+            tower_section['Mass tonne'] = mass
+            tower_section['Lift height m'] = lift_height
+            output_components_list.append(tower_section)
+
+        # Make the output component list
         output_components = pd.DataFrame(output_components_list)
 
         print('>>>>>>>>>> MODIFIED COMPONENTS <<<<<<<<')
