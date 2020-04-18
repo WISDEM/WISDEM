@@ -503,8 +503,6 @@ class RunFrame3DD(ExplicitComponent):
         load = frame3dd.StaticLoadCase(gx, gy, gz)
 
         if not self.options['pbeam']:
-            # Need loads in blade c.s., this reverses the last step of TotalLoads
-            #P = DirectionVector(Px_af, Py_af, Pz_af).airfoilToBlade(theta+alpha)
             # Have to further move the loads into principle directions
             P = DirectionVector(Px_af, Py_af, Pz_af).bladeToAirfoil(alpha)
             Px_af = P.x
@@ -534,8 +532,6 @@ class RunFrame3DD(ExplicitComponent):
         dx = displacements.dx[iCase,:]
         dy = displacements.dy[iCase,:]
         dz = displacements.dz[iCase,:]
-        #dr = DirectionVector(dx, dy, dz)
-        #delta = dr.airfoilToBlade(theta + alpha).bladeToAzimuth(0.0).azimuthToHub(0.0).hubToYaw(0.0)
         
         # Mode shapes and frequencies
         freq_x, freq_y, mshapes_x, mshapes_y = util.get_mode_shapes(r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
