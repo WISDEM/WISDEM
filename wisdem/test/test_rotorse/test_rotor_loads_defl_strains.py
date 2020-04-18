@@ -236,6 +236,57 @@ class TestRLDS(unittest.TestCase):
         npt.assert_almost_equal(outputs['freqs'], freqs_pbeam, decimal=0)
         
         
+    def testRunFrame3DD_TipDeflection(self):
+        inputs = {}
+        outputs0 = {}
+        outputs = {}
+        discrete_inputs = {}
+        discrete_outputs = {}
+
+        nrel5mw = np.load('nrel5mw_test.npz')
+        for k in nrel5mw.files:
+            inputs[k] = nrel5mw[k]
+        
+        npts  = len(inputs['r'])
+        nfreq = 10
+        myzero = np.zeros(npts)
+        myone  = np.ones(npts)
+        options = {}
+        options['blade'] = {}
+        options['blade']['n_span'] = npts
+        options['blade']['n_freq'] = nfreq
+
+        # Tip deflection the old pBeam way
+        myobj0 = rlds.RunFrame3DD(analysis_options=options, pbeam=True)
+        myobj0.n_span = npts
+        myobj0.n_freq = nfreq
+        myobj0.compute(inputs, outputs0)
+        
+        mytip = rlds.TipDeflection()
+        inputs['dx_tip'] = outputs0['dx'][-1]
+        inputs['dy_tip'] = outputs0['dy'][-1]
+        inputs['dz_tip'] = outputs0['dz'][-1]
+        inputs['theta_tip'] = inputs['theta'][-1]
+        inputs['pitch_load'] = 0.0
+        inputs['tilt'] = 0.0
+        inputs['3d_curv_tip'] = 0.0
+        inputs['dynamicFactor'] = 1.0
+        mytip.compute(inputs, outputs0)
+
+        # Tip deflection the new, enhanced way with geometric stiffening
+        myobj = rlds.RunFrame3DD(analysis_options=options, pbeam=False)
+        myobj.n_span = npts
+        myobj.n_freq = nfreq
+        myobj.compute(inputs, outputs)
+        
+        inputs['dx_tip'] = outputs['dx'][-1]
+        inputs['dy_tip'] = outputs['dy'][-1]
+        inputs['dz_tip'] = outputs['dz'][-1]
+        inputs['theta_tip'] = inputs['theta'][-1]
+        mytip.compute(inputs, outputs)
+        self.assertLess(outputs['tip_deflection'], outputs0['tip_deflection'])
+        
+        
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestRLDS))

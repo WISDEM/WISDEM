@@ -402,7 +402,8 @@ class RunFrame3DD(ExplicitComponent):
         xl_strain_te   = inputs['xl_strain_te']
         yu_strain_te   = inputs['yu_strain_te']
         yl_strain_te   = inputs['yl_strain_te']
-
+        #np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af,xu_strain_spar=xu_strain_spar,xl_strain_spar=xl_strain_spar,yu_strain_spar=yu_strain_spar,yl_strain_spar=yl_strain_spar,xu_strain_te=xu_strain_te,xl_strain_te=xl_strain_te,yu_strain_te=yu_strain_te,yl_strain_te=yl_strain_te)
+        
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         EIxx_cs , EIyy_cs = EIyy.copy() , EIxx.copy()
         x_ec_cs , y_ec_cs = y_ec.copy() , x_ec.copy()
@@ -421,7 +422,10 @@ class RunFrame3DD(ExplicitComponent):
         EI22 = EIyy_cs + EIxy_cs*np.tan(alpha)
         ca   = np.cos(alpha)
         sa   = np.sin(alpha)
-
+        
+        # Now store alpha in degrees
+        alpha = np.rad2deg(alpha)
+        
         # Frame3dd call
         # ------- node data ----------------
         n     = len(z_az)
@@ -469,7 +473,7 @@ class RunFrame3DD(ExplicitComponent):
             roll = np.zeros(n-1)
         else:
             # Angle of element principal axes relative to global coordinate system
-            roll,_ = util.nodal2sectional(theta + np.rad2deg(alpha))
+            roll,_ = util.nodal2sectional(theta + alpha)
             
         Asx = Asy = 1e-6*np.ones(elem.shape) # Unused
         elements   = frame3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
@@ -498,6 +502,15 @@ class RunFrame3DD(ExplicitComponent):
         gx = gy = gz = 0.0
         load = frame3dd.StaticLoadCase(gx, gy, gz)
 
+        if not self.options['pbeam']:
+            # Need loads in blade c.s., this reverses the last step of TotalLoads
+            #P = DirectionVector(Px_af, Py_af, Pz_af).airfoilToBlade(theta+alpha)
+            # Have to further move the loads into principle directions
+            P = DirectionVector(Px_af, Py_af, Pz_af).bladeToAirfoil(alpha)
+            Px_af = P.x
+            Py_af = P.y
+            Pz_af = P.z
+        
         Px, Py, Pz = Pz_af, Py_af, -Px_af # switch to local c.s.
         xx1 = xy1 = xz1 = np.zeros(n-1)
         xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
@@ -517,6 +530,13 @@ class RunFrame3DD(ExplicitComponent):
         displacements, forces, reactions, internalForces, mass, modal = blade.run()
         iCase = 0
 
+        # Displacements
+        dx = displacements.dx[iCase,:]
+        dy = displacements.dy[iCase,:]
+        dz = displacements.dz[iCase,:]
+        #dr = DirectionVector(dx, dy, dz)
+        #delta = dr.airfoilToBlade(theta + alpha).bladeToAzimuth(0.0).azimuthToHub(0.0).hubToYaw(0.0)
+        
         # Mode shapes and frequencies
         freq_x, freq_y, mshapes_x, mshapes_y = util.get_mode_shapes(r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
 
@@ -560,14 +580,14 @@ class RunFrame3DD(ExplicitComponent):
         outputs['root_F'] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
         outputs['root_M'] = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
         outputs['freqs'] = modal.freq
-        outputs['edge_mode_shapes'] = mshapes_x
-        outputs['flap_mode_shapes'] = mshapes_y
-        outputs['edge_mode_freqs']  = freq_x
-        outputs['flap_mode_freqs']  = freq_y
-        outputs['freq_distance']    = freq_x[0] / freq_y[0]
-        outputs['dx'] = displacements.dx[iCase,:]
-        outputs['dy'] = displacements.dy[iCase,:]
-        outputs['dz'] = displacements.dz[iCase,:]
+        outputs['edge_mode_shapes'] = mshapes_y
+        outputs['flap_mode_shapes'] = mshapes_x
+        outputs['edge_mode_freqs']  = freq_y
+        outputs['flap_mode_freqs']  = freq_x
+        outputs['freq_distance']    = freq_y[0] / freq_x[0]
+        outputs['dx'] = dx
+        outputs['dy'] = dy
+        outputs['dz'] = dz
         outputs['strainU_spar'] = strainU_spar
         outputs['strainL_spar'] = strainL_spar
         outputs['strainU_te'] = strainU_te
@@ -601,15 +621,14 @@ class TipDeflection(ExplicitComponent):
         totalConeTip  = inputs['3d_curv_tip']
         dynamicFactor = inputs['dynamicFactor']
 
-        theta = theta + pitch
-
         dr = DirectionVector(dx, dy, dz)
-        delta = dr.airfoilToBlade(theta).bladeToAzimuth(totalConeTip).azimuthToHub(azimuth).hubToYaw(tilt)
 
-        tip_deflection = dynamicFactor * delta.x
+        # TODO: REMOVE THETA IF USING FRAME3DD?
+        delta = dr.airfoilToBlade(theta + pitch).bladeToAzimuth(totalConeTip).azimuthToHub(azimuth).hubToYaw(tilt)
 
-        outputs['tip_deflection'] = tip_deflection
+        outputs['tip_deflection'] = dynamicFactor * delta.x
 
+        
 class DesignConstraints(ExplicitComponent):
     # OpenMDAO component that formulates constraints on user-defined maximum strains, frequencies   
     def initialize(self):
@@ -707,7 +726,7 @@ class RotorLoadsDeflStrains(Group):
         # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
         promoteListpBeam = ['r','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te']
         self.add_subsystem('pbeam',     RunpBEAM(analysis_options = analysis_options),      promotes=promoteListpBeam)
-        promoteListFrame3DD = ['x_az','y_az','z_az','r','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te']
+        promoteListFrame3DD = ['x_az','y_az','z_az','theta','r','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te']
         self.add_subsystem('frame',     RunFrame3DD(analysis_options = analysis_options),      promotes=promoteListFrame3DD)
         self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
         self.add_subsystem('aero_hub_loads', AeroHubLoads(analysis_options = analysis_options), promotes = promoteListAeroLoads)
