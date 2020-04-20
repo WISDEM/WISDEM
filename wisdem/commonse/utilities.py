@@ -44,6 +44,9 @@ def rotate(xo, yo, xp, yp, angle):
 
 def arc_length(points):
     """
+    Compute the distances between points along a curve and return those
+    distances as a flat array.
+    
     Parameters
     ----------
     points : numpy array[n_points, n_dimensions]
@@ -56,7 +59,48 @@ def arc_length(points):
     """
     cartesian_distances = np.sqrt(np.sum(np.diff(points, axis=0)**2, axis=1))
     arc_distances = np.r_[0.0, np.cumsum(cartesian_distances)]
+    
     return arc_distances
+    
+def arc_length_deriv(points):
+    """
+    Return the Jacobian for function arc_length().
+    See its docstring for more details.
+    
+    Parameters
+    ----------
+    points : numpy array[n_points, n_dim]
+        Array of coordinate points that we compute the arc distances for.
+    Returns
+    -------
+    d_arc_distances_d_points : numpy array[n_points, n_points * n_dim]
+        Array, starting at 0, with the cumulative distance from the first
+        point in the points array along the arc.
+    """
+    n_points, n_dim = points.shape
+    d_arc_distances_d_points = np.zeros((n_points, n_points * n_dim))
+    
+    diff_points = np.diff(points, axis=0)
+    sum_diffs = np.sum(diff_points**2, axis=1)
+    cartesian_distances = np.sqrt(sum_diffs)
+    cum_sum_distances = np.cumsum(cartesian_distances)
+    arc_distances = np.r_[0.0, cum_sum_distances]
+    
+    from time import time
+    # This can be sped up slightly through numpy vectorization, it's shown here in
+    # for-loop for clarity.
+    for i in range(1, n_points):
+        d_inner = 2*points[i]-2*points[i-1]
+        d_outer = 0.5 * (sum_diffs[i-1])**(-0.5)
+        d_arc_distances_d_points[i, i*n_dim:i*n_dim+n_dim] = d_inner * d_outer
+        
+        d_inner = 2*points[i-1]-2*points[i]
+        d_outer = 0.5 * (sum_diffs[i-1])**(-0.5)
+        d_arc_distances_d_points[i, i*n_dim-n_dim:i*n_dim] = d_inner * d_outer
+        
+        d_arc_distances_d_points[i:, i*n_dim-n_dim:i*n_dim] = np.sum(d_arc_distances_d_points[i-1:i+1, i*n_dim-n_dim:i*n_dim], axis=0)
+    
+    return arc_distances, d_arc_distances_d_points
 
 def cosd(value):
     """cosine of value where value is given in degrees"""
