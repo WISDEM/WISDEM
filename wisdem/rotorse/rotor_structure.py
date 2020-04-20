@@ -8,7 +8,7 @@ from openmdao.api import ExplicitComponent
 from wisdem.ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
 from wisdem.commonse import gravity, NFREQ
 from wisdem.commonse.csystem import DirectionVector
-from wisdem.commonse.utilities import trapz_deriv, interp_with_deriv, rotate, arc_length
+from wisdem.commonse.utilities import trapz_deriv, interp_with_deriv
 from wisdem.commonse.akima import Akima, akima_interp_with_derivs
 import wisdem.pBeam._pBEAM as _pBEAM
 import wisdem.ccblade._bem as _bem
