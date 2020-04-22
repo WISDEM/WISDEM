@@ -7,14 +7,9 @@ import openmdao.api as om
 import copy
 import time
 import os
-ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'regulation.npz'
+ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'nrel5mw_test.npz'
         
 class TestRLDS(unittest.TestCase):
-    def setUp(self):
-        self.inputs = {}
-        self.outputs = {}
-        self.discrete_inputs = {}
-        self.discrete_outputs = {}
         
     def testGust(self):
         inputs = {}
@@ -193,7 +188,7 @@ class TestRLDS(unittest.TestCase):
         discrete_inputs = {}
         discrete_outputs = {}
 
-        nrel5mw = np.load('nrel5mw_test.npz')
+        nrel5mw = np.load(ARCHIVE)
         for k in nrel5mw.files:
             inputs[k] = nrel5mw[k]
         
@@ -243,7 +238,7 @@ class TestRLDS(unittest.TestCase):
         discrete_inputs = {}
         discrete_outputs = {}
 
-        nrel5mw = np.load('nrel5mw_test.npz')
+        nrel5mw = np.load(ARCHIVE)
         for k in nrel5mw.files:
             inputs[k] = nrel5mw[k]
         
@@ -286,6 +281,47 @@ class TestRLDS(unittest.TestCase):
         mytip.compute(inputs, outputs)
         self.assertLess(outputs['tip_deflection'], outputs0['tip_deflection'])
         
+            
+    def testConstraints(self):
+        inputs = {}
+        outputs = {}
+
+        npts = 101
+        myzero = np.zeros(npts)
+        myone  = np.ones(npts)
+        options = {}
+        options['blade'] = {}
+        options['blade']['n_span'] = npts
+        options['blade']['n_freq'] = 6
+
+        myopt = {}
+        myopt['optimization_variables'] = {}
+        myopt['optimization_variables']['blade'] = {}
+        myopt['optimization_variables']['blade']['structure'] = {}
+        myopt['optimization_variables']['blade']['spar_cap_ss'] = {}
+        myopt['optimization_variables']['blade']['spar_cap_ps'] = {}
+        myopt['optimization_variables']['blade']['spar_cap_ss']['n_opt'] = 3
+        myopt['optimization_variables']['blade']['spar_cap_ps']['n_opt'] = 3
+
+        myobj = rlds.DesignConstraints(analysis_options=options, opt_options=myopt)
+
+        # Straight blade: Z is 'r'
+        inputs['strainU_spar'] = np.linspace(0.4, 0.6, npts)
+        inputs['strainL_spar'] = 0.6*myone
+        inputs['min_strainU_spar'] = inputs['min_strainL_spar'] = 0.0
+        inputs['max_strainU_spar'] = inputs['max_strainL_spar'] = 0.5
+        inputs['s'] = np.linspace(0,1,npts)
+        inputs['s_opt_spar_cap_ss'] = inputs['s_opt_spar_cap_ps'] = np.array([0.0, 0.5, 1.0])
+        inputs['rated_Omega'] = 10.0
+        inputs['delta_f'] = 1.1
+        inputs['flap_mode_freqs'] = 0.6*np.ones(3)
+        inputs['edge_mode_freqs'] = 0.4*np.ones(3)
+        
+        myobj.compute(inputs, outputs)
+        npt.assert_equal(outputs['constr_max_strainU_spar'], np.array([0.8, 1.0, 1.2]))
+        npt.assert_equal(outputs['constr_max_strainL_spar'], 1.2*np.ones(3))
+        npt.assert_almost_equal(outputs['constr_flap_f_margin'], 0.5-0.9*0.6)
+        npt.assert_almost_equal(outputs['constr_edge_f_margin'], 1.1*0.4-0.5)
         
 def suite():
     suite = unittest.TestSuite()

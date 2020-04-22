@@ -10,7 +10,6 @@ from wisdem.commonse.akima import Akima
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse import RPM2RS, RS2RPM
-import wisdem.pBeam._pBEAM as _pBEAM
 import wisdem.pyframe3dd.frame3dd as frame3dd
 
 class GustETM(ExplicitComponent):
@@ -157,158 +156,6 @@ class TotalLoads(ExplicitComponent):
         outputs['Py_af'] = dynamicFactor * P.y
         outputs['Pz_af'] = dynamicFactor * P.z
 
-        
-class RunpBEAM(ExplicitComponent):
-    def initialize(self):
-        self.options.declare('analysis_options')
-
-    def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
-        self.n_span = n_span = blade_init_options['n_span']
-        self.n_freq = n_freq = blade_init_options['n_freq']
-
-        # all inputs/outputs in airfoil coordinate system
-        self.add_input('Px_af', val=np.zeros(n_span), desc='distributed load (force per unit length) in airfoil x-direction')
-        self.add_input('Py_af', val=np.zeros(n_span), desc='distributed load (force per unit length) in airfoil y-direction')
-        self.add_input('Pz_af', val=np.zeros(n_span), desc='distributed load (force per unit length) in airfoil z-direction')
-
-        self.add_input('xu_strain_spar',    val=np.zeros(n_span), desc='x-position of midpoint of spar cap on upper surface for strain calculation')
-        self.add_input('xl_strain_spar',    val=np.zeros(n_span), desc='x-position of midpoint of spar cap on lower surface for strain calculation')
-        self.add_input('yu_strain_spar',    val=np.zeros(n_span), desc='y-position of midpoint of spar cap on upper surface for strain calculation')
-        self.add_input('yl_strain_spar',    val=np.zeros(n_span), desc='y-position of midpoint of spar cap on lower surface for strain calculation')
-        self.add_input('xu_strain_te',      val=np.zeros(n_span), desc='x-position of midpoint of trailing-edge panel on upper surface for strain calculation')
-        self.add_input('xl_strain_te',      val=np.zeros(n_span), desc='x-position of midpoint of trailing-edge panel on lower surface for strain calculation')
-        self.add_input('yu_strain_te',      val=np.zeros(n_span), desc='y-position of midpoint of trailing-edge panel on upper surface for strain calculation')
-        self.add_input('yl_strain_te',      val=np.zeros(n_span), desc='y-position of midpoint of trailing-edge panel on lower surface for strain calculation')
-
-        self.add_input('r',     val=np.zeros(n_span), units='m',        desc='locations of properties along beam')
-        self.add_input('EA',    val=np.zeros(n_span), units='N',        desc='axial stiffness')
-        self.add_input('EIxx',  val=np.zeros(n_span), units='N*m**2',   desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('EIyy',  val=np.zeros(n_span), units='N*m**2',   desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-        self.add_input('EIxy',  val=np.zeros(n_span), units='N*m**2',   desc='coupled flap-edge stiffness')
-        self.add_input('GJ',    val=np.zeros(n_span), units='N*m**2',   desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
-        self.add_input('rhoA',  val=np.zeros(n_span), units='kg/m',     desc='mass per unit length')
-        self.add_input('rhoJ',  val=np.zeros(n_span), units='kg*m',     desc='polar mass moment of inertia per unit length')
-        self.add_input('x_ec',  val=np.zeros(n_span), units='m',        desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
-        self.add_input('y_ec',  val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
-
-        # outputs
-        # self.add_output('blade_mass',       val=0.0,              units='kg',       desc='mass of one blades')
-        # self.add_output('blade_moment_of_inertia', val=0.0,       units='kg*m**2',  desc='out of plane moment of inertia of a blade')
-        self.add_output('freq_pbeam',       val=np.zeros(n_freq), units='Hz',       desc='first nF natural frequencies of blade')
-        self.add_output('freq_distance',    val=0.0,              desc='ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise')
-        self.add_output('dx',               val=np.zeros(n_span), desc='deflection of blade section in airfoil x-direction')
-        self.add_output('dy',               val=np.zeros(n_span), desc='deflection of blade section in airfoil y-direction')
-        self.add_output('dz',               val=np.zeros(n_span), desc='deflection of blade section in airfoil z-direction')
-        self.add_output('strainU_spar',     val=np.zeros(n_span), desc='strain in spar cap on upper surface at location xu,yu_strain with loads P_strain')
-        self.add_output('strainL_spar',     val=np.zeros(n_span), desc='strain in spar cap on lower surface at location xl,yl_strain with loads P_strain')
-        self.add_output('strainU_te',       val=np.zeros(n_span), desc='strain in trailing-edge panels on upper surface at location xu,yu_te with loads P_te')
-        self.add_output('strainL_te',       val=np.zeros(n_span), desc='strain in trailing-edge panels on lower surface at location xl,yl_te with loads P_te')
-        
-    def principalCS(self, EIyy_in, EIxx_in, y_ec_in, x_ec_in, EA, EIxy):
-
-        # rename (with swap of x, y for profile c.s.)
-        EIxx , EIyy = EIyy_in , EIxx_in
-        x_ec , y_ec = y_ec_in , x_ec_in
-        self.EA     = EA
-        EIxy        = EIxy
-
-        # translate to elastic center
-        EIxx -= y_ec**2*EA
-        EIyy -= x_ec**2*EA
-        EIxy -= x_ec*y_ec*EA
-
-        # get rotation angle
-        alpha = 0.5*np.arctan2(2*EIxy, EIyy-EIxx)
-
-        self.EI11 = EIxx - EIxy*np.tan(alpha)
-        self.EI22 = EIyy + EIxy*np.tan(alpha)
-
-        # get moments and positions in principal axes
-        self.ca = np.cos(alpha)
-        self.sa = np.sin(alpha)
-
-    def strain(self, blade, xu, yu, xl, yl):
-
-        Vx, Vy, Fz, Mx, My, Tz = blade.shearAndBending()
-
-        # use profile c.s. to use Hansen's notation
-        Vx, Vy = Vy, Vx
-        Mx, My = My, Mx
-        xu, yu = yu, xu
-        xl, yl = yl, xl
-
-        # convert to principal xes
-        M1 = Mx*self.ca + My*self.sa
-        M2 = -Mx*self.sa + My*self.ca
-
-        x = xu*self.ca + yu*self.sa
-        y = -xu*self.sa + yu*self.ca
-
-        # compute strain
-        strainU = -(M1/self.EI11*y - M2/self.EI22*x + Fz/self.EA)  # negative sign because 3 is opposite of z
-
-        x = xl*self.ca + yl*self.sa
-        y = -xl*self.sa + yl*self.ca
-
-        strainL = -(M1/self.EI11*y - M2/self.EI22*x + Fz/self.EA)
-
-        return strainU, strainL
-
-    def compute(self, inputs, outputs):
-
-        Px = inputs['Px_af']
-        Py = inputs['Py_af']
-        Pz = inputs['Pz_af']
-        xu_strain_spar = inputs['xu_strain_spar']
-        xl_strain_spar = inputs['xl_strain_spar']
-        yu_strain_spar = inputs['yu_strain_spar']
-        yl_strain_spar = inputs['yl_strain_spar']
-        xu_strain_te = inputs['xu_strain_te']
-        xu_strain_te = inputs['xu_strain_te']
-        xl_strain_te = inputs['xl_strain_te']
-        yu_strain_te = inputs['yu_strain_te']
-        yl_strain_te = inputs['yl_strain_te']
-
-        # outputs
-        nsec = self.n_span
-
-        # create finite element objects
-        p_section = _pBEAM.SectionData(nsec, inputs['r'], inputs['EA'], inputs['EIxx'],
-                                       inputs['EIyy'], inputs['GJ'], inputs['rhoA'], inputs['rhoJ'])
-        p_tip = _pBEAM.TipData()  # no tip mass
-        p_base = _pBEAM.BaseData(np.ones(6), 1.0)  # rigid base
-
-
-        # ----- tip deflection -----
-
-        # evaluate displacements
-        p_loads = _pBEAM.Loads(nsec, Px, Py, Pz)
-        blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
-        dx, dy, dz, dtheta_r1, dtheta_r2, dtheta_z = blade.displacement()
-
-        # now computed in rotor elasticity!
-        # --- moments of inertia
-        # blade_moment_of_inertia = blade.outOfPlaneMomentOfInertia()
-        # --- mass --- 
-        # blade_mass = blade.mass()
-        # ----- natural frequencies ----
-        freq = blade.naturalFrequencies(self.n_freq)
-
-        # ----- strain -----
-        self.principalCS(inputs['EIyy'], inputs['EIxx'], inputs['y_ec'], inputs['x_ec'], inputs['EA'], inputs['EIxy'])
-        strainU_spar, strainL_spar = self.strain(blade, xu_strain_spar, yu_strain_spar, xl_strain_spar, yl_strain_spar)
-        strainU_te, strainL_te = self.strain(blade, xu_strain_te, yu_strain_te, xl_strain_te, yl_strain_te)
-
-        outputs['freq_pbeam'] = freq
-        outputs['freq_distance'] = np.float(freq[1]/freq[0])
-        outputs['dx'] = dx
-        outputs['dy'] = dy
-        outputs['dz'] = dz
-        outputs['strainU_spar'] = strainU_spar
-        outputs['strainL_spar'] = strainL_spar
-        outputs['strainU_te'] = strainU_te
-        outputs['strainL_te'] = strainL_te
 
 
 
@@ -423,14 +270,14 @@ class RunFrame3DD(ExplicitComponent):
         ca   = np.cos(alpha)
         sa   = np.sin(alpha)
         
-        # Now store alpha in degrees
+        # Now store alpha for later use in degrees
         alpha = np.rad2deg(alpha)
         
         # Frame3dd call
         # ------- node data ----------------
         n     = len(z_az)
-        rad   = np.zeros(n) # 'radius' of rigidity at node
-        inode = 1 + np.arange(n)
+        rad   = np.zeros(n) # 'radius' of rigidity at node- set to zero
+        inode = 1 + np.arange(n) # Node numbers (1-based indexing)
         if self.options['pbeam']:
             nodes = frame3dd.NodeData(inode, np.zeros(n), np.zeros(n), r, rad)
             L     = np.diff(r)
@@ -440,27 +287,31 @@ class RunFrame3DD(ExplicitComponent):
         # -----------------------------------
 
         # ------ reaction data ------------
+        # Pinned at root
         rnode = np.array([1])
         rigid = np.array([1e16])
         reactions = frame3dd.ReactionData(rnode, rigid, rigid, rigid, rigid, rigid, rigid, float(rigid))
         # -----------------------------------
 
         # ------ frame element data ------------
-        elem = np.arange(1, n)
-        N1   = np.arange(1, n)
-        N2   = np.arange(2, n+1)
+        elem = np.arange(1, n) # Element Numbers
+        N1   = np.arange(1, n) # Node number start
+        N2   = np.arange(2, n+1) # Node number finish
 
         E   = EA   / A
         rho = rhoA / A
         J   = rhoJ / rho
         G   = GJ   / J
         if self.options['pbeam']:
+            # Use airfoil c.s.
             Ix  = EIyy / E
             Iy  = EIxx / E
         else:
+            # Will further rotate to principle axes
             Ix  = EI11 / E
             Iy  = EI22 / E
 
+        # Have to convert nodal values to find average at center of element
         Abar,_   = util.nodal2sectional(A)
         Ebar,_   = util.nodal2sectional(E)
         rhobar,_ = util.nodal2sectional(rho)
@@ -469,20 +320,22 @@ class RunFrame3DD(ExplicitComponent):
         Ixbar,_  = util.nodal2sectional(Ix)
         Iybar,_  = util.nodal2sectional(Iy)
 
+        # Angle of element principal axes relative to global coordinate system
         if self.options['pbeam']:
+            # Work in airfoil c.s. for both global and local c.s.
             roll = np.zeros(n-1)
         else:
-            # Angle of element principal axes relative to global coordinate system
+            # Global c.s. is blade, local element c.s. is airfoil (twist + principle rotation)
             roll,_ = util.nodal2sectional(theta + alpha)
             
-        Asx = Asy = 1e-6*np.ones(elem.shape) # Unused
+        Asx = Asy = 1e-6*np.ones(elem.shape) # Unused when shear=False
         elements   = frame3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
         # -----------------------------------
 
         # ------ options ------------
         shear   = False # If not false, have to compute Asx or Asy
         geom    = (not self.options['pbeam']) # Must be true for spin-stiffening
-        dx      = -1 #np.sum(L) #0.5*np.diff(z_az).min()
+        dx      = -1 # Don't need stress changes within element for now
         options = frame3dd.Options(shear, geom, dx)
         # -----------------------------------
 
@@ -526,9 +379,11 @@ class RunFrame3DD(ExplicitComponent):
 
         # run the analysis
         displacements, forces, reactions, internalForces, mass, modal = blade.run()
+
+        # For now, just 1 load case and blade
         iCase = 0
 
-        # Displacements
+        # Displacements in global (blade) c.s.
         dx = displacements.dx[iCase,:]
         dy = displacements.dy[iCase,:]
         dz = displacements.dz[iCase,:]
@@ -594,10 +449,10 @@ class TipDeflection(ExplicitComponent):
     # OpenMDAO component that computes the blade deflection at tip in yaw x-direction
     def setup(self):
         # Inputs
-        self.add_input('dx_tip',        val=0.0,                    desc='deflection at tip in airfoil x-direction')
-        self.add_input('dy_tip',        val=0.0,                    desc='deflection at tip in airfoil y-direction')
-        self.add_input('dz_tip',        val=0.0,                    desc='deflection at tip in airfoil z-direction')
-        self.add_input('theta_tip',     val=0.0,    units='deg',    desc='twist at tip section')
+        self.add_input('dx_tip',        val=0.0,                    desc='deflection at tip in blade x-direction')
+        self.add_input('dy_tip',        val=0.0,                    desc='deflection at tip in blade y-direction')
+        self.add_input('dz_tip',        val=0.0,                    desc='deflection at tip in blade z-direction')
+        #self.add_input('theta_tip',     val=0.0,    units='deg',    desc='twist at tip section')
         self.add_input('pitch_load',    val=0.0,    units='deg',    desc='blade pitch angle')
         self.add_input('tilt',          val=0.0,    units='deg',    desc='tilt angle')
         self.add_input('3d_curv_tip',   val=0.0,    units='deg',    desc='total coning angle including precone and curvature')
@@ -610,8 +465,7 @@ class TipDeflection(ExplicitComponent):
         dx            = inputs['dx_tip']
         dy            = inputs['dy_tip']
         dz            = inputs['dz_tip']
-        theta         = inputs['theta_tip']
-        pitch         = inputs['pitch_load']
+        pitch         = inputs['pitch_load'] #+ inputs['theta_tip']
         azimuth       = 180.0 # The blade is assumed in front of the tower, although the loading may correspond to another azimuthal position
         tilt          = inputs['tilt']
         totalConeTip  = inputs['3d_curv_tip']
@@ -619,8 +473,7 @@ class TipDeflection(ExplicitComponent):
 
         dr = DirectionVector(dx, dy, dz)
 
-        # TODO: REMOVE THETA IF USING FRAME3DD?
-        delta = dr.airfoilToBlade(theta + pitch).bladeToAzimuth(totalConeTip).azimuthToHub(azimuth).hubToYaw(tilt)
+        delta = dr.airfoilToBlade(pitch).bladeToAzimuth(totalConeTip).azimuthToHub(azimuth).hubToYaw(tilt)
 
         outputs['tip_deflection'] = dynamicFactor * delta.x
 
@@ -635,6 +488,7 @@ class DesignConstraints(ExplicitComponent):
         blade_init_options = self.options['analysis_options']['blade']
         self.n_span = n_span = blade_init_options['n_span']
         self.n_freq = n_freq = blade_init_options['n_freq']
+        n_freq2 = int(n_freq/2)
         self.opt_options   = opt_options   = self.options['opt_options']
         self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']
         self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']
@@ -653,18 +507,17 @@ class DesignConstraints(ExplicitComponent):
 
         # Input frequencies
         self.add_input('rated_Omega', val=0.0,                units='rpm', desc='rotor rotation speed at rated')
-        self.add_input('delta_f',     val=1.1,                             desc='minimum margin between 3P and edge frequency')
-        self.add_input('freq',        val=np.zeros(n_freq),   units='Hz',  desc='first nF natural frequencies')
+        self.add_input('delta_f',     val=1.1,                             desc='minimum frequency margin')
+        self.add_input('flap_mode_freqs', np.zeros(n_freq2), units='Hz', desc='Frequencies associated with mode shapes in the flap direction')
+        self.add_input('edge_mode_freqs', np.zeros(n_freq2), units='Hz', desc='Frequencies associated with mode shapes in the edge direction')
 
         # Outputs
         # self.add_output('constr_min_strainU_spar',     val=np.zeros(n_opt_spar_cap_ss), desc='constraint for minimum strain in spar cap suction side')
         self.add_output('constr_max_strainU_spar',     val=np.zeros(n_opt_spar_cap_ss), desc='constraint for maximum strain in spar cap suction side')
         # self.add_output('constr_min_strainL_spar',     val=np.zeros(n_opt_spar_cap_ps), desc='constraint for minimum strain in spar cap pressure side')
         self.add_output('constr_max_strainL_spar',     val=np.zeros(n_opt_spar_cap_ps), desc='constraint for maximum strain in spar cap pressure side')
-        self.add_output('constr_flap_f_above_3P',      val=0.0,                     desc='constraint on flap blade frequency to stay above 3P + delta')
-        self.add_output('constr_edge_f_above_3P',      val=0.0,                     desc='constraint on edge blade frequency to stay above 3P + delta')
-        self.add_output('constr_flap_f_below_3P',      val=0.0,                     desc='constraint on flap blade frequency to stay below 3P + delta')
-        self.add_output('constr_edge_f_below_3P',      val=0.0,                     desc='constraint on edge blade frequency to stay below 3P + delta')
+        self.add_output('constr_flap_f_margin',      val=np.zeros(n_freq2),             desc='constraint on flap blade frequency such that ratio of 3P/f is above or below delta with constraint <= 0')
+        self.add_output('constr_edge_f_margin',      val=np.zeros(n_freq2),             desc='constraint on edge blade frequency such that ratio of 3P/f is above or below delta with constraint <= 0')
 
     def compute(self, inputs, outputs):
         
@@ -687,13 +540,11 @@ class DesignConstraints(ExplicitComponent):
 
         # Constraints on blade frequencies
         threeP = 3. * inputs['rated_Omega'] / 60. # TODO: CHange this to nBlades
-        flap_f = inputs['freq'][0] # assuming the flap frequency is the first lowest
-        edge_f = inputs['freq'][1] # assuming the edge frequency is the second lowest
+        flap_f = inputs['flap_mode_freqs']
+        edge_f = inputs['edge_mode_freqs']
         delta  = inputs['delta_f']
-        outputs['constr_flap_f_above_3P'] = (threeP * delta) / flap_f
-        outputs['constr_edge_f_above_3P'] = (threeP * delta) / edge_f
-        outputs['constr_flap_f_below_3P'] = flap_f / (threeP * (1.- (delta - 1.)))
-        outputs['constr_edge_f_below_3P'] = edge_f / (threeP / (1.- (delta - 1.)))
+        outputs['constr_flap_f_margin'] = np.array( [min([threeP-(2-delta)*f, delta*f-threeP]) for f in flap_f] ).flatten()
+        outputs['constr_edge_f_margin'] = np.array( [min([threeP-(2-delta)*f, delta*f-threeP]) for f in edge_f] ).flatten()
         
         
 class RotorLoadsDeflStrains(Group):
@@ -720,8 +571,6 @@ class RotorLoadsDeflStrains(Group):
         self.add_subsystem('tot_loads_gust',        TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
         # self.add_subsystem('tot_loads_storm_1yr',   TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
         # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(analysis_options = analysis_options),      promotes=promoteListTotalLoads)
-        promoteListpBeam = ['r','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te']
-        self.add_subsystem('pbeam',     RunpBEAM(analysis_options = analysis_options),      promotes=promoteListpBeam)
         promoteListFrame3DD = ['x_az','y_az','z_az','theta','r','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te']
         self.add_subsystem('frame',     RunFrame3DD(analysis_options = analysis_options),      promotes=promoteListFrame3DD)
         self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
@@ -743,21 +592,20 @@ class RotorLoadsDeflStrains(Group):
         # self.connect('aero_storm_50yr.loads_Pz', 'tot_loads_storm_50yr.aeroloads_Pz')
 
         # Total loads to strains
-        self.connect('tot_loads_gust.Px_af', 'pbeam.Px_af')
-        self.connect('tot_loads_gust.Py_af', 'pbeam.Py_af')
-        self.connect('tot_loads_gust.Pz_af', 'pbeam.Pz_af')
         self.connect('tot_loads_gust.Px_af', 'frame.Px_af')
         self.connect('tot_loads_gust.Py_af', 'frame.Py_af')
         self.connect('tot_loads_gust.Pz_af', 'frame.Pz_af')
 
         # Blade distributed deflections to tip deflection
-        self.connect('pbeam.dx', 'tip_pos.dx_tip', src_indices=[-1])
-        self.connect('pbeam.dy', 'tip_pos.dy_tip', src_indices=[-1])
-        self.connect('pbeam.dz', 'tip_pos.dz_tip', src_indices=[-1])
+        self.connect('frame.dx', 'tip_pos.dx_tip', src_indices=[-1])
+        self.connect('frame.dy', 'tip_pos.dy_tip', src_indices=[-1])
+        self.connect('frame.dz', 'tip_pos.dz_tip', src_indices=[-1])
         self.connect('3d_curv',  'tip_pos.3d_curv_tip', src_indices=[-1])
 
-        # Strains from pbeam to constraint
-        self.connect('pbeam.strainU_spar', 'constr.strainU_spar')
-        self.connect('pbeam.strainL_spar', 'constr.strainL_spar')
+        # Strains from frame3dd to constraint
+        self.connect('frame.strainU_spar', 'constr.strainU_spar')
+        self.connect('frame.strainL_spar', 'constr.strainL_spar')
+        self.connect('frame.flap_mode_freqs', 'constr.flap_mode_freqs')
+        self.connect('frame.edge_mode_freqs', 'constr.edge_mode_freqs')
 
          
