@@ -205,6 +205,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('t', val=np.zeros(npts-1), units='m', desc='effective shell thickness for section')
 
         # spring reaction data.  Use global RIGID for rigid constraints.
+        # JPJ: these next outputs should be discrete outputs
         self.add_input('kidx', val=np.zeros(nK, dtype=np.int_), desc='indices of z where external stiffness reactions should be applied.')
         self.add_input('kx', val=np.zeros(nK), units='N/m', desc='spring stiffness in x-direction')
         self.add_input('ky', val=np.zeros(nK), units='N/m', desc='spring stiffness in y-direction')
@@ -214,6 +215,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_input('ktz', val=np.zeros(nK), units='N/m', desc='spring stiffness in theta_z-rotation')
 
         # extra mass
+        # JPJ: these next outputs should be discrete outputs
         self.add_input('midx', val=np.zeros(nMass, dtype=np.int_), desc='indices where added mass should be applied.')
         self.add_input('m', val=np.zeros(nMass), units='kg', desc='added mass')
         self.add_input('mIxx', val=np.zeros(nMass), units='kg*m**2', desc='x mass moment of inertia about some point p')
