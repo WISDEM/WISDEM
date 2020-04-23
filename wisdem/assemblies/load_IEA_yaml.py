@@ -1031,17 +1031,19 @@ class Tower(Group):
         ivc.add_discrete_output('layer_mat',  val=[],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
         
         self.add_subsystem('compute_tower_grid',
-            ComputeTowerGrid(tower_init_options=tower_init_options),
+            ComputeGrid(init_options=tower_init_options),
             promotes=['*'])
 
-class ComputeTowerGrid(ExplicitComponent):
-    # Openmdao component with the tower data coming from the input yaml file.
+class ComputeGrid(ExplicitComponent):
+    """
+    Compute the non-dimensionsal grid for a tower or monopile.
+    """
     def initialize(self):
-        self.options.declare('tower_init_options')
+        self.options.declare('init_options')
         
     def setup(self):
-        tower_init_options = self.options['tower_init_options']
-        n_height           = tower_init_options['n_height']
+        init_options = self.options['init_options']
+        n_height           = init_options['n_height']
 
         self.add_input('ref_axis', val=np.zeros((n_height, 3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
         
@@ -1100,52 +1102,9 @@ class Monopile(Group):
         ivc.add_output('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
         
         self.add_subsystem('compute_monopile_grid',
-            ComputeMonopileGrid(monopile_init_options=monopile_init_options),
+            ComputeGrid(init_options=monopile_init_options),
             promotes=['*'])
-        
-class ComputeMonopileGrid(ExplicitComponent):
-    # Openmdao component with the tower data coming from the input yaml file.
-    def initialize(self):
-        self.options.declare('monopile_init_options')
-        
-    def setup(self):
-        monopile_init_options = self.options['monopile_init_options']
-        n_height           = monopile_init_options['n_height']
 
-        self.add_input('ref_axis', val=np.zeros((n_height,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-        
-        self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
-        self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
-        
-        # Declare all partial derivatives.
-        # For height wrt ref_axis, the Jacobian is fixed and is only populated
-        # in one entry, so we define that entry and the value here.
-        self.declare_partials('height', 'ref_axis', rows=[0], cols=[n_height*3-1], val=1.)
-        self.declare_partials('length', 'ref_axis')
-        self.declare_partials('s', 'ref_axis')
-
-    def compute(self, inputs, outputs):
-        # Compute monopile height and monopile length
-        # (a straight monopile will be high as long)
-        outputs['height']   = inputs['ref_axis'][-1,2]
-        myarc               = arc_length(inputs['ref_axis'])
-        outputs['length']   = myarc[-1]
-        
-        if myarc[-1] > 0.0:
-            outputs['s']    = myarc / myarc[-1]
-            
-    def compute_partials(self, inputs, partials):
-        arc_distances, d_arc_distances_d_points = arc_length_deriv(inputs['ref_axis'])
-        
-        # The length is based on only the final point in the arc,
-        # but that final point has sensitivity to all ref_axis points
-        partials['length', 'ref_axis'] = d_arc_distances_d_points[-1, :]
-        
-        # Do quotient rule to get the non-dimensional grid derivatives
-        low_d_high = arc_distances[-1] * d_arc_distances_d_points
-        high_d_low = np.outer(arc_distances, d_arc_distances_d_points[-1, :])
-        partials['s', 'ref_axis'] = (low_d_high - high_d_low) / arc_distances[-1]**2
 
 class ComputeMaterialsProperties(ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
