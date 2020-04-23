@@ -365,15 +365,23 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Cq'] = WISDEM_turbine.Cq
 
 
-from time import time
-class RegulatedPowerCurve(ExplicitComponent):
+class RegulatedPowerCurve(Group):
+    
+    def initialize(self):
+        self.options.declare('analysis_options')
+
+    def setup(self):
+        analysis_options = self.options['analysis_options']
+        
+        self.add_subsystem('compute_power_curve', ComputePowerCurve(analysis_options=analysis_options), promotes=['*'])
+
+class ComputePowerCurve(ExplicitComponent):
     """
     Iteratively call CCBlade to compute the power curve.
     """
     
     def initialize(self):
         self.options.declare('analysis_options')
-        self.options.declare('opt_options')
 
     def setup(self):
         analysis_options = self.options['analysis_options']
@@ -446,9 +454,11 @@ class RegulatedPowerCurve(ExplicitComponent):
         self.add_output('Ct_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic thrust coefficient')
         self.add_output('Cq_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic torque coefficient')
         self.add_output('Cm_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic moment coefficient')
+        
         self.add_output('V_spline', val=np.zeros(self.n_pc_spline), units='m/s', desc='wind vector')
         self.add_output('P_spline', val=np.zeros(self.n_pc_spline), units='W',   desc='rotor electrical power')
         self.add_output('Omega_spline', val=np.zeros(self.n_pc_spline), units='rpm',   desc='omega')
+        
         self.add_output('V_R25',       val=0.0,                units='m/s', desc='region 2.5 transition wind speed')
         self.add_output('rated_V',     val=0.0,                units='m/s', desc='rated wind speed')
         self.add_output('rated_Omega', val=0.0,                units='rpm', desc='rotor rotation speed at rated')
@@ -464,8 +474,6 @@ class RegulatedPowerCurve(ExplicitComponent):
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
-        
-        
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
         # Create Airfoil class instances
@@ -516,7 +524,7 @@ class RegulatedPowerCurve(ExplicitComponent):
 
         # Set baseline power production
         P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
-        P, eff  = CSMDrivetrain(P_aero, P_rated, driveType, driveEta)
+        P, eff  = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
         Cp      = Cp_aero*eff
 
         
@@ -563,7 +571,7 @@ class RegulatedPowerCurve(ExplicitComponent):
 
             # Find associated power
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
-            P[i], eff  = CSMDrivetrain(P_aero[i], P_rated, driveType, driveEta)
+            P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
             Cp[i]      = Cp_aero[i]*eff
 
             # Note if we find Region 2.5
@@ -586,7 +594,7 @@ class RegulatedPowerCurve(ExplicitComponent):
                 Uhub_i  = x[1]
                 Omega_i = min([Uhub_i * tsr / R_tip, Omega_max])
                 P_aero_i, _, _, _ = self.ccblade.evaluate([Uhub_i], [Omega_i*30./np.pi], [pitch], coefficients=False)
-                P_i,eff           = CSMDrivetrain(P_aero_i.flatten(), P_rated, driveType, driveEta)
+                P_i,eff           = compute_P_and_eff(P_aero_i.flatten(), P_rated, driveType, driveEta)
                 return (P_i - P_rated)
 
             if region2p5:
@@ -618,7 +626,7 @@ class RegulatedPowerCurve(ExplicitComponent):
             Omega[i:]    = np.minimum(Omega[i:], Omega_rated) # Stay at this speed if hit rated too early
             Omega_rpm    = Omega * 30. / np.pi
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([U_rated], [Omega_rpm[i]], [pitch[i]], coefficients=True)
-            P[i], eff    = CSMDrivetrain(P_aero[i], P_rated, driveType, driveEta)
+            P[i], eff    = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
             Cp[i]        = Cp_aero[i]*eff
             P[i]         = P_rated
             
@@ -638,7 +646,7 @@ class RegulatedPowerCurve(ExplicitComponent):
             # Function to be used to stay at rated power in Region 3
             def rated_power_dist(pitch, Uhub, Omega_rpm):
                 P_aero, _, _, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
-                P, eff          = CSMDrivetrain(P_aero, P_rated, driveType, driveEta)
+                P, eff          = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
                 return (P - P_rated)
 
             # Solve for Region 3 pitch
@@ -654,7 +662,7 @@ class RegulatedPowerCurve(ExplicitComponent):
                                                   method='bounded', options={'disp':False, 'xatol':1e-3, 'maxiter':40})['x']
 
                     P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
-                    P[i], eff  = CSMDrivetrain(P_aero[i], P_rated, driveType, driveEta)
+                    P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
                     Cp[i]      = Cp_aero[i]*eff
                     #P[i]       = P_rated
 
@@ -690,8 +698,8 @@ class RegulatedPowerCurve(ExplicitComponent):
         a_regII, ap_regII, alpha_regII, cl_regII, cd_regII = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
         
         # Fit spline to powercurve for higher grid density
-        spline   = PchipInterpolator(Uhub, P)
         V_spline = np.linspace(inputs['v_min'], inputs['v_max'], self.n_pc_spline)
+        spline   = PchipInterpolator(Uhub, P)
         P_spline = spline(V_spline)
         spline   = PchipInterpolator(Uhub, Omega)
         Omega_spline = spline(V_spline)
@@ -914,7 +922,7 @@ class AEP(ExplicitComponent):
         J = self.J
         '''
 
-def CSMDrivetrain(aeroPower, ratedPower, drivetrainType, drivetrainEff):
+def compute_P_and_eff(aeroPower, ratedPower, drivetrainType, drivetrainEff):
 
     if drivetrainEff == 0.0:
         drivetrainType = drivetrainType.upper()
