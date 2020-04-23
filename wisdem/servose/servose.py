@@ -374,6 +374,8 @@ class RegulatedPowerCurve(Group):
         analysis_options = self.options['analysis_options']
         
         self.add_subsystem('compute_power_curve', ComputePowerCurve(analysis_options=analysis_options), promotes=['*'])
+        
+        self.add_subsystem('compute_splines', ComputeSplines(analysis_options=analysis_options), promotes=['*'])
 
 class ComputePowerCurve(ExplicitComponent):
     """
@@ -454,10 +456,6 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_output('Ct_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic thrust coefficient')
         self.add_output('Cq_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic torque coefficient')
         self.add_output('Cm_aero',  val=np.zeros(self.n_pc),                     desc='rotor aerodynamic moment coefficient')
-        
-        self.add_output('V_spline', val=np.zeros(self.n_pc_spline), units='m/s', desc='wind vector')
-        self.add_output('P_spline', val=np.zeros(self.n_pc_spline), units='W',   desc='rotor electrical power')
-        self.add_output('Omega_spline', val=np.zeros(self.n_pc_spline), units='rpm',   desc='omega')
         
         self.add_output('V_R25',       val=0.0,                units='m/s', desc='region 2.5 transition wind speed')
         self.add_output('rated_V',     val=0.0,                units='m/s', desc='rated wind speed')
@@ -697,17 +695,7 @@ class ComputePowerCurve(ExplicitComponent):
         id_regII = np.argmin(abs(tsr_vec - inputs['tsr_operational']))
         a_regII, ap_regII, alpha_regII, cl_regII, cd_regII = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
         
-        # Fit spline to powercurve for higher grid density
-        V_spline = np.linspace(inputs['v_min'], inputs['v_max'], self.n_pc_spline)
-        spline   = PchipInterpolator(Uhub, P)
-        P_spline = spline(V_spline)
-        spline   = PchipInterpolator(Uhub, Omega)
-        Omega_spline = spline(V_spline)
-        
         # outputs
-        outputs['V_spline']          = V_spline.flatten()
-        outputs['P_spline']          = P_spline.flatten()
-        outputs['Omega_spline']          = Omega_spline.flatten()
         outputs['ax_induct_regII']   = a_regII
         outputs['tang_induct_regII'] = ap_regII
         outputs['aoa_regII']         = alpha_regII
@@ -715,7 +703,62 @@ class ComputePowerCurve(ExplicitComponent):
         outputs['cd_regII']          = cd_regII
         outputs['Cp_regII']          = Cp_aero[id_regII]
         
+        
+class ComputeSplines(ExplicitComponent):
+    """
+    Compute splined quantities for V, P, and Omega.
+    """
+    
+    def initialize(self):
+        self.options.declare('analysis_options')
 
+    def setup(self):
+        analysis_options = self.options['analysis_options']
+        self.n_pc          = analysis_options['servose']['n_pc']
+        self.n_pc_spline   = analysis_options['servose']['n_pc_spline']
+        
+        self.add_input('v_min',        val=0.0, units='m/s',  desc='cut-in wind speed')
+        self.add_input('v_max',       val=0.0, units='m/s',  desc='cut-out wind speed')
+        self.add_input('V',        val=np.zeros(self.n_pc), units='m/s',        desc='wind vector')
+        self.add_input('Omega',    val=np.zeros(self.n_pc), units='rpm',        desc='rotor rotational speed')
+        self.add_input('P',        val=np.zeros(self.n_pc), units='W',          desc='rotor electrical power')
+
+        self.add_output('V_spline', val=np.zeros(self.n_pc_spline), units='m/s', desc='wind vector')
+        self.add_output('P_spline', val=np.zeros(self.n_pc_spline), units='W',   desc='rotor electrical power')
+        self.add_output('Omega_spline', val=np.zeros(self.n_pc_spline), units='rpm',   desc='omega')
+        
+        self.declare_partials(of='V_spline', wrt='v_min')
+        self.declare_partials(of='V_spline', wrt='v_max')
+        
+        self.declare_partials(of='P_spline', wrt='v_min', method='fd')
+        self.declare_partials(of='P_spline', wrt='v_max', method='fd')
+        self.declare_partials(of='P_spline', wrt='V', method='fd')
+        self.declare_partials(of='P_spline', wrt='P', method='fd')
+        
+        self.declare_partials(of='Omega_spline', wrt='v_min', method='fd')
+        self.declare_partials(of='Omega_spline', wrt='v_max', method='fd')
+        self.declare_partials(of='Omega_spline', wrt='V', method='fd')
+        self.declare_partials(of='Omega_spline', wrt='Omega', method='fd')
+    
+    def compute(self, inputs, outputs):
+        # Fit spline to powercurve for higher grid density
+        V_spline = np.linspace(inputs['v_min'], inputs['v_max'], self.n_pc_spline)
+        spline   = PchipInterpolator(inputs['V'], inputs['P'])
+        P_spline = spline(V_spline)
+        spline   = PchipInterpolator(inputs['V'], inputs['Omega'])
+        Omega_spline = spline(V_spline)
+        
+        # outputs
+        outputs['V_spline']          = V_spline.flatten()
+        outputs['P_spline']          = P_spline.flatten()
+        outputs['Omega_spline']      = Omega_spline.flatten()
+        
+    def compute_partials(self, inputs, partials):
+        linspace_with_deriv
+        V_spline, dy_dstart, dy_dstop = linspace_with_deriv(inputs['v_min'], inputs['v_max'], self.n_pc_spline)
+        partials['V_spline', 'v_min'] = dy_dstart
+        partials['V_spline', 'v_max'] = dy_dstop
+        
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
         self.options.declare('analysis_options')
