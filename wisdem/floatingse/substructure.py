@@ -5,33 +5,35 @@ from scipy.integrate import cumtrapz
 from wisdem.commonse import gravity, eps, DirectionVector, NFREQ
 from wisdem.commonse.utilities import assembleI, unassembleI
 from .map_mooring import NLINES_MAX
-        
+
+
 class SubstructureGeometry(ExplicitComponent):
     """
     OpenMDAO Component class for substructure geometry for floating offshore wind turbines.
     """
 
     def initialize(self):
-        self.options.declare('nFull')
-        self.options.declare('nFullTow')
+        self.options.declare('n_height_main')
+        self.options.declare('n_height_off')
         
     def setup(self):
-        nFull    = self.options['nFull']
-        nFullTow = self.options['nFullTow']
+        n_height_main = self.options['n_height_main']
+        n_height_off  = self.options['n_height_off']
+        n_full_main   = get_nfull(n_height_main)
+        n_full_off    = get_nfull(n_height_off)
 
         # Design variables
-        self.add_input('main_d_full', val=np.zeros((nFull,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('offset_d_full', val=np.zeros((nFull,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('offset_z_nodes', val=np.zeros((nFull,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
+        self.add_input('main_d_full', val=np.zeros(n_full_main), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
+        self.add_input('main_z_nodes', val=np.zeros(n_full_main), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
+        self.add_input('offset_d_full', val=np.zeros(n_full_off), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
+        self.add_input('offset_z_nodes', val=np.zeros(n_full_off), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
         self.add_input('offset_freeboard', val=0.0, units='m', desc='Length of column above water line')
         self.add_input('offset_draft', val=0.0, units='m', desc='Length of column below water line')
-        self.add_input('main_z_nodes', val=np.zeros((nFull,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
         self.add_input('fairlead_location', val=0.0, desc='Fractional length from column bottom to top for mooring line attachment')
         self.add_input('fairlead_offset_from_shell', val=0.0, units='m',desc='fairlead offset from shell')
         self.add_input('radius_to_offset_column', val=0.0, units='m',desc='Distance from main column centerpoint to offset column centerpoint')
         self.add_input('number_of_offset_columns', val=0, desc='Number of offset columns evenly spaced around main column')
-        self.add_input('tower_d_full', val=np.zeros((nFullTow,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('Rhub', val=0.0, units='m', desc='rotor hub radius')
+        self.add_input('tower_d_base', val=0.0, units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
         self.add_input('Hs', val=0.0, units='m', desc='significant wave height')
         self.add_input('max_survival_heel', val=0.0, units='deg', desc='max heel angle for turbine survival')
         
@@ -40,7 +42,6 @@ class SubstructureGeometry(ExplicitComponent):
         self.add_output('fairlead_radius', val=0.0, units='m', desc='Outer spar radius at fairlead depth (point of mooring attachment)')
         self.add_output('main_offset_spacing', val=0.0, desc='Radius of main and offset columns relative to spacing')
         self.add_output('tower_transition_buffer', val=0.0, units='m', desc='Buffer between substructure main and tower main')
-        self.add_output('nacelle_transition_buffer', val=0.0, units='m', desc='Buffer between tower top and nacelle main')
         self.add_output('offset_freeboard_heel_margin', val=0.0, units='m', desc='Margin so offset column does not submerge during max heel')
         self.add_output('offset_draft_heel_margin', val=0.0, units='m', desc='Margin so offset column does not leave water during max heel')
         self.add_output('wave_height_fairlead_ratio', val=0.0, desc='Ratio of maximum wave height (avg of top 1%) to fairlead')
@@ -65,12 +66,11 @@ class SubstructureGeometry(ExplicitComponent):
         # Unpack variables
         ncolumns        = int(inputs['number_of_offset_columns'])
         R_od_main       = 0.5*inputs['main_d_full']
-        R_od_offset    = 0.5*inputs['offset_d_full']
+        R_od_offset     = 0.5*inputs['offset_d_full']
         R_semi          = inputs['radius_to_offset_column']
-        R_tower         = 0.5*inputs['tower_d_full']
-        R_hub           = inputs['Rhub']
+        R_tower_base    = 0.5*inputs['tower_d_base']
         
-        z_nodes_offset = inputs['offset_z_nodes']
+        z_nodes_offset  = inputs['offset_z_nodes']
         z_nodes_main    = inputs['main_z_nodes']
         
         location        = inputs['fairlead_location']
@@ -93,8 +93,7 @@ class SubstructureGeometry(ExplicitComponent):
         outputs['wave_height_fairlead_ratio'] = inputs['Hs'] / np.abs(z_fairlead)
         
         # Constrain spar top to be at least greater than tower main
-        outputs['tower_transition_buffer']   = R_od_main[-1] - R_tower[0]
-        outputs['nacelle_transition_buffer'] = (R_hub + 1.0) - R_tower[-1] # Guessing at 6m size for nacelle
+        outputs['tower_transition_buffer']   = R_od_main[-1] - R_tower_base
 
         # Make sure semi columns don't get submerged
         heel_deflect = R_semi*np.sin(np.deg2rad(max_heel))

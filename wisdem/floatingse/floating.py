@@ -10,99 +10,19 @@ import numpy as np
 class FloatingSE(Group):
 
     def initialize(self):
-        self.options.declare('nSection', default=4)
-        self.options.declare('nTower', default=3)
-        self.options.declare('nRefine', default=3)
+        self.options.declare('analysis_options')
         self.options.declare('topLevelFlag', default=True)
 
     def setup(self):
-
+        platopt = self.options['analysis_options']['platform']
+        n_height_main = platopt['columns']['main']['n_height']
+        n_height_off  = platopt['columns']['offset']['n_height']
         nSection = self.options['nSection']
         nTower   = self.options['nTower']
         nRefine  = self.options['nRefine']
         topLevelFlag = self.options['topLevelFlag']
         nFullSec = nRefine*nSection+1
         nFullTow = nRefine*nTower  +1
-
-        self.add_subsystem('tow', TowerLeanSE(nPoints=nTower+1, nFull=nFullTow, topLevelFlag=False), promotes=['material_density','tower_section_height',
-                                                                        'tower_outer_diameter','tower_wall_thickness','tower_outfitting_factor',
-                                                                        'tower_buckling_length','max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
-                                                                        'tower_mass','tower_I_base','hub_height',#'tip_position','hub_cm','downwind',
-                                                                        'material_cost_rate','labor_cost_rate','painting_cost_rate'])
-        
-        # Next do main and ballast columns
-        # Ballast columns are replicated from same design in the components
-        self.add_subsystem('main', Column(nSection=nSection, nFull=nFullSec, topLevelFlag=False), promotes=['water_density','E','nu','yield_stress','z0',
-                                                                                                            'Uref','zref','shearExp','yaw','Uc','Hs','hmax','T','cd_usr','cm','loading',
-                                                                 'max_draft','max_taper','min_d_to_t','gamma_f','gamma_b','foundation_height',
-                                                                 'permanent_ballast_density','bulkhead_mass_factor','buoyancy_tank_mass_factor',
-                                                                 'ring_mass_factor','column_mass_factor','outfitting_mass_fraction','ballast_cost_rate',
-                                                                 'material_cost_rate','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
-        self.add_subsystem('off', Column(nSection=nSection, nFull=nFullSec, topLevelFlag=False), promotes=['water_density','E','nu','yield_stress','z0',
-                                                                                                           'Uref','zref','shearExp','yaw','Uc','Hs','hmax','T','cd_usr','cm','loading',
-                                                                'max_draft','max_taper','min_d_to_t','gamma_f','gamma_b','foundation_height',
-                                                                'permanent_ballast_density','bulkhead_mass_factor','buoyancy_tank_mass_factor',
-                                                                'ring_mass_factor','column_mass_factor','outfitting_mass_fraction','ballast_cost_rate',
-                                                                'material_cost_rate','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
-
-        # Run Semi Geometry for interfaces
-        self.add_subsystem('sg', SubstructureGeometry(nFull=nFullSec, nFullTow=nFullTow), promotes=['*'])
-
-        # Next run MapMooring
-        self.add_subsystem('mm', MapMooring(), promotes=['*'])
-        
-        # Add in the connecting truss
-        self.add_subsystem('load', Loading(nFull=nFullSec, nFullTow=nFullTow), promotes=['*'])
-
-        # Run main Semi analysis
-        self.add_subsystem('subs', Substructure(nFull=nFullSec, nFullTow=nFullTow), promotes=['*'])
-
-        # Independent variables that may be duplicated at higher levels of aggregation
-        if topLevelFlag:
-            sharedIndeps = IndepVarComp()
-            sharedIndeps.add_output('hub_height', 0.0, units='m')
-            sharedIndeps.add_output('material_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('air_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('air_viscosity', 0.0, units='kg/m/s')
-            sharedIndeps.add_output('shearExp', 0.0)
-            sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
-            sharedIndeps.add_output('wind_reference_speed', 0.0, units='m/s')
-            sharedIndeps.add_output('wind_z0', 0.0, units='m')
-            sharedIndeps.add_output('wind_beta', 0.0, units='deg')
-            sharedIndeps.add_output('cd_usr', -1.0)
-            sharedIndeps.add_output('cm', 0.0)
-            sharedIndeps.add_output('Uc', 0.0, units='m/s')
-            sharedIndeps.add_output('water_depth', 0.0, units='m')
-            sharedIndeps.add_output('water_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('water_viscosity', 0.0, units='kg/m/s')
-            sharedIndeps.add_output('significant_wave_height', 0.0, units='m')
-            sharedIndeps.add_output('significant_wave_period', 0.0, units='s')
-            sharedIndeps.add_output('wave_beta', 0.0, units='deg')
-            sharedIndeps.add_output('wave_z0', 0.0, units='m')
-            sharedIndeps.add_output('yaw', 0.0, units='deg')
-            sharedIndeps.add_output('E', 0.0, units='N/m**2')
-            sharedIndeps.add_output('G', 0.0, units='N/m**2')
-            sharedIndeps.add_output('nu', 0.0)
-            sharedIndeps.add_output('yield_stress', 0.0, units='N/m**2')
-            sharedIndeps.add_output('gamma_f', 0.0)
-            sharedIndeps.add_output('gamma_m', 0.0)
-            sharedIndeps.add_output('gamma_n', 0.0)
-            sharedIndeps.add_output('gamma_b', 0.0)
-            sharedIndeps.add_output('gamma_fatigue', 0.0)
-            sharedIndeps.add_output('DC', 0.0)
-            sharedIndeps.add_discrete_output('shear', True)
-            sharedIndeps.add_discrete_output('geom', False)
-            sharedIndeps.add_discrete_output('nM', 2)
-            sharedIndeps.add_discrete_output('Mmethod', 1)
-            sharedIndeps.add_discrete_output('lump', 0)
-            sharedIndeps.add_output('tol', 0.0)
-            sharedIndeps.add_output('shift', 0.0)
-            sharedIndeps.add_output('life', 0.0)
-            sharedIndeps.add_output('m_SN', 0.0)
-            sharedIndeps.add_output('rna_mass', 0.0, units='kg')
-            sharedIndeps.add_output('rna_I', np.zeros(6), units='kg*m**2')
-            sharedIndeps.add_output('rna_cg', np.zeros(3), units='m')
-            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
 
         # Define all input variables from all models
         floatingIndeps = IndepVarComp()
@@ -150,15 +70,109 @@ class FloatingSE(Group):
         # Other Constraints
         floatingIndeps.add_output('wave_period_range_low', 2.0, units='s')
         floatingIndeps.add_output('wave_period_range_high', 20.0, units='s')
-
-
         self.add_subsystem('floatingIndeps', floatingIndeps, promotes=['*'])
+
+        # Independent variables that may be duplicated at higher levels of aggregation
+        if topLevelFlag:
+            sharedIndeps = IndepVarComp()
+            sharedIndeps.add_output('hub_height', 0.0, units='m')
+            sharedIndeps.add_output('material_density', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('air_density', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('air_viscosity', 0.0, units='kg/m/s')
+            sharedIndeps.add_output('shearExp', 0.0)
+            sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
+            sharedIndeps.add_output('wind_reference_speed', 0.0, units='m/s')
+            sharedIndeps.add_output('wind_z0', 0.0, units='m')
+            sharedIndeps.add_output('wind_beta', 0.0, units='deg')
+            sharedIndeps.add_output('cd_usr', -1.0)
+            sharedIndeps.add_output('cm', 0.0)
+            sharedIndeps.add_output('Uc', 0.0, units='m/s')
+            sharedIndeps.add_output('water_depth', 0.0, units='m')
+            sharedIndeps.add_output('water_density', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('water_viscosity', 0.0, units='kg/m/s')
+            sharedIndeps.add_output('significant_wave_height', 0.0, units='m')
+            sharedIndeps.add_output('significant_wave_period', 0.0, units='s')
+            sharedIndeps.add_output('wave_beta', 0.0, units='deg')
+            sharedIndeps.add_output('wave_z0', 0.0, units='m')
+            sharedIndeps.add_output('yaw', 0.0, units='deg')
+            sharedIndeps.add_output('E', 0.0, units='N/m**2')
+            sharedIndeps.add_output('G', 0.0, units='N/m**2')
+            sharedIndeps.add_output('nu', 0.0)
+            sharedIndeps.add_output('yield_stress', 0.0, units='N/m**2')
+            sharedIndeps.add_output('gamma_f', 0.0)
+            sharedIndeps.add_output('gamma_m', 0.0)
+            sharedIndeps.add_output('gamma_n', 0.0)
+            sharedIndeps.add_output('gamma_b', 0.0)
+            sharedIndeps.add_output('gamma_fatigue', 0.0)
+            sharedIndeps.add_output('DC', 0.0)
+            sharedIndeps.add_discrete_output('shear', True)
+            sharedIndeps.add_discrete_output('geom', False)
+            sharedIndeps.add_discrete_output('nM', 2)
+            sharedIndeps.add_discrete_output('Mmethod', 1)
+            sharedIndeps.add_discrete_output('lump', 0)
+            sharedIndeps.add_output('tol', 0.0)
+            sharedIndeps.add_output('shift', 0.0)
+            sharedIndeps.add_output('life', 0.0)
+            sharedIndeps.add_output('m_SN', 0.0)
+            sharedIndeps.add_output('rna_mass', 0.0, units='kg')
+            sharedIndeps.add_output('rna_I', np.zeros(6), units='kg*m**2')
+            sharedIndeps.add_output('rna_cg', np.zeros(3), units='m')
+            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
+        else:
+            # If using YAML for input, unpack to native variables
+            n_height_tow = self.options['analysis_options']['tower']['n_height']
+            n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
+            n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
+            n_layers_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_layers']
+            self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon,
+                                                          n_layers_tower=toweropt['n_layers'], n_layers_monopile=n_layers_mon,
+                                                          n_mat=self.options['analysis_options']['materials']['n_mat']),
+                               promotes=['*'])
+
+        
+        self.add_subsystem('tow', TowerLeanSE(analysis_options=self.options['analysis_options'], topLevelFlag=False),
+                           promotes=['material_density','tower_section_height',
+                                     'tower_outer_diameter','tower_wall_thickness','tower_outfitting_factor',
+                                     'tower_buckling_length','max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
+                                     'tower_mass','tower_I_base','hub_height',#'tip_position','hub_cm','downwind',
+                                     'material_cost_rate','labor_cost_rate','painting_cost_rate'])
+        
+        # Next do main and ballast columns
+        # Ballast columns are replicated from same design in the components
+        self.add_subsystem('main', Column(n_height=n_height_main, topLevelFlag=False),
+                           promotes=['water_density','E','nu','yield_stress','z0',
+                                     'Uref','zref','shearExp','yaw','Uc','Hs','hmax','T','cd_usr','cm','loading',
+                                     'max_draft','max_taper','min_d_to_t','gamma_f','gamma_b','foundation_height',
+                                     'permanent_ballast_density','bulkhead_mass_factor','buoyancy_tank_mass_factor',
+                                     'ring_mass_factor','column_mass_factor','outfitting_mass_fraction','ballast_cost_rate',
+                                     'material_cost_rate','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
+        
+        self.add_subsystem('off', Column(n_height=n_height_off, topLevelFlag=False),
+                           promotes=['water_density','E','nu','yield_stress','z0',
+                                     'Uref','zref','shearExp','yaw','Uc','Hs','hmax','T','cd_usr','cm','loading',
+                                     'max_draft','max_taper','min_d_to_t','gamma_f','gamma_b','foundation_height',
+                                     'permanent_ballast_density','bulkhead_mass_factor','buoyancy_tank_mass_factor',
+                                     'ring_mass_factor','column_mass_factor','outfitting_mass_fraction','ballast_cost_rate',
+                                     'material_cost_rate','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
+
+        # Run Semi Geometry for interfaces
+        self.add_subsystem('sg', SubstructureGeometry(nFull=nFullSec), promotes=['*'])
+
+        # Next run MapMooring
+        self.add_subsystem('mm', MapMooring(), promotes=['*'])
+        
+        # Add in the connecting truss
+        self.add_subsystem('load', Loading(nFull=nFullSec, nFullTow=nFullTow), promotes=['*'])
+
+        # Run main Semi analysis
+        self.add_subsystem('subs', Substructure(nFull=nFullSec, nFullTow=nFullTow), promotes=['*'])
         
         # Connect all input variables from all models
         self.connect('main.freeboard', 'tow.foundation_height')
         self.connect('z_offset', 'foundation_height')
 
-        self.connect('tow.d_full', ['windLoads.d','tower_d_full']) # includes tower_d_full
+        self.connect('tow.d_full', 'windLoads.d')
+        self.connect('tow.d_full', 'tower_d_base', src_indices=[0])
         self.connect('tow.t_full', 'tower_t_full')
         self.connect('tow.z_full', ['loadingWind.z','windLoads.z','tower_z_full']) # includes tower_z_full
         self.connect('tow.cm.mass','tower_mass_section')
