@@ -7,7 +7,7 @@ from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.rotorse.precomp import PreComp, Profile, Orthotropic2DMaterial, CompositeSection
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse.rotor_cost import blade_cost_model
-from wisdem.rotorse.rail_transport import RailTransport
+#from wisdem.rotorse.rail_transport import RailTransport
 
 class RunPreComp(ExplicitComponent):
     # Openmdao component to run precomp and generate the elastic properties of a wind turbine blade

@@ -375,10 +375,10 @@ if __name__ == "__main__":
 
         import matplotlib.pyplot as plt
         plt.figure()
-        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_spar'], label='spar ss')
-        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_spar'], label='spar ps')
-        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_te'], label='te ss')
-        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_te'], label='te ps')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.frame.strainU_spar'], label='spar ss')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.frame.strainL_spar'], label='spar ps')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.frame.strainU_te'], label='te ss')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.frame.strainL_te'], label='te ps')
         plt.ylim([-5e-3, 5e-3])
         plt.xlabel('r [m]')
         plt.ylabel('strain [-]')

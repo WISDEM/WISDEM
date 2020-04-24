@@ -49,7 +49,7 @@ class WT_RNTA(Group):
 
         # Connections from blade aero parametrization to other modules
         self.connect('blade.pa.twist_param',           ['sse.theta','elastic.theta','rlds.theta'])
-        self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
+        #self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
         self.connect('blade.pa.chord_param',           ['xf.chord', 'elastic.chord', 'sse.chord','rlds.chord'])
 
 
@@ -154,14 +154,14 @@ class WT_RNTA(Group):
         self.connect('env.weibull_k',               'sse.cdf.k')
         
         # Connnections to curvefem_rated
-        self.connect('assembly.r_blade',            'sse.curvefem_rated.r')
-        self.connect('elastic.EA',                  'sse.curvefem_rated.EA')
-        self.connect('elastic.EIxx',                'sse.curvefem_rated.EIxx')
-        self.connect('elastic.EIyy',                'sse.curvefem_rated.EIyy')
-        self.connect('elastic.GJ',                  'sse.curvefem_rated.GJ')
-        self.connect('elastic.rhoA',                'sse.curvefem_rated.rhoA')
-        self.connect('elastic.rhoJ',                'sse.curvefem_rated.rhoJ')
-        self.connect('elastic.Tw_iner',             'sse.curvefem_rated.Tw_iner')
+        #self.connect('assembly.r_blade',            'sse.curvefem_rated.r')
+        #self.connect('elastic.EA',                  'sse.curvefem_rated.EA')
+        #self.connect('elastic.EIxx',                'sse.curvefem_rated.EIxx')
+        #self.connect('elastic.EIyy',                'sse.curvefem_rated.EIyy')
+        #self.connect('elastic.GJ',                  'sse.curvefem_rated.GJ')
+        #self.connect('elastic.rhoA',                'sse.curvefem_rated.rhoA')
+        #self.connect('elastic.rhoJ',                'sse.curvefem_rated.rhoJ')
+        #self.connect('elastic.Tw_iner',             'sse.curvefem_rated.Tw_iner')
         # self.connect('elastic.precurve',            'sse.curvefem_rated.precurve')
         # self.connect('elastic.presweep',            'sse.curvefem_rated.presweep')
 
@@ -210,7 +210,7 @@ class WT_RNTA(Group):
         self.connect('blade.outer_shape_bem.s','rlds.constr.s')
 
         # Frequencies from curvefem to constraint
-        self.connect('sse.curvefem_rated.freq',   'rlds.constr.freq') 
+        #self.connect('sse.curvefem_rated.freq',   'rlds.constr.freq') 
 
         self.connect('assembly.r_blade',                'rlds.r')
         self.connect('assembly.rotor_radius',           'rlds.Rtip')
@@ -358,7 +358,8 @@ class WT_RNTA(Group):
             self.connect('elastic.EIxx',                'aeroelastic.beam:EIxx')
             self.connect('elastic.EIyy',                'aeroelastic.beam:EIyy')
             self.connect('elastic.Tw_iner',             'aeroelastic.beam:Tw_iner')
-            self.connect('sse.curvefem_rated.modes_coef', 'aeroelastic.modes_coef_curvefem')
+            #self.connect('sse.curvefem_rated.modes_coef', 'aeroelastic.modes_coef_curvefem')
+            self.connect('rlds.frame.all_mode_shapes', 'aeroelastic.modes_coef_curvefem')
             self.connect('sse.powercurve.V',            'aeroelastic.U_init')
             self.connect('sse.powercurve.Omega',        'aeroelastic.Omega_init')
             self.connect('sse.powercurve.pitch',        'aeroelastic.pitch_init')

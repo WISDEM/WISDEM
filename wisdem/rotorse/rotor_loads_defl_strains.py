@@ -207,6 +207,7 @@ class RunFrame3DD(ExplicitComponent):
         self.add_output('root_M', np.zeros(3), units='N*m', desc='Blade root moment in blade c.s.')
         self.add_output('flap_mode_shapes', np.zeros((n_freq2,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
         self.add_output('edge_mode_shapes', np.zeros((n_freq2,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+        self.add_output('all_mode_shapes', np.zeros((n_freq,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
         self.add_output('flap_mode_freqs', np.zeros(n_freq2), units='Hz', desc='Frequencies associated with mode shapes in the flap direction')
         self.add_output('edge_mode_freqs', np.zeros(n_freq2), units='Hz', desc='Frequencies associated with mode shapes in the edge direction')
         self.add_output('freqs',            val=np.zeros(n_freq),  units='Hz', desc='ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise')
@@ -433,6 +434,8 @@ class RunFrame3DD(ExplicitComponent):
         outputs['freqs'] = modal.freq
         outputs['edge_mode_shapes'] = mshapes_y
         outputs['flap_mode_shapes'] = mshapes_x
+        # Dense numpy command that interleaves and alternates flap and edge modes
+        outputs['all_mode_shapes'] = np.c_[mshapes_x, mshapes_y].flatten().reshape((self.n_freq,5))
         outputs['edge_mode_freqs']  = freq_y
         outputs['flap_mode_freqs']  = freq_x
         outputs['freq_distance']    = freq_y[0] / freq_x[0]
@@ -449,9 +452,9 @@ class TipDeflection(ExplicitComponent):
     # OpenMDAO component that computes the blade deflection at tip in yaw x-direction
     def setup(self):
         # Inputs
-        self.add_input('dx_tip',        val=0.0,                    desc='deflection at tip in blade x-direction')
-        self.add_input('dy_tip',        val=0.0,                    desc='deflection at tip in blade y-direction')
-        self.add_input('dz_tip',        val=0.0,                    desc='deflection at tip in blade z-direction')
+        self.add_input('dx_tip',        val=0.0,    units='m',      desc='deflection at tip in blade x-direction')
+        self.add_input('dy_tip',        val=0.0,    units='m',      desc='deflection at tip in blade y-direction')
+        self.add_input('dz_tip',        val=0.0,    units='m',      desc='deflection at tip in blade z-direction')
         #self.add_input('theta_tip',     val=0.0,    units='deg',    desc='twist at tip section')
         self.add_input('pitch_load',    val=0.0,    units='deg',    desc='blade pitch angle')
         self.add_input('tilt',          val=0.0,    units='deg',    desc='tilt angle')
