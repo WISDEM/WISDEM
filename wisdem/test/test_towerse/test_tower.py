@@ -4,6 +4,7 @@ import unittest
 import wisdem.towerse.tower as tow
 import openmdao.api as om
 from wisdem.commonse import gravity as g
+from wisdem.commonse.vertical_cylinder import NFREQ, RIGID
 import copy
 
 class TestTowerSE(unittest.TestCase):
@@ -301,12 +302,12 @@ class TestTowerSE(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs['kidx'], np.array([0]))
-        npt.assert_equal(self.outputs['kx'], np.array([1e16]))
-        npt.assert_equal(self.outputs['ky'], np.array([1e16]))
-        npt.assert_equal(self.outputs['kz'], np.array([1e16]))
-        npt.assert_equal(self.outputs['ktx'], np.array([1e16]))
-        npt.assert_equal(self.outputs['kty'], np.array([1e16]))
-        npt.assert_equal(self.outputs['ktz'], np.array([1e16]))
+        npt.assert_equal(self.outputs['kx'], np.array([RIGID]))
+        npt.assert_equal(self.outputs['ky'], np.array([RIGID]))
+        npt.assert_equal(self.outputs['kz'], np.array([RIGID]))
+        npt.assert_equal(self.outputs['ktx'], np.array([RIGID]))
+        npt.assert_equal(self.outputs['kty'], np.array([RIGID]))
+        npt.assert_equal(self.outputs['ktz'], np.array([RIGID]))
 
         npt.assert_equal(self.outputs['midx'], np.array([6, 0, 0]))
         npt.assert_equal(self.outputs['m'], np.array([1e5, 0, 0]))
@@ -458,12 +459,12 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob['tower_mass'], mass_dens*80.0)
 
         npt.assert_equal(prob['pre.kidx'], np.array([0], dtype=np.int_))
-        npt.assert_equal(prob['pre.kx'], np.array([1e16]))
-        npt.assert_equal(prob['pre.ky'], np.array([1e16]))
-        npt.assert_equal(prob['pre.kz'], np.array([1e16]))
-        npt.assert_equal(prob['pre.ktx'], np.array([1e16]))
-        npt.assert_equal(prob['pre.kty'], np.array([1e16]))
-        npt.assert_equal(prob['pre.ktz'], np.array([1e16]))
+        npt.assert_equal(prob['pre.kx'], np.array([RIGID]))
+        npt.assert_equal(prob['pre.ky'], np.array([RIGID]))
+        npt.assert_equal(prob['pre.kz'], np.array([RIGID]))
+        npt.assert_equal(prob['pre.ktx'], np.array([RIGID]))
+        npt.assert_equal(prob['pre.kty'], np.array([RIGID]))
+        npt.assert_equal(prob['pre.ktz'], np.array([RIGID]))
 
         npt.assert_equal(prob['pre.midx'], np.array([6, 0, 0]))
         npt.assert_equal(prob['pre.m'], np.array([2e5, 0, 0]))
@@ -575,12 +576,12 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob['tower_mass'], mass_dens*45.0)
 
         npt.assert_equal(prob['pre.kidx'], np.array([0], dtype=np.int_))
-        npt.assert_array_less(prob['pre.kx'], 1e16)
-        npt.assert_array_less(prob['pre.ky'], 1e16)
-        npt.assert_array_less(prob['pre.kz'], 1e16)
-        npt.assert_array_less(prob['pre.ktx'], 1e16)
-        npt.assert_array_less(prob['pre.kty'], 1e16)
-        npt.assert_array_less(prob['pre.ktz'], 1e16)
+        npt.assert_array_less(prob['pre.kx'], RIGID)
+        npt.assert_array_less(prob['pre.ky'], RIGID)
+        npt.assert_array_less(prob['pre.kz'], RIGID)
+        npt.assert_array_less(prob['pre.ktx'], RIGID)
+        npt.assert_array_less(prob['pre.kty'], RIGID)
+        npt.assert_array_less(prob['pre.ktz'], RIGID)
         npt.assert_array_less(0.0, prob['pre.kx'])
         npt.assert_array_less(0.0, prob['pre.ky'])
         npt.assert_array_less(0.0, prob['pre.kz'])
@@ -746,7 +747,6 @@ class TestTowerSE(unittest.TestCase):
         prob.setup()
         
         # Set common and then customized parameters
-        print(h_param.sum())
         prob['hub_height'] = prob['wind_reference_height'] = 30+146.1679
         prob['foundation_height'] = 0.0 #-30.0
         prob['tower_section_height'] = h_param
@@ -793,9 +793,6 @@ class TestTowerSE(unittest.TestCase):
 
         # # --- run ---
         prob.run_model()
-        print(prob['post.structural_frequencies'])
-        print(prob['post.fore_aft_modes'])
-        print(prob['post.side_side_modes'])
         '''
         Natural Frequencies (Hz): [ 0.2161   0.21842  1.1091   1.167    1.2745   2.3611   2.5877   5.1233  5.2111   9.9725  10.007   10.151   16.388   16.4     18.092   21.813 23.955   23.958   30.184   33.706  ]
  
@@ -1005,13 +1002,13 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob['weldability'], [-0.40192308, -0.34386447])
         npt.assert_almost_equal(prob['manufacturability'], [0.60521262, 0.60521262])
         npt.assert_almost_equal(prob['wind1.Uref'], [11.73732])
-        npt.assert_almost_equal(prob['tower1.f1'], [0.33214436])
+        npt.assert_almost_equal(prob['tower1.f1'], [0.33214436],5)
         npt.assert_almost_equal(prob['post1.top_deflection'], [0.69728181])
         npt.assert_almost_equal(prob['post1.stress'], [0.45829084, 0.41279851, 0.35017739, 0.31497515, 0.17978168, 0.12035124])
         npt.assert_almost_equal(prob['post1.global_buckling'], [0.50459926, 0.47009267, 0.42172339, 0.40495796, 0.29807777, 0.25473308])
         npt.assert_almost_equal(prob['post1.shell_buckling'], [0.32499642, 0.25914569, 0.18536257, 0.17036815, 0.06343523, 0.03259229])
         npt.assert_almost_equal(prob['wind2.Uref'], [70.])
-        npt.assert_almost_equal(prob['tower2.f1'], [0.33218936])
+        npt.assert_almost_equal(prob['tower2.f1'], [0.33218936],5)
         npt.assert_almost_equal(prob['post2.top_deflection'], [0.64374406])
         npt.assert_almost_equal(prob['post2.stress'], [0.44627896, 0.38220803, 0.30583361, 0.25654412, 0.13137214, 0.10615505])
         npt.assert_almost_equal(prob['post2.global_buckling'], [0.49412205, 0.4442257,  0.38450749, 0.35599809, 0.25784865, 0.24625576])
