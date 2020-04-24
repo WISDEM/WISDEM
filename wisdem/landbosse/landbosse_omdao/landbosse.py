@@ -16,7 +16,7 @@ default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('foundat
 default_components_data = default_project_data["components"]
 
 
-USE_DEFAULT_COMPONENT_DATA = -1.0
+use_default_component_data = -1.0
 NUMBER_OF_BLADES = 3
 
 
@@ -35,7 +35,7 @@ class LandBOSSE(om.Group):
         myIndeps.add_output('decommissioning_pct', 0.15)
 
         # Inputs for automatic component list generation of blades
-        # A default of USE_DEFAULT_COMPONENT_DATA for any of these inputs means that the
+        # A default of use_default_component_data for any of these inputs means that the
         # default value loaded above should be used. All blades are
         # assumed to be the same.
 
@@ -45,12 +45,12 @@ class LandBOSSE(om.Group):
         myIndeps.add_output('tower_section_length_m', 30.0, units='m',
                             desc='The transportable length of a tower section.')
 
-        myIndeps.add_output('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
-        myIndeps.add_output('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
-        myIndeps.add_output('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
-        myIndeps.add_output('blade_offload_hook_height', USE_DEFAULT_COMPONENT_DATA, units='m')
-        myIndeps.add_output('blade_offload_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
-        myIndeps.add_output('blade_drag_multiplier', USE_DEFAULT_COMPONENT_DATA)  # Unitless
+        myIndeps.add_output('blade_drag_coefficient', use_default_component_data)  # Unitless
+        myIndeps.add_output('blade_lever_arm', use_default_component_data, units='m')
+        myIndeps.add_output('blade_install_cycle_time', use_default_component_data, units='h')
+        myIndeps.add_output('blade_offload_hook_height', use_default_component_data, units='m')
+        myIndeps.add_output('blade_offload_cycle_time', use_default_component_data, units='h')
+        myIndeps.add_output('blade_drag_multiplier', use_default_component_data)  # Unitless
 
         self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
 
@@ -59,7 +59,7 @@ class LandBOSSE(om.Group):
             sharedIndeps.add_output('hub_height', 0.0, units='m')
             sharedIndeps.add_output('foundation_height', 0.0, units='m')
             sharedIndeps.add_output('blade_mass', 0.0, units='kg')
-            sharedIndeps.add_output('nacelle_mass', 0.0, units='kg')
+            sharedIndeps.add_output('nacelle_mass', use_default_component_data, units='kg')
             sharedIndeps.add_output('tower_mass', 0.0, units='kg')
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
             
@@ -86,12 +86,12 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         self.add_input('plant_turbine_spacing', 7)
         self.add_input('plant_row_spacing', 7)
-        self.add_input('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
-        self.add_input('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
-        self.add_input('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
-        self.add_input('blade_offload_hook_height', USE_DEFAULT_COMPONENT_DATA, units='m')
-        self.add_input('blade_offload_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='h')
-        self.add_input('blade_drag_multiplier', USE_DEFAULT_COMPONENT_DATA)  # Unitless
+        self.add_input('blade_drag_coefficient', use_default_component_data)  # Unitless
+        self.add_input('blade_lever_arm', use_default_component_data, units='m')
+        self.add_input('blade_install_cycle_time', use_default_component_data, units='h')
+        self.add_input('blade_offload_hook_height', use_default_component_data, units='m')
+        self.add_input('blade_offload_cycle_time', use_default_component_data, units='h')
+        self.add_input('blade_drag_multiplier', use_default_component_data)  # Unitless
 
         # Even though LandBOSSE doesn't use foundation height, TowerSE does,
         # and foundation height can be used with hub height to calculate
@@ -612,12 +612,12 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         input_components = discrete_inputs['components']
 
-        # myIndeps.add_output('blade_drag_coefficient', USE_DEFAULT_COMPONENT_DATA)  # Unitless
-        # myIndeps.add_output('blade_lever_arm', USE_DEFAULT_COMPONENT_DATA, units='m')
-        # myIndeps.add_output('blade_install_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='hr')
-        # myIndeps.add_output('blade_offload_hook_height', USE_DEFAULT_COMPONENT_DATA, units='m')
-        # myIndeps.add_output('blade_offload_cycle_time', USE_DEFAULT_COMPONENT_DATA, units='hr')
-        # myIndeps.add_output('blade_drag_multiplier', USE_DEFAULT_COMPONENT_DATA)  # Unitless
+        # myIndeps.add_output('blade_drag_coefficient', use_default_component_data)  # Unitless
+        # myIndeps.add_output('blade_lever_arm', use_default_component_data, units='m')
+        # myIndeps.add_output('blade_install_cycle_time', use_default_component_data, units='hr')
+        # myIndeps.add_output('blade_offload_hook_height', use_default_component_data, units='m')
+        # myIndeps.add_output('blade_offload_cycle_time', use_default_component_data, units='hr')
+        # myIndeps.add_output('blade_drag_multiplier', use_default_component_data)  # Unitless
 
         # Another way would be to look at topLevelFlag
 
@@ -625,15 +625,24 @@ class LandBOSSE_API(om.ExplicitComponent):
         print('>>>>>>>>>> UNMODIFIED COMPONENTS <<<<<<<<')
         print(input_components)
 
-        # Will modified output components
+        # Will hold modified output components
         output_components_list = []
 
-        # Make some blades
-        default_blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0]
-        if inputs['blade_drag_coefficient'] != USE_DEFAULT_COMPONENT_DATA:
-            default_blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
+        # Need to convert kg to tonnes
+        kg_per_tonne = 1000
 
-        # What to do with the blade drag multipler? I don't see it in the component list
+        # Make the nacelle
+        nacelle = input_components[input_components['Component'].str.startswith('Nacelle')].iloc[0].copy()
+        if inputs['nacelle_mass'] != use_default_component_data:
+            nacelle['Mass tonne'] = inputs['nacelle_mass'][0] / kg_per_tonne
+            nacelle['Component'] = 'DrivetrainSE Nacelle'
+        nacelle['Lift height m'] = inputs['hub_height_meters'][0]
+        output_components_list.append(nacelle)
+
+        # Make blades
+        default_blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0]
+        if inputs['blade_drag_coefficient'] != use_default_component_data:
+            default_blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
 
         for i in range(NUMBER_OF_BLADES):
             component = f"Blade {i}"
@@ -641,8 +650,7 @@ class LandBOSSE_API(om.ExplicitComponent):
             blade_i['Component'] = component
             output_components_list.append(blade_i)
 
-        # Tower sections
-        kg_per_tonne = 1000
+        # Make tower sections
         tower_mass_tonnes = inputs['tower_mass'][0] / kg_per_tonne
         tower_section_length_m = inputs['tower_section_length_m'][0]
         tower_height_m = inputs['hub_height_meters'][0] - inputs['foundation_height'][0]

@@ -287,6 +287,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
 
     # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<<<<<<<
     prob['blade_drag_coefficient'] = 0.567
+    prob['nacelle_mass'] = 60000
 
     return prob
 
