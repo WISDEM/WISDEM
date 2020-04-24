@@ -115,7 +115,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('num_turbines', val=100, desc='Number of turbines in project')
         self.add_input('fuel_cost_usd_per_gal', val=1.0, desc='Fuel cost USD/gal')
 
-        self.add_input('breakpoint_between_base_and_topping_percent', val=70,
+        self.add_input('breakpoint_between_base_and_topping_percent', val=0.0,
                        desc='Breakpoint between base and topping (percent)')
 
         # Could not place units in rate_of_deliveries
