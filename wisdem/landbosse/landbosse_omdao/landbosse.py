@@ -612,13 +612,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         input_components = discrete_inputs['components']
 
-        # myIndeps.add_output('blade_drag_coefficient', use_default_component_data)  # Unitless
-        # myIndeps.add_output('blade_lever_arm', use_default_component_data, units='m')
-        # myIndeps.add_output('blade_install_cycle_time', use_default_component_data, units='hr')
-        # myIndeps.add_output('blade_offload_hook_height', use_default_component_data, units='m')
-        # myIndeps.add_output('blade_offload_cycle_time', use_default_component_data, units='hr')
-        # myIndeps.add_output('blade_drag_multiplier', use_default_component_data)  # Unitless
-
         # Another way would be to look at topLevelFlag
 
         pd.set_option('display.max_columns', None)
@@ -640,13 +633,28 @@ class LandBOSSE_API(om.ExplicitComponent):
         output_components_list.append(nacelle)
 
         # Make blades
-        default_blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0]
+        blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0].copy()
         if inputs['blade_drag_coefficient'] != use_default_component_data:
-            default_blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
+            blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
+
+        if inputs['blade_lever_arm'] != use_default_component_data:
+            blade['Lever arm m'] = inputs['blade_lever_arm'][0]
+
+        if inputs['blade_install_cycle_time'] != use_default_component_data:
+            blade['Cycle time installation hrs'] = inputs['blade_install_cycle_time'][0]
+
+        if inputs['blade_offload_hook_height'] != use_default_component_data:
+            blade['Offload hook height m'] = inputs['blade_offload_hook_height'][0]
+
+        if inputs['blade_offload_cycle_time'] != use_default_component_data:
+            blade['Offload cycle time hrs'] = inputs['blade_offload_cycle_time']
+
+        if inputs['blade_drag_multiplier'] != use_default_component_data:
+            blade['Multiplier drag rotor'] = inputs['blade_drag_multiplier']
 
         for i in range(NUMBER_OF_BLADES):
             component = f"Blade {i}"
-            blade_i = default_blade.copy()
+            blade_i = blade.copy()
             blade_i['Component'] = component
             output_components_list.append(blade_i)
 
