@@ -639,13 +639,8 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         input_components = discrete_inputs['components']
 
-        # Another way would be to look at topLevelFlag
-
-        pd.set_option('display.max_columns', None)
-        print('>>>>>>>>>> UNMODIFIED COMPONENTS <<<<<<<<')
-        print(input_components)
-
-        # Will hold modified output components
+        # This list is a sequence of pd.Series instances that have the
+        # specifications of each component.
         output_components_list = []
 
         # Need to convert kg to tonnes
