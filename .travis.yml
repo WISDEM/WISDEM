@@ -37,6 +37,5 @@ install:
 
   
 script:
-  - python test/test_all.py
-  #- py.test  # will run all tests in the package, currently there are
-  #some we do not want to run though
+  #- python test/test_all.py
+  - py.test

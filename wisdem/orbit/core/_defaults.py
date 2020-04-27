@@ -27,7 +27,7 @@ process_times = {
     "cable_splice_time": 48,  # hr
     "cable_raise_time": 0.5,  # hr
     # Offshore Substation
-    "topside_fasten_time": 2,  # hr
+    "topside_fasten_time": 12,  # hr
     "topside_release_time": 2,  # hr
     "topside_attach_time": 6,  # hr
     # Monopiles

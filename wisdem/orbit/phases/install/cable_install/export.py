@@ -13,7 +13,6 @@ from marmot import process
 
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.logic import position_onsite
-from wisdem.orbit.core._defaults import process_times as pt
 from wisdem.orbit.phases.install import InstallPhase
 from wisdem.orbit.core.exceptions import InsufficientCable
 
@@ -21,6 +20,7 @@ from .common import SimpleCable as Cable
 from .common import (
     lay_cable,
     bury_cable,
+    dig_trench,
     pull_in_cable,
     landfall_tasks,
     lay_bury_cable,
@@ -31,6 +31,7 @@ from .common import (
 
 
 class ExportCableInstallation(InstallPhase):
+    """Export Cable Installation Phase"""
 
     phase = "Export Cable Installation"
 
@@ -39,6 +40,7 @@ class ExportCableInstallation(InstallPhase):
         "landfall": {"trench_length": "km (optional)"},
         "export_cable_install_vessel": "str | dict",
         "export_cable_bury_vessel": "str | dict (optional)",
+        "export_cable_trench_vessel": "str (optional)",
         "site": {"distance": "km"},
         "plant": {"num_turbines": "int"},
         "turbine": {"turbine_rating": "MW"},
@@ -90,6 +92,7 @@ class ExportCableInstallation(InstallPhase):
 
         self.initialize_installation_vessel()
         self.initialize_burial_vessel()
+        self.initialize_trench_vessel()
 
         # Perform onshore construction
         self.onshore_construction(**kwargs)
@@ -102,6 +105,7 @@ class ExportCableInstallation(InstallPhase):
             number=self.number,
             distances=self.distances,
             burial_vessel=self.bury_vessel,
+            trench_vessel=self.trench_vessel,
             **kwargs,
         )
 
@@ -193,8 +197,7 @@ class ExportCableInstallation(InstallPhase):
         vessel = Vessel(name, vessel_specs)
         self.env.register(vessel)
 
-        vessel.extract_vessel_specs()
-        vessel.mobilize()
+        vessel.initialize()
         self.install_vessel = vessel
 
     def initialize_burial_vessel(self):
@@ -211,9 +214,26 @@ class ExportCableInstallation(InstallPhase):
         vessel = Vessel(name, vessel_specs)
         self.env.register(vessel)
 
-        vessel.extract_vessel_specs()
-        vessel.mobilize()
+        vessel.initialize()
         self.bury_vessel = vessel
+
+    def initialize_trench_vessel(self):
+        """Creates the export cable trenching vessel."""
+
+        # Vessel name and costs
+        vessel_specs = self.config.get("export_cable_trench_vessel", None)
+        if vessel_specs is None:
+            self.trench_vessel = None
+            return
+        name = vessel_specs.get("name", "Export Cable Trench Vessel")
+
+        vessel = Vessel(name, vessel_specs)
+        self.env.register(vessel)
+
+        vessel.initialize()
+        vessel.at_port = True
+        vessel.at_site = False
+        self.trench_vessel = vessel
 
     @property
     def detailed_output(self):
@@ -226,7 +246,14 @@ class ExportCableInstallation(InstallPhase):
 
 @process
 def install_export_cables(
-    vessel, sections, cable, number, distances, burial_vessel=None, **kwargs
+    vessel,
+    sections,
+    cable,
+    number,
+    distances,
+    burial_vessel=None,
+    trench_vessel=None,
+    **kwargs,
 ):
     """
     Simulation of the installation of export cables.
@@ -253,7 +280,40 @@ def install_export_cables(
         Optional configuration for burial vessel. If configured, the
         installation vessel only lays the cable on the seafloor and this
         vessel will bury them at the end of the simulation.
+    trench_vessel: Vessel
+        Optional configuration for trenching vessel.  If configured, the
+        trenching vessel travels along the cable route prior to arrival of
+        the cable lay vessel and digs a trench.
     """
+
+    # Conduct trenching operations
+    if trench_vessel is None:
+        pass
+    else:
+        for _ in range(number):
+            # Total export cable length along which to dig trench
+            total_sections_distance = sum(sections)
+
+            # Trenching vessel can dig a trench during inbound or outbound journey
+            if trench_vessel.at_port:
+                trench_vessel.at_port = False
+                yield dig_export_cables_trench(
+                    trench_vessel, total_sections_distance, **kwargs
+                )
+                trench_vessel.at_site = True
+            elif trench_vessel.at_site:
+                trench_vessel.at_site = False
+                yield dig_export_cables_trench(
+                    trench_vessel, total_sections_distance, **kwargs
+                )
+                trench_vessel.at_port = True
+
+        # If the vessel finishes trenching at site, return to shore
+        # TODO: replace with demobilization method
+        if trench_vessel.at_site:
+            trench_vessel.at_site = False
+            yield trench_vessel.transit(total_sections_distance, **kwargs)
+        trench_vessel.at_port = True
 
     for _ in range(number):
         vessel.cable_storage.reset()
@@ -339,3 +399,24 @@ def bury_export_cables(vessel, length, number, **kwargs):
         yield bury_cable(vessel, length, **kwargs)
 
     vessel.submit_debug_log(message="Export cable burial process completed!")
+
+
+@process
+def dig_export_cables_trench(vessel, distance, **kwargs):
+    """
+    Simulation for digging a trench for the export cables (if configured).
+
+    Parameters
+    ----------
+    vessel : Vessel
+        Performing vessel.
+    distance : int | float
+        Distance along export cable route to dig trench for cable
+    """
+
+    yield position_onsite(vessel, site_position_time=2)
+    yield dig_trench(vessel, distance, **kwargs)
+
+    vessel.submit_debug_log(
+        message="Export cable trench digging process completed!"
+    )

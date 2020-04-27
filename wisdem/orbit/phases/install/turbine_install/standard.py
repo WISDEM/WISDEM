@@ -169,8 +169,7 @@ class TurbineInstallation(InstallPhase):
         wtiv = Vessel(name, wtiv_specs)
         self.env.register(wtiv)
 
-        wtiv.extract_vessel_specs()
-        wtiv.mobilize()
+        wtiv.initialize()
         wtiv.at_port = True
         wtiv.at_site = False
         self.wtiv = wtiv
@@ -191,8 +190,7 @@ class TurbineInstallation(InstallPhase):
             feeder = Vessel(name, feeder_specs)
             self.env.register(feeder)
 
-            feeder.extract_vessel_specs()
-            feeder.mobilize()
+            feeder.initialize()
             feeder.at_port = True
             feeder.at_site = False
             self.feeders.append(feeder)
