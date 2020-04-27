@@ -150,7 +150,7 @@ class LandBasedTurbine(Group):
         self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']),
                            promotes=['machine_rating', 'lcoe'])
 
-        # Because of the promotes=['*'] should not need the LandBOSSE prefix.
+        # BOS Calculation
         self.add_subsystem('landbosse', LandBOSSE(), promotes=['*'])
 
         # Set up connections
