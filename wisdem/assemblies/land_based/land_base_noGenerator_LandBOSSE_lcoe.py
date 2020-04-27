@@ -218,7 +218,7 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level=Analysis_Level, fst_vt=fst_vt)
 
     # Set the machine rating
-    prob['machine_rating'] = 1500.0
+    prob['machine_rating'] = 1.5e6
 
     # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<
     # Leave all LandBOSSE inputs at their default for now.
