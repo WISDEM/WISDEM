@@ -309,11 +309,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         # filename supplied in the optimization yaml
         if 'recorder' in opt_options:
             if opt_options['recorder']['flag']:
-                recorder = om.SqliteRecorder(opt_options['optimization_log'])
+                recorder = om.SqliteRecorder(opt_options['recorder']['file_name'])
                 wt_opt.driver.add_recorder(recorder)
                 wt_opt.add_recorder(recorder)
                 
-                wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe', 'rlds.constr.constr_max_strainU_spar', 'rlds.constr.constr_max_strainL_spar', 'tcons.tip_deflection_ratio', 'sse.stall_check.no_stall_constraint', 'pc.tsr_opt', ]
+                wt_opt.driver.recording_options['includes'] = ['*']
                 wt_opt.driver.recording_options['record_constraints'] = True 
                 wt_opt.driver.recording_options['record_desvars'] = True 
                 wt_opt.driver.recording_options['record_objectives'] = True

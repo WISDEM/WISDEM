@@ -4,9 +4,10 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.interpolate import pchip, Akima1DInterpolator, PchipInterpolator
 
-from wisdem.rotorse.geometry_tools.geom_tools import calculate_length, curvature
+from wisdem.rotorse.geometry_tools.geom_tools import curvature
 from wisdem.rotorse.geometry_tools.cubicspline import NaturalCubicSpline
 from wisdem.rotorse.geometry_tools.distfunc import distfunc
+from wisdem.commonse.utilities import arc_length
 
 
 class Curve(object):
@@ -35,7 +36,7 @@ class Curve(object):
         """
         compute normalized curve length
         """
-        s = calculate_length(self.points)
+        s = arc_length(self.points)
         self.length = s[-1]
         self.ds = np.diff(s)
         self.s = s/s[-1]
