@@ -724,4 +724,5 @@ class LandBOSSE_API(om.ExplicitComponent):
         output_components = pd.DataFrame(output_components_list)
 
         print('>>>>>>>>>> MODIFIED COMPONENTS <<<<<<<<')
+        pd.set_option('display.max_columns', 500)
         print(output_components)
