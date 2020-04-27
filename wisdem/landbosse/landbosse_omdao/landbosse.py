@@ -55,12 +55,17 @@ class LandBOSSE(om.Group):
             sharedIndeps.add_output('blade_mass', 0.0, units='kg')
             sharedIndeps.add_output('nacelle_mass', use_default_component_data, units='kg')
             sharedIndeps.add_output('tower_mass', 0.0, units='kg')
+            sharedIndeps.add_output('machine_rating', 1500.0, units='kW')
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
             
         self.add_subsystem('landbosse', LandBOSSE_API(topLevelFlag = self.options['topLevelFlag']), promotes=['*'])
 
         if self.options['topLevelFlag']:
             self.connect('hub_height', 'hub_height_meters')
+
+            # machine_rating is in kW by turbine_rating_MW is in MW. However,
+            # these units are specified to OpenMDAO so it can convert units.
+            self.connect('machine_rating', 'turbine_rating_MW')
 
 
 class LandBOSSE_API(om.ExplicitComponent):
@@ -630,6 +635,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         print('>>> hub_mass kg', inputs['hub_mass'])
         print('>>> nacelle_mass kg', inputs['nacelle_mass'])
+        print('>>> turbine_rating_MW', inputs['turbine_rating_MW'])
 
         input_components = discrete_inputs['components']
 

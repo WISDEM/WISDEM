@@ -211,10 +211,14 @@ class LandBasedTurbine(Group):
         # Connections to LandBOSSE
         self.connect('hub_height', 'hub_height_meters')
         self.connect('number_of_turbines', 'num_turbines')
+        self.connect('machine_rating', 'turbine_rating_MW')
 
 
 def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={}):
     prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level=Analysis_Level, fst_vt=fst_vt)
+
+    # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<<<<<<<
+    # Leave all LandBOSSE inputs at their defaults for now.
 
     # Environmental parameters for the tower
     # prob['wind_reference_speed']           = 11.0
@@ -289,9 +293,6 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
     prob['drive.gearbox_input_xcm'] = 0.1
     prob['drive.hss_input_length'] = 1.5
     prob['drive.yaw_motors_number'] = 1
-
-    # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<<<<<<<
-    prob['blade_drag_coefficient'] = 0.567
 
     return prob
 
