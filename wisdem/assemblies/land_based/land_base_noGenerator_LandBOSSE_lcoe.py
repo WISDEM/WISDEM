@@ -209,6 +209,7 @@ class LandBasedTurbine(Group):
 
         # Connections to LandBOSSE
         self.connect('hub_height', 'hub_height_meters')
+        self.connect('number_of_turbines', 'num_turbines')
 
 
 def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={}):

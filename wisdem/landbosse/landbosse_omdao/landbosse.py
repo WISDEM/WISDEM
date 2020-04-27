@@ -112,7 +112,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('rotor_diameter_m', val=77, units='m', desc='Rotor diameter m')
         self.add_input('wind_shear_exponent', val=0.2, desc='Wind shear exponent')
         self.add_input('turbine_rating_MW', val=1.5, units='MW', desc='Turbine rating MW')
-        self.add_input('num_turbines', val=100, desc='Number of turbines in project')
+        # self.add_input('num_turbines', val=100, desc='Number of turbines in project')
         self.add_input('fuel_cost_usd_per_gal', val=1.0, desc='Fuel cost USD/gal')
 
         self.add_input('breakpoint_between_base_and_topping_percent', val=0.0,
@@ -182,9 +182,9 @@ class LandBOSSE_API(om.ExplicitComponent):
     def setup_discrete_inputs_that_are_not_dataframes(self):
         """
         This method sets up the discrete inputs that aren't dataframes.
-        The dataframes need to be handled differently because the way
-        they will get their default data is different.
         """
+        self.add_discrete_input('num_turbines', val=100, desc='Number of turbines in project')
+
         self.add_discrete_input('user_defined_home_run_trench', val=1,
                                 desc='Flag for user-defined home run trench length (0 = no; 1 = yes)')
 
@@ -419,7 +419,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         incomplete_input_dict['rsmeans_per_diem'] = crew_cost.loc['RSMeans', 'Per diem USD per day']
 
         # Calculate project size in megawatts
-        incomplete_input_dict['project_size_megawatts'] = float(inputs['num_turbines'] * inputs['turbine_rating_MW'])
+        incomplete_input_dict['project_size_megawatts'] = \
+            float(discrete_inputs['num_turbines'] * inputs['turbine_rating_MW'])
 
         defaults = DefaultMasterInputDict()
         master_input_dict = defaults.populate_input_dict(incomplete_input_dict)
