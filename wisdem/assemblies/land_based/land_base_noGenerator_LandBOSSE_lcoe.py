@@ -219,8 +219,11 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
 
     # Set the machine rating
     prob['machine_rating'] = 1.5e6
-
-    prob['hub_height'] = 80
+    prob['diameter'] = 77.0
+    hub_diam = 3.0
+    prob['bladeLength'] = 0.5 * (prob['diameter'] - hub_diam)
+    prob['hubFraction'] = 0.5 * hub_diam / prob['bladeLength']
+    prob['hub_height'] = 80.0
 
     # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<
     # Leave all LandBOSSE inputs at their default for now.
