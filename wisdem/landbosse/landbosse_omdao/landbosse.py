@@ -33,11 +33,6 @@ class LandBOSSE(om.Group):
         myIndeps.add_output('commissioning_pct', 0.01)
         myIndeps.add_output('decommissioning_pct', 0.15)
 
-        # Inputs for automatic component list generation of blades
-        # A default of use_default_component_data for any of these inputs means that the
-        # default value loaded above should be used. All blades are
-        # assumed to be the same.
-
         # Add a tower section height variable. The default value of 30 m is for
         # transportable tower sections.
 
@@ -99,9 +94,26 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('foundation_height', 0.0, units='m')
 
         self.add_input('tower_section_length_m', 30.0, units='m')
-        self.add_input('blade_mass', use_default_component_data, units='kg')
         self.add_input('nacelle_mass', 0.0, units='kg')
         self.add_input('tower_mass', 0.0, units='kg')
+
+        # A discrete input below, number_of_blades, gives the number of blades
+        # on the rotor.
+        #
+        # The total mass of the rotor nacelle assembly (RNA) is the following
+        # sum:
+        #
+        # (blade_mass * number_of_blades) + nac_mass + hub_mass
+
+        self.add_input('blade_mass',
+                       use_default_component_data,
+                       units='kg',
+                       desc='The mass of one rotor blade.')
+
+        self.add_input('hub_mass',
+                       use_default_component_data,
+                       units='kg',
+                       desc='Mass of the rotor hub')
 
         self.add_input('crane_breakdown_fraction', val=0.0,
                        desc='0 means the crane is never broken down. 1 means it is broken down every turbine.')
@@ -616,6 +628,9 @@ class LandBOSSE_API(om.ExplicitComponent):
             A dictionary-like with the non-numeric inputs (like
             pandas.DataFrame)
         """
+        print('>>> hub_mass kg', inputs['hub_mass'])
+        print('>>> nacelle_mass kg', inputs['nacelle_mass'])
+
         input_components = discrete_inputs['components']
 
         # Another way would be to look at topLevelFlag
@@ -630,13 +645,24 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Need to convert kg to tonnes
         kg_per_tonne = 1000
 
-        # Make the nacelle
+        # Get the hub height
+        hub_height_meters = inputs['hub_height_meters'][0]
+
+        # Make the nacelle. This does not include the hub or blades.
+        nacelle_mass_kg = inputs['nacelle_mass'][0]
         nacelle = input_components[input_components['Component'].str.startswith('Nacelle')].iloc[0].copy()
         if inputs['nacelle_mass'] != use_default_component_data:
-            nacelle['Mass tonne'] = inputs['nacelle_mass'][0] / kg_per_tonne
+            nacelle['Mass tonne'] = nacelle_mass_kg / kg_per_tonne
             nacelle['Component'] = 'DrivetrainSE Nacelle'
-        nacelle['Lift height m'] = inputs['hub_height_meters'][0]
+        nacelle['Lift height m'] = hub_height_meters
         output_components_list.append(nacelle)
+
+        # Make the hub
+        hub_mass_kg = inputs['hub_mass'][0]
+        hub = input_components[input_components['Component'].str.startswith('Hub')].iloc[0].copy()
+        if hub_mass_kg != use_default_component_data:
+            hub['Mass tonne'] = hub_mass_kg / kg_per_tonne
+        output_components_list.append(hub)
 
         # Make blades
         blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0].copy()
