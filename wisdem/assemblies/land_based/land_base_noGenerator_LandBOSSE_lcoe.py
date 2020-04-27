@@ -217,8 +217,11 @@ class LandBasedTurbine(Group):
 def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={}):
     prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level=Analysis_Level, fst_vt=fst_vt)
 
-    # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<<<<<<<
-    # Leave all LandBOSSE inputs at their defaults for now.
+    # Set the machine rating
+    prob['machine_rating'] = 1500.0
+
+    # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<
+    # Leave all LandBOSSE inputs at their default for now.
 
     # Environmental parameters for the tower
     # prob['wind_reference_speed']           = 11.0
