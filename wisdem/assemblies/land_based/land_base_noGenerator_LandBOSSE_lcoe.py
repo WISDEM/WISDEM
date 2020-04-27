@@ -207,6 +207,9 @@ class LandBasedTurbine(Group):
         self.connect('bos_costs', 'plantfinancese.bos_per_kW')
         self.connect('annual_opex', 'plantfinancese.opex_per_kW')
 
+        # Connections to LandBOSSE
+        self.connect('hub_height', 'hub_height_meters')
+
 
 def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={}):
     prob = Init_RotorSE_wRefBlade(prob, blade, Analysis_Level=Analysis_Level, fst_vt=fst_vt)
