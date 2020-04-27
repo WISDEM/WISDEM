@@ -17,7 +17,6 @@ default_components_data = default_project_data["components"]
 
 
 use_default_component_data = -1.0
-NUMBER_OF_BLADES = 3
 
 
 class LandBOSSE(om.Group):
@@ -100,7 +99,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('foundation_height', 0.0, units='m')
 
         self.add_input('tower_section_length_m', 30.0, units='m')
-        self.add_input('blade_mass', 0.0, units='kg')
+        self.add_input('blade_mass', use_default_component_data, units='kg')
         self.add_input('nacelle_mass', 0.0, units='kg')
         self.add_input('tower_mass', 0.0, units='kg')
 
@@ -184,6 +183,12 @@ class LandBOSSE_API(om.ExplicitComponent):
         This method sets up the discrete inputs that aren't dataframes.
         """
         self.add_discrete_input('num_turbines', val=100, desc='Number of turbines in project')
+
+        # Since 3 blades are so common on rotors, that is a reasonable default
+        # value that will not need to be checked during component list
+        # assembly.
+
+        self.add_discrete_input('number_of_blades', val=3, desc='Number of blades on the rotor')
 
         self.add_discrete_input('user_defined_home_run_trench', val=1,
                                 desc='Flag for user-defined home run trench length (0 = no; 1 = yes)')
@@ -635,26 +640,34 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         # Make blades
         blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0].copy()
-        if inputs['blade_drag_coefficient'] != use_default_component_data:
+        if inputs['blade_drag_coefficient'][0] != use_default_component_data:
             blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
 
-        if inputs['blade_lever_arm'] != use_default_component_data:
+        if inputs['blade_lever_arm'][0] != use_default_component_data:
             blade['Lever arm m'] = inputs['blade_lever_arm'][0]
 
-        if inputs['blade_install_cycle_time'] != use_default_component_data:
+        if inputs['blade_install_cycle_time'][0] != use_default_component_data:
             blade['Cycle time installation hrs'] = inputs['blade_install_cycle_time'][0]
 
-        if inputs['blade_offload_hook_height'] != use_default_component_data:
+        if inputs['blade_offload_hook_height'][0] != use_default_component_data:
             blade['Offload hook height m'] = inputs['blade_offload_hook_height'][0]
 
-        if inputs['blade_offload_cycle_time'] != use_default_component_data:
+        if inputs['blade_offload_cycle_time'][0] != use_default_component_data:
             blade['Offload cycle time hrs'] = inputs['blade_offload_cycle_time']
 
-        if inputs['blade_drag_multiplier'] != use_default_component_data:
+        if inputs['blade_drag_multiplier'][0] != use_default_component_data:
             blade['Multiplier drag rotor'] = inputs['blade_drag_multiplier']
 
-        for i in range(NUMBER_OF_BLADES):
-            component = f"Blade {i}"
+        if inputs['blade_mass'][0] != use_default_component_data:
+            blade['Mass tonne'] = inputs['blade_mass'][0] / kg_per_tonne
+
+        # Assume that number_of_blades always has a reasonable value. It's
+        # default count when the discrete input is declared of 3 is always
+        # reasonable unless overridden by another input.
+
+        number_of_blades = discrete_inputs['number_of_blades']
+        for i in range(number_of_blades):
+            component = f"Blade {i + 1}"
             blade_i = blade.copy()
             blade_i['Component'] = component
             output_components_list.append(blade_i)
@@ -675,7 +688,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         default_tower_section = input_components[input_components['Component'].str.startswith('Tower')].iloc[0]
         for i, (mass, lift_height) in enumerate(zip(tower_section_masses, tower_lift_heights)):
             tower_section = default_tower_section.copy()
-            tower_section['Component'] = f'Tower section {i}'
+            tower_section['Component'] = f'Tower section {i + 1}'
             tower_section['Mass tonne'] = mass
             tower_section['Lift height m'] = lift_height
             output_components_list.append(tower_section)
