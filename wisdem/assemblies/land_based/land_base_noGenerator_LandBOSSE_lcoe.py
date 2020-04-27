@@ -117,7 +117,8 @@ class LandBasedTurbine(Group):
                                      'hub_mass', 'bedplate_mass', 'gearbox_mass', 'generator_mass', 'hss_mass',
                                      'hvac_mass', 'lss_mass', 'cover_mass',
                                      'pitch_system_mass', 'platforms_mass', 'spinner_mass', 'transformer_mass',
-                                     'vs_electronics_mass', 'yaw_mass'])
+                                     'vs_electronics_mass', 'yaw_mass',
+                                     'nacelle_mass'])
 
         # Tower and substructure
         self.add_subsystem('tow', TowerSE(nLC=1,
@@ -291,7 +292,6 @@ def Init_LandBasedAssembly(prob, blade, Nsection_Tow, Analysis_Level=0, fst_vt={
 
     # >>>>>>>>>>>>>>> LandBOSSE inputs <<<<<<<<<<<<<<<<<<<
     prob['blade_drag_coefficient'] = 0.567
-    prob['nacelle_mass'] = 60000
 
     return prob
 
