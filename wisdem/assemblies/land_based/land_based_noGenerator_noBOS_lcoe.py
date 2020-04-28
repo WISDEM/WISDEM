@@ -116,8 +116,8 @@ class LandBasedTurbine(Group):
                                      'tower_wall_thickness', 'tower_outer_diameter',
                                      'tower_outfitting_factor','tower_buckling_length',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
-                                     'tower_mass','tower_I_base','hub_height',
-                                     'foundation_height','monopile','soil_G','soil_nu',
+                                     'tower_mass','tower_I_base','hub_height','tower_add_gravity',
+                                     'foundation_height','soil_G','soil_nu',
                                      'suctionpile_depth','gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue',
                                      'labor_cost_rate','material_cost_rate','painting_cost_rate','z_full','d_full','t_full',
                                      'DC','shear','geom','tower_force_discretization','nM','Mmethod','lump','tol','shift'])
