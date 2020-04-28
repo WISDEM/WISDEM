@@ -292,15 +292,18 @@ class CaseGen_IEC():
         for case in caselist:
             row_out = [None]*len(change_vars)
             for i, var in enumerate(change_vars):
-                row_out[i] = str(case[var])
+                # row_out[i] = str(case[var])
+                row_out[i] = case[var]
             matrix_out.append(row_out)
-        matrix_out = np.asarray(matrix_out)
+        # matrix_out = np.asarray(matrix_out)
 
         change_vars = [('IEC', 'DLC')] + change_vars
-        matrix_out = np.hstack((np.asarray([[i] for i in dlc_list]), matrix_out))
+        [matrix_row.insert(0, dlc) for dlc, matrix_row in zip(dlc_list,matrix_out)]
 
+        # matrix_out = np.hstack((np.asarray([[i] for i in dlc_list]), matrix_out))
         if not os.path.exists(self.run_dir):
             os.makedirs(self.run_dir)
+
         save_case_matrix(matrix_out, change_vars, self.run_dir)
         save_case_matrix_yaml(matrix_out, change_vars, self.run_dir, case_names_all)
 
