@@ -654,7 +654,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         nacelle = input_components[input_components['Component'].str.startswith('Nacelle')].iloc[0].copy()
         if inputs['nacelle_mass'] != use_default_component_data:
             nacelle['Mass tonne'] = nacelle_mass_kg / kg_per_tonne
-            nacelle['Component'] = 'DrivetrainSE Nacelle'
+            nacelle['Component'] = 'Nacelle'
         nacelle['Lift height m'] = hub_height_meters
         output_components_list.append(nacelle)
 
