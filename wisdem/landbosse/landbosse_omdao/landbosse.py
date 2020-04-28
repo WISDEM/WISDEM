@@ -661,12 +661,17 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Make the hub
         hub_mass_kg = inputs['hub_mass'][0]
         hub = input_components[input_components['Component'].str.startswith('Hub')].iloc[0].copy()
+        hub['Lift height m'] = hub_height_meters
         if hub_mass_kg != use_default_component_data:
             hub['Mass tonne'] = hub_mass_kg / kg_per_tonne
         output_components_list.append(hub)
 
         # Make blades
         blade = input_components[input_components['Component'].str.startswith('Blade')].iloc[0].copy()
+
+        # There is always a hub height, so use that as the lift height
+        blade['Lift height m'] = hub_height_meters
+
         if inputs['blade_drag_coefficient'][0] != use_default_component_data:
             blade['Coeff drag'] = inputs['blade_drag_coefficient'][0]
 
@@ -677,7 +682,7 @@ class LandBOSSE_API(om.ExplicitComponent):
             blade['Cycle time installation hrs'] = inputs['blade_install_cycle_time'][0]
 
         if inputs['blade_offload_hook_height'][0] != use_default_component_data:
-            blade['Offload hook height m'] = inputs['blade_offload_hook_height'][0]
+            blade['Offload hook height m'] = hub_height_meters
 
         if inputs['blade_offload_cycle_time'][0] != use_default_component_data:
             blade['Offload cycle time hrs'] = inputs['blade_offload_cycle_time']
@@ -702,7 +707,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Make tower sections
         tower_mass_tonnes = inputs['tower_mass'][0] / kg_per_tonne
         tower_section_length_m = inputs['tower_section_length_m'][0]
-        tower_height_m = inputs['hub_height_meters'][0] - inputs['foundation_height'][0]
+        tower_height_m = hub_height_meters - inputs['foundation_height'][0]
         complete_tower_sections = int(tower_height_m // tower_section_length_m)
         incomplete_tower_section_m = tower_height_m % tower_section_length_m
         tower_sections = [tower_section_length_m] * complete_tower_sections
