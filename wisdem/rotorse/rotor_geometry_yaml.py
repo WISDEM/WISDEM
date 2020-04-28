@@ -17,6 +17,7 @@ import jsonschema as json
 from wisdem.ccblade.ccblade_component import CCBladeGeometry
 from wisdem.ccblade import CCAirfoil
 from wisdem.airfoilprep.airfoilprep import Airfoil, Polar
+from wisdem.commonse.utilities import arc_length, rotate
 
 from wisdem.rotorse.precomp import Profile, Orthotropic2DMaterial, CompositeSection, _precomp, PreCompWriter
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, Curve
@@ -64,26 +65,6 @@ def remapAirfoil(x_ref, y_ref, x0):
     x_in[:idx] *= -1.
 
     return remap2grid(x, y, x_in)
-
-def arc_length(x, y, z=[]):
-    npts = len(x)
-    arc = np.array([0.]*npts)
-    if len(z) == len(x):
-        for k in range(1, npts):
-            arc[k] = arc[k-1] + np.sqrt((x[k] - x[k-1])**2 + (y[k] - y[k-1])**2 + (z[k] - z[k-1])**2)
-    else:
-        for k in range(1, npts):
-            arc[k] = arc[k-1] + np.sqrt((x[k] - x[k-1])**2 + (y[k] - y[k-1])**2)
-
-    return arc
-
-
-def rotate(xo, yo, xp, yp, angle):
-    ## Rotate a point clockwise by a given angle around a given origin.
-    # angle *= -1.
-    qx = xo + np.cos(angle) * (xp - xo) - np.sin(angle) * (yp - yo)
-    qy = yo + np.sin(angle) * (xp - xo) + np.cos(angle) * (yp - yo)
-    return qx, qy
 
 def trailing_edge_smoothing(data):
     # correction to trailing edge shape for interpolated airfoils that smooths out unrealistic geometric errors
@@ -863,7 +844,7 @@ class ReferenceBlade(object):
                 TE = np.mean((profile_i[-1,:], profile_i[0,:]), axis=0)
                 profile_i = np.row_stack((TE, profile_i, TE))
             idx_le = np.argmin(profile_i[:,0])
-            profile_i_arc = arc_length(profile_i[:,0], profile_i[:,1])
+            profile_i_arc = arc_length(profile_i)
             arc_L = profile_i_arc[-1]
             profile_i_arc /= arc_L
             LE_loc[i] = profile_i_arc[idx_le]
@@ -887,7 +868,7 @@ class ReferenceBlade(object):
 
             idx_le = np.argmin(profile_i[:,0])
 
-            profile_i_arc = arc_length(profile_i[:,0], profile_i[:,1])
+            profile_i_arc = arc_length(profile_i)
             arc_L = profile_i_arc[-1]
             profile_i_arc /= arc_L
             
@@ -1164,7 +1145,7 @@ class ReferenceBlade(object):
         # Store additional rotorse variables
         blade['ctrl_pts']['r_cylinder']   = r_cylinder
         blade['ctrl_pts']['r_max_chord']  = r_max_chord
-        # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
+        # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]  # will need to update this for new arc_length function signature
         blade['ctrl_pts']['bladeLength']  = blade['pf']['r'][-1]
 
         # plt.plot(r_in, blade['ctrl_pts']['thickness_in'], 'x')
@@ -1200,7 +1181,7 @@ class ReferenceBlade(object):
         if len(idx_min) > 0:
             blade['pf']['rthick']   = np.array([min(thk_ref) if i > idx_min[0] else thk for i, thk in enumerate(blade['pf']['rthick'])])
 
-        # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]
+        # blade['ctrl_pts']['bladeLength']  = arc_length(blade['pf']['precurve'], blade['pf']['presweep'], blade['pf']['r'])[-1]  # will need to update this for new arc_length function signature
 
         for var in self.spar_var:
             idx_spar  = [i for i, sec in enumerate(blade['st']['layers']) if sec['name'].lower()==var.lower()][0]
@@ -1442,7 +1423,7 @@ class ReferenceBlade(object):
 
             idx_le = np.argmin(profile_i_rot[:,0])
 
-            profile_i_arc = arc_length(profile_i_rot[:,0], profile_i_rot[:,1])
+            profile_i_arc = arc_length(profile_i_rot)
             arc_L = profile_i_arc[-1]
             profile_i_arc /= arc_L
 

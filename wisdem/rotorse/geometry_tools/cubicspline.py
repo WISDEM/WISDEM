@@ -1,7 +1,7 @@
 
 import numpy as np
 from scipy.linalg import solve_banded
-from wisdem.rotorse.geometry_tools.utilities import _checkIfFloat
+from wisdem.commonse.utilities import _checkIfFloat
 
 class NaturalCubicSpline(object):
     """

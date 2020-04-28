@@ -4,7 +4,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import numpy as np
 from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, interp1d
-from wisdem.rotorse.rotor_geometry_yaml import remap2grid, remapAirfoil, arc_length, rotate, ReferenceBlade
+from wisdem.rotorse.rotor_geometry_yaml import remap2grid, remapAirfoil, rotate, ReferenceBlade
+from wisdem.commonse.utilities import arc_length
+
 
 def plot_spanwise_vars(blade, path, show_plots = True):
     
@@ -183,7 +185,7 @@ def plot_lofted(blade, layer_vars, path, show_plots = True):
         profile_i = out['profile']['xy'][:,:,i]
         # if profile_i[0,1] != profile_i[-1,1]:
         #     profile_i = np.row_stack((profile_i, profile_i[0,:])) 
-        arc = arc_length(profile_i[:,0], profile_i[:,1])
+        arc = arc_length(profile_i)
         out['profile']['arc'].append(arc/arc[-1])
 
     # For each layer, get surface locations

@@ -324,7 +324,7 @@ class RunPreComp(ExplicitComponent):
 
             idx_le = np.argmin(profile_i_rot[:,0])
 
-            profile_i_arc = arc_length(profile_i_rot[:,0], profile_i_rot[:,1])
+            profile_i_arc = arc_length(profile_i_rot)
             arc_L = profile_i_arc[-1]
             profile_i_arc /= arc_L
 
