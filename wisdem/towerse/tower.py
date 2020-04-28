@@ -61,7 +61,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         else:
             n_height           = n_height_tow
             n_height_mon_minus = 0
-
+            
         # Inputs here are the outputs from the Tower component in load_IEA_yaml
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_input('tower_s',        val=np.zeros(n_height_tow),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')

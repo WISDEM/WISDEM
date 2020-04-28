@@ -11,7 +11,8 @@ import numpy as np
 from math import pi, cos, sqrt, sin, exp, radians
 import sys
 import warnings
-warnings.simplefilter("error")
+# warnings.simplefilter("error")  # is this necessary? Filtering warnings
+# as errors might have unintended consequences down the road
 
 from wisdem.drivetrainse.drivese_utils import get_distance_hub2mb
 
