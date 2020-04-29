@@ -198,7 +198,6 @@ components:
           distance_hub2mb: 1.912
           yaw_motors_number: 1
           efficiency: 0.95
-
     tower:
         outfitting_factor: 1.07
         outer_shape_bem:
@@ -215,6 +214,9 @@ components:
             outer_diameter:
                 grid: *grid_tower
                 values: [6.   , 5.645, 5.29 , 4.935, 4.58 , 4.225, 3.87]
+            drag_coefficient:
+                grid: [0.0, 1.0]
+                values: [1.0, 1.0]
         internal_structure_2d_fem:
             reference_axis: *ref_axis_tower
             layers:
@@ -411,7 +413,7 @@ materials:
       G: 7.93e10
       rho: 7850.0
       orth: 0
-      sigma_y: 450e6
+      Xy: 450e6
       nu: 0.265
       Xt: 1.12e9
       Xc: 2.16e9
@@ -472,7 +474,7 @@ control:
     VS_zeta: 0.7                      # Torque controller desired damping ratio [-]
     VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
     # 
-    max_pitch: 90                     # Maximum pitch angle [rad], {default = 90 degrees}
+    max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
     min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
     vs_minspd: 0                      # Minimum rotor speed [rad/s], {default = 0 rad/s}
     ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
