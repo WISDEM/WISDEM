@@ -45,6 +45,8 @@ def arc_length(points):
     Compute the distances between points along a curve and return those
     cumulative distances as a flat array.
     
+    This function works for 2D, 3D, and N-D arrays.
+    
     Parameters
     ----------
     points : numpy array[n_points, n_dimensions]
