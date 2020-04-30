@@ -708,15 +708,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         tower_mass_tonnes = inputs['tower_mass'][0] / kg_per_tonne
         tower_section_length_m = inputs['tower_section_length_m'][0]
         tower_height_m = hub_height_meters - inputs['foundation_height'][0]
-        complete_tower_sections = int(tower_height_m // tower_section_length_m)
-        incomplete_tower_section_m = tower_height_m % tower_section_length_m
-        tower_sections = [tower_section_length_m] * complete_tower_sections
-        if incomplete_tower_section_m > 0:
-            tower_sections.append(incomplete_tower_section_m)
-        tower_section_masses = [x / tower_height_m * tower_mass_tonnes for x in tower_sections]
-        tower_sections = np.array(tower_sections)
-        tower_lift_heights = tower_sections.cumsum()
-
+        tower_section_masses, tower_lift_heights = self.make_tower_sections(
+            tower_mass_tonnes, tower_section_length_m, tower_height_m)
         default_tower_section = input_components[input_components['Component'].str.startswith('Tower')].iloc[0]
         for i, (mass, lift_height) in enumerate(zip(tower_section_masses, tower_lift_heights)):
             tower_section = default_tower_section.copy()
@@ -731,3 +724,35 @@ class LandBOSSE_API(om.ExplicitComponent):
         print('>>>>>>>>>> MODIFIED COMPONENTS <<<<<<<<')
         pd.set_option('display.max_columns', 500)
         print(output_components)
+
+    @staticmethod
+    def make_tower_sections(tower_mass_tonnes, tower_section_length_m, tower_height_m):
+        """
+        Makes lists of tower section masses and tower lift heights
+
+        Parameters
+        ----------
+        tower_mass_tonnes: float
+            The total mass of the tower in tonnes.
+
+        tower_section_length_m: float
+            The maximum length of a tower section
+
+        tower_height_m: float
+            The total length of tower
+
+        Returns
+        -------
+        np.array, np.array
+            Tower section masses and tower section lift heights
+        """
+        complete_tower_sections = int(tower_height_m // tower_section_length_m)
+        incomplete_tower_section_m = tower_height_m % tower_section_length_m
+        tower_sections = [tower_section_length_m] * complete_tower_sections
+        if incomplete_tower_section_m > 0:
+            tower_sections.append(incomplete_tower_section_m)
+        tower_section_masses = [x / tower_height_m * tower_mass_tonnes for x in tower_sections]
+        tower_sections = np.array(tower_sections)
+        tower_lift_heights = tower_sections.cumsum()
+
+        return tower_section_masses, tower_lift_heights
