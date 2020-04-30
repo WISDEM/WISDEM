@@ -231,7 +231,7 @@ class RegulatedPowerCurve(ExplicitComponent):
             
         # Solve for rated velocity
         i = i_rated
-        if i < npc-1 and self.options['regulation_reg_II5']:
+        if i < npc-1:
             def const_Urated(x):
                 pitch   = x[0]           
                 Uhub_i  = x[1]
@@ -240,7 +240,7 @@ class RegulatedPowerCurve(ExplicitComponent):
                 P_i,eff           = CSMDrivetrain(P_aero_i.flatten(), P_rated, driveType, driveEta)
                 return (P_i - P_rated)
 
-            if region2p5:
+            if region2p5 and self.options['regulation_reg_II5']:
                 # Have to search over both pitch and speed
                 x0            = [0.0, Uhub[i]]
                 bnds          = [ np.sort([pitch[i-1], pitch[i+1]]), [Uhub[i-1], Uhub[i+1]] ]
@@ -272,9 +272,9 @@ class RegulatedPowerCurve(ExplicitComponent):
             P[i], eff    = CSMDrivetrain(P_aero[i], P_rated, driveType, driveEta)
             Cp[i]        = Cp_aero[i]*eff
             
-        # Store rated speed in array
-        P[i_rated]   = P_rated
-        Uhub[i_rated] = U_rated
+            # Store rated speed in array
+            P[i_rated]    = P_rated
+            Uhub[i_rated] = U_rated
 
         # Store outputs
         outputs['rated_V']     = np.float64(U_rated)
