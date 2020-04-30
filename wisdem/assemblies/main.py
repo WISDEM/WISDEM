@@ -91,7 +91,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     # Initialize openmdao problem. If running with multiple processors in MPI,
     # use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally.
-    # with other OM problems?
     if MPI:
         num_par_fd = MPI.COMM_WORLD.Get_size()
         wt_opt = Problem(model=Group(num_par_fd=num_par_fd))

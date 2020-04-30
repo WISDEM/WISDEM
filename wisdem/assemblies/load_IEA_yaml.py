@@ -1036,20 +1036,25 @@ class Tower(Group):
 
 class ComputeGrid(ExplicitComponent):
     """
-    Compute the non-dimensionsal grid for a tower or monopile.
+    Compute the non-dimensional grid or a tower or monopile.
+    
+    Using the dimensional `ref_axis` array, this component computes the
+    non-dimensional grid, height (vertical distance) and length (curve distance)
+    of a tower or monopile.
     """
+    
     def initialize(self):
         self.options.declare('init_options')
         
     def setup(self):
         init_options = self.options['init_options']
-        n_height           = init_options['n_height']
+        n_height = init_options['n_height']
 
-        self.add_input('ref_axis', val=np.zeros((n_height, 3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        self.add_input('ref_axis', val=np.zeros((n_height, 3)), units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
         
-        self.add_output('s',        val=np.zeros(n_height),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_output('height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
-        self.add_output('length',   val = 0.0,                  units='m',  desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
+        self.add_output('s', val=np.zeros(n_height), desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
+        self.add_output('height', val=0.0, units='m', desc='Scalar of the tower height computed along the z axis.')
+        self.add_output('length', val=0.0, units='m', desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
         
         # Declare all partial derivatives.
         # For height wrt ref_axis, the Jacobian is fixed and is only populated
@@ -1060,12 +1065,12 @@ class ComputeGrid(ExplicitComponent):
         
     def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
-        outputs['height']   = inputs['ref_axis'][-1,2]
-        myarc               = arc_length(inputs['ref_axis'])
-        outputs['length']   = myarc[-1]
+        outputs['height'] = inputs['ref_axis'][-1,2]
+        myarc = arc_length(inputs['ref_axis'])
+        outputs['length'] = myarc[-1]
         
         if myarc[-1] > 0.0:
-            outputs['s']    = myarc / myarc[-1]
+            outputs['s'] = myarc / myarc[-1]
             
     def compute_partials(self, inputs, partials):
         arc_distances, d_arc_distances_d_points = arc_length_deriv(inputs['ref_axis'])
