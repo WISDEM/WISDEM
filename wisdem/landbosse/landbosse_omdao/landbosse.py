@@ -1,5 +1,5 @@
 import openmdao.api as om
-from math import ceil
+from math import pi, ceil
 import numpy as np
 import warnings
 with warnings.catch_warnings():
@@ -708,7 +708,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         tower_mass_tonnes = inputs['tower_mass'][0] / kg_per_tonne
         tower_section_length_m = inputs['tower_section_length_m'][0]
         tower_height_m = hub_height_meters - inputs['foundation_height'][0]
-        tower_section_masses, tower_lift_heights = self.make_tower_sections(
+        tower_section_masses, tower_lift_heights = self.make_crude_tower_sections(
             tower_mass_tonnes, tower_section_length_m, tower_height_m)
         default_tower_section = input_components[input_components['Component'].str.startswith('Tower')].iloc[0]
         for i, (mass, lift_height) in enumerate(zip(tower_section_masses, tower_lift_heights)):
@@ -726,9 +726,88 @@ class LandBOSSE_API(om.ExplicitComponent):
         print(output_components)
 
     @staticmethod
-    def make_tower_sections(tower_mass_tonnes, tower_section_length_m, tower_height_m):
+    def make_tower_sections(tower_mass_tonnes,
+                            tower_height_m,
+                            default_tower_section):
+        """
+        This makes tower sections for a transportable tower.
+
+        Approximations:
+
+        - Weight is distributed uniformly among the sections
+
+        - The diameter is assumed to be 4.3 m. Transportable towers have a
+          total width of 4.5 meters to account for flanges, but those
+          aren't a large part of the surface area.
+
+        - The number of sections is either the maximum allowed by mass or
+          the maximum allowed by height, to maintain transportability.
+
+        For each tower section, calculate:
+            - lift height
+            - lever arm
+            - surface area
+
+        The rest of values should remain at their defaults.
+
+        Parameters
+        ----------
+        tower_mass_tonnes: float
+            The total tower mass in tonnes
+
+        tower_height_m: float
+            The total height of the tower in meters.
+
+        default_tower_section: pd.Series
+            There are a number of values that are kept constant in creating
+            the tower sections. This series holds the values.
+
+        Returns
+        -------
+        List[pd.Series]
+            A list of series to be appended onto an output component list.
+            It is not a dataframe, because it is faster to append to a list
+            and make a dataframe once.
+        """
+        tower_radius = 2.15  # for 4.3 m diameter
+
+        number_of_sections = max(
+            ceil(tower_height_m / 30), ceil(tower_mass_tonnes / 80)
+        )
+
+        tower_section_height_m = tower_height_m / number_of_sections
+
+        tower_section_mass = tower_mass_tonnes / number_of_sections
+
+        tower_section_surface_area_m2 = \
+            pi * tower_section_height_m * (tower_radius ** 2)
+
+        sections = []
+        for i in range(number_of_sections):
+            lift_height_m = (i * tower_section_height_m) + tower_section_height_m
+            lever_arm = (i * tower_section_height_m) + (0.5 * tower_section_height_m)
+            name = f'Tower {i + 1}'
+
+            section = default_tower_section.copy()
+            section['Component'] = name
+            section['Mass tonne'] = tower_section_mass
+            section['Lift height m'] = lift_height_m
+            section['Surface area sq m'] = tower_section_surface_area_m2
+            section['Section height m'] = tower_section_height_m
+            section['Lever arm m'] = lever_arm
+
+            sections.append(section)
+
+        return sections
+
+
+    @staticmethod
+    def make_crude_tower_sections(tower_mass_tonnes, tower_section_length_m, tower_height_m):
         """
         Makes lists of tower section masses and tower lift heights
+
+        This is called make_crude_tower_sections because it is a poor
+        approximation of a tower.
 
         Parameters
         ----------
