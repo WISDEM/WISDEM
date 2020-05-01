@@ -339,6 +339,56 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
     wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
     wt_opt['sse.stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
+    
+    # Place the last design variables from a previous run into the problem.
+    # This needs to occur after the above setup() and yaml2openmdao() calls
+    # so these values are correctly placed in the problem.
+    if 'warmstart_file' in opt_options['driver']:
+        
+        # Directly read the pyoptsparse sqlite db file
+        from pyoptsparse import SqliteDict
+        db = SqliteDict(opt_options['driver']['warmstart_file'])
+
+        # Grab the last iteration's design variables
+        last_key = db['last']
+        desvars = db[last_key]['xuser']
+        
+        # Obtain the already-setup OM problem's design variables
+        if wt_opt.model._static_mode:
+            design_vars = wt_opt.model._static_design_vars
+        else:
+            design_vars = wt_opt.model._design_vars
+        
+        # Get the absolute names from the promoted names within the OM model.
+        # We need this because the pyoptsparse db has the absolute names for
+        # variables but the OM model uses the promoted names.
+        prom2abs = wt_opt.model._var_allprocs_prom2abs_list['output']
+        abs2prom = {}
+        for key in design_vars:
+            abs2prom[prom2abs[key][0]] = key
+
+        # Loop through each design variable
+        for key in desvars:
+            prom_key = abs2prom[key]
+            
+            # Scale each DV based on the OM scaling from the problem.
+            # This assumes we're running the same problem with the same scaling
+            scaler = design_vars[prom_key]['scaler']
+            adder = design_vars[prom_key]['adder']
+            
+            if scaler is None:
+                scaler = 1.0
+            if adder is None:
+                adder = 0.0
+            
+            scaled_dv = desvars[key] / scaler - adder
+            
+            # Special handling for blade twist as we only have the
+            # last few control points as design variables
+            if 'twist_opt_gain' in key:
+                wt_opt[key][2:] = scaled_dv
+            else:
+                wt_opt[key][:] = scaled_dv
 
     if 'check_totals' in opt_options['driver']:
         if opt_options['driver']['check_totals']:
