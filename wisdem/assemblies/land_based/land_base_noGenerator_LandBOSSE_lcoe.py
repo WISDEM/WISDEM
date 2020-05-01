@@ -311,7 +311,7 @@ if __name__ == "__main__":
 
     # Reference rotor design
     fname_schema = "../../rotorse/turbine_inputs/IEAontology_schema.yaml"
-    fname_input = "../../rotorse/turbine_inputs/nrel5mw_mod_update.yaml"
+    fname_input = "../../rotorse/turbine_inputs/ge1p5-lcoe_mass_aep.yaml"
     Analysis_Level = 0  # 0: Run CCBlade; 1: Update FAST model at each iteration but do not run; 2: Run FAST w/ ElastoDyn; 3: (Not implemented) Run FAST w/ BeamDyn
     # Initialize blade design
     refBlade = ReferenceBlade()
