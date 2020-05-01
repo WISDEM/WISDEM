@@ -603,8 +603,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         actual_construction_months = master_output_dict['actual_construction_months']
         outputs['installation_time_months'] = round(actual_construction_months, 0)
 
-    # assumes $25k per tower section, 30m max length, 80t max section mass
-
     def modify_component_lists(self, inputs, discrete_inputs):
         """
         This method modifies the previously loaded default component lists with
