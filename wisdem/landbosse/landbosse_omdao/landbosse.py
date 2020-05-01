@@ -729,10 +729,6 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         - Weight is distributed uniformly among the sections
 
-        - The diameter is assumed to be 4.3 m. Transportable towers have a
-          total width of 4.5 meters to account for flanges, but those
-          aren't a large part of the surface area.
-
         - The number of sections is either the maximum allowed by mass or
           the maximum allowed by height, to maintain transportability.
 
@@ -742,6 +738,11 @@ class LandBOSSE_API(om.ExplicitComponent):
             - surface area
 
         The rest of values should remain at their defaults.
+
+        Note: Tower sections are constrained in maximum diameter to 4.5 m.
+            However, their surface area is calculated with a 1.3 m radius
+            to agree more closely with empirical data. Also, tower sections
+            are approximated as cylinders.
 
         Parameters
         ----------
@@ -762,7 +763,7 @@ class LandBOSSE_API(om.ExplicitComponent):
             It is not a dataframe, because it is faster to append to a list
             and make a dataframe once.
         """
-        tower_radius = 2.15  # for 4.3 m diameter
+        tower_radius = 1.3
 
         number_of_sections = max(
             ceil(tower_height_m / 30), ceil(tower_mass_tonnes / 80)
