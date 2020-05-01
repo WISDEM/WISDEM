@@ -2110,7 +2110,7 @@ def assign_material_values(wt_opt, analysis_options, materials):
             unit_cost[i] = materials[i]['unit_cost']
         if 'waste' in materials[i]:
             waste[i] = materials[i]['waste']
-        if 'sigma_y' in materials[i]:
+        if 'Xy' in materials[i]:
             sigma_y[i] =  materials[i]['Xy']
 
             
