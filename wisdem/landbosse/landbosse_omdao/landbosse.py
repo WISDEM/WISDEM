@@ -706,17 +706,10 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         # Make tower sections
         tower_mass_tonnes = inputs['tower_mass'][0] / kg_per_tonne
-        tower_section_length_m = inputs['tower_section_length_m'][0]
         tower_height_m = hub_height_meters - inputs['foundation_height'][0]
-        tower_section_masses, tower_lift_heights = self.make_crude_tower_sections(
-            tower_mass_tonnes, tower_section_length_m, tower_height_m)
         default_tower_section = input_components[input_components['Component'].str.startswith('Tower')].iloc[0]
-        for i, (mass, lift_height) in enumerate(zip(tower_section_masses, tower_lift_heights)):
-            tower_section = default_tower_section.copy()
-            tower_section['Component'] = f'Tower section {i + 1}'
-            tower_section['Mass tonne'] = mass
-            tower_section['Lift height m'] = lift_height
-            output_components_list.append(tower_section)
+        tower_sections = self.make_tower_sections(tower_mass_tonnes, tower_height_m, default_tower_section)
+        output_components_list.extend(tower_sections)
 
         # Make the output component list
         output_components = pd.DataFrame(output_components_list)
@@ -799,39 +792,3 @@ class LandBOSSE_API(om.ExplicitComponent):
             sections.append(section)
 
         return sections
-
-
-    @staticmethod
-    def make_crude_tower_sections(tower_mass_tonnes, tower_section_length_m, tower_height_m):
-        """
-        Makes lists of tower section masses and tower lift heights
-
-        This is called make_crude_tower_sections because it is a poor
-        approximation of a tower.
-
-        Parameters
-        ----------
-        tower_mass_tonnes: float
-            The total mass of the tower in tonnes.
-
-        tower_section_length_m: float
-            The maximum length of a tower section
-
-        tower_height_m: float
-            The total length of tower
-
-        Returns
-        -------
-        np.array, np.array
-            Tower section masses and tower section lift heights
-        """
-        complete_tower_sections = int(tower_height_m // tower_section_length_m)
-        incomplete_tower_section_m = tower_height_m % tower_section_length_m
-        tower_sections = [tower_section_length_m] * complete_tower_sections
-        if incomplete_tower_section_m > 0:
-            tower_sections.append(incomplete_tower_section_m)
-        tower_section_masses = [x / tower_height_m * tower_mass_tonnes for x in tower_sections]
-        tower_sections = np.array(tower_sections)
-        tower_lift_heights = tower_sections.cumsum()
-
-        return tower_section_masses, tower_lift_heights
