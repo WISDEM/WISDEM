@@ -1,10 +1,8 @@
-import numpy as np
-import scipy as sp
-import matplotlib.pyplot as plt
-from scipy.optimize import minimize
-import wisdem.pBeam._pBEAM as _pBEAM
+Alsoimport numpy as np
+import scipy.constants as spc
 from openmdao.api import ExplicitComponent
-from wisdem.commonse.utilities import rotate
+import wisdem.pyframe3dd.frame3dd as frame3dd
+from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.commonse.constants import gravity
 import copy
 
@@ -20,7 +18,6 @@ class RailTransport(ExplicitComponent):
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
 
         # Rail configuration
-
         self.add_input('horizontal_angle_deg', val=13.,         units='deg', desc='Angle of horizontal turn (defined for an chord of 100 feet)')
         self.add_input('min_vertical_radius',  val=609.6,       units='m',   desc='Minimum radius of a vertical curvature (hill or sag) (2000 feet)')
         self.add_input('lateral_clearance',    val=6.7056,      units='m',   desc='Clearance profile horizontal (22 feet)')
@@ -28,8 +25,8 @@ class RailTransport(ExplicitComponent):
         self.add_input('deck_height',          val=1.19,        units='m',   desc='Height of the deck of the flatcar from the rails (4 feet)')
         self.add_input('max_strains',          val=3500.*1.e-6,              desc='Max allowable strains during transport')
         self.add_input('max_LV',               val=0.5,                      desc='Max allowable ratio between lateral and vertical forces')
-        self.add_input('max_flatcar_weight_4axle',   val=129727.31,   units='kg',  desc='Max weight of an 4-axle flatcar (286000 lbm)')
-        self.add_input('max_flatcar_weight_8axle',   val=217724.16,   units='kg',  desc='Max weight of an 8-axle flatcar (480000 lbm)')
+        self.add_input('max_flatcar_weight_4axle',   val=129727.31,   units='kg',  desc='Max mass of an 4-axle flatcar (286000 lbm)')
+        self.add_input('max_flatcar_weight_8axle',   val=217724.16,   units='kg',  desc='Max mass of an 8-axle flatcar (480000 lbm)')
         self.add_input('max_root_rot_deg',     val=15.,         units='deg', desc='Max degree of angle at blade root')
         self.add_input('flatcar_tc_length',    val=20.12,       units='m',   desc='Flatcar truck center to truck center lenght')
 
@@ -42,67 +39,157 @@ class RailTransport(ExplicitComponent):
         self.add_input('coord_xy_dim',     val=np.zeros((n_span, n_xy, 2)), units = 'm', desc='3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.')
 
         # Inputs - Distributed beam properties
+        self.add_input('A',            val=np.zeros(n_span), units='m**2',   desc='airfoil cross section material area')
         self.add_input('EA',           val=np.zeros(n_span), units='N',      desc='axial stiffness')
         self.add_input('EIxx',         val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
         self.add_input('EIyy',         val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+        self.add_input('EIxy',         val=np.zeros(n_span), units='N*m**2',   desc='coupled flap-edge stiffness')
         self.add_input('GJ',           val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
         self.add_input('rhoA',         val=np.zeros(n_span), units='kg/m',   desc='mass per unit length')
         self.add_input('rhoJ',         val=np.zeros(n_span), units='kg*m',   desc='polar mass moment of inertia per unit length')
         self.add_input('x_ec_abs',     val=np.zeros(n_span), units='m',      desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
         self.add_input('y_ec_abs',     val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_input('x_ec',  val=np.zeros(n_span), units='m',        desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
+        self.add_input('y_ec',  val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
         
         # Outputs
-        self.add_output('LV_constraint_4axle', val=0.0, desc='Constraint for max L/V for a 4-axle flatcar, violated when bigger than 1')
-        self.add_output('LV_constraint_8axle', val=0.0, desc='Constraint for max L/V for an 8-axle flatcar, violated when bigger than 1')
+        self.add_output('constr_LV_4axle_horiz', val=np.zeros(3), desc='Constraint for max L/V for a 4-axle flatcar on horiz curves, violated when bigger than 1')
+        self.add_output('constr_LV_8axle_horiz', val=np.zeros(3), desc='Constraint for max L/V for an 8-axle flatcar on horiz curves, violated when bigger than 1')
+        self.add_output('constr_LV_4axle_vert', val=np.zeros(3), desc='Constraint for max L/V for a 4-axle flatcar on vert curves, violated when bigger than 1')
+        self.add_output('constr_LV_8axle_vert', val=np.zeros(3), desc='Constraint for max L/V for an 8-axle flatcar on vert curves, violated when bigger than 1')
+        self.add_output('constr_strainPS', val=np.zeros(n_span-1), desc='Strain along pressure side of blade on a horizontal curve')
+        self.add_output('constr_strainSS', val=np.zeros(n_span-1), desc='Strain along suction side of blade on a horizontal curve')
+        self.add_output('constr_strainLE', val=np.zeros(n_span-1), desc='Strain along leading edge side of blade on a vertical curve')
+        self.add_output('constr_strainTE', val=np.zeros(n_span-1), desc='Strain along trailing edge side of blade on a vertical curve')
 
 
     def compute(self, inputs, outputs):
 
+        # Unpack inputs
+        x_ref = inputs['blade_ref_axis'][:,0] # from LE to TE
+        y_ref = inputs['blade_ref_axis'][:,1] # from PS to SS
+        z_ref = inputs['blade_ref_axis'][:,2] # from root to tip
+        r     = arc_length(inputs['blade_ref_axis'])
+        blade_length = r[-1]
+        theta = inputs['theta']
+        chord = inputs['chord']
+        x_ec  = inputs['x_ec']
+        y_ec  = inputs['y_ec']
+        A     = inputs['A']
+        rhoA  = inputs['rhoA']
+        rhoJ  = inputs['rhoJ']
+        GJ    = inputs['GJ']
+        EA    = inputs['EA']
+        EIxx  = inputs['EIxx'] # edge
+        EIyy  = inputs['EIyy'] # flap
+        EIxy  = inputs['EIxy']
+        lateral_clearance = inputs['lateral_clearance'][0]
+        #n_points          = 10000
+        max_strains       = inputs['max_strains'][0]
+        #n_opt             = 21
+        max_LV            = inputs['max_LV'][0]
+        mass_car_4axle    = inputs['max_flatcar_weight_4axle'][0]
+        mass_car_8axle    = inputs['max_flatcar_weight_8axle'][0]
+        #max_root_rot_deg  = inputs['max_root_rot_deg'][0]
+        flatcar_tc_length = inputs['flatcar_tc_length'][0]
+        #np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af,xu_strain_spar=xu_strain_spar,xl_strain_spar=xl_strain_spar,yu_strain_spar=yu_strain_spar,yl_strain_spar=yl_strain_spar,xu_strain_te=xu_strain_te,xl_strain_te=xl_strain_te,yu_strain_te=yu_strain_te,yl_strain_te=yl_strain_te)
+
+
+        #------- Get turn radius geometry for horizontal and vertical curves
+        # Horizontal turns- defined as a degree of arc assuming a 100ft "chord"
+        # https://trn.trains.com/railroads/ask-trains/2011/01/measuring-track-curvature
+        angleH_rad  = np.deg2rad(inputs['horizontal_angle_deg'][0])
+        r_curveH    = spc.foot * 100. /(2.*np.sin(0.5*angleH_rad))
+        arcsH       = r / r_curveH
+        # Vertical curves on hills and sags defined directly by radius
+        r_curveV    = inputs['min_vertical_radius'][0]
+        arcsV       = r / r_curveV
+        # ----------
+
+
+        #---------- Put airfoil cross sections into principle axes
+        # Determine principal C.S. (with swap of x, y for profile c.s.)
+        EIxx_cs , EIyy_cs = EIyy.copy() , EIxx.copy()
+        x_ec_cs , y_ec_cs = y_ec.copy() , x_ec.copy()
+        EIxy_cs = EIxy.copy()
+
+        # translate to elastic center
+        EIxx_cs -= y_ec_cs**2 * EA
+        EIyy_cs -= x_ec_cs**2 * EA
+        EIxy_cs -= x_ec_cs * y_ec_cs * EA
+
+        # get rotation angle
+        alpha = 0.5*np.arctan2(2*EIxy_cs, EIyy_cs-EIxx_cs)
+
+        # get moments and positions in principal axes
+        EI11 = EIxx_cs - EIxy_cs*np.tan(alpha)
+        EI22 = EIyy_cs + EIxy_cs*np.tan(alpha)
+        ca   = np.cos(alpha)
+        sa   = np.sin(alpha)
+
+        # Now store alpha for later use in degrees
+        alpha = np.rad2deg(alpha)
+        # -------------------
+
         
-        # Horizontal turns
-        # Inputs
-        blade_length            = inputs['blade_ref_axis'][-1,2]
-        if max(abs(inputs['blade_ref_axis'][:,1])) > 0.:
-            exit('The script currently does not support swept blades')
+        # ---------- Frame3dd blade prep
+        # Nodes: Prep data, but node x,y,z will shift for vertical and horizontal curves
+        rad   = np.zeros(self.n_span) # 'radius' of rigidity at node- set to zero
+        inode = 1 + np.arange(self.n_span) # Node numbers (1-based indexing)
+        L     = np.diff(r)
 
-        lateral_clearance       = inputs['lateral_clearance'][0]
-        n_points                = 10000
-        max_strains             = inputs['max_strains'][0]
-        n_opt                   = 21
-        max_LV                  = inputs['max_LV'][0]
-        weight_car_4axle        = inputs['max_flatcar_weight_4axle'][0]
-        weight_car_8axle        = inputs['max_flatcar_weight_8axle'][0]
-        max_root_rot_deg        = inputs['max_root_rot_deg'][0]
-        flatcar_tc_length       = inputs['flatcar_tc_length'][0]
-        #########
+        # Reactions: prep data for 3 attachment points
+        rigid     = 1e16
+        pin_pin   = rigid*np.ones(3)
+        pin_free  = np.array([rigid, 0.0, 0.0])
+        
+        # Element data
+        elem = np.arange(1, self.n_span) # Element Numbers
+        N1   = np.arange(1, self.n_span) # Node number start
+        N2   = np.arange(2, self.n_span+1) # Node number finish
+        E    = EA   / A
+        rho  = rhoA / A
+        J    = rhoJ / rho
+        G    = GJ   / J
+        Ix   = EI11 / E
+        Iy   = EI22 / E
+        Asx  = Asy = 1e-6*np.ones(elem.shape) # Unused when shear=False
 
-        def arc_length(x, y):
-            arc = np.sqrt( np.diff(x)**2 + np.diff(y)**2 )
-            return np.r_[0.0, np.cumsum(arc)]
+        # Have to convert nodal values to find average at center of element
+        Abar,_   = util.nodal2sectional(A)
+        Ebar,_   = util.nodal2sectional(E)
+        rhobar,_ = util.nodal2sectional(rho)
+        Jbar,_   = util.nodal2sectional(J)
+        Gbar,_   = util.nodal2sectional(G)
+        Ixbar,_  = util.nodal2sectional(Ix)
+        Iybar,_  = util.nodal2sectional(Iy)
 
-        angle_rad    = inputs['horizontal_angle_deg'][0] / 180. * np.pi
-        radius = sp.constants.foot * 100. /(2.*np.sin(angle_rad/2.))
+        # Angle of element principal axes relative to global coordinate system
+        # Global c.s. is blade with z from root to tip, y from ss to ps, and x from LE to TE (TE points up)
+        # Local element c.s. is airfoil (twist + principle rotation)
+        # Additional 180 because LE is pointed down whereas positive x is pointed up
+        roll,_ = util.nodal2sectional(theta + alpha + 180)
 
-        r        = inputs['blade_ref_axis'][:,2]
-        EIflap   = inputs['EIyy']
-        EA       = inputs['EA']
-        EIedge   = inputs['EIxx']
-        GJ       = inputs['GJ']
-        rhoA     = inputs['rhoA']
-        rhoJ     = inputs['rhoJ']
+        elements   = frame3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
 
-        AE = np.zeros(self.n_span)
-        DE = np.zeros(self.n_span)
-        EC = np.zeros(self.n_span)
-        EB = np.zeros(self.n_span)
+        # Frame3dd options: no need for shear, axial stiffening, or higher resolution force calculations
+        options = frame3dd.Options(False, False, -1)
+        #-----------
 
+        
+        #------ Airfoil positions at which to measure strain
+        # Find the cross sectional points furthest from the elastic center at each spanwise location to be used for strain measurement
+        xps = xss = np.zeros(AE.shape)
+        yle = yte = np.zeros(EC.shape)
+        yps = np.zeros(self.n_span)
+        yss = np.zeros(self.n_span)
+        xte = np.zeros(self.n_span)
+        xle = np.zeros(self.n_span)
 
-        # Elastic center
-        ## Spanwise
         for i in range(self.n_span):        
             ## Rotate the profiles to the blade reference system
             profile_i = inputs['coord_xy_interp'][i,:,:]
-            profile_i_rot = np.column_stack(rotate(inputs['pitch_axis'][i], 0., profile_i[:,0], profile_i[:,1], np.radians(inputs['theta'][i])))
+            profile_i_rot = np.column_stack(rotate(inputs['pitch_axis'][i], 0., profile_i[:,0], profile_i[:,1], np.radians(theta[i])))
             # normalize
             profile_i_rot[:,0] -= min(profile_i_rot[:,0])
             profile_i_rot = profile_i_rot/ max(profile_i_rot[:,0])
@@ -131,381 +218,186 @@ class RailTransport(ExplicitComponent):
             xnode          = profile_i_rot_precomp[:,0]
             xnode_pa       = xnode - inputs['pitch_axis'][i]
             ynode          = profile_i_rot_precomp[:,1]
-            theta_rad      = inputs['theta'][i] * np.pi / 180.
+            theta_rad      = theta[i] * np.pi / 180.
 
             xnode_no_theta = xnode_pa * np.cos(-theta_rad) - ynode * np.sin(-theta_rad)
             ynode_no_theta = xnode_pa * np.sin(-theta_rad) + ynode * np.cos(-theta_rad)
 
-            xnode_dim_no_theta = xnode_no_theta * inputs['chord'][i]
-            ynode_dim_no_theta = ynode_no_theta * inputs['chord'][i]
+            xnode_dim_no_theta = xnode_no_theta * chord[i]
+            ynode_dim_no_theta = ynode_no_theta * chord[i]
 
             xnode_dim = xnode_dim_no_theta * np.cos(theta_rad) - ynode_dim_no_theta * np.sin(theta_rad)
             ynode_dim = xnode_dim_no_theta * np.sin(theta_rad) + ynode_dim_no_theta * np.cos(theta_rad)
 
             # Compute the points farthest from the elastic center in the blade reference system
-            x_ec = inputs['x_ec_abs'][i]
-            y_ec = inputs['y_ec_abs'][i]
-
-            AE[i] = max(ynode_dim) - y_ec
-            EB[i] = y_ec - min(ynode_dim)
-            EC[i] = max(xnode_dim) - x_ec
-            DE[i] = x_ec - min(xnode_dim)
-
-        dist_ss  = AE
-        dist_ps  = EB
-
-        # Reconstruct the distributed loading q along the blade corresponding to the maximum allowable strains. This is done by computing the moment distribution M and deriving it twice
-        M        = np.array(max_strains * EIflap / dist_ss)
-        V        = -np.gradient(M,r)
-        q        = -np.gradient(V,r)    
-
-        # Interpolate the moment at the optimization points and recompute the distributed loading q
-        r_opt    = np.linspace(0., blade_length, n_opt)
-        pb_opt   = np.interp(r_opt, r, inputs['blade_ref_axis'][:,0])
-        M_opt_h  = np.interp(r_opt, r, M)
-        V_opt_h  = np.gradient(M_opt_h,r_opt)
-        q_opt_h  = np.max([np.zeros(n_opt), np.gradient(V_opt_h,r_opt)], axis=0)
-
-        # Draw the rail lines given the lateral curvature radius
-        r_midline = radius
-        r_outer   = r_midline + 0.5*lateral_clearance
-        r_inner   = r_midline - 0.5*lateral_clearance
-
-        x_rail_h  = np.linspace(0., 2.*r_midline, n_points)
-        y_rail_h  = np.sqrt(r_midline**2. - (x_rail_h-r_midline)**2.)
-
-        # Draw the lateral clearance given the rail lines
-        x_outer   = np.linspace(- 0.5*lateral_clearance, 2.*r_midline + 0.5*lateral_clearance, n_points)
-        y_outer   = np.sqrt(r_outer**2. - (x_outer-r_midline)**2.)
-
-        x_inner   = np.linspace(0.5*lateral_clearance, 2.*r_midline - 0.5*lateral_clearance, n_points)
-        y_inner   = np.sqrt(r_inner**2. - (x_inner-r_midline)**2.)
-
-        # Interpolate the blade elastic properties
-        dist_ss_interp   = np.interp(r_opt, r, dist_ss)
-        dist_ps_interp   = np.interp(r_opt, r, dist_ps)
-        EIflap_interp    = np.interp(r_opt, r, EIflap)
-        EIedge_interp    = np.interp(r_opt, r, EIedge)
-        GJ_interp        = np.interp(r_opt, r, GJ)
-        rhoA_interp      = np.interp(r_opt, r, rhoA)
-        EA_interp        = np.interp(r_opt, r, EA)
-        rhoJ_interp      = np.interp(r_opt, r, rhoJ)
-
-        def get_max_force_h(inputs):
-            # Objective function to minimize the reaction force of the first flatcat, which holds blade root, during a lateral curve
-            q_iter    = q_opt_h * inputs[:-1]
-            V_iter    = np.zeros(n_opt)
-            M_iter    = np.zeros(n_opt)
-            for i in range(n_opt):
-                V_iter[i] = np.trapz(q_iter[i:],r_opt[i:])
-            for i in range(n_opt):
-                M_iter[i] = np.trapz(V_iter[i:],r_opt[i:])
-            
-            RF_flatcar_1 = 0.5 * V_iter[0] + M_iter[0] / flatcar_tc_length
-
-            return RF_flatcar_1*1.e-5
-
-        def get_constraints_h(inputs):
-            # Constraint function to make sure the blade does not exceed the maximum strains while staying within the lateral clearance
-            q_iter = q_opt_h * inputs[:-1] #np.gradient(V_iter,r_opt)
-            V_iter = np.zeros(n_opt)
-            M_iter = np.zeros(n_opt)
-            for i in range(n_opt):
-                V_iter[i] = np.trapz(q_iter[i:],r_opt[i:])
-            for i in range(n_opt):
-                M_iter[i]    = np.trapz(V_iter[i:],r_opt[i:])
-
-            root_rot_rad_iter = inputs[-1]
-
-            eps            = M_iter * dist_ss_interp / EIflap_interp
-            consts_strains = (max_strains - abs(eps))*1.e+3
-
-            p_section    = _pBEAM.SectionData(n_opt, r_opt, EA_interp, EIedge_interp, EIflap_interp, GJ_interp, rhoA_interp, rhoJ_interp)
-            p_tip        = _pBEAM.TipData()  # no tip mass
-            p_base       = _pBEAM.BaseData(np.ones(6), 1.0)  # rigid base
-            p_loads      = _pBEAM.Loads(n_opt, q_iter, np.zeros_like(r_opt), np.zeros_like(r_opt))
-            blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
-            dx, dy, dz, dtheta_r1, dtheta_r2, dtheta_z = blade.displacement()
-
-            x_blade_transport = (dx + pb_opt)*blade_length/arc_length(r_opt, dx)[-1]
-            y_blade_transport = r_opt*blade_length/arc_length(r_opt, dx)[-1]
-
-            ps_x = x_blade_transport + dist_ps_interp
-            ss_x = x_blade_transport - dist_ss_interp
-            ps_y = ss_y = y_blade_transport
-
-            ps_x_rot  = ps_x*np.cos(root_rot_rad_iter) - ps_y*np.sin(root_rot_rad_iter)
-            ps_y_rot  = ps_y*np.cos(root_rot_rad_iter) + ps_x*np.sin(root_rot_rad_iter)
-            
-            ss_x_rot  = ss_x*np.cos(root_rot_rad_iter) - ss_y*np.sin(root_rot_rad_iter)
-            ss_y_rot  = ss_y*np.cos(root_rot_rad_iter) + ss_x*np.sin(root_rot_rad_iter)
-
-            id_outer = np.zeros(n_opt, dtype = int)
-            id_inner = np.zeros(n_opt, dtype = int)
-            for i in range(n_opt):
-                id_outer[i] = np.argmin(abs(y_outer[:int(np.ceil(n_points*0.5))] - ps_y_rot[i]))
-                id_inner[i] = np.argmin(abs(y_inner[:int(np.ceil(n_points*0.5))]  - ss_y_rot[i]))
-
-            consts_envelope_outer = ss_x_rot - x_outer[id_outer]
-            consts_envelope_inner = x_inner[id_inner] - ps_x_rot
-
-            # Constraints on maximum strains, and outer and inner limits of the lateral clearance
-            consts = np.hstack((consts_strains, consts_envelope_outer, consts_envelope_inner))
-
-            return consts
-
-        # Run a sub-optimization to find the distributed loading that respects the constraints in maximum strains, and outer and inner limits of the lateral clearance, while minimizing the reaction force of the first flatcar
-        x0    = np.hstack((np.ones(n_opt), 0.))
-        # To-do initialize the tuple given the n_opt
-        bnds = ((0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(-max_root_rot_deg / 180. * np.pi, max_root_rot_deg / 180. * np.pi))
-        const           = {}
-        const['type']   = 'ineq'
-        const['fun']    = get_constraints_h
-        res    = minimize(get_max_force_h, x0, method='SLSQP', bounds=bnds, constraints=const)
-
-        if res.success == False:
-            # If the optimization does not find a solution, assign a high value to the the fields LV_constraint_8axle, which are typically imposed lower than 1 in an outer blade design loop
-            outputs['LV_constraint_8axle'] = 2.
-            outputs['LV_constraint_4axle'] = 2.
-            print('The optimization cannot satisfy the constraint on max strains of 3500 mu eps')
-        else:
-            # If the optimization does converge, integrate the distributed loading twice to obtain the bending moment and the strains along span
-            q_final    = q_opt_h * res.x[:-1]
-            V_final    = np.zeros(n_opt)
-            M_final    = np.zeros(n_opt)
-            for i in range(n_opt):
-                V_final[i] = np.trapz(q_final[i:],r_opt[i:])
-            for i in range(n_opt):
-                M_final[i] = np.trapz(V_final[i:],r_opt[i:])
-            
-            root_rot_rad_final = res.x[-1]
-
-            # print('The optimizer finds a solution for the lateral curves!')
-            # print('Prescribed rotation angle: ' + str(root_rot_rad_final * 180. / np.pi) + ' deg')
-            
-            # Compute the reaction force on the first flatcar
-            RF_flatcar_1 = 0.5 * V_final[0] + M_final[0] / flatcar_tc_length
-
-            # print('Max reaction force lateral turn: ' + str(RF_flatcar_1) + ' N')
-
-            # Constraint the lateral reaction force to respect the max L/V ratio, typically imposed to be lower than 0.5 
-            outputs['LV_constraint_8axle'] = (RF_flatcar_1 / (0.5 * weight_car_8axle * gravity)) / max_LV
-            outputs['LV_constraint_4axle'] = (RF_flatcar_1 / (0.5 * weight_car_4axle * gravity)) / max_LV
-
-            print('L/V constraint 8-axle: ' + str(outputs['LV_constraint_8axle']))
-            # print('L/V constraint 4-axle: ' + str(outputs['LV_constraint_4axle']))
-
-
-        # Vertical turns - hill
-        vertical_clearance      = inputs['vertical_clearance'][0]
-        deck_height             = inputs['deck_height'][0]
-        min_vertical_radius     = inputs['min_vertical_radius'][0]
-
-        dist_le  = DE
-        dist_te  = EC
-
-        # The blade is transported with the trailing edge pointing upwards. Compute the moment that generates max strains at the trailing edge and derive it twice to obtain the correspnding distributed loading q
-        M        = np.array(max_strains * EIedge / dist_te)
-        V        = -np.gradient(M,r)
-        q        = -np.gradient(V,r)    
-
-        M_opt_v  = np.interp(r_opt, r, M)
-        V_opt_v  = np.gradient(M_opt_v,r_opt)
-        q_opt_v  = np.max([np.zeros(n_opt), np.gradient(V_opt_v,r_opt)], axis=0)
-
-        dist_le_interp   = np.interp(r_opt, r, dist_le)
-        dist_te_interp   = np.interp(r_opt, r, dist_te)
-
-
-        r_rail    = min_vertical_radius
-        r_deck_hill    = r_rail + deck_height
-        r_upper_hill   = r_rail + vertical_clearance
-        r_deck_sag     = r_rail - deck_height
-        r_upper_sag    = r_rail - vertical_clearance
-
-        x_rail_v  = np.linspace(0., 2.*r_rail, n_points)
-        y_rail_v  = np.sqrt(r_rail**2. - (x_rail_v-r_rail)**2.)
-
-        # Draw the verticl clearance given the rail lines for hill and sag cases
-        x_deck_hill   = np.linspace(-deck_height, 2.*r_deck_hill - deck_height, n_points)
-        y_deck_hill   = np.sqrt(r_deck_hill**2. - (x_deck_hill-r_rail)**2.)
-        x_upper_hill  = np.linspace(-vertical_clearance, 2.*r_upper_hill - vertical_clearance, n_points)
-        y_upper_hill  = np.sqrt(r_upper_hill**2. - (x_upper_hill-r_rail)**2. + 1.e-5)
-        x_deck_sag    = np.linspace(deck_height, 2.*r_deck_sag + deck_height, n_points)
-        y_deck_sag   = np.sqrt(r_deck_sag**2. - (x_deck_sag-r_rail)**2.)
-        x_upper_sag   = np.linspace(vertical_clearance, 2.*r_upper_sag + vertical_clearance, n_points)
-        y_upper_sag   = np.sqrt(r_upper_sag**2. - (x_upper_sag-r_rail)**2. + 1.e-5)
-
-        def get_max_force_v(inputs):
-            # Objective function to minimize the reaction force of the first flatcat, which holds blade root, during a vertical curve 
-            q_iter    = q_opt_h * inputs[:-2]
-            V_iter    = np.zeros(n_opt)
-            M_iter    = np.zeros(n_opt)
-            for i in range(n_opt):
-                V_iter[i] = np.trapz(q_iter[i:],r_opt[i:])
-            for i in range(n_opt):
-                M_iter[i] = np.trapz(V_iter[i:],r_opt[i:])
-            
-            RF_flatcar_1 = V_iter[0] + M_iter[0] / (flatcar_tc_length * 0.5)
-
-            return RF_flatcar_1*1.e-4
-
-        def get_constraints_hill(inputs):
-            # Constraint function to make sure the blade does not exceed the maximum strains while staying within the vertical clearance during a summit curve
-            q_iter = q_opt_v * inputs[:-2]
-            V_iter = np.zeros(n_opt)
-            M_iter = np.zeros(n_opt)
-            for i in range(n_opt):
-                V_iter[i] = np.trapz(q_iter[i:],r_opt[i:])
-            for i in range(n_opt):
-                M_iter[i] = np.trapz(V_iter[i:],r_opt[i:])
-
-            eps            = M_iter * dist_te_interp / EIedge_interp
-            consts_strains = (max_strains - abs(eps))*1.e+3
-
-            p_section    = _pBEAM.SectionData(n_opt, r_opt, EA_interp, EIedge_interp, EIflap_interp, GJ_interp, rhoA_interp, rhoJ_interp)
-            p_tip        = _pBEAM.TipData()  # no tip mass
-            p_base       = _pBEAM.BaseData(np.ones(6), 1.0)  # rigid base
-            p_loads      = _pBEAM.Loads(n_opt, np.zeros_like(r_opt), q_iter, np.zeros_like(r_opt))
-            blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
-            dx, dy, dz, dtheta_r1, dtheta_r2, dtheta_z = blade.displacement()
-
-            x_blade_transport = dy*blade_length/arc_length(r_opt, dy)[-1] - dist_le[0] - deck_height
-            y_blade_transport = r_opt*blade_length/arc_length(r_opt, dy)[-1]
-
-            le_x = x_blade_transport + dist_le_interp
-            te_x = x_blade_transport - dist_te_interp
-            le_y = te_y = y_blade_transport
-
-            # Rotation
-            root_rot_rad_iter = inputs[-1]
-            le_x_rot  = le_x*np.cos(root_rot_rad_iter) - le_y*np.sin(root_rot_rad_iter)
-            le_y_rot  = le_y*np.cos(root_rot_rad_iter) + le_x*np.sin(root_rot_rad_iter)
-            
-            te_x_rot  = te_x*np.cos(root_rot_rad_iter) - te_y*np.sin(root_rot_rad_iter)
-            te_y_rot  = te_y*np.cos(root_rot_rad_iter) + te_x*np.sin(root_rot_rad_iter)
-
-            # Translation
-            le_x_transl = le_x_rot - inputs[-2]
-            te_x_transl = te_x_rot - inputs[-2]
-            le_y_transl = te_y_transl = le_y_rot = te_y_rot
-
-
-            id_upper = np.zeros(n_opt, dtype = int)
-            id_deck  = np.zeros(n_opt, dtype = int)
-            for i in range(n_opt):
-                id_upper[i] = np.argmin(abs(y_upper_hill[:int(np.ceil(n_points*0.5))] - te_y_transl[i]))
-                id_deck[i]  = np.argmin(abs(y_deck_hill[:int(np.ceil(n_points*0.5))]  - le_y_transl[i]))
-
-            consts_envelope_upper = te_x_transl - x_upper_hill[id_upper]
-            consts_envelope_deck  = x_deck_hill[id_deck] - le_x_transl
-
-            consts = np.hstack((consts_strains, consts_envelope_upper, consts_envelope_deck))
-
-            return consts
-
-        def get_constraints_sag(inputs):
-            # Constraint function to make sure the blade does not exceed the maximum strains while staying within the vertical clearance during a sag curve
-            q_iter = q_opt_v * inputs[:-2]
-            V_iter = np.zeros(n_opt)
-            M_iter = np.zeros(n_opt)
-            for i in range(n_opt):
-                V_iter[i] = np.trapz(q_iter[i:],r_opt[i:])
-            for i in range(n_opt):
-                M_iter[i] = np.trapz(V_iter[i:],r_opt[i:])
-
-            eps            = - M_iter * dist_te_interp / EIedge_interp
-            consts_strains = (max_strains - abs(eps))*1.e+3
-
-            p_section    = _pBEAM.SectionData(n_opt, r_opt, EA_interp, EIedge_interp, EIflap_interp, GJ_interp, rhoA_interp, rhoJ_interp)
-            p_tip        = _pBEAM.TipData()  # no tip mass
-            p_base       = _pBEAM.BaseData(np.ones(6), 1.0)  # rigid base
-            p_loads      = _pBEAM.Loads(n_opt, np.zeros_like(r_opt), q_iter, np.zeros_like(r_opt))
-            blade = _pBEAM.Beam(p_section, p_loads, p_tip, p_base)
-            dx, dy, dz, dtheta_r1, dtheta_r2, dtheta_z = blade.displacement()
-
-            x_blade_transport = dy*blade_length/arc_length(r_opt, dy)[-1] + dist_le[0] + deck_height
-            y_blade_transport = r_opt*blade_length/arc_length(r_opt, dy)[-1]
-
-            le_x = x_blade_transport - dist_le_interp
-            te_x = x_blade_transport + dist_te_interp
-            le_y = te_y = y_blade_transport
-
-            # Rotation
-            root_rot_rad_iter = inputs[-1]
-            le_x_rot  = le_x*np.cos(root_rot_rad_iter) - le_y*np.sin(root_rot_rad_iter)
-            le_y_rot  = le_y*np.cos(root_rot_rad_iter) + le_x*np.sin(root_rot_rad_iter)
-            
-            te_x_rot  = te_x*np.cos(root_rot_rad_iter) - te_y*np.sin(root_rot_rad_iter)
-            te_y_rot  = te_y*np.cos(root_rot_rad_iter) + te_x*np.sin(root_rot_rad_iter)
-
-            # Translation
-            le_x_transl = le_x_rot + inputs[-2]
-            te_x_transl = te_x_rot + inputs[-2]
-            le_y_transl = te_y_transl = le_y_rot = te_y_rot
-
-
-            id_upper = np.zeros(n_opt, dtype = int)
-            id_deck  = np.zeros(n_opt, dtype = int)
-            for i in range(n_opt):
-                id_upper[i] = np.argmin(abs(y_upper_sag[:int(np.ceil(n_points*0.5))] - te_y_transl[i]))
-                id_deck[i]  = np.argmin(abs(y_deck_sag[:int(np.ceil(n_points*0.5))]  - le_y_transl[i]))
-
-            consts_envelope_upper = x_upper_sag[id_upper] - te_x_transl
-            consts_envelope_deck  = le_x_transl - x_deck_sag[id_deck]
-
-            consts = np.hstack((consts_strains, consts_envelope_upper, consts_envelope_deck))
-
-            return consts
-
-        x0    = np.hstack((np.ones(n_opt), np.zeros(2)))
-
-        bnds = ((0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.),(0., 1.), (0., vertical_clearance - deck_height - 2*dist_le[0]), (-max_root_rot_deg / 180. * np.pi, max_root_rot_deg / 180. * np.pi))
-        const           = {}
-        const['type']   = 'ineq'
-        const['fun']    = get_constraints_hill
-        res_hill        = minimize(get_max_force_v, x0, method='SLSQP', bounds=bnds, constraints=const)
-
-        const['fun']    = get_constraints_sag
-        res_sag         = minimize(get_max_force_v, x0, method='SLSQP', bounds=bnds, constraints=const)
+            #x_ec = inputs['x_ec_abs'][i]
+            #y_ec = inputs['y_ec_abs'][i]
+
+            yss[i] = max(ynode_dim) - y_ec[i]
+            yps[i] = y_ec[i] - min(ynode_dim)
+            xte[i] = max(xnode_dim) - x_ec[i]
+            xle[i] = x_ec[i] - min(xnode_dim)
+
+        # Put these sectional points in airfoil principle directions
+        xps_cs, yps_cs = yps, xps
+        xss_cs, yss_cs = yss, xss
         
-        if res_hill.success == False:
-            # If the optimization does not find a solution, assign a high value to the the fields LV_constraint_8axle, which are typically imposed lower than 1 in an outer blade design loop
-            outputs['LV_constraint_8axle'] = 2.
-            print('The optimization cannot satisfy the constraint on max strains of 3500 mu eps for the hill case.')
-        elif res_sag.success == False:
-            # If the optimization does not find a solution, assign a high value to the the fields LV_constraint_8axle, which are typically imposed lower than 1 in an outer blade design loop
-            outputs['LV_constraint_8axle'] = 2.
-            print('The optimization cannot satisfy the constraint on max strains of 3500 mu eps for the sag case')
-        else:
-             # If the optimization does converge, integrate the distributed loading twice to obtain the bending moment and the strains in the trailing edge along span
-            q_hill    = q_opt_v * res_hill.x[:-2]
-            V_hill    = np.zeros(n_opt)
-            M_hill    = np.zeros(n_opt)
-            for i in range(n_opt):
-                V_hill[i] = np.trapz(q_hill[i:],r_opt[i:])
-            for i in range(n_opt):
-                M_hill[i] = np.trapz(V_hill[i:],r_opt[i:])
+        ps1 =  xps_cs*ca + yps_cs*sa
+        ps2 = -xps_cs*sa + yps_cs*ca
+        
+        ss1 =  xss_cs*ca + yss_cs*sa
+        ss2 = -xss_cs*sa + yss_cs*ca
 
-            q_sag    = q_opt_v * res_sag.x[:-2]
-            V_sag    = np.zeros(n_opt)
-            M_sag    = np.zeros(n_opt)
-            for i in range(n_opt):
-                V_sag[i] = np.trapz(q_sag[i:],r_opt[i:])
-            for i in range(n_opt):
-                M_sag[i] = np.trapz(V_sag[i:],r_opt[i:])
+        xle_cs, yle_cs = yle, xle
+        xte_cs, yte_cs = yte, xte
+        
+        le1 =  xle_cs*ca + yle_cs*sa
+        le2 = -xle_cs*sa + yle_cs*ca
+        
+        te1 =  xte_cs*ca + yte_cs*sa
+        te2 = -xte_cs*sa + yte_cs*ca
+        #----------------
+
+
+        #-------- Horizontal curve where we select blade support nodes on flat cars
+        # Find last node that can be supported without blade tip extending beyond envelope
+        dist_to_tip = r[-1] - r
+        dtip        = r_curveH*(1 - np.cos(dist_to_tip / r_curveH))
+        itip_fix    = np.where(dtip < 0.5*lateral_clearance)[0][0]
+        
+        # Set nodes to be convenient for coordinate system with center of curvature 0,0 in y-z plane
+        nodes = frame3dd.NodeData(inode, x_ref, r_curveH+y_ref, z_ref, rad)
+
+        # Consider middle attachment point for blade: Find the one that minizes reaction force and not adjacent to the others
+        RF_derail = np.inf * np.ones((self.n_span, 3))  # num middle reaction points X  num reactions
+        strainPS  = np.zeros((self.n_span, self.n_span-1)) # num middle reaction points X  num elements
+        strainSS  = np.zeros((self.n_span, self.n_span-1)) # num middle reaction points X  num elements
+        for k in range(2, itip_fix-1):
+            # ------ reaction data ------------
+            # Pinned at root, rotations allowed at k-node and tip
+            rnode     = 1 + np.array([0, k, itip_fix])
+            reactions = frame3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
+
+            # Initialize frame3dd object
+            blade = frame3dd.Frame(nodes, reactions, elements, options)
+
+            # Load case: gravity + blade bending
+            gx   = -gravity
+            gy   = gz = 0.0
+            load = frame3dd.StaticLoadCase(gx, gy, gz)
+
+            # Node displacement: use distance from root as arc length
+            dy   = -r_curveH*(1 - np.cos(arcsH[rnode]))
+            dz   = -r_curveH*     np.sin(arcsH[rnode])
+            dx   = dM = np.zeros(dy.shape)
+            load.changePrescribedDisplacements(rnode, dx, dy, dz, dM, dM, dM)
+
+            # Store this load case
+            blade.addLoadCase(load)
+
+            # Debugging
+            #blade.write('blade.3dd')
             
-            # print('The optimizer finds a solution for the vertical curves!')
+            # Run the case
+            displacements, forces, reactions, internalForces, mass, modal = blade.run()
+            iCase = 0
+
+            # Reaction forces for derailment:
+            #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
+            #  - Moment around axis perpendicular to ground
+            print(np.c_[reactions.Fx, reactions.Fy, reactions.Fz, reactions.Mxx, reactions.Myy, reactions.Mzz])
+            RF_derailH[k,:] = -0.5*reactions.Fy - reactions.Mx/flatcar_tc_length
             
-            # Compute the reaction forces for hill and sag cases
-            RF_flatcar_1_hill = 0.5 * V_hill[0] + M_hill[0] / (flatcar_tc_length)
-            RF_flatcar_1_sag  = 0.5 * V_sag[0] + M_sag[0] / (flatcar_tc_length)
+            # Element shear and bending, one per element, which are already in principle directions in Hansen's notation
+            Fz = np.r_[-forces.Nx[ iCase,0],  forces.Nx[ iCase, 1::2]]
+            M1 = np.r_[-forces.Myy[iCase,0],  forces.Myy[iCase, 1::2]]
+            M2 = np.r_[ forces.Mzz[iCase,0], -forces.Mzz[iCase, 1::2]]
 
-            # print('Max reaction force from hill: ' + str(RF_flatcar_1_hill) + ' N')
-            # print('Max reaction force from sag: '  + str(RF_flatcar_1_sag) + ' N')
+            # compute strain at the two points: pressure/suction side extremes
+            strainPS[k,:] = -(M1/EI11*ps2 - M2/EI22*ps1 + Fz/EA)  # negative sign because 3 is opposite of z
+            strainSS[k,:] = -(M1/EI11*ss2 - M2/EI22*ss1 + Fz/EA)  # negative sign because 3 is opposite of z
+            
+        # Express derailing force as a constraint
+        constr_derailH_8axle = (RF_derailH / (0.5 * mass_car_8axle * gravity)) / max_LV
+        constr_derailH_4axle = (RF_derailH / (0.5 * mass_car_4axle * gravity)) / max_LV
 
-            # outputs['LV_constraint_8axle'] = (RF_flatcar_1_hill / (weight_car_8axle * gravity)) / max_LV
-            # outputs['LV_constraint_4axle'] = (RF_flatcar_1_hill / (weight_car_4axle * gravity)) / max_LV
+        # Find best point(s) for middle support spot
+        derailed4 = np.maximum([1.0, constr_derailH_4axle]).mean(axis=1)
+        derailed8 = np.maximum([1.0, constr_derailH_8axle]).mean(axis=1)
+        ibest4    = np.argmin(derailed4)
+        ibest8    = np.argmin(derailed8)
+        outputs['constr_LV_4axle_horiz'] = constr_derailH_4axle[ibest4,:]
+        outputs['constr_LV_8axle_horiz'] = constr_derailH_8axle[ibest8,:]
+        print(derailed8)
+        print(ibest8)
+        # Strain constraint outputs
+        outputs['constr_strainPS'] = strainPS[ibest8,:] / max_strains
+        outputs['constr_strainSS'] = strainSS[ibest8,:] / max_strains
+        #------------
 
-            # print('L/V constraint 8-axle: ' + str(outputs['LV_constraint_8axle']))
-            # print('L/V constraint 4-axle: ' + str(outputs['LV_constraint_4axle']))
+
+        # ------- Vertical hills/sag using best attachment points
+        # Set up Frame3DD blade for vertical analysis
+        rnode     = 1 + np.array([0, ibest8, itip_fix])
+        reactions = frame3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
+
+        # Set nodes to be convenient for coordinate system with center of curvature 0,0 in x-z plane
+        nodes = frame3dd.NodeData(inode, r_curveV+x_ref, y_ref, z_ref, rad)
+        
+        # Initialize frame3dd object
+        blade = frame3dd.Frame(nodes, reactions, elements, options)
+
+        # Load case 1: gravity + hill, case 2: gravity + sag
+        gx = -gravity
+        gy = gz = 0.0
+        load1 = frame3dd.StaticLoadCase(gx, gy, gz)
+        load2 = frame3dd.StaticLoadCase(gx, gy, gz)
+
+        # Node displacement hill
+        dx = -r_curveV * (1 - np.cos(arcsV[rnode]))
+        dz = -r_curveV *      np.sin(arcsV[rnode])
+        dy = dM = np.zeros(dy.shape)
+        load1.changePrescribedDisplacements(rnode, dx, dy, dz, dM, dM, dM)
+
+        # Node displacement sag
+        dx *= -1
+        dz *= -1
+        load2.changePrescribedDisplacements(rnode, dx, dy, dz, dM, dM, dM)
+
+        # Store these load cases and run
+        blade.addLoadCase(load1)
+        blade.addLoadCase(load2)
+        #blade.write('blade.3dd')
+        displacements, forces, reactions, internalForces, mass, modal = blade.run()
+
+        # Reaction forces for derailment:
+        #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
+        #  - Moment around axis perpendicular to ground
+        print(np.c_[reactions.Fx, reactions.Fy, reactions.Fz, reactions.Mxx, reactions.Myy, reactions.Mzz])
+        # Should have 2 cases X 3 rxn nodes
+        RF_derailV = -0.5*reactions.Fy - reactions.Mx/flatcar_tc_length
+        RF_derailV = RF_derailV.max(axis=0) # max across hill & sag
+
+        # Loop over hill & sag cases, then take worst strain case
+        strainLE = np.zeros((2, self.n_span-1))
+        strainTE = np.zeros((2, self.n_span-1))
+        for k in range(2):
+            # Element shear and bending, one per element, with conversion to profile c.s. using Hansen's notation
+            Fz = np.r_[-forces.Nx[ k, 0],  forces.Nx[ k, 1::2]]
+            M1 = np.r_[-forces.Myy[k, 0],  forces.Myy[k, 1::2]]
+            M2 = np.r_[ forces.Mzz[k, 0], -forces.Mzz[k, 1::2]]
+
+            # compute strain at the two points
+            strainLE[k,:] = -(M1/EI11*le2 - M2/EI22*le1 + Fz/EA) # negative sign because 3 is opposite of z
+            strainTE[k,:] = -(M1/EI11*te2 - M2/EI22*te1 + Fz/EA) # negative sign because 3 is opposite of z
+            
+        # Find best points for middle reaction and formulate as constraints
+        constr_derailV_8axle = (RF_derailV / (0.5 * mass_car_8axle * gravity)) / max_LV
+        constr_derailV_4axle = (RF_derailV / (0.5 * mass_car_4axle * gravity)) / max_LV
+
+        outputs['constr_LV_4axle_vert'] = constr_derailV_4axle.mean()
+        outputs['constr_LV_8axle_vert'] = constr_derailV_8axle.mean()
+
+        # Strain constraint outputs
+        outputs['constr_strainLE'] = strainLE.max(axis=0) / max_strains
+        outputs['constr_strainTE'] = strainTE.max(axis=0) / max_strains

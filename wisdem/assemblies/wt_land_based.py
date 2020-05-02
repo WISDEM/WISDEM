@@ -86,9 +86,7 @@ class WT_RNTA(Group):
 
         # Conncetions to rail transport module
         if opt_options['constraints']['blade']['rail_transport']['flag']:
-            self.connect('blade.pa.twist_param',                    'elastic.rail.theta')
-            self.connect('blade.pa.chord_param',                    'elastic.rail.chord')
-            self.connect('blade.outer_shape_bem.pitch_axis',        'elastic.rail.pitch_axis')
+             self.connect('blade.outer_shape_bem.pitch_axis',        'elastic.rail.pitch_axis')
             self.connect('blade.outer_shape_bem.ref_axis',          'elastic.rail.blade_ref_axis')
             self.connect('blade.interp_airfoils.coord_xy_dim',      'elastic.rail.coord_xy_dim')
             self.connect('blade.interp_airfoils.coord_xy_interp',   'elastic.rail.coord_xy_interp')

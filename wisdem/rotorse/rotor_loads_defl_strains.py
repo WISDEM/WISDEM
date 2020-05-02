@@ -193,7 +193,7 @@ class RunFrame3DD(ExplicitComponent):
         self.add_input('A',     val=np.zeros(n_span), units='m**2',     desc='airfoil cross section material area')
         self.add_input('EA',    val=np.zeros(n_span), units='N',        desc='axial stiffness')
         self.add_input('EIxx',  val=np.zeros(n_span), units='N*m**2',   desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('EIyy',  val=np.zeros(n_span), units='N*m**2',   desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+        self.add_input('EIyy',  val=np.zeros(n_span), units='N*m**2',   desc='flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
         self.add_input('EIxy',  val=np.zeros(n_span), units='N*m**2',   desc='coupled flap-edge stiffness')
         self.add_input('GJ',    val=np.zeros(n_span), units='N*m**2',   desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
         self.add_input('rhoA',  val=np.zeros(n_span), units='kg/m',     desc='mass per unit length')
@@ -403,13 +403,16 @@ class RunFrame3DD(ExplicitComponent):
 
         def strain(xu, yu, xl, yl):
             # use profile c.s. to use Hansen's notation
-            Mxx, Myy = My, Mx
             xuu, yuu = yu, xu
             xll, yll = yl, xl
 
-            # convert to principal axes
-            M1 =  Mxx*ca + Myy*sa
-            M2 = -Mxx*sa + Myy*ca
+            # convert to principal axes, unless already there
+            if self.options['pbeam']:
+                Mxx, Myy = My, Mx
+                M1 =  Mxx*ca + Myy*sa
+                M2 = -Mxx*sa + Myy*ca
+            else:
+                M1,M2 = My,Mx
 
             x =  xuu*ca + yuu*sa
             y = -xuu*sa + yuu*ca

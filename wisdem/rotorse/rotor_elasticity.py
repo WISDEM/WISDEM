@@ -551,33 +551,7 @@ class RunPreComp(ExplicitComponent):
         outputs['total_blade_cost'] = blade_cost
         outputs['total_blade_mass'] = blade_mass
 
-class RunCurveFEM(ExplicitComponent):
-    # OpenMDAO component that computes the natural frequencies for curved blades using _pBEAM
-    def initialize(self):
-        self.options.declare('analysis_options')
-
-    def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
-        self.n_span = n_span = blade_init_options['n_span']
-        self.n_freq = n_freq = blade_init_options['n_freq']
-
-        # Inputs
-        self.add_input('Omega',         val=0.0,                units='rpm',    desc='rotor rotation frequency')
-        self.add_input('r',             val=np.zeros(n_span),   units='m',      desc='locations of properties along beam')
-        self.add_input('EA',            val=np.zeros(n_span),   units='N',      desc='axial stiffness')
-        self.add_input('EIxx',          val=np.zeros(n_span),   units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('EIyy',          val=np.zeros(n_span),   units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-        self.add_input('GJ',            val=np.zeros(n_span),   units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
-        self.add_input('rhoA',          val=np.zeros(n_span),   units='kg/m',   desc='mass per unit length')
-        self.add_input('rhoJ',          val=np.zeros(n_span),   units='kg*m',   desc='polar mass moment of inertia per unit length')
-        self.add_input('Tw_iner',       val=np.zeros(n_span),   units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
-        self.add_input('precurve',      val=np.zeros(n_span),   units='m',      desc='structural precuve (see FAST definition)')
-        self.add_input('presweep',      val=np.zeros(n_span),   units='m',      desc='structural presweep (see FAST definition)')
-
-        # Outputs
-        self.add_output('freq',         val=np.zeros(n_freq),   units='Hz',     desc='first nF natural frequencies')
-        self.add_output('modes_coef',   val=np.zeros((3, 5)),                   desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
-
+        
 class RotorElasticity(Group):
     # OpenMDAO group to compute the blade elastic properties and natural frequencies
     def initialize(self):
@@ -588,7 +562,8 @@ class RotorElasticity(Group):
         opt_options     = self.options['opt_options']
 
         # Get elastic properties by running precomp
-        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','A','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep','x_ec_abs', 'y_ec_abs'])
+        promote_list = ['chord','theta','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','x_ec_abs','y_ec_abs']
+        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=promote_list+['r','Tw_iner','precurve','presweep'])
         # Check rail transportabiliy
         if opt_options['constraints']['blade']['rail_transport']['flag']:
-            self.add_subsystem('rail',     RailTransport(analysis_options = analysis_options), promotes=['EA','EIxx','EIyy','GJ','rhoA','rhoJ','x_ec_abs', 'y_ec_abs'])
+            self.add_subsystem('rail',  RailTransport(analysis_options = analysis_options), promotes=promote_list)
