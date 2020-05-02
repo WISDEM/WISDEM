@@ -1,7 +1,7 @@
 import numpy as np
 from openmdao.api import ExplicitComponent, Group, Problem
 from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyOpenMDAO
-from wisdem.rotorse.rotor_geometry import TurbineClass
+from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015

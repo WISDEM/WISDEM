@@ -91,7 +91,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     # Initialize openmdao problem. If running with multiple processors in MPI,
     # use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally.
-    # with other OM problems?
     if MPI:
         num_par_fd = MPI.COMM_WORLD.Get_size()
         wt_opt = Problem(model=Group(num_par_fd=num_par_fd))
@@ -323,9 +322,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     
     # Load initial wind turbine data from wt_initial to the openmdao problem
     wt_opt = yaml2openmdao(wt_opt, analysis_options, wt_init)
-    wt_opt['blade.pa.s_opt_twist']   = np.linspace(0., 1., blade_opt_options['aero_shape']['twist']['n_opt'])
+    wt_opt['blade.opt_var.s_opt_twist']   = np.linspace(0., 1., blade_opt_options['aero_shape']['twist']['n_opt'])
     if blade_opt_options['aero_shape']['twist']['flag']:
-        init_twist_opt = np.interp(wt_opt['blade.pa.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
+        init_twist_opt = np.interp(wt_opt['blade.opt_var.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
         lb_twist = np.array(blade_opt_options['aero_shape']['twist']['lower_bound'])
         ub_twist = np.array(blade_opt_options['aero_shape']['twist']['upper_bound'])
         wt_opt['blade.opt_var.twist_opt_gain']    = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
@@ -333,7 +332,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
             
     blade_constraints = opt_options['constraints']['blade']
-    wt_opt['blade.pa.s_opt_chord']       = np.linspace(0., 1., blade_opt_options['aero_shape']['chord']['n_opt'])
+    wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., blade_opt_options['aero_shape']['chord']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ss']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ps']['n_opt'])
     wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
