@@ -8,7 +8,7 @@ import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
 import wisdem.commonse.utilities as util
-import wisdem.pyframe3dd.frame3dd as frame3dd
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
 RIGID = 1e30
 NFREQ = 6
@@ -284,7 +284,7 @@ class CylinderFrame3DD(ExplicitComponent):
         y = np.zeros(n)
         r = np.zeros(n)
 
-        nodes = frame3dd.NodeData(node, x, y, z, r)
+        nodes = pyframe3dd.NodeData(node, x, y, z, r)
         # -----------------------------------
 
         # ------ reaction data ------------
@@ -293,7 +293,7 @@ class CylinderFrame3DD(ExplicitComponent):
         node = inputs['kidx'] + np.ones(len(inputs['kidx']))   # add one because 0-based index but 1-based node numbering
         rigid = RIGID
 
-        reactions = frame3dd.ReactionData(node, inputs['kx'], inputs['ky'], inputs['kz'], inputs['ktx'], inputs['kty'], inputs['ktz'], rigid)
+        reactions = pyframe3dd.ReactionData(node, inputs['kx'], inputs['ky'], inputs['kz'], inputs['ktx'], inputs['kty'], inputs['ktz'], rigid)
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -315,16 +315,16 @@ class CylinderFrame3DD(ExplicitComponent):
         G   = inputs['G']
         rho = inputs['rho']
 
-        elements = frame3dd.ElementData(element, N1, N2, Az, Asx, Asy, Jz, Ixx, Iyy, E, G, roll, rho)
+        elements = pyframe3dd.ElementData(element, N1, N2, Az, Asx, Asy, Jz, Ixx, Iyy, E, G, roll, rho)
         # -----------------------------------
 
 
         # ------ options ------------
-        options = frame3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
+        options = pyframe3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
         # -----------------------------------
 
         # initialize frame3dd object
-        cylinder = frame3dd.Frame(nodes, reactions, elements, options)
+        cylinder = pyframe3dd.Frame(nodes, reactions, elements, options)
 
 
         # ------ add extra mass ------------
@@ -348,7 +348,7 @@ class CylinderFrame3DD(ExplicitComponent):
         gy = 0.0
         gz = -gravity
 
-        load = frame3dd.StaticLoadCase(gx, gy, gz)
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
         # point loads
         nF = inputs['plidx'] + np.ones(len(inputs['plidx']))

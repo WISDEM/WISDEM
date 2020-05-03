@@ -448,19 +448,19 @@ class Frame(object):
         # load c module
         mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
         try:
-            self._frame3dd = np.ctypeslib.load_library(libname, mydir)
+            self._pyframe3dd = np.ctypeslib.load_library(libname, mydir)
         except:
             mydir = os.path.abspath(os.path.dirname(mydir))
-            self._frame3dd = np.ctypeslib.load_library(libname, mydir)
+            self._pyframe3dd = np.ctypeslib.load_library(libname, mydir)
 
-        self._frame3dd.run.argtypes = [POINTER(C_Nodes), POINTER(C_Reactions), POINTER(C_Elements),
+        self._pyframe3dd.run.argtypes = [POINTER(C_Nodes), POINTER(C_Reactions), POINTER(C_Elements),
             POINTER(C_OtherElementData), c_int, POINTER(C_LoadCase),
             POINTER(C_DynamicData), POINTER(C_ExtraInertia), POINTER(C_ExtraMass),
             POINTER(C_Condensation),
             POINTER(C_Displacements), POINTER(C_Forces), POINTER(C_ReactionForces),
             POINTER(POINTER(C_InternalForces)), POINTER(C_MassResults), POINTER(C_ModalResults)]
 
-        self._frame3dd.run.restype = c_int
+        self._pyframe3dd.run.restype = c_int
 
 
 
@@ -767,7 +767,7 @@ class Frame(object):
         exagg_modal = 1.0  # not used
         c_dynamicData = C_DynamicData(self.nM, self.Mmethod, self.lump, self.tol, self.shift, exagg_modal)
 
-        exitCode = self._frame3dd.run(self.c_nodes, self.c_reactions, self.c_elements, self.c_other,
+        exitCode = self._pyframe3dd.run(self.c_nodes, self.c_reactions, self.c_elements, self.c_other,
                                       nCases, c_loadcases, c_dynamicData, self.c_extraInertia,
                                       self.c_extraMass, self.c_condensation,
                                       c_disp, c_forces, c_reactions, c_internalForces, c_massResults, c_modalResults)

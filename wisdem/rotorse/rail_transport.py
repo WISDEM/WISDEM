@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.constants as spc
 from openmdao.api import ExplicitComponent
-import wisdem.pyframe3dd.frame3dd as frame3dd
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilities as util
 from wisdem.commonse.constants import gravity
 import copy
@@ -171,10 +171,10 @@ class RailTransport(ExplicitComponent):
         # Additional 180 because LE is pointed down whereas positive x is pointed up
         roll,_ = util.nodal2sectional(theta + alpha + 180)
 
-        elements   = frame3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
+        elements   = pyframe3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
 
         # Frame3dd options: no need for shear, axial stiffening, or higher resolution force calculations
-        options = frame3dd.Options(False, False, -1)
+        options = pyframe3dd.Options(False, False, -1)
         #-----------
 
         
@@ -267,7 +267,7 @@ class RailTransport(ExplicitComponent):
         itip_fix    = np.where(dtip < 0.5*lateral_clearance)[0][0]
 
         # Set nodes to be convenient for coordinate system with center of curvature 0,0 in y-z plane
-        nodes = frame3dd.NodeData(inode, x_ref, r_curveH+y_ref, z_ref, rad)
+        nodes = pyframe3dd.NodeData(inode, x_ref, r_curveH+y_ref, z_ref, rad)
 
         # Consider middle attachment point for blade: Find the one that minizes reaction force and not adjacent to the others
         RF_derailH = np.inf * np.ones((self.n_span, 3))  # num middle reaction points X  num reactions
@@ -277,15 +277,15 @@ class RailTransport(ExplicitComponent):
             # ------ reaction data ------------
             # Pinned at root, rotations allowed at k-node and tip
             rnode     = 1 + np.array([0, k, itip_fix])
-            reactions = frame3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
+            reactions = pyframe3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
 
             # Initialize frame3dd object
-            blade = frame3dd.Frame(nodes, reactions, elements, options)
+            blade = pyframe3dd.Frame(nodes, reactions, elements, options)
 
             # Load case: gravity + blade bending
             gx   = -gravity
             gy   = gz = 0.0
-            load = frame3dd.StaticLoadCase(gx, gy, gz)
+            load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
             # Node displacement: use distance from root as arc length
             dy   = -r_curveH*(1 - np.cos(arcsH[rnode]))
@@ -338,19 +338,19 @@ class RailTransport(ExplicitComponent):
         # ------- Vertical hills/sag using best attachment points
         # Set up Frame3DD blade for vertical analysis
         rnode     = 1 + np.array([0, ibest8, itip_fix])
-        reactions = frame3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
+        reactions = pyframe3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
 
         # Set nodes to be convenient for coordinate system with center of curvature 0,0 in x-z plane
-        nodes = frame3dd.NodeData(inode, r_curveV+x_ref, y_ref, z_ref, rad)
+        nodes = pyframe3dd.NodeData(inode, r_curveV+x_ref, y_ref, z_ref, rad)
         
         # Initialize frame3dd object
-        blade = frame3dd.Frame(nodes, reactions, elements, options)
+        blade = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # Load case 1: gravity + hill, case 2: gravity + sag
         gx = -gravity
         gy = gz = 0.0
-        load1 = frame3dd.StaticLoadCase(gx, gy, gz)
-        load2 = frame3dd.StaticLoadCase(gx, gy, gz)
+        load1 = pyframe3dd.StaticLoadCase(gx, gy, gz)
+        load2 = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
         # Node displacement hill
         dx = -r_curveV * (1 - np.cos(arcsV[rnode]))

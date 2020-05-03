@@ -10,7 +10,7 @@ from wisdem.commonse.akima import Akima
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse import RPM2RS, RS2RPM
-import wisdem.pyframe3dd.frame3dd as frame3dd
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
 class GustETM(ExplicitComponent):
     # OpenMDAO component that generates an "equivalent gust" wind speed by summing an user-defined wind speed at hub height with 3 times sigma. sigma is the turbulent wind speed standard deviation for the extreme turbulence model, see IEC-61400-1 Eq. 19 paragraph 6.3.2.3
@@ -280,10 +280,10 @@ class RunFrame3DD(ExplicitComponent):
         rad   = np.zeros(n) # 'radius' of rigidity at node- set to zero
         inode = 1 + np.arange(n) # Node numbers (1-based indexing)
         if self.options['pbeam']:
-            nodes = frame3dd.NodeData(inode, np.zeros(n), np.zeros(n), r, rad)
+            nodes = pyframe3dd.NodeData(inode, np.zeros(n), np.zeros(n), r, rad)
             L     = np.diff(r)
         else:
-            nodes = frame3dd.NodeData(inode, x_az, y_az, z_az, rad)
+            nodes = pyframe3dd.NodeData(inode, x_az, y_az, z_az, rad)
             L     = np.sqrt(np.diff(x_az)**2 + np.diff(y_az)**2 + np.diff(z_az)**2)
         # -----------------------------------
 
@@ -291,7 +291,7 @@ class RunFrame3DD(ExplicitComponent):
         # Pinned at root
         rnode = np.array([1])
         rigid = np.array([1e16])
-        reactions = frame3dd.ReactionData(rnode, rigid, rigid, rigid, rigid, rigid, rigid, float(rigid))
+        reactions = pyframe3dd.ReactionData(rnode, rigid, rigid, rigid, rigid, rigid, rigid, float(rigid))
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -330,18 +330,18 @@ class RunFrame3DD(ExplicitComponent):
             roll,_ = util.nodal2sectional(theta + alpha)
             
         Asx = Asy = 1e-6*np.ones(elem.shape) # Unused when shear=False
-        elements   = frame3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
+        elements   = pyframe3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
         # -----------------------------------
 
         # ------ options ------------
         shear   = False # If not false, have to compute Asx or Asy
         geom    = (not self.options['pbeam']) # Must be true for spin-stiffening
         dx      = -1 # Don't need stress changes within element for now
-        options = frame3dd.Options(shear, geom, dx)
+        options = pyframe3dd.Options(shear, geom, dx)
         # -----------------------------------
 
         # initialize frame3dd object
-        blade = frame3dd.Frame(nodes, reactions, elements, options)
+        blade = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # ------- enable dynamic analysis ----------
         Mmethod = 1 # 1= Subspace-Jacobi iteration, 2= Stodola (matrix iteration) method
@@ -354,7 +354,7 @@ class RunFrame3DD(ExplicitComponent):
         # ------ load case 1, blade 1 ------------
         # trapezoidally distributed loads- already has gravity, centrifugal, aero, etc.
         gx = gy = gz = 0.0
-        load = frame3dd.StaticLoadCase(gx, gy, gz)
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
         if not self.options['pbeam']:
             # Have to further move the loads into principle directions
