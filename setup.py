@@ -22,7 +22,7 @@ else:
 
 # All the extensions
 bemExt     = Extension('wisdem.ccblade._bem',
-                       sources=[os.path.join('wisdem','ccblade','bem.f90')],
+                       sources=[os.path.join('wisdem','ccblade','src','bem.f90')],
                        extra_compile_args=['-O2','-fPIC'])
 pyframeExt = Extension('wisdem.pyframe3dd._pyframe3dd',
                        sources=glob.glob(os.path.join('wisdem','pyframe3dd','src','*.c')))

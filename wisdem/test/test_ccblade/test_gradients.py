@@ -83,14 +83,19 @@ class TestGradients(unittest.TestCase):
         self.azimuth = 90
 
 
-        self.Np, self.Tp, self.dNp, self.dTp \
-            = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, derivs = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        self.Np = loads['Np']
+        self.Tp = loads['Tp']
+        self.dNp = derivs['dNp']
+        self.dTp = derivs['dTp']
 
-        #self.P, self.T, self.Q, self.M, self.dP, self.dT, self.dQ \
-        #    = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        self.P, self.T, self.Q, self.M = [outputs[k] for k in ('P', 'T', 'Q', 'M')]
+        self.dP, self.dT, self.dQ = [derivs[k] for k in ('dP', 'dT', 'dQ')]
 
-        self.P, self.T, self.Q, self.M, self.dP, self.dT, self.dQ, self.CP, self.CT, self.CQ, self.CM, self.dCP, self.dCT, self.dCQ \
-            = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        self.CP, self.CT, self.CQ, self.CM = [outputs[k] for k in ('CP', 'CT', 'CQ', 'CM')]
+        self.dCP, self.dCT, self.dCQ     = [derivs[k] for k in ('dCP', 'dCT', 'dCQ')]
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -113,7 +118,9 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dr_fd[:, i] = (Npd - self.Np) / delta
             dTp_dr_fd[:, i] = (Tpd - self.Tp) / delta
@@ -141,7 +148,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            Pd = outputs['P']
+            Td = outputs['T']
+            Qd = outputs['Q']
 
             dT_dr_fd[:, i] = (Td - self.T) / delta
             dQ_dr_fd[:, i] = (Qd - self.Q) / delta
@@ -170,7 +180,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            CPd = outputs['CP']
+            CTd = outputs['CT']
+            CQd = outputs['CQ']
 
             dCT_dr_fd[:, i] = (CTd - self.CT) / delta
             dCQ_dr_fd[:, i] = (CQd - self.CQ) / delta
@@ -198,7 +211,9 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dchord_fd[:, i] = (Npd - self.Np) / delta
             dTp_dchord_fd[:, i] = (Tpd - self.Tp) / delta
@@ -227,7 +242,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            Pd = outputs['P']
+            Td = outputs['T']
+            Qd = outputs['Q']
 
             dT_dchord_fd[:, i] = (Td - self.T) / delta
             dQ_dchord_fd[:, i] = (Qd - self.Q) / delta
@@ -256,7 +274,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            CPd = outputs['CP']
+            CTd = outputs['CT']
+            CQd = outputs['CQ']
 
             dCT_dchord_fd[:, i] = (CTd - self.CT) / delta
             dCQ_dchord_fd[:, i] = (CQd - self.CQ) / delta
@@ -285,7 +306,9 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dtheta_fd[:, i] = (Npd - self.Np) / delta
             dTp_dtheta_fd[:, i] = (Tpd - self.Tp) / delta
@@ -313,7 +336,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            Pd = outputs['P']
+            Td = outputs['T']
+            Qd = outputs['Q']
 
             dT_dtheta_fd[:, i] = (Td - self.T) / delta
             dQ_dtheta_fd[:, i] = (Qd - self.Q) / delta
@@ -343,7 +369,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            CPd = outputs['CP']
+            CTd = outputs['CT']
+            CQd = outputs['CQ']
 
             dCT_dtheta_fd[:, i] = (CTd - self.CT) / delta
             dCQ_dtheta_fd[:, i] = (CQd - self.CQ) / delta
@@ -371,7 +400,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dRhub_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dRhub_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -398,7 +429,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dRhub_fd[:, 0] = (Td - self.T) / delta
         dQ_dRhub_fd[:, 0] = (Qd - self.Q) / delta
@@ -428,7 +462,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dRhub_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dRhub_fd[:, 0] = (CQd - self.CQ) / delta
@@ -456,7 +493,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
+
         dNp_dRtip_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dRtip_fd[:, 0] = (Tpd - self.Tp) / delta
 
@@ -482,7 +522,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dRtip_fd[:, 0] = (Td - self.T) / delta
         dQ_dRtip_fd[:, 0] = (Qd - self.Q) / delta
@@ -511,7 +554,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dRtip_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dRtip_fd[:, 0] = (CQd - self.CQ) / delta
@@ -538,7 +584,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dprecone_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dprecone_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -566,7 +614,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dprecone_fd[:, 0] = (Td - self.T) / delta
         dQ_dprecone_fd[:, 0] = (Qd - self.Q) / delta
@@ -595,7 +646,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dprecone_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dprecone_fd[:, 0] = (CQd - self.CQ) / delta
@@ -622,7 +676,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dtilt_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dtilt_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -649,7 +705,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dtilt_fd[:, 0] = (Td - self.T) / delta
         dQ_dtilt_fd[:, 0] = (Qd - self.Q) / delta
@@ -678,7 +737,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dtilt_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dtilt_fd[:, 0] = (CQd - self.CQ) / delta
@@ -705,7 +767,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             hubht, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dhubht_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dhubht_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -732,7 +796,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             hubht, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dhubht_fd[:, 0] = (Td - self.T) / delta
         dQ_dhubht_fd[:, 0] = (Qd - self.Q) / delta
@@ -762,7 +829,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             hubht, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dhubht_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dhubht_fd[:, 0] = (CQd - self.CQ) / delta
@@ -790,7 +860,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dyaw_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dyaw_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -817,7 +889,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dyaw_fd[:, 0] = (Td - self.T) / delta
         dQ_dyaw_fd[:, 0] = (Qd - self.Q) / delta
@@ -847,7 +922,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dyaw_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dyaw_fd[:, 0] = (CQd - self.CQ) / delta
@@ -871,7 +949,9 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6*azimuth
         azimuth += delta
 
-        Npd, Tpd = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, azimuth)
+        outputs, _ = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, azimuth)
+        Npd = outputs['Np']
+        Tpd = outputs['Tp']
 
         dNp_dazimuth_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dazimuth_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -892,7 +972,9 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6*Uinf
         Uinf += delta
 
-        Npd, Tpd = self.rotor.distributedAeroLoads(Uinf, self.Omega, self.pitch, self.azimuth)
+        outputs, _ = self.rotor.distributedAeroLoads(Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = outputs['Np']
+        Tpd = outputs['Tp']
 
         dNp_dUinf_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dUinf_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -915,7 +997,10 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6*Uinf
         Uinf += delta
 
-        Pd, Td, Qd, Md = self.rotor.evaluate([Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = self.rotor.evaluate([Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dUinf_fd[:, 0] = (Td - self.T) / delta
         dQ_dUinf_fd[:, 0] = (Qd - self.Q) / delta
@@ -941,7 +1026,10 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6*Uinf
         Uinf += delta
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = self.rotor.evaluate([Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = self.rotor.evaluate([Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dUinf_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dUinf_fd[:, 0] = (CQd - self.CQ) / delta
@@ -964,7 +1052,9 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6*Omega
         Omega += delta
 
-        Npd, Tpd = self.rotor.distributedAeroLoads(self.Uinf, Omega, self.pitch, self.azimuth)
+        loads, _ = self.rotor.distributedAeroLoads(self.Uinf, Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dOmega_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dOmega_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -987,7 +1077,10 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6*Omega
         Omega += delta
 
-        Pd, Td, Qd, Md = self.rotor.evaluate([self.Uinf], [Omega], [self.pitch], coefficients=False)
+        outputs, _ = self.rotor.evaluate([self.Uinf], [Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dOmega_fd[:, 0] = (Td - self.T) / delta
         dQ_dOmega_fd[:, 0] = (Qd - self.Q) / delta
@@ -1013,7 +1106,10 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6*Omega
         Omega += delta
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = self.rotor.evaluate([self.Uinf], [Omega], [self.pitch], coefficients=True)
+        outputs, _ = self.rotor.evaluate([self.Uinf], [Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dOmega_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dOmega_fd[:, 0] = (CQd - self.CQ) / delta
@@ -1037,7 +1133,9 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6
         pitch += delta
 
-        Npd, Tpd = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, pitch, self.azimuth)
+        loads, _ = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dpitch_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dpitch_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1060,7 +1158,10 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6
         pitch += delta
 
-        Pd, Td, Qd, Md = self.rotor.evaluate([self.Uinf], [self.Omega], [pitch], coefficients=False)
+        outputs, _ = self.rotor.evaluate([self.Uinf], [self.Omega], [pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dpitch_fd[:, 0] = (Td - self.T) / delta
         dQ_dpitch_fd[:, 0] = (Qd - self.Q) / delta
@@ -1086,7 +1187,10 @@ class TestGradients(unittest.TestCase):
         delta = 1e-6
         pitch += delta
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = self.rotor.evaluate([self.Uinf], [self.Omega], [pitch], coefficients=True)
+        outputs, _ = self.rotor.evaluate([self.Uinf], [self.Omega], [pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dpitch_fd[:, 0] = (CTd - self.CT) / delta
         dCQ_dpitch_fd[:, 0] = (CQd - self.CQ) / delta
@@ -1107,8 +1211,11 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, precurve=precurve, precurveTip=precurveTip)
 
-        Np, Tp, dNp, dTp \
-            = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, derivs = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Np = loads['Np']
+        Tp = loads['Tp']
+        dNp = derivs['dNp']
+        dTp = derivs['dTp']
 
         dNp_dprecurve = dNp['dprecurve']
         dTp_dprecurve = dTp['dprecurve']
@@ -1125,7 +1232,9 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False, precurve=pc, precurveTip=precurveTip)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dprecurve_fd[:, i] = (Npd - Np) / delta
             dTp_dprecurve_fd[:, i] = (Tpd - Tp) / delta
@@ -1144,7 +1253,13 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, precurve=precurve, precurveTip=precurveTip)
 
-        P, T, Q, M, dP, dT, dQ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        P = outputs['P']
+        T = outputs['T']
+        Q = outputs['Q']
+        dP = derivs['dP']
+        dT = derivs['dT']
+        dQ = derivs['dQ']
 
         dT_dprecurve = dT['dprecurve']
         dQ_dprecurve = dQ['dprecurve']
@@ -1162,7 +1277,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False, precurve=pc, precurveTip=precurveTip)
 
-            Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            Pd = outputs['P']
+            Td = outputs['T']
+            Qd = outputs['Q']
 
             dT_dprecurve_fd[:, i] = (Td - T) / delta
             dQ_dprecurve_fd[:, i] = (Qd - Q) / delta
@@ -1182,8 +1300,13 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, precurve=precurve, precurveTip=precurveTip)
 
-        P, T, Q, M, dP, dT, dQ, CP, CT, CQ, CM, dCP, dCT, dCQ \
-            = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CP = outputs['CP']
+        CT = outputs['CT']
+        CQ = outputs['CQ']
+        dCP = derivs['dCP']
+        dCT = derivs['dCT']
+        dCQ = derivs['dCQ']
 
         dCT_dprecurve = dCT['dprecurve']
         dCQ_dprecurve = dCQ['dprecurve']
@@ -1202,7 +1325,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False, precurve=pc, precurveTip=precurveTip)
 
-            Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            CPd = outputs['CP']
+            CTd = outputs['CT']
+            CQd = outputs['CQ']
 
             dCT_dprecurve_fd[:, i] = (CTd - CT) / delta
             dCQ_dprecurve_fd[:, i] = (CQd - CQ) / delta
@@ -1222,8 +1348,11 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, presweep=presweep, presweepTip=presweepTip)
 
-        Np, Tp, dNp, dTp \
-            = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, derivs = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Np = loads['Np']
+        Tp = loads['Tp']
+        dNp = derivs['dNp']
+        dTp = derivs['dTp']
 
         dNp_dpresweep = dNp['dpresweep']
         dTp_dpresweep = dTp['dpresweep']
@@ -1240,7 +1369,9 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False, presweep=ps, presweepTip=presweepTip)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dpresweep_fd[:, i] = (Npd - Np) / delta
             dTp_dpresweep_fd[:, i] = (Tpd - Tp) / delta
@@ -1258,7 +1389,13 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, presweep=presweep, presweepTip=presweepTip)
 
-        P, T, Q, M, dP, dT, dQ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        P = outputs['P']
+        T = outputs['T']
+        Q = outputs['Q']
+        dP = derivs['dP']
+        dT = derivs['dT']
+        dQ = derivs['dQ']
 
         dT_dpresweep = dT['dpresweep']
         dQ_dpresweep = dQ['dpresweep']
@@ -1277,7 +1414,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False, presweep=ps, presweepTip=presweepTip)
 
-            Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+            Pd = outputs['P']
+            Td = outputs['T']
+            Qd = outputs['Q']
 
             dT_dpresweep_fd[:, i] = (Td - T) / delta
             dQ_dpresweep_fd[:, i] = (Qd - Q) / delta
@@ -1300,8 +1440,13 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, presweep=presweep, presweepTip=presweepTip)
 
-        P, T, Q, M, dP, dT, dQ, CP, CT, CQ, CM, dCP, dCT, dCQ \
-            = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CP = outputs['CP']
+        CT = outputs['CT']
+        CQ = outputs['CQ']
+        dCP = derivs['dCP']
+        dCT = derivs['dCT']
+        dCQ = derivs['dCQ']
 
         dCT_dpresweep = dCT['dpresweep']
         dCQ_dpresweep = dCQ['dpresweep']
@@ -1319,7 +1464,10 @@ class TestGradients(unittest.TestCase):
                 self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False, presweep=ps, presweepTip=presweepTip)
 
-            Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+            CPd = outputs['CP']
+            CTd = outputs['CT']
+            CQd = outputs['CQ']
 
             dCT_dpresweep_fd[:, i] = (CTd - CT) / delta
             dCQ_dpresweep_fd[:, i] = (CQd - CQ) / delta
@@ -1341,8 +1489,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, precurve=precurve, precurveTip=precurveTip)
 
-        Np, Tp, dNp, dTp \
-            = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Np = loads['Np']
+        Tp = loads['Tp']
 
         dNp_dprecurveTip_fd = np.zeros((self.n, 1))
         dTp_dprecurveTip_fd = np.zeros((self.n, 1))
@@ -1355,7 +1504,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False, precurve=precurve, precurveTip=pct)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
         dNp_dprecurveTip_fd[:, 0] = (Npd - Np) / delta
         dTp_dprecurveTip_fd[:, 0] = (Tpd - Tp) / delta
 
@@ -1372,7 +1523,13 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, precurve=precurve, precurveTip=precurveTip)
 
-        P, T, Q, M, dP, dT, dQ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        P = outputs['P']
+        T = outputs['T']
+        Q = outputs['Q']
+        dP = derivs['dP']
+        dT = derivs['dT']
+        dQ = derivs['dQ']
 
         dT_dprecurveTip = dT['dprecurveTip']
         dQ_dprecurveTip = dQ['dprecurveTip']
@@ -1390,7 +1547,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False, precurve=precurve, precurveTip=pct)
 
-        Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dprecurveTip_fd[:, 0] = (Td - T) / delta
         dQ_dprecurveTip_fd[:, 0] = (Qd - Q) / delta
@@ -1411,8 +1571,13 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, precurve=precurve, precurveTip=precurveTip)
 
-        P, T, Q, M, dP, dT, dQ, CP, CT, CQ, CM, dCP, dCT, dCQ \
-            = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CP = outputs['CP']
+        CT = outputs['CT']
+        CQ = outputs['CQ']
+        dCP = derivs['dCP']
+        dCT = derivs['dCT']
+        dCQ = derivs['dCQ']
 
         dCT_dprecurveTip = dCT['dprecurveTip']
         dCQ_dprecurveTip = dCQ['dprecurveTip']
@@ -1430,7 +1595,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False, precurve=precurve, precurveTip=pct)
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dprecurveTip_fd[:, 0] = (CTd - CT) / delta
         dCQ_dprecurveTip_fd[:, 0] = (CQd - CQ) / delta
@@ -1450,8 +1618,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, presweep=presweep, presweepTip=presweepTip)
 
-        Np, Tp, dNp, dTp \
-            = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Np = loads['Np']
+        Tp = loads['Tp']
 
         dNp_dpresweepTip_fd = np.zeros((self.n, 1))
         dTp_dpresweepTip_fd = np.zeros((self.n, 1))
@@ -1464,7 +1633,9 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False, presweep=presweep, presweepTip=pst)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
         dNp_dpresweepTip_fd[:, 0] = (Npd - Np) / delta
         dTp_dpresweepTip_fd[:, 0] = (Tpd - Tp) / delta
 
@@ -1481,7 +1652,13 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, presweep=presweep, presweepTip=presweepTip)
 
-        P, T, Q, M, dP, dT, dQ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        P = outputs['P']
+        T = outputs['T']
+        Q = outputs['Q']
+        dP = derivs['dP']
+        dT = derivs['dT']
+        dQ = derivs['dQ']
 
         dT_dpresweepTip = dT['dpresweepTip']
         dQ_dpresweepTip = dQ['dpresweepTip']
@@ -1499,7 +1676,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False, presweep=presweep, presweepTip=pst)
 
-        Pd, Td, Qd, Md = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        Pd = outputs['P']
+        Td = outputs['T']
+        Qd = outputs['Q']
 
         dT_dpresweepTip_fd[:, 0] = (Td - T) / delta
         dQ_dpresweepTip_fd[:, 0] = (Qd - Q) / delta
@@ -1520,8 +1700,13 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, presweep=presweep, presweepTip=presweepTip)
 
-        P, T, Q, M, dP, dT, dQ, CP, CT, CQ, CM, dCP, dCT, dCQ \
-            = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CP = outputs['CP']
+        CT = outputs['CT']
+        CQ = outputs['CQ']
+        dCP = derivs['dCP']
+        dCT = derivs['dCT']
+        dCQ = derivs['dCQ']
 
         dCT_dpresweepTip = dCT['dpresweepTip']
         dCQ_dpresweepTip = dCQ['dpresweepTip']
@@ -1539,7 +1724,10 @@ class TestGradients(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False, presweep=presweep, presweepTip=pst)
 
-        Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        CPd = outputs['CP']
+        CTd = outputs['CT']
+        CQd = outputs['CQ']
 
         dCT_dpresweepTip_fd[:, 0] = (CTd - CT) / delta
         dCQ_dpresweepTip_fd[:, 0] = (CQd - CQ) / delta
@@ -1614,8 +1802,12 @@ class TestGradientsNotRotating(unittest.TestCase):
         self.Omega = 0.0  # convert to RPM
         self.azimuth = 90
 
-        self.Np, self.Tp, self.dNp, self.dTp \
-            = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+
+        loads, derivs = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        self.Np = loads['Np']
+        self.Tp = loads['Tp']
+        self.dNp = derivs['dNp']
+        self.dTp = derivs['dTp']
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -1638,7 +1830,9 @@ class TestGradientsNotRotating(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dr_fd[:, i] = (Npd - self.Np) / delta
             dTp_dr_fd[:, i] = (Tpd - self.Tp) / delta
@@ -1665,7 +1859,9 @@ class TestGradientsNotRotating(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dchord_fd[:, i] = (Npd - self.Np) / delta
             dTp_dchord_fd[:, i] = (Tpd - self.Tp) / delta
@@ -1691,7 +1887,9 @@ class TestGradientsNotRotating(unittest.TestCase):
                 self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dtheta_fd[:, i] = (Npd - self.Np) / delta
             dTp_dtheta_fd[:, i] = (Tpd - self.Tp) / delta
@@ -1717,7 +1915,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dRhub_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dRhub_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1742,7 +1942,10 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
+
         dNp_dRtip_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dRtip_fd[:, 0] = (Tpd - self.Tp) / delta
 
@@ -1766,7 +1969,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dprecone_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dprecone_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1791,7 +1996,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dtilt_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dtilt_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1816,7 +2023,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             hubht, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dhubht_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dhubht_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1841,7 +2050,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dyaw_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dyaw_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1867,7 +2078,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, azimuth)
+        loads, _ = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dazimuth_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dazimuth_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1892,7 +2105,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = self.rotor.distributedAeroLoads(Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dUinf_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dUinf_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1922,7 +2137,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, pitch, self.azimuth)
+        loads, _ = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
 
         dNp_dpitch_fd[:, 0] = (Npd - self.Np) / delta
         dTp_dpitch_fd[:, 0] = (Tpd - self.Tp) / delta
@@ -1941,9 +2158,11 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, precurve=precurve, precurveTip=precurveTip)
 
-        Np, Tp, dNp, dTp \
-            = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
-
+        loads, derivs = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Np = loads['Np']
+        Tp = loads['Tp']
+        dNp = derivs['dNp']
+        dTp = derivs['dTp']
 
         dNp_dprecurve = dNp['dprecurve']
         dTp_dprecurve = dTp['dprecurve']
@@ -1959,7 +2178,9 @@ class TestGradientsNotRotating(unittest.TestCase):
                 self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False, precurve=pc, precurveTip=precurveTip)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dprecurve_fd[:, i] = (Npd - Np) / delta
             dTp_dprecurve_fd[:, i] = (Tpd - Tp) / delta
@@ -1976,8 +2197,11 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, presweep=presweep, presweepTip=presweepTip)
 
-        Np, Tp, dNp, dTp \
-            = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, derivs = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Np = loads['Np']
+        Tp = loads['Tp']
+        dNp = derivs['dNp']
+        dTp = derivs['dTp']
 
         dNp_dpresweep = dNp['dpresweep']
         dTp_dpresweep = dTp['dpresweep']
@@ -1993,7 +2217,9 @@ class TestGradientsNotRotating(unittest.TestCase):
                 self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
                 self.hubHt, self.nSector, derivatives=False, presweep=ps, presweepTip=presweepTip)
 
-            Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+            Npd = loads['Np']
+            Tpd = loads['Tp']
 
             dNp_dpresweep_fd[:, i] = (Npd - Np) / delta
             dTp_dpresweep_fd[:, i] = (Tpd - Tp) / delta
@@ -2011,8 +2237,11 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, precurve=precurve, precurveTip=precurveTip)
 
-        Np, Tp, dNp, dTp \
-            = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, derivs = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Np = loads['Np']
+        Tp = loads['Tp']
+        dNp = derivs['dNp']
+        dTp = derivs['dTp']
 
         dNp_dprecurveTip_fd = np.zeros((self.n, 1))
         dTp_dprecurveTip_fd = np.zeros((self.n, 1))
@@ -2025,7 +2254,9 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False, precurve=precurve, precurveTip=pct)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
         dNp_dprecurveTip_fd[:, 0] = (Npd - Np) / delta
         dTp_dprecurveTip_fd[:, 0] = (Tpd - Tp) / delta
 
@@ -2042,8 +2273,11 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=True, presweep=presweep, presweepTip=presweepTip)
 
-        Np, Tp, dNp, dTp \
-            = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, derivs = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Np = loads['Np']
+        Tp = loads['Tp']
+        dNp = derivs['dNp']
+        dTp = derivs['dTp']
 
         dNp_dpresweepTip_fd = np.zeros((self.n, 1))
         dTp_dpresweepTip_fd = np.zeros((self.n, 1))
@@ -2056,13 +2290,14 @@ class TestGradientsNotRotating(unittest.TestCase):
             self.B, self.rho, self.mu, precone, self.tilt, self.yaw, self.shearExp,
             self.hubHt, self.nSector, derivatives=False, presweep=presweep, presweepTip=pst)
 
-        Npd, Tpd = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        loads, _ = rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
+        Npd = loads['Np']
+        Tpd = loads['Tp']
         dNp_dpresweepTip_fd[:, 0] = (Npd - Np) / delta
         dTp_dpresweepTip_fd[:, 0] = (Tpd - Tp) / delta
 
         np.testing.assert_allclose(dNp_dpresweepTip_fd, 0.0, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dTp_dpresweepTip_fd, 0.0, rtol=1e-4, atol=1e-8)
-
 
 
 
@@ -2127,11 +2362,13 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         self.pitch = np.zeros(3)
         self.Omega = self.Uinf*tsr/self.Rtip * 30.0/pi  # convert to RPM
 
-        #self.P, self.T, self.Q, self.M, self.dP, self.dT, self.dQ \
-        #    = self.rotor.evaluate(self.Uinf, self.Omega, self.pitch, coefficients=False)
+        outputs, derivs = self.rotor.evaluate(self.Uinf, self.Omega, self.pitch, coefficients=False)
+        self.P, self.T, self.Q = [outputs[k] for k in ('P', 'T', 'Q')]
+        self.dP, self.dT, self.dQ = [derivs[k] for k in ('dP', 'dT', 'dQ')]
 
-        self.P, self.T, self.Q, self.M, self.dP, self.dT, self.dQ, self.CP, self.CT, self.CQ, self.CM, self.dCP, self.dCT, self.dCQ \
-            = self.rotor.evaluate(self.Uinf, self.Omega, self.pitch, coefficients=True)
+        outputs, derivs = self.rotor.evaluate(self.Uinf, self.Omega, self.pitch, coefficients=True)
+        self.CP, self.CT, self.CQ = [outputs[k] for k in ('CP', 'CT', 'CQ')]
+        self.dCP, self.dCT, self.dCQ = [derivs[k] for k in ('dCP', 'dCT', 'dCQ')]
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -2154,7 +2391,10 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             delta = 1e-6*Uinf[i]
             Uinf[i] += delta
 
-            Pd, Td, Qd, Md = self.rotor.evaluate(Uinf, self.Omega, self.pitch, coefficients=False)
+            outputs, _ = self.rotor.evaluate(Uinf, self.Omega, self.pitch, coefficients=False)
+            Pd = outputs['P']
+            Td = outputs['T']
+            Qd = outputs['Q']
 
             dT_dUinf_fd[:, i] = (Td - self.T) / delta
             dQ_dUinf_fd[:, i] = (Qd - self.Q) / delta
@@ -2181,7 +2421,10 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             delta = 1e-6*Uinf[i]
             Uinf[i] += delta
 
-            Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = self.rotor.evaluate(Uinf, self.Omega, self.pitch, coefficients=True)
+            outputs, _ = self.rotor.evaluate(Uinf, self.Omega, self.pitch, coefficients=True)
+            CPd = outputs['CP']
+            CTd = outputs['CT']
+            CQd = outputs['CQ']
 
             dCT_dUinf_fd[:, i] = (CTd - self.CT) / delta
             dCQ_dUinf_fd[:, i] = (CQd - self.CQ) / delta
@@ -2207,7 +2450,10 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             delta = 1e-6*Omega[i]
             Omega[i] += delta
 
-            Pd, Td, Qd, Md = self.rotor.evaluate(self.Uinf, Omega, self.pitch, coefficients=False)
+            outputs, _ = self.rotor.evaluate(self.Uinf, Omega, self.pitch, coefficients=False)
+            Pd = outputs['P']
+            Td = outputs['T']
+            Qd = outputs['Q']
 
             dT_dOmega_fd[:, i] = (Td - self.T) / delta
             dQ_dOmega_fd[:, i] = (Qd - self.Q) / delta
@@ -2234,7 +2480,10 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             delta = 1e-6*Omega[i]
             Omega[i] += delta
 
-            Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = self.rotor.evaluate(self.Uinf, Omega, self.pitch, coefficients=True)
+            outputs, _ = self.rotor.evaluate(self.Uinf, Omega, self.pitch, coefficients=True)
+            CPd = outputs['CP']
+            CTd = outputs['CT']
+            CQd = outputs['CQ']
 
             dCT_dOmega_fd[:, i] = (CTd - self.CT) / delta
             dCQ_dOmega_fd[:, i] = (CQd - self.CQ) / delta
@@ -2260,7 +2509,10 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             delta = 1e-6
             pitch[i] += delta
 
-            Pd, Td, Qd, Md = self.rotor.evaluate(self.Uinf, self.Omega, pitch, coefficients=False)
+            outputs, _ = self.rotor.evaluate(self.Uinf, self.Omega, pitch, coefficients=False)
+            Pd = outputs['P']
+            Td = outputs['T']
+            Qd = outputs['Q']
 
             dT_dpitch_fd[:, i] = (Td - self.T) / delta
             dQ_dpitch_fd[:, i] = (Qd - self.Q) / delta
@@ -2287,7 +2539,10 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             delta = 1e-6
             pitch[i] += delta
 
-            Pd, Td, Qd, Md, CPd, CTd, CQd, CMd = self.rotor.evaluate(self.Uinf, self.Omega, pitch, coefficients=True)
+            outputs, _ = self.rotor.evaluate(self.Uinf, self.Omega, pitch, coefficients=True)
+            CPd = outputs['CP']
+            CTd = outputs['CT']
+            CQd = outputs['CQ']
 
             dCT_dpitch_fd[:, i] = (CTd - self.CT) / delta
             dCQ_dpitch_fd[:, i] = (CQd - self.CQ) / delta
@@ -2298,17 +2553,13 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         np.testing.assert_allclose(dCP_dpitch_fd, dCP_dpitch, rtol=5e-5, atol=1e-8)
 
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestGradients))
+    suite.addTest(unittest.makeSuite(TestGradientsNotRotating))
+    suite.addTest(unittest.makeSuite(TestGradientsFreestreamArray))
+    return suite
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.TextTestRunner().run(suite())
 
-    # from unittest import TestSuite
-
-    # blah = TestSuite()
-    # blah.addTest(TestGradientsFreestreamArray('test_dUinf3'))
-    # # # blah.addTest(TestGradients('test_dRhub2'))
-    # # # blah.addTest(TestGradients('test_dRhub3'))
-    # # # blah.addTest(TestGradientsFreestreamArray('test_dtheta1'))
-    # # # blah.addTest(TestGradients('test_dpitch3'))
-
-    # unittest.TextTestRunner().run(blah)
