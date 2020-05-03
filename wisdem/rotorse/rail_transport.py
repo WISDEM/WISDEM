@@ -41,10 +41,10 @@ class RailTransport(ExplicitComponent):
         # Inputs - Distributed beam properties
         self.add_input('A',            val=np.zeros(n_span), units='m**2',   desc='airfoil cross section material area')
         self.add_input('EA',           val=np.zeros(n_span), units='N',      desc='axial stiffness')
-        self.add_input('EIxx',         val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('EIyy',         val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+        self.add_input('EIxx',         val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-axis of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+        self.add_input('EIyy',         val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-axis of airfoil aligned coordinate system)')
         self.add_input('EIxy',         val=np.zeros(n_span), units='N*m**2',   desc='coupled flap-edge stiffness')
-        self.add_input('GJ',           val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
+        self.add_input('GJ',           val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-axis of airfoil aligned coordinate system)')
         self.add_input('rhoA',         val=np.zeros(n_span), units='kg/m',   desc='mass per unit length')
         self.add_input('rhoJ',         val=np.zeros(n_span), units='kg*m',   desc='polar mass moment of inertia per unit length')
         self.add_input('x_ec_abs',     val=np.zeros(n_span), units='m',      desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
@@ -66,8 +66,8 @@ class RailTransport(ExplicitComponent):
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        x_ref = inputs['blade_ref_axis'][:,0] # from LE to TE
-        y_ref = inputs['blade_ref_axis'][:,1] # from PS to SS
+        x_ref = inputs['blade_ref_axis'][:,0] # from PS to SS
+        y_ref = inputs['blade_ref_axis'][:,1] # from LE to TE
         z_ref = inputs['blade_ref_axis'][:,2] # from root to tip
         r     = util.arc_length(inputs['blade_ref_axis'])
         blade_length = r[-1]
@@ -80,10 +80,10 @@ class RailTransport(ExplicitComponent):
         rhoJ  = inputs['rhoJ']
         GJ    = inputs['GJ']
         EA    = inputs['EA']
-        EIxx  = inputs['EIxx'] # edge
-        EIyy  = inputs['EIyy'] # flap
+        EIxx  = inputs['EIxx'] # edge (rotation about x)
+        EIyy  = inputs['EIyy'] # flap (rotation about y)
         EIxy  = inputs['EIxy']
-        lateral_clearance = inputs['lateral_clearance'][0]
+        lateral_clearance = 0.5*inputs['lateral_clearance'][0]
         #n_points          = 10000
         max_strains       = inputs['max_strains'][0]
         #n_opt             = 21
@@ -127,6 +127,10 @@ class RailTransport(ExplicitComponent):
         EI22 = EIyy_cs + EIxy_cs*np.tan(alpha)
         ca   = np.cos(alpha)
         sa   = np.sin(alpha)
+        def rotate(x,y):
+            x2 =  x*ca + y*sa
+            y2 = -x*sa + y*ca
+            return x2, y2
 
         # Now store alpha for later use in degrees
         alpha = np.rad2deg(alpha)
@@ -171,7 +175,7 @@ class RailTransport(ExplicitComponent):
         # Additional 180 because LE is pointed down whereas positive x is pointed up
         roll,_ = util.nodal2sectional(theta + alpha + 180)
 
-        elements   = pyframe3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
+        elements = pyframe3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
 
         # Frame3dd options: no need for shear, axial stiffening, or higher resolution force calculations
         options = pyframe3dd.Options(False, False, -1)
@@ -243,20 +247,14 @@ class RailTransport(ExplicitComponent):
         xps_cs, yps_cs = yps, xps
         xss_cs, yss_cs = yss, xss
         
-        ps1 =  xps_cs*ca + yps_cs*sa
-        ps2 = -xps_cs*sa + yps_cs*ca
-        
-        ss1 =  xss_cs*ca + yss_cs*sa
-        ss2 = -xss_cs*sa + yss_cs*ca
+        ps1, ps2 = rotate(xps_cs, yps_cs)
+        ss1, ss2 = rotate(xss_cs, yss_cs)
 
         xle_cs, yle_cs = yle, xle
         xte_cs, yte_cs = yte, xte
         
-        le1 =  xle_cs*ca + yle_cs*sa
-        le2 = -xle_cs*sa + yle_cs*ca
-        
-        te1 =  xte_cs*ca + yte_cs*sa
-        te2 = -xte_cs*sa + yte_cs*ca
+        le1, le2 = rotate(xle_cs, yle_cs)
+        te1, te2 = rotate(xte_cs, yte_cs)
         #----------------
 
 
@@ -264,7 +262,7 @@ class RailTransport(ExplicitComponent):
         # Find last node that can be supported without blade tip extending beyond envelope
         dist_to_tip = r[-1] - r
         dtip        = r_curveH*(1 - np.cos(dist_to_tip / r_curveH))
-        itip_fix    = np.where(dtip < 0.5*lateral_clearance)[0][0]
+        itip_fix    = np.where(dtip < lateral_clearance)[0][0]
 
         # Set nodes to be convenient for coordinate system with center of curvature 0,0 in y-z plane
         nodes = pyframe3dd.NodeData(inode, x_ref, r_curveH+y_ref, z_ref, rad)
@@ -275,7 +273,7 @@ class RailTransport(ExplicitComponent):
         strainSS   = np.zeros((self.n_span, self.n_span)) # num middle reaction points X  num elements
         for k in range(2, itip_fix-1):
             # ------ reaction data ------------
-            # Pinned at root, rotations allowed at k-node and tip
+            # Pinned at root, rotations allowed at k-node and tip which are assumed to be on a "slide"
             rnode     = 1 + np.array([0, k, itip_fix])
             reactions = pyframe3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
 
@@ -288,10 +286,10 @@ class RailTransport(ExplicitComponent):
             load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
             # Node displacement: use distance from root as arc length
-            dy   = -r_curveH*(1 - np.cos(arcsH[rnode]))
-            dz   = -r_curveH*     np.sin(arcsH[rnode])
+            dy   = r_curveH*(1 - np.cos(arcsH[rnode])) - (lateral_clearance-0.5*chord[rnode])
+            dz   = r_curveH*     np.sin(arcsH[rnode])
             dx   = dM = np.zeros(dy.shape)
-            load.changePrescribedDisplacements(rnode, dx, dy, dz, dM, dM, dM)
+            load.changePrescribedDisplacements(rnode, dx, np.maximum(0.0, dy), dz, dM, dM, dM)
 
             # Store this load case
             blade.addLoadCase(load)
@@ -314,12 +312,12 @@ class RailTransport(ExplicitComponent):
             M2 = np.r_[ forces.Mzz[iCase,0], -forces.Mzz[iCase, 1::2]]
 
             # compute strain at the two points: pressure/suction side extremes
-            strainPS[k,:] = -(M1/EI11*ps2 - M2/EI22*ps1 + Fz/EA)  # negative sign because 3 is opposite of z
-            strainSS[k,:] = -(M1/EI11*ss2 - M2/EI22*ss1 + Fz/EA)  # negative sign because 3 is opposite of z
+            strainPS[k,:] = -(M1/EI11*ps2 - M2/EI22*ps1 + Fz/EA)  # negative sign because Hansen c3 is opposite of Precomp z
+            strainSS[k,:] = -(M1/EI11*ss2 - M2/EI22*ss1 + Fz/EA)
             
         # Express derailing force as a constraint
-        constr_derailH_8axle = RF_derailH / (0.5 * mass_car_8axle * gravity) / max_LV
         constr_derailH_4axle = RF_derailH / (0.5 * mass_car_4axle * gravity) / max_LV
+        constr_derailH_8axle = RF_derailH / (0.5 * mass_car_8axle * gravity) / max_LV
 
         # Find best point(s) for middle support spot
         derailed4 = np.maximum(1.0, constr_derailH_4axle).mean(axis=1)
@@ -386,8 +384,8 @@ class RailTransport(ExplicitComponent):
             M2 = np.r_[ forces.Mzz[k, 0], -forces.Mzz[k, 1::2]]
 
             # compute strain at the two points
-            strainLE[k,:] = -(M1/EI11*le2 - M2/EI22*le1 + Fz/EA) # negative sign because 3 is opposite of z
-            strainTE[k,:] = -(M1/EI11*te2 - M2/EI22*te1 + Fz/EA) # negative sign because 3 is opposite of z
+            strainLE[k,:] = -(M1/EI11*le2 - M2/EI22*le1 + Fz/EA)
+            strainTE[k,:] = -(M1/EI11*te2 - M2/EI22*te1 + Fz/EA)
             
         # Find best points for middle reaction and formulate as constraints
         constr_derailV_8axle = (RF_derailV / (0.5 * mass_car_8axle * gravity)) / max_LV
