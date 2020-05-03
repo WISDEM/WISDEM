@@ -91,7 +91,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     # Initialize openmdao problem. If running with multiple processors in MPI,
     # use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally.
-    # with other OM problems?
     if MPI:
         num_par_fd = MPI.COMM_WORLD.Get_size()
         wt_opt = Problem(model=Group(num_par_fd=num_par_fd))
@@ -309,11 +308,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         # filename supplied in the optimization yaml
         if 'recorder' in opt_options:
             if opt_options['recorder']['flag']:
-                recorder = om.SqliteRecorder(opt_options['optimization_log'])
+                recorder = om.SqliteRecorder(opt_options['recorder']['file_name'])
                 wt_opt.driver.add_recorder(recorder)
                 wt_opt.add_recorder(recorder)
                 
-                wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe', 'rlds.constr.constr_max_strainU_spar', 'rlds.constr.constr_max_strainL_spar', 'tcons.tip_deflection_ratio', 'sse.stall_check.no_stall_constraint', 'pc.tsr_opt', ]
+                wt_opt.driver.recording_options['includes'] = ['*']
                 wt_opt.driver.recording_options['record_constraints'] = True 
                 wt_opt.driver.recording_options['record_desvars'] = True 
                 wt_opt.driver.recording_options['record_objectives'] = True
@@ -323,9 +322,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     
     # Load initial wind turbine data from wt_initial to the openmdao problem
     wt_opt = yaml2openmdao(wt_opt, analysis_options, wt_init)
-    wt_opt['blade.pa.s_opt_twist']   = np.linspace(0., 1., blade_opt_options['aero_shape']['twist']['n_opt'])
+    wt_opt['blade.opt_var.s_opt_twist']   = np.linspace(0., 1., blade_opt_options['aero_shape']['twist']['n_opt'])
     if blade_opt_options['aero_shape']['twist']['flag']:
-        init_twist_opt = np.interp(wt_opt['blade.pa.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
+        init_twist_opt = np.interp(wt_opt['blade.opt_var.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
         lb_twist = np.array(blade_opt_options['aero_shape']['twist']['lower_bound'])
         ub_twist = np.array(blade_opt_options['aero_shape']['twist']['upper_bound'])
         wt_opt['blade.opt_var.twist_opt_gain']    = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
@@ -333,12 +332,62 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
             
     blade_constraints = opt_options['constraints']['blade']
-    wt_opt['blade.pa.s_opt_chord']       = np.linspace(0., 1., blade_opt_options['aero_shape']['chord']['n_opt'])
+    wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., blade_opt_options['aero_shape']['chord']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ss']['n_opt'])
     wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ps']['n_opt'])
     wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
     wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
     wt_opt['sse.stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
+    
+    # Place the last design variables from a previous run into the problem.
+    # This needs to occur after the above setup() and yaml2openmdao() calls
+    # so these values are correctly placed in the problem.
+    if 'warmstart_file' in opt_options['driver']:
+        
+        # Directly read the pyoptsparse sqlite db file
+        from pyoptsparse import SqliteDict
+        db = SqliteDict(opt_options['driver']['warmstart_file'])
+
+        # Grab the last iteration's design variables
+        last_key = db['last']
+        desvars = db[last_key]['xuser']
+        
+        # Obtain the already-setup OM problem's design variables
+        if wt_opt.model._static_mode:
+            design_vars = wt_opt.model._static_design_vars
+        else:
+            design_vars = wt_opt.model._design_vars
+        
+        # Get the absolute names from the promoted names within the OM model.
+        # We need this because the pyoptsparse db has the absolute names for
+        # variables but the OM model uses the promoted names.
+        prom2abs = wt_opt.model._var_allprocs_prom2abs_list['output']
+        abs2prom = {}
+        for key in design_vars:
+            abs2prom[prom2abs[key][0]] = key
+
+        # Loop through each design variable
+        for key in desvars:
+            prom_key = abs2prom[key]
+            
+            # Scale each DV based on the OM scaling from the problem.
+            # This assumes we're running the same problem with the same scaling
+            scaler = design_vars[prom_key]['scaler']
+            adder = design_vars[prom_key]['adder']
+            
+            if scaler is None:
+                scaler = 1.0
+            if adder is None:
+                adder = 0.0
+            
+            scaled_dv = desvars[key] / scaler - adder
+            
+            # Special handling for blade twist as we only have the
+            # last few control points as design variables
+            if 'twist_opt_gain' in key:
+                wt_opt[key][2:] = scaled_dv
+            else:
+                wt_opt[key][:] = scaled_dv
 
     if 'check_totals' in opt_options['driver']:
         if opt_options['driver']['check_totals']:

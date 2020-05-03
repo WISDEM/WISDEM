@@ -758,15 +758,25 @@ class CCBlade(object):
             fzero, a, ap = _bem.inductionfactors(r, chord, self.Rhub, self.Rtip, phi,
                                                  cl, cd, self.B, Vx, Vy, **self.bemoptions)
 
+            # if isnan(a):
+            #     if r == self.Rhub:
+            #         fzero, a, ap = _bem.inductionfactors(r + 1.e-5, chord, self.Rhub, self.Rtip, phi,
+            #                                      cl, cd, self.B, Vx, Vy, **self.bemoptions)
+            #     elif r == self.Rtip:
+            #         fzero, a, ap = _bem.inductionfactors(r - 1.e-5, chord, self.Rhub, self.Rtip, phi,
+            #                                      cl, cd, self.B, Vx, Vy, **self.bemoptions)
+
+            #     print(a)
+            #     #exit()
         
-        return fzero, a, ap
+        return fzero, a, ap, cl, cd
 
     def __errorFunction(self, phi, r, chord, theta, af, Vx, Vy):
         """strip other outputs leaving only residual for Brent's method
         Standard use case, geometry is known
         """
 
-        fzero, a, ap = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
+        fzero, a, ap, _, _ = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
 
         return fzero
 
@@ -838,14 +848,15 @@ class CCBlade(object):
         sphi = sin(phi)
 
         if rotating:
-            _, a, ap = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
+            _, a, ap, cl, cd = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
         else:
             a = 0.0
             ap = 0.0
                 
         alpha_rad, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch,
                                              chord, theta, self.rho, self.mu)
-        cl, cd = af.evaluate(alpha_rad, Re)
+        if not rotating:
+            cl, cd = af.evaluate(alpha_rad, Re)
 
         cn = cl*cphi + cd*sphi  # these expressions should always contain drag
         ct = cl*sphi - cd*cphi
