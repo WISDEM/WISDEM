@@ -1,8 +1,8 @@
-Alsoimport numpy as np
+import numpy as np
 import scipy.constants as spc
 from openmdao.api import ExplicitComponent
 import wisdem.pyframe3dd.frame3dd as frame3dd
-from wisdem.commonse.utilities import rotate, arc_length
+import wisdem.commonse.utilities as util
 from wisdem.commonse.constants import gravity
 import copy
 
@@ -57,10 +57,10 @@ class RailTransport(ExplicitComponent):
         self.add_output('constr_LV_8axle_horiz', val=np.zeros(3), desc='Constraint for max L/V for an 8-axle flatcar on horiz curves, violated when bigger than 1')
         self.add_output('constr_LV_4axle_vert', val=np.zeros(3), desc='Constraint for max L/V for a 4-axle flatcar on vert curves, violated when bigger than 1')
         self.add_output('constr_LV_8axle_vert', val=np.zeros(3), desc='Constraint for max L/V for an 8-axle flatcar on vert curves, violated when bigger than 1')
-        self.add_output('constr_strainPS', val=np.zeros(n_span-1), desc='Strain along pressure side of blade on a horizontal curve')
-        self.add_output('constr_strainSS', val=np.zeros(n_span-1), desc='Strain along suction side of blade on a horizontal curve')
-        self.add_output('constr_strainLE', val=np.zeros(n_span-1), desc='Strain along leading edge side of blade on a vertical curve')
-        self.add_output('constr_strainTE', val=np.zeros(n_span-1), desc='Strain along trailing edge side of blade on a vertical curve')
+        self.add_output('constr_strainPS', val=np.zeros(n_span), desc='Strain along pressure side of blade on a horizontal curve')
+        self.add_output('constr_strainSS', val=np.zeros(n_span), desc='Strain along suction side of blade on a horizontal curve')
+        self.add_output('constr_strainLE', val=np.zeros(n_span), desc='Strain along leading edge side of blade on a vertical curve')
+        self.add_output('constr_strainTE', val=np.zeros(n_span), desc='Strain along trailing edge side of blade on a vertical curve')
 
 
     def compute(self, inputs, outputs):
@@ -69,7 +69,7 @@ class RailTransport(ExplicitComponent):
         x_ref = inputs['blade_ref_axis'][:,0] # from LE to TE
         y_ref = inputs['blade_ref_axis'][:,1] # from PS to SS
         z_ref = inputs['blade_ref_axis'][:,2] # from root to tip
-        r     = arc_length(inputs['blade_ref_axis'])
+        r     = util.arc_length(inputs['blade_ref_axis'])
         blade_length = r[-1]
         theta = inputs['theta']
         chord = inputs['chord']
@@ -98,12 +98,13 @@ class RailTransport(ExplicitComponent):
         #------- Get turn radius geometry for horizontal and vertical curves
         # Horizontal turns- defined as a degree of arc assuming a 100ft "chord"
         # https://trn.trains.com/railroads/ask-trains/2011/01/measuring-track-curvature
-        angleH_rad  = np.deg2rad(inputs['horizontal_angle_deg'][0])
-        r_curveH    = spc.foot * 100. /(2.*np.sin(0.5*angleH_rad))
-        arcsH       = r / r_curveH
+        angleH_rad = np.deg2rad(inputs['horizontal_angle_deg'][0])
+        r_curveH   = spc.foot * 100. /(2.*np.sin(0.5*angleH_rad))
+        arcsH      = r / r_curveH
+        
         # Vertical curves on hills and sags defined directly by radius
-        r_curveV    = inputs['min_vertical_radius'][0]
-        arcsV       = r / r_curveV
+        r_curveV   = inputs['min_vertical_radius'][0]
+        arcsV      = r / r_curveV
         # ----------
 
 
@@ -179,8 +180,8 @@ class RailTransport(ExplicitComponent):
         
         #------ Airfoil positions at which to measure strain
         # Find the cross sectional points furthest from the elastic center at each spanwise location to be used for strain measurement
-        xps = xss = np.zeros(AE.shape)
-        yle = yte = np.zeros(EC.shape)
+        xps = xss = np.zeros(self.n_span)
+        yle = yte = np.zeros(self.n_span)
         yps = np.zeros(self.n_span)
         yss = np.zeros(self.n_span)
         xte = np.zeros(self.n_span)
@@ -189,7 +190,7 @@ class RailTransport(ExplicitComponent):
         for i in range(self.n_span):        
             ## Rotate the profiles to the blade reference system
             profile_i = inputs['coord_xy_interp'][i,:,:]
-            profile_i_rot = np.column_stack(rotate(inputs['pitch_axis'][i], 0., profile_i[:,0], profile_i[:,1], np.radians(theta[i])))
+            profile_i_rot = np.column_stack(util.rotate(inputs['pitch_axis'][i], 0., profile_i[:,0], profile_i[:,1], np.radians(theta[i])))
             # normalize
             profile_i_rot[:,0] -= min(profile_i_rot[:,0])
             profile_i_rot = profile_i_rot/ max(profile_i_rot[:,0])
@@ -264,14 +265,14 @@ class RailTransport(ExplicitComponent):
         dist_to_tip = r[-1] - r
         dtip        = r_curveH*(1 - np.cos(dist_to_tip / r_curveH))
         itip_fix    = np.where(dtip < 0.5*lateral_clearance)[0][0]
-        
+
         # Set nodes to be convenient for coordinate system with center of curvature 0,0 in y-z plane
         nodes = frame3dd.NodeData(inode, x_ref, r_curveH+y_ref, z_ref, rad)
 
         # Consider middle attachment point for blade: Find the one that minizes reaction force and not adjacent to the others
-        RF_derail = np.inf * np.ones((self.n_span, 3))  # num middle reaction points X  num reactions
-        strainPS  = np.zeros((self.n_span, self.n_span-1)) # num middle reaction points X  num elements
-        strainSS  = np.zeros((self.n_span, self.n_span-1)) # num middle reaction points X  num elements
+        RF_derailH = np.inf * np.ones((self.n_span, 3))  # num middle reaction points X  num reactions
+        strainPS   = np.zeros((self.n_span, self.n_span)) # num middle reaction points X  num elements
+        strainSS   = np.zeros((self.n_span, self.n_span)) # num middle reaction points X  num elements
         for k in range(2, itip_fix-1):
             # ------ reaction data ------------
             # Pinned at root, rotations allowed at k-node and tip
@@ -300,15 +301,14 @@ class RailTransport(ExplicitComponent):
             
             # Run the case
             displacements, forces, reactions, internalForces, mass, modal = blade.run()
-            iCase = 0
 
             # Reaction forces for derailment:
             #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
             #  - Moment around axis perpendicular to ground
-            print(np.c_[reactions.Fx, reactions.Fy, reactions.Fz, reactions.Mxx, reactions.Myy, reactions.Mzz])
-            RF_derailH[k,:] = -0.5*reactions.Fy - reactions.Mx/flatcar_tc_length
+            RF_derailH[k,:] = 0.5*np.abs(reactions.Fy) + np.abs(reactions.Mxx)/flatcar_tc_length
             
             # Element shear and bending, one per element, which are already in principle directions in Hansen's notation
+            iCase = 0
             Fz = np.r_[-forces.Nx[ iCase,0],  forces.Nx[ iCase, 1::2]]
             M1 = np.r_[-forces.Myy[iCase,0],  forces.Myy[iCase, 1::2]]
             M2 = np.r_[ forces.Mzz[iCase,0], -forces.Mzz[iCase, 1::2]]
@@ -318,18 +318,17 @@ class RailTransport(ExplicitComponent):
             strainSS[k,:] = -(M1/EI11*ss2 - M2/EI22*ss1 + Fz/EA)  # negative sign because 3 is opposite of z
             
         # Express derailing force as a constraint
-        constr_derailH_8axle = (RF_derailH / (0.5 * mass_car_8axle * gravity)) / max_LV
-        constr_derailH_4axle = (RF_derailH / (0.5 * mass_car_4axle * gravity)) / max_LV
+        constr_derailH_8axle = RF_derailH / (0.5 * mass_car_8axle * gravity) / max_LV
+        constr_derailH_4axle = RF_derailH / (0.5 * mass_car_4axle * gravity) / max_LV
 
         # Find best point(s) for middle support spot
-        derailed4 = np.maximum([1.0, constr_derailH_4axle]).mean(axis=1)
-        derailed8 = np.maximum([1.0, constr_derailH_8axle]).mean(axis=1)
+        derailed4 = np.maximum(1.0, constr_derailH_4axle).mean(axis=1)
+        derailed8 = np.maximum(1.0, constr_derailH_8axle).mean(axis=1)
         ibest4    = np.argmin(derailed4)
         ibest8    = np.argmin(derailed8)
         outputs['constr_LV_4axle_horiz'] = constr_derailH_4axle[ibest4,:]
         outputs['constr_LV_8axle_horiz'] = constr_derailH_8axle[ibest8,:]
-        print(derailed8)
-        print(ibest8)
+
         # Strain constraint outputs
         outputs['constr_strainPS'] = strainPS[ibest8,:] / max_strains
         outputs['constr_strainSS'] = strainSS[ibest8,:] / max_strains
@@ -373,14 +372,13 @@ class RailTransport(ExplicitComponent):
         # Reaction forces for derailment:
         #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
         #  - Moment around axis perpendicular to ground
-        print(np.c_[reactions.Fx, reactions.Fy, reactions.Fz, reactions.Mxx, reactions.Myy, reactions.Mzz])
         # Should have 2 cases X 3 rxn nodes
-        RF_derailV = -0.5*reactions.Fy - reactions.Mx/flatcar_tc_length
+        RF_derailV = -0.5*reactions.Fy - reactions.Mxx/flatcar_tc_length
         RF_derailV = RF_derailV.max(axis=0) # max across hill & sag
 
         # Loop over hill & sag cases, then take worst strain case
-        strainLE = np.zeros((2, self.n_span-1))
-        strainTE = np.zeros((2, self.n_span-1))
+        strainLE = np.zeros((2, self.n_span))
+        strainTE = np.zeros((2, self.n_span))
         for k in range(2):
             # Element shear and bending, one per element, with conversion to profile c.s. using Hansen's notation
             Fz = np.r_[-forces.Nx[ k, 0],  forces.Nx[ k, 1::2]]
