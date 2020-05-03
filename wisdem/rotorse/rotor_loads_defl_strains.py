@@ -170,9 +170,9 @@ class RunFrame3DD(ExplicitComponent):
         self.n_freq = n_freq = blade_init_options['n_freq']
 
         # Locations of airfoils in global c.s.
-        self.add_input('x_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth x-coordinate system')
-        self.add_input('y_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth y-coordinate system')
-        self.add_input('z_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth z-coordinate system')
+        self.add_input('x_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth x-coordinate system (from LE to TE)')
+        self.add_input('y_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth y-coordinate system (from PS to SS)')
+        self.add_input('z_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth z-coordinate system (from root to tip)')
         self.add_input('theta',    val=np.zeros(n_span),   units='deg',    desc='structural twist')
         
         # all inputs/outputs in airfoil coordinate system
@@ -192,8 +192,8 @@ class RunFrame3DD(ExplicitComponent):
         self.add_input('r',     val=np.zeros(n_span), units='m',        desc='locations of properties along beam')
         self.add_input('A',     val=np.zeros(n_span), units='m**2',     desc='airfoil cross section material area')
         self.add_input('EA',    val=np.zeros(n_span), units='N',        desc='axial stiffness')
-        self.add_input('EIxx',  val=np.zeros(n_span), units='N*m**2',   desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('EIyy',  val=np.zeros(n_span), units='N*m**2',   desc='flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+        self.add_input('EIxx',  val=np.zeros(n_span), units='N*m**2',   desc='edgewise stiffness (bending about :ref:`x-axis of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+        self.add_input('EIyy',  val=np.zeros(n_span), units='N*m**2',   desc='flapwise stiffness (bending about y-axis of airfoil aligned coordinate system)')
         self.add_input('EIxy',  val=np.zeros(n_span), units='N*m**2',   desc='coupled flap-edge stiffness')
         self.add_input('GJ',    val=np.zeros(n_span), units='N*m**2',   desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
         self.add_input('rhoA',  val=np.zeros(n_span), units='kg/m',     desc='mass per unit length')
@@ -253,6 +253,7 @@ class RunFrame3DD(ExplicitComponent):
         #np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af,xu_strain_spar=xu_strain_spar,xl_strain_spar=xl_strain_spar,yu_strain_spar=yu_strain_spar,yl_strain_spar=yl_strain_spar,xu_strain_te=xu_strain_te,xl_strain_te=xl_strain_te,yu_strain_te=yu_strain_te,yl_strain_te=yl_strain_te)
         
         # Determine principal C.S. (with swap of x, y for profile c.s.)
+        # Can get to Hansen's c.s. from Precomp's c.s. by rotating around z -90 deg, then y by 180 (swap x-y)
         EIxx_cs , EIyy_cs = EIyy.copy() , EIxx.copy()
         x_ec_cs , y_ec_cs = y_ec.copy() , x_ec.copy()
         EIxy_cs = EIxy.copy()
@@ -270,6 +271,10 @@ class RunFrame3DD(ExplicitComponent):
         EI22 = EIyy_cs + EIxy_cs*np.tan(alpha)
         ca   = np.cos(alpha)
         sa   = np.sin(alpha)
+        def rotate(x,y):
+            x2 =  x*ca + y*sa
+            y2 = -x*sa + y*ca
+            return x2, y2
         
         # Now store alpha for later use in degrees
         alpha = np.rad2deg(alpha)
@@ -409,20 +414,15 @@ class RunFrame3DD(ExplicitComponent):
             # convert to principal axes, unless already there
             if self.options['pbeam']:
                 Mxx, Myy = My, Mx
-                M1 =  Mxx*ca + Myy*sa
-                M2 = -Mxx*sa + Myy*ca
+                M1, M2 = rotate(Mxx, Myy)
             else:
                 M1,M2 = My,Mx
 
-            x =  xuu*ca + yuu*sa
-            y = -xuu*sa + yuu*ca
-
             # compute strain
-            strainU = -(M1/EI11*y - M2/EI22*x + Fz/EA)  # negative sign because 3 is opposite of z
+            x,y = rotate(xuu, yuu)
+            strainU = -(M1/EI11*y - M2/EI22*x + Fz/EA)  # negative sign because Hansen c3 is opposite of Precomp z
 
-            x =  xll*ca + yll*sa
-            y = -xll*sa + yll*ca
-
+            x,y = rotate(xll, yll)
             strainL = -(M1/EI11*y - M2/EI22*x + Fz/EA)
 
             return strainU, strainL
