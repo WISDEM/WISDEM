@@ -18,14 +18,16 @@ class CCBladeGeometry(ExplicitComponent):
         self.add_input('precurve_in', val=np.zeros(NINPUT), desc='prebend distribution', units='m')
         self.add_input('presweep_in', val=np.zeros(NINPUT), desc='presweep distribution', units='m')
         self.add_input('precone', val=0.0, desc='precone angle', units='deg')
+        
         self.add_output('R', val=0.0, units='m', desc='rotor radius')
         self.add_output('diameter', val=0.0, units='m')
         self.add_output('precurveTip', val=0.0, units='m', desc='tip prebend')
         self.add_output('presweepTip', val=0.0, units='m', desc='tip sweep')
         
-        #self.declare_partials('R', '*')
-        #self.declare_partials('diameter', '*')
-        #self.declare_partials('diameter', 'R')
+        self.declare_partials('R', ['Rtip','precurve_in','precone'])
+        self.declare_partials('diameter', ['R','Rtip','precurve_in','precone'])
+        self.declare_partials('precurveTip', 'precurve_in')
+        self.declare_partials('presweepTip', 'presweep_in')
         
     def compute(self, inputs, outputs):
         
@@ -38,21 +40,27 @@ class CCBladeGeometry(ExplicitComponent):
         self.R = self.Rtip*cosd(self.precone) + self.precurveTip*sind(self.precone)
         outputs['R']            = self.R
         outputs['diameter']     = self.R*2
-        '''
+
 
     def compute_partials(self, inputs, J):
+        NINPUT = self.options['NINPUT']
+        myzero = np.zeros(NINPUT)
+        
+        J_sub = np.array([cosd(self.precone), sind(self.precone),
+            (-self.Rtip*sind(self.precone) + self.precurveTip*sind(self.precone))*np.pi/180.0])
 
-        J_sub = np.array([[cosd(self.precone), sind(self.precone),
-            (-self.Rtip*sind(self.precone) + self.precurveTip*sind(self.precone))*np.pi/180.0]])
-
-        J['R', 'Rtip'] = J_sub[0][0]
-        J['R', 'precurveTip'] = J_sub[0][1]
-        J['R', 'precone'] = J_sub[0][2]
-        J['diameter', 'Rtip'] = 2.0*J_sub[0][0]
-        J['diameter', 'precurveTip'] = 2.0*J_sub[0][1]
-        J['diameter', 'precone'] = 2.0*J_sub[0][2]
+        J['R', 'Rtip'] = J_sub[0]
+        J['R', 'precurve_in'] = myzero
+        J['R', 'precurve_in'][-1] = J_sub[1]
+        J['R', 'precone'] = J_sub[2]
+        J['diameter', 'Rtip'] = 2.0*J['R', 'Rtip']
+        J['diameter', 'precurve_in'] = 2.0*J['R', 'precurve_in']
+        J['diameter', 'precone'] = 2.0*J['R', 'precone']
         J['diameter', 'R'] = 2.0
-        '''
+        J['precurveTip', 'precurve_in'] = myzero
+        J['precurveTip', 'precurve_in'][-1] = 1.0
+        J['presweepTip', 'presweep_in'] = myzero
+        J['presweepTip', 'presweep_in'][-1] = 1.0
 
         
 
@@ -116,61 +124,60 @@ class CCBladePower(ExplicitComponent):
         self.add_discrete_input('wakerotation', val=True, desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
         self.add_discrete_input('usecd', val=True, desc='use drag coefficient in computing induction factors')
 
-        #self.declare_partials(['P', 'T', 'Q'],['precone', 'tilt', 'hub_height', 'Rhub', 'Rtip', 'yaw',
-        #                                       'Uhub', 'Omega', 'pitch', 'r', 'chord', 'theta',
-        #                                       'precurve', 'precurveTip'])
+        self.declare_partials(['P', 'T', 'Q'],['precone', 'tilt', 'hub_height', 'Rhub', 'Rtip', 'yaw',
+                                               'Uhub', 'Omega', 'pitch', 'r', 'chord', 'theta',
+                                               'precurve', 'precurveTip'])
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        self.r = inputs['r']
-        self.chord = inputs['chord']
-        self.theta = inputs['theta']
-        self.Rhub = inputs['Rhub']
-        self.Rtip = inputs['Rtip']
-        self.hub_height = inputs['hub_height']
-        self.precone = inputs['precone']
-        self.tilt = inputs['tilt']
-        self.yaw = inputs['yaw']
-        self.precurve = inputs['precurve']
-        self.precurveTip = inputs['precurveTip']
-        # self.airfoils = discrete_inputs['airfoils']
-        self.B = discrete_inputs['nBlades']
-        self.rho = inputs['rho']
-        self.mu = inputs['mu']
-        self.shearExp = inputs['shearExp']
-        self.nSector = discrete_inputs['nSector']
-        self.tiploss = discrete_inputs['tiploss']
-        self.hubloss = discrete_inputs['hubloss']
-        self.wakerotation = discrete_inputs['wakerotation']
-        self.usecd = discrete_inputs['usecd']
-        self.Uhub = inputs['Uhub']
-        self.Omega = inputs['Omega']
-        self.pitch = inputs['pitch']
+        r = inputs['r']
+        chord = inputs['chord']
+        theta = inputs['theta']
+        Rhub = inputs['Rhub']
+        Rtip = inputs['Rtip']
+        hub_height = inputs['hub_height']
+        precone = inputs['precone']
+        tilt = inputs['tilt']
+        yaw = inputs['yaw']
+        precurve = inputs['precurve']
+        precurveTip = inputs['precurveTip']
+        # airfoils = discrete_inputs['airfoils']
+        B = discrete_inputs['nBlades']
+        rho = inputs['rho']
+        mu = inputs['mu']
+        shearExp = inputs['shearExp']
+        nSector = discrete_inputs['nSector']
+        tiploss = discrete_inputs['tiploss']
+        hubloss = discrete_inputs['hubloss']
+        wakerotation = discrete_inputs['wakerotation']
+        usecd = discrete_inputs['usecd']
+        Uhub = inputs['Uhub']
+        Omega = inputs['Omega']
+        pitch = inputs['pitch']
 
         af = [None]*self.naero
         for i in range(self.naero):
             af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
         
-        self.ccblade = CCBlade(self.r, self.chord, self.theta, af, self.Rhub, self.Rtip, self.B,
-            self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hub_height,
-            self.nSector, self.precurve, self.precurveTip, tiploss=self.tiploss, hubloss=self.hubloss,
-            wakerotation=self.wakerotation, usecd=self.usecd, derivatives=True)
+        ccblade = CCBlade(r, chord, theta, af, Rhub, Rtip, B,
+            rho, mu, precone, tilt, yaw, shearExp, hub_height,
+            nSector, precurve, precurveTip, tiploss=tiploss, hubloss=hubloss,
+            wakerotation=wakerotation, usecd=usecd, derivatives=True)
 
         # power, thrust, torque
-        self.P, self.T, self.Q, self.M, self.dP, self.dT, self.dQ \
-            = self.ccblade.evaluate(self.Uhub, self.Omega, self.pitch, coefficients=False)
-        outputs['T'] = self.T
-        outputs['Q'] = self.Q
-        outputs['P'] = self.P
-        '''
+        myoutputs, self.derivs = ccblade.evaluate(Uhub, Omega, pitch, coefficients=False)
+        outputs['T'] = myoutputs['T']
+        outputs['Q'] = myoutputs['Q']
+        outputs['P'] = myoutputs['P']
+        
 
     def compute_partials(self, inputs, J, discrete_inputs):
 
-        dP = self.dP
-        dT = self.dT
-        dQ = self.dQ
-        
+        dP = self.derivs['dP']
+        dT = self.derivs['dT']
+        dQ = self.derivs['dQ']
+
         J['P', 'precone']     = dP['dprecone']
         J['P', 'tilt']        = dP['dtilt']
         J['P', 'hub_height']  = dP['dhubHt']
@@ -215,7 +222,6 @@ class CCBladePower(ExplicitComponent):
         J['Q', 'theta']       = dQ['dtheta']
         J['Q', 'precurve']    = dQ['dprecurve']
         J['Q', 'precurveTip'] = dQ['dprecurveTip']
-        '''
 
         
 
@@ -283,10 +289,10 @@ class CCBladeLoads(ExplicitComponent):
         # self.add_output('loads_pitch',  val=0.0, units='deg', desc='pitch angle')
         # self.add_output('loads_azimuth',val=0.0, units='deg', desc='azimuthal angle')
         
-        #self.declare_partials('loads_r', ['r', 'Rhub', 'Rtip'])
-        #self.declare_partials(['loads_Px', 'loads_Py'],
-        #                      ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hub_height', 'precone', 'tilt',
-        #                       'yaw', 'V_load', 'Omega_load', 'pitch_load', 'azimuth_load', 'precurve'])
+        self.declare_partials('loads_r', ['r', 'Rhub', 'Rtip'])
+        self.declare_partials(['loads_Px', 'loads_Py', 'loads_Pz'],
+                              ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hub_height', 'precone', 'tilt',
+                               'yaw', 'V_load', 'Omega_load', 'pitch_load', 'azimuth_load', 'precurve'])
         #self.declare_partials('loads_V', 'V_load')
         #self.declare_partials('loads_Omega', 'Omega_load')
         #self.declare_partials('loads_pitch', 'pitch_load')
@@ -294,54 +300,53 @@ class CCBladeLoads(ExplicitComponent):
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        self.r = inputs['r']
-        self.chord = inputs['chord']
-        self.theta = inputs['theta']
-        self.Rhub = inputs['Rhub']
-        self.Rtip = inputs['Rtip']
-        self.hub_height = inputs['hub_height']
-        self.precone = inputs['precone']
-        self.tilt = inputs['tilt']
-        self.yaw = inputs['yaw']
-        self.precurve = inputs['precurve']
-        self.precurveTip = inputs['precurveTip']
-        # self.airfoils = discrete_inputs['airfoils']
-        self.B = discrete_inputs['nBlades']
-        self.rho = inputs['rho']
-        self.mu = inputs['mu']
-        self.shearExp = inputs['shearExp']
-        self.nSector = discrete_inputs['nSector']
-        self.tiploss = discrete_inputs['tiploss']
-        self.hubloss = discrete_inputs['hubloss']
-        self.wakerotation = discrete_inputs['wakerotation']
-        self.usecd = discrete_inputs['usecd']
-        self.V_load = inputs['V_load']
-        self.Omega_load = inputs['Omega_load']
-        self.pitch_load = inputs['pitch_load']
-        self.azimuth_load = inputs['azimuth_load']
+        r = inputs['r']
+        chord = inputs['chord']
+        theta = inputs['theta']
+        Rhub = inputs['Rhub']
+        Rtip = inputs['Rtip']
+        hub_height = inputs['hub_height']
+        precone = inputs['precone']
+        tilt = inputs['tilt']
+        yaw = inputs['yaw']
+        precurve = inputs['precurve']
+        precurveTip = inputs['precurveTip']
+        # airfoils = discrete_inputs['airfoils']
+        B = discrete_inputs['nBlades']
+        rho = inputs['rho']
+        mu = inputs['mu']
+        shearExp = inputs['shearExp']
+        nSector = discrete_inputs['nSector']
+        tiploss = discrete_inputs['tiploss']
+        hubloss = discrete_inputs['hubloss']
+        wakerotation = discrete_inputs['wakerotation']
+        usecd = discrete_inputs['usecd']
+        V_load = inputs['V_load']
+        Omega_load = inputs['Omega_load']
+        pitch_load = inputs['pitch_load']
+        azimuth_load = inputs['azimuth_load']
 
 
-        if len(self.precurve) == 0:
-            self.precurve = np.zeros_like(self.r)
+        if len(precurve) == 0:
+            precurve = np.zeros_like(r)
 
         # airfoil files
-        # n = len(self.airfoils)
         af = [None]*self.n_span
         for i in range(self.n_span):
             af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
 
-        self.ccblade = CCBlade(self.r, self.chord, self.theta, af, self.Rhub, self.Rtip, self.B,
-            self.rho, self.mu, self.precone, self.tilt, self.yaw, self.shearExp, self.hub_height,
-            self.nSector, self.precurve, self.precurveTip, tiploss=self.tiploss, hubloss=self.hubloss,
-            wakerotation=self.wakerotation, usecd=self.usecd, derivatives=True)
+        ccblade = CCBlade(r, chord, theta, af, Rhub, Rtip, B,
+            rho, mu, precone, tilt, yaw, shearExp, hub_height,
+            nSector, precurve, precurveTip, tiploss=tiploss, hubloss=hubloss,
+            wakerotation=wakerotation, usecd=usecd, derivatives=True)
 
         # distributed loads
-        Np, Tp, self.dNp, self.dTp \
-            = self.ccblade.distributedAeroLoads(self.V_load, self.Omega_load, self.pitch_load, self.azimuth_load)
-        
+        loads, self.derivs = ccblade.distributedAeroLoads(V_load, Omega_load, pitch_load, azimuth_load)
+        Np = loads['Np']
+        Tp = loads['Tp']
         
         # concatenate loads at root/tip
-        outputs['loads_r'] = self.r
+        outputs['loads_r'] = r
 
         # conform to blade-aligned coordinate system
         outputs['loads_Px'] = Np
@@ -349,8 +354,8 @@ class CCBladeLoads(ExplicitComponent):
         outputs['loads_Pz'] = 0*Np
 
         # import matplotlib.pyplot as plt
-        # plt.plot(self.r, Np)
-        # plt.plot(self.r, -Tp)
+        # plt.plot(r, Np)
+        # plt.plot(r, -Tp)
         # plt.show()
 
         # # return other outputs needed
@@ -358,12 +363,12 @@ class CCBladeLoads(ExplicitComponent):
         # outputs['loads_Omega'] = self.Omega_load
         # outputs['loads_pitch'] = self.pitch_load
         # outputs['loads_azimuth'] = self.azimuth_load
-        '''
+
     def compute_partials(self, inputs, J, discrete_inputs=None):
 
-        dNp = self.dNp
-        dTp = self.dTp
-        n = len(self.r)
+        dNp = self.derivs['dNp']
+        dTp = self.derivs['dTp']
+        n = self.n_span
 
         dr_dr = np.eye(n)
         dr_dRhub = np.zeros(n)
@@ -380,10 +385,12 @@ class CCBladeLoads(ExplicitComponent):
         dazimuth = np.zeros(4*n+10)
         dazimuth[3*n+9] = 1.0
 
+        
         zero = np.zeros(self.naero)
         J['loads_r',      'r']             = dr_dr
         J['loads_r',      'Rhub']          = dr_dRhub
         J['loads_r',      'Rtip']          = dr_dRtip
+        
         J['loads_Px',     'r']             = dNp['dr']
         J['loads_Px',     'chord']         = dNp['dchord']
         J['loads_Px',     'theta']         = dNp['dtheta']
@@ -398,6 +405,7 @@ class CCBladeLoads(ExplicitComponent):
         J['loads_Px',     'pitch_load']    = np.squeeze(dNp['dpitch'])
         J['loads_Px',     'azimuth_load']  = np.squeeze(dNp['dazimuth'])
         J['loads_Px',     'precurve']      = dNp['dprecurve']
+        
         J['loads_Py',     'r']             = -dTp['dr']
         J['loads_Py',     'chord']         = -dTp['dchord']
         J['loads_Py',     'theta']         = -dTp['dtheta']
@@ -412,11 +420,16 @@ class CCBladeLoads(ExplicitComponent):
         J['loads_Py',     'pitch_load']    = -np.squeeze(dTp['dpitch'])
         J['loads_Py',     'azimuth_load']  = -np.squeeze(dTp['dazimuth'])
         J['loads_Py',     'precurve']      = -dTp['dprecurve']
-        J['loads_V',      'V_load']        = 1.0
-        J['loads_Omega',  'Omega_load']    = 1.0
-        J['loads_pitch',  'pitch_load']    = 1.0
-        J['loads_azimuth', 'azimuth_load'] = 1.0
-        '''
+
+        for key in ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hub_height', 'precone', 'tilt',
+                    'yaw', 'V_load', 'Omega_load', 'pitch_load', 'azimuth_load', 'precurve']:
+            J['loads_Pz', key] = 0.0*J['loads_Px', key]
+        
+        #J['loads_V',      'V_load']        = 1.0
+        #J['loads_Omega',  'Omega_load']    = 1.0
+        #J['loads_pitch',  'pitch_load']    = 1.0
+        #J['loads_azimuth', 'azimuth_load'] = 1.0
+
 
         
 
@@ -531,8 +544,9 @@ class AeroHubLoads(ExplicitComponent):
 
         # distributed loads
         for i_blade in range(B):
-            Np, Tp, dNp, dTp \
-                = ccblade.distributedAeroLoads(V_load, Omega_load, pitch_load, azimuth_blades[i_blade])
+            loads, self.derivs = ccblade.distributedAeroLoads(V_load, Omega_load, pitch_load, azimuth_blades[i_blade])
+            Np = loads['Np']
+            Tp = loads['Tp']
             
             # conform to blade-aligned coordinate system
             Px = Np

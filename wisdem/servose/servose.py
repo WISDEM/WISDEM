@@ -512,7 +512,8 @@ class ComputePowerCurve(ExplicitComponent):
         Omega_rpm = Omega * 30. / np.pi
 
         # Set baseline power production
-        P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
+        myout, derivs = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
+        P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
         P, eff  = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
         Cp      = Cp_aero*eff
 
@@ -543,8 +544,8 @@ class ComputePowerCurve(ExplicitComponent):
 
         # Function to be used inside of power maximization until Region 3
         def maximizePower(pitch, Uhub, Omega_rpm):
-            P, _, _, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
-            return -P
+            myout, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
+            return -myout['P']
 
         # Maximize power until Region 3
         region2p5 = False
@@ -559,7 +560,8 @@ class ComputePowerCurve(ExplicitComponent):
                                        bounds=bnds, method='bounded', options={'disp':False, 'xatol':1e-2, 'maxiter':40})['x']
 
             # Find associated power
-            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
             P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
             Cp[i]      = Cp_aero[i]*eff
 
@@ -579,11 +581,12 @@ class ComputePowerCurve(ExplicitComponent):
         i = i_rated
         if i < self.n_pc-1:
             def const_Urated(x):
-                pitch   = x[0]           
-                Uhub_i  = x[1]
-                Omega_i = min([Uhub_i * tsr / R_tip, Omega_max])
-                P_aero_i, _, _, _ = self.ccblade.evaluate([Uhub_i], [Omega_i*30./np.pi], [pitch], coefficients=False)
-                P_i,eff           = compute_P_and_eff(P_aero_i.flatten(), P_rated, driveType, driveEta)
+                pitch    = x[0]           
+                Uhub_i   = x[1]
+                Omega_i  = min([Uhub_i * tsr / R_tip, Omega_max])
+                myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i*30./np.pi], [pitch], coefficients=False)
+                P_aero_i = myout['P']
+                P_i,eff  = compute_P_and_eff(P_aero_i.flatten(), P_rated, driveType, driveEta)
                 return (P_i - P_rated)
 
             if region2p5:
@@ -614,7 +617,8 @@ class ComputePowerCurve(ExplicitComponent):
             Omega_rated  = min([U_rated * tsr / R_tip, Omega_max])
             Omega[i:]    = np.minimum(Omega[i:], Omega_rated) # Stay at this speed if hit rated too early
             Omega_rpm    = Omega * 30. / np.pi
-            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([U_rated], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            myout, _     = self.ccblade.evaluate([U_rated], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
             P[i], eff    = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
             Cp[i]        = Cp_aero[i]*eff
             P[i]         = P_rated
@@ -634,7 +638,8 @@ class ComputePowerCurve(ExplicitComponent):
         if region3:
             # Function to be used to stay at rated power in Region 3
             def rated_power_dist(pitch, Uhub, Omega_rpm):
-                P_aero, _, _, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
+                myout, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
+                P_aero = myout['P']
                 P, eff          = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
                 return (P - P_rated)
 
@@ -648,9 +653,10 @@ class ComputePowerCurve(ExplicitComponent):
                                           xtol = 1e-4, rtol = 1e-5, maxiter=40, disp=False)
                     except ValueError:
                         pitch[i] = minimize_scalar(lambda x: np.abs(rated_power_dist(x, Uhub[i], Omega_rpm[i])), bounds=[pitch0-5., pitch0+15.],
-                                                  method='bounded', options={'disp':False, 'xatol':1e-3, 'maxiter':40})['x']
+                                                   method='bounded', options={'disp':False, 'xatol':1e-3, 'maxiter':40})['x']
 
-                    P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+                    myout, _   = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+                    P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
                     P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
                     Cp[i]      = Cp_aero[i]*eff
                     #P[i]       = P_rated
@@ -684,14 +690,14 @@ class ComputePowerCurve(ExplicitComponent):
         self.ccblade.induction_inflow = True
         tsr_vec = Omega_rpm / 30. * np.pi *  R_tip / Uhub
         id_regII = np.argmin(abs(tsr_vec - inputs['tsr_operational']))
-        a_regII, ap_regII, alpha_regII, cl_regII, cd_regII = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
+        loads, derivs = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
         
         # outputs
-        outputs['ax_induct_regII']   = a_regII
-        outputs['tang_induct_regII'] = ap_regII
-        outputs['aoa_regII']         = alpha_regII
-        outputs['cl_regII']          = cl_regII
-        outputs['cd_regII']          = cd_regII
+        outputs['ax_induct_regII']   = loads['a']
+        outputs['tang_induct_regII'] = loads['ap']
+        outputs['aoa_regII']         = loads['alpha']
+        outputs['cl_regII']          = loads['Cl']
+        outputs['cd_regII']          = loads['Cd']
         outputs['Cp_regII']          = Cp_aero[id_regII]
         
         
@@ -867,7 +873,8 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
                 print('Cp-Ct-Cq surfaces completed at ' + str(int(k/(n_U*n_tsr)*100.)) + ' %')
                 U     =  U_vector[i] * np.ones(n_pitch)
                 Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
-                _, _, _, _, outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
+                myout, _  = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
+                outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i] = [myout[key] for key in ['Cp','Ct','Cq']]
 
 # Class to define a constraint so that the blade cannot operate in stall conditions
 class NoStallConstraint(ExplicitComponent):
