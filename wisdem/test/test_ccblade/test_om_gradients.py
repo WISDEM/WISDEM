@@ -6,7 +6,7 @@ import numpy as np
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
 
-from wisdem.ccblade.ccblade_component import CCBladeGeometry, CCBladePower, \
+from wisdem.ccblade.ccblade_component import CCBladeGeometry, \
     CCBladeLoads, AeroHubLoads
     
 
