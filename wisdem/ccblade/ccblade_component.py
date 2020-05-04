@@ -3,13 +3,14 @@ from openmdao.api import ExplicitComponent
 import numpy as np
 import wisdem.ccblade._bem as _bem
 
+
 cosd = lambda x: np.cos(np.deg2rad(x))
 sind = lambda x: np.sin(np.deg2rad(x))
 
 class CCBladeGeometry(ExplicitComponent):
+    
     def initialize(self):
         self.options.declare('NINPUT')
-        
         
     def setup(self):
         NINPUT = self.options['NINPUT']
@@ -24,44 +25,36 @@ class CCBladeGeometry(ExplicitComponent):
         self.add_output('precurveTip', val=0.0, units='m', desc='tip prebend')
         self.add_output('presweepTip', val=0.0, units='m', desc='tip sweep')
         
-        self.declare_partials('R', ['Rtip','precurve_in','precone'])
-        self.declare_partials('diameter', ['R','Rtip','precurve_in','precone'])
-        self.declare_partials('precurveTip', 'precurve_in')
-        self.declare_partials('presweepTip', 'presweep_in')
+        self.declare_partials('R', ['Rtip', 'precone'])
+        self.declare_partials('diameter', ['Rtip', 'precone'])
+        
+        self.declare_partials(['R', 'diameter'], 'precurve_in', rows=[0], cols=[NINPUT-1])
+        
+        self.declare_partials('precurveTip', 'precurve_in', val=1., rows=[0], cols=[NINPUT-1])
+        self.declare_partials('presweepTip', 'presweep_in', val=1., rows=[0], cols=[NINPUT-1])
         
     def compute(self, inputs, outputs):
-        
-        self.Rtip           = inputs['Rtip']
-        self.precone        = inputs['precone']
+        Rtip           = inputs['Rtip']
+        precone        = inputs['precone']
         
         outputs['precurveTip']  = inputs['precurve_in'][-1]
         outputs['presweepTip']  = inputs['presweep_in'][-1]
-        self.precurveTip        = outputs['precurveTip']
-        self.R = self.Rtip*cosd(self.precone) + self.precurveTip*sind(self.precone)
-        outputs['R']            = self.R
-        outputs['diameter']     = self.R*2
-
+        
+        outputs['R'] = Rtip * cosd(precone) + outputs['precurveTip'] * sind(precone)
+        outputs['diameter'] = outputs['R'] * 2
 
     def compute_partials(self, inputs, J):
-        NINPUT = self.options['NINPUT']
-        myzero = np.zeros(NINPUT)
+        Rtip           = inputs['Rtip']
+        precone        = inputs['precone']
+        precurveTip  = inputs['precurve_in'][-1]
         
-        J_sub = np.array([cosd(self.precone), sind(self.precone),
-            (-self.Rtip*sind(self.precone) + self.precurveTip*sind(self.precone))*np.pi/180.0])
-
-        J['R', 'Rtip'] = J_sub[0]
-        J['R', 'precurve_in'] = myzero
-        J['R', 'precurve_in'][-1] = J_sub[1]
-        J['R', 'precone'] = J_sub[2]
-        J['diameter', 'Rtip'] = 2.0*J['R', 'Rtip']
-        J['diameter', 'precurve_in'] = 2.0*J['R', 'precurve_in']
-        J['diameter', 'precone'] = 2.0*J['R', 'precone']
-        J['diameter', 'R'] = 2.0
-        J['precurveTip', 'precurve_in'] = myzero
-        J['precurveTip', 'precurve_in'][-1] = 1.0
-        J['presweepTip', 'presweep_in'] = myzero
-        J['presweepTip', 'presweep_in'][-1] = 1.0
-
+        J['R', 'precurve_in'] = sind(precone)
+        J['R', 'Rtip'] = cosd(precone)
+        J['R', 'precone'] = (-Rtip*sind(precone) + precurveTip*cosd(precone))*np.pi/180.0
+        
+        J['diameter', 'precurve_in'] = 2.0 * J['R', 'precurve_in']
+        J['diameter', 'Rtip'] = 2.0 * J['R', 'Rtip']
+        J['diameter', 'precone'] = 2.0 * J['R', 'precone']
         
 
 class CCBladePower(ExplicitComponent):
