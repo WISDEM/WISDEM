@@ -5,7 +5,11 @@ from openmdao.api import ExplicitComponent
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilities as util
 from wisdem.commonse.constants import gravity
-import copy
+
+
+def find_nearest(array, value):
+    return (np.abs(array-value)).argmin() 
+
 
 class RailTransport(ExplicitComponent):
     # Openmdao component to simulate a rail transport of a wind turbine blade
@@ -199,7 +203,7 @@ class RailTransport(ExplicitComponent):
             # normalize
             profile_i_rot[:,0] -= min(profile_i_rot[:,0])
             profile_i_rot = profile_i_rot/ max(profile_i_rot[:,0])
-            profile_i_rot_precomp = copy.copy(profile_i_rot)
+            profile_i_rot_precomp = profile_i_rot.copy()
             idx_s = 0
             idx_le_precomp = np.argmax(profile_i_rot_precomp[:,0])
             if idx_le_precomp != 0:
@@ -260,11 +264,6 @@ class RailTransport(ExplicitComponent):
 
 
         #-------- Horizontal curve where we select blade support nodes on flat cars
-        # Find last node that can be supported without blade tip extending beyond envelope
-        dist_to_tip = r[-1] - r
-        dtip        = r_curveH*(1 - np.cos(dist_to_tip / r_curveH))
-        itip_fix    = np.where(dtip < lateral_clearance)[0][0]
-
         # Assume root rotates to max point that still keeps blade within clearance envelope: have to find that rotation angle
         def rot_blade(angleIn):
             y2, z2 = util.rotate(r_curveH, 0.0, r_curveH + y_ref, z_ref, angleIn)
@@ -277,11 +276,18 @@ class RailTransport(ExplicitComponent):
         # Set nodes to be convenient for coordinate system with center of curvature 0,0 in y-z plane
         nodes = pyframe3dd.NodeData(inode, x_ref, y_rot, z_rot, rad)
 
+        # Find last node that can be supported without blade tip extending beyond envelope
+        dist_to_tip = r[-1] - r
+        dtip        = r_curveH*(1 - np.cos(dist_to_tip / r_curveH))
+        itip_fix    = np.where(dtip < lateral_clearance)[0][0]
+
         # Consider middle attachment point for blade: Find the one that minizes reaction force and not adjacent to the others
+        # Start looking at outer 2/3 of the blade
+        istart = find_nearest(r, r[-1]/3)
         RF_derailH = np.inf * np.ones((self.n_span, 3))  # num middle reaction points X  num reactions
         strainPS   = np.zeros((self.n_span, self.n_span)) # num middle reaction points X  num elements
         strainSS   = np.zeros((self.n_span, self.n_span)) # num middle reaction points X  num elements
-        for k in range(2, itip_fix-1):
+        for k in range(istart, itip_fix-1):
             # ------ reaction data ------------
             # Pinned at root, rotations allowed at k-node and tip which are assumed to be on a "slide"
             rnode     = np.array([0, k, itip_fix])
@@ -340,8 +346,8 @@ class RailTransport(ExplicitComponent):
         outputs['constr_LV_8axle_horiz'] = constr_derailH_8axle[ibest8,:]
         
         # Strain constraint outputs
-        outputs['constr_strainPS'] = strainPS[ibest8,:] / max_strains
-        outputs['constr_strainSS'] = strainSS[ibest8,:] / max_strains
+        outputs['constr_strainPS'] = np.abs(strainPS[ibest8,:]) / max_strains
+        outputs['constr_strainSS'] = np.abs(strainSS[ibest8,:]) / max_strains
         #------------
 
 
