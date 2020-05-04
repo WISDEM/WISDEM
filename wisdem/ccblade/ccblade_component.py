@@ -2,6 +2,7 @@ from wisdem.ccblade import CCAirfoil, CCBlade as CCBlade
 from openmdao.api import ExplicitComponent
 import numpy as np
 import wisdem.ccblade._bem as _bem
+from wisdem.commonse.csystem import DirectionVector
 
 
 cosd = lambda x: np.cos(np.deg2rad(x))
@@ -59,18 +60,17 @@ class CCBladeGeometry(ExplicitComponent):
 
 class CCBladePower(ExplicitComponent):
     def initialize(self):
-        self.options.declare('naero')
+        self.options.declare('n_span')
         self.options.declare('npower')
 
-        self.options.declare('n_aoa_grid')
-        self.options.declare('n_Re_grid')
-
+        self.options.declare('n_aoa')
+        self.options.declare('n_re')
         
     def setup(self):
-        self.naero = naero = self.options['naero']
+        self.n_span = n_span = self.options['n_span']
         npower = self.options['npower']
-        n_aoa_grid = self.options['n_aoa_grid']
-        n_Re_grid  = self.options['n_Re_grid']
+        n_aoa = self.options['n_aoa']
+        n_re  = self.options['n_re']
 
         """blade element momentum code"""
 
@@ -84,11 +84,10 @@ class CCBladePower(ExplicitComponent):
         self.add_output('Q', val=np.zeros(npower), units='N*m', desc='rotor aerodynamic torque')
         self.add_output('P', val=np.zeros(npower), units='W', desc='rotor aerodynamic power')
 
-        
         # (potential) variables
-        self.add_input('r', val=np.zeros(naero), units='m', desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
-        self.add_input('chord', val=np.zeros(naero), units='m', desc='chord length at each section')
-        self.add_input('theta', val=np.zeros(naero),  units='deg', desc='twist angle at each section (positive decreases angle of attack)')
+        self.add_input('r', val=np.zeros(n_span), units='m', desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
+        self.add_input('chord', val=np.zeros(n_span), units='m', desc='chord length at each section')
+        self.add_input('theta', val=np.zeros(n_span),  units='deg', desc='twist angle at each section (positive decreases angle of attack)')
         self.add_input('Rhub', val=0.0, units='m', desc='hub radius')
         self.add_input('Rtip', val=0.0, units='m', desc='tip radius')
         self.add_input('hub_height', val=0.0, units='m', desc='hub height')
@@ -97,16 +96,16 @@ class CCBladePower(ExplicitComponent):
         self.add_input('yaw', val=0.0, desc='yaw error', units='deg')
 
         # TODO: I've not hooked up the gradients for these ones yet.
-        self.add_input('precurve', val=np.zeros(naero), units='m', desc='precurve at each section')
+        self.add_input('precurve', val=np.zeros(n_span), units='m', desc='precurve at each section')
         self.add_input('precurveTip', val=0.0, units='m', desc='precurve at tip')
 
         # parameters
-        self.add_input('airfoils_cl', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm', val=np.zeros((n_aoa_grid, naero, n_Re_grid)), desc='moment coefficients, spanwise')
-        self.add_input('airfoils_aoa', val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
-        self.add_input('airfoils_Re', val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
-        # self.add_discrete_input('airfoils', val=[0]*naero, desc='CCAirfoil instances')
+        self.add_input('airfoils_cl', val=np.zeros((n_aoa, n_span, n_re)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd', val=np.zeros((n_aoa, n_span, n_re)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm', val=np.zeros((n_aoa, n_span, n_re)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa', val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re', val=np.zeros((n_re)), desc='Reynolds numbers of polars')
+        # self.add_discrete_input('airfoils', val=[0]*n_span, desc='CCAirfoil instances')
         self.add_discrete_input('nBlades', val=0, desc='number of blades')
         self.add_input('rho', val=0.0, units='kg/m**3', desc='density of air')
         self.add_input('mu', val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
@@ -134,7 +133,6 @@ class CCBladePower(ExplicitComponent):
         yaw = inputs['yaw']
         precurve = inputs['precurve']
         precurveTip = inputs['precurveTip']
-        # airfoils = discrete_inputs['airfoils']
         B = discrete_inputs['nBlades']
         rho = inputs['rho']
         mu = inputs['mu']
@@ -148,8 +146,8 @@ class CCBladePower(ExplicitComponent):
         Omega = inputs['Omega']
         pitch = inputs['pitch']
 
-        af = [None]*self.naero
-        for i in range(self.naero):
+        af = [None]*self.n_span
+        for i in range(self.n_span):
             af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][:,i,:], inputs['airfoils_cd'][:,i,:], inputs['airfoils_cm'][:,i,:])
         
         ccblade = CCBlade(r, chord, theta, af, Rhub, Rtip, B,
@@ -215,9 +213,6 @@ class CCBladePower(ExplicitComponent):
         J['Q', 'precurve']    = dQ['dprecurve']
         J['Q', 'precurveTip'] = dQ['dprecurveTip']
 
-        
-
-
     
 class CCBladeLoads(ExplicitComponent):
     # OpenMDAO component that given a rotor speed, pitch angle, and wind speed, computes the aerodynamic forces along the blade span
@@ -252,7 +247,6 @@ class CCBladeLoads(ExplicitComponent):
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
 
         # parameters
-        # self.add_discrete_input('airfoils', val=[0]*naero, desc='CCAirfoil instances')
         self.add_input('airfoils_cl',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
         self.add_input('airfoils_cm',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
@@ -403,7 +397,7 @@ class AeroHubLoads(ExplicitComponent):
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
 
         # parameters
-        # self.add_discrete_input('airfoils', val=[0]*naero, desc='CCAirfoil instances')
+        # self.add_discrete_input('airfoils', val=[0]*n_span, desc='CCAirfoil instances')
         self.add_input('airfoils_cl',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
         self.add_input('airfoils_cm',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
@@ -449,7 +443,6 @@ class AeroHubLoads(ExplicitComponent):
         V_load = inputs['V_load']
         Omega_load = inputs['Omega_load']
         pitch_load = inputs['pitch_load']
-        from wisdem.commonse.csystem import DirectionVector
 
         if len(precurve) == 0:
             precurve = np.zeros_like(r)

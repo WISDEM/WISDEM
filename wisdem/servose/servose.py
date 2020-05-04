@@ -385,11 +385,11 @@ class ComputePowerCurve(ExplicitComponent):
         self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.regulation_reg_III = analysis_options['servose']['regulation_reg_III']
-        # naero       = self.naero = self.options['naero']
+        # n_span       = self.n_span = self.options['n_span']
         self.n_pc          = analysis_options['servose']['n_pc']
         self.n_pc_spline   = analysis_options['servose']['n_pc_spline']
-        # n_aoa_grid  = self.options['n_aoa_grid']
-        # n_Re_grid   = self.options['n_Re_grid']
+        # n_aoa  = self.options['n_aoa']
+        # n_re   = self.options['n_re']
         
         # parameters
         self.add_input('v_min',        val=0.0, units='m/s',  desc='cut-in wind speed')
@@ -417,7 +417,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
         self.add_input('presweepTip',   val=0.0,                units='m', desc='presweep at tip')
         
-        # self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
+        # self.add_discrete_input('airfoils',  val=[0]*n_span,                      desc='CCAirfoil instances')
         self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
         self.add_input('airfoils_cm', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
@@ -759,12 +759,12 @@ class ComputeSplines(ExplicitComponent):
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
         self.options.declare('analysis_options')
-        # self.options.declare('naero')
+        # self.options.declare('n_span')
         # self.options.declare('n_pitch', default=20)
         # self.options.declare('n_tsr', default=20)
         # self.options.declare('n_U', default=1)
-        # self.options.declare('n_aoa_grid')
-        # self.options.declare('n_Re_grid')
+        # self.options.declare('n_aoa')
+        # self.options.declare('n_re')
 
     def setup(self):
         analysis_options = self.options['analysis_options']
@@ -802,7 +802,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.add_input('rho',           val=1.225,              units='kg/m**3',    desc='density of air')
         self.add_input('mu',            val=1.81e-5,            units='kg/(m*s)',   desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                desc='shear exponent')
-        # self.add_discrete_input('airfoils',      val=[0]*naero,                 desc='CCAirfoil instances')
+        # self.add_discrete_input('airfoils',      val=[0]*n_span,                 desc='CCAirfoil instances')
         self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
         self.add_input('airfoils_cm', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')

@@ -206,8 +206,8 @@ class FASTLoadCases(ExplicitComponent):
         npts_spline_power_curve = self.options['npts_spline_power_curve']
         FASTpref                = self.options['FASTpref']
         NPTS                    = len(RefBlade['pf']['s'])
-        n_aoa_grid              = len(RefBlade['airfoils_aoa'])
-        n_Re_grid               = len(RefBlade['airfoils_Re'])
+        n_aoa              = len(RefBlade['airfoils_aoa'])
+        n_re               = len(RefBlade['airfoils_Re'])
         
         self.add_discrete_input('fst_vt_in', val={})
 
@@ -232,11 +232,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('rthick',            val=np.zeros(NPTS), desc='relative thickness of airfoil distribution')
         self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
-        self.add_input('airfoils_cl',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm',       val=np.zeros((n_aoa_grid, NPTS, n_Re_grid)), desc='moment coefficients, spanwise')
-        self.add_input('airfoils_aoa',      val=np.zeros((n_aoa_grid)), units='deg', desc='angle of attack grid for polars')
-        self.add_input('airfoils_Re',       val=np.zeros((n_Re_grid)), desc='Reynolds numbers of polars')
+        self.add_input('airfoils_cl',       val=np.zeros((n_aoa, NPTS, n_re)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd',       val=np.zeros((n_aoa, NPTS, n_re)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm',       val=np.zeros((n_aoa, NPTS, n_re)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_aoa',      val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
+        self.add_input('airfoils_Re',       val=np.zeros((n_re)), desc='Reynolds numbers of polars')
         
         # Airfoil coordinates
         self.add_input('airfoils_coord_x',  val=np.zeros((200, NPTS)), desc='x airfoil coordinate, spanwise')
