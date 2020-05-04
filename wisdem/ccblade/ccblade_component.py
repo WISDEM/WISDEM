@@ -214,7 +214,6 @@ class AeroHubLoads(ExplicitComponent):
         self.options.declare('analysis_options')
 
     def setup(self):
-        
         blade_init_options = self.options['analysis_options']['blade']
         self.n_span        = n_span    = blade_init_options['n_span']
         af_init_options = self.options['analysis_options']['airfoils']
@@ -241,7 +240,6 @@ class AeroHubLoads(ExplicitComponent):
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
 
         # parameters
-        # self.add_discrete_input('airfoils', val=[0]*n_span, desc='CCAirfoil instances')
         self.add_input('airfoils_cl',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
         self.add_input('airfoils_cm',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
@@ -262,6 +260,9 @@ class AeroHubLoads(ExplicitComponent):
         self.add_output('Mxyz_blade_aero',  val=np.zeros((3,6)),  units='N*m', desc='Moments at blade root from aerodynamic loading in the blade c.s.')
         self.add_output('Fxyz_hub_aero',    val=np.zeros(3),      units='N',   desc='Forces at hub center from aerodynamic loading in the hub c.s.')
         self.add_output('Mxyz_hub_aero',    val=np.zeros(3),      units='N*m', desc='Moments at hub center from aerodynamic loading in the hub c.s.')
+        
+        # Just finite difference over the relevant derivatives for now
+        self.declare_partials(['Fxyz_blade_aero', 'Fxyz_hub_aero', 'Mxyz_blade_aero', 'Mxyz_hub_aero'], ['Omega_load', 'Rhub', 'Rtip', 'V_load', 'chord', 'hub_height', 'pitch_load', 'precone', 'precurve', 'r', 'theta', 'tilt', 'yaw', 'Omega_load'], method='fd')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         r = inputs['r']
