@@ -1,10 +1,15 @@
 import numpy as np
 import scipy.constants as spc
+from scipy.optimize import brentq, minimize_scalar
 from openmdao.api import ExplicitComponent
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilities as util
 from wisdem.commonse.constants import gravity
-import copy
+
+
+def find_nearest(array, value):
+    return (np.abs(array-value)).argmin() 
+
 
 class RailTransport(ExplicitComponent):
     # Openmdao component to simulate a rail transport of a wind turbine blade
@@ -198,7 +203,7 @@ class RailTransport(ExplicitComponent):
             # normalize
             profile_i_rot[:,0] -= min(profile_i_rot[:,0])
             profile_i_rot = profile_i_rot/ max(profile_i_rot[:,0])
-            profile_i_rot_precomp = copy.copy(profile_i_rot)
+            profile_i_rot_precomp = profile_i_rot.copy()
             idx_s = 0
             idx_le_precomp = np.argmax(profile_i_rot_precomp[:,0])
             if idx_le_precomp != 0:
@@ -259,23 +264,34 @@ class RailTransport(ExplicitComponent):
 
 
         #-------- Horizontal curve where we select blade support nodes on flat cars
+        # Assume root rotates to max point that still keeps blade within clearance envelope: have to find that rotation angle
+        def rot_blade(angleIn):
+            y2, z2 = util.rotate(r_curveH, 0.0, r_curveH + y_ref, z_ref, angleIn)
+            dy = np.abs(r_curveH*np.cos(arcsH) - y2)
+            return dy.sum()
+        rot_angle = minimize_scalar(lambda x: rot_blade(x), bounds=[0.0, np.pi/8.0], method='bounded',
+                                    options={'disp':False, 'xatol':1e-3, 'maxiter':30})['x']
+        y_rot, z_rot = util.rotate(r_curveH, 0.0, r_curveH + y_ref, z_ref, rot_angle)
+        
+        # Set nodes to be convenient for coordinate system with center of curvature 0,0 in y-z plane
+        nodes = pyframe3dd.NodeData(inode, x_ref, y_rot, z_rot, rad)
+
         # Find last node that can be supported without blade tip extending beyond envelope
         dist_to_tip = r[-1] - r
         dtip        = r_curveH*(1 - np.cos(dist_to_tip / r_curveH))
         itip_fix    = np.where(dtip < lateral_clearance)[0][0]
 
-        # Set nodes to be convenient for coordinate system with center of curvature 0,0 in y-z plane
-        nodes = pyframe3dd.NodeData(inode, x_ref, r_curveH+y_ref, z_ref, rad)
-
         # Consider middle attachment point for blade: Find the one that minizes reaction force and not adjacent to the others
+        # Start looking at outer 2/3 of the blade
+        istart = find_nearest(r, r[-1]/3)
         RF_derailH = np.inf * np.ones((self.n_span, 3))  # num middle reaction points X  num reactions
         strainPS   = np.zeros((self.n_span, self.n_span)) # num middle reaction points X  num elements
         strainSS   = np.zeros((self.n_span, self.n_span)) # num middle reaction points X  num elements
-        for k in range(2, itip_fix-1):
+        for k in range(istart, itip_fix-1):
             # ------ reaction data ------------
             # Pinned at root, rotations allowed at k-node and tip which are assumed to be on a "slide"
-            rnode     = 1 + np.array([0, k, itip_fix])
-            reactions = pyframe3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
+            rnode     = np.array([0, k, itip_fix])
+            reactions = pyframe3dd.ReactionData(1+rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
 
             # Initialize frame3dd object
             blade = pyframe3dd.Frame(nodes, reactions, elements, options)
@@ -286,10 +302,12 @@ class RailTransport(ExplicitComponent):
             load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
             # Node displacement: use distance from root as arc length
-            dy   = r_curveH*(1 - np.cos(arcsH[rnode])) - (lateral_clearance-0.5*chord[rnode])
-            dz   = r_curveH*     np.sin(arcsH[rnode])
-            dx   = dM = np.zeros(dy.shape)
-            load.changePrescribedDisplacements(rnode, dx, np.maximum(0.0, dy), dz, dM, dM, dM)
+            dy    = y_rot[rnode] - r_curveH*np.cos(arcsH[rnode])
+            dz    = z_rot[rnode] - r_curveH*np.sin(arcsH[rnode])
+            # Assume the attachment points are on a "slide" and can move up to the lateral clearance
+            coeff = np.maximum(0.0, np.sqrt(dy**2 + dz**2)/lateral_clearance - 1.0)
+            dx    = dM = np.zeros(dy.shape)
+            load.changePrescribedDisplacements(1+rnode, dx, coeff*dy, coeff*dz, dM, dM, dM)
 
             # Store this load case
             blade.addLoadCase(load)
@@ -326,17 +344,17 @@ class RailTransport(ExplicitComponent):
         ibest8    = np.argmin(derailed8)
         outputs['constr_LV_4axle_horiz'] = constr_derailH_4axle[ibest4,:]
         outputs['constr_LV_8axle_horiz'] = constr_derailH_8axle[ibest8,:]
-
+        
         # Strain constraint outputs
-        outputs['constr_strainPS'] = strainPS[ibest8,:] / max_strains
-        outputs['constr_strainSS'] = strainSS[ibest8,:] / max_strains
+        outputs['constr_strainPS'] = np.abs(strainPS[ibest8,:]) / max_strains
+        outputs['constr_strainSS'] = np.abs(strainSS[ibest8,:]) / max_strains
         #------------
 
 
         # ------- Vertical hills/sag using best attachment points
         # Set up Frame3DD blade for vertical analysis
-        rnode     = 1 + np.array([0, ibest8, itip_fix])
-        reactions = pyframe3dd.ReactionData(rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
+        rnode     = np.array([0, ibest8, itip_fix])
+        reactions = pyframe3dd.ReactionData(1+rnode, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
 
         # Set nodes to be convenient for coordinate system with center of curvature 0,0 in x-z plane
         nodes = pyframe3dd.NodeData(inode, r_curveV+x_ref, y_ref, z_ref, rad)
@@ -354,12 +372,12 @@ class RailTransport(ExplicitComponent):
         dx = -r_curveV * (1 - np.cos(arcsV[rnode]))
         dz = -r_curveV *      np.sin(arcsV[rnode])
         dy = dM = np.zeros(dy.shape)
-        load1.changePrescribedDisplacements(rnode, dx, dy, dz, dM, dM, dM)
+        load1.changePrescribedDisplacements(1+rnode, dx, dy, dz, dM, dM, dM)
 
         # Node displacement sag
         dx *= -1
         dz *= -1
-        load2.changePrescribedDisplacements(rnode, dx, dy, dz, dM, dM, dM)
+        load2.changePrescribedDisplacements(1+rnode, dx, dy, dz, dM, dM, dM)
 
         # Store these load cases and run
         blade.addLoadCase(load1)
