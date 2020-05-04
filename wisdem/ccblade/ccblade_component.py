@@ -123,7 +123,6 @@ class CCBladePower(ExplicitComponent):
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         r = inputs['r']
         chord = inputs['chord']
         theta = inputs['theta']
@@ -276,21 +275,12 @@ class CCBladeLoads(ExplicitComponent):
         self.add_output('loads_Py',     val=np.zeros(n_span), units='N/m',  desc='distributed loads in blade-aligned y-direction')
         self.add_output('loads_Pz',     val=np.zeros(n_span), units='N/m',  desc='distributed loads in blade-aligned z-direction')
 
-        # # corresponding setting for loads
-        # self.add_output('loads_V',      val=0.0, units='m/s', desc='hub height wind speed')
-        # self.add_output('loads_Omega',  val=0.0, units='rpm', desc='rotor rotation speed')
-        # self.add_output('loads_pitch',  val=0.0, units='deg', desc='pitch angle')
-        # self.add_output('loads_azimuth',val=0.0, units='deg', desc='azimuthal angle')
-        
-        self.declare_partials('loads_r', ['r', 'Rhub', 'Rtip'])
-        self.declare_partials(['loads_Px', 'loads_Py', 'loads_Pz'],
-                              ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hub_height', 'precone', 'tilt',
-                               'yaw', 'V_load', 'Omega_load', 'pitch_load', 'azimuth_load', 'precurve'])
-        #self.declare_partials('loads_V', 'V_load')
-        #self.declare_partials('loads_Omega', 'Omega_load')
-        #self.declare_partials('loads_pitch', 'pitch_load')
-        #self.declare_partials('loads_azimuth', 'azimuth_load')
-
+        arange = np.arange(n_span)
+        self.declare_partials('loads_Px', ['Omega_load', 'Rhub', 'Rtip', 'V_load', 'azimuth_load', 'chord', 'hub_height', 'pitch_load', 'precone', 'precurve', 'r', 'theta', 'tilt', 'yaw'])
+        self.declare_partials('loads_Py', ['Omega_load', 'Rhub', 'Rtip', 'V_load', 'azimuth_load', 'chord', 'hub_height', 'pitch_load', 'precone', 'precurve', 'r', 'theta', 'tilt', 'yaw'])
+        self.declare_partials('loads_Pz', '*', dependent=False)
+        self.declare_partials('loads_r', 'r', val=1., rows=arange, cols=arange)
+        self.declare_partials('*', 'airfoils*', dependent=False)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         r = inputs['r']
@@ -304,7 +294,6 @@ class CCBladeLoads(ExplicitComponent):
         yaw = inputs['yaw']
         precurve = inputs['precurve']
         precurveTip = inputs['precurveTip']
-        # airfoils = discrete_inputs['airfoils']
         B = discrete_inputs['nBlades']
         rho = inputs['rho']
         mu = inputs['mu']
@@ -318,8 +307,7 @@ class CCBladeLoads(ExplicitComponent):
         Omega_load = inputs['Omega_load']
         pitch_load = inputs['pitch_load']
         azimuth_load = inputs['azimuth_load']
-
-
+        
         if len(precurve) == 0:
             precurve = np.zeros_like(r)
 
@@ -338,52 +326,18 @@ class CCBladeLoads(ExplicitComponent):
         Np = loads['Np']
         Tp = loads['Tp']
         
-        # concatenate loads at root/tip
+        # unclear why we need this output at all
         outputs['loads_r'] = r
 
         # conform to blade-aligned coordinate system
         outputs['loads_Px'] = Np
         outputs['loads_Py'] = -Tp
-        outputs['loads_Pz'] = 0*Np
+        outputs['loads_Pz'][:] = 0.
 
-        # import matplotlib.pyplot as plt
-        # plt.plot(r, Np)
-        # plt.plot(r, -Tp)
-        # plt.show()
-
-        # # return other outputs needed
-        # outputs['loads_V'] = self.V_load
-        # outputs['loads_Omega'] = self.Omega_load
-        # outputs['loads_pitch'] = self.pitch_load
-        # outputs['loads_azimuth'] = self.azimuth_load
-
-    def compute_partials(self, inputs, J, discrete_inputs=None):
-
+    def compute_partials(self, inputs, J, discrete_inputs):
         dNp = self.derivs['dNp']
         dTp = self.derivs['dTp']
-        n = self.n_span
-
-        dr_dr = np.eye(n)
-        dr_dRhub = np.zeros(n)
-        dr_dRtip = np.zeros(n)
-        dr_dRhub[0] = 1.0
-        dr_dRtip[-1] = 1.0
-
-        dV = np.zeros(4*n+10)
-        dV[3*n+6] = 1.0
-        dOmega = np.zeros(4*n+10)
-        dOmega[3*n+7] = 1.0
-        dpitch = np.zeros(4*n+10)
-        dpitch[3*n+8] = 1.0
-        dazimuth = np.zeros(4*n+10)
-        dazimuth[3*n+9] = 1.0
-
-        
-        zero = np.zeros(self.naero)
-        J['loads_r',      'r']             = dr_dr
-        J['loads_r',      'Rhub']          = dr_dRhub
-        J['loads_r',      'Rtip']          = dr_dRtip
-        
+    
         J['loads_Px',     'r']             = dNp['dr']
         J['loads_Px',     'chord']         = dNp['dchord']
         J['loads_Px',     'theta']         = dNp['dtheta']
@@ -398,7 +352,7 @@ class CCBladeLoads(ExplicitComponent):
         J['loads_Px',     'pitch_load']    = np.squeeze(dNp['dpitch'])
         J['loads_Px',     'azimuth_load']  = np.squeeze(dNp['dazimuth'])
         J['loads_Px',     'precurve']      = dNp['dprecurve']
-        
+    
         J['loads_Py',     'r']             = -dTp['dr']
         J['loads_Py',     'chord']         = -dTp['dchord']
         J['loads_Py',     'theta']         = -dTp['dtheta']
@@ -413,18 +367,7 @@ class CCBladeLoads(ExplicitComponent):
         J['loads_Py',     'pitch_load']    = -np.squeeze(dTp['dpitch'])
         J['loads_Py',     'azimuth_load']  = -np.squeeze(dTp['dazimuth'])
         J['loads_Py',     'precurve']      = -dTp['dprecurve']
-
-        for key in ['r', 'chord', 'theta', 'Rhub', 'Rtip', 'hub_height', 'precone', 'tilt',
-                    'yaw', 'V_load', 'Omega_load', 'pitch_load', 'azimuth_load', 'precurve']:
-            J['loads_Pz', key] = 0.0*J['loads_Px', key]
-        
-        #J['loads_V',      'V_load']        = 1.0
-        #J['loads_Omega',  'Omega_load']    = 1.0
-        #J['loads_pitch',  'pitch_load']    = 1.0
-        #J['loads_azimuth', 'azimuth_load'] = 1.0
-
-
-        
+    
 
 class AeroHubLoads(ExplicitComponent):
     # OpenMDAO component that computes the aerodynamic loading at hub center
