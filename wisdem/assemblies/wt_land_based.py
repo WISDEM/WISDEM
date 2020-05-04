@@ -1,7 +1,7 @@
 import numpy as np
 from openmdao.api import ExplicitComponent, Group, Problem
 from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyOpenMDAO
-from wisdem.rotorse.rotor_geometry import TurbineClass
+from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
@@ -430,8 +430,8 @@ class WindPark(Group):
         self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(analysis_options = analysis_options))
-        if opt_options['opt_flag']:
-            self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
+        # if opt_options['opt_flag']:
+        #     self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # Inputs to plantfinancese from wt group
         self.connect('sse.AEP',                 'financese.turbine_aep')

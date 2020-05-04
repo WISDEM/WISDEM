@@ -7,370 +7,382 @@ import copy
 import time
 import os
 ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'regulation.npz'
+
         
 class TestServo(unittest.TestCase):
-    def setUp(self):
-        self.inputs = {}
-        self.outputs = {}
-        self.discrete_inputs = {}
-        self.discrete_outputs = {}
         
     def testRegulationTrajectory(self):
+        prob = om.Problem()
+        
+        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
+        
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(ARCHIVE)
-        self.inputs['airfoils_aoa'] = npzfile['aoa']
-        self.inputs['airfoils_Re'] = npzfile['Re']
-        self.inputs['airfoils_cl'] = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1)
-        self.inputs['airfoils_cd'] = np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1)
-        self.inputs['airfoils_cm'] = np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1)
-        self.inputs['r'] = npzfile['r']
-        self.inputs['chord'] = npzfile['chord']
-        self.inputs['theta'] = npzfile['theta']
+        ivc.add_output('airfoils_aoa', npzfile['aoa'], units='deg')
+        ivc.add_output('airfoils_Re', npzfile['Re'])
+        ivc.add_output('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
+        ivc.add_output('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
+        ivc.add_output('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
+        ivc.add_output('r', npzfile['r'], units='m')
+        ivc.add_output('chord', npzfile['chord'], units='m')
+        ivc.add_output('theta', npzfile['theta'], units='deg')
 
-        n_span = self.inputs['r'].size
-        n_aoa = self.inputs['airfoils_aoa'].size
-        n_Re = self.inputs['airfoils_Re'].size
+        n_span = npzfile['r'].size
+        n_aoa = npzfile['aoa'].size
+        n_Re = npzfile['Re'].size
         n_pc = 22
         
         # parameters
-        self.inputs['v_min'] = 4.
-        self.inputs['v_max'] = 25.
-        self.inputs['rated_power'] = 5e6
-        self.inputs['omega_min'] = 0.0
-        self.inputs['omega_max'] = 100.0
-        self.inputs['control_maxTS'] = 90.
-        self.inputs['tsr_operational'] = 10.
-        self.inputs['control_pitch'] = 0.0
-        self.discrete_inputs['drivetrainType'] = 'GEARED'
-        self.inputs['drivetrainEff'] = 0.95
+        ivc.add_output('v_min', 4., units='m/s')
+        ivc.add_output('v_max', 25., units='m/s')
+        ivc.add_output('rated_power', 5e6, units='W')
+        ivc.add_output('omega_min', 0.0, units='rpm')
+        ivc.add_output('omega_max', 100.0, units='rpm')
+        ivc.add_output('control_maxTS', 90., units='m/s')
+        ivc.add_output('tsr_operational', 10.)
+        ivc.add_output('control_pitch', 0.0, units='deg')
+        ivc.add_output('drivetrainEff', 0.95)
+        ivc.add_discrete_output('drivetrainType', 'GEARED')
         
-        self.inputs['Rhub'] = 1.
-        self.inputs['Rtip'] = 70.
-        self.inputs['hub_height'] = 100.
-        self.inputs['precone'] = 0.
-        self.inputs['tilt'] = 0.
-        self.inputs['yaw'] = 0.
-        self.inputs['precurve'] = np.zeros(n_span)
-        self.inputs['precurveTip'] = 0.
-        self.inputs['presweep'] = np.zeros(n_span)
-        self.inputs['presweepTip'] = 0.
+        ivc.add_output('Rhub', 1., units='m')
+        ivc.add_output('Rtip', 70., units='m')
+        ivc.add_output('hub_height', 100., units='m')
+        ivc.add_output('precone', 0., units='deg')
+        ivc.add_output('tilt', 0., units='deg')
+        ivc.add_output('yaw', 0., units='deg')
+        ivc.add_output('precurve', np.zeros(n_span), units='m')
+        ivc.add_output('precurveTip', 0., units='m')
+        ivc.add_output('presweep', np.zeros(n_span), units='m')
+        ivc.add_output('presweepTip', 0., units='m')
         
-        self.discrete_inputs['nBlades'] = 3
-        self.inputs['rho'] = 1.225
-        self.inputs['mu'] = 1.81206e-5
-        self.inputs['shearExp'] = 0.25
-        self.discrete_inputs['nSector'] = 4
-        self.discrete_inputs['tiploss'] = True
-        self.discrete_inputs['hubloss'] = True
-        self.discrete_inputs['wakerotation'] = True
-        self.discrete_inputs['usecd'] = True
+        ivc.add_output('rho', 1.225, units='kg/m**3')
+        ivc.add_output('mu', 1.81206e-5, units='kg/(m*s)')
+        ivc.add_output('shearExp', 0.25)
+        ivc.add_discrete_output('nBlades', 3)
+        ivc.add_discrete_output('nSector', 4)
+        ivc.add_discrete_output('tiploss', True)
+        ivc.add_discrete_output('hubloss', True)
+        ivc.add_discrete_output('wakerotation', True)
+        ivc.add_discrete_output('usecd', True)
 
-        myopt = {}
-        myopt['blade'] = {}
-        myopt['blade']['n_span'] = n_span
-        myopt['blade']['n_aoa'] = n_aoa
-        myopt['blade']['n_Re'] = n_Re
-        myopt['blade']['n_tab'] = 1
-        myopt['servose'] = {}
-        myopt['servose']['regulation_reg_III'] = True
-        myopt['servose']['n_pc'] = n_pc
-        myopt['servose']['n_pc_spline'] = n_pc
-        myobj = serv.RegulatedPowerCurve(analysis_options=myopt)
-        myobj.n_span = n_span
-        myobj.n_tab  = 1
-        myobj.n_pc   = n_pc
-        myobj.n_pc_spline = n_pc
-        myobj.regulation_reg_III = True
+        analysis_options = {}
+        analysis_options['blade'] = {}
+        analysis_options['blade']['n_span'] = n_span
+        analysis_options['blade']['n_aoa'] = n_aoa
+        analysis_options['blade']['n_Re'] = n_Re
+        analysis_options['blade']['n_tab'] = 1
+        analysis_options['servose'] = {}
+        analysis_options['servose']['regulation_reg_III'] = True
+        analysis_options['servose']['n_pc'] = n_pc
+        analysis_options['servose']['n_pc_spline'] = n_pc
 
-        grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi/4.,np.pi/2.,n_pc + 1)))))
-        grid1 = (grid0 - grid0[0])/(grid0[-1]-grid0[0])
-        V_expect0  = grid1 * (self.inputs['v_max'] - self.inputs['v_min']) + self.inputs['v_min']
-        V_spline = np.linspace(self.inputs['v_min'], self.inputs['v_max'], n_pc)
-        irated = 12
+        n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
+        analysis_options['airfoils'] = {}
+        analysis_options['airfoils']['n_aoa'] = n_aoa
+        analysis_options['airfoils']['n_Re'] = n_Re
+        analysis_options['airfoils']['n_tab'] = n_tab
+        
+        prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(analysis_options=analysis_options), promotes=['*'])
+        
+        prob.setup()
 
         # All reg 2: no maxTS, no max rpm, no power limit
-        self.inputs['omega_max'] = 1e3
-        self.inputs['control_maxTS'] = 1e5
-        self.inputs['rated_power'] = 1e16
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        prob['omega_max'] = 1e3
+        prob['control_maxTS'] = 1e5
+        prob['rated_power'] = 1e16
+        prob.run_model()
+        
+        grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi/4.,np.pi/2.,n_pc + 1)))))
+        grid1 = (grid0 - grid0[0])/(grid0[-1]-grid0[0])
+        V_expect0  = grid1 * (prob['v_max'] - prob['v_min']) + prob['v_min']
+        V_spline = np.linspace(prob['v_min'], prob['v_max'], n_pc)
+        irated = 12
+        
         V_expect1 = V_expect0.copy()
-        #V_expect1[irated] = self.outputs['rated_V']
+        #V_expect1[irated] = prob['rated_V']
         Omega_tsr = V_expect1*10*60/70./2./np.pi
-        npt.assert_equal(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_spline)
-        npt.assert_allclose(self.outputs['Omega'], Omega_tsr)
-        npt.assert_equal(self.outputs['pitch'], np.zeros( V_expect0.shape ) )
-        npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
-        npt.assert_allclose(self.outputs['Cp'], self.outputs['Cp'][0])
-        npt.assert_allclose(self.outputs['Cp_aero'], self.outputs['Cp_aero'][0])
-        myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
+        npt.assert_equal(prob['V'], V_expect1)
+        npt.assert_equal(prob['V_spline'], V_spline.flatten())
+        npt.assert_allclose(prob['Omega'], Omega_tsr)
+        npt.assert_equal(prob['pitch'], np.zeros( V_expect0.shape ) )
+        npt.assert_equal(prob['Cp'], prob['Cp_aero']*0.95)
+        npt.assert_allclose(prob['Cp'], prob['Cp'][0])
+        npt.assert_allclose(prob['Cp_aero'], prob['Cp_aero'][0])
+        myCp = prob['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
         npt.assert_allclose(myCp, myCp[0])
         self.assertGreater(myCp[0], 0.4)
         self.assertGreater(0.5, myCp[0])
-        npt.assert_allclose(myCp, self.outputs['Cp'])
-        npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
-        npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
-        npt.assert_array_less(self.outputs['T'][:-1], self.outputs['T'][1:])
-        self.assertEqual(self.outputs['rated_V'], V_expect1[-1])
-        self.assertAlmostEqual(self.outputs['rated_Omega'], Omega_tsr[-1])
-        self.assertEqual(self.outputs['rated_pitch'], 0.0)
+        npt.assert_allclose(myCp, prob['Cp'])
+        npt.assert_array_less(prob['P'][:-1], prob['P'][1:])
+        npt.assert_array_less(prob['Q'][:-1], prob['Q'][1:])
+        npt.assert_array_less(prob['T'][:-1], prob['T'][1:])
+        self.assertEqual(prob['rated_V'], V_expect1[-1])
+        self.assertAlmostEqual(prob['rated_Omega'][0], Omega_tsr[-1])
+        self.assertEqual(prob['rated_pitch'], 0.0)
         
         # Test no maxTS, max rpm, no power limit
-        self.inputs['omega_max'] = 15.0
-        self.inputs['control_maxTS'] = 1e5
-        self.inputs['rated_power'] = 1e16
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        prob['omega_max'] = 15.0
+        prob['control_maxTS'] = 1e5
+        prob['rated_power'] = 1e16
+        prob.run_model()
         V_expect1 = V_expect0.copy()
         #V_expect1[irated] = 15.*70*2*np.pi/(10.*60.)
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.minimum(Omega_tsr, 15.0)
-        npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_spline)
-        npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'][:irated], 0.0 )
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][(irated+1):]))
-        npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
-        npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
-        npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
-        npt.assert_array_less(self.outputs['T'][:-1], self.outputs['T'][1:])
-        self.assertAlmostEqual(self.outputs['rated_V'], V_expect1[-1], 3)
-        self.assertAlmostEqual(self.outputs['rated_Omega'], 15.0)
-        self.assertGreater(self.outputs['rated_pitch'], 0.0)
-        myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
+        npt.assert_allclose(prob['V'], V_expect1)
+        npt.assert_equal(prob['V_spline'], V_spline.flatten())
+        npt.assert_allclose(prob['Omega'], Omega_expect)
+        npt.assert_equal(prob['pitch'][:irated], 0.0 )
+        npt.assert_array_less(0.0, np.abs(prob['pitch'][(irated+1):]))
+        npt.assert_equal(prob['Cp'], prob['Cp_aero']*0.95)
+        npt.assert_array_less(prob['P'][:-1], prob['P'][1:])
+        npt.assert_array_less(prob['Q'][:-1], prob['Q'][1:])
+        npt.assert_array_less(prob['T'][:-1], prob['T'][1:])
+        self.assertAlmostEqual(prob['rated_V'], V_expect1[-1], 3)
+        self.assertAlmostEqual(prob['rated_Omega'][0], 15.0)
+        self.assertGreater(prob['rated_pitch'], 0.0)
+        myCp = prob['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
-        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
+        npt.assert_allclose(myCp[:irated], prob['Cp'][:irated])
 
         # Test maxTS, no max rpm, no power limit
-        self.inputs['omega_max'] = 1e3
-        self.inputs['control_maxTS'] = 105.0
-        self.inputs['rated_power'] = 1e16
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        prob['omega_max'] = 1e3
+        prob['control_maxTS'] = 105.0
+        prob['rated_power'] = 1e16
+        prob.run_model()
         V_expect1 = V_expect0.copy()
         #V_expect1[irated] = 105./10.
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.minimum(Omega_tsr, 105./70./2/np.pi*60)
-        npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_spline)
-        npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'][:irated], 0.0 )
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][irated:]))
-        npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95) 
-        npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
-        npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
-        npt.assert_array_less(self.outputs['T'][:-1], self.outputs['T'][1:])
-        self.assertEqual(self.outputs['rated_V'], V_expect1[-1])
-        self.assertAlmostEqual(self.outputs['rated_Omega'], Omega_expect[-1])
-        self.assertGreater(self.outputs['rated_pitch'], 0.0)
-        myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
+        npt.assert_allclose(prob['V'], V_expect1)
+        npt.assert_equal(prob['V_spline'], V_spline.flatten())
+        npt.assert_allclose(prob['Omega'], Omega_expect)
+        npt.assert_equal(prob['pitch'][:irated], 0.0 )
+        npt.assert_array_less(0.0, np.abs(prob['pitch'][irated:]))
+        npt.assert_equal(prob['Cp'], prob['Cp_aero']*0.95) 
+        npt.assert_array_less(prob['P'][:-1], prob['P'][1:])
+        npt.assert_array_less(prob['Q'][:-1], prob['Q'][1:])
+        npt.assert_array_less(prob['T'][:-1], prob['T'][1:])
+        self.assertEqual(prob['rated_V'], V_expect1[-1])
+        self.assertAlmostEqual(prob['rated_Omega'][0], Omega_expect[-1])
+        self.assertGreater(prob['rated_pitch'], 0.0)
+        myCp = prob['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
-        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
+        npt.assert_allclose(myCp[:irated], prob['Cp'][:irated])
 
         # Test no maxTS, no max rpm, power limit
-        self.inputs['omega_max'] = 1e3
-        self.inputs['control_maxTS'] = 1e4
-        self.inputs['rated_power'] = 5e6
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        prob['omega_max'] = 1e3
+        prob['control_maxTS'] = 1e4
+        prob['rated_power'] = 5e6
+        prob.run_model()
         V_expect1 = V_expect0.copy()
-        V_expect1[irated] = self.outputs['rated_V']
+        V_expect1[irated] = prob['rated_V']
         Omega_tsr = V_expect1*10*60/70./2./np.pi
-        Omega_expect = np.minimum(Omega_tsr, self.outputs['rated_Omega'])
-        npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_spline)
-        npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'][:irated], 0.0 )
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][(irated+1):]))
-        npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
-        npt.assert_array_less(self.outputs['P'][:irated], self.outputs['P'][1:(irated+1)])
-        npt.assert_allclose(self.outputs['P'][irated:], 5e6, rtol=1e-4, atol=0)
-        #npt.assert_array_less(self.outputs['Q'], self.outputs['Q'][1:])
-        npt.assert_array_less(self.outputs['T'], self.outputs['T'][irated]+1e-1)
-        #self.assertEqual(self.outputs['rated_V'], V_expect1[-1])
-        self.assertAlmostEqual(self.outputs['rated_Omega'], Omega_expect[-1])
-        self.assertEqual(self.outputs['rated_pitch'], 0.0)
-        myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
+        Omega_expect = np.minimum(Omega_tsr, prob['rated_Omega'])
+        npt.assert_allclose(prob['V'], V_expect1)
+        npt.assert_equal(prob['V_spline'], V_spline.flatten())
+        npt.assert_allclose(prob['Omega'], Omega_expect)
+        npt.assert_equal(prob['pitch'][:irated], 0.0 )
+        npt.assert_array_less(0.0, np.abs(prob['pitch'][(irated+1):]))
+        npt.assert_equal(prob['Cp'], prob['Cp_aero']*0.95)
+        npt.assert_array_less(prob['P'][:irated], prob['P'][1:(irated+1)])
+        npt.assert_allclose(prob['P'][irated:], 5e6, rtol=1e-4, atol=0)
+        #npt.assert_array_less(prob['Q'], prob['Q'][1:])
+        npt.assert_array_less(prob['T'], prob['T'][irated]+1e-1)
+        #self.assertEqual(prob['rated_V'], V_expect1[-1])
+        self.assertAlmostEqual(prob['rated_Omega'][0], Omega_expect[-1])
+        self.assertEqual(prob['rated_pitch'], 0.0)
+        myCp = prob['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
-        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
+        npt.assert_allclose(myCp[:irated], prob['Cp'][:irated])
         
         # Test min & max rpm, no power limit
-        self.inputs['omega_min'] = 7.0
-        self.inputs['omega_max'] = 15.0
-        self.inputs['control_maxTS'] = 1e5
-        self.inputs['rated_power'] = 1e16
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        prob['omega_min'] = 7.0
+        prob['omega_max'] = 15.0
+        prob['control_maxTS'] = 1e5
+        prob['rated_power'] = 1e16
+        prob.run_model()
         V_expect1 = V_expect0.copy()
         #V_expect1[irated] = 15.*70*2*np.pi/(10.*60.)
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.maximum( np.minimum(Omega_tsr, 15.0), 7.0)
-        npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_spline)
-        npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][Omega_expect != Omega_tsr]) )
-        npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95) 
-        npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
-        npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
-        npt.assert_array_less(self.outputs['T'][:-1], self.outputs['T'][1:])
-        self.assertEqual(self.outputs['rated_V'], V_expect1[-1])
-        self.assertAlmostEqual(self.outputs['rated_Omega'], 15.0)
-        self.assertGreater(self.outputs['rated_pitch'], 0.0)
-        myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
+        npt.assert_allclose(prob['V'], V_expect1)
+        npt.assert_equal(prob['V_spline'], V_spline.flatten())
+        npt.assert_allclose(prob['Omega'], Omega_expect)
+        npt.assert_array_less(0.0, np.abs(prob['pitch'][Omega_expect != Omega_tsr]) )
+        npt.assert_equal(prob['Cp'], prob['Cp_aero']*0.95) 
+        npt.assert_array_less(prob['P'][:-1], prob['P'][1:])
+        npt.assert_array_less(prob['Q'][:-1], prob['Q'][1:])
+        npt.assert_array_less(prob['T'][:-1], prob['T'][1:])
+        self.assertEqual(prob['rated_V'], V_expect1[-1])
+        self.assertAlmostEqual(prob['rated_Omega'][0], 15.0)
+        self.assertGreater(prob['rated_pitch'], 0.0)
+        myCp = prob['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
         npt.assert_allclose(myCp[Omega_expect == Omega_tsr], myCp[6])
-        npt.assert_allclose(myCp[Omega_expect == Omega_tsr], self.outputs['Cp'][Omega_expect == Omega_tsr])
+        npt.assert_allclose(myCp[Omega_expect == Omega_tsr], prob['Cp'][Omega_expect == Omega_tsr])
         
         # Test fixed pitch
-        self.inputs['omega_min'] = 0.0
-        self.inputs['omega_max'] = 15.0
-        self.inputs['control_maxTS'] = 1e5
-        self.inputs['rated_power'] = 1e16
-        self.inputs['control_pitch'] = 5.0
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        prob['omega_min'] = 0.0
+        prob['omega_max'] = 15.0
+        prob['control_maxTS'] = 1e5
+        prob['rated_power'] = 1e16
+        prob['control_pitch'] = 5.0
+        prob.run_model()
         V_expect1 = V_expect0.copy()
         #V_expect1[irated] = 15.*70*2*np.pi/(10.*60.)
         Omega_tsr = V_expect1*10*60/70./2./np.pi
         Omega_expect = np.minimum(Omega_tsr, 15.0)
-        npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_spline)
-        npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'][:irated], 5.0 )
-        npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][irated:]))
-        npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
-        npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
-        npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
-        npt.assert_array_less(self.outputs['T'][:-1], self.outputs['T'][1:])
-        self.assertAlmostEqual(self.outputs['rated_V'], V_expect1[-1], 3)
-        self.assertAlmostEqual(self.outputs['rated_Omega'], 15.0)
-        self.assertGreater(self.outputs['rated_pitch'], 5.0)
-        myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
+        npt.assert_allclose(prob['V'], V_expect1)
+        npt.assert_equal(prob['V_spline'], V_spline.flatten())
+        npt.assert_allclose(prob['Omega'], Omega_expect)
+        npt.assert_equal(prob['pitch'][:irated], 5.0 )
+        npt.assert_array_less(0.0, np.abs(prob['pitch'][irated:]))
+        npt.assert_equal(prob['Cp'], prob['Cp_aero']*0.95)
+        npt.assert_array_less(prob['P'][:-1], prob['P'][1:])
+        npt.assert_array_less(prob['Q'][:-1], prob['Q'][1:])
+        npt.assert_array_less(prob['T'][:-1], prob['T'][1:])
+        self.assertAlmostEqual(prob['rated_V'], V_expect1[-1], 3)
+        self.assertAlmostEqual(prob['rated_Omega'][0], 15.0)
+        self.assertGreater(prob['rated_pitch'], 5.0)
+        myCp = prob['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
-        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
-
-        
+        npt.assert_allclose(myCp[:irated], prob['Cp'][:irated])
         
     def testRegulationTrajectoryNoRegion3(self):
+        prob = om.Problem()
+        
+        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
+        
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(ARCHIVE)
-        self.inputs['airfoils_aoa'] = npzfile['aoa']
-        self.inputs['airfoils_Re'] = npzfile['Re']
-        self.inputs['airfoils_cl'] = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1)
-        self.inputs['airfoils_cd'] = np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1)
-        self.inputs['airfoils_cm'] = np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1)
-        self.inputs['r'] = npzfile['r']
-        self.inputs['chord'] = npzfile['chord']
-        self.inputs['theta'] = npzfile['theta']
+        ivc.add_output('airfoils_aoa', npzfile['aoa'], units='deg')
+        ivc.add_output('airfoils_Re', npzfile['Re'])
+        ivc.add_output('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
+        ivc.add_output('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
+        ivc.add_output('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
+        ivc.add_output('r', npzfile['r'], units='m')
+        ivc.add_output('chord', npzfile['chord'], units='m')
+        ivc.add_output('theta', npzfile['theta'], units='deg')
 
-        n_span = self.inputs['r'].size
-        n_aoa = self.inputs['airfoils_aoa'].size
-        n_Re = self.inputs['airfoils_Re'].size
+        n_span = npzfile['r'].size
+        n_aoa = npzfile['aoa'].size
+        n_Re = npzfile['Re'].size
         n_pc = 22
         
         # parameters
-        self.inputs['v_min'] = 4.
-        self.inputs['v_max'] = 25.
-        self.inputs['rated_power'] = 5e6
-        self.inputs['omega_min'] = 0.0
-        self.inputs['omega_max'] = 100.0
-        self.inputs['control_maxTS'] = 90.
-        self.inputs['tsr_operational'] = 10.
-        self.inputs['control_pitch'] = 0.0
-        self.discrete_inputs['drivetrainType'] = 'GEARED'
-        self.inputs['drivetrainEff'] = 0.95
+        ivc.add_output('v_min', 4., units='m/s')
+        ivc.add_output('v_max', 25., units='m/s')
+        ivc.add_output('rated_power', 5e6, units='W')
+        ivc.add_output('omega_min', 0.0, units='rpm')
+        ivc.add_output('omega_max', 100.0, units='rpm')
+        ivc.add_output('control_maxTS', 90., units='m/s')
+        ivc.add_output('tsr_operational', 10.)
+        ivc.add_output('control_pitch', 0.0, units='deg')
+        ivc.add_output('drivetrainEff', 0.95)
+        ivc.add_discrete_output('drivetrainType', 'GEARED')
         
-        self.inputs['Rhub'] = 1.
-        self.inputs['Rtip'] = 70.
-        self.inputs['hub_height'] = 100.
-        self.inputs['precone'] = 0.
-        self.inputs['tilt'] = 0.
-        self.inputs['yaw'] = 0.
-        self.inputs['precurve'] = np.zeros(n_span)
-        self.inputs['precurveTip'] = 0.
-        self.inputs['presweep'] = np.zeros(n_span)
-        self.inputs['presweepTip'] = 0.
+        ivc.add_output('Rhub', 1., units='m')
+        ivc.add_output('Rtip', 70., units='m')
+        ivc.add_output('hub_height', 100., units='m')
+        ivc.add_output('precone', 0., units='deg')
+        ivc.add_output('tilt', 0., units='deg')
+        ivc.add_output('yaw', 0., units='deg')
+        ivc.add_output('precurve', np.zeros(n_span), units='m')
+        ivc.add_output('precurveTip', 0., units='m')
+        ivc.add_output('presweep', np.zeros(n_span), units='m')
+        ivc.add_output('presweepTip', 0., units='m')
         
-        self.discrete_inputs['nBlades'] = 3
-        self.inputs['rho'] = 1.225
-        self.inputs['mu'] = 1.81206e-5
-        self.inputs['shearExp'] = 0.25
-        self.discrete_inputs['nSector'] = 4
-        self.discrete_inputs['tiploss'] = True
-        self.discrete_inputs['hubloss'] = True
-        self.discrete_inputs['wakerotation'] = True
-        self.discrete_inputs['usecd'] = True
+        ivc.add_output('rho', 1.225, units='kg/m**3')
+        ivc.add_output('mu', 1.81206e-5, units='kg/(m*s)')
+        ivc.add_output('shearExp', 0.25)
+        ivc.add_discrete_output('nBlades', 3)
+        ivc.add_discrete_output('nSector', 4)
+        ivc.add_discrete_output('tiploss', True)
+        ivc.add_discrete_output('hubloss', True)
+        ivc.add_discrete_output('wakerotation', True)
+        ivc.add_discrete_output('usecd', True)
 
-        myopt = {}
-        myopt['blade'] = {}
-        myopt['blade']['n_span'] = n_span
-        myopt['blade']['n_aoa'] = n_aoa
-        myopt['blade']['n_Re'] = n_Re
-        myopt['blade']['n_tab'] = 1
-        myopt['servose'] = {}
-        myopt['servose']['regulation_reg_III'] = False
-        myopt['servose']['n_pc'] = n_pc
-        myopt['servose']['n_pc_spline'] = n_pc
-        myobj = serv.RegulatedPowerCurve(analysis_options=myopt)
-        myobj.n_span = n_span
-        myobj.n_tab  = 1
-        myobj.n_pc   = n_pc
-        myobj.n_pc_spline = n_pc
-        myobj.regulation_reg_III = False
+        analysis_options = {}
+        analysis_options['blade'] = {}
+        analysis_options['blade']['n_span'] = n_span
+        analysis_options['blade']['n_aoa'] = n_aoa
+        analysis_options['blade']['n_Re'] = n_Re
+        analysis_options['blade']['n_tab'] = 1
+        analysis_options['servose'] = {}
+        analysis_options['servose']['regulation_reg_III'] = False
+        analysis_options['servose']['n_pc'] = n_pc
+        analysis_options['servose']['n_pc_spline'] = n_pc
 
-        grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi/4.,np.pi/2.,n_pc + 1)))))
-        grid1 = (grid0 - grid0[0])/(grid0[-1]-grid0[0])
-        V_expect0  = grid1 * (self.inputs['v_max'] - self.inputs['v_min']) + self.inputs['v_min']
-        V_spline = np.linspace(self.inputs['v_min'], self.inputs['v_max'], n_pc)
-        irated = 12
+        n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
+        analysis_options['airfoils'] = {}
+        analysis_options['airfoils']['n_aoa'] = n_aoa
+        analysis_options['airfoils']['n_Re'] = n_Re
+        analysis_options['airfoils']['n_tab'] = n_tab
+        
+        prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(analysis_options=analysis_options), promotes=['*'])
+        
+        prob.setup()
         
         # All reg 2: no maxTS, no max rpm, no power limit
-        self.inputs['omega_max'] = 1e3
-        self.inputs['control_maxTS'] = 1e5
-        self.inputs['rated_power'] = 1e16
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        prob['omega_max'] = 1e3
+        prob['control_maxTS'] = 1e5
+        prob['rated_power'] = 1e16
+        prob.run_model()
+        
+        grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi/4.,np.pi/2.,n_pc + 1)))))
+        grid1 = (grid0 - grid0[0])/(grid0[-1]-grid0[0])
+        V_expect0  = grid1 * (prob['v_max'] - prob['v_min']) + prob['v_min']
+        V_spline = np.linspace(prob['v_min'], prob['v_max'], n_pc)
+        irated = 12
+        
         V_expect1 = V_expect0.copy()
-        #V_expect1[irated] = self.outputs['rated_V']
+        #V_expect1[irated] = prob['rated_V']
         Omega_tsr = V_expect1*10*60/70./2./np.pi
-        npt.assert_equal(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_spline)
-        npt.assert_allclose(self.outputs['Omega'], Omega_tsr)
-        npt.assert_equal(self.outputs['pitch'], np.zeros( V_expect0.shape ) )
-        npt.assert_equal(self.outputs['Cp'], self.outputs['Cp_aero']*0.95)
-        npt.assert_allclose(self.outputs['Cp'], self.outputs['Cp'][0])
-        npt.assert_allclose(self.outputs['Cp_aero'], self.outputs['Cp_aero'][0])
-        myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
+        npt.assert_equal(prob['V'], V_expect1)
+        npt.assert_equal(prob['V_spline'], V_spline.flatten())
+        npt.assert_allclose(prob['Omega'], Omega_tsr)
+        npt.assert_equal(prob['pitch'], np.zeros( V_expect0.shape ) )
+        npt.assert_equal(prob['Cp'], prob['Cp_aero']*0.95)
+        npt.assert_allclose(prob['Cp'], prob['Cp'][0])
+        npt.assert_allclose(prob['Cp_aero'], prob['Cp_aero'][0])
+        myCp = prob['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
         npt.assert_allclose(myCp, myCp[0])
         self.assertGreater(myCp[0], 0.4)
         self.assertGreater(0.5, myCp[0])
-        npt.assert_allclose(myCp, self.outputs['Cp'])
-        npt.assert_array_less(self.outputs['P'][:-1], self.outputs['P'][1:])
-        npt.assert_array_less(self.outputs['Q'][:-1], self.outputs['Q'][1:])
-        npt.assert_array_less(self.outputs['T'][:-1], self.outputs['T'][1:])
-        self.assertEqual(self.outputs['rated_V'], V_expect1[-1])
-        self.assertAlmostEqual(self.outputs['rated_Omega'], Omega_tsr[-1])
-        self.assertEqual(self.outputs['rated_pitch'], 0.0)
+        npt.assert_allclose(myCp, prob['Cp'])
+        npt.assert_array_less(prob['P'][:-1], prob['P'][1:])
+        npt.assert_array_less(prob['Q'][:-1], prob['Q'][1:])
+        npt.assert_array_less(prob['T'][:-1], prob['T'][1:])
+        self.assertEqual(prob['rated_V'], V_expect1[-1])
+        self.assertAlmostEqual(prob['rated_Omega'][0], Omega_tsr[-1])
+        self.assertEqual(prob['rated_pitch'], 0.0)
         
         # Test no maxTS, no max rpm, power limit
-        self.inputs['omega_max'] = 1e3
-        self.inputs['control_maxTS'] = 1e4
-        self.inputs['rated_power'] = 5e6
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        prob['omega_max'] = 1e3
+        prob['control_maxTS'] = 1e4
+        prob['rated_power'] = 5e6
+        prob.run_model()
         V_expect1 = V_expect0.copy()
-        V_expect1[irated] = self.outputs['rated_V']
+        V_expect1[irated] = prob['rated_V']
         Omega_tsr = V_expect1*10*60/70./2./np.pi
-        Omega_expect = np.minimum(Omega_tsr, self.outputs['rated_Omega'])
-        npt.assert_allclose(self.outputs['V'], V_expect1)
-        npt.assert_equal(self.outputs['V_spline'], V_spline)
-        npt.assert_allclose(self.outputs['Omega'], Omega_expect)
-        npt.assert_equal(self.outputs['pitch'], 0.0 )
-        #npt.assert_array_less(0.0, np.abs(self.outputs['pitch'][(irated+1):]))
-        npt.assert_allclose(self.outputs['Cp'][:(irated+1)], self.outputs['Cp_aero'][:(irated+1)]*0.95)
-        npt.assert_array_less(self.outputs['P'][:irated], self.outputs['P'][1:(irated+1)])
-        npt.assert_allclose(self.outputs['P'][irated:], 5e6, rtol=1e-6, atol=0)
-        #npt.assert_equal(self.outputs['Q'][(irated+1):], self.outputs['Q'][irated])
-        npt.assert_equal(self.outputs['T'][(irated+1):], 0.0)
-        npt.assert_array_less(self.outputs['T'], self.outputs['T'][irated]+1e-1)
-        #self.assertEqual(self.outputs['rated_V'], V_expect1[-1])
-        self.assertAlmostEqual(self.outputs['rated_Omega'], Omega_expect[-1])
-        self.assertEqual(self.outputs['rated_pitch'], 0.0)
-        myCp = self.outputs['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
+        Omega_expect = np.minimum(Omega_tsr, prob['rated_Omega'])
+        npt.assert_allclose(prob['V'], V_expect1)
+        npt.assert_equal(prob['V_spline'], V_spline.flatten())
+        npt.assert_allclose(prob['Omega'], Omega_expect)
+        npt.assert_equal(prob['pitch'], 0.0 )
+        #npt.assert_array_less(0.0, np.abs(prob['pitch'][(irated+1):]))
+        npt.assert_allclose(prob['Cp'][:(irated+1)], prob['Cp_aero'][:(irated+1)]*0.95)
+        npt.assert_array_less(prob['P'][:irated], prob['P'][1:(irated+1)])
+        npt.assert_allclose(prob['P'][irated:], 5e6, rtol=1e-6, atol=0)
+        #npt.assert_equal(prob['Q'][(irated+1):], prob['Q'][irated])
+        npt.assert_equal(prob['T'][(irated+1):], 0.0)
+        npt.assert_array_less(prob['T'], prob['T'][irated]+1e-1)
+        #self.assertEqual(prob['rated_V'], V_expect1[-1])
+        self.assertAlmostEqual(prob['rated_Omega'][0], Omega_expect[-1])
+        self.assertEqual(prob['rated_pitch'], 0.0)
+        myCp = prob['P']/(0.5*1.225*V_expect1**3.*np.pi*70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
-        npt.assert_allclose(myCp[:irated], self.outputs['Cp'][:irated])
+        npt.assert_allclose(myCp[:irated], prob['Cp'][:irated])
 
         
 def suite():

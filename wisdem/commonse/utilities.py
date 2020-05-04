@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
 """
 utilities.py
 
@@ -10,6 +8,30 @@ Copyright (c) NREL. All rights reserved.
 from __future__ import print_function
 import numpy as np
 from scipy.linalg import solve_banded
+from scipy.optimize import curve_fit
+
+
+def mode_fit(x, c2, c3, c4, c5, c6):
+    return c2*x**2. + c3*x**3. + c4*x**4. + c5*x**5. + c6*x**6.
+
+def get_modal_coefficients(x, y, deg=6):
+    # Normalize x input
+    xn = (x-x[0]) / (x[-1]-x[0])
+
+    # Get coefficients to 6th order polynomial
+    p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
+    #coef, pcov = curve_fit(mode_fit, xn, y)
+
+    # Normalize for Elastodyn
+    if y.ndim > 1:
+        p6 = p6[2:,:]
+        p6 /= p6.sum(axis=0)[np.newaxis,:]
+    else:
+        p6 = p6[2:]
+        p6 /= p6.sum()
+    
+    return p6
+    
 
 def rotate(xo, yo, xp, yp, angle):
     ## Rotate a point clockwise by a given angle around a given origin.
@@ -18,13 +40,87 @@ def rotate(xo, yo, xp, yp, angle):
     qy = yo + np.sin(angle) * (xp - xo) + np.cos(angle) * (yp - yo)
     return qx, qy
 
-def arc_length(x, y, z=[]):
-    if len(z) == len(x):
-        arc = np.sqrt( np.diff(x)**2 + np.diff(y)**2 + np.diff(z)**2 )
-    else:
-        arc = np.sqrt( np.diff(x)**2 + np.diff(y)**2 )
+def arc_length(points):
+    """
+    Compute the distances between points along a curve and return those
+    cumulative distances as a flat array.
     
-    return np.r_[0.0, np.cumsum(arc)]
+    This function works for 2D, 3D, and N-D arrays.
+    
+    Parameters
+    ----------
+    points : numpy array[n_points, n_dimensions]
+        Array of coordinate points that we compute the arc distances for.
+        
+    Returns
+    -------
+    arc_distances : numpy array[n_points]
+        Array, starting at 0, with the cumulative distance from the first
+        point in the points array along the arc.
+        
+    See Also
+    --------
+    wisdem.commonse.utilities.arc_length_deriv : computes derivatives for
+    the arc_length function
+    
+    Examples
+    --------
+    Here is a simple example of how to use this function to find the cumulative
+    distances between points on a 2D curve.
+    
+    >>> x_values = numpy.linspace(0., 5., 10)
+    >>> y_values = numpy.linspace(2., 4., 10)
+    >>> points = numpy.vstack((x_values, y_values)).T
+    >>> arc_length(points)
+    array([0.        , 0.59835165, 1.19670329, 1.79505494, 2.39340658,
+           2.99175823, 3.59010987, 4.18846152, 4.78681316, 5.38516481])
+    """
+    cartesian_distances = np.sqrt(np.sum(np.diff(points, axis=0)**2, axis=1))
+    arc_distances = np.r_[0.0, np.cumsum(cartesian_distances)]
+    
+    return arc_distances
+    
+def arc_length_deriv(points):
+    """
+    Return the Jacobian for function arc_length().
+    See its docstring for more details.
+    
+    Parameters
+    ----------
+    points : numpy array[n_points, n_dim]
+        Array of coordinate points that we compute the arc distances for.
+        
+    Returns
+    -------
+    d_arc_distances_d_points : numpy array[n_points, n_points * n_dim]
+        Array, starting at 0, with the cumulative distance from the first
+        point in the points array along the arc.
+    """
+    n_points, n_dim = points.shape
+    d_arc_distances_d_points = np.zeros((n_points, n_points * n_dim))
+    
+    # Break out the two-line calculation into subparts to help obtain
+    # derivatives easier
+    diff_points = np.diff(points, axis=0)
+    sum_diffs = np.sum(diff_points**2, axis=1)
+    cartesian_distances = np.sqrt(sum_diffs)
+    cum_sum_distances = np.cumsum(cartesian_distances)
+    arc_distances = np.r_[0.0, cum_sum_distances]
+    
+    # This can be sped up slightly through numpy vectorization, it's shown here in
+    # for-loop for clarity.
+    for i in range(1, n_points):
+        d_inner = 2 * points[i] - 2 * points[i-1]
+        d_outer = 0.5 * (sum_diffs[i-1])**(-0.5)
+        d_arc_distances_d_points[i, i*n_dim:i*n_dim+n_dim] = d_inner * d_outer
+        
+        d_inner = 2 * points[i-1] - 2 * points[i]
+        d_outer = 0.5 * (sum_diffs[i-1])**(-0.5)
+        d_arc_distances_d_points[i, i*n_dim-n_dim:i*n_dim] = d_inner * d_outer
+        
+        d_arc_distances_d_points[i:, i*n_dim-n_dim:i*n_dim] = np.sum(d_arc_distances_d_points[i-1:i+1, i*n_dim-n_dim:i*n_dim], axis=0)
+    
+    return arc_distances, d_arc_distances_d_points
 
 def cosd(value):
     """cosine of value where value is given in degrees"""

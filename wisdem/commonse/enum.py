@@ -1,3 +1,5 @@
+# JPJ: this should probably be renamed so it doesn't conflict with the enum
+# package.
 
 # http://stackoverflow.com/a/505457 with GB modifications
 class Enum(object):

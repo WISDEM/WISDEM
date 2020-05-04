@@ -67,43 +67,6 @@ def calculate_angle(v1,v2):
     v2 = v2/norm(v2)
     return np.arctan2(norm(np.cross(v1,v2)),np.dot(v1,v2))
 
-def calculate_length(In):
-    """
-    Calculate the running length of a 3D line: (x,3) array 
-
-    \param    In    the array of 3d points              <c> numpy.array((n,3)) </c>
-    \retval   leng  a vector of the running distance    <c> numpy.array(n) </c>
-    """
-    if len(In.shape) == 1:
-        d=np.diff(In)
-        leng = np.cumsum(d)
-        leng = np.insert(leng,0,0.)
-        return leng
-
-    ni, nj = In.shape
-    if nj == 2:
-        # segment lengths
-        seglen  =np.zeros(In.shape[0]) 
-        curvelen=np.zeros(In.shape[0]) 
-
-        # calculate length and normals for each segment
-        for i in range(1,In.shape[0]):
-            seglen[i]=((In[i,0]-In[i-1,0])**2.0 \
-                      +(In[i,1]-In[i-1,1])**2.0)**0.5
-        # calculate accumulated curvelen
-        leng=np.cumsum(seglen)
-
-    elif nj ==3:
-        seglen  =np.zeros(In.shape[0]) 
-        curvelen=np.zeros(In.shape[0]) 
-        for i in range(1,In.shape[0]):
-            seglen[i]=((In[i,0]-In[i-1,0])**2.0 \
-                      +(In[i,1]-In[i-1,1])**2.0 \
-                      +(In[i,2]-In[i-1,2])**2.0)**0.5
-        leng=np.cumsum(seglen)
-
-    return leng
-
 def calculate_rotation_matrix(vect):
     """
     Transpose (P1) and project the normal vector (vect) to the Z direction.

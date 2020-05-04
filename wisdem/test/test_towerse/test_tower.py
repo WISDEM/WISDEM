@@ -699,6 +699,115 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob['post.Fz'], myFz)
 
         
+    def test15MWmode_shapes(self):
+        # --- geometry ----
+        h_param = np.array([5., 5., 5., 5., 5., 5., 5., 5., 5., 13.,  13.,  13.,  13.,  13.,  13.,  13.,  13.,  13., 14.1679])
+        d_param = np.array([10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 9.92647687, 9.44319282, 8.83283769, 8.15148167, 7.38976138, 6.90908962, 6.74803581, 6.57231775, 6.5])
+        t_param = np.array([0.05534138, 0.05344902, 0.05150928, 0.04952705, 0.04751736, 0.04551709, 0.0435267, 0.04224176, 0.04105759, 0.0394965, 0.03645589, 0.03377851, 0.03219233, 0.03070819, 0.02910109, 0.02721289, 0.02400931, 0.0208264, 0.02399756])
+
+        # Store analysis options
+        analysis_options = {}
+        analysis_options['tower'] = {}
+        analysis_options['tower']['buckling_length'] = 15.0
+        analysis_options['tower']['monopile'] = False #True
+
+        # --- safety factors ---
+        analysis_options['tower']['gamma_f'] = 1.35
+        analysis_options['tower']['gamma_m'] = 1.3
+        analysis_options['tower']['gamma_n'] = 1.0
+        analysis_options['tower']['gamma_b'] = 1.1
+        # ---------------
+
+        # --- fatigue ---
+        analysis_options['tower']['gamma_fatigue'] = 1.35*1.3*1.0
+        life = 20.0
+        # ---------------
+
+        # -----Frame3DD------
+        analysis_options['tower']['frame3dd']            = {}
+        analysis_options['tower']['frame3dd']['DC']      = 80.0
+        analysis_options['tower']['frame3dd']['shear']   = True
+        analysis_options['tower']['frame3dd']['geom']    = True
+        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['nM']      = 6
+        analysis_options['tower']['frame3dd']['Mmethod'] = 1
+        analysis_options['tower']['frame3dd']['lump']    = 0
+        analysis_options['tower']['frame3dd']['tol']     = 1e-9
+        analysis_options['tower']['frame3dd']['shift']   = 0.0
+        analysis_options['tower']['frame3dd']['add_gravity'] = True
+        # ---------------
+
+        analysis_options['tower']['n_height'] = len(d_param)
+        analysis_options['tower']['wind'] = 'PowerWind'
+        analysis_options['tower']['nLC'] = 1
+
+        prob = om.Problem()
+        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+        prob.setup()
+        
+        # Set common and then customized parameters
+        print(h_param.sum())
+        prob['hub_height'] = prob['wind_reference_height'] = 30+146.1679
+        prob['foundation_height'] = 0.0 #-30.0
+        prob['tower_section_height'] = h_param
+        prob['tower_outer_diameter'] = d_param
+        prob['tower_wall_thickness'] = t_param
+        prob['outfitting_factor'] = 1.0
+        prob['suctionpile_depth'] = 0.0 #45.0
+        prob['yaw'] = 0.0
+        prob['transition_piece_mass'] = 0.0 #100e3
+        prob['transition_piece_height'] = 0.0 #15.0
+        #prob['G_soil'] = 140e6
+        #prob['nu_soil'] = 0.4
+        prob['shearExp'] = 0.11
+        prob['rho_air'] = 1.225
+        prob['wind_z0'] = 0.0
+        prob['mu_air'] = 1.7934e-5
+        prob['rho_water'] = 1025.0
+        prob['mu_water'] = 1.3351e-3
+        prob['beta_wind'] = prob['beta_wave'] = 0.0
+        prob['hsig_wave'] = 0.0 #4.52
+        prob['Tsig_wave'] = 0.0 #9.52
+        prob['life'] = 20.0
+
+        prob['E'] = 210e9
+        prob['G'] = 79.3e9 #80.8e9
+        prob['rho'] = 7850.0 #8500.0
+        prob['sigma_y'] = 345.0e6 #450.0e6
+
+        mIxx = 379640227.0
+        mIyy = 224477294.0
+        mIzz = 182971949.0
+        mIxy = 0.0
+        mIxz = -7259625.38
+        mIyz = 0.0
+        prob['rna_mass'] = 1007537.0
+        prob['rna_I'] = np.array([mIxx, mIyy, mIzz, mIxy, mIxz, mIyz])
+        prob['rna_cg'] = np.array([-5.019, 0., 0.])
+
+        prob['wind.Uref'] = 0.0 #20.00138038
+        prob['pre.rna_F'] = np.zeros(3) #np.array([3569257.70891496, -22787.83765441, -404483.54819059])
+        prob['pre.rna_M'] = np.zeros(3) #np.array([68746553.1515807, 16045443.38557568, 1811078.988995])
+        prob['min_d_to_t'] = 120.0
+        prob['max_taper']  = 0.2
+
+        # # --- run ---
+        prob.run_model()
+        print(prob['post.structural_frequencies'])
+        print(prob['post.fore_aft_modes'])
+        print(prob['post.side_side_modes'])
+        '''
+        Natural Frequencies (Hz): [ 0.2161   0.21842  1.1091   1.167    1.2745   2.3611   2.5877   5.1233  5.2111   9.9725  10.007   10.151   16.388   16.4     18.092   21.813 23.955   23.958   30.184   33.706  ]
+ 
+        Polynomial fit coefficients to modal displacements (x^2, x^3, x^4, x^5, x^6)
+        1st Fore-aft    = [1.11422342, -2.73438505, 6.84397071, -5.97959674, 1.75578766]
+        2nd Fore-aft    = [-48.86125831, 82.74454067, -156.79260263, 208.53125496, -84.62193469]
+        1st Side-side   = [1.10492357, -2.71587869, 6.80247339, -5.93612744, 1.74460918]
+        2nd Side-side   = [48.9719383, -89.25323746, 183.04839183, -226.34534799, 84.57825533]
+        '''
+        
+
+        
     def testExampleRegression(self):
         # --- geometry ----
         h_param = np.diff(np.array([0.0, 43.8, 87.6]))
@@ -911,7 +1020,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob['tower1.base_M'], [ 4.14769959e+06,  1.10756769e+08, -3.46781682e+05], 0)
         npt.assert_almost_equal(prob['tower2.base_F'], [ 1.61668069e+06,  6.98491931e-10, -6.27903939e+06], 2)
         npt.assert_almost_equal(prob['tower2.base_M'], [-1.76118035e+06,  1.12568312e+08,  1.47301970e+05], 0)
-
+        
 
 
     

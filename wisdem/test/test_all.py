@@ -18,6 +18,7 @@ import wisdem.test.test_servose as test_servose
 import wisdem.test.test_towerse as test_towerse
 import wisdem.test.test_turbinecostsse as test_turbinecostsse
 import wisdem.test.test_wisdem as test_wisdem
+import wisdem.test.test_yaml as test_yaml
 
 def suite():
     suite = unittest.TestSuite( (
@@ -35,8 +36,9 @@ def suite():
         #test_rotorse.test_all.suite(),
         test_servose.test_all.suite(),
         test_towerse.test_all.suite(),
-        test_turbinecostsse.test_all.suite()
-        #test_wisdem.test_all.suite()                                 
+        test_turbinecostsse.test_all.suite(),
+        #test_wisdem.test_all.suite(),  
+        test_yaml.test_all.suite(),       
     ) )
     return suite
 
@@ -56,7 +58,9 @@ valid_tests = [#'test_orbit',
     #'test_rotorse',
     'test_servose',
     #'test_wisdem',
-    'test_turbinecostsse']
+    'test_turbinecostsse',
+    'test_yaml',
+    ]
 
 if __name__ == '__main__':
     #unittest.TextTestRunner().run(suite())

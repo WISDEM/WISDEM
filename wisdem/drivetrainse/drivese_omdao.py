@@ -265,8 +265,9 @@ class Gearbox_OM(ExplicitComponent):
 
         mygearbox = dc.Gearbox(discrete_inputs['gear_configuration'], discrete_inputs['shaft_factor'], debug=self.options['debug'])
         
-        (outputs['stage_masses'], outputs['gearbox_mass'], outputs['gearbox_cm'], outputs['gearbox_I'], outputs['gearbox_length'], outputs['gearbox_height'], outputs['gearbox_diameter']) \
-            = mygearbox.compute(inputs['gear_ratio'], discrete_inputs['planet_numbers'], inputs['rotor_rpm'], inputs['rotor_diameter'], inputs['rotor_torque'], inputs['gearbox_input_xcm'])
+        if inputs['gear_ratio'] > 1.:
+            (outputs['stage_masses'], outputs['gearbox_mass'], outputs['gearbox_cm'], outputs['gearbox_I'], outputs['gearbox_length'], outputs['gearbox_height'], outputs['gearbox_diameter']) \
+                = mygearbox.compute(inputs['gear_ratio'], discrete_inputs['planet_numbers'], inputs['rotor_rpm'], inputs['rotor_diameter'], inputs['rotor_torque'], inputs['gearbox_input_xcm'])
 
         
 
