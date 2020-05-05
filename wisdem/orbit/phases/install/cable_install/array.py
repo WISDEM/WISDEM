@@ -8,6 +8,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 from copy import deepcopy
 
+import numpy as np
 from marmot import process
 
 from wisdem.orbit.core import Vessel
@@ -41,6 +42,7 @@ class ArrayCableInstallation(InstallPhase):
         "array_cable_trench_vessel": "str (optional)",
         "site": {"distance": "km"},
         "array_system": {
+            "num_strings": "int (optional, default: 10)",
             "cables": {
                 "name (variable)": {
                     "linear_density": "t/km",
@@ -48,7 +50,7 @@ class ArrayCableInstallation(InstallPhase):
                         ("length, km", "int", "speed, km/h (optional)")
                     ],
                 }
-            }
+            },
         },
     }
 
@@ -84,6 +86,7 @@ class ArrayCableInstallation(InstallPhase):
         self.initialize_burial_vessel()
         self.initialize_trench_vessel()
 
+        self.num_strings = self.config["array_system"].get("num_strings", 10)
         self.cable_data = [
             (Cable(data["linear_density"]), deepcopy(data["cable_sections"]))
             for _, data in self.config["array_system"]["cables"].items()
@@ -94,6 +97,7 @@ class ArrayCableInstallation(InstallPhase):
             self.install_vessel,
             distance=self.config["site"]["distance"],
             cable_data=self.cable_data,
+            num_strings=self.num_strings,
             burial_vessel=self.bury_vessel,
             trench_vessel=self.trench_vessel,
             **kwargs,
@@ -164,6 +168,7 @@ def install_array_cables(
     vessel,
     distance,
     cable_data,
+    num_strings,
     burial_vessel=None,
     trench_vessel=None,
     **kwargs,
@@ -177,6 +182,9 @@ def install_array_cables(
         Cable installation vessel.
     cable_data : list
         List of tuples containing `Cable` instances and sections.
+    num_strings : int
+        Number of array system strings. Used for partial generation assumptions
+        for the post-processed cash flow model.
     burial_vessel : Vessel
         Optional configuration for burial vessel. If configured, the
         installation vessel only lays the cable on the seafloor and this
@@ -187,20 +195,23 @@ def install_array_cables(
         the cable lay vessel and digs a trench.
     """
 
+    breakpoints = list(np.linspace(1 / num_strings, 1, num_strings))
+    trench_sections = []
+    total_cable_distance = 0
+    installed = 0
+
+    for cable, sections in cable_data:
+        for s in sections:
+            d_i, num_i = s
+            trench_sections.extend([d_i] * num_i)
+            total_cable_distance += d_i * num_i
+
     ## Trenching Process
     # Conduct trenching along cable routes before laying cable
     if trench_vessel is None:
         pass
 
     else:
-        # Create list of cable section lengths to dig trenches for
-        total_trench_distance = []
-
-        for cable, sections in cable_data:
-            for s in sections:
-                d_i, num_i = s
-                total_trench_distance.extend([d_i] * num_i)
-
         # Conduct trenching operations
         while True:
             if trench_vessel.at_port:
@@ -212,7 +223,7 @@ def install_array_cables(
 
                 try:
                     # Dig trench along each cable section distance
-                    trench_distance = total_trench_distance.pop(0)
+                    trench_distance = trench_sections.pop(0)
                     yield dig_array_cables_trench(
                         trench_vessel, trench_distance, **kwargs
                     )
@@ -284,6 +295,7 @@ def install_array_cables(
                     # Cable laying procedure
                     if burial_vessel is None:
                         yield lay_bury_cable(vessel, section, **specs)
+                        installed += section
 
                     else:
                         yield lay_cable(vessel, section, **specs)
@@ -293,6 +305,14 @@ def install_array_cables(
                     yield prep_cable(vessel, **kwargs)
                     yield pull_in_cable(vessel, **kwargs)
                     yield terminate_cable(vessel, **kwargs)
+
+                    if burial_vessel is None:
+                        breakpoints = check_for_completed_string(
+                            vessel,
+                            installed,
+                            total_cable_distance,
+                            breakpoints,
+                        )
 
         # Transit back to port
         vessel.at_site = False
@@ -307,11 +327,11 @@ def install_array_cables(
 
     else:
         vessel.submit_debug_log(message="Array cable lay process completed!")
-        bury_array_cables(burial_vessel, to_bury, **kwargs)
+        bury_array_cables(burial_vessel, to_bury, breakpoints, **kwargs)
 
 
 @process
-def bury_array_cables(vessel, sections, **kwargs):
+def bury_array_cables(vessel, sections, breakpoints, **kwargs):
     """
     Simulation for the burial of array cables if configured.
 
@@ -321,11 +341,22 @@ def bury_array_cables(vessel, sections, **kwargs):
         Performing vessel.
     sections : list
         List of cable sections that need to be buried at site.
+    breakpoints : list
+        TODO
+        List of string breakpoints.
     """
+
+    installed = 0
+    total_length = sum(sections)
 
     for length in sections:
         yield position_onsite(vessel, site_position_time=2)
         yield bury_cable(vessel, length, **kwargs)
+        installed += length
+
+        breakpoints = check_for_completed_string(
+            vessel, installed, total_length, breakpoints
+        )
 
     vessel.submit_debug_log(message="Array cable burial process completed!")
 
@@ -345,3 +376,15 @@ def dig_array_cables_trench(vessel, distance, **kwargs):
 
     yield position_onsite(vessel, site_position_time=2)
     yield dig_trench(vessel, distance, **kwargs)
+
+
+def check_for_completed_string(vessel, installed, total, breakpoints):
+    """
+    TODO:
+    """
+
+    if (installed / total) >= breakpoints[0]:
+        vessel.submit_debug_log(progress="Array String")
+        _ = breakpoints.pop(0)
+
+    return breakpoints

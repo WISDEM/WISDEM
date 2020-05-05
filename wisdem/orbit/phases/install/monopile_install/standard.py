@@ -293,7 +293,7 @@ def solo_install_monopiles(vessel, port, distance, monopiles, **kwargs):
                 )
 
                 yield install_transition_piece(vessel, tp, **kwargs)
-
+                vessel.submit_debug_log(progress="Substructure")
                 n += 1
 
             else:
@@ -360,6 +360,7 @@ def install_monopiles_from_queue(wtiv, queue, monopiles, distance, **kwargs):
 
                 # Install transition piece
                 yield install_transition_piece(wtiv, tp, **kwargs)
+                wtiv.submit_debug_log(progress="Substructure")
                 n += 1
 
             else:

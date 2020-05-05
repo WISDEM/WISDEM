@@ -5,14 +5,14 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 from copy import deepcopy
-from datetime import datetime
 
 import pandas as pd
 import pytest
 
 from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
+from wisdem.orbit.manager import ProjectProgress
 from wisdem.orbit.core.exceptions import (
     MissingInputs,
     PhaseNotFound,
@@ -22,9 +22,8 @@ from wisdem.orbit.core.exceptions import (
 
 weather_df = pd.DataFrame(test_weather).set_index("datetime")
 
-initialize_library(pytest.library)
 config = extract_library_specs("config", "project_manager")
-
+complete_project = extract_library_specs("config", "complete_project")
 
 ### Top Level
 @pytest.mark.parametrize("weather", (None, weather_df))
@@ -361,7 +360,7 @@ def test_resolve_project_capacity():
     }
 
     with pytest.raises(AttributeError):
-        out5 = ProjectManager.resolve_project_capacity(config5)
+        _ = ProjectManager.resolve_project_capacity(config5)
 
     # Test for not enough information
     config6 = {"plant": {"capacity": 600}}
@@ -370,10 +369,10 @@ def test_resolve_project_capacity():
     assert out6["plant"]["capacity"] == config6["plant"]["capacity"]
 
     with pytest.raises(KeyError):
-        turbine_rating = out6["turbine"]["turbine_rating"]
+        _ = out6["turbine"]["turbine_rating"]
 
     with pytest.raises(KeyError):
-        num_turbines = out6["plant"]["num_turbines"]
+        _ = out6["plant"]["num_turbines"]
 
 
 ### Exceptions
@@ -437,3 +436,172 @@ def test_circular_dependencies():
     with pytest.raises(PhaseDependenciesInvalid):
         project = ProjectManager(circular_deps)
         project.run_project()
+
+
+def test_ProjectProgress():
+
+    data = [
+        ("Export System", 10),
+        ("Offshore Substation", 20),
+        ("Array String", 15),
+        ("Array String", 25),
+        ("Turbine", 5),
+        ("Turbine", 10),
+        ("Turbine", 15),
+        ("Turbine", 20),
+        ("Turbine", 25),
+        ("Substructure", 6),
+        ("Substructure", 9),
+        ("Substructure", 14),
+        ("Substructure", 22),
+        ("Substructure", 26),
+    ]
+
+    progress = ProjectProgress(data)
+
+    assert progress.parse_logs("Export System") == [10]
+
+    turbines = progress.parse_logs("Turbine")
+    assert len(turbines) == 5
+
+    chunks = list(progress.chunk_max(turbines, 2))
+    assert chunks[0] == 10
+    assert chunks[1] == 20
+    assert chunks[2] == 25
+
+    assert progress.complete_export_system == 20
+    times, _ = progress.complete_array_strings
+    assert times == [15, 26]
+
+    times, turbines = progress.energize_points
+    assert times == [20, 26]
+    assert sum(turbines) == 5
+
+
+def test_ProjectProgress_with_incomplete_project():
+
+    project = ProjectManager(config)
+    project.run_project()
+
+    _ = project.progress.parse_logs("Substructure")
+    _ = project.progress.parse_logs("Turbine")
+
+    with pytest.raises(ValueError):
+        project.progress.complete_export_system
+
+    with pytest.raises(ValueError):
+        project.progress.complete_array_strings
+
+
+def test_ProjectProgress_with_complete_project():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+
+    _ = project.progress.parse_logs("Substructure")
+    _ = project.progress.parse_logs("Turbine")
+    _ = project.progress.parse_logs("Array String")
+    _ = project.progress.parse_logs("Export System")
+    _ = project.progress.parse_logs("Offshore Substation")
+
+    _ = project.progress.complete_export_system
+    _ = project.progress.complete_array_strings
+
+    _ = project.progress.energize_points
+
+    new = deepcopy(complete_project)
+    new["plant"]["num_turbines"] = 61
+
+    # Uneven strings
+    project = ProjectManager(new)
+    project.run_project()
+
+    _ = project.progress.energize_points
+
+
+def test_monthly_expenses():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+    _ = project.monthly_expenses
+
+    # Still report expenses for "incomplete" project
+    config = deepcopy(complete_project)
+    _ = config["install_phases"].pop("TurbineInstallation")
+
+    project = ProjectManager(config)
+    project.run_project()
+
+    _ = project.monthly_expenses
+
+
+def test_monthly_revenue():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+    _ = project.monthly_revenue
+
+    # Can't generate revenue with "incomplete" project
+    config = deepcopy(complete_project)
+    _ = config["install_phases"].pop("TurbineInstallation")
+
+    project = ProjectManager(config)
+    project.run_project()
+
+    with pytest.raises(ValueError):
+        _ = project.monthly_revenue
+
+
+def test_cash_flow():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+    _ = project.cash_flow
+
+    # Can't generate revenue with "incomplete" project but cash flow will still
+    # be reported
+    config = deepcopy(complete_project)
+    _ = config["install_phases"].pop("TurbineInstallation")
+
+    project = ProjectManager(config)
+    project.run_project()
+
+    cash_flow = project.cash_flow
+    assert all(v <= 0 for v in cash_flow.values())
+
+
+def test_npv():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+    baseline = project.npv
+
+    config = deepcopy(complete_project)
+    config["ncf"] = 0.35
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
+
+    config = deepcopy(complete_project)
+    config["offtake_price"] = 70
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
+
+    config = deepcopy(complete_project)
+    config["project_lifetime"] = 30
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
+
+    config = deepcopy(complete_project)
+    config["discount_rate"] = 0.03
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
+
+    config = deepcopy(complete_project)
+    config["opex_rate"] = 120
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline

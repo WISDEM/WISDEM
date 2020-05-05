@@ -249,4 +249,7 @@ def install_oss_from_queue(vessel, queue, substations, distance, **kwargs):
     vessel.at_site = False
     yield vessel.transit(distance)
     vessel.at_port = True
-    vessel.submit_debug_log(message="Monopile installation complete!")
+    vessel.submit_debug_log(
+        message="Monopile installation complete!",
+        progress="Offshore Substation",
+    )

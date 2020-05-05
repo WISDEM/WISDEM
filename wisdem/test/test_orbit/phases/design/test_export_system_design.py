@@ -6,15 +6,11 @@ __maintainer__ = "Rob Hammond"
 __email__ = "robert.hammond@nrel.gov"
 
 
-import copy
-
-import numpy as np
 import pytest
 
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.phases.design import ExportSystemDesign
 
-initialize_library(pytest.library)
 config = extract_library_specs("config", "export_design")
 
 
@@ -98,7 +94,7 @@ def test_design_result():
     export = ExportSystemDesign(config)
     export.run()
 
-    cable_name = export.cable.name
+    _ = export.cable.name
     cables = export.design_result["export_system"]["cable"]
 
     assert cables["sections"] == [export.length]
