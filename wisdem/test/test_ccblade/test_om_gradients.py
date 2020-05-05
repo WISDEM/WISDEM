@@ -15,7 +15,7 @@ np.random.seed(314)
 class Test(unittest.TestCase):
 
     def test_ccblade_geometry(self):
-        n_input = 10
+        n_span = 10
     
         prob = om.Problem()
     
@@ -23,11 +23,11 @@ class Test(unittest.TestCase):
     
         # Add some arbitrary inputs
         ivc.add_output('Rtip', val=80., units='m')
-        ivc.add_output('precurve_in', val=np.random.rand(n_input), units='m')
-        ivc.add_output('presweep_in', val=np.random.rand(n_input), units='m')
+        ivc.add_output('precurve_in', val=np.random.rand(n_span), units='m')
+        ivc.add_output('presweep_in', val=np.random.rand(n_span), units='m')
         ivc.add_output('precone', val=2.2, units='deg')
     
-        comp = CCBladeGeometry(NINPUT=n_input)
+        comp = CCBladeGeometry(n_span=n_span)
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
