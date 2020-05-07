@@ -903,10 +903,10 @@ class Compute_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
 
                 if discrete_inputs['definition_web'][j] == 1:
                     web_rotation[j,i] = - inputs['twist'][i]
-                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
+                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], - web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
                 elif discrete_inputs['definition_web'][j] == 2:
                     web_rotation[j,i] = - inputs['web_rotation_yaml'][j,i]
-                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
+                    web_start_nd[j,i], web_end_nd[j,i] = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], - web_rotation[j,i], outputs['web_offset_y_pa'][j,i], [0.,0.], ['suction', 'pressure'])
                     if i == 0:
                         print('WARNING: The web ' + web_name[j] + ' is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition.')
                     if web_start_nd[j,i] < 0. or web_start_nd[j,i] > 1.:
@@ -926,7 +926,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(ExplicitComponent):
                         layer_rotation[j,i] = - inputs['twist'][i]
                     else:
                         layer_rotation[j,i] = - inputs['layer_rotation_yaml'][j,i]
-                    midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], layer_rotation[j,i], inputs['layer_offset_y_pa_yaml'][j,i], [0.,0.], [discrete_inputs['layer_side'][j]])[0]
+                    midpoint = calc_axis_intersection(inputs['coord_xy_dim'][i,:,:], - layer_rotation[j,i], inputs['layer_offset_y_pa_yaml'][j,i], [0.,0.], [discrete_inputs['layer_side'][j]])[0]
 
                     # Geometry check to make sure the spar caps does not exceed 80% of the chord
                     width    = inputs['layer_width_yaml'][j,i]
@@ -1826,7 +1826,7 @@ def assign_tower_values(wt_opt, analysis_options, tower):
     wt_opt['tower.layer_mat']         = layer_mat
     wt_opt['tower.layer_thickness']   = thickness
     
-    wt_opt['tower.outfitting_factor'] = tower['outfitting_factor']    
+    wt_opt['tower.outfitting_factor'] = tower['internal_structure_2d_fem']['outfitting_factor']    
     
     return wt_opt
 

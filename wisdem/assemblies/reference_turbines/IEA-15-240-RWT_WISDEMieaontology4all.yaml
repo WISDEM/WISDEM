@@ -382,6 +382,7 @@ components:
                 grid: [0.0, 1.0]
                 values: [0.5, 0.5]
         internal_structure_2d_fem:
+            outfitting_factor: 1.07
             reference_axis: *ref_axis_tower
             layers:
                 - name: tower_wall
