@@ -199,7 +199,6 @@ components:
           yaw_motors_number: 1
           efficiency: 0.95
     tower:
-        outfitting_factor: 1.07
         outer_shape_bem:
             reference_axis: &ref_axis_tower
                 x:
@@ -218,6 +217,7 @@ components:
                 grid: [0.0, 1.0]
                 values: [1.0, 1.0]
         internal_structure_2d_fem:
+            outfitting_factor: 1.07
             reference_axis: *ref_axis_tower
             layers:
                 - name: tower_wall
