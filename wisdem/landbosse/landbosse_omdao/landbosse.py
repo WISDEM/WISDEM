@@ -324,8 +324,6 @@ class LandBOSSE_API(om.ExplicitComponent):
             val=None
         )
 
-        # OUTPUTS, SPECIFIC
-
         self.add_discrete_output(
             'erection_crane_choice',
             desc='The crane choices for erection.',
@@ -335,6 +333,12 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_discrete_output(
             'erection_component_name_topvbase',
             desc='List of components and whether they are a topping or base operation',
+            val=None
+        )
+
+        self.add_discrete_output(
+            'erection_components',
+            desc='List of components with their values modified from the defaults.',
             val=None
         )
 
@@ -389,6 +393,10 @@ class LandBOSSE_API(om.ExplicitComponent):
         details = self.gather_details_from_master_output_dict(master_output_dict)
         discrete_outputs['landbosse_details_by_module'] = details
 
+        # This is where we have access to the modified components, so put those
+        # in the outputs of the component
+        discrete_outputs['erection_components'] = master_input_dict['components']
+
         # Now get specific outputs. These have been refactored to methods that work
         # with each module so as to keep this method as compact as possible.
         self.gather_specific_erection_outputs(master_output_dict, outputs, discrete_outputs)
@@ -421,12 +429,15 @@ class LandBOSSE_API(om.ExplicitComponent):
         discrete_inputs_dict = {key: value for key, value in discrete_inputs.items()}
         incomplete_input_dict = {**inputs_dict, **discrete_inputs_dict}
 
-        # Modify the component data if it is needed
-        self.modify_component_lists(inputs, discrete_inputs)
+        # Modify the default component data if needed. Write them into the
+        # incomplete input dictionary.
+        modified_components = self.modify_component_lists(inputs, discrete_inputs)
+        print(incomplete_input_dict['components'])
+        incomplete_input_dict['components'] = modified_components
 
         # FoundationCost needs to have all the component data split into separate
         # NumPy arrays.
-        incomplete_input_dict['component_data'] = discrete_inputs['components']
+        incomplete_input_dict['component_data'] = modified_components
         for component in incomplete_input_dict['component_data'].keys():
             incomplete_input_dict[component] = np.array(incomplete_input_dict['component_data'][component])
 
@@ -630,6 +641,11 @@ class LandBOSSE_API(om.ExplicitComponent):
         discrete_inputs : openmdao.core.component._DictValues
             A dictionary-like with the non-numeric inputs (like
             pandas.DataFrame)
+
+        Returns
+        -------
+        pd.DataFrame
+            The dataframe with the modified components.
         """
         print('>>> hub_mass kg', inputs['hub_mass'])
         print('>>> nacelle_mass kg', inputs['nacelle_mass'])
@@ -709,12 +725,9 @@ class LandBOSSE_API(om.ExplicitComponent):
         tower_sections = self.make_tower_sections(tower_mass_tonnes, tower_height_m, default_tower_section)
         output_components_list.extend(tower_sections)
 
-        # Make the output component list
+        # Make the output component dataframe and return it.
         output_components = pd.DataFrame(output_components_list)
-
-        print('>>>>>>>>>> MODIFIED COMPONENTS <<<<<<<<')
-        pd.set_option('display.max_columns', 500)
-        print(output_components)
+        return output_components
 
     @staticmethod
     def make_tower_sections(tower_mass_tonnes,

@@ -355,6 +355,8 @@ if __name__ == "__main__":
     print(prob['erection_crane_choice'])
     print('ErectionCost components top or base')
     print(prob['erection_component_name_topvbase'])
+    print('ErectionCost components')
+    print(prob['erection_components'])
     print('#################################################################')
 
     print('###### LandBOSSE totals #########################################')
