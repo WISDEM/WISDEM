@@ -432,8 +432,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Modify the default component data if needed. Write them into the
         # incomplete input dictionary.
         modified_components = self.modify_component_lists(inputs, discrete_inputs)
-        print(incomplete_input_dict['components'])
-        incomplete_input_dict['components'] = modified_components
+        incomplete_input_dict['project_data']['components'] = modified_components
 
         # FoundationCost needs to have all the component data split into separate
         # NumPy arrays.
