@@ -17,7 +17,7 @@ import jsonschema as json
 from wisdem.ccblade.ccblade_component import CCBladeGeometry
 from wisdem.ccblade import CCAirfoil
 from wisdem.airfoilprep.airfoilprep import Airfoil, Polar
-from wisdem.commonse.utilities import arc_length
+from wisdem.commonse.utilities import arc_length, rotate
 
 from wisdem.rotorse.precomp import Profile, Orthotropic2DMaterial, CompositeSection, _precomp, PreCompWriter
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, Curve
@@ -65,13 +65,6 @@ def remapAirfoil(x_ref, y_ref, x0):
     x_in[:idx] *= -1.
 
     return remap2grid(x, y, x_in)
-
-def rotate(xo, yo, xp, yp, angle):
-    ## Rotate a point clockwise by a given angle around a given origin.
-    # angle *= -1.
-    qx = xo + np.cos(angle) * (xp - xo) - np.sin(angle) * (yp - yo)
-    qy = yo + np.sin(angle) * (xp - xo) + np.cos(angle) * (yp - yo)
-    return qx, qy
 
 def trailing_edge_smoothing(data):
     # correction to trailing edge shape for interpolated airfoils that smooths out unrealistic geometric errors

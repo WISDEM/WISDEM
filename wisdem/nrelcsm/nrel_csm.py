@@ -7,7 +7,7 @@ Copyright (c) NREL. All rights reserved.
 
 import numpy as np
 from math import pi, gamma, exp
-from wisdem.nrelcsm.utilities import smooth_abs, smooth_min, hstack
+from wisdem.commonse.utilities import smooth_abs, smooth_min, hstack
 from wisdem.nrelcsm.config import *
 
 # NREL Cost and Scaling Model plant energy modules

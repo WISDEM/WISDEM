@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import openmdao.api as om
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver, CaseReader
 from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyPython, WindTurbineOntologyOpenMDAO, yaml2openmdao
 from wisdem.assemblies.run_tools import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
@@ -104,7 +105,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         step_size = opt_options['driver']['step_size']
     else:
         step_size = 1.e-6
-    wt_opt.model.approx_totals(method='fd', step=step_size, form='central')    
+    wt_opt.model.approx_totals(method='fd', step=step_size, form='central')
     
     # After looping through the optimization options yaml above, if opt_flag
     # became true then we set up an optimization problem
@@ -144,8 +145,13 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             wt_opt.driver.opt_settings['Major feasibility tolerance'] = float(opt_options['driver']['tol'])
             # wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
             # wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
-            # wt_opt.driver.opt_settings['Major step limit'] = opt_options['driver']['step_size']
-            wt_opt.driver.hist_file = 'tower_opt.db'
+            if 'hist_file_name' in opt_options['driver']:
+                wt_opt.driver.hist_file = opt_options['driver']['hist_file_name']
+            if 'verify_level' in opt_options['driver']:
+                wt_opt.driver.opt_settings['Verify level'] = opt_options['driver']['verify_level']
+            # wt_opt.driver.declare_coloring()  
+            if 'hotstart_file' in opt_options['driver']:
+                wt_opt.driver.hotstart_file = opt_options['driver']['hotstart_file']
 
         else:
             exit('The optimizer ' + opt_options['driver']['solver'] + 'is not yet supported!')
@@ -301,11 +307,16 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
         # Set recorder on the OpenMDAO driver level using the `optimization_log`
         # filename supplied in the optimization yaml
-        wt_opt.driver.add_recorder(SqliteRecorder(opt_options['optimization_log']))
-        wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe', 'rlds.constr.constr_max_strainU_spar', 'rlds.constr.constr_max_strainL_spar', 'tcons.tip_deflection_ratio', 'sse.stall_check.no_stall_constraint', 'pc.tsr_opt', ]
-        wt_opt.driver.recording_options['record_objectives']  = True
-        wt_opt.driver.recording_options['record_constraints'] = True
-        wt_opt.driver.recording_options['record_desvars']     = True
+        if 'recorder' in opt_options:
+            if opt_options['recorder']['flag']:
+                recorder = om.SqliteRecorder(opt_options['optimization_log'])
+                wt_opt.driver.add_recorder(recorder)
+                wt_opt.add_recorder(recorder)
+                
+                wt_opt.driver.recording_options['includes'] = ['sse.AEP, elastic.precomp.blade_mass, financese.lcoe', 'rlds.constr.constr_max_strainU_spar', 'rlds.constr.constr_max_strainL_spar', 'tcons.tip_deflection_ratio', 'sse.stall_check.no_stall_constraint', 'pc.tsr_opt', ]
+                wt_opt.driver.recording_options['record_constraints'] = True 
+                wt_opt.driver.recording_options['record_desvars'] = True 
+                wt_opt.driver.recording_options['record_objectives'] = True
     
     # Setup openmdao problem
     wt_opt.setup()
