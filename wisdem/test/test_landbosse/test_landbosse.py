@@ -11,4 +11,8 @@ def test_landbosse():
     prob.setup()
     prob.run_model()
 
+    landbosse_costs_by_module_type_operation = prob['landbosse_costs_by_module_type_operation']
+
+    print(landbosse_costs_by_module_type_operation)
+
     assert True

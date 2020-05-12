@@ -647,10 +647,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         pd.DataFrame
             The dataframe with the modified components.
         """
-        print('>>> hub_mass kg', inputs['hub_mass'])
-        print('>>> nacelle_mass kg', inputs['nacelle_mass'])
-        print('>>> turbine_rating_MW', inputs['turbine_rating_MW'])
-
         input_components = discrete_inputs['components']
 
         # This list is a sequence of pd.Series instances that have the
