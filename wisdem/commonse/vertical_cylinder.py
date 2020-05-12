@@ -12,6 +12,15 @@ import wisdem.pyframe3dd.frame3dd as frame3dd
 
 RIGID = 1e30
 NFREQ = 6
+NREFINE = 3
+
+def get_nfull(npts):
+    nFull = int( 1 + NREFINE*(npts-1) )
+    return nFull
+
+def get_npts(nFull):
+    npts = int( 1 + (nFull-1)/NREFINE )
+    return npts
 
 # -----------------
 #  Components
@@ -23,7 +32,7 @@ class CylinderDiscretization(ExplicitComponent):
 
     def initialize(self):
         self.options.declare('nPoints')
-        self.options.declare('nRefine')
+        self.options.declare('nRefine', default=NREFINE)
 
     def setup(self):
         nPoints = self.options['nPoints']

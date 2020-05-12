@@ -19,22 +19,13 @@ from wisdem.commonse.tube import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
 from wisdem.commonse import gravity, eps
 
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ, get_nfull, get_npts
 
 import wisdem.commonse.UtilizationSupplement as Util
 
 
 def find_nearest(array, value):
     return (np.abs(array-value)).argmin() 
-
-NREFINE = 3
-def get_nfull(npts):
-    nFull = int( 1 + NREFINE*(npts-1) )
-    return nFull
-
-def get_npts(nFull):
-    npts = int( 1 + (nFull-1)/NREFINE )
-    return npts
 
 # -----------------
 #  Components
@@ -770,7 +761,7 @@ class TowerLeanSE(om.Group):
         self.add_subsystem('predisc', MonopileFoundation(monopile=monopile), promotes=['*'])
             
         # Promote all but foundation_height so that we can override
-        self.add_subsystem('geometry', CylinderDiscretization(nPoints=n_height, nRefine=NREFINE), promotes=['z_param','z_full','d_full','t_full'])
+        self.add_subsystem('geometry', CylinderDiscretization(nPoints=n_height), promotes=['z_param','z_full','d_full','t_full'])
         
         self.add_subsystem('tgeometry', TowerDiscretization(n_height=n_height), promotes=['*'])
         

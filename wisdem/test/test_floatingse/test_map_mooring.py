@@ -2,7 +2,6 @@ import numpy as np
 import numpy.testing as npt
 import unittest
 import wisdem.floatingse.map_mooring as mapMooring
-from wisdem.floatingse.column import ColumnGeometry
 from wisdem.pymap import pyMAP
 from wisdem.commonse import gravity as g
 

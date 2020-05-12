@@ -4,6 +4,7 @@ from scipy.integrate import cumtrapz
 
 from wisdem.commonse import gravity, eps, DirectionVector, NFREQ
 from wisdem.commonse.utilities import assembleI, unassembleI
+from wisdem.commonse.vertical_cylinder import get_nfull
 from .map_mooring import NLINES_MAX
 
 
@@ -34,7 +35,7 @@ class SubstructureGeometry(ExplicitComponent):
         self.add_input('radius_to_offset_column', val=0.0, units='m',desc='Distance from main column centerpoint to offset column centerpoint')
         self.add_input('number_of_offset_columns', val=0, desc='Number of offset columns evenly spaced around main column')
         self.add_input('tower_d_base', val=0.0, units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('Hs', val=0.0, units='m', desc='significant wave height')
+        self.add_input('hsig_wave', val=0.0, units='m', desc='significant wave height')
         self.add_input('max_survival_heel', val=0.0, units='deg', desc='max heel angle for turbine survival')
         
         # Output constraints
@@ -90,7 +91,7 @@ class SubstructureGeometry(ExplicitComponent):
             z_fairlead = location * (z_nodes_main[-1] - z_nodes_main[0]) + z_nodes_main[0]
             outputs['fairlead_radius'] = fair_off + np.interp(z_fairlead, z_nodes_main, R_od_main)
         outputs['fairlead'] = -z_fairlead # Fairlead defined as positive below waterline
-        outputs['wave_height_fairlead_ratio'] = inputs['Hs'] / np.abs(z_fairlead)
+        outputs['wave_height_fairlead_ratio'] = inputs['hsig_wave'] / np.abs(z_fairlead)
         
         # Constrain spar top to be at least greater than tower main
         outputs['tower_transition_buffer']   = R_od_main[-1] - R_tower_base
@@ -105,15 +106,20 @@ class SubstructureGeometry(ExplicitComponent):
 class Substructure(ExplicitComponent):
 
     def initialize(self):
-        self.options.declare('nFull')
-        self.options.declare('nFullTow')
+        self.options.declare('n_height_main')
+        self.options.declare('n_height_off')
+        self.options.declare('n_height_tow')
         
     def setup(self):
-        nFull    = self.options['nFull']
-        nFullTow = self.options['nFullTow']
+        n_height_main = self.options['n_height_main']
+        n_height_off  = self.options['n_height_off']
+        n_height_tow  = self.options['n_height_tow']
+        n_full_main   = get_nfull(n_height_main)
+        n_full_off    = get_nfull(n_height_off)
+        n_full_tow    = get_nfull(n_height_tow)
 
         # Environment
-        self.add_input('water_density', val=0.0, units='kg/m**3', desc='density of water')
+        self.add_input('rho_water', val=0.0, units='kg/m**3', desc='density of water')
         self.add_input('wave_period_range_low', val=2.0, units='s', desc='Lower bound of typical ocean wavve period')
         self.add_input('wave_period_range_high', val=20.0, units='s', desc='Upper bound of typical ocean wavve period')
 
@@ -135,7 +141,7 @@ class Substructure(ExplicitComponent):
         self.add_input('main_Iwaterplane', val=0.0, units='m**4', desc='Second moment of area of waterplane cross-section')
         self.add_input('main_Awaterplane', val=0.0, units='m**2', desc='Area of waterplane cross-section')
         self.add_input('main_cost', val=0.0, units='USD', desc='Cost of spar structure')
-        self.add_input('main_mass', val=np.zeros((nFull-1,)), units='kg', desc='mass of main column by section')
+        self.add_input('main_mass', val=np.zeros((n_full_main-1,)), units='kg', desc='mass of main column by section')
         self.add_input('main_freeboard', val=0.0, units='m', desc='Length of spar above water line')
         self.add_input('main_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of column buoyancy force')
         self.add_input('main_center_of_mass', val=0.0, units='m', desc='z-position of center of column mass')
@@ -145,7 +151,7 @@ class Substructure(ExplicitComponent):
         self.add_input('offset_Iwaterplane', val=0.0, units='m**4', desc='Second moment of area of waterplane cross-section')
         self.add_input('offset_Awaterplane', val=0.0, units='m**2', desc='Area of waterplane cross-section')
         self.add_input('offset_cost', val=0.0, units='USD', desc='Cost of spar structure')
-        self.add_input('offset_mass', val=np.zeros((nFull-1,)), units='kg', desc='mass of offset column by section')
+        self.add_input('offset_mass', val=np.zeros((n_full_off-1,)), units='kg', desc='mass of offset column by section')
         self.add_input('offset_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of column buoyancy force')
         self.add_input('offset_center_of_mass', val=0.0, units='m', desc='z-position of center of column mass')
         self.add_input('offset_moments_of_inertia', val=np.zeros(6), units='kg*m**2', desc='mass moment of inertia of column about main [xx yy zz xy xz yz]')
@@ -154,13 +160,13 @@ class Substructure(ExplicitComponent):
         self.add_input('tower_mass', val=0.0, units='kg', desc='Mass of tower')
         self.add_input('tower_shell_cost', val=0.0, units='USD', desc='Cost of tower')
         self.add_input('tower_I_base', val=np.zeros(6), units='kg*m**2', desc='Moments about tower main')
-        self.add_input('tower_z_full', val=np.zeros((nFullTow,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
+        self.add_input('tower_z_full', val=np.zeros((n_full_tow,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
         self.add_input('rna_mass', val=0.0, units='kg', desc='Mass of RNA')
         self.add_input('rna_cg', val=np.zeros(3), units='m', desc='Location of RNA center of mass relative to tower top')
         self.add_input('rna_I', val=np.zeros(6), units='kg*m**2', desc='Moments about turbine main')
         
-        self.add_input('water_ballast_zpts_vector', val=np.zeros((nFull,)), units='m', desc='z-points of potential ballast mass')
-        self.add_input('water_ballast_radius_vector', val=np.zeros((nFull,)), units='m', desc='Inner radius of potential ballast mass')
+        self.add_input('water_ballast_zpts_vector', val=np.zeros((n_full_main,)), units='m', desc='z-points of potential ballast mass')
+        self.add_input('water_ballast_radius_vector', val=np.zeros((n_full_main,)), units='m', desc='Inner radius of potential ballast mass')
 
         self.add_input('structural_mass', val=0.0, units='kg', desc='Mass of whole turbine except for mooring lines')
         self.add_input('structure_center_of_mass', val=np.zeros(3), units='m', desc='xyz-position of center of gravity of whole turbine')
@@ -234,7 +240,7 @@ class Substructure(ExplicitComponent):
         
         z_water_data = inputs['water_ballast_zpts_vector']
         r_water_data = inputs['water_ballast_radius_vector']
-        rhoWater     = inputs['water_density']
+        rhoWater     = inputs['rho_water']
         
         # SEMI TODO: Make water_ballast in main only?  columns too?  How to apportion?
 
@@ -294,7 +300,7 @@ class Substructure(ExplicitComponent):
         F_surge         = inputs['total_force'][0]
         M_pitch         = inputs['total_moment'][1]
         F_restore       = inputs['mooring_surge_restoring_force']
-        rhoWater        = inputs['water_density']
+        rhoWater        = inputs['rho_water']
         R_semi          = inputs['radius_to_offset_column']
 
         F_restore_pitch = inputs['mooring_pitch_restoring_force']
@@ -371,7 +377,7 @@ class Substructure(ExplicitComponent):
         m_a_main        = inputs['main_added_mass']
         m_a_column      = inputs['offset_added_mass']
         
-        rhoWater        = inputs['water_density']
+        rhoWater        = inputs['rho_water']
         V_system        = inputs['total_displacement']
         h_metacenter    = outputs['metacentric_height']
 

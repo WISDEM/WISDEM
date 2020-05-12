@@ -6,17 +6,8 @@ import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.UtilizationSupplement import shellBuckling_withStiffeners, GeometricConstraints
 from wisdem.commonse import gravity, eps, AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, get_nfull
 from wisdem.commonse.environment import PowerWind, LinearWaves
-
-NREFINE = 3
-def get_nfull(npts):
-    nFull = int( 1 + NREFINE*(npts-1) )
-    return nFull
-
-def get_npts(nFull):
-    npts = int( 1 + (nFull-1)/NREFINE )
-    return npts
 
 def get_inner_radius(Ro, t):
     # Radius varies at nodes, t varies by section

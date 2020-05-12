@@ -9,7 +9,7 @@ import wisdem.commonse.UtilizationSupplement as util
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
 from wisdem.commonse.environment import WaveBase, PowerWind
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, get_nfull
 from .map_mooring import NLINES_MAX
 
 
@@ -31,70 +31,75 @@ class FloatingFrame(ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare('nFull')
-        self.options.declare('nFullTow')
+        self.options.declare('n_height_main')
+        self.options.declare('n_height_off')
+        self.options.declare('n_height_tow')
         
     def setup(self):
-        nFull    = self.options['nFull']
-        nFullTow = self.options['nFullTow']
+        n_height_main = self.options['n_height_main']
+        n_height_off  = self.options['n_height_off']
+        n_height_tow  = self.options['n_height_tow']
+        n_full_main   = get_nfull(n_height_main)
+        n_full_off    = get_nfull(n_height_off)
+        n_full_tow    = get_nfull(n_height_tow)
 
         # Keep Frame3DD data object for easy testing and debugging
         self.myframe = None
         
         # Environment
-        self.add_input('water_density', val=0.0, units='kg/m**3', desc='density of water')
+        self.add_input('rho_water', val=0.0, units='kg/m**3', desc='density of water')
 
         # Material properties
-        self.add_input('material_density', val=0., units='kg/m**3', desc='density of material')
+        self.add_input('rho', val=0., units='kg/m**3', desc='density of material')
         self.add_input('E', val=0.0, units='Pa', desc='Modulus of elasticity (Youngs) of material')
         self.add_input('G', val=0.0, units='Pa', desc='Shear modulus of material')
         self.add_input('yield_stress', val=0.0, units='Pa', desc='yield stress of material')
-        self.add_input('Hs', val=0.0, units='m', desc='wave significant height')
+        self.add_input('hsig_wave', val=0.0, units='m', desc='wave significant height')
 
         # Base column
-        self.add_input('main_z_full', val=np.zeros((nFull,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('main_d_full', val=np.zeros((nFull,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('main_t_full', val=np.zeros((nFull-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
-        self.add_input('main_mass', val=np.zeros((nFull-1,)), units='kg', desc='mass of main column by section')
-        self.add_input('main_buckling_length', val=np.zeros((nFull-1,)), units='m', desc='distance between ring stiffeners')
-        self.add_input('main_displaced_volume', val=np.zeros((nFull-1,)), units='m**3', desc='column volume of water displaced by section')
-        self.add_input('main_hydrostatic_force', val=np.zeros((nFull-1,)), units='N', desc='Net z-force of hydrostatic pressure by section')
+        self.add_input('main_z_full', val=np.zeros((n_full_main,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
+        self.add_input('main_d_full', val=np.zeros((n_full_main,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
+        self.add_input('main_t_full', val=np.zeros((n_full_main-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
+        self.add_input('main_mass', val=np.zeros((n_full_main-1,)), units='kg', desc='mass of main column by section')
+        self.add_input('main_buckling_length', val=np.zeros((n_full_main-1,)), units='m', desc='distance between ring stiffeners')
+        self.add_input('main_displaced_volume', val=np.zeros((n_full_main-1,)), units='m**3', desc='column volume of water displaced by section')
+        self.add_input('main_hydrostatic_force', val=np.zeros((n_full_main-1,)), units='N', desc='Net z-force of hydrostatic pressure by section')
         self.add_input('main_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of column buoyancy force')
         self.add_input('main_center_of_mass', val=0.0, units='m', desc='z-position of center of column mass')
-        self.add_input('main_Px', np.zeros(nFull), units='N/m', desc='force per unit length in x-direction on main')
-        self.add_input('main_Py', np.zeros(nFull), units='N/m', desc='force per unit length in y-direction on main')
-        self.add_input('main_Pz', np.zeros(nFull), units='N/m', desc='force per unit length in z-direction on main')
-        self.add_input('main_qdyn', np.zeros(nFull), units='N/m**2', desc='dynamic pressure on main')
+        self.add_input('main_Px', np.zeros(n_full_main), units='N/m', desc='force per unit length in x-direction on main')
+        self.add_input('main_Py', np.zeros(n_full_main), units='N/m', desc='force per unit length in y-direction on main')
+        self.add_input('main_Pz', np.zeros(n_full_main), units='N/m', desc='force per unit length in z-direction on main')
+        self.add_input('main_qdyn', np.zeros(n_full_main), units='N/m**2', desc='dynamic pressure on main')
 
         self.add_input('main_pontoon_attach_upper', val=0.0, desc='Fraction of main column for upper truss attachment on main column')
         self.add_input('main_pontoon_attach_lower', val=0.0, desc='Fraction of main column lower truss attachment on main column')
 
         # offset columns
-        self.add_input('offset_z_full', val=np.zeros((nFull,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('offset_d_full', val=np.zeros((nFull,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('offset_t_full', val=np.zeros((nFull-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
-        self.add_input('offset_mass', val=np.zeros((nFull-1,)), units='kg', desc='mass of offset column by section')
-        self.add_input('offset_buckling_length', val=np.zeros((nFull-1,)), units='m', desc='distance between ring stiffeners')
-        self.add_input('offset_displaced_volume', val=np.zeros((nFull-1,)), units='m**3', desc='column volume of water displaced by section')
-        self.add_input('offset_hydrostatic_force', val=np.zeros((nFull-1,)), units='N', desc='Net z-force of hydrostatic pressure by section')
+        self.add_input('offset_z_full', val=np.zeros((n_full_off,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
+        self.add_input('offset_d_full', val=np.zeros((n_full_off,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
+        self.add_input('offset_t_full', val=np.zeros((n_full_off-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
+        self.add_input('offset_mass', val=np.zeros((n_full_off-1,)), units='kg', desc='mass of offset column by section')
+        self.add_input('offset_buckling_length', val=np.zeros((n_full_off-1,)), units='m', desc='distance between ring stiffeners')
+        self.add_input('offset_displaced_volume', val=np.zeros((n_full_off-1,)), units='m**3', desc='column volume of water displaced by section')
+        self.add_input('offset_hydrostatic_force', val=np.zeros((n_full_off-1,)), units='N', desc='Net z-force of hydrostatic pressure by section')
         self.add_input('offset_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of column buoyancy force')
         self.add_input('offset_center_of_mass', val=0.0, units='m', desc='z-position of center of column mass')
-        self.add_input('offset_Px', np.zeros(nFull), units='N/m', desc='force per unit length in x-direction on offset')
-        self.add_input('offset_Py', np.zeros(nFull), units='N/m', desc='force per unit length in y-direction on offset')
-        self.add_input('offset_Pz', np.zeros(nFull), units='N/m', desc='force per unit length in z-direction on offset')
-        self.add_input('offset_qdyn', np.zeros(nFull), units='N/m**2', desc='dynamic pressure on offset')
+        self.add_input('offset_Px', np.zeros(n_full_off), units='N/m', desc='force per unit length in x-direction on offset')
+        self.add_input('offset_Py', np.zeros(n_full_off), units='N/m', desc='force per unit length in y-direction on offset')
+        self.add_input('offset_Pz', np.zeros(n_full_off), units='N/m', desc='force per unit length in z-direction on offset')
+        self.add_input('offset_qdyn', np.zeros(n_full_off), units='N/m**2', desc='dynamic pressure on offset')
 
         # Tower
-        self.add_input('tower_z_full', val=np.zeros((nFullTow,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('tower_d_full', val=np.zeros((nFullTow,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('tower_t_full', val=np.zeros((nFullTow-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
-        self.add_input('tower_mass_section', val=np.zeros((nFullTow-1,)), units='kg', desc='mass of tower column by section')
+        self.add_input('tower_z_full', val=np.zeros((n_full_tow,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
+        self.add_input('tower_d_full', val=np.zeros((n_full_tow,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
+        self.add_input('tower_t_full', val=np.zeros((n_full_tow-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
+        self.add_input('tower_mass_section', val=np.zeros((n_full_tow-1,)), units='kg', desc='mass of tower column by section')
         self.add_input('tower_buckling_length', 0.0, units='m', desc='buckling length')
         self.add_input('tower_center_of_mass', val=0.0, units='m', desc='z-position of center of tower mass')
-        self.add_input('tower_Px', np.zeros(nFullTow), units='N/m', desc='force per unit length in x-direction on tower')
-        self.add_input('tower_Py', np.zeros(nFullTow), units='N/m', desc='force per unit length in y-direction on tower')
-        self.add_input('tower_Pz', np.zeros(nFullTow), units='N/m', desc='force per unit length in z-direction on tower')
-        self.add_input('tower_qdyn', np.zeros(nFullTow), units='N/m**2', desc='dynamic pressure on tower')
+        self.add_input('tower_Px', np.zeros(n_full_tow), units='N/m', desc='force per unit length in x-direction on tower')
+        self.add_input('tower_Py', np.zeros(n_full_tow), units='N/m', desc='force per unit length in y-direction on tower')
+        self.add_input('tower_Pz', np.zeros(n_full_tow), units='N/m', desc='force per unit length in z-direction on tower')
+        self.add_input('tower_qdyn', np.zeros(n_full_tow), units='N/m**2', desc='dynamic pressure on tower')
         
         # Semi geometry
         self.add_input('radius_to_offset_column', val=0.0, units='m',desc='Distance from main column centerpoint to offset column centerpoint')
@@ -155,29 +160,29 @@ class FloatingFrame(ExplicitComponent):
         self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
         self.add_output('pontoon_stress', val=np.zeros((70,)), desc='Utilization (<1) of von Mises stress by yield stress and safety factor for all pontoon elements')
 
-        self.add_output('main_stress', np.zeros(nFull-1), desc='Von Mises stress utilization along main column at specified locations. Incudes safety factor.')
-        self.add_output('main_stress:axial', np.zeros(nFull-1), desc='Axial stress along main column at specified locations.')
-        self.add_output('main_stress:shear', np.zeros(nFull-1), desc='Shear stress along main column at specified locations.')
-        self.add_output('main_stress:hoop', np.zeros(nFull-1), desc='Hoop stress along main column at specified locations.')
-        self.add_output('main_stress:hoopStiffen', np.zeros(nFull-1), desc='Hoop stress along main column at specified locations.')
-        self.add_output('main_shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint. Should be < 1 for feasibility. Includes safety factors')
-        self.add_output('main_global_buckling', np.zeros(nFull-1), desc='Global buckling constraint. Should be < 1 for feasibility. Includes safety factors')
+        self.add_output('main_stress', np.zeros(n_full_main-1), desc='Von Mises stress utilization along main column at specified locations. Incudes safety factor.')
+        self.add_output('main_stress:axial', np.zeros(n_full_main-1), desc='Axial stress along main column at specified locations.')
+        self.add_output('main_stress:shear', np.zeros(n_full_main-1), desc='Shear stress along main column at specified locations.')
+        self.add_output('main_stress:hoop', np.zeros(n_full_main-1), desc='Hoop stress along main column at specified locations.')
+        self.add_output('main_stress:hoopStiffen', np.zeros(n_full_main-1), desc='Hoop stress along main column at specified locations.')
+        self.add_output('main_shell_buckling', np.zeros(n_full_main-1), desc='Shell buckling constraint. Should be < 1 for feasibility. Includes safety factors')
+        self.add_output('main_global_buckling', np.zeros(n_full_main-1), desc='Global buckling constraint. Should be < 1 for feasibility. Includes safety factors')
 
-        self.add_output('offset_stress', np.zeros(nFull-1), desc='Von Mises stress utilization along offset column at specified locations. Incudes safety factor.')
-        self.add_output('offset_stress:axial', np.zeros(nFull-1), desc='Axial stress along offset column at specified locations.')
-        self.add_output('offset_stress:shear', np.zeros(nFull-1), desc='Shear stress along offset column at specified locations.')
-        self.add_output('offset_stress:hoop', np.zeros(nFull-1), desc='Hoop stress along offset column at specified locations.')
-        self.add_output('offset_stress:hoopStiffen', np.zeros(nFull-1), desc='Hoop stress along offset column at specified locations.')
-        self.add_output('offset_shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint. Should be < 1 for feasibility. Includes safety factors')
-        self.add_output('offset_global_buckling', np.zeros(nFull-1), desc='Global buckling constraint. Should be < 1 for feasibility. Includes safety factors')
+        self.add_output('offset_stress', np.zeros(n_full_off-1), desc='Von Mises stress utilization along offset column at specified locations. Incudes safety factor.')
+        self.add_output('offset_stress:axial', np.zeros(n_full_off-1), desc='Axial stress along offset column at specified locations.')
+        self.add_output('offset_stress:shear', np.zeros(n_full_off-1), desc='Shear stress along offset column at specified locations.')
+        self.add_output('offset_stress:hoop', np.zeros(n_full_off-1), desc='Hoop stress along offset column at specified locations.')
+        self.add_output('offset_stress:hoopStiffen', np.zeros(n_full_off-1), desc='Hoop stress along offset column at specified locations.')
+        self.add_output('offset_shell_buckling', np.zeros(n_full_off-1), desc='Shell buckling constraint. Should be < 1 for feasibility. Includes safety factors')
+        self.add_output('offset_global_buckling', np.zeros(n_full_off-1), desc='Global buckling constraint. Should be < 1 for feasibility. Includes safety factors')
 
-        self.add_output('tower_stress', np.zeros(nFullTow-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
-        self.add_output('tower_stress:axial', np.zeros(nFullTow-1), desc='Axial stress along tower column at specified locations.')
-        self.add_output('tower_stress:shear', np.zeros(nFullTow-1), desc='Shear stress along tower column at specified locations.')
-        self.add_output('tower_stress:hoop', np.zeros(nFullTow-1), desc='Hoop stress along tower column at specified locations.')
-        self.add_output('tower_stress:hoopStiffen', np.zeros(nFullTow-1), desc='Hoop stress along tower column at specified locations.')
-        self.add_output('tower_shell_buckling', np.zeros(nFullTow-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
-        self.add_output('tower_global_buckling', np.zeros(nFullTow-1), desc='Global buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
+        self.add_output('tower_stress', np.zeros(n_full_tow-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
+        self.add_output('tower_stress:axial', np.zeros(n_full_tow-1), desc='Axial stress along tower column at specified locations.')
+        self.add_output('tower_stress:shear', np.zeros(n_full_tow-1), desc='Shear stress along tower column at specified locations.')
+        self.add_output('tower_stress:hoop', np.zeros(n_full_tow-1), desc='Hoop stress along tower column at specified locations.')
+        self.add_output('tower_stress:hoopStiffen', np.zeros(n_full_tow-1), desc='Hoop stress along tower column at specified locations.')
+        self.add_output('tower_shell_buckling', np.zeros(n_full_tow-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
+        self.add_output('tower_global_buckling', np.zeros(n_full_tow-1), desc='Global buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
 
         self.add_discrete_output('plot_matrix', val=np.array([]), desc='Ratio of shear stress to yield stress for all pontoon elements')
         self.add_output('main_connection_ratio', val=np.zeros((nFull,)), desc='Ratio of pontoon outer diameter to main outer diameter')
@@ -222,7 +227,7 @@ class FloatingFrame(ExplicitComponent):
 
         E              = inputs['E']
         G              = inputs['G']
-        rho            = inputs['material_density']
+        rho            = inputs['rho']
         sigma_y        = inputs['yield_stress']
         
         z_main         = inputs['main_z_full']
@@ -242,7 +247,7 @@ class FloatingFrame(ExplicitComponent):
         I_rna          = inputs['rna_I']
         cg_rna         = inputs['rna_cg']
         
-        rhoWater       = inputs['water_density']
+        rhoWater       = inputs['rho_water']
         
         V_main         = inputs['main_displaced_volume']
         V_offset      = inputs['offset_displaced_volume']
@@ -273,7 +278,7 @@ class FloatingFrame(ExplicitComponent):
         # Quick ratio for unknowns
         outputs['main_connection_ratio']    = inputs['connection_ratio_max'] - R_od_pontoon/R_od_main
         outputs['offset_connection_ratio'] = inputs['connection_ratio_max'] - R_od_pontoon/R_od_offset
-        outputs['pontoon_wave_height_depth_margin'] = np.abs(np.r_[z_attach_lower, z_attach_upper]) - np.abs(inputs['Hs'])
+        outputs['pontoon_wave_height_depth_margin'] = np.abs(np.r_[z_attach_lower, z_attach_upper]) - np.abs(inputs['hsig_wave'])
 
         
         # --- INPUT CHECKS -----
@@ -1223,12 +1228,17 @@ class TrussIntegerToBoolean(ExplicitComponent):
 class Loading(Group):
 
     def initialize(self):
-        self.options.declare('nFull')
-        self.options.declare('nFullTow')
+        self.options.declare('n_height_main')
+        self.options.declare('n_height_off')
+        self.options.declare('n_height_tow')
         
     def setup(self):
-        nFull    = self.options['nFull']
-        nFullTow = self.options['nFullTow']
+        n_height_main = self.options['n_height_main']
+        n_height_off  = self.options['n_height_off']
+        n_height_tow  = self.options['n_height_tow']
+        n_full_main   = get_nfull(n_height_main)
+        n_full_off    = get_nfull(n_height_off)
+        n_full_tow    = get_nfull(n_height_tow)
         
         # Independent variables that are unique to this Group
         loadingIndeps = IndepVarComp()
@@ -1248,10 +1258,12 @@ class Loading(Group):
         self.add_subsystem('loadingIndeps', loadingIndeps, promotes=['*'])
         
         # All the components
-        self.add_subsystem('loadingWind', PowerWind(nPoints=nFullTow), promotes=['z0','Uref','shearExp','zref'])
-        self.add_subsystem('windLoads', CylinderWindDrag(nPoints=nFullTow), promotes=['cd_usr','beta'])
+        self.add_subsystem('loadingWind', PowerWind(nPoints=n_full_tow), promotes=['z0','Uref','shearExp','zref'])
+        self.add_subsystem('windLoads', CylinderWindDrag(nPoints=n_full_tow), promotes=['cd_usr','beta'])
         self.add_subsystem('intbool', TrussIntegerToBoolean(), promotes=['*'])
-        self.add_subsystem('frame', FloatingFrame(nFull=nFull, nFullTow=nFullTow), promotes=['*'])
+        self.add_subsystem('frame', FloatingFrame(n_height_main=n_height_main,
+                                                  n_height_off=n_height_off,
+                                                  n_height_tow=n_height_tow), promotes=['*'])
         
         self.connect('loadingWind.U', 'windLoads.U')
         self.connect('windLoads.windLoads_Px', 'tower_Px')

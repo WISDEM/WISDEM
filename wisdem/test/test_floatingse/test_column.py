@@ -2,10 +2,11 @@ import numpy as np
 import numpy.testing as npt
 import unittest
 import wisdem.floatingse.column as column
+from wisdem.commonse.vertical_cylinder import get_nfull
 from wisdem.commonse.utilities import nodal2sectional
 from wisdem.commonse import gravity as g
 NHEIGHT = 6
-NPTS = column.get_nfull(NHEIGHT)
+NPTS = get_nfull(NHEIGHT)
 myones = np.ones((NPTS,))
 secones = np.ones((NPTS-1,))
 
