@@ -5,7 +5,10 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
     import pandas as pd
 
-from .OpenMDAOFileOperations import OpenMDAOFileOperations
+
+# The library path is where to find the default input data for LandBOSSE.
+library_path = '../../library/landbosse'
+
 
 class OpenMDAODataframeCache:
     """
@@ -56,7 +59,7 @@ class OpenMDAODataframeCache:
 
         xlsx_path : str
             The path from which to read the .xlsx file. This parameter
-            has the default value of
+            has the default value of the library path variable above.
 
         Returns
         -------
@@ -69,10 +72,8 @@ class OpenMDAODataframeCache:
             original = cls._cache[xlsx_basename]
             return cls.copy_dataframes(original)
 
-        file_ops = OpenMDAOFileOperations()
-
         if xlsx_path is None:
-            xlsx_filename = os.path.join(file_ops.landbosse_input_dir(), 'project_data', f'{xlsx_basename}.xlsx')
+            xlsx_filename = os.path.join(library_path, f'{xlsx_basename}.xlsx')
         else:
             xlsx_filename = os.path.join(xlsx_path, f'{xlsx_basename}.xlsx')
 
