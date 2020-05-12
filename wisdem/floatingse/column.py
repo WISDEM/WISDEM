@@ -1087,8 +1087,8 @@ class Column(Group):
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
             
         
-        self.add_subsystem('cyl_geom', CylinderDiscretization(nPoints=n_height, nRefine=NREFINE), promotes=['section_height','diameter','wall_thickness',
-                                                                                    'd_full','t_full','foundation_height'])
+            self.add_subsystem('cyl_geom', CylinderDiscretization(nPoints=n_height), promotes=['section_height','diameter','wall_thickness',
+                                                                                               'd_full','t_full','foundation_height'])
         
         self.add_subsystem('gc', GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=['max_taper','min_d_to_t','manufacturability','weldability'])
 

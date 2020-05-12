@@ -14,15 +14,10 @@ class FloatingSE(Group):
         self.options.declare('topLevelFlag', default=True)
 
     def setup(self):
-        platopt = self.options['analysis_options']['platform']
-        n_height_main = platopt['columns']['main']['n_height']
-        n_height_off  = platopt['columns']['offset']['n_height']
-        nSection = self.options['nSection']
-        nTower   = self.options['nTower']
-        nRefine  = self.options['nRefine']
-        topLevelFlag = self.options['topLevelFlag']
-        nFullSec = nRefine*nSection+1
-        nFullTow = nRefine*nTower  +1
+        n_height_main = self.options['analysis_options']['platform']['columns']['main']['n_height']
+        n_height_off  = self.options['analysis_options']['platform']['columns']['offset']['n_height']
+        n_height_tow  = self.options['analysis_options']['tower']['n_height']
+        topLevelFlag  = self.options['topLevelFlag']
 
         # Define all input variables from all models
         floatingIndeps = IndepVarComp()
@@ -82,7 +77,7 @@ class FloatingSE(Group):
             sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
             sharedIndeps.add_output('wind_reference_speed', 0.0, units='m/s')
             sharedIndeps.add_output('wind_z0', 0.0, units='m')
-            sharedIndeps.add_output('wind_beta', 0.0, units='deg')
+            sharedIndeps.add_output('beta_wind', 0.0, units='deg')
             sharedIndeps.add_output('cd_usr', -1.0)
             sharedIndeps.add_output('cm', 0.0)
             sharedIndeps.add_output('Uc', 0.0, units='m/s')
@@ -91,7 +86,7 @@ class FloatingSE(Group):
             sharedIndeps.add_output('mu_water', 0.0, units='kg/m/s')
             sharedIndeps.add_output('hsig_wave', 0.0, units='m')
             sharedIndeps.add_output('Tsig_wave', 0.0, units='s')
-            sharedIndeps.add_output('wave_beta', 0.0, units='deg')
+            sharedIndeps.add_output('beta_wave', 0.0, units='deg')
             sharedIndeps.add_output('wave_z0', 0.0, units='m')
             sharedIndeps.add_output('yaw', 0.0, units='deg')
             sharedIndeps.add_output('E', 0.0, units='N/m**2')
@@ -155,16 +150,21 @@ class FloatingSE(Group):
                                      'material_cost_rate','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
 
         # Run Semi Geometry for interfaces
-        self.add_subsystem('sg', SubstructureGeometry(nFull=nFullSec), promotes=['*'])
+        self.add_subsystem('sg', SubstructureGeometry(n_height_main=n_height_main,
+                                                      n_height_off=n_height_off), promotes=['*'])
 
         # Next run MapMooring
         self.add_subsystem('mm', MapMooring(), promotes=['*'])
         
         # Add in the connecting truss
-        self.add_subsystem('load', Loading(nFull=nFullSec, nFullTow=nFullTow), promotes=['*'])
+        self.add_subsystem('load', Loading(n_height_main=n_height_main,
+                                           n_height_off=n_height_off,
+                                           n_height_tow=n_height_tow), promotes=['*'])
 
         # Run main Semi analysis
-        self.add_subsystem('subs', Substructure(nFull=nFullSec, nFullTow=nFullTow), promotes=['*'])
+        self.add_subsystem('subs', Substructure(n_height_main=n_height_main,
+                                           n_height_off=n_height_off,
+                                           n_height_tow=n_height_tow), promotes=['*'])
         
         # Connect all input variables from all models
         self.connect('main.freeboard', 'tow.foundation_height')
@@ -184,10 +184,7 @@ class FloatingSE(Group):
         
         # To do: connect these to independent variables
         if topLevelFlag:
-            self.connect('rho_air','windLoads.rho_air')
-            self.connect('mu_air','windLoads.mu_air')
             self.connect('water_depth',['main.wave.z_floor','off.wave.z_floor'])
-            self.connect('wave_beta',['main.waveLoads.beta','off.waveLoads.beta'])
             self.connect('wave_z0',['main.wave.z_surface','off.wave.z_surface'])
             self.connect('wind_z0','z0')
             self.connect('wind_reference_height','zref')
@@ -256,7 +253,7 @@ def commonVars(prob, nsection):
     prob['Uc']          = 0.0    # Mean current speed
     prob['wind_z0']     = 0.0    # Water line
     prob['yaw']         = 0.0    # Turbine yaw angle
-    prob['beta']        = 0.0    # Wind beta angle
+    prob['beta_wind'] = prob['beta_wave'] = 0.0    # Wind/water beta angle
     prob['cd_usr']      = -1.0 # Compute drag coefficient
 
     # Wind and water properties
@@ -336,13 +333,29 @@ def commonVars(prob, nsection):
 
 
 def sparExample():
+    npts = 5
+    nsection = npts - 1
+    
+    opt = {}
+    opt['platform'] = {}
+    opt['platform']['columns'] = {}
+    opt['platform']['columns']['main'] = {}
+    opt['platform']['columns']['offset'] = {}
+    opt['platform']['columns']['main']['n_height'] = npts
+    opt['platform']['columns']['offset']['n_height'] = npts
+    opt['tower'] = {}
+    opt['tower']['monopile'] = False
+    opt['tower']['n_height'] = npts
+    opt['tower']['n_layers'] = 1
+    opt['materials'] = {}
+    opt['materials']['n_mat'] = 1
+    
     # Initialize OpenMDAO problem and FloatingSE Group
     prob = Problem()
-    prob.model = FloatingSE()
+    prob.model = FloatingSE(analysis_options=opt)
     prob.setup()
 
     # Variables common to both examples
-    nsection = prob.model.options['nSection']
     prob = commonVars(prob, nsection)
     
     # Remove all offset columns
@@ -405,13 +418,29 @@ def sparExample():
 
 
 def semiExample():
+    npts = 5
+    nsection = npts - 1
+    
+    opt = {}
+    opt['platform'] = {}
+    opt['platform']['columns'] = {}
+    opt['platform']['columns']['main'] = {}
+    opt['platform']['columns']['offset'] = {}
+    opt['platform']['columns']['main']['n_height'] = npts
+    opt['platform']['columns']['offset']['n_height'] = npts
+    opt['tower'] = {}
+    opt['tower']['monopile'] = False
+    opt['tower']['n_height'] = npts
+    opt['tower']['n_layers'] = 1
+    opt['materials'] = {}
+    opt['materials']['n_mat'] = 1
+    
     # Initialize OpenMDAO problem and FloatingSE Group
     prob = Problem()
-    prob.model = FloatingSE()
+    prob.model = FloatingSE(analysis_options=opt)
     prob.setup()
 
     # Variables common to both examples
-    nsection = prob.model.options['nSection']
     prob = commonVars(prob, nsection)
     
     # Add in offset columns and truss elements

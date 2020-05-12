@@ -185,8 +185,8 @@ class FloatingFrame(ExplicitComponent):
         self.add_output('tower_global_buckling', np.zeros(n_full_tow-1), desc='Global buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
 
         self.add_discrete_output('plot_matrix', val=np.array([]), desc='Ratio of shear stress to yield stress for all pontoon elements')
-        self.add_output('main_connection_ratio', val=np.zeros((nFull,)), desc='Ratio of pontoon outer diameter to main outer diameter')
-        self.add_output('offset_connection_ratio', val=np.zeros((nFull,)), desc='Ratio of pontoon outer diameter to main outer diameter')
+        self.add_output('main_connection_ratio', val=np.zeros((n_full_main,)), desc='Ratio of pontoon outer diameter to main outer diameter')
+        self.add_output('offset_connection_ratio', val=np.zeros((n_full_off,)), desc='Ratio of pontoon outer diameter to main outer diameter')
 
         self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First six natural frequencies')
         self.add_output('substructure_mass', val=0.0, units='kg', desc='Mass of substructure elements and connecting truss')
@@ -1259,7 +1259,7 @@ class Loading(Group):
         
         # All the components
         self.add_subsystem('loadingWind', PowerWind(nPoints=n_full_tow), promotes=['z0','Uref','shearExp','zref'])
-        self.add_subsystem('windLoads', CylinderWindDrag(nPoints=n_full_tow), promotes=['cd_usr','beta'])
+        self.add_subsystem('windLoads', CylinderWindDrag(nPoints=n_full_tow), promotes=['cd_usr','beta_wind','rho_air','mu_air'])
         self.add_subsystem('intbool', TrussIntegerToBoolean(), promotes=['*'])
         self.add_subsystem('frame', FloatingFrame(n_height_main=n_height_main,
                                                   n_height_off=n_height_off,
