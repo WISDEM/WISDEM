@@ -13,7 +13,7 @@ from .WeatherWindowCSVReader import read_weather_window
 
 # Read in default sheets for project data
 default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_public')
-default_components_data = default_project_data["components"]
+default_components_data = default_project_data['components']
 
 
 use_default_component_data = -1.0
