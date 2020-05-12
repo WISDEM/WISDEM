@@ -429,10 +429,11 @@ class LandBOSSE_API(om.ExplicitComponent):
         discrete_inputs_dict = {key: value for key, value in discrete_inputs.items()}
         incomplete_input_dict = {**inputs_dict, **discrete_inputs_dict}
 
-        # Modify the default component data if needed. Write them into the
-        # incomplete input dictionary.
+        # Modify the default component data if needed and copy it into the
+        # appropriate values of the input dictionary.
         modified_components = self.modify_component_lists(inputs, discrete_inputs)
         incomplete_input_dict['project_data']['components'] = modified_components
+        incomplete_input_dict['components'] = modified_components
 
         # FoundationCost needs to have all the component data split into separate
         # NumPy arrays.
