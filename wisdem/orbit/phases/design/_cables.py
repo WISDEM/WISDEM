@@ -429,7 +429,11 @@ class CableSystem(DesignPhase):
             except AttributeError:
                 sections = self.cable_lengths_by_type[name]
 
-            sections = [(*el[:-1], el[-1]) for el in Counter(sections).items()]
+            try:
+                sections = [(data[0], count, *data[1:]) for data, count in Counter(sections).items()]
+            except IndexError:
+                sections = [(*data[:-1], data[-1]) for data in Counter(sections).items()]
+                
             if sections:
                 _temp[name] = {
                     "cable_sections": sections,

@@ -14,11 +14,9 @@ import pandas as pd
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.core._defaults import process_times as pt
 from wisdem.orbit.phases.install import ExportCableInstallation
-
-initialize_library(pytest.library)
 
 base_config = extract_library_specs("config", "export_cable_install")
 simul_config = deepcopy(base_config)

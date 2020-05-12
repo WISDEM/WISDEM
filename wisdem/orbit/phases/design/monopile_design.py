@@ -371,7 +371,7 @@ class MonopileDesign(DesignPhase):
         """
         Calculates required pile embedment length.
         Source: Arany & Bhattacharya (2016)
-        - Equation 102
+        - Equation 7 (Enforces a rigid/lower aspect ratio monopile)
 
         Parameters
         ----------
@@ -387,7 +387,7 @@ class MonopileDesign(DesignPhase):
         monopile_modulus = kwargs.get("monopile_modulus", 200e9)  # Pa
         soil_coefficient = kwargs.get("soil_coefficient", 4000000)  # N/m3
 
-        Lp = 4 * ((monopile_modulus * Ip) / soil_coefficient) ** 0.2
+        Lp = 2 * ((monopile_modulus * Ip) / soil_coefficient) ** 0.2
 
         return Lp
 
@@ -488,7 +488,7 @@ class MonopileDesign(DesignPhase):
             Rated windspeed of turbine (m/s).
         load_factor : float
             Added safety factor on the extreme wind moment.
-            Default: 1.35
+            Default: 3.375 (2.5x DNV standard as this model does not design for buckling or fatigue)
 
         Returns
         -------
@@ -496,7 +496,7 @@ class MonopileDesign(DesignPhase):
             50 year extreme wind moment (N-m).
         """
 
-        load_factor = kwargs.get("load_factor", 1.35)
+        load_factor = kwargs.get("load_factor", 3.375)
 
         F_50y = self.calculate_50year_wind_load(
             mean_windspeed=mean_windspeed,

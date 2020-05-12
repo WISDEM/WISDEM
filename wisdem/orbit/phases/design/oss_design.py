@@ -28,8 +28,8 @@ class OffshoreSubstationDesign(DesignPhase):
             "workspace_cost": "USD (optional)",
             "other_ancillary_cost": "USD (optional)",
             "topside_assembly_factor": "float (optional)",
-            "substation_jacket_cost_rate": "USD/t (optional)",
-            "substation_pile_cost_rate": "USD/t (optional)",
+            "oss_substructure_cost_rate": "USD/t (optional)",
+            "oss_pile_cost_rate": "USD/t (optional)",
             "num_substations": "int (optional)",
             "design_time": "h (optional)",
         },
@@ -243,32 +243,27 @@ class OffshoreSubstationDesign(DesignPhase):
     def calc_substructure_mass_and_cost(self):
         """
         Calculates the mass and associated cost of the substation substructure.
-        Assumes a jacket.
 
         Parameters
         ----------
-        substation_jacket_cost_rate : int | float
-        substation_pile_cost_rate : int | float
+        oss_substructure_cost_rate : int | float
+        oss_pile_cost_rate : int | float
         """
 
         _design = self.config.get("substation_design", {})
-        substation_jacket_cost_rate = _design.get(
-            "substation_jacket_cost_rate", 6250
+        oss_substructure_cost_rate = _design.get(
+            "oss_substructure_cost_rate", 3000
         )
-        substation_pile_cost_rate = _design.get(
-            "substation_pile_cost_rate", 2250
-        )
+        oss_pile_cost_rate = _design.get("oss_pile_cost_rate", 0)
 
-        substructure_jacket_mass = 0.4 * self.topside_mass
-        substructure_pile_mass = 8 * substructure_jacket_mass ** 0.5574
+        substructure_mass = 0.4 * self.topside_mass
+        substructure_pile_mass = 8 * substructure_mass ** 0.5574
         self.substructure_cost = (
-            substructure_jacket_mass * substation_jacket_cost_rate
-            + substructure_pile_mass * substation_pile_cost_rate
+            substructure_mass * oss_substructure_cost_rate
+            + substructure_pile_mass * oss_pile_cost_rate
         )
 
-        self.substructure_mass = (
-            substructure_jacket_mass + substructure_pile_mass
-        )
+        self.substructure_mass = substructure_mass + substructure_pile_mass
 
     def calc_substation_cost(self):
         """

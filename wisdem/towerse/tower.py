@@ -827,6 +827,8 @@ if __name__ == '__main__':
     from wisdem.commonse.environment import PowerWind
     from wisdem.commonse.environment import LogWind
 
+    optimize_flag = False
+
     # --- geometry ----
     h_param = np.diff(np.array([0.0, 43.8, 87.6]))
     d_param = np.array([6.0, 4.935, 3.87])
@@ -928,6 +930,49 @@ if __name__ == '__main__':
     
     prob = Problem()
     prob.model = TowerSE(nLC=nLC, nPoints=nPoints, nFull=nFull, wind=wind, topLevelFlag=True, monopile=monopile)
+
+    if optimize_flag:
+
+        # --- optimizer imports ---
+        from openmdao.api import ScipyOptimizeDriver, SqliteRecorder
+        # ----------------------
+
+        # --- Setup Pptimizer ---
+        prob.driver = ScipyOptimizeDriver()
+        prob.driver.options['optimizer'] = 'SLSQP'
+        # ----------------------
+
+        # --- Objective ---
+        prob.model.add_objective('tower_mass', scaler=1e-6)
+        # ----------------------
+
+        # --- Design Variables ---
+        prob.model.add_design_var('tower_outer_diameter', lower=3.87, upper=6.0, indices=[m for m in range(nPoints-1)])
+        prob.model.add_design_var('tower_wall_thickness', lower=4e-3, upper=2e-1)
+        prob.model.add_design_var('tower_section_height', lower=2.0, upper=80.0)
+        # ----------------------
+
+        # --- recorder ---
+        frecord_opt = 'tower_example-optimizer.sql'
+        frecord = 'tower_example.sql'
+        prob.driver.add_recorder(SqliteRecorder(frecord_opt))
+        prob.add_recorder(SqliteRecorder(frecord))
+        # ----------------------
+
+        # --- Constraints ---
+        prob.model.add_constraint('height_constraint',    lower=-1e-2,upper=1.e-2)
+        prob.model.add_constraint('post1.stress',          upper=1.0)
+        prob.model.add_constraint('post1.global_buckling', upper=1.0)
+        prob.model.add_constraint('post1.shell_buckling',  upper=1.0)
+        prob.model.add_constraint('post2.stress',          upper=1.0)
+        prob.model.add_constraint('post2.global_buckling', upper=1.0)
+        prob.model.add_constraint('post2.shell_buckling',  upper=1.0)
+        prob.model.add_constraint('weldability',          upper=0.0)
+        prob.model.add_constraint('manufacturability',    lower=0.0)
+        prob.model.add_constraint('slope',                upper=1.0)
+        prob.model.add_constraint('tower1.f1',             lower=0.3)
+        # ----------------------
+
     prob.setup()
 
     if wind=='PowerWind':
@@ -1021,7 +1066,11 @@ if __name__ == '__main__':
     prob['pre2.rna_M' ] = np.array([Mxx2, Myy2, Mzz2])
 
     # # --- run ---
-    prob.run_driver()
+    if optimize_flag:
+        prob.model.approx_totals()
+        prob.run_driver()
+    else:
+        prob.run_model()
 
     z,_ = nodal2sectional(prob['z_full'])
 
@@ -1093,52 +1142,6 @@ if __name__ == '__main__':
     print(prob['tower2.base_M'])
     # ------------
 
-    """
-    if optimize:
-
-        # --- optimizer imports ---
-        from pyopt_driver.pyopt_driver import pyOptDriver
-        from openmdao.lib.casehandlers.api import DumpCaseRecorder
-        # ----------------------
-
-        # --- Setup Pptimizer ---
-        tower.replace('driver', pyOptDriver())
-        tower.driver.optimizer = 'SNOPT'
-        tower.driver.options = {'Major feasibility tolerance': 1e-6,
-                               'Minor feasibility tolerance': 1e-6,
-                               'Major optimality tolerance': 1e-5,
-                               'Function precision': 1e-8}
-        # ----------------------
-
-        # --- Objective ---
-        tower.driver.add_objective('tower1.mass / 300000')
-        # ----------------------
-
-        # --- Design Variables ---
-        tower.driver.add_parameter('z_param[1]', low=0.0, high=87.0)
-        tower.driver.add_parameter('d_param[:-1]', low=3.87, high=20.0)
-        tower.driver.add_parameter('t_param', low=0.005, high=0.2)
-        # ----------------------
-
-        # --- recorder ---
-        tower.recorders = [DumpCaseRecorder()]
-        # ----------------------
-
-        # --- Constraints ---
-        tower.driver.add_constraint('tower.stress <= 1.0')
-        tower.driver.add_constraint('tower.global_buckling <= 1.0')
-        tower.driver.add_constraint('tower.shell_buckling <= 1.0')
-        tower.driver.add_constraint('tower.damage <= 1.0')
-        tower.driver.add_constraint('gc.weldability <= 0.0')
-        tower.driver.add_constraint('gc.manufacturability <= 0.0')
-        freq1p = 0.2  # 1P freq in Hz
-        tower.driver.add_constraint('tower.f1 >= 1.1*%f' % freq1p)
-        # ----------------------
-
-        # --- run opt ---
-        tower.run_driver()
-        # ---------------
-    """
 
 
 

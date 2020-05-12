@@ -361,6 +361,8 @@ def solo_install_turbines(
                     constraints=vessel.transit_limits,
                 )
 
+                vessel.submit_debug_log(progress="Turbine")
+
                 n += 1
 
             else:
@@ -456,6 +458,8 @@ def install_turbine_components_from_queue(
                 yield wtiv.task(
                     "Jackdown", jackdown_time, constraints=wtiv.transit_limits
                 )
+
+                wtiv.submit_debug_log(progress="Turbine")
 
                 n += 1
 
