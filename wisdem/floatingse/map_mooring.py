@@ -4,10 +4,9 @@ import os
 import sys
 from wisdem.pymap import pyMAP
 
-from wisdem.commonse import gravity, Enum
+from wisdem.commonse import gravity
 from wisdem.commonse.utilities import assembleI, unassembleI
 
-Anchor    = Enum('DRAGEMBEDMENT SUCTIONPILE')
 NLINES_MAX = 15
 NPTS_PLOT = 20
 
@@ -29,7 +28,7 @@ class MapMooring(ExplicitComponent):
         self.tlpFlag             = False
 
         # Environment
-        self.add_input('water_density', val=0.0, units='kg/m**3', desc='density of water')
+        self.add_input('rho_water', val=0.0, units='kg/m**3', desc='density of water')
         self.add_input('water_depth', val=0.0, units='m', desc='water depth')
 
         # Material properties
@@ -203,7 +202,7 @@ class MapMooring(ExplicitComponent):
         OUTPUTS  : none
         """
         # Unpack variables
-        rhoWater = inputs['water_density']
+        rhoWater = inputs['rho_water']
         lineType = discrete_inputs['mooring_type'].lower()
         Dmooring = inputs['mooring_diameter']
         
@@ -403,7 +402,7 @@ class MapMooring(ExplicitComponent):
         OUTPUTS  : none (multiple unknown dictionary values set)
         """
         # Unpack variables
-        rhoWater      = inputs['water_density']
+        rhoWater      = inputs['rho_water']
         waterDepth    = inputs['water_depth']
         fairleadDepth = inputs['fairlead']
         Dmooring      = inputs['mooring_diameter']
@@ -549,7 +548,7 @@ class MapMooring(ExplicitComponent):
         OUTPUTS  : none (mooring_cost/mass unknown dictionary values set)
         """
         # Unpack variables
-        rhoWater      = inputs['water_density']
+        rhoWater      = inputs['rho_water']
         L_mooring     = inputs['mooring_line_length']
         anchorType    = discrete_inputs['anchor_type']
         costFact      = inputs['mooring_cost_factor']
@@ -558,10 +557,9 @@ class MapMooring(ExplicitComponent):
         ntotal        = n_connect * n_lines
         
         # Cost of anchors
-        if type(anchorType) == type(''): anchorType = Anchor[anchorType.upper()]
-        if anchorType == Anchor['DRAGEMBEDMENT']:
+        if anchorType.upper() == 'DRAGEMBEDMENT':
             anchor_rate = 1e-3 * self.min_break_load / gravity / 20*2000
-        elif anchorType  == Anchor['SUCTIONPILE']:
+        elif anchorType.upper()  == 'SUCTIONPILE':
             anchor_rate = 150000.* np.sqrt(1e-3*self.min_break_load/gravity/1250.)
         else:
             raise ValueError('Anchor Type must be DRAGEMBEDMENT or SUCTIONPILE')

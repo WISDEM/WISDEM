@@ -51,7 +51,6 @@ class FloatingSE(Group):
 
         # Column
         floatingIndeps.add_output('permanent_ballast_density', 0.0, units='kg/m**3')
-
         floatingIndeps.add_output('bulkhead_mass_factor', 0.0)
         floatingIndeps.add_output('ring_mass_factor', 0.0)
         floatingIndeps.add_output('shell_mass_factor', 0.0)
@@ -76,9 +75,9 @@ class FloatingSE(Group):
         if topLevelFlag:
             sharedIndeps = IndepVarComp()
             sharedIndeps.add_output('hub_height', 0.0, units='m')
-            sharedIndeps.add_output('material_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('air_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('air_viscosity', 0.0, units='kg/m/s')
+            sharedIndeps.add_output('rho', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('rho_air', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('mu_air', 0.0, units='kg/m/s')
             sharedIndeps.add_output('shearExp', 0.0)
             sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
             sharedIndeps.add_output('wind_reference_speed', 0.0, units='m/s')
@@ -88,10 +87,10 @@ class FloatingSE(Group):
             sharedIndeps.add_output('cm', 0.0)
             sharedIndeps.add_output('Uc', 0.0, units='m/s')
             sharedIndeps.add_output('water_depth', 0.0, units='m')
-            sharedIndeps.add_output('water_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('water_viscosity', 0.0, units='kg/m/s')
-            sharedIndeps.add_output('significant_wave_height', 0.0, units='m')
-            sharedIndeps.add_output('significant_wave_period', 0.0, units='s')
+            sharedIndeps.add_output('rho_water', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('mu_water', 0.0, units='kg/m/s')
+            sharedIndeps.add_output('hsig_wave', 0.0, units='m')
+            sharedIndeps.add_output('Tsig_wave', 0.0, units='s')
             sharedIndeps.add_output('wave_beta', 0.0, units='deg')
             sharedIndeps.add_output('wave_z0', 0.0, units='m')
             sharedIndeps.add_output('yaw', 0.0, units='deg')
@@ -131,7 +130,7 @@ class FloatingSE(Group):
 
         
         self.add_subsystem('tow', TowerLeanSE(analysis_options=self.options['analysis_options'], topLevelFlag=False),
-                           promotes=['material_density','tower_section_height',
+                           promotes=['rho','tower_section_height',
                                      'tower_outer_diameter','tower_wall_thickness','tower_outfitting_factor',
                                      'tower_buckling_length','max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_mass','tower_I_base','hub_height',#'tip_position','hub_cm','downwind',
@@ -140,16 +139,16 @@ class FloatingSE(Group):
         # Next do main and ballast columns
         # Ballast columns are replicated from same design in the components
         self.add_subsystem('main', Column(n_height=n_height_main, topLevelFlag=False),
-                           promotes=['water_density','E','nu','yield_stress','z0',
-                                     'Uref','zref','shearExp','yaw','Uc','Hs','hmax','T','cd_usr','cm','loading',
+                           promotes=['E','nu','yield_stress','z0','rho_air','mu_air','rho_water','mu_water','rho',
+                                     'Uref','zref','shearExp','yaw','Uc','hsig_wave','Tsig_wave','cd_usr','cm','loading',
                                      'max_draft','max_taper','min_d_to_t','gamma_f','gamma_b','foundation_height',
                                      'permanent_ballast_density','bulkhead_mass_factor','buoyancy_tank_mass_factor',
                                      'ring_mass_factor','column_mass_factor','outfitting_mass_fraction','ballast_cost_rate',
                                      'material_cost_rate','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
         
         self.add_subsystem('off', Column(n_height=n_height_off, topLevelFlag=False),
-                           promotes=['water_density','E','nu','yield_stress','z0',
-                                     'Uref','zref','shearExp','yaw','Uc','Hs','hmax','T','cd_usr','cm','loading',
+                           promotes=['E','nu','yield_stress','z0','rho_air','mu_air','rho_water','mu_water','rho',
+                                     'Uref','zref','shearExp','yaw','Uc','hsig_wave','Tsig_wave','cd_usr','cm','loading',
                                      'max_draft','max_taper','min_d_to_t','gamma_f','gamma_b','foundation_height',
                                      'permanent_ballast_density','bulkhead_mass_factor','buoyancy_tank_mass_factor',
                                      'ring_mass_factor','column_mass_factor','outfitting_mass_fraction','ballast_cost_rate',
@@ -185,16 +184,12 @@ class FloatingSE(Group):
         
         # To do: connect these to independent variables
         if topLevelFlag:
-            self.connect('air_density',['main.windLoads.rho','off.windLoads.rho','windLoads.rho'])
-            self.connect('air_viscosity',['main.windLoads.mu','off.windLoads.mu','windLoads.mu'])
-            self.connect('water_density',['main.wave.rho','main.waveLoads.rho','off.wave.rho','off.waveLoads.rho'])
-            self.connect('water_viscosity',['main.waveLoads.mu','off.waveLoads.mu'])
+            self.connect('rho_air','windLoads.rho_air')
+            self.connect('mu_air','windLoads.mu_air')
             self.connect('water_depth',['main.wave.z_floor','off.wave.z_floor'])
             self.connect('wave_beta',['main.waveLoads.beta','off.waveLoads.beta'])
             self.connect('wave_z0',['main.wave.z_surface','off.wave.z_surface'])
             self.connect('wind_z0','z0')
-            self.connect('significant_wave_height',['Hs', 'hmax'])
-            self.connect('significant_wave_period','T')
             self.connect('wind_reference_height','zref')
             self.connect('wind_reference_speed','Uref')
             
@@ -265,13 +260,13 @@ def commonVars(prob, nsection):
     prob['cd_usr']      = -1.0 # Compute drag coefficient
 
     # Wind and water properties
-    prob['air_density'] = 1.226   # Density of air [kg/m^3]
-    prob['air_viscosity']  = 1.78e-5 # Viscosity of air [kg/m/s]
-    prob['water_density']      = 1025.0  # Density of water [kg/m^3]
-    prob['water_viscosity']  = 1.08e-3 # Viscosity of water [kg/m/s]
+    prob['rho_air'] = 1.226   # Density of air [kg/m^3]
+    prob['mu_air']  = 1.78e-5 # Viscosity of air [kg/m/s]
+    prob['rho_water']      = 1025.0  # Density of water [kg/m^3]
+    prob['mu_water']  = 1.08e-3 # Viscosity of water [kg/m/s]
     
     # Material properties
-    prob['material_density'] = prob['main.material_density'] = prob['off.material_density'] = 7850.0          # Steel [kg/m^3]
+    prob['rho'] = 7850.0          # Steel [kg/m^3]
     prob['E']                = 200e9           # Young's modulus [N/m^2]
     prob['G']                = 79.3e9          # Shear modulus [N/m^2]
     prob['yield_stress']     = 3.45e8          # Elastic yield stress [N/m^2]
@@ -361,8 +356,8 @@ def sparExample():
 
     # Set environment to that used in OC3 testing campaign
     prob['water_depth'] = 320.0  # Distance to sea floor [m]
-    prob['significant_wave_height']        = 10.8   # Significant wave height [m]
-    prob['significant_wave_period']           = 9.8    # Wave period [s]
+    prob['hsig_wave']        = 10.8   # Significant wave height [m]
+    prob['Tsig_wave']           = 9.8    # Wave period [s]
     prob['wind_reference_speed']        = 11.0   # Wind reference speed [m/s]
     prob['wind_reference_height']        = 119.0  # Wind reference height [m]
 
@@ -430,8 +425,8 @@ def semiExample():
 
     # Set environment to that used in OC4 testing campaign
     prob['water_depth'] = 200.0  # Distance to sea floor [m]
-    prob['significant_wave_height']        = 10.8   # Significant wave height [m]
-    prob['significant_wave_period']           = 9.8    # Wave period [s]
+    prob['hsig_wave']        = 10.8   # Significant wave height [m]
+    prob['Tsig_wave']           = 9.8    # Wave period [s]
     prob['wind_reference_speed']        = 11.0   # Wind reference speed [m/s]
     prob['wind_reference_height']        = 119.0  # Wind reference height [m]
 

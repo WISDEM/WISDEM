@@ -9,6 +9,15 @@ from wisdem.commonse import gravity, eps, AeroHydroLoads, CylinderWindDrag, Cyli
 from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass
 from wisdem.commonse.environment import PowerWind, LinearWaves
 
+NREFINE = 3
+def get_nfull(npts):
+    nFull = int( 1 + NREFINE*(npts-1) )
+    return nFull
+
+def get_npts(nFull):
+    npts = int( 1 + (nFull-1)/NREFINE )
+    return npts
+
 def get_inner_radius(Ro, t):
     # Radius varies at nodes, t varies by section
     return (Ro-sectional2nodal(t))
@@ -34,8 +43,8 @@ class BulkheadProperties(ExplicitComponent):
         
     def setup(self):
         n_height = self.options['n_height']
-        n_sect = n_height - 1
-        n_full    = get_nfull(n_height)
+        n_sect   = n_height - 1
+        n_full   = get_nfull(n_height)
         
         self.bulk_full = np.zeros( n_full, dtype=np.int_)
 
@@ -171,13 +180,13 @@ class BuoyancyTankProperties(ExplicitComponent):
         z_full    = inputs['z_full']
 
         R_od      = 0.5*inputs['d_full']
-        R_plate   = 0.5*inputs['buoyancy_tank_diameter']
-        h_box     = inputs['buoyancy_tank_height']
+        R_plate   = 0.5*float(inputs['buoyancy_tank_diameter'])
+        h_box     = float(inputs['buoyancy_tank_height'])
 
-        location  = inputs['buoyancy_tank_location']
+        location  = float(inputs['buoyancy_tank_location'])
         
-        coeff     = inputs['buoyancy_tank_mass_factor']
-        rho       = inputs['rho']
+        coeff     = float(inputs['buoyancy_tank_mass_factor'])
+        rho       = float(inputs['rho'])
 
         # Current hard-coded, coarse specification of shell thickness
         t_plate   = R_plate / 50.0
@@ -284,8 +293,8 @@ class StiffenerProperties(ExplicitComponent):
         
     def setup(self):
         n_height = self.options['n_height']
-        n_sect = n_height - 1
-        n_full    = get_nfull(n_height)
+        n_sect   = n_height - 1
+        n_full   = get_nfull(n_height)
 
         self.add_input('d_full', val=np.zeros(n_full), units='m', desc='cylinder diameter at corresponding locations')
         self.add_input('t_full', val=np.zeros(n_full-1), units='m', desc='shell thickness at corresponding locations')
@@ -386,7 +395,7 @@ class StiffenerProperties(ExplicitComponent):
         outputs['stiffener_mass'] =  n_stiff * m_ring
 
         # Find total number of stiffeners in each original section
-        n_sect    = self.options['n_height']
+        n_sect      = self.options['n_height']-1
         npts_per    = int(h_web.size / n_sect)
         n_stiff_sec = np.zeros(n_sect)
         for k in range(npts_per):
@@ -445,7 +454,7 @@ class BallastProperties(ExplicitComponent):
         n_height = self.options['n_height']
         n_full    = get_nfull(n_height)
 
-        self.add_input('water_density', val=0.0, units='kg/m**3', desc='density of water')
+        self.add_input('rho_water', val=0.0, units='kg/m**3', desc='density of water')
         self.add_input('d_full', val=np.zeros(n_full), units='m', desc='cylinder diameter at corresponding locations')
         self.add_input('t_full', val=np.zeros(n_full-1), units='m', desc='shell thickness at corresponding locations')
         self.add_input('z_full', val=np.zeros(n_full), units='m', desc='z-coordinates of section nodes')
@@ -468,7 +477,7 @@ class BallastProperties(ExplicitComponent):
         z_nodes     = inputs['z_full']
         h_ballast   = float(inputs['permanent_ballast_height'])
         rho_ballast = float(inputs['permanent_ballast_density'])
-        rho_water   = float(inputs['water_density'])
+        rho_water   = float(inputs['rho_water'])
         R_id_orig   = get_inner_radius(R_od, t_wall)
 
         npts = R_od.size
@@ -534,7 +543,7 @@ class ColumnGeometry(ExplicitComponent):
 
         # Design variables
         self.add_input('water_depth', val=0.0, units='m', desc='water depth')
-        self.add_input('Hs', val=0.0, units='m', desc='significant wave height')
+        self.add_input('hsig_wave', val=0.0, units='m', desc='significant wave height')
         self.add_input('freeboard', val=0.0, units='m', desc='Length of column above water line')
         self.add_input('max_draft', val=0.0, units='m', desc='Maxmimum length of column below water line')
         self.add_input('z_full_in', val=np.zeros((n_full,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
@@ -586,7 +595,7 @@ class ColumnGeometry(ExplicitComponent):
         outputs['draft_margin'] = draft / inputs['max_draft']
 
         # Make sure freeboard is more than 20% of Hs (DNV-OS-J101)
-        outputs['wave_height_freeboard_ratio'] = inputs['Hs'] / np.abs(freeboard)
+        outputs['wave_height_freeboard_ratio'] = inputs['hsig_wave'] / np.abs(freeboard)
 
         # Sectional stiffener properties
         outputs['t_web']        = sectionalInterp(z_section, z_param, inputs['stiffener_web_thickness'])
@@ -613,7 +622,7 @@ class ColumnProperties(ExplicitComponent):
         self.ibox = None
         
         # Environment
-        self.add_input('water_density', val=0.0, units='kg/m**3', desc='density of water')
+        self.add_input('rho_water', val=0.0, units='kg/m**3', desc='density of water')
 
         # Inputs from Geometry
         self.add_input('z_full', val=np.zeros((n_full,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
@@ -795,7 +804,7 @@ class ColumnProperties(ExplicitComponent):
         z_nodes           = inputs['z_full']
         z_box             = inputs['buoyancy_tank_cg']
         V_box             = inputs['buoyancy_tank_displacement']
-        rho_water         = inputs['water_density']
+        rho_water         = inputs['rho_water']
         nsection          = R_od.size - 1
 
         # Compute volume of each section and mass of displaced water by section
@@ -996,7 +1005,24 @@ class ColumnBuckling(ExplicitComponent):
         outputs['external_local_utilization']   = external_local_raw * gamma_f*gamma_b
         outputs['external_general_utilization'] = external_general_raw * gamma_f*gamma_b
 
-
+class TempRho(ExplicitComponent):
+    
+    def initialize(self):
+        self.options.declare('n_height')
+        
+    def setup(self):
+        n_height  = self.options['n_height']
+        n_full    = get_nfull(n_height)
+        self.add_input('rho', 0.0, units='kg/m**3')
+        self.add_input('material_cost_rate', 0.0, units='USD/kg')
+        self.add_output('rho_vec', np.zeros(n_full-1), units='kg/m**3')
+        self.add_output('material_cost_rate_vec', np.zeros(n_full-1), units='USD/kg')
+        
+    def compute(self, inputs, outputs):
+        npts    = get_nfull(self.options['n_height']) - 1
+        outputs['rho_vec'] = inputs['rho']*np.ones(npts)
+        outputs['material_cost_rate_vec'] = inputs['material_cost_rate']*np.ones(npts)
+    
 class Column(Group):
 
     def initialize(self):
@@ -1004,8 +1030,8 @@ class Column(Group):
         self.options.declare('topLevelFlag', default=False)
         
     def setup(self):
-        n_height = self.options['n_height']
-        n_sect = n_height - 1
+        n_height  = self.options['n_height']
+        n_sect    = n_height - 1
         n_full    = get_nfull(n_height)
         topLevelFlag = self.options['topLevelFlag']
 
@@ -1024,16 +1050,49 @@ class Column(Group):
         columnIndeps.add_output('buoyancy_tank_diameter', 0.0, units='m')
         columnIndeps.add_output('buoyancy_tank_height', 0.0, units='m')
         columnIndeps.add_output('buoyancy_tank_location', 0.0, units='m')
-        columnIndeps.add_output('material_density', 0.0, units='kg/m**3')
+        columnIndeps.add_output('rho', 0.0, units='kg/m**3')
         self.add_subsystem('columnIndeps', columnIndeps, promotes=['*'])
 
         if topLevelFlag:
             sharedIndeps = IndepVarComp()
-            sharedIndeps.add_output('water_density', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('permanent_ballast_density', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('rho_air', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('mu_air', 0.0, units='kg/m/s')
+            sharedIndeps.add_output('rho_water', 0.0, units='kg/m**3')
+            sharedIndeps.add_output('mu_water', 0.0, units='kg/m/s')
             sharedIndeps.add_output('water_depth', 0.0, units='m')
-            sharedIndeps.add_output('wave_beta', 0.0, units='deg')
+            sharedIndeps.add_output('beta_wave', 0.0, units='deg')
+            sharedIndeps.add_output('beta_wind', 0.0, units='deg')
             sharedIndeps.add_output('wave_z0', 0.0, units='m')
-            sharedIndeps.add_output('significant_wave_height', 0.0, units='m')
+            sharedIndeps.add_output('wind_z0', 0.0, units='m')
+            sharedIndeps.add_output('hsig_wave', 0.0, units='m')
+            sharedIndeps.add_output('Tsig_wave', 10.0, units='s')
+            sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
+            sharedIndeps.add_output('wind_reference_speed', 0.0, units='m/s')
+            sharedIndeps.add_output('bulkhead_mass_factor', 0.0)
+            sharedIndeps.add_output('ring_mass_factor', 0.0)
+            sharedIndeps.add_output('shell_mass_factor', 0.0)
+            sharedIndeps.add_output('column_mass_factor', 0.0)
+            sharedIndeps.add_output('outfitting_mass_fraction', 0.0)
+            sharedIndeps.add_output('ballast_cost_rate', 0.0, units='USD/kg')
+            sharedIndeps.add_output('material_cost_rate', 0.0, units='USD/kg')
+            sharedIndeps.add_output('labor_cost_rate', 0.0, units='USD/min')
+            sharedIndeps.add_output('painting_cost_rate', 0.0, units='USD/m**2')
+            sharedIndeps.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
+            sharedIndeps.add_discrete_output('loading', 'hydrostatic')
+            sharedIndeps.add_output('max_taper_ratio', 0.0)
+            sharedIndeps.add_output('min_diameter_thickness_ratio', 0.0)
+            sharedIndeps.add_output('shearExp', 0.0)
+            sharedIndeps.add_output('cd_usr', -1.0)
+            sharedIndeps.add_output('cm', 0.0)
+            sharedIndeps.add_output('Uc', 0.0, units='m/s')
+            sharedIndeps.add_output('yaw', 0.0, units='deg')
+            sharedIndeps.add_output('E', 0.0, units='N/m**2')
+            sharedIndeps.add_output('nu', 0.0)
+            sharedIndeps.add_output('yield_stress', 0.0, units='N/m**2')
+            sharedIndeps.add_output('gamma_f', 0.0)
+            sharedIndeps.add_output('gamma_b', 0.0)
+            sharedIndeps.add_output('max_draft', 0.0, units='m')
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
             
         
@@ -1042,9 +1101,12 @@ class Column(Group):
         
         self.add_subsystem('gc', GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=['max_taper','min_d_to_t','manufacturability','weldability'])
 
-        self.add_subsystem('cyl_mass', CylinderMass(nPoints=n_full), promotes=['d_full','t_full','material_density',
-                                                            'material_cost_rate','labor_cost_rate','painting_cost_rate',
-                                                            'section_center_of_mass'])
+        self.add_subsystem('cyl_mass', CylinderMass(nPoints=n_full), promotes=['d_full','t_full',#'rho','material_cost_rate'
+                                                                               'labor_cost_rate','painting_cost_rate',
+                                                                               'section_center_of_mass'])
+        self.add_subsystem('trho', TempRho(n_height=n_height), promotes=['*'])
+        self.connect('rho_vec','cyl_mass.rho')
+        self.connect('material_cost_rate_vec','cyl_mass.material_cost_rate')
 
         self.add_subsystem('col_geom', ColumnGeometry(n_height=n_height), promotes=['*'])
 
@@ -1059,9 +1121,9 @@ class Column(Group):
         self.add_subsystem('col', ColumnProperties(n_height=n_height), promotes=['*'])
 
         self.add_subsystem('wind', PowerWind(nPoints=n_full), promotes=['Uref','zref','shearExp','z0'])
-        self.add_subsystem('wave', LinearWaves(nPoints=n_full), promotes=['Uc','hmax','T'])
-        self.add_subsystem('windLoads', CylinderWindDrag(nPoints=n_full), promotes=['cd_usr','beta'])
-        self.add_subsystem('waveLoads', CylinderWaveDrag(nPoints=n_full), promotes=['cm','cd_usr'])
+        self.add_subsystem('wave', LinearWaves(nPoints=n_full), promotes=['Uc','hsig_wave','Tsig_wave','rho_water'])
+        self.add_subsystem('windLoads', CylinderWindDrag(nPoints=n_full), promotes=['cd_usr','beta_wind','rho_air','mu_air'])
+        self.add_subsystem('waveLoads', CylinderWaveDrag(nPoints=n_full), promotes=['cm','cd_usr','beta_wave','rho_water','mu_water'])
         self.add_subsystem('distLoads', AeroHydroLoads(nPoints=n_full), promotes=['Px','Py','Pz','qdyn','yaw'])
 
         self.add_subsystem('buck', ColumnBuckling(n_height=n_height), promotes=['*'])
@@ -1076,16 +1138,15 @@ class Column(Group):
         self.connect('cyl_mass.mass', 'shell_mass')
         self.connect('cyl_mass.cost', 'shell_cost')
         self.connect('cyl_mass.I_base', 'shell_I_keel')
-        self.connect('material_density','rho')
         
         self.connect('column_total_mass', 'section_mass')
 
         if topLevelFlag:
             self.connect('water_depth','wave.z_floor')
-            self.connect('wave_beta','waveLoads.beta')
             self.connect('wave_z0', 'wave.z_surface')
-            self.connect('significant_wave_height',['Hs', 'hmax'])
-            self.connect('water_density',['wave.rho','waveLoads.rho'])
+            self.connect('wind_reference_height', 'zref')
+            self.connect('wind_reference_speed', 'Uref')
+            self.connect('wind_z0', 'z0')
         self.connect('z_full', ['wind.z', 'wave.z', 'windLoads.z','waveLoads.z','distLoads.z'])
         self.connect('d_full', ['windLoads.d','waveLoads.d'])
 
