@@ -618,6 +618,8 @@ class LowSpeedShaft4pt(object):
         self.len_pts = 101
         self.D_max = 1
         self.D_min = 0.2
+        self.D_med = 0.
+        self.D_in  = 0.
 
         tol = 1e-4
         check_limit = 1.0
