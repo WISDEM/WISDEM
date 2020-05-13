@@ -128,7 +128,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('rotor_diameter_m', val=77, units='m', desc='Rotor diameter m')
         self.add_input('wind_shear_exponent', val=0.2, desc='Wind shear exponent')
         self.add_input('turbine_rating_MW', val=1.5, units='MW', desc='Turbine rating MW')
-        # self.add_input('num_turbines', val=100, desc='Number of turbines in project')
         self.add_input('fuel_cost_usd_per_gal', val=1.0, desc='Fuel cost USD/gal')
 
         self.add_input('breakpoint_between_base_and_topping_percent', val=0.0,
