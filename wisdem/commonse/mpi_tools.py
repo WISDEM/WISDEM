@@ -38,13 +38,9 @@ Example uses:
 
 import numpy as np
 
-from openmdao.core.mpi_wrap import MPI
+from wisdem.commonse.mpi_tools import MPI
 if MPI:
-    from openmdao.api import PetscImpl as impl
     from mpi4py import MPI
-    from petsc4py import PETSc
-else:
-    from openmdao.api import BasicImpl as impl
 
 def map_comm_heirarchical(K, K2):
     """ 

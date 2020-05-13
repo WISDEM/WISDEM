@@ -108,18 +108,18 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
 
     color_i = color_map[rank]
-
+    comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+    num_par_fd = MPI.COMM_WORLD.Get_size()
     if color_i == 0:
         if MPI:
             analysis_options['openfast']['FASTpref']['mpi_run']           = True
             analysis_options['openfast']['FASTpref']['mpi_comm_map_down'] = comm_map_down
             analysis_options['openfast']['FASTpref']['cores']             = nOF
             comm    = MPI.COMM_WORLD
-            comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
-            num_par_fd = MPI.COMM_WORLD.Get_size()
+            
             # wt_opt = Problem(model=Group(num_par_fd=num_par_fd))
             #rotor       = Problem(impl=impl, comm=comm_i, root=ParallelFDGroup(K))
-            wt_opt = Problem(model=Group(num_par_fd=num_par_fd), impl= impl, comm=comm_i, root=ParallelFDGroup(nDV))
+            wt_opt = Problem(model=Group(num_par_fd=num_par_fd, comm=comm_i))
 
             wt_opt.model.add_subsystem('comp', WindPark(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         else:
