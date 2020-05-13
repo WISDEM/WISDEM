@@ -13,17 +13,30 @@ The current set of packages included in WISDEM are the NREL Cost and Scaling Mod
 
 Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
 
+Using WISDEM
+============
+
 .. toctree::
    :maxdepth: 2
 
    installation
-   what_wisdem_does
+   how_wisdem_works
    tutorials
+   examples
    modules
+   
+   
+Other Useful Docs
+=================
+
+.. toctree::
+   :maxdepth: 2
+
+   known_issues
    how_to_write_docs
    how_to_contribute_code
    
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`
