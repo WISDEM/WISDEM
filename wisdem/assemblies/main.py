@@ -86,57 +86,78 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     if not os.path.isdir(folder_output):
         os.mkdir(folder_output)
 
-    # Initialize openmdao problem. If running with multiple processors in MPI,
-    # use parallel finite differencing equal to the number of cores used.
-    # Otherwise, initialize the WindPark system normally.
-    # Get the rank number for parallelization. We only print output files
-    # using the root processor.
-    if MPI:
-        rank = MPI.COMM_WORLD.Get_rank()
+    # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
+    # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
+    if MPI and opt_options['opt_flag']:
+        # Determine the number of design variables
+        n_DV = 0
+        if blade_opt_options['aero_shape']['twist']['flag']:
+            n_DV += blade_opt_options['aero_shape']['twist']['n_opt'] - 2
+        if blade_opt_options['aero_shape']['chord']['flag']:    
+            n_DV += blade_opt_options['aero_shape']['chord']['n_opt'] - 3            
+        if blade_opt_options['aero_shape']['af_positions']['flag']:
+            n_DV += analysis_options['blade']['n_af_span'] - blade_opt_options['aero_shape']['af_positions']['af_start'] - 1
+        if blade_opt_options['structure']['spar_cap_ss']['flag']:
+            n_DV += blade_opt_options['structure']['spar_cap_ss']['n_opt'] - 2
+        if blade_opt_options['structure']['spar_cap_ps']['flag'] and not blade_opt_options['structure']['spar_cap_ps']['equal_to_suction']:
+            n_DV += blade_opt_options['structure']['spar_cap_ps']['n_opt'] - 2
+        if opt_options['optimization_variables']['control']['tsr']['flag']:
+            n_DV += 1
+        if 'dac' in blade_opt_options:
+            if blade_opt_options['dac']['te_flap_end']['flag']:
+                n_DV += analysis_options['blade']['n_te_flaps']
+            if blade_opt_options['dac']['te_flap_ext']['flag']:
+                n_DV += analysis_options['blade']['n_te_flaps']
+        if tower_opt_options['outer_diameter']['flag']:
+            n_DV += analysis_options['tower']['n_height']
+        if tower_opt_options['layer_thickness']['flag']:
+            n_DV += (analysis_options['tower']['n_height'] - 1) * analysis_options['tower']['n_layers']
+        
+        if opt_options['driver']['form'] == 'central':
+            n_DV *= 2
+        
+        # Extract the number of cores available
+        max_cores = MPI.COMM_WORLD.Get_size()
+        # Define the maximum number of parallel finite difference evaluations, as the minimum between the number of cores available and the number of design variables
+        n_FD = min([max_cores, n_DV])
+        n_OF_runs = 1
+        if n_OF_runs > 1 or n_FD > 1:
+            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs)
+        else:
+            color_map     = [0]
+            comm_map_down = {}
+            comm_map_up   = {}
+        
+        rank    = MPI.COMM_WORLD.Get_rank()
+        color_i = color_map[rank]
+        comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
     else:
-        rank = 0
-    print(rank)
-    exit()
-    nOF = 1
-    nDV = 1
-    if nDV == 1 and nOF == 1:
-        color_map     = [0]
-        comm_map_down = {}
-        comm_map_up   = {}
-    else:
-        comm_map_down, comm_map_up, color_map = map_comm_heirarchical(nDV, nOF)
+        color_i = 0
 
 
-    color_i = color_map[rank]
-    comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
-    num_par_fd = MPI.COMM_WORLD.Get_size()
     if color_i == 0:
         if MPI:
             analysis_options['openfast']['FASTpref']['mpi_run']           = True
             analysis_options['openfast']['FASTpref']['mpi_comm_map_down'] = comm_map_down
-            analysis_options['openfast']['FASTpref']['cores']             = nOF
-            comm    = MPI.COMM_WORLD
-            
+            analysis_options['openfast']['FASTpref']['cores']             = n_OF_runs            
             # wt_opt = Problem(model=Group(num_par_fd=num_par_fd))
             #rotor       = Problem(impl=impl, comm=comm_i, root=ParallelFDGroup(K))
-            wt_opt = Problem(model=Group(num_par_fd=num_par_fd, comm=comm_i))
+            wt_opt = Problem(model=Group(num_par_fd=n_FD), comm=comm_i)
 
             wt_opt.model.add_subsystem('comp', WindPark(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         else:
             wt_opt = Problem(model=WindPark(analysis_options = analysis_options, opt_options = opt_options))
         
-        # If a step size for the driver-level finite differencing is provided,
-        # use that step size. Otherwise use a default value.
-        if 'step_size' in opt_options['driver']:
-            step_size = opt_options['driver']['step_size']
-        else:
-            step_size = 1.e-6
-        wt_opt.model.approx_totals(method='fd', step=step_size, form='central')
-        
-        # After looping through the optimization options yaml above, if opt_flag
-        # became true then we set up an optimization problem
-        # Solver has specific meaning in OpenMDAO
+        # If at least one of the design variables is active, setup an optimization
         if opt_options['opt_flag']:
+            # If a step size for the driver-level finite differencing is provided, use that step size. Otherwise use a default value.
+            if 'step_size' in opt_options['driver']:
+                step_size = opt_options['driver']['step_size']
+            else:
+                step_size = 1.e-6
+            
+            # Solver has specific meaning in OpenMDAO
+            wt_opt.model.approx_totals(method='fd', step=step_size, form=opt_options['driver']['form'])
             
             # Set optimization solver and options. First, Scipy's SLSQP
             if opt_options['driver']['solver'] == 'SLSQP':
@@ -430,9 +451,15 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         # Run openmdao problem
         wt_opt.run_driver()
 
-        if rank == 0:
+        if MPI:
+            if rank == 0:
+                # Save data coming from openmdao to an output yaml file
+                wt_initial.write_ontology(wt_opt, fname_wt_output)
+        else:
             # Save data coming from openmdao to an output yaml file
             wt_initial.write_ontology(wt_opt, fname_wt_output)
+        
+        
 
     if MPI:
         # subprocessor ranks spin, waiting for FAST simulations to run

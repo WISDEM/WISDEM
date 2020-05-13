@@ -615,6 +615,7 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     iec.dlc_inputs['Yaw'] = [[]]
     iec.transient_dir_change = '-'  # '+','-','both': sign for transient events in EDC, EWS
     iec.transient_shear_orientation = 'v'  # 'v','h','both': vertical or horizontal shear for EWS
+    iec.TMax = 5.
 
     iec.wind_dir = runDir
     iec.case_name_base = namebase + '_DAC'  # distributed aerodynamic control

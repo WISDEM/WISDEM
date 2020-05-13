@@ -1,5 +1,6 @@
 import os
 import sys
+from mpi4py import MPI
 
 def under_mpirun():
     """Return True if we're being executed under mpirun."""
@@ -25,22 +26,6 @@ if under_mpirun():
         sys.stdout.flush()
 else:
     MPI = None
-
-
-"""
-Created by Evan Gaertner on 6/6/2019
-
-Tools for heirachical parallelization for WISDEM packages
-Example uses:
-- Nested optimization problems with parallel finite differencing
-- Optimization with parallel finite differencing where a number of FAST simulations are executed in parallel for each function evaluation
-"""
-
-import numpy as np
-
-from wisdem.commonse.mpi_tools import MPI
-if MPI:
-    from mpi4py import MPI
 
 def map_comm_heirarchical(K, K2):
     """ 
@@ -78,8 +63,8 @@ def subprocessor_loop(comm_map_up):
     Stop sigal:
     data[0] = False
     """
-    comm        = impl.world_comm()
-    rank        = comm.rank
+    # comm        = impl.world_comm()
+    rank        = MPI.COMM_WORLD.Get_rank()
     rank_target = comm_map_up[rank]
 
     keep_running = True
@@ -106,5 +91,5 @@ def subprocessor_stop(comm_map_down):
 
 
 if __name__ == "__main__":
-
-    print(map_comm_heirarchical(2,4))
+    from mpi4py import MPI
+    _, _, _, = map_comm_heirarchical(2,4)
