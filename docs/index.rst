@@ -1,5 +1,5 @@
-Documentation for WISDEM
-========================
+WISDEM Documentation
+====================
 
 .. TODO: Need to update this copy. Is it strictly correct?
 The Wind-plant Integrated System Design and Engineering Model (WISDEM) includes integrated assemblies for the assessment of system behavior of wind turbines and plants.
@@ -15,11 +15,10 @@ Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    installation
+   what_wisdem_does
    tutorials
-   documentation
    modules
    how_to_write_docs
    how_to_contribute_code
