@@ -182,6 +182,10 @@ class WindTurbineOntologyPython(object):
         if self.analysis_options['tower']['monopile']:
             self.analysis_options['monopile']['n_height']  = len(self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid'])
             self.analysis_options['monopile']['n_layers']  = len(self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'])
+
+        # Assembly
+        self.analysis_options['assembly'] = {}
+        self.analysis_options['assembly']['number_of_blades'] = int(self.wt_init['assembly']['number_of_blades'])
         
     def load_ontology(self, fname_input, validate=False, fname_schema=''):
         """ Load inputs IEA turbine ontology yaml inputs, optional validation """
