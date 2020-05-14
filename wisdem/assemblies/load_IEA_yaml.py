@@ -95,7 +95,6 @@ class WindTurbineOntologyPython(object):
         FASTpref['FAST_namingOut']      = self.analysis_options['openfast']['FAST_namingOut']
         FASTpref['FAST_runDirectory']   = self.analysis_options['openfast']['FAST_runDirectory']
         FASTpref['path2dll']            = self.analysis_options['openfast']['path2dll']
-        FASTpref['cores']               = self.analysis_options['openfast']['cores']
         FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
         FASTpref['DLC_gust']            = None      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain

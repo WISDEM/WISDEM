@@ -118,16 +118,28 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
-        # Define the maximum number of parallel finite difference evaluations, as the minimum between the number of cores available and the number of design variables
-        n_FD = min([max_cores, n_DV])
-        n_OF_runs = 1
-        if n_OF_runs > 1 or n_FD > 1:
-            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs)
+
+        if max_cores / 2. != np.round(max_cores / 2.):
+            exit('ERROR: the parallelization logic only works for an even number of cores available')
+
+        # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
+        if analysis_options['openfast']['run_openfast']:
+            # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, otherwise it is half of the number of DV (rounded to the lower integer). We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
+            if max_cores > 2. * n_DV:
+                n_FD = n_DV
+            else:
+                n_FD = int(np.floor(max_cores / 2))
+            # The number of OpenFAST runs is the minimum between the actual number of requested OpenFAST simulations, and the number of cores available (minus the number of DV, which sit and wait for OF to complete)
+            n_OF_runs = analysis_options['openfast']['n_simulations']
+            max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
+            n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
         else:
-            color_map     = [0]
-            comm_map_down = {}
-            comm_map_up   = {}
+            # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
+            n_FD = min([max_cores, n_DV])
+            n_OF_runs_parallel = 1
         
+        # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
+        comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
         rank    = MPI.COMM_WORLD.Get_rank()
         color_i = color_map[rank]
         comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
@@ -135,19 +147,20 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         color_i = 0
 
 
-    if color_i == 0:
+    if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
+            # Parallel settings for OpenFAST
             analysis_options['openfast']['FASTpref']['mpi_run']           = True
             analysis_options['openfast']['FASTpref']['mpi_comm_map_down'] = comm_map_down
-            analysis_options['openfast']['FASTpref']['cores']             = n_OF_runs            
-            # wt_opt = Problem(model=Group(num_par_fd=num_par_fd))
-            #rotor       = Problem(impl=impl, comm=comm_i, root=ParallelFDGroup(K))
+            analysis_options['openfast']['FASTpref']['cores']             = n_OF_runs_parallel            
+            # Parallel settings for OpenMDAO
             wt_opt = Problem(model=Group(num_par_fd=n_FD), comm=comm_i)
-
             wt_opt.model.add_subsystem('comp', WindPark(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         else:
+            # Sequential finite differencing and openfast simulations
+            analysis_options['openfast']['FASTpref']['cores'] = 1
             wt_opt = Problem(model=WindPark(analysis_options = analysis_options, opt_options = opt_options))
-        
+
         # If at least one of the design variables is active, setup an optimization
         if opt_options['opt_flag']:
             # If a step size for the driver-level finite differencing is provided, use that step size. Otherwise use a default value.

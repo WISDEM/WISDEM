@@ -69,24 +69,24 @@ def subprocessor_loop(comm_map_up):
 
     keep_running = True
     while keep_running == True:
-        data = comm.recv(source=(rank_target), tag=0)
+        data = MPI.COMM_WORLD.recv(source=(rank_target), tag=0)
         if data[0] == False:
             break
         else:
             func_execution = data[0]
             args           = data[1]
             output = func_execution(args)
-            comm.send(output, dest=(rank_target), tag=1)
+            MPI.COMM_WORLD.send(output, dest=(rank_target), tag=1)
 
 def subprocessor_stop(comm_map_down):
     """
     Send stop signal to subprocessors
     """
-    comm = MPI.COMM_WORLD
+    # comm = MPI.COMM_WORLD
     for rank in comm_map_down.keys():
         subranks = comm_map_down[rank]
         for subrank_i in subranks:
-            comm.send([False], dest=subrank_i, tag=0)
+            MPI.COMM_WORLD.send([False], dest=subrank_i, tag=0)
         print('All MPI subranks closed.')
 
 

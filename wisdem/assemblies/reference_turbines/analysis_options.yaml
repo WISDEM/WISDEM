@@ -46,7 +46,7 @@ openfast:
     Turbsim_exe: "/Users/nabbas/openfast/install/bin/turbsim_dev"
     FAST_namingOut: WISDEM_BAR2011n
     FAST_runDirectory: temp_bar
-    cores: 1
+    n_simulations: 1 # Number of OpenFAST simulations to run per evaluation of the objective function
     debug_level: 2
     update_hub_nacelle: True
     generate_af_coords: False
