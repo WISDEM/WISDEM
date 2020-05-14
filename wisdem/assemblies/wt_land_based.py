@@ -32,14 +32,14 @@ class WT_RNTA(Group):
         self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options)) # Recompute polars with xfoil (for flaps)
         self.add_subsystem('sse',       ServoSE(analysis_options = analysis_options)) # Aero analysis
         
-        if analysis_options['openfast']['run_openfast'] == True:
-            self.add_subsystem('aeroelastic',  FASTLoadCases(analysis_options = analysis_options))
-        
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
         self.add_subsystem('drivese',   DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
         self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
+        
+        if analysis_options['openfast']['run_openfast'] == True:
+            self.add_subsystem('aeroelastic',  FASTLoadCases(analysis_options = analysis_options))
 
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
@@ -328,6 +328,13 @@ class WT_RNTA(Group):
             self.connect('nacelle.nacelle_I',               'aeroelastic.nacelle_I')
             self.connect('nacelle.nacelle_cm',              'aeroelastic.nacelle_cm')
 
+            self.connect('towerse.post.mass_den',           'aeroelastic.mass_den')
+            self.connect('towerse.post.foreaft_stff',       'aeroelastic.foreaft_stff')
+            self.connect('towerse.post.sideside_stff',      'aeroelastic.sideside_stff')
+            self.connect('towerse.post.sec_loc',            'aeroelastic.sec_loc')
+            self.connect('towerse.post.fore_aft_modes',     'aeroelastic.fore_aft_modes')
+            self.connect('towerse.post.side_side_modes',    'aeroelastic.side_side_modes')
+
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
             self.connect('assembly.hub_height',             'aeroelastic.hub_height')
@@ -343,7 +350,8 @@ class WT_RNTA(Group):
             self.connect('elastic.EIxx',                'aeroelastic.beam:EIxx')
             self.connect('elastic.EIyy',                'aeroelastic.beam:EIyy')
             self.connect('elastic.Tw_iner',             'aeroelastic.beam:Tw_iner')
-            self.connect('rlds.frame.all_mode_shapes', 'aeroelastic.modes_coef_curvefem')
+            self.connect('rlds.frame.flap_mode_shapes', 'aeroelastic.flap_mode_shapes')
+            self.connect('rlds.frame.edge_mode_shapes', 'aeroelastic.edge_mode_shapes')
             self.connect('sse.powercurve.V',            'aeroelastic.U_init')
             self.connect('sse.powercurve.Omega',        'aeroelastic.Omega_init')
             self.connect('sse.powercurve.pitch',        'aeroelastic.pitch_init')
