@@ -474,7 +474,7 @@ class ComputePowerCurve(ExplicitComponent):
             else:
                 af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
                 
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'], derivatives=True)
+        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
         
         # JPJ: what is this grid for? Seems to be a special distribution of velocities
         # for the hub
@@ -544,9 +544,9 @@ class ComputePowerCurve(ExplicitComponent):
 
         # Function to be used inside of power maximization until Region 3
         def maximizePower(pitch, Uhub, Omega_rpm):
-            myout, derivs = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
-            return -myout['P']/1e6, -derivs['dP']['dpitch']/1e6
-            
+            myout, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
+            return -myout['P']
+
         # Maximize power until Region 3
         region2p5 = False
         for i in range(i_3):
@@ -555,10 +555,10 @@ class ComputePowerCurve(ExplicitComponent):
 
             # Find pitch value that gives highest power rating
             pitch0   = pitch[i] if i==0 else pitch[i-1]
-            bnds     = [(pitch0 - 10., pitch0 + 10.)]
-            pitch[i] = minimize(lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]), x0=pitch0,
-                                       bounds=bnds, method='SLSQP', jac=True, tol=1e-8, options={'disp':True, 'maxiter':40})['x']
-                                       
+            bnds     = [pitch0-10., pitch0+10.]
+            pitch[i] = minimize_scalar(lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
+                                       bounds=bnds, method='bounded', options={'disp':False, 'xatol':1e-2, 'maxiter':40})['x']
+
             # Find associated power
             myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
@@ -641,9 +641,10 @@ class ComputePowerCurve(ExplicitComponent):
                 myout, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
                 P_aero = myout['P']
                 P, eff          = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
-                return (P - P_rated) / 1e6
+                return (P - P_rated)
 
             # Solve for Region 3 pitch
+            options = {'disp':False}
             if self.regulation_reg_III:
                 for i in range(i_3, self.n_pc):
                     pitch0   = pitch[i-1]
