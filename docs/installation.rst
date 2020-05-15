@@ -65,6 +65,8 @@ For Windows systems:
 
 Finally, for all systems:
 
+.. code-block:: bash
+
     git clone https://github.com/WISDEM/WISDEM.git
     cd WISDEM
     python setup.py develop
