@@ -1,6 +1,8 @@
 Installation
 ------------
 
+.. TODO: update all of this for the correct instructions now
+
 .. admonition:: prerequisites
    :class: warning
 

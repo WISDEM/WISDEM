@@ -1,44 +1,43 @@
-.. WISDEM documentation master file, created by
-   sphinx-quickstart on Wed Oct 30 06:43:34 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+WISDEM Documentation
+====================
 
-WISDEM
-======
+.. TODO: Need to update this copy. Is it strictly correct?
+The Wind-plant Integrated System Design and Engineering Model (WISDEM) includes integrated assemblies for the assessment of system behavior of wind turbines and plants.
+These assemblies are template assemblies that can be tweaked for a given analysis depending on the focus of the work.
+For example, any variable in these assemblies can be a design variable, an objective or part of a constraint in an multi-disciplinary optimization.
+Any variable can be assigned to a distribution in order to study the behavior of the system under uncertainty or even to perform design/optimization under uncertainty.
+The assemblies included here are simply the basic structure for doing a single analysis which can be extended in a multitude of directions.
 
-.. only:: html
+.. TODO: We need to verify this list of packages, or not list them here, or provide more explanation about what each of them does
+The current set of packages included in WISDEM are the NREL Cost and Scaling Model, a series of turbine systems engineering models (RotorSE, DriveSE, DriveWPACT and TowerSE) along with plant cost and energy production models (Plant_EnergySE, Turbine_CostsSE, Plant_CostsSE, Plant_FinanceSE).
 
-    Wind turbine and plant system level assemblies.
+Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
 
-    Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
+Using WISDEM
+============
 
 .. toctree::
-   :numbered:
    :maxdepth: 2
-   :caption: Contents:
 
-   intro
    installation
-   tutorial
-   documentation
-   wisdem/aeroelasticse/index
-   wisdem/airfoilprep/index
-   wisdem/ccblade/index
-   wisdem/commonse/index
-   wisdem/drivetrainse/drivese/index
-   wisdem/drivetrainse/generator/index
-   wisdem/floatingse/index
-   wisdem/jacketse/index
-   wisdem/nrelcsm/index
-   wisdem/pbeam/index
-   wisdem/plantfinancese/index
-   wisdem/pymap/index
-   wisdem/rotorse/index
-   wisdem/towerse/index
-   wisdem/turbine_costsse/index
+   how_wisdem_works
+   tutorials
+   examples
+   modules
+   theory
+   
+   
+Other Useful Docs
+=================
 
+.. toctree::
+   :maxdepth: 2
 
-Indices and tables
+   known_issues
+   how_to_write_docs
+   how_to_contribute_code
+   
+Indices and Tables
 ==================
 
 * :ref:`genindex`
