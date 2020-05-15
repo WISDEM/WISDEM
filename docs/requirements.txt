@@ -11,12 +11,5 @@ marmot-agents
 # docs
 sphinx
 numpydoc
-sphinx.ext.autodoc
-sphinx.ext.coverage
-sphinx.ext.napoleon
-sphinx.ext.mathjax
-sphinx.ext.viewcode
 numpydoc
-sphinx.ext.autosummary
 sphinxcontrib.bibtex
-sphinx.ext.intersphinx
