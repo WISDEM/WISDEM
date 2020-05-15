@@ -181,6 +181,9 @@ class TuneROSCO(ExplicitComponent):
             self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
 
+        # Outputs for constraints and optimizations
+        self.add_output('Flp_Kp',           val=0.0,            units='rad',        desc='Flap control proportional gain')
+        self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
 
     def compute(self,inputs,outputs, discrete_inputs, discrete_outputs):
         '''
@@ -363,6 +366,9 @@ class TuneROSCO(ExplicitComponent):
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Ct'] = WISDEM_turbine.Ct
         self.analysis_options['openfast']['fst_vt']['DISCON_in']['Cq'] = WISDEM_turbine.Cq
 
+        # Outputs 
+        outputs['Flp_Kp'] = controller.Kp_flap[-1]
+        outputs['Flp_Ki'] = controller.Ki_flap[-1]
 
 class RegulatedPowerCurve(Group):
     
