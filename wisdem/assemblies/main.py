@@ -149,10 +149,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
-            # Parallel settings for OpenFAST
-            analysis_options['openfast']['FASTpref']['mpi_run']           = True
-            analysis_options['openfast']['FASTpref']['mpi_comm_map_down'] = comm_map_down
-            analysis_options['openfast']['FASTpref']['cores']             = n_OF_runs_parallel            
+            if analysis_options['openfast']['run_openfast']:
+                # Parallel settings for OpenFAST
+                analysis_options['openfast']['FASTpref']['mpi_run']           = True
+                analysis_options['openfast']['FASTpref']['mpi_comm_map_down'] = comm_map_down
+                analysis_options['openfast']['FASTpref']['cores']             = n_OF_runs_parallel            
             # Parallel settings for OpenMDAO
             wt_opt = Problem(model=Group(num_par_fd=n_FD), comm=comm_i)
             wt_opt.model.add_subsystem('comp', WindPark(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
@@ -246,7 +247,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 
             chord_options = blade_opt_options['aero_shape']['chord']
             if chord_options['flag']:
-                indices  = range(2, chord_options['n_opt'] - 1)
+                indices  = range(3, chord_options['n_opt'] - 1)
                 wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=chord_options['min_gain'], upper=chord_options['max_gain'])
                 
             if blade_opt_options['aero_shape']['af_positions']['flag']:
@@ -474,7 +475,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         
         
 
-    if MPI:
+    if MPI and analysis_options['openfast']['run_openfast']:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
