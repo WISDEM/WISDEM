@@ -7,5 +7,16 @@ scipy
 openmdao>=2.0
 simpy
 marmot-agents
-numpydoc
+
+# docs
 sphinx
+numpydoc
+sphinx.ext.autodoc
+sphinx.ext.coverage
+sphinx.ext.napoleon
+sphinx.ext.mathjax
+sphinx.ext.viewcode
+numpydoc
+sphinx.ext.autosummary
+sphinxcontrib.bibtex
+sphinx.ext.intersphinx
