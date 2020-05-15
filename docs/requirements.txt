@@ -3,7 +3,6 @@
 # simulation
 matplotlib
 numpy
-pytes
 scipy
 openmdao>=2.0
 simpy
