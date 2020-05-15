@@ -209,7 +209,6 @@ class BearingsCost2015(ExplicitComponent):
 
         # variables
         self.add_input('main_bearing_mass', 0.0, desc='component mass', units='kg') #mass input
-        self.add_discrete_input('main_bearing_number', 2, desc='number of main bearings') #number of main bearings- defaults to 2
         self.add_input('bearings_mass_cost_coeff', 4.5, desc='main bearings mass-cost coeff', units='USD/kg')
     
         # Outputs
@@ -218,11 +217,10 @@ class BearingsCost2015(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         main_bearing_mass = inputs['main_bearing_mass']
-        main_bearing_number = discrete_inputs['main_bearing_number']
         bearings_mass_cost_coeff = inputs['bearings_mass_cost_coeff']
 
         #calculate component cost 
-        outputs['main_bearing_cost'] = bearings_mass_cost_coeff * main_bearing_mass * main_bearing_number
+        outputs['main_bearing_cost'] = bearings_mass_cost_coeff * main_bearing_mass
 
 #-------------------------------------------------------------------------------
 class GearboxCost2015(ExplicitComponent):

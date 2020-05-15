@@ -470,7 +470,7 @@ class turbine_mass_adder(ExplicitComponent):
     
         # Parameters
         self.add_discrete_input('blade_number', 3, desc = 'number of rotor blades')
-        self.add_discrete_input('bearing_number', 2, desc = 'number of main bearings')
+        self.add_discrete_input('main_bearing_number', 2, desc = 'number of main bearings')
     
         # Outputs
         self.add_output('hub_system_mass', 0.0, units='kg', desc='hub system mass')
@@ -497,7 +497,7 @@ class turbine_mass_adder(ExplicitComponent):
         transformer_mass = inputs['transformer_mass']
         tower_mass = inputs['tower_mass']
         blade_number = discrete_inputs['blade_number']
-        bearing_number = discrete_inputs['bearing_number']
+        bearing_number = discrete_inputs['main_bearing_number']
         
         
         outputs['hub_system_mass'] = hub_mass + pitch_system_mass + spinner_mass
@@ -517,7 +517,9 @@ class nrel_csm_mass_2015(Group):
         sharedIndeps = IndepVarComp()
         sharedIndeps.add_output('machine_rating',     units='kW', val=0.0)
         sharedIndeps.add_output('rotor_diameter',         units='m', val=0.0)
+        sharedIndeps.add_output('hub_height',         units='m', val=0.0)
         sharedIndeps.add_discrete_output('blade_number',  val=0)
+        sharedIndeps.add_discrete_output('main_bearing_number',  val=0)
         sharedIndeps.add_discrete_output('crane', val=False)
         self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
 
@@ -562,7 +564,7 @@ def mass_example():
     prob['blade_number'] = 3    
     prob['machine_rating'] = 5000.0
     prob['hub_height'] = 90.0
-    prob['bearing_number'] = 2
+    prob['main_bearing_number'] = 2
     prob['crane'] = True
     prob['max_tip_speed'] = 80.0
     prob['max_efficiency'] = 0.90
@@ -588,7 +590,7 @@ def cost_example():
     prob['blade_number'] = 3    
     prob['machine_rating'] = 5000.0
     prob['hub_height'] = 90.0
-    prob['bearing_number'] = 2
+    prob['main_bearing_number'] = 2
     prob['crane'] = True
     prob['max_tip_speed'] = 80.0
     prob['max_efficiency'] = 0.90
