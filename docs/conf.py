@@ -40,7 +40,8 @@ extensions = ['sphinx.ext.autodoc',
               'numpydoc',
               'sphinx.ext.autosummary',
               'sphinxcontrib.bibtex',
-              'sphinx.ext.intersphinx'
+              'sphinx.ext.intersphinx',
+              'sphinx_rtd_theme'
 ]
 
 # Numbering figures in HTML format (always numbered in latex)
@@ -60,7 +61,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = 'alabaster'
+# html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static/custom.css']
 html_theme_options = {
     # "logo": "logo.png",

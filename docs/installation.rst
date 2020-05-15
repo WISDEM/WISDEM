@@ -28,10 +28,10 @@ From an active Anaconda environment, install WISDEM and its dependencies with:
 
     conda install -y wisdem
 
-Install WISDEM Tuturials
+Running WISDEM Tuturials
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-To open up the WISDEM tutorials, you will have to clone the WISDEM source code.  First navigate to a directory where you want to place WISDEM and all of its files and then install with:
+To open up the WISDEM tutorials, you will have to clone the WISDEM source code.  First navigate to a directory where you want to place WISDEM and all of its files and then run with:
 
 .. code-block:: bash
 
