@@ -9,7 +9,7 @@ simpy
 marmot-agents
 
 # docs
-sphinx
+sphinx>2.0
 numpydoc
 numpydoc
 sphinxcontrib.bibtex
