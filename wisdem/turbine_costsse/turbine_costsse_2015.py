@@ -202,14 +202,14 @@ class LowSpeedShaftCost2015(ExplicitComponent):
         outputs['lss_cost'] = lss_mass_cost_coeff * lss_mass
 
 #-------------------------------------------------------------------------------
-class BearingsCost2015(ExplicitComponent):
+class BearingCost2015(ExplicitComponent):
 
     def setup(self):
 
 
         # variables
         self.add_input('main_bearing_mass', 0.0, desc='component mass', units='kg') #mass input
-        self.add_input('bearings_mass_cost_coeff', 4.5, desc='main bearings mass-cost coeff', units='USD/kg')
+        self.add_input('bearing_mass_cost_coeff', 4.5, desc='main bearing mass-cost coeff', units='USD/kg')
     
         # Outputs
         self.add_output('main_bearing_cost', 0.0, units='USD', desc='Overall wind turbine component capial costs excluding transportation costs')
@@ -217,10 +217,10 @@ class BearingsCost2015(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         main_bearing_mass = inputs['main_bearing_mass']
-        bearings_mass_cost_coeff = inputs['bearings_mass_cost_coeff']
+        bearing_mass_cost_coeff = inputs['bearing_mass_cost_coeff']
 
         #calculate component cost 
-        outputs['main_bearing_cost'] = bearings_mass_cost_coeff * main_bearing_mass
+        outputs['main_bearing_cost'] = bearing_mass_cost_coeff * main_bearing_mass
 
 #-------------------------------------------------------------------------------
 class GearboxCost2015(ExplicitComponent):
@@ -785,7 +785,7 @@ class Turbine_CostsSE_2015(Group):
             sharedIndeps.add_output('pitch_system_mass',  units='kg', val=0.0)
             sharedIndeps.add_output('spinner_mass',       units='kg', val=0.0)
             sharedIndeps.add_output('lss_mass',           units='kg', val=0.0)
-            sharedIndeps.add_output('bearings_mass',      units='kg', val=0.0)
+            sharedIndeps.add_output('bearing_mass',      units='kg', val=0.0)
             sharedIndeps.add_output('gearbox_mass',       units='kg', val=0.0)
             sharedIndeps.add_output('main_bearing_mass',  units='kg', val=0.0)
             sharedIndeps.add_discrete_output('main_bearing_number',  val=0)
@@ -808,7 +808,7 @@ class Turbine_CostsSE_2015(Group):
         indeps.add_output('pitch_system_mass_cost_coeff',  units='USD/kg', val=22.1)
         indeps.add_output('spinner_mass_cost_coeff',       units='USD/kg', val=11.1)
         indeps.add_output('lss_mass_cost_coeff',           units='USD/kg', val=11.9)
-        indeps.add_output('bearings_mass_cost_coeff',      units='USD/kg', val=4.5)
+        indeps.add_output('bearing_mass_cost_coeff',      units='USD/kg', val=4.5)
         indeps.add_output('gearbox_mass_cost_coeff',       units='USD/kg', val=12.9)
         indeps.add_output('hss_mass_cost_coeff',           units='USD/kg', val=6.8)
         indeps.add_output('generator_mass_cost_coeff',     units='USD/kg', val=12.4)
@@ -850,7 +850,7 @@ class Turbine_CostsSE_2015(Group):
         self.add_subsystem('hub_adder'     , HubSystemCostAdder2015(),promotes=['*'])
         self.add_subsystem('rotor_adder'   , RotorCostAdder2015(),    promotes=['*'])
         self.add_subsystem('lss_c'         , LowSpeedShaftCost2015(), promotes=['*'])
-        self.add_subsystem('bearing_c'     , BearingsCost2015(),      promotes=['*'])
+        self.add_subsystem('bearing_c'     , BearingCost2015(),      promotes=['*'])
         self.add_subsystem('gearbox_c'     , GearboxCost2015(),       promotes=['*'])
         self.add_subsystem('hss_c'         , HighSpeedSideCost2015(), promotes=['*'])
         self.add_subsystem('generator_c'   , GeneratorCost2015(),     promotes=['*'])
@@ -882,7 +882,7 @@ def example():
     prob['pitch_system_mass']   = 17004.0
     prob['spinner_mass']        = 1810.5
     prob['lss_mass']            = 31257.3
-    #bearingsMass'] = 9731.41
+    #bearingMass'] = 9731.41
     prob['main_bearing_mass']   = 9731.41 / 2
     prob['gearbox_mass']        = 30237.60
     prob['hss_mass']            = 1492.45

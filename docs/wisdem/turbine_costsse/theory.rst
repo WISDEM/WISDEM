@@ -18,7 +18,7 @@ While the NREL Cost and Scaling Model improved the overall cost estimation for l
 .. _NRELCSM:
 
 .. figure:: /images/turbine_costsse/NRELCSM.*
-    :width: 5.5in
+   :width: 5.5in
    :align: center
 
     NREL Cost and Scaling Model Key Input-Output Relationships.  TODO: REFRESH GRAPHIC
@@ -50,13 +50,19 @@ Where :math:`D_{rotor}` is the rotor diameter and :math:`k_c` is determined by:
 * If turbine class II+ and blade DOES NOT have carbon fiber spar caps, :math:`k_c=2.50`
 * User override of exponent value
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: BladeMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: BladeCost2015
+
 The mass scaling relationships are based on the following data,
 
 .. figure:: /images/turbine_costsse/BladeMass.*
    :width: 5in
    :align: center
 
-  
 Hub (Shell)
 ~~~~~~~~~~~
 To obtain the hub shell mass in kilograms and cost in USD from the blade mass in kilgograms,
@@ -67,6 +73,13 @@ To obtain the hub shell mass in kilograms and cost in USD from the blade mass in
    k_m &= 2.3\\
    b   &= 1320\\
    k_c &= 3.9
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: HubMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: HubCost2015
 
 The mass scaling relationships are based on the following data,
 
@@ -90,6 +103,14 @@ To obtain the pitch bearing and system mass in kilograms and cost in USD from th
 
 Where :math:`n_{blade}` is the number of blades, :math:`h` is fractional mass of the pitch bearing housing.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: PitchSystemMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: PitchSystemCost2015
+
+
 Spinner (Nose Cone)
 ~~~~~~~~~~~~~~~~~~
 To obtain the spinner (nose cone) mass in kilograms and cost in USD from the rotor diameter in meters,
@@ -100,6 +121,13 @@ To obtain the spinner (nose cone) mass in kilograms and cost in USD from the rot
    k_m &= 15.5\\
    b   &= -980\\
    k_c &= 11.1
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: SpinnerMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: SpinnerCost2015
 
 The mass scaling relationships are based on the following data,
 
@@ -119,7 +147,16 @@ To obtain the low speed shaft mass in kilograms and cost in USD from the blade m
    b_2 &= 775\\
    k_c &= 11.9
 
-Where :math:`P_{turbine}` is the machine rating.  The mass scaling relationships are based on the following data,
+Where :math:`P_{turbine}` is the machine rating.
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: LowSpeedShaftMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: LowSpeedShaftCost2015
+
+The mass scaling relationships are based on the following data,
 
 .. figure:: /images/turbine_costsse/LssMass.*
    :width: 4in
@@ -136,7 +173,16 @@ To obtain the main bearings mass in kilograms and cost in USD from the rotor dia
    b   &= 3.5\\
    k_c &= 4.5
 
-Where :math:`D_{rotor}` is the rotor diameter and :math:`n_{bearing}` is the number of bearings. The mass scaling relationships are based on the following data,
+Where :math:`D_{rotor}` is the rotor diameter and :math:`n_{bearing}` is the number of bearings.
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: BearingMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: BearingCost2015
+
+The mass scaling relationships are based on the following data,
 
 .. figure:: /images/turbine_costsse/BearingMass.*
    :width: 4in
@@ -159,7 +205,16 @@ Where :math:`Q_{rotor}` is the rotor torque and is approximated by,
 .. math::
    Q_{rotor} = (0.5 P_{turbine} D_{rotor}) / (\eta V_{tip})
 
-Where :math:`P_{turbine}` is the machine rating, :math:`D_{rotor}` is the rotor diameter, :math:`V_{tip}` is the max tip speed, and :math:`\eta` is the drivetrain efficiency.  The mass scaling relationships are based on the following data,
+Where :math:`P_{turbine}` is the machine rating, :math:`D_{rotor}` is the rotor diameter, :math:`V_{tip}` is the max tip speed, and :math:`\eta` is the drivetrain efficiency.
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: GearboxMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: GearboxCost2015
+
+The mass scaling relationships are based on the following data,
 
 .. figure:: /images/turbine_costsse/GearboxMass.*
    :width: 4in
@@ -177,6 +232,13 @@ To obtain the high speed shaft mass in kilograms and cost in USD from the machin
 
 Where :math:`P_{turbine}` is the machine rating.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: HighSpeedSideMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: HighSpeedSideCost2015
+
 Generator
 ~~~~~~~~~
 To obtain the generator mass in kilograms and cost in USD from the machine rating in megawatts,
@@ -188,7 +250,16 @@ To obtain the generator mass in kilograms and cost in USD from the machine ratin
    b   &= 3400\\
    k_c &= 12.4
 
-Where :math:`P_{turbine}` is the machine rating.  The mass scaling relationships are based on the following data,
+Where :math:`P_{turbine}` is the machine rating.
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: GeneratorMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: GeneratorCost2015
+
+The mass scaling relationships are based on the following data,
 
 .. figure:: /images/turbine_costsse/GeneratorMass.*
    :width: 4in
@@ -207,6 +278,13 @@ To obtain the yaw system mass in kilograms and cost in USD from the rotor diamet
 
 Where :math:`D_{rotor}` is the rotor diameter.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: YawSystemMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: YawSystemCost2015
+
 Hydraulic Cooling
 ~~~~~~~~~~~~~~~~~
 To obtain the hydraulic cooling mass in kilograms and cost in USD from the machine rating in megawatts,
@@ -219,6 +297,13 @@ To obtain the hydraulic cooling mass in kilograms and cost in USD from the machi
 
 Where :math:`P_{turbine}` is the machine rating.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: HydraulicCoolingMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: HydraulicCoolingCost2015
+
 Transformer
 ~~~~~~~~~~~
 To obtain the transformer mass in kilograms and cost in USD from the machine rating in megawatts,
@@ -229,6 +314,13 @@ To obtain the transformer mass in kilograms and cost in USD from the machine rat
    k_m &= 1915\\
    b   &= 1910\\
    k_c &= 18.8
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: TransformerMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: TransformerCost2015
 
 The mass scaling relationships are based on the following data,
 
@@ -246,6 +338,11 @@ To obtain the cabling and electrical connections cost in USD (there is no mass c
 
 Where :math:`P_{turbine}` is the machine rating.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: ElecConnecCost2015
+
 Control System
 ~~~~~~~~~~~~~~
 To obtain the control system cost in USD (there is no mass calculated) from the machine rating in megawatts,
@@ -255,6 +352,11 @@ To obtain the control system cost in USD (there is no mass calculated) from the 
    k_c &= 21150
 
 Where :math:`P_{turbine}` is the machine rating.
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: ControlsCost2015
 
 Other Nacelle Equipment
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -269,6 +371,13 @@ To obtain the nacelle platform and service crane mass in kilograms and cost in U
    k_c &= 17.1
 
 Note that the service crane is optional with a flag set by the user.
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: PlatformsMainframeMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: PlatformsMainframeCost2015
 
 Bedplate
 ~~~~~~~~
@@ -286,6 +395,13 @@ Where :math:`D_{rotor}` is the rotor diameter.  The mass scaling relationships a
    :width: 4in
    :align: center
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: BedplateMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: BedplateCost2015
+
 
 Nacelle Cover
 ~~~~~~~~~~~~~
@@ -300,6 +416,13 @@ To obtain the nacelle cover mass in kilograms and cost in USD from the machine r
 
 Where :math:`P_{turbine}` is the machine rating.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: NacelleCoverMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: NacelleCoverCost2015
+
 Tower
 ~~~~~
 To obtain the tower mass in kilograms and cost in USD from the hub height in meters,
@@ -311,7 +434,16 @@ To obtain the tower mass in kilograms and cost in USD from the hub height in met
    b   &= 2.0282\\
    k_c &= 2.9
 
-Where :math:`L_{hub}` is the hub height.  The mass scaling relationships are based on the following data,
+Where :math:`L_{hub}` is the hub height.
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. class:: TowerMass
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: TowerCost2015
+
+The mass scaling relationships are based on the following data,
 
 .. figure:: /images/turbine_costsse/TowerMass.*
    :width: 4in
@@ -333,6 +465,12 @@ It is assumed that the hub system is assembled and transported as a one unit, th
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: HubSystemCostAdder2015
+
+
 Rotor System
 ============
 
@@ -341,6 +479,12 @@ The rotor mass and cost is aggregated for conceptual convenience, but it is assu
 .. math::
    m_{rotor} &= n_{blade} m_{blade} + m_{hubsys}\\
    c_{rotor} &= n_{blade} c_{blade} + c_{hubsys}
+
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: RotorCostAdder2015
+
 
 Nacelle
 =======
@@ -356,6 +500,12 @@ It is assumed that the nacelle and all of its sub-components are assembled and t
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: NacelleSystemCostAdder2015
+
+
 Tower System
 ============
 
@@ -366,15 +516,24 @@ The tower is not aggregated with any other component, but for consistency there 
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: TowerCostAdder2015
+
 Turbine
 =======
 
 The final turbine assembly also allows for user specification of other cost multipliers,
 
 .. math::
-   m_{turbine} &= m_{rotor} + m_{nacelle} + m_{tower}
+   m_{turbine} &= m_{rotor} + m_{nacelle} + m_{tower}\\
    c_{turbine} &= (1+kt_{turbine}+kp_{turbine}) (1+ko{turbine}+ka_{turbine}) (c_{rotor} + c_{nacelle} + c_{towersys})
 
+For variable names access to override the default values and source docs, see:
+
+.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. class:: TurbineCostAdder2015
 
 
 
