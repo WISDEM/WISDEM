@@ -56,16 +56,37 @@ master_doc = 'index'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
-# -- Options for HTML output -------------------------------------------------
+# -- Options for HTML output ----------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-#html_theme = 'alabaster'
-html_theme = 'nrel-theme'
-html_theme_path = ['.']
+html_theme = 'alabaster'
+html_static_path = ['_static/custom.css']
+html_theme_options = {
+    # "logo": "logo.png",
+    # "logo_name": True,
+    "badge_branch": "IEAontology4all",
+    "codecov_button": True,
+    "fixed_sidebar": True,
+    "github_user": "WISDEM",
+    "github_repo": "WISDEM",
+    "sidebar_width": '375px',
+    "page_width": '75%',
+    "show_relbars": True
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = [os.path.join('source', '_static')]
+
+# Custom sidebar templates, must be a dictionary that maps document names
+# to template names.
+#
+# This is required for the alabaster theme
+# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'searchbox.html'        
+    ]
+}
