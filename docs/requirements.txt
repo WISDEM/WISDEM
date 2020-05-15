@@ -1,0 +1,12 @@
+# Requirements list for wisdem
+
+# simulation
+matplotlib
+numpy
+pytes
+scipy
+openmdao>=2.0
+simpy
+marmot-agents
+numpydoc
+sphinx
