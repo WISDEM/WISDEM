@@ -330,12 +330,10 @@ class CaseGen_IEC():
                 # row_out[i] = str(case[var])
                 row_out[i] = case[var]
             matrix_out.append(row_out)
-        # matrix_out = np.asarray(matrix_out)
 
         change_vars = [('IEC', 'DLC')] + change_vars
         [matrix_row.insert(0, dlc) for dlc, matrix_row in zip(dlc_list,matrix_out)]
 
-        # matrix_out = np.hstack((np.asarray([[i] for i in dlc_list]), matrix_out))
         if not os.path.exists(self.run_dir):
             os.makedirs(self.run_dir)
 
