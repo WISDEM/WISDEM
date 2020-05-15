@@ -66,12 +66,12 @@ html_theme_options = {
     # "logo": "logo.png",
     # "logo_name": True,
     "badge_branch": "IEAontology4all",
-    "codecov_button": True,
+    # "codecov_button": True,
     "fixed_sidebar": True,
     "github_user": "WISDEM",
     "github_repo": "WISDEM",
-    "sidebar_width": '375px',
-    "page_width": '75%',
+    # "sidebar_width": '220px',
+    # "page_width": '75%',
     "show_relbars": True
 }
 
