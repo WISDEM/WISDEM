@@ -24,6 +24,7 @@ Using WISDEM
    tutorials
    examples
    modules
+   theory
    
    
 Other Useful Docs
