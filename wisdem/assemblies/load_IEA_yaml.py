@@ -327,7 +327,13 @@ class WindTurbineOntologyPython(object):
 
 
         # Update controller
-        self.wt_init['control']['tsr'] = float(wt_opt['pc.tsr_opt'])
+        self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])
+        self.wt_init['control']['PC_omega'] = float(wt_opt['control.PC_omega'])
+        self.wt_init['control']['PC_zeta']  = float(wt_opt['control.PC_zeta'])
+        self.wt_init['control']['VS_omega'] = float(wt_opt['control.VS_omega'])
+        self.wt_init['control']['VS_zeta']  = float(wt_opt['control.VS_zeta'])
+        self.wt_init['control']['Flp_omega']= float(wt_opt['control.Flp_omega'])
+        self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
 
         # Write yaml with updated values
         f = open(fname_output, "w")
