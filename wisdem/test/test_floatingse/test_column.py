@@ -23,7 +23,7 @@ class TestBulk(unittest.TestCase):
         self.inputs['rho'] = 1e3
         self.inputs['bulkhead_mass_factor'] = 1.1
         self.inputs['bulkhead_thickness'] = 0.05 * np.array([0.0, 1.0, 0.0, 1.0, 0.0, 0.0])
-        self.inputs['material_cost_rate'] = 1.0
+        self.inputs['unit_cost'] = 1.0
         self.inputs['painting_cost_rate'] = 10.0
         self.inputs['labor_cost_rate'] = 2.0
         self.inputs['shell_mass'] = 500.0*np.ones(NPTS-1)
@@ -55,13 +55,13 @@ class TestBulk(unittest.TestCase):
         A = np.pi*R_i**2
         Kp_exp = 10.0*2*A*ind.sum()
         self.inputs['painting_cost_rate'] = 10.0
-        self.inputs['material_cost_rate'] = 1.0
+        self.inputs['unit_cost'] = 1.0
         self.inputs['labor_cost_rate'] = 0.0
         self.bulk.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs['bulkhead_cost'], Kp_exp + m_bulk*ind.sum())
         
         self.inputs['painting_cost_rate'] = 0.0
-        self.inputs['material_cost_rate'] = 0.0
+        self.inputs['unit_cost'] = 0.0
         self.inputs['labor_cost_rate'] = 1.0
         self.bulk.compute(self.inputs, self.outputs)
         self.assertGreater(self.outputs['bulkhead_cost'], 2e3)
@@ -81,7 +81,7 @@ class TestBuoyancyTank(unittest.TestCase):
         self.inputs['buoyancy_tank_height'] = 0.25
         self.inputs['buoyancy_tank_location'] = 0.0
         self.inputs['buoyancy_tank_mass_factor'] = 1.1
-        self.inputs['material_cost_rate'] = 1.0
+        self.inputs['unit_cost'] = 1.0
         self.inputs['labor_cost_rate'] = 2.0
         self.inputs['painting_cost_rate'] = 10.0
         self.inputs['shell_mass'] = 500.0*np.ones(NPTS-1)
@@ -100,13 +100,13 @@ class TestBuoyancyTank(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['buoyancy_tank_displacement'], V_box)
         #self.assertEqual(self.outputs['buoyancy_tank_I_keel'], 0.0)
         
-        self.inputs['material_cost_rate'] = 1.0
+        self.inputs['unit_cost'] = 1.0
         self.inputs['labor_cost_rate'] = 0.0
         self.inputs['painting_cost_rate'] = 10.0
         self.box.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs['buoyancy_tank_cost'], m_expect + 10*2*1.5*A_box)
         
-        self.inputs['material_cost_rate'] = 0.0
+        self.inputs['unit_cost'] = 0.0
         self.inputs['labor_cost_rate'] = 1.0
         self.inputs['painting_cost_rate'] = 0.0
         self.box.compute(self.inputs, self.outputs)
@@ -163,7 +163,7 @@ class TestStiff(unittest.TestCase):
         inputs['L_stiffener'][int(NPTS/2):] = 0.05
         inputs['rho'] = 1e3
         inputs['ring_mass_factor'] = 1.1
-        inputs['material_cost_rate'] = 1.0
+        inputs['unit_cost'] = 1.0
         inputs['labor_cost_rate'] = 2.0
         inputs['painting_cost_rate'] = 10.0
         inputs['shell_mass'] = 500.0*np.ones(NPTS-1)
@@ -192,13 +192,13 @@ class TestStiff(unittest.TestCase):
 
         # Test cost
         A = 2*(np.pi*(Rwo**2-Rwi**2) + 2*np.pi*0.5*(Rfi+Rwi)*(0.3+2)) - 2*np.pi*Rwi*0.5
-        inputs['material_cost_rate'] = 1.0
+        inputs['unit_cost'] = 1.0
         inputs['labor_cost_rate'] = 0.0
         inputs['painting_cost_rate'] = 10.0
         stiff.compute(inputs, outputs)
         self.assertAlmostEqual(outputs['stiffener_cost'], (expect + 10*2*A)*(0.5/0.1 + 0.5/0.05) )
         
-        inputs['material_cost_rate'] = 0.0
+        inputs['unit_cost'] = 0.0
         inputs['labor_cost_rate'] = 1.0
         inputs['painting_cost_rate'] = 0.0
         stiff.compute(inputs, outputs)
@@ -510,10 +510,11 @@ class TestBuckle(unittest.TestCase):
         self.inputs['z_full'] = np.linspace(0, 1, NPTS)
         self.inputs['z_section'],_ = nodal2sectional( self.inputs['z_full'] )
         self.inputs['z_param'] = np.linspace(0, 1, NHEIGHT)
-        self.inputs['gamma_f'] = 1.0
-        self.inputs['gamma_b'] = 1.0
+        opt = {}
+        opt['gamma_f'] = 1.0
+        opt['gamma_b'] = 1.0
 
-        self.buckle = column.ColumnBuckling(n_height=NHEIGHT)
+        self.buckle = column.ColumnBuckling(n_height=NHEIGHT, analysis_options=opt)
 
 
     def testAppliedAxial(self):
@@ -537,9 +538,14 @@ import openmdao.api as om
 
 class TestGroup(unittest.TestCase):
     def testAll(self):
+        opt = {}
+        opt['gamma_f'] = 1.0
+        opt['gamma_b'] = 1.0
+
         prob = om.Problem()
 
-        prob.model.add_subsystem('col', column.Column(n_height=3, topLevelFlag=True), promotes=['*'])
+        prob.model.add_subsystem('col', column.Column(n_height=3, analysis_options=opt,
+                                                      topLevelFlag=True), promotes=['*'])
         
         prob.setup()
         prob['freeboard'] = 15.0
@@ -573,11 +579,10 @@ class TestGroup(unittest.TestCase):
         prob['Tsig_wave'] = 10.0
         prob['bulkhead_mass_factor'] = 1.0
         prob['ring_mass_factor'] = 1.0
-        prob['shell_mass_factor'] = 1.0
         prob['column_mass_factor'] = 1.0
         prob['outfitting_mass_fraction'] = 0.05
         prob['ballast_cost_rate'] = 5.0
-        prob['material_cost_rate'] = 2.0
+        prob['unit_cost'] = 2.0
         prob['labor_cost_rate'] = 10.0
         prob['painting_cost_rate'] = 20.0
         prob['outfitting_cost_rate'] = 300.0

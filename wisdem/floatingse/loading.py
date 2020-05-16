@@ -6,10 +6,11 @@ from wisdem.commonse.utilities import nodal2sectional
 
 from wisdem.commonse import gravity, eps, Tube, NFREQ
 import wisdem.commonse.UtilizationSupplement as util
+from wisdem.commonse.utilities import get_modal_coefficients
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
 from wisdem.commonse.environment import WaveBase, PowerWind
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, get_nfull
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, get_nfull, RIGID
 from .map_mooring import NLINES_MAX
 
 
@@ -34,6 +35,7 @@ class FloatingFrame(ExplicitComponent):
         self.options.declare('n_height_main')
         self.options.declare('n_height_off')
         self.options.declare('n_height_tow')
+        self.options.declare('analysis_options')
         
     def setup(self):
         n_height_main = self.options['n_height_main']
@@ -133,13 +135,6 @@ class FloatingFrame(ExplicitComponent):
         self.add_input('fairlead_support_outer_diameter', val=0.0, units='m',desc='fairlead support outer diameter')
         self.add_input('fairlead_support_wall_thickness', val=0.0, units='m',desc='fairlead support wall thickness')
         
-        # safety factors
-        self.add_input('gamma_f', 0.0, desc='safety factor on loads')
-        self.add_input('gamma_m', 0.0, desc='safety factor on materials')
-        self.add_input('gamma_n', 0.0, desc='safety factor on consequence of failure')
-        self.add_input('gamma_b', 0.0, desc='buckling safety factor')
-        self.add_input('gamma_fatigue', 0.0, desc='total safety factor for fatigue')
-
         # Manufacturing
         self.add_input('connection_ratio_max', val=0.0, desc='Maximum ratio of pontoon outer diameter to main/offset outer diameter')
         
@@ -188,7 +183,10 @@ class FloatingFrame(ExplicitComponent):
         self.add_output('main_connection_ratio', val=np.zeros((n_full_main,)), desc='Ratio of pontoon outer diameter to main outer diameter')
         self.add_output('offset_connection_ratio', val=np.zeros((n_full_off,)), desc='Ratio of pontoon outer diameter to main outer diameter')
 
+        NFREQ2 = int(NFREQ/2)
         self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First six natural frequencies')
+        self.add_output('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the y-direction')
         self.add_output('substructure_mass', val=0.0, units='kg', desc='Mass of substructure elements and connecting truss')
         self.add_output('structural_mass', val=0.0, units='kg', desc='Mass of whole turbine except for mooring lines')
         self.add_output('total_displacement', val=0.0, units='m**3', desc='Total volume of water displaced by floating turbine (except for mooring lines)')
@@ -202,8 +200,8 @@ class FloatingFrame(ExplicitComponent):
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
          
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        
-        # Unpack variables
+
+
         ncolumn         = int(inputs['number_of_offset_columns'])
         crossAttachFlag = discrete_inputs['cross_attachment_pontoons']
         lowerAttachFlag = discrete_inputs['lower_attachment_pontoons']
@@ -241,13 +239,13 @@ class FloatingFrame(ExplicitComponent):
         m_offset      = inputs['offset_mass']
         m_tower        = inputs['tower_mass_section']
         
-        m_rna          = inputs['rna_mass']
+        m_rna          = float(inputs['rna_mass'])
         F_rna          = inputs['rna_force']
         M_rna          = inputs['rna_moment']
         I_rna          = inputs['rna_I']
         cg_rna         = inputs['rna_cg']
         
-        rhoWater       = inputs['rho_water']
+        rhoWater       = float(inputs['rho_water'])
         
         V_main         = inputs['main_displaced_volume']
         V_offset      = inputs['offset_displaced_volume']
@@ -268,13 +266,15 @@ class FloatingFrame(ExplicitComponent):
         I_mooring      = inputs['mooring_moments_of_inertia']
         F_mooring      = inputs['mooring_neutral_load']
         R_fairlead     = inputs['fairlead_radius']
-        
-        gamma_f        = inputs['gamma_f']
-        gamma_m        = inputs['gamma_m']
-        gamma_n        = inputs['gamma_n']
-        gamma_b        = inputs['gamma_b']
-        gamma_fatigue  = inputs['gamma_fatigue']
 
+        opt = self.options['analysis_options']
+        gamma_f      = opt['gamma_f']
+        gamma_m      = opt['gamma_m']
+        gamma_n      = opt['gamma_n']
+        gamma_b      = opt['gamma_b']
+        frame3dd_opt = opt['frame3dd']
+        
+        # Unpack variables
         # Quick ratio for unknowns
         outputs['main_connection_ratio']    = inputs['connection_ratio_max'] - R_od_pontoon/R_od_main
         outputs['offset_connection_ratio'] = inputs['connection_ratio_max'] - R_od_pontoon/R_od_offset
@@ -782,17 +782,14 @@ class FloatingFrame(ExplicitComponent):
         elemAng = np.arccos( np.diff(plotMat[:,-1,:], axis=-1).flatten() / elemL )
 
         # ---Options object---
-        shear = True               # 1: include shear deformation
-        geom = False               # 1: include geometric stiffness
-        dx = -1                    # x-axis increment for internal forces, -1 to skip
-        other = frame3dd.Options(shear, geom, dx)
+        other = frame3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
 
         # ---LOAD CASES---
         # Extreme loading
-        gx = 0.0
-        gy = 0.0
+        gx = gy = 0.0
         gz = -gravity
         load = frame3dd.StaticLoadCase(gx, gy, gz)
+        load0 = frame3dd.StaticLoadCase(gx, gy, gz)
 
         # Wind + Wave loading in local main / offset / tower c.s.
         Px_main,    Py_main,    Pz_main    = inputs['main_Pz'], inputs['main_Py'], -inputs['main_Px']  # switch to local c.s.
@@ -1007,17 +1004,18 @@ class FloatingFrame(ExplicitComponent):
 
 
         # ---REACTIONS---
+        # Will first compute unrestained mode shapes and then impose reactions to compute stress loads
         # Find node closest to CG
         cg_dist = np.sum( (nodeMat - outputs['structure_center_of_mass'][np.newaxis,:])**2, axis=1 )
         cg_node = np.argmin(cg_dist)
-        # Free=0, Rigid=inf
+        rigid = RIGID
         rid = np.array([mainBeginID]) #np.array(fairleadID) #np.array([cg_node+1]) #
-        Rx  = np.inf * np.ones(rid.shape)
-        Ry  = np.inf * np.ones(rid.shape)
-        Rz  = np.inf * np.ones(rid.shape)
-        Rxx = np.inf * np.ones(rid.shape)
-        Ryy = np.inf * np.ones(rid.shape)
-        Rzz = np.inf * np.ones(rid.shape)
+        Rx  = rigid * np.ones(rid.shape)
+        Ry  = rigid * np.ones(rid.shape)
+        Rz  = rigid * np.ones(rid.shape)
+        Rxx = rigid * np.ones(rid.shape)
+        Ryy = rigid * np.ones(rid.shape)
+        Rzz = rigid * np.ones(rid.shape)
         rid = np.append(rid, fairleadID)
         Rx  = np.append(Rx,  K_mooring[0] /nnode_connect * np.ones(nnode_connect) )
         Ry  = np.append(Ry,  K_mooring[1] /nnode_connect * np.ones(nnode_connect) )
@@ -1026,14 +1024,14 @@ class FloatingFrame(ExplicitComponent):
         Ryy = np.append(Ryy,  K_mooring[4]/nnode_connect * np.ones(nnode_connect) )
         Rzz = np.append(Rzz,  K_mooring[5]/nnode_connect * np.ones(nnode_connect) )
         # Get reactions object from frame3dd
-        reactions = frame3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=np.inf)
+        reactions  = frame3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=rigid)
+        R0 = np.zeros(rid.shape)
+        reactions0 = frame3dd.ReactionData([], R0, R0, R0, R0, R0, R0, rigid=1)
 
-        
-        # ---FRAME3DD INSTANCE---
-
-        # Initialize frame3dd object
+        # Initialize two frame3dd objects
+        myframe0 = frame3dd.Frame(nodes, reactions0, elements, other)
         self.myframe = frame3dd.Frame(nodes, reactions, elements, other)
-        
+
         # Add in extra mass of rna
         inode   = np.array([towerEndID], dtype=np.int32) # rna
         m_extra = np.array([m_rna])
@@ -1046,29 +1044,64 @@ class FloatingFrame(ExplicitComponent):
         rhox = np.array([ cg_rna[0] ])
         rhoy = np.array([ cg_rna[1] ])
         rhoz = np.array([ cg_rna[2] ])
+        myframe0.changeExtraNodeMass(inode, m_extra, Ixx, Iyy, Izz, Ixy, Ixz, Iyz, rhox, rhoy, rhoz, True)
         self.myframe.changeExtraNodeMass(inode, m_extra, Ixx, Iyy, Izz, Ixy, Ixz, Iyz, rhox, rhoy, rhoz, True)
-        
-        # Store load case into frame 3dd object
+
+        # Add in load cases
+        myframe0.addLoadCase(load0)
         self.myframe.addLoadCase(load)
-
-
-        # ---DYNAMIC ANALYSIS---
-        # This needs to be compared to FAST until I trust it enough to use it.
-        # Have to test BCs, results, mooring stiffness, mooring mass/MOI, etc
-        nM = 0 #NFREQ          # number of desired dynamic modes of vibration
-        Mmethod = 1         # 1: subspace Jacobi     2: Stodola
-        lump = 0            # 0: consistent mass ... 1: lumped mass matrix
-        tol = 1e-5          # mode shape tolerance
-        shift = 0.0        # shift value ... for unrestrained or partially restrained structures
         
-        #self.myframe.enableDynamics(nM, Mmethod, lump, tol, shift)
+        # ---RUN MODAL ANALYSIS---
+        if opt['run_modal']:
 
-        # ---DEBUGGING---
-        #self.myframe.write('debug.3dd') # For debugging
+            # ---DYNAMIC ANALYSIS---
+            shift = 1e1
+            myframe0.enableDynamics(3*NFREQ, frame3dd_opt['Mmethod'], frame3dd_opt['lump'], float(frame3dd_opt['tol']), shift)
 
-        # ---RUN ANALYSIS---
+            # ---DEBUGGING---
+            myframe0.write('debug.3dd') # For debugging
+
+            try:
+                _, _, _, _, _, modal = myframe0.run()
+            except:
+                bad_input()
+                return
+
+            # Get mode shapes in batch
+            mpfs   = np.abs( np.c_[modal.xmpf, modal.ympf, modal.zmpf] )
+            polys  = get_modal_coefficients(znode, np.vstack((modal.xdsp, modal.ydsp)).T, 6)
+            xpolys = polys[:,:(3*NFREQ)].T
+            ypolys = polys[:,(3*NFREQ):].T
+
+            NFREQ2    = int(NFREQ/2)
+            mshapes_x = np.zeros((NFREQ2, 5))
+            mshapes_y = np.zeros((NFREQ2, 5))
+            ix = 0
+            iy = 0
+            im = []
+            for m in range(len(modal.freq)):
+                if mpfs[m,:].max() < 1e-11: continue
+                imode = np.argmax(mpfs[m,:])
+                if imode == 0 and ix<NFREQ2:
+                    mshapes_x[ix,:] = xpolys[m,:]
+                    ix += 1
+                    im.append(m)
+                elif imode == 1 and iy<NFREQ2:
+                    mshapes_y[iy,:] = ypolys[m,:]
+                    iy += 1
+                    im.append(m)
+                #else:
+                #    print('Warning: Unknown mode shape')
+            outputs['x_mode_shapes'] = mshapes_x
+            outputs['y_mode_shapes'] = mshapes_y
+            outputs['structural_frequencies'] = modal.freq[im]
+
+
+        # ---RUN STRESS ANALYSIS---
+        
+        # Initialize frame3dd object again with reactions and rerun with 
         try:
-            displacements, forces, reactions, internalForces, mass, modal = self.myframe.run()
+            displacements, forces, reactions, internalForces, mass, _ = self.myframe.run()
         except:
             bad_input()
             return
@@ -1076,11 +1109,6 @@ class FloatingFrame(ExplicitComponent):
         # --OUTPUTS--
         nE    = nelem.size
         iCase = 0
-
-        # natural frequncies- catch nans and zeros
-        temp = np.zeros(NFREQ) #np.array( modal.freq )
-        temp[np.isnan(temp)] = 0.0
-        outputs['structural_frequencies'] = temp + eps
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs['top_deflection'] = displacements.dx[iCase, towerEndID-1]  # in yaw-aligned direction
@@ -1125,7 +1153,7 @@ class FloatingFrame(ExplicitComponent):
         
         # Extract tower for Eurocode checks
         idx = towerEID-1 + np.arange(R_od_tower.size, dtype=np.int32)
-        L_reinforced   = inputs['tower_buckling_length'] * np.ones(idx.shape)
+        L_reinforced   = opt['tower']['buckling_length'] * np.ones(idx.shape)
         sigma_ax_tower = sigma_ax[idx]
         sigma_sh_tower = sigma_sh[idx]
         qdyn_tower,_   = nodal2sectional( inputs['tower_qdyn'] )
@@ -1171,7 +1199,7 @@ class FloatingFrame(ExplicitComponent):
         # Extract offset column for Eurocode checks
         if ncolumn > 0:
             idx = offsetEID[0]-1 + np.arange(R_od_offset.size, dtype=np.int32)
-            L_reinforced     = inputs['offset_buckling_length']
+            L_reinforced    = inputs['offset_buckling_length']
             sigma_ax_offset = sigma_ax[idx]
             sigma_sh_offset = sigma_sh[idx]
             qdyn_offset,_   = nodal2sectional( inputs['offset_qdyn'] )
@@ -1231,6 +1259,7 @@ class Loading(Group):
         self.options.declare('n_height_main')
         self.options.declare('n_height_off')
         self.options.declare('n_height_tow')
+        self.options.declare('analysis_options')
         
     def setup(self):
         n_height_main = self.options['n_height_main']
@@ -1263,7 +1292,8 @@ class Loading(Group):
         self.add_subsystem('intbool', TrussIntegerToBoolean(), promotes=['*'])
         self.add_subsystem('frame', FloatingFrame(n_height_main=n_height_main,
                                                   n_height_off=n_height_off,
-                                                  n_height_tow=n_height_tow), promotes=['*'])
+                                                  n_height_tow=n_height_tow,
+                                                  analysis_options=self.options['analysis_options']), promotes=['*'])
         
         self.connect('loadingWind.U', 'windLoads.U')
         self.connect('windLoads.windLoads_Px', 'tower_Px')

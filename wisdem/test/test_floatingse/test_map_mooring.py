@@ -73,11 +73,12 @@ class TestMapMooring(unittest.TestCase):
         self.inputs['max_offset'] = 10.0
         self.inputs['max_survival_heel'] = 10.0
         self.inputs['operational_heel'] = 10.0
-        self.inputs['gamma_f'] = 1.35
         self.inputs['mooring_cost_factor'] = 1.1
 
+        opt = {}
+        opt['gamma_f'] = 1.35
 
-        self.mymap = mapMooring.MapMooring()
+        self.mymap = mapMooring.MapMooring(analysis_options=opt)
         self.mymap.set_properties(self.inputs, self.discrete_inputs)
         self.mymap.set_geometry(self.inputs, self.outputs)
          

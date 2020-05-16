@@ -381,13 +381,19 @@ class Frame(object):
         self.nr = np.copy(nodes.r)
 
         # reactions
-        self.rnode = reactions.node.astype(np.int32)
-        self.rKx = reactions.Kx.astype(np.float64)  # convert rather than copy to allow old syntax of integers
-        self.rKy = reactions.Ky.astype(np.float64)
-        self.rKz = reactions.Kz.astype(np.float64)
-        self.rKtx = reactions.Ktx.astype(np.float64)
-        self.rKty = reactions.Kty.astype(np.float64)
-        self.rKtz = reactions.Ktz.astype(np.float64)
+        if len(reactions.node) == 0:
+            self.rnode = np.array([]).astype(np.int32)
+            self.rKx = self.rKy = self.rKz = self.rKtx = self.rKty = self.rKtz = np.array([]).astype(np.float64)
+            rigid = 1
+        else:
+            self.rnode = reactions.node.astype(np.int32)
+            self.rKx = reactions.Kx.astype(np.float64)  # convert rather than copy to allow old syntax of integers
+            self.rKy = reactions.Ky.astype(np.float64)
+            self.rKz = reactions.Kz.astype(np.float64)
+            self.rKtx = reactions.Ktx.astype(np.float64)
+            self.rKty = reactions.Kty.astype(np.float64)
+            self.rKtz = reactions.Ktz.astype(np.float64)
+            rigid = reactions.rigid
 
         # elements
         self.eelement = elements.element.astype(np.int32)
@@ -415,7 +421,7 @@ class Frame(object):
 
         self.c_reactions = C_Reactions(len(self.rnode), ip(self.rnode),
             dp(self.rKx), dp(self.rKy), dp(self.rKz),
-            dp(self.rKtx), dp(self.rKty), dp(self.rKtz), reactions.rigid)
+            dp(self.rKtx), dp(self.rKty), dp(self.rKtz), rigid)
 
         self.c_elements = C_Elements(len(self.eelement), ip(self.eelement),
             ip(self.eN1), ip(self.eN2), dp(self.eAx), dp(self.eAsy),

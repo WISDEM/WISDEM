@@ -15,6 +15,8 @@ class MapMooring(ExplicitComponent):
     OpenMDAO Component class for mooring system attached to sub-structure of floating offshore wind turbines.
     Should be tightly coupled with Spar class for full system representation.
     """
+    def initialize(self):
+        self.options.declare('analysis_options')
 
     def setup(self):
     
@@ -50,7 +52,6 @@ class MapMooring(ExplicitComponent):
         self.add_input('max_offset', val=0.0, units='m',desc='X offsets in discretization')
         self.add_input('operational_heel', val=0.0, units='deg',desc='Maximum angle of heel allowable during operation')
         self.add_input('max_survival_heel', val=0.0, units='deg', desc='max heel angle for turbine survival')
-        self.add_input('gamma_f', val=0.0, desc='Safety factor for mooring line tension')
 
         # Cost rates
         self.add_input('mooring_cost_factor', val=0.0, desc='miscellaneous cost factor in percent')
@@ -178,7 +179,7 @@ class MapMooring(ExplicitComponent):
         waterDepth    = inputs['water_depth']
         L_mooring     = inputs['mooring_line_length']
         max_heel      = inputs['max_survival_heel']
-        gamma         = inputs['gamma_f']
+        gamma         = self.options['analysis_options']['gamma_f']
         
         if L_mooring > (waterDepth - fairleadDepth):
             self.tlpFlag = False
@@ -408,7 +409,7 @@ class MapMooring(ExplicitComponent):
         Dmooring      = inputs['mooring_diameter']
         offset        = inputs['max_offset']
         heel          = inputs['operational_heel']
-        gamma         = inputs['gamma_f']
+        gamma         = self.options['analysis_options']['gamma_f']
         n_connect     = int(inputs['number_of_mooring_connections'])
         n_lines       = int(inputs['mooring_lines_per_connection'])
         ntotal        = n_connect * n_lines

@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import copy
 import numpy as np
 import numpy.testing as npt
 import unittest
@@ -14,6 +15,28 @@ from wisdem.commonse import gravity as g
 NSECTIONS = 5
 NHEIGHT   = NSECTIONS+1
 NPTS = get_nfull(NHEIGHT)
+
+
+opt = {}
+opt['gamma_f'] = 1.35
+opt['gamma_m'] = 1.1
+opt['gamma_n'] = 1.0
+opt['gamma_b'] = 1.1
+opt['gamma_fatigue'] = 1.755
+
+opt['frame3dd']            = {}
+opt['frame3dd']['shear']   = True
+opt['frame3dd']['geom']    = False
+opt['frame3dd']['dx']      = -1
+opt['frame3dd']['nM']      = 6
+opt['frame3dd']['Mmethod'] = 1
+opt['frame3dd']['lump']    = 0
+opt['frame3dd']['tol']     = 1e-7
+
+opt['run_modal'] = False
+
+opt['tower'] = {}
+opt['tower']['buckling_length'] = 30
 
 def DrawTruss(mytruss):
     mynodes = {}
@@ -127,12 +150,6 @@ def getInputs():
     inputs['rna_cg'] = np.array([3.05, 2.96, 2.13])
     inputs['rna_I'] = np.array([3.05284574e9, 2.96031642e9, 2.13639924e7, 0.0, 2.89884849e7, 0.0])
 
-    inputs['gamma_f'] = 1.35
-    inputs['gamma_m'] = 1.1
-    inputs['gamma_n'] = 1.0
-    inputs['gamma_b'] = 1.1
-    inputs['gamma_fatigue'] = 1.755
-
     inputs['material_cost_rate'] = 1.0
     inputs['painting_cost_rate'] = 10.0
     inputs['labor_cost_rate'] = 2.0
@@ -147,7 +164,8 @@ class TestFrame(unittest.TestCase):
 
         self.outputs['pontoon_stress'] = np.zeros(70)
         
-        self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT)
+        self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
+                                        analysis_options=opt)
 
     def tearDown(self):
         self.mytruss = None
@@ -318,7 +336,7 @@ class TestFrame(unittest.TestCase):
             self.mytruss.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
             if self.outputs['substructure_mass'] < 1e3:
                 goodRun = True
-            if kiter > 10:
+            if kiter > 3:
                 self.assertTrue(goodRun)
             
         msub = (NPTS-1) + 3*20.0*1.0*0.1
@@ -334,6 +352,23 @@ class TestFrame(unittest.TestCase):
         self.mytruss.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['total_force'], 3*10 + np.array([10.0, 10.0, 10-mtot*g]), decimal=1)
         #self.assertAlmostEqual(self.outputs['total_moment'][-1], 20.0)
+
+
+class TestModal(unittest.TestCase):
+    def testRunModal(self):
+        inputs, discrete_inputs = getInputs()
+        outputs = {}
+        discrete_outputs = {}
+        outputs['pontoon_stress'] = np.zeros(70)
+
+        newopt = copy.copy(opt)
+        newopt['run_modal'] = True
+        mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
+                                        analysis_options=newopt)
+
+        mytruss.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.assertTrue(True)
+    
         
 class TestSandbox(unittest.TestCase):
     def setUp(self):
@@ -341,7 +376,9 @@ class TestSandbox(unittest.TestCase):
         self.outputs = {}
         self.discrete_outputs = {}
         self.outputs['pontoon_stress'] = np.zeros(70)
-        self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT)
+        
+        self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
+                                        analysis_options=opt)
 
     def tearDown(self):
         self.mytruss = None
@@ -397,12 +434,13 @@ class TestSandbox(unittest.TestCase):
                                     if self.outputs['substructure_mass'] == 1e30:
                                         print(nc, cap, lap, uap, lrp, urp, ocp)
                                     self.assertNotEqual(self.outputs['substructure_mass'], 1e30)
-                                    time.sleep(1e-3)
+                                    time.sleep(1e-4)
 
         
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestFrame))
+    suite.addTest(unittest.makeSuite(TestModal))
     suite.addTest(unittest.makeSuite(TestSandbox))
     return suite
 

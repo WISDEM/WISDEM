@@ -11,6 +11,7 @@ from __future__ import print_function
 
 import numpy as np
 import openmdao.api as om
+import copy
 
 from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
 
@@ -104,8 +105,8 @@ class DiscretizationYAML(om.ExplicitComponent):
         h_tow = inputs['tower_height']
         lthick_mon = inputs['monopile_layer_thickness']
         lthick_tow = inputs['tower_layer_thickness']
-        lmat_mon = discrete_inputs['monopile_layer_materials']
-        lmat_tow = discrete_inputs['tower_layer_materials']
+        lmat_mon = copy.copy( discrete_inputs['monopile_layer_materials'] )
+        lmat_tow = copy.copy( discrete_inputs['tower_layer_materials'] )
         
         if n_height_mon > 0:
             # Last monopile point and first tower point are the same
@@ -723,39 +724,55 @@ class TowerLeanSE(om.Group):
         
     def setup(self):
         toweropt = self.options['analysis_options']['tower']
-        n_height = toweropt['n_height']
         monopile = toweropt['monopile']
-        nFull    = get_nfull(n_height)
+
+        n_height_tow = toweropt['n_height']
+        n_layers_tow = toweropt['n_layers']
+        n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
+        n_layers_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_layers']
+        n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
+        nFull        = get_nfull(n_height)
+
+        n_mat        = self.options['analysis_options']['materials']['n_mat']
         
         # Independent variables that are only used in the user is calling TowerSE via python directly
         if self.options['topLevelFlag']:
-            sharedIndeps = om.IndepVarComp()
-            sharedIndeps.add_output('gravity_foundation_mass', 0.0, units='kg')
-            sharedIndeps.add_output('transition_piece_mass', 0.0, units='kg')
-            sharedIndeps.add_output('transition_piece_height', 0.0, units='m')
-            sharedIndeps.add_output('suctionpile_depth', 0.0, units='m')
-            sharedIndeps.add_output('suctionpile_depth_diam_ratio', 0.0)
-            sharedIndeps.add_output('tower_outer_diameter', np.zeros(n_height), units='m')
-            sharedIndeps.add_output('tower_section_height', np.zeros(n_height-1), units='m')
-            sharedIndeps.add_output('tower_wall_thickness', np.zeros(n_height-1), units='m')
-            sharedIndeps.add_output('outfitting_factor', np.zeros(n_height-1))
-            sharedIndeps.add_output('foundation_height', 0.0, units='m')
-            sharedIndeps.add_output('hub_height', 0.0, units='m')
-            sharedIndeps.add_output('rho', np.zeros(n_height-1), units='kg/m**3')
-            sharedIndeps.add_output('unit_cost', np.zeros(n_height-1), units='USD/kg')
-            sharedIndeps.add_output('labor_cost_rate', 0.0, units='USD/min')
-            sharedIndeps.add_output('painting_cost_rate', 0.0, units='USD/m**2')
-            self.add_subsystem('sharedIndepsLean', sharedIndeps, promotes=['*'])
-        else:
-            # If using YAML for input, unpack to native variables
-            n_height_tow = self.options['analysis_options']['tower']['n_height']
-            n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
-            n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
-            n_layers_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_layers']
-            self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon,
-                                                          n_layers_tower=toweropt['n_layers'], n_layers_monopile=n_layers_mon,
-                                                          n_mat=self.options['analysis_options']['materials']['n_mat']),
-                               promotes=['*'])
+            ivc = om.IndepVarComp()
+            ivc.add_output('tower_outer_diameter_in', np.zeros(n_height_tow), units='m')
+            ivc.add_output('tower_s', np.zeros(n_height_tow))
+            ivc.add_output('tower_height', 0.0, units='m')
+            ivc.add_output('tower_layer_thickness', np.zeros((n_layers_tow,n_height_tow-1)), units='m')
+            ivc.add_output('tower_outfitting_factor', 0.0)
+            ivc.add_discrete_output('tower_layer_materials', ['steel'])
+
+            if monopile:
+                ivc.add_output('monopile_outer_diameter_in', np.zeros(n_height_mon), units='m')
+                ivc.add_output('monopile_s', np.zeros(n_height_mon))
+                ivc.add_output('monopile_height', 0.0, units='m')
+                ivc.add_output('monopile_layer_thickness', np.zeros((n_layers_mon,n_height_mon-1)), units='m')
+                ivc.add_output('monopile_outfitting_factor', 0.0)
+                ivc.add_discrete_output('monopile_layer_materials', ['steel'])
+
+            ivc.add_discrete_output('material_names', ['steel'])
+            ivc.add_output('gravity_foundation_mass', 0.0, units='kg')
+            ivc.add_output('transition_piece_mass', 0.0, units='kg')
+            ivc.add_output('transition_piece_height', 0.0, units='m')
+            ivc.add_output('suctionpile_depth', 0.0, units='m')
+            ivc.add_output('suctionpile_depth_diam_ratio', 0.0)
+            ivc.add_output('foundation_height', 0.0, units='m')
+            ivc.add_output('hub_height', 0.0, units='m')
+            ivc.add_output('rho_mat', np.zeros(n_mat), units='kg/m**3')
+            ivc.add_output('unit_cost_mat', np.zeros(n_mat), units='USD/kg')
+            ivc.add_output('labor_cost_rate', 0.0, units='USD/min')
+            ivc.add_output('painting_cost_rate', 0.0, units='USD/m**2')
+            self.add_subsystem('ivcLean', ivc, promotes=['*'])
+            
+        # Inputs here are the outputs from the Tower component in load_IEA_yaml
+        # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
+        self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon,
+                                                      n_layers_tower=n_layers_tow, n_layers_monopile=n_layers_mon,
+                                                      n_mat=self.options['analysis_options']['materials']['n_mat']),
+                           promotes=['*'])
             
         # If doing fixed bottom monopile, we add an additional point for the pile (even for gravity foundations)
         self.add_subsystem('predisc', MonopileFoundation(monopile=monopile), promotes=['*'])
@@ -802,45 +819,44 @@ class TowerSE(om.Group):
         
     def setup(self):
         toweropt = self.options['analysis_options']['tower']
-        n_height = toweropt['n_height']
-        nFull    = get_nfull(n_height)
         monopile = toweropt['monopile']
         nLC      = toweropt['nLC']
         wind     = toweropt['wind']
         frame3dd_opt = toweropt['frame3dd']
         topLevelFlag = self.options['topLevelFlag']
-        
+        n_height_tow = self.options['analysis_options']['tower']['n_height']
+        n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
+        n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
+        nFull        = get_nfull(n_height)
+        n_mat        = self.options['analysis_options']['materials']['n_mat']
+
         # Independent variables that are only used in the user is calling TowerSE via python directly
         if topLevelFlag:
-            sharedIndeps = om.IndepVarComp()
-            sharedIndeps.add_output('rho_air', 1.225, units='kg/m**3')
-            sharedIndeps.add_output('mu_air', 1.81206e-5, units='kg/m/s')
-            sharedIndeps.add_output('shearExp', 0.0)
-            sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
-            sharedIndeps.add_output('wind_z0', 0.0, units='m')
-            sharedIndeps.add_output('beta_wind', 0.0, units='deg')
-            sharedIndeps.add_output('rho_water', 1025.0, units='kg/m**3')
-            sharedIndeps.add_output('mu_water', 8.9e-4, units='kg/m/s')
-            sharedIndeps.add_output('beta_wave', 0.0, units='deg')
-            sharedIndeps.add_output('hsig_wave', 0.0, units='m')
-            sharedIndeps.add_output('Tsig_wave', 0.0, units='s')
-            sharedIndeps.add_output('cd_usr', -1.)
-            sharedIndeps.add_output('yaw', 0.0, units='deg')
-            sharedIndeps.add_output('E', np.zeros(n_height-1), units='N/m**2')
-            sharedIndeps.add_output('G', np.zeros(n_height-1), units='N/m**2')
-            sharedIndeps.add_output('G_soil', 0.0, units='N/m**2')
-            sharedIndeps.add_output('nu_soil', 0.0)
-            sharedIndeps.add_output('sigma_y', np.zeros(n_height-1), units='N/m**2')
-            sharedIndeps.add_output('rna_mass', 0.0, units='kg')
-            sharedIndeps.add_output('rna_cg', np.zeros(3), units='m')
-            sharedIndeps.add_output('rna_I', np.zeros(6), units='kg*m**2')
-            sharedIndeps.add_output('life', 0.0)
-            #sharedIndeps.add_output('m_SN', 0.0)
-            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
-        else:
-            n_height_tow = self.options['analysis_options']['tower']['n_height']
-            n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
-            n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
+            ivc = om.IndepVarComp()
+            ivc.add_output('rho_air', 1.225, units='kg/m**3')
+            ivc.add_output('mu_air', 1.81206e-5, units='kg/m/s')
+            ivc.add_output('shearExp', 0.0)
+            ivc.add_output('wind_reference_height', 0.0, units='m')
+            ivc.add_output('wind_z0', 0.0, units='m')
+            ivc.add_output('beta_wind', 0.0, units='deg')
+            ivc.add_output('rho_water', 1025.0, units='kg/m**3')
+            ivc.add_output('mu_water', 8.9e-4, units='kg/m/s')
+            ivc.add_output('beta_wave', 0.0, units='deg')
+            ivc.add_output('hsig_wave', 0.0, units='m')
+            ivc.add_output('Tsig_wave', 0.0, units='s')
+            ivc.add_output('cd_usr', -1.)
+            ivc.add_output('yaw', 0.0, units='deg')
+            ivc.add_output('E_mat', np.zeros((n_mat,3)), units='N/m**2')
+            ivc.add_output('G_mat', np.zeros((n_mat,3)), units='N/m**2')
+            ivc.add_output('G_soil', 0.0, units='N/m**2')
+            ivc.add_output('nu_soil', 0.0)
+            ivc.add_output('sigma_y_mat', np.zeros(n_mat), units='N/m**2')
+            ivc.add_output('rna_mass', 0.0, units='kg')
+            ivc.add_output('rna_cg', np.zeros(3), units='m')
+            ivc.add_output('rna_I', np.zeros(6), units='kg*m**2')
+            ivc.add_output('life', 0.0)
+            #ivc.add_output('m_SN', 0.0)
+            self.add_subsystem('ivc', ivc, promotes=['*'])
 
         # Load baseline discretization
         self.add_subsystem('geom', TowerLeanSE(analysis_options=self.options['analysis_options'], topLevelFlag=topLevelFlag), promotes=['*'])
@@ -1006,8 +1022,8 @@ if __name__ == '__main__':
     from wisdem.commonse.environment import PowerWind
     from wisdem.commonse.environment import LogWind
     
-    plot = False
-    opt  = False
+    plot = True #False
+    opt  = True #False
 
     # --- geometry ----
     n_control_points = 3
@@ -1017,13 +1033,13 @@ if __name__ == '__main__':
     z_foundation = 0.0
     theta_stress = 0.0
     yaw = 0.0
-    Koutfitting = 1.07 * np.ones(n_control_points - 1)
+    Koutfitting = 1.07
 
     # --- material props ---
-    E = 210e9 * np.ones(n_control_points - 1)
-    G = 80.8e9 * np.ones(n_control_points - 1)
-    rho = 8500.0 * np.ones(n_control_points - 1)
-    sigma_y = 450.0e6 * np.ones(n_control_points - 1)
+    E = 210e9
+    G = 80.8e9
+    rho = 8500.0
+    sigma_y = 450.0e6
 
     # --- extra mass ----
     m = np.array([285598.8])
@@ -1083,6 +1099,8 @@ if __name__ == '__main__':
 
     # Store analysis options
     analysis_options = {}
+    analysis_options['materials'] = {}
+    analysis_options['monopile'] = {}
     analysis_options['tower'] = {}
     analysis_options['tower']['buckling_length'] = 30.0
     analysis_options['tower']['monopile'] = False
@@ -1127,8 +1145,12 @@ if __name__ == '__main__':
     # # .freq1p = V_max / (D/2) / (2*pi)  # convert to Hz
 
     analysis_options['tower']['n_height'] = len(d_param)
+    analysis_options['tower']['n_layers'] = 1
+    analysis_options['monopile']['n_height'] = 0
+    analysis_options['monopile']['n_layers'] = 0
     analysis_options['tower']['wind'] = 'PowerWind'
     analysis_options['tower']['nLC'] = 2
+    analysis_options['materials']['n_mat'] = 1
     
     prob = om.Problem()
     prob.model = TowerSE(analysis_options=analysis_options, topLevelFlag=True)
@@ -1144,8 +1166,8 @@ if __name__ == '__main__':
         prob.model.add_objective('tower_mass', scaler=1e-6)
         # ----------------------
 
-        prob.model.add_design_var('tower_outer_diameter', lower=3.87, upper=10.0)
-        prob.model.add_design_var('tower_wall_thickness', lower=4e-3, upper=2e-1)
+        prob.model.add_design_var('tower_outer_diameter_in', lower=3.87, upper=10.0)
+        prob.model.add_design_var('tower_layer_thickness', lower=4e-3, upper=2e-1)
 
         # --- Constraints ---
         #prob.model.add_constraint('height_constraint',    lower=-1e-2,upper=1.e-2)
@@ -1167,25 +1189,26 @@ if __name__ == '__main__':
     if analysis_options['tower']['wind'] == 'PowerWind':
         prob['shearExp'] = shearExp
 
-    # assign values to params
-
     # --- geometry ----
     prob['hub_height'] = h_param.sum()
     prob['foundation_height'] = 0.0
-    prob['tower_section_height'] = h_param
-    prob['tower_outer_diameter'] = d_param
-    prob['tower_wall_thickness'] = t_param
-    prob['outfitting_factor'] = Koutfitting
+    #prob['tower_section_height'] = h_param
+    prob['tower_s'] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
+    prob['tower_height'] = h_param.sum()
+    prob['tower_outer_diameter_in'] = d_param
+    #prob['tower_wall_thickness'] = t_param
+    prob['tower_layer_thickness'] = t_param.reshape( (1,len(t_param)) )
+    prob['tower_outfitting_factor'] = Koutfitting
     prob['yaw'] = yaw
     prob['suctionpile_depth'] = suction_depth
     prob['suctionpile_depth_diam_ratio'] = 3.25
     prob['G_soil'] = soilG
     prob['nu_soil'] = soilnu
     # --- material props ---
-    prob['E'] = E
-    prob['G'] = G
-    prob['rho'] = rho
-    prob['sigma_y'] = sigma_y
+    prob['E_mat'] = E*np.ones((1,3))
+    prob['G_mat'] = G*np.ones((1,3))
+    prob['rho_mat'] = rho
+    prob['sigma_y_mat'] = sigma_y
 
     # --- extra mass ----
     prob['rna_mass'] = m
@@ -1194,7 +1217,7 @@ if __name__ == '__main__':
     # -----------
 
     # --- costs ---
-    prob['unit_cost'] = material_cost
+    prob['unit_cost_mat'] = material_cost
     prob['labor_cost_rate']    = labor_cost
     prob['painting_cost_rate'] = painting_cost
     # -----------

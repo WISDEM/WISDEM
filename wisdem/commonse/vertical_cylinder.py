@@ -3,7 +3,7 @@ import numpy as np
 from openmdao.api import ExplicitComponent
 from wisdem.commonse.tube import CylindricalShellProperties
 
-from wisdem.commonse import gravity, eps
+from wisdem.commonse import gravity, eps, NFREQ
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
@@ -11,7 +11,6 @@ import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.frame3dd as frame3dd
 
 RIGID = 1e30
-NFREQ = 6
 NREFINE = 3
 
 def get_nfull(npts):
@@ -259,7 +258,7 @@ class CylinderFrame3DD(ExplicitComponent):
         self.add_output('f2', val=0.0, units='Hz', desc='Second natural frequency')
         self.add_output('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
         self.add_output('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
-        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
+        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the y-direction')
         self.add_output('top_deflection', val=0.0, units='m', desc='Deflection of cylinder top in yaw-aligned +x direction')
         self.add_output('Fz_out', val=np.zeros(npts-1), units='N', desc='Axial foce in vertical z-direction in cylinder structure.')
         self.add_output('Vx_out', val=np.zeros(npts-1), units='N', desc='Shear force in x-direction in cylinder structure.')
