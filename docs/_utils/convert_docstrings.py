@@ -112,7 +112,7 @@ for line in content:
         
         doc_lines.append(class_name)
         doc_lines.append('\"\"\"')
-        doc_lines.append('Replace this with docstring')
+        doc_lines.append('TODO : replace this with docstring')
         doc_lines.append('')
         
         doc_lines.append('Parameters')

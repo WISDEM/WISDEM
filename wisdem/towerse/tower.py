@@ -43,14 +43,14 @@ def get_npts(nFull):
 
 class DiscretizationYAML(om.ExplicitComponent):
     """
-    Replace this with docstring
+    Process some of the tower YAML inputs.
     
     Parameters
     ----------
     tower_s : numpy array[n_height_tow]
         1D array of the non-dimensional grid defined along the tower axis (0-tower base,
     1-tower top)
-    tower_layer_materials : TODO: add type by hand, could not be parsed automatically
+    tower_layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the tower
     structure.
     tower_layer_thickness : numpy array[n_layers_tow, n_height_tow-1]
@@ -66,7 +66,7 @@ class DiscretizationYAML(om.ExplicitComponent):
     monopile_s : numpy array[n_height_mon]
         1D array of the non-dimensional grid defined along the tower axis (0-tower base,
     1-tower top)
-    monopile_layer_materials : TODO: add type by hand, could not be parsed automatically
+    monopile_layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the tower
     structure.
     monopile_layer_thickness : numpy array[n_layers_mon, n_height_mon_minus]
@@ -79,7 +79,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         cylinder diameter at corresponding locations
     monopile_outfitting_factor : float
         Multiplier that accounts for secondary structure mass inside of cylinder
-    material_names : TODO: add type by hand, could not be parsed automatically
+    material_names : list of strings
         1D array of names of materials.
     E_mat : numpy array[n_mat, 3]
         2D array of the Youngs moduli of the materials. Each row represents a material,
@@ -301,7 +301,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         
 class MonopileFoundation(om.ExplicitComponent):
     """
-    Replace this with docstring
+    Compute the monopile foundation parameterized section heights.
     
     Parameters
     ----------
@@ -345,7 +345,7 @@ class MonopileFoundation(om.ExplicitComponent):
                                                  
 class TowerDiscretization(om.ExplicitComponent):
     """
-    Replace this with docstring
+    Compute the full arrays for some measures along the tower by interpolating.
     
     Parameters
     ----------
@@ -625,7 +625,7 @@ class TurbineMass(om.ExplicitComponent):
         
 class TowerPreFrame(om.ExplicitComponent):
     """
-    Replace this with docstring
+    Compute some properties of the tower needed for FEM analysis.
     
     Parameters
     ----------
@@ -891,7 +891,7 @@ class TowerPreFrame(om.ExplicitComponent):
         
 class TowerPostFrame(om.ExplicitComponent):
     """
-    Replace this with docstring
+    Postprocess results from Frame3DD.
     
     Parameters
     ----------
