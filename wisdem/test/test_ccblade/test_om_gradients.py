@@ -174,6 +174,9 @@ class Test(unittest.TestCase):
         analysis_options['blade']['n_Re'] = n_Re
         analysis_options['blade']['n_tab'] = 1
 
+        analysis_options['assembly'] = {}
+        analysis_options['assembly']['number_of_blades'] = 3
+        
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
         analysis_options['airfoils'] = {}
         analysis_options['airfoils']['n_aoa'] = n_aoa
