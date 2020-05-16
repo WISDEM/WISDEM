@@ -157,7 +157,7 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['generator_mass_cost_coeff']             = 17.43
         self.params['bedplate_mass_cost_coeff']              = 4.5
         self.params['yaw_mass_cost_coeff']            = 11.01
-        self.params['vs_electronics_mass_cost_coeff']   = 26.5
+        self.params['converter_mass_cost_coeff']   = 26.5
         self.params['hvac_mass_cost_coeff']     = 163.95
         self.params['cover_mass_cost_coeff']         = 7.61
         self.params['elec_connec_machine_rating_cost_coeff'] = 40.0
@@ -200,7 +200,7 @@ class FloatingTurbineInstance(FloatingInstance):
         self.params['pitch_system_mass']    = 17004.0
         self.params['spinner_mass']         = 1810.5
         self.params['transformer_mass']     = 1e3
-        self.params['vs_electronics_mass']  = 1e3
+        self.params['converter_mass']  = 1e3
         self.params['yaw_mass']             = 11878.24
         
         # Offshore BOS

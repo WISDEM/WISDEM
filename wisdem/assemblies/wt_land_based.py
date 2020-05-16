@@ -1,7 +1,7 @@
 import numpy as np
 from openmdao.api import ExplicitComponent, Group, Problem
 from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyOpenMDAO
-from wisdem.rotorse.rotor_geometry import TurbineClass
+from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
@@ -407,7 +407,7 @@ class WT_RNTA(Group):
         self.connect('drivese.generator_mass',      'tcc.generator_mass')
         self.connect('drivese.bedplate_mass',       'tcc.bedplate_mass')
         self.connect('drivese.yaw_mass',            'tcc.yaw_mass')
-        self.connect('drivese.vs_electronics_mass', 'tcc.vs_electronics_mass')
+        self.connect('drivese.converter_mass', 'tcc.converter_mass')
         self.connect('drivese.hvac_mass',           'tcc.hvac_mass')
         self.connect('drivese.cover_mass',          'tcc.cover_mass')
         self.connect('drivese.platforms_mass',      'tcc.platforms_mass')

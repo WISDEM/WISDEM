@@ -3,7 +3,7 @@ general:
 
 yaml:
     validate: False
-    path2schema: wisdem/wisdem/assemblies/reference_turbines/IEAontology_schema.yaml
+    path2schema: /Users/pbortolo/work/3_projects/5_IEAtask37/ontology/turbine/pibo/IEAontology_schema.yaml
 
 xfoil:
     path       : "wine /Users/nabbas/Documents/WindEnergyToolbox/XFOIL_exe/xfoil.exe"

@@ -11,8 +11,7 @@ Turbine_CostsSE
 .. toctree::
 
     intro
-    tutorial
-    documentation
     theory
+    tutorial
 
 
