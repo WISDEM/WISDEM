@@ -2321,7 +2321,7 @@ class AboveYawMassAdder(object):
     
         # returns
         self.electrical_mass = 0.0 #Float(iotype = 'out', units='kg', desc='component mass')
-        self.vs_electronics_mass = 0.0 #Float(iotype = 'out', units='kg', desc='component mass')
+        self.converter_mass = 0.0 #Float(iotype = 'out', units='kg', desc='component mass')
         self.hvac_mass = 0.0 #Float(iotype = 'out', units='kg', desc='component mass')
         self.controls_mass = 0.0 #Float(iotype = 'out', units='kg', desc='component mass')
         self.platforms_mass = 0.0 #Float(iotype = 'out', units='kg', desc='component mass')
@@ -2336,7 +2336,7 @@ class AboveYawMassAdder(object):
         # electronic systems, hydraulics and controls
         self.electrical_mass = 0.0
         
-        self.vs_electronics_mass = 0 #2.4445*self.machine_rating + 1599.0 accounted for in transformer calcs
+        self.converter_mass = 0 #2.4445*self.machine_rating + 1599.0 accounted for in transformer calcs
         
         self.hvac_mass = 0.08 * self.machine_rating
         
@@ -2364,7 +2364,7 @@ class AboveYawMassAdder(object):
                                 self.mainframe_mass + 
                                 self.transformer_mass +
                                 self.electrical_mass + 
-                                self.vs_electronics_mass + 
+                                self.converter_mass + 
                                 self.hvac_mass +
                                 self.cover_mass)
 
@@ -2372,7 +2372,7 @@ class AboveYawMassAdder(object):
         self.width       = self.bedplate_width                        # nacelle width [m] based on bedplate width
         self.height      = (2.0 / 3.0) * self.length                         # nacelle height [m] calculated based on cladding area
 
-        return(self.electrical_mass, self.vs_electronics_mass, self.hvac_mass, self.controls_mass, self.platforms_mass, self.crane_mass, \
+        return(self.electrical_mass, self.converter_mass, self.hvac_mass, self.controls_mass, self.platforms_mass, self.crane_mass, \
                self.mainframe_mass, self.cover_mass, self.above_yaw_mass, self.length, self.width, self.height)
 
 #--------------------------------------------

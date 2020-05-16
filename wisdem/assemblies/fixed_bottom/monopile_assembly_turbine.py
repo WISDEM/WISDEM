@@ -111,7 +111,7 @@ class MonopileTurbine(Group):
                                             topLevelFlag=False),
                            promotes=['machine_rating', 'overhang',
                                      'hub_mass','bedplate_mass','gearbox_mass','generator_mass','hss_mass','hvac_mass','lss_mass','cover_mass',
-                                     'pitch_system_mass','platforms_mass','spinner_mass','transformer_mass','vs_electronics_mass','yaw_mass'])
+                                     'pitch_system_mass','platforms_mass','spinner_mass','transformer_mass','converter_mass','yaw_mass'])
         
         # Tower and substructure
         self.add_subsystem('tow',TowerSE(nLC=1,
