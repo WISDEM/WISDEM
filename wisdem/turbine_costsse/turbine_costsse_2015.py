@@ -328,8 +328,7 @@ class BearingCost2015(ExplicitComponent):
         main_bearing_mass = inputs['main_bearing_mass']
         bearing_mass_cost_coeff = inputs['bearing_mass_cost_coeff']
 
-        # TODO : hardcoded for now so tests pass; remove factor at some point
-        outputs['main_bearing_cost'] = bearing_mass_cost_coeff * main_bearing_mass * 2
+        outputs['main_bearing_cost'] = bearing_mass_cost_coeff * main_bearing_mass
 
 #-------------------------------------------------------------------------------
 class GearboxCost2015(ExplicitComponent):
