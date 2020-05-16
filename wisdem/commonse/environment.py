@@ -25,49 +25,85 @@ from .constants import gravity
 
 
 class WindBase(ExplicitComponent):
-    """base component for wind speed/direction"""
+    """
+    Base component for wind speed/direction
+    
+    Parameters
+    ----------
+    Uref : float
+        reference wind speed (usually at hub height)
+    zref : float
+        corresponding reference height
+    z : numpy array[npts]
+        'heights where wind speed should be computed
+    z0 : float
+        bottom of wind profile (height of ground/sea)
+    
+    Returns
+    -------
+    U : numpy array[npts]
+        magnitude of wind speed at each z location
+    
+    """
     def initialize(self):
         self.options.declare('nPoints')
         
     def setup(self):
         npts = self.options['nPoints']
-        
-        # TODO: if I put required=True here for Uref there is another bug
 
-        # variables
-        self.add_input('Uref', 0.0, units='m/s', desc='reference wind speed (usually at hub height)')
-        self.add_input('zref', 0.0, units='m', desc='corresponding reference height')
-        self.add_input('z', np.zeros(npts), units='m', desc='heights where wind speed should be computed')
+        self.add_input('Uref', 0.0, units='m/s')
+        self.add_input('zref', 0.0, units='m')
+        self.add_input('z', np.zeros(npts), units='m')
+        self.add_input('z0', 0.0, units='m')
 
-        # parameters
-        self.add_input('z0', 0.0, units='m', desc='bottom of wind profile (height of ground/sea)')
-
-        # out
-        self.add_output('U', np.zeros(npts), units='m/s', desc='magnitude of wind speed at each z location')
-
+        self.add_output('U', np.zeros(npts), units='m/s')
 
 class WaveBase(ExplicitComponent):
-    """base component for wave speed/direction"""
+    """
+    Base component for wave speed/direction
+    
+    Parameters
+    ----------
+    rho_water : float
+        water density
+    z : numpy array[npts]
+        heights where wave speed should be computed
+    z_surface : float
+        vertical location of water surface
+    z_floor : float
+        vertical location of sea floor
+    
+    Returns
+    -------
+    U : numpy array[npts]
+        horizontal wave velocity at each z location
+    W : numpy array[npts]
+        vertical wave velocity at each z location
+    V : numpy array[npts]
+        total wave velocity at each z location
+    A : numpy array[npts]
+        horizontal wave acceleration at each z location
+    p : numpy array[npts]
+        pressure oscillation at each z location
+    
+    """
+    
     def initialize(self):
         self.options.declare('nPoints')
         
     def setup(self):
         npts = self.options['nPoints']
 
-        # variables
-        self.add_input('rho_water', 0.0, units='kg/m**3', desc='water density')
-        self.add_input('z', np.zeros(npts), units='m', desc='heights where wave speed should be computed')
-        self.add_input('z_surface', 0.0, units='m', desc='vertical location of water surface')
-        self.add_input('z_floor', 0.0, units='m', desc='vertical location of sea floor')
+        self.add_input('rho_water', 0.0, units='kg/m**3')
+        self.add_input('z', np.zeros(npts), units='m')
+        self.add_input('z_surface', 0.0, units='m')
+        self.add_input('z_floor', 0.0, units='m')
 
-        # out
-        self.add_output('U', np.zeros(npts), units='m/s', desc='horizontal wave velocity at each z location')
-        self.add_output('W', np.zeros(npts), units='m/s', desc='vertical wave velocity at each z location')
-        self.add_output('V', np.zeros(npts), units='m/s', desc='total wave velocity at each z location')
-        self.add_output('A', np.zeros(npts), units='m/s**2', desc='horizontal wave acceleration at each z location')
-        self.add_output('p', np.zeros(npts), units='N/m**2', desc='pressure oscillation at each z location')
-        #self.add_output('U0', 0.0, units='m/s', desc='magnitude of wave speed at z=MSL')
-        #self.add_output('A0', 0.0, units='m/s**2', desc='magnitude of wave acceleration at z=MSL')
+        self.add_output('U', np.zeros(npts), units='m/s')
+        self.add_output('W', np.zeros(npts), units='m/s')
+        self.add_output('V', np.zeros(npts), units='m/s')
+        self.add_output('A', np.zeros(npts), units='m/s**2')
+        self.add_output('p', np.zeros(npts), units='N/m**2')
 
 
     def compute(self, inputs, outputs):
@@ -90,14 +126,36 @@ class WaveBase(ExplicitComponent):
 
 
 class PowerWind(WindBase):
-    """power-law profile wind.  any nodes must not cross z0, and if a node is at z0
-    it must stay at that point.  otherwise gradients crossing the boundary will be wrong."""
+    """
+    Power-law profile wind.
+    Any nodes must not cross z0, and if a node is at z0 it must stay at that point.
+    Otherwise gradients crossing the boundary will be wrong.
+    
+    Parameters
+    ----------
+    Uref : float
+        reference wind speed (usually at hub height)
+    zref : float
+        corresponding reference height
+    z : numpy array[npts]
+        'heights where wind speed should be computed
+    z0 : float
+        bottom of wind profile (height of ground/sea)
+    shearExp : float
+        shear exponent
+    
+    Returns
+    -------
+    U : numpy array[npts]
+        magnitude of wind speed at each z location
+    
+    """
 
     def setup(self):
         super(PowerWind, self).setup()
 
         # parameters
-        self.add_input('shearExp', 0.0, desc='shear exponent')
+        self.add_input('shearExp', 0.0)
 
         self.declare_partials('U', ['Uref','z','zref'])
 
@@ -176,13 +234,34 @@ class PowerWind(WindBase):
 
 
 class LogWind(WindBase):
-    """logarithmic-profile wind"""
+    """
+    Logarithmic-profile wind
+    
+    Parameters
+    ----------
+    Uref : float
+        reference wind speed (usually at hub height)
+    zref : float
+        corresponding reference height
+    z : numpy array[npts]
+        'heights where wind speed should be computed
+    z0 : float
+        bottom of wind profile (height of ground/sea)
+    z_roughness : float
+        surface roughness length
+    
+    Returns
+    -------
+    U : numpy array[npts]
+        magnitude of wind speed at each z location
+    
+    """
 
     def setup(self):
         super(LogWind, self).setup()
 
         # parameters
-        self.add_input('z_roughness', 0.0, units='mm', desc='surface roughness length')
+        self.add_input('z_roughness', 0.0, units='mm')
 
         self.declare_partials('U', ['Uref','z','zref'])
 
@@ -233,7 +312,40 @@ class LogWind(WindBase):
 
 
 class LinearWaves(WaveBase):
-    """linear (Airy) wave theory"""
+    """
+    Linear (Airy) wave theory
+    
+    Parameters
+    ----------
+    rho_water : float
+        water density
+    z : numpy array[npts]
+        heights where wave speed should be computed
+    z_surface : float
+        vertical location of water surface
+    z_floor : float
+        vertical location of sea floor
+    hsig_wave : float
+        Maximum wave height (crest-to-trough)
+    Tsig_wave : float
+        period of maximum wave height
+    
+    Returns
+    -------
+    U : numpy array[npts]
+        horizontal wave velocity at each z location
+    W : numpy array[npts]
+        vertical wave velocity at each z location
+    V : numpy array[npts]
+        total wave velocity at each z location
+    A : numpy array[npts]
+        horizontal wave acceleration at each z location
+    p : numpy array[npts]
+        pressure oscillation at each z location
+    phase_speed : float
+        Phase speed of wave
+    
+    """
 
     def setup(self):
         super(LinearWaves, self).setup()
@@ -242,11 +354,11 @@ class LinearWaves(WaveBase):
         self.add_input('Uc', 0.0, units='m/s', desc='mean current speed')
 
         # parameters
-        self.add_input('hsig_wave', 0.0, units='m', desc='maximum wave height (crest-to-trough)')
-        self.add_input('Tsig_wave', 0.0, units='s', desc='period of maximum wave height')
+        self.add_input('hsig_wave', 0.0, units='m')
+        self.add_input('Tsig_wave', 0.0, units='s')
 
         # For Ansys AQWA connection
-        self.add_output('phase_speed', val=0.0, units='m/s', desc='phase speed of wave')
+        self.add_output('phase_speed', val=0.0, units='m/s')
 
         self.declare_partials('U', ['Uc','z'])
         self.declare_partials('V', ['Uc','z'])
@@ -358,19 +470,42 @@ class LinearWaves(WaveBase):
 
 
 class TowerSoil(ExplicitComponent):
-    """Soil stiffness method from Arya, Suresh C., Michael W. O'Neill, and George Pincus. Design of structures and foundations for vibrating machines. Gulf Pub Co, 1979."""
+    """
+    Soil stiffness method from Arya, Suresh C., Michael W. O'Neill, and George Pincus.
+    Design of structures and foundations for vibrating machines. Gulf Pub Co, 1979.
+    
+    Parameters
+    ----------
+    d0 : float
+        diameter of base of tower
+    depth : float
+        depth of foundation in the soil
+    G : float
+        shear modulus of soil
+    nu : float
+        Poisson''s ratio of soil
+    k_usr : numpy array[6]
+        User overrides of stiffness values. Use positive values and for rigid
+        use np.inf. Order is x, theta_x, y, theta_y, z, theta_z
+    
+    Returns
+    -------
+    k : numpy array[6]
+        Spring stiffness (x, theta_x, y, theta_y, z, theta_z)
+    """
     def setup(self):
         super(TowerSoil, self).setup()
 
         # variable
-        self.add_input('d0', 1.0, units='m', desc='diameter of base of tower')
-        self.add_input('depth', 1.0, units='m', desc='depth of foundation in the soil')
+        self.add_input('d0', 1.0, units='m')
+        self.add_input('depth', 1.0, units='m')
 
         # inputeter
-        self.add_input('G', 140e6, units='Pa', desc='shear modulus of soil')
-        self.add_input('nu', 0.4, desc='Poisson''s ratio of soil')
-        self.add_input('k_usr', -1*np.ones(6), desc='User overrides of stiffness values. Use positive values and for rigid use np.inf. Order is x, theta_x, y, theta_y, z, theta_z')
-        self.add_output('k', np.zeros(6), units='N/m', desc='spring stiffness (x, theta_x, y, theta_y, z, theta_z)')
+        self.add_input('G', 140e6, units='Pa')
+        self.add_input('nu', 0.4)
+        self.add_input('k_usr', -1*np.ones(6), units='N/m')
+        
+        self.add_output('k', np.zeros(6), units='N/m')
 
         self.declare_partials('k', ['d0','depth'])
 

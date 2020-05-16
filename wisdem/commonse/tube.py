@@ -27,25 +27,50 @@ def main():
 
 
 class CylindricalShellProperties(ExplicitComponent):
+    """
+    OpenMDAO wrapper for tube class to obtain cylindrical sheel properties.
+    
+    Parameters
+    ----------
+    d : numpy array[nFull]
+        tower diameter at corresponding locations
+    t : numpy array[nFull-1]
+        shell thickness at corresponding locations
+    
+    Returns
+    -------
+    Az : numpy array[nFull-1]
+        cross-sectional area
+    Asx : numpy array[nFull-1]
+        x shear area
+    Asy : numpy array[nFull-1]
+        y shear area
+    Jz : numpy array[nFull-1]
+        polar moment of inertia
+    Ixx : numpy array[nFull-1]
+        area moment of inertia about x-axis
+    Iyy : numpy array[nFull-1]
+        area moment of inertia about y-axis
+    
+    """
     def initialize(self):
         self.options.declare('nFull')
         
     def setup(self):
         nFull = self.options['nFull']
 
-        self.add_input('d', np.zeros(nFull), units='m', desc='tower diameter at corresponding locations')
-        self.add_input('t', np.zeros(nFull-1), units='m', desc='shell thickness at corresponding locations')
+        self.add_input('d', np.zeros(nFull), units='m')
+        self.add_input('t', np.zeros(nFull-1), units='m')
 
-        self.add_output('Az', np.zeros(nFull-1), units='m**2', desc='cross-sectional area')
-        self.add_output('Asx', np.zeros(nFull-1), units='m**2', desc='x shear area')
-        self.add_output('Asy', np.zeros(nFull-1), units='m**2', desc='y shear area')
-        self.add_output('Jz', np.zeros(nFull-1), units='m**4', desc='polar moment of inertia')
-        self.add_output('Ixx', np.zeros(nFull-1), units='m**4', desc='area moment of inertia about x-axis')
-        self.add_output('Iyy', np.zeros(nFull-1), units='m**4', desc='area moment of inertia about y-axis')
+        self.add_output('Az', np.zeros(nFull-1), units='m**2')
+        self.add_output('Asx', np.zeros(nFull-1), units='m**2')
+        self.add_output('Asy', np.zeros(nFull-1), units='m**2')
+        self.add_output('Jz', np.zeros(nFull-1), units='m**4')
+        self.add_output('Ixx', np.zeros(nFull-1), units='m**4')
+        self.add_output('Iyy', np.zeros(nFull-1), units='m**4')
 
         # Derivatives
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
-
 
     def compute(self, inputs, outputs):
         d,_ = nodal2sectional(inputs['d'])
@@ -57,17 +82,6 @@ class CylindricalShellProperties(ExplicitComponent):
         outputs['Jz'] = tube.J0
         outputs['Ixx'] = tube.Jxx
         outputs['Iyy'] = tube.Jyy
-
-##        ro = self.d/2.0 + self.t/2.0
-##        ri = self.d/2.0 - self.t/2.0
-##        self.Az = math.pi * (ro**2 - ri**2)
-##        self.Asx = self.Az / (0.54414 + 2.97294*(ri/ro) - 1.51899*(ri/ro)**2)
-##        self.Asy = self.Az / (0.54414 + 2.97294*(ri/ro) - 1.51899*(ri/ro)**2)
-##        self.Jz = math.pi/2.0 * (ro**4 - ri**4)
-##        self.Ixx = self.Jz/2.0
-##        self.Iyy = self.Jz/2.0
-
-
 
 class Tube:
     """The Tube Class contains functions to calculate properties of tubular circular cross-sections

@@ -49,15 +49,36 @@ import numpy as np
 #         outputs['frequency1P_margin_low']  = freq_struct / indicator_low
 
 class TowerModes(ExplicitComponent):
+    """
+    Compute tower frequency constraints
+    
+    Parameters
+    ----------
+    tower_freq : numpy array[2]
+        First natural frequencies of tower (and substructure)
+    rotor_omega : float
+        rated rotor rotation speed
+    gamma_freq : float
+        partial safety factor for fatigue
+    blade_number : int
+        number of rotor blades
+    
+    Returns
+    -------
+    frequencyNP_margin : numpy array[2]
+        constraint on tower/structure frequency to blade passing frequency with margin
+    frequency1P_margin : numpy array[2]
+        constraint on tower/structure frequency to rotor frequency with margin
+    
+    """
     def setup(self):
+        self.add_input('tower_freq', val=np.zeros(2), units='Hz')
+        self.add_input('rotor_omega', val=0.0, units='rpm')
+        self.add_input('gamma_freq', val=1.0)
+        self.add_discrete_input('blade_number', 3)
 
-        self.add_input('tower_freq', val=np.zeros(2), units='Hz', desc='First natural frequencies of tower (and substructure)')
-        self.add_input('rotor_omega', val=0.0, units='rpm', desc='rated rotor rotation speed')
-        self.add_input('gamma_freq',  val=1.0, desc='partial safety factor for fatigue')
-        self.add_discrete_input('blade_number', 3, desc='number of rotor blades')
-
-        self.add_output('frequencyNP_margin', val=np.zeros(2), desc='constraint on tower/structure frequency to blade passing frequency with margin')
-        self.add_output('frequency1P_margin', val=np.zeros(2), desc='constraint on tower/structure frequency to rotor frequency with margin')
+        self.add_output('frequencyNP_margin', val=np.zeros(2))
+        self.add_output('frequency1P_margin', val=np.zeros(2))
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
@@ -76,29 +97,72 @@ class TowerModes(ExplicitComponent):
 
 
 class TipDeflectionConstraint(ExplicitComponent):
-    # OpenMDAO component that computes the undeflected tip-tower clearance and the ratio between the two including a safety factor (typically equal to 1.3)
+    """
+    Compute the undeflected tip-tower clearance and the ratio between the two
+    including a safety factor (typically equal to 1.3)
+    
+    Parameters
+    ----------
+    rotor_orientation : string
+        Rotor orientation, either upwind or downwind.
+    tip_deflection : float
+        Blade tip deflection in yaw x-direction
+    Rtip : float
+        Blade tip location in z_b
+    ref_axis_blade : numpy array[n_span, 3]
+        2D array of the coordinates (x,y,z) of the blade reference axis, defined along
+        blade span. The coordinate system is the one of BeamDyn: it is placed at blade
+        root with x pointing the suction side of the blade, y pointing the trailing edge
+        and z along the blade span. A standard configuration will have negative x values
+        (prebend), if swept positive y values, and positive z values.
+    precone : float
+        Rotor precone angle
+    tilt : float
+        Nacelle uptilt angle
+    overhang : float
+        Horizontal distance between hub and tower-top axis
+    ref_axis_tower : numpy array[n_height_tow, 3]
+        2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate
+        system is the global coordinate system of OpenFAST: it is placed at tower base
+        with x pointing downwind, y pointing on the side and z pointing vertically
+        upwards. A standard tower configuration will have zero x and y values and
+        positive z values.
+    d_full : numpy array[n_height_tow]
+        Diameter of tower at fine-section nodes
+    max_allowable_td_ratio : float
+        Safety factor of the tip deflection to stay within the tower clearance
+    
+    Returns
+    -------
+    tip_deflection_ratio : float
+        Ratio of blade tip deflection towards the tower and clearance between
+        undeflected blade tip and tower
+    blade_tip_tower_clearance : float
+        Clearance between undeflected blade tip and tower in x-direction of yaw c.s.
+    
+    """
     def initialize(self):
         self.options.declare('analysis_options')
     def setup(self):
-        analysis_options = self.options['analysis_options']
+        analysis_options     = self.options['analysis_options']
         blade_init_options   = analysis_options['blade']
         n_span               = blade_init_options['n_span']
         tower_init_options   = analysis_options['tower']
-        n_height_tow    = tower_init_options['n_height']
-        # Inputs
-        self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
-        self.add_input('tip_deflection', val=0.0,       units='m',  desc='Blade tip deflection in yaw x-direction')
-        self.add_input('Rtip',           val=0.0,       units='m',  desc='Blade tip location in z_b')
-        self.add_input('ref_axis_blade', val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
-        self.add_input('precone',        val=0.0,       units='deg',desc='Rotor precone angle')
-        self.add_input('tilt',           val=0.0,       units='deg',desc='Nacelle uptilt angle')
-        self.add_input('overhang',       val=0.0,       units='m',  desc='Horizontal distance between hub and tower-top axis')
-        self.add_input('ref_axis_tower', val=np.zeros((n_height_tow,3)), units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-        self.add_input('d_full',         val=np.zeros(n_height_tow),units='m',  desc='Diameter of tower at fine-section nodes')
-        self.add_input('max_allowable_td_ratio',     val=1.3, desc='Safety factor of the tip deflection to stay within the tower clearance')
-        # Outputs
-        self.add_output('tip_deflection_ratio',      val=0.0,           desc='Ratio of blade tip deflection towards the tower and clearance between undeflected blade tip and tower')
-        self.add_output('blade_tip_tower_clearance', val=0.0, units='m',desc='Clearance between undeflected blade tip and tower in x-direction of yaw c.s.')
+        n_height_tow         = tower_init_options['n_height']
+        
+        self.add_discrete_input('rotor_orientation', val='upwind')
+        self.add_input('tip_deflection', val=0.0, units='m')
+        self.add_input('Rtip', val=0.0, units='m')
+        self.add_input('ref_axis_blade', val=np.zeros((n_span, 3)), units='m')
+        self.add_input('precone', val=0.0, units='deg')
+        self.add_input('tilt', val=0.0, units='deg')
+        self.add_input('overhang', val=0.0, units='m')
+        self.add_input('ref_axis_tower', val=np.zeros((n_height_tow, 3)), units='m')
+        self.add_input('d_full', val=np.zeros(n_height_tow), units='m')
+        self.add_input('max_allowable_td_ratio', val=1.3)
+
+        self.add_output('tip_deflection_ratio', val=0.0)
+        self.add_output('blade_tip_tower_clearance', val=0.0, units='m')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack variables
