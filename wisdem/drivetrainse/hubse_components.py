@@ -215,7 +215,7 @@ class Hub(object):
         
         if self.blade_number != 3:
             sys.stderr.write('\n***ERROR: spherical_hub only works with 3-bladed hubs\n\n')
-            return None, None, None
+            #return None, None, None
         
         if self.debug:
             sys.stderr.write('Hub: INPUTS BRD {:.1f} m RPM {:.1f} BMass {:.1f} RDiam {:.1f} m BLen {:.1f} m\n'.format(float(blade_root_diameter), \
@@ -371,7 +371,7 @@ class Spinner(object):
 
         if self.blade_number != 3:
             sys.stderr.write('\n***ERROR: spherical_spinner only works with 3-bladed hubs\n\n')
-            return None, None, None
+            #return None, None, None
         
         # Parameters / 'constants'
         HUB_CIRC_INCR_PCT = 20.   # %      C12  Initial Spherical Hub  Circumference Increase Factor (Percentage)  
@@ -443,7 +443,7 @@ class Spinner(object):
         ''' This version of compute implements the REV02 rewrite of the spinner that Scott Caron delivered on 2019 07 07 '''
         if self.blade_number != 3:
             sys.stderr.write('\n***ERROR: spherical_spinner only works with 3-bladed hubs\n\n')
-            return None, None, None
+            #return None, None, None
         
         # Parameters / 'constants'
         OSHA_CLEARANCE = 0.5             #  m            C17  Clearance between Spinner and Hub  

@@ -490,7 +490,7 @@ class AboveYawMassAdder_OM(ExplicitComponent):
         
         # returns
         self.add_output('electrical_mass', val=0.0, units='kg', desc='component mass')
-        self.add_output('vs_electronics_mass', val=0.0, units='kg', desc='component mass')
+        self.add_output('converter_mass', val=0.0, units='kg', desc='component mass')
         self.add_output('hvac_mass', val=0.0, units='kg', desc='component mass')
         self.add_output('controls_mass', val=0.0, units='kg', desc='component mass')
         self.add_output('platforms_mass', val=0.0, units='kg', desc='component mass')
@@ -506,7 +506,7 @@ class AboveYawMassAdder_OM(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         aboveyawmass = dc.AboveYawMassAdder(discrete_inputs['crane'])
 
-        (outputs['electrical_mass'], outputs['vs_electronics_mass'], outputs['hvac_mass'], outputs['controls_mass'], 
+        (outputs['electrical_mass'], outputs['converter_mass'], outputs['hvac_mass'], outputs['controls_mass'], 
          outputs['platforms_mass'], outputs['crane_mass'], outputs['mainframe_mass'], outputs['cover_mass'], 
          outputs['above_yaw_mass'], outputs['nacelle_length'], outputs['nacelle_width'], outputs['nacelle_height']) \
             = aboveyawmass.compute(inputs['machine_rating'], inputs['lss_mass'], inputs['mb1_mass'], inputs['mb2_mass'], 
@@ -520,7 +520,7 @@ class AboveYawMassAdder_OM(ExplicitComponent):
                   inputs['lss_mass'], inputs['mb1_mass'], inputs['mb2_mass'], inputs['gearbox_mass'],
                   inputs['hss_mass'], inputs['generator_mass'], inputs['bedplate_mass'], inputs['transformer_mass']))
             print('AYMA OUT masses (kg) : E {:.1f} VSE {:.1f} HVAC {:.1f} CNTL {:.1f} PTFM {:.1f} CRN {:.1f} MNFRM {:.1f} CVR {:.1f} AYM {:.1f}'.format( 
-                  outputs['electrical_mass'], outputs['vs_electronics_mass'], outputs['hvac_mass'], outputs['controls_mass'],
+                  outputs['electrical_mass'], outputs['converter_mass'], outputs['hvac_mass'], outputs['controls_mass'],
                   outputs['platforms_mass'], outputs['crane_mass'], outputs['mainframe_mass'], outputs['cover_mass'],
                   outputs['above_yaw_mass']))
             print('AYMA OUT nacelle (m): L {:.2f} W {:.2f} H {:.2f}'.format( 

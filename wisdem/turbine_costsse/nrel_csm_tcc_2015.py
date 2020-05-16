@@ -12,23 +12,42 @@ from openmdao.api import ExplicitComponent, Problem, Group, IndepVarComp
 
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 
+
 # --------------------------------------------------------------------
 class BladeMass(ExplicitComponent):
+    """
+    Compute blade mass
+    
+    Parameters
+    ----------
+    rotor_diameter : float
+        rotor diameter of the machine
+    turbine_class : float
+        turbine class
+    blade_has_carbon : boolean
+        does the blade have carbon?
+    blade_mass_coeff : float
+        A in the blade mass equation: A*(rotor_diameter/B)^exp
+    blade_user_exp : float
+        optional user-entered exp for the blade mass equation
+    
+    Returns
+    -------
+    blade_mass : float
+        component mass [kg]
+    
+    """
     
     def setup(self):
-        
-        # Variables
-        self.add_input('rotor_diameter', 0.0, units='m', desc= 'rotor diameter of the machine')
-        self.add_discrete_input('turbine_class', 1, desc='turbine class')
-        self.add_discrete_input('blade_has_carbon', False, desc= 'does the blade have carbon?') #default to doesn't have carbon
-        self.add_input('blade_mass_coeff', 0.5, desc= 'A in the blade mass equation: A*(rotor_diameter/B)^exp') #default from ppt
-        self.add_input('blade_user_exp', 2.5, desc='optional user-entered exp for the blade mass equation')
-        
-        # Outputs
-        self.add_output('blade_mass', 0.0, units='kg', desc= 'component mass [kg]')
+        self.add_input('rotor_diameter', 0.0, units='m')
+        self.add_discrete_input('turbine_class', 1)
+        self.add_discrete_input('blade_has_carbon', False)
+        self.add_input('blade_mass_coeff', 0.5)
+        self.add_input('blade_user_exp', 2.5)
+
+        self.add_output('blade_mass', 0.0, units='kg')
   
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        
         rotor_diameter = inputs['rotor_diameter']
         turbine_class = discrete_inputs['turbine_class']
         blade_has_carbon = discrete_inputs['blade_has_carbon']
@@ -55,19 +74,34 @@ class BladeMass(ExplicitComponent):
 
   # --------------------------------------------------------------------
 class HubMass(ExplicitComponent):
+    """
+    Compute hub mass
+    
+    Parameters
+    ----------
+    blade_mass : float
+        component mass [kg]
+    hub_mass_coeff : float
+        A in the hub mass equation: A*blade_mass + B
+    hub_mass_intercept : float
+        B in the hub mass equation: A*blade_mass + B
+    
+    Returns
+    -------
+    hub_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
-        
         # Variables
-        self.add_input('blade_mass', 0.0, units='kg', desc= 'component mass [kg]')
-        self.add_input('hub_mass_coeff', 2.3, desc= 'A in the hub mass equation: A*blade_mass + B') #default from ppt
-        self.add_input('hub_mass_intercept', 1320., desc= 'B in the hub mass equation: A*blade_mass + B') #default from ppt
+        self.add_input('blade_mass', 0.0, units='kg')
+        self.add_input('hub_mass_coeff', 2.3)
+        self.add_input('hub_mass_intercept', 1320.)
+
+        self.add_output('hub_mass', 0.0, units='kg')
         
-        # Outputs
-        self.add_output('hub_mass', 0.0, units='kg', desc='component mass [kg]')
-  
     def compute(self, inputs, outputs):
-      
         blade_mass = inputs['blade_mass']
         hub_mass_coeff = inputs['hub_mass_coeff']
         hub_mass_intercept = inputs['hub_mass_intercept']
@@ -77,21 +111,42 @@ class HubMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class PitchSystemMass(ExplicitComponent):
+    """
+    Compute pitch system mass
+    
+    Parameters
+    ----------
+    blade_mass : float
+        component mass [kg]
+    blade_number : float
+        number of rotor blades
+    pitch_bearing_mass_coeff : float
+        A in the pitch bearing mass equation: A*blade_mass*blade_number + B
+    pitch_bearing_mass_intercept : float
+        B in the pitch bearing mass equation: A*blade_mass*blade_number + B
+    bearing_housing_percent : float
+        bearing housing percentage (in decimal form: ex 10% is 0.10)
+    mass_sys_offset : float
+        mass system offset
+    
+    Returns
+    -------
+    pitch_system_mass : float
+        component mass [kg]
+    
+    """
     
     def setup(self):
-        
-        self.add_input('blade_mass', 0.0, units='kg', desc= 'component mass [kg]')
-        self.add_discrete_input('blade_number', 3, desc='number of rotor blades')
-        self.add_input('pitch_bearing_mass_coeff', 0.1295, desc='A in the pitch bearing mass equation: A*blade_mass*blade_number + B') #default from old CSM
-        self.add_input('pitch_bearing_mass_intercept', 491.31, desc='B in the pitch bearing mass equation: A*blade_mass*blade_number + B') #default from old CSM
-        self.add_input('bearing_housing_percent', .3280, desc='bearing housing percentage (in decimal form: ex 10% is 0.10)') #default from old CSM
-        self.add_input('mass_sys_offset', 555.0, desc='mass system offset') #default from old CSM
-        
-        # Outputs
-        self.add_output('pitch_system_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('blade_mass', 0.0, units='kg')
+        self.add_discrete_input('blade_number', 3)
+        self.add_input('pitch_bearing_mass_coeff', 0.1295)
+        self.add_input('pitch_bearing_mass_intercept', 491.31)
+        self.add_input('bearing_housing_percent', .3280)
+        self.add_input('mass_sys_offset', 555.0)
+
+        self.add_output('pitch_system_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        
         blade_mass = inputs['blade_mass']
         blade_number = discrete_inputs['blade_number']
         pitch_bearing_mass_coeff = inputs['pitch_bearing_mass_coeff']
@@ -105,20 +160,33 @@ class PitchSystemMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class SpinnerMass(ExplicitComponent):
+    """
+    Compute spinner mass
+    
+    Parameters
+    ----------
+    rotor_diameter : float
+        rotor diameter of the machine
+    spinner_mass_coeff : float
+        A in the spinner mass equation: A*rotor_diameter + B
+    spinner_mass_intercept : float
+        B in the spinner mass equation: A*rotor_diameter + B
+    
+    Returns
+    -------
+    spinner_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
+        self.add_input('rotor_diameter', 0.0, units='m')
+        self.add_input('spinner_mass_coeff', 15.5)
+        self.add_input('spinner_mass_intercept', -980.0)
+
+        self.add_output('spinner_mass', 0.0, units='kg')
         
-    
-        # Variables
-        self.add_input('rotor_diameter', 0.0, units='m', desc= 'rotor diameter of the machine')
-        self.add_input('spinner_mass_coeff', 15.5, desc= 'A in the spinner mass equation: A*rotor_diameter + B')
-        self.add_input('spinner_mass_intercept', -980.0, desc= 'B in the spinner mass equation: A*rotor_diameter + B')
-        
-        # Outputs
-        self.add_output('spinner_mass', 0.0, units='kg', desc='component mass [kg]')
-    
     def compute(self, inputs, outputs):
-        
         rotor_diameter = inputs['rotor_diameter']
         spinner_mass_coeff = inputs['spinner_mass_coeff']
         spinner_mass_intercept = inputs['spinner_mass_intercept']
@@ -128,22 +196,39 @@ class SpinnerMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class LowSpeedShaftMass(ExplicitComponent):
+    """
+    Compute low speed shaft mass
+    
+    Parameters
+    ----------
+    blade_mass : float
+        mass for a single wind turbine blade
+    machine_rating : float
+        machine rating
+    lss_mass_coeff : float
+        A in the lss mass equation: A*(blade_mass*rated_power)^exp + B
+    lss_mass_exp : float
+        exp in the lss mass equation: A*(blade_mass*rated_power)^exp + B
+    lss_mass_intercept : float
+        B in the lss mass equation: A*(blade_mass*rated_power)^exp + B
+    
+    Returns
+    -------
+    lss_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
-        
-        
-        # Variables
-        self.add_input('blade_mass', 0.0, units='kg', desc='mass for a single wind turbine blade')
-        self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
-        self.add_input('lss_mass_coeff', 13., desc='A in the lss mass equation: A*(blade_mass*rated_power)^exp + B')
-        self.add_input('lss_mass_exp', 0.65, desc='exp in the lss mass equation: A*(blade_mass*rated_power)^exp + B')
-        self.add_input('lss_mass_intercept', 775., desc='B in the lss mass equation: A*(blade_mass*rated_power)^exp + B')
-        
-        # Outputs
-        self.add_output('lss_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('blade_mass', 0.0, units='kg')
+        self.add_input('machine_rating', 0.0, units='kW')
+        self.add_input('lss_mass_coeff', 13.)
+        self.add_input('lss_mass_exp', 0.65)
+        self.add_input('lss_mass_intercept', 775.)
+
+        self.add_output('lss_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         blade_mass = inputs['blade_mass']
         machine_rating = inputs['machine_rating']
         lss_mass_coeff = inputs['lss_mass_coeff']
@@ -155,20 +240,34 @@ class LowSpeedShaftMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class BearingMass(ExplicitComponent):
+    """
+    Compute bearing mass
+    
+    Parameters
+    ----------
+    rotor_diameter : float
+        rotor diameter of the machine
+    bearing_mass_coeff : float
+        A in the bearing mass equation: A*rotor_diameter^exp
+    bearing_mass_exp : float
+        exp in the bearing mass equation: A*rotor_diameter^exp
+    
+    Returns
+    -------
+    main_bearing_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
-
-
         # Variables
-        self.add_input('rotor_diameter', 0.0, units='m', desc= 'rotor diameter of the machine')
-        self.add_input('bearing_mass_coeff', 0.0001, desc= 'A in the bearing mass equation: A*rotor_diameter^exp') #default from ppt
-        self.add_input('bearing_mass_exp', 3.5, desc= 'exp in the bearing mass equation: A*rotor_diameter^exp') #default from ppt
-        
-        # Outputs
-        self.add_output('main_bearing_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('rotor_diameter', 0.0, units='m')
+        self.add_input('bearing_mass_coeff', 0.0001)
+        self.add_input('bearing_mass_exp', 3.5)
+
+        self.add_output('main_bearing_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         rotor_diameter = inputs['rotor_diameter']
         bearing_mass_coeff = inputs['bearing_mass_coeff']
         bearing_mass_exp = inputs['bearing_mass_exp']
@@ -178,17 +277,37 @@ class BearingMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class RotorTorque(ExplicitComponent):
+    """
+    Computed rated rpm and rotor torque
+    
+    Parameters
+    ----------
+    rotor_diameter : float
+        rotor diameter of the machine
+    machine_rating : float
+        machine rating
+    max_tip_speed : float
+        Maximum allowable blade tip speed
+    max_efficiency : float
+        Maximum possible drivetrain efficiency
+    
+    Returns
+    -------
+    rated_rpm : float
+        rpm of rotor at rated power
+    rotor_torque : float
+        torque from rotor at rated power
+    
+    """
 
     def setup(self):
-  
-        # Variables
-        self.add_input('rotor_diameter', 0.0, units='m', desc= 'rotor diameter of the machine')
-        self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
-        self.add_input('max_tip_speed', 0.0, units='m/s', desc='Maximum allowable blade tip speed')
-        self.add_input('max_efficiency', 0.0, desc='Maximum possible drivetrain efficiency')
+        self.add_input('rotor_diameter', 0.0, units='m')
+        self.add_input('machine_rating', 0.0, units='kW')
+        self.add_input('max_tip_speed', 0.0, units='m/s')
+        self.add_input('max_efficiency', 0.0)
 
-        self.add_output('rated_rpm', 0.0, units='rpm', desc = 'rpm of rotor at rated power') #JMF do we want this default?
-        self.add_output('rotor_torque', 0.0, units='N*m', desc = 'torque from rotor at rated power') #JMF do we want this default?
+        self.add_output('rated_rpm', 0.0, units='rpm')
+        self.add_output('rotor_torque', 0.0, units='N*m')
 
     def compute(self, inputs, outputs):
         # Rotor force calculations for nacelle inputs
@@ -199,22 +318,36 @@ class RotorTorque(ExplicitComponent):
         rotorSpeed       = maxTipSpd / (0.5*inputs['rotor_diameter'])
         outputs['rated_rpm']    = rotorSpeed / (2*np.pi) * 60.0
         outputs['rotor_torque'] = ratedHubPower_W / rotorSpeed
+        
 # --------------------------------------------------------------------
 class GearboxMass(ExplicitComponent):
+    """
+    Compute gearbox mass
+    
+    Parameters
+    ----------
+    rotor_torque : float
+        torque from rotor at rated power
+    gearbox_mass_coeff : float
+        A in the gearbox mass equation: A*rotor_torque^exp
+    gearbox_mass_exp : float
+        exp in the gearbox mass equation: A*rotor_torque^exp
+    
+    Returns
+    -------
+    gearbox_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
-  
-  
-        # Variables
-        self.add_input('rotor_torque', 0.0, units='N*m', desc = 'torque from rotor at rated power') #JMF do we want this default?
-        self.add_input('gearbox_mass_coeff', 113., desc= 'A in the gearbox mass equation: A*rotor_torque^exp')
-        self.add_input('gearbox_mass_exp', 0.71, desc= 'exp in the gearbox mass equation: A*rotor_torque^exp')
-        
-        # Outputs
-        self.add_output('gearbox_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('rotor_torque', 0.0, units='N*m')
+        self.add_input('gearbox_mass_coeff', 113.)
+        self.add_input('gearbox_mass_exp', 0.71)
+
+        self.add_output('gearbox_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         rotor_torque = inputs['rotor_torque']
         gearbox_mass_coeff = inputs['gearbox_mass_coeff']
         gearbox_mass_exp = inputs['gearbox_mass_exp']
@@ -224,19 +357,30 @@ class GearboxMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class HighSpeedSideMass(ExplicitComponent):
+    """
+    Compute high speed side mass
+    
+    Parameters
+    ----------
+    machine_rating : float
+        machine rating
+    hss_mass_coeff : float
+        NREL CSM hss equation; removing intercept since it is negligible
+    
+    Returns
+    -------
+    hss_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
-      
+        self.add_input('machine_rating', 0.0, units='kW')
+        self.add_input('hss_mass_coeff', 0.19894)
 
-        # Variables
-        self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
-        self.add_input('hss_mass_coeff', 0.19894, desc= 'NREL CSM hss equation; removing intercept since it is negligible')
-        
-        # Outputs
-        self.add_output('hss_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_output('hss_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         machine_rating = inputs['machine_rating']
         hss_mass_coeff = inputs['hss_mass_coeff']
         
@@ -245,21 +389,33 @@ class HighSpeedSideMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class GeneratorMass(ExplicitComponent):
+    """
+    Compute generator mass
+    
+    Parameters
+    ----------
+    machine_rating : float
+        machine rating
+    generator_mass_coeff : float
+        A in the generator mass equation: A*rated_power + B
+    generator_mass_intercept : float
+        B in the generator mass equation: A*rated_power + B
+    
+    Returns
+    -------
+    generator_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
-      
-        
-  
-        # Variables
-        self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
-        self.add_input('generator_mass_coeff', 2300., desc= 'A in the generator mass equation: A*rated_power + B') #default from ppt
-        self.add_input('generator_mass_intercept', 3400., desc= 'B in the generator mass equation: A*rated_power + B') #default from ppt
-        
-        # Outputs
-        self.add_output('generator_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('machine_rating', 0.0, units='kW')
+        self.add_input('generator_mass_coeff', 2300.)
+        self.add_input('generator_mass_intercept', 3400.)
+
+        self.add_output('generator_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-
         machine_rating = inputs['machine_rating']
         generator_mass_coeff = inputs['generator_mass_coeff']
         generator_mass_intercept = inputs['generator_mass_intercept']
@@ -269,19 +425,30 @@ class GeneratorMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class BedplateMass(ExplicitComponent):
+    """
+    Compute bedplate mass
+    
+    Parameters
+    ----------
+    rotor_diameter : float
+        rotor diameter of the machine
+    bedplate_mass_exp : float
+        exp in the bedplate mass equation: rotor_diameter^exp
+    
+    Returns
+    -------
+    bedplate_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
+        self.add_input('rotor_diameter', 0.0, units='m')
+        self.add_input('bedplate_mass_exp', 2.2)
 
-
-        # Variables
-        self.add_input('rotor_diameter', 0.0, units='m', desc= 'rotor diameter of the machine')
-        self.add_input('bedplate_mass_exp', 2.2, desc= 'exp in the bedplate mass equation: rotor_diameter^exp')
-        
-        # Outputs
-        self.add_output('bedplate_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_output('bedplate_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         rotor_diameter = inputs['rotor_diameter']
         bedplate_mass_exp = inputs['bedplate_mass_exp']
         
@@ -290,20 +457,33 @@ class BedplateMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class YawSystemMass(ExplicitComponent):
+    """
+    Compute yaw system mass
+    
+    Parameters
+    ----------
+    rotor_diameter : float
+        rotor diameter of the machine
+    yaw_mass_coeff : float
+        A in the yaw mass equation: A*rotor_diameter^exp
+    yaw_mass_exp : float
+        exp in the yaw mass equation: A*rotor_diameter^exp
+    
+    Returns
+    -------
+    yaw_mass : float
+        component mass [kg]
+    
+    """
   
     def setup(self):
+        self.add_input('rotor_diameter', 0.0, units='m')
+        self.add_input('yaw_mass_coeff', 0.0009)
+        self.add_input('yaw_mass_exp', 3.314)
 
-
-        # Variables
-        self.add_input('rotor_diameter', 0.0, units='m', desc= 'rotor diameter of the machine')
-        self.add_input('yaw_mass_coeff', 0.0009, desc= 'A in the yaw mass equation: A*rotor_diameter^exp') #NREL CSM
-        self.add_input('yaw_mass_exp', 3.314, desc= 'exp in the yaw mass equation: A*rotor_diameter^exp') #NREL CSM
-        
-        # Outputs
-        self.add_output('yaw_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_output('yaw_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-      
         rotor_diameter = inputs['rotor_diameter']
         yaw_mass_coeff = inputs['yaw_mass_coeff']
         yaw_mass_exp = inputs['yaw_mass_exp']
@@ -315,19 +495,30 @@ class YawSystemMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class HydraulicCoolingMass(ExplicitComponent):
+    """
+    Compute hydraulic cooling mass
+    
+    Parameters
+    ----------
+    machine_rating : float
+        machine rating
+    hvac_mass_coeff : float
+        hvac linear coeff
+    
+    Returns
+    -------
+    hvac_mass : float
+        component mass [kg]
+    
+    """
     
     def setup(self):
-    
-        
-        # Variables
-        self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
-        self.add_input('hvac_mass_coeff', 0.08, desc= 'hvac linear coeff') #NREL CSM
-        
-        # Outputs
-        self.add_output('hvac_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('machine_rating', 0.0, units='kW')
+        self.add_input('hvac_mass_coeff', 0.08)
+
+        self.add_output('hvac_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         machine_rating = inputs['machine_rating']
         hvac_mass_coeff = inputs['hvac_mass_coeff']
         
@@ -336,20 +527,33 @@ class HydraulicCoolingMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class NacelleCoverMass(ExplicitComponent):
+    """
+    Compute nacelle cover mass
+    
+    Parameters
+    ----------
+    machine_rating : float
+        machine rating
+    cover_mass_coeff : float
+        A in the spinner mass equation: A*rotor_diameter + B
+    cover_mass_intercept : float
+        B in the spinner mass equation: A*rotor_diameter + B
+    
+    Returns
+    -------
+    cover_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
-    
-    
-        # Variables
-        self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
-        self.add_input('cover_mass_coeff', 1.2817, desc= 'A in the spinner mass equation: A*rotor_diameter + B')
-        self.add_input('cover_mass_intercept', 428.19, desc= 'B in the spinner mass equation: A*rotor_diameter + B')
-        
-        # Outputs
-        self.add_output('cover_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('machine_rating', 0.0, units='kW')
+        self.add_input('cover_mass_coeff', 1.2817)
+        self.add_input('cover_mass_intercept', 428.19)
+
+        self.add_output('cover_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         machine_rating = inputs['machine_rating']
         cover_mass_coeff = inputs['cover_mass_coeff']
         cover_mass_intercept = inputs['cover_mass_intercept']
@@ -360,24 +564,39 @@ class NacelleCoverMass(ExplicitComponent):
 # TODO: ignoring controls and electronics mass for now
 
 # --------------------------------------------------------------------
-class OtherMainframeMass(ExplicitComponent):
+class PlatformsMainframeMass(ExplicitComponent):
+    """
+    Compute platforms mainframe mass
+    
+    Parameters
+    ----------
+    bedplate_mass : float
+        component mass [kg]
+    platforms_mass_coeff : float
+        nacelle platforms mass coeff as a function of bedplate mass [kg/kg]
+    crane : boolean
+        flag for presence of onboard crane
+    crane_weight : float
+        weight of onboard crane
+    
+    Returns
+    -------
+    platforms_mass : float
+        component mass [kg]
+    
+    """
     # nacelle platforms, service crane, base hardware
-    
+     
     def setup(self):
-    
-        
-        # Variables
-        self.add_input('bedplate_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('platforms_mass_coeff', 0.125, desc='nacelle platforms mass coeff as a function of bedplate mass [kg/kg]') #default from old CSM
-        self.add_discrete_input('crane', False, desc='flag for presence of onboard crane')
-        self.add_input('crane_weight', 3000., desc='weight of onboard crane')
+        self.add_input('bedplate_mass', 0.0, units='kg')
+        self.add_input('platforms_mass_coeff', 0.125)
+        self.add_discrete_input('crane', False)
+        self.add_input('crane_weight', 3000.)
+
+        self.add_output('platforms_mass', 0.0, units='kg')
         #TODO: there is no base hardware mass model in the old model. Cost is not dependent on mass.
-        
-        # Outputs
-        self.add_output('other_mass', 0.0, units='kg', desc='component mass [kg]')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        
         bedplate_mass = inputs['bedplate_mass']
         platforms_mass_coeff = inputs['platforms_mass_coeff']
         crane = discrete_inputs['crane']
@@ -392,24 +611,37 @@ class OtherMainframeMass(ExplicitComponent):
         else:
             crane_mass = 0.  
         
-        outputs['other_mass'] = platforms_mass + crane_mass
+        outputs['platforms_mass'] = platforms_mass + crane_mass
 
 # --------------------------------------------------------------------
 class TransformerMass(ExplicitComponent):
+    """
+    Compute transformer mass
+    
+    Parameters
+    ----------
+    machine_rating : float
+        machine rating
+    transformer_mass_coeff : float
+        A in the transformer mass equation: A*rated_power + B
+    transformer_mass_intercept : float
+        B in the transformer mass equation: A*rated_power + B
+    
+    Returns
+    -------
+    transformer_mass : float
+        component mass [kg]
+    
+    """
 
     def setup(self):
-    
-    
-        # Variables
-        self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
-        self.add_input('transformer_mass_coeff', 1915., desc= 'A in the transformer mass equation: A*rated_power + B') #default from ppt
-        self.add_input('transformer_mass_intercept', 1910., desc= 'B in the transformer mass equation: A*rated_power + B') #default from ppt
-        
-        # Outputs
-        self.add_output('transformer_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('machine_rating', 0.0, units='kW')
+        self.add_input('transformer_mass_coeff', 1915.)
+        self.add_input('transformer_mass_intercept', 1910.)
+
+        self.add_output('transformer_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         machine_rating = inputs['machine_rating']
         transformer_mass_coeff = inputs['transformer_mass_coeff']
         transformer_mass_intercept = inputs['transformer_mass_intercept']
@@ -419,67 +651,128 @@ class TransformerMass(ExplicitComponent):
 
 # --------------------------------------------------------------------
 class TowerMass(ExplicitComponent):
+    """
+    Compute tower mass
+    
+    Parameters
+    ----------
+    hub_height : float
+        hub height of wind turbine above ground / sea level
+    tower_mass_coeff : float
+        A in the tower mass equation: A*hub_height^B
+    tower_mass_exp : float
+        B in the tower mass equation: A*hub_height^B
+    
+    Returns
+    -------
+    tower_mass : float
+        component mass [kg]
+    
+    """
   
     def setup(self):
+        self.add_input('hub_height', 0.0)
+        self.add_input('tower_mass_coeff', 19.828)
+        self.add_input('tower_mass_exp', 2.0282)
 
-
-        # Variables
-        self.add_input('hub_height', 0.0, desc= 'hub height of wind turbine above ground / sea level')
-        self.add_input('tower_mass_coeff', 19.828, desc= 'A in the tower mass equation: A*hub_height^B') #default from ppt
-        self.add_input('tower_mass_exp', 2.0282, desc= 'B in the tower mass equation: A*hub_height^B') #default from ppt
-        
-        # Outputs
-        self.add_output('tower_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_output('tower_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs):
-        
         hub_height = inputs['hub_height']
         tower_mass_coeff = inputs['tower_mass_coeff']
         tower_mass_exp = inputs['tower_mass_exp']
         
         # calculate the tower mass
         outputs['tower_mass'] = tower_mass_coeff * hub_height ** tower_mass_exp
- 
 
 # Turbine mass adder
-class turbine_mass_adder(ExplicitComponent):
+class TurbineMassAdder(ExplicitComponent):
+    """
+    Compute system masses
+    
+    Parameters
+    ----------
+    blade_mass : float
+        component mass [kg]
+    hub_mass : float
+        component mass [kg]
+    pitch_system_mass : float
+        component mass [kg]
+    spinner_mass : float
+        component mass [kg]
+    lss_mass : float
+        component mass [kg]
+    main_bearing_mass : float
+        component mass [kg]
+    gearbox_mass : float
+        component mass [kg]
+    hss_mass : float
+        component mass [kg]
+    generator_mass : float
+        component mass [kg]
+    bedplate_mass : float
+        component mass [kg]
+    yaw_mass : float
+        component mass [kg]
+    hvac_mass : float
+        component mass [kg]
+    cover_mass : float
+        component mass [kg]
+    platforms_mass : float
+        component mass [kg]
+    transformer_mass : float
+        component mass [kg]
+    tower_mass : float
+        component mass [kg]
+    blade_number : float
+        number of rotor blades
+    main_bearing_number : float
+        number of main bearings
+    
+    Returns
+    -------
+    hub_system_mass : float
+        hub system mass
+    rotor_mass : float
+        hub system mass
+    nacelle_mass : float
+        nacelle mass
+    turbine_mass : float
+        turbine mass
+    
+    """
     
     def setup(self):
-        
-    
-        # Inputs
         # rotor
-        self.add_input('blade_mass', 0.0, units='kg', desc= 'component mass [kg]')
-        self.add_input('hub_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('pitch_system_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('spinner_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('blade_mass', 0.0, units='kg')
+        self.add_input('hub_mass', 0.0, units='kg')
+        self.add_input('pitch_system_mass', 0.0, units='kg')
+        self.add_input('spinner_mass', 0.0, units='kg')
+        
         # nacelle
-        self.add_input('lss_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('main_bearing_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('gearbox_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('hss_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('generator_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('bedplate_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('yaw_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('hvac_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('cover_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('other_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('transformer_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('lss_mass', 0.0, units='kg')
+        self.add_input('main_bearing_mass', 0.0, units='kg')
+        self.add_input('gearbox_mass', 0.0, units='kg')
+        self.add_input('hss_mass', 0.0, units='kg')
+        self.add_input('generator_mass', 0.0, units='kg')
+        self.add_input('bedplate_mass', 0.0, units='kg')
+        self.add_input('yaw_mass', 0.0, units='kg')
+        self.add_input('hvac_mass', 0.0, units='kg')
+        self.add_input('cover_mass', 0.0, units='kg')
+        self.add_input('platforms_mass', 0.0, units='kg')
+        self.add_input('transformer_mass', 0.0, units='kg')
+        
         # tower
-        self.add_input('tower_mass', 0.0, units='kg', desc='component mass [kg]')
-    
-        # Parameters
-        self.add_discrete_input('blade_number', 3, desc = 'number of rotor blades')
-        self.add_discrete_input('bearing_number', 2, desc = 'number of main bearings')
-    
-        # Outputs
-        self.add_output('hub_system_mass', 0.0, units='kg', desc='hub system mass')
-        self.add_output('rotor_mass', 0.0, units='kg', desc='hub system mass')
-        self.add_output('nacelle_mass', 0.0, units='kg', desc='nacelle mass')
-        self.add_output('turbine_mass', 0.0, units='kg', desc='turbine mass')
+        self.add_input('tower_mass', 0.0, units='kg')
+        self.add_discrete_input('blade_number', 3)
+        self.add_discrete_input('main_bearing_number', 2)
+
+        self.add_output('hub_system_mass', 0.0, units='kg')
+        self.add_output('rotor_mass', 0.0, units='kg')
+        self.add_output('nacelle_mass', 0.0, units='kg')
+        self.add_output('turbine_mass', 0.0, units='kg')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         blade_mass = inputs['blade_mass']
         hub_mass = inputs['hub_mass']
         pitch_system_mass = inputs['pitch_system_mass']
@@ -493,19 +786,18 @@ class turbine_mass_adder(ExplicitComponent):
         yaw_mass = inputs['yaw_mass']
         hvac_mass = inputs['hvac_mass']
         cover_mass = inputs['cover_mass']
-        other_mass = inputs['other_mass']
+        platforms_mass = inputs['platforms_mass']
         transformer_mass = inputs['transformer_mass']
         tower_mass = inputs['tower_mass']
         blade_number = discrete_inputs['blade_number']
-        bearing_number = discrete_inputs['bearing_number']
-        
+        bearing_number = discrete_inputs['main_bearing_number']
         
         outputs['hub_system_mass'] = hub_mass + pitch_system_mass + spinner_mass
         outputs['rotor_mass'] = blade_mass * blade_number + outputs['hub_system_mass']
         outputs['nacelle_mass'] = lss_mass + bearing_number * main_bearing_mass + \
                             gearbox_mass + hss_mass + generator_mass + \
                             bedplate_mass + yaw_mass + hvac_mass + \
-                            cover_mass + other_mass + transformer_mass
+                            cover_mass + platforms_mass + transformer_mass
         outputs['turbine_mass'] = outputs['rotor_mass'] + outputs['nacelle_mass'] + tower_mass
 
 # --------------------------------------------------------------------
@@ -513,32 +805,33 @@ class turbine_mass_adder(ExplicitComponent):
 class nrel_csm_mass_2015(Group):
     
     def setup(self):
-
         sharedIndeps = IndepVarComp()
         sharedIndeps.add_output('machine_rating',     units='kW', val=0.0)
         sharedIndeps.add_output('rotor_diameter',         units='m', val=0.0)
+        sharedIndeps.add_output('hub_height',         units='m', val=0.0)
         sharedIndeps.add_discrete_output('blade_number',  val=0)
+        sharedIndeps.add_discrete_output('main_bearing_number',  val=0)
         sharedIndeps.add_discrete_output('crane', val=False)
         self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
 
-        self.add_subsystem('blade',BladeMass(), promotes=['*'])
-        self.add_subsystem('hub',HubMass(), promotes=['*'])
-        self.add_subsystem('pitch',PitchSystemMass(), promotes=['*'])
-        self.add_subsystem('spinner',SpinnerMass(), promotes=['*'])
-        self.add_subsystem('lss',LowSpeedShaftMass(), promotes=['*'])
-        self.add_subsystem('bearing',BearingMass(), promotes=['*'])
-        self.add_subsystem('torque',RotorTorque(), promotes=['*'])
-        self.add_subsystem('gearbox',GearboxMass(), promotes=['*'])
-        self.add_subsystem('hss',HighSpeedSideMass(), promotes=['*'])
-        self.add_subsystem('generator',GeneratorMass(), promotes=['*'])
-        self.add_subsystem('bedplate',BedplateMass(), promotes=['*'])
-        self.add_subsystem('yaw',YawSystemMass(), promotes=['*'])
-        self.add_subsystem('hvac',HydraulicCoolingMass(), promotes=['*'])
-        self.add_subsystem('cover',NacelleCoverMass(), promotes=['*'])
-        self.add_subsystem('other',OtherMainframeMass(), promotes=['*'])
-        self.add_subsystem('transformer',TransformerMass(), promotes=['*'])
-        self.add_subsystem('tower',TowerMass(), promotes=['*'])
-        self.add_subsystem('turbine',turbine_mass_adder(), promotes=['*'])
+        self.add_subsystem('blade', BladeMass(), promotes=['*'])
+        self.add_subsystem('hub', HubMass(), promotes=['*'])
+        self.add_subsystem('pitch', PitchSystemMass(), promotes=['*'])
+        self.add_subsystem('spinner', SpinnerMass(), promotes=['*'])
+        self.add_subsystem('lss', LowSpeedShaftMass(), promotes=['*'])
+        self.add_subsystem('bearing', BearingMass(), promotes=['*'])
+        self.add_subsystem('torque', RotorTorque(), promotes=['*'])
+        self.add_subsystem('gearbox', GearboxMass(), promotes=['*'])
+        self.add_subsystem('hss', HighSpeedSideMass(), promotes=['*'])
+        self.add_subsystem('generator', GeneratorMass(), promotes=['*'])
+        self.add_subsystem('bedplate', BedplateMass(), promotes=['*'])
+        self.add_subsystem('yaw', YawSystemMass(), promotes=['*'])
+        self.add_subsystem('hvac', HydraulicCoolingMass(), promotes=['*'])
+        self.add_subsystem('cover', NacelleCoverMass(), promotes=['*'])
+        self.add_subsystem('platforms', PlatformsMainframeMass(), promotes=['*'])
+        self.add_subsystem('transformer', TransformerMass(), promotes=['*'])
+        self.add_subsystem('tower', TowerMass(), promotes=['*'])
+        self.add_subsystem('turbine', TurbineMassAdder(), promotes=['*'])
        
 
 class nrel_csm_2015(Group):
@@ -562,7 +855,7 @@ def mass_example():
     prob['blade_number'] = 3    
     prob['machine_rating'] = 5000.0
     prob['hub_height'] = 90.0
-    prob['bearing_number'] = 2
+    prob['main_bearing_number'] = 2
     prob['crane'] = True
     prob['max_tip_speed'] = 80.0
     prob['max_efficiency'] = 0.90
@@ -588,7 +881,7 @@ def cost_example():
     prob['blade_number'] = 3    
     prob['machine_rating'] = 5000.0
     prob['hub_height'] = 90.0
-    prob['bearing_number'] = 2
+    prob['main_bearing_number'] = 2
     prob['crane'] = True
     prob['max_tip_speed'] = 80.0
     prob['max_efficiency'] = 0.90

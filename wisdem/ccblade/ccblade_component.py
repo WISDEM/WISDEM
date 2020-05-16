@@ -402,6 +402,8 @@ class AeroHubLoads(ExplicitComponent):
 
     def setup(self):
         blade_init_options = self.options['analysis_options']['blade']
+        n_blades           = self.options['analysis_options']['assembly']['number_of_blades']
+
         self.n_span        = n_span    = blade_init_options['n_span']
         af_init_options = self.options['analysis_options']['airfoils']
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']  # Number of angle of attacks
@@ -443,8 +445,8 @@ class AeroHubLoads(ExplicitComponent):
         self.add_discrete_input('usecd',    val=True)
 
         # outputs
-        self.add_output('Fxyz_blade_aero',  val=np.zeros((3,6)),  units='N')
-        self.add_output('Mxyz_blade_aero',  val=np.zeros((3,6)),  units='N*m')
+        self.add_output('Fxyz_blade_aero',  val=np.zeros((n_blades,6)),  units='N',   desc='Forces at blade root from aerodynamic loading in the blade c.s.')
+        self.add_output('Mxyz_blade_aero',  val=np.zeros((n_blades,6)),  units='N*m', desc='Moments at blade root from aerodynamic loading in the blade c.s.')
         self.add_output('Fxyz_hub_aero',    val=np.zeros(3),      units='N')
         self.add_output('Mxyz_hub_aero',    val=np.zeros(3),      units='N*m')
         

@@ -1449,7 +1449,8 @@ class blade_labor_ct(object):
         try:        
             team_size = brentq(lambda x: min_ct_lp_skin(x), 0.01, 100., xtol=1e-4)
         except:
-            team_size = brentq(lambda x: min_ct_lp_skin(x), 0.01, 250., xtol=1e-4)
+            team_size = 100.
+            print('WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the low-pressure mold, but this is incorrect.')
 
         if self.options['discrete']:
             team_size = round(team_size)
@@ -1472,13 +1473,14 @@ class blade_labor_ct(object):
         try:        
             team_size = brentq(lambda x: min_ct_hp_skin(x), 0.01, 100., xtol=1e-4)
         except:
-            team_size = brentq(lambda x: min_ct_hp_skin(x), 0.01, 250., xtol=1e-4)
+            team_size = 100.
+            print('WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the high-pressure mold, but this is incorrect.')
 
         if self.options['discrete']:
             team_size = round(team_size)
         labor[6 + self.n_webs] , non_gating_ct[6 + self.n_webs] = labor_ct_hp_skin(team_size)
         
-        # HP skin infusion
+        # Assembly
         operation[7 + self.n_webs]  = 'Assembly'
         def labor_ct_assembly(team_size):
             assembly  = assembly_labor(self.assembly, team_size)
@@ -1495,7 +1497,8 @@ class blade_labor_ct(object):
         try:        
             team_size = brentq(lambda x: min_ct_assembly(x), 0.01, 100., xtol=1e-4)
         except:
-            team_size = brentq(lambda x: min_ct_assembly(x), 0.01, 250., xtol=1e-4)
+            team_size = 100.
+            print('WARNING: the blade cost model is used beyond its applicability range. No team can limit the assembly cycle time to 24 hours. 100 workers are assumed at the assembly line, but this is incorrect.')
         if self.options['discrete']:
             team_size = round(team_size)
         labor[7 + self.n_webs] , skin_mold_gating_ct[7 + self.n_webs] = labor_ct_assembly(team_size)

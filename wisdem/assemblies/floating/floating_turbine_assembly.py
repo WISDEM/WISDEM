@@ -62,7 +62,7 @@ class FloatingTurbine(Group):
         self.add('pitch_system_mass',        IndepVarComp('pitch_system_mass', 0.0), promotes=['*'])
         self.add('spinner_mass',             IndepVarComp('spinner_mass', 0.0), promotes=['*'])
         self.add('transformer_mass',         IndepVarComp('transformer_mass', 0.0), promotes=['*'])
-        self.add('vs_electronics_mass', IndepVarComp('vs_electronics_mass', 0.0), promotes=['*'])
+        self.add('converter_mass', IndepVarComp('converter_mass', 0.0), promotes=['*'])
         self.add('yaw_mass',          IndepVarComp('yaw_mass', 0.0), promotes=['*'])
         
         # Tower

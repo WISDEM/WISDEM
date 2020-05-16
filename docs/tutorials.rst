@@ -3,8 +3,8 @@
 .. currentmodule:: wisdem.docs.examples.example
 
 
-Tutorial
---------
+Tutorials
+---------
 
 Tutorial for WISDEM with NREL CSM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
