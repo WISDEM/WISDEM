@@ -80,7 +80,11 @@ for line in content:
             else:
                 try:
                     float(val_str)
-                    type_ = 'float'
+                    if 'discrete' in discrete_string:
+                        type_ = 'TODO: add type by hand, could not be parsed automatically'
+                    else:
+                        type_ = 'float'
+                        
                 except:
                     type_ = 'TODO: add type by hand, could not be parsed automatically'
                     
@@ -93,9 +97,26 @@ for line in content:
                     
                 desc = ' '.join([x.strip() for x in desc.split()])
                 if len(desc) > 80:
-                    desc = "\n    ".join(textwrap.wrap(desc, 80))
+                    desc = "\n        ".join(textwrap.wrap(desc, 80))
                     
-                new_add_statement = line.split('desc')[0].strip()[:-1] + ')'
+                split_line = line.split(',')
+                new_split_line = []
+                for i_string, substring in enumerate(split_line):
+                    if 'desc' in substring:
+                        if i_string == len(split_line) - 1:
+                            desc_last = True
+                        else:
+                            desc_last = False
+                    else:
+                        new_split_line.append(substring)
+                        
+                # Need special logic is desc is the last entry in the add_ call
+                # or if units comes after
+                if desc_last:
+                    new_add_statement = line.split('desc')[0].strip()[:-1] + ')'
+                else:
+                    new_add_statement = ', '.join(new_split_line)
+                    
                 new_add_statements.append(new_add_statement) 
                 
             else:
