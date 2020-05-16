@@ -360,9 +360,9 @@ class NacelleCoverMass(ExplicitComponent):
 # TODO: ignoring controls and electronics mass for now
 
 # --------------------------------------------------------------------
-class OtherMainframeMass(ExplicitComponent):
+class PlatformsMainframeMass(ExplicitComponent):
     # nacelle platforms, service crane, base hardware
-    
+     
     def setup(self):
     
         
@@ -374,7 +374,7 @@ class OtherMainframeMass(ExplicitComponent):
         #TODO: there is no base hardware mass model in the old model. Cost is not dependent on mass.
         
         # Outputs
-        self.add_output('other_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_output('platforms_mass', 0.0, units='kg', desc='component mass [kg]')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -392,7 +392,7 @@ class OtherMainframeMass(ExplicitComponent):
         else:
             crane_mass = 0.  
         
-        outputs['other_mass'] = platforms_mass + crane_mass
+        outputs['platforms_mass'] = platforms_mass + crane_mass
 
 # --------------------------------------------------------------------
 class TransformerMass(ExplicitComponent):
@@ -463,14 +463,14 @@ class turbine_mass_adder(ExplicitComponent):
         self.add_input('yaw_mass', 0.0, units='kg', desc='component mass [kg]')
         self.add_input('hvac_mass', 0.0, units='kg', desc='component mass [kg]')
         self.add_input('cover_mass', 0.0, units='kg', desc='component mass [kg]')
-        self.add_input('other_mass', 0.0, units='kg', desc='component mass [kg]')
+        self.add_input('platforms_mass', 0.0, units='kg', desc='component mass [kg]')
         self.add_input('transformer_mass', 0.0, units='kg', desc='component mass [kg]')
         # tower
         self.add_input('tower_mass', 0.0, units='kg', desc='component mass [kg]')
     
         # Parameters
         self.add_discrete_input('blade_number', 3, desc = 'number of rotor blades')
-        self.add_discrete_input('bearing_number', 2, desc = 'number of main bearings')
+        self.add_discrete_input('main_bearing_number', 2, desc = 'number of main bearings')
     
         # Outputs
         self.add_output('hub_system_mass', 0.0, units='kg', desc='hub system mass')
@@ -493,11 +493,11 @@ class turbine_mass_adder(ExplicitComponent):
         yaw_mass = inputs['yaw_mass']
         hvac_mass = inputs['hvac_mass']
         cover_mass = inputs['cover_mass']
-        other_mass = inputs['other_mass']
+        platforms_mass = inputs['platforms_mass']
         transformer_mass = inputs['transformer_mass']
         tower_mass = inputs['tower_mass']
         blade_number = discrete_inputs['blade_number']
-        bearing_number = discrete_inputs['bearing_number']
+        bearing_number = discrete_inputs['main_bearing_number']
         
         
         outputs['hub_system_mass'] = hub_mass + pitch_system_mass + spinner_mass
@@ -505,7 +505,7 @@ class turbine_mass_adder(ExplicitComponent):
         outputs['nacelle_mass'] = lss_mass + bearing_number * main_bearing_mass + \
                             gearbox_mass + hss_mass + generator_mass + \
                             bedplate_mass + yaw_mass + hvac_mass + \
-                            cover_mass + other_mass + transformer_mass
+                            cover_mass + platforms_mass + transformer_mass
         outputs['turbine_mass'] = outputs['rotor_mass'] + outputs['nacelle_mass'] + tower_mass
 
 # --------------------------------------------------------------------
@@ -517,7 +517,9 @@ class nrel_csm_mass_2015(Group):
         sharedIndeps = IndepVarComp()
         sharedIndeps.add_output('machine_rating',     units='kW', val=0.0)
         sharedIndeps.add_output('rotor_diameter',         units='m', val=0.0)
+        sharedIndeps.add_output('hub_height',         units='m', val=0.0)
         sharedIndeps.add_discrete_output('blade_number',  val=0)
+        sharedIndeps.add_discrete_output('main_bearing_number',  val=0)
         sharedIndeps.add_discrete_output('crane', val=False)
         self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
 
@@ -535,7 +537,7 @@ class nrel_csm_mass_2015(Group):
         self.add_subsystem('yaw',YawSystemMass(), promotes=['*'])
         self.add_subsystem('hvac',HydraulicCoolingMass(), promotes=['*'])
         self.add_subsystem('cover',NacelleCoverMass(), promotes=['*'])
-        self.add_subsystem('other',OtherMainframeMass(), promotes=['*'])
+        self.add_subsystem('platforms',PlatformsMainframeMass(), promotes=['*'])
         self.add_subsystem('transformer',TransformerMass(), promotes=['*'])
         self.add_subsystem('tower',TowerMass(), promotes=['*'])
         self.add_subsystem('turbine',turbine_mass_adder(), promotes=['*'])
@@ -562,7 +564,7 @@ def mass_example():
     prob['blade_number'] = 3    
     prob['machine_rating'] = 5000.0
     prob['hub_height'] = 90.0
-    prob['bearing_number'] = 2
+    prob['main_bearing_number'] = 2
     prob['crane'] = True
     prob['max_tip_speed'] = 80.0
     prob['max_efficiency'] = 0.90
@@ -588,7 +590,7 @@ def cost_example():
     prob['blade_number'] = 3    
     prob['machine_rating'] = 5000.0
     prob['hub_height'] = 90.0
-    prob['bearing_number'] = 2
+    prob['main_bearing_number'] = 2
     prob['crane'] = True
     prob['max_tip_speed'] = 80.0
     prob['max_efficiency'] = 0.90

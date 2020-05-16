@@ -202,15 +202,14 @@ class LowSpeedShaftCost2015(ExplicitComponent):
         outputs['lss_cost'] = lss_mass_cost_coeff * lss_mass
 
 #-------------------------------------------------------------------------------
-class BearingsCost2015(ExplicitComponent):
+class BearingCost2015(ExplicitComponent):
 
     def setup(self):
 
 
         # variables
         self.add_input('main_bearing_mass', 0.0, desc='component mass', units='kg') #mass input
-        self.add_discrete_input('main_bearing_number', 2, desc='number of main bearings') #number of main bearings- defaults to 2
-        self.add_input('bearings_mass_cost_coeff', 4.5, desc='main bearings mass-cost coeff', units='USD/kg')
+        self.add_input('bearing_mass_cost_coeff', 4.5, desc='main bearing mass-cost coeff', units='USD/kg')
     
         # Outputs
         self.add_output('main_bearing_cost', 0.0, units='USD', desc='Overall wind turbine component capial costs excluding transportation costs')
@@ -218,11 +217,10 @@ class BearingsCost2015(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         main_bearing_mass = inputs['main_bearing_mass']
-        main_bearing_number = discrete_inputs['main_bearing_number']
-        bearings_mass_cost_coeff = inputs['bearings_mass_cost_coeff']
+        bearing_mass_cost_coeff = inputs['bearing_mass_cost_coeff']
 
         #calculate component cost 
-        outputs['main_bearing_cost'] = bearings_mass_cost_coeff * main_bearing_mass * main_bearing_number
+        outputs['main_bearing_cost'] = bearing_mass_cost_coeff * main_bearing_mass
 
 #-------------------------------------------------------------------------------
 class GearboxCost2015(ExplicitComponent):
@@ -325,24 +323,24 @@ class YawSystemCost2015(ExplicitComponent):
         outputs['yaw_system_cost'] = yaw_mass_cost_coeff * yaw_mass
 
 #---------------------------------------------------------------------------------
-class VariableSpeedElecCost2015(ExplicitComponent):
+class ConverterCost2015(ExplicitComponent):
 
     def setup(self):
 
 
         # variables
-        self.add_input('vs_electronics_mass', 0.0, desc='component mass', units='kg')
-        self.add_input('vs_electronics_mass_cost_coeff', 18.8, desc='variable speed electronics mass cost coeff', units='USD/kg')
+        self.add_input('converter_mass', 0.0, desc='component mass', units='kg')
+        self.add_input('converter_mass_cost_coeff', 18.8, desc='variable speed electronics mass cost coeff', units='USD/kg')
     
         # Outputs
-        self.add_output('vs_cost', 0.0, units='USD', desc='Overall wind turbine component capial costs excluding transportation costs')
+        self.add_output('converter_cost', 0.0, units='USD', desc='Overall wind turbine component capial costs excluding transportation costs')
 
     def compute(self, inputs, outputs):
 
-        vs_electronics_mass = inputs['vs_electronics_mass']
-        vs_electronics_mass_cost_coeff = inputs['vs_electronics_mass_cost_coeff']
+        converter_mass = inputs['converter_mass']
+        converter_mass_cost_coeff = inputs['converter_mass_cost_coeff']
 
-        outputs['vs_cost'] = vs_electronics_mass_cost_coeff * vs_electronics_mass
+        outputs['converter_cost'] = converter_mass_cost_coeff * converter_mass
 
 #---------------------------------------------------------------------------------
 class HydraulicCoolingCost2015(ExplicitComponent):
@@ -427,7 +425,7 @@ class ControlsCost2015(ExplicitComponent):
         outputs['controls_cost'] = machine_rating * coeff
 
 #---------------------------------------------------------------------------------
-class OtherMainframeCost2015(ExplicitComponent):
+class PlatformsMainframeCost2015(ExplicitComponent):
 
     def setup(self):  
 
@@ -441,7 +439,7 @@ class OtherMainframeCost2015(ExplicitComponent):
         # self.add_input('base_hardware_cost_coeff', 0.7, desc='base hardware cost coeff based on bedplate cost')
     
         # Outputs
-        self.add_output('other_cost', 0.0, units='USD', desc='Overall wind turbine component capial costs excluding transportation costs')
+        self.add_output('platforms_cost', 0.0, units='USD', desc='Overall wind turbine component capial costs excluding transportation costs')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -467,7 +465,7 @@ class OtherMainframeCost2015(ExplicitComponent):
         #BaseHardwareCost = bedplate_cost * base_hardware_cost_coeff
     
         #aggregate all three mainframe costs
-        outputs['other_cost'] = NacellePlatformsCost + craneCost #+ BaseHardwareCost
+        outputs['platforms_cost'] = NacellePlatformsCost + craneCost #+ BaseHardwareCost
 
 #-------------------------------------------------------------------------------
 class TransformerCost2015(ExplicitComponent):
@@ -510,15 +508,15 @@ class NacelleSystemCostAdder2015(ExplicitComponent):
         self.add_input('bedplate_mass',     0.0, units='kg',  desc='Component mass')
         self.add_input('yaw_system_cost',   0.0, units='USD', desc='Component cost')
         self.add_input('yaw_mass',          0.0, units='kg',  desc='Component mass')
-        self.add_input('vs_cost',           0.0, units='USD', desc='Component cost')
-        self.add_input('vs_mass',           0.0, units='kg',  desc='Component mass')
+        self.add_input('converter_cost',    0.0, units='USD', desc='Component cost')
+        self.add_input('converter_mass',    0.0, units='kg',  desc='Component mass')
         self.add_input('hvac_cost',         0.0, units='USD', desc='Component cost')
         self.add_input('hvac_mass',         0.0, units='kg',  desc='Component mass')
         self.add_input('cover_cost',        0.0, units='USD', desc='Component cost')
         self.add_input('cover_mass',        0.0, units='kg',  desc='Component mass')
         self.add_input('elec_cost',         0.0, units='USD', desc='Component cost')
         self.add_input('controls_cost',     0.0, units='USD', desc='Component cost')
-        self.add_input('other_cost',        0.0, units='USD', desc='Component cost')
+        self.add_input('platforms_cost',    0.0, units='USD', desc='Component cost')
         self.add_input('transformer_cost',  0.0, units='USD', desc='Component cost')
         self.add_input('transformer_mass',  0.0, units='kg',  desc='Component mass')
         self.add_discrete_input('main_bearing_number', 2, desc ='number of bearings')
@@ -542,12 +540,12 @@ class NacelleSystemCostAdder2015(ExplicitComponent):
         generator_cost      = inputs['generator_cost']
         bedplate_cost       = inputs['bedplate_cost']
         yaw_system_cost     = inputs['yaw_system_cost']
-        vs_cost             = inputs['vs_cost']
+        converter_cost      = inputs['converter_cost']
         hvac_cost           = inputs['hvac_cost']
         cover_cost          = inputs['cover_cost']
         elec_cost           = inputs['elec_cost']
         controls_cost       = inputs['controls_cost']
-        other_cost          = inputs['other_cost']
+        platforms_cost      = inputs['platforms_cost']
         transformer_cost    = inputs['transformer_cost']
         
         lss_mass            = inputs['lss_mass']
@@ -557,7 +555,7 @@ class NacelleSystemCostAdder2015(ExplicitComponent):
         generator_mass      = inputs['generator_mass']
         bedplate_mass       = inputs['bedplate_mass']
         yaw_mass            = inputs['yaw_mass']
-        vs_mass             = inputs['vs_mass']
+        converter_mass      = inputs['converter_mass']
         hvac_mass           = inputs['hvac_mass']
         cover_mass          = inputs['cover_mass']
         transformer_mass    = inputs['transformer_mass']
@@ -570,8 +568,8 @@ class NacelleSystemCostAdder2015(ExplicitComponent):
         nacelle_transportMultiplier     = inputs['nacelle_transportMultiplier']        
 
         #apply multipliers for assembly, transport, overhead, and profits
-        outputs['nacelle_mass_tcc'] = lss_mass + main_bearing_number * main_bearing_mass + gearbox_mass + hss_mass + generator_mass + bedplate_mass + yaw_mass + vs_mass + hvac_mass + cover_mass + transformer_mass
-        partsCost = lss_cost + main_bearing_number * main_bearing_cost + gearbox_cost + hss_cost + generator_cost + bedplate_cost + yaw_system_cost + vs_cost + hvac_cost + cover_cost + elec_cost + controls_cost + other_cost + transformer_cost
+        outputs['nacelle_mass_tcc'] = lss_mass + main_bearing_number * main_bearing_mass + gearbox_mass + hss_mass + generator_mass + bedplate_mass + yaw_mass + converter_mass + hvac_mass + cover_mass + transformer_mass
+        partsCost = lss_cost + main_bearing_number * main_bearing_cost + gearbox_cost + hss_cost + generator_cost + bedplate_cost + yaw_system_cost + converter_cost + hvac_cost + cover_cost + elec_cost + controls_cost + platforms_cost + transformer_cost
         outputs['nacelle_cost'] = (1 + nacelle_transportMultiplier + nacelle_profitMultiplier) * ((1 + nacelle_overheadCostMultiplier + nacelle_assemblyCostMultiplier) * partsCost)
 
 ###### Tower
@@ -713,9 +711,11 @@ class Outputs2Screen(ExplicitComponent):
         self.add_input('cover_mass',       0.0,  units='kg',  desc='Cover mass')
         self.add_input('elec_cost',        0.0,  units='USD', desc='Overall wind turbine component capital costs excluding transportation costs')
         self.add_input('controls_cost',    0.0,  units='USD', desc='Overall wind turbine component capital costs excluding transportation costs')
-        self.add_input('other_cost',       0.0,  units='USD', desc='Overall wind turbine component capital costs excluding transportation costs')
+        self.add_input('platforms_cost',   0.0,  units='USD', desc='Overall wind turbine component capital costs excluding transportation costs')
         self.add_input('transformer_cost', 0.0,  units='USD', desc='Overall wind turbine component capital costs excluding transportation costs')
         self.add_input('transformer_mass', 0.0,  units='kg',  desc='Transformer mass')
+        self.add_input('converter_cost', 0.0,  units='USD', desc='Overall wind turbine component capital costs excluding transportation costs')
+        self.add_input('converter_mass', 0.0,  units='kg',  desc='Converter mass')
                                            
         self.add_input('rotor_cost',       0.0,  units='USD', desc='Overall wind turbine rotor capital costs')
         self.add_input('rotor_mass_tcc',   0.0,  units='kg',  desc='Rotor mass')
@@ -753,8 +753,9 @@ class Outputs2Screen(ExplicitComponent):
             print('Nacelle cover cost      %.3f k USD       mass %.3f kg' % (inputs['cover_cost'] * 1.e-003,        inputs['cover_mass']))
             print('Electr connection cost  %.3f k USD'                    % (inputs['elec_cost'] * 1.e-003))
             print('Controls cost           %.3f k USD'                    % (inputs['controls_cost'] * 1.e-003))
-            print('Other main frame cost   %.3f k USD'                    % (inputs['other_cost'] * 1.e-003))
+            print('Other main frame cost   %.3f k USD'                    % (inputs['platforms_cost'] * 1.e-003))
             print('Transformer cost        %.3f k USD       mass %.3f kg' % (inputs['transformer_cost'] * 1.e-003,  inputs['transformer_mass']))
+            print('Converter cost          %.3f k USD       mass %.3f kg' % (inputs['converter_cost'] * 1.e-003,  inputs['converter_mass']))
             print('------------------------------------------------')
             print('Nacelle cost            %.3f k USD       mass %.3f kg' % (inputs['nacelle_cost'] * 1.e-003,      inputs['nacelle_mass_tcc']))
             print('')
@@ -784,7 +785,7 @@ class Turbine_CostsSE_2015(Group):
             sharedIndeps.add_output('pitch_system_mass',  units='kg', val=0.0)
             sharedIndeps.add_output('spinner_mass',       units='kg', val=0.0)
             sharedIndeps.add_output('lss_mass',           units='kg', val=0.0)
-            sharedIndeps.add_output('bearings_mass',      units='kg', val=0.0)
+            sharedIndeps.add_output('bearing_mass',      units='kg', val=0.0)
             sharedIndeps.add_output('gearbox_mass',       units='kg', val=0.0)
             sharedIndeps.add_output('main_bearing_mass',  units='kg', val=0.0)
             sharedIndeps.add_discrete_output('main_bearing_number',  val=0)
@@ -792,7 +793,7 @@ class Turbine_CostsSE_2015(Group):
             sharedIndeps.add_output('generator_mass',     units='kg', val=0.0)
             sharedIndeps.add_output('bedplate_mass',      units='kg', val=0.0)
             sharedIndeps.add_output('yaw_mass',           units='kg', val=0.0)
-            sharedIndeps.add_output('vs_electronics_mass',units='kg', val=0.0)
+            sharedIndeps.add_output('converter_mass',     units='kg', val=0.0)
             sharedIndeps.add_output('hvac_mass',          units='kg', val=0.0)
             sharedIndeps.add_output('cover_mass',         units='kg', val=0.0)
             sharedIndeps.add_output('platforms_mass',     units='kg', val=0.0)
@@ -807,19 +808,19 @@ class Turbine_CostsSE_2015(Group):
         indeps.add_output('pitch_system_mass_cost_coeff',  units='USD/kg', val=22.1)
         indeps.add_output('spinner_mass_cost_coeff',       units='USD/kg', val=11.1)
         indeps.add_output('lss_mass_cost_coeff',           units='USD/kg', val=11.9)
-        indeps.add_output('bearings_mass_cost_coeff',      units='USD/kg', val=4.5)
+        indeps.add_output('bearing_mass_cost_coeff',      units='USD/kg', val=4.5)
         indeps.add_output('gearbox_mass_cost_coeff',       units='USD/kg', val=12.9)
         indeps.add_output('hss_mass_cost_coeff',           units='USD/kg', val=6.8)
         indeps.add_output('generator_mass_cost_coeff',     units='USD/kg', val=12.4)
         indeps.add_output('bedplate_mass_cost_coeff',      units='USD/kg', val=2.9)
         indeps.add_output('yaw_mass_cost_coeff',           units='USD/kg', val=8.3)
-        indeps.add_output('vs_electronics_mass_cost_coeff',units='USD/kg', val=18.8)
+        indeps.add_output('converter_mass_cost_coeff',     units='USD/kg', val=18.8)
+        indeps.add_output('transformer_mass_cost_coeff',   units='USD/kg', val=18.8)
         indeps.add_output('hvac_mass_cost_coeff',          units='USD/kg', val=124.0)
         indeps.add_output('cover_mass_cost_coeff',         units='USD/kg', val=5.7)
         indeps.add_output('elec_connec_machine_rating_cost_coeff',units='USD/kW', val=41.85)
         indeps.add_output('platforms_mass_cost_coeff',     units='USD/kg', val=17.1)
         indeps.add_output('base_hardware_cost_coeff',      units='USD/kg', val=0.7)
-        indeps.add_output('transformer_mass_cost_coeff',   units='USD/kg', val=18.8)
         indeps.add_output('tower_mass_cost_coeff',         units='USD/kg', val=2.9)
         indeps.add_output('controls_machine_rating_cost_coeff', units='USD/kW', val=21.15)
         indeps.add_output('crane_cost',                    units='USD', val=12e3)
@@ -849,7 +850,7 @@ class Turbine_CostsSE_2015(Group):
         self.add_subsystem('hub_adder'     , HubSystemCostAdder2015(),promotes=['*'])
         self.add_subsystem('rotor_adder'   , RotorCostAdder2015(),    promotes=['*'])
         self.add_subsystem('lss_c'         , LowSpeedShaftCost2015(), promotes=['*'])
-        self.add_subsystem('bearing_c'     , BearingsCost2015(),      promotes=['*'])
+        self.add_subsystem('bearing_c'     , BearingCost2015(),      promotes=['*'])
         self.add_subsystem('gearbox_c'     , GearboxCost2015(),       promotes=['*'])
         self.add_subsystem('hss_c'         , HighSpeedSideCost2015(), promotes=['*'])
         self.add_subsystem('generator_c'   , GeneratorCost2015(),     promotes=['*'])
@@ -857,10 +858,10 @@ class Turbine_CostsSE_2015(Group):
         self.add_subsystem('yaw_c'         , YawSystemCost2015(),     promotes=['*'])
         self.add_subsystem('hvac_c'        , HydraulicCoolingCost2015(), promotes=['*'])
         self.add_subsystem('controls_c'    , ControlsCost2015(),      promotes=['*'])
-        self.add_subsystem('vs_c'          , VariableSpeedElecCost2015(), promotes=['*'])
+        self.add_subsystem('converter_c'   , ConverterCost2015(),     promotes=['*'])
         self.add_subsystem('elec_c'        , ElecConnecCost2015(),    promotes=['*'])
         self.add_subsystem('cover_c'       , NacelleCoverCost2015(),  promotes=['*'])
-        self.add_subsystem('other_c'       , OtherMainframeCost2015(),promotes=['*'])
+        self.add_subsystem('platforms_c'   , PlatformsMainframeCost2015(),promotes=['*'])
         self.add_subsystem('transformer_c' , TransformerCost2015(),   promotes=['*'])
         self.add_subsystem('nacelle_adder' , NacelleSystemCostAdder2015(), promotes=['*'])
         self.add_subsystem('tower_c'       , TowerCost2015(),         promotes=['*'])
@@ -881,7 +882,7 @@ def example():
     prob['pitch_system_mass']   = 17004.0
     prob['spinner_mass']        = 1810.5
     prob['lss_mass']            = 31257.3
-    #bearingsMass'] = 9731.41
+    #bearingMass'] = 9731.41
     prob['main_bearing_mass']   = 9731.41 / 2
     prob['gearbox_mass']        = 30237.60
     prob['hss_mass']            = 1492.45
@@ -889,7 +890,7 @@ def example():
     prob['bedplate_mass']       = 93090.6
     prob['yaw_mass']            = 11878.24
     prob['tower_mass']          = 434559.0
-    prob['vs_electronics_mass'] = 1000.
+    prob['converter_mass']      = 1000.
     prob['hvac_mass']           = 1000.
     prob['cover_mass']          = 1000.
     prob['platforms_mass']      = 1000.

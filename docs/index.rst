@@ -4,17 +4,17 @@ WISDEM Documentation
 .. warning::
   This documentation is currently under development and is only valid for the IEAontology4all branch of WISDEM. There is no guarantee of applicability for any version of WISDEM.
 
-.. TODO: Need to update this copy. Is it strictly correct?
-The Wind-plant Integrated System Design and Engineering Model (WISDEM) includes integrated assemblies for the assessment of system behavior of wind turbines and plants.
-These assemblies are template assemblies that can be tweaked for a given analysis depending on the focus of the work.
-For example, any variable in these assemblies can be a design variable, an objective or part of a constraint in an multidisciplinary optimization.
-Any variable can be assigned to a distribution in order to study the behavior of the system under uncertainty or even to perform design/optimization under uncertainty.
-The assemblies included here are simply the basic structure for doing a single analysis which can be extended in a multitude of directions.
+The Wind-plant Integrated System Design and Engineering Model (WISDEM) includes integrated assemblies for the assessment of system behavior of wind turbines and plants. These assemblies can be used as is, but a richer use-case involves treating the assemblies as temples, modifying the source code and `OpenMDAO <https://openmdao.org/>`_ problems to answer specific research questions.  For example, any variable in these assemblies can be a design variable, an objective, or part of a constraint in a multidisciplinary optimization. WISDEM should therefore be viewed a toolbox of analysis tools and the basic structure for connecting tools across subsystems and fidelity levels, which can be extended in a multitude of directions according to the user’s needs.
 
-.. TODO: We need to verify this list of packages, or not list them here, or provide more explanation about what each of them does
-The current set of packages included in WISDEM are the NREL Cost and Scaling Model, a series of turbine systems engineering models (RotorSE, DriveSE, DriveWPACT and TowerSE) along with plant cost and energy production models (Plant_EnergySE, Turbine_CostsSE, Plant_CostsSE, Plant_FinanceSE).
+Important Links:
+
+- `Source Code Repository <https://github.com/WISDEM/WISDEM/tree/IEAontology4all>`_ 
+- `OpenMDAO <https://openmdao.org/>`_
 
 Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
+
+.. This images is a placeholder, feel free to replace.  Would like to include an image on the landing page that captures the breadth of the tool. -EMG
+.. figure:: /images/wisdem/WISDEM_Overview.*
 
 Using WISDEM
 ============

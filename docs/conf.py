@@ -42,7 +42,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinxcontrib.bibtex',
               'sphinx.ext.intersphinx',
-              'embed_n2',
+              'sphinx_rtd_theme',
+              # 'embed-n2',
 ]
 
 # Numbering figures in HTML format (always numbered in latex)
@@ -71,7 +72,8 @@ autodoc_default_options = {
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = 'alabaster'
+# html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static/custom.css']
 html_theme_options = {
     # "logo": "logo.png",
