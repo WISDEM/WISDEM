@@ -49,14 +49,14 @@ class DiscretizationYAML(om.ExplicitComponent):
     ----------
     tower_s : numpy array[n_height_tow]
         1D array of the non-dimensional grid defined along the tower axis (0-tower base,
-    1-tower top)
+        1-tower top)
     tower_layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the tower
-    structure.
+        structure.
     tower_layer_thickness : numpy array[n_layers_tow, n_height_tow-1]
         2D array of the thickness of the layers of the tower structure. The first
-    dimension represents each layer, the second dimension represents each piecewise-
-    constant entry of the tower sections.
+        dimension represents each layer, the second dimension represents each piecewise-
+        constant entry of the tower sections.
     tower_height : float
         Scalar of the tower height computed along the z axis.
     tower_outer_diameter_in : numpy array[n_height_tow]
@@ -65,14 +65,14 @@ class DiscretizationYAML(om.ExplicitComponent):
         Multiplier that accounts for secondary structure mass inside of cylinder
     monopile_s : numpy array[n_height_mon]
         1D array of the non-dimensional grid defined along the tower axis (0-tower base,
-    1-tower top)
+        1-tower top)
     monopile_layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the tower
-    structure.
+        structure.
     monopile_layer_thickness : numpy array[n_layers_mon, n_height_mon_minus]
         2D array of the thickness of the layers of the tower structure. The first
-    dimension represents each layer, the second dimension represents each piecewise-
-    constant entry of the tower sections.
+        dimension represents each layer, the second dimension represents each piecewise-
+        constant entry of the tower sections.
     monopile_height : float
         Scalar of the tower height computed along the z axis.
     monopile_outer_diameter_in : numpy array[n_height_tow]
@@ -83,16 +83,16 @@ class DiscretizationYAML(om.ExplicitComponent):
         1D array of names of materials.
     E_mat : numpy array[n_mat, 3]
         2D array of the Youngs moduli of the materials. Each row represents a material,
-    the three columns represent E11, E22 and E33.
+        the three columns represent E11, E22 and E33.
     G_mat : numpy array[n_mat, 3]
         2D array of the shear moduli of the materials. Each row represents a material,
-    the three columns represent G12, G13 and G23.
+        the three columns represent G12, G13 and G23.
     sigma_y_mat : numpy array[n_mat]
         2D array of the yield strength of the materials. Each row represents a material,
-    the three columns represent Xt12, Xt13 and Xt23.
+        the three columns represent Xt12, Xt13 and Xt23.
     rho_mat : numpy array[n_mat]
         1D array of the density of the materials. For composites, this is the density of
-    the laminate.
+        the laminate.
     unit_cost_mat : numpy array[n_mat]
         1D array of the unit costs of the materials.
     
@@ -627,6 +627,10 @@ class TowerPreFrame(om.ExplicitComponent):
     """
     Compute some properties of the tower needed for FEM analysis.
     
+    This component can be simplified by using src_indices for data-passing.
+    At the very least, we can code the sparse derivatives as-is for
+    input-output relationships.
+    
     Parameters
     ----------
     z_full : numpy array[nFull]
@@ -721,11 +725,6 @@ class TowerPreFrame(om.ExplicitComponent):
     Mzz : numpy array[nPL]
         point moment about z-axis
     
-    """
-    """
-    This component can be simplified by using src_indices for data-passing.
-    At the very least, we can code the sparse derivatives as-is for
-    input-output relationships.
     """
     def initialize(self):
         self.options.declare('n_height')
@@ -934,21 +933,21 @@ class TowerPostFrame(om.ExplicitComponent):
         First and second natural frequency
     fore_aft_modes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the tower fore-aft direction
-    (without constant term)
+        (without constant term)
     side_side_modes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the tower side-side direction
-    (without constant term)
+        (without constant term)
     top_deflection : float
         Deflection of tower top in yaw-aligned +x direction
     stress : numpy array[nFull-1]
-        Von Mises stress utilization along tower at specified locations. incudes safety
-    factor.
+        Von Mises stress utilization along tower at specified locations. Includes safety
+        factor.
     shell_buckling : numpy array[nFull-1]
         Shell buckling constraint. Should be < 1 for feasibility. Includes safety
-    factors
+        factors
     global_buckling : numpy array[nFull-1]
         Global buckling constraint. Should be < 1 for feasibility. Includes safety
-    factors
+        factors
     turbine_F : numpy array[3]
         Total force on tower+rna
     turbine_M : numpy array[3]
@@ -1156,6 +1155,9 @@ class TowerLeanSE(om.Group):
 
         
 class TowerSE(om.Group):
+    """
+    This is the main TowerSE group.
+    """
 
     def initialize(self):
         self.options.declare('analysis_options')
