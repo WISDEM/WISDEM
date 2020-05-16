@@ -60,7 +60,7 @@ class TowerModes(ExplicitComponent):
         rated rotor rotation speed
     gamma_freq : float
         partial safety factor for fatigue
-    blade_number : TODO: add type by hand, could not be parsed automatically
+    blade_number : int
         number of rotor blades
     
     Returns
@@ -103,7 +103,7 @@ class TipDeflectionConstraint(ExplicitComponent):
     
     Parameters
     ----------
-    rotor_orientation : TODO: add type by hand, could not be parsed automatically
+    rotor_orientation : string
         Rotor orientation, either upwind or downwind.
     tip_deflection : float
         Blade tip deflection in yaw x-direction
@@ -150,7 +150,7 @@ class TipDeflectionConstraint(ExplicitComponent):
         tower_init_options   = analysis_options['tower']
         n_height_tow         = tower_init_options['n_height']
         
-        self.add_discrete_input('rotor_orientation', val='upwind', either upwind or downwind.')
+        self.add_discrete_input('rotor_orientation', val='upwind')
         self.add_input('tip_deflection', val=0.0, units='m')
         self.add_input('Rtip', val=0.0, units='m')
         self.add_input('ref_axis_blade', val=np.zeros((n_span, 3)), units='m')

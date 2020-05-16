@@ -127,7 +127,7 @@ for line in content:
                 parsed_data['inputs'][var_name] = {'type_' : type_, 'desc' : desc}
             else:
                 parsed_data['outputs'][var_name] = {'type_' : type_, 'desc' : desc}
-                    
+                
     elif 'compute(' in line:
         in_class_flag = False
         
