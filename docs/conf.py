@@ -15,6 +15,7 @@ import sys
 cwd = os.getcwd()
 wisdempath = os.path.dirname(cwd)
 sys.path.insert(0, wisdempath)
+sys.path.insert(0, os.path.abspath('./_exts'))
 
 
 # -- Project information -----------------------------------------------------
@@ -40,7 +41,8 @@ extensions = ['sphinx.ext.autodoc',
               'numpydoc',
               'sphinx.ext.autosummary',
               'sphinxcontrib.bibtex',
-              'sphinx.ext.intersphinx'
+              'sphinx.ext.intersphinx',
+              'embed_n2',
 ]
 
 # Numbering figures in HTML format (always numbered in latex)
@@ -56,6 +58,15 @@ master_doc = 'index'
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+
+# -- Autodoc options ------------------------------------------------------
+autodoc_default_options = {
+    'members': 'var1, var2',
+    'member-order': 'bysource',
+    'undoc-members': True,
+    'exclude-members': '__weakref__'
+}
 
 
 # -- Options for HTML output ----------------------------------------------

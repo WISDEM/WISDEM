@@ -42,6 +42,82 @@ def get_npts(nFull):
 
 
 class DiscretizationYAML(om.ExplicitComponent):
+    """
+    Replace this with docstring
+    
+    Parameters
+    ----------
+    tower_s : numpy array[n_height_tow]
+        1D array of the non-dimensional grid defined along the tower axis (0-tower base,
+    1-tower top)
+    tower_layer_materials : TODO: add type by hand, could not be parsed automatically
+        1D array of the names of the materials of each layer modeled in the tower
+    structure.
+    tower_layer_thickness : numpy array[n_layers_tow, n_height_tow-1]
+        2D array of the thickness of the layers of the tower structure. The first
+    dimension represents each layer, the second dimension represents each piecewise-
+    constant entry of the tower sections.
+    tower_height : float
+        Scalar of the tower height computed along the z axis.
+    tower_outer_diameter_in : numpy array[n_height_tow]
+        cylinder diameter at corresponding locations
+    tower_outfitting_factor : float
+        Multiplier that accounts for secondary structure mass inside of cylinder
+    monopile_s : numpy array[n_height_mon]
+        1D array of the non-dimensional grid defined along the tower axis (0-tower base,
+    1-tower top)
+    monopile_layer_materials : TODO: add type by hand, could not be parsed automatically
+        1D array of the names of the materials of each layer modeled in the tower
+    structure.
+    monopile_layer_thickness : numpy array[n_layers_mon, n_height_mon_minus]
+        2D array of the thickness of the layers of the tower structure. The first
+    dimension represents each layer, the second dimension represents each piecewise-
+    constant entry of the tower sections.
+    monopile_height : float
+        Scalar of the tower height computed along the z axis.
+    monopile_outer_diameter_in : numpy array[n_height_tow]
+        cylinder diameter at corresponding locations
+    monopile_outfitting_factor : float
+        Multiplier that accounts for secondary structure mass inside of cylinder
+    material_names : TODO: add type by hand, could not be parsed automatically
+        1D array of names of materials.
+    E_mat : numpy array[n_mat, 3]
+        2D array of the Youngs moduli of the materials. Each row represents a material,
+    the three columns represent E11, E22 and E33.
+    G_mat : numpy array[n_mat, 3]
+        2D array of the shear moduli of the materials. Each row represents a material,
+    the three columns represent G12, G13 and G23.
+    sigma_y_mat : numpy array[n_mat]
+        2D array of the yield strength of the materials. Each row represents a material,
+    the three columns represent Xt12, Xt13 and Xt23.
+    rho_mat : numpy array[n_mat]
+        1D array of the density of the materials. For composites, this is the density of
+    the laminate.
+    unit_cost_mat : numpy array[n_mat]
+        1D array of the unit costs of the materials.
+    
+    Returns
+    -------
+    tower_section_height : numpy array[n_height-1]
+        parameterized section heights along cylinder
+    tower_outer_diameter : numpy array[n_height]
+        cylinder diameter at corresponding locations
+    tower_wall_thickness : numpy array[n_height-1]
+        shell thickness at corresponding locations
+    outfitting_factor : numpy array[n_height-1]
+        Multiplier that accounts for secondary structure mass inside of cylinder
+    E : numpy array[n_height-1]
+        Isotropic Youngs modulus of the materials along the tower sections.
+    G : numpy array[n_height-1]
+        Isotropic shear modulus of the materials along the tower sections.
+    sigma_y : numpy array[n_height-1]
+        Isotropic yield strength of the materials along the tower sections.
+    rho : numpy array[n_height-1]
+        Density of the materials along the tower sections.
+    unit_cost : numpy array[n_height-1]
+        Unit costs of the materials along the tower sections.
+    
+    """
     def initialize(self):
         self.options.declare('n_height_tower')
         self.options.declare('n_height_monopile')
@@ -64,40 +140,35 @@ class DiscretizationYAML(om.ExplicitComponent):
             
         # Inputs here are the outputs from the Tower component in load_IEA_yaml
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
-        self.add_input('tower_s',        val=np.zeros(n_height_tow),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_discrete_input('tower_layer_materials',     val=n_layers_tow * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-        self.add_input('tower_layer_thickness',     val=np.zeros((n_layers_tow, n_height_tow-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
-        self.add_input('tower_height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
-        self.add_input('tower_outer_diameter_in', np.zeros(n_height_tow), units='m', desc='cylinder diameter at corresponding locations')
-        self.add_input('tower_outfitting_factor', val=0.0, desc='Multiplier that accounts for secondary structure mass inside of cylinder')
+        self.add_input('tower_s', val=np.zeros(n_height_tow))
+        self.add_discrete_input('tower_layer_materials', val=n_layers_tow * [''])
+        self.add_input('tower_layer_thickness', val=np.zeros((n_layers_tow, n_height_tow-1)), units='m')
+        self.add_input('tower_height', val = 0.0, units='m')
+        self.add_input('tower_outer_diameter_in', np.zeros(n_height_tow), units='m')
+        self.add_input('tower_outfitting_factor', val=0.0)
+        self.add_input('monopile_s', val=np.zeros(n_height_mon))
+        self.add_discrete_input('monopile_layer_materials', val=n_layers_tow * [''])
+        self.add_input('monopile_layer_thickness', val=np.zeros((n_layers_mon, n_height_mon_minus)), units='m')
+        self.add_input('monopile_height', val = 0.0, units='m')
+        self.add_input('monopile_outer_diameter_in', np.zeros(n_height_tow), units='m')
+        self.add_input('monopile_outfitting_factor', val=0.0)
+        self.add_discrete_input('material_names', val=n_mat * [''])
+        self.add_input('E_mat', val=np.zeros([n_mat, 3]), units='Pa')
+        self.add_input('G_mat', val=np.zeros([n_mat, 3]), units='Pa')
+        self.add_input('sigma_y_mat', val=np.zeros(n_mat), units='Pa')
+        self.add_input('rho_mat', val=np.zeros(n_mat), units='kg/m**3')
+        self.add_input('unit_cost_mat', val=np.zeros(n_mat), units='USD/kg')
 
-        self.add_input('monopile_s',        val=np.zeros(n_height_mon),                 desc='1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)')
-        self.add_discrete_input('monopile_layer_materials',     val=n_layers_tow * [''],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-        self.add_input('monopile_layer_thickness',     val=np.zeros((n_layers_mon, n_height_mon_minus)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
-        self.add_input('monopile_height',   val = 0.0,                  units='m',  desc='Scalar of the tower height computed along the z axis.')
-        self.add_input('monopile_outer_diameter_in', np.zeros(n_height_tow), units='m', desc='cylinder diameter at corresponding locations')
-        self.add_input('monopile_outfitting_factor', val=0.0, desc='Multiplier that accounts for secondary structure mass inside of cylinder')
+        self.add_output('tower_section_height', val=np.zeros(n_height-1), units='m')
+        self.add_output('tower_outer_diameter', val=np.zeros(n_height), units='m')
+        self.add_output('tower_wall_thickness', val=np.zeros(n_height-1), units='m')
+        self.add_output('outfitting_factor', val=np.zeros(n_height-1))
+        self.add_output('E', val=np.zeros(n_height-1), units='Pa')
+        self.add_output('G', val=np.zeros(n_height-1), units='Pa')
+        self.add_output('sigma_y', val=np.zeros(n_height-1), units='Pa')
+        self.add_output('rho', val=np.zeros(n_height-1), units='kg/m**3')
+        self.add_output('unit_cost', val=np.zeros(n_height-1), units='USD/kg')
 
-
-        self.add_discrete_input('material_names', val=n_mat * [''],                         desc='1D array of names of materials.')
-        self.add_input('E_mat',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
-        self.add_input('G_mat',             val=np.zeros([n_mat, 3]), units='Pa',     desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
-        self.add_input('sigma_y_mat',       val=np.zeros(n_mat),      units='Pa',     desc='2D array of the yield strength of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
-        self.add_input('rho_mat',           val=np.zeros(n_mat),      units='kg/m**3',desc='1D array of the density of the materials. For composites, this is the density of the laminate.')
-        self.add_input('unit_cost_mat',     val=np.zeros(n_mat),      units='USD/kg', desc='1D array of the unit costs of the materials.')
-
-        
-        self.add_output('tower_section_height', val=np.zeros(n_height-1), units='m', desc='parameterized section heights along cylinder')
-        self.add_output('tower_outer_diameter', val=np.zeros(n_height), units='m', desc='cylinder diameter at corresponding locations')
-        self.add_output('tower_wall_thickness', val=np.zeros(n_height-1), units='m', desc='shell thickness at corresponding locations')
-        self.add_output('outfitting_factor', val=np.zeros(n_height-1), desc='Multiplier that accounts for secondary structure mass inside of cylinder')
-        
-        self.add_output('E',             val=np.zeros(n_height-1), units='Pa',     desc='Isotropic Youngs modulus of the materials along the tower sections.')
-        self.add_output('G',             val=np.zeros(n_height-1), units='Pa',     desc='Isotropic shear modulus of the materials along the tower sections.')
-        self.add_output('sigma_y',       val=np.zeros(n_height-1), units='Pa',     desc='Isotropic yield strength of the materials along the tower sections.')
-        self.add_output('rho',           val=np.zeros(n_height-1), units='kg/m**3',desc='Density of the materials along the tower sections.')
-        self.add_output('unit_cost',     val=np.zeros(n_height-1), units='USD/kg', desc='Unit costs of the materials along the tower sections.')
-        
         # self.declare_partials('*', '*', method='fd')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -229,16 +300,36 @@ class DiscretizationYAML(om.ExplicitComponent):
 
         
 class MonopileFoundation(om.ExplicitComponent):
+    """
+    Replace this with docstring
+    
+    Parameters
+    ----------
+    suctionpile_depth : float
+        depth of foundation in the soil
+    suctionpile_depth_diam_ratio : float
+        ratio of sunction pile depth to mudline monopile diameter
+    foundation_height : float
+        height of foundation (0.0 for land, -water_depth for fixed bottom)
+    base_diameter : float
+        cylinder diameter at base
+    
+    Returns
+    -------
+    z_start : float
+        parameterized section heights along cylinder
+    
+    """
     def initialize(self):
         self.options.declare('monopile')
     
     def setup(self):
-        self.add_input('suctionpile_depth', 0.0, units='m', desc='depth of foundation in the soil')
-        self.add_input('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
-        self.add_input('foundation_height', 0.0, units='m', desc='height of foundation (0.0 for land, -water_depth for fixed bottom)')
-        self.add_input('base_diameter', 0.0, units='m', desc='cylinder diameter at base')
+        self.add_input('suctionpile_depth', 0.0, units='m')
+        self.add_input('suctionpile_depth_diam_ratio', 0.0)
+        self.add_input('foundation_height', 0.0, units='m')
+        self.add_input('base_diameter', 0.0, units='m')
 
-        self.add_output('z_start', 0.0, units='m', desc='parameterized section heights along cylinder')
+        self.add_output('z_start', 0.0, units='m')
         
         self.declare_partials('*', '*', method='fd')
 
@@ -253,6 +344,36 @@ class MonopileFoundation(om.ExplicitComponent):
             
                                                  
 class TowerDiscretization(om.ExplicitComponent):
+    """
+    Replace this with docstring
+    
+    Parameters
+    ----------
+    hub_height : float
+        diameter at tower base
+    z_param : numpy array[n_height]
+        parameterized locations along tower, linear lofting between
+    z_full : numpy array[nFull]
+        parameterized locations along tower, linear lofting between
+    rho : numpy array[n_height-1]
+        Density of the materials along the tower sections.
+    unit_cost : numpy array[n_height-1]
+        Unit costs of the materials along the tower sections.
+    outfitting_factor : numpy array[n_height-1]
+        Multiplier that accounts for secondary structure mass inside of cylinder
+    
+    Returns
+    -------
+    height_constraint : float
+        mismatch between tower height and desired hub_height
+    rho_full : numpy array[nFull-1]
+        Density of the materials along the tower sections.
+    unit_cost_full : numpy array[nFull-1]
+        Unit costs of the materials along the tower sections.
+    outfitting_full : numpy array[nFull-1]
+        Multiplier that accounts for secondary structure mass inside of cylinder
+    
+    """
     def initialize(self):
         self.options.declare('n_height')
     
@@ -260,19 +381,17 @@ class TowerDiscretization(om.ExplicitComponent):
         n_height = self.options['n_height']
         nFull = get_nfull(n_height)
 
-        self.add_input('hub_height', val=0.0, units='m', desc='diameter at tower base')
-        self.add_input('z_param', np.zeros(n_height), units='m', desc='parameterized locations along tower, linear lofting between')
-        self.add_input('z_full', val=np.zeros(nFull), units='m', desc='parameterized locations along tower, linear lofting between')
+        self.add_input('hub_height', val=0.0, units='m')
+        self.add_input('z_param', np.zeros(n_height), units='m')
+        self.add_input('z_full', val=np.zeros(nFull), units='m')
+        self.add_input('rho', val=np.zeros(n_height-1), units='kg/m**3')
+        self.add_input('unit_cost', val=np.zeros(n_height-1), units='USD/kg')
+        self.add_input('outfitting_factor', val=np.zeros(n_height-1))
 
-        self.add_input('rho',           val=np.zeros(n_height-1), units='kg/m**3',desc='Density of the materials along the tower sections.')
-        self.add_input('unit_cost',     val=np.zeros(n_height-1), units='USD/kg', desc='Unit costs of the materials along the tower sections.')
-        self.add_input('outfitting_factor', val=np.zeros(n_height-1), desc='Multiplier that accounts for secondary structure mass inside of cylinder')
-        
-        self.add_output('height_constraint', val=0.0, units='m', desc='mismatch between tower height and desired hub_height')
-
-        self.add_output('rho_full',           val=np.zeros(nFull-1), units='kg/m**3',desc='Density of the materials along the tower sections.')
-        self.add_output('unit_cost_full',     val=np.zeros(nFull-1), units='USD/kg', desc='Unit costs of the materials along the tower sections.')
-        self.add_output('outfitting_full', val=np.zeros(nFull-1), desc='Multiplier that accounts for secondary structure mass inside of cylinder')
+        self.add_output('height_constraint', val=0.0, units='m')
+        self.add_output('rho_full', val=np.zeros(nFull-1), units='kg/m**3')
+        self.add_output('unit_cost_full', val=np.zeros(nFull-1), units='USD/kg')
+        self.add_output('outfitting_full', val=np.zeros(nFull-1))
         
         self.declare_partials('height_constraint', ['hub_height', 'z_param'], method='fd')
         self.declare_partials('outfitting_full', ['outfitting_factor'], method='fd')
@@ -298,6 +417,52 @@ class TowerDiscretization(om.ExplicitComponent):
     
             
 class TowerMass(om.ExplicitComponent):
+    """
+    Compute the tower and monopile masses, raw cost, and CG properties.
+    
+    Parameters
+    ----------
+    cylinder_mass : numpy array[nFull-1]
+        Total cylinder mass
+    cylinder_cost : float
+        Total cylinder cost
+    cylinder_center_of_mass : float
+        z position of center of mass of cylinder
+    cylinder_section_center_of_mass : numpy array[nFull-1]
+        z position of center of mass of each can in the cylinder
+    cylinder_I_base : numpy array[6]
+        Mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
+    transition_piece_height : float
+        Point mass height of transition piece above water line
+    transition_piece_mass : float
+        Point mass of transition piece
+    gravity_foundation_mass : float
+        Extra mass of gravity foundation
+    foundation_height : float 
+        Height of foundation (0.0 for land, -water_depth for fixed bottom)
+    z_full : numpy array[nFull]
+        Parameterized locations along tower, linear lofting between
+    
+    Returns
+    -------
+    tower_raw_cost : float
+        Total tower cost
+    tower_mass : float
+        Total tower mass
+    tower_center_of_mass : float
+        z-position of center of mass of tower
+    tower_section_center_of_mass : numpy array[nFull-1]
+        z position of center of mass of each can in the tower
+    tower_I_base : numpy array[6]
+        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
+    monopile_mass : float 
+        Mass of monopile from bottom of suction pile through transition piece
+    monopile_cost : float
+        Total monopile cost
+    monopile_length : float
+        Length of monopile from bottom of suction pile through transition piece
+        
+    """
 
     def initialize(self):
         self.options.declare('n_height')
@@ -306,27 +471,25 @@ class TowerMass(om.ExplicitComponent):
         n_height = self.options['n_height']
         nFull = get_nfull(n_height)
         
-        self.add_input('cylinder_mass', val=np.zeros(nFull-1), units='kg', desc='Total cylinder mass')
-        self.add_input('cylinder_cost', val=0.0, units='USD', desc='Total cylinder cost')
-        self.add_input('cylinder_center_of_mass', val=0.0, units='m', desc='z-position of center of mass of cylinder')
-        self.add_input('cylinder_section_center_of_mass', val=np.zeros(nFull-1), units='m', desc='z position of center of mass of each can in the cylinder')
-        self.add_input('cylinder_I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of cylinder about base [xx yy zz xy xz yz]')
+        self.add_input('cylinder_mass', val=np.zeros(nFull-1), units='kg')
+        self.add_input('cylinder_cost', val=0.0, units='USD')
+        self.add_input('cylinder_center_of_mass', val=0.0, units='m')
+        self.add_input('cylinder_section_center_of_mass', val=np.zeros(nFull-1), units='m')
+        self.add_input('cylinder_I_base', np.zeros(6), units='kg*m**2')
+        self.add_input('transition_piece_height', 0.0, units='m')
+        self.add_input('transition_piece_mass', 0.0, units='kg')
+        self.add_input('gravity_foundation_mass', 0.0, units='kg')
+        self.add_input('foundation_height', 0.0, units='m')
+        self.add_input('z_full', val=np.zeros(nFull), units='m')
 
-        self.add_input('transition_piece_height', 0.0, units='m', desc='point mass height of transition piece above water line')
-        self.add_input('transition_piece_mass', 0.0, units='kg', desc='point mass of transition piece')
-        self.add_input('gravity_foundation_mass', 0.0, units='kg', desc='extra mass of gravity foundation')
-        self.add_input('foundation_height', 0.0, units='m', desc='height of foundation (0.0 for land, -water_depth for fixed bottom)')
-        self.add_input('z_full', val=np.zeros(nFull), units='m', desc='parameterized locations along tower, linear lofting between')
-        
-        self.add_output('tower_raw_cost', val=0.0, units='USD', desc='Total tower cost')
-        self.add_output('tower_mass', val=0.0, units='kg', desc='Total tower mass')
-        self.add_output('tower_center_of_mass', val=0.0, units='m', desc='z-position of center of mass of tower')
-        self.add_output('tower_section_center_of_mass', val=np.zeros(nFull-1), units='m', desc='z position of center of mass of each can in the tower')
-        self.add_output('tower_I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of tower about base [xx yy zz xy xz yz]')
-
-        self.add_output('monopile_mass', val=0.0, units='kg', desc='Mass of monopile from bottom of suction pile through transition piece')
-        self.add_output('monopile_cost', val=0.0, units='USD', desc='Total monopile cost')
-        self.add_output('monopile_length', val=0.0, units='m', desc='Length of monopile from bottom of suction pile through transition piece')
+        self.add_output('tower_raw_cost', val=0.0, units='USD')
+        self.add_output('tower_mass', val=0.0, units='kg')
+        self.add_output('tower_center_of_mass', val=0.0, units='m')
+        self.add_output('tower_section_center_of_mass', val=np.zeros(nFull-1), units='m')
+        self.add_output('tower_I_base', np.zeros(6), units='kg*m**2')
+        self.add_output('monopile_mass', val=0.0, units='kg')
+        self.add_output('monopile_cost', val=0.0, units='USD')
+        self.add_output('monopile_length', val=0.0, units='m')
         
         self.declare_partials('monopile_cost', ['transition_piece_height', 'z_full'], method='fd')
         self.declare_partials('monopile_length', ['transition_piece_height', 'z_full'], method='fd')
@@ -336,7 +499,6 @@ class TowerMass(om.ExplicitComponent):
         self.declare_partials('tower_mass', ['cylinder_mass', 'transition_piece_height', 'z_full'], method='fd')
         self.declare_partials('tower_raw_cost', ['cylinder_cost'], method='fd')
         self.declare_partials('tower_section_center_of_mass', ['cylinder_section_center_of_mass'], method='fd')
-        
         
     def compute(self, inputs, outputs):
         outputs['tower_raw_cost']       = inputs['cylinder_cost']
@@ -356,15 +518,15 @@ class TowerMass(om.ExplicitComponent):
         outputs['monopile_mass']  += inputs['transition_piece_mass'] + inputs['gravity_foundation_mass']
         outputs['monopile_length'] = inputs['transition_piece_height'] - inputs['z_full'][0]
 
-        self.J = {}
-        self.J['monopile_mass', 'z_full'] = dydxp[0,:]
-        self.J['monopile_mass', 'cylinder_mass'] = dydyp[0,1:]
-        self.J['monopile_mass', 'transition_piece_height'] = dydx[0,0]
-
-        self.J['monopile_cost', 'z_full'] = inputs['cylinder_cost'] * self.J['monopile_mass', 'z_full'] / inputs['cylinder_mass'].sum()
-        self.J['monopile_cost', 'cylinder_cost'] = outputs['monopile_mass']/ inputs['cylinder_mass']
-        self.J['monopile_cost', 'cylinder_mass'] = inputs['cylinder_cost']*self.J['monopile_mass', 'cylinder_mass']/inputs['cylinder_mass'] - outputs['monopile_cost']/inputs['cylinder_mass']
-        self.J['monopile_cost', 'transition_piece_height'] = inputs['cylinder_cost'] * self.J['monopile_mass', 'transition_piece_height'] / inputs['cylinder_mass']
+        # self.J = {}
+        # self.J['monopile_mass', 'z_full'] = dydxp[0,:]
+        # self.J['monopile_mass', 'cylinder_mass'] = dydyp[0,1:]
+        # self.J['monopile_mass', 'transition_piece_height'] = dydx[0,0]
+        # 
+        # self.J['monopile_cost', 'z_full'] = inputs['cylinder_cost'] * self.J['monopile_mass', 'z_full'] / inputs['cylinder_mass'].sum()
+        # self.J['monopile_cost', 'cylinder_cost'] = outputs['monopile_mass']/ inputs['cylinder_mass']
+        # self.J['monopile_cost', 'cylinder_mass'] = inputs['cylinder_cost']*self.J['monopile_mass', 'cylinder_mass']/inputs['cylinder_mass'] - outputs['monopile_cost']/inputs['cylinder_mass']
+        # self.J['monopile_cost', 'transition_piece_height'] = inputs['cylinder_cost'] * self.J['monopile_mass', 'transition_piece_height'] / inputs['cylinder_mass']
         
     # def compute_partials(self, inputs, J):
     #     J['tower_mass','cylinder_mass'] = np.ones(len(inputs['cylinder_mass'])) - self.J['monopile_mass', 'cylinder_mass']
@@ -397,33 +559,63 @@ class TowerMass(om.ExplicitComponent):
         
         
 class TurbineMass(om.ExplicitComponent):
+    """
+    Compute the turbine mass, center of mass, and mass moment of inertia.
+    
+    Parameters
+    ----------
+    hub_height : float
+        Hub height
+    rna_mass : float
+        Total tower mass
+    rna_I : numpy array[6]
+        Mass moment of inertia of RNA about tower top [xx yy zz xy xz yz]
+    rna_cg : numpy array[3]
+        xyz-location of RNA cg relative to tower top
+    tower_mass : float
+        Total tower mass (not including monopile)
+    monopile_mass : float
+        Monopile mass
+    tower_center_of_mass : float
+        z-position of center of mass of tower
+    tower_I_base : numpy array[6]
+        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
+        
+    Returns
+    -------
+    turbine_mass : float
+        Total mass of tower and RNA combined
+    turbine_center_of_mass : numpy array[3]
+        xyz-position of tower and RNA center of mass
+    turbine_I_base : numpy array[6]
+        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
+        
+    """
 
     def setup(self):
-        
-        self.add_input('hub_height', val=0.0, units='m', desc='Hub-height')
-        self.add_input('rna_mass', val=0.0, units='kg', desc='Total tower mass')
-        self.add_input('rna_I', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of rna about tower top [xx yy zz xy xz yz]')
-        self.add_input('rna_cg', np.zeros((3,)), units='m', desc='xyz-location of rna cg relative to tower top')
-        
-        self.add_input('tower_mass', val=0.0, units='kg', desc='Total tower mass (not including monopile)')
-        self.add_input('monopile_mass', val=0.0, units='kg', desc='Monopile mass')
-        self.add_input('tower_center_of_mass', val=0.0, units='m', desc='z-position of center of mass of tower')
-        self.add_input('tower_I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of tower about base [xx yy zz xy xz yz]')
+        self.add_input('hub_height', val=0.0, units='m')
+        self.add_input('rna_mass', val=0.0, units='kg')
+        self.add_input('rna_I', np.zeros(6), units='kg*m**2')
+        self.add_input('rna_cg', np.zeros(3), units='m')
+        self.add_input('tower_mass', val=0.0, units='kg')
+        self.add_input('monopile_mass', val=0.0, units='kg')
+        self.add_input('tower_center_of_mass', val=0.0, units='m')
+        self.add_input('tower_I_base', np.zeros(6), units='kg*m**2')
 
-        self.add_output('turbine_mass', val=0.0, units='kg', desc='Total mass of tower+rna')
-        self.add_output('turbine_center_of_mass', val=np.zeros((3,)), units='m', desc='xyz-position of tower+rna center of mass')
-        self.add_output('turbine_I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of tower about base [xx yy zz xy xz yz]')
-       
+        self.add_output('turbine_mass', val=0.0, units='kg')
+        self.add_output('turbine_center_of_mass', val=np.zeros(3), units='m')
+        self.add_output('turbine_I_base', np.zeros(6), units='kg*m**2')
+        
         self.declare_partials('turbine_I_base', ['hub_height', 'rna_I', 'rna_cg', 'rna_mass', 'tower_I_base'], method='fd')
         self.declare_partials('turbine_center_of_mass', ['hub_height', 'monopile_mass', 'rna_cg', 'rna_mass', 'tower_center_of_mass', 'tower_mass'], method='fd')
-        self.declare_partials('turbine_mass', ['monopile_mass', 'rna_mass', 'tower_mass'], method='fd')
+        self.declare_partials('turbine_mass', ['monopile_mass', 'rna_mass', 'tower_mass'], val=1.)
         
     def compute(self, inputs, outputs):
         outputs['turbine_mass'] = inputs['rna_mass'] + inputs['tower_mass'] + inputs['monopile_mass']
         
         cg_rna   = inputs['rna_cg'] + np.array([0.0, 0.0, inputs['hub_height']])
         cg_tower = np.array([0.0, 0.0, inputs['tower_center_of_mass']])
-        outputs['turbine_center_of_mass'] = (inputs['rna_mass']*cg_rna + inputs['tower_mass']*cg_tower) / outputs['turbine_mass']
+        outputs['turbine_center_of_mass'] = (inputs['rna_mass'] * cg_rna + inputs['tower_mass'] * cg_tower) / outputs['turbine_mass']
 
         R       = cg_rna
         I_tower = assembleI(inputs['tower_I_base'])
@@ -432,6 +624,104 @@ class TurbineMass(om.ExplicitComponent):
 
         
 class TowerPreFrame(om.ExplicitComponent):
+    """
+    Replace this with docstring
+    
+    Parameters
+    ----------
+    z_full : numpy array[nFull]
+        location along tower. start at bottom and go to top
+    d_full : numpy array[nFull]
+        diameter along tower
+    z_param : numpy array[n_height]
+        parameterized locations along tower, linear lofting between
+    mass : float
+        added mass
+    mI : numpy array[6]
+        mass moment of inertia about some point p [xx yy zz xy xz yz]
+    mrho : numpy array[3]
+        xyz-location of p relative to node
+    transition_piece_mass : float
+        point mass of transition piece
+    gravity_foundation_mass : float
+        point mass of transition piece
+    transition_piece_height : float
+        height of transition piece above water line
+    foundation_height : float
+        height of foundation (0.0 for land, -water_depth for fixed bottom)
+    rna_F : numpy array[3]
+        rna force
+    rna_M : numpy array[3]
+        rna moment
+    k_monopile : numpy array[6]
+        Stiffness BCs for ocean soil. Only used if monoflag inputis True
+    E : numpy array[n_height-1]
+        Isotropic Youngs modulus of the materials along the tower sections.
+    G : numpy array[n_height-1]
+        Isotropic shear modulus of the materials along the tower sections.
+    sigma_y : numpy array[n_height-1]
+        Isotropic yield strength of the materials along the tower sections.
+    
+    Returns
+    -------
+    E_full : numpy array[nFull-1]
+        Isotropic Youngs modulus of the materials along the tower sections.
+    G_full : numpy array[nFull-1]
+        Isotropic shear modulus of the materials along the tower sections.
+    sigma_y_full : numpy array[nFull-1]
+        Isotropic yield strength of the materials along the tower sections.
+    kidx : numpy array[np.int_]
+        indices of z where external stiffness reactions should be applied.
+    kx : numpy array[nK]
+        spring stiffness in x-direction
+    ky : numpy array[nK]
+        spring stiffness in y-direction
+    kz : numpy array[nK]
+        spring stiffness in z-direction
+    ktx : numpy array[nK]
+        spring stiffness in theta_x-rotation
+    kty : numpy array[nK]
+        spring stiffness in theta_y-rotation
+    ktz : numpy array[nK]
+        spring stiffness in theta_z-rotation
+    midx : numpy array[np.int_]
+        indices where added mass should be applied.
+    m : numpy array[nMass]
+        added mass
+    mIxx : numpy array[nMass]
+        x mass moment of inertia about some point p
+    mIyy : numpy array[nMass]
+        y mass moment of inertia about some point p
+    mIzz : numpy array[nMass]
+        z mass moment of inertia about some point p
+    mIxy : numpy array[nMass]
+        xy mass moment of inertia about some point p
+    mIxz : numpy array[nMass]
+        xz mass moment of inertia about some point p
+    mIyz : numpy array[nMass]
+        yz mass moment of inertia about some point p
+    mrhox : numpy array[nMass]
+        x-location of p relative to node
+    mrhoy : numpy array[nMass]
+        y-location of p relative to node
+    mrhoz : numpy array[nMass]
+        z-location of p relative to node
+    plidx : numpy array[np.int_]
+        indices where point loads should be applied.
+    Fx : numpy array[nPL]
+        point force in x-direction
+    Fy : numpy array[nPL]
+        point force in y-direction
+    Fz : numpy array[nPL]
+        point force in z-direction
+    Mxx : numpy array[nPL]
+        point moment about x-axis
+    Myy : numpy array[nPL]
+        point moment about y-axis
+    Mzz : numpy array[nPL]
+        point moment about z-axis
+    
+    """
     """
     This component can be simplified by using src_indices for data-passing.
     At the very least, we can code the sparse derivatives as-is for
@@ -445,68 +735,68 @@ class TowerPreFrame(om.ExplicitComponent):
         n_height = self.options['n_height']
         nFull   = get_nfull(n_height)
         
-        self.add_input('z_full', np.zeros(nFull), units='m', desc='location along tower. start at bottom and go to top')
-        self.add_input('d_full', np.zeros(nFull), units='m', desc='diameter along tower')
-        self.add_input('z_param', np.zeros(n_height), units='m', desc='parameterized locations along tower, linear lofting between')
-
+        self.add_input('z_full', np.zeros(nFull), units='m')
+        self.add_input('d_full', np.zeros(nFull), units='m')
+        self.add_input('z_param', np.zeros(n_height), units='m')
+        
         # extra mass
-        self.add_input('mass', 0.0, units='kg', desc='added mass')
-        self.add_input('mI', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia about some point p [xx yy zz xy xz yz]')
-        self.add_input('mrho', np.zeros((3,)), units='m', desc='xyz-location of p relative to node')
-        self.add_input('transition_piece_mass', 0.0, units='kg', desc='point mass of transition piece')
-        self.add_input('gravity_foundation_mass', 0.0, units='kg', desc='point mass of transition piece')
-        self.add_input('transition_piece_height', 0.0, units='m', desc='height of transition piece above water line')
-        self.add_input('foundation_height', 0.0, units='m', desc='height of foundation (0.0 for land, -water_depth for fixed bottom)')
+        self.add_input('mass', 0.0, units='kg')
+        self.add_input('mI', np.zeros(6), units='kg*m**2')
+        self.add_input('mrho', np.zeros(3), units='m')
+        self.add_input('transition_piece_mass', 0.0, units='kg')
+        self.add_input('gravity_foundation_mass', 0.0, units='kg')
+        self.add_input('transition_piece_height', 0.0, units='m')
+        self.add_input('foundation_height', 0.0, units='m')
         
         # point loads
-        self.add_input('rna_F', np.zeros((3,)), units='N', desc='rna force')
-        self.add_input('rna_M', np.zeros((3,)), units='N*m', desc='rna moment')
-
+        self.add_input('rna_F', np.zeros(3), units='N')
+        self.add_input('rna_M', np.zeros(3), units='N*m')
+        
         # Monopile handling
-        self.add_input('k_monopile', np.zeros(6), units='N/m', desc='Stiffness BCs for ocean soil.  Only used if monoflag inputis True')
-
+        self.add_input('k_monopile', np.zeros(6), units='N/m')
+        
         # Material property discretization
-        self.add_input('E',             val=np.zeros(n_height-1), units='Pa',     desc='Isotropic Youngs modulus of the materials along the tower sections.')
-        self.add_input('G',             val=np.zeros(n_height-1), units='Pa',     desc='Isotropic shear modulus of the materials along the tower sections.')
-        self.add_input('sigma_y',       val=np.zeros(n_height-1), units='Pa',     desc='Isotropic yield strength of the materials along the tower sections.')
+        self.add_input('E', val=np.zeros(n_height-1), units='Pa')
+        self.add_input('G', val=np.zeros(n_height-1), units='Pa')
+        self.add_input('sigma_y', val=np.zeros(n_height-1), units='Pa')
 
-        self.add_output('E_full',       val=np.zeros(nFull-1), units='Pa',     desc='Isotropic Youngs modulus of the materials along the tower sections.')
-        self.add_output('G_full',       val=np.zeros(nFull-1), units='Pa',     desc='Isotropic shear modulus of the materials along the tower sections.')
-        self.add_output('sigma_y_full', val=np.zeros(nFull-1), units='Pa',     desc='Isotropic yield strength of the materials along the tower sections.')
+        self.add_output('E_full', val=np.zeros(nFull-1), units='Pa')
+        self.add_output('G_full', val=np.zeros(nFull-1), units='Pa')
+        self.add_output('sigma_y_full', val=np.zeros(nFull-1), units='Pa')
         
         # spring reaction data.
         nK = 1
-        self.add_output('kidx', np.zeros(nK, dtype=np.int_), desc='indices of z where external stiffness reactions should be applied.')
-        self.add_output('kx', np.zeros(nK), units='N/m', desc='spring stiffness in x-direction')
-        self.add_output('ky', np.zeros(nK), units='N/m', desc='spring stiffness in y-direction')
-        self.add_output('kz', np.zeros(nK), units='N/m', desc='spring stiffness in z-direction')
-        self.add_output('ktx', np.zeros(nK), units='N/m', desc='spring stiffness in theta_x-rotation')
-        self.add_output('kty', np.zeros(nK), units='N/m', desc='spring stiffness in theta_y-rotation')
-        self.add_output('ktz', np.zeros(nK), units='N/m', desc='spring stiffness in theta_z-rotation')
+        self.add_output('kidx', np.zeros(nK, dtype=np.int_))
+        self.add_output('kx', np.zeros(nK), units='N/m')
+        self.add_output('ky', np.zeros(nK), units='N/m')
+        self.add_output('kz', np.zeros(nK), units='N/m')
+        self.add_output('ktx', np.zeros(nK), units='N/m')
+        self.add_output('kty', np.zeros(nK), units='N/m')
+        self.add_output('ktz', np.zeros(nK), units='N/m')
         
         # extra mass
         nMass = 3
-        self.add_output('midx', np.zeros(nMass, dtype=np.int_), desc='indices where added mass should be applied.')
-        self.add_output('m', np.zeros(nMass), units='kg', desc='added mass')
-        self.add_output('mIxx', np.zeros(nMass), units='kg*m**2', desc='x mass moment of inertia about some point p')
-        self.add_output('mIyy', np.zeros(nMass), units='kg*m**2', desc='y mass moment of inertia about some point p')
-        self.add_output('mIzz', np.zeros(nMass), units='kg*m**2', desc='z mass moment of inertia about some point p')
-        self.add_output('mIxy', np.zeros(nMass), units='kg*m**2', desc='xy mass moment of inertia about some point p')
-        self.add_output('mIxz', np.zeros(nMass), units='kg*m**2', desc='xz mass moment of inertia about some point p')
-        self.add_output('mIyz', np.zeros(nMass), units='kg*m**2', desc='yz mass moment of inertia about some point p')
-        self.add_output('mrhox', np.zeros(nMass), units='m', desc='x-location of p relative to node')
-        self.add_output('mrhoy', np.zeros(nMass), units='m', desc='y-location of p relative to node')
-        self.add_output('mrhoz', np.zeros(nMass), units='m', desc='z-location of p relative to node')
-
+        self.add_output('midx', np.zeros(nMass, dtype=np.int_))
+        self.add_output('m', np.zeros(nMass), units='kg')
+        self.add_output('mIxx', np.zeros(nMass), units='kg*m**2')
+        self.add_output('mIyy', np.zeros(nMass), units='kg*m**2')
+        self.add_output('mIzz', np.zeros(nMass), units='kg*m**2')
+        self.add_output('mIxy', np.zeros(nMass), units='kg*m**2')
+        self.add_output('mIxz', np.zeros(nMass), units='kg*m**2')
+        self.add_output('mIyz', np.zeros(nMass), units='kg*m**2')
+        self.add_output('mrhox', np.zeros(nMass), units='m')
+        self.add_output('mrhoy', np.zeros(nMass), units='m')
+        self.add_output('mrhoz', np.zeros(nMass), units='m')
+        
         # point loads (if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also)
         nPL = 1
-        self.add_output('plidx', np.zeros(nPL, dtype=np.int_), desc='indices where point loads should be applied.')
-        self.add_output('Fx', np.zeros(nPL), units='N', desc='point force in x-direction')
-        self.add_output('Fy', np.zeros(nPL), units='N', desc='point force in y-direction')
-        self.add_output('Fz', np.zeros(nPL), units='N', desc='point force in z-direction')
-        self.add_output('Mxx', np.zeros(nPL), units='N*m', desc='point moment about x-axis')
-        self.add_output('Myy', np.zeros(nPL), units='N*m', desc='point moment about y-axis')
-        self.add_output('Mzz', np.zeros(nPL), units='N*m', desc='point moment about z-axis')
+        self.add_output('plidx', np.zeros(nPL, dtype=np.int_))
+        self.add_output('Fx', np.zeros(nPL), units='N')
+        self.add_output('Fy', np.zeros(nPL), units='N')
+        self.add_output('Fz', np.zeros(nPL), units='N')
+        self.add_output('Mxx', np.zeros(nPL), units='N*m')
+        self.add_output('Myy', np.zeros(nPL), units='N*m')
+        self.add_output('Mzz', np.zeros(nPL), units='N*m')
 
         self.declare_partials('E_full', [], method='fd')
         self.declare_partials('Fx', ['rna_F'], method='fd')
@@ -536,7 +826,6 @@ class TowerPreFrame(om.ExplicitComponent):
         self.declare_partials('mrhoz', ['mrho'], method='fd')
         self.declare_partials('plidx', [], method='fd')
         self.declare_partials('sigma_y_full', ['sigma_y'], method='fd')
-
         
     def compute(self, inputs, outputs):
         n_height = self.options['n_height']
@@ -601,6 +890,71 @@ class TowerPreFrame(om.ExplicitComponent):
 
         
 class TowerPostFrame(om.ExplicitComponent):
+    """
+    Replace this with docstring
+    
+    Parameters
+    ----------
+    z_full : numpy array[nFull]
+        location along tower. start at bottom and go to top
+    d_full : numpy array[nFull]
+        effective tower diameter for section
+    t_full : numpy array[nFull-1]
+        effective shell thickness for section
+    E_full : numpy array[nFull-1]
+        modulus of elasticity
+    sigma_y_full : numpy array[nFull-1]
+        yield stress
+    Fz : numpy array[nFull-1]
+        Axial foce in vertical z-direction in cylinder structure.
+    Mxx : numpy array[nFull-1]
+        Moment about x-axis in cylinder structure.
+    Myy : numpy array[nFull-1]
+        Moment about y-axis in cylinder structure.
+    axial_stress : numpy array[nFull-1]
+        axial stress in tower elements
+    shear_stress : numpy array[nFull-1]
+        shear stress in tower elements
+    hoop_stress : numpy array[nFull-1]
+        hoop stress in tower elements
+    top_deflection_in : float
+        Deflection of tower top in yaw-aligned +x direction
+    life : float
+        fatigue life of tower
+    freqs : numpy array[NFREQ]
+        Natural frequencies of the structure
+    x_mode_shapes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the x-direction
+    y_mode_shapes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the x-direction
+    
+    Returns
+    -------
+    structural_frequencies : numpy array[NFREQ]
+        First and second natural frequency
+    fore_aft_modes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the tower fore-aft direction
+    (without constant term)
+    side_side_modes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the tower side-side direction
+    (without constant term)
+    top_deflection : float
+        Deflection of tower top in yaw-aligned +x direction
+    stress : numpy array[nFull-1]
+        Von Mises stress utilization along tower at specified locations. incudes safety
+    factor.
+    shell_buckling : numpy array[nFull-1]
+        Shell buckling constraint. Should be < 1 for feasibility. Includes safety
+    factors
+    global_buckling : numpy array[nFull-1]
+        Global buckling constraint. Should be < 1 for feasibility. Includes safety
+    factors
+    turbine_F : numpy array[3]
+        Total force on tower+rna
+    turbine_M : numpy array[3]
+        Total x-moment on tower+rna measured at base
+    
+    """
     def initialize(self):
         self.options.declare('n_height')
         self.options.declare('analysis_options')
@@ -611,23 +965,23 @@ class TowerPostFrame(om.ExplicitComponent):
         nFull    = get_nfull(n_height)
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
-        self.add_input('z_full', np.zeros(nFull), units='m', desc='location along tower. start at bottom and go to top')
-        self.add_input('d_full', np.zeros(nFull), units='m', desc='effective tower diameter for section')
-        self.add_input('t_full', np.zeros(nFull-1), units='m', desc='effective shell thickness for section')
-
+        self.add_input('z_full', np.zeros(nFull), units='m')
+        self.add_input('d_full', np.zeros(nFull), units='m')
+        self.add_input('t_full', np.zeros(nFull-1), units='m')
+        
         # Material properties
-        self.add_input('E_full', np.zeros(nFull-1), units='N/m**2', desc='modulus of elasticity')
-        self.add_input('sigma_y_full', np.zeros(nFull-1), units='N/m**2', desc='yield stress')
-
+        self.add_input('E_full', np.zeros(nFull-1), units='N/m**2')
+        self.add_input('sigma_y_full', np.zeros(nFull-1), units='N/m**2')
+        
         # Processed Frame3DD outputs
-        self.add_input('Fz', np.zeros(nFull-1), units='N', desc='Axial foce in vertical z-direction in cylinder structure.')
-        self.add_input('Mxx', np.zeros(nFull-1), units='N*m', desc='Moment about x-axis in cylinder structure.')
-        self.add_input('Myy', np.zeros(nFull-1), units='N*m', desc='Moment about y-axis in cylinder structure.')
-        self.add_input('axial_stress', val=np.zeros(nFull-1), units='N/m**2', desc='axial stress in tower elements')
-        self.add_input('shear_stress', val=np.zeros(nFull-1), units='N/m**2', desc='shear stress in tower elements')
-        self.add_input('hoop_stress' , val=np.zeros(nFull-1), units='N/m**2', desc='hoop stress in tower elements')
-        self.add_input('top_deflection_in', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
-
+        self.add_input('Fz', np.zeros(nFull-1), units='N')
+        self.add_input('Mxx', np.zeros(nFull-1), units='N*m')
+        self.add_input('Myy', np.zeros(nFull-1), units='N*m')
+        self.add_input('axial_stress', val=np.zeros(nFull-1), units='N/m**2')
+        self.add_input('shear_stress', val=np.zeros(nFull-1), units='N/m**2')
+        self.add_input('hoop_stress', val=np.zeros(nFull-1), units='N/m**2')
+        self.add_input('top_deflection_in', 0.0, units='m')
+        
         # safety factors
         #self.add_input('gamma_f', 1.35, desc='safety factor on loads')
         #self.add_input('gamma_m', 1.1, desc='safety factor on materials')
@@ -636,30 +990,29 @@ class TowerPostFrame(om.ExplicitComponent):
         #self.add_input('gamma_fatigue', 1.755, desc='total safety factor for fatigue')
 
         # fatigue parameters
-        self.add_input('life', 20.0, desc='fatigue life of tower')
+        self.add_input('life', 20.0)
         #self.add_input('m_SN', 4, desc='slope of S/N curve')
         #self.add_input('DC', 80.0, desc='standard value of stress')
         #self.add_input('z_DEL', np.zeros(nDEL), units='m', desc='absolute z coordinates of corresponding fatigue parameters')
         #self.add_input('M_DEL', np.zeros(nDEL), desc='fatigue parameters at corresponding z coordinates')
-
+        
         # Frequencies
         NFREQ2 = int(NFREQ/2)
-        self.add_input('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
-        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
-        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction')
-        
-        # outputs
-        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First and second natural frequency')
-        self.add_output('fore_aft_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower fore-aft direction (without constant term)')
-        self.add_output('side_side_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower side-side direction (without constant term)')
-        self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
-        self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
-        self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
-        self.add_output('global_buckling', np.zeros(nFull-1), desc='Global buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
+        self.add_input('freqs', val=np.zeros(NFREQ), units='Hz')
+        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2, 5)))
+        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2, 5)))
+
+        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz')
+        self.add_output('fore_aft_modes', np.zeros((NFREQ2, 5)))
+        self.add_output('side_side_modes', np.zeros((NFREQ2, 5)))
+        self.add_output('top_deflection', 0.0, units='m')
+        self.add_output('stress', np.zeros(nFull-1))
+        self.add_output('shell_buckling', np.zeros(nFull-1))
+        self.add_output('global_buckling', np.zeros(nFull-1))
         #self.add_output('damage', np.zeros(nFull-1), desc='Fatigue damage at each tower section')
-        self.add_output('turbine_F', val=np.zeros(3), units='N', desc='Total force on tower+rna')
-        self.add_output('turbine_M', val=np.zeros(3), units='N*m', desc='Total x-moment on tower+rna measured at base')
-        
+        self.add_output('turbine_F', val=np.zeros(3), units='N')
+        self.add_output('turbine_M', val=np.zeros(3), units='N*m')
+
         self.declare_partials('global_buckling', ['Fz', 'Mxx', 'Myy', 'd_full', 'sigma_y_full', 't_full', 'z_full'], method='fd')
         self.declare_partials('shell_buckling', ['axial_stress', 'd_full', 'hoop_stress', 'shear_stress', 'sigma_y_full', 't_full'], method='fd')
         self.declare_partials('stress', ['axial_stress', 'hoop_stress', 'shear_stress', 'sigma_y_full'], method='fd')
@@ -669,7 +1022,6 @@ class TowerPostFrame(om.ExplicitComponent):
         self.declare_partials('top_deflection', ['top_deflection_in'], method='fd')
         self.declare_partials('turbine_F', [], method='fd')
         self.declare_partials('turbine_M', [], method='fd')
-
         
     def compute(self, inputs, outputs):
         # Unpack some variables
