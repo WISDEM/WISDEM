@@ -2,17 +2,35 @@
 from openmdao.api import ExplicitComponent
 
 class TurbineClass(ExplicitComponent):
+    """
+    Compute velocities based on the chosen turbine class
+    
+    Parameters
+    ----------
+    turbine_class : string
+        IEC turbine class
+    V_mean_overwrite : float
+        overwrite value for mean velocity for using user defined CDFs
+    
+    Returns
+    -------
+    V_mean : float
+        IEC mean wind speed for Rayleigh distribution
+    V_extreme1 : float
+        IEC extreme wind speed at hub height for a 1-year retunr period
+    V_extreme50 : float
+        IEC extreme wind speed at hub height for a 50-year retunr period
+    
+    """
     def setup(self):
         # parameters
-        self.add_discrete_input('turbine_class', val='I', desc='IEC turbine class')
-        self.add_input('V_mean_overwrite', val=0., desc='overwrite value for mean velocity for using user defined CDFs')
+        self.add_discrete_input('turbine_class', val='I')
+        self.add_input('V_mean_overwrite', val=0.)
 
-        # outputs should be constant
-        self.add_output('V_mean', shape=1, units='m/s', desc='IEC mean wind speed for Rayleigh distribution')
-        self.add_output('V_extreme1', shape=1, units='m/s', desc='IEC extreme wind speed at hub height for a 1-year retunr period')
-        self.add_output('V_extreme50', shape=1, units='m/s', desc='IEC extreme wind speed at hub height for a 50-year retunr period')
-        # self.add_output('V_extreme_full', shape=2, units='m/s', desc='IEC extreme wind speed at hub height')
-        
+        self.add_output('V_mean', 0.0, units='m/s')
+        self.add_output('V_extreme1', 0.0, units='m/s')
+        self.add_output('V_extreme50', 0.0, units='m/s')
+
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
