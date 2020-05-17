@@ -7,14 +7,81 @@ from wisdem.pymap import pyMAP
 from wisdem.commonse import gravity, Enum
 from wisdem.commonse.utilities import assembleI, unassembleI
 
+
 Anchor    = Enum('DRAGEMBEDMENT SUCTIONPILE')
 NLINES_MAX = 15
 NPTS_PLOT = 20
 
 class MapMooring(ExplicitComponent):
     """
-    OpenMDAO Component class for mooring system attached to sub-structure of floating offshore wind turbines.
+    Sets mooring line properties then writes MAP input file and executes MAP.
+    
+    Component for mooring system attached to sub-structure of floating offshore wind turbines.
     Should be tightly coupled with Spar class for full system representation.
+    
+    Parameters
+    ----------
+    water_density : float
+        density of water
+    water_depth : float
+        water depth
+    fairlead_radius : float
+        Outer spar radius at fairlead depth (point of mooring attachment)
+    fairlead : float
+        Depth below water for mooring line attachment
+    mooring_line_length : float
+        Unstretched total mooring line length
+    anchor_radius : float
+        radius from center of spar to mooring anchor point
+    mooring_diameter : float
+        diameter of mooring line
+    number_of_mooring_connections : float
+        number of mooring connections on vessel
+    mooring_lines_per_connection : float
+        number of mooring lines per connection
+    mooring_type : string
+        chain, nylon, polyester, fiber, or iwrc
+    anchor_type : string
+        SUCTIONPILE or DRAGEMBEDMENT
+    max_offset : float
+        X offsets in discretization
+    operational_heel : float
+        Maximum angle of heel allowable during operation
+    max_survival_heel : float
+        max heel angle for turbine survival
+    gamma_f : float
+        Safety factor for mooring line tension
+    mooring_cost_factor : float
+        miscellaneous cost factor in percent
+    
+    Returns
+    -------
+    number_of_mooring_lines : float
+        total number of mooring lines
+    mooring_mass : float
+        total mass of mooring
+    mooring_moments_of_inertia : numpy array[6]
+        mass moment of inertia of mooring system about fairlead-centerline point [xx yy
+        zz xy xz yz]
+    mooring_cost : float
+        total cost for anchor + legs + miscellaneous costs
+    mooring_stiffness : numpy array[6, 6]
+        Linearized stiffness matrix of mooring system at neutral (no offset) conditions.
+    anchor_cost : float
+        total cost for anchor
+    mooring_neutral_load : numpy array[NLINES_MAX, 3]
+        mooring vertical load in all mooring lines
+    max_offset_restoring_force : float
+        sum of forces in x direction after max offset
+    operational_heel_restoring_force : numpy array[NLINES_MAX, 3]
+        forces for all mooring lines after operational heel
+    mooring_plot_matrix : numpy array[NLINES_MAX, NPTS_PLOT, 3]
+        data matrix for plotting
+    axial_unity : float
+        range of damaged mooring
+    mooring_length_max : float
+        mooring line length ratio to nodal distance
+    
     """
 
     def setup(self):
@@ -29,64 +96,49 @@ class MapMooring(ExplicitComponent):
         self.tlpFlag             = False
 
         # Environment
-        self.add_input('water_density', val=0.0, units='kg/m**3', desc='density of water')
-        self.add_input('water_depth', val=0.0, units='m', desc='water depth')
-
-        # Material properties
-
+        self.add_input('water_density', val=0.0, units='kg/m**3')
+        self.add_input('water_depth', val=0.0, units='m')
+        
         # Inputs from SparGeometry
-        self.add_input('fairlead_radius', val=0.0, units='m', desc='Outer spar radius at fairlead depth (point of mooring attachment)')
+        self.add_input('fairlead_radius', val=0.0, units='m')
         
         # Design variables
-        self.add_input('fairlead', val=0.0, units='m', desc='Depth below water for mooring line attachment')
-        self.add_input('mooring_line_length', val=0.0, units='m',desc='Unstretched total mooring line length')
-        self.add_input('anchor_radius', val=0.0, units='m', desc='radius from center of spar to mooring anchor point')
-        self.add_input('mooring_diameter', val=0.0, units='m',desc='diameter of mooring line')
-
-        # User inputs (could be design variables)
-        self.add_input('number_of_mooring_connections', val=3, desc='number of mooring connections on vessel')
-        self.add_input('mooring_lines_per_connection', val=1, desc='number of mooring lines per connection')
-        self.add_discrete_input('mooring_type', val='CHAIN', desc='chain, nylon, polyester, fiber, or iwrc')
-        self.add_discrete_input('anchor_type', val='DRAGEMBEDMENT', desc='SUCTIONPILE or DRAGEMBEDMENT')
-        self.add_input('max_offset', val=0.0, units='m',desc='X offsets in discretization')
-        self.add_input('operational_heel', val=0.0, units='deg',desc='Maximum angle of heel allowable during operation')
-        self.add_input('max_survival_heel', val=0.0, units='deg', desc='max heel angle for turbine survival')
-        self.add_input('gamma_f', val=0.0, desc='Safety factor for mooring line tension')
-
-        # Cost rates
-        self.add_input('mooring_cost_factor', val=0.0, desc='miscellaneous cost factor in percent')
-
-        # Outputs
-        self.add_output('number_of_mooring_lines', val=0, desc='total number of mooring lines')
-        self.add_output('mooring_mass', val=0.0, units='kg',desc='total mass of mooring')
-        self.add_output('mooring_moments_of_inertia', val=np.zeros(6), units='kg*m**2', desc='mass moment of inertia of mooring system about fairlead-centerline point [xx yy zz xy xz yz]')
-        self.add_output('mooring_cost', val=0.0, units='USD',desc='total cost for anchor + legs + miscellaneous costs')
-        self.add_output('mooring_stiffness', val=np.zeros((6,6)), units='N/m', desc='Linearized stiffness matrix of mooring system at neutral (no offset) conditions.')
-        self.add_output('anchor_cost', val=0.0, units='USD',desc='total cost for anchor')
-        self.add_output('mooring_neutral_load', val=np.zeros((NLINES_MAX,3)), units='N',desc='mooring vertical load in all mooring lines')
-        self.add_output('max_offset_restoring_force', val=0.0, units='N',desc='sum of forces in x direction after max offset')
-        self.add_output('operational_heel_restoring_force', val=np.zeros((NLINES_MAX,3)), units='N',desc='forces for all mooring lines after operational heel')
-        self.add_output('mooring_plot_matrix', val=np.zeros((NLINES_MAX, NPTS_PLOT, 3)), units='m', desc='data matrix for plotting') 
-
-        # Output constriants
-        self.add_output('axial_unity', val=0.0, units='m',desc='range of damaged mooring')
-        self.add_output('mooring_length_max', val=0.0, desc='mooring line length ratio to nodal distance')
+        self.add_input('fairlead', val=0.0, units='m')
+        self.add_input('mooring_line_length', val=0.0, units='m')
+        self.add_input('anchor_radius', val=0.0, units='m')
+        self.add_input('mooring_diameter', val=0.0, units='m')
         
-        # Derivatives
+        # User inputs (could be design variables)
+        self.add_input('number_of_mooring_connections', val=3)
+        self.add_input('mooring_lines_per_connection', val=1)
+        self.add_discrete_input('mooring_type', val='CHAIN')
+        self.add_discrete_input('anchor_type', val='DRAGEMBEDMENT')
+        self.add_input('max_offset', val=0.0, units='m')
+        self.add_input('operational_heel', val=0.0, units='deg')
+        self.add_input('max_survival_heel', val=0.0, units='deg')
+        self.add_input('gamma_f', val=0.0)
+        
+        # Cost rates
+        self.add_input('mooring_cost_factor', val=0.0)
+
+        self.add_output('number_of_mooring_lines', val=0)
+        self.add_output('mooring_mass', val=0.0, units='kg')
+        self.add_output('mooring_moments_of_inertia', val=np.zeros(6), units='kg*m**2')
+        self.add_output('mooring_cost', val=0.0, units='USD')
+        self.add_output('mooring_stiffness', val=np.zeros((6, 6)), units='N/m')
+        self.add_output('anchor_cost', val=0.0, units='USD')
+        self.add_output('mooring_neutral_load', val=np.zeros((NLINES_MAX, 3)), units='N')
+        self.add_output('max_offset_restoring_force', val=0.0, units='N')
+        self.add_output('operational_heel_restoring_force', val=np.zeros((NLINES_MAX, 3)), units='N')
+        self.add_output('mooring_plot_matrix', val=np.zeros((NLINES_MAX, NPTS_PLOT, 3)), units='m')
+        
+        # Constraints
+        self.add_output('axial_unity', val=0.0, units='m')
+        self.add_output('mooring_length_max', val=0.0)
+
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
-        
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        """Sets mooring line properties then writes MAP input file and executes MAP.
-        
-        INPUTS:
-        ----------
-        inputs   : dictionary of input parameters
-        outputs : dictionary of output parameters
-        
-        OUTPUTS  : none (all unknown dictionary values set)
-        """
-
         # Set characteristics based on regressions / empirical data
         self.set_properties(inputs, discrete_inputs)
 

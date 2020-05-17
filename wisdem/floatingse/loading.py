@@ -399,7 +399,7 @@ class FloatingFrame(ExplicitComponent):
         self.add_input('connection_ratio_max', val=0.0)
         
         # Costing
-        self.add_input('material_cost_rate', 0.0, units='USD/kg', aluminum $3.5/kg')
+        self.add_input('material_cost_rate', 0.0, units='USD/kg')
         self.add_input('labor_cost_rate', 0.0, units='USD/min')
         self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
 
