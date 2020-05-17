@@ -12,7 +12,7 @@
 #
 import os
 import sys
-import wisdem
+
 cwd = os.getcwd()
 wisdempath = os.path.dirname(cwd)
 sys.path.insert(0, wisdempath)
