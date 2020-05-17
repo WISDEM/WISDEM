@@ -26,7 +26,7 @@ class Escalator:
             self.wts[i] *= 0.01
             sum += self.wts[i]
         if (abs(sum-1.0) > 0.0001):
-            print "Weights for %s add up to %.5f" % sum
+            print("Weights for %s add up to %.5f" % sum)
             
     def compute(self,ppitbls,sy,sm,ey,em):
         ''' 
@@ -40,7 +40,7 @@ class Escalator:
             #    print 'Skipping GDP'
             #    continue
             if (key not in ppitbls):
-                print 'No PPI table %s' % key
+                print('No PPI table %s' % key)
                 continue           
             if (key == "326150P") and (self.name == "Advanced Blade material costs       "):
             		ce = ppitbls[key].getEsc(2002,sm,ey,em)
@@ -72,15 +72,15 @@ class PPITbl:
         end_row   = end_yr-self.years[0]
         
         if (start_row < 0):
-            print "\n*** Year start_yr ${0:.2f} before table start {1}\n".format(start_yr,self.years[0])
+            print("\n*** Year start_yr ${0:.2f} before table start {1}\n".format(start_yr,self.years[0]))
             return None
         if (end_row >= len(self.cost)):
-            print "\n*** Year end_yr ${0:.2f} after table end {1}\n".format(end_yr,self.years[-1])
+            print("\n*** Year end_yr ${0:.2f} after table end {1}\n".format(end_yr,self.years[-1]))
             return None            
         if (len(self.cost[start_row]) < start_mon):
             raise IndexError("Start_mon out of range")
         if (len(self.cost[end_row]) < end_mon):
-            print "\n*** EM %d > LER %d in table %s" % (end_mon, len(self.cost[end_row]), self.code)
+            print("\n*** EM %d > LER %d in table %s" % (end_mon, len(self.cost[end_row]), self.code))
             raise IndexError("End_mon out of range")
             
         try:
@@ -89,12 +89,12 @@ class PPITbl:
             cost_start = self.cost[start_row][start_mon-1]
             cost_end   = self.cost[end_row][end_mon-1]
         except:
-            print "Index out of range for table %s %s" % (self.code, self.name)
+            print("Index out of range for table %s %s" % (self.code, self.name))
             return None
         esc = cost_end / cost_start
         if (printFlag):
-            print "%-9s C[%2d][%2d] = %6.2f  C[%2d][%2d] = %6.2f  Esc = %6.4f" % \
-                (self.code, start_yr,start_mon,cost_start,end_yr,end_mon,cost_end,esc)
+            print("%-9s C[%2d][%2d] = %6.2f  C[%2d][%2d] = %6.2f  Esc = %6.4f" % \
+                (self.code, start_yr,start_mon,cost_start,end_yr,end_mon,cost_end,esc))
         return esc
 
 #--------------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ class PPI:
                 ippi = len(self.ppitbls)-1
                 iCode[code] = ippi  # index of tables by code
                 if (self.debug > 0): 
-                    print "Created %2d %-10s %s" % (ippi, code, self.ppitbls[code].name)
+                    print("Created %2d %-10s %s" % (ippi, code, self.ppitbls[code].name))
                 continue
                 
             if (words[0].startswith("NAICS")):
@@ -192,7 +192,7 @@ class PPI:
                 self.ppitbls[code] = PPITbl(code=code, name=words[2])  # add a new element to self.ppitbls
                 ippi = len(self.ppitbls)-1
                 if (self.debug > 0): 
-                    print "Created %2d %-10s %s" % (ippi, code, self.ppitbls[code].name)
+                    print("Created %2d %-10s %s" % (ippi, code, self.ppitbls[code].name))
                 iCode[code] = ippi  # index of tables by code 
                 
             if (found_tables and words[0].startswith("20")): # a year number
@@ -204,7 +204,7 @@ class PPI:
                 self.ppitbls[code].add_row(int(words[0]), rvals)
                 iyr += 1
         
-        print ' '
+        print(' ')
         
         self.escData['IPPI_BLD'] = Escalator( ['Baseline Blade material costs       ',   ['3272123', '3255204', '332722489', '326150P'], [ 60.00,  23.00,  8.00,   9.00 ]  ] )
         self.escData['IPPI_BLA'] = Escalator( ['Advanced Blade material costs       ',   ['3272123', '3255204', '332722489', '326150P'], [ 61.00,  27.00,  3.00,   9.00 ]  ] )
@@ -261,11 +261,11 @@ class PPI:
         # returns the cost escalator for escData object 'escCode', using reference and current yr/mon values
         
         if (escCode not in self.escData):
-            print "Warning - no such code in PPI '${0:.2f}'".format(escCode)
+            print("Warning - no such code in PPI '${0:.2f}'".format(escCode))
             return 0
         esc = self.escData[escCode].compute(self.ppitbls,self.ref_yr,self.ref_mon,self.curr_yr,self.curr_mon)
         if (debug > 0):
-            print "Escalator {} from {}{:02} to {}{:02} = {:.4}".format(escCode,self.ref_yr,self.ref_mon,self.curr_yr,self.curr_mon,esc)
+            print("Escalator {} from {}{:02} to {}{:02} = {:.4}".format(escCode,self.ref_yr,self.ref_mon,self.curr_yr,self.curr_mon,esc))
         return esc
         
 #--------------------------------------------------------------------------------------
@@ -279,12 +279,12 @@ def example():
     ppi = PPI(sy,sm,ey,em)
          
     for i in list(ppi.escData.keys()):
-        print ppi.escData[i].name
+        print(ppi.escData[i].name)
         
         # Use ppi.compute(code) to compute ppi for default interval
-        print "%-9s Esc %.4f " % (i, ppi.compute(i))
+        print("%-9s Esc %.4f " % (i, ppi.compute(i)))
         
-        print ' '
+        print(' ')
 
 if __name__ == "__main__":
 

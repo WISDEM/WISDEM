@@ -103,19 +103,19 @@ class RotorSE_Example3():
 		# === run and outputs ===
 		rotor.run()
 
-		print 'AEP =', rotor['AEP']
-		print 'diameter =', rotor['diameter']
-		print 'rated_V =', rotor['rated_V']
-		print 'rated_Omega =', rotor['rated_Omega']
-		print 'rated_pitch =', rotor['rated_pitch']
-		print 'rated_T =', rotor['rated_T']
-		print 'rated_Q =', rotor['rated_Q']
-		print 'mass_one_blade =', rotor['mass_one_blade']
-		print 'mass_all_blades =', rotor['mass_all_blades']
-		print 'I_all_blades =', rotor['I_all_blades']
-		print 'freq =', rotor['freq']
-		print 'tip_deflection =', rotor['tip_deflection']
-		print 'root_bending_moment =', rotor['root_bending_moment']
+		print('AEP =', rotor['AEP'])
+		print('diameter =', rotor['diameter'])
+		print('rated_V =', rotor['rated_V'])
+		print('rated_Omega =', rotor['rated_Omega'])
+		print('rated_pitch =', rotor['rated_pitch'])
+		print('rated_T =', rotor['rated_T'])
+		print('rated_Q =', rotor['rated_Q'])
+		print('mass_one_blade =', rotor['mass_one_blade'])
+		print('mass_all_blades =', rotor['mass_all_blades'])
+		print('I_all_blades =', rotor['I_all_blades'])
+		print('freq =', rotor['freq'])
+		print('tip_deflection =', rotor['tip_deflection'])
+		print('root_bending_moment =', rotor['root_bending_moment'])
 
 		outpath = '..\..\..\docs\images'
 		import matplotlib.pyplot as plt
