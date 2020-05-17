@@ -28,7 +28,30 @@ from scipy.optimize import brentq, minimize_scalar
 
 
 class GeometricConstraints(ExplicitComponent):
-    """docstring for OtherConstraints"""
+    """
+    Compute the minimum diameter-to-thickness ratio and taper constraints.
+    
+    Parameters
+    ----------
+    d : numpy array[nPoints]
+        Sectional tower diameters
+    t : numpy array[nPoints-1]
+        Sectional tower wall thicknesses
+    min_d_to_t : float
+        Minimum diameter-to-thickness ratio, dictated by ability to roll steel
+    max_taper : float
+        Maximum taper ratio of tower sections        
+    
+    Returns
+    -------
+    weldability : numpy array[n_points-1]
+        Minimum diameter-to-thickness constraint, must be negative to be feasible
+    manufacturability : numpy array[n_points-1]
+        Taper ratio constraint, must be positve to be feasible
+    slope : numpy array[n_points-2]
+        Slope constraint, must be less than 1.0 to be feasible
+    
+    """
     def initialize(self):
         self.options.declare('nPoints')
         self.options.declare('diamFlag', default=True)

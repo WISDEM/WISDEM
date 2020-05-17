@@ -10,7 +10,56 @@ from .map_mooring import NLINES_MAX
 
 class SubstructureGeometry(ExplicitComponent):
     """
-    OpenMDAO Component class for substructure geometry for floating offshore wind turbines.
+    Component for substructure geometry for floating offshore wind turbines.
+    
+    Parameters
+    ----------
+    main_d_full : numpy array[n_full_main]
+        outer radius at each section node bottom to top (length = nsection + 1)
+    main_z_nodes : numpy array[n_full_main]
+        z-coordinates of section nodes (length = nsection+1)
+    offset_d_full : numpy array[n_full_off]
+        outer radius at each section node bottom to top (length = nsection + 1)
+    offset_z_nodes : numpy array[n_full_off]
+        z-coordinates of section nodes (length = nsection+1)
+    offset_freeboard : float
+        Length of column above water line
+    offset_draft : float
+        Length of column below water line
+    fairlead_location : float
+        Fractional length from column bottom to top for mooring line attachment
+    fairlead_offset_from_shell : float
+        fairlead offset from shell
+    radius_to_offset_column : float
+        Distance from main column centerpoint to offset column centerpoint
+    number_of_offset_columns : float
+        Number of offset columns evenly spaced around main column
+    tower_d_base : float
+        base diameter of the tower
+    hsig_wave : float
+        significant wave height
+    max_survival_heel : float
+        max heel angle for turbine survival
+    
+    Returns
+    -------
+    fairlead : float
+        Depth below water line for mooring line attachment
+    fairlead_radius : float
+        Outer spar radius at fairlead depth (point of mooring attachment)
+    main_offset_spacing : float
+        Radius of main and offset columns relative to spacing
+    tower_transition_buffer : float
+        Buffer between substructure main and tower main
+    nacelle_transition_buffer : float
+        Buffer between tower top and nacelle main
+    offset_freeboard_heel_margin : float
+        Margin so offset column does not submerge during max heel
+    offset_draft_heel_margin : float
+        Margin so offset column does not leave water during max heel
+    wave_height_fairlead_ratio : float
+        Ratio of maximum wave height (avg of top 1%) to fairlead
+    
     """
 
     def initialize(self):
@@ -23,30 +72,27 @@ class SubstructureGeometry(ExplicitComponent):
         n_full_main   = get_nfull(n_height_main)
         n_full_off    = get_nfull(n_height_off)
 
-        # Design variables
-        self.add_input('main_d_full', val=np.zeros(n_full_main), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('main_z_nodes', val=np.zeros(n_full_main), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('offset_d_full', val=np.zeros(n_full_off), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('offset_z_nodes', val=np.zeros(n_full_off), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('offset_freeboard', val=0.0, units='m', desc='Length of column above water line')
-        self.add_input('offset_draft', val=0.0, units='m', desc='Length of column below water line')
-        self.add_input('fairlead_location', val=0.0, desc='Fractional length from column bottom to top for mooring line attachment')
-        self.add_input('fairlead_offset_from_shell', val=0.0, units='m',desc='fairlead offset from shell')
-        self.add_input('radius_to_offset_column', val=0.0, units='m',desc='Distance from main column centerpoint to offset column centerpoint')
-        self.add_input('number_of_offset_columns', val=0, desc='Number of offset columns evenly spaced around main column')
-        self.add_input('tower_d_base', val=0.0, units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('hsig_wave', val=0.0, units='m', desc='significant wave height')
-        self.add_input('max_survival_heel', val=0.0, units='deg', desc='max heel angle for turbine survival')
-        
-        # Output constraints
-        self.add_output('fairlead', val=0.0, units='m', desc='Depth below water line for mooring line attachment')
-        self.add_output('fairlead_radius', val=0.0, units='m', desc='Outer spar radius at fairlead depth (point of mooring attachment)')
-        self.add_output('main_offset_spacing', val=0.0, desc='Radius of main and offset columns relative to spacing')
-        self.add_output('tower_transition_buffer', val=0.0, units='m', desc='Buffer between substructure main and tower main')
-        self.add_output('offset_freeboard_heel_margin', val=0.0, units='m', desc='Margin so offset column does not submerge during max heel')
-        self.add_output('offset_draft_heel_margin', val=0.0, units='m', desc='Margin so offset column does not leave water during max heel')
-        self.add_output('wave_height_fairlead_ratio', val=0.0, desc='Ratio of maximum wave height (avg of top 1%) to fairlead')
+        self.add_input('main_d_full', np.zeros(n_full_main), units='m')
+        self.add_input('main_z_nodes', np.zeros(n_full_main), units='m')
+        self.add_input('offset_d_full', np.zeros(n_full_off), units='m')
+        self.add_input('offset_z_nodes', np.zeros(n_full_off), units='m')
+        self.add_input('offset_freeboard', 0.0, units='m')
+        self.add_input('offset_draft', 0.0, units='m')
+        self.add_input('fairlead_location', 0.0)
+        self.add_input('fairlead_offset_from_shell', 0.0, units='m')
+        self.add_input('radius_to_offset_column', 0.0, units='m')
+        self.add_input('number_of_offset_columns', 0)
+        self.add_input('tower_d_base', 0.0, units='m')
+        self.add_input('hsig_wave', 0.0, units='m')
+        self.add_input('max_survival_heel', 0.0, units='deg')
 
+        self.add_output('fairlead', 0.0, units='m')
+        self.add_output('fairlead_radius', 0.0, units='m')
+        self.add_output('main_offset_spacing', 0.0)
+        self.add_output('tower_transition_buffer', 0.0, units='m')
+        self.add_output('offset_freeboard_heel_margin', 0.0, units='m')
+        self.add_output('offset_draft_heel_margin', 0.0, units='m')
+        self.add_output('wave_height_fairlead_ratio', 0.0)
         
         # Derivatives
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
@@ -104,6 +150,160 @@ class SubstructureGeometry(ExplicitComponent):
 
 
 class Substructure(ExplicitComponent):
+    """
+    Calculate substructure properties
+    
+    Parameters
+    ----------
+    water_density : float
+        density of water
+    wave_period_range_low : float
+        Lower bound of typical ocean wavve period
+    wave_period_range_high : float
+        Upper bound of typical ocean wavve period
+    operational_heel : float
+        Maximum angle of heel allowable
+    mooring_mass : float
+        Mass of mooring lines
+    mooring_moments_of_inertia : numpy array[6]
+        mass moment of inertia of mooring system about fairlead-centerline point [xx yy
+        zz xy xz yz]
+    mooring_neutral_load : numpy array[NLINES_MAX, 3]
+        z-force of mooring lines on structure
+    mooring_surge_restoring_force : float
+        Restoring force from mooring system after surge motion
+    mooring_pitch_restoring_force : numpy array[NLINES_MAX, 3]
+        Restoring force from mooring system after pitch motion
+    mooring_cost : float
+        Cost of mooring system
+    mooring_stiffness : numpy array[6, 6]
+        Linearized stiffness matrix of mooring system at neutral (no offset) conditions.
+    fairlead : float
+        Depth below water for mooring line attachment
+    fairlead_radius : float
+        Outer spar radius at fairlead depth (point of mooring attachment)
+    number_of_offset_columns : float
+        Number of offset columns evenly spaced around main column
+    radius_to_offset_column : float
+        Distance from main column centerpoint to offset column centerpoint
+    main_Iwaterplane : float
+        Second moment of area of waterplane cross-section
+    main_Awaterplane : float
+        Area of waterplane cross-section
+    main_cost : float
+        Cost of spar structure
+    main_mass : numpy array[n_full_main-1]
+        mass of main column by section
+    main_freeboard : float
+        Length of spar above water line
+    main_center_of_buoyancy : float
+        z-position of center of column buoyancy force
+    main_center_of_mass : float
+        z-position of center of column mass
+    main_moments_of_inertia : numpy array[6]
+        mass moment of inertia of column about main [xx yy zz xy xz yz]
+    main_added_mass : numpy array[6]
+        Diagonal of added mass matrix- masses are first 3 entries, moments are last 3
+    offset_Iwaterplane : float
+        Second moment of area of waterplane cross-section
+    offset_Awaterplane : float
+        Area of waterplane cross-section
+    offset_cost : float
+        Cost of spar structure
+    offset_mass : numpy array[n_full_off-1]
+        mass of offset column by section
+    offset_center_of_buoyancy : float
+        z-position of center of column buoyancy force
+    offset_center_of_mass : float
+        z-position of center of column mass
+    offset_moments_of_inertia : numpy array[6]
+        mass moment of inertia of column about main [xx yy zz xy xz yz]
+    offset_added_mass : numpy array[6]
+        Diagonal of added mass matrix- masses are first 3 entries, moments are last 3
+    tower_mass : float
+        Mass of tower
+    tower_shell_cost : float
+        Cost of tower
+    tower_I_base : numpy array[6]
+        Moments about tower main
+    tower_z_full : numpy array[n_full_tow]
+        z-coordinates of section nodes (length = nsection+1)
+    rna_mass : float
+        Mass of RNA
+    rna_cg : numpy array[3]
+        Location of RNA center of mass relative to tower top
+    rna_I : numpy array[6]
+        Moments about turbine main
+    water_ballast_zpts_vector : numpy array[n_full_main]
+        z-points of potential ballast mass
+    water_ballast_radius_vector : numpy array[n_full_main]
+        Inner radius of potential ballast mass
+    structural_mass : float
+        Mass of whole turbine except for mooring lines
+    structure_center_of_mass : numpy array[3]
+        xyz-position of center of gravity of whole turbine
+    structural_frequencies : numpy array[NFREQ]
+        Structural frequencies outputted from FEM calculation
+    z_center_of_buoyancy : float
+        z-position of center of gravity (x,y = 0,0)
+    total_displacement : float
+        Total volume of water displaced by floating turbine (except for mooring lines)
+    total_force : numpy array[3]
+        Net forces on turbine
+    total_moment : numpy array[3]
+        Moments on whole turbine
+    pontoon_cost : float
+        Cost of pontoon elements and connecting truss
+    
+    Returns
+    -------
+    substructure_moments_of_inertia : numpy array[6]
+        mass moment of inertia of substructure (no tower or rna or mooring)
+        [xx yy zz xy xz yz]
+    total_mass : float
+        total mass of spar and moorings
+    total_cost : float
+        total cost of spar and moorings
+    metacentric_height : float
+        measure of static overturning stability
+    buoyancy_to_gravity : float
+        static stability margin based on position of centers of gravity and buoyancy
+    offset_force_ratio : float
+        total surge force divided by restoring force
+    heel_moment_ratio : float
+        total pitch moment divided by restoring moment
+    Iwaterplane_system : float
+        Second moment of area of waterplane cross-section for whole structure
+    center_of_mass : numpy array[3]
+        xyz-position of center of gravity (x,y = 0,0)
+    variable_ballast_mass : float
+        Amount of variable water ballast
+    variable_ballast_center_of_mass : float
+        Center of mass for variable ballast
+    variable_ballast_moments_of_inertia : numpy array[6]
+        mass moment of inertia of variable ballast [xx yy zz xy xz yz]
+    variable_ballast_height : float
+        height of water ballast to balance spar
+    variable_ballast_height_ratio : float
+        Ratio of water ballast height to available height
+    mass_matrix : numpy array[6]
+        Summary mass matrix of structure (minus pontoons)
+    added_mass_matrix : numpy array[6]
+        Summary hydrodynamic added mass matrix of structure (minus pontoons)
+    hydrostatic_stiffness : numpy array[6]
+        Summary hydrostatic stiffness of structure
+    rigid_body_periods : numpy array[6]
+        Natural periods of oscillation in 6 DOF
+    period_margin_low : numpy array[6]
+        Margin between natural periods and 2 second wave period
+    period_margin_high : numpy array[6]
+        Margin between natural periods and 20 second wave period
+    modal_margin_low : numpy array[NFREQ]
+        Margin between structural modes and 2 second wave period
+    modal_margin_high : numpy array[NFREQ]
+        Margin between structural modes and 20 second wave period
+    
+    """
 
     def initialize(self):
         self.options.declare('n_height_main')
@@ -118,96 +318,84 @@ class Substructure(ExplicitComponent):
         n_full_off    = get_nfull(n_height_off)
         n_full_tow    = get_nfull(n_height_tow)
 
-        # Environment
-        self.add_input('rho_water', val=0.0, units='kg/m**3', desc='density of water')
-        self.add_input('wave_period_range_low', val=2.0, units='s', desc='Lower bound of typical ocean wavve period')
-        self.add_input('wave_period_range_high', val=20.0, units='s', desc='Upper bound of typical ocean wavve period')
+        self.add_input('rho_water', 0.0, units='kg/m**3')
+        self.add_input('wave_period_range_low', 2.0, units='s')
+        self.add_input('wave_period_range_high', 20.0, units='s')
+        self.add_input('operational_heel', 0.0, units='deg')
+        self.add_input('mooring_mass', 0.0, units='kg')
+        self.add_input('mooring_moments_of_inertia', np.zeros(6), units='kg*m**2')
+        self.add_input('mooring_neutral_load', np.zeros((NLINES_MAX, 3)), units='N')
+        self.add_input('mooring_surge_restoring_force', 0.0, units='N')
+        self.add_input('mooring_pitch_restoring_force', np.zeros((NLINES_MAX, 3)), units='N')
+        self.add_input('mooring_cost', 0.0, units='USD')
+        self.add_input('mooring_stiffness', np.zeros((6, 6)), units='N/m')
+        self.add_input('fairlead', 1.0, units='m')
+        self.add_input('fairlead_radius', 0.0, units='m')
+        self.add_input('number_of_offset_columns', 0)
+        self.add_input('radius_to_offset_column', 0.0, units='m')
 
-        # From other components
-        self.add_input('operational_heel', val=0.0, units='deg',desc='Maximum angle of heel allowable')
-        self.add_input('mooring_mass', val=0.0, units='kg', desc='Mass of mooring lines')
-        self.add_input('mooring_moments_of_inertia', val=np.zeros(6), units='kg*m**2', desc='mass moment of inertia of mooring system about fairlead-centerline point [xx yy zz xy xz yz]')
-        self.add_input('mooring_neutral_load', val=np.zeros((NLINES_MAX,3)), units='N', desc='z-force of mooring lines on structure')
-        self.add_input('mooring_surge_restoring_force', val=0.0, units='N', desc='Restoring force from mooring system after surge motion')
-        self.add_input('mooring_pitch_restoring_force', val=np.zeros((NLINES_MAX,3)), units='N', desc='Restoring force from mooring system after pitch motion')
-        self.add_input('mooring_cost', val=0.0, units='USD', desc='Cost of mooring system')
-        self.add_input('mooring_stiffness', val=np.zeros((6,6)), units='N/m', desc='Linearized stiffness matrix of mooring system at neutral (no offset) conditions.')
-        self.add_input('fairlead', val=1.0, units='m', desc='Depth below water for mooring line attachment')
-        self.add_input('fairlead_radius', val=0.0, units='m', desc='Outer spar radius at fairlead depth (point of mooring attachment)')
+        self.add_input('main_Iwaterplane', 0.0, units='m**4')
+        self.add_input('main_Awaterplane', 0.0, units='m**2')
+        self.add_input('main_cost', 0.0, units='USD')
+        self.add_input('main_mass', np.zeros(n_full_main-1), units='kg')
+        self.add_input('main_freeboard', 0.0, units='m')
+        self.add_input('main_center_of_buoyancy', 0.0, units='m')
+        self.add_input('main_center_of_mass', 0.0, units='m')
+        self.add_input('main_moments_of_inertia', np.zeros(6), units='kg*m**2')
+        self.add_input('main_added_mass', np.zeros(6), units='kg')
         
-        self.add_input('number_of_offset_columns', val=0, desc='Number of offset columns evenly spaced around main column')
-        self.add_input('radius_to_offset_column', val=0.0, units='m',desc='Distance from main column centerpoint to offset column centerpoint')
-
-        self.add_input('main_Iwaterplane', val=0.0, units='m**4', desc='Second moment of area of waterplane cross-section')
-        self.add_input('main_Awaterplane', val=0.0, units='m**2', desc='Area of waterplane cross-section')
-        self.add_input('main_cost', val=0.0, units='USD', desc='Cost of spar structure')
-        self.add_input('main_mass', val=np.zeros((n_full_main-1,)), units='kg', desc='mass of main column by section')
-        self.add_input('main_freeboard', val=0.0, units='m', desc='Length of spar above water line')
-        self.add_input('main_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of column buoyancy force')
-        self.add_input('main_center_of_mass', val=0.0, units='m', desc='z-position of center of column mass')
-        self.add_input('main_moments_of_inertia', val=np.zeros(6), units='kg*m**2', desc='mass moment of inertia of column about main [xx yy zz xy xz yz]')
-        self.add_input('main_added_mass', val=np.zeros(6), units='kg', desc='Diagonal of added mass matrix- masses are first 3 entries, moments are last 3')
-
-        self.add_input('offset_Iwaterplane', val=0.0, units='m**4', desc='Second moment of area of waterplane cross-section')
-        self.add_input('offset_Awaterplane', val=0.0, units='m**2', desc='Area of waterplane cross-section')
-        self.add_input('offset_cost', val=0.0, units='USD', desc='Cost of spar structure')
-        self.add_input('offset_mass', val=np.zeros((n_full_off-1,)), units='kg', desc='mass of offset column by section')
-        self.add_input('offset_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of column buoyancy force')
-        self.add_input('offset_center_of_mass', val=0.0, units='m', desc='z-position of center of column mass')
-        self.add_input('offset_moments_of_inertia', val=np.zeros(6), units='kg*m**2', desc='mass moment of inertia of column about main [xx yy zz xy xz yz]')
-        self.add_input('offset_added_mass', val=np.zeros(6), units='kg', desc='Diagonal of added mass matrix- masses are first 3 entries, moments are last 3')
-
-        self.add_input('tower_mass', val=0.0, units='kg', desc='Mass of tower')
-        self.add_input('tower_shell_cost', val=0.0, units='USD', desc='Cost of tower')
-        self.add_input('tower_I_base', val=np.zeros(6), units='kg*m**2', desc='Moments about tower main')
-        self.add_input('tower_z_full', val=np.zeros((n_full_tow,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('rna_mass', val=0.0, units='kg', desc='Mass of RNA')
-        self.add_input('rna_cg', val=np.zeros(3), units='m', desc='Location of RNA center of mass relative to tower top')
-        self.add_input('rna_I', val=np.zeros(6), units='kg*m**2', desc='Moments about turbine main')
+        self.add_input('offset_Iwaterplane', 0.0, units='m**4')
+        self.add_input('offset_Awaterplane', 0.0, units='m**2')
+        self.add_input('offset_cost', 0.0, units='USD')
+        self.add_input('offset_mass', np.zeros(n_full_off-1), units='kg')
+        self.add_input('offset_center_of_buoyancy', 0.0, units='m')
+        self.add_input('offset_center_of_mass', 0.0, units='m')
+        self.add_input('offset_moments_of_inertia', np.zeros(6), units='kg*m**2')
+        self.add_input('offset_added_mass', np.zeros(6), units='kg')
         
-        self.add_input('water_ballast_zpts_vector', val=np.zeros((n_full_main,)), units='m', desc='z-points of potential ballast mass')
-        self.add_input('water_ballast_radius_vector', val=np.zeros((n_full_main,)), units='m', desc='Inner radius of potential ballast mass')
-
-        self.add_input('structural_mass', val=0.0, units='kg', desc='Mass of whole turbine except for mooring lines')
-        self.add_input('structure_center_of_mass', val=np.zeros(3), units='m', desc='xyz-position of center of gravity of whole turbine')
-        self.add_input('structural_frequencies', val=np.zeros(NFREQ), units='Hz', desc='')
-        self.add_input('z_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of gravity (x,y = 0,0)')
-        self.add_input('total_displacement', val=0.0, units='m**3', desc='Total volume of water displaced by floating turbine (except for mooring lines)')
-        self.add_input('total_force', val=np.zeros(3), units='N', desc='Net forces on turbine')
-        self.add_input('total_moment', val=np.zeros(3), units='N*m', desc='Moments on whole turbine')
-
-        self.add_input('pontoon_cost', val=0.0, units='USD', desc='Cost of pontoon elements and connecting truss')
-
+        self.add_input('tower_mass', 0.0, units='kg')
+        self.add_input('tower_shell_cost', 0.0, units='USD')
+        self.add_input('tower_I_base', np.zeros(6), units='kg*m**2')
+        self.add_input('tower_z_full', np.zeros(n_full_tow), units='m')
+        self.add_input('rna_mass', 0.0, units='kg')
+        self.add_input('rna_cg', np.zeros(3), units='m')
+        self.add_input('rna_I', np.zeros(6), units='kg*m**2')
         
-        # Outputs
-        self.add_output('substructure_moments_of_inertia', val=np.zeros(6), units='kg*m**2', desc='mass moment of inertia of substructure (no tower or rna or mooring) [xx yy zz xy xz yz]')
-        self.add_output('total_mass', val=0.0, units='kg', desc='total mass of spar and moorings')
-        self.add_output('total_cost', val=0.0, units='USD', desc='total cost of spar and moorings')
-        self.add_output('metacentric_height', val=0.0, units='m', desc='measure of static overturning stability')
-        self.add_output('buoyancy_to_gravity', val=0.0, desc='static stability margin based on position of centers of gravity and buoyancy')
-        self.add_output('offset_force_ratio', val=0.0, desc='total surge force divided by restoring force')
-        self.add_output('heel_moment_ratio', val=0.0, desc='total pitch moment divided by restoring moment')
-        self.add_output('Iwaterplane_system', val=0.0, units='m**4', desc='Second moment of area of waterplane cross-section for whole structure')
-
-        self.add_output('center_of_mass', val=np.zeros(3), units='m', desc='xyz-position of center of gravity (x,y = 0,0)')
-
-        self.add_output('variable_ballast_mass', val=0.0, units='kg', desc='Amount of variable water ballast')
-        self.add_output('variable_ballast_center_of_mass', val=0.0, units='m', desc='Center of mass for variable ballast')
-        self.add_output('variable_ballast_moments_of_inertia', val=np.zeros(6), units='kg*m**2', desc='mass moment of inertia of variable ballast [xx yy zz xy xz yz]')
-        self.add_output('variable_ballast_height', val=0.0, units='m', desc='height of water ballast to balance spar')
-        self.add_output('variable_ballast_height_ratio', val=0.0, desc='Ratio of water ballast height to available height')
-
-        self.add_output('mass_matrix', val=np.zeros(6), units='kg', desc='Summary mass matrix of structure (minus pontoons)')
-        self.add_output('added_mass_matrix', val=np.zeros(6), units='kg', desc='Summary hydrodynamic added mass matrix of structure (minus pontoons)')
-        self.add_output('hydrostatic_stiffness', val=np.zeros(6), units='N/m', desc='Summary hydrostatic stiffness of structure')
-        self.add_output('rigid_body_periods', val=np.zeros(6), units='s', desc='Natural periods of oscillation in 6 DOF')
-        self.add_output('period_margin_low', val=np.zeros(6), desc='Margin between natural periods and 2 second wave period')
-        self.add_output('period_margin_high', val=np.zeros(6), desc='Margin between natural periods and 20 second wave period')
-        self.add_output('modal_margin_low', val=np.zeros(NFREQ), desc='Margin between structural modes and 2 second wave period')
-        self.add_output('modal_margin_high', val=np.zeros(NFREQ), desc='Margin between structural modes and 20 second wave period')
+        self.add_input('water_ballast_zpts_vector', np.zeros(n_full_main), units='m')
+        self.add_input('water_ballast_radius_vector', np.zeros(n_full_main), units='m')
         
-        
-        # Derivatives
+        self.add_input('structural_mass', 0.0, units='kg')
+        self.add_input('structure_center_of_mass', np.zeros(3), units='m')
+        self.add_input('structural_frequencies', np.zeros(NFREQ), units='Hz')
+        self.add_input('z_center_of_buoyancy', 0.0, units='m')
+        self.add_input('total_displacement', 0.0, units='m**3')
+        self.add_input('total_force', np.zeros(3), units='N')
+        self.add_input('total_moment', np.zeros(3), units='N*m')
+        self.add_input('pontoon_cost', 0.0, units='USD')
+
+        self.add_output('substructure_moments_of_inertia', np.zeros(6), units='kg*m**2')
+        self.add_output('total_mass', 0.0, units='kg')
+        self.add_output('total_cost', 0.0, units='USD')
+        self.add_output('metacentric_height', 0.0, units='m')
+        self.add_output('buoyancy_to_gravity', 0.0)
+        self.add_output('offset_force_ratio', 0.0)
+        self.add_output('heel_moment_ratio', 0.0)
+        self.add_output('Iwaterplane_system', 0.0, units='m**4')
+        self.add_output('center_of_mass', np.zeros(3), units='m')
+        self.add_output('variable_ballast_mass', 0.0, units='kg')
+        self.add_output('variable_ballast_center_of_mass', 0.0, units='m')
+        self.add_output('variable_ballast_moments_of_inertia', np.zeros(6), units='kg*m**2')
+        self.add_output('variable_ballast_height', 0.0, units='m')
+        self.add_output('variable_ballast_height_ratio', 0.0)
+        self.add_output('mass_matrix', np.zeros(6), units='kg')
+        self.add_output('added_mass_matrix', np.zeros(6), units='kg')
+        self.add_output('hydrostatic_stiffness', np.zeros(6), units='N/m')
+        self.add_output('rigid_body_periods', np.zeros(6), units='s')
+        self.add_output('period_margin_low', np.zeros(6))
+        self.add_output('period_margin_high', np.zeros(6))
+        self.add_output('modal_margin_low', np.zeros(NFREQ))
+        self.add_output('modal_margin_high', np.zeros(NFREQ))
+
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
