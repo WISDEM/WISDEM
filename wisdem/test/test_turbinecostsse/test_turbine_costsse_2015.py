@@ -43,7 +43,7 @@ class TestNewAssembly(unittest.TestCase):
     self.assertEqual(np.round(self.prob['rotor_cost'], 2), 1292397.85)
     self.assertEqual(np.round(self.prob['generator_cost'], 2), 207078.14)
     self.assertEqual(np.round(self.prob['transformer_cost'], 2), 18800.00)
-    self.assertEqual(np.round(self.prob['turbine_cost'], 2), 4448107.48)
+    self.assertEqual(np.round(self.prob['turbine_cost'], 2), 4404316.13)
 
 
 def suite():
