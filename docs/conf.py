@@ -43,8 +43,11 @@ extensions = ['sphinx.ext.autodoc',
               'sphinxcontrib.bibtex',
               'sphinx.ext.intersphinx',
               'sphinx_rtd_theme',
+              'autoapi.extension',
               # 'embed-n2',
 ]
+
+autoapi_dirs = ['../wisdem']
 
 # Numbering figures in HTML format (always numbered in latex)
 numfig = True
