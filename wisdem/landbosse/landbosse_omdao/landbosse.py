@@ -128,23 +128,21 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('rotor_diameter_m', val=77, units='m', desc='Rotor diameter m')
         self.add_input('wind_shear_exponent', val=0.2, desc='Wind shear exponent')
         self.add_input('turbine_rating_MW', val=1.5, units='MW', desc='Turbine rating MW')
-        self.add_input('fuel_cost_usd_per_gal', val=1.0, desc='Fuel cost USD/gal')
+        self.add_input('fuel_cost_usd_per_gal', val=1.5, desc='Fuel cost USD/gal')
 
-        self.add_input('breakpoint_between_base_and_topping_percent', val=0.0,
+        self.add_input('breakpoint_between_base_and_topping_percent', val=0.8,
                        desc='Breakpoint between base and topping (percent)')
 
         # Could not place units in rate_of_deliveries
         self.add_input('rate_of_deliveries', val=10, desc='Rate of deliveries (turbines per week)')
 
         # Could not place units in turbine_spacing_rotor_diameters
-        # indeps.add_output('turbine_spacing_rotor_diameters', units='rotor diameters', desc='Turbine spacing (times rotor diameter)', val=4)
         self.add_input('turbine_spacing_rotor_diameters', desc='Turbine spacing (times rotor diameter)', val=4)
 
         self.add_input('depth', units='m', desc='Foundation depth m', val=2.36)
         self.add_input('rated_thrust_N', units='N', desc='Rated Thrust (N)', val=5.89e5)
 
         # Can't set units
-        # indeps.add_output('bearing_pressure_n_m2', units='n/m2', desc='Bearing Pressure (n/m2)', val=191521)
         self.add_input('bearing_pressure_n_m2', desc='Bearing Pressure (n/m2)', val=191521)
 
         self.add_input('gust_velocity_m_per_s', units='m/s', desc='50-year Gust Velocity (m/s)', val=59.5)
@@ -159,7 +157,7 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         # Can't set units
         self.add_input('row_spacing_rotor_diameters',
-                       desc='Row spacing (times rotor diameter)', val=4)
+                       desc='Row spacing (times rotor diameter)', val=10)
 
         self.add_input(
             'user_defined_distance_to_grid_connection',
@@ -190,6 +188,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('Mass tonne', val=(1.,), desc='', units='t')
         self.add_input('development_labor_cost_usd', val=1e6, desc='The cost of labor in the development phase',
                        units='USD')
+        self.add_input('labor_cost_multiplier', val=1.0, desc='Labor cost multiuplier')
 
         self.add_input('commissioning_pct', 0.01)
         self.add_input('decommissioning_pct', 0.15)
@@ -206,7 +205,7 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         self.add_discrete_input('number_of_blades', val=3, desc='Number of blades on the rotor')
 
-        self.add_discrete_input('user_defined_home_run_trench', val=1,
+        self.add_discrete_input('user_defined_home_run_trench', val=0,
                                 desc='Flag for user-defined home run trench length (0 = no; 1 = yes)')
 
         self.add_discrete_input(
