@@ -334,6 +334,8 @@ class WT_RNTA(Group):
             self.connect('towerse.post.sec_loc',            'aeroelastic.sec_loc')
             self.connect('towerse.post.fore_aft_modes',     'aeroelastic.fore_aft_modes')
             self.connect('towerse.post.side_side_modes',    'aeroelastic.side_side_modes')
+            self.connect('towerse.tower_section_height',    'aeroelastic.tower_section_height')
+            self.connect('towerse.tower_outer_diameter',    'aeroelastic.tower_outer_diameter')
 
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
