@@ -11,8 +11,8 @@ import numpy as np
 #-------------------------------------------------------------------------------
 class BladeCost2015(om.ExplicitComponent):
     """
-    Compute blade cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $14.6 USD/kg.
+    Compute blade cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $14.6 USD/kg.
     Cost includes materials and manufacturing costs.
     Cost can be overridden with use of `blade_cost_external`
     
@@ -53,8 +53,8 @@ class BladeCost2015(om.ExplicitComponent):
 # -----------------------------------------------------------------------------------------------
 class HubCost2015(om.ExplicitComponent):
     """
-    Compute hub cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $3.9 USD/kg.
+    Compute hub cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $3.9 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -88,8 +88,8 @@ class HubCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class PitchSystemCost2015(om.ExplicitComponent):
     """
-    Compute pitch system cost in the form of cost = k*mass.  
-    Value of k was NOT updated in 2015 and remains the same as original CSM, $22.1 USD/kg.
+    Compute pitch system cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $22.1 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -122,8 +122,8 @@ class PitchSystemCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class SpinnerCost2015(om.ExplicitComponent):
     """
-    Compute spinner cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $11.1 USD/kg.
+    Compute spinner cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $11.1 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -291,8 +291,8 @@ class RotorCostAdder2015(om.ExplicitComponent):
 # -------------------------------------------------
 class LowSpeedShaftCost2015(om.ExplicitComponent):
     """
-    Compute low speed shaft cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $11.9 USD/kg.
+    Compute low speed shaft cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $11.9 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -323,8 +323,8 @@ class LowSpeedShaftCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class BearingCost2015(om.ExplicitComponent):
     """
-    Compute (single) main bearing cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $4.5 USD/kg.
+    Compute (single) main bearing cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $4.5 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -356,8 +356,8 @@ class BearingCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class GearboxCost2015(om.ExplicitComponent):
     """
-    Compute gearbox cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $12.9 USD/kg.
+    Compute gearbox cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $12.9 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -389,8 +389,8 @@ class GearboxCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class HighSpeedSideCost2015(om.ExplicitComponent):
     """
-    Compute high speed shaft cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $6.8 USD/kg.
+    Compute high speed shaft cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $6.8 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -422,8 +422,8 @@ class HighSpeedSideCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class GeneratorCost2015(om.ExplicitComponent):
     """
-    Compute generator cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $12.4 USD/kg.
+    Compute generator cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $12.4 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -455,8 +455,8 @@ class GeneratorCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class BedplateCost2015(om.ExplicitComponent):
     """
-    Compute bedplate cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $2.9 USD/kg.
+    Compute bedplate cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $2.9 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -488,8 +488,8 @@ class BedplateCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class YawSystemCost2015(om.ExplicitComponent):
     """
-    Compute yaw system cost in the form of cost = k*mass.  
-    Value of k was NOT updated in 2015 and remains the same as original CSM, $8.3 USD/kg.
+    Compute yaw system cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $8.3 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -521,8 +521,8 @@ class YawSystemCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class ConverterCost2015(om.ExplicitComponent):
     """
-    Compute converter cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $18.8 USD/kg.
+    Compute converter cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $18.8 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -554,8 +554,8 @@ class ConverterCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class HydraulicCoolingCost2015(om.ExplicitComponent):
     """
-    Compute hydraulic cooling cost in the form of cost = k*mass.  
-    Value of k was NOT updated in 2015 and remains the same as original CSM, $124.0 USD/kg.
+    Compute hydraulic cooling cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $124.0 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -588,8 +588,8 @@ class HydraulicCoolingCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class NacelleCoverCost2015(om.ExplicitComponent):
     """
-    Compute nacelle cover cost in the form of cost = k*mass.  
-    Value of k was NOT updated in 2015 and remains the same as original CSM, $5.7 USD/kg.
+    Compute nacelle cover cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $5.7 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -621,8 +621,8 @@ class NacelleCoverCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class ElecConnecCost2015(om.ExplicitComponent):
     """
-    Compute electrical connection cost in the form of cost = k*mass.  
-    Value of k was NOT updated in 2015 and remains the same as original CSM, $41.85 USD/kg.
+    Compute electrical connection cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $41.85 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -655,8 +655,8 @@ class ElecConnecCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class ControlsCost2015(om.ExplicitComponent):
     """
-    Compute controls cost in the form of cost = k*mass.  
-    Value of k was NOT updated in 2015 and remains the same as original CSM, $21.15 USD/kg.
+    Compute controls cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $21.15 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -688,8 +688,8 @@ class ControlsCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class PlatformsMainframeCost2015(om.ExplicitComponent):
     """
-    Compute platforms cost in the form of cost = k*mass.  
-    Value of k was NOT updated in 2015 and remains the same as original CSM, $17.1 USD/kg.
+    Compute platforms cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $17.1 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -746,8 +746,8 @@ class PlatformsMainframeCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class TransformerCost2015(om.ExplicitComponent):
     """
-    Compute transformer cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $18.8 USD/kg.
+    Compute transformer cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $18.8 USD/kg.
     Cost includes materials and manufacturing costs.
     
     Parameters
@@ -943,8 +943,8 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class TowerCost2015(om.ExplicitComponent):
     """
-    Compute tower cost in the form of cost = k*mass.  
-    Value of k was updated in 2015 to be $2.9 USD/kg.
+    Compute tower cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2015 to be $2.9 USD/kg.
     Cost includes materials and manufacturing costs.
     Cost can be overridden with use of `tower_cost_external`
     
