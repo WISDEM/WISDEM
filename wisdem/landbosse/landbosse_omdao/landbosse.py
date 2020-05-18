@@ -176,7 +176,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('Mass tonne', val=(1.,), desc='', units='t')
         self.add_input('development_labor_cost_usd', val=1e6, desc='The cost of labor in the development phase',
                        units='USD')
-        self.add_input('labor_cost_multiplier', val=1.0, desc='Labor cost multiuplier')
+        # Disabled due to Pandas conflict right now.
+        self.add_input('labor_cost_multiplier', val=1.0, desc='Labor cost multiplier')
 
         self.add_input('commissioning_pct', 0.01)
         self.add_input('decommissioning_pct', 0.15)
