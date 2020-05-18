@@ -5,7 +5,7 @@ Copyright (c) NREL. All rights reserved.
 from __future__ import print_function
 import numpy as np
 
-from openmdao.api as om
+import openmdao.api as om
 
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 
@@ -668,7 +668,7 @@ class TowerMass(om.ExplicitComponent):
     """
   
     def setup(self):
-        self.add_input('hub_height', 0.0)
+        self.add_input('hub_height', 0.0, units='m')
         self.add_input('tower_mass_coeff', 19.828)
         self.add_input('tower_mass_exp', 2.0282)
 
