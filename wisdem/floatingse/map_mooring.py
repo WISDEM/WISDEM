@@ -1,7 +1,7 @@
-from openmdao.api import ExplicitComponent
 import numpy as np
 import os
 import sys
+import openmdao.api as om
 from wisdem.pymap import pyMAP
 
 from wisdem.commonse import gravity, Enum
@@ -12,7 +12,7 @@ Anchor    = Enum('DRAGEMBEDMENT SUCTIONPILE')
 NLINES_MAX = 15
 NPTS_PLOT = 20
 
-class MapMooring(ExplicitComponent):
+class MapMooring(om.ExplicitComponent):
     """
     Sets mooring line properties then writes MAP input file and executes MAP.
     

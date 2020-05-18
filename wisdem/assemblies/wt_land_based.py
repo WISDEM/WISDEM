@@ -394,6 +394,7 @@ class WT_RNTA(Group):
         self.connect('tower.diameter',                  'tcons.d_full')
 
         # Connections to turbine capital cost
+        self.connect('configuration.n_blades',      'tcc.blade_number')
         self.connect('control.rated_power',         'tcc.machine_rating')
         self.connect('elastic.precomp.blade_mass',  'tcc.blade_mass')
         self.connect('elastic.precomp.total_blade_cost',  'tcc.blade_cost_external')

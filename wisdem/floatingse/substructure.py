@@ -1,12 +1,12 @@
-from openmdao.api import ExplicitComponent
 import numpy as np
 from scipy.integrate import cumtrapz
+import openmdao.api as om
 
 from wisdem.commonse import gravity, eps, DirectionVector, NFREQ
 from wisdem.commonse.utilities import assembleI, unassembleI
 from .map_mooring import NLINES_MAX
         
-class SubstructureGeometry(ExplicitComponent):
+class SubstructureGeometry(om.ExplicitComponent):
     """
     Component for substructure geometry for floating offshore wind turbines.
     
@@ -152,7 +152,7 @@ class SubstructureGeometry(ExplicitComponent):
 
 
 
-class Substructure(ExplicitComponent):
+class Substructure(om.ExplicitComponent):
     """
     Calculate substructure properties
     

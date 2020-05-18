@@ -13,8 +13,10 @@ from __future__ import print_function
 import math
 import numpy as np
 from .Material import Material
-from openmdao.api import ExplicitComponent, Group, Problem
 from wisdem.commonse.utilities import nodal2sectional
+import openmdao.api as om
+
+
 pi = math.pi
 
 def main():
@@ -26,7 +28,7 @@ def main():
 
 
 
-class CylindricalShellProperties(ExplicitComponent):
+class CylindricalShellProperties(om.ExplicitComponent):
     """
     OpenMDAO wrapper for tube class to obtain cylindrical sheel properties.
     

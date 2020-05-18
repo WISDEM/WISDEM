@@ -1,11 +1,11 @@
-from openmdao.api import Group, ExplicitComponent
+import numpy as np
+import openmdao.api as om
 from .csystem import DirectionVector
 from .utilities import interp_with_deriv
 from wisdem.commonse import NFREQ
-import numpy as np
 
 
-# class TowerModes(ExplicitComponent):
+# class TowerModes(om.ExplicitComponent):
 #     def setup(self):
 
 #         self.add_input('tower_freq', val=np.zeros(2), units='Hz', desc='First natural frequencies of tower (and substructure)')
@@ -48,7 +48,7 @@ import numpy as np
 #         indicator_low[freq_struct > oneP_high] = 1e30
 #         outputs['frequency1P_margin_low']  = freq_struct / indicator_low
 
-class TowerModes(ExplicitComponent):
+class TowerModes(om.ExplicitComponent):
     """
     Compute tower frequency constraints
     
@@ -96,7 +96,7 @@ class TowerModes(ExplicitComponent):
         outputs['frequency1P_margin'] = np.array([min([f-oneP_low, oneP_high-f]) for f in freq_struct]).flatten()
 
 
-class TipDeflectionConstraint(ExplicitComponent):
+class TipDeflectionConstraint(om.ExplicitComponent):
     """
     Compute the undeflected tip-tower clearance and the ratio between the two
     including a safety factor (typically equal to 1.3)
@@ -201,10 +201,11 @@ class TipDeflectionConstraint(ExplicitComponent):
         outputs['tip_deflection_ratio']        = delta * inputs['max_allowable_td_ratio'] / parked_margin
 
     
-class TurbineConstraints(Group):
+class TurbineConstraints(om.Group):
 
     def initialize(self):
         self.options.declare('analysis_options')
+        
     def setup(self):
         analysis_options = self.options['analysis_options']
         
