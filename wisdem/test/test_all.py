@@ -17,6 +17,7 @@ import wisdem.test.test_rotorse as test_rotorse
 import wisdem.test.test_towerse as test_towerse
 import wisdem.test.test_turbinecostsse as test_turbinecostsse
 import wisdem.test.test_wisdem as test_wisdem
+import wisdem.test.test_landbosse as test_landbosse
 
 def suite():
     suite = unittest.TestSuite( (
@@ -39,6 +40,7 @@ def suite():
     return suite
 
 valid_tests = ['test_orbit',
+               'test_landbosse',
                'test_assemblies',
                'test_airfoilprep',
                'test_ccblade',
