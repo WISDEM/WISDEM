@@ -377,7 +377,7 @@ It is assumed that the hub system is assembled and transported as a one unit, th
 
 .. math::
    m_{hubsys} &= m_{hub} + m_{pitch} + m_{spinner}\\
-   c_{hubsys} &= (1+kt_{hub}+kp_{hub}) (1+ko{hub}+ka_{hub}) (c_{hub} + c_{pitch} + c_{spinner})
+   c_{hubsys} &= (1+kt_{hubsys}+kp_{hubsys}) (1+ko_{hubsys}+ka_{hubsys}) (c_{hub} + c_{pitch} + c_{spinner})
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
@@ -407,7 +407,7 @@ It is assumed that the nacelle and all of its sub-components are assembled and t
    &m_{yaw} + m_{hvac} + m_{transformer} + m_{platform} + m_{cover}\\
    c_{parts} &= c_{lss} + c_{bearing} + c_{gearbox} + c_{hss} + c_{generator} +c_{bedplate} + \\
    &c_{yaw} + c_{hvac} + c_{transformer} + c_{connect} + c_{control} + c_{platform} + c_{cover}\\
-   c_{nacelle} &= (1+kt_{nacelle}+kp_{nacelle}) (1+ko{nacelle}+ka_{nacelle}) c_{parts}
+   c_{nacelle} &= (1+kt_{nacelle}+kp_{nacelle}) (1+ko_{nacelle}+ka_{nacelle}) c_{parts}
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
@@ -418,10 +418,10 @@ For variable names access to override the default values see the :ref:`source`.
 Tower System
 ============
 
-The tower is not aggregated with any other component, but for consistency there are allowances for additional costs incurred from transportation and additional assembly complexity,
+The tower is not aggregated with any other component, but for consistency there are allowances for additional costs incurred from transportation and assembly complexity,
 
 .. math::
-   c_{towersys} = (1+kt_{tower}+kp_{tower}) (1+ko{tower}+ka_{tower}) c_{tower}
+   c_{towersys} = (1+kt_{tower}+kp_{tower}) (1+ko_{tower}+ka_{tower}) c_{tower}
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
@@ -435,7 +435,7 @@ The final turbine assembly also allows for user specification of other cost mult
 
 .. math::
    m_{turbine} &= m_{rotor} + m_{nacelle} + m_{tower}\\
-   c_{turbine} &= (1+kt_{turbine}+kp_{turbine}) (1+ko{turbine}+ka_{turbine}) (c_{rotor} + c_{nacelle} + c_{towersys})
+   c_{turbine} &= (1+kt_{turbine}+kp_{turbine}) (1+ko_{turbine}+ka_{turbine}) (c_{rotor} + c_{nacelle} + c_{towersys})
 
 For variable names access to override the default values see the :ref:`source`.
 
