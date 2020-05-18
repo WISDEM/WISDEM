@@ -440,7 +440,7 @@ class LandBOSSE_API(om.ExplicitComponent):
             incomplete_input_dict[component] = np.array(incomplete_input_dict['component_data'][component])
 
         # These are aliases because parts of the code call the same thing by
-        # different names.
+        # difference names.
         incomplete_input_dict['crew_cost'] = discrete_inputs['crew_price']
         incomplete_input_dict['cable_specs_pd'] = discrete_inputs['cable_specs']
 
@@ -455,12 +455,6 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         defaults = DefaultMasterInputDict()
         master_input_dict = defaults.populate_input_dict(incomplete_input_dict)
-
-        # Apply labor rate multiplier
-        self.apply_labor_multiplier_to_project_data_dict(
-            incomplete_input_dict['project_data'],
-            inputs['labor_cost_multiplier']
-        )
 
         return master_input_dict
 
@@ -804,51 +798,3 @@ class LandBOSSE_API(om.ExplicitComponent):
             sections.append(section)
 
         return sections
-
-    def apply_labor_multiplier_to_project_data_dict(self, project_data_dict, labor_cost_multiplier):
-        """
-        Applies the labor multiplier to the dataframes that contain the labor
-        costs in the project_data_dict. The dataframes are values in the
-        dictionary. The keys are "crew_price" and "rsmeans".
-
-        For the crew_price dataframe, the labor_cost_multiplier is broadcast
-        down the "Hourly rate USD per hour" and the "Per diem USD per day" columns.
-
-        For the rsmeans dataframe, rows that have "Labor" for the "Type of cost"
-        column are found and, for those rows, the values in the "Rate USD per unit"
-        column is multiplied by the multiplier
-
-        The dataframes are modified in place.
-
-        Parameters
-        ----------
-        project_data_dict : dict
-            The dictionary that has the dataframes as values.
-
-        labor_cost_multiplier : float
-            The scalar labor cost multiplier.
-        """
-        crew_price = project_data_dict['crew_price']
-        crew_price_new_hourly_rates = crew_price['Hourly rate USD per hour'] * labor_cost_multiplier
-        crew_price_new_per_diem_rates = crew_price['Per diem USD per day'] * labor_cost_multiplier
-        crew_price['Hourly rate USD per hour'] = crew_price_new_hourly_rates
-        crew_price['Per diem USD per day'] = crew_price_new_per_diem_rates
-
-        rsmeans = project_data_dict['rsmeans']
-
-        # This function maps new labor rates in rsmeans. Used with an apply()
-        # call, it will create a new Series that can be mapped back onto the
-        # original dataframe.
-        #
-        # If the column "Type of cost" is "Labor" then return the current cost
-        # times the labor multiplier. If "Type of cost" isn't "Labor" then
-        # just return the current cost.
-        def map_labor_rates(row):
-            if row['Type of cost'] == 'Labor':
-                return row['Rate USD per unit'] * labor_cost_multiplier
-            else:
-                return row['Rate USD per unit']
-
-        rsmeans_new_labor_rates = rsmeans.apply(map_labor_rates, axis=1)
-        rsmeans.drop(columns=['Rate USD per unit'], inplace=True)
-        rsmeans['Rate USD per unit'] = rsmeans_new_labor_rates
