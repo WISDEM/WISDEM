@@ -1,9 +1,7 @@
 """
-turbine_costsse_2015.py
-
-Created by Janine Freeman 2015 based on turbine_costsse.py 2012.
 Copyright (c) NREL. All rights reserved.
 """
+
 import openmdao.api as om
 
 import numpy as np
@@ -13,7 +11,10 @@ import numpy as np
 #-------------------------------------------------------------------------------
 class BladeCost2015(om.ExplicitComponent):
     """
-    Compute blade cost
+    Compute blade cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $14.6 USD/kg.
+    Cost includes materials and manufacturing costs.
+    Cost can be overridden with use of `blade_cost_external`
     
     Parameters
     ----------
@@ -52,7 +53,9 @@ class BladeCost2015(om.ExplicitComponent):
 # -----------------------------------------------------------------------------------------------
 class HubCost2015(om.ExplicitComponent):
     """
-    Compute hub cost
+    Compute hub cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $3.9 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -85,7 +88,9 @@ class HubCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class PitchSystemCost2015(om.ExplicitComponent):
     """
-    Compute pitch system cost
+    Compute pitch system cost in the form of cost = k*mass.  
+    Value of k was NOT updated in 2015 and remains the same as original CSM, $22.1 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -117,7 +122,9 @@ class PitchSystemCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class SpinnerCost2015(om.ExplicitComponent):
     """
-    Compute spinner cost
+    Compute spinner cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $11.1 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -149,7 +156,18 @@ class SpinnerCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class HubSystemCostAdder2015(om.ExplicitComponent):
     """
-    Add hub, pitch system, and spinner costs
+    Aggregates the hub, pitch system, and spinner costs into a single component
+    that is transported to the project site and could therefore incur additional
+    costs.  Cost multipliers are of the form,
+    :math:`c_{hubsys} = (1+kt_{hubsys}+kp_{hubsys}) (1+ko_{hubsys}+ka_{hubsys})
+    (c_{hub} + c_{pitch} + c_{spinner})`
+
+    Where conceptually, :math:`kt` is a transportation multiplier,
+    :math:`kp` is a profit multiplier,
+    :math:`ko` is an overhead cost multiplier, and
+    :math:`ka` is an assembly cost multiplier
+
+    By default, :math:`kt=kp=ko=ka=0`.
     
     Parameters
     ----------
@@ -166,13 +184,13 @@ class HubSystemCostAdder2015(om.ExplicitComponent):
     spinner_mass : float
         Spinner component mass
     hub_assemblyCostMultiplier : float
-        Rotor assembly cost multiplier
+        Hub assembly assembly cost multiplier
     hub_overheadCostMultiplier : float
-        Rotor overhead cost multiplier
+        Hub assembly overhead cost multiplier
     hub_profitMultiplier : float
-        Rotor profit multiplier
+        Hub assembly profit multiplier
     hub_transportMultiplier : float
-        Rotor transport multiplier
+        Hub assembly transport multiplier
     
     Returns
     -------
@@ -220,7 +238,9 @@ class HubSystemCostAdder2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class RotorCostAdder2015(om.ExplicitComponent):
     """
-    Sum individual rotor system and component costs to get overall rotor cost.
+    Sum of individual component costs to get overall rotor cost.
+    No additional transport and assembly multipliers are included because it is
+    assumed that each component is transported separately.
     
     Parameters
     ----------
@@ -271,7 +291,9 @@ class RotorCostAdder2015(om.ExplicitComponent):
 # -------------------------------------------------
 class LowSpeedShaftCost2015(om.ExplicitComponent):
     """
-    Compute low speed shaft cost
+    Compute low speed shaft cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $11.9 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -301,7 +323,9 @@ class LowSpeedShaftCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class BearingCost2015(om.ExplicitComponent):
     """
-    Compute main bearing cost
+    Compute (single) main bearing cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $4.5 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -332,7 +356,9 @@ class BearingCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class GearboxCost2015(om.ExplicitComponent):
     """
-    Compute gearbox cost
+    Compute gearbox cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $12.9 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -363,7 +389,9 @@ class GearboxCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class HighSpeedSideCost2015(om.ExplicitComponent):
     """
-    Compute high speed side cost
+    Compute high speed shaft cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $6.8 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -394,7 +422,9 @@ class HighSpeedSideCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class GeneratorCost2015(om.ExplicitComponent):
     """
-    Compute generator cost
+    Compute generator cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $12.4 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -425,7 +455,9 @@ class GeneratorCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class BedplateCost2015(om.ExplicitComponent):
     """
-    Compute bedplate cost
+    Compute bedplate cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $2.9 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -456,7 +488,9 @@ class BedplateCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class YawSystemCost2015(om.ExplicitComponent):
     """
-    Compute yaw system cost
+    Compute yaw system cost in the form of cost = k*mass.  
+    Value of k was NOT updated in 2015 and remains the same as original CSM, $8.3 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -487,7 +521,9 @@ class YawSystemCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class ConverterCost2015(om.ExplicitComponent):
     """
-    Compute converter cost
+    Compute converter cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $18.8 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -518,7 +554,9 @@ class ConverterCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class HydraulicCoolingCost2015(om.ExplicitComponent):
     """
-    Compute hydraulic cooling cost
+    Compute hydraulic cooling cost in the form of cost = k*mass.  
+    Value of k was NOT updated in 2015 and remains the same as original CSM, $124.0 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -550,7 +588,9 @@ class HydraulicCoolingCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class NacelleCoverCost2015(om.ExplicitComponent):
     """
-    Compute nacelle cover cost
+    Compute nacelle cover cost in the form of cost = k*mass.  
+    Value of k was NOT updated in 2015 and remains the same as original CSM, $5.7 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -581,7 +621,9 @@ class NacelleCoverCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class ElecConnecCost2015(om.ExplicitComponent):
     """
-    Compute electrical connection costs
+    Compute electrical connection cost in the form of cost = k*mass.  
+    Value of k was NOT updated in 2015 and remains the same as original CSM, $41.85 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -613,7 +655,9 @@ class ElecConnecCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class ControlsCost2015(om.ExplicitComponent):
     """
-    Compute controls cost
+    Compute controls cost in the form of cost = k*mass.  
+    Value of k was NOT updated in 2015 and remains the same as original CSM, $21.15 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -644,7 +688,9 @@ class ControlsCost2015(om.ExplicitComponent):
 #---------------------------------------------------------------------------------
 class PlatformsMainframeCost2015(om.ExplicitComponent):
     """
-    Compute platforms cost
+    Compute platforms cost in the form of cost = k*mass.  
+    Value of k was NOT updated in 2015 and remains the same as original CSM, $17.1 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -700,7 +746,9 @@ class PlatformsMainframeCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class TransformerCost2015(om.ExplicitComponent):
     """
-    Compute transformer costs
+    Compute transformer cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $18.8 USD/kg.
+    Cost includes materials and manufacturing costs.
     
     Parameters
     ----------
@@ -731,8 +779,18 @@ class TransformerCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class NacelleSystemCostAdder2015(om.ExplicitComponent):
     """
-    Sum nacelle system costs
-    
+    Aggregates the nacelle system costs into a single component
+    that is transported to the project site and could therefore incur additional
+    costs.  Cost multipliers are of the form,
+    :math:`c_{nacellesys} = (1+kt_{nacelle}+kp_{nacelle}) (1+ko_{nacelle}+ka_{nacelle}) c_{nacelle}`
+
+    Where conceptually, :math:`kt` is a transportation multiplier,
+    :math:`kp` is a profit multiplier,
+    :math:`ko` is an overhead cost multiplier, and
+    :math:`ka` is an assembly cost multiplier
+
+    By default, :math:`kt=kp=ko=ka=0`.
+
     Parameters
     ----------
     lss_cost : float
@@ -885,7 +943,10 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class TowerCost2015(om.ExplicitComponent):
     """
-    Compute tower parts costs
+    Compute tower cost in the form of cost = k*mass.  
+    Value of k was updated in 2015 to be $2.9 USD/kg.
+    Cost includes materials and manufacturing costs.
+    Cost can be overridden with use of `tower_cost_external`
     
     Parameters
     ----------
@@ -924,8 +985,18 @@ class TowerCost2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class TowerCostAdder2015(om.ExplicitComponent):
     """
-    Sum tower costs
-    
+    The tower is not aggregated with any other component, but for consistency 
+    there are allowances for additional costs incurred from transportation and 
+    assembly complexity,
+    :math:`c_{towersys} = (1+kt_{tower}+kp_{tower}) (1+ko_{tower}+ka_{tower}) c_{tower}`
+
+    Where conceptually, :math:`kt` is a transportation multiplier,
+    :math:`kp` is a profit multiplier,
+    :math:`ko` is an overhead cost multiplier, and
+    :math:`ka` is an assembly cost multiplier
+
+    By default, :math:`kt=kp=ko=ka=0`.
+
     Parameters
     ----------
     tower_parts_cost : float
@@ -969,8 +1040,19 @@ class TowerCostAdder2015(om.ExplicitComponent):
 #-------------------------------------------------------------------------------
 class TurbineCostAdder2015(om.ExplicitComponent):
     """
-    Sum all turbine costs
-    
+    Aggregates the turbine system costs into a single value with allowances for
+    additional costs incurred from transportation and assembly complexity.  Costs
+    are reported per kW.  Cost multipliers are of the form,
+    :math:`c_{turbine} = (1+kt_{turbine}+kp_{turbine}) (1+ko_{turbine}+ka_{turbine})
+    (c_{rotor} + c_{nacelle} + c_{tower})`
+
+    Where conceptually, :math:`kt` is a transportation multiplier,
+    :math:`kp` is a profit multiplier,
+    :math:`ko` is an overhead cost multiplier, and
+    :math:`ka` is an assembly cost multiplier
+
+    By default, :math:`kt=kp=ko=ka=0`.
+
     Parameters
     ----------
     rotor_cost : float
@@ -1224,6 +1306,11 @@ class Outputs2Screen(om.ExplicitComponent):
 
 #-------------------------------------------------------------------------------
 class Turbine_CostsSE_2015(om.Group):
+    """
+    Print cost outputs to the terminal
+    
+    """
+    
     def initialize(self):
         self.options.declare('verbosity', default=False)
         self.options.declare('topLevelFlag', default=True)
@@ -1256,46 +1343,46 @@ class Turbine_CostsSE_2015(om.Group):
             sharedIndeps.add_discrete_output('crane', val=False)
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
         
-        indeps = om.IndepVarComp()
-        indeps.add_output('blade_mass_cost_coeff',         units='USD/kg', val=14.6)
-        indeps.add_output('hub_mass_cost_coeff',           units='USD/kg', val=3.9)
-        indeps.add_output('pitch_system_mass_cost_coeff',  units='USD/kg', val=22.1)
-        indeps.add_output('spinner_mass_cost_coeff',       units='USD/kg', val=11.1)
-        indeps.add_output('lss_mass_cost_coeff',           units='USD/kg', val=11.9)
-        indeps.add_output('bearing_mass_cost_coeff',      units='USD/kg', val=4.5)
-        indeps.add_output('gearbox_mass_cost_coeff',       units='USD/kg', val=12.9)
-        indeps.add_output('hss_mass_cost_coeff',           units='USD/kg', val=6.8)
-        indeps.add_output('generator_mass_cost_coeff',     units='USD/kg', val=12.4)
-        indeps.add_output('bedplate_mass_cost_coeff',      units='USD/kg', val=2.9)
-        indeps.add_output('yaw_mass_cost_coeff',           units='USD/kg', val=8.3)
-        indeps.add_output('converter_mass_cost_coeff',     units='USD/kg', val=18.8)
-        indeps.add_output('transformer_mass_cost_coeff',   units='USD/kg', val=18.8)
-        indeps.add_output('hvac_mass_cost_coeff',          units='USD/kg', val=124.0)
-        indeps.add_output('cover_mass_cost_coeff',         units='USD/kg', val=5.7)
-        indeps.add_output('elec_connec_machine_rating_cost_coeff',units='USD/kW', val=41.85)
-        indeps.add_output('platforms_mass_cost_coeff',     units='USD/kg', val=17.1)
-        indeps.add_output('base_hardware_cost_coeff',      units='USD/kg', val=0.7)
-        indeps.add_output('tower_mass_cost_coeff',         units='USD/kg', val=2.9)
-        indeps.add_output('controls_machine_rating_cost_coeff', units='USD/kW', val=21.15)
-        indeps.add_output('crane_cost',                    units='USD', val=12e3)
+        ivc = om.IndepVarComp()
+        ivc.add_output('blade_mass_cost_coeff',         units='USD/kg', val=14.6)
+        ivc.add_output('hub_mass_cost_coeff',           units='USD/kg', val=3.9)
+        ivc.add_output('pitch_system_mass_cost_coeff',  units='USD/kg', val=22.1)
+        ivc.add_output('spinner_mass_cost_coeff',       units='USD/kg', val=11.1)
+        ivc.add_output('lss_mass_cost_coeff',           units='USD/kg', val=11.9)
+        ivc.add_output('bearing_mass_cost_coeff',      units='USD/kg', val=4.5)
+        ivc.add_output('gearbox_mass_cost_coeff',       units='USD/kg', val=12.9)
+        ivc.add_output('hss_mass_cost_coeff',           units='USD/kg', val=6.8)
+        ivc.add_output('generator_mass_cost_coeff',     units='USD/kg', val=12.4)
+        ivc.add_output('bedplate_mass_cost_coeff',      units='USD/kg', val=2.9)
+        ivc.add_output('yaw_mass_cost_coeff',           units='USD/kg', val=8.3)
+        ivc.add_output('converter_mass_cost_coeff',     units='USD/kg', val=18.8)
+        ivc.add_output('transformer_mass_cost_coeff',   units='USD/kg', val=18.8)
+        ivc.add_output('hvac_mass_cost_coeff',          units='USD/kg', val=124.0)
+        ivc.add_output('cover_mass_cost_coeff',         units='USD/kg', val=5.7)
+        ivc.add_output('elec_connec_machine_rating_cost_coeff',units='USD/kW', val=41.85)
+        ivc.add_output('platforms_mass_cost_coeff',     units='USD/kg', val=17.1)
+        ivc.add_output('base_hardware_cost_coeff',      units='USD/kg', val=0.7)
+        ivc.add_output('tower_mass_cost_coeff',         units='USD/kg', val=2.9)
+        ivc.add_output('controls_machine_rating_cost_coeff', units='USD/kW', val=21.15)
+        ivc.add_output('crane_cost',                    units='USD', val=12e3)
         
-        indeps.add_output('hub_assemblyCostMultiplier',    val=0.0)
-        indeps.add_output('hub_overheadCostMultiplier',    val=0.0)
-        indeps.add_output('nacelle_assemblyCostMultiplier',val=0.0)
-        indeps.add_output('nacelle_overheadCostMultiplier',val=0.0)
-        indeps.add_output('tower_assemblyCostMultiplier',  val=0.0)
-        indeps.add_output('tower_overheadCostMultiplier',  val=0.0)
-        indeps.add_output('turbine_assemblyCostMultiplier',val=0.0)
-        indeps.add_output('turbine_overheadCostMultiplier',val=0.0)
-        indeps.add_output('hub_profitMultiplier',          val=0.0)
-        indeps.add_output('nacelle_profitMultiplier',      val=0.0)
-        indeps.add_output('tower_profitMultiplier',        val=0.0)
-        indeps.add_output('turbine_profitMultiplier',      val=0.0)
-        indeps.add_output('hub_transportMultiplier',       val=0.0)
-        indeps.add_output('nacelle_transportMultiplier',   val=0.0)
-        indeps.add_output('tower_transportMultiplier',     val=0.0)
-        indeps.add_output('turbine_transportMultiplier',   val=0.0)
-        self.add_subsystem('indeps', indeps, promotes=['*'])
+        ivc.add_output('hub_assemblyCostMultiplier',    val=0.0)
+        ivc.add_output('hub_overheadCostMultiplier',    val=0.0)
+        ivc.add_output('nacelle_assemblyCostMultiplier',val=0.0)
+        ivc.add_output('nacelle_overheadCostMultiplier',val=0.0)
+        ivc.add_output('tower_assemblyCostMultiplier',  val=0.0)
+        ivc.add_output('tower_overheadCostMultiplier',  val=0.0)
+        ivc.add_output('turbine_assemblyCostMultiplier',val=0.0)
+        ivc.add_output('turbine_overheadCostMultiplier',val=0.0)
+        ivc.add_output('hub_profitMultiplier',          val=0.0)
+        ivc.add_output('nacelle_profitMultiplier',      val=0.0)
+        ivc.add_output('tower_profitMultiplier',        val=0.0)
+        ivc.add_output('turbine_profitMultiplier',      val=0.0)
+        ivc.add_output('hub_transportMultiplier',       val=0.0)
+        ivc.add_output('nacelle_transportMultiplier',   val=0.0)
+        ivc.add_output('tower_transportMultiplier',     val=0.0)
+        ivc.add_output('turbine_transportMultiplier',   val=0.0)
+        self.add_subsystem('ivc', ivc, promotes=['*'])
         
         self.add_subsystem('blade_c'       , BladeCost2015(),         promotes=['*'])
         self.add_subsystem('hub_c'         , HubCost2015(),           promotes=['*'])
@@ -1322,47 +1409,3 @@ class Turbine_CostsSE_2015(om.Group):
         self.add_subsystem('tower_adder'   , TowerCostAdder2015(),    promotes=['*'])
         self.add_subsystem('turbine_c'     , TurbineCostAdder2015(),  promotes=['*'])
         self.add_subsystem('outputs'       , Outputs2Screen(verbosity=self.verbosity), promotes=['*'])
-
-#-------------------------------------------------------------------------------
-def example():
-
-    # simple test of module
-    turbine = Turbine_CostsSE_2015(verbosity=True)
-    prob = om.Problem(turbine)
-    prob.setup()
-
-    prob['blade_mass']          = 17650.67  # inline with the windpact estimates
-    prob['hub_mass']            = 31644.5
-    prob['pitch_system_mass']   = 17004.0
-    prob['spinner_mass']        = 1810.5
-    prob['lss_mass']            = 31257.3
-    #bearingMass'] = 9731.41
-    prob['main_bearing_mass']   = 9731.41 / 2
-    prob['gearbox_mass']        = 30237.60
-    prob['hss_mass']            = 1492.45
-    prob['generator_mass']      = 16699.85
-    prob['bedplate_mass']       = 93090.6
-    prob['yaw_mass']            = 11878.24
-    prob['tower_mass']          = 434559.0
-    prob['converter_mass']      = 1000.
-    prob['hvac_mass']           = 1000.
-    prob['cover_mass']          = 1000.
-    prob['platforms_mass']      = 1000.
-    prob['transformer_mass']    = 1000.
-
-    # other inputs
-    prob['machine_rating']      = 5000.0
-    prob['blade_number']        = 3
-    prob['crane']               = True
-    prob['main_bearing_number'] = 2
-
-    prob.run_model()
-
-    #print('The results for the NREL 5 MW Reference Turbine in an offshore 20 m water depth location are')
-    for io in turbine._outputs:
-        print(io, str(turbine._outputs[io]))
-
-
-if __name__ == "__main__":
-
-    example()

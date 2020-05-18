@@ -1,7 +1,4 @@
 """
-tcc_csm_component.py
-
-Created by NWTC Systems Engineering Sub-Task on 2012-08-01.
 Copyright (c) NREL. All rights reserved.
 """
 
@@ -671,7 +668,7 @@ class TowerMass(om.ExplicitComponent):
     """
   
     def setup(self):
-        self.add_input('hub_height', 0.0)
+        self.add_input('hub_height', 0.0, units='m')
         self.add_input('tower_mass_coeff', 19.828)
         self.add_input('tower_mass_exp', 2.0282)
 
@@ -805,14 +802,14 @@ class TurbineMassAdder(om.ExplicitComponent):
 class nrel_csm_mass_2015(om.Group):
     
     def setup(self):
-        sharedIndeps = om.IndepVarComp()
-        sharedIndeps.add_output('machine_rating',     units='kW', val=0.0)
-        sharedIndeps.add_output('rotor_diameter',         units='m', val=0.0)
-        sharedIndeps.add_output('hub_height',         units='m', val=0.0)
-        sharedIndeps.add_discrete_output('blade_number',  val=0)
-        sharedIndeps.add_discrete_output('main_bearing_number',  val=0)
-        sharedIndeps.add_discrete_output('crane', val=False)
-        self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
+        ivc = om.IndepVarComp()
+        ivc.add_output('machine_rating',     units='kW', val=0.0)
+        ivc.add_output('rotor_diameter',         units='m', val=0.0)
+        ivc.add_output('hub_height',         units='m', val=0.0)
+        ivc.add_discrete_output('blade_number',  val=0)
+        ivc.add_discrete_output('main_bearing_number',  val=0)
+        ivc.add_discrete_output('crane', val=False)
+        self.add_subsystem('ivc', ivc, promotes=['*'])
 
         self.add_subsystem('blade', BladeMass(), promotes=['*'])
         self.add_subsystem('hub', HubMass(), promotes=['*'])
@@ -839,59 +836,3 @@ class nrel_csm_2015(om.Group):
     def setup(self):
         self.add_subsystem('nrel_csm_mass', nrel_csm_mass_2015(), promotes=['*'])
         self.add_subsystem('turbine_costs', Turbine_CostsSE_2015(verbosity=False, topLevelFlag=False), promotes=['*'])
-
-#-----------------------------------------------------------------
-
-def mass_example():
-
-    # simple test of module
-    trb = nrel_csm_mass_2015()
-    prob = om.Problem(trb)
-    prob.setup()
-    
-    prob['rotor_diameter'] = 126.0
-    prob['turbine_class'] = 1
-    prob['blade_has_carbon'] = False
-    prob['blade_number'] = 3    
-    prob['machine_rating'] = 5000.0
-    prob['hub_height'] = 90.0
-    prob['main_bearing_number'] = 2
-    prob['crane'] = True
-    prob['max_tip_speed'] = 80.0
-    prob['max_efficiency'] = 0.90
-
-    prob.run_model()
-   
-    print("The MASS results for the NREL 5 MW Reference Turbine in an offshore 20 m water depth location are:")
-    #print "Overall turbine mass is {0:.2f} kg".format(trb.turbine.params['turbine_mass'])
-    for io in trb._outputs:
-        print(io, str(trb._outputs[io]))
-
-def cost_example():
-
-    # simple test of module
-    trb = nrel_csm_2015()
-    prob = om.Problem(trb)
-    prob.setup()
-
-    # simple test of module
-    prob['rotor_diameter'] = 126.0
-    prob['turbine_class'] = 1
-    prob['blade_has_carbon'] = False
-    prob['blade_number'] = 3    
-    prob['machine_rating'] = 5000.0
-    prob['hub_height'] = 90.0
-    prob['main_bearing_number'] = 2
-    prob['crane'] = True
-    prob['max_tip_speed'] = 80.0
-    prob['max_efficiency'] = 0.90
-
-    prob.run_model()
-
-    print("The COST results for the NREL 5 MW Reference Turbine:")
-    for io in trb._outputs:
-        print(io, str(trb._outputs[io]))
-
-if __name__ == "__main__":
-    mass_example()
-    cost_example()

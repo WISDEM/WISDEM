@@ -18,11 +18,10 @@ Module documentation
    wisdem/drivetrainse/drivese/index
    wisdem/drivetrainse/generator/index
    wisdem/floatingse/index
-   wisdem/jacketse/index
    wisdem/nrelcsm/index
-   wisdem/pbeam/index
    wisdem/plantfinancese/index
    wisdem/pymap/index
    wisdem/rotorse/index
    wisdem/towerse/index
    wisdem/turbine_costsse/index
+   wisdem/jacketse/index
