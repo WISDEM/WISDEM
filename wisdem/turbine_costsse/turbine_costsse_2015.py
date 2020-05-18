@@ -159,16 +159,13 @@ class HubSystemCostAdder2015(om.ExplicitComponent):
     Aggregates the hub, pitch system, and spinner costs into a single component
     that is transported to the project site and could therefore incur additional
     costs.  Cost multipliers are of the form,
+    :math:`c_{hubsys} = (1+kt_{hubsys}+kp_{hubsys}) (1+ko_{hubsys}+ka_{hubsys})
+    (c_{hub} + c_{pitch} + c_{spinner})`
 
-    .. math::
-    c_{hubsys} = (1+kt_{hubsys}+kp_{hubsys}) * (1+ko_{hubsys}+ka_{hubsys}) *
-                 (c_{hub} + c_{pitch} + c_{spinner})
-
-    Where conceptually, 
-    - :math:`kt` is a transportation multiplier
-    - :math:`kp` is a profit multiplier
-    - :math:`ko` is an overhead cost multiplier
-    - :math:`ka` is an assembly cost multiplier
+    Where conceptually, :math:`kt` is a transportation multiplier,
+    :math:`kp` is a profit multiplier,
+    :math:`ko` is an overhead cost multiplier, and
+    :math:`ka` is an assembly cost multiplier
 
     By default, :math:`kt=kp=ko=ka=0`.
     
@@ -785,15 +782,12 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
     Aggregates the nacelle system costs into a single component
     that is transported to the project site and could therefore incur additional
     costs.  Cost multipliers are of the form,
+    :math:`c_{nacellesys} = (1+kt_{nacelle}+kp_{nacelle}) (1+ko_{nacelle}+ka_{nacelle}) c_{nacelle}`
 
-    .. math::
-    c_{nacelle} = (1+kt_{nacelle}+kp_{nacelle}) * (1+ko_{nacelle}+ka_{nacelle}) * c_{nacelle}
-
-    Where conceptually, 
-    - :math:`kt` is a transportation multiplier
-    - :math:`kp` is a profit multiplier
-    - :math:`ko` is an overhead cost multiplier
-    - :math:`ka` is an assembly cost multiplier
+    Where conceptually, :math:`kt` is a transportation multiplier,
+    :math:`kp` is a profit multiplier,
+    :math:`ko` is an overhead cost multiplier, and
+    :math:`ka` is an assembly cost multiplier
 
     By default, :math:`kt=kp=ko=ka=0`.
 
@@ -994,15 +988,12 @@ class TowerCostAdder2015(om.ExplicitComponent):
     The tower is not aggregated with any other component, but for consistency 
     there are allowances for additional costs incurred from transportation and 
     assembly complexity,
+    :math:`c_{towersys} = (1+kt_{tower}+kp_{tower}) (1+ko_{tower}+ka_{tower}) c_{tower}`
 
-    .. math::
-    c_{towersys} = (1+kt_{tower}+kp_{tower}) * (1+ko_{tower}+ka_{tower}) * c_{tower}
-
-    Where conceptually, 
-    - :math:`kt` is a transportation multiplier
-    - :math:`kp` is a profit multiplier
-    - :math:`ko` is an overhead cost multiplier
-    - :math:`ka` is an assembly cost multiplier
+    Where conceptually, :math:`kt` is a transportation multiplier,
+    :math:`kp` is a profit multiplier,
+    :math:`ko` is an overhead cost multiplier, and
+    :math:`ka` is an assembly cost multiplier
 
     By default, :math:`kt=kp=ko=ka=0`.
 
@@ -1052,16 +1043,13 @@ class TurbineCostAdder2015(om.ExplicitComponent):
     Aggregates the turbine system costs into a single value with allowances for
     additional costs incurred from transportation and assembly complexity.  Costs
     are reported per kW.  Cost multipliers are of the form,
+    :math:`c_{turbine} = (1+kt_{turbine}+kp_{turbine}) (1+ko_{turbine}+ka_{turbine})
+    (c_{rotor} + c_{nacelle} + c_{tower})`
 
-    .. math::
-    c_{turbine} = (1+kt_{turbine}+kp_{turbine}) * (1+ko_{turbine}+ka_{turbine}) * 
-                  (c_{rotor} + c_{nacelle} + c_{tower})
-
-    Where conceptually, 
-    - :math:`kt` is a transportation multiplier
-    - :math:`kp` is a profit multiplier
-    - :math:`ko` is an overhead cost multiplier
-    - :math:`ka` is an assembly cost multiplier
+    Where conceptually, :math:`kt` is a transportation multiplier,
+    :math:`kp` is a profit multiplier,
+    :math:`ko` is an overhead cost multiplier, and
+    :math:`ka` is an assembly cost multiplier
 
     By default, :math:`kt=kp=ko=ka=0`.
 
@@ -1318,6 +1306,11 @@ class Outputs2Screen(om.ExplicitComponent):
 
 #-------------------------------------------------------------------------------
 class Turbine_CostsSE_2015(om.Group):
+    """
+    Print cost outputs to the terminal
+    
+    """
+    
     def initialize(self):
         self.options.declare('verbosity', default=False)
         self.options.declare('topLevelFlag', default=True)
@@ -1416,47 +1409,3 @@ class Turbine_CostsSE_2015(om.Group):
         self.add_subsystem('tower_adder'   , TowerCostAdder2015(),    promotes=['*'])
         self.add_subsystem('turbine_c'     , TurbineCostAdder2015(),  promotes=['*'])
         self.add_subsystem('outputs'       , Outputs2Screen(verbosity=self.verbosity), promotes=['*'])
-
-#-------------------------------------------------------------------------------
-def example():
-
-    # simple test of module
-    turbine = Turbine_CostsSE_2015(verbosity=True)
-    prob = om.Problem(turbine)
-    prob.setup()
-
-    prob['blade_mass']          = 17650.67  # inline with the windpact estimates
-    prob['hub_mass']            = 31644.5
-    prob['pitch_system_mass']   = 17004.0
-    prob['spinner_mass']        = 1810.5
-    prob['lss_mass']            = 31257.3
-    #bearingMass'] = 9731.41
-    prob['main_bearing_mass']   = 9731.41 / 2
-    prob['gearbox_mass']        = 30237.60
-    prob['hss_mass']            = 1492.45
-    prob['generator_mass']      = 16699.85
-    prob['bedplate_mass']       = 93090.6
-    prob['yaw_mass']            = 11878.24
-    prob['tower_mass']          = 434559.0
-    prob['converter_mass']      = 1000.
-    prob['hvac_mass']           = 1000.
-    prob['cover_mass']          = 1000.
-    prob['platforms_mass']      = 1000.
-    prob['transformer_mass']    = 1000.
-
-    # other inputs
-    prob['machine_rating']      = 5000.0
-    prob['blade_number']        = 3
-    prob['crane']               = True
-    prob['main_bearing_number'] = 2
-
-    prob.run_model()
-
-    #print('The results for the NREL 5 MW Reference Turbine in an offshore 20 m water depth location are')
-    for io in turbine._outputs:
-        print(io, str(turbine._outputs[io]))
-
-
-if __name__ == "__main__":
-
-    example()
