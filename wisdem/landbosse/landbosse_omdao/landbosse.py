@@ -133,9 +133,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('breakpoint_between_base_and_topping_percent', val=0.8,
                        desc='Breakpoint between base and topping (percent)')
 
-        # Could not place units in rate_of_deliveries
-        self.add_input('rate_of_deliveries', val=10, desc='Rate of deliveries (turbines per week)')
-
         # Could not place units in turbine_spacing_rotor_diameters
         self.add_input('turbine_spacing_rotor_diameters', desc='Turbine spacing (times rotor diameter)', val=4)
 
@@ -159,17 +156,10 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('row_spacing_rotor_diameters',
                        desc='Row spacing (times rotor diameter)', val=10)
 
-        self.add_input(
-            'user_defined_distance_to_grid_connection',
-            desc='Flag for user-defined home run trench length (True or False)',
-            val=False
-        )
-
         self.add_input('trench_len_to_substation_km', units='km',
                        desc='Combined Homerun Trench Length to Substation (km)', val=50)
         self.add_input('distance_to_interconnect_mi', units='mi', desc='Distance to interconnect (miles)', val=5)
         self.add_input('interconnect_voltage_kV', units='kV', desc='Interconnect Voltage (kV)', val=130)
-        self.add_input('new_switchyard', desc='New Switchyard (True or False)', val=True)
         self.add_input('critical_speed_non_erection_wind_delays_m_per_s', units='m/s',
                        desc='Non-Erection Wind Delay Critical Speed (m/s)', val=15)
         self.add_input('critical_height_non_erection_wind_delays_m', units='m',
@@ -177,8 +167,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input('road_width_ft', units='ft', desc='Road width (ft)', val=20)
         self.add_input('road_thickness', desc='Road thickness (in)', val=8)
         self.add_input('crane_width', units='m', desc='Crane width (m)', val=12.2)
-        self.add_input('num_hwy_permits', desc='Number of highway permits', val=10)
-        self.add_input('num_access_roads', desc='Number of access roads', val=2)
         self.add_input('overtime_multiplier', desc='Overtime multiplier', val=1.4)
         self.add_input('markup_contingency', desc='Markup contingency', val=0.03)
         self.add_input('markup_warranty_management', desc='Markup warranty management', val=0.0002)
@@ -225,6 +213,19 @@ class LandBOSSE_API(om.ExplicitComponent):
             desc='One of the keys in the hour_day dictionary to specify how many hours per day construction happens.',
             val='normal'
         )
+
+        self.add_discrete_input(
+            'user_defined_distance_to_grid_connection',
+            desc='Flag for user-defined home run trench length (True or False)',
+            val=False
+        )
+
+        # Could not place units in rate_of_deliveries
+        self.add_discrete_input('rate_of_deliveries', val=10, desc='Rate of deliveries (turbines per week)')
+
+        self.add_discrete_input('new_switchyard', desc='New Switchyard (True or False)', val=True)
+        self.add_discrete_input('num_hwy_permits', desc='Number of highway permits', val=10)
+        self.add_discrete_input('num_access_roads', desc='Number of access roads', val=2)
 
     def setup_discrete_inputs_that_are_dataframes(self):
         """
