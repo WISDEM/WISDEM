@@ -109,6 +109,7 @@ Thumbs.db
 # Other file types #
 ####################
 *.bak
-*.png
-*.pdf
 *.docx
+# Needed for documentation, not sure why there were added
+#*.png
+#*.pdf

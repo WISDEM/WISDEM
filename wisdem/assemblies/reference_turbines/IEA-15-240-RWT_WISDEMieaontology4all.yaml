@@ -382,6 +382,7 @@ components:
                 grid: [0.0, 1.0]
                 values: [0.5, 0.5]
         internal_structure_2d_fem:
+            outfitting_factor: 1.07
             reference_axis: *ref_axis_tower
             layers:
                 - name: tower_wall
@@ -572,6 +573,7 @@ materials:
       alpha: 0.0
       Xt: 1.12e+009
       Xc: 2.16e+009
+      Xy: 450.e+6
    -  name: glass_uni
       description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
@@ -736,6 +738,10 @@ environment:
     weib_shape_parameter: 2.
     air_speed_sound: 340.
     shear_exp: 0.2
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140e6
+    soil_poisson: 0.4
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.056

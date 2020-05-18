@@ -102,7 +102,7 @@ class MonopileTurbine(Group):
         myIndeps.add_output('platforms_mass', 0.0, units='kg')
         myIndeps.add_output('spinner_mass', 0.0, units='kg')
         myIndeps.add_output('transformer_mass', 0.0, units='kg')
-        myIndeps.add_output('vs_electronics_mass', 0.0, units='kg')
+        myIndeps.add_output('converter_mass', 0.0, units='kg')
         myIndeps.add_output('yaw_mass', 0.0, units='kg')
         myIndeps.add_output('gearbox_mass', 0.0, units='kg')
         myIndeps.add_output('generator_mass', 0.0, units='kg')

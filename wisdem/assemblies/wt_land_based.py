@@ -403,7 +403,7 @@ class WT_RNTA(Group):
         self.connect('drivese.generator_mass',      'tcc.generator_mass')
         self.connect('drivese.bedplate_mass',       'tcc.bedplate_mass')
         self.connect('drivese.yaw_mass',            'tcc.yaw_mass')
-        self.connect('drivese.vs_electronics_mass', 'tcc.vs_electronics_mass')
+        self.connect('drivese.converter_mass', 'tcc.converter_mass')
         self.connect('drivese.hvac_mass',           'tcc.hvac_mass')
         self.connect('drivese.cover_mass',          'tcc.cover_mass')
         self.connect('drivese.platforms_mass',      'tcc.platforms_mass')

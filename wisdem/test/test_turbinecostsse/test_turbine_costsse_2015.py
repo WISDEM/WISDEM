@@ -23,7 +23,7 @@ class TestNewAssembly(unittest.TestCase):
     self.prob['bedplate_mass']       = 93090.6
     self.prob['yaw_mass']            = 11878.24
     self.prob['tower_mass']          = 434559.0
-    self.prob['vs_electronics_mass'] = 1000.
+    self.prob['converter_mass'] = 1000.
     self.prob['hvac_mass']           = 1000.
     self.prob['cover_mass']          = 1000.
     self.prob['platforms_mass']      = 1000.

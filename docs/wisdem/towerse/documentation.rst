@@ -7,25 +7,19 @@ Documentation
 
 The following inputs and outputs are defined for TowerSE:
 
-.. literalinclude:: ../../../wisdem/towerse/tower.py
-    :language: python
-    :start-after: TowerSE(Assembly)
-    :end-before: def configure(self)
-    :prepend: class TowerSE(Assembly):
+.. embed-n2::
+  ../wisdem/towerse/tower.py
 
-
-Referenced Environment Modules
-==============================
-.. module:: wisdem.commonse.environment
-.. class:: WindBase
-.. class:: WaveBase
-.. class:: SoilBase
-.. class:: PowerWind
-.. class:: LogWind
-.. class:: LinearWaves
-.. class:: TowerSoil
 
 Referenced Tower Modules
 ========================
-.. module:: wisdem.towerse.tower
-.. class:: TowerSE
+
+.. autoclass:: DiscretizationYAML
+.. autoclass:: MonopileFoundation
+.. autoclass:: TowerDiscretization
+.. autoclass:: TowerMass
+.. autoclass:: TurbineMass
+.. autoclass:: TowerPreFrame
+.. autoclass:: TowerPostFrame
+.. autoclass:: TowerLeanSE
+.. autoclass:: TowerSE

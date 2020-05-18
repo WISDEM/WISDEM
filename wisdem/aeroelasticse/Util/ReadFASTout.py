@@ -6,6 +6,8 @@ Author: Evan Gaertner, National Renewable Energy Laboratory
 Inputs:
     FileName      - string: contains file name to open
     OutFileFmt    - int: (optional) 1=textfile, 2=binary
+    Verbose       - boolean: (optional) switch text output on and off
+    SkipHeader    - int: (optional) for reading text output files, number of header lines to skip; only needed for files that have blank lines in the file desciption/header, common in FAST7 outputs
 
 Outputs:
     data          - dict: FAST output time series, output channel names as dict keys
@@ -16,7 +18,7 @@ import numpy as np
 import struct
 import os
 
-def ReadFASToutFormat(FileName, OutFileFmt=0, Verbose=False):
+def ReadFASToutFormat(FileName, OutFileFmt=0, Verbose=False, SkipHeader=0):
     
     if OutFileFmt == 2:
         path,fname = os.path.split(FileName)
@@ -49,7 +51,7 @@ def ReadFASToutFormat(FileName, OutFileFmt=0, Verbose=False):
                     print('Attempting text read')
                 path,fname = os.path.split(FileName)
                 FileName = os.path.join(path, '.'.join(fname.split('.')[:-1])+'.out')
-                Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTtext(FileName)
+                Channels, ChanName, ChanUnit, FileID, DescStr = ReadFASTtext(FileName, SkipHeader=SkipHeader)
                 if Verbose:
                     print('Success')
                 error = False
@@ -171,18 +173,19 @@ def ReadFASTbinary(FileName):
 
     return Channels, ChanName, ChanUnit, FileID, DescStr
 
-def ReadFASTtext(FileName):
+def ReadFASTtext(FileName, SkipHeader=0):
 
-    f = open(FileName, 'r')
+    f  = open(FileName, 'r', errors='replace')
+    ln = f.readline()
 
     DescStr = []
-    ln = f.readline()
     i = 0
-    while ln != '':
+    while ln != '' or i<=SkipHeader+1:
         if 'Time' in ln:
             break
         DescStr.append(ln.strip())
         ln = f.readline()
+        i += 1
         
     DescStr = ' '.join(DescStr).strip()
     ChanName = ln.split()
@@ -195,10 +198,10 @@ def ReadFASTtext(FileName):
 
 if __name__ == "__main__":
 
-    FileName = '0.outb'
+    FileName = 'IECDLC1p2NTM_yaw0_3mps_seed1_dir180.out'
     # FileName = 'temp/OpenFAST/09.out'
     
-    data, meta = ReadFASToutFormat(FileName, OutFileFmt=2)
+    data, meta = ReadFASToutFormat(FileName, SkipHeader=0)
 
     import matplotlib.pyplot as plt
     plt.figure()

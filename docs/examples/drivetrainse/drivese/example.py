@@ -112,7 +112,7 @@ print 'Main bearings: {0:8.1f} kg'.format(nace.mainBearing.mass + nace.secondBea
 print 'Gearbox: {0:8.1f} kg'.format(nace.gearbox.mass)
 print 'High speed shaft & brakes: {0:8.1f} kg'.format(nace.highSpeedSide.mass)
 print 'Generator: {0:8.1f} kg'.format(nace.generator.mass)
-print 'Variable speed electronics: {0:8.1f} kg'.format(nace.above_yaw_massAdder.vs_electronics_mass)
+print 'Variable speed electronics: {0:8.1f} kg'.format(nace.above_yaw_massAdder.converter_mass)
 print 'Overall mainframe:{0:8.1f} kg'.format(nace.above_yaw_massAdder.mainframe_mass)
 print '     Bedplate: {0:8.1f} kg'.format(nace.bedplate.mass)
 print 'Electrical connections: {0:8.1f} kg'.format(nace.above_yaw_massAdder.electrical_mass)
