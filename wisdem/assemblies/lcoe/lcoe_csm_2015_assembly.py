@@ -478,15 +478,15 @@ def create_example_se_assembly(with_landbos=False,with_ecn_opex=False, ecn_file=
     # === Print ===
 
 
-    print "Key Plant Outputs for wind plant with NREL 5 MW Turbine"
+    print("Key Plant Outputs for wind plant with NREL 5 MW Turbine")
     #print "LCOE: ${0:.4f} USD/kWh".format(lcoe_se.lcoe) # not in base output set (add to assembly output if desired)
-    print "COE: ${0:.4f} USD/kWh".format(lcoe_se.coe)
-    print
-    print "AEP per turbine: {0:.1f} kWh/turbine".format(lcoe_se.net_aep / lcoe_se.turbine_number)
-    print "Turbine Cost: ${0:.2f} USD".format(lcoe_se.turbine_cost)
-    print "BOS costs per turbine: ${0:.2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number)
-    print "OPEX per turbine: ${0:.2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number)    
-    print
+    print("COE: ${0:.4f} USD/kWh".format(lcoe_se.coe))
+    print()
+    print("AEP per turbine: {0:.1f} kWh/turbine".format(lcoe_se.net_aep / lcoe_se.turbine_number))
+    print("Turbine Cost: ${0:.2f} USD".format(lcoe_se.turbine_cost))
+    print("BOS costs per turbine: ${0:.2f} USD/turbine".format(lcoe_se.bos_costs / lcoe_se.turbine_number))
+    print("OPEX per turbine: ${0:.2f} USD/turbine".format(lcoe_se.avg_annual_opex / lcoe_se.turbine_number))    
+    print()
     # ====
 
 if __name__ == '__main__':

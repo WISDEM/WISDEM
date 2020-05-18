@@ -12,6 +12,7 @@
 #
 import os
 import sys
+
 cwd = os.getcwd()
 wisdempath = os.path.dirname(cwd)
 sys.path.insert(0, wisdempath)
@@ -43,8 +44,10 @@ extensions = ['sphinx.ext.autodoc',
               'sphinxcontrib.bibtex',
               'sphinx.ext.intersphinx',
               'sphinx_rtd_theme',
+              # 'autoapi.extension',
               # 'embed-n2',
 ]
+
 
 # Numbering figures in HTML format (always numbered in latex)
 numfig = True
@@ -60,15 +63,13 @@ master_doc = 'index'
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-
-# -- Autodoc options ------------------------------------------------------
+# TODO : need to set these options correctly; right now the members are placeholders
 autodoc_default_options = {
     'members': 'var1, var2',
     'member-order': 'bysource',
     'undoc-members': True,
     'exclude-members': '__weakref__'
 }
-
 
 # -- Options for HTML output ----------------------------------------------
 
