@@ -4,15 +4,14 @@ turbine_costsse_2015.py
 Created by Janine Freeman 2015 based on turbine_costsse.py 2012.
 Copyright (c) NREL. All rights reserved.
 """
-
-from openmdao.api import ExplicitComponent, Problem, Group, IndepVarComp
+import openmdao.api as om
 
 import numpy as np
 
 
 ###### Rotor
 #-------------------------------------------------------------------------------
-class BladeCost2015(ExplicitComponent):
+class BladeCost2015(om.ExplicitComponent):
     """
     Compute blade cost
     
@@ -51,7 +50,7 @@ class BladeCost2015(ExplicitComponent):
         
 
 # -----------------------------------------------------------------------------------------------
-class HubCost2015(ExplicitComponent):
+class HubCost2015(om.ExplicitComponent):
     """
     Compute hub cost
     
@@ -84,7 +83,7 @@ class HubCost2015(ExplicitComponent):
         
 
 #-------------------------------------------------------------------------------
-class PitchSystemCost2015(ExplicitComponent):
+class PitchSystemCost2015(om.ExplicitComponent):
     """
     Compute pitch system cost
     
@@ -116,7 +115,7 @@ class PitchSystemCost2015(ExplicitComponent):
         outputs['pitch_system_cost'] = pitch_system_mass_cost_coeff * pitch_system_mass
         
 #-------------------------------------------------------------------------------
-class SpinnerCost2015(ExplicitComponent):
+class SpinnerCost2015(om.ExplicitComponent):
     """
     Compute spinner cost
     
@@ -148,7 +147,7 @@ class SpinnerCost2015(ExplicitComponent):
         outputs['spinner_cost'] = spinner_mass_cost_coeff * spinner_mass
 
 #-------------------------------------------------------------------------------
-class HubSystemCostAdder2015(ExplicitComponent):
+class HubSystemCostAdder2015(om.ExplicitComponent):
     """
     Add hub, pitch system, and spinner costs
     
@@ -219,7 +218,7 @@ class HubSystemCostAdder2015(ExplicitComponent):
         outputs['hub_system_cost'] = (1 + hub_transportMultiplier + hub_profitMultiplier) * ((1 + hub_overheadCostMultiplier + hub_assemblyCostMultiplier) * partsCost)
 
 #-------------------------------------------------------------------------------
-class RotorCostAdder2015(ExplicitComponent):
+class RotorCostAdder2015(om.ExplicitComponent):
     """
     Sum individual rotor system and component costs to get overall rotor cost.
     
@@ -270,7 +269,7 @@ class RotorCostAdder2015(ExplicitComponent):
 
 ###### Nacelle
 # -------------------------------------------------
-class LowSpeedShaftCost2015(ExplicitComponent):
+class LowSpeedShaftCost2015(om.ExplicitComponent):
     """
     Compute low speed shaft cost
     
@@ -300,7 +299,7 @@ class LowSpeedShaftCost2015(ExplicitComponent):
         outputs['lss_cost'] = lss_mass_cost_coeff * lss_mass
 
 #-------------------------------------------------------------------------------
-class BearingCost2015(ExplicitComponent):
+class BearingCost2015(om.ExplicitComponent):
     """
     Compute main bearing cost
     
@@ -331,7 +330,7 @@ class BearingCost2015(ExplicitComponent):
         outputs['main_bearing_cost'] = bearing_mass_cost_coeff * main_bearing_mass
 
 #-------------------------------------------------------------------------------
-class GearboxCost2015(ExplicitComponent):
+class GearboxCost2015(om.ExplicitComponent):
     """
     Compute gearbox cost
     
@@ -362,7 +361,7 @@ class GearboxCost2015(ExplicitComponent):
         outputs['gearbox_cost'] = gearbox_mass_cost_coeff * gearbox_mass
 
 #-------------------------------------------------------------------------------
-class HighSpeedSideCost2015(ExplicitComponent):
+class HighSpeedSideCost2015(om.ExplicitComponent):
     """
     Compute high speed side cost
     
@@ -393,7 +392,7 @@ class HighSpeedSideCost2015(ExplicitComponent):
         outputs['hss_cost'] = hss_mass_cost_coeff * hss_mass
 
 #-------------------------------------------------------------------------------
-class GeneratorCost2015(ExplicitComponent):
+class GeneratorCost2015(om.ExplicitComponent):
     """
     Compute generator cost
     
@@ -424,7 +423,7 @@ class GeneratorCost2015(ExplicitComponent):
         outputs['generator_cost'] = generator_mass_cost_coeff * generator_mass
 
 #-------------------------------------------------------------------------------
-class BedplateCost2015(ExplicitComponent):
+class BedplateCost2015(om.ExplicitComponent):
     """
     Compute bedplate cost
     
@@ -455,7 +454,7 @@ class BedplateCost2015(ExplicitComponent):
         outputs['bedplate_cost'] = bedplate_mass_cost_coeff * bedplate_mass
 
 #---------------------------------------------------------------------------------
-class YawSystemCost2015(ExplicitComponent):
+class YawSystemCost2015(om.ExplicitComponent):
     """
     Compute yaw system cost
     
@@ -486,7 +485,7 @@ class YawSystemCost2015(ExplicitComponent):
         outputs['yaw_system_cost'] = yaw_mass_cost_coeff * yaw_mass
 
 #---------------------------------------------------------------------------------
-class ConverterCost2015(ExplicitComponent):
+class ConverterCost2015(om.ExplicitComponent):
     """
     Compute converter cost
     
@@ -517,7 +516,7 @@ class ConverterCost2015(ExplicitComponent):
         outputs['converter_cost'] = converter_mass_cost_coeff * converter_mass
 
 #---------------------------------------------------------------------------------
-class HydraulicCoolingCost2015(ExplicitComponent):
+class HydraulicCoolingCost2015(om.ExplicitComponent):
     """
     Compute hydraulic cooling cost
     
@@ -549,7 +548,7 @@ class HydraulicCoolingCost2015(ExplicitComponent):
         outputs['hvac_cost'] = hvac_mass_cost_coeff * hvac_mass
 
 #---------------------------------------------------------------------------------
-class NacelleCoverCost2015(ExplicitComponent):
+class NacelleCoverCost2015(om.ExplicitComponent):
     """
     Compute nacelle cover cost
     
@@ -580,7 +579,7 @@ class NacelleCoverCost2015(ExplicitComponent):
         outputs['cover_cost'] = cover_mass_cost_coeff * cover_mass
 
 #---------------------------------------------------------------------------------
-class ElecConnecCost2015(ExplicitComponent):
+class ElecConnecCost2015(om.ExplicitComponent):
     """
     Compute electrical connection costs
     
@@ -612,7 +611,7 @@ class ElecConnecCost2015(ExplicitComponent):
 
 
 #---------------------------------------------------------------------------------
-class ControlsCost2015(ExplicitComponent):
+class ControlsCost2015(om.ExplicitComponent):
     """
     Compute controls cost
     
@@ -643,7 +642,7 @@ class ControlsCost2015(ExplicitComponent):
         outputs['controls_cost'] = machine_rating * coeff
 
 #---------------------------------------------------------------------------------
-class PlatformsMainframeCost2015(ExplicitComponent):
+class PlatformsMainframeCost2015(om.ExplicitComponent):
     """
     Compute platforms cost
     
@@ -699,7 +698,7 @@ class PlatformsMainframeCost2015(ExplicitComponent):
         outputs['platforms_cost'] = NacellePlatformsCost + craneCost #+ BaseHardwareCost
 
 #-------------------------------------------------------------------------------
-class TransformerCost2015(ExplicitComponent):
+class TransformerCost2015(om.ExplicitComponent):
     """
     Compute transformer costs
     
@@ -730,7 +729,7 @@ class TransformerCost2015(ExplicitComponent):
         outputs['transformer_cost'] = transformer_mass_cost_coeff * transformer_mass
 
 #-------------------------------------------------------------------------------
-class NacelleSystemCostAdder2015(ExplicitComponent):
+class NacelleSystemCostAdder2015(om.ExplicitComponent):
     """
     Sum nacelle system costs
     
@@ -884,7 +883,7 @@ class NacelleSystemCostAdder2015(ExplicitComponent):
 
 ###### Tower
 #-------------------------------------------------------------------------------
-class TowerCost2015(ExplicitComponent):
+class TowerCost2015(om.ExplicitComponent):
     """
     Compute tower parts costs
     
@@ -923,7 +922,7 @@ class TowerCost2015(ExplicitComponent):
         
         
 #-------------------------------------------------------------------------------
-class TowerCostAdder2015(ExplicitComponent):
+class TowerCostAdder2015(om.ExplicitComponent):
     """
     Sum tower costs
     
@@ -968,7 +967,7 @@ class TowerCostAdder2015(ExplicitComponent):
         outputs['tower_cost'] = (1 + tower_transportMultiplier + tower_profitMultiplier) * ((1 + tower_overheadCostMultiplier + tower_assemblyCostMultiplier) * partsCost)
 
 #-------------------------------------------------------------------------------
-class TurbineCostAdder2015(ExplicitComponent):
+class TurbineCostAdder2015(om.ExplicitComponent):
     """
     Sum all turbine costs
     
@@ -1045,7 +1044,7 @@ class TurbineCostAdder2015(ExplicitComponent):
         outputs['turbine_cost']    = (1 + turbine_transportMultiplier + turbine_profitMultiplier) * ((1 + turbine_overheadCostMultiplier + turbine_assemblyCostMultiplier) * partsCost)
         outputs['turbine_cost_kW'] = outputs['turbine_cost'] / inputs['machine_rating']
 
-class Outputs2Screen(ExplicitComponent):
+class Outputs2Screen(om.ExplicitComponent):
     """
     Print cost outputs to the terminal
     
@@ -1224,7 +1223,7 @@ class Outputs2Screen(ExplicitComponent):
     
 
 #-------------------------------------------------------------------------------
-class Turbine_CostsSE_2015(Group):
+class Turbine_CostsSE_2015(om.Group):
     def initialize(self):
         self.options.declare('verbosity', default=False)
         self.options.declare('topLevelFlag', default=True)
@@ -1233,7 +1232,7 @@ class Turbine_CostsSE_2015(Group):
         self.verbosity = self.options['verbosity']
 
         if self.options['topLevelFlag']:
-            sharedIndeps = IndepVarComp()
+            sharedIndeps = om.IndepVarComp()
             sharedIndeps.add_output('machine_rating',     units='kW', val=0.0)
             sharedIndeps.add_output('blade_mass',         units='kg', val=0.0)
             sharedIndeps.add_output('hub_mass',           units='kg', val=0.0)
@@ -1257,7 +1256,7 @@ class Turbine_CostsSE_2015(Group):
             sharedIndeps.add_discrete_output('crane', val=False)
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
         
-        indeps = IndepVarComp()
+        indeps = om.IndepVarComp()
         indeps.add_output('blade_mass_cost_coeff',         units='USD/kg', val=14.6)
         indeps.add_output('hub_mass_cost_coeff',           units='USD/kg', val=3.9)
         indeps.add_output('pitch_system_mass_cost_coeff',  units='USD/kg', val=22.1)
@@ -1329,7 +1328,7 @@ def example():
 
     # simple test of module
     turbine = Turbine_CostsSE_2015(verbosity=True)
-    prob = Problem(turbine)
+    prob = om.Problem(turbine)
     prob.setup()
 
     prob['blade_mass']          = 17650.67  # inline with the windpact estimates

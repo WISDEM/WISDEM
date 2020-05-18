@@ -8,13 +8,13 @@ Copyright (c) NREL. All rights reserved.
 from __future__ import print_function
 import numpy as np
 
-from openmdao.api import ExplicitComponent, Problem, Group, IndepVarComp
+import openmdao.api as om
 
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 
 
 # --------------------------------------------------------------------
-class BladeMass(ExplicitComponent):
+class BladeMass(om.ExplicitComponent):
     """
     Compute blade mass
     
@@ -73,7 +73,7 @@ class BladeMass(ExplicitComponent):
         outputs['blade_mass'] = blade_mass_coeff * (rotor_diameter / 2)**exp
 
   # --------------------------------------------------------------------
-class HubMass(ExplicitComponent):
+class HubMass(om.ExplicitComponent):
     """
     Compute hub mass
     
@@ -110,7 +110,7 @@ class HubMass(ExplicitComponent):
         outputs['hub_mass'] = hub_mass_coeff * blade_mass + hub_mass_intercept
 
 # --------------------------------------------------------------------
-class PitchSystemMass(ExplicitComponent):
+class PitchSystemMass(om.ExplicitComponent):
     """
     Compute pitch system mass
     
@@ -159,7 +159,7 @@ class PitchSystemMass(ExplicitComponent):
         outputs['pitch_system_mass'] = pitchBearingMass * (1 + bearing_housing_percent) + mass_sys_offset
 
 # --------------------------------------------------------------------
-class SpinnerMass(ExplicitComponent):
+class SpinnerMass(om.ExplicitComponent):
     """
     Compute spinner mass
     
@@ -195,7 +195,7 @@ class SpinnerMass(ExplicitComponent):
         outputs['spinner_mass'] = spinner_mass_coeff * rotor_diameter + spinner_mass_intercept
 
 # --------------------------------------------------------------------
-class LowSpeedShaftMass(ExplicitComponent):
+class LowSpeedShaftMass(om.ExplicitComponent):
     """
     Compute low speed shaft mass
     
@@ -239,7 +239,7 @@ class LowSpeedShaftMass(ExplicitComponent):
         outputs['lss_mass'] = lss_mass_coeff * (blade_mass * machine_rating/1000.)**lss_mass_exp + lss_mass_intercept
 
 # --------------------------------------------------------------------
-class BearingMass(ExplicitComponent):
+class BearingMass(om.ExplicitComponent):
     """
     Compute bearing mass
     
@@ -276,7 +276,7 @@ class BearingMass(ExplicitComponent):
         outputs['main_bearing_mass'] = bearing_mass_coeff * rotor_diameter ** bearing_mass_exp
 
 # --------------------------------------------------------------------
-class RotorTorque(ExplicitComponent):
+class RotorTorque(om.ExplicitComponent):
     """
     Computed rated rpm and rotor torque
     
@@ -320,7 +320,7 @@ class RotorTorque(ExplicitComponent):
         outputs['rotor_torque'] = ratedHubPower_W / rotorSpeed
         
 # --------------------------------------------------------------------
-class GearboxMass(ExplicitComponent):
+class GearboxMass(om.ExplicitComponent):
     """
     Compute gearbox mass
     
@@ -356,7 +356,7 @@ class GearboxMass(ExplicitComponent):
         outputs['gearbox_mass'] = gearbox_mass_coeff * (rotor_torque/1000.0)**gearbox_mass_exp
 
 # --------------------------------------------------------------------
-class HighSpeedSideMass(ExplicitComponent):
+class HighSpeedSideMass(om.ExplicitComponent):
     """
     Compute high speed side mass
     
@@ -388,7 +388,7 @@ class HighSpeedSideMass(ExplicitComponent):
         outputs['hss_mass'] = hss_mass_coeff * machine_rating
 
 # --------------------------------------------------------------------
-class GeneratorMass(ExplicitComponent):
+class GeneratorMass(om.ExplicitComponent):
     """
     Compute generator mass
     
@@ -424,7 +424,7 @@ class GeneratorMass(ExplicitComponent):
         outputs['generator_mass'] = generator_mass_coeff * machine_rating/1000. + generator_mass_intercept
 
 # --------------------------------------------------------------------
-class BedplateMass(ExplicitComponent):
+class BedplateMass(om.ExplicitComponent):
     """
     Compute bedplate mass
     
@@ -456,7 +456,7 @@ class BedplateMass(ExplicitComponent):
         outputs['bedplate_mass'] = rotor_diameter**bedplate_mass_exp
 
 # --------------------------------------------------------------------
-class YawSystemMass(ExplicitComponent):
+class YawSystemMass(om.ExplicitComponent):
     """
     Compute yaw system mass
     
@@ -494,7 +494,7 @@ class YawSystemMass(ExplicitComponent):
 #TODO: no variable speed mass; ignore for now
 
 # --------------------------------------------------------------------
-class HydraulicCoolingMass(ExplicitComponent):
+class HydraulicCoolingMass(om.ExplicitComponent):
     """
     Compute hydraulic cooling mass
     
@@ -526,7 +526,7 @@ class HydraulicCoolingMass(ExplicitComponent):
         outputs['hvac_mass'] = hvac_mass_coeff * machine_rating
 
 # --------------------------------------------------------------------
-class NacelleCoverMass(ExplicitComponent):
+class NacelleCoverMass(om.ExplicitComponent):
     """
     Compute nacelle cover mass
     
@@ -564,7 +564,7 @@ class NacelleCoverMass(ExplicitComponent):
 # TODO: ignoring controls and electronics mass for now
 
 # --------------------------------------------------------------------
-class PlatformsMainframeMass(ExplicitComponent):
+class PlatformsMainframeMass(om.ExplicitComponent):
     """
     Compute platforms mainframe mass
     
@@ -614,7 +614,7 @@ class PlatformsMainframeMass(ExplicitComponent):
         outputs['platforms_mass'] = platforms_mass + crane_mass
 
 # --------------------------------------------------------------------
-class TransformerMass(ExplicitComponent):
+class TransformerMass(om.ExplicitComponent):
     """
     Compute transformer mass
     
@@ -650,7 +650,7 @@ class TransformerMass(ExplicitComponent):
         outputs['transformer_mass'] = transformer_mass_coeff * machine_rating/1000. + transformer_mass_intercept
 
 # --------------------------------------------------------------------
-class TowerMass(ExplicitComponent):
+class TowerMass(om.ExplicitComponent):
     """
     Compute tower mass
     
@@ -686,7 +686,7 @@ class TowerMass(ExplicitComponent):
         outputs['tower_mass'] = tower_mass_coeff * hub_height ** tower_mass_exp
 
 # Turbine mass adder
-class TurbineMassAdder(ExplicitComponent):
+class TurbineMassAdder(om.ExplicitComponent):
     """
     Compute system masses
     
@@ -802,10 +802,10 @@ class TurbineMassAdder(ExplicitComponent):
 
 # --------------------------------------------------------------------
 
-class nrel_csm_mass_2015(Group):
+class nrel_csm_mass_2015(om.Group):
     
     def setup(self):
-        sharedIndeps = IndepVarComp()
+        sharedIndeps = om.IndepVarComp()
         sharedIndeps.add_output('machine_rating',     units='kW', val=0.0)
         sharedIndeps.add_output('rotor_diameter',         units='m', val=0.0)
         sharedIndeps.add_output('hub_height',         units='m', val=0.0)
@@ -834,7 +834,7 @@ class nrel_csm_mass_2015(Group):
         self.add_subsystem('turbine', TurbineMassAdder(), promotes=['*'])
        
 
-class nrel_csm_2015(Group):
+class nrel_csm_2015(om.Group):
     
     def setup(self):
         self.add_subsystem('nrel_csm_mass', nrel_csm_mass_2015(), promotes=['*'])
@@ -846,7 +846,7 @@ def mass_example():
 
     # simple test of module
     trb = nrel_csm_mass_2015()
-    prob = Problem(trb)
+    prob = om.Problem(trb)
     prob.setup()
     
     prob['rotor_diameter'] = 126.0
@@ -871,7 +871,7 @@ def cost_example():
 
     # simple test of module
     trb = nrel_csm_2015()
-    prob = Problem(trb)
+    prob = om.Problem(trb)
     prob.setup()
 
     # simple test of module

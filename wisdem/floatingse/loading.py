@@ -1,6 +1,5 @@
-
-from openmdao.api import ExplicitComponent, Group, IndepVarComp
 import numpy as np
+import openmdao.api as om
 import wisdem.pyframe3dd.frame3dd as frame3dd
 from wisdem.commonse.utilities import nodal2sectional
 
@@ -24,7 +23,7 @@ def ghostNodes(x1, x2, r1, r2):
     dr2 = (1.0 - r2/L) * dx + x1
     return dr1, dr2
 
-class FloatingFrame(ExplicitComponent):
+class FloatingFrame(om.ExplicitComponent):
     """
     Component for semisubmersible pontoon / truss structure for floating offshore wind turbines.
     Should be tightly coupled with Semi and Mooring classes for full system representation.
@@ -1449,7 +1448,7 @@ class FloatingFrame(ExplicitComponent):
 
 
 
-class TrussIntegerToBoolean(ExplicitComponent):
+class TrussIntegerToBoolean(om.ExplicitComponent):
     """
     Get booleans from truss integers
     
@@ -1519,7 +1518,7 @@ class TrussIntegerToBoolean(ExplicitComponent):
 #  Assembly
 # -----------------
 
-class Loading(Group):
+class Loading(om.Group):
 
     def initialize(self):
         self.options.declare('nFull')
@@ -1530,7 +1529,7 @@ class Loading(Group):
         nFullTow = self.options['nFullTow']
         
         # Independent variables that are unique to this Group
-        loadingIndeps = IndepVarComp()
+        loadingIndeps = om.IndepVarComp()
         loadingIndeps.add_output('main_pontoon_attach_lower', 0.0)
         loadingIndeps.add_output('main_pontoon_attach_upper', 0.0)
         loadingIndeps.add_output('pontoon_outer_diameter', 0.0, units='m')

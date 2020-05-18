@@ -10,7 +10,7 @@ from math import atan2
 import numpy as np
 from wisdem.commonse.constants import eps
 from wisdem.commonse.utilities import CubicSplineSegment, cubic_spline_eval, smooth_max, smooth_min, nodal2sectional, sectional2nodal
-from openmdao.api import ExplicitComponent
+import openmdao.api as om
 from scipy.optimize import brentq, minimize_scalar
 
 #-------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ from scipy.optimize import brentq, minimize_scalar
 
 
 
-class GeometricConstraints(ExplicitComponent):
+class GeometricConstraints(om.ExplicitComponent):
     """
     Compute the minimum diameter-to-thickness ratio and taper constraints.
     

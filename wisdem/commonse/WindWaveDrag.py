@@ -23,7 +23,7 @@ from __future__ import print_function
 import math
 import numpy as np
 
-from openmdao.api import ExplicitComponent, Problem, Group
+import openmdao.api as om
 from wisdem.commonse.utilities import sind, cosd  # , linspace_with_deriv, interp_with_deriv, hstack, vstack
 from wisdem.commonse.csystem import DirectionVector
 
@@ -70,7 +70,7 @@ def cylinderDrag(Re):
 #  Components
 # -----------------
 
-class AeroHydroLoads(ExplicitComponent):
+class AeroHydroLoads(om.ExplicitComponent):
     """
     Compute summed forces due to wind and wave loads.
     
@@ -168,7 +168,7 @@ class AeroHydroLoads(ExplicitComponent):
 
 # -----------------
 
-class CylinderWindDrag(ExplicitComponent):
+class CylinderWindDrag(om.ExplicitComponent):
     """
     Compute drag forces on a cylindrical cylinder due to wind.
     
@@ -327,7 +327,7 @@ class CylinderWindDrag(ExplicitComponent):
 
 # -----------------
 
-class CylinderWaveDrag(ExplicitComponent):
+class CylinderWaveDrag(om.ExplicitComponent):
     """
     Compute drag forces on a cylindrical cylinder due to waves.
     
@@ -576,9 +576,9 @@ def main():
     nPoints = len(z)
 
 
-    prob = Problem()
+    prob = om.Problem()
 
-    root = prob.model = Group()
+    root = prob.model = om.Group()
 
     root.add('p1', CylinderWindDrag(nPoints))
 
