@@ -34,13 +34,11 @@ class ServoSE(Group):
         analysis_options = self.options['analysis_options']
 
         self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('gust',              GustETM())
         self.add_subsystem('stall_check',       NoStallConstraint(analysis_options   = analysis_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=analysis_options['servose']['n_pc_spline']))
         self.add_subsystem('aep',               AEP(), promotes=['AEP'])
-        # Compute blade frequencies at rated rotor speed
-        if analysis_options['openfast']['run_openfast'] == True:
-            self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-            self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+
         # Connections to the stall check
         self.connect('powercurve.aoa_regII','stall_check.aoa_along_span')
 
@@ -51,19 +49,57 @@ class ServoSE(Group):
         self.connect('cdf.F',               'aep.CDF_V')
         self.connect('powercurve.P_spline', 'aep.P')   
 
-        if analysis_options['openfast']['run_openfast'] == True:
-            # Connect ROSCO Power curve
-            self.connect('powercurve.rated_V',      'tune_rosco.v_rated')
-            self.connect('powercurve.rated_Omega',  'tune_rosco.rated_rotor_speed')
-            self.connect('powercurve.rated_Q',      'tune_rosco.rated_torque')
+class ServoSE_ROSCO(Group):
+    def initialize(self):
+        self.options.declare('analysis_options')
+        self.options.declare('opt_options')
 
-            # Connect ROSCO for Rotor Performance tables
-            self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
-            self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
-            self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
-            self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
-            self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
-            self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
+    def setup(self):
+        analysis_options = self.options['analysis_options']
+
+        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+
+        # Connect ROSCO for Rotor Performance tables
+        self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
+        self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
+        self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
+        self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
+        self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
+        self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
+
+class GustETM(ExplicitComponent):
+    # OpenMDAO component that generates an "equivalent gust" wind speed by summing an user-defined wind speed at hub height with 3 times sigma. sigma is the turbulent wind speed standard deviation for the extreme turbulence model, see IEC-61400-1 Eq. 19 paragraph 6.3.2.3
+    
+    def setup(self):
+        # Inputs
+        self.add_input('V_mean', val=0.0, units='m/s', desc='IEC average wind speed for turbine class')
+        self.add_input('V_hub', val=0.0, units='m/s', desc='hub height wind speed')
+        self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
+        self.add_input('std', val=3.0, desc='number of standard deviations for strength of gust')
+
+        # Output
+        self.add_output('V_gust', val=0.0, units='m/s', desc='gust wind speed')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        V_mean = inputs['V_mean']
+        V_hub  = inputs['V_hub']
+        std    = inputs['std']
+        turbulence_class = discrete_inputs['turbulence_class']
+
+        if turbulence_class.upper() == 'A':
+            Iref = 0.16
+        elif turbulence_class.upper() == 'B':
+            Iref = 0.14
+        elif turbulence_class.upper() == 'C':
+            Iref = 0.12
+        else:
+            raise ValueError('Unknown Turbulence Class: '+str(turbulence_class)+' . Permitted values are A / B / C')
+
+        c = 2.0
+        sigma = c * Iref * (0.072*(V_mean/c + 3)*(V_hub/c - 4) + 10)
+        V_gust = V_hub + std*sigma
+        outputs['V_gust'] = V_gust
 
 class TuneROSCO(ExplicitComponent):
     def initialize(self):

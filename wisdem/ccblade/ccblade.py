@@ -843,77 +843,85 @@ class CCBlade(object):
 
     def __loads(self, phi, rotating, r, chord, theta, af, Vx, Vy):
         """normal and tangential loads at one section (and optionally derivatives)"""
+        if Vx != 0. and Vy != 0.:
 
-        cphi = cos(phi)
-        sphi = sin(phi)
+            cphi = cos(phi)
+            sphi = sin(phi)
 
-        if rotating:
-            _, a, ap, cl, cd = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
-        else:
-            a = 0.0
-            ap = 0.0
-                
-        alpha_rad, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch,
-                                             chord, theta, self.rho, self.mu)
-        if not rotating:
-            cl, cd = af.evaluate(alpha_rad, Re)
-
-        cn = cl*cphi + cd*sphi  # these expressions should always contain drag
-        ct = cl*sphi - cd*cphi
-
-        q = 0.5*self.rho*W**2
-        Np = cn*q*chord
-        Tp = ct*q*chord
-
-        alpha_deg = alpha_rad * 180. / np.pi
-
-        if self.derivatives:
-
-            # derivative of residual function
             if rotating:
-                dR_dx, da_dx, dap_dx = self.__residualDerivatives(phi, r, chord, theta, af, Vx, Vy)
-                dphi_dx = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+                _, a, ap, cl, cd = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
             else:
-                dR_dx = np.zeros(9)
-                dR_dx[0] = 1.0  # just to prevent divide by zero
-                da_dx = np.zeros(9)
-                dap_dx = np.zeros(9)
-                dphi_dx = np.zeros(9)
+                a = 0.0
+                ap = 0.0
+                    
+            alpha_rad, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch,
+                                                 chord, theta, self.rho, self.mu)
+            if not rotating:
+                cl, cd = af.evaluate(alpha_rad, Re)
 
-            # x = [phi, chord, theta, Vx, Vy, r, Rhub, Rtip, pitch]  (derivative order)
-            dx_dx = np.eye(9)
-            dchord_dx = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+            cn = cl*cphi + cd*sphi  # these expressions should always contain drag
+            ct = cl*sphi - cd*cphi
 
-            # alpha, W, Re (Tapenade)
-
-            alpha_rad, dalpha_dx, W, dW_dx, Re, dRe_dx = _bem.relativewind_dv(phi, dx_dx[0, :],
-                a, da_dx, ap, dap_dx, Vx, dx_dx[3, :], Vy, dx_dx[4, :],
-                self.pitch, dx_dx[8, :], chord, dx_dx[1, :], theta, dx_dx[2, :],
-                self.rho, self.mu)
-
-            # cl, cd (spline derivatives)
-            dcl_dalpha, dcl_dRe, dcd_dalpha, dcd_dRe = af.derivatives(alpha_rad, Re)
-
-            # chain rule
-            dcl_dx = dcl_dalpha*dalpha_dx + dcl_dRe*dRe_dx
-            dcd_dx = dcd_dalpha*dalpha_dx + dcd_dRe*dRe_dx
-
-            # cn, cd
-            dcn_dx = dcl_dx*cphi - cl*sphi*dphi_dx + dcd_dx*sphi + cd*cphi*dphi_dx
-            dct_dx = dcl_dx*sphi + cl*cphi*dphi_dx - dcd_dx*cphi + cd*sphi*dphi_dx
-
-            # Np, Tp
-            dNp_dx = Np*(1.0/cn*dcn_dx + 2.0/W*dW_dx + 1.0/chord*dchord_dx)
-            dTp_dx = Tp*(1.0/ct*dct_dx + 2.0/W*dW_dx + 1.0/chord*dchord_dx)
+            q = 0.5*self.rho*W**2
+            Np = cn*q*chord
+            Tp = ct*q*chord
 
             alpha_deg = alpha_rad * 180. / np.pi
 
-        else:
-            dNp_dx = None
-            dTp_dx = None
-            dR_dx = None
+            if self.derivatives:
 
-        return a, ap, Np, Tp, alpha_deg, cl, cd, cn, ct, q, W, Re, dNp_dx, dTp_dx, dR_dx
+                # derivative of residual function
+                if rotating:
+                    dR_dx, da_dx, dap_dx = self.__residualDerivatives(phi, r, chord, theta, af, Vx, Vy)
+                    dphi_dx = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+                else:
+                    dR_dx = np.zeros(9)
+                    dR_dx[0] = 1.0  # just to prevent divide by zero
+                    da_dx = np.zeros(9)
+                    dap_dx = np.zeros(9)
+                    dphi_dx = np.zeros(9)
+
+                # x = [phi, chord, theta, Vx, Vy, r, Rhub, Rtip, pitch]  (derivative order)
+                dx_dx = np.eye(9)
+                dchord_dx = np.array([0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+
+                # alpha, W, Re (Tapenade)
+
+                alpha_rad, dalpha_dx, W, dW_dx, Re, dRe_dx = _bem.relativewind_dv(phi, dx_dx[0, :],
+                    a, da_dx, ap, dap_dx, Vx, dx_dx[3, :], Vy, dx_dx[4, :],
+                    self.pitch, dx_dx[8, :], chord, dx_dx[1, :], theta, dx_dx[2, :],
+                    self.rho, self.mu)
+
+                # cl, cd (spline derivatives)
+                dcl_dalpha, dcl_dRe, dcd_dalpha, dcd_dRe = af.derivatives(alpha_rad, Re)
+
+                # chain rule
+                dcl_dx = dcl_dalpha*dalpha_dx + dcl_dRe*dRe_dx
+                dcd_dx = dcd_dalpha*dalpha_dx + dcd_dRe*dRe_dx
+
+                # cn, cd
+                dcn_dx = dcl_dx*cphi - cl*sphi*dphi_dx + dcd_dx*sphi + cd*cphi*dphi_dx
+                dct_dx = dcl_dx*sphi + cl*cphi*dphi_dx - dcd_dx*cphi + cd*sphi*dphi_dx
+
+                # Np, Tp
+                if cn==0. or W==0. or chord==0.:
+                    print(phi, rotating, r, chord, theta, af, Vx, Vy)
+                    exit()
+                dNp_dx = Np*(1.0/cn*dcn_dx + 2.0/W*dW_dx + 1.0/chord*dchord_dx)
+                dTp_dx = Tp*(1.0/ct*dct_dx + 2.0/W*dW_dx + 1.0/chord*dchord_dx)
+
+                alpha_deg = alpha_rad * 180. / np.pi
+
+            else:
+                dNp_dx = None
+                dTp_dx = None
+                dR_dx = None
+
+            return a, ap, Np, Tp, alpha_deg, cl, cd, cn, ct, q, W, Re, dNp_dx, dTp_dx, dR_dx
+
+        else:
+            # print('Warning: CCBlade.__loads: Wind Velocities, Vx=0, Vy=0. If unexpected, check assigned load cases, connections, and/or workflow order.')
+            return 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., np.zeros(9), np.zeros(9), np.zeros(9)
 
 
     def __windComponents(self, Uinf, Omega, azimuth):

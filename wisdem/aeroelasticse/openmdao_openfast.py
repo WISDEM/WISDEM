@@ -479,9 +479,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynBlade']['FlpStff']    = inputs['beam:EIyy']
         fst_vt['ElastoDynBlade']['EdgStff']    = inputs['beam:EIxx']
         for i in range(5):
-            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i]
-            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i]
-            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i]
+            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i] / sum(inputs['flap_mode_shapes'][0,:])
+            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i] / sum(inputs['flap_mode_shapes'][1,:])
+            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i] / sum(inputs['edge_mode_shapes'][0,:])
         
         # Update AeroDyn15
         fst_vt['AeroDyn15']['AirDens']   = inputs['rho'][0]

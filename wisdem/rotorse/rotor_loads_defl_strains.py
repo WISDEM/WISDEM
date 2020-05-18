@@ -12,39 +12,6 @@ from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse import RPM2RS, RS2RPM
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
-class GustETM(ExplicitComponent):
-    # OpenMDAO component that generates an "equivalent gust" wind speed by summing an user-defined wind speed at hub height with 3 times sigma. sigma is the turbulent wind speed standard deviation for the extreme turbulence model, see IEC-61400-1 Eq. 19 paragraph 6.3.2.3
-    
-    def setup(self):
-        # Inputs
-        self.add_input('V_mean', val=0.0, units='m/s', desc='IEC average wind speed for turbine class')
-        self.add_input('V_hub', val=0.0, units='m/s', desc='hub height wind speed')
-        self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
-        self.add_input('std', val=3.0, desc='number of standard deviations for strength of gust')
-
-        # Output
-        self.add_output('V_gust', val=0.0, units='m/s', desc='gust wind speed')
-
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        V_mean = inputs['V_mean']
-        V_hub  = inputs['V_hub']
-        std    = inputs['std']
-        turbulence_class = discrete_inputs['turbulence_class']
-
-        if turbulence_class.upper() == 'A':
-            Iref = 0.16
-        elif turbulence_class.upper() == 'B':
-            Iref = 0.14
-        elif turbulence_class.upper() == 'C':
-            Iref = 0.12
-        else:
-            raise ValueError('Unknown Turbulence Class: '+str(turbulence_class)+' . Permitted values are A / B / C')
-
-        c = 2.0
-        sigma = c * Iref * (0.072*(V_mean/c + 3)*(V_hub/c - 4) + 10)
-        V_gust = V_hub + std*sigma
-        outputs['V_gust'] = V_gust
-
 class BladeCurvature(ExplicitComponent):
     # OpenMDAO component that computes the 3D curvature of the blade
     def initialize(self):
@@ -535,10 +502,16 @@ class DesignConstraints(ExplicitComponent):
         strainU_spar     = inputs['strainU_spar']
         strainL_spar     = inputs['strainL_spar']
         # min_strainU_spar = inputs['min_strainU_spar']
-        max_strainU_spar = inputs['max_strainU_spar']
+        if inputs['max_strainU_spar'] == np.zeros_like(inputs['max_strainU_spar']):
+            max_strainU_spar =  np.ones_like(inputs['max_strainU_spar'])
+        else:
+            max_strainU_spar = inputs['max_strainU_spar']
         # min_strainL_spar = inputs['min_strainL_spar']
-        max_strainL_spar = inputs['max_strainL_spar']
-        
+        if inputs['max_strainL_spar'] == np.zeros_like(inputs['max_strainL_spar']):
+            max_strainL_spar =  np.ones_like(inputs['max_strainL_spar'])
+        else:
+            max_strainL_spar = inputs['max_strainL_spar']
+
         # outputs['constr_min_strainU_spar'] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / abs(min_strainU_spar)
         outputs['constr_max_strainU_spar'] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / max_strainU_spar
         # outputs['constr_min_strainL_spar'] = abs(np.interp(s_opt_spar_cap_ps, s, strainL_spar)) / abs(min_strainL_spar)
@@ -565,7 +538,6 @@ class RotorLoadsDeflStrains(Group):
         # Load blade with rated conditions and compute aerodynamic forces
         promoteListAeroLoads =  ['r', 'theta', 'chord', 'Rtip', 'Rhub', 'hub_height', 'precone', 'tilt', 'airfoils_aoa', 'airfoils_Re', 'airfoils_cl', 'airfoils_cd', 'airfoils_cm', 'nBlades', 'rho', 'mu', 'Omega_load','pitch_load']
         # self.add_subsystem('aero_rated',        CCBladeLoads(analysis_options = analysis_options), promotes=promoteListAeroLoads)
-        self.add_subsystem('gust',              GustETM())
         self.add_subsystem('aero_gust',         CCBladeLoads(analysis_options = analysis_options), promotes=promoteListAeroLoads)
         # self.add_subsystem('aero_storm_1yr',    CCBladeLoads(analysis_options = analysis_options), promotes=promoteListAeroLoads)
         # self.add_subsystem('aero_storm_50yr',   CCBladeLoads(analysis_options = analysis_options), promotes=promoteListAeroLoads)
