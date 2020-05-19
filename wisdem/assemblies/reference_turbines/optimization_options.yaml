@@ -136,8 +136,9 @@ constraints:
 driver:
     tol: 1.e-2
     max_iter: 10
-    solver: SNOPT #SLSQP # SNOPT # CONMIN
-    step_size: 1.e-2
+    solver: SLSQP # SNOPT # CONMIN
+    step_size: 1.e-3
+    form: central # forward
 
 recorder:
     flag: True

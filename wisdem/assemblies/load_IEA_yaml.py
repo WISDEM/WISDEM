@@ -95,7 +95,6 @@ class WindTurbineOntologyPython(object):
         FASTpref['FAST_namingOut']      = self.analysis_options['openfast']['FAST_namingOut']
         FASTpref['FAST_runDirectory']   = self.analysis_options['openfast']['FAST_runDirectory']
         FASTpref['path2dll']            = self.analysis_options['openfast']['path2dll']
-        FASTpref['cores']               = self.analysis_options['openfast']['cores']
         FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
         FASTpref['DLC_gust']            = None      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
@@ -1409,8 +1408,8 @@ class WindTurbineOntologyOpenMDAO(Group):
         env_ivc.add_output('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
         env_ivc.add_output('rho_water',    val=1025.,       units='kg/m**3',    desc='Density of ocean water')
         env_ivc.add_output('mu_water',     val=1.3351e-3,   units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
-        env_ivc.add_output('G_soil',       val=140e6,       units='kg/m**3',    desc='Density of ocean water')
-        env_ivc.add_output('nu_soil',      val=0.4,         units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
+        env_ivc.add_output('G_soil',       val=140e6,       units='N/m**2',     desc='Shear stress of soil')
+        env_ivc.add_output('nu_soil',      val=0.4,                             desc='Poisson ratio of soil')
 
         # Cost analysis inputs
         costs_ivc = self.add_subsystem('costs', IndepVarComp())
