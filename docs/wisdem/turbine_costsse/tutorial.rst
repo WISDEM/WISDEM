@@ -7,7 +7,7 @@ Tutorial
 .. contents:: List of Examples
 
 
-Tutorial for Turbine Component Mass Using the NREL_CSM (2015)
+Turbine Component Masses Using the NREL_CSM (2015)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As an example of estimating turbine component masses (only) using the 2015 update of the NREL Cost and Scaling Model (CSM), let us simulate the NREL 5MW Reference Model :cite:`FAST2009`.
@@ -54,7 +54,7 @@ The final lines highlight the mass breakdown summaries:
 See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass.py>`_.
 
 
-Tutorial for Turbine Component Mass and Costs Using the NREL_CSM (2015)
+Turbine Component Masses and Costs Using the NREL_CSM (2015)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is often desired to estimate the component costs and cost of energy of a hypothetical turbine, not just the component masses in the previous example.  To do so, all that is required is import the full 2015 Cost and Scaling model with:
@@ -97,7 +97,7 @@ The final screen output is:
 See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass_and_cost.py>`_.
 
 
-Tutorial for Turbine Component Costs Using the NREL_CSM (2015)
+Turbine Component Costs Using the NREL_CSM (2015)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As an example of estimating turbine component costs (only), if the component masses are already known, using the 2015 update of the NREL Cost and Scaling Model (CSM), let us simulate the NREL 5MW Reference Model :cite:`FAST2009`.
@@ -179,7 +179,7 @@ See the full source for this example on `Github <https://github.com/WISDEM/WISDE
 
 
 
-Tutorial for Parametric Studies Using the NREL_CSM (2015)
+Parametric Studies Using the NREL_CSM (2015)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The simplicity and rapid execution of the NREL CSM makes it well suited for parametric studies.  This example runs approximately 6000 points in a Design of Experiment (DoE) parametric analysis varying machine rating, rotor diameter (and thereby hub_height), the blade mass scaling exponent, the average wind speed, and wind shear.
