@@ -14,3 +14,4 @@ numpydoc
 numpydoc
 sphinxcontrib.bibtex
 sphinx-rtd-theme
+# sphinx-autoapi

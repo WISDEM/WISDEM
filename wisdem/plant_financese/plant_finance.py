@@ -2,30 +2,58 @@ from openmdao.api import ExplicitComponent, Group, Problem
 import numpy as np
 
 class PlantFinance(ExplicitComponent):
+    """
+    Compute LCOE for the wind plant
+    
+    Parameters
+    ----------
+    machine_rating : float
+        Rating of the turbine
+    tcc_per_kW : float
+        Turbine capital cost
+    offset_tcc_per_kW : float
+        Offset to turbine capital cost
+    turbine_number : int
+        Number of turbines at plant
+    bos_per_kW : float
+        Balance of system costs of the turbine
+    opex_per_kW : float
+        Average annual operational expenditures of the turbine
+    park_aep : float
+        Annual Energy Production of the wind plant
+    turbine_aep : float
+        Annual Energy Production of the wind turbine
+    wake_loss_factor : float
+        The losses in AEP due to waked conditions
+    fixed_charge_rate : float
+        Fixed charge rate for coe calculation
+    
+    Returns
+    -------
+    lcoe : float
+        Levelized cost of energy for the wind plant
+    
+    """
     def initialize(self):
         self.options.declare('verbosity',default=False)
         
     def setup(self):
 
         # Inputs
-        self.add_input('machine_rating',    val=0.0, units='kW',        desc='Rating of the turbine')
-        self.add_input('tcc_per_kW' ,       val=0.0, units='USD/kW',    desc='Turbine capital cost')
-        self.add_input('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
-        self.add_discrete_input('turbine_number',    val=0,             desc='Number of turbines at plant')
-        self.add_input('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
-        self.add_input('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
-        self.add_input('park_aep',          val=0.0, units='kW*h',      desc='Annual Energy Production of the wind plant')
-        self.add_input('turbine_aep',       val=0.0, units='kW*h',      desc='Annual Energy Production of the wind turbine')
+        self.add_input('machine_rating', val=0.0, units='kW')
+        self.add_input('tcc_per_kW', val=0.0, units='USD/kW')
+        self.add_input('offset_tcc_per_kW', val=0.0, units='USD/kW')
+        self.add_discrete_input('turbine_number', val=0)
+        self.add_input('bos_per_kW', val=0.0, units='USD/kW')
+        self.add_input('opex_per_kW', val=0.0, units='USD/kW/yr')
+        self.add_input('park_aep', val=0.0, units='kW*h')
+        self.add_input('turbine_aep', val=0.0, units='kW*h')
+        self.add_input('wake_loss_factor', val=0.15)
+        self.add_input('fixed_charge_rate', val=0.075)
 
-        # parameters
-        self.add_input('wake_loss_factor',  val=0.15,                   desc='The losses in AEP due to waked conditions')
-        self.add_input('fixed_charge_rate', val=0.075,                  desc = 'Fixed charge rate for coe calculation')
+        self.add_output('lcoe', val=0.0, units='USD/kW/h')
 
-        #Outputs
-        self.add_output('lcoe',             val=0.0, units='USD/kW/h',  desc='Levelized cost of energy for the wind plant')
-
-        self.declare_partials('*','*')
-        
+        self.declare_partials('*', '*')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack parameters
@@ -40,7 +68,6 @@ class PlantFinance(ExplicitComponent):
         c_turbine       = tcc_per_kW * t_rating
         c_bos_turbine   = bos_per_kW * t_rating
         c_opex_turbine  = opex_per_kW * t_rating
-        
         
         # Run a few checks on the inputs
         if n_turbine == 0:
@@ -120,13 +147,9 @@ class PlantFinance(ExplicitComponent):
             print('Net energy capture                %.2f MWh/MW/yr'  % nec)
             print('LCoE                              %.2f USD/MWh'    % (lcoe  * 1.e003)) #removed "coe", best to have only one metric for cost
             print('################################################')
-            
-                    
 
     def compute_partials(self, inputs, J, discrete_inputs):
         J = self.J
-
-
 
     
 class Finance(Group):

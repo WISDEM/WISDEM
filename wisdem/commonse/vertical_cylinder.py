@@ -1,6 +1,5 @@
-
 import numpy as np
-from openmdao.api import ExplicitComponent
+import openmdao.api as om
 from wisdem.commonse.tube import CylindricalShellProperties
 
 from wisdem.commonse import gravity, eps
@@ -10,6 +9,7 @@ from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
+
 RIGID = 1e30
 NFREQ = 6
 
@@ -18,7 +18,33 @@ NFREQ = 6
 # -----------------
 
 #TODO need to check the length of each array
-class CylinderDiscretization(ExplicitComponent):
+class CylinderDiscretization(om.ExplicitComponent):
+    """
+    Discretize geometry into finite element nodes
+    
+    Parameters
+    ----------
+    foundation_height : float
+        starting height of tower
+    section_height : numpy array[nPoints-1]
+        parameterized section heights along cylinder
+    diameter : numpy array[nPoints]
+        cylinder diameter at corresponding locations
+    wall_thickness : numpy array[nPoints-1]
+        shell thickness at corresponding locations
+    
+    Returns
+    -------
+    z_param : numpy array[nPoints]
+        parameterized locations along cylinder, linear lofting between
+    z_full : numpy array[nFull]
+        locations along cylinder
+    d_full : numpy array[nFull]
+        cylinder diameter at corresponding locations
+    t_full : numpy array[nFull-1]
+        shell thickness at corresponding locations
+    
+    """
     """discretize geometry into finite element nodes"""
 
     def initialize(self):
@@ -30,20 +56,16 @@ class CylinderDiscretization(ExplicitComponent):
         nRefine = np.round( self.options['nRefine'] )
         nFull   = int(nRefine * (nPoints-1) + 1)
         
-        # variables
-        self.add_input('foundation_height', val=0.0, units='m', desc='starting height of tower') 
-        self.add_input('section_height', np.zeros(nPoints-1), units='m', desc='parameterized section heights along cylinder')
-        self.add_input('diameter', np.zeros(nPoints), units='m', desc='cylinder diameter at corresponding locations')
-        self.add_input('wall_thickness', np.zeros(nPoints-1), units='m', desc='shell thickness at corresponding locations')
+        self.add_input('foundation_height', val=0.0, units='m')
+        self.add_input('section_height', np.zeros(nPoints-1), units='m')
+        self.add_input('diameter', np.zeros(nPoints), units='m')
+        self.add_input('wall_thickness', np.zeros(nPoints-1), units='m')
 
-        #out
-        self.add_output('z_param', np.zeros(nPoints), units='m', desc='parameterized locations along cylinder, linear lofting between')
-        self.add_output('z_full', np.zeros(nFull), units='m', desc='locations along cylinder')
-        self.add_output('d_full', np.zeros(nFull), units='m', desc='cylinder diameter at corresponding locations')
-        self.add_output('t_full', np.zeros(nFull-1), units='m', desc='shell thickness at corresponding locations')
-        # Convenience outputs for export to other modules
-        
-        # Derivatives
+        self.add_output('z_param', np.zeros(nPoints), units='m')
+        self.add_output('z_full', np.zeros(nFull), units='m')
+        self.add_output('d_full', np.zeros(nFull), units='m')
+        self.add_output('t_full', np.zeros(nFull-1), units='m')
+
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
@@ -69,7 +91,43 @@ class CylinderDiscretization(ExplicitComponent):
         outputs['t_full']  = util.sectionalInterp(z_section, z_param, inputs['wall_thickness'])
         outputs['z_param'] = z_param
 
-class CylinderMass(ExplicitComponent):
+class CylinderMass(om.ExplicitComponent):
+    """
+    Compute cylinder cost and mass properties
+    
+    Parameters
+    ----------
+    d_full : numpy array[nPoints]
+        cylinder diameter at corresponding locations
+    t_full : numpy array[nPoints-1]
+        shell thickness at corresponding locations
+    z_full : numpy array[nPoints]
+        parameterized locations along cylinder, linear lofting between
+    rho : numpy array[nPoints-1]
+        material density
+    outfitting_factor : numpy array[nPoints-1]
+        Multiplier that accounts for secondary structure mass inside of cylinder
+    material_cost_rate : numpy array[nPoints-1]
+        Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg
+    labor_cost_rate : float
+        Labor cost rate
+    painting_cost_rate : float
+        Painting / surface finishing cost rate
+    
+    Returns
+    -------
+    cost : float
+        Total cylinder cost
+    mass : numpy array[nPoints-1]
+        Total cylinder mass
+    center_of_mass : float
+        z-position of center of mass of cylinder
+    section_center_of_mass : numpy array[nPoints-1]
+        z position of center of mass of each can in the cylinder
+    I_base : numpy array[6]
+        mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
+    
+    """
 
     def initialize(self):
         self.options.declare('nPoints')
@@ -77,22 +135,20 @@ class CylinderMass(ExplicitComponent):
     def setup(self):
         nPoints = self.options['nPoints']
         
-        self.add_input('d_full', val=np.zeros(nPoints), units='m', desc='cylinder diameter at corresponding locations')
-        self.add_input('t_full', val=np.zeros(nPoints-1), units='m', desc='shell thickness at corresponding locations')
-        self.add_input('z_full', val=np.zeros(nPoints), units='m', desc='parameterized locations along cylinder, linear lofting between')
-        self.add_input('rho', val=np.zeros(nPoints-1), units='kg/m**3', desc='material density')
-        self.add_input('outfitting_factor', val=np.zeros(nPoints-1), desc='Multiplier that accounts for secondary structure mass inside of cylinder')
-        
-        self.add_input('material_cost_rate', val=np.zeros(nPoints-1), units='USD/kg', desc='Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg')
-        self.add_input('labor_cost_rate', 0.0, units='USD/min', desc='Labor cost rate')
-        self.add_input('painting_cost_rate', 0.0, units='USD/m/m', desc='Painting / surface finishing cost rate')
-        
-        self.add_output('cost', val=0.0, units='USD', desc='Total cylinder cost')
-        self.add_output('mass', val=np.zeros(nPoints-1), units='kg', desc='Total cylinder mass')
-        self.add_output('center_of_mass', val=0.0, units='m', desc='z-position of center of mass of cylinder')
-        self.add_output('section_center_of_mass', val=np.zeros(nPoints-1), units='m', desc='z position of center of mass of each can in the cylinder')
-        self.add_output('I_base', np.zeros((6,)), units='kg*m**2', desc='mass moment of inertia of cylinder about base [xx yy zz xy xz yz]')
-        
+        self.add_input('d_full', val=np.zeros(nPoints), units='m')
+        self.add_input('t_full', val=np.zeros(nPoints-1), units='m')
+        self.add_input('z_full', val=np.zeros(nPoints), units='m')
+        self.add_input('rho', val=np.zeros(nPoints-1), units='kg/m**3')
+        self.add_input('outfitting_factor', val=np.zeros(nPoints-1))
+        self.add_input('material_cost_rate', val=np.zeros(nPoints-1), units='USD/kg')
+        self.add_input('labor_cost_rate', 0.0, units='USD/min')
+        self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
+
+        self.add_output('cost', val=0.0, units='USD')
+        self.add_output('mass', val=np.zeros(nPoints-1), units='kg')
+        self.add_output('center_of_mass', val=0.0, units='m')
+        self.add_output('section_center_of_mass', val=np.zeros(nPoints-1), units='m')
+        self.add_output('I_base', np.zeros(6), units='kg*m**2')
         
     def compute(self, inputs, outputs):
         # Unpack variables for thickness and average radius at each can interface
@@ -172,7 +228,142 @@ class CylinderMass(ExplicitComponent):
         
 
 #@implement_base(CylinderFromCSProps)
-class CylinderFrame3DD(ExplicitComponent):
+class CylinderFrame3DD(om.ExplicitComponent):
+    """
+    Run Frame3DD on the cylinder geometry
+    
+    Parameters
+    ----------
+    z : numpy array[npts]
+        location along cylinder. start at bottom and go to top
+    Az : numpy array[npts-1]
+        cross-sectional area
+    Asx : numpy array[npts-1]
+        x shear area
+    Asy : numpy array[npts-1]
+        y shear area
+    Jz : numpy array[npts-1]
+        polar moment of inertia
+    Ixx : numpy array[npts-1]
+        area moment of inertia about x-axis
+    Iyy : numpy array[npts-1]
+        area moment of inertia about y-axis
+    E : numpy array[npts-1]
+        modulus of elasticity
+    G : numpy array[npts-1]
+        shear modulus
+    rho : numpy array[npts-1]
+        material density
+    d : numpy array[npts]
+        effective cylinder diameter for section
+    t : numpy array[npts-1]
+        effective shell thickness for section
+    kidx : numpy array[nK, dtype]
+        indices of z where external stiffness reactions should be applied.
+    kx : numpy array[nK]
+        spring stiffness in x-direction
+    ky : numpy array[nK]
+        spring stiffness in y-direction
+    kz : numpy array[nK]
+        spring stiffness in z-direction
+    ktx : numpy array[nK]
+        spring stiffness in theta_x-rotation
+    kty : numpy array[nK]
+        spring stiffness in theta_y-rotation
+    ktz : numpy array[nK]
+        spring stiffness in theta_z-rotation
+    midx : numpy array[nMass, dtype]
+        indices where added mass should be applied.
+    m : numpy array[nMass]
+        added mass
+    mIxx : numpy array[nMass]
+        x mass moment of inertia about some point p
+    mIyy : numpy array[nMass]
+        y mass moment of inertia about some point p
+    mIzz : numpy array[nMass]
+        z mass moment of inertia about some point p
+    mIxy : numpy array[nMass]
+        xy mass moment of inertia about some point p
+    mIxz : numpy array[nMass]
+        xz mass moment of inertia about some point p
+    mIyz : numpy array[nMass]
+        yz mass moment of inertia about some point p
+    mrhox : numpy array[nMass]
+        x-location of p relative to node
+    mrhoy : numpy array[nMass]
+        y-location of p relative to node
+    mrhoz : numpy array[nMass]
+        z-location of p relative to node
+    plidx : numpy array[nPL, dtype]
+        indices where point loads should be applied.
+    Fx : numpy array[nPL]
+        point force in x-direction
+    Fy : numpy array[nPL]
+        point force in y-direction
+    Fz : numpy array[nPL]
+        point force in z-direction
+    Mxx : numpy array[nPL]
+        point moment about x-axis
+    Myy : numpy array[nPL]
+        point moment about y-axis
+    Mzz : numpy array[nPL]
+        point moment about z-axis
+    Px : numpy array[npts]
+        force per unit length in x-direction
+    Py : numpy array[npts]
+        force per unit length in y-direction
+    Pz : numpy array[npts]
+        force per unit length in z-direction
+    qdyn : numpy array[npts]
+        dynamic pressure
+    
+    Returns
+    -------
+    mass : float
+        Structural mass computed by Frame3DD
+    f1 : float
+        First natural frequency
+    f2 : float
+        Second natural frequency
+    freqs : numpy array[NFREQ]
+        Natural frequencies of the structure
+    x_mode_shapes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the x-direction
+    y_mode_shapes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the x-direction
+    x_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the x-direction
+    y_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the y-direction
+    top_deflection : float
+        Deflection of cylinder top in yaw-aligned +x direction
+    Fz_out : numpy array[npts-1]
+        Axial foce in vertical z-direction in cylinder structure.
+    Vx_out : numpy array[npts-1]
+        Shear force in x-direction in cylinder structure.
+    Vy_out : numpy array[npts-1]
+        Shear force in y-direction in cylinder structure.
+    Mxx_out : numpy array[npts-1]
+        Moment about x-axis in cylinder structure.
+    Myy_out : numpy array[npts-1]
+        Moment about y-axis in cylinder structure.
+    Mzz_out : numpy array[npts-1]
+        Moment about z-axis in cylinder structure.
+    base_F : numpy array[3]
+        Total force on cylinder
+    base_M : numpy array[3]
+        Total moment on cylinder measured at base
+    axial_stress : numpy array[npts-1]
+        Axial stress in cylinder structure
+    shear_stress : numpy array[npts-1]
+        Shear stress in cylinder structure
+    hoop_stress : numpy array[npts-1]
+        Hoop stress in cylinder structure calculated with simple method used in API
+        standards
+    hoop_stress_euro : numpy array[npts-1]
+        Hoop stress in cylinder structure calculated with Eurocode method
+    
+    """
     def initialize(self):
         self.options.declare('npts')
         self.options.declare('nK')
@@ -188,89 +379,85 @@ class CylinderFrame3DD(ExplicitComponent):
         nPL   = self.options['nPL']
 
         # cross-sectional data along cylinder.
-        self.add_input('z', val=np.zeros(npts), units='m', desc='location along cylinder. start at bottom and go to top')
-        self.add_input('Az', val=np.zeros(npts-1), units='m**2', desc='cross-sectional area')
-        self.add_input('Asx', val=np.zeros(npts-1), units='m**2', desc='x shear area')
-        self.add_input('Asy', val=np.zeros(npts-1), units='m**2', desc='y shear area')
-        self.add_input('Jz', val=np.zeros(npts-1), units='m**4', desc='polar moment of inertia')
-        self.add_input('Ixx', val=np.zeros(npts-1), units='m**4', desc='area moment of inertia about x-axis')
-        self.add_input('Iyy', val=np.zeros(npts-1), units='m**4', desc='area moment of inertia about y-axis')
-
-        self.add_input('E', val=np.zeros(npts-1), units='N/m**2', desc='modulus of elasticity')
-        self.add_input('G', val=np.zeros(npts-1), units='N/m**2', desc='shear modulus')
-        self.add_input('rho', val=np.zeros(npts-1), units='kg/m**3', desc='material density')
-
-        # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
-        self.add_input('d', val=np.zeros(npts), units='m', desc='effective cylinder diameter for section')
-        self.add_input('t', val=np.zeros(npts-1), units='m', desc='effective shell thickness for section')
-
-        # spring reaction data.  Use global RIGID for rigid constraints.
-        # JPJ: these next outputs should be discrete outputs
-        self.add_input('kidx', val=np.zeros(nK, dtype=np.int_), desc='indices of z where external stiffness reactions should be applied.')
-        self.add_input('kx', val=np.zeros(nK), units='N/m', desc='spring stiffness in x-direction')
-        self.add_input('ky', val=np.zeros(nK), units='N/m', desc='spring stiffness in y-direction')
-        self.add_input('kz', val=np.zeros(nK), units='N/m', desc='spring stiffness in z-direction')
-        self.add_input('ktx', val=np.zeros(nK), units='N/m', desc='spring stiffness in theta_x-rotation')
-        self.add_input('kty', val=np.zeros(nK), units='N/m', desc='spring stiffness in theta_y-rotation')
-        self.add_input('ktz', val=np.zeros(nK), units='N/m', desc='spring stiffness in theta_z-rotation')
-
-        # extra mass
-        # JPJ: these next outputs should be discrete outputs
-        self.add_input('midx', val=np.zeros(nMass, dtype=np.int_), desc='indices where added mass should be applied.')
-        self.add_input('m', val=np.zeros(nMass), units='kg', desc='added mass')
-        self.add_input('mIxx', val=np.zeros(nMass), units='kg*m**2', desc='x mass moment of inertia about some point p')
-        self.add_input('mIyy', val=np.zeros(nMass), units='kg*m**2', desc='y mass moment of inertia about some point p')
-        self.add_input('mIzz', val=np.zeros(nMass), units='kg*m**2', desc='z mass moment of inertia about some point p')
-        self.add_input('mIxy', val=np.zeros(nMass), units='kg*m**2', desc='xy mass moment of inertia about some point p')
-        self.add_input('mIxz', val=np.zeros(nMass), units='kg*m**2', desc='xz mass moment of inertia about some point p')
-        self.add_input('mIyz', val=np.zeros(nMass), units='kg*m**2', desc='yz mass moment of inertia about some point p')
-        self.add_input('mrhox', val=np.zeros(nMass), units='m', desc='x-location of p relative to node')
-        self.add_input('mrhoy', val=np.zeros(nMass), units='m', desc='y-location of p relative to node')
-        self.add_input('mrhoz', val=np.zeros(nMass), units='m', desc='z-location of p relative to node')
-
-        # point loads (if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also)
-        self.add_input('plidx', val=np.zeros(nPL, dtype=np.int_), desc='indices where point loads should be applied.')
-        self.add_input('Fx', val=np.zeros(nPL), units='N', desc='point force in x-direction')
-        self.add_input('Fy', val=np.zeros(nPL), units='N', desc='point force in y-direction')
-        self.add_input('Fz', val=np.zeros(nPL), units='N', desc='point force in z-direction')
-        self.add_input('Mxx', val=np.zeros(nPL), units='N*m', desc='point moment about x-axis')
-        self.add_input('Myy', val=np.zeros(nPL), units='N*m', desc='point moment about y-axis')
-        self.add_input('Mzz', val=np.zeros(nPL), units='N*m', desc='point moment about z-axis')
-
-        # combined wind-water distributed loads
-        self.add_input('Px', val=np.zeros(npts), units='N/m', desc='force per unit length in x-direction')
-        self.add_input('Py', val=np.zeros(npts), units='N/m', desc='force per unit length in y-direction')
-        self.add_input('Pz', val=np.zeros(npts), units='N/m', desc='force per unit length in z-direction')
-        self.add_input('qdyn', val=np.zeros(npts), units='N/m**2', desc='dynamic pressure')
-
-        # outputs
-        NFREQ2 = int(NFREQ/2)
-        self.add_output('mass', val=0.0, units='kg', desc='Structural mass computed by Frame3DD')
-        self.add_output('f1', val=0.0, units='Hz', desc='First natural frequency')
-        self.add_output('f2', val=0.0, units='Hz', desc='Second natural frequency')
-        self.add_output('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
-        self.add_output('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)')
-        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)')
-        self.add_output('x_mode_freqs', val=np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the x-direction')
-        self.add_output('y_mode_freqs', val=np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the y-direction')
-        self.add_output('top_deflection', val=0.0, units='m', desc='Deflection of cylinder top in yaw-aligned +x direction')
-        self.add_output('Fz_out', val=np.zeros(npts-1), units='N', desc='Axial foce in vertical z-direction in cylinder structure.')
-        self.add_output('Vx_out', val=np.zeros(npts-1), units='N', desc='Shear force in x-direction in cylinder structure.')
-        self.add_output('Vy_out', val=np.zeros(npts-1), units='N', desc='Shear force in y-direction in cylinder structure.')
-        self.add_output('Mxx_out', val=np.zeros(npts-1), units='N*m', desc='Moment about x-axis in cylinder structure.')
-        self.add_output('Myy_out', val=np.zeros(npts-1), units='N*m', desc='Moment about y-axis in cylinder structure.')
-        self.add_output('Mzz_out', val=np.zeros(npts-1), units='N*m', desc='Moment about z-axis in cylinder structure.')
-        self.add_output('base_F', val=np.zeros(3), units='N', desc='Total force on cylinder')
-        self.add_output('base_M', val=np.zeros(3), units='N*m', desc='Total moment on cylinder measured at base')
-
-        self.add_output('axial_stress', val=np.zeros(npts-1), units='N/m**2', desc='Axial stress in cylinder structure')
-        self.add_output('shear_stress', val=np.zeros(npts-1), units='N/m**2', desc='Shear stress in cylinder structure')
-        self.add_output('hoop_stress', val=np.zeros(npts-1), units='N/m**2', desc='Hoop stress in cylinder structure calculated with simple method used in API standards')
-        self.add_output('hoop_stress_euro', val=np.zeros(npts-1), units='N/m**2', desc='Hoop stress in cylinder structure calculated with Eurocode method')
+        self.add_input('z', val=np.zeros(npts), units='m')
+        self.add_input('Az', val=np.zeros(npts-1), units='m**2')
+        self.add_input('Asx', val=np.zeros(npts-1), units='m**2')
+        self.add_input('Asy', val=np.zeros(npts-1), units='m**2')
+        self.add_input('Jz', val=np.zeros(npts-1), units='m**4')
+        self.add_input('Ixx', val=np.zeros(npts-1), units='m**4')
+        self.add_input('Iyy', val=np.zeros(npts-1), units='m**4')
+        self.add_input('E', val=np.zeros(npts-1), units='N/m**2')
+        self.add_input('G', val=np.zeros(npts-1), units='N/m**2')
+        self.add_input('rho', val=np.zeros(npts-1), units='kg/m**3')
         
-        # Derivatives
-        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
+        self.add_input('d', val=np.zeros(npts), units='m')
+        self.add_input('t', val=np.zeros(npts-1), units='m')
+        
+        # spring reaction data.  Use global RIGID for rigid constraints.
+        # JPJ: this next output should be a discrete output
+        self.add_input('kidx', val=np.zeros(nK, dtype=np.int_))
+        self.add_input('kx', val=np.zeros(nK), units='N/m')
+        self.add_input('ky', val=np.zeros(nK), units='N/m')
+        self.add_input('kz', val=np.zeros(nK), units='N/m')
+        self.add_input('ktx', val=np.zeros(nK), units='N/m')
+        self.add_input('kty', val=np.zeros(nK), units='N/m')
+        self.add_input('ktz', val=np.zeros(nK), units='N/m')
+        
+        # extra mass
+        # JPJ: this next output should be a discrete output
+        self.add_input('midx', val=np.zeros(nMass, dtype=np.int_))
+        self.add_input('m', val=np.zeros(nMass), units='kg')
+        self.add_input('mIxx', val=np.zeros(nMass), units='kg*m**2')
+        self.add_input('mIyy', val=np.zeros(nMass), units='kg*m**2')
+        self.add_input('mIzz', val=np.zeros(nMass), units='kg*m**2')
+        self.add_input('mIxy', val=np.zeros(nMass), units='kg*m**2')
+        self.add_input('mIxz', val=np.zeros(nMass), units='kg*m**2')
+        self.add_input('mIyz', val=np.zeros(nMass), units='kg*m**2')
+        self.add_input('mrhox', val=np.zeros(nMass), units='m')
+        self.add_input('mrhoy', val=np.zeros(nMass), units='m')
+        self.add_input('mrhoz', val=np.zeros(nMass), units='m')
+        
+        # point loads (if addGravityLoadForExtraMass=True be sure not to double count by adding those force here also)
+        self.add_input('plidx', val=np.zeros(nPL, dtype=np.int_))
+        self.add_input('Fx', val=np.zeros(nPL), units='N')
+        self.add_input('Fy', val=np.zeros(nPL), units='N')
+        self.add_input('Fz', val=np.zeros(nPL), units='N')
+        self.add_input('Mxx', val=np.zeros(nPL), units='N*m')
+        self.add_input('Myy', val=np.zeros(nPL), units='N*m')
+        self.add_input('Mzz', val=np.zeros(nPL), units='N*m')
+        
+        # combined wind-water distributed loads
+        self.add_input('Px', val=np.zeros(npts), units='N/m')
+        self.add_input('Py', val=np.zeros(npts), units='N/m')
+        self.add_input('Pz', val=np.zeros(npts), units='N/m')
+        self.add_input('qdyn', val=np.zeros(npts), units='N/m**2')
 
+        NFREQ2 = int(NFREQ/2)
+        self.add_output('mass', val=0.0, units='kg')
+        self.add_output('f1', val=0.0, units='Hz')
+        self.add_output('f2', val=0.0, units='Hz')
+        self.add_output('freqs', val=np.zeros(NFREQ), units='Hz')
+        self.add_output('x_mode_shapes', val=np.zeros((NFREQ2, 5)))
+        self.add_output('y_mode_shapes', val=np.zeros((NFREQ2, 5)))
+        self.add_output('x_mode_freqs', val=np.zeros(NFREQ2))
+        self.add_output('y_mode_freqs', val=np.zeros(NFREQ2))
+        self.add_output('top_deflection', val=0.0, units='m')
+        self.add_output('Fz_out', val=np.zeros(npts-1), units='N')
+        self.add_output('Vx_out', val=np.zeros(npts-1), units='N')
+        self.add_output('Vy_out', val=np.zeros(npts-1), units='N')
+        self.add_output('Mxx_out', val=np.zeros(npts-1), units='N*m')
+        self.add_output('Myy_out', val=np.zeros(npts-1), units='N*m')
+        self.add_output('Mzz_out', val=np.zeros(npts-1), units='N*m')
+        self.add_output('base_F', val=np.zeros(3), units='N')
+        self.add_output('base_M', val=np.zeros(3), units='N*m')
+        self.add_output('axial_stress', val=np.zeros(npts-1), units='N/m**2')
+        self.add_output('shear_stress', val=np.zeros(npts-1), units='N/m**2')
+        self.add_output('hoop_stress', val=np.zeros(npts-1), units='N/m**2')
+        self.add_output('hoop_stress_euro', val=np.zeros(npts-1), units='N/m**2')
+
+
+        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
     def compute(self, inputs, outputs):
 

@@ -1000,7 +1000,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob['tower_mass'], [370541.14008246])
         npt.assert_almost_equal(prob['tower_center_of_mass'], [38.78441074])
         npt.assert_almost_equal(prob['weldability'], [-0.40192308, -0.34386447])
-        npt.assert_almost_equal(prob['manufacturability'], [0.60521262, 0.60521262])
+        npt.assert_almost_equal(prob['manufacturability'], [0.6225   , 0.5841945])
         npt.assert_almost_equal(prob['wind1.Uref'], [11.73732])
         npt.assert_almost_equal(prob['tower1.f1'], [0.33214436],5)
         npt.assert_almost_equal(prob['post1.top_deflection'], [0.69728181])

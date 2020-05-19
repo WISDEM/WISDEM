@@ -127,7 +127,7 @@ class ExcelWrapper (object):
             else:
                 AScloseExcel()
         except:
-            print "failed to close Excel"
+            print("failed to close Excel")
             return 3
         return 0
 
@@ -177,11 +177,11 @@ def example():
     xcel = ExcelWrapper()
     xcel.openWorkbook(workbook)
     nbooks = xcel.countWorkbooks()
-    print "%d workbooks open" % nbooks
+    print("%d workbooks open" % nbooks)
     for n in range(4,10):
         xcel.setCell(1,1,n,"Sheet1")
         val, res = xcel.getCell(1,2,"Sheet1")
-        print "n=%d val(1,2) = %d" % (n,val)
+        print("n=%d val(1,2) = %d" % (n,val))
     xcel.closeWorkbook()
     xcel.closeExcel()
 
