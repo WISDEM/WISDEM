@@ -448,8 +448,9 @@ class FASTLoadCases(ExplicitComponent):
 
         
 
-        tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
-        fst_vt['ElastoDyn']['TowerBsHt'] = max([inputs['tower_base_height'][0], fst_vt['ElastoDyn']['PtfmRefzt']]) # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
+        #tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
+        fst_vt['ElastoDyn']['TowerBsHt'] = inputs['tower_base_height'][0] # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
+        fst_vt['ElastoDyn']['PtfmRefzt'] = inputs['tower_base_height'][0] # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
         fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][0] + fst_vt['ElastoDyn']['TowerBsHt'] # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
         # Update Inflowwind
