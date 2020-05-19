@@ -1,44 +1,46 @@
-.. WISDEM documentation master file, created by
-   sphinx-quickstart on Wed Oct 30 06:43:34 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+WISDEM Documentation
+====================
 
-WISDEM
-======
+.. warning::
+  This documentation is currently under development and is only valid for the IEAontology4all branch of WISDEM. There is no guarantee of applicability for any version of WISDEM.
 
-.. only:: html
+The Wind-plant Integrated System Design and Engineering Model (WISDEM) includes integrated assemblies for the assessment of system behavior of wind turbines and plants. These assemblies can be used as is, but a richer use-case involves treating the assemblies as temples, modifying the source code and `OpenMDAO <https://openmdao.org/>`_ problems to answer specific research questions.  For example, any variable in these assemblies can be a design variable, an objective, or part of a constraint in a multidisciplinary optimization. WISDEM should therefore be viewed a toolbox of analysis tools and the basic structure for connecting tools across subsystems and fidelity levels, which can be extended in a multitude of directions according to the user’s needs.
 
-    Wind turbine and plant system level assemblies.
+Important Links:
 
-    Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
+- `Source Code Repository <https://github.com/WISDEM/WISDEM/tree/IEAontology4all>`_ 
+- `OpenMDAO <https://openmdao.org/>`_
+
+Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
+
+.. This images is a placeholder, feel free to replace.  Would like to include an image on the landing page that captures the breadth of the tool. -EMG
+.. figure:: /images/wisdem/WISDEM_Overview.*
+
+Using WISDEM
+============
 
 .. toctree::
-   :numbered:
    :maxdepth: 2
-   :caption: Contents:
 
-   intro
    installation
-   tutorial
-   documentation
-   wisdem/aeroelasticse/index
-   wisdem/airfoilprep/index
-   wisdem/ccblade/index
-   wisdem/commonse/index
-   wisdem/drivetrainse/drivese/index
-   wisdem/drivetrainse/generator/index
-   wisdem/floatingse/index
-   wisdem/jacketse/index
-   wisdem/nrelcsm/index
-   wisdem/pbeam/index
-   wisdem/plantfinancese/index
-   wisdem/pymap/index
-   wisdem/rotorse/index
-   wisdem/towerse/index
-   wisdem/turbine_costsse/index
+   how_wisdem_works
+   tutorials
+   examples
+   modules
+   theory
+   
+   
+Other Useful Docs
+=================
 
+.. toctree::
+   :maxdepth: 2
 
-Indices and tables
+   known_issues
+   how_to_write_docs
+   how_to_contribute_code
+   
+Indices and Tables
 ==================
 
 * :ref:`genindex`

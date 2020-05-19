@@ -1,7 +1,6 @@
-
-from openmdao.api import ExplicitComponent, Group, IndepVarComp
 import numpy as np
-import wisdem.pyframe3dd.frame3dd as frame3dd
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
+import openmdao.api as om
 from wisdem.commonse.utilities import nodal2sectional
 
 from wisdem.commonse import gravity, eps, Tube, NFREQ
@@ -24,10 +23,270 @@ def ghostNodes(x1, x2, r1, r2):
     dr2 = (1.0 - r2/L) * dx + x1
     return dr1, dr2
 
-class FloatingFrame(ExplicitComponent):
+class FloatingFrame(om.ExplicitComponent):
     """
-    OpenMDAO Component class for semisubmersible pontoon / truss structure for floating offshore wind turbines.
+    Component for semisubmersible pontoon / truss structure for floating offshore wind turbines.
     Should be tightly coupled with Semi and Mooring classes for full system representation.
+    
+    Parameters
+    ----------
+    water_density : float
+        density of water
+    material_density : float
+        density of material
+    E : float
+        Modulus of elasticity (Youngs) of material
+    G : float
+        Shear modulus of material
+    yield_stress : float
+        yield stress of material
+    Hs : float
+        wave significant height
+    main_z_full : numpy array[nFull]
+        z-coordinates of section nodes (length = nsection+1)
+    main_d_full : numpy array[nFull]
+        outer radius at each section node bottom to top (length = nsection + 1)
+    main_t_full : numpy array[nFull-1]
+        shell wall thickness at each section node bottom to top (length = nsection + 1)
+    main_mass : numpy array[nFull-1]
+        mass of main column by section
+    main_buckling_length : numpy array[nFull-1]
+        distance between ring stiffeners
+    main_displaced_volume : numpy array[nFull-1]
+        column volume of water displaced by section
+    main_hydrostatic_force : numpy array[nFull-1]
+        Net z-force of hydrostatic pressure by section
+    main_center_of_buoyancy : float
+        z-position of center of column buoyancy force
+    main_center_of_mass : float
+        z-position of center of column mass
+    main_Px : numpy array[nFull]
+        force per unit length in x-direction on main
+    main_Py : numpy array[nFull]
+        force per unit length in y-direction on main
+    main_Pz : numpy array[nFull]
+        force per unit length in z-direction on main
+    main_qdyn : numpy array[nFull]
+        dynamic pressure on main
+    main_pontoon_attach_upper : float
+        Fraction of main column for upper truss attachment on main column
+    main_pontoon_attach_lower : float
+        Fraction of main column lower truss attachment on main column
+    offset_z_full : numpy array[nFull]
+        z-coordinates of section nodes (length = nsection+1)
+    offset_d_full : numpy array[nFull]
+        outer radius at each section node bottom to top (length = nsection + 1)
+    offset_t_full : numpy array[nFull-1]
+        shell wall thickness at each section node bottom to top (length = nsection + 1)
+    offset_mass : numpy array[nFull-1]
+        mass of offset column by section
+    offset_buckling_length : numpy array[nFull-1]
+        distance between ring stiffeners
+    offset_displaced_volume : numpy array[nFull-1]
+        column volume of water displaced by section
+    offset_hydrostatic_force : numpy array[nFull-1]
+        Net z-force of hydrostatic pressure by section
+    offset_center_of_buoyancy : float
+        z-position of center of column buoyancy force
+    offset_center_of_mass : float
+        z-position of center of column mass
+    offset_Px : numpy array[nFull]
+        force per unit length in x-direction on offset
+    offset_Py : numpy array[nFull]
+        force per unit length in y-direction on offset
+    offset_Pz : numpy array[nFull]
+        force per unit length in z-direction on offset
+    offset_qdyn : numpy array[nFull]
+        dynamic pressure on offset
+    tower_z_full : numpy array[nFullTow]
+        z-coordinates of section nodes (length = nsection+1)
+    tower_d_full : numpy array[nFullTow]
+        outer radius at each section node bottom to top (length = nsection + 1)
+    tower_t_full : numpy array[nFullTow-1]
+        shell wall thickness at each section node bottom to top (length = nsection + 1)
+    tower_mass_section : numpy array[nFullTow-1]
+        mass of tower column by section
+    tower_buckling_length : float
+        buckling length
+    tower_center_of_mass : float
+        z-position of center of tower mass
+    tower_Px : numpy array[nFullTow]
+        force per unit length in x-direction on tower
+    tower_Py : numpy array[nFullTow]
+        force per unit length in y-direction on tower
+    tower_Pz : numpy array[nFullTow]
+        force per unit length in z-direction on tower
+    tower_qdyn : numpy array[nFullTow]
+        dynamic pressure on tower
+    radius_to_offset_column : float
+        Distance from main column centerpoint to offset column centerpoint
+    number_of_offset_columns : float
+        Number of offset columns evenly spaced around main column
+    pontoon_outer_diameter : float
+        Outer radius of tubular pontoon that connects offset or main columns
+    pontoon_wall_thickness : float
+        Inner radius of tubular pontoon that connects offset or main columns
+    cross_attachment_pontoons : TODO: add type by hand, could not be parsed automatically
+        Inclusion of pontoons that connect the bottom of the central main to the tops of
+        the outer offset columns
+    lower_attachment_pontoons : TODO: add type by hand, could not be parsed automatically
+        Inclusion of pontoons that connect the central main to the outer offset columns
+        at their bottoms
+    upper_attachment_pontoons : TODO: add type by hand, could not be parsed automatically
+        Inclusion of pontoons that connect the central main to the outer offset columns
+        at their tops
+    lower_ring_pontoons : TODO: add type by hand, could not be parsed automatically
+        Inclusion of pontoons that ring around outer offset columns at their bottoms
+    upper_ring_pontoons : TODO: add type by hand, could not be parsed automatically
+        Inclusion of pontoons that ring around outer offset columns at their tops
+    outer_cross_pontoons : TODO: add type by hand, could not be parsed automatically
+        Inclusion of pontoons that ring around outer offset columns at their tops
+    rna_mass : float
+        mass of tower
+    rna_cg : numpy array[3]
+        Location of RNA center of mass relative to tower top
+    rna_force : numpy array[3]
+        Force in xyz-direction on turbine
+    rna_moment : numpy array[3]
+        Moments about turbine main
+    rna_I : numpy array[6]
+        Moments about turbine main
+    number_of_mooring_connections : float
+        number of mooring connections on vessel
+    mooring_lines_per_connection : float
+        number of mooring lines per connection
+    mooring_neutral_load : numpy array[NLINES_MAX, 3]
+        z-force of mooring lines on structure
+    mooring_stiffness : numpy array[6, 6]
+        Linearized stiffness matrix of mooring system at neutral (no offset) conditions.
+    mooring_moments_of_inertia : numpy array[6]
+        mass moment of inertia of mooring system about fairlead-centerline point [xx yy
+        zz xy xz yz]
+    fairlead : float
+        Depth below water for mooring line attachment
+    fairlead_radius : float
+        Radius from center of structure to fairlead connection points
+    fairlead_support_outer_diameter : float
+        fairlead support outer diameter
+    fairlead_support_wall_thickness : float
+        fairlead support wall thickness
+    gamma_f : float
+        safety factor on loads
+    gamma_m : float
+        safety factor on materials
+    gamma_n : float
+        safety factor on consequence of failure
+    gamma_b : float
+        buckling safety factor
+    gamma_fatigue : float
+        total safety factor for fatigue
+    connection_ratio_max : float
+        Maximum ratio of pontoon outer diameter to main/offset outer diameter
+    material_cost_rate : float
+        Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg
+    labor_cost_rate : float
+        Labor cost rate
+    painting_cost_rate : float
+        Painting / surface finishing cost rate
+    
+    Returns
+    -------
+    pontoon_wave_height_depth_margin : numpy array[2]
+        Distance between attachment point of pontoons and wave crest- both above and
+        below waterline
+    pontoon_cost : float
+        Cost of pontoon elements and connecting truss
+    pontoon_cost_rate : float
+        Cost rate of finished pontoon and truss
+    pontoon_mass : float
+        Mass of pontoon elements and connecting truss
+    pontoon_displacement : float
+        Buoyancy force of submerged pontoon elements
+    pontoon_center_of_buoyancy : float
+        z-position of center of pontoon buoyancy force
+    pontoon_center_of_mass : float
+        z-position of center of pontoon mass
+    top_deflection : float
+        Deflection of tower top in yaw-aligned +x direction
+    pontoon_stress : numpy array[70]
+        Utilization (<1) of von Mises stress by yield stress and safety factor for all
+        pontoon elements
+    main_stress : numpy array[nFull-1]
+        Von Mises stress utilization along main column at specified locations. Incudes
+        safety factor.
+    main_stress:axial : numpy array[nFull-1]
+        Axial stress along main column at specified locations.
+    main_stress:shear : numpy array[nFull-1]
+        Shear stress along main column at specified locations.
+    main_stress:hoop : numpy array[nFull-1]
+        Hoop stress along main column at specified locations.
+    main_stress:hoopStiffen : numpy array[nFull-1]
+        Hoop stress along main column at specified locations.
+    main_shell_buckling : numpy array[nFull-1]
+        Shell buckling constraint. Should be < 1 for feasibility. Includes safety
+        factors
+    main_global_buckling : numpy array[nFull-1]
+        Global buckling constraint. Should be < 1 for feasibility. Includes safety
+        factors
+    offset_stress : numpy array[nFull-1]
+        Von Mises stress utilization along offset column at specified locations. Incudes
+        safety factor.
+    offset_stress:axial : numpy array[nFull-1]
+        Axial stress along offset column at specified locations.
+    offset_stress:shear : numpy array[nFull-1]
+        Shear stress along offset column at specified locations.
+    offset_stress:hoop : numpy array[nFull-1]
+        Hoop stress along offset column at specified locations.
+    offset_stress:hoopStiffen : numpy array[nFull-1]
+        Hoop stress along offset column at specified locations.
+    offset_shell_buckling : numpy array[nFull-1]
+        Shell buckling constraint. Should be < 1 for feasibility. Includes safety
+        factors
+    offset_global_buckling : numpy array[nFull-1]
+        Global buckling constraint. Should be < 1 for feasibility. Includes safety
+        factors
+    tower_stress : numpy array[nFullTow-1]
+        Von Mises stress utilization along tower at specified locations. incudes safety
+        factor.
+    tower_stress:axial : numpy array[nFullTow-1]
+        Axial stress along tower column at specified locations.
+    tower_stress:shear : numpy array[nFullTow-1]
+        Shear stress along tower column at specified locations.
+    tower_stress:hoop : numpy array[nFullTow-1]
+        Hoop stress along tower column at specified locations.
+    tower_stress:hoopStiffen : numpy array[nFullTow-1]
+        Hoop stress along tower column at specified locations.
+    tower_shell_buckling : numpy array[nFullTow-1]
+        Shell buckling constraint. Should be < 1 for feasibility. Includes safety
+        factors
+    tower_global_buckling : numpy array[nFullTow-1]
+        Global buckling constraint. Should be < 1 for feasibility. Includes safety
+        factors
+    plot_matrix : numpy array[]
+        Ratio of shear stress to yield stress for all pontoon elements
+    main_connection_ratio : numpy array[nFull]
+        Ratio of pontoon outer diameter to main outer diameter
+    offset_connection_ratio : numpy array[nFull]
+        Ratio of pontoon outer diameter to main outer diameter
+    structural_frequencies : numpy array[NFREQ]
+        First six natural frequencies
+    substructure_mass : float
+        Mass of substructure elements and connecting truss
+    structural_mass : float
+        Mass of whole turbine except for mooring lines
+    total_displacement : float
+        Total volume of water displaced by floating turbine (except for mooring lines)
+    z_center_of_buoyancy : float
+        z-position of center of buoyancy of whole turbine
+    substructure_center_of_mass : numpy array[3]
+        xyz-position of center of gravity of substructure only
+    structure_center_of_mass : numpy array[3]
+        xyz-position of center of gravity of whole turbine
+    total_force : numpy array[3]
+        Net forces on turbine
+    total_moment : numpy array[3]
+        Moments on whole turbine
+    
     """
 
     def initialize(self):
@@ -42,158 +301,156 @@ class FloatingFrame(ExplicitComponent):
         self.myframe = None
         
         # Environment
-        self.add_input('water_density', val=0.0, units='kg/m**3', desc='density of water')
-
+        self.add_input('water_density', val=0.0, units='kg/m**3')
+        
         # Material properties
-        self.add_input('material_density', val=0., units='kg/m**3', desc='density of material')
-        self.add_input('E', val=0.0, units='Pa', desc='Modulus of elasticity (Youngs) of material')
-        self.add_input('G', val=0.0, units='Pa', desc='Shear modulus of material')
-        self.add_input('yield_stress', val=0.0, units='Pa', desc='yield stress of material')
-        self.add_input('Hs', val=0.0, units='m', desc='wave significant height')
-
+        self.add_input('material_density', val=0., units='kg/m**3')
+        self.add_input('E', val=0.0, units='Pa')
+        self.add_input('G', val=0.0, units='Pa')
+        self.add_input('yield_stress', val=0.0, units='Pa')
+        self.add_input('Hs', val=0.0, units='m')
+        
         # Base column
-        self.add_input('main_z_full', val=np.zeros((nFull,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('main_d_full', val=np.zeros((nFull,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('main_t_full', val=np.zeros((nFull-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
-        self.add_input('main_mass', val=np.zeros((nFull-1,)), units='kg', desc='mass of main column by section')
-        self.add_input('main_buckling_length', val=np.zeros((nFull-1,)), units='m', desc='distance between ring stiffeners')
-        self.add_input('main_displaced_volume', val=np.zeros((nFull-1,)), units='m**3', desc='column volume of water displaced by section')
-        self.add_input('main_hydrostatic_force', val=np.zeros((nFull-1,)), units='N', desc='Net z-force of hydrostatic pressure by section')
-        self.add_input('main_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of column buoyancy force')
-        self.add_input('main_center_of_mass', val=0.0, units='m', desc='z-position of center of column mass')
-        self.add_input('main_Px', np.zeros(nFull), units='N/m', desc='force per unit length in x-direction on main')
-        self.add_input('main_Py', np.zeros(nFull), units='N/m', desc='force per unit length in y-direction on main')
-        self.add_input('main_Pz', np.zeros(nFull), units='N/m', desc='force per unit length in z-direction on main')
-        self.add_input('main_qdyn', np.zeros(nFull), units='N/m**2', desc='dynamic pressure on main')
-
-        self.add_input('main_pontoon_attach_upper', val=0.0, desc='Fraction of main column for upper truss attachment on main column')
-        self.add_input('main_pontoon_attach_lower', val=0.0, desc='Fraction of main column lower truss attachment on main column')
-
+        self.add_input('main_z_full', val=np.zeros(nFull), units='m')
+        self.add_input('main_d_full', val=np.zeros(nFull), units='m')
+        self.add_input('main_t_full', val=np.zeros(nFull-1), units='m')
+        self.add_input('main_mass', val=np.zeros(nFull-1), units='kg')
+        self.add_input('main_buckling_length', val=np.zeros(nFull-1), units='m')
+        self.add_input('main_displaced_volume', val=np.zeros(nFull-1), units='m**3')
+        self.add_input('main_hydrostatic_force', val=np.zeros(nFull-1), units='N')
+        self.add_input('main_center_of_buoyancy', val=0.0, units='m')
+        self.add_input('main_center_of_mass', val=0.0, units='m')
+        self.add_input('main_Px', np.zeros(nFull), units='N/m')
+        self.add_input('main_Py', np.zeros(nFull), units='N/m')
+        self.add_input('main_Pz', np.zeros(nFull), units='N/m')
+        self.add_input('main_qdyn', np.zeros(nFull), units='N/m**2')
+        
+        self.add_input('main_pontoon_attach_upper', val=0.0)
+        self.add_input('main_pontoon_attach_lower', val=0.0)
+        
         # offset columns
-        self.add_input('offset_z_full', val=np.zeros((nFull,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('offset_d_full', val=np.zeros((nFull,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('offset_t_full', val=np.zeros((nFull-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
-        self.add_input('offset_mass', val=np.zeros((nFull-1,)), units='kg', desc='mass of offset column by section')
-        self.add_input('offset_buckling_length', val=np.zeros((nFull-1,)), units='m', desc='distance between ring stiffeners')
-        self.add_input('offset_displaced_volume', val=np.zeros((nFull-1,)), units='m**3', desc='column volume of water displaced by section')
-        self.add_input('offset_hydrostatic_force', val=np.zeros((nFull-1,)), units='N', desc='Net z-force of hydrostatic pressure by section')
-        self.add_input('offset_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of column buoyancy force')
-        self.add_input('offset_center_of_mass', val=0.0, units='m', desc='z-position of center of column mass')
-        self.add_input('offset_Px', np.zeros(nFull), units='N/m', desc='force per unit length in x-direction on offset')
-        self.add_input('offset_Py', np.zeros(nFull), units='N/m', desc='force per unit length in y-direction on offset')
-        self.add_input('offset_Pz', np.zeros(nFull), units='N/m', desc='force per unit length in z-direction on offset')
-        self.add_input('offset_qdyn', np.zeros(nFull), units='N/m**2', desc='dynamic pressure on offset')
-
+        self.add_input('offset_z_full', val=np.zeros(nFull), units='m')
+        self.add_input('offset_d_full', val=np.zeros(nFull), units='m')
+        self.add_input('offset_t_full', val=np.zeros(nFull-1), units='m')
+        self.add_input('offset_mass', val=np.zeros(nFull-1), units='kg')
+        self.add_input('offset_buckling_length', val=np.zeros(nFull-1), units='m')
+        self.add_input('offset_displaced_volume', val=np.zeros(nFull-1), units='m**3')
+        self.add_input('offset_hydrostatic_force', val=np.zeros(nFull-1), units='N')
+        self.add_input('offset_center_of_buoyancy', val=0.0, units='m')
+        self.add_input('offset_center_of_mass', val=0.0, units='m')
+        self.add_input('offset_Px', np.zeros(nFull), units='N/m')
+        self.add_input('offset_Py', np.zeros(nFull), units='N/m')
+        self.add_input('offset_Pz', np.zeros(nFull), units='N/m')
+        self.add_input('offset_qdyn', np.zeros(nFull), units='N/m**2')
+        
         # Tower
-        self.add_input('tower_z_full', val=np.zeros((nFullTow,)), units='m', desc='z-coordinates of section nodes (length = nsection+1)')
-        self.add_input('tower_d_full', val=np.zeros((nFullTow,)), units='m', desc='outer radius at each section node bottom to top (length = nsection + 1)')
-        self.add_input('tower_t_full', val=np.zeros((nFullTow-1,)), units='m', desc='shell wall thickness at each section node bottom to top (length = nsection + 1)')
-        self.add_input('tower_mass_section', val=np.zeros((nFullTow-1,)), units='kg', desc='mass of tower column by section')
-        self.add_input('tower_buckling_length', 0.0, units='m', desc='buckling length')
-        self.add_input('tower_center_of_mass', val=0.0, units='m', desc='z-position of center of tower mass')
-        self.add_input('tower_Px', np.zeros(nFullTow), units='N/m', desc='force per unit length in x-direction on tower')
-        self.add_input('tower_Py', np.zeros(nFullTow), units='N/m', desc='force per unit length in y-direction on tower')
-        self.add_input('tower_Pz', np.zeros(nFullTow), units='N/m', desc='force per unit length in z-direction on tower')
-        self.add_input('tower_qdyn', np.zeros(nFullTow), units='N/m**2', desc='dynamic pressure on tower')
+        self.add_input('tower_z_full', val=np.zeros(nFullTow), units='m')
+        self.add_input('tower_d_full', val=np.zeros(nFullTow), units='m')
+        self.add_input('tower_t_full', val=np.zeros(nFullTow-1), units='m')
+        self.add_input('tower_mass_section', val=np.zeros(nFullTow-1), units='kg')
+        self.add_input('tower_buckling_length', 0.0, units='m')
+        self.add_input('tower_center_of_mass', val=0.0, units='m')
+        self.add_input('tower_Px', np.zeros(nFullTow), units='N/m')
+        self.add_input('tower_Py', np.zeros(nFullTow), units='N/m')
+        self.add_input('tower_Pz', np.zeros(nFullTow), units='N/m')
+        self.add_input('tower_qdyn', np.zeros(nFullTow), units='N/m**2')
         
         # Semi geometry
-        self.add_input('radius_to_offset_column', val=0.0, units='m',desc='Distance from main column centerpoint to offset column centerpoint')
-        self.add_input('number_of_offset_columns', val=3, desc='Number of offset columns evenly spaced around main column')
-
+        self.add_input('radius_to_offset_column', val=0.0, units='m')
+        self.add_input('number_of_offset_columns', val=3)
+        
         # Pontoon properties
-        self.add_input('pontoon_outer_diameter', val=0.0, units='m',desc='Outer radius of tubular pontoon that connects offset or main columns')
-        self.add_input('pontoon_wall_thickness', val=0.0, units='m',desc='Inner radius of tubular pontoon that connects offset or main columns')
-        self.add_discrete_input('cross_attachment_pontoons', val=True, desc='Inclusion of pontoons that connect the bottom of the central main to the tops of the outer offset columns')
-        self.add_discrete_input('lower_attachment_pontoons', val=True, desc='Inclusion of pontoons that connect the central main to the outer offset columns at their bottoms')
-        self.add_discrete_input('upper_attachment_pontoons', val=True, desc='Inclusion of pontoons that connect the central main to the outer offset columns at their tops')
-        self.add_discrete_input('lower_ring_pontoons', val=True, desc='Inclusion of pontoons that ring around outer offset columns at their bottoms')
-        self.add_discrete_input('upper_ring_pontoons', val=True, desc='Inclusion of pontoons that ring around outer offset columns at their tops')
-        self.add_discrete_input('outer_cross_pontoons', val=True, desc='Inclusion of pontoons that ring around outer offset columns at their tops')
+        self.add_input('pontoon_outer_diameter', val=0.0, units='m')
+        self.add_input('pontoon_wall_thickness', val=0.0, units='m')
+        self.add_discrete_input('cross_attachment_pontoons', val=True)
+        self.add_discrete_input('lower_attachment_pontoons', val=True)
+        self.add_discrete_input('upper_attachment_pontoons', val=True)
+        self.add_discrete_input('lower_ring_pontoons', val=True)
+        self.add_discrete_input('upper_ring_pontoons', val=True)
+        self.add_discrete_input('outer_cross_pontoons', val=True)
         
         # Turbine parameters
-        self.add_input('rna_mass', val=0.0, units='kg', desc='mass of tower')
-        self.add_input('rna_cg', val=np.zeros(3), units='m', desc='Location of RNA center of mass relative to tower top')
-        self.add_input('rna_force', val=np.zeros(3), units='N', desc='Force in xyz-direction on turbine')
-        self.add_input('rna_moment', val=np.zeros(3), units='N*m', desc='Moments about turbine main')
-        self.add_input('rna_I', val=np.zeros(6), units='kg*m**2', desc='Moments about turbine main')
-
-        # Mooting parameters for loading
-        self.add_input('number_of_mooring_connections', val=3, desc='number of mooring connections on vessel')
-        self.add_input('mooring_lines_per_connection', val=1, desc='number of mooring lines per connection')
-        self.add_input('mooring_neutral_load', val=np.zeros((NLINES_MAX,3)), units='N', desc='z-force of mooring lines on structure')
-        self.add_input('mooring_stiffness', val=np.zeros((6,6)), units='N/m', desc='Linearized stiffness matrix of mooring system at neutral (no offset) conditions.')
-        self.add_input('mooring_moments_of_inertia', val=np.zeros(6), units='kg*m**2', desc='mass moment of inertia of mooring system about fairlead-centerline point [xx yy zz xy xz yz]')
-        self.add_input('fairlead', val=0.0, units='m', desc='Depth below water for mooring line attachment')
-        self.add_input('fairlead_radius', val=0.0, units='m',desc='Radius from center of structure to fairlead connection points')
-        self.add_input('fairlead_support_outer_diameter', val=0.0, units='m',desc='fairlead support outer diameter')
-        self.add_input('fairlead_support_wall_thickness', val=0.0, units='m',desc='fairlead support wall thickness')
+        self.add_input('rna_mass', val=0.0, units='kg')
+        self.add_input('rna_cg', val=np.zeros(3), units='m')
+        self.add_input('rna_force', val=np.zeros(3), units='N')
+        self.add_input('rna_moment', val=np.zeros(3), units='N*m')
+        self.add_input('rna_I', val=np.zeros(6), units='kg*m**2')
+        
+        # Mooring parameters for loading
+        self.add_input('number_of_mooring_connections', val=3)
+        self.add_input('mooring_lines_per_connection', val=1)
+        self.add_input('mooring_neutral_load', val=np.zeros((NLINES_MAX, 3)), units='N')
+        self.add_input('mooring_stiffness', val=np.zeros((6, 6)), units='N/m')
+        self.add_input('mooring_moments_of_inertia', val=np.zeros(6), units='kg*m**2')
+        self.add_input('fairlead', val=0.0, units='m')
+        self.add_input('fairlead_radius', val=0.0, units='m')
+        self.add_input('fairlead_support_outer_diameter', val=0.0, units='m')
+        self.add_input('fairlead_support_wall_thickness', val=0.0, units='m')
         
         # safety factors
-        self.add_input('gamma_f', 0.0, desc='safety factor on loads')
-        self.add_input('gamma_m', 0.0, desc='safety factor on materials')
-        self.add_input('gamma_n', 0.0, desc='safety factor on consequence of failure')
-        self.add_input('gamma_b', 0.0, desc='buckling safety factor')
-        self.add_input('gamma_fatigue', 0.0, desc='total safety factor for fatigue')
-
+        self.add_input('gamma_f', 0.0)
+        self.add_input('gamma_m', 0.0)
+        self.add_input('gamma_n', 0.0)
+        self.add_input('gamma_b', 0.0)
+        self.add_input('gamma_fatigue', 0.0)
+        
         # Manufacturing
-        self.add_input('connection_ratio_max', val=0.0, desc='Maximum ratio of pontoon outer diameter to main/offset outer diameter')
+        self.add_input('connection_ratio_max', val=0.0)
         
         # Costing
-        self.add_input('material_cost_rate', 0.0, units='USD/kg', desc='Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg')
-        self.add_input('labor_cost_rate', 0.0, units='USD/min', desc='Labor cost rate')
-        self.add_input('painting_cost_rate', 0.0, units='USD/m/m', desc='Painting / surface finishing cost rate')
+        self.add_input('material_cost_rate', 0.0, units='USD/kg')
+        self.add_input('labor_cost_rate', 0.0, units='USD/min')
+        self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
+
+        self.add_output('pontoon_wave_height_depth_margin', val=np.zeros(2), units='m')
+        self.add_output('pontoon_cost', val=0.0, units='USD')
+        self.add_output('pontoon_cost_rate', val=0.0, units='USD/t')
+        self.add_output('pontoon_mass', val=0.0, units='kg')
+        self.add_output('pontoon_displacement', val=0.0, units='m**3')
+        self.add_output('pontoon_center_of_buoyancy', val=0.0, units='m')
+        self.add_output('pontoon_center_of_mass', val=0.0, units='m')
         
-        # Outputs
-        self.add_output('pontoon_wave_height_depth_margin', val=np.zeros(2), units='m', desc='Distance between attachment point of pontoons and wave crest- both above and below waterline')
-        self.add_output('pontoon_cost', val=0.0, units='USD', desc='Cost of pontoon elements and connecting truss')
-        self.add_output('pontoon_cost_rate', val=0.0, units='USD/t', desc='Cost rate of finished pontoon and truss')
-        self.add_output('pontoon_mass', val=0.0, units='kg', desc='Mass of pontoon elements and connecting truss')
-        self.add_output('pontoon_displacement', val=0.0, units='m**3', desc='Buoyancy force of submerged pontoon elements')
-        self.add_output('pontoon_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of pontoon buoyancy force')
-        self.add_output('pontoon_center_of_mass', val=0.0, units='m', desc='z-position of center of pontoon mass')
-
-        self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
-        self.add_output('pontoon_stress', val=np.zeros((70,)), desc='Utilization (<1) of von Mises stress by yield stress and safety factor for all pontoon elements')
-
-        self.add_output('main_stress', np.zeros(nFull-1), desc='Von Mises stress utilization along main column at specified locations. Incudes safety factor.')
-        self.add_output('main_stress:axial', np.zeros(nFull-1), desc='Axial stress along main column at specified locations.')
-        self.add_output('main_stress:shear', np.zeros(nFull-1), desc='Shear stress along main column at specified locations.')
-        self.add_output('main_stress:hoop', np.zeros(nFull-1), desc='Hoop stress along main column at specified locations.')
-        self.add_output('main_stress:hoopStiffen', np.zeros(nFull-1), desc='Hoop stress along main column at specified locations.')
-        self.add_output('main_shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint. Should be < 1 for feasibility. Includes safety factors')
-        self.add_output('main_global_buckling', np.zeros(nFull-1), desc='Global buckling constraint. Should be < 1 for feasibility. Includes safety factors')
-
-        self.add_output('offset_stress', np.zeros(nFull-1), desc='Von Mises stress utilization along offset column at specified locations. Incudes safety factor.')
-        self.add_output('offset_stress:axial', np.zeros(nFull-1), desc='Axial stress along offset column at specified locations.')
-        self.add_output('offset_stress:shear', np.zeros(nFull-1), desc='Shear stress along offset column at specified locations.')
-        self.add_output('offset_stress:hoop', np.zeros(nFull-1), desc='Hoop stress along offset column at specified locations.')
-        self.add_output('offset_stress:hoopStiffen', np.zeros(nFull-1), desc='Hoop stress along offset column at specified locations.')
-        self.add_output('offset_shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint. Should be < 1 for feasibility. Includes safety factors')
-        self.add_output('offset_global_buckling', np.zeros(nFull-1), desc='Global buckling constraint. Should be < 1 for feasibility. Includes safety factors')
-
-        self.add_output('tower_stress', np.zeros(nFullTow-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
-        self.add_output('tower_stress:axial', np.zeros(nFullTow-1), desc='Axial stress along tower column at specified locations.')
-        self.add_output('tower_stress:shear', np.zeros(nFullTow-1), desc='Shear stress along tower column at specified locations.')
-        self.add_output('tower_stress:hoop', np.zeros(nFullTow-1), desc='Hoop stress along tower column at specified locations.')
-        self.add_output('tower_stress:hoopStiffen', np.zeros(nFullTow-1), desc='Hoop stress along tower column at specified locations.')
-        self.add_output('tower_shell_buckling', np.zeros(nFullTow-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
-        self.add_output('tower_global_buckling', np.zeros(nFullTow-1), desc='Global buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
-
-        self.add_discrete_output('plot_matrix', val=np.array([]), desc='Ratio of shear stress to yield stress for all pontoon elements')
-        self.add_output('main_connection_ratio', val=np.zeros((nFull,)), desc='Ratio of pontoon outer diameter to main outer diameter')
-        self.add_output('offset_connection_ratio', val=np.zeros((nFull,)), desc='Ratio of pontoon outer diameter to main outer diameter')
-
-        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First six natural frequencies')
-        self.add_output('substructure_mass', val=0.0, units='kg', desc='Mass of substructure elements and connecting truss')
-        self.add_output('structural_mass', val=0.0, units='kg', desc='Mass of whole turbine except for mooring lines')
-        self.add_output('total_displacement', val=0.0, units='m**3', desc='Total volume of water displaced by floating turbine (except for mooring lines)')
-        self.add_output('z_center_of_buoyancy', val=0.0, units='m', desc='z-position of center of buoyancy of whole turbine')
-        self.add_output('substructure_center_of_mass', val=np.zeros(3), units='m', desc='xyz-position of center of gravity of substructure only')
-        self.add_output('structure_center_of_mass', val=np.zeros(3), units='m', desc='xyz-position of center of gravity of whole turbine')
-        self.add_output('total_force', val=np.zeros(3), units='N', desc='Net forces on turbine')
-        self.add_output('total_moment', val=np.zeros(3), units='N*m', desc='Moments on whole turbine')
+        self.add_output('top_deflection', 0.0, units='m')
+        self.add_output('pontoon_stress', val=np.zeros(70))
         
-        # Derivatives
+        self.add_output('main_stress', np.zeros(nFull-1))
+        self.add_output('main_stress:axial', np.zeros(nFull-1))
+        self.add_output('main_stress:shear', np.zeros(nFull-1))
+        self.add_output('main_stress:hoop', np.zeros(nFull-1))
+        self.add_output('main_stress:hoopStiffen', np.zeros(nFull-1))
+        self.add_output('main_shell_buckling', np.zeros(nFull-1))
+        self.add_output('main_global_buckling', np.zeros(nFull-1))
+        
+        self.add_output('offset_stress', np.zeros(nFull-1))
+        self.add_output('offset_stress:axial', np.zeros(nFull-1))
+        self.add_output('offset_stress:shear', np.zeros(nFull-1))
+        self.add_output('offset_stress:hoop', np.zeros(nFull-1))
+        self.add_output('offset_stress:hoopStiffen', np.zeros(nFull-1))
+        self.add_output('offset_shell_buckling', np.zeros(nFull-1))
+        self.add_output('offset_global_buckling', np.zeros(nFull-1))
+        
+        self.add_output('tower_stress', np.zeros(nFullTow-1))
+        self.add_output('tower_stress:axial', np.zeros(nFullTow-1))
+        self.add_output('tower_stress:shear', np.zeros(nFullTow-1))
+        self.add_output('tower_stress:hoop', np.zeros(nFullTow-1))
+        self.add_output('tower_stress:hoopStiffen', np.zeros(nFullTow-1))
+        self.add_output('tower_shell_buckling', np.zeros(nFullTow-1))
+        self.add_output('tower_global_buckling', np.zeros(nFullTow-1))
+        
+        self.add_discrete_output('plot_matrix', val=np.array([]))
+        self.add_output('main_connection_ratio', val=np.zeros(nFull))
+        self.add_output('offset_connection_ratio', val=np.zeros(nFull))
+        
+        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz')
+        self.add_output('substructure_mass', val=0.0, units='kg')
+        self.add_output('structural_mass', val=0.0, units='kg')
+        self.add_output('total_displacement', val=0.0, units='m**3')
+        self.add_output('z_center_of_buoyancy', val=0.0, units='m')
+        self.add_output('substructure_center_of_mass', val=np.zeros(3), units='m')
+        self.add_output('structure_center_of_mass', val=np.zeros(3), units='m')
+        self.add_output('total_force', val=np.zeros(3), units='N')
+        self.add_output('total_moment', val=np.zeros(3), units='N*m')
+
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
          
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -755,12 +1012,12 @@ class FloatingFrame(ExplicitComponent):
         # Create Node Data object
         nnode   = 1 + np.arange(xnode.size)
         myrnode = np.zeros(xnode.shape) # z-spacing too narrow for use of rnodes
-        nodes   = frame3dd.NodeData(nnode, xnode, ynode, znode, myrnode)
+        nodes   = pyframe3dd.NodeData(nnode, xnode, ynode, znode, myrnode)
         nodeMat = np.c_[xnode, ynode, znode]
 
         # Create Element Data object
         nelem    = 1 + np.arange(N1.size)
-        elements = frame3dd.ElementData(nelem, N1, N2, Ax, As, As, Jx, I, I, modE, modG, roll, dens)
+        elements = pyframe3dd.ElementData(nelem, N1, N2, Ax, As, As, Jx, I, I, modE, modG, roll, dens)
 
         # Store data for plotting, also handy for operations below
         plotMat = np.zeros((mainEID, 3, 2))
@@ -780,14 +1037,14 @@ class FloatingFrame(ExplicitComponent):
         shear = True               # 1: include shear deformation
         geom = False               # 1: include geometric stiffness
         dx = -1                    # x-axis increment for internal forces, -1 to skip
-        other = frame3dd.Options(shear, geom, dx)
+        other = pyframe3dd.Options(shear, geom, dx)
 
         # ---LOAD CASES---
         # Extreme loading
         gx = 0.0
         gy = 0.0
         gz = -gravity
-        load = frame3dd.StaticLoadCase(gx, gy, gz)
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
         # Wind + Wave loading in local main / offset / tower c.s.
         Px_main,    Py_main,    Pz_main    = inputs['main_Pz'], inputs['main_Py'], -inputs['main_Px']  # switch to local c.s.
@@ -1021,13 +1278,13 @@ class FloatingFrame(ExplicitComponent):
         Ryy = np.append(Ryy,  K_mooring[4]/nnode_connect * np.ones(nnode_connect) )
         Rzz = np.append(Rzz,  K_mooring[5]/nnode_connect * np.ones(nnode_connect) )
         # Get reactions object from frame3dd
-        reactions = frame3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=np.inf)
+        reactions = pyframe3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=np.inf)
 
         
         # ---FRAME3DD INSTANCE---
 
         # Initialize frame3dd object
-        self.myframe = frame3dd.Frame(nodes, reactions, elements, other)
+        self.myframe = pyframe3dd.Frame(nodes, reactions, elements, other)
         
         # Add in extra mass of rna
         inode   = np.array([towerEndID], dtype=np.int32) # rna
@@ -1191,21 +1448,62 @@ class FloatingFrame(ExplicitComponent):
 
 
 
-class TrussIntegerToBoolean(ExplicitComponent):
+class TrussIntegerToBoolean(om.ExplicitComponent):
+    """
+    Get booleans from truss integers
+    
+    Parameters
+    ----------
+    cross_attachment_pontoons_int : float
+        Inclusion of pontoons that connect the bottom of the central main to the tops of
+        the outer offset columns
+    lower_attachment_pontoons_int : float
+        Inclusion of pontoons that connect the central main to the outer offset columns
+        at their bottoms
+    upper_attachment_pontoons_int : float
+        Inclusion of pontoons that connect the central main to the outer offset columns
+        at their tops
+    lower_ring_pontoons_int : float
+        Inclusion of pontoons that ring around outer offset columns at their bottoms
+    upper_ring_pontoons_int : float
+        Inclusion of pontoons that ring around outer offset columns at their tops
+    outer_cross_pontoons_int : float
+        Inclusion of pontoons that ring around outer offset columns at their tops
+    
+    Returns
+    -------
+    cross_attachment_pontoons : boolean
+        Inclusion of pontoons that connect the bottom of the central main to the tops of
+        the outer offset columns
+    lower_attachment_pontoons : boolean
+        Inclusion of pontoons that connect the central main to the outer offset columns
+        at their bottoms
+    upper_attachment_pontoons : boolean
+        Inclusion of pontoons that connect the central main to the outer offset columns
+        at their tops
+    lower_ring_pontoons : boolean
+        Inclusion of pontoons that ring around outer offset columns at their bottoms
+    upper_ring_pontoons : boolean
+        Inclusion of pontoons that ring around outer offset columns at their tops
+    outer_cross_pontoons : boolean
+        Inclusion of pontoons that ring around outer offset columns at their tops
+    
+    """
     def setup(self):
-        self.add_input('cross_attachment_pontoons_int', val=1, desc='Inclusion of pontoons that connect the bottom of the central main to the tops of the outer offset columns')
-        self.add_input('lower_attachment_pontoons_int', val=1, desc='Inclusion of pontoons that connect the central main to the outer offset columns at their bottoms')
-        self.add_input('upper_attachment_pontoons_int', val=1, desc='Inclusion of pontoons that connect the central main to the outer offset columns at their tops')
-        self.add_input('lower_ring_pontoons_int', val=1, desc='Inclusion of pontoons that ring around outer offset columns at their bottoms')
-        self.add_input('upper_ring_pontoons_int', val=1, desc='Inclusion of pontoons that ring around outer offset columns at their tops')
-        self.add_input('outer_cross_pontoons_int', val=1, desc='Inclusion of pontoons that ring around outer offset columns at their tops')
+        self.add_input('cross_attachment_pontoons_int', val=1)
+        self.add_input('lower_attachment_pontoons_int', val=1)
+        self.add_input('upper_attachment_pontoons_int', val=1)
+        self.add_input('lower_ring_pontoons_int', val=1)
+        self.add_input('upper_ring_pontoons_int', val=1)
+        self.add_input('outer_cross_pontoons_int', val=1)
 
-        self.add_discrete_output('cross_attachment_pontoons', val=True, desc='Inclusion of pontoons that connect the bottom of the central main to the tops of the outer offset columns')
-        self.add_discrete_output('lower_attachment_pontoons', val=True, desc='Inclusion of pontoons that connect the central main to the outer offset columns at their bottoms')
-        self.add_discrete_output('upper_attachment_pontoons', val=True, desc='Inclusion of pontoons that connect the central main to the outer offset columns at their tops')
-        self.add_discrete_output('lower_ring_pontoons', val=True, desc='Inclusion of pontoons that ring around outer offset columns at their bottoms')
-        self.add_discrete_output('upper_ring_pontoons', val=True, desc='Inclusion of pontoons that ring around outer offset columns at their tops')
-        self.add_discrete_output('outer_cross_pontoons', val=True, desc='Inclusion of pontoons that ring around outer offset columns at their tops')
+        self.add_discrete_output('cross_attachment_pontoons', val=True)
+        self.add_discrete_output('lower_attachment_pontoons', val=True)
+        self.add_discrete_output('upper_attachment_pontoons', val=True)
+        self.add_discrete_output('lower_ring_pontoons', val=True)
+        self.add_discrete_output('upper_ring_pontoons', val=True)
+        self.add_discrete_output('outer_cross_pontoons', val=True)
+
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         discrete_outputs['cross_attachment_pontoons'] = (int(inputs['cross_attachment_pontoons_int']) == 1)
@@ -1220,7 +1518,7 @@ class TrussIntegerToBoolean(ExplicitComponent):
 #  Assembly
 # -----------------
 
-class Loading(Group):
+class Loading(om.Group):
 
     def initialize(self):
         self.options.declare('nFull')
@@ -1231,7 +1529,7 @@ class Loading(Group):
         nFullTow = self.options['nFullTow']
         
         # Independent variables that are unique to this Group
-        loadingIndeps = IndepVarComp()
+        loadingIndeps = om.IndepVarComp()
         loadingIndeps.add_output('main_pontoon_attach_lower', 0.0)
         loadingIndeps.add_output('main_pontoon_attach_upper', 0.0)
         loadingIndeps.add_output('pontoon_outer_diameter', 0.0, units='m')

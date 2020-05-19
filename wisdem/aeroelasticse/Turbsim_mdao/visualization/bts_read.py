@@ -58,6 +58,6 @@ for it in range(nt):
           velocity[it,k,iy,iz] = ( v_cnt[ip] - Voffset[k])/Vslope[k] 
           ip = ip + 1
  
-print velocity
+print(velocity)
 
 np.save('velocity', velocity)

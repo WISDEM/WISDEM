@@ -10,9 +10,13 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+
+cwd = os.getcwd()
+wisdempath = os.path.dirname(cwd)
+sys.path.insert(0, wisdempath)
+sys.path.insert(0, os.path.abspath('./_exts'))
 
 
 # -- Project information -----------------------------------------------------
@@ -31,13 +35,19 @@ release = '2.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.coverage',
+              'sphinx.ext.napoleon',
               'sphinx.ext.mathjax',
               'sphinx.ext.viewcode',
               'numpydoc',
               'sphinx.ext.autosummary',
               'sphinxcontrib.bibtex',
-              'sphinx.ext.intersphinx'
+              'sphinx.ext.intersphinx',
+              'sphinx_rtd_theme',
+              # 'autoapi.extension',
+              # 'embed-n2',
 ]
+
 
 # Numbering figures in HTML format (always numbered in latex)
 numfig = True
@@ -53,17 +63,46 @@ master_doc = 'index'
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+# TODO : need to set these options correctly; right now the members are placeholders
+autodoc_default_options = {
+    'members': 'var1, var2',
+    'member-order': 'bysource',
+    'undoc-members': True,
+    'exclude-members': '__weakref__'
+}
 
-# -- Options for HTML output -------------------------------------------------
+# -- Options for HTML output ----------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-#html_theme = 'alabaster'
-html_theme = 'nrel-theme'
-html_theme_path = ['.']
+# html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
+html_static_path = ['_static/custom.css']
+html_theme_options = {
+    # "logo": "logo.png",
+    # "logo_name": True,
+    "badge_branch": "IEAontology4all",
+    # "codecov_button": True,
+    "fixed_sidebar": True,
+    "github_user": "WISDEM",
+    "github_repo": "WISDEM",
+    # "sidebar_width": '220px',
+    # "page_width": '75%',
+    "show_relbars": True
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = [os.path.join('source', '_static')]
+
+# Custom sidebar templates, must be a dictionary that maps document names
+# to template names.
+#
+# This is required for the alabaster theme
+# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'searchbox.html'        
+    ]
+}

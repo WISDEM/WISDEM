@@ -482,7 +482,6 @@ def RotorSE_DLC_7_1_Steady(fst_vt, runDir, namebase, TMax, turbine_class, turbul
 
     return case_list, case_name_list, channels
 
-
 def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_comm_map_down=[]):
     
     # Default Runtime
@@ -582,9 +581,10 @@ def RotorSE_DLC_1_1_Turb(fst_vt, runDir, namebase, TMax, turbine_class, turbulen
 
     return case_list, case_name_list, channels
 
-def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, U, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_comm_map_down=[]):
+
+def RotorSE_DAC_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', debug_level=0, cores=0, mpi_run=False, mpi_comm_map_down=[]):
     # Default Runtime
-    T = 5. # 600.  # 150. # 630.
+    T = 150. # 600.
     TStart = 0. #0.  # 30.
 
     # Overwrite for testing
@@ -593,6 +593,7 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
         TStart = 0.
 
     iec = CaseGen_IEC()
+    iec.TMax = T
     iec.init_cond[("ElastoDyn", "RotSpeed")] = {'U': U_init}
     iec.init_cond[("ElastoDyn", "RotSpeed")]['val'] = [0.95 * omega_i for omega_i in Omega_init]
     iec.init_cond[("ElastoDyn", "BlPitch1")] = {'U': U_init}
@@ -609,16 +610,16 @@ def RotorSE_predef_wind(fst_vt, runDir, namebase, TMax, turbine_class, turbulenc
     iec.dlc_inputs = {}
     iec.dlc_inputs['DLC'] = [1.1]  # [1.1]
     # iec.dlc_inputs['U'] = [[U]]
-    iec.dlc_inputs['U'] = [[10]]
+    iec.dlc_inputs['U'] = [[Vrated, Vrated+2]]
     # iec.dlc_inputs['Seeds'] = [[1]]
-    iec.dlc_inputs['Seeds'] = [[13428]]  # nothing special about these seeds, randomly generated
+    iec.dlc_inputs['Seeds'] = [[13428, 1524]]  # nothing special about these seeds, randomly generated
     iec.dlc_inputs['Yaw'] = [[]]
     iec.transient_dir_change = '-'  # '+','-','both': sign for transient events in EDC, EWS
     iec.transient_shear_orientation = 'v'  # 'v','h','both': vertical or horizontal shear for EWS
     iec.TMax = 5.
 
     iec.wind_dir = runDir
-    iec.case_name_base = namebase + '_DAC'  # distributed aerodynamic control
+    iec.case_name_base = namebase 
     iec.Turbsim_exe = Turbsim_exe
     iec.debug_level = debug_level
     iec.cores = cores

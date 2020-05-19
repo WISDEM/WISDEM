@@ -1,50 +1,84 @@
-Installation
-------------
+WISDEM Installation
+-------------------
 
-.. admonition:: prerequisites
-   :class: warning
+The recommended method for installing WISDEM is with `Anaconda <https://www.anaconda.com>`_.  This streamlines the installation of dependencies and creates self-contained environments suitable for testing and analysis.  WISDEM requires `Anaconda 64-bit <https://www.anaconda.com/distribution/>`_.
 
-	General: C compiler, Fortran compiler, NumPy, SciPy, Swig, pyWin32, MatlPlotLib, Lxml, OpenMDAO
+Configure Anaconda Environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	Wind Plant Framework: FUSED-Wind (Framework for Unified Systems Engineering and Design of Wind Plants)
+Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
-	Sub-Models: CommonSE, AeroelasticSE, RotorSE, DriveSE, DriveWPACT, TowerSE, JacketSE, Turbine_CostsSE, Plant_CostsSE, Plant_EnergySE, Plant_FinanceSEE, pBEAM, CCBlade, Akima
-
-	Supporting python packages: Pandas, Algopy, Zope.interface, Sphinx, Xlrd, PyOpt, py2exe, Pyzmq, Sphinxcontrib-bibtex, Sphinxcontrib-zopeext, Numpydoc, Ipython
-
-Clone the repository at `<https://github.com/WISDEM/WISDEM>`_
-or download the releases and uncompress/unpack (WISDEM.py-|release|.tar.gz or WISDEM.py-|release|.zip) from the website link at the bottom the `WISDEM site<http://nwtc.nrel.gov/WISDEM>`_.
-
-To install WISDEM, first activate the OpenMDAO environment and then install with the following command.  For full instructions for Windows, see the README.md file.
+The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.
 
 .. code-block:: bash
 
-   $ python setup_all.py
+    conda config --add channels conda-forge
+    conda create -y --name wisdem-env python=3.7
+    conda activate wisdem-env
 
-To check if installation was successful try to import the module from within an activated OpenMDAO environment:
+Note that older versions of anaconda on MacOS and Linux may instead require `source activate wisdem-env`
 
-.. code-block:: bash
+.. _install_as_user:
+Install WISDEM as a User
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-    $ python
-
-.. code-block:: python
-
-	> import wisdem.lcoe.lcoe_csm_assembly
-	> import wisdem.lcoe.lcoe_se_csm_assembly
-	> import wisdem.turbinese.turbine
-
-or run the unit tests which include functional and gradient tests.  Analytic gradients are provided for variables only so warnings will appear for missing gradients on model input parameters; these can be ignored.
+From an active Anaconda environment, install WISDEM and its dependencies with:
 
 .. code-block:: bash
 
-   $ python src/test/test_WISDEM.py
-   $ python src/test/test_turbine_gradients.py
+    conda install -y wisdem
 
-An "OK" signifies that all the tests passed.
+Running WISDEM Tuturials
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-For software issues please use `<https://github.com/WISDEM/WISDEM/issues>`_.  For functionality and theory related questions and comments please use the NWTC forum for `Systems Engineering Software Questions <https://wind.nrel.gov/forum/wind/viewtopic.php?f=34&t=1002>`_.
+To open up the WISDEM tutorials, you will have to clone the WISDEM source code.  First navigate to a directory where you want to place WISDEM and all of its files and then run with:
 
-.. only:: latex
+.. code-block:: bash
 
-    An HTML version of this documentation that contains further details and links to the source code is available at `<http://wisdem.github.io/WISDEM>`_
+    conda install -y git jupyter
+    git clone https://github.com/WISDEM/WISDEM.git
+    cd WISDEM/tutorial-notebooks
+    jupyter notebook
 
+.. _install_as_developer:
+Install WISDEM as a Developer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you wish to edit source files and/or contribute to WISDEM, you will need to install as a developer.  WISDEM is first installed with Anaconda to install all dependencies, but then reinstall WISDEM from source.  Note the differences between Windows and Mac/Linux build systems.
+
+.. code-block:: bash
+
+    conda install -y wisdem git jupyter
+    conda remove --force wisdem
+
+For Mac / Linux systems:
+
+.. code-block:: bash
+
+    conda install compilers
+
+For Windows systems:
+
+.. code-block:: bash
+
+    conda install m2w64-toolchain libpython
+
+Finally, for all systems:
+
+.. code-block:: bash
+
+    git clone https://github.com/WISDEM/WISDEM.git
+    cd WISDEM
+    python setup.py develop
+
+Install pyOptSparse (`Optional`)
+""""""""""""""""""""""""""""""""
+
+`pyOptSparse <https://github.com/mdolab/pyoptsparse>`_ is a package that provides additional optimization solvers with OpenMDAO support:
+
+.. code-block:: bash
+
+    git clone https://github.com/evan-gaertner/pyoptsparse.git
+    cd pyoptsparse
+    python setup.py install
+    cd ..

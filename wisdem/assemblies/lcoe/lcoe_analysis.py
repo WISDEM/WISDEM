@@ -298,30 +298,30 @@ if __name__ == "__main__":
         print(prob.driver.get_constraints())
         print(prob.driver.get_desvars())
         print(prob.driver.get_objectives())
-        print
-        print
-        print 'zs=', prob['z_full']
-        print 'ds=', prob['d_full']
-        print 'ts=', prob['t_full']
-        print 'mass (kg) =', prob['tower_mass']
-        print 'cg (m) =', prob['tower_center_of_mass']
-        print 'weldability =', prob['weldability']
-        print 'manufacturability =', prob['manufacturability']
-        print '\nwind: ', prob['wind1.Uref']
-        print 'f1 (Hz) =', prob['tower1.f1']
-        print 'top_deflection1 (m) =', prob['post1.top_deflection']
-        print 'stress1 =', prob['post1.stress']
-        print 'GL buckling =', prob['post1.global_buckling']
-        print 'Shell buckling =', prob['post1.shell_buckling']
-        print 'damage =', prob['post1.damage']
-        print '\nwind: ', prob['wind2.Uref']
-        print 'f1 (Hz) =', prob['tower2.f1']
-        print 'top_deflection2 (m) =', prob['post2.top_deflection']
-        print 'stress2 =', prob['post2.stress']
-        print 'GL buckling =', prob['post2.global_buckling']
-        print 'Shell buckling =', prob['post2.shell_buckling']
-        print 'damage =', prob['post2.damage']
-        print
+        print()
+        print()
+        print( 'zs=', prob['z_full'] )
+        print( 'ds=', prob['d_full'] )
+        print( 'ts=', prob['t_full'] )
+        print( 'mass (kg) =', prob['tower_mass'] )
+        print( 'cg (m) =', prob['tower_center_of_mass'] )
+        print( 'weldability =', prob['weldability'] )
+        print( 'manufacturability =', prob['manufacturability'] )
+        print( '\nwind: ', prob['wind1.Uref'] )
+        print( 'f1 (Hz) =', prob['tower1.f1'] )
+        print( 'top_deflection1 (m) =', prob['post1.top_deflection'] )
+        print( 'stress1 =', prob['post1.stress'] )
+        print( 'GL buckling =', prob['post1.global_buckling'] )
+        print( 'Shell buckling =', prob['post1.shell_buckling'] )
+        print( 'damage =', prob['post1.damage'] )
+        print( '\nwind: ', prob['wind2.Uref'] )
+        print( 'f1 (Hz) =', prob['tower2.f1'] )
+        print( 'top_deflection2 (m) =', prob['post2.top_deflection'] )
+        print( 'stress2 =', prob['post2.stress'] )
+        print( 'GL buckling =', prob['post2.global_buckling'] )
+        print( 'Shell buckling =', prob['post2.shell_buckling'] )
+        print( 'damage =', prob['post2.damage'] )
+        print()
         print('----- NREL 5 MW Turbine - 4 Point Suspension -----')
         FUSED_print(lcoegroup)
     

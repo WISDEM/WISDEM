@@ -95,16 +95,16 @@ class RotorSE_Example2():
 		rotor.run()
 		# ---
 
-		print 'Max Chord Radius = ', rotor['r_max_chord']
-		print 'Chord Control Points = ', rotor['chord_in']
-		print 'Twist Control Points = ', rotor['theta_in']
-		print 'TSR = ', rotor['control_tsr']
+		print('Max Chord Radius = ', rotor['r_max_chord'])
+		print('Chord Control Points = ', rotor['chord_in'])
+		print('Twist Control Points = ', rotor['theta_in'])
+		print('TSR = ', rotor['control_tsr'])
 
-		print'----------------'
-		print 'Objective = ', -1*rotor['AEP']/AEP0
-		print 'AEP = ', rotor['AEP']
-		print 'Rated Thrust =', rotor['rated_T']
-		print 'Percent change in thrust =', (rotor['rated_T']-T0)/T0 *100
+		print('----------------')
+		print('Objective = ', -1*rotor['AEP']/AEP0)
+		print('AEP = ', rotor['AEP'])
+		print('Rated Thrust =', rotor['rated_T'])
+		print('Percent change in thrust =', (rotor['rated_T']-T0)/T0 *100)
 
 
 

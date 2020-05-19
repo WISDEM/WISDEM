@@ -5,7 +5,6 @@ from scipy.interpolate import PchipInterpolator
 from openmdao.api import ExplicitComponent, Group
 from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.rotorse.precomp import PreComp, Profile, Orthotropic2DMaterial, CompositeSection
-import wisdem.pBeam._pBEAM as _pBEAM
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.rotorse.rotor_cost import blade_cost_model
 from wisdem.rotorse.rail_transport import RailTransport
@@ -66,6 +65,7 @@ class RunPreComp(ExplicitComponent):
 
         # Outputs - Distributed beam properties
         self.add_output('z',            val=np.zeros(n_span), units='m',      desc='locations of properties along beam')
+        self.add_output('A',            val=np.zeros(n_span), units='m**2',   desc='cross sectional area')
         self.add_output('EA',           val=np.zeros(n_span), units='N',      desc='axial stiffness')
         self.add_output('EIxx',         val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
         self.add_output('EIyy',         val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
@@ -421,7 +421,7 @@ class RunPreComp(ExplicitComponent):
         beam = PreComp(inputs['r'], inputs['chord'], np.zeros_like(inputs['r']), inputs['pitch_axis'], 
                        inputs['precurve'], inputs['presweep'], profile, materials, upperCS, lowerCS, websCS, 
                        sector_idx_strain_spar_cap_ps, sector_idx_strain_spar_cap_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
-        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, rhoJ, Tw_iner, flap_iner, edge_iner, x_tc, y_tc, x_sc, y_sc, x_cg, y_cg = beam.sectionProperties()
+        EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, area, rhoJ, Tw_iner, flap_iner, edge_iner, x_tc, y_tc, x_sc, y_sc, x_cg, y_cg = beam.sectionProperties()
 
         outputs['x_ec_abs'] = beam.x_ec_nose - inputs['pitch_axis'] * inputs['chord']
         outputs['y_ec_abs'] = beam.y_ec_nose
@@ -441,6 +441,7 @@ class RunPreComp(ExplicitComponent):
         outputs['x_ec']      = x_ec
         outputs['y_ec']      = y_ec
         outputs['rhoA']      = rhoA
+        outputs['A']         = area
         outputs['rhoJ']      = rhoJ
         outputs['Tw_iner']   = Tw_iner
         outputs['flap_iner'] = flap_iner
@@ -550,139 +551,7 @@ class RunPreComp(ExplicitComponent):
         outputs['total_blade_cost'] = blade_cost
         outputs['total_blade_mass'] = blade_mass
 
-class RunCurveFEM(ExplicitComponent):
-    # OpenMDAO component that computes the natural frequencies for curved blades using _pBEAM
-    def initialize(self):
-        self.options.declare('analysis_options')
-
-    def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
-        self.n_span = n_span = blade_init_options['n_span']
-        self.n_freq = n_freq = blade_init_options['n_freq']
-
-        # Inputs
-        self.add_input('Omega',         val=0.0,                units='rpm',    desc='rotor rotation frequency')
-        self.add_input('r',             val=np.zeros(n_span),   units='m',      desc='locations of properties along beam')
-        self.add_input('EA',            val=np.zeros(n_span),   units='N',      desc='axial stiffness')
-        self.add_input('EIxx',          val=np.zeros(n_span),   units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('EIyy',          val=np.zeros(n_span),   units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-        self.add_input('GJ',            val=np.zeros(n_span),   units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
-        self.add_input('rhoA',          val=np.zeros(n_span),   units='kg/m',   desc='mass per unit length')
-        self.add_input('rhoJ',          val=np.zeros(n_span),   units='kg*m',   desc='polar mass moment of inertia per unit length')
-        self.add_input('Tw_iner',       val=np.zeros(n_span),   units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
-        self.add_input('precurve',      val=np.zeros(n_span),   units='m',      desc='structural precuve (see FAST definition)')
-        self.add_input('presweep',      val=np.zeros(n_span),   units='m',      desc='structural presweep (see FAST definition)')
-
-        # Outputs
-        self.add_output('freq',         val=np.zeros(n_freq),   units='Hz',     desc='first nF natural frequencies')
-        self.add_output('modes_coef',   val=np.zeros((3, 5)),                   desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
-
-
-    def compute(self, inputs, outputs):
-        mycurve = _pBEAM.CurveFEM(inputs['Omega'], inputs['Tw_iner'], inputs['r'], inputs['precurve'], inputs['presweep'], inputs['rhoA'], True)
-        freq, eig_vec = mycurve.frequencies(inputs['EA'], inputs['EIxx'], inputs['EIyy'], inputs['GJ'], inputs['rhoJ'], self.n_span)
-        outputs['freq'] = freq[:self.n_freq]
         
-        # Parse eigen vectors
-        R = inputs['r']
-        R = np.asarray([(Ri-R[0])/(R[-1]-R[0]) for Ri in R])
-        ndof = 6
-
-        flap = np.zeros((self.n_freq, self.n_span))
-        edge = np.zeros((self.n_freq, self.n_span))
-        for i in range(self.n_freq):
-            eig_vec_i = eig_vec[:,i]
-            for j in range(self.n_span):
-                flap[i,j] = eig_vec_i[0+j*ndof]
-                edge[i,j] = eig_vec_i[1+j*ndof]
-
-
-        # Mode shape polynomial fit
-        def mode_fit(x, a, b, c, d, e):
-            return a*x**2. + b*x**3. + c*x**4. + d*x**5. + e*x**6.
-        # First Flapwise
-        coef, pcov = curve_fit(mode_fit, R, flap[0,:])
-        coef_norm = [c/sum(coef) for c in coef]
-        outputs['modes_coef'][0,:] = coef_norm
-        # Second Flapwise
-        coef, pcov = curve_fit(mode_fit, R, flap[1,:])
-        coef_norm = [c/sum(coef) for c in coef]
-        outputs['modes_coef'][1,:] = coef_norm
-        # First Edgewise
-        coef, pcov = curve_fit(mode_fit, R, edge[0,:])
-        coef_norm = [c/sum(coef) for c in coef]
-        outputs['modes_coef'][2,:] = coef_norm
-
-
-        # # temp
-        # from bmodes import BModes_tools
-        # r = np.asarray([(ri-inputs['z'][0])/(inputs['z'][-1]-inputs['z'][0]) for ri in inputs['z']])
-        # prop = np.column_stack((r, inputs['theta'], inputs['Tw_iner'], inputs['rhoA'], inputs['flap_iner'], inputs['edge_iner'], inputs['EIyy'], \
-        #         inputs['EIxx'], inputs['GJ'], inputs['EA'], np.zeros_like(r), np.zeros_like(r), np.zeros_like(r)))
-        
-        # bm = BModes_tools()
-        # bm.setup.radius = inputs['z'][-1]
-        # bm.setup.hub_rad = inputs['z'][0]
-        # bm.setup.precone = -2.5
-        # bm.prop = prop
-        # bm.exe_BModes = 'C:/Users/egaertne/WT_Codes/bModes/BModes.exe'
-        # bm.execute()
-        # print(bm.freq)
-
-        # import matplotlib.pyplot as plt
-
-        # fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(12., 6.), sharex=True, sharey=True)
-        # # fig.subplots_adjust(bottom=0.2, top=0.9)
-        # fig.subplots_adjust(bottom=0.15, left=0.1, hspace=0, wspace=0)
-        # i = 0
-        # k_flap = bm.flap_disp[i,-1]/flap[i,-1]
-        # k_edge = bm.lag_disp[i,-1]/edge[i,-1]
-        # ax[0,0].plot(R, flap[i,:]*k_flap ,'k',label='CurveFEM')
-        # ax[0,0].plot(bm.r[i,:], bm.flap_disp[i,:],'bx',label='BModes')
-        # ax[0,0].set_ylabel('Flapwise Disp.')
-        # ax[0,0].set_title('1st Mode')
-        # ax[1,0].plot(R, edge[i,:]*k_edge ,'k')
-        # ax[1,0].plot(bm.r[i,:], bm.lag_disp[i,:],'bx')
-        # ax[1,0].set_ylabel('Edgewise Disp.')
-
-        # i = 1
-        # k_flap = bm.flap_disp[i,-1]/flap[i,-1]
-        # k_edge = bm.lag_disp[i,-1]/edge[i,-1]
-        # ax[0,1].plot(R, flap[i,:]*k_flap ,'k')
-        # ax[0,1].plot(bm.r[i,:], bm.flap_disp[i,:],'bx')
-        # ax[0,1].set_title('2nd Mode')
-        # ax[1,1].plot(R, edge[i,:]*k_edge ,'k')
-        # ax[1,1].plot(bm.r[i,:], bm.lag_disp[i,:],'bx')
-
-        # i = 2
-        # k_flap = bm.flap_disp[i,-1]/flap[i,-1]
-        # k_edge = bm.lag_disp[i,-1]/edge[i,-1]
-        # ax[0,2].plot(R, flap[i,:]*k_flap ,'k')
-        # ax[0,2].plot(bm.r[i,:], bm.flap_disp[i,:],'bx')
-        # ax[0,2].set_title('3rd Mode')
-        # ax[1,2].plot(R, edge[i,:]*k_edge ,'k')
-        # ax[1,2].plot(bm.r[i,:], bm.lag_disp[i,:],'bx')
-        # fig.legend(loc='lower center', ncol=2)
-
-        # i = 3
-        # k_flap = bm.flap_disp[i,-1]/flap[i,-1]
-        # k_edge = bm.lag_disp[i,-1]/edge[i,-1]
-        # ax[0,3].plot(R, flap[i,:]*k_flap ,'k')
-        # ax[0,3].plot(bm.r[i,:], bm.flap_disp[i,:],'bx')
-        # ax[0,3].set_title('4th Mode')
-        # ax[1,3].plot(R, edge[i,:]*k_edge ,'k')
-        # ax[1,3].plot(bm.r[i,:], bm.lag_disp[i,:],'bx')
-        # fig.legend(loc='lower center', ncol=2)
-        # fig.text(0.5, 0.075, 'Blade Spanwise Position, $r/R$', ha='center')
-
-        # (n,m)=np.shape(ax)
-        # for i in range(n):
-        #     for j in range(m):
-        #         ax[i,j].tick_params(axis='both', which='major', labelsize=8)
-        #         ax[i,j].grid(True, linestyle=':')
-
-        # plt.show()
-
 class RotorElasticity(Group):
     # OpenMDAO group to compute the blade elastic properties and natural frequencies
     def initialize(self):
@@ -693,9 +562,8 @@ class RotorElasticity(Group):
         opt_options     = self.options['opt_options']
 
         # Get elastic properties by running precomp
-        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=['r','chord','theta','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep','x_ec_abs', 'y_ec_abs'])
-        # Compute frequencies
-        self.add_subsystem('curvefem_0rpm', RunCurveFEM(analysis_options = analysis_options), promotes=['r','EA','EIxx','EIyy','GJ','rhoA','rhoJ','Tw_iner','precurve','presweep'])
+        promote_list = ['chord','theta','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','x_ec_abs','y_ec_abs']
+        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=promote_list+['r','Tw_iner','precurve','presweep'])
         # Check rail transportabiliy
         if opt_options['constraints']['blade']['rail_transport']['flag']:
-            self.add_subsystem('rail',     RailTransport(analysis_options = analysis_options), promotes=['EA','EIxx','EIyy','GJ','rhoA','rhoJ','x_ec_abs', 'y_ec_abs'])
+            self.add_subsystem('rail',  RailTransport(analysis_options = analysis_options), promotes=promote_list)

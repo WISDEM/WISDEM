@@ -6,6 +6,8 @@ from scipy.interpolate import PchipInterpolator
 import os, copy, warnings, shutil
 from openmdao.api import ExplicitComponent
 from wisdem.commonse.mpi_tools import MPI
+from wisdem.commonse.vertical_cylinder import NFREQ
+from wisdem.towerse.tower import get_nfull
 
 # from wisdem.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from wisdem.aeroelasticse.FAST_writer import InputWriter_OpenFAST
@@ -209,9 +211,13 @@ class FASTLoadCases(ExplicitComponent):
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
 
-        
+        n_height_tow = self.options['analysis_options']['tower']['n_height']
+        nFull        = get_nfull(self.options['analysis_options']['tower']['n_height'])
+        N_beam       = (nFull-1)*2
+        n_freq_tower = int(NFREQ/2)
+        n_freq_blade = int(self.options['analysis_options']['blade']['n_freq']/2)
 
-        FASTpref                = self.options['analysis_options']['openfast']['FASTpref']
+        FASTpref = self.options['analysis_options']['openfast']['FASTpref']
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -223,7 +229,18 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('beam:rhoA',             val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
         self.add_input('beam:EIyy',             val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
         self.add_input('beam:EIxx',             val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('modes_coef_curvefem',   val=np.zeros((3, 5)), desc='mode shapes as 6th order polynomials, in the format accepted by ElastoDyn, [[c_x2, c_],..]')
+        self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
+        self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+
+        # tower properties
+        self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
+        self.add_input('side_side_modes',  val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+        self.add_input('sec_loc',          val=np.zeros(N_beam),                         desc='normalized sectional location')
+        self.add_input('mass_den',         val=np.zeros(N_beam),         units='kg/m',   desc='sectional mass per unit length')
+        self.add_input('foreaft_stff',     val=np.zeros(N_beam),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
+        self.add_input('sideside_stff',    val=np.zeros(N_beam),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
+        self.add_input('tower_section_height', val=np.zeros(n_height_tow-1), units='m',      desc='parameterized section heights along cylinder')
+        self.add_input('tower_outer_diameter', val=np.zeros(n_height_tow),   units='m',      desc='cylinder diameter at corresponding locations')
 
         # DriveSE quantities
         self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
@@ -233,9 +250,6 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('yaw_mass',        val=0.0, units='kg', desc='Mass of yaw system')
         self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_input('nacelle_I',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
-
-
-
 
         # AeroDyn Inputs
         self.add_input('ref_axis_blade',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
@@ -435,13 +449,25 @@ class FASTLoadCases(ExplicitComponent):
 
         
 
-        tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
-        fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][0] + inputs['tower_base_height'][0] # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+        #tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
         fst_vt['ElastoDyn']['TowerBsHt'] = inputs['tower_base_height'][0] # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
+        fst_vt['ElastoDyn']['PtfmRefzt'] = inputs['tower_base_height'][0] # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
+        fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][0] + fst_vt['ElastoDyn']['TowerBsHt'] # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
         # Update Inflowwind
         fst_vt['InflowWind']['RefHt'] = inputs['hub_height'][0]
         fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
+
+        # Update ElastoDyn Tower Input File
+        fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
+        fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
+        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
+        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
+        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
+        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
+        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -455,14 +481,18 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynBlade']['FlpStff']    = inputs['beam:EIyy']
         fst_vt['ElastoDynBlade']['EdgStff']    = inputs['beam:EIxx']
         for i in range(5):
-            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['modes_coef_curvefem'][0,i]
-            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['modes_coef_curvefem'][1,i]
-            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['modes_coef_curvefem'][2,i]
+            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i] / sum(inputs['flap_mode_shapes'][0,:])
+            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i] / sum(inputs['flap_mode_shapes'][1,:])
+            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i] / sum(inputs['edge_mode_shapes'][0,:])
         
         # Update AeroDyn15
-        fst_vt['AeroDyn15']['AirDens'] = inputs['rho'][0]
-        fst_vt['AeroDyn15']['KinVisc'] = inputs['mu'][0] / inputs['rho'][0]
-        
+        fst_vt['AeroDyn15']['AirDens']   = inputs['rho'][0]
+        fst_vt['AeroDyn15']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
+        fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'])
+        fst_vt['AeroDyn15']['TwrElev']   = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
+        fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter']
+        fst_vt['AeroDyn15']['TwrCd']     = np.ones_like(fst_vt['AeroDyn15']['TwrDiam']) * np.mean(fst_vt['AeroDyn15']['TwrCd'])
+
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
         r[0]  = 0.
@@ -481,6 +511,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['NumAFfiles'] = self.n_span
         # fst_vt['AeroDyn15']['af_data'] = [{}]*len(airfoils)
         fst_vt['AeroDyn15']['af_data'] = []
+
+        if self.n_tab > 1:
+            fst_vt['AeroDyn15']['AFTabMod'] = 3
+
         for i in range(self.n_span): # No of blade radial stations
         
             fst_vt['AeroDyn15']['af_data'].append([])

@@ -23,68 +23,69 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     optimization_data.fname_opt_options = fname_opt_options
     optimization_data.folder_output     = folder_output    
     
+    if not os.path.isdir(folder_output):
+        os.mkdir(folder_output)
+
     # Load yaml for turbine description into a pure python data structure.
     wt_initial                   = WindTurbineOntologyPython()
     analysis_options, wt_init    = wt_initial.initialize(fname_wt_input, fname_analysis_options)
-    
     opt_options = optimization_data.initialize()
     
     # Assume we're not doing optimization unless an opt_flag is true in the
     # optimization yaml
     opt_options['opt_flag']    = False
     
-    # Loop through all blade optimization variables, setting opt_flag to true
+    # ----------------------------------------------------------------------
+    # Loop through all optimization variables, setting opt_flag to true
     # if any of these variables are set to optimize. If it's not an optimization
     # DV, set the number of optimization points to be the same as the number
     # of discretization points. 
+    # ----------------------------------------------------------------------
+
+    # Blade optimization variables
     blade_opt_options = opt_options['optimization_variables']['blade']
-    
     if blade_opt_options['aero_shape']['twist']['flag']:
         opt_options['opt_flag'] = True
     else:
         blade_opt_options['aero_shape']['twist']['n_opt'] = analysis_options['rotorse']['n_span']
-        
     if blade_opt_options['aero_shape']['chord']['flag']:
         opt_options['opt_flag'] = True
     else:
         blade_opt_options['aero_shape']['chord']['n_opt'] = analysis_options['rotorse']['n_span']
-        
     if blade_opt_options['aero_shape']['af_positions']['flag']:
         opt_options['opt_flag'] = True
-        
     if blade_opt_options['structure']['spar_cap_ss']['flag']:
         opt_options['opt_flag'] = True
     else:
         blade_opt_options['structure']['spar_cap_ss']['n_opt'] = analysis_options['rotorse']['n_span']
-        
     if blade_opt_options['structure']['spar_cap_ps']['flag']:
         opt_options['opt_flag'] = True
     else:
         blade_opt_options['structure']['spar_cap_ps']['n_opt'] = analysis_options['rotorse']['n_span']
-        
-    if opt_options['optimization_variables']['control']['tsr']['flag']:
-        opt_options['opt_flag'] = True
-        
+
     # 'dac' is an optional setting, so we check if it's in the yaml-produced dict
     if 'dac' in blade_opt_options:
         if blade_opt_options['dac']['te_flap_end']['flag'] or blade_opt_options['dac']['te_flap_ext']['flag']:
             opt_options['opt_flag'] = True
-            
-    # Loop through all tower optimization variables, setting opt_flag to true
-    # if any of these variables are set to optimize. If it's not an optimization
-    # DV, set the number of optimization points to be the same as the number
-    # of discretization points. 
+
+    # Tower optimization variables
     tower_opt_options = opt_options['optimization_variables']['tower']
-    
     if tower_opt_options['outer_diameter']['flag']:
         opt_options['opt_flag'] = True
-        
     if tower_opt_options['layer_thickness']['flag']:
         opt_options['opt_flag'] = True
-    
         
-    if not os.path.isdir(folder_output):
-        os.mkdir(folder_output)
+    # Servo optimization variables
+    control_opt_options = opt_options['optimization_variables']['control']
+    if control_opt_options['tsr']['flag']:
+        opt_options['opt_flag'] = True
+    if control_opt_options['servo']['pitch_control']['flag']:
+        opt_options['opt_flag'] = True
+    if control_opt_options['servo']['torque_control']['flag']:
+        opt_options['opt_flag'] = True
+    if 'flap_control' in control_opt_options['servo']:
+        if control_opt_options['servo']['flap_control']['flag']:
+            opt_options['opt_flag'] = True
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
@@ -233,7 +234,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             elif opt_options['merit_figure'] == 'Cp':
                 wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
             elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
-                wt_opt.model.add_objective('aeroelastic.My_std')  #1.e-8)
+                wt_opt.model.add_objective('aeroelastic.My_std', ref = 1.e6)
             elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
                 wt_opt.model.add_objective('aeroelastic.flp1_std')  #1.e-8)
             else:
@@ -291,6 +292,26 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             if tower_opt_options['layer_thickness']['flag']:
                 wt_opt.model.add_design_var('tower.layer_thickness', lower=tower_opt_options['layer_thickness']['lower_bound'], upper=tower_opt_options['layer_thickness']['upper_bound'], ref=1e-2)
             
+            # -- Control -- 
+            if control_opt_options['tsr']['flag']:
+                wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=control_opt_options['tsr']['min_gain'], 
+                                                                    upper=control_opt_options['tsr']['max_gain'])
+            if control_opt_options['servo']['pitch_control']['flag']:
+                wt_opt.model.add_design_var('control.PC_omega', lower=control_opt_options['servo']['pitch_control']['omega_min'], 
+                                                                upper=control_opt_options['servo']['pitch_control']['omega_max'])
+                wt_opt.model.add_design_var('control.PC_zeta', lower=control_opt_options['servo']['pitch_control']['zeta_min'], 
+                                                               upper=control_opt_options['servo']['pitch_control']['zeta_max'])
+            if control_opt_options['servo']['torque_control']['flag']:
+                wt_opt.model.add_design_var('control.VS_omega', lower=control_opt_options['servo']['torque_control']['omega_min'], 
+                                                                upper=control_opt_options['servo']['torque_control']['omega_max'])
+                wt_opt.model.add_design_var('control.VS_zeta', lower=control_opt_options['servo']['torque_control']['zeta_min'], 
+                                                               upper=control_opt_options['servo']['torque_control']['zeta_max'])
+            if 'flap_control' in control_opt_options['servo']:
+                if control_opt_options['servo']['flap_control']['flag']:
+                    wt_opt.model.add_design_var('control.Flp_omega', lower=control_opt_options['servo']['flap_control']['omega_min'], 
+                                                                     upper=control_opt_options['servo']['flap_control']['omega_max'])
+                    wt_opt.model.add_design_var('control.Flp_zeta', lower=control_opt_options['servo']['flap_control']['zeta_min'], 
+                                                                    upper=control_opt_options['servo']['flap_control']['zeta_max'])
 
             # Set non-linear constraints
             blade_constraints = opt_options['constraints']['blade']
@@ -364,7 +385,15 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.model.add_constraint('towerse.tower.f1',
                     lower=tower_constraints['frequency_1']['lower_bound'],
                     upper=tower_constraints['frequency_1']['upper_bound'])
-                
+            
+            control_constraints = opt_options['constraints']['control']
+            if control_constraints['flap_control']['flag']:
+                wt_opt.model.add_constraint('sse.tune_rosco.Flp_Kp',
+                    lower = control_constraints['flap_control']['min'],
+                    upper = control_constraints['flap_control']['max'])
+                wt_opt.model.add_constraint('sse.tune_rosco.Flp_Ki', 
+                    lower = control_constraints['flap_control']['min'],
+                    upper = control_constraints['flap_control']['max'])    
             
             # Set recorder on the OpenMDAO driver level using the `optimization_log`
             # filename supplied in the optimization yaml
@@ -501,4 +530,3 @@ if __name__ == "__main__":
     folder_output          = run_dir + 'nrel5mw/'
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
-

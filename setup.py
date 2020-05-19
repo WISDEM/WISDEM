@@ -9,12 +9,6 @@ from numpy.distutils.core import setup, Extension
 
 os.environ['NPY_DISTUTILS_APPEND_FLAGS'] = '1'
 
-# CXXFLAGS for pBEAM
-if platform.system() == 'Windows':
-    pbeamArgs = ['-std=gnu++11','-fPIC']
-else:
-    pbeamArgs = ['-std=c++11','-fPIC']
-
 # CFLAGS for pyMAP
 if platform.system() == 'Windows': # For Anaconda
     pymapArgs = ['-O1', '-m64', '-fPIC', '-std=c99','-DCMINPACK_NO_DLL']
@@ -28,17 +22,13 @@ else:
 
 # All the extensions
 bemExt     = Extension('wisdem.ccblade._bem',
-                       sources=[os.path.join('wisdem','ccblade','bem.f90')],
+                       sources=[os.path.join('wisdem','ccblade','src','bem.f90')],
                        extra_compile_args=['-O2','-fPIC'])
 pyframeExt = Extension('wisdem.pyframe3dd._pyframe3dd',
                        sources=glob.glob(os.path.join('wisdem','pyframe3dd','src','*.c')))
 precompExt = Extension('wisdem.rotorse._precomp',
                        sources=[os.path.join('wisdem','rotorse','PreCompPy.f90')],
                        extra_compile_args=['-O2','-fPIC'])
-pbeamExt   = Extension('wisdem.pBeam._pBEAM',
-                       sources=glob.glob(os.path.join('wisdem','pBeam','src','*.cpp')),
-                       extra_compile_args=pbeamArgs,
-                       include_dirs=[os.path.join('wisdem','include')])
 pymapExt   = Extension('wisdem.pymap._libmap', sources=glob.glob(os.path.join('wisdem','pymap','**','*.c'), recursive=True)+
                        glob.glob(os.path.join('wisdem','pymap','**','*.cc'), recursive=True),
                        extra_compile_args=pymapArgs,
@@ -59,6 +49,6 @@ setup(
     packages         = find_packages(exclude=['docs', 'tests', 'ext']),
     license          = 'Apache License, Version 2.0',
     python_requires  = '>= 3.4',
-    ext_modules      = [bemExt, pyframeExt, precompExt, pbeamExt, pymapExt],
+    ext_modules      = [bemExt, pyframeExt, precompExt, pymapExt],
     zip_safe         = False
 )
