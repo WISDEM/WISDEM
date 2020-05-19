@@ -331,16 +331,16 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.model.add_constraint('blade.pa.max_chord_constr', upper= 1.0)
                 
             if blade_constraints['frequency']['flap_above_3P']:
-                wt_opt.model.add_constraint('rlds.constr.constr_flap_f_above_3P', upper= 1.0)
+                wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
                 
             if blade_constraints['frequency']['edge_above_3P']:
-                wt_opt.model.add_constraint('rlds.constr.constr_edge_f_above_3P', upper= 1.0)
+                wt_opt.model.add_constraint('rlds.constr.constr_edge_f_margin', upper= 0.0)
                 
-            if blade_constraints['frequency']['flap_below_3P']:
-                wt_opt.model.add_constraint('rlds.constr.constr_flap_f_below_3P', upper= 1.0)
+            # if blade_constraints['frequency']['flap_below_3P']:
+            #     wt_opt.model.add_constraint('rlds.constr.constr_flap_f_below_3P', upper= 1.0)
                 
-            if blade_constraints['frequency']['edge_below_3P']:
-                wt_opt.model.add_constraint('rlds.constr.constr_edge_f_below_3P', upper= 1.0)
+            # if blade_constraints['frequency']['edge_below_3P']:
+            #     wt_opt.model.add_constraint('rlds.constr.constr_edge_f_below_3P', upper= 1.0)
                 
             if blade_constraints['frequency']['flap_above_3P'] and blade_constraints['frequency']['flap_below_3P']:
                 exit('The blade flap frequency is constrained to be both above and below 3P. Please check the constraint flags.')
@@ -350,9 +350,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 
             if blade_constraints['rail_transport']['flag']:
                 if blade_constraints['rail_transport']['8_axle']:
-                    wt_opt.model.add_constraint('elastic.rail.LV_constraint_8axle', upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz', upper= 1.0)
                 elif blade_constraints['rail_transport']['4_axle']:
-                    wt_opt.model.add_constraint('elastic.rail.LV_constraint_4axle', upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_LV_4axle_horiz', upper= 1.0)
                 else:
                     exit('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
                     
@@ -388,10 +388,12 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             
             control_constraints = opt_options['constraints']['control']
             if control_constraints['flap_control']['flag']:
-                wt_opt.model.add_constraint('sse.tune_rosco.Flp_Kp',
+                if analysis_options['openfast']['run_openfast'] != True:
+                    exit('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
+                wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Kp',
                     lower = control_constraints['flap_control']['min'],
                     upper = control_constraints['flap_control']['max'])
-                wt_opt.model.add_constraint('sse.tune_rosco.Flp_Ki', 
+                wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Ki', 
                     lower = control_constraints['flap_control']['min'],
                     upper = control_constraints['flap_control']['max'])    
             

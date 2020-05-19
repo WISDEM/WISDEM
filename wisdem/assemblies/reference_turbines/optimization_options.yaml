@@ -132,6 +132,11 @@ constraints:
       flag: False
       lower_bound: 0.13
       upper_bound: 0.40
+  control:
+    flap_control:
+      flag: True
+      min: 0.0
+      max: 0.1
 
 driver:
     tol: 1.e-2
