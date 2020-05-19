@@ -23,7 +23,7 @@ from wisdem.ccblade import CCAirfoil, CCBlade
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 from wisdem.commonse.utilities import vstack, trapz_deriv, linspace_with_deriv, smooth_min, smooth_abs
 from wisdem.commonse.environment import PowerWind
-from wisdem.rotorse.rotor_fast import eval_unsteady
+from wisdem.aeroelasticse.openmdao_openfast import eval_unsteady
 
 class ServoSE(Group):
     def initialize(self):

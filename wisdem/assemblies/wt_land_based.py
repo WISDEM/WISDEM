@@ -32,9 +32,6 @@ class WT_RNTA(Group):
         self.add_subsystem('elastic',   RotorElasticity(analysis_options = analysis_options, opt_options = opt_options))
         self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options)) # Recompute polars with xfoil (for flaps)
         self.add_subsystem('sse',       ServoSE(analysis_options = analysis_options)) # Aero analysis
-        self.add_subsystem('drivese',   DriveSE(debug=False,
-                                            number_of_main_bearings=1,
-                                            topLevelFlag=False))
             
         if analysis_options['openfast']['run_openfast'] == True:
             self.add_subsystem('freq_rotor',  RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
@@ -43,6 +40,9 @@ class WT_RNTA(Group):
             self.add_subsystem('aeroelastic', FASTLoadCases(analysis_options = analysis_options))
 
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
+        self.add_subsystem('drivese',   DriveSE(debug=False,
+                                            number_of_main_bearings=1,
+                                            topLevelFlag=False))
         self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
