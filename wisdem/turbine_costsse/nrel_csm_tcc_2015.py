@@ -76,7 +76,7 @@ class BladeMass(om.ExplicitComponent):
   # --------------------------------------------------------------------
 class HubMass(om.ExplicitComponent):
     """
-    Compute hub mass in the form of :math:`mass = k*blade_mass + b`.
+    Compute hub mass in the form of :math:`mass = k*m_{blade} + b`.
     Value of :math:`k` was updated in 2015 to be 2.3.
     Value of :math:`b` was updated in 2015 to be 1320.
     
@@ -115,8 +115,8 @@ class HubMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class PitchSystemMass(om.ExplicitComponent):
     """
-    Compute pitch bearing mass in the form of :math:`bearing_mass = k*blade_mass*blade_number + b1`.
-    Then compute pitch system mass, with bearing housing in the form of :math:`mass = (1+h)*bearing_mass + b2`.
+    Compute pitch bearing mass in the form of :math:`m_{bearing} = k*m_{blade}*nblade + b1`.
+    Then compute pitch system mass, with bearing housing in the form of :math:`mass = (1+h)*m_{bearing} + b2`.
     The values of the constants were NOT updated in 2015 and are the same as the original CSM.
     Value of :math:`k` is 0.1295.
     Value of :math:`h` is 0.328.
@@ -170,7 +170,7 @@ class PitchSystemMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class SpinnerMass(om.ExplicitComponent):
     """
-    Compute spinner (nose cone) mass in the form of :math:`mass = k*rotor_diameter + b`.
+    Compute spinner (nose cone) mass in the form of :math:`mass = k*diameter + b`.
     Value of :math:`k` was updated in 2015 to be 15.5.
     Value of :math:`b` was updated in 2015 to be -980.
     
@@ -208,7 +208,7 @@ class SpinnerMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class LowSpeedShaftMass(om.ExplicitComponent):
     """
-    Compute low speed shaft mass in the form of :math:`mass = k*(blade_mass*rated_power)^b1 + b2`.
+    Compute low speed shaft mass in the form of :math:`mass = k*(m_{blade}*power)^b1 + b2`.
     Value of :math:`k` was updated in 2015 to be 13.
     Value of :math:`b1` was updated in 2015 to be 0.65.
     Value of :math:`b2` was updated in 2015 to be 775.
@@ -255,7 +255,7 @@ class LowSpeedShaftMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class BearingMass(om.ExplicitComponent):
     """
-    Compute main bearing mass (single bearing) in the form of :math:`mass = k*diameter^b.
+    Compute main bearing mass (single bearing) in the form of :math:`mass = k*diameter^b`.
     Value of :math:`k` was updated in 2015 to be 1e-4.
     Value of :math:`b` was updated in 2015 to be 3.5.
     
@@ -339,7 +339,7 @@ class RotorTorque(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class GearboxMass(om.ExplicitComponent):
     """
-    Compute gearbox mass in the form of :math:`mass = k*torque^b.
+    Compute gearbox mass in the form of :math:`mass = k*torque^b`.
     Value of :math:`k` was updated in 2015 to be 113.
     Value of :math:`b` was updated in 2015 to be 0.71.
     
@@ -377,7 +377,7 @@ class GearboxMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class HighSpeedSideMass(om.ExplicitComponent):
     """
-    Compute high speed side (shaft, brake) mass in the form of :math:`mass = k*rated_power.
+    Compute high speed side (shaft, brake) mass in the form of :math:`mass = k*power`.
     Value of :math:`k` was updated in 2015 to be 0.19894.
     
     Parameters
@@ -410,7 +410,7 @@ class HighSpeedSideMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class GeneratorMass(om.ExplicitComponent):
     """
-    Compute generator mass in the form of :math:`mass = k*rated_power + b`.
+    Compute generator mass in the form of :math:`mass = k*power + b`.
     Value of :math:`k` was updated in 2015 to be 2300.
     Value of :math:`b` was updated in 2015 to be 3400.
     
@@ -448,7 +448,7 @@ class GeneratorMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class BedplateMass(om.ExplicitComponent):
     """
-    Compute bedplate mass in the form of :math:`mass = diameter^b.
+    Compute bedplate mass in the form of :math:`mass = diameter^b`.
     Value of :math:`b` was updated in 2015 to be 2.2.
     
     Parameters
@@ -522,7 +522,7 @@ class YawSystemMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class HydraulicCoolingMass(om.ExplicitComponent):
     """
-    Compute hydraulic cooling mass in the form of :math:`mass = k*rated_power`.
+    Compute hydraulic cooling mass in the form of :math:`mass = k*power`.
     The values of the constants were NOT updated in 2015 and are the same as the original CSM.
     Value of :math:`k` is 0.08.
     
@@ -556,7 +556,7 @@ class HydraulicCoolingMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class NacelleCoverMass(om.ExplicitComponent):
     """
-    Compute nacelle cover mass in the form of :math:`mass = k*rated_power + b`.
+    Compute nacelle cover mass in the form of :math:`mass = k*power + b`.
     The values of the constants were NOT updated in 2015 and are the same as the original CSM.
     Value of :math:`k` is 1.2817.
     Value of :math:`b` is 428.19.
@@ -597,7 +597,7 @@ class NacelleCoverMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class PlatformsMainframeMass(om.ExplicitComponent):
     """
-    Compute platforms mass in the form of :math:`mass = k*bedplate mass` and
+    Compute platforms mass in the form of :math:`mass = k*m_{bedplate}` and
     crane mass as 3000kg, if flagged by the user.
     The values of the constants were NOT updated in 2015 and are the same as the original CSM.
     Value of :math:`k` is 0.125.
@@ -650,7 +650,7 @@ class PlatformsMainframeMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class TransformerMass(om.ExplicitComponent):
     """
-    Compute transformer mass in the form of :math:`mass = k*rated_power + b`.
+    Compute transformer mass in the form of :math:`mass = k*power + b`.
     Value of :math:`k` was updated in 2015 to be 1915.
     Value of :math:`b` was updated in 2015 to be 1910.
     
@@ -688,7 +688,7 @@ class TransformerMass(om.ExplicitComponent):
 # --------------------------------------------------------------------
 class TowerMass(om.ExplicitComponent):
     """
-    Compute tower mass in the form of :math:`mass = k*hub_height^b`.
+    Compute tower mass in the form of :math:`mass = k*H_{hub}^b`.
     Value of :math:`k` was updated in 2015 to be 19.828.
     Value of :math:`b` was updated in 2015 to be 2.0282.
     
