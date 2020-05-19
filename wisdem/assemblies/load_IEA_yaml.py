@@ -16,7 +16,7 @@ from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_s
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_predef_wind
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_DAC_rated
 
 
 def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.):
@@ -99,7 +99,7 @@ class WindTurbineOntologyPython(object):
         FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
         FASTpref['DLC_gust']            = None      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
-        FASTpref['DLC_turbulent']       = RotorSE_predef_wind
+        FASTpref['DLC_turbulent']       = RotorSE_DAC_rated
         FASTpref['DLC_powercurve']      = None      # AEP
         if FASTpref['Analysis_Level'] > 0:
             fast = InputReader_OpenFAST(FAST_ver=FASTpref['FAST_ver'], dev_branch=FASTpref['dev_branch'])
@@ -332,7 +332,13 @@ class WindTurbineOntologyPython(object):
 
 
         # Update controller
-        self.wt_init['control']['tsr'] = float(wt_opt['pc.tsr_opt'])
+        self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])
+        self.wt_init['control']['PC_omega'] = float(wt_opt['control.PC_omega'])
+        self.wt_init['control']['PC_zeta']  = float(wt_opt['control.PC_zeta'])
+        self.wt_init['control']['VS_omega'] = float(wt_opt['control.VS_omega'])
+        self.wt_init['control']['VS_zeta']  = float(wt_opt['control.VS_zeta'])
+        self.wt_init['control']['Flp_omega']= float(wt_opt['control.Flp_omega'])
+        self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
 
         # Write yaml with updated values
         f = open(fname_output, "w")

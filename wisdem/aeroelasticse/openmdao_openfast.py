@@ -510,6 +510,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['NumAFfiles'] = self.n_span
         # fst_vt['AeroDyn15']['af_data'] = [{}]*len(airfoils)
         fst_vt['AeroDyn15']['af_data'] = []
+
+        if self.n_tab > 1:
+            fst_vt['AeroDyn15']['AFTabMod'] = 3
+
         for i in range(self.n_span): # No of blade radial stations
         
             fst_vt['AeroDyn15']['af_data'].append([])
