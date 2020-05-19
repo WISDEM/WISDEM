@@ -568,39 +568,51 @@ materials:
       alpha: 0.0
       Xt: 74
       Xc: 87
+      S: 2.126E7
+      GIc: 303
+      GIIc: 3446
+      alp0: 53
       ply_t: 5.0E-4
       waste: 0.25
       unit_cost: 7.23
       component_id: 0
    -  name: Steel
+      description: Steel of the tower
+      source: Standard steel with higher density to account for auxiliary systems of the tower (elevator, stairs, etc)
       orth: 0
-      rho: 7850.0
-      E: 2.0e+011
-      G: 7.93e+010
-      nu: 0.265
+      rho: 8500
       alpha: 0.0
-      Xt: 1.12e+009
-      Xc: 2.16e+009
-      Xy: 450.e+6
+      E: 210.e+009
+      nu: 0.3
+      G: 65.625e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 360.e+006
+      Xc: 360.e+006
+      S: 0
+      sigma_y: 450.e+6
    -  name: glass_uni
       description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
       orth: 1
       rho: 1940.0
-      E: [44.6e+009, 17.0e+009, 16.7e+009]
-      G: [3.27e+009, 3.48e+009, 3.50e+009]
-      nu: [0.262, 0.350, 0.264]
-      # alpha:[7    21  21]
-      Xt: [1060.0e+006, 66.3e+006, 26.6e+006]
-      Xc: [826.0e+006, 196.0e+006, 197.0e+006]
-      S: [32.9e+006, 30.0e+006, 22.9e+006]
-      fvf: 0.5448275862068965
-      fwf: 0.7301813011020263
-      ply_t: 0.0013116358325219086
+      E: [4.46E10, 1.7E10, 1.67E10]
+      G: [3.27E9, 3.48E9, 3.5E9]
+      nu: [0.262, 0.35, 0.264]
+      Xt: [6.092E8, 3.81E7, 1.529E7]
+      Xc: [4.7471E8, 1.1264E8, 1.1322E8]
+      S: [1.891E7, 1.724E7, 1.316E7]
+      GIc: 303
+      GIIc: 3446
+      alp0: 53
+      fvf: 0.57
+      fwf: 0.7450682696347697
+      ply_t: 0.005
       unit_cost: 1.87
       waste: 0.05
-      fiber_density: 2600.
-      area_density_dry: 1.858
+      fiber_density: 2535.5
+      area_density_dry: 7.227162215457267
       component_id: 5
    -  name: CarbonUD
       E: [114500000000.0, 8390000000.0, 8390000000.0]
@@ -610,6 +622,10 @@ materials:
       nu: [0.27, 0.27, 0.27]
       Xt: [0.0, 0.0, 0.0]
       Xc: [0.0, 0.0, 0.0]
+      S: [None, None, None]
+      GIc: None
+      GIIc: None
+      alp0: None
       fvf: 0.5384615384615385
       fwf: 0.6461538461538463
       ply_t: 0.0010317460317460314
@@ -636,77 +652,90 @@ materials:
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
       orth: 1
       rho: 1940.0
-      E: [11.1e+009, 11.1e+009, 16.7e+009]
-      G: [13.53e+009, 3.49e+009, 3.49e+009]
-      nu: [0.500, 0.000, 0.066]
-      # alpha:  [14 14  21]
-      Xt: [54.47e+006, 54.47e+006, 26.6e+006]
-      Xc: [74.1e+006, 74.1e+006, 197.0e+006]
-      S: [180.0e+006, 30.0e+006, 22.9e+006]
-      fvf: 0.5448275862068965
-      fwf: 0.7301813011020263
-      ply_t: 0.0007850048685491725
+      E: [1.11E10, 1.11E10, 1.67E10]
+      G: [1.353E10, 3.49E9, 3.49E9]
+      nu: [0.5, 0.0, 0.066]
+      Xt: [4.29E7, 4.26E7, 1.53E7]
+      Xc: [7.07E7, 7.07E7, 1.132E8]
+      S: [1.034E8, 1.72E7, 1.32E7]
+      GIc: 303
+      GIIc: 3446
+      alp0: 53
+      fvf: 0.57
+      fwf: 0.7450682696347697
+      ply_t: 0.001
       waste: 0.15
       unit_cost: 3.00
-      fiber_density: 2600.
-      area_density_dry: 1.112
+      fiber_density: 2535.5
+      area_density_dry: 1.4454324430914534
       component_id: 3
       roll_mass: 181.4368
    -  name: glass_triax
       description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
-      orth: 1
+      orth: 1.0
       rho: 1940.0
-      E: [28.7e+009, 16.6e+009, 16.7e+009]
-      G: [8.40e+009, 3.49e+009, 3.49e+009]
-      nu: [0.500, 0.000, 0.170]
-      # alpha:  [11 18  21]
-      Xt: [54.5e+006, 54.5e+006, 26.6e+006]
-      Xc: [74.1e+006, 74.1e+006, 197.0e+006]
-      S: [32.9e+006, 30.0e+006, 22.9e+006]
-      fvf: 0.5448275862068965
-      fwf: 0.7301813011020263
-      ply_t: 0.0007850048685491725
+      E: [2.87E10, 1.66E10, 1.67E10]
+      G: [8.4E9, 3.49E9, 3.49E9]
+      nu: [0.5, 0.0, 0.17]
+      Xt: [3.96E8, 7.64E7, 1.53E7]
+      Xc: [4.489E8, 1.747E8, 1.132E8]
+      S: [1.034E8, 1.72E7, 1.32E7]
+      GIc: 303
+      GIIc: 3446
+      alp0: 53
+      fvf: 0.57
+      fwf: 0.7450682696347697
+      ply_t: 0.001
       unit_cost: 2.86
       waste: 0.15
-      fiber_density: 2600.
-      area_density_dry: 1.112
+      fiber_density: 2535.5
+      area_density_dry: 1.4454324430914534
       component_id: 2
       roll_mass: 181.4368
-   -  name: balsa
-      description: 1-2-3 are radial, tangential, axial, G12 calculated from assumed isotropy
-      source: M.Ashby 2011 Materials Selection in Mech Design (4th Ed) and K.E.Easterling 1982 On the mechanics of balsa and other woods
-      rho: 110.0
-      E: [0.05e+009, 0.05e+009, 2.73e+009]
-      G: [0.01667e+009, 0.15e+009, 0.15e+009]
-      nu: [0.5, 0.013, 0.013]
-      Xt: [0.0, 0.0, 0.0]
-      Xc: [0.0, 0.0, 0.0]
-      orth: 1
-      ply_t: 0.005
-      component_id: 1
-      waste: 0.2
-      unit_cost: 13
+#   -  name: balsa
+#      description: 1-2-3 are radial, tangential, axial, G12 calculated from assumed isotropy
+#      source: M.Ashby 2011 Materials Selection in Mech Design (4th Ed) and K.E.Easterling 1982 On the mechanics of balsa and other woods
+#      rho: 110.0
+#      E: [0.05e+009, 0.05e+009, 2.73e+009]
+#      G: [0.01667e+009, 0.15e+009, 0.15e+009]
+#      nu: [0.5, 0.013, 0.013]
+#      Xt: [0.0, 0.0, 0.0]
+#      Xc: [0.0, 0.0, 0.0]
+#      orth: 1
+#      ply_t: 0.005
+#      component_id: 1
+#      waste: 0.2
+#      unit_cost: 13
    -  name: medium_density_foam
-      description: Airex C70.130 PVC Foam
-      source: https://www.3accorematerials.com/uploads/documents/TDS-AIREX-C70-E_1106.pdf
-      orth: 0
+      description: Airex C70.130 PVC Foam, source 'https://www.3accorematerials.com/uploads/documents/TDS-AIREX-C70-E_1106.pdf'
+      orth: 0.0
       rho: 130.0
-      E: 129.20e+006
+      E: 1.292E8
+      G: 4.8946969696969695E7
       nu: 0.32
-      # alpha: 2.5
-      Xt: 4.0e+006
-      Xc: 3.0e+006
-      S: 2.4e+006
-      G: 48946969.696969695
-      ply_t: 0.005
+      Xt: 2083000.0
+      Xc: 1563000.0
+      S: 1250000.0
+      GIc: 303
+      GIIc: 3446
+      alp0: 53
       component_id: 1
       waste: 0.2
       unit_cost: 13
    -  name: resin
       description: epoxy
       E: 1.e+6
+      nu: 0.3  #Place holder, currently not used
+      G: 312500.0  #Place holder, currently not used
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 0  #Place holder, currently not used
+      Xc: 0  #Place holder, currently not used
+      S: 0  #Place holder, currently not used
       rho: 1150.
+      alpha: 0.0
       orth: 0
 
 assembly:
