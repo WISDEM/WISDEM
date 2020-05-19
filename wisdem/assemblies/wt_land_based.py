@@ -30,7 +30,7 @@ class WT_RNTA(Group):
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('wt_class',  TurbineClass())
         self.add_subsystem('elastic',   RotorElasticity(analysis_options = analysis_options, opt_options = opt_options))
-        self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options)) # Recompute polars with xfoil (for flaps)
+        self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
         self.add_subsystem('sse',       ServoSE(analysis_options = analysis_options)) # Aero analysis
             
         if analysis_options['openfast']['run_openfast'] == True:
@@ -533,7 +533,7 @@ class WindPark(Group):
         self.add_subsystem('wt',        WT_RNTA(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
         # Post-processing
-        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(analysis_options = analysis_options))
+        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(analysis_options = analysis_options, opt_options = opt_options))
         # if opt_options['opt_flag']:
         #     self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
@@ -556,5 +556,9 @@ class WindPark(Group):
         if analysis_options['openfast']['run_openfast'] == True:
             self.connect('aeroelastic.My_std',         'outputs_2_screen.My_std')
             self.connect('aeroelastic.flp1_std',       'outputs_2_screen.flp1_std')
-
-
+            self.connect('control.PC_omega',        'outputs_2_screen.PC_omega')
+            self.connect('control.PC_zeta',         'outputs_2_screen.PC_zeta')
+            self.connect('control.VS_omega',        'outputs_2_screen.VS_omega')
+            self.connect('control.VS_zeta',         'outputs_2_screen.VS_zeta')
+            self.connect('control.Flp_omega',       'outputs_2_screen.Flp_omega')
+            self.connect('control.Flp_zeta',        'outputs_2_screen.Flp_zeta')

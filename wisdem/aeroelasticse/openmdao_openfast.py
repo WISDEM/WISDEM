@@ -321,8 +321,9 @@ class FASTLoadCases(ExplicitComponent):
         self.debug_level         = FASTpref['debug_level']
         self.FAST_InputFile      = FASTpref['FAST_InputFile']
         if MPI:
-            self.FAST_runDirectory = os.path.join(FASTpref['FAST_runDirectory'],'rank_%000d'%int(impl.world_comm().rank))
-            self.FAST_namingOut  = FASTpref['FAST_namingOut']+'_%000d'%int(impl.world_comm().rank)
+            rank    = MPI.COMM_WORLD.Get_rank()
+            self.FAST_runDirectory = os.path.join(FASTpref['FAST_runDirectory'],'rank_%000d'%int(rank))
+            self.FAST_namingOut  = FASTpref['FAST_namingOut']+'_%000d'%int(rank)
             # try:
             #     if not os.path.exists(directory):
             #         os.makedirs(self.FAST_runDirectory)
@@ -510,6 +511,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['NumAFfiles'] = self.n_span
         # fst_vt['AeroDyn15']['af_data'] = [{}]*len(airfoils)
         fst_vt['AeroDyn15']['af_data'] = []
+
+        if self.n_tab > 1:
+            fst_vt['AeroDyn15']['AFTabMod'] = 3
+
         for i in range(self.n_span): # No of blade radial stations
         
             fst_vt['AeroDyn15']['af_data'].append([])
