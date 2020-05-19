@@ -18,13 +18,14 @@ class BladeMass(om.ExplicitComponent):
     Value of :math:`b` was updated to be 2.47/2.54 for turbine class I blades with/without carbon or
     2.44/2.5 for other turbine classes with/without carbon.
     Values of k and b can be overridden by the user with use of `blade_mass_coeff` (k) and/or `blade_user_exp` (b).
+    To use `blade_user_exp`, the value of `turbine_class` must be less than 1.
 
     Parameters
     ----------
     rotor_diameter : float
         rotor diameter of the machine
     turbine_class : float
-        turbine class
+        turbine class.  Set to 1 for Class I, 2 for Class II+, or 0 for user overrides of blade_user_exp
     blade_has_carbon : boolean
         does the blade have carbon?
     blade_mass_coeff : float

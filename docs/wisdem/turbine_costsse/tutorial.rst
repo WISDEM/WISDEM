@@ -1,10 +1,13 @@
 .. _tutorial-label:
 
-
+--------
 Tutorial
 --------
 
-Tutorial for Turbine Component Mass Using NREL_CSM (2015)
+.. contents:: List of Examples
+
+
+Tutorial for Turbine Component Mass Using the NREL_CSM (2015)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As an example of estimating turbine component masses (only) using the 2015 update of the NREL Cost and Scaling Model (CSM), let us simulate the NREL 5MW Reference Model :cite:`FAST2009`.
@@ -51,7 +54,7 @@ The final lines highlight the mass breakdown summaries:
 See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass.py>`_.
 
 
-Tutorial for Turbine Component Mass and Costs Using NREL_CSM (2015)
+Tutorial for Turbine Component Mass and Costs Using the NREL_CSM (2015)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is often desired to estimate the component costs and cost of energy of a hypothetical turbine, not just the component masses in the previous example.  To do so, all that is required is import the full 2015 Cost and Scaling model with:
@@ -94,7 +97,7 @@ The final screen output is:
 See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass_and_cost.py>`_.
 
 
-Tutorial for Turbine Component Costs Using NREL_CSM (2015)
+Tutorial for Turbine Component Costs Using the NREL_CSM (2015)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As an example of estimating turbine component costs (only), if the component masses are already known, using the 2015 update of the NREL Cost and Scaling Model (CSM), let us simulate the NREL 5MW Reference Model :cite:`FAST2009`.
@@ -171,8 +174,66 @@ We can also print out an exhaustive listing of the inputs and outputs to each su
     :start-after: # 5 ---
     :end-before: # 5 ---
 
-
 See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/costs.py>`_.
+
+
+
+
+Tutorial for Parametric Studies Using the NREL_CSM (2015)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The simplicity and rapid execution of the NREL CSM makes it well suited for parametric studies.  This example runs approximately 6000 points in a Design of Experiment (DoE) parametric analysis varying machine rating, rotor diameter (and thereby hub_height), the blade mass scaling exponent, the average wind speed, and wind shear.
+
+As above, the first step is to import OpenMDAO and the model itself, but we will also need other Python and WISDEM packages.  In this case, the NumPy library and the annual energy production (AEP) estimator from the older (~2010) CSM code:
+
+.. literalinclude:: /../examples/nrel_csm/parametric.py
+    :start-after: # 0 ---
+    :end-before: # 0 ---
+
+Next, we initialize an OpenMDAO instance and assign the model to be the `nrel_csm_2015` module.  We also initialize an instance of the AEP model:
+
+.. literalinclude:: /../examples/nrel_csm/parametric.py
+    :start-after: # 1 ---
+    :end-before: # 1 ---
+
+The CSM model initialization is abbreviated here because some of the variables will be modified within the DoE loop.  The remaining ones are:
+
+.. literalinclude:: /../examples/nrel_csm/parametric.py
+    :start-after: # 2 ---
+    :end-before: # 2 ---
+
+Note that the `turbine_class` variable has been set to `-1` to allow us to override the `blade_mass_exp` value as described in the :ref:`source` documentation.  Also, two variables are jointly assigned to local Python variables for use in the AEP estimation. 
+The AEP model requires a number of other inputs to define the turbine power curve.  To keep things simple, we focus on a single turbine, and ignore many of the other losses and options:
+
+.. literalinclude:: /../examples/nrel_csm/parametric.py
+    :start-after: # 3 ---
+    :end-before: # 3 ---
+
+Next we define our parametric axes using NumPy's `arange <https://numpy.org/doc/stable/reference/generated/numpy.arange.html>`_ function that provides evenly spaced intervals:
+
+.. literalinclude:: /../examples/nrel_csm/parametric.py
+    :start-after: # 4 ---
+    :end-before: # 4 ---
+
+To run our n-dimensional DOE, we do a "tensor" or "outer" multiplication of the arrays using NumPy's `meshgrid <https://numpy.org/doc/stable/reference/generated/numpy.arange.html>`_, but then flatten them into 1-D vectors for easy enumeration of all of the scenarios:
+
+.. literalinclude:: /../examples/nrel_csm/parametric.py
+    :start-after: # 5 ---
+    :end-before: # 5 ---
+
+We are now ready to loop through all of the points, and evaluate the CSM model and AEP model:
+
+.. literalinclude:: /../examples/nrel_csm/parametric.py
+    :start-after: # 6 ---
+    :end-before: # 6 ---
+
+To store for later postprocessing, we save everything into a large csv-file.  Flattening the arrays makes this fairly straightforward using NumPy's concatenation shortcuts:
+
+.. literalinclude:: /../examples/nrel_csm/parametric.py
+    :start-after: # 7 ---
+    :end-before: # 7 ---
+
+See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/parametric.py>`_.
 
 .. only:: html
 
