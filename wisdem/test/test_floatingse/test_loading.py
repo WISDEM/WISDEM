@@ -324,7 +324,15 @@ class TestFrame(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['total_moment'], np.array([20.0, 20.0, 20.0]), decimal=0)
 
         self.inputs['rna_cg'] = np.array([5.0, 5.0, 5.0])
-        self.mytruss.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        goodRun = False
+        kiter = 0
+        while goodRun == False:
+            kiter += 1
+            self.mytruss.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+            if self.outputs['substructure_mass'] < 1e3:
+                goodRun = True
+            if kiter > 3:
+                self.assertTrue(goodRun)
         npt.assert_almost_equal(self.outputs['total_force'], 3*10 + np.array([10.0, 10.0, 10-mtot*g]), decimal=1)
         #self.assertAlmostEqual(self.outputs['total_moment'][-1], 20.0)
         
