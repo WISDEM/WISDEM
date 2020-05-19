@@ -341,6 +341,7 @@ class WindTurbineOntologyPython(object):
         yaml.width = float("inf")
         yaml.indent(mapping=4, sequence=6, offset=3)
         yaml.dump(self.wt_init, f)
+        f.close()
 
         return None
 

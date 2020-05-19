@@ -9,7 +9,7 @@
 !   Given blade airfoil geometry, twist distribution, composite plies layup,
 !   and material properties, PreComp computes cross-sectional stiffness
 !   (flap bending, lag bending, torsion, axial, coupled bending-twist,
-!   axial-twist, axial-bending), mass per unit length , flap inertia,
+!   axial-twist, axial-bending), mass per unit length , cross-sectional area, flap inertia,
 !   lag inertia, elastic-axis offset, tension center offset, and c.m. offset)
 !   at user-specified span locations.
 
@@ -45,7 +45,7 @@ contains
         nweb, loc_web, n_laminaW, n_pliesW, t_lamW, tht_lamW, mat_lamW, &
         eifbar, eilbar, gjbar, eabar, eiflbar, &
         sfbar, slbar, sftbar, sltbar, satbar, &
-        z_sc, y_sc, ztc_ref, ytc_ref, mass, iflap_eta, &
+        z_sc, y_sc, ztc_ref, ytc_ref, mass, area, iflap_eta, &
         ilag_zeta, tw_iner, zcm_ref, ycm_ref, &
         n_af_nodes, n_materials, n_sctU, n_sctL, nwebin, &
         n_laminaTotalU, n_laminaTotalL, n_laminaTotalW)
@@ -110,6 +110,7 @@ contains
         real(dbp), intent(out) :: ztc_ref     ! X_tc, X-coordinate of the tension-center offset with respect to the XR-YR axes (m)
         real(dbp), intent(out) :: ytc_ref     ! Y_tc, Chordwise offset of the section tension-center with respect to the XR-YR axes (m)
         real(dbp), intent(out) :: mass        ! Mass, Section mass per unit length (Kg/m)
+        real(dbp), intent(out) :: area        ! Area, Cross-Sectional area (m)
         real(dbp), intent(out) :: iflap_eta   ! Flap_iner, Section flap inertia about the YG axis per unit length (Kg-m)
         real(dbp), intent(out) :: ilag_zeta   ! Lag_iner, Section lag inertia about the XG axis per unit length (Kg-m)
         real(dbp), intent(out) :: tw_iner     ! Tw_iner, Orientation of the section principal inertia axes with respect the blade reference plane, θ (deg)
@@ -722,6 +723,7 @@ contains
         q11yza = 0.0_dbp
 
         mass = 0.0_dbp
+        area = 0.0_dbp
         rhoya = 0.0_dbp
         rhoza = 0.0_dbp
         rhoysqa = 0.0_dbp
@@ -878,6 +880,7 @@ contains
                 ep = ep + wdq2bar*ybart
             endif
 
+            area = area + w
             mass = mass + rhot*w
             rhoya = rhoya + rhoyt*w
             rhoza = rhoza + rhozt*w

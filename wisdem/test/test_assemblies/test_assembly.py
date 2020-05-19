@@ -17,11 +17,11 @@ class TestRegression(unittest.TestCase):
 
         wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
 
-        print(wt_opt['elastic.precomp.blade_mass'])
+        #print(wt_opt['elastic.precomp.blade_mass'])
 
         self.assertAlmostEqual(wt_opt['elastic.precomp.blade_mass'][0], 16403.682326940743)
-        self.assertAlmostEqual(wt_opt['sse.AEP'][0]*1.e-6, 23.84091289784652)
-        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 104.02863191357483)
+        self.assertAlmostEqual(wt_opt['sse.AEP'][0]*1.e-6, 24.4786099873)
+        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 101.2202080405)
 
         # ## IEA 15MW
         # fname_wt_input         = test_dir + 'IEA-15-240-RWT_WISDEMieaontology4all.yaml'

@@ -77,8 +77,8 @@ class TowerModes(om.ExplicitComponent):
         self.add_input('gamma_freq', val=1.0)
         self.add_discrete_input('blade_number', 3)
 
-        self.add_output('frequencyNP_margin', val=np.zeros(2))
-        self.add_output('frequency1P_margin', val=np.zeros(2))
+        self.add_output('constr_tower_f_NPmargin', val=np.zeros(2), desc='constraint on tower frequency such that ratio of 3P/f is above or below gamma with constraint <= 0')
+        self.add_output('constr_tower_f_1Pmargin', val=np.zeros(2), desc='constraint on tower frequency such that ratio of 1P/f is above or below gamma with constraint <= 0')
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
@@ -86,14 +86,10 @@ class TowerModes(om.ExplicitComponent):
         freq_struct = inputs['tower_freq']
         gamma       = inputs['gamma_freq']
         oneP        = (inputs['rotor_omega']/60.0)
-        oneP_high   = oneP * gamma
-        oneP_low    = oneP / gamma
         threeP      = oneP * discrete_inputs['blade_number']
-        threeP_high = threeP * gamma
-        threeP_low  = threeP / gamma
         
-        outputs['frequencyNP_margin'] = np.array([min([f-threeP_low, threeP_high-f]) for f in freq_struct]).flatten()
-        outputs['frequency1P_margin'] = np.array([min([f-oneP_low, oneP_high-f]) for f in freq_struct]).flatten()
+        outputs['constr_tower_f_NPmargin'] = np.array( [min([threeP-(2-gamma)*f, gamma*f-threeP]) for f in freq_struct] ).flatten()
+        outputs['constr_tower_f_1Pmargin'] = np.array( [min([oneP  -(2-gamma)*f, gamma*f-oneP  ]) for f in freq_struct] ).flatten()
 
 
 class TipDeflectionConstraint(om.ExplicitComponent):

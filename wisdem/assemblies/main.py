@@ -429,16 +429,17 @@ if __name__ == "__main__":
     if rank == 0:
         # Printing and plotting results
         print('AEP in GWh = ' + str(wt_opt['sse.AEP']*1.e-6))
-        print('Nat frequencies blades in Hz = ' + str(wt_opt['sse.curvefem_rated.freq']))
+        print('Nat frequencies blades flap in Hz = ' + str(wt_opt['rlds.frame.flap_mode_freqs']))
+        print('Nat frequencies blades edge in Hz = ' + str(wt_opt['rlds.frame.edge_mode_freqs']))
         print('Tip tower clearance in m     = ' + str(wt_opt['tcons.blade_tip_tower_clearance']))
         print('Tip deflection constraint    = ' + str(wt_opt['tcons.tip_deflection_ratio']))
 
         import matplotlib.pyplot as plt
         plt.figure()
-        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_spar'], label='spar ss')
-        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_spar'], label='spar ps')
-        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainU_te'], label='te ss')
-        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.pbeam.strainL_te'], label='te ps')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.frame.strainU_spar'], label='spar ss')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.frame.strainL_spar'], label='spar ps')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.frame.strainU_te'], label='te ss')
+        plt.plot(wt_opt['assembly.r_blade'], wt_opt['rlds.frame.strainL_te'], label='te ps')
         plt.ylim([-5e-3, 5e-3])
         plt.xlabel('r [m]')
         plt.ylabel('strain [-]')

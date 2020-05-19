@@ -19,7 +19,7 @@ from wisdem.commonse.tube import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
 from wisdem.commonse import gravity, eps
 
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ
+from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ, RIGID
 
 import wisdem.commonse.UtilizationSupplement as Util
 
@@ -873,12 +873,12 @@ class TowerPreFrame(om.ExplicitComponent):
             outputs['kty']  = np.array([ kmono[3] ])
             outputs['ktz']  = np.array([ kmono[5] ])
         else:
-            outputs['kx']   = np.array([ 1.e16 ])
-            outputs['ky']   = np.array([ 1.e16 ])
-            outputs['kz']   = np.array([ 1.e16 ])
-            outputs['ktx']  = np.array([ 1.e16 ])
-            outputs['kty']  = np.array([ 1.e16 ])
-            outputs['ktz']  = np.array([ 1.e16 ])
+            outputs['kx']   = np.array([ RIGID ])
+            outputs['ky']   = np.array([ RIGID ])
+            outputs['kz']   = np.array([ RIGID ])
+            outputs['ktx']  = np.array([ RIGID ])
+            outputs['kty']  = np.array([ RIGID ])
+            outputs['ktz']  = np.array([ RIGID ])
 
         # Material property discretization
         z_param   = inputs['z_param']
@@ -969,9 +969,11 @@ class TowerPostFrame(om.ExplicitComponent):
         self.add_input('t_full', np.zeros(nFull-1), units='m')
         
         # Material properties
-        self.add_input('E_full', np.zeros(nFull-1), units='N/m**2')
-        self.add_input('sigma_y_full', np.zeros(nFull-1), units='N/m**2')
-        
+        self.add_input('E_full',       np.zeros(nFull-1), units='N/m**2', desc='modulus of elasticity')
+        self.add_input('G_full',       np.zeros(nFull-1), units='Pa',     desc='Isotropic shear modulus of the materials along the tower sections.')
+        self.add_input('rho_full',     np.zeros(nFull-1), units='kg/m**3',desc='Density of the materials along the tower sections.')
+        self.add_input('sigma_y_full', np.zeros(nFull-1), units='N/m**2', desc='yield stress')
+
         # Processed Frame3DD outputs
         self.add_input('Fz', np.zeros(nFull-1), units='N')
         self.add_input('Mxx', np.zeros(nFull-1), units='N*m')
@@ -997,20 +999,42 @@ class TowerPostFrame(om.ExplicitComponent):
         
         # Frequencies
         NFREQ2 = int(NFREQ/2)
-        self.add_input('freqs', val=np.zeros(NFREQ), units='Hz')
-        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2, 5)))
-        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2, 5)))
 
-        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz')
-        self.add_output('fore_aft_modes', np.zeros((NFREQ2, 5)))
-        self.add_output('side_side_modes', np.zeros((NFREQ2, 5)))
-        self.add_output('top_deflection', 0.0, units='m')
-        self.add_output('stress', np.zeros(nFull-1))
-        self.add_output('shell_buckling', np.zeros(nFull-1))
-        self.add_output('global_buckling', np.zeros(nFull-1))
+        self.add_input('freqs', val=np.zeros(NFREQ), units='Hz', desc='Natural frequencies of the structure')
+        self.add_input('x_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)')
+        self.add_input('y_mode_shapes', val=np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)')
+        self.add_input('x_mode_freqs', val=np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the x-direction')
+        self.add_input('y_mode_freqs', val=np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the y-direction')
+        
+        # outputs
+        self.add_output('structural_frequencies', np.zeros(NFREQ), units='Hz', desc='First and second natural frequency')
+        self.add_output('fore_aft_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower fore-aft direction (x^2..x^6, no linear or constant term)')
+        self.add_output('side_side_modes', np.zeros((NFREQ2,5)), desc='6-degree polynomial coefficients of mode shapes in the tower side-side direction (x^2..x^6, no linear or constant term)')
+        self.add_output('fore_aft_freqs', np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the tower fore-aft direction')
+        self.add_output('side_side_freqs', np.zeros(NFREQ2), desc='Frequencies associated with mode shapes in the tower side-side direction')
+        self.add_output('top_deflection', 0.0, units='m', desc='Deflection of tower top in yaw-aligned +x direction')
+        self.add_output('stress', np.zeros(nFull-1), desc='Von Mises stress utilization along tower at specified locations.  incudes safety factor.')
+        self.add_output('shell_buckling', np.zeros(nFull-1), desc='Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
+        self.add_output('global_buckling', np.zeros(nFull-1), desc='Global buckling constraint.  Should be < 1 for feasibility.  Includes safety factors')
         #self.add_output('damage', np.zeros(nFull-1), desc='Fatigue damage at each tower section')
-        self.add_output('turbine_F', val=np.zeros(3), units='N')
-        self.add_output('turbine_M', val=np.zeros(3), units='N*m')
+        self.add_output('turbine_F', val=np.zeros(3), units='N', desc='Total force on tower+rna')
+        self.add_output('turbine_M', val=np.zeros(3), units='N*m', desc='Total x-moment on tower+rna measured at base')
+        
+        # Tower Distributed Beam Properties (properties needed for ElastoDyn (OpenFAST) inputs or BModes inputs for verification purposes)
+        N_beam = (nFull-1)*2
+        self.add_output('sec_loc',       np.zeros(N_beam),                 desc='normalized sectional location')
+        self.add_output('str_tw',        np.zeros(N_beam), units='deg',    desc='structural twist of section')
+        self.add_output('tw_iner',       np.zeros(N_beam), units='deg',    desc='inertial twist of section')
+        self.add_output('mass_den',      np.zeros(N_beam), units='kg/m',   desc='sectional mass per unit length')
+        self.add_output('foreaft_iner',  np.zeros(N_beam), units='kg*m',   desc='sectional fore-aft intertia per unit length about the Y_G inertia axis')
+        self.add_output('sideside_iner', np.zeros(N_beam), units='kg*m',   desc='sectional side-side intertia per unit length about the Y_G inertia axis')
+        self.add_output('foreaft_stff',  np.zeros(N_beam), units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
+        self.add_output('sideside_stff', np.zeros(N_beam), units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
+        self.add_output('tor_stff',      np.zeros(N_beam), units='N*m**2', desc='sectional torsional stiffness')
+        self.add_output('axial_stff',    np.zeros(N_beam), units='N',      desc='sectional axial stiffness')
+        self.add_output('cg_offst',      np.zeros(N_beam), units='m',      desc='offset from the sectional center of mass')
+        self.add_output('sc_offst',      np.zeros(N_beam), units='m',      desc='offset from the sectional shear center')
+        self.add_output('tc_offst',      np.zeros(N_beam), units='m',      desc='offset from the sectional tension center')
 
         self.declare_partials('global_buckling', ['Fz', 'Mxx', 'Myy', 'd_full', 'sigma_y_full', 't_full', 'z_full'], method='fd')
         self.declare_partials('shell_buckling', ['axial_stress', 'd_full', 'hoop_stress', 'shear_stress', 'sigma_y_full', 't_full'], method='fd')
@@ -1043,6 +1067,9 @@ class TowerPostFrame(om.ExplicitComponent):
         outputs['fore_aft_modes']         = inputs['x_mode_shapes']
         outputs['side_side_modes']        = inputs['y_mode_shapes']
 
+        # Compute distributed beam properties
+        outputs = self.compute_distprop(outputs, inputs['z_full'], inputs['d_full'], inputs['t_full'], inputs['E_full'], inputs['G_full'], inputs['rho_full'])
+
         # Tower top deflection
         outputs['top_deflection'] = inputs['top_deflection_in']
         
@@ -1067,6 +1094,49 @@ class TowerPostFrame(om.ExplicitComponent):
 
         #    outputs['damage'] = Util.fatigue(M_DEL, N_DEL, d, inputs['t'], inputs['m_SN'],
         #                                      inputs['DC'], gamma_fatigue, stress_factor=1.0, weld_factor=True)
+
+    def compute_distprop(self, outputs, z_in, d_in, thk_in, E_in, G_in, rho_in):
+        # z   = N positions where tower properties are defined, m
+        # d   = N diameters at points 'z', m
+        # thk = N wall thicknesses at points 'z', m
+        # E   = Young's modulus of tower material, N/m**2 
+        # G   = shear modulus of tower material, N/m**2
+        # rho = density of tower material, kg/m**3
+
+        towdata = np.c_[z_in, np.r_[d_in], np.r_[thk_in[0], thk_in], np.r_[E_in[0], E_in], np.r_[G_in[0], G_in], np.r_[rho_in[0], rho_in]]
+        rowadd = []
+        for k in range(towdata.shape[0]):
+            if k==0: continue
+            if k+1 < towdata.shape[0]:
+                rowadd.append([towdata[k,0]+1e-3, towdata[k,1], towdata[k+1,2], towdata[k+1,3], towdata[k+1,4], towdata[k+1,5]])
+        towdata = np.vstack((towdata, rowadd))
+        towdata = np.round( towdata[towdata[:,0].argsort(),], 3)
+
+        z   = towdata[:,0]
+        d   = towdata[:,1]
+        thk = towdata[:,2]
+        E   = towdata[:,3]
+        G   = towdata[:,4]
+        rho = towdata[:,5]
+        N   = len(z)
+
+        if z[0] > 0.:
+            z  -= z[0]
+
+        outputs['sec_loc']       = np.array(z)/z[-1]
+        for i in range(N):
+            a = d[i]/2. 
+            b = d[i]/2. - thk[i]
+            A = np.pi*(a**2. - b**2.)
+            I = np.pi/4.*(a**4.-b**4.)
+
+            outputs['mass_den'][i]     = A*rho[i]
+            outputs['foreaft_iner'][i] = outputs['sideside_iner'][i] = 0.5*outputs['mass_den'][i]*(a**2 + b**2)/2.
+            outputs['foreaft_stff'][i] = outputs['sideside_stff'][i] = E[i]*I
+            outputs['tor_stff'][i]     = 1./2.*np.pi*(a**4.-b**4)*G[i]
+            outputs['axial_stff'][i]   = A*E[i]
+
+        return outputs
 
 # -----------------
 #  Assembly
@@ -1264,9 +1334,9 @@ class TowerSE(om.Group):
                 self.connect('rna_cg', 'pre'+lc+'.mrho')
                 self.connect('rna_I', 'pre'+lc+'.mI')
 
-            self.connect('rho_full', 'tower'+lc+'.rho')
+            self.connect('rho_full', ['tower'+lc+'.rho', 'post'+lc+'.rho_full'])
             self.connect('pre'+lc+'.E_full', ['tower'+lc+'.E', 'post'+lc+'.E_full'])
-            self.connect('pre'+lc+'.G_full', 'tower'+lc+'.G')
+            self.connect('pre'+lc+'.G_full', ['tower'+lc+'.G', 'post'+lc+'.G_full'])
             self.connect('pre'+lc+'.sigma_y_full', 'post'+lc+'.sigma_y_full')
             
             self.connect('pre'+lc+'.kidx', 'tower'+lc+'.kidx')

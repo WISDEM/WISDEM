@@ -9,7 +9,6 @@ import wisdem.test.test_commonse as test_commonse
 import wisdem.test.test_drivetrainse as test_drivetrainse
 import wisdem.test.test_floatingse as test_floatingse
 import wisdem.test.test_nrelcsm as test_nrelcsm
-import wisdem.test.test_pbeam as test_pbeam
 import wisdem.test.test_plant_financese as test_plant_financese
 import wisdem.test.test_pyframe3dd as test_pyframe3dd
 import wisdem.test.test_pymap as test_pymap
@@ -29,7 +28,6 @@ def suite():
         test_drivetrainse.test_all.suite(),
         # test_floatingse.test_all.suite(),
         #test_nrelcsm.test_all.suite(),
-        test_pbeam.test_all.suite(),
         test_plant_financese.test_all.suite(),
         test_pyframe3dd.test_all.suite(),
         #test_pymap.test_all.suite(),
@@ -48,7 +46,6 @@ valid_tests = [#'test_orbit',
     'test_ccblade',
     'test_commonse',
     #    'test_floatingse',
-    'test_pbeam',
     'test_plant_financese',
     'test_pyframe3dd',
     'test_towerse',

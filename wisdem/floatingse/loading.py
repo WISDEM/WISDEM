@@ -1,6 +1,6 @@
 import numpy as np
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import openmdao.api as om
-import wisdem.pyframe3dd.frame3dd as frame3dd
 from wisdem.commonse.utilities import nodal2sectional
 
 from wisdem.commonse import gravity, eps, Tube, NFREQ
@@ -1012,12 +1012,12 @@ class FloatingFrame(om.ExplicitComponent):
         # Create Node Data object
         nnode   = 1 + np.arange(xnode.size)
         myrnode = np.zeros(xnode.shape) # z-spacing too narrow for use of rnodes
-        nodes   = frame3dd.NodeData(nnode, xnode, ynode, znode, myrnode)
+        nodes   = pyframe3dd.NodeData(nnode, xnode, ynode, znode, myrnode)
         nodeMat = np.c_[xnode, ynode, znode]
 
         # Create Element Data object
         nelem    = 1 + np.arange(N1.size)
-        elements = frame3dd.ElementData(nelem, N1, N2, Ax, As, As, Jx, I, I, modE, modG, roll, dens)
+        elements = pyframe3dd.ElementData(nelem, N1, N2, Ax, As, As, Jx, I, I, modE, modG, roll, dens)
 
         # Store data for plotting, also handy for operations below
         plotMat = np.zeros((mainEID, 3, 2))
@@ -1037,14 +1037,14 @@ class FloatingFrame(om.ExplicitComponent):
         shear = True               # 1: include shear deformation
         geom = False               # 1: include geometric stiffness
         dx = -1                    # x-axis increment for internal forces, -1 to skip
-        other = frame3dd.Options(shear, geom, dx)
+        other = pyframe3dd.Options(shear, geom, dx)
 
         # ---LOAD CASES---
         # Extreme loading
         gx = 0.0
         gy = 0.0
         gz = -gravity
-        load = frame3dd.StaticLoadCase(gx, gy, gz)
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
         # Wind + Wave loading in local main / offset / tower c.s.
         Px_main,    Py_main,    Pz_main    = inputs['main_Pz'], inputs['main_Py'], -inputs['main_Px']  # switch to local c.s.
@@ -1278,13 +1278,13 @@ class FloatingFrame(om.ExplicitComponent):
         Ryy = np.append(Ryy,  K_mooring[4]/nnode_connect * np.ones(nnode_connect) )
         Rzz = np.append(Rzz,  K_mooring[5]/nnode_connect * np.ones(nnode_connect) )
         # Get reactions object from frame3dd
-        reactions = frame3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=np.inf)
+        reactions = pyframe3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=np.inf)
 
         
         # ---FRAME3DD INSTANCE---
 
         # Initialize frame3dd object
-        self.myframe = frame3dd.Frame(nodes, reactions, elements, other)
+        self.myframe = pyframe3dd.Frame(nodes, reactions, elements, other)
         
         # Add in extra mass of rna
         inode   = np.array([towerEndID], dtype=np.int32) # rna
