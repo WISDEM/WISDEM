@@ -10,37 +10,6 @@ import os
 ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'nrel5mw_test.npz'
         
 class TestRLDS(unittest.TestCase):
-        
-    def testGust(self):
-        inputs = {}
-        outputs = {}
-        discrete_inputs = {}
-        discrete_outputs = {}
-
-        myobj = rlds.GustETM()
-        
-        inputs['V_mean'] = 10.0
-        inputs['V_hub']  = 15.0
-        inputs['std']    = 2.5
-        discrete_inputs['turbulence_class'] = 'A'
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        sigma = 0.32 * (0.072*8.0*3.5 + 10.0)
-        expect = 15.0 + 2.5*sigma
-        self.assertEqual(outputs['V_gust'], expect)
-
-        # Test lower case
-        discrete_inputs['turbulence_class'] = 'c'
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        sigma = 0.24 * (0.072*8.0*3.5 + 10.0)
-        expect = 15.0 + 2.5*sigma
-        self.assertEqual(outputs['V_gust'], expect)
-
-        # Test bad class
-        discrete_inputs['turbulence_class'] = 'd'
-        try:
-            myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        except ValueError:
-            self.assertTrue(True)
 
             
     def testBladeCurvature(self):
