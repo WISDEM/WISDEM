@@ -227,16 +227,16 @@ if __name__ == '__main__':
 
     PenderSwtch=True
 
-    print 'Soil z-bottoms [m]:',soil.zbots,' ;\n','Undrained shear strength [N/m^2]:',soil.cus,' ;\n',\
+    print('Soil z-bottoms [m]:',soil.zbots,' ;\n','Undrained shear strength [N/m^2]:',soil.cus,' ;\n',\
           'Unit weight  [N/m^3]:', soil.gammas,' ;\n','Friction angles [deg]:', soil.phis,' ;\n',\
-          'Pile-soil friction angle [deg]:', soil.delta
+          'Pile-soil friction angle [deg]:', soil.delta)
 
     ksavg=SubgrReact(soil,Lp,sndflg=sndflg)
 
-    print 'Coefficient of subgrade reaction [MN/m3]=', SubgrReact(soil,Lp,sndflg=sndflg)/1.e6
+    print('Coefficient of subgrade reaction [MN/m3]=', SubgrReact(soil,Lp,sndflg=sndflg)/1.e6)
 
     Kglobal=SoilPileStiffness(ksavg,Dp,Lp,Ep,Gp,Jxx_p,loadZ=0,PenderSwtch=False,H=H,M=M,batter=batter)
 
     for ii in range(0,6):
         for jj in range(0,6):
-            print('K[{:d},{:d}] = {:10.3e}'.format(ii,jj,Kglobal[ii,jj]))
+            print(('K[{:d},{:d}] = {:10.3e}'.format(ii,jj,Kglobal[ii,jj])))

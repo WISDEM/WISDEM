@@ -64,15 +64,15 @@ lcoe.run()
 # 3 ---------
 # 4 --------- 
 
-print "Cost of Energy results for a 500 MW offshore wind farm using the NREL 5 MW reference turbine"
-print "LCOE: ${0:.4f} USD/kWh".format(lcoe.lcoe)
-print "COE: ${0:.4f} USD/kWh".format(lcoe.coe)
-print
-print "AEP per turbine: {0:1f} kWh/turbine".format(lcoe.net_aep / lcoe.turbine_number)
-print "Turbine Cost: ${0:2f} USD".format(lcoe.turbine_cost)
-print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.turbine_number)
-print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number)
-print
+print("Cost of Energy results for a 500 MW offshore wind farm using the NREL 5 MW reference turbine")
+print("LCOE: ${0:.4f} USD/kWh".format(lcoe.lcoe))
+print("COE: ${0:.4f} USD/kWh".format(lcoe.coe))
+print()
+print("AEP per turbine: {0:1f} kWh/turbine".format(lcoe.net_aep / lcoe.turbine_number))
+print("Turbine Cost: ${0:2f} USD".format(lcoe.turbine_cost))
+print("BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.turbine_number))
+print("OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number))
+print()
 
 # 4 ----------
 # 5 ----------
@@ -141,14 +141,14 @@ lcoe.run()
 # 7 ----------
 # 8 ----------
 
-print "Cost of Energy results for a 500 MW offshore wind farm using the NREL 5 MW reference turbine"
-print "LCOE: ${0:.4f} USD/kWh".format(lcoe.lcoe)
-print "COE: ${0:.4f} USD/kWh".format(lcoe.coe)
-print
-print "AEP per turbine: {0:1f} kWh/turbine".format(lcoe.net_aep / lcoe.turbine_number)
-print "Turbine Cost: ${0:2f} USD".format(lcoe.turbine_cost)
-print "BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.turbine_number)
-print "OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number)
+print("Cost of Energy results for a 500 MW offshore wind farm using the NREL 5 MW reference turbine")
+print("LCOE: ${0:.4f} USD/kWh".format(lcoe.lcoe))
+print("COE: ${0:.4f} USD/kWh".format(lcoe.coe))
+print()
+print("AEP per turbine: {0:1f} kWh/turbine".format(lcoe.net_aep / lcoe.turbine_number))
+print("Turbine Cost: ${0:2f} USD".format(lcoe.turbine_cost))
+print("BOS costs per turbine: ${0:2f} USD/turbine".format(lcoe.bos_costs / lcoe.turbine_number))
+print("OPEX per turbine: ${0:2f} USD/turbine".format(lcoe.avg_annual_opex / lcoe.turbine_number))
 
 # 8 -----------
 # 9 -----------

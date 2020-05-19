@@ -1,7 +1,7 @@
+import openmdao.api as om
 
-from openmdao.api import ExplicitComponent
 
-class TurbineClass(ExplicitComponent):
+class TurbineClass(om.ExplicitComponent):
     """
     Compute velocities based on the chosen turbine class
     

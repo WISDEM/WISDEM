@@ -11,7 +11,7 @@ import pytest
 import numpy as np
 from commonse.utilities import check_gradient_unit_test, check_for_missing_unit_tests
 from rotorse.rotor_aeropower import SetupRunVarSpeed, RegulatedPowerCurve, AEP, CSMDrivetrain, OutputsAero
-from ccblade.ccblade_component import CCBladePower, CCBladeLoads, CCBladeGeometry
+from ccblade.ccblade_component import CCBladeLoads, CCBladeGeometry
 from commonse.distribution import WeibullCDF, WeibullWithMeanCDF, RayleighCDF
 
 from enum import Enum

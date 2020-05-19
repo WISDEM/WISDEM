@@ -11,8 +11,8 @@ from __future__ import print_function
 import math
 import numpy as np
 from scipy.optimize import brentq
-from openmdao.api import ExplicitComponent, Problem, Group, IndepVarComp
 import sys
+import openmdao.api as om
 
 from .utilities import hstack, vstack
 from .constants import gravity
@@ -24,7 +24,7 @@ from .constants import gravity
 # -----------------
 
 
-class WindBase(ExplicitComponent):
+class WindBase(om.ExplicitComponent):
     """
     Base component for wind speed/direction
     
@@ -58,7 +58,7 @@ class WindBase(ExplicitComponent):
 
         self.add_output('U', np.zeros(npts), units='m/s')
 
-class WaveBase(ExplicitComponent):
+class WaveBase(om.ExplicitComponent):
     """
     Base component for wave speed/direction
     
@@ -469,7 +469,7 @@ class LinearWaves(WaveBase):
         
 
 
-class TowerSoil(ExplicitComponent):
+class TowerSoil(om.ExplicitComponent):
     """
     Soil stiffness method from Arya, Suresh C., Michael W. O'Neill, and George Pincus.
     Design of structures and foundations for vibrating machines. Gulf Pub Co, 1979.
@@ -593,9 +593,9 @@ if __name__ == '__main__':
     z = np.linspace(1.0, 5, 100)
     nPoints = len(z)
 
-    prob = Problem()
+    prob = om.Problem()
 
-    root = prob.model = Group()
+    root = prob.model = om.Group()
     root.add('p1', PowerWind(nPoints=nPoints))
 
     prob.setup()
@@ -624,11 +624,11 @@ if __name__ == '__main__':
     z = np.linspace(1.0, 5, 100)
     nPoints = len(z)
 
-    prob = Problem()
+    prob = om.Problem()
 
-    root = prob.model = Group()
+    root = prob.model = om.Group()
     root.add('p1', LogWind(nPoints))
-    #root.add('p',IndepVarComp('zref',100.0))
+    #root.add('p',om.IndepVarComp('zref',100.0))
 
     #root.connect('p1.zref', 'p.zref')
 

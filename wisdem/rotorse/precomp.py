@@ -105,6 +105,7 @@ class PreComp():
         beam_EIxy      = np.zeros(nsec)
         beam_GJ        = np.zeros(nsec)
         beam_rhoA      = np.zeros(nsec)
+        beam_A         = np.zeros(nsec)
         beam_rhoJ      = np.zeros(nsec)
         beam_Tw_iner   = np.zeros(nsec)
 
@@ -190,18 +191,19 @@ class PreComp():
             beam_x_ec[i]      = results[12] - results[10]
             beam_y_ec[i]      = results[13] - results[11]
             beam_rhoA[i]      = results[14]
-            beam_rhoJ[i]      = results[15] + results[16]  # perpendicular axis theorem
-            beam_Tw_iner[i]   = results[17]
-            beam_x_cg[i]      = results[18]
-            beam_y_cg[i]      = results[19]
+            beam_A[i]         = results[15]
+            beam_rhoJ[i]      = results[16] + results[17]  # perpendicular axis theorem
+            beam_Tw_iner[i]   = results[18]
+            beam_x_cg[i]      = results[19]
+            beam_y_cg[i]      = results[20]
 
-            beam_flap_iner[i] = results[15]
-            beam_edge_iner[i] = results[16]
+            beam_flap_iner[i] = results[16]
+            beam_edge_iner[i] = results[17]
 
             self.x_ec_nose[i] = results[13] + self.leLoc[i]*self.chord[i]
             self.y_ec_nose[i] = results[12]  # switch b.c of coordinate system used
 
-        return beam_EIxx, beam_EIyy, beam_GJ, beam_EA, beam_EIxy, beam_x_ec, beam_y_ec, beam_rhoA, beam_rhoJ, beam_Tw_iner, beam_flap_iner, beam_edge_iner, beam_x_tc, beam_y_tc, beam_x_sc, beam_y_sc, beam_x_cg, beam_y_cg
+        return beam_EIxx, beam_EIyy, beam_GJ, beam_EA, beam_EIxy, beam_x_ec, beam_y_ec, beam_rhoA, beam_A, beam_rhoJ, beam_Tw_iner, beam_flap_iner, beam_edge_iner, beam_x_tc, beam_y_tc, beam_x_sc, beam_y_sc, beam_x_cg, beam_y_cg
 
     def criticalStrainLocations(self, sector_idx_strain_ss, sector_idx_strain_ps):
 

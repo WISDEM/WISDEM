@@ -67,13 +67,13 @@ class RotorSE_Example1b():
 		# === run and outputs ===
 		rotor.run()
 
-		print 'AEP =', rotor['AEP']
-		print 'diameter =', rotor['diameter']
-		print 'ratedConditions.V =', rotor['rated_V']
-		print 'ratedConditions.Omega =', rotor['rated_Omega']
-		print 'ratedConditions.pitch =', rotor['rated_pitch']
-		print 'ratedConditions.T =', rotor['rated_T']
-		print 'ratedConditions.Q =', rotor['rated_Q']
+		print('AEP =', rotor['AEP'])
+		print('diameter =', rotor['diameter'])
+		print('ratedConditions.V =', rotor['rated_V'])
+		print('ratedConditions.Omega =', rotor['rated_Omega'])
+		print('ratedConditions.pitch =', rotor['rated_pitch'])
+		print('ratedConditions.T =', rotor['rated_T'])
+		print('ratedConditions.Q =', rotor['rated_Q'])
 		#for io in rotor.root.unknowns:
 		#    print(io + ' ' + str(rotor.root.unknowns[io]))
 

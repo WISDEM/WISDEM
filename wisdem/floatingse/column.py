@@ -1,5 +1,5 @@
-from openmdao.api import Group, IndepVarComp, ExplicitComponent
 import numpy as np
+import openmdao.api as om
 
 from wisdem.commonse.utilities import nodal2sectional, sectional2nodal, assembleI, unassembleI, sectionalInterp
 import wisdem.commonse.frustum as frustum
@@ -28,7 +28,7 @@ def I_tube(r_i, r_o, h, m):
     return np.c_[Ixx, Iyy, Izz, np.zeros((n,3))]
     
 
-class BulkheadProperties(ExplicitComponent):
+class BulkheadProperties(om.ExplicitComponent):
     """
     Compute bulkhead properties
     
@@ -170,7 +170,7 @@ class BulkheadProperties(ExplicitComponent):
 
     
 
-class BuoyancyTankProperties(ExplicitComponent):
+class BuoyancyTankProperties(om.ExplicitComponent):
     """
     Compute buoyancy tank properties
     
@@ -340,7 +340,7 @@ class BuoyancyTankProperties(ExplicitComponent):
         outputs['buoyancy_tank_I_keel']       = unassembleI(I_keel)
         
         
-class StiffenerProperties(ExplicitComponent):
+class StiffenerProperties(om.ExplicitComponent):
     """
     Computes column stiffener properties by section. 
      
@@ -557,7 +557,7 @@ class StiffenerProperties(ExplicitComponent):
 
 
         
-class BallastProperties(ExplicitComponent):
+class BallastProperties(om.ExplicitComponent):
     """
     Compute ballast properties
     
@@ -675,7 +675,7 @@ class BallastProperties(ExplicitComponent):
 
         
         
-class ColumnGeometry(ExplicitComponent):
+class ColumnGeometry(om.ExplicitComponent):
     """
     Compute geometric properties for vertical columns in substructure
     for floating offshore wind turbines.
@@ -805,7 +805,7 @@ class ColumnGeometry(ExplicitComponent):
         
 
 
-class ColumnProperties(ExplicitComponent):
+class ColumnProperties(om.ExplicitComponent):
     """
     Compute column substructure elements in floating offshore wind turbines.
     
@@ -1159,7 +1159,7 @@ class ColumnProperties(ExplicitComponent):
         outputs['tapered_column_cost_rate'] = 1e3*outputs['column_total_cost']/outputs['column_total_mass'].sum()
 
         
-class ColumnBuckling(ExplicitComponent):
+class ColumnBuckling(om.ExplicitComponent):
     """
     Compute the applied axial and hoop stresses in a column and compare that to 
     limits established by the API standard. Some physcial geometry checks are also performed.
@@ -1338,7 +1338,7 @@ class ColumnBuckling(ExplicitComponent):
         outputs['external_local_utilization']   = external_local_raw * gamma_f*gamma_b
         outputs['external_general_utilization'] = external_general_raw * gamma_f*gamma_b
 
-class TempRho(ExplicitComponent):
+class TempRho(om.ExplicitComponent):
     
     def initialize(self):
         self.options.declare('n_height')
@@ -1355,8 +1355,9 @@ class TempRho(ExplicitComponent):
         npts    = get_nfull(self.options['n_height']) - 1
         outputs['rho_vec'] = inputs['rho']*np.ones(npts)
         outputs['unit_cost_vec'] = inputs['unit_cost']*np.ones(npts)
-    
-class Column(Group):
+
+
+class Column(om.Group):
 
     def initialize(self):
         self.options.declare('n_height')
@@ -1369,7 +1370,7 @@ class Column(Group):
         n_full    = get_nfull(n_height)
         topLevelFlag = self.options['topLevelFlag']
 
-        ivc = IndepVarComp()
+        ivc = om.IndepVarComp()
         ivc.add_output('section_height', np.zeros(n_sect), units='m')
         ivc.add_output('outer_diameter', np.zeros(n_height), units='m')
         ivc.add_output('wall_thickness', np.zeros(n_sect), units='m')
@@ -1387,7 +1388,7 @@ class Column(Group):
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
         if topLevelFlag:
-            sharedIndeps = IndepVarComp()
+            sharedIndeps = om.IndepVarComp()
             sharedIndeps.add_output('freeboard', 0.0, units='m')
             sharedIndeps.add_output('permanent_ballast_density', 0.0, units='kg/m**3')
             sharedIndeps.add_output('rho', 0.0, units='kg/m**3')

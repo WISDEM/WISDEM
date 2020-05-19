@@ -1,23 +1,24 @@
 """
-tcc_csm_component.py
-
-Created by NWTC Systems Engineering Sub-Task on 2012-08-01.
 Copyright (c) NREL. All rights reserved.
 """
 
 from __future__ import print_function
 import numpy as np
 
-from openmdao.api import ExplicitComponent, Problem, Group, IndepVarComp
+import openmdao.api as om
 
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 
 
 # --------------------------------------------------------------------
-class BladeMass(ExplicitComponent):
+class BladeMass(om.ExplicitComponent):
     """
-    Compute blade mass
-    
+    Compute blade mass of the form :math:`mass = k*diameter^b`.
+    Value of :math:`k` was updated in 2015 to be 0.5.
+    Value of :math:`b` was updated to be 2.47/2.54 for turbine class I blades with/without carbon or
+    2.44/2.5 for other turbine classes with/without carbon.
+    Values of k and b can be overridden by the user with use of `blade_mass_coeff` (k) and/or `blade_user_exp` (b).
+
     Parameters
     ----------
     rotor_diameter : float
@@ -27,7 +28,7 @@ class BladeMass(ExplicitComponent):
     blade_has_carbon : boolean
         does the blade have carbon?
     blade_mass_coeff : float
-        A in the blade mass equation: A*(rotor_diameter/B)^exp
+        k in the blade mass equation: k*(rotor_diameter/2)^b
     blade_user_exp : float
         optional user-entered exp for the blade mass equation
     
@@ -73,18 +74,20 @@ class BladeMass(ExplicitComponent):
         outputs['blade_mass'] = blade_mass_coeff * (rotor_diameter / 2)**exp
 
   # --------------------------------------------------------------------
-class HubMass(ExplicitComponent):
+class HubMass(om.ExplicitComponent):
     """
-    Compute hub mass
+    Compute hub mass in the form of :math:`mass = k*blade_mass + b`.
+    Value of :math:`k` was updated in 2015 to be 2.3.
+    Value of :math:`b` was updated in 2015 to be 1320.
     
     Parameters
     ----------
     blade_mass : float
         component mass [kg]
     hub_mass_coeff : float
-        A in the hub mass equation: A*blade_mass + B
+        k inthe hub mass equation: k*blade_mass + b
     hub_mass_intercept : float
-        B in the hub mass equation: A*blade_mass + B
+        b in the hub mass equation: k*blade_mass + b
     
     Returns
     -------
@@ -110,9 +113,15 @@ class HubMass(ExplicitComponent):
         outputs['hub_mass'] = hub_mass_coeff * blade_mass + hub_mass_intercept
 
 # --------------------------------------------------------------------
-class PitchSystemMass(ExplicitComponent):
+class PitchSystemMass(om.ExplicitComponent):
     """
-    Compute pitch system mass
+    Compute pitch bearing mass in the form of :math:`bearing_mass = k*blade_mass*blade_number + b1`.
+    Then compute pitch system mass, with bearing housing in the form of :math:`mass = (1+h)*bearing_mass + b2`.
+    The values of the constants were NOT updated in 2015 and are the same as the original CSM.
+    Value of :math:`k` is 0.1295.
+    Value of :math:`h` is 0.328.
+    Value of :math:`b1` is 491.31.
+    Value of :math:`b2` is 555.0.
     
     Parameters
     ----------
@@ -121,11 +130,11 @@ class PitchSystemMass(ExplicitComponent):
     blade_number : float
         number of rotor blades
     pitch_bearing_mass_coeff : float
-        A in the pitch bearing mass equation: A*blade_mass*blade_number + B
+        k in the pitch bearing mass equation: k*blade_mass*blade_number + b
     pitch_bearing_mass_intercept : float
-        B in the pitch bearing mass equation: A*blade_mass*blade_number + B
-    bearing_housing_percent : float
-        bearing housing percentage (in decimal form: ex 10% is 0.10)
+        b in the pitch bearing mass equation: k*blade_mass*blade_number + b
+    bearing_housing_fraction : float
+        bearing housing fraction
     mass_sys_offset : float
         mass system offset
     
@@ -141,7 +150,7 @@ class PitchSystemMass(ExplicitComponent):
         self.add_discrete_input('blade_number', 3)
         self.add_input('pitch_bearing_mass_coeff', 0.1295)
         self.add_input('pitch_bearing_mass_intercept', 491.31)
-        self.add_input('bearing_housing_percent', .3280)
+        self.add_input('bearing_housing_fraction', .3280)
         self.add_input('mass_sys_offset', 555.0)
 
         self.add_output('pitch_system_mass', 0.0, units='kg')
@@ -151,26 +160,28 @@ class PitchSystemMass(ExplicitComponent):
         blade_number = discrete_inputs['blade_number']
         pitch_bearing_mass_coeff = inputs['pitch_bearing_mass_coeff']
         pitch_bearing_mass_intercept = inputs['pitch_bearing_mass_intercept']
-        bearing_housing_percent = inputs['bearing_housing_percent']
+        bearing_housing_fraction = inputs['bearing_housing_fraction']
         mass_sys_offset = inputs['mass_sys_offset']
         
         # calculate the hub mass
         pitchBearingMass = pitch_bearing_mass_coeff * blade_mass * blade_number + pitch_bearing_mass_intercept
-        outputs['pitch_system_mass'] = pitchBearingMass * (1 + bearing_housing_percent) + mass_sys_offset
+        outputs['pitch_system_mass'] = pitchBearingMass * (1 + bearing_housing_fraction) + mass_sys_offset
 
 # --------------------------------------------------------------------
-class SpinnerMass(ExplicitComponent):
+class SpinnerMass(om.ExplicitComponent):
     """
-    Compute spinner mass
+    Compute spinner (nose cone) mass in the form of :math:`mass = k*rotor_diameter + b`.
+    Value of :math:`k` was updated in 2015 to be 15.5.
+    Value of :math:`b` was updated in 2015 to be -980.
     
     Parameters
     ----------
     rotor_diameter : float
         rotor diameter of the machine
     spinner_mass_coeff : float
-        A in the spinner mass equation: A*rotor_diameter + B
+        k inthe spinner mass equation: k*rotor_diameter + b
     spinner_mass_intercept : float
-        B in the spinner mass equation: A*rotor_diameter + B
+        b in the spinner mass equation: k*rotor_diameter + b
     
     Returns
     -------
@@ -195,9 +206,12 @@ class SpinnerMass(ExplicitComponent):
         outputs['spinner_mass'] = spinner_mass_coeff * rotor_diameter + spinner_mass_intercept
 
 # --------------------------------------------------------------------
-class LowSpeedShaftMass(ExplicitComponent):
+class LowSpeedShaftMass(om.ExplicitComponent):
     """
-    Compute low speed shaft mass
+    Compute low speed shaft mass in the form of :math:`mass = k*(blade_mass*rated_power)^b1 + b2`.
+    Value of :math:`k` was updated in 2015 to be 13.
+    Value of :math:`b1` was updated in 2015 to be 0.65.
+    Value of :math:`b2` was updated in 2015 to be 775.
     
     Parameters
     ----------
@@ -206,11 +220,11 @@ class LowSpeedShaftMass(ExplicitComponent):
     machine_rating : float
         machine rating
     lss_mass_coeff : float
-        A in the lss mass equation: A*(blade_mass*rated_power)^exp + B
+        k inthe lss mass equation: k*(blade_mass*rated_power)^b1 + b2
     lss_mass_exp : float
-        exp in the lss mass equation: A*(blade_mass*rated_power)^exp + B
+        b1 in the lss mass equation: k*(blade_mass*rated_power)^b1 + b2
     lss_mass_intercept : float
-        B in the lss mass equation: A*(blade_mass*rated_power)^exp + B
+        b2 in the lss mass equation: k*(blade_mass*rated_power)^b1 + b2
     
     Returns
     -------
@@ -239,18 +253,20 @@ class LowSpeedShaftMass(ExplicitComponent):
         outputs['lss_mass'] = lss_mass_coeff * (blade_mass * machine_rating/1000.)**lss_mass_exp + lss_mass_intercept
 
 # --------------------------------------------------------------------
-class BearingMass(ExplicitComponent):
+class BearingMass(om.ExplicitComponent):
     """
-    Compute bearing mass
+    Compute main bearing mass (single bearing) in the form of :math:`mass = k*diameter^b.
+    Value of :math:`k` was updated in 2015 to be 1e-4.
+    Value of :math:`b` was updated in 2015 to be 3.5.
     
     Parameters
     ----------
     rotor_diameter : float
         rotor diameter of the machine
     bearing_mass_coeff : float
-        A in the bearing mass equation: A*rotor_diameter^exp
+        k inthe bearing mass equation: k*rotor_diameter^b
     bearing_mass_exp : float
-        exp in the bearing mass equation: A*rotor_diameter^exp
+        exp in the bearing mass equation: k*rotor_diameter^b
     
     Returns
     -------
@@ -276,9 +292,10 @@ class BearingMass(ExplicitComponent):
         outputs['main_bearing_mass'] = bearing_mass_coeff * rotor_diameter ** bearing_mass_exp
 
 # --------------------------------------------------------------------
-class RotorTorque(ExplicitComponent):
+class RotorTorque(om.ExplicitComponent):
     """
-    Computed rated rpm and rotor torque
+    Computed rated rpm and rotor torque from rated power, rotor diameter, max tip speed, and drivetrain efficiency.
+    Rotor torque will be used to size other drivetrain components, such as the generator.
     
     Parameters
     ----------
@@ -320,18 +337,20 @@ class RotorTorque(ExplicitComponent):
         outputs['rotor_torque'] = ratedHubPower_W / rotorSpeed
         
 # --------------------------------------------------------------------
-class GearboxMass(ExplicitComponent):
+class GearboxMass(om.ExplicitComponent):
     """
-    Compute gearbox mass
+    Compute gearbox mass in the form of :math:`mass = k*torque^b.
+    Value of :math:`k` was updated in 2015 to be 113.
+    Value of :math:`b` was updated in 2015 to be 0.71.
     
     Parameters
     ----------
     rotor_torque : float
         torque from rotor at rated power
     gearbox_mass_coeff : float
-        A in the gearbox mass equation: A*rotor_torque^exp
+        k inthe gearbox mass equation: k*rotor_torque^b
     gearbox_mass_exp : float
-        exp in the gearbox mass equation: A*rotor_torque^exp
+        exp in the gearbox mass equation: k*rotor_torque^b
     
     Returns
     -------
@@ -356,9 +375,10 @@ class GearboxMass(ExplicitComponent):
         outputs['gearbox_mass'] = gearbox_mass_coeff * (rotor_torque/1000.0)**gearbox_mass_exp
 
 # --------------------------------------------------------------------
-class HighSpeedSideMass(ExplicitComponent):
+class HighSpeedSideMass(om.ExplicitComponent):
     """
-    Compute high speed side mass
+    Compute high speed side (shaft, brake) mass in the form of :math:`mass = k*rated_power.
+    Value of :math:`k` was updated in 2015 to be 0.19894.
     
     Parameters
     ----------
@@ -388,18 +408,20 @@ class HighSpeedSideMass(ExplicitComponent):
         outputs['hss_mass'] = hss_mass_coeff * machine_rating
 
 # --------------------------------------------------------------------
-class GeneratorMass(ExplicitComponent):
+class GeneratorMass(om.ExplicitComponent):
     """
-    Compute generator mass
+    Compute generator mass in the form of :math:`mass = k*rated_power + b`.
+    Value of :math:`k` was updated in 2015 to be 2300.
+    Value of :math:`b` was updated in 2015 to be 3400.
     
     Parameters
     ----------
     machine_rating : float
         machine rating
     generator_mass_coeff : float
-        A in the generator mass equation: A*rated_power + B
+        k inthe generator mass equation: k*rated_power + b
     generator_mass_intercept : float
-        B in the generator mass equation: A*rated_power + B
+        b in the generator mass equation: k*rated_power + b
     
     Returns
     -------
@@ -424,16 +446,17 @@ class GeneratorMass(ExplicitComponent):
         outputs['generator_mass'] = generator_mass_coeff * machine_rating/1000. + generator_mass_intercept
 
 # --------------------------------------------------------------------
-class BedplateMass(ExplicitComponent):
+class BedplateMass(om.ExplicitComponent):
     """
-    Compute bedplate mass
+    Compute bedplate mass in the form of :math:`mass = diameter^b.
+    Value of :math:`b` was updated in 2015 to be 2.2.
     
     Parameters
     ----------
     rotor_diameter : float
         rotor diameter of the machine
     bedplate_mass_exp : float
-        exp in the bedplate mass equation: rotor_diameter^exp
+        exp in the bedplate mass equation: rotor_diameter^b
     
     Returns
     -------
@@ -456,18 +479,21 @@ class BedplateMass(ExplicitComponent):
         outputs['bedplate_mass'] = rotor_diameter**bedplate_mass_exp
 
 # --------------------------------------------------------------------
-class YawSystemMass(ExplicitComponent):
+class YawSystemMass(om.ExplicitComponent):
     """
-    Compute yaw system mass
+    Compute yaw system mass in the form of :math:`mass = k*diameter^b`.
+    The values of the constants were NOT updated in 2015 and are the same as the original CSM.
+    Value of :math:`k` is 9e-4.
+    Value of :math:`b` is 3.314.
     
     Parameters
     ----------
     rotor_diameter : float
         rotor diameter of the machine
     yaw_mass_coeff : float
-        A in the yaw mass equation: A*rotor_diameter^exp
+        k inthe yaw mass equation: k*rotor_diameter^b
     yaw_mass_exp : float
-        exp in the yaw mass equation: A*rotor_diameter^exp
+        exp in the yaw mass equation: k*rotor_diameter^b
     
     Returns
     -------
@@ -494,9 +520,11 @@ class YawSystemMass(ExplicitComponent):
 #TODO: no variable speed mass; ignore for now
 
 # --------------------------------------------------------------------
-class HydraulicCoolingMass(ExplicitComponent):
+class HydraulicCoolingMass(om.ExplicitComponent):
     """
-    Compute hydraulic cooling mass
+    Compute hydraulic cooling mass in the form of :math:`mass = k*rated_power`.
+    The values of the constants were NOT updated in 2015 and are the same as the original CSM.
+    Value of :math:`k` is 0.08.
     
     Parameters
     ----------
@@ -526,18 +554,21 @@ class HydraulicCoolingMass(ExplicitComponent):
         outputs['hvac_mass'] = hvac_mass_coeff * machine_rating
 
 # --------------------------------------------------------------------
-class NacelleCoverMass(ExplicitComponent):
+class NacelleCoverMass(om.ExplicitComponent):
     """
-    Compute nacelle cover mass
+    Compute nacelle cover mass in the form of :math:`mass = k*rated_power + b`.
+    The values of the constants were NOT updated in 2015 and are the same as the original CSM.
+    Value of :math:`k` is 1.2817.
+    Value of :math:`b` is 428.19.
     
     Parameters
     ----------
     machine_rating : float
         machine rating
     cover_mass_coeff : float
-        A in the spinner mass equation: A*rotor_diameter + B
+        k inthe spinner mass equation: k*rotor_diameter + b
     cover_mass_intercept : float
-        B in the spinner mass equation: A*rotor_diameter + B
+        b in the spinner mass equation: k*rotor_diameter + b
     
     Returns
     -------
@@ -564,9 +595,12 @@ class NacelleCoverMass(ExplicitComponent):
 # TODO: ignoring controls and electronics mass for now
 
 # --------------------------------------------------------------------
-class PlatformsMainframeMass(ExplicitComponent):
+class PlatformsMainframeMass(om.ExplicitComponent):
     """
-    Compute platforms mainframe mass
+    Compute platforms mass in the form of :math:`mass = k*bedplate mass` and
+    crane mass as 3000kg, if flagged by the user.
+    The values of the constants were NOT updated in 2015 and are the same as the original CSM.
+    Value of :math:`k` is 0.125.
     
     Parameters
     ----------
@@ -591,7 +625,7 @@ class PlatformsMainframeMass(ExplicitComponent):
         self.add_input('bedplate_mass', 0.0, units='kg')
         self.add_input('platforms_mass_coeff', 0.125)
         self.add_discrete_input('crane', False)
-        self.add_input('crane_weight', 3000.)
+        self.add_input('crane_weight', 3000., units='kg')
 
         self.add_output('platforms_mass', 0.0, units='kg')
         #TODO: there is no base hardware mass model in the old model. Cost is not dependent on mass.
@@ -614,18 +648,20 @@ class PlatformsMainframeMass(ExplicitComponent):
         outputs['platforms_mass'] = platforms_mass + crane_mass
 
 # --------------------------------------------------------------------
-class TransformerMass(ExplicitComponent):
+class TransformerMass(om.ExplicitComponent):
     """
-    Compute transformer mass
+    Compute transformer mass in the form of :math:`mass = k*rated_power + b`.
+    Value of :math:`k` was updated in 2015 to be 1915.
+    Value of :math:`b` was updated in 2015 to be 1910.
     
     Parameters
     ----------
     machine_rating : float
         machine rating
     transformer_mass_coeff : float
-        A in the transformer mass equation: A*rated_power + B
+        k inthe transformer mass equation: k*rated_power + b
     transformer_mass_intercept : float
-        B in the transformer mass equation: A*rated_power + B
+        b in the transformer mass equation: k*rated_power + b
     
     Returns
     -------
@@ -650,18 +686,20 @@ class TransformerMass(ExplicitComponent):
         outputs['transformer_mass'] = transformer_mass_coeff * machine_rating/1000. + transformer_mass_intercept
 
 # --------------------------------------------------------------------
-class TowerMass(ExplicitComponent):
+class TowerMass(om.ExplicitComponent):
     """
-    Compute tower mass
+    Compute tower mass in the form of :math:`mass = k*hub_height^b`.
+    Value of :math:`k` was updated in 2015 to be 19.828.
+    Value of :math:`b` was updated in 2015 to be 2.0282.
     
     Parameters
     ----------
     hub_height : float
         hub height of wind turbine above ground / sea level
     tower_mass_coeff : float
-        A in the tower mass equation: A*hub_height^B
+        k inthe tower mass equation: k*hub_height^b
     tower_mass_exp : float
-        B in the tower mass equation: A*hub_height^B
+        b in the tower mass equation: k*hub_height^b
     
     Returns
     -------
@@ -671,7 +709,7 @@ class TowerMass(ExplicitComponent):
     """
   
     def setup(self):
-        self.add_input('hub_height', 0.0)
+        self.add_input('hub_height', 0.0, units='m')
         self.add_input('tower_mass_coeff', 19.828)
         self.add_input('tower_mass_exp', 2.0282)
 
@@ -686,9 +724,9 @@ class TowerMass(ExplicitComponent):
         outputs['tower_mass'] = tower_mass_coeff * hub_height ** tower_mass_exp
 
 # Turbine mass adder
-class TurbineMassAdder(ExplicitComponent):
+class TurbineMassAdder(om.ExplicitComponent):
     """
-    Compute system masses
+    Aggregates all components masses into category labels of hub system, rotor, nacelle, and tower.
     
     Parameters
     ----------
@@ -802,17 +840,17 @@ class TurbineMassAdder(ExplicitComponent):
 
 # --------------------------------------------------------------------
 
-class nrel_csm_mass_2015(Group):
+class nrel_csm_mass_2015(om.Group):
     
     def setup(self):
-        sharedIndeps = IndepVarComp()
-        sharedIndeps.add_output('machine_rating',     units='kW', val=0.0)
-        sharedIndeps.add_output('rotor_diameter',         units='m', val=0.0)
-        sharedIndeps.add_output('hub_height',         units='m', val=0.0)
-        sharedIndeps.add_discrete_output('blade_number',  val=0)
-        sharedIndeps.add_discrete_output('main_bearing_number',  val=0)
-        sharedIndeps.add_discrete_output('crane', val=False)
-        self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
+        ivc = om.IndepVarComp()
+        ivc.add_output('machine_rating',     units='kW', val=0.0)
+        ivc.add_output('rotor_diameter',         units='m', val=0.0)
+        ivc.add_output('hub_height',         units='m', val=0.0)
+        ivc.add_discrete_output('blade_number',  val=0)
+        ivc.add_discrete_output('main_bearing_number',  val=0)
+        ivc.add_discrete_output('crane', val=False)
+        self.add_subsystem('ivc', ivc, promotes=['*'])
 
         self.add_subsystem('blade', BladeMass(), promotes=['*'])
         self.add_subsystem('hub', HubMass(), promotes=['*'])
@@ -834,64 +872,8 @@ class nrel_csm_mass_2015(Group):
         self.add_subsystem('turbine', TurbineMassAdder(), promotes=['*'])
        
 
-class nrel_csm_2015(Group):
+class nrel_csm_2015(om.Group):
     
     def setup(self):
         self.add_subsystem('nrel_csm_mass', nrel_csm_mass_2015(), promotes=['*'])
         self.add_subsystem('turbine_costs', Turbine_CostsSE_2015(verbosity=False, topLevelFlag=False), promotes=['*'])
-
-#-----------------------------------------------------------------
-
-def mass_example():
-
-    # simple test of module
-    trb = nrel_csm_mass_2015()
-    prob = Problem(trb)
-    prob.setup()
-    
-    prob['rotor_diameter'] = 126.0
-    prob['turbine_class'] = 1
-    prob['blade_has_carbon'] = False
-    prob['blade_number'] = 3    
-    prob['machine_rating'] = 5000.0
-    prob['hub_height'] = 90.0
-    prob['main_bearing_number'] = 2
-    prob['crane'] = True
-    prob['max_tip_speed'] = 80.0
-    prob['max_efficiency'] = 0.90
-
-    prob.run_model()
-   
-    print("The MASS results for the NREL 5 MW Reference Turbine in an offshore 20 m water depth location are:")
-    #print "Overall turbine mass is {0:.2f} kg".format(trb.turbine.params['turbine_mass'])
-    for io in trb._outputs:
-        print(io, str(trb._outputs[io]))
-
-def cost_example():
-
-    # simple test of module
-    trb = nrel_csm_2015()
-    prob = Problem(trb)
-    prob.setup()
-
-    # simple test of module
-    prob['rotor_diameter'] = 126.0
-    prob['turbine_class'] = 1
-    prob['blade_has_carbon'] = False
-    prob['blade_number'] = 3    
-    prob['machine_rating'] = 5000.0
-    prob['hub_height'] = 90.0
-    prob['main_bearing_number'] = 2
-    prob['crane'] = True
-    prob['max_tip_speed'] = 80.0
-    prob['max_efficiency'] = 0.90
-
-    prob.run_model()
-
-    print("The COST results for the NREL 5 MW Reference Turbine:")
-    for io in trb._outputs:
-        print(io, str(trb._outputs[io]))
-
-if __name__ == "__main__":
-    mass_example()
-    cost_example()

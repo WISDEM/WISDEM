@@ -7,7 +7,7 @@ import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
 import wisdem.commonse.utilities as util
-import wisdem.pyframe3dd.frame3dd as frame3dd
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
 
 RIGID = 1e30
@@ -339,6 +339,10 @@ class CylinderFrame3DD(om.ExplicitComponent):
         6-degree polynomial coefficients of mode shapes in the x-direction
     y_mode_shapes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the x-direction
+    x_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the x-direction
+    y_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the y-direction
     top_deflection : float
         Deflection of cylinder top in yaw-aligned +x direction
     Fz_out : numpy array[npts-1]
@@ -444,6 +448,8 @@ class CylinderFrame3DD(om.ExplicitComponent):
         self.add_output('freqs', val=np.zeros(NFREQ), units='Hz')
         self.add_output('x_mode_shapes', val=np.zeros((NFREQ2, 5)))
         self.add_output('y_mode_shapes', val=np.zeros((NFREQ2, 5)))
+        self.add_output('x_mode_freqs', val=np.zeros(NFREQ2))
+        self.add_output('y_mode_freqs', val=np.zeros(NFREQ2))
         self.add_output('top_deflection', val=0.0, units='m')
         self.add_output('Fz_out', val=np.zeros(npts-1), units='N')
         self.add_output('Vx_out', val=np.zeros(npts-1), units='N')
@@ -457,6 +463,7 @@ class CylinderFrame3DD(om.ExplicitComponent):
         self.add_output('shear_stress', val=np.zeros(npts-1), units='N/m**2')
         self.add_output('hoop_stress', val=np.zeros(npts-1), units='N/m**2')
         self.add_output('hoop_stress_euro', val=np.zeros(npts-1), units='N/m**2')
+
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
@@ -472,7 +479,7 @@ class CylinderFrame3DD(om.ExplicitComponent):
         y = np.zeros(n)
         r = np.zeros(n)
 
-        nodes = frame3dd.NodeData(node, x, y, z, r)
+        nodes = pyframe3dd.NodeData(node, x, y, z, r)
         # -----------------------------------
 
         # ------ reaction data ------------
@@ -481,7 +488,7 @@ class CylinderFrame3DD(om.ExplicitComponent):
         node = inputs['kidx'] + np.ones(len(inputs['kidx']))   # add one because 0-based index but 1-based node numbering
         rigid = RIGID
 
-        reactions = frame3dd.ReactionData(node, inputs['kx'], inputs['ky'], inputs['kz'], inputs['ktx'], inputs['kty'], inputs['ktz'], rigid)
+        reactions = pyframe3dd.ReactionData(node, inputs['kx'], inputs['ky'], inputs['kz'], inputs['ktx'], inputs['kty'], inputs['ktz'], rigid)
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -503,16 +510,16 @@ class CylinderFrame3DD(om.ExplicitComponent):
         G   = inputs['G']
         rho = inputs['rho']
 
-        elements = frame3dd.ElementData(element, N1, N2, Az, Asx, Asy, Jz, Ixx, Iyy, E, G, roll, rho)
+        elements = pyframe3dd.ElementData(element, N1, N2, Az, Asx, Asy, Jz, Ixx, Iyy, E, G, roll, rho)
         # -----------------------------------
 
 
         # ------ options ------------
-        options = frame3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
+        options = pyframe3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
         # -----------------------------------
 
         # initialize frame3dd object
-        cylinder = frame3dd.Frame(nodes, reactions, elements, options)
+        cylinder = pyframe3dd.Frame(nodes, reactions, elements, options)
 
 
         # ------ add extra mass ------------
@@ -536,7 +543,7 @@ class CylinderFrame3DD(om.ExplicitComponent):
         gy = 0.0
         gz = -gravity
 
-        load = frame3dd.StaticLoadCase(gx, gy, gz)
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
         # point loads
         nF = inputs['plidx'] + np.ones(len(inputs['plidx']))
@@ -575,28 +582,10 @@ class CylinderFrame3DD(om.ExplicitComponent):
         outputs['f2']    = modal.freq[1]
         outputs['freqs'] = modal.freq
 
-        # Get mode shapes in batch
-        mpfs   = np.abs( np.c_[modal.xmpf, modal.ympf, modal.zmpf] )
-        polys  = util.get_modal_coefficients(z, np.vstack((modal.xdsp, modal.ydsp)).T, 6)
-        xpolys = polys[:,:NFREQ].T
-        ypolys = polys[:,NFREQ:].T
-        
-        NFREQ2    = int(NFREQ/2)
-        mshapes_x = np.zeros((NFREQ2, 5))
-        mshapes_y = np.zeros((NFREQ2, 5))
-        ix = 0
-        iy = 0
-        for m in range(NFREQ):
-            if mpfs[m,:].max() < 1e-11: continue
-            imode = np.argmax(mpfs[m,:])
-            if imode == 0:
-                mshapes_x[ix,:] = xpolys[m,:]
-                ix += 1
-            elif imode == 1:
-                mshapes_y[iy,:] = ypolys[m,:]
-                iy += 1
-            else:
-                print('Warning: Unknown mode shape')
+        # Get all mode shapes in batch
+        freq_x, freq_y, mshapes_x, mshapes_y = util.get_mode_shapes(z, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
+        outputs['x_mode_freqs']  = freq_x
+        outputs['y_mode_freqs']  = freq_y
         outputs['x_mode_shapes'] = mshapes_x
         outputs['y_mode_shapes'] = mshapes_y
 

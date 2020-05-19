@@ -19,12 +19,11 @@ from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem
 from scipy import interpolate, gradient
 from scipy.optimize import minimize_scalar, minimize, brentq
 from scipy.interpolate import PchipInterpolator
-from wisdem.rotorse.rotor_elasticity import RunCurveFEM
 from wisdem.ccblade import CCAirfoil, CCBlade
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 from wisdem.commonse.utilities import vstack, trapz_deriv, linspace_with_deriv, smooth_min, smooth_abs
 from wisdem.commonse.environment import PowerWind
-from wisdem.rotorse.rotor_fast import eval_unsteady
+from wisdem.aeroelasticse.openmdao_openfast import eval_unsteady
 
 class ServoSE(Group):
     def initialize(self):
@@ -35,14 +34,11 @@ class ServoSE(Group):
         analysis_options = self.options['analysis_options']
 
         self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('gust',              GustETM())
         self.add_subsystem('stall_check',       NoStallConstraint(analysis_options   = analysis_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=analysis_options['servose']['n_pc_spline']))
         self.add_subsystem('aep',               AEP(), promotes=['AEP'])
-        # Compute blade frequencies at rated rotor speed
-        self.add_subsystem('curvefem_rated',    RunCurveFEM(analysis_options = analysis_options))
-        if analysis_options['openfast']['run_openfast'] == True:
-            self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-            self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+
         # Connections to the stall check
         self.connect('powercurve.aoa_regII','stall_check.aoa_along_span')
 
@@ -53,26 +49,57 @@ class ServoSE(Group):
         self.connect('cdf.F',               'aep.CDF_V')
         self.connect('powercurve.P_spline', 'aep.P')   
 
-        # Connections to CurvFEM
-        self.connect('powercurve.rated_Omega', 'curvefem_rated.Omega')
+class ServoSE_ROSCO(Group):
+    def initialize(self):
+        self.options.declare('analysis_options')
+        self.options.declare('opt_options')
 
-        if analysis_options['openfast']['run_openfast'] == True:
-            # Connect ROSCO Power curve
-            self.connect('powercurve.rated_V',      'tune_rosco.v_rated')
-            self.connect('powercurve.rated_Omega',  'tune_rosco.rated_rotor_speed')
-            self.connect('powercurve.rated_Q',      'tune_rosco.rated_torque')
+    def setup(self):
+        analysis_options = self.options['analysis_options']
 
-            # Connect freqs
-            self.connect('curvefem_rated.freq',           'tune_rosco.flap_freq', src_indices=[0])
-            self.connect('curvefem_rated.freq',           'tune_rosco.edge_freq', src_indices=[1])
+        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('tune_rosco',        TuneROSCO(analysis_options = analysis_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
 
-            # Connect ROSCO for Rotor Performance tables
-            self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
-            self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
-            self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
-            self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
-            self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
-            self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
+        # Connect ROSCO for Rotor Performance tables
+        self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
+        self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
+        self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
+        self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
+        self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
+        self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
+
+class GustETM(ExplicitComponent):
+    # OpenMDAO component that generates an "equivalent gust" wind speed by summing an user-defined wind speed at hub height with 3 times sigma. sigma is the turbulent wind speed standard deviation for the extreme turbulence model, see IEC-61400-1 Eq. 19 paragraph 6.3.2.3
+    
+    def setup(self):
+        # Inputs
+        self.add_input('V_mean', val=0.0, units='m/s', desc='IEC average wind speed for turbine class')
+        self.add_input('V_hub', val=0.0, units='m/s', desc='hub height wind speed')
+        self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
+        self.add_input('std', val=3.0, desc='number of standard deviations for strength of gust')
+
+        # Output
+        self.add_output('V_gust', val=0.0, units='m/s', desc='gust wind speed')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        V_mean = inputs['V_mean']
+        V_hub  = inputs['V_hub']
+        std    = inputs['std']
+        turbulence_class = discrete_inputs['turbulence_class']
+
+        if turbulence_class.upper() == 'A':
+            Iref = 0.16
+        elif turbulence_class.upper() == 'B':
+            Iref = 0.14
+        elif turbulence_class.upper() == 'C':
+            Iref = 0.12
+        else:
+            raise ValueError('Unknown Turbulence Class: '+str(turbulence_class)+' . Permitted values are A / B / C')
+
+        c = 2.0
+        sigma = c * Iref * (0.072*(V_mean/c + 3)*(V_hub/c - 4) + 10)
+        V_gust = V_hub + std*sigma
+        outputs['V_gust'] = V_gust
 
 class TuneROSCO(ExplicitComponent):
     def initialize(self):
@@ -394,11 +421,11 @@ class ComputePowerCurve(ExplicitComponent):
         self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.regulation_reg_III = analysis_options['servose']['regulation_reg_III']
-        # naero       = self.naero = self.options['naero']
+        # n_span       = self.n_span = self.options['n_span']
         self.n_pc          = analysis_options['servose']['n_pc']
         self.n_pc_spline   = analysis_options['servose']['n_pc_spline']
-        # n_aoa_grid  = self.options['n_aoa_grid']
-        # n_Re_grid   = self.options['n_Re_grid']
+        # n_aoa  = self.options['n_aoa']
+        # n_re   = self.options['n_re']
         
         # parameters
         self.add_input('v_min',        val=0.0, units='m/s',  desc='cut-in wind speed')
@@ -426,7 +453,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
         self.add_input('presweepTip',   val=0.0,                units='m', desc='presweep at tip')
         
-        # self.add_discrete_input('airfoils',  val=[0]*naero,                      desc='CCAirfoil instances')
+        # self.add_discrete_input('airfoils',  val=[0]*n_span,                      desc='CCAirfoil instances')
         self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
         self.add_input('airfoils_cm', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
@@ -521,7 +548,8 @@ class ComputePowerCurve(ExplicitComponent):
         Omega_rpm = Omega * 30. / np.pi
 
         # Set baseline power production
-        P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
+        myout, derivs = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
+        P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
         P, eff  = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
         Cp      = Cp_aero*eff
 
@@ -552,8 +580,8 @@ class ComputePowerCurve(ExplicitComponent):
 
         # Function to be used inside of power maximization until Region 3
         def maximizePower(pitch, Uhub, Omega_rpm):
-            P, _, _, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
-            return -P
+            myout, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
+            return -myout['P']
 
         # Maximize power until Region 3
         region2p5 = False
@@ -568,7 +596,8 @@ class ComputePowerCurve(ExplicitComponent):
                                        bounds=bnds, method='bounded', options={'disp':False, 'xatol':1e-2, 'maxiter':40})['x']
 
             # Find associated power
-            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
             P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
             Cp[i]      = Cp_aero[i]*eff
 
@@ -588,11 +617,12 @@ class ComputePowerCurve(ExplicitComponent):
         i = i_rated
         if i < self.n_pc-1:
             def const_Urated(x):
-                pitch   = x[0]           
-                Uhub_i  = x[1]
-                Omega_i = min([Uhub_i * tsr / R_tip, Omega_max])
-                P_aero_i, _, _, _ = self.ccblade.evaluate([Uhub_i], [Omega_i*30./np.pi], [pitch], coefficients=False)
-                P_i,eff           = compute_P_and_eff(P_aero_i.flatten(), P_rated, driveType, driveEta)
+                pitch    = x[0]           
+                Uhub_i   = x[1]
+                Omega_i  = min([Uhub_i * tsr / R_tip, Omega_max])
+                myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i*30./np.pi], [pitch], coefficients=False)
+                P_aero_i = myout['P']
+                P_i,eff  = compute_P_and_eff(P_aero_i.flatten(), P_rated, driveType, driveEta)
                 return (P_i - P_rated)
 
             if region2p5:
@@ -623,7 +653,8 @@ class ComputePowerCurve(ExplicitComponent):
             Omega_rated  = min([U_rated * tsr / R_tip, Omega_max])
             Omega[i:]    = np.minimum(Omega[i:], Omega_rated) # Stay at this speed if hit rated too early
             Omega_rpm    = Omega * 30. / np.pi
-            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([U_rated], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            myout, _     = self.ccblade.evaluate([U_rated], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
             P[i], eff    = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
             Cp[i]        = Cp_aero[i]*eff
             P[i]         = P_rated
@@ -643,7 +674,8 @@ class ComputePowerCurve(ExplicitComponent):
         if region3:
             # Function to be used to stay at rated power in Region 3
             def rated_power_dist(pitch, Uhub, Omega_rpm):
-                P_aero, _, _, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
+                myout, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
+                P_aero = myout['P']
                 P, eff          = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
                 return (P - P_rated)
 
@@ -657,9 +689,10 @@ class ComputePowerCurve(ExplicitComponent):
                                           xtol = 1e-4, rtol = 1e-5, maxiter=40, disp=False)
                     except ValueError:
                         pitch[i] = minimize_scalar(lambda x: np.abs(rated_power_dist(x, Uhub[i], Omega_rpm[i])), bounds=[pitch0-5., pitch0+15.],
-                                                  method='bounded', options={'disp':False, 'xatol':1e-3, 'maxiter':40})['x']
+                                                   method='bounded', options={'disp':False, 'xatol':1e-3, 'maxiter':40})['x']
 
-                    P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+                    myout, _   = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+                    P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
                     P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
                     Cp[i]      = Cp_aero[i]*eff
                     #P[i]       = P_rated
@@ -693,14 +726,14 @@ class ComputePowerCurve(ExplicitComponent):
         self.ccblade.induction_inflow = True
         tsr_vec = Omega_rpm / 30. * np.pi *  R_tip / Uhub
         id_regII = np.argmin(abs(tsr_vec - inputs['tsr_operational']))
-        a_regII, ap_regII, alpha_regII, cl_regII, cd_regII = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
+        loads, derivs = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
         
         # outputs
-        outputs['ax_induct_regII']   = a_regII
-        outputs['tang_induct_regII'] = ap_regII
-        outputs['aoa_regII']         = alpha_regII
-        outputs['cl_regII']          = cl_regII
-        outputs['cd_regII']          = cd_regII
+        outputs['ax_induct_regII']   = loads['a']
+        outputs['tang_induct_regII'] = loads['ap']
+        outputs['aoa_regII']         = loads['alpha']
+        outputs['cl_regII']          = loads['Cl']
+        outputs['cd_regII']          = loads['Cd']
         outputs['Cp_regII']          = Cp_aero[id_regII]
         
         
@@ -762,12 +795,12 @@ class ComputeSplines(ExplicitComponent):
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
         self.options.declare('analysis_options')
-        # self.options.declare('naero')
+        # self.options.declare('n_span')
         # self.options.declare('n_pitch', default=20)
         # self.options.declare('n_tsr', default=20)
         # self.options.declare('n_U', default=1)
-        # self.options.declare('n_aoa_grid')
-        # self.options.declare('n_Re_grid')
+        # self.options.declare('n_aoa')
+        # self.options.declare('n_re')
 
     def setup(self):
         analysis_options = self.options['analysis_options']
@@ -805,7 +838,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
         self.add_input('rho',           val=1.225,              units='kg/m**3',    desc='density of air')
         self.add_input('mu',            val=1.81e-5,            units='kg/(m*s)',   desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                desc='shear exponent')
-        # self.add_discrete_input('airfoils',      val=[0]*naero,                 desc='CCAirfoil instances')
+        # self.add_discrete_input('airfoils',      val=[0]*n_span,                 desc='CCAirfoil instances')
         self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
         self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
         self.add_input('airfoils_cm', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
@@ -876,7 +909,8 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
                 print('Cp-Ct-Cq surfaces completed at ' + str(int(k/(n_U*n_tsr)*100.)) + ' %')
                 U     =  U_vector[i] * np.ones(n_pitch)
                 Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
-                _, _, _, _, outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i], _ = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
+                myout, _  = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
+                outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i] = [myout[key] for key in ['CP','CT','CQ']]
 
 # Class to define a constraint so that the blade cannot operate in stall conditions
 class NoStallConstraint(ExplicitComponent):

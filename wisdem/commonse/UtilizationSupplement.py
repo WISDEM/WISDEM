@@ -10,7 +10,7 @@ from math import atan2
 import numpy as np
 from wisdem.commonse.constants import eps
 from wisdem.commonse.utilities import CubicSplineSegment, cubic_spline_eval, smooth_max, smooth_min, nodal2sectional, sectional2nodal
-from openmdao.api import ExplicitComponent
+import openmdao.api as om
 from scipy.optimize import brentq, minimize_scalar
 
 #-------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ from scipy.optimize import brentq, minimize_scalar
 
 
 
-class GeometricConstraints(ExplicitComponent):
+class GeometricConstraints(om.ExplicitComponent):
     """
     Compute the minimum diameter-to-thickness ratio and taper constraints.
     
@@ -66,29 +66,30 @@ class GeometricConstraints(ExplicitComponent):
 
         self.add_output('weldability', np.zeros(nPoints-1))
         self.add_output('manufacturability', np.zeros(nPoints-1))
-        self.add_output('slope', np.zeros(nPoints-2))
+        self.add_output('slope', np.zeros(nPoints-1))
 
         # Derivatives
         self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
 
     def compute(self, inputs, outputs):
-        diamFlag = self.options['diamFlag']
-
-        d,_ = nodal2sectional(inputs['d'])
-        t = inputs['t']
+        # Unpack inputs
+        d          = inputs['d']
+        t          = inputs['t']
+        min_d_to_t = inputs['min_d_to_t']
+        max_taper  = inputs['max_taper']
+        diamFlag   = self.options['diamFlag']
 
         # Check if the input was radii instead of diameters and convert if necessary
         if not diamFlag: d *= 2.0
-        
-        min_d_to_t = inputs['min_d_to_t']
-        max_taper = inputs['max_taper']
 
-        outputs['weldability'] = 1.0 - (d/t)/min_d_to_t
+        dave,_  = nodal2sectional(d)
         d_ratio = d[1:]/d[:-1]
-        manufacturability = np.minimum(d_ratio, 1.0/d_ratio) - max_taper
-        outputs['manufacturability'] = np.r_[manufacturability, manufacturability[-1]]
-        outputs['slope'] = d_ratio
+
+        outputs['weldability']       = 1.0 - (dave/t)/min_d_to_t
+        manufacturability            = np.minimum(d_ratio, 1.0/d_ratio) - max_taper
+        outputs['manufacturability'] = manufacturability
+        outputs['slope']             = d_ratio
 
     # def compute_partials(self, inputs, J):
 

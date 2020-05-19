@@ -121,9 +121,9 @@ P, T, Q = rotor.evaluate([Uinf], [Omega], [pitch])
 
 CP, CT, CQ = rotor.evaluate([Uinf], [Omega], [pitch], coefficient=True)
 
-print 'CP =', CP
-print 'CT =', CT
-print 'CQ =', CQ
+print('CP =', CP)
+print('CT =', CT)
+print('CQ =', CQ)
 
 # 6 ----------
 

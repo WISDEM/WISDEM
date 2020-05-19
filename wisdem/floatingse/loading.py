@@ -1,7 +1,6 @@
-
-from openmdao.api import ExplicitComponent, Group, IndepVarComp
 import numpy as np
-import wisdem.pyframe3dd.frame3dd as frame3dd
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
+import openmdao.api as om
 from wisdem.commonse.utilities import nodal2sectional
 
 from wisdem.commonse import gravity, eps, Tube, NFREQ
@@ -25,7 +24,7 @@ def ghostNodes(x1, x2, r1, r2):
     dr2 = (1.0 - r2/L) * dx + x1
     return dr1, dr2
 
-class FloatingFrame(ExplicitComponent):
+class FloatingFrame(om.ExplicitComponent):
     """
     Component for semisubmersible pontoon / truss structure for floating offshore wind turbines.
     Should be tightly coupled with Semi and Mooring classes for full system representation.
@@ -1011,12 +1010,12 @@ class FloatingFrame(ExplicitComponent):
         # Create Node Data object
         nnode   = 1 + np.arange(xnode.size)
         myrnode = np.zeros(xnode.shape) # z-spacing too narrow for use of rnodes
-        nodes   = frame3dd.NodeData(nnode, xnode, ynode, znode, myrnode)
+        nodes   = pyframe3dd.NodeData(nnode, xnode, ynode, znode, myrnode)
         nodeMat = np.c_[xnode, ynode, znode]
 
         # Create Element Data object
         nelem    = 1 + np.arange(N1.size)
-        elements = frame3dd.ElementData(nelem, N1, N2, Ax, As, As, Jx, I, I, modE, modG, roll, dens)
+        elements = pyframe3dd.ElementData(nelem, N1, N2, Ax, As, As, Jx, I, I, modE, modG, roll, dens)
 
         # Store data for plotting, also handy for operations below
         plotMat = np.zeros((mainEID, 3, 2))
@@ -1033,14 +1032,14 @@ class FloatingFrame(ExplicitComponent):
         elemAng = np.arccos( np.diff(plotMat[:,-1,:], axis=-1).flatten() / elemL )
 
         # ---Options object---
-        other = frame3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
+        other = pyframe3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
 
         # ---LOAD CASES---
         # Extreme loading
         gx = gy = 0.0
         gz = -gravity
-        load = frame3dd.StaticLoadCase(gx, gy, gz)
-        load0 = frame3dd.StaticLoadCase(gx, gy, gz)
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
+        load0 = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
         # Wind + Wave loading in local main / offset / tower c.s.
         Px_main,    Py_main,    Pz_main    = inputs['main_Pz'], inputs['main_Py'], -inputs['main_Px']  # switch to local c.s.
@@ -1275,13 +1274,13 @@ class FloatingFrame(ExplicitComponent):
         Ryy = np.append(Ryy,  K_mooring[4]/nnode_connect * np.ones(nnode_connect) )
         Rzz = np.append(Rzz,  K_mooring[5]/nnode_connect * np.ones(nnode_connect) )
         # Get reactions object from frame3dd
-        reactions  = frame3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=rigid)
+        reactions  = pyframe3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=rigid)
         R0 = np.zeros(rid.shape)
-        reactions0 = frame3dd.ReactionData([], R0, R0, R0, R0, R0, R0, rigid=1)
+        reactions0 = pyframe3dd.ReactionData([], R0, R0, R0, R0, R0, R0, rigid=1)
 
         # Initialize two frame3dd objects
-        myframe0 = frame3dd.Frame(nodes, reactions0, elements, other)
-        self.myframe = frame3dd.Frame(nodes, reactions, elements, other)
+        myframe0 = pyframe3dd.Frame(nodes, reactions0, elements, other)
+        self.myframe = pyframe3dd.Frame(nodes, reactions, elements, other)
 
         # Add in extra mass of rna
         inode   = np.array([towerEndID], dtype=np.int32) # rna
@@ -1475,7 +1474,7 @@ class FloatingFrame(ExplicitComponent):
 
 
 
-class TrussIntegerToBoolean(ExplicitComponent):
+class TrussIntegerToBoolean(om.ExplicitComponent):
     """
     Get booleans from truss integers
     
@@ -1545,7 +1544,7 @@ class TrussIntegerToBoolean(ExplicitComponent):
 #  Assembly
 # -----------------
 
-class Loading(Group):
+class Loading(om.Group):
 
     def initialize(self):
         self.options.declare('n_height_main')
@@ -1562,7 +1561,7 @@ class Loading(Group):
         n_full_tow    = get_nfull(n_height_tow)
         
         # Independent variables that are unique to this Group
-        loadingIndeps = IndepVarComp()
+        loadingIndeps = om.IndepVarComp()
         loadingIndeps.add_output('main_pontoon_attach_lower', 0.0)
         loadingIndeps.add_output('main_pontoon_attach_upper', 0.0)
         loadingIndeps.add_output('pontoon_outer_diameter', 0.0, units='m')
