@@ -185,13 +185,13 @@ The mass scaling relationships are based on the following data,
    :width: 4in
    :align: center
 
-High Speed Shaft
-~~~~~~~~~~~~~~~~
-To obtain the high speed shaft mass in kilograms and cost in USD from the machine rating in megawatts,
+High Speed Shaft and Brake
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+To obtain the high speed shaft and brake mass in kilograms and cost in USD from the machine rating in megawatts,
 
 .. math::
-   m_{lss} &= k_m P_{turbine}\\
-   c_{lss} &= k_c m_{lss}\\
+   m_{hss} &= k_m P_{turbine}\\
+   c_{hss} &= k_c m_{hss}\\
    k_m &= 198.94\\
    k_c &= 6.8
 
