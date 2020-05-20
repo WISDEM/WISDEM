@@ -4,13 +4,14 @@ from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 # 0 ---------- (marker for docs)
 
 # 1 ---------- (marker for docs)
+# OpenMDAO Problem instance
 prob       = om.Problem()
 prob.model = Turbine_CostsSE_2015(verbosity=True)
 prob.setup()
 # 1 ---------- (marker for docs)
 
 # 2 ---------- (marker for docs)
-# Turbine configuration
+# Initialize variables for NREL CSM
 prob['machine_rating']      = 5000.0
 prob['blade_number']        = 3
 prob['crane']               = True

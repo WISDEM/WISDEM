@@ -4,12 +4,14 @@ from wisdem.turbine_costsse.nrel_csm_tcc_2015 import nrel_csm_2015
 # 0 ---------- (marker for docs)
 
 # 1 ---------- (marker for docs)
+# OpenMDAO Problem instance
 prob       = om.Problem()
 prob.model = nrel_csm_2015()
 prob.setup()
 # 1 ---------- (marker for docs)
 
 # 2 ---------- (marker for docs)
+# Initialize variables for NREL CSM
 prob['machine_rating']      = 5000.0
 prob['rotor_diameter']      = 126.0
 prob['turbine_class']       = 2
