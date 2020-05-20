@@ -76,7 +76,7 @@ low-fidelity cost and sizing model.
 
 
 .. _fig_verify:
-.. figure::  images/floatingse/oc3-verification_equivalentstress.png
+.. figure::  /images/floatingse/oc3-verification_equivalentstress.*
     :width: 50%
     :align: center
 

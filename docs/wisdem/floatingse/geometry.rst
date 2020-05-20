@@ -15,7 +15,7 @@ taut mooring lines for its stability.
 
 
 .. _fig_archetype:
-.. figure::  images/floatingse/archetypes.png
+.. figure::  /images/floatingse/archetypes.*
     :width: 50%
     :align: center
 
@@ -42,7 +42,7 @@ ones shown.
 
 
 .. _fig_diagram:
-.. figure::  images/floatingse/diagram.png
+.. figure::  /images/floatingse/diagram.*
     :width: 90%
     :align: center
 
@@ -70,7 +70,7 @@ will include the option to select one of multiple material options for
 each section in each cylinder.
 
 .. _fig_column:
-.. figure::  images/floatingse/colGeom.png
+.. figure::  /images/floatingse/colGeom.*
     :width: 30%
     :align: center
 
@@ -78,7 +78,7 @@ each section in each cylinder.
 
        
 .. _fig_stiffenerCut:
-.. figure::  images/floatingse/stiffenerCut.png
+.. figure::  /images/floatingse/stiffenerCut.*
     :width: 30%
     :align: center
 
@@ -86,7 +86,7 @@ each section in each cylinder.
 
 
 .. _fig_stiffenerZoom:
-.. figure::  images/floatingse/stiffenerZoom.png
+.. figure::  /images/floatingse/stiffenerZoom.*
     :width: 30%
     :align: center
 
@@ -283,7 +283,7 @@ columns (:math:`F`). The variables that drive this parameterization are
 listed in :numref:`tbl_trussvar`.
 
 .. _fig_pontoon:
-.. figure::  images/floatingse/semi.png
+.. figure::  /images/floatingse/semi.*
     :width: 50%
     :align: center
 

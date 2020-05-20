@@ -204,7 +204,7 @@ opposed to an analytical expression.
 
 
 .. _fig_frameCS:
-.. figure::  images/floatingse/frameCS.png
+.. figure::  /images/floatingse/frameCS.*
     :width: 40%
     :align: center
 
@@ -468,7 +468,7 @@ to the direction.
 
 
 .. _fig_metaA:
-.. figure::  images/floatingse/metacenterA.png
+.. figure::  /images/floatingse/metacenterA.*
     :height: 500px
     :align: center
 
@@ -476,7 +476,7 @@ to the direction.
 
        
 .. _fig_metaB:
-.. figure::  images/floatingse/metacenterB.png
+.. figure::  /images/floatingse/metacenterB.*
     :height: 500px
     :align: center
 
