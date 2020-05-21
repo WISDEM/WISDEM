@@ -278,11 +278,11 @@ class RunFrame3DD(ExplicitComponent):
         if self.options['pbeam']:
             # Use airfoil c.s.
             Ix  = EIyy / E
-            Iy  = EIxx / E
+            Iy  = EIxx / E 
         else:
             # Will further rotate to principle axes
-            Ix  = EI11 / E
-            Iy  = EI22 / E
+            Ix  = EI22 / E
+            Iy  = EI11 / E
 
         # Have to convert nodal values to find average at center of element
         Abar,_   = util.nodal2sectional(A)
@@ -334,7 +334,7 @@ class RunFrame3DD(ExplicitComponent):
             Px_af = P.x
             Py_af = P.y
             Pz_af = P.z
-        
+            
         Px, Py, Pz = Pz_af, Py_af, -Px_af # switch to local c.s.
         xx1 = xy1 = xz1 = np.zeros(n-1)
         xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
