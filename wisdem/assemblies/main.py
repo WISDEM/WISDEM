@@ -104,6 +104,12 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             n_DV += blade_opt_options['structure']['spar_cap_ps']['n_opt'] - 2
         if opt_options['optimization_variables']['control']['tsr']['flag']:
             n_DV += 1
+        if opt_options['optimization_variables']['control']['servo']['pitch_control']['flag']:
+            n_DV += 2
+        if opt_options['optimization_variables']['control']['servo']['torque_control']['flag']:
+            n_DV += 2
+        if opt_options['optimization_variables']['control']['servo']['flap_control']['flag']:
+            n_DV += 2
         if 'dac' in blade_opt_options:
             if blade_opt_options['dac']['te_flap_end']['flag']:
                 n_DV += analysis_options['blade']['n_te_flaps']
