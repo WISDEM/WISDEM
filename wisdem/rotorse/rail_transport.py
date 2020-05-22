@@ -92,15 +92,13 @@ class RailTransport(ExplicitComponent):
         EIxy  = inputs['EIxy']
         lateral_clearance = 0.5*inputs['lateral_clearance'][0]
         vertical_clearance = inputs['vertical_clearance'][0]
-        #n_points          = 10000
         max_strains       = inputs['max_strains'][0]
-        #n_opt             = 21
+        max_rot = inputs['max_root_rot_deg'][0]
         max_LV            = inputs['max_LV'][0]
         mass_car_4axle    = inputs['max_flatcar_weight_4axle'][0]
         mass_car_8axle    = inputs['max_flatcar_weight_8axle'][0]
         #max_root_rot_deg  = inputs['max_root_rot_deg'][0]
         flatcar_tc_length = inputs['flatcar_tc_length'][0]
-        #np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af,xu_strain_spar=xu_strain_spar,xl_strain_spar=xl_strain_spar,yu_strain_spar=yu_strain_spar,yl_strain_spar=yl_strain_spar,xu_strain_te=xu_strain_te,xl_strain_te=xl_strain_te,yu_strain_te=yu_strain_te,yl_strain_te=yl_strain_te)
 
 
         #------- Get turn radius geometry for horizontal and vertical curves
@@ -271,157 +269,188 @@ class RailTransport(ExplicitComponent):
         gy = -gravity
         gx = gz = 0.0
 
-        ireact = inode.copy() #np.unique(np.r_[0, np.where(node_dr)[0]])
-        pin_pin  = rigid*np.ones(ireact.size)
-        pin_free = np.zeros(ireact.size)
+        # Set clearance boundary
+        r_envelopeH = r_curveH + lateral_clearance*np.array([-1, 1])
+        
+        # Set up reactions at every node for prescribed displacements at every node
+        # (but only moment constrained with zero displacement at the root)
+        ireact      = inode.copy()
+        pin_pin     = rigid*np.ones(ireact.size)
+        pin_free    = np.zeros(ireact.size)
         pin_free[0] = rigid
-        reactions = pyframe3dd.ReactionData(ireact+1, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
+        reactions   = pyframe3dd.ReactionData(ireact+1, pin_pin, pin_pin, pin_pin, pin_free, pin_free, pin_free, float(rigid))
 
-        RF_derailH = np.zeros((ireact.size, 2))
-        strainPS = np.zeros((self.n_span, 2))
-        strainSS = np.zeros((self.n_span, 2))
+        # Output containers
+        RF_derailH = np.zeros((ireact.size, 2)) # Derailment reaction force
+        strainPS   = np.zeros((self.n_span, 2)) 
+        strainSS   = np.zeros((self.n_span, 2))
 
+        # Tolerance for envelop compliance checking
+        tol = 3e-1
+        
+        # Function that does the structural analysis to be called during optimization
         def run_hcurve(rot_angles):
-            # Curve towards SS (towards the left with LE pointed down and standing at the root)
+            
+            # Node location starting points when curving towards SS
+            # (towards the LEFT with LE pointed down and standing at the root looking at tip)
             x_rot1, z_rot1 = util.rotate(r_curveH, 0.0, r_curveH + x_ref, z_ref, rot_angles[0])
-
-            # Curve towards PS (towards the right with LE pointed down and standing at the root)
-            x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, rot_angles[1])
-
-            # Set nodes to be convenient for coordinate system with center of curvature 0,0 in y-z plane
             nodes1 = pyframe3dd.NodeData(inode+1, x_rot1, y_ref, z_rot1, rad)
+
+            # Node location starting points when curving towards PS
+            # (towards the RIGHT with LE pointed down and standing at the root looking at tip)
+            x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, rot_angles[1])
             nodes2 = pyframe3dd.NodeData(inode+1, x_rot2, y_ref, z_rot2, rad)
-            r_blade1 = np.sqrt(nodes1.x**2 + nodes1.z**2)
-            r_blade2 = np.sqrt(nodes2.x**2 + nodes2.z**2)
+            
+            # Use blade shape and clearance envelope to determine node position limits: Bending towards SS
+            blade_xmin1 = x_ref - xss
+            blade_xmax1 = x_ref + xps
+            
+            # Use blade shape and clearance envelope to determine node position limits: Bending towards SS
+            blade_xmin2 = x_ref - xps
+            blade_xmax2 = x_ref + xss
 
-            # Initialize frame3dd object
-            blade1 = pyframe3dd.Frame(nodes1, reactions, elements, options)
-            blade2 = pyframe3dd.Frame(nodes2, reactions, elements, options)
-
-            # Load case1: gravity + blade bending towards SS
-            blade_xmin = x_ref - xss
-            blade_xmax = x_ref + xps
-            r_envelopeH = r_curveH + lateral_clearance*np.array([-1, 1])
-            r_envelopeH_inner = r_envelopeH.min() + blade_xmin
-            r_envelopeH_outer = r_envelopeH.max() - blade_xmax
-            node_dr_inner = np.maximum(r_envelopeH_inner - r_blade1, 0)
-            node_dr_outer = np.minimum(r_envelopeH_outer - r_blade1, 0)
-            node_dr = node_dr_inner + node_dr_outer
-            #node_dr_inner = r_envelopeH_inner - r_blade1
-            #node_dr_outer = r_envelopeH_outer - r_blade1
-            #node_dr = rot_angles[2:]*(node_dr_outer-node_dr_inner) + node_dr_inner
-            node_dx = node_dr*np.cos(arcsH)
-            node_dz = node_dr*np.sin(arcsH)
-
-            dy = dM = np.zeros(ireact.size)
-            load1 = pyframe3dd.StaticLoadCase(gx, gy, gz)
-            load1.changePrescribedDisplacements(ireact+1, node_dx[ireact], dy, node_dz[ireact], dM, dM, dM)
-
-            # Load case2: gravity + blade bending towards PS
-            blade_xmin = x_ref - xps
-            blade_xmax = x_ref + xss
-            r_envelopeH = r_curveH + lateral_clearance*np.array([-1, 1])
-            r_envelopeH_inner = r_envelopeH.min() + blade_xmin
-            r_envelopeH_outer = r_envelopeH.max() - blade_xmax
-            node_dr_inner = np.maximum(r_envelopeH_inner - r_blade2, 0)
-            node_dr_outer = np.minimum(r_envelopeH_outer - r_blade2, 0)
-            node_dr = node_dr_inner + node_dr_outer
-            node_dx = node_dr*np.cos(np.pi - arcsH)
-            node_dz = node_dr*np.sin(np.pi - arcsH)
-
-            load2 = pyframe3dd.StaticLoadCase(gx, gy, gz)
-            load2.changePrescribedDisplacements(ireact+1, node_dx[ireact], dy, node_dz[ireact], dM, dM, dM)
-
-            # Store this load case
-            blade1.addLoadCase(load1)
-            blade2.addLoadCase(load2)
-
-            # Debugging
-            #blade.write('blade.3dd')
-
+            # Loop over the loade cases since the code looks the same from here on
             for k in range(2):
-                blade = blade1 if k==0 else blade2
+                if k == 0:
+                    nodes, blade_xmin, blade_xmax = nodes1, blade_xmin1, blade_xmax1
+                else:
+                    nodes, blade_xmin, blade_xmax = nodes2, blade_xmin2, blade_xmax2
+                    
+                # Compute node radii starting points to determine if within clearance boundary
+                r_blade = np.sqrt(nodes.x**2 + nodes.z**2)
+                
+                # Use blade shape and clearance envelope to determine node position limits
+                r_envelopeH_inner = r_envelopeH.min() + blade_xmin
+                r_envelopeH_outer = r_envelopeH.max() - blade_xmax
+                
+                # Compute needed displacements to comply with node limits
+                node_dr_inner = np.maximum(r_envelopeH_inner - r_blade, 0)
+                node_dr_outer = np.minimum(r_envelopeH_outer - r_blade, 0)
+                node_dr       = node_dr_inner + node_dr_outer
+                node_dx       = node_dr*np.cos(arcsH)
+                node_dz       = node_dr*np.sin(arcsH)
+                
+                # Load case: gravity + blade bending 
+                dy = dM = np.zeros(ireact.size)
+                load = pyframe3dd.StaticLoadCase(gx, gy, gz)
+                load.changePrescribedDisplacements(ireact+1, node_dx[ireact], dy, node_dz[ireact], dM, dM, dM)
+                
+                # Initialize Frame3dd objects
+                blade = pyframe3dd.Frame(nodes, reactions, elements, options)
+                blade.addLoadCase(load)
 
                 # Run the case
                 displacements, forces, forces_rxn, internalForces, mass, modal = blade.run()
-                #r_check = np.sqrt( (nodes.x+displacements.dx[0,:])**2 + (nodes.z+displacements.dz[0,:])**2)
-
+                    
                 # Reaction forces for derailment:
                 #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
                 #  - Moment around axis perpendicular to ground
                 RF_derailH[:,k] = 0.5*np.abs(forces_rxn.Fy) + np.abs(forces_rxn.Mxx)/flatcar_tc_length
 
                 # Element shear and bending, one per element, which are already in principle directions in Hansen's notation
-                iCase = 0
-                Fz = np.r_[-forces.Nx[ iCase,0],  forces.Nx[ iCase, 1::2]]
-                M1 = np.r_[-forces.Myy[iCase,0],  forces.Myy[iCase, 1::2]]
-                M2 = np.r_[ forces.Mzz[iCase,0], -forces.Mzz[iCase, 1::2]]
-
-                # compute strain at the two points: pressure/suction side extremes
+                Fz = np.r_[-forces.Nx[ 0,0],  forces.Nx[ 0, 1::2]]
+                M1 = np.r_[-forces.Myy[0,0],  forces.Myy[0, 1::2]]
+                M2 = np.r_[ forces.Mzz[0,0], -forces.Mzz[0, 1::2]]
+                if PBEAM: M1,M2 = rotate(M1,M2)
+                
+                # Compute strain at the two points: pressure/suction side extremes
                 strainPS[:,k] = -(M1/EI11*ps2 - M2/EI22*ps1 + Fz/EA)  # negative sign because Hansen c3 is opposite of Precomp z
                 strainSS[:,k] = -(M1/EI11*ss2 - M2/EI22*ss1 + Fz/EA)
+
+                # Check solved blade shape against envelope
+                r_check  = np.sqrt( (nodes.x+displacements.dx[0,:])**2 + (nodes.z+displacements.dz[0,:])**2)
+                node_tol = ( np.abs( np.maximum(r_envelopeH_inner - r_check, 0) ) +
+                             np.abs( np.minimum(r_envelopeH_outer - r_check, 0) ) )
+                
+                # If any violations, penalize constraints
+                if np.any(node_tol > tol):
+                    RF_derailH[:,k] += 2
                 
             return RF_derailH, strainPS, strainSS
         
         # Assume root rotates to max point that still keeps blade within clearance envelope: have to find that rotation angle
-        def opt_rot_blade(anglesIn):
-            RF_derailH, strainPS, strainSS = run_hcurve(anglesIn)
-            #obj1 = RF_derailH[0,:].mean() / (0.5 * mass_car_8axle * gravity) / max_LV
+
+        # Store last inputs and outputs when objective & constraints are the same function for efficient calculations
+        self.xLast           = np.inf * np.ones(2)
+        self.RF_derailH_last = np.inf*np.ones(RF_derailH.shape)
+        self.strainPS_last   = np.inf*np.ones(strainPS.shape)
+        self.strainSS_last   = np.inf*np.ones(strainSS.shape)
+
+        # Function wrapper to spit out objective and constraints
+        def opt_rot_blade(x, con_flag=True):
+            if not np.all(self.xLast == x):
+                RF_derailH, strainPS, strainSS = run_hcurve(x)
+                self.xLast           = x.copy()
+                self.RF_derailH_last = RF_derailH.copy()
+                self.strainPS_last   = strainPS.copy()
+                self.strainSS_last   = strainSS.copy()
+            else:
+                RF_derailH, strainPS, strainSS = self.RF_derailH_last, self.strainPS_last, self.strainSS_last
+                
+            # Objective is to minimize strain
             mystrainPS = np.maximum(np.abs(strainPS) - max_strains, 0.0)
             mystrainSS = np.maximum(np.abs(strainSS) - max_strains, 0.0)
-            obj2 = (mystrainPS.mean() + mystrainSS.mean()) / 2
-            return obj2
-        
-        def con_rot_blade(anglesIn):
-            RF_derailH, strainPS, strainSS = run_hcurve(anglesIn)
-            obj1 = RF_derailH[0,:] / (0.5 * mass_car_8axle * gravity) / max_LV
-            #mystrainPS = np.maximum(np.abs(strainPS) - max_strains, 0.0)
-            #mystrainSS = np.maximum(np.abs(strainSS) - max_strains, 0.0)
-            #obj2 = (mystrainPS.mean() + mystrainSS.mean()) / 2
-            return 1-obj1
-        
+            obj = (mystrainPS.sum() + mystrainSS.sum())
+
+            # Constrain derailing moment
+            con = RF_derailH[0,:] / (0.5 * mass_car_8axle * gravity) / max_LV
+            
+            return (1-con) if con_flag else obj
+
+        # Initiliaze scipy minimization
         const         = {}
         const['type'] = 'ineq'
-        const['fun']  = con_rot_blade
-        bounds = [np.pi/10.0*np.r_[-1,1]]*2 #+ [[0,1]]*self.n_span
-        x0     = np.r_[np.deg2rad([15, -15])]#, np.zeros(self.n_span)]
-        result = minimize(opt_rot_blade, x0, method='slsqp', bounds=bounds, tol=1e-6, constraints=const)
+        const['fun']  = opt_rot_blade
         
+        bounds = [np.deg2rad(max_rot)*np.r_[-1,1]]*2
+        x0     = np.deg2rad(0.1*max_rot)*np.r_[-1,1]
+        
+        result = minimize(opt_rot_blade, x0, method='slsqp', bounds=bounds, tol=1e-6, args=(False), constraints=const)
+
+        # Verify good result
         if result.success or result.status==9:
-            print(result)
             print(np.rad2deg(result.x))
-            RF_derailH, strainPS, strainSS = run_hcurve(result.x)
         else:
-            breakpoint()
-            
+            #breakpoint()
+            print('Warning: Failed to find good blade solution around the horizontal curves')
+            outputs['constr_LV_4axle_horiz'] = 1e2
+            outputs['constr_LV_8axle_horiz'] = 1e2
+            outputs['constr_strainPS'] = 1e2
+            outputs['constr_strainSS'] = 1e2
+            return
+
+        # Evaluate optimized solution
+        RF_derailH, strainPS, strainSS = run_hcurve(result.x)
+
         # Express derailing force as a constraint
         constr_derailH_4axle = RF_derailH / (0.5 * mass_car_4axle * gravity) / max_LV
         constr_derailH_8axle = RF_derailH / (0.5 * mass_car_8axle * gravity) / max_LV
         outputs['constr_LV_4axle_horiz'] = constr_derailH_4axle[0,:]
         outputs['constr_LV_8axle_horiz'] = constr_derailH_8axle[0,:]
-        print(outputs['constr_LV_8axle_horiz'])
+
         # Strain constraint outputs
         outputs['constr_strainPS'] = np.abs(strainPS) / max_strains
         outputs['constr_strainSS'] = np.abs(strainSS) / max_strains
-        print(outputs['constr_strainPS'].sum(),outputs['constr_strainSS'].sum())
         
         # ------- Vertical hills/sag using best attachment points
         # Set up Frame3DD blade for vertical analysis
 
-        # Set nodes to be convenient for coordinate system with center of curvature 0,0 in x-z plane
-        nodes = pyframe3dd.NodeData(inode+1, x_ref, r_curveV+y_ref, z_ref, rad)
+        # Node location starting points
+        nodes   = pyframe3dd.NodeData(inode+1, x_ref, r_curveV+y_ref, z_ref, rad)
+
+        # Compute node radii starting points to determine if within clearance boundary
         r_blade = np.sqrt(nodes.y**2 + nodes.z**2)
         
         # Initialize frame3dd object
         blade = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # Hill
-        r_envelopeV = r_curveV + vertical_clearance
-        blade_ymax = y_ref + yte
+        blade_ymax        = y_ref + yte
+        r_envelopeV       = r_curveV + vertical_clearance
         r_envelopeV_outer = r_envelopeV - blade_ymax
-        node_dr = np.minimum(r_envelopeV_outer - r_blade, 0)
-        node_dy = node_dr*np.cos(arcsV)
-        node_dz = node_dr*np.sin(arcsV)
+        node_dr           = np.minimum(r_envelopeV_outer - r_blade, 0)
+        node_dy           = node_dr*np.cos(arcsV)
+        node_dz           = node_dr*np.sin(arcsV)
         
         # Load case 1: gravity + hill
         dx = dM = np.zeros(ireact.size)
@@ -429,12 +458,12 @@ class RailTransport(ExplicitComponent):
         load1.changePrescribedDisplacements(ireact+1, dx, node_dy[ireact], node_dz[ireact], dM, dM, dM)
 
         # Sag
-        r_envelopeV = r_curveV - vertical_clearance
-        blade_ymin = y_ref - yte
+        blade_ymin        = y_ref - yte
+        r_envelopeV       = r_curveV - vertical_clearance
         r_envelopeV_inner = r_envelopeV.min() + blade_ymin
-        node_dr = np.maximum(r_envelopeV_inner - r_blade, 0)
-        node_dy = node_dr*np.cos(arcsV)
-        node_dz = node_dr*np.sin(arcsV)
+        node_dr           = np.maximum(r_envelopeV_inner - r_blade, 0)
+        node_dy           = node_dr*np.cos(arcsV)
+        node_dz           = node_dr*np.sin(arcsV)
         
         # Load case 2: gravity + sag
         load2 = pyframe3dd.StaticLoadCase(gx, gy, gz)
