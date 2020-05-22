@@ -721,7 +721,7 @@ class FASTLoadCases(ExplicitComponent):
                 t_e = min(data['Time'][-1], 90.)
                 idx_s = list(data['Time']).index(t_s)
                 idx_e = list(data['Time']).index(t_e)
-            elif case_type = 4:
+            elif case_type == 4:
                 t_s = min(max(data['Time'][0], 30.), data['Time'][-2])
                 idx_s = list(data['Time']).index(t_s)
                 idx_e = -1
