@@ -973,9 +973,9 @@ class FASTLoadCases(ExplicitComponent):
                     data_concat[var] = np.array(data_concat[var])
 
                 post_gust(data_concat, casei)
-                post_extreme(data_concat, casei)
+                # post_extreme(data_concat, casei)
                 Gust_Outputs = True
-                Extreme_Outputs = True
+                # Extreme_Outputs = True
 
 
     def writeCpsurfaces(self, inputs):
