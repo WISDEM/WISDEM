@@ -71,6 +71,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda install m2w64-toolchain libpython       # (Windows only)
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
+        git checkout IEAontology4all
         python setup.py develop
 
 

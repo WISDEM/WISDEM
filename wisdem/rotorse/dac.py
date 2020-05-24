@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import copy
 from openmdao.api import ExplicitComponent
 from wisdem.ccblade import CCAirfoil
 from wisdem.ccblade.Polar import Polar
@@ -157,6 +158,7 @@ class RunXFOIL(ExplicitComponent):
     # Openmdao component to run XFOIL and re-compute polars
     def initialize(self):
         self.options.declare('analysis_options')
+        self.options.declare('opt_options')
         
     def setup(self):
         blade_init_options = self.options['analysis_options']['blade']
@@ -208,6 +210,10 @@ class RunXFOIL(ExplicitComponent):
         self.add_output('flap_angles',      val=np.zeros((n_span, n_Re, n_tab)), units = 'deg',   desc='3D array with the flap angles of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the Reynolds number, dimension 2 is along the number of tabs, which may describe multiple sets at the same station.')
         self.add_output('Re_loc',           val=np.zeros((n_span, n_Re, n_tab)),   desc='3D array with the Re. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the Reynolds number, dimension 2 is along the number of tabs, which may describe multiple sets at the same station.')
         self.add_output('Ma_loc',           val=np.zeros((n_span, n_Re, n_tab)),   desc='3D array with the Mach number. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the Reynolds number, dimension 2 is along the number of tabs, which may describe multiple sets at the same station.')
+
+        # initialize saved data polar data. 
+        # - This is filled if we're not changing the flaps, so we don't need to re-run xfoil every time
+        self.saved_polar_data = {}
 
     def compute(self, inputs, outputs):
         
@@ -449,101 +455,123 @@ class RunXFOIL(ExplicitComponent):
         SpdSound = inputs['speed_sound_air'] # speed of sound (m/s) from yaml file
         
         if self.n_te_flaps > 0:
-            for afi in range(self.n_span): # iterate number of radial stations for various airfoil tables
-                if 'coords' in flap_profiles[afi]: # check if 'coords' is an element of 'flap_profiles', i.e. if we have various flap angles
-                    # for j in range(n_Re): # ToDo incorporade variable Re capability
-                    for ind in range(self.n_tab):
-                        #fa = flap_profiles[afi]['flap_angles'][ind] # value of respective flap angle
-                        fa_control[afi,:,ind] = flap_profiles[afi]['flap_angles'][ind] # flap angle vector of distributed aerodynamics control
-                        # eta = (blade['pf']['r'][afi]/blade['pf']['r'][-1])
-                        # eta = blade['outer_shape_bem']['chord']['grid'][afi]
-                        c   = inputs['chord'][afi]  # blade chord length at cross section
-                        s   = inputs['s'][afi]
-                        rR  = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section in the rotor coordinate system
-                        Re_loc[afi,:,ind] = c*maxTS * rR / KinVisc
-                        Ma_loc[afi,:,ind] = maxTS * rR / SpdSound
+            if 'cl_interp_flaps' not in self.saved_polar_data.keys():
+            # if True:
+                for afi in range(self.n_span): # iterate number of radial stations for various airfoil tables
+                    if 'coords' in flap_profiles[afi]: # check if 'coords' is an element of 'flap_profiles', i.e. if we have various flap angles
+                        # for j in range(n_Re): # ToDo incorporade variable Re capability
+                        for ind in range(self.n_tab):
+                            #fa = flap_profiles[afi]['flap_angles'][ind] # value of respective flap angle
+                            fa_control[afi,:,ind] = flap_profiles[afi]['flap_angles'][ind] # flap angle vector of distributed aerodynamics control
+                            # eta = (blade['pf']['r'][afi]/blade['pf']['r'][-1])
+                            # eta = blade['outer_shape_bem']['chord']['grid'][afi]
+                            c   = inputs['chord'][afi]  # blade chord length at cross section
+                            s   = inputs['s'][afi]
+                            rR  = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section in the rotor coordinate system
+                            Re_loc[afi,:,ind] = c*maxTS * rR / KinVisc
+                            Ma_loc[afi,:,ind] = maxTS * rR / SpdSound
 
-                        print('Run xfoil for nondimensional blade span section s = ' + str(s) + ' with ' + str(fa_control[afi,0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc[afi,0,ind]) + '; Ma equal to ' + str(Ma_loc[afi,0,ind]))
-                        # if  rR > 0.88:  # reduce AoAmin for (thinner) airfoil at the blade tip due to convergence reasons in XFoil
-                        #     data = self.runXfoil(flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc[afi, j, ind], -13.5, 25., 0.5, Ma_loc[afi, j, ind])
-                        # else:  # normal case
-                        data = runXfoil(self.xfoil_path, flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc[afi, 0, ind], -20., 25., 0.5, Ma_loc[afi, 0, ind])
+                            print('Run xfoil for nondimensional blade span section s = ' + str(s) + ' with ' + str(fa_control[afi,0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc[afi,0,ind]) + '; Ma equal to ' + str(Ma_loc[afi,0,ind]))
+                            # if  rR > 0.88:  # reduce AoAmin for (thinner) airfoil at the blade tip due to convergence reasons in XFoil
+                            #     data = self.runXfoil(flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc[afi, j, ind], -13.5, 25., 0.5, Ma_loc[afi, j, ind])
+                            # else:  # normal case
+                            data = runXfoil(self.xfoil_path, flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc[afi, 0, ind], -20., 25., 0.5, Ma_loc[afi, 0, ind])
 
-                        # data = self.runXfoil(flap_profiles[afi]['coords'][:,0,ind], flap_profiles[afi]['coords'][:,1,ind], Re[j])
-                        # data[data[:,0].argsort()] # To sort data by increasing aoa
-                        # Apply corrections to airfoil polars
-                        # oldpolar= Polar(Re[j], data[:,0],data[:,1],data[:,2],data[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
-                        oldpolar= Polar(Re_loc[afi,0,ind], data[:,0],data[:,1],data[:,2],data[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
+                            # data = self.runXfoil(flap_profiles[afi]['coords'][:,0,ind], flap_profiles[afi]['coords'][:,1,ind], Re[j])
+                            # data[data[:,0].argsort()] # To sort data by increasing aoa
+                            # Apply corrections to airfoil polars
+                            # oldpolar= Polar(Re[j], data[:,0],data[:,1],data[:,2],data[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
+                            oldpolar= Polar(Re_loc[afi,0,ind], data[:,0],data[:,1],data[:,2],data[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
 
-                        polar3d = oldpolar.correction3D(rR,c/R,tsr) # Apply 3D corrections (made sure to change the r/R, c/R, and tsr values appropriately when calling AFcorrections())
-                        cdmax   = 1.5
-                        polar   = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg
+                            polar3d = oldpolar.correction3D(rR,c/R,tsr) # Apply 3D corrections (made sure to change the r/R, c/R, and tsr values appropriately when calling AFcorrections())
+                            cdmax   = 1.5
+                            polar   = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg
 
-                        for j in range(self.n_Re):
-                            cl_interp_flaps[afi,:,j,ind] = np.interp(np.degrees(inputs['aoa']), polar.alpha, polar.cl)
-                            cd_interp_flaps[afi,:,j,ind] = np.interp(np.degrees(inputs['aoa']), polar.alpha, polar.cd)
-                            cm_interp_flaps[afi,:,j,ind] = np.interp(np.degrees(inputs['aoa']), polar.alpha, polar.cm)
+                            for j in range(self.n_Re):
+                                cl_interp_flaps[afi,:,j,ind] = np.interp(np.degrees(inputs['aoa']), polar.alpha, polar.cl)
+                                cd_interp_flaps[afi,:,j,ind] = np.interp(np.degrees(inputs['aoa']), polar.alpha, polar.cd)
+                                cm_interp_flaps[afi,:,j,ind] = np.interp(np.degrees(inputs['aoa']), polar.alpha, polar.cm)
 
-                    # # ** The code below will plot the three cl polars
-                    # import matplotlib.pyplot as plt
-                    # font = {'family': 'Times New Roman',
-                    #         'weight': 'normal',
-                    #         'size': 18}
-                    # plt.rc('font', **font)
-                    # plt.figure
-                    # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r', label='$\\delta_{flap}$ = -10 deg')  # -10
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k', label='$\\delta_{flap}$ = 0 deg')  # 0
-                    # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b', label='$\\delta_{flap}$ = +10 deg')  # +10
-                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r')  # -10
-                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k')  # 0
-                    # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b')  # +10
-                    # plt.xlim(xmin=-15, xmax=15)
-                    # plt.ylim(ymin=-1.7, ymax=2.2)
-                    # plt.grid(True)
-                    # # autoscale_y(ax)
-                    # plt.xlabel('Angles of attack, deg')
-                    # plt.ylabel('Lift coefficient')
-                    # plt.legend(loc='lower right')
-                    # plt.tight_layout()
-                    # plt.show()
-                    # # # # plt.savefig('airfoil_polars_check/r_R_1_0_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('airfoil_polars_check/NACA63-618_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-211_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-241_cl_flaps.png', dpi=300)
-                    # # # # plt.savefig('airfoil_polars_check/FFA-W3-301_cl_flaps.png', dpi=300)
-
-
-
-                else:  # no flap at specific radial location (but in general 'aerodynamic_control' is defined in blade from yaml)
-                    for ind in range(self.n_tab):  # fill all self.n_tab slots even though no flaps exist at current radial position
-                        c = inputs['chord'][afi]  # blade chord length at cross section
-                        rR = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
-                        Re_loc[afi, :, ind] = c * maxTS * rR / KinVisc
-                        Ma_loc[afi, :, ind] = maxTS * rR / SpdSound
-                        for j in range(self.n_Re):
-                            cl_interp_flaps[afi,:,j,ind] = inputs['cl_interp'][afi,:,j,0]
-                            cd_interp_flaps[afi,:,j,ind] = inputs['cd_interp'][afi,:,j,0]
-                            cm_interp_flaps[afi,:,j,ind] = inputs['cm_interp'][afi,:,j,0]
-
-                        for j in range(self.n_Re):
-                            cl_interp_flaps[afi, :, j, ind] = cl_interp_flaps[afi, :, j, 0]
-                            cd_interp_flaps[afi, :, j, ind] = cd_interp_flaps[afi, :, j, 0]
-                            cm_interp_flaps[afi, :, j, ind] = cm_interp_flaps[afi, :, j, 0]
+                        # # ** The code below will plot the three cl polars
+                        # import matplotlib.pyplot as plt
+                        # font = {'family': 'Times New Roman',
+                        #         'weight': 'normal',
+                        #         'size': 18}
+                        # plt.rc('font', **font)
+                        # plt.figure
+                        # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+                        # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r', label='$\\delta_{flap}$ = -10 deg')  # -10
+                        # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k', label='$\\delta_{flap}$ = 0 deg')  # 0
+                        # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b', label='$\\delta_{flap}$ = +10 deg')  # +10
+                        # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,0],'r')  # -10
+                        # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,1],'k')  # 0
+                        # # plt.plot(np.degrees(inputs['aoa']), cl_interp_flaps[afi,:,0,2],'b')  # +10
+                        # plt.xlim(xmin=-15, xmax=15)
+                        # plt.ylim(ymin=-1.7, ymax=2.2)
+                        # plt.grid(True)
+                        # # autoscale_y(ax)
+                        # plt.xlabel('Angles of attack, deg')
+                        # plt.ylabel('Lift coefficient')
+                        # plt.legend(loc='lower right')
+                        # plt.tight_layout()
+                        # plt.show()
+                        # # # # plt.savefig('airfoil_polars_check/r_R_1_0_cl_flaps.png', dpi=300)
+                        # # # # plt.savefig('airfoil_polars_check/NACA63-618_cl_flaps.png', dpi=300)
+                        # # # # plt.savefig('airfoil_polars_check/FFA-W3-211_cl_flaps.png', dpi=300)
+                        # # # # plt.savefig('airfoil_polars_check/FFA-W3-241_cl_flaps.png', dpi=300)
+                        # # # # plt.savefig('airfoil_polars_check/FFA-W3-301_cl_flaps.png', dpi=300)
 
 
 
-                # else:  # no flap at specific radial location (but in general 'aerodynamic_control' is defined in blade from yaml)
-                #     # for j in range(n_Re): # ToDo incorporade variable Re capability
-                #     for ind in range(self.n_tab):  # fill all self.n_tab slots even though no flaps exist at current radial position
-                #         c = inputs['chord'][afi]  # blade chord length at cross section
-                #         rR = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
-                #         Re_loc[afi, :, ind] = c * maxTS * rR / KinVisc
-                #         Ma_loc[afi, :, ind] = maxTS * rR / SpdSound
-                #         for j in range(self.n_Re):
-                #             cl_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
-                #             cd_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
-                #             cm_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
+                    else:  # no flap at specific radial location (but in general 'aerodynamic_control' is defined in blade from yaml)
+                        for ind in range(self.n_tab):  # fill all self.n_tab slots even though no flaps exist at current radial position
+                            c = inputs['chord'][afi]  # blade chord length at cross section
+                            rR = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
+                            Re_loc[afi, :, ind] = c * maxTS * rR / KinVisc
+                            Ma_loc[afi, :, ind] = maxTS * rR / SpdSound
+                            for j in range(self.n_Re):
+                                cl_interp_flaps[afi,:,j,ind] = inputs['cl_interp'][afi,:,j,0]
+                                cd_interp_flaps[afi,:,j,ind] = inputs['cd_interp'][afi,:,j,0]
+                                cm_interp_flaps[afi,:,j,ind] = inputs['cm_interp'][afi,:,j,0]
+
+                            for j in range(self.n_Re):
+                                cl_interp_flaps[afi, :, j, ind] = cl_interp_flaps[afi, :, j, 0]
+                                cd_interp_flaps[afi, :, j, ind] = cd_interp_flaps[afi, :, j, 0]
+                                cm_interp_flaps[afi, :, j, ind] = cm_interp_flaps[afi, :, j, 0]
+                
+                # save xfoil outputs if we're not optimizing
+                if not any([self.options['opt_options']['optimization_variables']['blade']['dac']['te_flap_ext']['flag'],
+                            self.options['opt_options']['optimization_variables']['blade']['dac']['te_flap_end']['flag']]):
+                    self.saved_polar_data['cl_interp_flaps'] = copy.copy(cl_interp_flaps)
+                    self.saved_polar_data['cd_interp_flaps'] = copy.copy(cd_interp_flaps)
+                    self.saved_polar_data['cm_interp_flaps'] = copy.copy(cm_interp_flaps)
+                    self.saved_polar_data['fa_control'] = copy.copy(fa_control)
+                    self.saved_polar_data['Re_loc'] = copy.copy(Re_loc)
+                    self.saved_polar_data['Ma_loc'] = copy.copy(Ma_loc)
+                    
+            else:
+                # load xfoil data from previous runs
+                print('Skipping XFOIL and loading blade polar data from previous iteration.')
+                cl_interp_flaps = self.saved_polar_data['cl_interp_flaps']
+                cd_interp_flaps = self.saved_polar_data['cd_interp_flaps']
+                cm_interp_flaps = self.saved_polar_data['cm_interp_flaps']
+                fa_control = self.saved_polar_data['fa_control']  
+                Re_loc = self.saved_polar_data['Re_loc']       
+                Ma_loc = self.saved_polar_data['Ma_loc']       
+
+
+
+                    # else:  # no flap at specific radial location (but in general 'aerodynamic_control' is defined in blade from yaml)
+                    #     # for j in range(n_Re): # ToDo incorporade variable Re capability
+                    #     for ind in range(self.n_tab):  # fill all self.n_tab slots even though no flaps exist at current radial position
+                    #         c = inputs['chord'][afi]  # blade chord length at cross section
+                    #         rR = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
+                    #         Re_loc[afi, :, ind] = c * maxTS * rR / KinVisc
+                    #         Ma_loc[afi, :, ind] = maxTS * rR / SpdSound
+                    #         for j in range(self.n_Re):
+                    #             cl_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
+                    #             cd_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
+                    #             cm_interp_flaps[afi, :, j, ind] = inputs['cl_interp'][afi, :, j, 0]
 
         else:
             for afi in range(self.n_span):
@@ -560,3 +588,4 @@ class RunXFOIL(ExplicitComponent):
         outputs['flap_angles']      = fa_control # use vector of flap angle controls
         outputs['Re_loc'] = Re_loc
         outputs['Ma_loc'] = Ma_loc
+

@@ -202,7 +202,7 @@ discussion of optimization constraints in Section :ref:`optimization-label`.
 
 
 .. _fig_floatingse:
-.. figure::  images/floatingse/floatingse.png
+.. figure::  /images/floatingse/floatingse.*
     :width: 90%
     :align: center
 
@@ -232,7 +232,7 @@ visualization of the geometries described by these examples is shown in
 
 
 .. _fig_initial-spar:
-.. figure::  images/floatingse/spar-initial.png
+.. figure::  /images/floatingse/spar-initial.*
     :width: 75%
     :align: center
 
@@ -240,7 +240,7 @@ visualization of the geometries described by these examples is shown in
 
        
 .. _fig_initial-semi:
-.. figure::  images/floatingse/semi-initial.png
+.. figure::  /images/floatingse/semi-initial.*
     :width: 75%
     :align: center
 

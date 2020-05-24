@@ -1,28 +1,36 @@
-from __future__ import print_function
-import numpy as np
-from openmdao.api as om
-from wisdem.turbine_costsse.nrel_csm_tcc_2015 import nrel_csm_mass_2015
+# 0 ---------- (marker for docs)
+import openmdao.api as om
+from wisdem.turbine_costsse.nrel_csm_tcc_2015 import nrel_csm_2015
+# 0 ---------- (marker for docs)
 
-# simple test of module
-prob = om.Problem()
+# 1 ---------- (marker for docs)
+# OpenMDAO Problem instance
+prob       = om.Problem()
 prob.model = nrel_csm_2015()
 prob.setup()
+# 1 ---------- (marker for docs)
 
-# simple test of module
-prob['rotor_diameter'] = 126.0
-prob['turbine_class'] = 1
-prob['blade_has_carbon'] = False
-prob['blade_number'] = 3    
-prob['machine_rating'] = 5000.0
-prob['hub_height'] = 90.0
+# 2 ---------- (marker for docs)
+# Initialize variables for NREL CSM
+prob['machine_rating']      = 5000.0
+prob['rotor_diameter']      = 126.0
+prob['turbine_class']       = 2
+prob['hub_height']          = 90.0
+prob['blade_number']        = 3    
+prob['blade_has_carbon']    = False
+prob['max_tip_speed']       = 80.0
+prob['max_efficiency']      = 0.90
 prob['main_bearing_number'] = 2
-prob['crane'] = True
-prob['max_tip_speed'] = 80.0
-prob['max_efficiency'] = 0.90
+prob['crane']               = True
+# 2 ---------- (marker for docs)
 
+# 3 ---------- (marker for docs)
 # Evaluate the model
 prob.run_model()
+# 3 ---------- (marker for docs)
 
+# 4 ---------- (marker for docs)
 # Print all intermediate inputs and outputs to the screen
 prob.model.list_inputs(units=True)
 prob.model.list_outputs(units=True)
+# 4 ---------- (marker for docs)

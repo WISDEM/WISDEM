@@ -71,15 +71,15 @@ def load_yaml(fname_input, package=0):
 
     if package == 0:
         with open(fname_input) as f:
-            data = yaml.load(f)
+            data = yaml.safe_load(f)
         return data
 
     elif package == 1:
         with open(fname_input, 'r') as myfile:
             text_input = myfile.read()
         myfile.close()
-        yaml = ry.YAML()
-        return dict(yaml.load(text_input))
+        ryaml = ry.YAML()
+        return dict(ryaml.load(text_input))
 
 
 def save_yaml(outdir, fname, data_out):
@@ -114,57 +114,114 @@ def get_dlc_label(cases, include_seed=True):
     # Get descriptive string describing IEC DLC cases from the case_matrix
 
     labels = []
-    for idx in range(len(cases['DLC'])):
+    # from txt
+    try:
+        for idx in range(len(cases['DLC'])):
 
-        DLC        = cases['DLC'][idx]
-        wind_fname = cases['Filename'][idx]
+            DLC        = cases['DLC'][idx]
+            wind_fname = cases['Filename'][idx]
 
-        if DLC == 1.1:
-            ntm      = wind_fname.split('NTM')[-1].split('_')
-            ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
-            ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
-            if include_seed == True:
-                label_i = "DLC 1.1, Normal Turbulence, U=%0.1f m/s, Seed=%d"%(ntm_U, ntm_Seed)
-            else:
-                label_i = "DLC 1.1, Normal Turbulence, U=%0.1f m/s"%(ntm_U)
+            if DLC == 1.1:
+                ntm      = wind_fname.split('NTM')[-1].split('_')
+                ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
+                ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
+                if include_seed == True:
+                    label_i = "DLC 1.1, Normal Turbulence, U=%0.1f m/s, Seed=%d"%(ntm_U, ntm_Seed)
+                else:
+                    label_i = "DLC 1.1, Normal Turbulence, U=%0.1f m/s"%(ntm_U)
 
-        if DLC == 1.3:
-            etm   = wind_fname.split('ETM')[-1].split('_')
-            etm_U = float(".".join(etm[1].strip("U").split('.')[:-1]))
-            etm_Seed = float(".".join(etm[2].strip("Seed").split('.')[:-1]))
-            if include_seed == True:
-                label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s, Seed=%d"%(etm_U, etm_Seed)
-            else:
-                label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s"%(etm_U)
-        
-        if DLC == 1.4:
-            ecd      = wind_fname.split('ECD')[-1].split('_')
-            ecd_dir  = ecd[1]
-            ecd_U    = float(".".join(ecd[2].strip("U").split('.')[:-1]))
-            label_i  = "DLC 1.4, %s ECD, U=%0.1f m/s"%(ecd_dir, ecd_U)
+            if DLC == 1.3:
+                etm   = wind_fname.split('ETM')[-1].split('_')
+                etm_U = float(".".join(etm[1].strip("U").split('.')[:-1]))
+                etm_Seed = float(".".join(etm[2].strip("Seed").split('.')[:-1]))
+                if include_seed == True:
+                    label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s, Seed=%d"%(etm_U, etm_Seed)
+                else:
+                    label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s"%(etm_U)
+            
+            if DLC == 1.4:
+                ecd      = wind_fname.split('ECD')[-1].split('_')
+                ecd_dir  = ecd[1]
+                ecd_U    = float(".".join(ecd[2].strip("U").split('.')[:-1]))
+                label_i  = "DLC 1.4, %s ECD, U=%0.1f m/s"%(ecd_dir, ecd_U)
 
-        if DLC == 1.5:
-            ews      = wind_fname.split('EWS')[-1].split('_')
-            ews_type = ews[1]
-            ews_dir  = ews[2]
-            ews_U    = float(".".join(ews[3].strip("U").split('.')[:-1]))
-            if ews_type == "H":
-                ews_type = "Hor."
-            elif ews_type == "V":
-                ews_type = "Vert."
-            if ews_dir == "P":
-                ews_dir = "Pos."
-            elif ews_dir == "N":
-                ews_dir = "Neg."
-            label_i = "DLC 1.5, Extreme %s Shear, %s, U=%0.1f m/s"%(ews_type, ews_dir, ews_U)
+            if DLC == 1.5:
+                ews      = wind_fname.split('EWS')[-1].split('_')
+                ews_type = ews[1]
+                ews_dir  = ews[2]
+                ews_U    = float(".".join(ews[3].strip("U").split('.')[:-1]))
+                if ews_type == "H":
+                    ews_type = "Hor."
+                elif ews_type == "V":
+                    ews_type = "Vert."
+                if ews_dir == "P":
+                    ews_dir = "Pos."
+                elif ews_dir == "N":
+                    ews_dir = "Neg."
+                label_i = "DLC 1.5, Extreme %s Shear, %s, U=%0.1f m/s"%(ews_type, ews_dir, ews_U)
 
-        if DLC == 6.1:
-            label_i = "DLC 6.1"
+            if DLC == 6.1:
+                label_i = "DLC 6.1"
 
-        if DLC == 6.3:
-            label_i = "DLC 6.3"
+            if DLC == 6.3:
+                label_i = "DLC 6.3"
 
-        labels.append(label_i)
+            labels.append(label_i)
+    
+    # From yaml
+    except KeyError:
+        for idx in range(len(cases[('IEC','DLC')])):
+
+            DLC        = cases[('IEC','DLC')][idx]
+            wind_fname = cases[('InflowWind', 'Filename')][idx]
+
+            if DLC == 1.1:
+                ntm      = wind_fname.split('NTM')[-1].split('_')
+                ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
+                ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
+                if include_seed == True:
+                    label_i = "DLC 1.1, Normal Turbulence, U=%0.1f m/s, Seed=%d"%(ntm_U, ntm_Seed)
+                else:
+                    label_i = "DLC 1.1, Normal Turbulence, U=%0.1f m/s"%(ntm_U)
+
+            if DLC == 1.3:
+                etm   = wind_fname.split('ETM')[-1].split('_')
+                etm_U = float(".".join(etm[1].strip("U").split('.')[:-1]))
+                etm_Seed = float(".".join(etm[2].strip("Seed").split('.')[:-1]))
+                if include_seed == True:
+                    label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s, Seed=%d"%(etm_U, etm_Seed)
+                else:
+                    label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s"%(etm_U)
+            
+            if DLC == 1.4:
+                ecd      = wind_fname.split('ECD')[-1].split('_')
+                ecd_dir  = ecd[1]
+                ecd_U    = float(".".join(ecd[2].strip("U").split('.')[:-1]))
+                label_i  = "DLC 1.4, %s ECD, U=%0.1f m/s"%(ecd_dir, ecd_U)
+
+            if DLC == 1.5:
+                ews      = wind_fname.split('EWS')[-1].split('_')
+                ews_type = ews[1]
+                ews_dir  = ews[2]
+                ews_U    = float(".".join(ews[3].strip("U").split('.')[:-1]))
+                if ews_type == "H":
+                    ews_type = "Hor."
+                elif ews_type == "V":
+                    ews_type = "Vert."
+                if ews_dir == "P":
+                    ews_dir = "Pos."
+                elif ews_dir == "N":
+                    ews_dir = "Neg."
+                label_i = "DLC 1.5, Extreme %s Shear, %s, U=%0.1f m/s"%(ews_type, ews_dir, ews_U)
+
+            if DLC == 6.1:
+                label_i = "DLC 6.1"
+
+            if DLC == 6.3:
+                label_i = "DLC 6.3"
+
+            labels.append(label_i)
+
 
     return labels  
 
