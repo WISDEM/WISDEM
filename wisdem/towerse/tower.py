@@ -53,13 +53,13 @@ class DiscretizationYAML(om.ExplicitComponent):
     tower_layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the tower
         structure.
-    tower_layer_thickness : numpy array[n_layers_tow, n_height_tow-1]
+    tower_layer_thickness : numpy array[n_layers_tow, n_height_tow-1], [m]
         2D array of the thickness of the layers of the tower structure. The first
         dimension represents each layer, the second dimension represents each piecewise-
         constant entry of the tower sections.
-    tower_height : float
+    tower_height : float, [m]
         Scalar of the tower height computed along the z axis.
-    tower_outer_diameter_in : numpy array[n_height_tow]
+    tower_outer_diameter_in : numpy array[n_height_tow], [m]
         cylinder diameter at corresponding locations
     tower_outfitting_factor : float
         Multiplier that accounts for secondary structure mass inside of cylinder
@@ -69,52 +69,52 @@ class DiscretizationYAML(om.ExplicitComponent):
     monopile_layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the tower
         structure.
-    monopile_layer_thickness : numpy array[n_layers_mon, n_height_mon_minus]
+    monopile_layer_thickness : numpy array[n_layers_mon, n_height_mon_minus], [m]
         2D array of the thickness of the layers of the tower structure. The first
         dimension represents each layer, the second dimension represents each piecewise-
         constant entry of the tower sections.
-    monopile_height : float
+    monopile_height : float, [m]
         Scalar of the tower height computed along the z axis.
-    monopile_outer_diameter_in : numpy array[n_height_tow]
+    monopile_outer_diameter_in : numpy array[n_height_tow], [m]
         cylinder diameter at corresponding locations
     monopile_outfitting_factor : float
         Multiplier that accounts for secondary structure mass inside of cylinder
     material_names : list of strings
         1D array of names of materials.
-    E_mat : numpy array[n_mat, 3]
+    E_mat : numpy array[n_mat, 3], [Pa]
         2D array of the Youngs moduli of the materials. Each row represents a material,
         the three columns represent E11, E22 and E33.
-    G_mat : numpy array[n_mat, 3]
+    G_mat : numpy array[n_mat, 3], [Pa]
         2D array of the shear moduli of the materials. Each row represents a material,
         the three columns represent G12, G13 and G23.
-    sigma_y_mat : numpy array[n_mat]
+    sigma_y_mat : numpy array[n_mat], [Pa]
         2D array of the yield strength of the materials. Each row represents a material,
         the three columns represent Xt12, Xt13 and Xt23.
-    rho_mat : numpy array[n_mat]
+    rho_mat : numpy array[n_mat], [kg/m**3]
         1D array of the density of the materials. For composites, this is the density of
         the laminate.
-    unit_cost_mat : numpy array[n_mat]
+    unit_cost_mat : numpy array[n_mat], [USD/kg]
         1D array of the unit costs of the materials.
     
     Returns
     -------
-    tower_section_height : numpy array[n_height-1]
+    tower_section_height : numpy array[n_height-1], [m]
         parameterized section heights along cylinder
-    tower_outer_diameter : numpy array[n_height]
+    tower_outer_diameter : numpy array[n_height], [m]
         cylinder diameter at corresponding locations
-    tower_wall_thickness : numpy array[n_height-1]
+    tower_wall_thickness : numpy array[n_height-1], [m]
         shell thickness at corresponding locations
     outfitting_factor : numpy array[n_height-1]
         Multiplier that accounts for secondary structure mass inside of cylinder
-    E : numpy array[n_height-1]
+    E : numpy array[n_height-1], [Pa]
         Isotropic Youngs modulus of the materials along the tower sections.
-    G : numpy array[n_height-1]
+    G : numpy array[n_height-1], [Pa]
         Isotropic shear modulus of the materials along the tower sections.
-    sigma_y : numpy array[n_height-1]
+    sigma_y : numpy array[n_height-1], [Pa]
         Isotropic yield strength of the materials along the tower sections.
-    rho : numpy array[n_height-1]
+    rho : numpy array[n_height-1], [kg/m**3]
         Density of the materials along the tower sections.
-    unit_cost : numpy array[n_height-1]
+    unit_cost : numpy array[n_height-1], [USD/kg]
         Unit costs of the materials along the tower sections.
     
     """
@@ -305,18 +305,18 @@ class MonopileFoundation(om.ExplicitComponent):
     
     Parameters
     ----------
-    suctionpile_depth : float
+    suctionpile_depth : float, [m]
         depth of foundation in the soil
     suctionpile_depth_diam_ratio : float
         ratio of sunction pile depth to mudline monopile diameter
-    foundation_height : float
+    foundation_height : float, [m]
         height of foundation (0.0 for land, -water_depth for fixed bottom)
-    base_diameter : float
+    base_diameter : float, [m]
         cylinder diameter at base
     
     Returns
     -------
-    z_start : float
+    z_start : float, [m]
         parameterized section heights along cylinder
     
     """
@@ -349,26 +349,26 @@ class TowerDiscretization(om.ExplicitComponent):
     
     Parameters
     ----------
-    hub_height : float
+    hub_height : float, [m]
         diameter at tower base
-    z_param : numpy array[n_height]
+    z_param : numpy array[n_height], [m]
         parameterized locations along tower, linear lofting between
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         parameterized locations along tower, linear lofting between
-    rho : numpy array[n_height-1]
+    rho : numpy array[n_height-1], [kg/m**3]
         Density of the materials along the tower sections.
-    unit_cost : numpy array[n_height-1]
+    unit_cost : numpy array[n_height-1], [USD/kg]
         Unit costs of the materials along the tower sections.
     outfitting_factor : numpy array[n_height-1]
         Multiplier that accounts for secondary structure mass inside of cylinder
     
     Returns
     -------
-    height_constraint : float
+    height_constraint : float, [m]
         mismatch between tower height and desired hub_height
-    rho_full : numpy array[nFull-1]
+    rho_full : numpy array[nFull-1], [kg/m**3]
         Density of the materials along the tower sections.
-    unit_cost_full : numpy array[nFull-1]
+    unit_cost_full : numpy array[nFull-1], [USD/kg]
         Unit costs of the materials along the tower sections.
     outfitting_full : numpy array[nFull-1]
         Multiplier that accounts for secondary structure mass inside of cylinder
@@ -422,46 +422,46 @@ class TowerMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    cylinder_mass : numpy array[nFull-1]
+    cylinder_mass : numpy array[nFull-1], [kg]
         Total cylinder mass
-    cylinder_cost : float
+    cylinder_cost : float, [USD]
         Total cylinder cost
-    cylinder_center_of_mass : float
-        z position of center of mass of cylinder
-    cylinder_section_center_of_mass : numpy array[nFull-1]
+    cylinder_center_of_mass : float, [m]
+        z-position of center of mass of cylinder
+    cylinder_section_center_of_mass : numpy array[nFull-1], [m]
         z position of center of mass of each can in the cylinder
-    cylinder_I_base : numpy array[6]
-        Mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
-    transition_piece_height : float
-        Point mass height of transition piece above water line
-    transition_piece_mass : float
-        Point mass of transition piece
-    gravity_foundation_mass : float
-        Extra mass of gravity foundation
-    foundation_height : float 
-        Height of foundation (0.0 for land, -water_depth for fixed bottom)
-    z_full : numpy array[nFull]
-        Parameterized locations along tower, linear lofting between
+    cylinder_I_base : numpy array[6, ], [kg*m**2]
+        mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
+    transition_piece_height : float, [m]
+        point mass height of transition piece above water line
+    transition_piece_mass : float, [kg]
+        point mass of transition piece
+    gravity_foundation_mass : float, [kg]
+        extra mass of gravity foundation
+    foundation_height : float, [m]
+        height of foundation (0.0 for land, -water_depth for fixed bottom)
+    z_full : numpy array[nFull], [m]
+        parameterized locations along tower, linear lofting between
     
     Returns
     -------
-    tower_raw_cost : float
+    tower_raw_cost : float, [USD]
         Total tower cost
-    tower_mass : float
+    tower_mass : float, [kg]
         Total tower mass
-    tower_center_of_mass : float
+    tower_center_of_mass : float, [m]
         z-position of center of mass of tower
-    tower_section_center_of_mass : numpy array[nFull-1]
+    tower_section_center_of_mass : numpy array[nFull-1], [m]
         z position of center of mass of each can in the tower
-    tower_I_base : numpy array[6]
-        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
-    monopile_mass : float 
+    tower_I_base : numpy array[6, ], [kg*m**2]
+        mass moment of inertia of tower about base [xx yy zz xy xz yz]
+    monopile_mass : float, [kg]
         Mass of monopile from bottom of suction pile through transition piece
-    monopile_cost : float
+    monopile_cost : float, [USD]
         Total monopile cost
-    monopile_length : float
+    monopile_length : float, [m]
         Length of monopile from bottom of suction pile through transition piece
-        
+    
     """
 
     def initialize(self):
@@ -564,32 +564,32 @@ class TurbineMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    hub_height : float
-        Hub height
-    rna_mass : float
+    hub_height : float, [m]
+        Hub-height
+    rna_mass : float, [kg]
         Total tower mass
-    rna_I : numpy array[6]
-        Mass moment of inertia of RNA about tower top [xx yy zz xy xz yz]
-    rna_cg : numpy array[3]
-        xyz-location of RNA cg relative to tower top
-    tower_mass : float
+    rna_I : numpy array[6, ], [kg*m**2]
+        mass moment of inertia of rna about tower top [xx yy zz xy xz yz]
+    rna_cg : numpy array[3, ], [m]
+        xyz-location of rna cg relative to tower top
+    tower_mass : float, [kg]
         Total tower mass (not including monopile)
-    monopile_mass : float
+    monopile_mass : float, [kg]
         Monopile mass
-    tower_center_of_mass : float
+    tower_center_of_mass : float, [m]
         z-position of center of mass of tower
-    tower_I_base : numpy array[6]
-        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
-        
+    tower_I_base : numpy array[6, ], [kg*m**2]
+        mass moment of inertia of tower about base [xx yy zz xy xz yz]
+    
     Returns
     -------
-    turbine_mass : float
-        Total mass of tower and RNA combined
-    turbine_center_of_mass : numpy array[3]
-        xyz-position of tower and RNA center of mass
-    turbine_I_base : numpy array[6]
-        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
-        
+    turbine_mass : float, [kg]
+        Total mass of tower+rna
+    turbine_center_of_mass : numpy array[3, ], [m]
+        xyz-position of tower+rna center of mass
+    turbine_I_base : numpy array[6, ], [kg*m**2]
+        mass moment of inertia of tower about base [xx yy zz xy xz yz]
+    
     """
 
     def setup(self):
@@ -633,96 +633,96 @@ class TowerPreFrame(om.ExplicitComponent):
     
     Parameters
     ----------
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         location along tower. start at bottom and go to top
-    d_full : numpy array[nFull]
+    d_full : numpy array[nFull], [m]
         diameter along tower
-    z_param : numpy array[n_height]
+    z_param : numpy array[n_height], [m]
         parameterized locations along tower, linear lofting between
-    mass : float
+    mass : float, [kg]
         added mass
-    mI : numpy array[6]
+    mI : numpy array[6, ], [kg*m**2]
         mass moment of inertia about some point p [xx yy zz xy xz yz]
-    mrho : numpy array[3]
+    mrho : numpy array[3, ], [m]
         xyz-location of p relative to node
-    transition_piece_mass : float
+    transition_piece_mass : float, [kg]
         point mass of transition piece
-    gravity_foundation_mass : float
+    gravity_foundation_mass : float, [kg]
         point mass of transition piece
-    transition_piece_height : float
+    transition_piece_height : float, [m]
         height of transition piece above water line
-    foundation_height : float
+    foundation_height : float, [m]
         height of foundation (0.0 for land, -water_depth for fixed bottom)
-    rna_F : numpy array[3]
+    rna_F : numpy array[3, ], [N]
         rna force
-    rna_M : numpy array[3]
+    rna_M : numpy array[3, ], [N*m]
         rna moment
-    k_monopile : numpy array[6]
+    k_monopile : numpy array[6], [N/m]
         Stiffness BCs for ocean soil. Only used if monoflag inputis True
-    E : numpy array[n_height-1]
+    E : numpy array[n_height-1], [Pa]
         Isotropic Youngs modulus of the materials along the tower sections.
-    G : numpy array[n_height-1]
+    G : numpy array[n_height-1], [Pa]
         Isotropic shear modulus of the materials along the tower sections.
-    sigma_y : numpy array[n_height-1]
+    sigma_y : numpy array[n_height-1], [Pa]
         Isotropic yield strength of the materials along the tower sections.
     
     Returns
     -------
-    E_full : numpy array[nFull-1]
+    E_full : numpy array[nFull-1], [Pa]
         Isotropic Youngs modulus of the materials along the tower sections.
-    G_full : numpy array[nFull-1]
+    G_full : numpy array[nFull-1], [Pa]
         Isotropic shear modulus of the materials along the tower sections.
-    sigma_y_full : numpy array[nFull-1]
+    sigma_y_full : numpy array[nFull-1], [Pa]
         Isotropic yield strength of the materials along the tower sections.
     kidx : numpy array[np.int_]
         indices of z where external stiffness reactions should be applied.
-    kx : numpy array[nK]
+    kx : numpy array[nK], [N/m]
         spring stiffness in x-direction
-    ky : numpy array[nK]
+    ky : numpy array[nK], [N/m]
         spring stiffness in y-direction
-    kz : numpy array[nK]
+    kz : numpy array[nK], [N/m]
         spring stiffness in z-direction
-    ktx : numpy array[nK]
+    ktx : numpy array[nK], [N/m]
         spring stiffness in theta_x-rotation
-    kty : numpy array[nK]
+    kty : numpy array[nK], [N/m]
         spring stiffness in theta_y-rotation
-    ktz : numpy array[nK]
+    ktz : numpy array[nK], [N/m]
         spring stiffness in theta_z-rotation
     midx : numpy array[np.int_]
         indices where added mass should be applied.
-    m : numpy array[nMass]
+    m : numpy array[nMass], [kg]
         added mass
-    mIxx : numpy array[nMass]
+    mIxx : numpy array[nMass], [kg*m**2]
         x mass moment of inertia about some point p
-    mIyy : numpy array[nMass]
+    mIyy : numpy array[nMass], [kg*m**2]
         y mass moment of inertia about some point p
-    mIzz : numpy array[nMass]
+    mIzz : numpy array[nMass], [kg*m**2]
         z mass moment of inertia about some point p
-    mIxy : numpy array[nMass]
+    mIxy : numpy array[nMass], [kg*m**2]
         xy mass moment of inertia about some point p
-    mIxz : numpy array[nMass]
+    mIxz : numpy array[nMass], [kg*m**2]
         xz mass moment of inertia about some point p
-    mIyz : numpy array[nMass]
+    mIyz : numpy array[nMass], [kg*m**2]
         yz mass moment of inertia about some point p
-    mrhox : numpy array[nMass]
+    mrhox : numpy array[nMass], [m]
         x-location of p relative to node
-    mrhoy : numpy array[nMass]
+    mrhoy : numpy array[nMass], [m]
         y-location of p relative to node
-    mrhoz : numpy array[nMass]
+    mrhoz : numpy array[nMass], [m]
         z-location of p relative to node
     plidx : numpy array[np.int_]
         indices where point loads should be applied.
-    Fx : numpy array[nPL]
+    Fx : numpy array[nPL], [N]
         point force in x-direction
-    Fy : numpy array[nPL]
+    Fy : numpy array[nPL], [N]
         point force in y-direction
-    Fz : numpy array[nPL]
+    Fz : numpy array[nPL], [N]
         point force in z-direction
-    Mxx : numpy array[nPL]
+    Mxx : numpy array[nPL], [N*m]
         point moment about x-axis
-    Myy : numpy array[nPL]
+    Myy : numpy array[nPL], [N*m]
         point moment about y-axis
-    Mzz : numpy array[nPL]
+    Mzz : numpy array[nPL], [N*m]
         point moment about z-axis
     
     """
@@ -894,33 +894,33 @@ class TowerPostFrame(om.ExplicitComponent):
     
     Parameters
     ----------
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         location along tower. start at bottom and go to top
-    d_full : numpy array[nFull]
+    d_full : numpy array[nFull], [m]
         effective tower diameter for section
-    t_full : numpy array[nFull-1]
+    t_full : numpy array[nFull-1], [m]
         effective shell thickness for section
-    E_full : numpy array[nFull-1]
+    E_full : numpy array[nFull-1], [N/m**2]
         modulus of elasticity
-    sigma_y_full : numpy array[nFull-1]
+    sigma_y_full : numpy array[nFull-1], [N/m**2]
         yield stress
-    Fz : numpy array[nFull-1]
+    Fz : numpy array[nFull-1], [N]
         Axial foce in vertical z-direction in cylinder structure.
-    Mxx : numpy array[nFull-1]
+    Mxx : numpy array[nFull-1], [N*m]
         Moment about x-axis in cylinder structure.
-    Myy : numpy array[nFull-1]
+    Myy : numpy array[nFull-1], [N*m]
         Moment about y-axis in cylinder structure.
-    axial_stress : numpy array[nFull-1]
+    axial_stress : numpy array[nFull-1], [N/m**2]
         axial stress in tower elements
-    shear_stress : numpy array[nFull-1]
+    shear_stress : numpy array[nFull-1], [N/m**2]
         shear stress in tower elements
-    hoop_stress : numpy array[nFull-1]
+    hoop_stress : numpy array[nFull-1], [N/m**2]
         hoop stress in tower elements
-    top_deflection_in : float
+    top_deflection_in : float, [m]
         Deflection of tower top in yaw-aligned +x direction
     life : float
         fatigue life of tower
-    freqs : numpy array[NFREQ]
+    freqs : numpy array[NFREQ], [Hz]
         Natural frequencies of the structure
     x_mode_shapes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the x-direction
@@ -929,7 +929,7 @@ class TowerPostFrame(om.ExplicitComponent):
     
     Returns
     -------
-    structural_frequencies : numpy array[NFREQ]
+    structural_frequencies : numpy array[NFREQ], [Hz]
         First and second natural frequency
     fore_aft_modes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the tower fore-aft direction
@@ -937,10 +937,10 @@ class TowerPostFrame(om.ExplicitComponent):
     side_side_modes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the tower side-side direction
         (without constant term)
-    top_deflection : float
+    top_deflection : float, [m]
         Deflection of tower top in yaw-aligned +x direction
     stress : numpy array[nFull-1]
-        Von Mises stress utilization along tower at specified locations. Includes safety
+        Von Mises stress utilization along tower at specified locations. incudes safety
         factor.
     shell_buckling : numpy array[nFull-1]
         Shell buckling constraint. Should be < 1 for feasibility. Includes safety
@@ -948,9 +948,9 @@ class TowerPostFrame(om.ExplicitComponent):
     global_buckling : numpy array[nFull-1]
         Global buckling constraint. Should be < 1 for feasibility. Includes safety
         factors
-    turbine_F : numpy array[3]
+    turbine_F : numpy array[3], [N]
         Total force on tower+rna
-    turbine_M : numpy array[3]
+    turbine_M : numpy array[3], [N*m]
         Total x-moment on tower+rna measured at base
     
     """
