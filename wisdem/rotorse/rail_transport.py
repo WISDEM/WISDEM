@@ -32,7 +32,7 @@ class RailTransport(ExplicitComponent):
         self.add_input('max_LV',               val=0.5,                      desc='Max allowable ratio between lateral and vertical forces')
         self.add_input('max_flatcar_weight_4axle',   val=129727.31,   units='kg',  desc='Max mass of an 4-axle flatcar (286000 lbm)')
         self.add_input('max_flatcar_weight_8axle',   val=217724.16,   units='kg',  desc='Max mass of an 8-axle flatcar (480000 lbm)')
-        self.add_input('max_root_rot_deg',     val=15.,         units='deg', desc='Max degree of angle at blade root')
+        self.add_input('max_root_rot_deg',     val=30.,         units='deg', desc='Max degree of angle at blade root')
         self.add_input('flatcar_tc_length',    val=20.12,       units='m',   desc='Flatcar truck center to truck center lenght')
 
         # Input - Outer blade geometry
@@ -302,12 +302,12 @@ class RailTransport(ExplicitComponent):
             nodes2 = pyframe3dd.NodeData(inode+1, x_rot2, y_ref, z_rot2, rad)
             
             # Use blade shape and clearance envelope to determine node position limits: Bending towards SS
-            blade_xmin1 = x_ref - xss
-            blade_xmax1 = x_ref + xps
+            blade_xmin1 = x_ref - yss
+            blade_xmax1 = x_ref + yps
             
-            # Use blade shape and clearance envelope to determine node position limits: Bending towards SS
-            blade_xmin2 = x_ref - xps
-            blade_xmax2 = x_ref + xss
+            # Use blade shape and clearance envelope to determine node position limits: Bending towards PS
+            blade_xmin2 = x_ref - yps
+            blade_xmax2 = x_ref + yss
 
             # Loop over the loade cases since the code looks the same from here on
             for k in range(2):
