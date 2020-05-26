@@ -246,7 +246,7 @@ class Substructure(om.ExplicitComponent):
     structure_center_of_mass : numpy array[3], [m]
         xyz-position of center of gravity of whole turbine
     structural_frequencies : numpy array[NFREQ], [Hz]
-        
+        Structural frequencies outputted from FEM calculation
     z_center_of_buoyancy : float, [m]
         z-position of center of gravity (x,y = 0,0)
     total_displacement : float, [m**3]

@@ -35,7 +35,7 @@ class BladeMass(om.ExplicitComponent):
     
     Returns
     -------
-    blade_mass : float, [kg], [kg]
+    blade_mass : float, [kg]
         component mass
     
     """
