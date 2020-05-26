@@ -278,11 +278,11 @@ class RunFrame3DD(ExplicitComponent):
         if self.options['pbeam']:
             # Use airfoil c.s.
             Ix  = EIyy / E
-            Iy  = EIxx / E
+            Iy  = EIxx / E 
         else:
             # Will further rotate to principle axes
-            Ix  = EI11 / E
-            Iy  = EI22 / E
+            Ix  = EI22 / E
+            Iy  = EI11 / E
 
         # Have to convert nodal values to find average at center of element
         Abar,_   = util.nodal2sectional(A)
@@ -334,7 +334,7 @@ class RunFrame3DD(ExplicitComponent):
             Px_af = P.x
             Py_af = P.y
             Pz_af = P.z
-        
+            
         Px, Py, Pz = Pz_af, Py_af, -Px_af # switch to local c.s.
         xx1 = xy1 = xz1 = np.zeros(n-1)
         xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
@@ -402,12 +402,12 @@ class RunFrame3DD(ExplicitComponent):
         outputs['root_F'] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
         outputs['root_M'] = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
         outputs['freqs'] = modal.freq
-        outputs['edge_mode_shapes'] = mshapes_y
-        outputs['flap_mode_shapes'] = mshapes_x
+        outputs['edge_mode_shapes'] = mshapes_x
+        outputs['flap_mode_shapes'] = mshapes_y
         # Dense numpy command that interleaves and alternates flap and edge modes
         outputs['all_mode_shapes'] = np.c_[mshapes_x, mshapes_y].flatten().reshape((self.n_freq,5))
-        outputs['edge_mode_freqs']  = freq_y
-        outputs['flap_mode_freqs']  = freq_x
+        outputs['edge_mode_freqs']  = freq_x
+        outputs['flap_mode_freqs']  = freq_y
         outputs['freq_distance']    = freq_y[0] / freq_x[0]
         outputs['dx'] = dx
         outputs['dy'] = dy
