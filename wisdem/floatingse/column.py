@@ -47,8 +47,6 @@ class BulkheadProperties(om.ExplicitComponent):
     bulkhead_thickness : numpy array[n_height]
         Nodal locations of bulkhead thickness, zero meaning no bulkhead, bottom to top
         (length = nsection + 1)
-    bulkhead_mass_factor : float
-        Bulkhead mass correction factor
     shell_mass : numpy array[n_full-1]
         mass of column shell
     unit_cost : float
@@ -85,7 +83,6 @@ class BulkheadProperties(om.ExplicitComponent):
         self.add_input('t_full', np.zeros(n_full-1), units='m')
         self.add_input('rho', 0.0, units='kg/m**3')
         self.add_input('bulkhead_thickness', np.zeros(n_height), units='m')
-        self.add_input('bulkhead_mass_factor', 0.0)
         self.add_input('shell_mass', np.zeros(n_full-1), units='kg')
         self.add_input('unit_cost', 0.0, units='USD/kg')
         self.add_input('labor_cost_rate', 0.0, units='USD/min')
@@ -120,8 +117,8 @@ class BulkheadProperties(om.ExplicitComponent):
         # Assume bulkheads are same thickness as shell wall
         V_bulk = np.pi * R_id**2 * t_bulk_full
 
-        # Convert to mass with fudge factor for design features not captured in this simple approach
-        m_bulk = inputs['bulkhead_mass_factor'] * rho * V_bulk
+        # Convert to mass
+        m_bulk = rho * V_bulk
 
         # Compute moments of inertia at keel
         # Assume bulkheads are just simple thin discs with radius R_od-t_wall and mass already computed
@@ -196,8 +193,6 @@ class BuoyancyTankProperties(om.ExplicitComponent):
         Radius of heave plate at bottom of column
     buoyancy_tank_location : float
         Radius of heave plate at bottom of column
-    buoyancy_tank_mass_factor : float
-        Heave plate mass correction factor
     
     Returns
     -------
@@ -231,7 +226,6 @@ class BuoyancyTankProperties(om.ExplicitComponent):
         self.add_input('buoyancy_tank_diameter', 0.0, units='m')
         self.add_input('buoyancy_tank_height', 0.0, units='m')
         self.add_input('buoyancy_tank_location', 0.0, units='m')
-        self.add_input('buoyancy_tank_mass_factor', 0.0)
 
         self.add_output('buoyancy_tank_mass', 0.0, units='kg')
         self.add_output('buoyancy_tank_cost', 0.0, units='USD')
@@ -251,7 +245,6 @@ class BuoyancyTankProperties(om.ExplicitComponent):
 
         location  = float(inputs['buoyancy_tank_location'])
         
-        coeff     = float(inputs['buoyancy_tank_mass_factor'])
         rho       = float(inputs['rho'])
 
         # Current hard-coded, coarse specification of shell thickness
@@ -266,9 +259,9 @@ class BuoyancyTankProperties(om.ExplicitComponent):
         R_col     = np.interp([z_lower, z_upper], z_full, R_od)
         if not np.any(R_plate > R_col): R_plate = 0.0
         A_plate   = np.maximum(0.0, np.pi * (R_plate**2.0 - R_col**2.0))
-        m_plate   = coeff * rho * t_plate * A_plate
+        m_plate   = rho * t_plate * A_plate
         A_box     = A_plate.sum() + 2.0 * np.pi * R_plate * h_box
-        m_box     = coeff * rho * t_plate * A_box
+        m_box     = rho * t_plate * A_box
 
         # Compute displcement for buoyancy calculations, but check for what is submerged
         V_box      = np.pi * R_plate**2.0 * h_box
@@ -384,8 +377,6 @@ class StiffenerProperties(om.ExplicitComponent):
     L_stiffener : numpy array[n_full-1]
         Axial distance from one ring stiffener to another within each section bottom to
         top
-    ring_mass_factor : float
-        Stiffener ring mass correction factor
     
     Returns
     -------
@@ -425,7 +416,6 @@ class StiffenerProperties(om.ExplicitComponent):
         self.add_input('w_flange', np.zeros(n_full-1), units='m')
         self.add_input('t_flange', np.zeros(n_full-1), units='m')
         self.add_input('L_stiffener', np.zeros(n_full-1), units='m')
-        self.add_input('ring_mass_factor', 0.0)
 
         self.add_output('stiffener_mass', np.zeros(n_full-1), units='kg')
         self.add_output('stiffener_cost', 0.0, units='USD')
@@ -465,9 +455,8 @@ class StiffenerProperties(om.ExplicitComponent):
         V_flange = np.pi*(R_fo**2 - R_fi**2) * w_flange
 
         # Ring mass by volume by section 
-        # Include fudge factor for design features not captured in this simple approach
-        m_web    = inputs['ring_mass_factor'] * rho * V_web
-        m_flange = inputs['ring_mass_factor'] * rho * V_flange
+        m_web    = rho * V_web
+        m_flange = rho * V_flange
         m_ring   = m_web + m_flange
         n_stiff  = np.zeros(h_web.shape, dtype=np.int_)
         
@@ -837,9 +826,7 @@ class ColumnProperties(om.ExplicitComponent):
         z-coordinate of center of mass for buoyancy tank
     ballast_z_cg : float
         z-coordinate or permanent ballast center of gravity
-    column_mass_factor : float
-        Overall column mass correction factor
-    outfitting_mass_fraction : float
+    outfitting_factor : float
         Mass fraction added for outfitting
     shell_I_keel : numpy array[6]
         Moments of inertia of outer shell relative to keel point
@@ -933,8 +920,7 @@ class ColumnProperties(om.ExplicitComponent):
         
         self.add_input('buoyancy_tank_cg', 0.0, units='m')
         self.add_input('ballast_z_cg', 0.0, units='m')
-        self.add_input('column_mass_factor', 0.0)
-        self.add_input('outfitting_mass_fraction', 0.0)
+        self.add_input('outfitting_factor', 0.0)
         
         # Moments of inertia
         self.add_input('shell_I_keel', np.zeros(6), units='kg*m**2')
@@ -1001,8 +987,7 @@ class ColumnProperties(om.ExplicitComponent):
         outfitting_mass in 'outputs' dictionary set
         """
         # Unpack variables
-        out_frac     = inputs['outfitting_mass_fraction']
-        coeff        = inputs['column_mass_factor']
+        out_frac     = inputs['outfitting_factor']
         z_nodes      = inputs['z_full']
         z_section    = inputs['z_section']
         z_box        = inputs['buoyancy_tank_cg']
@@ -1019,7 +1004,7 @@ class ColumnProperties(om.ExplicitComponent):
         I_ballast    = inputs['ballast_I_keel']
 
         # Consistency check
-        if out_frac > 1.0: out_frac -= 1.0
+        if out_frac < 1.0: out_frac += 1.0
         
         # Initialize summations
         m_column  = 0.0
@@ -1038,12 +1023,6 @@ class ColumnProperties(om.ExplicitComponent):
         m_column += m_box
         z_cg     += m_box*z_box
 
-        # Account for components not explicitly calculated here
-        m_column *= coeff
-
-        # Compute CG position of the column
-        z_cg     *= coeff / m_column
-
         # Now calculate outfitting mass, evenly distributed so cg doesn't change
         m_outfit  = out_frac * m_column
 
@@ -1060,13 +1039,13 @@ class ColumnProperties(om.ExplicitComponent):
         self.ibox = ibox
 
         # Now do tally by section
-        m_sections         = coeff*(m_shell + m_stiffener + m_bulkhead[:-1]) + m_ballast
+        m_sections         = (m_shell + m_stiffener + m_bulkhead[:-1]) + m_ballast
         m_sections        += m_outfit / m_shell.size
-        m_sections[-1]    += coeff*m_bulkhead[-1]
-        m_sections[ibox]  += coeff*m_box
+        m_sections[-1]    += m_bulkhead[-1]
+        m_sections[ibox]  += m_box
 
         # Add up moments of inertia at keel, make sure to scale mass appropriately
-        I_total   = ((1+out_frac) * coeff) * (I_shell + I_stiffener + I_bulkhead + I_box) + I_ballast
+        I_total   = out_frac * (I_shell + I_stiffener + I_bulkhead + I_box) + I_ballast
 
         # Move moments of inertia from keel to cg
         I_total  -= m_total*((z_cg-z_nodes[0])**2.0) * np.r_[1.0, 1.0, np.zeros(4)]
@@ -1152,8 +1131,8 @@ class ColumnProperties(om.ExplicitComponent):
 
         
     def compute_cost(self, inputs, outputs):
-        outputs['column_structural_cost']   = inputs['column_mass_factor']*(inputs['shell_cost'] + inputs['stiffener_cost'] +
-                                                                             inputs['bulkhead_cost'] + inputs['buoyancy_tank_cost'])
+        outputs['column_structural_cost']   = (inputs['shell_cost'] + inputs['stiffener_cost'] +
+                                               inputs['bulkhead_cost'] + inputs['buoyancy_tank_cost'])
         outputs['column_outfitting_cost']   = inputs['outfitting_cost_rate'] * outputs['column_outfitting_mass']
         outputs['column_total_cost']        = outputs['column_structural_cost'] + outputs['column_outfitting_cost'] + inputs['ballast_cost']
         outputs['tapered_column_cost_rate'] = 1e3*outputs['column_total_cost']/outputs['column_total_mass'].sum()
@@ -1405,10 +1384,7 @@ class Column(om.Group):
             sharedIndeps.add_output('Tsig_wave', 10.0, units='s')
             sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
             sharedIndeps.add_output('wind_reference_speed', 0.0, units='m/s')
-            sharedIndeps.add_output('bulkhead_mass_factor', 0.0)
-            sharedIndeps.add_output('ring_mass_factor', 0.0)
-            sharedIndeps.add_output('column_mass_factor', 0.0)
-            sharedIndeps.add_output('outfitting_mass_fraction', 0.0)
+            sharedIndeps.add_output('outfitting_factor', 0.0)
             sharedIndeps.add_output('ballast_cost_rate', 0.0, units='USD/kg')
             sharedIndeps.add_output('unit_cost', 0.0, units='USD/kg')
             sharedIndeps.add_output('labor_cost_rate', 0.0, units='USD/min')

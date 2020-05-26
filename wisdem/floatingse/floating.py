@@ -67,10 +67,7 @@ class FloatingSE(om.Group):
 
         # Column
         ivc.add_output('permanent_ballast_density', 0.0, units='kg/m**3')
-        ivc.add_output('bulkhead_mass_factor', 0.0)
-        ivc.add_output('ring_mass_factor', 0.0)
-        ivc.add_output('column_mass_factor', 0.0)
-        ivc.add_output('outfitting_mass_fraction', 0.0)
+        ivc.add_output('outfitting_factor', 0.0)
         ivc.add_output('ballast_cost_rate', 0.0, units='USD/kg')
         ivc.add_output('unit_cost', 0.0, units='USD/kg')
         ivc.add_output('labor_cost_rate', 0.0, units='USD/min')
@@ -114,13 +111,6 @@ class FloatingSE(om.Group):
             sharedIndeps.add_output('nu', 0.0)
             sharedIndeps.add_output('yield_stress', 0.0, units='N/m**2')
             sharedIndeps.add_output('DC', 0.0)
-            sharedIndeps.add_discrete_output('shear', True)
-            sharedIndeps.add_discrete_output('geom', False)
-            sharedIndeps.add_discrete_output('nM', 2)
-            sharedIndeps.add_discrete_output('Mmethod', 1)
-            sharedIndeps.add_discrete_output('lump', 0)
-            sharedIndeps.add_output('tol', 0.0)
-            sharedIndeps.add_output('shift', 0.0)
             sharedIndeps.add_output('life', 0.0)
             sharedIndeps.add_output('m_SN', 0.0)
             sharedIndeps.add_output('rna_mass', 0.0, units='kg')
@@ -154,16 +144,14 @@ class FloatingSE(om.Group):
                            promotes=['E','nu','yield_stress','z0','rho_air','mu_air','rho_water','mu_water','rho',
                                      'Uref','zref','shearExp','yaw','Uc','hsig_wave','Tsig_wave','cd_usr','cm','loading',
                                      'max_draft','max_taper','min_d_to_t',
-                                     'permanent_ballast_density','bulkhead_mass_factor','buoyancy_tank_mass_factor',
-                                     'ring_mass_factor','column_mass_factor','outfitting_mass_fraction','ballast_cost_rate',
+                                     'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
                                      'unit_cost','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
 
         self.add_subsystem('off', Column(n_height=n_height_off, analysis_options=opt, topLevelFlag=False),
                            promotes=['E','nu','yield_stress','z0','rho_air','mu_air','rho_water','mu_water','rho',
                                      'Uref','zref','shearExp','yaw','Uc','hsig_wave','Tsig_wave','cd_usr','cm','loading',
                                      'max_draft','max_taper','min_d_to_t',
-                                     'permanent_ballast_density','bulkhead_mass_factor','buoyancy_tank_mass_factor',
-                                     'ring_mass_factor','column_mass_factor','outfitting_mass_fraction','ballast_cost_rate',
+                                     'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
                                      'unit_cost','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
 
         # Run Semi Geometry for interfaces
