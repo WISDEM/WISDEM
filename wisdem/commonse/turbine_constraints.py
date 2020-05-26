@@ -54,9 +54,9 @@ class TowerModes(om.ExplicitComponent):
     
     Parameters
     ----------
-    tower_freq : numpy array[2]
+    tower_freq : numpy array[2], [Hz]
         First natural frequencies of tower (and substructure)
-    rotor_omega : float
+    rotor_omega : float, [rpm]
         rated rotor rotation speed
     gamma_freq : float
         partial safety factor for fatigue
@@ -101,29 +101,29 @@ class TipDeflectionConstraint(om.ExplicitComponent):
     ----------
     rotor_orientation : string
         Rotor orientation, either upwind or downwind.
-    tip_deflection : float
+    tip_deflection : float, [m]
         Blade tip deflection in yaw x-direction
-    Rtip : float
+    Rtip : float, [m]
         Blade tip location in z_b
-    ref_axis_blade : numpy array[n_span, 3]
+    ref_axis_blade : numpy array[n_span, 3], [m]
         2D array of the coordinates (x,y,z) of the blade reference axis, defined along
         blade span. The coordinate system is the one of BeamDyn: it is placed at blade
         root with x pointing the suction side of the blade, y pointing the trailing edge
         and z along the blade span. A standard configuration will have negative x values
         (prebend), if swept positive y values, and positive z values.
-    precone : float
+    precone : float, [deg]
         Rotor precone angle
-    tilt : float
+    tilt : float, [deg]
         Nacelle uptilt angle
-    overhang : float
+    overhang : float, [m]
         Horizontal distance between hub and tower-top axis
-    ref_axis_tower : numpy array[n_height_tow, 3]
+    ref_axis_tower : numpy array[n_height_tow, 3], [m]
         2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate
         system is the global coordinate system of OpenFAST: it is placed at tower base
         with x pointing downwind, y pointing on the side and z pointing vertically
         upwards. A standard tower configuration will have zero x and y values and
         positive z values.
-    d_full : numpy array[n_height_tow]
+    d_full : numpy array[n_height_tow], [m]
         Diameter of tower at fine-section nodes
     max_allowable_td_ratio : float
         Safety factor of the tip deflection to stay within the tower clearance
@@ -133,7 +133,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
     tip_deflection_ratio : float
         Ratio of blade tip deflection towards the tower and clearance between
         undeflected blade tip and tower
-    blade_tip_tower_clearance : float
+    blade_tip_tower_clearance : float, [m]
         Clearance between undeflected blade tip and tower in x-direction of yaw c.s.
     
     """

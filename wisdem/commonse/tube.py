@@ -34,24 +34,24 @@ class CylindricalShellProperties(om.ExplicitComponent):
     
     Parameters
     ----------
-    d : numpy array[nFull]
+    d : numpy array[nFull], [m]
         tower diameter at corresponding locations
-    t : numpy array[nFull-1]
+    t : numpy array[nFull-1], [m]
         shell thickness at corresponding locations
     
     Returns
     -------
-    Az : numpy array[nFull-1]
+    Az : numpy array[nFull-1], [m**2]
         cross-sectional area
-    Asx : numpy array[nFull-1]
+    Asx : numpy array[nFull-1], [m**2]
         x shear area
-    Asy : numpy array[nFull-1]
+    Asy : numpy array[nFull-1], [m**2]
         y shear area
-    Jz : numpy array[nFull-1]
+    Jz : numpy array[nFull-1], [m**4]
         polar moment of inertia
-    Ixx : numpy array[nFull-1]
+    Ixx : numpy array[nFull-1], [m**4]
         area moment of inertia about x-axis
-    Iyy : numpy array[nFull-1]
+    Iyy : numpy array[nFull-1], [m**4]
         area moment of inertia about y-axis
     
     """

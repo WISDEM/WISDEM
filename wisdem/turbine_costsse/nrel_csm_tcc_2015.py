@@ -22,7 +22,7 @@ class BladeMass(om.ExplicitComponent):
 
     Parameters
     ----------
-    rotor_diameter : float
+    rotor_diameter : float, [m]
         rotor diameter of the machine
     turbine_class : float
         turbine class.  Set to 1 for Class I, 2 for Class II+, or 0 for user overrides of blade_user_exp
@@ -35,8 +35,8 @@ class BladeMass(om.ExplicitComponent):
     
     Returns
     -------
-    blade_mass : float
-        component mass [kg]
+    blade_mass : float, [kg], [kg]
+        component mass
     
     """
     
@@ -83,8 +83,8 @@ class HubMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    blade_mass : float
-        component mass [kg]
+    blade_mass : float, [kg]
+        component mass
     hub_mass_coeff : float
         k inthe hub mass equation: k*blade_mass + b
     hub_mass_intercept : float
@@ -92,8 +92,8 @@ class HubMass(om.ExplicitComponent):
     
     Returns
     -------
-    hub_mass : float
-        component mass [kg]
+    hub_mass : float, [kg]
+        component mass
     
     """
 
@@ -126,8 +126,8 @@ class PitchSystemMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    blade_mass : float
-        component mass [kg]
+    blade_mass : float, [kg]
+        component mass
     blade_number : float
         number of rotor blades
     pitch_bearing_mass_coeff : float
@@ -141,8 +141,8 @@ class PitchSystemMass(om.ExplicitComponent):
     
     Returns
     -------
-    pitch_system_mass : float
-        component mass [kg]
+    pitch_system_mass : float, [kg]
+        component mass
     
     """
     
@@ -177,7 +177,7 @@ class SpinnerMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    rotor_diameter : float
+    rotor_diameter : float, [m]
         rotor diameter of the machine
     spinner_mass_coeff : float
         k inthe spinner mass equation: k*rotor_diameter + b
@@ -186,8 +186,8 @@ class SpinnerMass(om.ExplicitComponent):
     
     Returns
     -------
-    spinner_mass : float
-        component mass [kg]
+    spinner_mass : float, [kg]
+        component mass
     
     """
 
@@ -216,9 +216,9 @@ class LowSpeedShaftMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    blade_mass : float
+    blade_mass : float, [kg]
         mass for a single wind turbine blade
-    machine_rating : float
+    machine_rating : float, [kW]
         machine rating
     lss_mass_coeff : float
         k inthe lss mass equation: k*(blade_mass*rated_power)^b1 + b2
@@ -229,8 +229,8 @@ class LowSpeedShaftMass(om.ExplicitComponent):
     
     Returns
     -------
-    lss_mass : float
-        component mass [kg]
+    lss_mass : float, [kg]
+        component mass
     
     """
 
@@ -262,7 +262,7 @@ class BearingMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    rotor_diameter : float
+    rotor_diameter : float, [m]
         rotor diameter of the machine
     bearing_mass_coeff : float
         k inthe bearing mass equation: k*rotor_diameter^b
@@ -271,8 +271,8 @@ class BearingMass(om.ExplicitComponent):
     
     Returns
     -------
-    main_bearing_mass : float
-        component mass [kg]
+    main_bearing_mass : float, [kg]
+        component mass
     
     """
 
@@ -300,20 +300,20 @@ class RotorTorque(om.ExplicitComponent):
     
     Parameters
     ----------
-    rotor_diameter : float
+    rotor_diameter : float, [m]
         rotor diameter of the machine
-    machine_rating : float
+    machine_rating : float, [kW]
         machine rating
-    max_tip_speed : float
+    max_tip_speed : float, [m/s]
         Maximum allowable blade tip speed
     max_efficiency : float
         Maximum possible drivetrain efficiency
     
     Returns
     -------
-    rated_rpm : float
+    rated_rpm : float, [rpm]
         rpm of rotor at rated power
-    rotor_torque : float
+    rotor_torque : float, [N*m]
         torque from rotor at rated power
     
     """
@@ -346,7 +346,7 @@ class GearboxMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    rotor_torque : float
+    rotor_torque : float, [N*m]
         torque from rotor at rated power
     gearbox_mass_coeff : float
         k inthe gearbox mass equation: k*rotor_torque^b
@@ -355,8 +355,8 @@ class GearboxMass(om.ExplicitComponent):
     
     Returns
     -------
-    gearbox_mass : float
-        component mass [kg]
+    gearbox_mass : float, [kg]
+        component mass
     
     """
 
@@ -383,15 +383,15 @@ class HighSpeedSideMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    machine_rating : float
+    machine_rating : float, [kW]
         machine rating
     hss_mass_coeff : float
         NREL CSM hss equation; removing intercept since it is negligible
     
     Returns
     -------
-    hss_mass : float
-        component mass [kg]
+    hss_mass : float, [kg]
+        component mass
     
     """
 
@@ -417,7 +417,7 @@ class GeneratorMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    machine_rating : float
+    machine_rating : float, [kW]
         machine rating
     generator_mass_coeff : float
         k inthe generator mass equation: k*rated_power + b
@@ -426,8 +426,8 @@ class GeneratorMass(om.ExplicitComponent):
     
     Returns
     -------
-    generator_mass : float
-        component mass [kg]
+    generator_mass : float, [kg]
+        component mass
     
     """
 
@@ -454,15 +454,15 @@ class BedplateMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    rotor_diameter : float
+    rotor_diameter : float, [m]
         rotor diameter of the machine
     bedplate_mass_exp : float
         exp in the bedplate mass equation: rotor_diameter^b
     
     Returns
     -------
-    bedplate_mass : float
-        component mass [kg]
+    bedplate_mass : float, [kg]
+        component mass
     
     """
 
@@ -489,7 +489,7 @@ class YawSystemMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    rotor_diameter : float
+    rotor_diameter : float, [m]
         rotor diameter of the machine
     yaw_mass_coeff : float
         k inthe yaw mass equation: k*rotor_diameter^b
@@ -498,8 +498,8 @@ class YawSystemMass(om.ExplicitComponent):
     
     Returns
     -------
-    yaw_mass : float
-        component mass [kg]
+    yaw_mass : float, [kg]
+        component mass
     
     """
   
@@ -529,15 +529,15 @@ class HydraulicCoolingMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    machine_rating : float
+    machine_rating : float, [kW]
         machine rating
     hvac_mass_coeff : float
         hvac linear coeff
     
     Returns
     -------
-    hvac_mass : float
-        component mass [kg]
+    hvac_mass : float, [kg]
+        component mass
     
     """
     
@@ -564,7 +564,7 @@ class NacelleCoverMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    machine_rating : float
+    machine_rating : float, [kW]
         machine rating
     cover_mass_coeff : float
         k inthe spinner mass equation: k*rotor_diameter + b
@@ -573,8 +573,8 @@ class NacelleCoverMass(om.ExplicitComponent):
     
     Returns
     -------
-    cover_mass : float
-        component mass [kg]
+    cover_mass : float, [kg]
+        component mass
     
     """
 
@@ -605,19 +605,19 @@ class PlatformsMainframeMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    bedplate_mass : float
-        component mass [kg]
+    bedplate_mass : float, [kg]
+        component mass
     platforms_mass_coeff : float
         nacelle platforms mass coeff as a function of bedplate mass [kg/kg]
     crane : boolean
         flag for presence of onboard crane
-    crane_weight : float
+    crane_weight : float, [kg]
         weight of onboard crane
     
     Returns
     -------
-    platforms_mass : float
-        component mass [kg]
+    platforms_mass : float, [kg]
+        component mass
     
     """
     # nacelle platforms, service crane, base hardware
@@ -657,7 +657,7 @@ class TransformerMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    machine_rating : float
+    machine_rating : float, [kW]
         machine rating
     transformer_mass_coeff : float
         k inthe transformer mass equation: k*rated_power + b
@@ -666,8 +666,8 @@ class TransformerMass(om.ExplicitComponent):
     
     Returns
     -------
-    transformer_mass : float
-        component mass [kg]
+    transformer_mass : float, [kg]
+        component mass
     
     """
 
@@ -695,7 +695,7 @@ class TowerMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    hub_height : float
+    hub_height : float, [m]
         hub height of wind turbine above ground / sea level
     tower_mass_coeff : float
         k inthe tower mass equation: k*hub_height^b
@@ -704,8 +704,8 @@ class TowerMass(om.ExplicitComponent):
     
     Returns
     -------
-    tower_mass : float
-        component mass [kg]
+    tower_mass : float, [kg]
+        component mass
     
     """
   
@@ -731,38 +731,38 @@ class TurbineMassAdder(om.ExplicitComponent):
     
     Parameters
     ----------
-    blade_mass : float
-        component mass [kg]
-    hub_mass : float
-        component mass [kg]
-    pitch_system_mass : float
-        component mass [kg]
-    spinner_mass : float
-        component mass [kg]
-    lss_mass : float
-        component mass [kg]
-    main_bearing_mass : float
-        component mass [kg]
-    gearbox_mass : float
-        component mass [kg]
-    hss_mass : float
-        component mass [kg]
-    generator_mass : float
-        component mass [kg]
-    bedplate_mass : float
-        component mass [kg]
-    yaw_mass : float
-        component mass [kg]
-    hvac_mass : float
-        component mass [kg]
-    cover_mass : float
-        component mass [kg]
-    platforms_mass : float
-        component mass [kg]
-    transformer_mass : float
-        component mass [kg]
-    tower_mass : float
-        component mass [kg]
+    blade_mass : float, [kg]
+        component mass
+    hub_mass : float, [kg]
+        component mass
+    pitch_system_mass : float, [kg]
+        component mass
+    spinner_mass : float, [kg]
+        component mass
+    lss_mass : float, [kg]
+        component mass
+    main_bearing_mass : float, [kg]
+        component mass
+    gearbox_mass : float, [kg]
+        component mass
+    hss_mass : float, [kg]
+        component mass
+    generator_mass : float, [kg]
+        component mass
+    bedplate_mass : float, [kg]
+        component mass
+    yaw_mass : float, [kg]
+        component mass
+    hvac_mass : float, [kg]
+        component mass
+    cover_mass : float, [kg]
+        component mass
+    platforms_mass : float, [kg]
+        component mass
+    transformer_mass : float, [kg]
+        component mass
+    tower_mass : float, [kg]
+        component mass
     blade_number : float
         number of rotor blades
     main_bearing_number : float
@@ -770,13 +770,13 @@ class TurbineMassAdder(om.ExplicitComponent):
     
     Returns
     -------
-    hub_system_mass : float
+    hub_system_mass : float, [kg]
         hub system mass
-    rotor_mass : float
+    rotor_mass : float, [kg]
         hub system mass
-    nacelle_mass : float
+    nacelle_mass : float, [kg]
         nacelle mass
-    turbine_mass : float
+    turbine_mass : float, [kg]
         turbine mass
     
     """

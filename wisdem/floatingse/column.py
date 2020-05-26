@@ -34,37 +34,37 @@ class BulkheadProperties(om.ExplicitComponent):
     
     Parameters
     ----------
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         z-coordinates of section nodes (length = nsection+1)
-    z_param : numpy array[nSection+1, ]
+    z_param : numpy array[nSection+1, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    d_full : numpy array[nFull]
+    d_full : numpy array[nFull], [m]
         cylinder diameter at corresponding locations
-    t_full : numpy array[nFull-1]
+    t_full : numpy array[nFull-1], [m]
         shell thickness at corresponding locations
-    rho : float
+    rho : float, [kg/m**3]
         material density
-    bulkhead_thickness : numpy array[nSection+1]
+    bulkhead_thickness : numpy array[nSection+1], [m]
         Nodal locations of bulkhead thickness, zero meaning no bulkhead, bottom to top
         (length = nsection + 1)
     bulkhead_mass_factor : float
         Bulkhead mass correction factor
-    shell_mass : numpy array[nFull-1]
+    shell_mass : numpy array[nFull-1], [kg]
         mass of column shell
-    material_cost_rate : float
+    material_cost_rate : float, [USD/kg]
         Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg
-    labor_cost_rate : float
+    labor_cost_rate : float, [USD/min]
         Labor cost rate
-    painting_cost_rate : float
+    painting_cost_rate : float, [USD/m/m]
         Painting / surface finishing cost rate
     
     Returns
     -------
-    bulkhead_mass : numpy array[nFull]
+    bulkhead_mass : numpy array[nFull], [kg]
         mass of column bulkheads
-    bulkhead_cost : float
+    bulkhead_cost : float, [USD]
         cost of column bulkheads
-    bulkhead_I_keel : numpy array[6]
+    bulkhead_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of bulkheads relative to keel point
     
     """
@@ -176,40 +176,40 @@ class BuoyancyTankProperties(om.ExplicitComponent):
     
     Parameters
     ----------
-    d_full : numpy array[nFull]
+    d_full : numpy array[nFull], [m]
         cylinder diameter at corresponding locations
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         z-coordinates of section nodes
-    rho : float
+    rho : float, [kg/m**3]
         material density
-    shell_mass : numpy array[nFull-1]
+    shell_mass : numpy array[nFull-1], [kg]
         mass of column shell
-    material_cost_rate : float
+    material_cost_rate : float, [USD/kg]
         Raw material cost: steel $1.1/kg, aluminum $3.5/kg
-    labor_cost_rate : float
+    labor_cost_rate : float, [USD/min]
         Labor cost
-    painting_cost_rate : float
+    painting_cost_rate : float, [USD/m/m]
         Painting / surface finishing cost rate
-    buoyancy_tank_diameter : float
+    buoyancy_tank_diameter : float, [m]
         Radius of heave plate at bottom of column
-    buoyancy_tank_height : float
+    buoyancy_tank_height : float, [m]
         Radius of heave plate at bottom of column
-    buoyancy_tank_location : float
+    buoyancy_tank_location : float, [m]
         Radius of heave plate at bottom of column
     buoyancy_tank_mass_factor : float
         Heave plate mass correction factor
     
     Returns
     -------
-    buoyancy_tank_mass : float
+    buoyancy_tank_mass : float, [kg]
         mass of buoyancy tank
-    buoyancy_tank_cost : float
+    buoyancy_tank_cost : float, [USD]
         cost of buoyancy tank
-    buoyancy_tank_cg : float
+    buoyancy_tank_cg : float, [m]
         z-coordinate of center of mass for buoyancy tank
-    buoyancy_tank_displacement : float
+    buoyancy_tank_displacement : float, [m**3]
         volume of water displaced by buoyancy tank
-    buoyancy_tank_I_keel : numpy array[6]
+    buoyancy_tank_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of heave plate relative to keel point
     
     """
@@ -356,31 +356,31 @@ class StiffenerProperties(om.ExplicitComponent):
     
     Parameters
     ----------
-    d_full : numpy array[nFull]
+    d_full : numpy array[nFull], [m]
         cylinder diameter at corresponding locations
-    t_full : numpy array[nFull-1]
+    t_full : numpy array[nFull-1], [m]
         shell thickness at corresponding locations
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         z-coordinates of section nodes
-    rho : float
+    rho : float, [kg/m**3]
         material density
-    shell_mass : numpy array[nFull-1]
+    shell_mass : numpy array[nFull-1], [kg]
         mass of column shell
-    material_cost_rate : float
+    material_cost_rate : float, [USD/kg]
         Raw material cost: steel $1.1/kg, aluminum $3.5/kg
-    labor_cost_rate : float
+    labor_cost_rate : float, [USD/min]
         Labor cost
-    painting_cost_rate : float
+    painting_cost_rate : float, [USD/m/m]
         Painting / surface finishing cost rate
-    h_web : numpy array[nFull-1, ]
+    h_web : numpy array[nFull-1, ], [m]
         height of stiffener web (base of T) within each section bottom to top
-    t_web : numpy array[nFull-1, ]
+    t_web : numpy array[nFull-1, ], [m]
         thickness of stiffener web (base of T) within each section bottom to top
-    w_flange : numpy array[nFull-1, ]
+    w_flange : numpy array[nFull-1, ], [m]
         height of stiffener flange (top of T) within each section bottom to top
-    t_flange : numpy array[nFull-1, ]
+    t_flange : numpy array[nFull-1, ], [m]
         thickness of stiffener flange (top of T) within each section bottom to top
-    L_stiffener : numpy array[nFull-1, ]
+    L_stiffener : numpy array[nFull-1, ], [m]
         Axial distance from one ring stiffener to another within each section bottom to
         top
     ring_mass_factor : float
@@ -388,11 +388,11 @@ class StiffenerProperties(om.ExplicitComponent):
     
     Returns
     -------
-    stiffener_mass : numpy array[nFull-1]
+    stiffener_mass : numpy array[nFull-1], [kg]
         mass of column stiffeners
-    stiffener_cost : float
+    stiffener_cost : float, [USD]
         cost of column stiffeners
-    stiffener_I_keel : numpy array[6]
+    stiffener_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of stiffeners relative to keel point
     number_of_stiffeners : numpy array[nSection, dtype]
         number of stiffeners in each section
@@ -562,34 +562,34 @@ class BallastProperties(om.ExplicitComponent):
     
     Parameters
     ----------
-    water_density : float
+    water_density : float, [kg/m**3]
         density of water
-    d_full : numpy array[nFull]
+    d_full : numpy array[nFull], [m]
         cylinder diameter at corresponding locations
-    t_full : numpy array[nFull-1]
+    t_full : numpy array[nFull-1], [m]
         shell thickness at corresponding locations
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         z-coordinates of section nodes
-    permanent_ballast_density : float
+    permanent_ballast_density : float, [kg/m**3]
         density of permanent ballast
-    permanent_ballast_height : float
+    permanent_ballast_height : float, [m]
         height of permanent ballast
-    ballast_cost_rate : float
+    ballast_cost_rate : float, [USD/kg]
         Cost per unit mass of ballast
     
     Returns
     -------
-    ballast_cost : float
+    ballast_cost : float, [USD]
         cost of permanent ballast
-    ballast_mass : numpy array[nFull-1]
+    ballast_mass : numpy array[nFull-1], [kg]
         mass of permanent ballast
-    ballast_z_cg : float
+    ballast_z_cg : float, [m]
         z-coordinate or permanent ballast center of gravity
-    ballast_I_keel : numpy array[6]
+    ballast_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of permanent ballast relative to keel point
-    variable_ballast_interp_zpts : numpy array[nFull, ]
+    variable_ballast_interp_zpts : numpy array[nFull, ], [m]
         z-points of potential ballast mass
-    variable_ballast_interp_radius : numpy array[nFull, ]
+    variable_ballast_interp_radius : numpy array[nFull, ], [m]
         inner radius of column at potential ballast mass
     
     """
@@ -680,55 +680,55 @@ class ColumnGeometry(om.ExplicitComponent):
     
     Parameters
     ----------
-    water_depth : float
+    water_depth : float, [m]
         water depth
-    Hs : float
+    Hs : float, [m]
         significant wave height
-    freeboard : float
+    freeboard : float, [m]
         Length of column above water line
-    max_draft : float
+    max_draft : float, [m]
         Maxmimum length of column below water line
-    z_full_in : numpy array[nFull, ]
+    z_full_in : numpy array[nFull, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    z_param_in : numpy array[nSection+1, ]
+    z_param_in : numpy array[nSection+1, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    section_center_of_mass : numpy array[nFull-1]
+    section_center_of_mass : numpy array[nFull-1], [m]
         z position of center of mass of each can in the cylinder
-    stiffener_web_height : numpy array[nSection, ]
+    stiffener_web_height : numpy array[nSection, ], [m]
         height of stiffener web (base of T) within each section bottom to top
         (length = nsection)
-    stiffener_web_thickness : numpy array[nSection, ]
+    stiffener_web_thickness : numpy array[nSection, ], [m]
         thickness of stiffener web (base of T) within each section bottom to top
         (length = nsection)
-    stiffener_flange_width : numpy array[nSection, ]
+    stiffener_flange_width : numpy array[nSection, ], [m]
         height of stiffener flange (top of T) within each section bottom to top
         (length = nsection)
-    stiffener_flange_thickness : numpy array[nSection, ]
+    stiffener_flange_thickness : numpy array[nSection, ], [m]
         thickness of stiffener flange (top of T) within each section bottom to top
         (length = nsection)
-    stiffener_spacing : numpy array[nSection, ]
+    stiffener_spacing : numpy array[nSection, ], [m]
         Axial distance from one ring stiffener to another within each section bottom to
         top (length = nsection)
     
     Returns
     -------
-    z_full : numpy array[nFull, ]
+    z_full : numpy array[nFull, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    z_param : numpy array[nSection+1, ]
+    z_param : numpy array[nSection+1, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    draft : float
+    draft : float, [m]
         Column draft (length of body under water)
-    z_section : numpy array[nFull-1, ]
+    z_section : numpy array[nFull-1, ], [m]
         z-coordinates of section centers of mass (length = nsection)
-    h_web : numpy array[nFull-1, ]
+    h_web : numpy array[nFull-1, ], [m]
         height of stiffener web (base of T) within each section bottom to top
-    t_web : numpy array[nFull-1, ]
+    t_web : numpy array[nFull-1, ], [m]
         thickness of stiffener web (base of T) within each section bottom to top
-    w_flange : numpy array[nFull-1, ]
+    w_flange : numpy array[nFull-1, ], [m]
         height of stiffener flange (top of T) within each section bottom to top
-    t_flange : numpy array[nFull-1, ]
+    t_flange : numpy array[nFull-1, ], [m]
         thickness of stiffener flange (top of T) within each section bottom to top
-    L_stiffener : numpy array[nFull-1, ]
+    L_stiffener : numpy array[nFull-1, ], [m]
         Axial distance from one ring stiffener to another within each section bottom to
         top
     draft_margin : float
@@ -810,94 +810,94 @@ class ColumnProperties(om.ExplicitComponent):
     
     Parameters
     ----------
-    water_density : float
+    water_density : float, [kg/m**3]
         density of water
-    z_full : numpy array[nFull, ]
+    z_full : numpy array[nFull, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    z_section : numpy array[nFull-1, ]
+    z_section : numpy array[nFull-1, ], [m]
         z-coordinates of section centers of mass (length = nsection)
-    d_full : numpy array[nFull, ]
+    d_full : numpy array[nFull, ], [m]
         outer diameter at each section node bottom to top (length = nsection + 1)
-    t_full : numpy array[nFull-1, ]
+    t_full : numpy array[nFull-1, ], [m]
         shell wall thickness at each section node bottom to top (length = nsection + 1)
-    buoyancy_tank_diameter : float
+    buoyancy_tank_diameter : float, [m]
         Radius of heave plate at bottom of column
-    shell_mass : numpy array[nFull-1]
+    shell_mass : numpy array[nFull-1], [kg]
         mass of column shell
-    stiffener_mass : numpy array[nFull-1]
+    stiffener_mass : numpy array[nFull-1], [kg]
         mass of column stiffeners
-    bulkhead_mass : numpy array[nFull]
+    bulkhead_mass : numpy array[nFull], [kg]
         mass of column bulkheads
-    buoyancy_tank_mass : float
+    buoyancy_tank_mass : float, [kg]
         mass of heave plate
-    ballast_mass : numpy array[nFull-1]
+    ballast_mass : numpy array[nFull-1], [kg]
         mass of permanent ballast
-    buoyancy_tank_cg : float
+    buoyancy_tank_cg : float, [m]
         z-coordinate of center of mass for buoyancy tank
-    ballast_z_cg : float
+    ballast_z_cg : float, [m]
         z-coordinate or permanent ballast center of gravity
     column_mass_factor : float
         Overall column mass correction factor
     outfitting_mass_fraction : float
         Mass fraction added for outfitting
-    shell_I_keel : numpy array[6]
+    shell_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of outer shell relative to keel point
-    bulkhead_I_keel : numpy array[6]
+    bulkhead_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of bulkheads relative to keel point
-    stiffener_I_keel : numpy array[6]
+    stiffener_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of stiffeners relative to keel point
-    buoyancy_tank_I_keel : numpy array[6]
+    buoyancy_tank_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of heave plate relative to keel point
-    ballast_I_keel : numpy array[6]
+    ballast_I_keel : numpy array[6], [kg*m**2]
         Moments of inertia of permanent ballast relative to keel point
-    buoyancy_tank_displacement : float
+    buoyancy_tank_displacement : float, [m**3]
         volume of water displaced by buoyancy tank
-    shell_cost : float
+    shell_cost : float, [USD]
         mass of column shell
-    stiffener_cost : float
+    stiffener_cost : float, [USD]
         mass of column stiffeners
-    bulkhead_cost : float
+    bulkhead_cost : float, [USD]
         mass of column bulkheads
-    ballast_cost : float
+    ballast_cost : float, [USD]
         cost of permanent ballast
-    buoyancy_tank_cost : float
+    buoyancy_tank_cost : float, [USD]
         mass of heave plate
-    material_cost_rate : float
+    material_cost_rate : float, [USD/kg]
         Raw material cost: steel $1.1/kg, aluminum $3.5/kg
-    outfitting_cost_rate : float
+    outfitting_cost_rate : float, [USD/kg]
         Cost per unit mass for outfitting column
     
     Returns
     -------
-    z_center_of_mass : float
+    z_center_of_mass : float, [m]
         z-position CofG of column
-    z_center_of_buoyancy : float
+    z_center_of_buoyancy : float, [m]
         z-position CofB of column
-    Awater : float
+    Awater : float, [m**2]
         Area of waterplace cross section
-    Iwater : float
+    Iwater : float, [m**4]
         Second moment of area of waterplace cross section
-    I_column : numpy array[6]
+    I_column : numpy array[6], [kg*m**2]
         Moments of inertia of whole column relative to keel point
-    displaced_volume : numpy array[nFull-1, ]
+    displaced_volume : numpy array[nFull-1, ], [m**3]
         Volume of water displaced by column by section
-    hydrostatic_force : numpy array[nFull-1, ]
+    hydrostatic_force : numpy array[nFull-1, ], [N]
         Net z-force on column sections
-    column_structural_mass : float
+    column_structural_mass : float, [kg]
         mass of column structure
-    column_outfitting_cost : float
+    column_outfitting_cost : float, [USD]
         cost of outfitting the column
-    column_outfitting_mass : float
+    column_outfitting_mass : float, [kg]
         cost of outfitting the column
-    column_added_mass : numpy array[6]
+    column_added_mass : numpy array[6], [kg]
         hydrodynamic added mass matrix diagonal
-    column_total_mass : numpy array[nFull-1, ]
+    column_total_mass : numpy array[nFull-1, ], [kg]
         total mass of column by section
-    column_total_cost : float
+    column_total_cost : float, [USD]
         total cost of column
-    column_structural_cost : float
+    column_structural_cost : float, [USD]
         Cost of column without ballast or outfitting
-    tapered_column_cost_rate : float
+    tapered_column_cost_rate : float, [USD/t]
         Cost rate of finished column
     
     """
@@ -1165,34 +1165,34 @@ class ColumnBuckling(om.ExplicitComponent):
     
     Parameters
     ----------
-    stack_mass_in : float
+    stack_mass_in : float, [kg]
         Weight above the cylinder column
-    section_mass : numpy array[nFull-1, ]
+    section_mass : numpy array[nFull-1, ], [kg]
         total mass of column by section
-    pressure : numpy array[nFull]
+    pressure : numpy array[nFull], [N/m**2]
         Dynamic (and static)? pressure
-    d_full : numpy array[nFull]
+    d_full : numpy array[nFull], [m]
         cylinder diameter at corresponding locations
-    t_full : numpy array[nFull-1]
+    t_full : numpy array[nFull-1], [m]
         shell thickness at corresponding locations
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         z-coordinates of section nodes (length = nsection+1)
-    h_web : numpy array[nFull-1, ]
+    h_web : numpy array[nFull-1, ], [m]
         height of stiffener web (base of T) within each section bottom to top
-    t_web : numpy array[nFull-1, ]
+    t_web : numpy array[nFull-1, ], [m]
         thickness of stiffener web (base of T) within each section bottom to top
-    w_flange : numpy array[nFull-1, ]
+    w_flange : numpy array[nFull-1, ], [m]
         height of stiffener flange (top of T) within each section bottom to top
-    t_flange : numpy array[nFull-1, ]
+    t_flange : numpy array[nFull-1, ], [m]
         thickness of stiffener flange (top of T) within each section bottom to top
-    L_stiffener : numpy array[nFull-1, ]
+    L_stiffener : numpy array[nFull-1, ], [m]
         Axial distance from one ring stiffener to another within each section bottom to
         top
-    E : float
+    E : float, [Pa]
         Modulus of elasticity (Youngs) of material
     nu : float
         poissons ratio of column material
-    yield_stress : float
+    yield_stress : float, [Pa]
         yield stress of material
     loading : string
         Loading type in API checks [hydro/radial]
@@ -1203,25 +1203,25 @@ class ColumnBuckling(om.ExplicitComponent):
     
     Returns
     -------
-    flange_compactness : numpy array[nFull-1]
+    flange_compactness : numpy array[nFull-1, ]
         check for flange compactness
-    web_compactness : numpy array[nFull-1]
+    web_compactness : numpy array[nFull-1, ]
         check for web compactness
-    axial_local_api : numpy array[nFull-1]
+    axial_local_api : numpy array[nFull-1, ]
         unity check for axial load with API safety factors - local buckling
-    axial_general_api : numpy array[nFull-1]
+    axial_general_api : numpy array[nFull-1, ]
         unity check for axial load with API safety factors- genenral instability
-    external_local_api : numpy array[nFull-1]
+    external_local_api : numpy array[nFull-1, ]
         unity check for external pressure with API safety factors- local buckling
-    external_general_api : numpy array[nFull-1]
+    external_general_api : numpy array[nFull-1, ]
         unity check for external pressure with API safety factors- general instability
-    axial_local_utilization : numpy array[nFull-1]
+    axial_local_utilization : numpy array[nFull-1, ]
         utilization check for axial load - local buckling
-    axial_general_utilization : numpy array[nFull-1]
+    axial_general_utilization : numpy array[nFull-1, ]
         utilization check for axial load - genenral instability
-    external_local_utilization : numpy array[nFull-1]
+    external_local_utilization : numpy array[nFull-1, ]
         utilization check for external pressure - local buckling
-    external_general_utilization : numpy array[nFull-1]
+    external_general_utilization : numpy array[nFull-1, ]
         utilization check for external pressure - general instability
     
     """
