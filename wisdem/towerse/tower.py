@@ -427,21 +427,21 @@ class TowerMass(om.ExplicitComponent):
     cylinder_cost : float, [USD]
         Total cylinder cost
     cylinder_center_of_mass : float, [m]
-        z-position of center of mass of cylinder
+        z position of center of mass of cylinder
     cylinder_section_center_of_mass : numpy array[nFull-1], [m]
         z position of center of mass of each can in the cylinder
-    cylinder_I_base : numpy array[6, ], [kg*m**2]
-        mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
+    cylinder_I_base : numpy array[6], [kg*m**2]
+        Mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
     transition_piece_height : float, [m]
-        point mass height of transition piece above water line
+        Point mass height of transition piece above water line
     transition_piece_mass : float, [kg]
-        point mass of transition piece
+        Point mass of transition piece
     gravity_foundation_mass : float, [kg]
-        extra mass of gravity foundation
+        Extra mass of gravity foundation
     foundation_height : float, [m]
-        height of foundation (0.0 for land, -water_depth for fixed bottom)
+        Height of foundation (0.0 for land, -water_depth for fixed bottom)
     z_full : numpy array[nFull], [m]
-        parameterized locations along tower, linear lofting between
+        Parameterized locations along tower, linear lofting between
     
     Returns
     -------
@@ -453,8 +453,8 @@ class TowerMass(om.ExplicitComponent):
         z-position of center of mass of tower
     tower_section_center_of_mass : numpy array[nFull-1], [m]
         z position of center of mass of each can in the tower
-    tower_I_base : numpy array[6, ], [kg*m**2]
-        mass moment of inertia of tower about base [xx yy zz xy xz yz]
+    tower_I_base : numpy array[6], [kg*m**2]
+        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
     monopile_mass : float, [kg]
         Mass of monopile from bottom of suction pile through transition piece
     monopile_cost : float, [USD]
@@ -568,26 +568,26 @@ class TurbineMass(om.ExplicitComponent):
         Hub-height
     rna_mass : float, [kg]
         Total tower mass
-    rna_I : numpy array[6, ], [kg*m**2]
-        mass moment of inertia of rna about tower top [xx yy zz xy xz yz]
-    rna_cg : numpy array[3, ], [m]
-        xyz-location of rna cg relative to tower top
+    rna_I : numpy array[6], [kg*m**2]
+        Mass moment of inertia of RNA about tower top [xx yy zz xy xz yz]
+    rna_cg : numpy array[3], [m]
+        xyz-location of RNA cg relative to tower top
     tower_mass : float, [kg]
         Total tower mass (not including monopile)
     monopile_mass : float, [kg]
         Monopile mass
     tower_center_of_mass : float, [m]
         z-position of center of mass of tower
-    tower_I_base : numpy array[6, ], [kg*m**2]
-        mass moment of inertia of tower about base [xx yy zz xy xz yz]
+    tower_I_base : numpy array[6], [kg*m**2]
+        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
     
     Returns
     -------
     turbine_mass : float, [kg]
         Total mass of tower+rna
-    turbine_center_of_mass : numpy array[3, ], [m]
+    turbine_center_of_mass : numpy array[3], [m]
         xyz-position of tower+rna center of mass
-    turbine_I_base : numpy array[6, ], [kg*m**2]
+    turbine_I_base : numpy array[6], [kg*m**2]
         mass moment of inertia of tower about base [xx yy zz xy xz yz]
     
     """
@@ -641,9 +641,9 @@ class TowerPreFrame(om.ExplicitComponent):
         parameterized locations along tower, linear lofting between
     mass : float, [kg]
         added mass
-    mI : numpy array[6, ], [kg*m**2]
+    mI : numpy array[6], [kg*m**2]
         mass moment of inertia about some point p [xx yy zz xy xz yz]
-    mrho : numpy array[3, ], [m]
+    mrho : numpy array[3], [m]
         xyz-location of p relative to node
     transition_piece_mass : float, [kg]
         point mass of transition piece
@@ -653,9 +653,9 @@ class TowerPreFrame(om.ExplicitComponent):
         height of transition piece above water line
     foundation_height : float, [m]
         height of foundation (0.0 for land, -water_depth for fixed bottom)
-    rna_F : numpy array[3, ], [N]
+    rna_F : numpy array[3], [N]
         rna force
-    rna_M : numpy array[3, ], [N*m]
+    rna_M : numpy array[3], [N*m]
         rna moment
     k_monopile : numpy array[6], [N/m]
         Stiffness BCs for ocean soil. Only used if monoflag inputis True
@@ -940,7 +940,7 @@ class TowerPostFrame(om.ExplicitComponent):
     top_deflection : float, [m]
         Deflection of tower top in yaw-aligned +x direction
     stress : numpy array[nFull-1]
-        Von Mises stress utilization along tower at specified locations. incudes safety
+        Von Mises stress utilization along tower at specified locations. Includes safety
         factor.
     shell_buckling : numpy array[nFull-1]
         Shell buckling constraint. Should be < 1 for feasibility. Includes safety
