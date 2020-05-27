@@ -30,101 +30,101 @@ class FloatingFrame(om.ExplicitComponent):
     
     Parameters
     ----------
-    water_density : float
+    water_density : float, [kg/m**3]
         density of water
-    material_density : float
+    material_density : float, [kg/m**3]
         density of material
-    E : float
+    E : float, [Pa]
         Modulus of elasticity (Youngs) of material
-    G : float
+    G : float, [Pa]
         Shear modulus of material
-    yield_stress : float
+    yield_stress : float, [Pa]
         yield stress of material
-    Hs : float
+    Hs : float, [m]
         wave significant height
-    main_z_full : numpy array[nFull]
+    main_z_full : numpy array[nFull, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    main_d_full : numpy array[nFull]
+    main_d_full : numpy array[nFull, ], [m]
         outer radius at each section node bottom to top (length = nsection + 1)
-    main_t_full : numpy array[nFull-1]
+    main_t_full : numpy array[nFull-1, ], [m]
         shell wall thickness at each section node bottom to top (length = nsection + 1)
-    main_mass : numpy array[nFull-1]
+    main_mass : numpy array[nFull-1, ], [kg]
         mass of main column by section
-    main_buckling_length : numpy array[nFull-1]
+    main_buckling_length : numpy array[nFull-1, ], [m]
         distance between ring stiffeners
-    main_displaced_volume : numpy array[nFull-1]
+    main_displaced_volume : numpy array[nFull-1, ], [m**3]
         column volume of water displaced by section
-    main_hydrostatic_force : numpy array[nFull-1]
+    main_hydrostatic_force : numpy array[nFull-1, ], [N]
         Net z-force of hydrostatic pressure by section
-    main_center_of_buoyancy : float
+    main_center_of_buoyancy : float, [m]
         z-position of center of column buoyancy force
-    main_center_of_mass : float
+    main_center_of_mass : float, [m]
         z-position of center of column mass
-    main_Px : numpy array[nFull]
+    main_Px : numpy array[nFull], [N/m]
         force per unit length in x-direction on main
-    main_Py : numpy array[nFull]
+    main_Py : numpy array[nFull], [N/m]
         force per unit length in y-direction on main
-    main_Pz : numpy array[nFull]
+    main_Pz : numpy array[nFull], [N/m]
         force per unit length in z-direction on main
-    main_qdyn : numpy array[nFull]
+    main_qdyn : numpy array[nFull], [N/m**2]
         dynamic pressure on main
     main_pontoon_attach_upper : float
         Fraction of main column for upper truss attachment on main column
     main_pontoon_attach_lower : float
         Fraction of main column lower truss attachment on main column
-    offset_z_full : numpy array[nFull]
+    offset_z_full : numpy array[nFull, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    offset_d_full : numpy array[nFull]
+    offset_d_full : numpy array[nFull, ], [m]
         outer radius at each section node bottom to top (length = nsection + 1)
-    offset_t_full : numpy array[nFull-1]
+    offset_t_full : numpy array[nFull-1, ], [m]
         shell wall thickness at each section node bottom to top (length = nsection + 1)
-    offset_mass : numpy array[nFull-1]
+    offset_mass : numpy array[nFull-1, ], [kg]
         mass of offset column by section
-    offset_buckling_length : numpy array[nFull-1]
+    offset_buckling_length : numpy array[nFull-1, ], [m]
         distance between ring stiffeners
-    offset_displaced_volume : numpy array[nFull-1]
+    offset_displaced_volume : numpy array[nFull-1, ], [m**3]
         column volume of water displaced by section
-    offset_hydrostatic_force : numpy array[nFull-1]
+    offset_hydrostatic_force : numpy array[nFull-1, ], [N]
         Net z-force of hydrostatic pressure by section
-    offset_center_of_buoyancy : float
+    offset_center_of_buoyancy : float, [m]
         z-position of center of column buoyancy force
-    offset_center_of_mass : float
+    offset_center_of_mass : float, [m]
         z-position of center of column mass
-    offset_Px : numpy array[nFull]
+    offset_Px : numpy array[nFull], [N/m]
         force per unit length in x-direction on offset
-    offset_Py : numpy array[nFull]
+    offset_Py : numpy array[nFull], [N/m]
         force per unit length in y-direction on offset
-    offset_Pz : numpy array[nFull]
+    offset_Pz : numpy array[nFull], [N/m]
         force per unit length in z-direction on offset
-    offset_qdyn : numpy array[nFull]
+    offset_qdyn : numpy array[nFull], [N/m**2]
         dynamic pressure on offset
-    tower_z_full : numpy array[nFullTow]
+    tower_z_full : numpy array[nFullTow, ], [m]
         z-coordinates of section nodes (length = nsection+1)
-    tower_d_full : numpy array[nFullTow]
+    tower_d_full : numpy array[nFullTow, ], [m]
         outer radius at each section node bottom to top (length = nsection + 1)
-    tower_t_full : numpy array[nFullTow-1]
+    tower_t_full : numpy array[nFullTow-1, ], [m]
         shell wall thickness at each section node bottom to top (length = nsection + 1)
-    tower_mass_section : numpy array[nFullTow-1]
+    tower_mass_section : numpy array[nFullTow-1, ], [kg]
         mass of tower column by section
-    tower_buckling_length : float
+    tower_buckling_length : float, [m]
         buckling length
-    tower_center_of_mass : float
+    tower_center_of_mass : float, [m]
         z-position of center of tower mass
-    tower_Px : numpy array[nFullTow]
+    tower_Px : numpy array[nFullTow], [N/m]
         force per unit length in x-direction on tower
-    tower_Py : numpy array[nFullTow]
+    tower_Py : numpy array[nFullTow], [N/m]
         force per unit length in y-direction on tower
-    tower_Pz : numpy array[nFullTow]
+    tower_Pz : numpy array[nFullTow], [N/m]
         force per unit length in z-direction on tower
-    tower_qdyn : numpy array[nFullTow]
+    tower_qdyn : numpy array[nFullTow], [N/m**2]
         dynamic pressure on tower
-    radius_to_offset_column : float
+    radius_to_offset_column : float, [m]
         Distance from main column centerpoint to offset column centerpoint
     number_of_offset_columns : float
         Number of offset columns evenly spaced around main column
-    pontoon_outer_diameter : float
+    pontoon_outer_diameter : float, [m]
         Outer radius of tubular pontoon that connects offset or main columns
-    pontoon_wall_thickness : float
+    pontoon_wall_thickness : float, [m]
         Inner radius of tubular pontoon that connects offset or main columns
     cross_attachment_pontoons : TODO: add type by hand, could not be parsed automatically
         Inclusion of pontoons that connect the bottom of the central main to the tops of
@@ -141,34 +141,34 @@ class FloatingFrame(om.ExplicitComponent):
         Inclusion of pontoons that ring around outer offset columns at their tops
     outer_cross_pontoons : TODO: add type by hand, could not be parsed automatically
         Inclusion of pontoons that ring around outer offset columns at their tops
-    rna_mass : float
+    rna_mass : float, [kg]
         mass of tower
-    rna_cg : numpy array[3]
+    rna_cg : numpy array[3], [m]
         Location of RNA center of mass relative to tower top
-    rna_force : numpy array[3]
+    rna_force : numpy array[3], [N]
         Force in xyz-direction on turbine
-    rna_moment : numpy array[3]
+    rna_moment : numpy array[3], [N*m]
         Moments about turbine main
-    rna_I : numpy array[6]
+    rna_I : numpy array[6], [kg*m**2]
         Moments about turbine main
     number_of_mooring_connections : float
         number of mooring connections on vessel
     mooring_lines_per_connection : float
         number of mooring lines per connection
-    mooring_neutral_load : numpy array[NLINES_MAX, 3]
+    mooring_neutral_load : numpy array[NLINES_MAX, 3], [N]
         z-force of mooring lines on structure
-    mooring_stiffness : numpy array[6, 6]
+    mooring_stiffness : numpy array[6, 6], [N/m]
         Linearized stiffness matrix of mooring system at neutral (no offset) conditions.
-    mooring_moments_of_inertia : numpy array[6]
+    mooring_moments_of_inertia : numpy array[6], [kg*m**2]
         mass moment of inertia of mooring system about fairlead-centerline point [xx yy
         zz xy xz yz]
-    fairlead : float
+    fairlead : float, [m]
         Depth below water for mooring line attachment
-    fairlead_radius : float
+    fairlead_radius : float, [m]
         Radius from center of structure to fairlead connection points
-    fairlead_support_outer_diameter : float
+    fairlead_support_outer_diameter : float, [m]
         fairlead support outer diameter
-    fairlead_support_wall_thickness : float
+    fairlead_support_wall_thickness : float, [m]
         fairlead support wall thickness
     gamma_f : float
         safety factor on loads
@@ -182,33 +182,33 @@ class FloatingFrame(om.ExplicitComponent):
         total safety factor for fatigue
     connection_ratio_max : float
         Maximum ratio of pontoon outer diameter to main/offset outer diameter
-    material_cost_rate : float
+    material_cost_rate : float, [USD/kg]
         Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg
-    labor_cost_rate : float
+    labor_cost_rate : float, [USD/min]
         Labor cost rate
-    painting_cost_rate : float
+    painting_cost_rate : float, [USD/m/m]
         Painting / surface finishing cost rate
     
     Returns
     -------
-    pontoon_wave_height_depth_margin : numpy array[2]
+    pontoon_wave_height_depth_margin : numpy array[2], [m]
         Distance between attachment point of pontoons and wave crest- both above and
         below waterline
-    pontoon_cost : float
+    pontoon_cost : float, [USD]
         Cost of pontoon elements and connecting truss
-    pontoon_cost_rate : float
+    pontoon_cost_rate : float, [USD/t]
         Cost rate of finished pontoon and truss
-    pontoon_mass : float
+    pontoon_mass : float, [kg]
         Mass of pontoon elements and connecting truss
-    pontoon_displacement : float
+    pontoon_displacement : float, [m**3]
         Buoyancy force of submerged pontoon elements
-    pontoon_center_of_buoyancy : float
+    pontoon_center_of_buoyancy : float, [m]
         z-position of center of pontoon buoyancy force
-    pontoon_center_of_mass : float
+    pontoon_center_of_mass : float, [m]
         z-position of center of pontoon mass
-    top_deflection : float
+    top_deflection : float, [m]
         Deflection of tower top in yaw-aligned +x direction
-    pontoon_stress : numpy array[70]
+    pontoon_stress : numpy array[70, ]
         Utilization (<1) of von Mises stress by yield stress and safety factor for all
         pontoon elements
     main_stress : numpy array[nFull-1]
@@ -264,27 +264,27 @@ class FloatingFrame(om.ExplicitComponent):
         factors
     plot_matrix : numpy array[]
         Ratio of shear stress to yield stress for all pontoon elements
-    main_connection_ratio : numpy array[nFull]
+    main_connection_ratio : numpy array[nFull, ]
         Ratio of pontoon outer diameter to main outer diameter
-    offset_connection_ratio : numpy array[nFull]
+    offset_connection_ratio : numpy array[nFull, ]
         Ratio of pontoon outer diameter to main outer diameter
-    structural_frequencies : numpy array[NFREQ]
+    structural_frequencies : numpy array[NFREQ], [Hz]
         First six natural frequencies
-    substructure_mass : float
+    substructure_mass : float, [kg]
         Mass of substructure elements and connecting truss
-    structural_mass : float
+    structural_mass : float, [kg]
         Mass of whole turbine except for mooring lines
-    total_displacement : float
+    total_displacement : float, [m**3]
         Total volume of water displaced by floating turbine (except for mooring lines)
-    z_center_of_buoyancy : float
+    z_center_of_buoyancy : float, [m]
         z-position of center of buoyancy of whole turbine
-    substructure_center_of_mass : numpy array[3]
+    substructure_center_of_mass : numpy array[3], [m]
         xyz-position of center of gravity of substructure only
-    structure_center_of_mass : numpy array[3]
+    structure_center_of_mass : numpy array[3], [m]
         xyz-position of center of gravity of whole turbine
-    total_force : numpy array[3]
+    total_force : numpy array[3], [N]
         Net forces on turbine
-    total_moment : numpy array[3]
+    total_moment : numpy array[3], [N*m]
         Moments on whole turbine
     
     """

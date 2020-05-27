@@ -14,11 +14,11 @@ class TurbineClass(om.ExplicitComponent):
     
     Returns
     -------
-    V_mean : float
+    V_mean : float, [m/s]
         IEC mean wind speed for Rayleigh distribution
-    V_extreme1 : float
+    V_extreme1 : float, [m/s]
         IEC extreme wind speed at hub height for a 1-year retunr period
-    V_extreme50 : float
+    V_extreme50 : float, [m/s]
         IEC extreme wind speed at hub height for a 50-year retunr period
     
     """

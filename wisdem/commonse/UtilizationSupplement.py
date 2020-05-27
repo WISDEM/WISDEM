@@ -33,9 +33,9 @@ class GeometricConstraints(om.ExplicitComponent):
     
     Parameters
     ----------
-    d : numpy array[nPoints]
+    d : numpy array[nPoints], [m]
         Sectional tower diameters
-    t : numpy array[nPoints-1]
+    t : numpy array[nPoints-1], [m]
         Sectional tower wall thicknesses
     min_d_to_t : float
         Minimum diameter-to-thickness ratio, dictated by ability to roll steel

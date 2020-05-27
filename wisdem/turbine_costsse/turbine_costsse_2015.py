@@ -18,17 +18,17 @@ class BladeCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    blade_mass : float
+    blade_mass : float, [kg]
         component mass
-    blade_mass_cost_coeff : float
+    blade_mass_cost_coeff : float, [USD/kg]
         blade mass-cost coeff
-    blade_cost_external : float
+    blade_cost_external : float, [USD]
         Blade cost computed by RotorSE
     
     Returns
     -------
-    blade_cost : float
-        Blade costs
+    blade_cost : float, [USD]
+        Blade cost
     
     """
 
@@ -59,14 +59,14 @@ class HubCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    hub_mass : float
+    hub_mass : float, [kg]
         component mass
-    hub_mass_cost_coeff : float
+    hub_mass_cost_coeff : float, [USD/kg]
         hub mass-cost coeff
     
     Returns
     -------
-    hub_cost : float
+    hub_cost : float, [USD]
         Hub cost
     
     """
@@ -94,14 +94,14 @@ class PitchSystemCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    pitch_system_mass : float
+    pitch_system_mass : float, [kg]
         component mass
-    pitch_system_mass_cost_coeff : float
+    pitch_system_mass_cost_coeff : float, [USD/kg]
         pitch system mass-cost coeff
     
     Returns
     -------
-    pitch_system_cost : float
+    pitch_system_cost : float, [USD]
         Pitch system cost
     
     """
@@ -128,14 +128,14 @@ class SpinnerCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    spinner_mass : float
+    spinner_mass : float, [kg]
         component mass
-    spinner_mass_cost_coeff : float
+    spinner_mass_cost_coeff : float, [USD/kg]
         spinner/nose cone mass-cost coeff
     
     Returns
     -------
-    spinner_cost : float
+    spinner_cost : float, [USD]
         Spinner cost
     
     """
@@ -171,32 +171,32 @@ class HubSystemCostAdder2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    hub_cost : float
+    hub_cost : float, [USD]
         Hub component cost
-    hub_mass : float
+    hub_mass : float, [kg]
         Hub component mass
-    pitch_system_cost : float
+    pitch_system_cost : float, [USD]
         Pitch system cost
-    pitch_system_mass : float
+    pitch_system_mass : float, [kg]
         Pitch system mass
-    spinner_cost : float
+    spinner_cost : float, [USD]
         Spinner component cost
-    spinner_mass : float
+    spinner_mass : float, [kg]
         Spinner component mass
     hub_assemblyCostMultiplier : float
-        Hub assembly assembly cost multiplier
+        Rotor assembly cost multiplier
     hub_overheadCostMultiplier : float
-        Hub assembly overhead cost multiplier
+        Rotor overhead cost multiplier
     hub_profitMultiplier : float
-        Hub assembly profit multiplier
+        Rotor profit multiplier
     hub_transportMultiplier : float
-        Hub assembly transport multiplier
+        Rotor transport multiplier
     
     Returns
     -------
-    hub_system_mass_tcc : float
+    hub_system_mass_tcc : float, [kg]
         Mass of the hub system, including hub, spinner, and pitch system for the blades
-    hub_system_cost : float
+    hub_system_cost : float, [USD]
         Overall wind sub-assembly capial costs including transportation costs
     
     """
@@ -244,22 +244,22 @@ class RotorCostAdder2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    blade_cost : float
+    blade_cost : float, [USD]
         Individual blade cost
-    blade_mass : float
+    blade_mass : float, [kg]
         Individual blade mass
-    hub_system_cost : float
+    hub_system_cost : float, [USD]
         Cost for hub system
-    hub_system_mass_tcc : float
+    hub_system_mass_tcc : float, [kg]
         Mass for hub system
     blade_number : int
         Number of rotor blades
     
     Returns
     -------
-    rotor_cost : float
+    rotor_cost : float, [USD]
         Rotor cost
-    rotor_mass_tcc : float
+    rotor_mass_tcc : float, [kg]
         Rotor mass, including blades, pitch system, hub, and spinner
     
     """
@@ -297,14 +297,14 @@ class LowSpeedShaftCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    lss_mass : float
+    lss_mass : float, [kg]
         component mass
-    lss_mass_cost_coeff : float
+    lss_mass_cost_coeff : float, [USD/kg]
         low speed shaft mass-cost coeff
     
     Returns
     -------
-    lss_cost : float
+    lss_cost : float, [USD]
         Low speed shaft cost
     
     """
@@ -329,14 +329,14 @@ class BearingCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    main_bearing_mass : float
+    main_bearing_mass : float, [kg]
         component mass
-    bearing_mass_cost_coeff : float
+    bearing_mass_cost_coeff : float, [USD/kg]
         main bearing mass-cost coeff
     
     Returns
     -------
-    main_bearing_cost : float
+    main_bearing_cost : float, [USD]
         Main bearing cost
     
     """
@@ -362,14 +362,14 @@ class GearboxCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    gearbox_mass : float
+    gearbox_mass : float, [kg]
         component mass
-    gearbox_mass_cost_coeff : float
+    gearbox_mass_cost_coeff : float, [USD/kg]
         gearbox mass-cost coeff
     
     Returns
     -------
-    gearbox_cost : float
+    gearbox_cost : float, [USD]
         Gearbox cost
     
     """
@@ -395,14 +395,14 @@ class HighSpeedSideCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    hss_mass : float
+    hss_mass : float, [kg]
         component mass
-    hss_mass_cost_coeff : float
+    hss_mass_cost_coeff : float, [USD/kg]
         high speed side mass-cost coeff
     
     Returns
     -------
-    hss_cost : float
+    hss_cost : float, [USD]
         High speed side cost
     
     """
@@ -428,14 +428,14 @@ class GeneratorCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    generator_mass : float
+    generator_mass : float, [kg]
         component mass
-    generator_mass_cost_coeff : float
+    generator_mass_cost_coeff : float, [USD/kg]
         generator mass cost coeff
     
     Returns
     -------
-    generator_cost : float
+    generator_cost : float, [USD]
         Generator cost
     
     """
@@ -461,14 +461,14 @@ class BedplateCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    bedplate_mass : float
+    bedplate_mass : float, [kg]
         component mass
-    bedplate_mass_cost_coeff : float
+    bedplate_mass_cost_coeff : float, [USD/kg]
         bedplate mass-cost coeff
     
     Returns
     -------
-    bedplate_cost : float
+    bedplate_cost : float, [USD]
         Bedplate cost
     
     """
@@ -494,14 +494,14 @@ class YawSystemCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    yaw_mass : float
+    yaw_mass : float, [kg]
         component mass
-    yaw_mass_cost_coeff : float
+    yaw_mass_cost_coeff : float, [USD/kg]
         yaw system mass cost coeff
     
     Returns
     -------
-    yaw_system_cost : float
+    yaw_system_cost : float, [USD]
         Yaw system cost
     
     """
@@ -527,14 +527,14 @@ class ConverterCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    converter_mass : float
+    converter_mass : float, [kg]
         component mass
-    converter_mass_cost_coeff : float
+    converter_mass_cost_coeff : float, [USD/kg]
         variable speed electronics mass cost coeff
     
     Returns
     -------
-    converter_cost : float
+    converter_cost : float, [USD]
         Converter cost
     
     """
@@ -560,14 +560,14 @@ class HydraulicCoolingCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    hvac_mass : float
+    hvac_mass : float, [kg]
         component mass
-    hvac_mass_cost_coeff : float
+    hvac_mass_cost_coeff : float, [USD/kg]
         hydraulic and cooling system mass cost coeff
     
     Returns
     -------
-    hvac_cost : float
+    hvac_cost : float, [USD]
         HVAC cost
     
     """
@@ -594,14 +594,14 @@ class NacelleCoverCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    cover_mass : float
+    cover_mass : float, [kg]
         component mass
-    cover_mass_cost_coeff : float
+    cover_mass_cost_coeff : float, [USD/kg]
         nacelle cover mass cost coeff
     
     Returns
     -------
-    cover_cost : float
+    cover_cost : float, [USD]
         Cover cost
     
     """
@@ -629,12 +629,12 @@ class ElecConnecCost2015(om.ExplicitComponent):
     ----------
     machine_rating : float
         machine rating
-    elec_connec_machine_rating_cost_coeff : float
+    elec_connec_machine_rating_cost_coeff : float, [USD/kg]
         electrical connections cost coefficient per kW
     
     Returns
     -------
-    elec_cost : float
+    elec_cost : float, [USD]
         Electrical connection costs
     
     """
@@ -663,12 +663,12 @@ class ControlsCost2015(om.ExplicitComponent):
     ----------
     machine_rating : float
         machine rating
-    controls_machine_rating_cost_coeff : float
+    controls_machine_rating_cost_coeff : float, [USD/kg]
         controls cost coefficient per kW
     
     Returns
     -------
-    controls_cost : float
+    controls_cost : float, [USD]
         Controls cost
     
     """
@@ -694,18 +694,18 @@ class PlatformsMainframeCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    platforms_mass : float
+    platforms_mass : float, [kg]
         component mass
-    platforms_mass_cost_coeff : float
+    platforms_mass_cost_coeff : float, [USD/kg]
         nacelle platforms mass cost coeff
     crane : boolean
         flag for presence of onboard crane
-    crane_cost : float
+    crane_cost : float, [USD]
         crane cost if present
     
     Returns
     -------
-    platforms_cost : float
+    platforms_cost : float, [USD]
         Platforms cost
     
     """
@@ -752,14 +752,14 @@ class TransformerCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    transformer_mass : float
+    transformer_mass : float, [kg]
         component mass
-    transformer_mass_cost_coeff : float
+    transformer_mass_cost_coeff : float, [USD/kg]
         transformer mass cost coeff
     
     Returns
     -------
-    transformer_cost : float
+    transformer_cost : float, [USD]
         Transformer cost
     
     """
@@ -793,55 +793,55 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
 
     Parameters
     ----------
-    lss_cost : float
+    lss_cost : float, [USD]
         Component cost
-    lss_mass : float
+    lss_mass : float, [kg]
         Component mass
-    main_bearing_cost : float
+    main_bearing_cost : float, [USD]
         Component cost
-    main_bearing_mass : float
+    main_bearing_mass : float, [kg]
         Component mass
-    gearbox_cost : float
+    gearbox_cost : float, [USD]
         Component cost
-    gearbox_mass : float
+    gearbox_mass : float, [kg]
         Component mass
-    hss_cost : float
+    hss_cost : float, [USD]
         Component cost
-    hss_mass : float
+    hss_mass : float, [kg]
         Component mass
-    generator_cost : float
+    generator_cost : float, [USD]
         Component cost
-    generator_mass : float
+    generator_mass : float, [kg]
         Component mass
-    bedplate_cost : float
+    bedplate_cost : float, [USD]
         Component cost
-    bedplate_mass : float
+    bedplate_mass : float, [kg]
         Component mass
-    yaw_system_cost : float
+    yaw_system_cost : float, [USD]
         Component cost
-    yaw_mass : float
+    yaw_mass : float, [kg]
         Component mass
-    converter_cost : float
+    converter_cost : float, [USD]
         Component cost
-    converter_mass : float
+    converter_mass : float, [kg]
         Component mass
-    hvac_cost : float
+    hvac_cost : float, [USD]
         Component cost
-    hvac_mass : float
+    hvac_mass : float, [kg]
         Component mass
-    cover_cost : float
+    cover_cost : float, [USD]
         Component cost
-    cover_mass : float
+    cover_mass : float, [kg]
         Component mass
-    elec_cost : float
+    elec_cost : float, [USD]
         Component cost
-    controls_cost : float
+    controls_cost : float, [USD]
         Component cost
-    platforms_cost : float
+    platforms_cost : float, [USD]
         Component cost
-    transformer_cost : float
+    transformer_cost : float, [USD]
         Component cost
-    transformer_mass : float
+    transformer_mass : float, [kg]
         Component mass
     main_bearing_number : int
         number of bearings
@@ -856,7 +856,7 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
     
     Returns
     -------
-    nacelle_cost : float
+    nacelle_cost : float, [USD]
         component cost
     nacelle_mass_tcc : float
         Nacelle mass, with all nacelle components, without the rotor
@@ -950,16 +950,16 @@ class TowerCost2015(om.ExplicitComponent):
     
     Parameters
     ----------
-    tower_mass : float
+    tower_mass : float, [kg]
         tower mass
-    tower_mass_cost_coeff : float
+    tower_mass_cost_coeff : float, [USD/kg]
         tower mass-cost coeff
     tower_cost_external : float
         Tower cost computed by TowerSE
     
     Returns
     -------
-    tower_parts_cost : float
+    tower_parts_cost : float, [USD]
         Tower parts cost
     
     """
@@ -999,7 +999,7 @@ class TowerCostAdder2015(om.ExplicitComponent):
 
     Parameters
     ----------
-    tower_parts_cost : float
+    tower_parts_cost : float, [USD]
         component cost
     tower_assemblyCostMultiplier : float
         tower assembly cost multiplier
@@ -1012,7 +1012,7 @@ class TowerCostAdder2015(om.ExplicitComponent):
     
     Returns
     -------
-    tower_cost : float
+    tower_cost : float, [USD]
         tower cost
     
     """
@@ -1055,17 +1055,17 @@ class TurbineCostAdder2015(om.ExplicitComponent):
 
     Parameters
     ----------
-    rotor_cost : float
+    rotor_cost : float, [USD]
         Rotor cost
     rotor_mass_tcc : float
         Rotor mass
-    nacelle_cost : float
+    nacelle_cost : float, [USD]
         Nacelle cost
     nacelle_mass_tcc : float
         Nacelle mass
-    tower_cost : float
+    tower_cost : float, [USD]
         Tower cost
-    tower_mass : float
+    tower_mass : float, [kg]
         Tower mass
     machine_rating : float
         Machine rating
@@ -1082,7 +1082,7 @@ class TurbineCostAdder2015(om.ExplicitComponent):
     -------
     turbine_mass_tcc : float
         Turbine total mass, without foundation
-    turbine_cost : float
+    turbine_cost : float, [USD]
         Overall wind turbine capital costs including transportation costs
     turbine_cost_kW : float
         Overall wind turbine capial costs including transportation costs
@@ -1132,85 +1132,85 @@ class Outputs2Screen(om.ExplicitComponent):
     
     Parameters
     ----------
-    blade_cost : float
+    blade_cost : float, [USD]
         blade cost
-    blade_mass : float
+    blade_mass : float, [kg]
         Blade mass
-    hub_cost : float
+    hub_cost : float, [USD]
         hub cost
-    hub_mass : float
+    hub_mass : float, [kg]
         Hub mass
-    pitch_system_cost : float
+    pitch_system_cost : float, [USD]
         pitch_system cost
-    pitch_system_mass : float
+    pitch_system_mass : float, [kg]
         Pitch system mass
-    spinner_cost : float
+    spinner_cost : float, [USD]
         spinner cost
-    spinner_mass : float
+    spinner_mass : float, [kg]
         Spinner mass
-    lss_cost : float
+    lss_cost : float, [USD]
         lss cost
-    lss_mass : float
+    lss_mass : float, [kg]
         LSS mass
-    main_bearing_cost : float
+    main_bearing_cost : float, [USD]
         main_bearing cost
-    main_bearing_mass : float
+    main_bearing_mass : float, [kg]
         Main bearing mass
-    gearbox_cost : float
+    gearbox_cost : float, [USD]
         gearbox cost
-    gearbox_mass : float
+    gearbox_mass : float, [kg]
         LSS mass
-    hss_cost : float
+    hss_cost : float, [USD]
         hss cost
-    hss_mass : float
+    hss_mass : float, [kg]
         HSS mass
-    generator_cost : float
+    generator_cost : float, [USD]
         generator cost
-    generator_mass : float
+    generator_mass : float, [kg]
         Generator mass
-    bedplate_cost : float
+    bedplate_cost : float, [USD]
         bedplate cost
-    bedplate_mass : float
+    bedplate_mass : float, [kg]
         Bedplate mass
-    yaw_system_cost : float
+    yaw_system_cost : float, [USD]
         yaw_system cost
-    yaw_mass : float
+    yaw_mass : float, [kg]
         Yaw system mass
-    hvac_cost : float
+    hvac_cost : float, [USD]
         hvac cost
-    hvac_mass : float
+    hvac_mass : float, [kg]
         HVAC mass
-    cover_cost : float
+    cover_cost : float, [USD]
         cover cost
-    cover_mass : float
+    cover_mass : float, [kg]
         Cover mass
-    elec_cost : float
+    elec_cost : float, [USD]
         elec cost
-    controls_cost : float
+    controls_cost : float, [USD]
         controls cost
-    platforms_cost : float
+    platforms_cost : float, [USD]
         platforms cost
-    transformer_cost : float
+    transformer_cost : float, [USD]
         transformer cost
-    transformer_mass : float
+    transformer_mass : float, [kg]
         Transformer mass
-    converter_cost : float
+    converter_cost : float, [USD]
         converter cost
-    converter_mass : float
+    converter_mass : float, [kg]
         Converter mass
-    rotor_cost : float
+    rotor_cost : float, [USD]
         rotor cost
     rotor_mass_tcc : float
         Rotor mass
-    nacelle_cost : float
+    nacelle_cost : float, [USD]
         nacelle cost
     nacelle_mass_tcc : float
         Nacelle mass
-    tower_cost : float
+    tower_cost : float, [USD]
         tower cost
-    tower_mass : float
+    tower_mass : float, [kg]
         Tower mass
-    turbine_cost : float
+    turbine_cost : float, [USD]
         Overall turbine costs
     turbine_cost_kW : float
         Overall wind turbine capital costs including transportation costs per kW
