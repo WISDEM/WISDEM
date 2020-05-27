@@ -19,19 +19,19 @@ class MapMooring(om.ExplicitComponent):
     
     Parameters
     ----------
-    water_density : float
+    water_density : float, [kg/m**3]
         density of water
-    water_depth : float
+    water_depth : float, [m]
         water depth
-    fairlead_radius : float
+    fairlead_radius : float, [m]
         Outer spar radius at fairlead depth (point of mooring attachment)
-    fairlead : float
+    fairlead : float, [m]
         Depth below water for mooring line attachment
-    mooring_line_length : float
+    mooring_line_length : float, [m]
         Unstretched total mooring line length
-    anchor_radius : float
+    anchor_radius : float, [m]
         radius from center of spar to mooring anchor point
-    mooring_diameter : float
+    mooring_diameter : float, [m]
         diameter of mooring line
     number_of_mooring_connections : float
         number of mooring connections on vessel
@@ -41,11 +41,11 @@ class MapMooring(om.ExplicitComponent):
         chain, nylon, polyester, fiber, or iwrc
     anchor_type : string
         SUCTIONPILE or DRAGEMBEDMENT
-    max_offset : float
+    max_offset : float, [m]
         X offsets in discretization
-    operational_heel : float
+    operational_heel : float, [deg]
         Maximum angle of heel allowable during operation
-    max_survival_heel : float
+    max_survival_heel : float, [deg]
         max heel angle for turbine survival
     gamma_f : float
         Safety factor for mooring line tension
@@ -56,26 +56,26 @@ class MapMooring(om.ExplicitComponent):
     -------
     number_of_mooring_lines : float
         total number of mooring lines
-    mooring_mass : float
+    mooring_mass : float, [kg]
         total mass of mooring
-    mooring_moments_of_inertia : numpy array[6]
+    mooring_moments_of_inertia : numpy array[6], [kg*m**2]
         mass moment of inertia of mooring system about fairlead-centerline point [xx yy
         zz xy xz yz]
-    mooring_cost : float
+    mooring_cost : float, [USD]
         total cost for anchor + legs + miscellaneous costs
-    mooring_stiffness : numpy array[6, 6]
+    mooring_stiffness : numpy array[6, 6], [N/m]
         Linearized stiffness matrix of mooring system at neutral (no offset) conditions.
-    anchor_cost : float
+    anchor_cost : float, [USD]
         total cost for anchor
-    mooring_neutral_load : numpy array[NLINES_MAX, 3]
+    mooring_neutral_load : numpy array[NLINES_MAX, 3], [N]
         mooring vertical load in all mooring lines
-    max_offset_restoring_force : float
+    max_offset_restoring_force : float, [N]
         sum of forces in x direction after max offset
-    operational_heel_restoring_force : numpy array[NLINES_MAX, 3]
+    operational_heel_restoring_force : numpy array[NLINES_MAX, 3], [N]
         forces for all mooring lines after operational heel
-    mooring_plot_matrix : numpy array[NLINES_MAX, NPTS_PLOT, 3]
+    mooring_plot_matrix : numpy array[NLINES_MAX, NPTS_PLOT, 3], [m]
         data matrix for plotting
-    axial_unity : float
+    axial_unity : float, [m]
         range of damaged mooring
     mooring_length_max : float
         mooring line length ratio to nodal distance

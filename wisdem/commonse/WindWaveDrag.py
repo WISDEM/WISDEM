@@ -76,48 +76,48 @@ class AeroHydroLoads(om.ExplicitComponent):
     
     Parameters
     ----------
-    windLoads_Px : numpy array[nPoints]
+    windLoads_Px : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in x-direction
-    windLoads_Py : numpy array[nPoints]
+    windLoads_Py : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in y-direction
-    windLoads_Pz : numpy array[nPoints]
+    windLoads_Pz : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in z-direction
-    windLoads_qdyn : numpy array[nPoints]
+    windLoads_qdyn : numpy array[nPoints], [N/m**2]
         dynamic pressure
-    windLoads_z : numpy array[nPoints]
+    windLoads_z : numpy array[nPoints], [m]
         corresponding heights
-    windLoads_d : numpy array[nPoints]
+    windLoads_d : numpy array[nPoints], [m]
         corresponding diameters
-    windLoads_beta : float
+    windLoads_beta : float, [deg]
         wind/wave angle relative to inertia c.s.
-    waveLoads_Px : numpy array[nPoints]
+    waveLoads_Px : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in x-direction
-    waveLoads_Py : numpy array[nPoints]
+    waveLoads_Py : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in y-direction
-    waveLoads_Pz : numpy array[nPoints]
+    waveLoads_Pz : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in z-direction
-    waveLoads_qdyn : numpy array[nPoints]
+    waveLoads_qdyn : numpy array[nPoints], [N/m**2]
         dynamic pressure
-    waveLoads_z : numpy array[nPoints]
+    waveLoads_z : numpy array[nPoints], [m]
         corresponding heights
-    waveLoads_d : numpy array[nPoints]
+    waveLoads_d : numpy array[nPoints], [m]
         corresponding diameters
-    waveLoads_beta : float
+    waveLoads_beta : float, [deg]
         wind/wave angle relative to inertia c.s.
-    z : numpy array[nPoints]
+    z : numpy array[nPoints], [m]
         locations along cylinder
-    yaw : float
+    yaw : float, [deg]
         yaw angle
     
     Returns
     -------
-    Px : numpy array[nPoints]
+    Px : numpy array[nPoints], [N/m]
         force per unit length in x-direction
-    Py : numpy array[nPoints]
+    Py : numpy array[nPoints], [N/m]
         force per unit length in y-direction
-    Pz : numpy array[nPoints]
+    Pz : numpy array[nPoints], [N/m]
         force per unit length in z-direction
-    qdyn : numpy array[nPoints]
+    qdyn : numpy array[nPoints], [N/m**2]
         dynamic pressure
     
     """
@@ -174,36 +174,36 @@ class CylinderWindDrag(om.ExplicitComponent):
     
     Parameters
     ----------
-    U : numpy array[nPoints]
+    U : numpy array[nPoints], [m/s]
         magnitude of wind speed
-    z : numpy array[nPoints]
+    z : numpy array[nPoints], [m]
         heights where wind speed was computed
-    d : numpy array[nPoints]
+    d : numpy array[nPoints], [m]
         corresponding diameter of cylinder section
-    beta_wind : float
+    beta_wind : float, [deg]
         corresponding wind angles relative to inertial coordinate system
-    rho_air : float
+    rho_air : float, [kg/m**3]
         air density
-    mu_air : float
+    mu_air : float, [kg/(m*]
         dynamic viscosity of air
     cd_usr : float
         User input drag coefficient to override Reynolds number based one
     
     Returns
     -------
-    windLoads_Px : numpy array[nPoints]
+    windLoads_Px : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in x-direction
-    windLoads_Py : numpy array[nPoints]
+    windLoads_Py : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in y-direction
-    windLoads_Pz : numpy array[nPoints]
+    windLoads_Pz : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in z-direction
-    windLoads_qdyn : numpy array[nPoints]
+    windLoads_qdyn : numpy array[nPoints], [N/m**2]
         dynamic pressure
-    windLoads_z : numpy array[nPoints]
+    windLoads_z : numpy array[nPoints], [m]
         corresponding heights
-    windLoads_d : numpy array[nPoints]
+    windLoads_d : numpy array[nPoints], [m]
         corresponding diameters
-    windLoads_beta : float
+    windLoads_beta : float, [deg]
         wind/wave angle relative to inertia c.s.
     
     """
@@ -333,21 +333,21 @@ class CylinderWaveDrag(om.ExplicitComponent):
     
     Parameters
     ----------
-    U : numpy array[nPoints]
+    U : numpy array[nPoints], [m/s]
         magnitude of wave speed
-    A : numpy array[nPoints]
+    A : numpy array[nPoints], [m/s**2]
         magnitude of wave acceleration
-    p : numpy array[nPoints]
+    p : numpy array[nPoints], [N/m**2]
         pressure oscillation
-    z : numpy array[nPoints]
+    z : numpy array[nPoints], [m]
         heights where wave speed was computed
-    d : numpy array[nPoints]
+    d : numpy array[nPoints], [m]
         corresponding diameter of cylinder section
-    beta_wave : float
+    beta_wave : float, [deg]
         corresponding wave angles relative to inertial coordinate system
-    rho_water : float
+    rho_water : float, [kg/m**3]
         water density
-    mu_water : float
+    mu_water : float, [kg/(m*]
         dynamic viscosity of water
     cm : float
         mass coefficient
@@ -356,21 +356,21 @@ class CylinderWaveDrag(om.ExplicitComponent):
     
     Returns
     -------
-    waveLoads_Px : numpy array[nPoints]
+    waveLoads_Px : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in x-direction
-    waveLoads_Py : numpy array[nPoints]
+    waveLoads_Py : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in y-direction
-    waveLoads_Pz : numpy array[nPoints]
+    waveLoads_Pz : numpy array[nPoints], [N/m]
         distributed loads, force per unit length in z-direction
-    waveLoads_qdyn : numpy array[nPoints]
+    waveLoads_qdyn : numpy array[nPoints], [N/m**2]
         dynamic pressure
-    waveLoads_pt : numpy array[nPoints]
+    waveLoads_pt : numpy array[nPoints], [N/m**2]
         total (static+dynamic) pressure
-    waveLoads_z : numpy array[nPoints]
+    waveLoads_z : numpy array[nPoints], [m]
         corresponding heights
-    waveLoads_d : numpy array[nPoints]
+    waveLoads_d : numpy array[nPoints], [m]
         corresponding diameters
-    waveLoads_beta : float
+    waveLoads_beta : float, [deg]
         wind/wave angle relative to inertia c.s.
     
     """

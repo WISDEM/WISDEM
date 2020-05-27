@@ -10,6 +10,21 @@ from wisdem.commonse.constants import gravity
 def find_nearest(array, value):
     return (np.abs(array-value)).argmin() 
 
+# This isn't used, but keeping around the code for now
+def enforce_length(x, y, z, L0):
+    r0 = np.sum(L0)
+    xn = x.copy()
+    yn = y.copy()
+    zn = z.copy()
+    rn = util.arc_length(np.c_[xn, yn, zn])
+
+    while np.abs(rn[-1] - r0) > 1e-5:
+        L  = np.diff(rn)
+        xn[1:] = (L0/L) * (xn[1:]-xn[:-1]) + xn[:-1]
+        zn[1:] = (L0/L) * (zn[1:]-zn[:-1]) + zn[:-1]
+        rn = util.arc_length(np.c_[xn, yn, zn])
+    return xn, zn
+
 
 class RailTransport(ExplicitComponent):
     # Openmdao component to simulate a rail transport of a wind turbine blade
@@ -300,14 +315,14 @@ class RailTransport(ExplicitComponent):
             # (towards the RIGHT with LE pointed down and standing at the root looking at tip)
             x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, rot_angles[1])
             nodes2 = pyframe3dd.NodeData(inode+1, x_rot2, y_ref, z_rot2, rad)
-            
+
             # Use blade shape and clearance envelope to determine node position limits: Bending towards SS
-            blade_xmin1 = x_ref - xss
-            blade_xmax1 = x_ref + xps
+            blade_xmin1 = x_ref - yss
+            blade_xmax1 = x_ref + yps
             
-            # Use blade shape and clearance envelope to determine node position limits: Bending towards SS
-            blade_xmin2 = x_ref - xps
-            blade_xmax2 = x_ref + xss
+            # Use blade shape and clearance envelope to determine node position limits: Bending towards PS
+            blade_xmin2 = x_ref - yps
+            blade_xmax2 = x_ref + yss
 
             # Loop over the loade cases since the code looks the same from here on
             for k in range(2):
@@ -348,7 +363,8 @@ class RailTransport(ExplicitComponent):
                 RF_derailH[:,k] = 0.5*np.abs(forces_rxn.Fy) + np.abs(forces_rxn.Mxx)/flatcar_tc_length
 
                 # Element shear and bending, one per element, which are already in principle directions in Hansen's notation
-                Fz = np.r_[-forces.Nx[ 0,0],  forces.Nx[ 0, 1::2]]
+                # Zero-ing out axial stress as there shouldn't be any for pure beam bending
+                Fz = 0.0 #np.r_[-forces.Nx[ 0,0],  forces.Nx[ 0, 1::2]]
                 M1 = np.r_[-forces.Myy[0,0],  forces.Myy[0, 1::2]]
                 M2 = np.r_[ forces.Mzz[0,0], -forces.Mzz[0, 1::2]]
                 if PBEAM: M1,M2 = rotate(M1,M2)
@@ -362,7 +378,6 @@ class RailTransport(ExplicitComponent):
                 node_tol = ( np.abs( np.maximum(r_envelopeH_inner - r_check, 0) ) +
                              np.abs( np.minimum(r_envelopeH_outer - r_check, 0) ) )
                 
-                # If any violations, penalize constraints
                 if np.any(node_tol > tol):
                     RF_derailH[:,k] += 2
                 
@@ -394,7 +409,6 @@ class RailTransport(ExplicitComponent):
 
             # Constrain derailing moment
             con = RF_derailH[0,:] / (0.5 * mass_car_8axle * gravity) / max_LV
-            
             return (1-con) if con_flag else obj
 
         # Initiliaze scipy minimization
@@ -402,8 +416,8 @@ class RailTransport(ExplicitComponent):
         const['type'] = 'ineq'
         const['fun']  = opt_rot_blade
         
-        bounds = [np.deg2rad(max_rot)*np.r_[-1,1]]*2
-        x0     = np.deg2rad(0.1*max_rot)*np.r_[-1,1]
+        bounds = [np.deg2rad(max_rot)*np.r_[-1,1], np.deg2rad(max_rot)*np.r_[-1,1]]
+        x0     = np.deg2rad(0.7*max_rot)*np.r_[1.0, -1.0]
         
         result = minimize(opt_rot_blade, x0, method='slsqp', bounds=bounds, tol=1e-6, args=(False), constraints=const)
 
@@ -431,6 +445,7 @@ class RailTransport(ExplicitComponent):
         # Strain constraint outputs
         outputs['constr_strainPS'] = np.abs(strainPS) / max_strains
         outputs['constr_strainSS'] = np.abs(strainSS) / max_strains
+
         
         # ------- Vertical hills/sag using best attachment points
         # Set up Frame3DD blade for vertical analysis
@@ -445,7 +460,7 @@ class RailTransport(ExplicitComponent):
         blade = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # Hill
-        blade_ymax        = y_ref + yte
+        blade_ymax        = y_ref + xte
         r_envelopeV       = r_curveV + vertical_clearance
         r_envelopeV_outer = r_envelopeV - blade_ymax
         node_dr           = np.minimum(r_envelopeV_outer - r_blade, 0)
@@ -458,7 +473,7 @@ class RailTransport(ExplicitComponent):
         load1.changePrescribedDisplacements(ireact+1, dx, node_dy[ireact], node_dz[ireact], dM, dM, dM)
 
         # Sag
-        blade_ymin        = y_ref - yte
+        blade_ymin        = y_ref - xte
         r_envelopeV       = r_curveV - vertical_clearance
         r_envelopeV_inner = r_envelopeV.min() + blade_ymin
         node_dr           = np.maximum(r_envelopeV_inner - r_blade, 0)
@@ -486,7 +501,8 @@ class RailTransport(ExplicitComponent):
         strainTE = np.zeros((self.n_span, 2))
         for k in range(2):
             # Element shear and bending, one per element, with conversion to profile c.s. using Hansen's notation
-            Fz = np.r_[-forces.Nx[ k, 0],  forces.Nx[ k, 1::2]]
+            # Zero-ing out axial stress as there shouldn't be any for pure beam bending
+            Fz = 0.0 #np.r_[-forces.Nx[ 0,0],  forces.Nx[ 0, 1::2]]
             M1 = np.r_[-forces.Myy[k, 0],  forces.Myy[k, 1::2]]
             M2 = np.r_[ forces.Mzz[k, 0], -forces.Mzz[k, 1::2]]
 

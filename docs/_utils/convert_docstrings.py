@@ -1,6 +1,18 @@
 """
 John Jasa
 May 2020
+
+This script parses a file containing OpenMDAO components and produces
+docstrings for those components. It makes some assumptions about the
+format of the code. Specifically, it reads the `add_input` and `add_output`
+statements from the components and generates docstrings based on that.
+
+Example usage:
+python convert_docstrings.py tower.py
+
+This creates a file called `tower_docstrings.py` which contains the
+modified components. These new components can then be used as-is or copied
+and pasted into the older file.
 """
 
 import sys
@@ -13,7 +25,6 @@ with open(filename) as f:
 orig_content = content.copy()
 orig_content = [x.strip('\n') for x in orig_content]
 content = [x.strip() for x in content]
-
 
 doc_lines = []
 
@@ -121,12 +132,35 @@ for line in content:
                 
             else:
                 desc = ''
-                new_add_statements.append(line) 
+                new_add_statements.append(line)
+                
+            # If units are included, parse the line to get the actual units
+            if 'units' in line:
+                
+                # Split the line on the word units; grab everything after that
+                post_units = line.split('units')[1]
+                
+                # Remove all whitespace from the string
+                post_units = ''.join(post_units.split())
+                
+                # Split the line on ',' or ')' to remove extra formatting
+                post_units = post_units.split(',')[0]
+                post_units = post_units.split(')')[0]
+                
+                # Get only the actual units, no quotation marks or equals signs
+                units = post_units[2:-1]
+                
+                # Add formatting to make it look good on the docstring
+                units = f', [{units}]'
+                
+            # If no units in line, add placeholder string
+            else:
+                units = ''
                 
             if is_input:
-                parsed_data['inputs'][var_name] = {'type_' : type_, 'desc' : desc}
+                parsed_data['inputs'][var_name] = {'type_' : type_, 'desc' : desc, 'units' : units}
             else:
-                parsed_data['outputs'][var_name] = {'type_' : type_, 'desc' : desc}
+                parsed_data['outputs'][var_name] = {'type_' : type_, 'desc' : desc, 'units' : units}
                 
     elif 'compute(' in line:
         in_class_flag = False
@@ -140,7 +174,7 @@ for line in content:
         doc_lines.append('----------')
         for var_name in parsed_data['inputs']:
             data = parsed_data['inputs'][var_name]
-            doc_lines.append(f"{var_name} : {data['type_']}")
+            doc_lines.append(f"{var_name} : {data['type_']}{data['units']}")
             doc_lines.append(f"    {data['desc']}")
             
         doc_lines.append('')
@@ -148,7 +182,7 @@ for line in content:
         doc_lines.append('-------')
         for var_name in parsed_data['outputs']:
             data = parsed_data['outputs'][var_name]
-            doc_lines.append(f"{var_name} : {data['type_']}")
+            doc_lines.append(f"{var_name} : {data['type_']}{data['units']}")
             doc_lines.append(f"    {data['desc']}")
         doc_lines.append('')
         doc_lines.append('\"\"\"')

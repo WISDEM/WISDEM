@@ -32,24 +32,24 @@ class CylinderDiscretization(om.ExplicitComponent):
     
     Parameters
     ----------
-    foundation_height : float
+    foundation_height : float, [m]
         starting height of tower
-    section_height : numpy array[nPoints-1]
+    section_height : numpy array[nPoints-1], [m]
         parameterized section heights along cylinder
-    diameter : numpy array[nPoints]
+    diameter : numpy array[nPoints], [m]
         cylinder diameter at corresponding locations
-    wall_thickness : numpy array[nPoints-1]
+    wall_thickness : numpy array[nPoints-1], [m]
         shell thickness at corresponding locations
     
     Returns
     -------
-    z_param : numpy array[nPoints]
+    z_param : numpy array[nPoints], [m]
         parameterized locations along cylinder, linear lofting between
-    z_full : numpy array[nFull]
+    z_full : numpy array[nFull], [m]
         locations along cylinder
-    d_full : numpy array[nFull]
+    d_full : numpy array[nFull], [m]
         cylinder diameter at corresponding locations
-    t_full : numpy array[nFull-1]
+    t_full : numpy array[nFull-1], [m]
         shell thickness at corresponding locations
     
     """
@@ -105,34 +105,34 @@ class CylinderMass(om.ExplicitComponent):
     
     Parameters
     ----------
-    d_full : numpy array[nPoints]
+    d_full : numpy array[nPoints], [m]
         cylinder diameter at corresponding locations
-    t_full : numpy array[nPoints-1]
+    t_full : numpy array[nPoints-1], [m]
         shell thickness at corresponding locations
-    z_full : numpy array[nPoints]
+    z_full : numpy array[nPoints], [m]
         parameterized locations along cylinder, linear lofting between
-    rho : numpy array[nPoints-1]
+    rho : numpy array[nPoints-1], [kg/m**3]
         material density
     outfitting_factor : numpy array[nPoints-1]
         Multiplier that accounts for secondary structure mass inside of cylinder
-    material_cost_rate : numpy array[nPoints-1]
+    material_cost_rate : numpy array[nPoints-1], [USD/kg]
         Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg
-    labor_cost_rate : float
+    labor_cost_rate : float, [USD/min]
         Labor cost rate
-    painting_cost_rate : float
+    painting_cost_rate : float, [USD/m/m]
         Painting / surface finishing cost rate
     
     Returns
     -------
-    cost : float
+    cost : float, [USD]
         Total cylinder cost
-    mass : numpy array[nPoints-1]
+    mass : numpy array[nPoints-1], [kg]
         Total cylinder mass
-    center_of_mass : float
+    center_of_mass : float, [m]
         z-position of center of mass of cylinder
-    section_center_of_mass : numpy array[nPoints-1]
+    section_center_of_mass : numpy array[nPoints-1], [m]
         z position of center of mass of each can in the cylinder
-    I_base : numpy array[6]
+    I_base : numpy array[6], [kg*m**2]
         mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
     
     """
@@ -242,133 +242,129 @@ class CylinderFrame3DD(om.ExplicitComponent):
     
     Parameters
     ----------
-    z : numpy array[npts]
+    z : numpy array[npts], [m]
         location along cylinder. start at bottom and go to top
-    Az : numpy array[npts-1]
+    Az : numpy array[npts-1], [m**2]
         cross-sectional area
-    Asx : numpy array[npts-1]
+    Asx : numpy array[npts-1], [m**2]
         x shear area
-    Asy : numpy array[npts-1]
+    Asy : numpy array[npts-1], [m**2]
         y shear area
-    Jz : numpy array[npts-1]
+    Jz : numpy array[npts-1], [m**4]
         polar moment of inertia
-    Ixx : numpy array[npts-1]
+    Ixx : numpy array[npts-1], [m**4]
         area moment of inertia about x-axis
-    Iyy : numpy array[npts-1]
+    Iyy : numpy array[npts-1], [m**4]
         area moment of inertia about y-axis
-    E : numpy array[npts-1]
+    E : numpy array[npts-1], [N/m**2]
         modulus of elasticity
-    G : numpy array[npts-1]
+    G : numpy array[npts-1], [N/m**2]
         shear modulus
-    rho : numpy array[npts-1]
+    rho : numpy array[npts-1], [kg/m**3]
         material density
-    d : numpy array[npts]
+    d : numpy array[npts], [m]
         effective cylinder diameter for section
-    t : numpy array[npts-1]
+    t : numpy array[npts-1], [m]
         effective shell thickness for section
     kidx : numpy array[nK, dtype]
         indices of z where external stiffness reactions should be applied.
-    kx : numpy array[nK]
+    kx : numpy array[nK], [N/m]
         spring stiffness in x-direction
-    ky : numpy array[nK]
+    ky : numpy array[nK], [N/m]
         spring stiffness in y-direction
-    kz : numpy array[nK]
+    kz : numpy array[nK], [N/m]
         spring stiffness in z-direction
-    ktx : numpy array[nK]
+    ktx : numpy array[nK], [N/m]
         spring stiffness in theta_x-rotation
-    kty : numpy array[nK]
+    kty : numpy array[nK], [N/m]
         spring stiffness in theta_y-rotation
-    ktz : numpy array[nK]
+    ktz : numpy array[nK], [N/m]
         spring stiffness in theta_z-rotation
     midx : numpy array[nMass, dtype]
         indices where added mass should be applied.
-    m : numpy array[nMass]
+    m : numpy array[nMass], [kg]
         added mass
-    mIxx : numpy array[nMass]
+    mIxx : numpy array[nMass], [kg*m**2]
         x mass moment of inertia about some point p
-    mIyy : numpy array[nMass]
+    mIyy : numpy array[nMass], [kg*m**2]
         y mass moment of inertia about some point p
-    mIzz : numpy array[nMass]
+    mIzz : numpy array[nMass], [kg*m**2]
         z mass moment of inertia about some point p
-    mIxy : numpy array[nMass]
+    mIxy : numpy array[nMass], [kg*m**2]
         xy mass moment of inertia about some point p
-    mIxz : numpy array[nMass]
+    mIxz : numpy array[nMass], [kg*m**2]
         xz mass moment of inertia about some point p
-    mIyz : numpy array[nMass]
+    mIyz : numpy array[nMass], [kg*m**2]
         yz mass moment of inertia about some point p
-    mrhox : numpy array[nMass]
+    mrhox : numpy array[nMass], [m]
         x-location of p relative to node
-    mrhoy : numpy array[nMass]
+    mrhoy : numpy array[nMass], [m]
         y-location of p relative to node
-    mrhoz : numpy array[nMass]
+    mrhoz : numpy array[nMass], [m]
         z-location of p relative to node
     plidx : numpy array[nPL, dtype]
         indices where point loads should be applied.
-    Fx : numpy array[nPL]
+    Fx : numpy array[nPL], [N]
         point force in x-direction
-    Fy : numpy array[nPL]
+    Fy : numpy array[nPL], [N]
         point force in y-direction
-    Fz : numpy array[nPL]
+    Fz : numpy array[nPL], [N]
         point force in z-direction
-    Mxx : numpy array[nPL]
+    Mxx : numpy array[nPL], [N*m]
         point moment about x-axis
-    Myy : numpy array[nPL]
+    Myy : numpy array[nPL], [N*m]
         point moment about y-axis
-    Mzz : numpy array[nPL]
+    Mzz : numpy array[nPL], [N*m]
         point moment about z-axis
-    Px : numpy array[npts]
+    Px : numpy array[npts], [N/m]
         force per unit length in x-direction
-    Py : numpy array[npts]
+    Py : numpy array[npts], [N/m]
         force per unit length in y-direction
-    Pz : numpy array[npts]
+    Pz : numpy array[npts], [N/m]
         force per unit length in z-direction
-    qdyn : numpy array[npts]
+    qdyn : numpy array[npts], [N/m**2]
         dynamic pressure
     
     Returns
     -------
-    mass : float
+    mass : float, [kg]
         Structural mass computed by Frame3DD
-    f1 : float
+    f1 : float, [Hz]
         First natural frequency
-    f2 : float
+    f2 : float, [Hz]
         Second natural frequency
-    freqs : numpy array[NFREQ]
+    freqs : numpy array[NFREQ], [Hz]
         Natural frequencies of the structure
     x_mode_shapes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the x-direction
     y_mode_shapes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the x-direction
-    x_mode_freqs : numpy array[NFREQ2]
-        Frequencies associated with mode shapes in the x-direction
-    y_mode_freqs : numpy array[NFREQ2]
-        Frequencies associated with mode shapes in the y-direction
-    top_deflection : float
+    top_deflection : float, [m]
         Deflection of cylinder top in yaw-aligned +x direction
-    Fz_out : numpy array[npts-1]
+    Fz_out : numpy array[npts-1], [N]
         Axial foce in vertical z-direction in cylinder structure.
-    Vx_out : numpy array[npts-1]
+    Vx_out : numpy array[npts-1], [N]
         Shear force in x-direction in cylinder structure.
-    Vy_out : numpy array[npts-1]
+    Vy_out : numpy array[npts-1], [N]
         Shear force in y-direction in cylinder structure.
-    Mxx_out : numpy array[npts-1]
+    Mxx_out : numpy array[npts-1], [N*m]
         Moment about x-axis in cylinder structure.
-    Myy_out : numpy array[npts-1]
+    Myy_out : numpy array[npts-1], [N*m]
         Moment about y-axis in cylinder structure.
-    Mzz_out : numpy array[npts-1]
+    Mzz_out : numpy array[npts-1], [N*m]
         Moment about z-axis in cylinder structure.
-    base_F : numpy array[3]
+    base_F : numpy array[3], [N]
         Total force on cylinder
-    base_M : numpy array[3]
+    base_M : numpy array[3], [N*m]
         Total moment on cylinder measured at base
-    axial_stress : numpy array[npts-1]
+    axial_stress : numpy array[npts-1], [N/m**2]
         Axial stress in cylinder structure
-    shear_stress : numpy array[npts-1]
+    shear_stress : numpy array[npts-1], [N/m**2]
         Shear stress in cylinder structure
-    hoop_stress : numpy array[npts-1]
+    hoop_stress : numpy array[npts-1], [N/m**2]
         Hoop stress in cylinder structure calculated with simple method used in API
         standards
-    hoop_stress_euro : numpy array[npts-1]
+    hoop_stress_euro : numpy array[npts-1], [N/m**2]
         Hoop stress in cylinder structure calculated with Eurocode method
     
     """
