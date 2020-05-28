@@ -366,7 +366,7 @@ class Blade(Group):
         # Optimization parameters initialized as indipendent variable component
         opt_var = IndepVarComp()
         opt_var.add_output('s_opt_twist',      val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
-        opt_var.add_output('s_opt_chord',      val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
+        opt_var.add_output('s_opt_chord',      val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
         opt_var.add_output('twist_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
         opt_var.add_output('chord_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
         opt_var.add_output('af_position',      val = np.ones(blade_init_options['n_af_span']))
