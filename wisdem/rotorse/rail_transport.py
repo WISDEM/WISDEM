@@ -408,7 +408,7 @@ class RailTransport(ExplicitComponent):
             obj = (mystrainPS.sum() + mystrainSS.sum())
 
             # Constrain derailing moment
-            con = RF_derailH[0,:] / (0.5 * mass_car_8axle * gravity) / max_LV
+            con = np.max(RF_derailH, axis=0) / (0.5 * mass_car_8axle * gravity) / max_LV
             return (1-con) if con_flag else obj
 
         # Initiliaze scipy minimization
@@ -439,8 +439,8 @@ class RailTransport(ExplicitComponent):
         # Express derailing force as a constraint
         constr_derailH_4axle = RF_derailH / (0.5 * mass_car_4axle * gravity) / max_LV
         constr_derailH_8axle = RF_derailH / (0.5 * mass_car_8axle * gravity) / max_LV
-        outputs['constr_LV_4axle_horiz'] = constr_derailH_4axle[0,:]
-        outputs['constr_LV_8axle_horiz'] = constr_derailH_8axle[0,:]
+        outputs['constr_LV_4axle_horiz'] = np.max(constr_derailH_4axle, axis=0)
+        outputs['constr_LV_8axle_horiz'] = np.max(constr_derailH_8axle, axis=0)
 
         # Strain constraint outputs
         outputs['constr_strainPS'] = np.abs(strainPS) / max_strains
@@ -511,8 +511,8 @@ class RailTransport(ExplicitComponent):
             strainTE[:,k] = -(M1/EI11*te2 - M2/EI22*te1 + Fz/EA)
             
         # Find best points for middle reaction and formulate as constraints
-        constr_derailV_8axle = (RF_derailV.T / (0.5 * mass_car_8axle * gravity)) / max_LV
-        constr_derailV_4axle = (RF_derailV.T / (0.5 * mass_car_4axle * gravity)) / max_LV
+        constr_derailV_8axle = (np.abs(RF_derailV.T) / (0.5 * mass_car_8axle * gravity)) / max_LV
+        constr_derailV_4axle = (np.abs(RF_derailV.T) / (0.5 * mass_car_4axle * gravity)) / max_LV
 
         outputs['constr_LV_4axle_vert'] = constr_derailV_4axle[0,:]
         outputs['constr_LV_8axle_vert'] = constr_derailV_8axle[0,:]

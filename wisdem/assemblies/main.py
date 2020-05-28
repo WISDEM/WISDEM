@@ -356,7 +356,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 
             if blade_constraints['rail_transport']['flag']:
                 if blade_constraints['rail_transport']['8_axle']:
-                    wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz', upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz',   upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_strainPS',         upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_strainSS',         upper= 1.0)
                 elif blade_constraints['rail_transport']['4_axle']:
                     wt_opt.model.add_constraint('elastic.rail.constr_LV_4axle_horiz', upper= 1.0)
                 else:
