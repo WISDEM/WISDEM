@@ -737,6 +737,7 @@ materials:
       rho: 1150.
       alpha: 0.0
       orth: 0
+      unit_cost: 3.63
 
 assembly:
     turbine_class: I
