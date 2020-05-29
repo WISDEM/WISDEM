@@ -281,8 +281,8 @@ class RunFrame3DD(ExplicitComponent):
             Iy  = EIxx / E 
         else:
             # Will further rotate to principle axes
-            Ix  = EI22 / E
-            Iy  = EI11 / E
+            Ix  = EI11 / E
+            Iy  = EI22 / E
 
         # Have to convert nodal values to find average at center of element
         Abar,_   = util.nodal2sectional(A)
