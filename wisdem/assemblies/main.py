@@ -22,9 +22,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     optimization_data       = Opt_Data()
     optimization_data.fname_opt_options = fname_opt_options
     optimization_data.folder_output     = folder_output    
-    
-    if not os.path.isdir(folder_output):
-        os.mkdir(folder_output)
 
     # Load yaml for turbine description into a pure python data structure.
     wt_initial                   = WindTurbineOntologyPython()
@@ -152,7 +149,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
     else:
         color_i = 0
+        rank = 0
 
+    if rank == 0 and not os.path.isdir(folder_output):
+        os.mkdir(folder_output)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
@@ -211,8 +211,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.driver.opt_settings['Major iterations limit']      = int(opt_options['driver']['max_iter'])
                 wt_opt.driver.opt_settings['Iterations limit']            = int(opt_options['driver']['max_function_calls'])
                 wt_opt.driver.opt_settings['Major feasibility tolerance'] = float(opt_options['driver']['tol'])
-                # wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
-                # wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
+                wt_opt.driver.opt_settings['Summary file']                = folder_output + 'SNOPT_Summary_file.txt'
+                wt_opt.driver.opt_settings['Print file']                  = folder_output + 'SNOPT_Print_file.txt'
                 if 'hist_file_name' in opt_options['driver']:
                     wt_opt.driver.hist_file = opt_options['driver']['hist_file_name']
                 if 'verify_level' in opt_options['driver']:
@@ -356,7 +356,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 
             if blade_constraints['rail_transport']['flag']:
                 if blade_constraints['rail_transport']['8_axle']:
-                    wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz',   upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz',   lower = 0.8, upper= 1.0)
                     wt_opt.model.add_constraint('elastic.rail.constr_strainPS',         upper= 1.0)
                     wt_opt.model.add_constraint('elastic.rail.constr_strainSS',         upper= 1.0)
                 elif blade_constraints['rail_transport']['4_axle']:
@@ -409,7 +409,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             # filename supplied in the optimization yaml
             if 'recorder' in opt_options:
                 if opt_options['recorder']['flag']:
-                    recorder = om.SqliteRecorder(opt_options['recorder']['file_name'])
+                    recorder = om.SqliteRecorder(folder_output + opt_options['recorder']['file_name'])
                     wt_opt.driver.add_recorder(recorder)
                     wt_opt.add_recorder(recorder)
                     
