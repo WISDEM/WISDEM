@@ -147,6 +147,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         rank    = MPI.COMM_WORLD.Get_rank()
         color_i = color_map[rank]
         comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+    elif MPI and not opt_options['opt_flag']:
+        exit('No design variables are defined in the optimization problem, but MPI is called. Please check the optimization setup or deactivate MPI.')
     else:
         color_i = 0
         rank = 0
