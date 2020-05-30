@@ -374,25 +374,25 @@ class Frame(object):
         # convert to C int size (not longs) and copy to prevent releasing (b/c address space is shared by c)
 
         # nodes
-        self.nnode = nodes.node.astype(np.int32)
+        self.nnode = np.array(nodes.node).astype(np.int32)
         self.nx = np.copy(nodes.x)
         self.ny = np.copy(nodes.y)
         self.nz = np.copy(nodes.z)
         self.nr = np.copy(nodes.r)
 
         # reactions
-        self.rnode = reactions.node.astype(np.int32)
-        self.rKx = reactions.Kx.astype(np.float64)  # convert rather than copy to allow old syntax of integers
-        self.rKy = reactions.Ky.astype(np.float64)
-        self.rKz = reactions.Kz.astype(np.float64)
-        self.rKtx = reactions.Ktx.astype(np.float64)
-        self.rKty = reactions.Kty.astype(np.float64)
-        self.rKtz = reactions.Ktz.astype(np.float64)
+        self.rnode = np.array(reactions.node).astype(np.int32)
+        self.rKx = np.array(reactions.Kx).astype(np.float64)  # convert rather than copy to allow old syntax of integers
+        self.rKy = np.array(reactions.Ky).astype(np.float64)
+        self.rKz = np.array(reactions.Kz).astype(np.float64)
+        self.rKtx = np.array(reactions.Ktx).astype(np.float64)
+        self.rKty = np.array(reactions.Kty).astype(np.float64)
+        self.rKtz = np.array(reactions.Ktz).astype(np.float64)
 
         # elements
-        self.eelement = elements.element.astype(np.int32)
-        self.eN1 = elements.N1.astype(np.int32)
-        self.eN2 = elements.N2.astype(np.int32)
+        self.eelement = np.array(elements.element).astype(np.int32)
+        self.eN1 = np.array(elements.N1).astype(np.int32)
+        self.eN2 = np.array(elements.N2).astype(np.int32)
         self.eAx = np.copy(elements.Ax)
         self.eAsy = np.copy(elements.Asy)
         self.eAsz = np.copy(elements.Asz)
@@ -465,13 +465,15 @@ class Frame(object):
 
 
     def addLoadCase(self, loadCase):
-
         self.loadCases.append(loadCase)
+
+    def clearLoadCases(self):
+        self.loadCases = []
 
 
     def changeExtraNodeMass(self, node, mass, Ixx, Iyy, Izz, Ixy, Ixz, Iyz, rhox, rhoy, rhoz, addGravityLoad):
 
-        self.ENMnode = node.astype(np.int32)
+        self.ENMnode = np.array(node).astype(np.int32)
         self.ENMmass = np.copy(mass)
         self.ENMIxx = np.copy(Ixx)
         self.ENMIyy = np.copy(Iyy)
@@ -493,7 +495,7 @@ class Frame(object):
 
     def changeExtraElementMass(self, element, mass, addGravityLoad):
 
-        self.EEMelement = element.astype(np.int32)
+        self.EEMelement = np.array(element).astype(np.int32)
         self.EEMmass = np.copy(mass)
         self.addGravityLoadForExtraElementMass = addGravityLoad
 
@@ -504,14 +506,14 @@ class Frame(object):
     def changeCondensationData(self, Cmethod, N, cx, cy, cz, cxx, cyy, czz, m):
         # I don't think this is actually used in Frame3DD anyway
 
-        self.NC = N.astype(np.int32)
+        self.NC = np.array(N).astype(np.int32)
         self.cx = np.copy(cx)
         self.cy = np.copy(cy)
         self.cz = np.copy(cz)
         self.cxx = np.copy(cxx)
         self.cyy = np.copy(cyy)
         self.czz = np.copy(czz)
-        self.mC = m.astype(np.int32)
+        self.mC = np.array(m).astype(np.int32)
 
         self.c_condensation = C_Condensation(Cmethod, len(N), ip(self.NC), dp(self.cx), dp(self.cy), dp(self.cz),
             dp(self.cxx), dp(self.cyy), dp(self.czz), ip(self.mC))
@@ -943,7 +945,7 @@ class StaticLoadCase(object):
     def changePointLoads(self, N, Fx, Fy, Fz, Mxx, Myy, Mzz):
 
         # copying to prevent any user error with variables pointing to something else (b/c memory address is shared by C)
-        self.NF = N.astype(np.int32)
+        self.NF = np.array(N).astype(np.int32)
         self.Fx = np.copy(Fx)
         self.Fy = np.copy(Fy)
         self.Fz = np.copy(Fz)
@@ -957,7 +959,7 @@ class StaticLoadCase(object):
 
     def changeUniformLoads(self, EL, Ux, Uy, Uz):
 
-        self.ELU = EL.astype(np.int32)
+        self.ELU = np.array(EL).astype(np.int32)
         self.Ux = np.copy(Ux)
         self.Uy = np.copy(Uy)
         self.Uz = np.copy(Uz)
@@ -968,7 +970,7 @@ class StaticLoadCase(object):
 
     def changeTrapezoidalLoads(self, EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2):
 
-        self.ELT = EL.astype(np.int32)
+        self.ELT = np.array(EL).astype(np.int32)
         self.xx1 = np.copy(xx1)
         self.xx2 = np.copy(xx2)
         self.wx1 = np.copy(wx1)
@@ -989,7 +991,7 @@ class StaticLoadCase(object):
 
     def changeElementLoads(self, EL, Px, Py, Pz, x):
 
-        self.ELE = EL.astype(np.int32)
+        self.ELE = np.array(EL).astype(np.int32)
         self.Px = np.copy(Px)
         self.Py = np.copy(Py)
         self.Pz = np.copy(Pz)
@@ -1002,7 +1004,7 @@ class StaticLoadCase(object):
 
     def changeTemperatureLoads(self, EL, a, hy, hz, Typ, Tym, Tzp, Tzm):
 
-        self.ELTemp = EL.astype(np.int32)
+        self.ELTemp = np.array(EL).astype(np.int32)
         self.a = np.copy(a)
         self.hy = np.copy(hy)
         self.hz = np.copy(hz)
@@ -1019,7 +1021,7 @@ class StaticLoadCase(object):
 
     def changePrescribedDisplacements(self, N, Dx, Dy, Dz, Dxx, Dyy, Dzz):
 
-        self.ND = N.astype(np.int32)
+        self.ND = np.array(N).astype(np.int32)
         self.Dx = np.copy(Dx)
         self.Dy = np.copy(Dy)
         self.Dz = np.copy(Dz)
@@ -1029,77 +1031,6 @@ class StaticLoadCase(object):
 
         self.pD = C_PrescribedDisplacements(len(N), ip(self.ND), dp(self.Dx), dp(self.Dy), dp(self.Dz),
                    dp(self.Dxx), dp(self.Dyy), dp(self.Dzz))
-
-
-
-
-# class DynamicAnalysis(object):
-#     """docstring"""
-
-
-#     def __init__(self, nM, Mmethod, lump, tol, shift):
-
-#         self.nM = nM
-
-#         exagg_modal = 1.0  # not used
-#         self.dynamicData = C_DynamicData(nM, Mmethod, lump, tol, shift, exagg_modal)
-
-#         i = np.array([], dtype=np.int32)
-#         d = np.array([])
-
-#         self.changeExtraInertia(i, d, d, d, d, d, d, d, d, d, d)
-
-#         self.changeExtraMass(i, d)
-
-#         self.changeCondensationData(0, i, d, d, d, d, d, d, i)
-
-
-
-#     def changeExtraInertia(self, N, EMs, EMx, EMy, EMz, EMxy, EMxz, EMyz, rhox, rhoy, rhoz):
-
-#         self.NI = N.astype(np.int32)
-#         self.EMs = np.copy(EMs)
-#         self.EMx = np.copy(EMx)
-#         self.EMy = np.copy(EMy)
-#         self.EMz = np.copy(EMz)
-#         self.EMxy = np.copy(EMxy)
-#         self.EMxz = np.copy(EMxz)
-#         self.EMyz = np.copy(EMyz)
-#         self.rhox = np.copy(rhox)
-#         self.rhoy = np.copy(rhoy)
-#         self.rhoz = np.copy(rhoz)
-
-
-#         self.extraInertia = C_ExtraInertia(len(N), ip(self.NI), dp(self.EMs),
-#             dp(self.EMx), dp(self.EMy), dp(self.EMz), dp(self.EMxy), dp(self.EMxz), dp(self.EMyz),
-#             dp(self.rhox), dp(self.rhoy), dp(self.rhoz))
-
-
-
-#     def changeExtraMass(self, EL, EMs):
-
-#         self.ELM = EL.astype(np.int32)
-#         self.EMsM = np.copy(EMs)
-
-#         self.extraMass = C_ExtraMass(len(EL), ip(self.ELM), dp(self.EMsM))
-
-
-
-
-#     def changeCondensationData(self, Cmethod, N, cx, cy, cz, cxx, cyy, czz, m):
-
-#         self.NC = N.astype(np.int32)
-#         self.cx = np.copy(cx)
-#         self.cy = np.copy(cy)
-#         self.cz = np.copy(cz)
-#         self.cxx = np.copy(cxx)
-#         self.cyy = np.copy(cyy)
-#         self.czz = np.copy(czz)
-#         self.mC = m.astype(np.int32)
-
-#         self.condensation = C_Condensation(Cmethod, len(N), ip(self.NC), dp(self.cx), dp(self.cy), dp(self.cz),
-#             dp(self.cxx), dp(self.cyy), dp(self.czz), ip(self.mC))
-
 
 
 
