@@ -147,6 +147,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         rank    = MPI.COMM_WORLD.Get_rank()
         color_i = color_map[rank]
         comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+    elif MPI and not opt_options['opt_flag']:
+        exit('No design variables are defined in the optimization problem, but MPI is called. Please check the optimization setup or deactivate MPI.')
     else:
         color_i = 0
         rank = 0
@@ -322,22 +324,40 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             # Set non-linear constraints
             blade_constraints = opt_options['constraints']['blade']
             if blade_constraints['strains_spar_cap_ss']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
+                if blade_opt_options['structure']['spar_cap_ss']['flag']:
+                    wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
+                else:
+                    print('WARNING: the strains of the suction-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['strains_spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.0)
+                if blade_opt_options['structure']['spar_cap_ps']['flag'] or blade_opt_options['structure']['spar_cap_ps']['equal_to_suction']:
+                    wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.0)
+                else:
+                    print('WARNING: the strains of the pressure-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['stall']['flag']:
-                wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.0) 
-                
+                if blade_opt_options['aero_shape']['twist']['flag']:
+                    wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.0) 
+                else:
+                    print('WARNING: the margin to stall is set to be constrained, but twist is not an active design variable. The constraint is not enforced.')
+
             if blade_constraints['tip_deflection']['flag']:
-                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= 1.0)
+                if blade_opt_options['structure']['spar_cap_ss']['flag'] or blade_opt_options['structure']['spar_cap_ps']['flag']:
+                    wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= 1.0)
+                else:
+                    print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['chord']['flag']:
-                wt_opt.model.add_constraint('blade.pa.max_chord_constr', upper= 1.0)
+                if blade_opt_options['aero_shape']['chord']['flag']:
+                    wt_opt.model.add_constraint('blade.pa.max_chord_constr', upper= 1.0)
+                else:
+                    print('WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['frequency']['flap_above_3P']:
-                wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
+                if blade_opt_options['structure']['spar_cap_ss']['flag'] or blade_opt_options['structure']['spar_cap_ps']['flag']:
+                    wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
+                else:
+                    print('WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['frequency']['edge_above_3P']:
                 wt_opt.model.add_constraint('rlds.constr.constr_edge_f_margin', upper= 0.0)
@@ -348,11 +368,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             # if blade_constraints['frequency']['edge_below_3P']:
             #     wt_opt.model.add_constraint('rlds.constr.constr_edge_f_below_3P', upper= 1.0)
                 
-            if blade_constraints['frequency']['flap_above_3P'] and blade_constraints['frequency']['flap_below_3P']:
-                exit('The blade flap frequency is constrained to be both above and below 3P. Please check the constraint flags.')
+            # if blade_constraints['frequency']['flap_above_3P'] and blade_constraints['frequency']['flap_below_3P']:
+            #     exit('The blade flap frequency is constrained to be both above and below 3P. Please check the constraint flags.')
                 
-            if blade_constraints['frequency']['edge_above_3P'] and blade_constraints['frequency']['edge_below_3P']:
-                exit('The blade edge frequency is constrained to be both above and below 3P. Please check the constraint flags.')
+            # if blade_constraints['frequency']['edge_above_3P'] and blade_constraints['frequency']['edge_below_3P']:
+            #     exit('The blade edge frequency is constrained to be both above and below 3P. Please check the constraint flags.')
                 
             if blade_constraints['rail_transport']['flag']:
                 if blade_constraints['rail_transport']['8_axle']:
