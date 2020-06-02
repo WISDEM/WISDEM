@@ -1434,21 +1434,30 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('---------------------- PLATFORM ADDITIONAL STIFFNESS AND DAMPING  --------------\n')
         f.write(" ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddF0']])+"   AddF0    - Additional preload (N, N-m)\n")
         for j in range(6):
-            ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddCLin'][j,:]])
+            try:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddCLin'][j,:]])
+            except:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddCLin'][j]])
             if j == 0:
                 ln = ln + "   AddCLin  - Additional linear stiffness (N/m, N/rad, N-m/m, N-m/rad)\n"
             else:
                 ln = ln  + "\n"
             f.write(ln)
         for j in range(6):
-            ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBLin'][j,:]])
+            try:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBLin'][j,:]])
+            except:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBLin'][j]])
             if j == 0:
                 ln = ln + "   AddBLin  - Additional linear damping(N/(m/s), N/(rad/s), N-m/(m/s), N-m/(rad/s))\n"
             else:
                 ln = ln  + "\n"
             f.write(ln)
         for j in range(6):
-            ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBQuad'][j,:]])
+            try:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBQuad'][j,:]])
+            except:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBQuad'][j]])
             if j == 0:
                 ln = ln + "   AddBQuad - Additional quadratic drag(N/(m/s)^2, N/(rad/s)^2, N-m(m/s)^2, N-m/(rad/s)^2)\n"
             else:
