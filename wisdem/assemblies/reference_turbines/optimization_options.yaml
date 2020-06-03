@@ -140,7 +140,8 @@ constraints:
 
 driver:
     tol: 1.e-2
-    max_iter: 10
+    max_major_iter: 10
+    max_minor_iter: 100
     solver: SLSQP # SNOPT # CONMIN
     step_size: 1.e-3
     form: central # forward

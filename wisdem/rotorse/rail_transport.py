@@ -77,8 +77,8 @@ class RailTransport(ExplicitComponent):
         self.add_output('constr_LV_8axle_horiz', val=np.zeros(2), desc='Constraint for max L/V for an 8-axle flatcar on horiz curves, violated when bigger than 1')
         self.add_output('constr_LV_4axle_vert', val=np.zeros(2), desc='Constraint for max L/V for a 4-axle flatcar on vert curves, violated when bigger than 1')
         self.add_output('constr_LV_8axle_vert', val=np.zeros(2), desc='Constraint for max L/V for an 8-axle flatcar on vert curves, violated when bigger than 1')
-        self.add_output('constr_strainPS', val=np.zeros((n_span,2)), desc='Strain along pressure side of blade on a horizontal curve')
-        self.add_output('constr_strainSS', val=np.zeros((n_span,2)), desc='Strain along suction side of blade on a horizontal curve')
+        self.add_output('constr_strainPS', val=np.zeros(n_span), desc='Strain along pressure side of blade on a horizontal curve')
+        self.add_output('constr_strainSS', val=np.zeros(n_span), desc='Strain along suction side of blade on a horizontal curve')
         self.add_output('constr_strainLE', val=np.zeros((n_span,2)), desc='Strain along leading edge side of blade on a vertical curve')
         self.add_output('constr_strainTE', val=np.zeros((n_span,2)), desc='Strain along trailing edge side of blade on a vertical curve')
 
@@ -427,23 +427,23 @@ class RailTransport(ExplicitComponent):
         result = minimize(lambda x: np.sum(np.abs(x)), x0, method='slsqp', bounds=bounds,
                           tol=1e-3, constraints=const, options={'maxiter': 100} )
 
-        if result.success:
-            # Evaluate optimized solution
-            RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False)
+        # if result.success:
+        # Evaluate optimized solution
+        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False)
 
-            # Express derailing force as a constraint
-            outputs['constr_LV_4axle_horiz'] = RF_derailH / (0.5 * mass_car_4axle * gravity) / max_LV
-            outputs['constr_LV_8axle_horiz'] = RF_derailH / (0.5 * mass_car_8axle * gravity) / max_LV
+        # Express derailing force as a constraint
+        outputs['constr_LV_4axle_horiz'] = RF_derailH / (0.5 * mass_car_4axle * gravity) / max_LV
+        outputs['constr_LV_8axle_horiz'] = RF_derailH / (0.5 * mass_car_8axle * gravity) / max_LV
 
-            # Strain constraint outputs
-            outputs['constr_strainPS'] = np.abs(strainPS) / max_strains
-            outputs['constr_strainSS'] = np.abs(strainSS) / max_strains
-        else:
-            outputs['LV_constraint_4axle_horiz'] = 2.
-            outputs['LV_constraint_8axle_horiz'] = 2.
-            outputs['constr_strainPS']           = 2. * np.ones([npts,2])
-            outputs['constr_strainSS']           = 2. * np.ones([npts,2])
-            print('The optimization cannot satisfy the blade rail transport constraints.')
+        # Strain constraint outputs
+        outputs['constr_strainPS'] = np.max(np.abs(strainPS) / max_strains, axis = 1)
+        outputs['constr_strainSS'] = np.max(np.abs(strainSS) / max_strains, axis = 1)
+        # else:
+        #     outputs['LV_constraint_4axle_horiz'] = 2.
+        #     outputs['LV_constraint_8axle_horiz'] = 2.
+        #     outputs['constr_strainPS']           = 2. * np.ones([npts,2])
+        #     outputs['constr_strainSS']           = 2. * np.ones([npts,2])
+        #     print('The optimization cannot satisfy the blade rail transport constraints.')
 
         
         '''
