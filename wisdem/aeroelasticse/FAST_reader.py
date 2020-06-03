@@ -1324,7 +1324,7 @@ class InputReader_OpenFAST(InputReader_Common):
         else:
             f.readline()
             self.fst_vt['ServoDyn']['DLL_FileName'] = self.path2dll
-        self.fst_vt['ServoDyn']['DLL_InFile']   = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['DLL_InFile']   = os.path.abspath(os.path.normpath(os.path.join(os.path.split(sd_file)[0], f.readline().split()[0][1:-1])))
         self.fst_vt['ServoDyn']['DLL_ProcName'] = f.readline().split()[0][1:-1]
         dll_dt_line = f.readline().split()[0]
         try:
@@ -2034,7 +2034,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['MAP']['Option']   = [str(val) for val in f.readline().strip().split()]
 
 
-def read_MoorDyn(self):
+    def read_MoorDyn(self):
 
         moordyn_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['MooringFile']))
 
