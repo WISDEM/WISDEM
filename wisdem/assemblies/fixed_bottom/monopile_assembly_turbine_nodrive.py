@@ -167,7 +167,7 @@ class MonopileTurbine(om.Group):
         
         # LCOE Calculation
         self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']), promotes=['machine_rating','lcoe',
-                                                                                                               'fixed_charge_rate'])
+                                                                                                               'fixed_charge_rate','wake_loss_factor'])
         
     
         # Set up connections        
