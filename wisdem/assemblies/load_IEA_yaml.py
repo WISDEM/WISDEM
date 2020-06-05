@@ -1168,10 +1168,10 @@ class Floating(om.Group):
         ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
         ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
 
-        self.add_subsystem('main_column', Column(options=floating_init_options['column']['main']))
+        self.add_subsystem('main_column',   Column(options=floating_init_options['column']['main']))
         self.add_subsystem('offset_column', Column(options=floating_init_options['column']['offset']))
-        self.add_subsystem('tower', Tower(options=floating_init_options['tower']))
-        self.add_subsystem('mooring', Mooring(options=floating_init_options['mooring']))
+        self.add_subsystem('tower',         Tower(options=floating_init_options['tower']))
+        self.add_subsystem('mooring',       Mooring(options=floating_init_options['mooring']))
         
     
         
@@ -1996,7 +1996,13 @@ def assign_foundation_values(wt_opt, foundation):
 
 
 def assign_floating_values(wt_opt, analysis_options, floating):
-    wt_opt['floating.radius_to_offset_column'] = floating['column']
+
+    svec = np.unique( np.r_[floating['column']['outer_shape_bem']['outer_diameter']['grid'],
+                            floating['column']['outer_shape_bem']['reference_axis']['x']['grid'],
+                            floating['column']['outer_shape_bem']['reference_axis']['y']['grid'],
+                            floating['column']['outer_shape_bem']['reference_axis']['z']['grid']] )
+    
+    wt_opt['floating.radius_to_offset_column'] = floating['column']['offset']['reference_axis']['x']
         
         ivc.add_output('radius_to_offset_column', 0.0, units='m')
         ivc.add_discrete_output('number_of_offset_columns', 0)
