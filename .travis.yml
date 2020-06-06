@@ -22,7 +22,7 @@ install:
   # Create environment and install dependences dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - conda activate test-environment
-  - conda install -q --yes compilers matplotlib pytest pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy pytest sympy shapely
+  - conda install -q --yes compilers matplotlib pytest pytest-cov coveralls pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy sympy shapely
   - conda install -c nikhar-abbas rosco-toolbox 
   - pip install simpy marmot-agents
   
@@ -48,4 +48,7 @@ install:
   
 script:
   #- python test/test_all.py
-  - py.test
+  - pytest --cov-config=.coverageac --cov=wisdem
+
+after_success:
+  - coveralls
