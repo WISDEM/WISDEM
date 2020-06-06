@@ -5,7 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/wisdem/badge/?version=latest)](https://wisdem.readthedocs.io/en/latest/?badge=latest)
 
 
-The Wind-Plant Integrated System Design and Engineering Model (WISDEM&reg;) is a set of models for assessing overall wind plant cost of energy (COE).  The models use wind turbine and plant cost and energy production as well as financial models to estimate coe and other wind plant system attributes.  It is built in OpenMDAO and uses several sub-models that are also designed as OpenMDAO plugin-ins.  These sub-models can be used independently but they are required to use the overall WISDEM&reg; capability.  Please install all of the pre-requisites prior to installing WISDEM&reg;.  For additional information about the NWTC effort in systems engineering that supports WISDEM&reg; development, please visit the official [NREL systems engineering for wind energy website](https://www.nrel.gov/wind/systems-engineering.html).
+The Wind-Plant Integrated System Design and Engineering Model (WISDEM&reg;) is a set of models for assessing overall wind plant cost of energy (COE).  The models use wind turbine and plant cost and energy production as well as financial models to estimate COE and other wind plant system attributes.  It is built in OpenMDAO and uses several sub-models that are also designed as OpenMDAO plugin-ins.  These sub-models can be used independently but they are required to use the overall WISDEM&reg; capability.  Please install all of the pre-requisites prior to installing WISDEM&reg;.  For additional information about the NWTC effort in systems engineering that supports WISDEM&reg; development, please visit the official [NREL systems engineering for wind energy website](https://www.nrel.gov/wind/systems-engineering.html).
 
 Author: [NREL WISDEM Team](mailto:systems.engineering@nrel.gov) 
 
@@ -22,7 +22,7 @@ See local documentation in the `docs`-directory or access the online version at 
 
 WISDEM&reg; is a family of modules.  The core modules are:
 
-* _AeroelasticSE_ provides multi-fidelity capability for rotor analysis by calling [OpenFAST]<https://github.com/OpenFAST/openfast>
+* _AeroelasticSE_ provides multi-fidelity capability for rotor analysis by calling [OpenFAST](https://github.com/OpenFAST/openfast)
 * _CommonSE_ includes several libraries shared among modules
 * _DrivetrainSE_ sizes the drivetrain and generator systems (formerly DriveSE and GeneratorSE)
 * _FloatingSE_ works with the floating platforms
@@ -81,7 +81,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         python setup.py develop
 
 
-4. OPTIONAL: Install pyOptSparse, an package that provides a handful of additional optimization solvers and has OpenMDAO support:
+4. OPTIONAL: Install pyOptSparse, a package that provides a handful of additional optimization solvers and has OpenMDAO support:
 
         git clone https://github.com/evan-gaertner/pyoptsparse.git
         cd pyoptsparse
