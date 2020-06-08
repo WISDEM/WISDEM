@@ -1,29 +1,46 @@
 general:
-    verbosity: False
+    verbosity: False  # When set to True, the code prints to screen many infos
 
 yaml:
-    validate: False
-    path2schema: /Users/pbortolo/work/3_projects/5_IEAtask37/ontology/turbine/pibo/IEAontology_schema.yaml
+    validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
+    path2schema: windIO/windIO/turbine/IEAontology_schema.yaml   # Path to the yams schema to run the validation
 
 xfoil:
-    path       : "wine /Users/nabbas/Documents/WindEnergyToolbox/XFOIL_exe/xfoil.exe"
+    path       : Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 
 
 rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
     n_xy: 200         # Number of angles of coordinate points used to discretize each airfoil
     n_span: 30        # Number of spanwise stations used to define the blade properties
 
-tower:
-  nLC: 1
-  wind: PowerWind
-  gamma_f: 1.35
-  gamma_m: 1.3
-  gamma_n: 1.0
-  gamma_b: 1.1
-  gamma_fatigue: 1.9305
-  buckling_length: 30
+openfast:
+    run_openfast: False         # Flag to run aeroelasticse, the wrapper of OpenFAST
+    Analysis_Level: 0           # Flag to set the call to OpenFAST. 0 - no call, 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
+    FAST_ver: OpenFAST          # Version of OpenFAST, do not change
+    dev_branch: True            # Git branch of OpenFAST, do not change
+    FAST_exe: openfast/build/glue-codes/openfast/openfast    # Path to OpenFAST executable
+    FAST_directory: "/Model_xyz/"  # Path to folder with the OpenFAST input files
+    FAST_InputFile: model.fst             # Name of the main OpenFAST input file (.fst)
+    path2dll: Controller/libdiscon.so     # Path to the the compiled ROSCO controller
+    Turbsim_exe: /install/bin/turbsim_dev   # Path to TurbSim executable
+    FAST_namingOut: WISDEM_BAR2011n         # Name of the OpenFAST output files
+    FAST_runDirectory: temp_bar             # Path to folder with the OpenFAST output files
+    n_simulations: 4  # Number of OpenFAST simulations to run per evaluation of the objective function
+    debug_level: 2    # Flag to set the debug level, do not change
+    update_hub_nacelle: True
+    generate_af_coords: False
+
+tower:             # Options of TowerSE module
+  nLC: 1           # Number of design load cases in TowerSE
+  wind: PowerWind  # Wind used in TowerSE
+  gamma_f: 1.35    # Safety factor for fatigue loads in TowerSE
+  gamma_m: 1.3     # Safety factor for material properties in TowerSE
+  gamma_n: 1.0     # Safety factor for ...
+  gamma_b: 1.1     # Safety factor for ...
+  gamma_fatigue: 1.9305  # Safety factor for fatigue loads in TowerSE
+  buckling_length: 30    # Buckling parameter in TowerSE
   frame3dd:
-    DC: 80.0
+    DC: 80.0             # Options of beam solver frame3dd
     shear: True
     geom: True
     dx: 5.0
@@ -34,23 +51,6 @@ tower:
     shift: 0.0
     add_gravity: True
 
-openfast:
-    run_openfast: False
-    Analysis_Level: 0
-    FAST_ver: OpenFAST
-    dev_branch: True
-    FAST_exe: "/Users/nabbas/openfast/install/bin/openfast_dev"
-    FAST_directory: "/Users/nabbas/Documents/TurbineModels/BAR/WISDEM_BAR2011n/"
-    FAST_InputFile: "WISDEM_BAR2011n.fst"
-    path2dll: "/Users/nabbas/Documents/TurbineModels/BAR/OpenFAST_Models/ROSCO/build/libdiscon_flaps.dylib"
-    Turbsim_exe: "/Users/nabbas/openfast/install/bin/turbsim_dev"
-    FAST_namingOut: WISDEM_BAR2011n
-    FAST_runDirectory: temp_bar
-    n_simulations: 4 # Number of OpenFAST simulations to run per evaluation of the objective function
-    debug_level: 2
-    update_hub_nacelle: True
-    generate_af_coords: False
-    
 servose:
     n_pc: 20                        # Number of wind speeds to compute the power curve
     n_pc_spline: 200                # Number of wind speeds to spline the power curve 
