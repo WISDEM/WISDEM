@@ -190,7 +190,7 @@ class MonopileInstallation(InstallPhase):
 
         monopile = Monopile(**self.config["monopile"])
         tp = TransitionPiece(**self.config["transition_piece"])
-        self.num_monopiles = self.config["plant"]["num_turbines"]
+        self.num_monopiles = int(self.config["plant"]["num_turbines"])
 
         for _ in range(self.num_monopiles):
             self.port.put(monopile)

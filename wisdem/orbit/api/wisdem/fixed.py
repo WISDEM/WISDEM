@@ -114,7 +114,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
             # Vessels
             'wtiv': discrete_inputs['wtiv'],
             'feeder': discrete_inputs['feeder'],
-            'num_feeders': discrete_inputs['num_feeders'],
+            'num_feeders': int(discrete_inputs['num_feeders']),
             'spi_vessel': 'example_scour_protection_vessel',
             'array_cable_install_vessel': 'example_cable_lay_vessel',
             'array_cable_bury_vessel': 'example_cable_lay_vessel',
@@ -135,7 +135,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
             
             'plant': {
                 'layout': 'grid',
-                'num_turbines': discrete_inputs['number_of_turbines'],
+                'num_turbines': int(discrete_inputs['number_of_turbines']),
                 'row_spacing': float(inputs['plant_row_spacing']),
                 'turbine_spacing': float(inputs['plant_turbine_spacing']),
                 'substation_distance': float(inputs['plant_substation_distance'])
@@ -167,7 +167,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 
                 'blade': {
                     'type': 'Blade',
-                    'number': float(discrete_inputs['number_of_blades']),
+                    'number': int(discrete_inputs['number_of_blades']),
                     'deck_space': float(inputs['blade_deck_space']),
                     'mass': float(inputs['blade_mass'])
                 }

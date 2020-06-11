@@ -222,7 +222,7 @@ class TurbineInstallation(InstallPhase):
             *np.repeat(blade, 3),
         ]
 
-        self.num_turbines = self.config["plant"]["num_turbines"]
+        self.num_turbines = int(self.config["plant"]["num_turbines"])
 
         for _ in range(self.num_turbines):
             for item in component_list:
