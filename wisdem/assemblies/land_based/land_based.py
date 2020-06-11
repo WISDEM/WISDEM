@@ -196,6 +196,10 @@ class LandBasedTurbine(om.Group):
         self.connect('hub_height', 'hub_height_meters')
         self.connect('number_of_turbines', 'num_turbines')
         self.connect('machine_rating', 'turbine_rating_MW')
+        self.connect('rated_T','rated_thrust_N')
+        self.connect('shearExp','wind_shear_exponent')
+        self.connect('diameter','rotor_diameter_m')
+        self.connect('nBlades', 'number_of_blades')
 
         # Connections to PlantFinanceSE
         self.connect('AEP', 'plantfinancese.turbine_aep')
