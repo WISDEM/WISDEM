@@ -920,11 +920,11 @@ class ErectionCost(CostModule):
         same_topbase_crane_list = possible_crane_topbase[['Crane name', 'Boom system']]
         possible_crane_topbase  = same_topbase_crane_list.merge(possible_crane_cost, on=['Crane name', 'Boom system'])
         possible_crane_topbase_sum = possible_crane_topbase.groupby(['Crane name',
-                                                                     'Boom system'])['Labor cost USD without management',
+                                                                     'Boom system'])[['Labor cost USD without management',
                                                                                      'Subtotal for hourly labor (non-management) USD',
                                                                                      'Subtotal for per diem labor (non-management) USD',
                                                                                      'Equipment rental cost USD',
-                                                                                     'Fuel cost USD'
+                                                                                     'Fuel cost USD']
         ].sum().reset_index()
 
         # Store the possible cranes for the top and base for future diagnostics.
@@ -952,11 +952,11 @@ class ErectionCost(CostModule):
 
         # calculate costs if top and base use separate cranes
         separate_topbase = \
-            possible_crane_cost.groupby(['Operation', 'Crane name', 'Boom system'])['Labor cost USD without management',
+            possible_crane_cost.groupby(['Operation', 'Crane name', 'Boom system'])[['Labor cost USD without management',
                                                                                                    'Subtotal for hourly labor (non-management) USD',
                                                                                                    'Subtotal for per diem labor (non-management) USD',
                                                                                                    'Equipment rental cost USD',
-                                                                                                   'Fuel cost USD'
+                                                                                                   'Fuel cost USD']
         ].sum().reset_index()
 
         # join mobilization data to separate top base crane costs
