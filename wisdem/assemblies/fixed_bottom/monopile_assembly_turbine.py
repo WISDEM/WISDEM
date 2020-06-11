@@ -111,7 +111,7 @@ class MonopileTurbine(Group):
         # Tower and substructure
         self.add_subsystem('tow',TowerSE(nLC=1,
                                          nPoints=Nsection_Tow+1,
-                                         nFull=5*Nsection_Tow+1,
+                                         nFull=3*Nsection_Tow+1,
                                          wind='PowerWind',
                                          topLevelFlag=False,
                                          monopile=True),
@@ -130,7 +130,7 @@ class MonopileTurbine(Group):
                                      'DC','shear','geom','tower_force_discretization','nM','Mmethod','lump','tol','shift'])
 
         # Turbine constraints
-        self.add_subsystem('tcons', TurbineConstraints(nFull=5*(Nsection_Tow+1)+1), promotes=['*'])
+        self.add_subsystem('tcons', TurbineConstraints(nFull=3*(Nsection_Tow+1)+1), promotes=['*'])
         
         # Turbine costs
         self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=self.options['VerbosityCosts'], topLevelFlag=False), promotes=['*'])
@@ -156,15 +156,12 @@ class MonopileTurbine(Group):
                                                        'monopile_deck_space',
                                                        'transition_piece_deck_space',
                                                        #'scour_protection_depth',
-                                                       'array_system_cables',
-                                                       'export_system_cable',
-                                                       'monopile_steel_cost',
                                                        'commissioning_pct',
                                                        'decommissioning_pct'])
         
         # LCOE Calculation
-        self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']), promotes=['machine_rating','lcoe',
-                                                                                                               'fixed_charge_rate','wake_loss_factor'])
+        self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']),
+                           promotes=['machine_rating','lcoe', 'fixed_charge_rate','wake_loss_factor'])
         
     
         # Set up connections
@@ -249,7 +246,6 @@ def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt =
     prob['wind_beta'] = prob['wave_beta'] = 0.0
     prob['significant_wave_height']        = 5.0
     prob['significant_wave_period']        = 10.0
-    prob['monopile']                       = True
 
     # Steel properties for the tower
     prob['material_density']               = 7850.0
@@ -296,7 +292,6 @@ def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt =
     prob['project_lifetime'] = prob['lifetime'] = 20.0    
     prob['number_of_turbines']             = 200. * 1.e+006 / prob['machine_rating']
     prob['annual_opex']                    = 43.56 # $/kW/yr
-    prob['bos_costs']                      = 517.0 # $/kW
     
     # For RNA
     prob['tower_add_gravity'] = True # Don't double count
@@ -356,10 +351,10 @@ if __name__ == "__main__":
         num_par_fd = MPI.COMM_WORLD.Get_size()
         prob = Problem(model=Group(num_par_fd=num_par_fd))
         prob.model.approx_totals(method='fd')
-        prob.model.add_subsystem('comp', LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True), promotes=['*'])
+        prob.model.add_subsystem('comp', MonopileTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True), promotes=['*'])
     else:
         prob = Problem()
-        prob.model=LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True)
+        prob.model=MonopileTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True)
     
     if optFlag:
         # --- Solver ---
@@ -420,21 +415,16 @@ if __name__ == "__main__":
 
     prob.setup(check=True)
     
-    prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
+    prob = Init_MonopileTurbine(prob, blade, Nsection_Tow)
     prob.model.nonlinear_solver = NonlinearRunOnce()
     prob.model.linear_solver = DirectSolver()
 
     if not MPI:
         prob.model.approx_totals()
 
-    # prob.run_model()
+    prob.run_model()
     # prob.model.list_inputs(units=True)
     # prob.model.list_outputs(units=True)
-
-
-    prob.run_driver()
-    # prob.check_partials(compact_print=True, method='fd', step=1e-6, form='central')
-    
 
 
 
