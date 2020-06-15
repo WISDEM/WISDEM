@@ -20,6 +20,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['tower_outer_diameter'] = 3.*np.ones(3)
         self.inputs['tower_wall_thickness'] = 0.1*np.ones(2)
         self.inputs['suctionpile_depth'] = 0.0
+        self.inputs['suctionpile_depth_diam_ratio'] = 0.0
         self.inputs['foundation_height'] = 0.0
         myobj = tow.MonopileFoundation(nPoints=3, monopile=False)
         myobj.compute(self.inputs, self.outputs)
@@ -55,6 +56,16 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs['wall_thickness_out'], 0.1*np.ones(3))
         npt.assert_equal(self.outputs['foundation_height_out'], self.inputs['foundation_height']-0.1)
 
+        # Test monopile with depth ratio
+        self.inputs['suctionpile_depth'] = 0.0
+        self.inputs['suctionpile_depth_diam_ratio'] = 4.0
+        myobj = tow.MonopileFoundation(nPoints=3, monopile=True)
+        myobj.compute(self.inputs, self.outputs)
+        npt.assert_equal(self.outputs['section_height_out'], np.array([12., 2., 2.]))
+        npt.assert_equal(self.outputs['outer_diameter_out'], 3.*np.ones(4))
+        npt.assert_equal(self.outputs['wall_thickness_out'], 0.1*np.ones(3))
+        npt.assert_equal(self.outputs['foundation_height_out'], self.inputs['foundation_height']-12.)
+        
         
     def testTowerDisc(self):
         # Test Land

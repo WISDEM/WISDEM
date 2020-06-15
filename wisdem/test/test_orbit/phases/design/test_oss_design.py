@@ -62,8 +62,8 @@ def test_oss_kwargs():
         "workspace_cost": 3e6,
         "other_ancillary_cost": 4e6,
         "topside_assembly_factor": 0.08,
-        "substation_jacket_cost_rate": 7250,
-        "substation_pile_cost_rate": 2500,
+        "oss_substructure_cost_rate": 7250,
+        "oss_pile_cost_rate": 2500,
         "num_substations": 2,
     }
 

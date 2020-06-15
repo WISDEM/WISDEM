@@ -8,6 +8,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 from copy import deepcopy
 
+import numpy as np
 from marmot import process
 
 from wisdem.orbit.core import Vessel
@@ -19,6 +20,7 @@ from .common import SimpleCable as Cable
 from .common import (
     lay_cable,
     bury_cable,
+    dig_trench,
     prep_cable,
     lower_cable,
     pull_in_cable,
@@ -37,8 +39,10 @@ class ArrayCableInstallation(InstallPhase):
     expected_config = {
         "array_cable_install_vessel": "str",
         "array_cable_bury_vessel": "str (optional)",
+        "array_cable_trench_vessel": "str (optional)",
         "site": {"distance": "km"},
         "array_system": {
+            "num_strings": "int (optional, default: 10)",
             "cables": {
                 "name (variable)": {
                     "linear_density": "t/km",
@@ -46,7 +50,7 @@ class ArrayCableInstallation(InstallPhase):
                         ("length, km", "int", "speed, km/h (optional)")
                     ],
                 }
-            }
+            },
         },
     }
 
@@ -80,7 +84,9 @@ class ArrayCableInstallation(InstallPhase):
 
         self.initialize_installation_vessel()
         self.initialize_burial_vessel()
+        self.initialize_trench_vessel()
 
+        self.num_strings = self.config["array_system"].get("num_strings", 10)
         self.cable_data = [
             (Cable(data["linear_density"]), deepcopy(data["cable_sections"]))
             for _, data in self.config["array_system"]["cables"].items()
@@ -91,7 +97,9 @@ class ArrayCableInstallation(InstallPhase):
             self.install_vessel,
             distance=self.config["site"]["distance"],
             cable_data=self.cable_data,
+            num_strings=self.num_strings,
             burial_vessel=self.bury_vessel,
+            trench_vessel=self.trench_vessel,
             **kwargs,
         )
 
@@ -105,8 +113,7 @@ class ArrayCableInstallation(InstallPhase):
         vessel = Vessel(name, vessel_specs)
         self.env.register(vessel)
 
-        vessel.extract_vessel_specs()
-        vessel.mobilize()
+        vessel.initialize()
         vessel.at_port = True
         vessel.at_site = False
         self.install_vessel = vessel
@@ -119,17 +126,33 @@ class ArrayCableInstallation(InstallPhase):
         if vessel_specs is None:
             self.bury_vessel = None
             return
-
         name = vessel_specs.get("name", "Array Cable Burial Vessel")
 
         vessel = Vessel(name, vessel_specs)
         self.env.register(vessel)
 
-        vessel.extract_vessel_specs()
-        vessel.mobilize()
+        vessel.initialize()
         vessel.at_port = True
         vessel.at_site = False
         self.bury_vessel = vessel
+
+    def initialize_trench_vessel(self):
+        """Creates the array cable trenching vessel."""
+
+        # Vessel name and costs
+        vessel_specs = self.config.get("array_cable_trench_vessel", None)
+        if vessel_specs is None:
+            self.trench_vessel = None
+            return
+        name = vessel_specs.get("name", "Array Cable Trench Vessel")
+
+        vessel = Vessel(name, vessel_specs)
+        self.env.register(vessel)
+
+        vessel.initialize()
+        vessel.at_port = True
+        vessel.at_site = False
+        self.trench_vessel = vessel
 
     @property
     def detailed_output(self):
@@ -142,7 +165,13 @@ class ArrayCableInstallation(InstallPhase):
 
 @process
 def install_array_cables(
-    vessel, distance, cable_data, burial_vessel=None, **kwargs
+    vessel,
+    distance,
+    cable_data,
+    num_strings,
+    burial_vessel=None,
+    trench_vessel=None,
+    **kwargs,
 ):
     """
     Simulation of the installation of array cables.
@@ -151,16 +180,66 @@ def install_array_cables(
     ----------
     vessel : Vessel
         Cable installation vessel.
-    cables : list
+    cable_data : list
         List of tuples containing `Cable` instances and sections.
+    num_strings : int
+        Number of array system strings. Used for partial generation assumptions
+        for the post-processed cash flow model.
     burial_vessel : Vessel
         Optional configuration for burial vessel. If configured, the
         installation vessel only lays the cable on the seafloor and this
         vessel will bury them at the end of the simulation.
+    trench_vessel: Vessel
+        Optional configuration for trenching vessel.  If configured, the
+        trenching vessel travels along the cable route prior to arrival of
+        the cable lay vessel and digs a trench.
     """
 
-    to_bury = []
+    breakpoints = list(np.linspace(1 / num_strings, 1, num_strings))
+    trench_sections = []
+    total_cable_distance = 0
+    installed = 0
 
+    for cable, sections in cable_data:
+        for s in sections:
+            d_i, num_i = s
+            trench_sections.extend([d_i] * num_i)
+            total_cable_distance += d_i * num_i
+
+    ## Trenching Process
+    # Conduct trenching along cable routes before laying cable
+    if trench_vessel is None:
+        pass
+
+    else:
+        # Conduct trenching operations
+        while True:
+            if trench_vessel.at_port:
+                trench_vessel.at_port = False
+                yield trench_vessel.transit(distance, **kwargs)
+                trench_vessel.at_site = True
+
+            elif trench_vessel.at_site:
+
+                try:
+                    # Dig trench along each cable section distance
+                    trench_distance = trench_sections.pop(0)
+                    yield dig_array_cables_trench(
+                        trench_vessel, trench_distance, **kwargs
+                    )
+
+                except IndexError:
+                    trench_vessel.at_site = False
+                    yield trench_vessel.transit(distance, **kwargs)
+                    trench_vessel.at_port = True
+                    break
+
+        vessel.submit_debug_log(
+            message="Array cable trench digging process completed!"
+        )
+
+    ## Cable Lay Process
+    to_bury = []
     for cable, sections in cable_data:
         vessel.cable_storage.reset()
 
@@ -216,6 +295,7 @@ def install_array_cables(
                     # Cable laying procedure
                     if burial_vessel is None:
                         yield lay_bury_cable(vessel, section, **specs)
+                        installed += section
 
                     else:
                         yield lay_cable(vessel, section, **specs)
@@ -226,11 +306,20 @@ def install_array_cables(
                     yield pull_in_cable(vessel, **kwargs)
                     yield terminate_cable(vessel, **kwargs)
 
+                    if burial_vessel is None:
+                        breakpoints = check_for_completed_string(
+                            vessel,
+                            installed,
+                            total_cable_distance,
+                            breakpoints,
+                        )
+
         # Transit back to port
         vessel.at_site = False
         yield vessel.transit(distance, **kwargs)
         vessel.at_port = True
 
+    ## Burial Process
     if burial_vessel is None:
         vessel.submit_debug_log(
             message="Array cable lay/burial process completed!"
@@ -238,11 +327,11 @@ def install_array_cables(
 
     else:
         vessel.submit_debug_log(message="Array cable lay process completed!")
-        bury_array_cables(burial_vessel, to_bury, **kwargs)
+        bury_array_cables(burial_vessel, to_bury, breakpoints, **kwargs)
 
 
 @process
-def bury_array_cables(vessel, sections, **kwargs):
+def bury_array_cables(vessel, sections, breakpoints, **kwargs):
     """
     Simulation for the burial of array cables if configured.
 
@@ -252,10 +341,50 @@ def bury_array_cables(vessel, sections, **kwargs):
         Performing vessel.
     sections : list
         List of cable sections that need to be buried at site.
+    breakpoints : list
+        TODO
+        List of string breakpoints.
     """
+
+    installed = 0
+    total_length = sum(sections)
 
     for length in sections:
         yield position_onsite(vessel, site_position_time=2)
         yield bury_cable(vessel, length, **kwargs)
+        installed += length
+
+        breakpoints = check_for_completed_string(
+            vessel, installed, total_length, breakpoints
+        )
 
     vessel.submit_debug_log(message="Array cable burial process completed!")
+
+
+@process
+def dig_array_cables_trench(vessel, distance, **kwargs):
+    """
+    Simulation for digging a trench for the array cables (if configured).
+
+    Parameters
+    ----------
+    vessel : Vessel
+        Performing vessel.
+    distance : int | float
+        Distance between turbines to dig trench for array cable
+    """
+
+    yield position_onsite(vessel, site_position_time=2)
+    yield dig_trench(vessel, distance, **kwargs)
+
+
+def check_for_completed_string(vessel, installed, total, breakpoints):
+    """
+    TODO:
+    """
+
+    if (installed / total) >= breakpoints[0]:
+        vessel.submit_debug_log(progress="Array String")
+        _ = breakpoints.pop(0)
+
+    return breakpoints

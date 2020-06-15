@@ -14,6 +14,7 @@ from wisdem.commonse import NFREQ
 from wisdem.commonse.environment import PowerWind, LogWind
 from wisdem.commonse.turbine_constraints import TurbineConstraints
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from wisdem.orbit.api.wisdem.fixed import Orbit
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 
@@ -59,20 +60,15 @@ class MonopileTurbine(Group):
         myIndeps.add_output('wind_beta',            0.0, units='deg')
         myIndeps.add_output('cd_usr', -1.)
 
+
         # Environment Offshore
         myIndeps.add_output('offshore',           True)
-        myIndeps.add_output('water_depth',        0.0)
-        myIndeps.add_output('wave_height',        0.0)
-        myIndeps.add_output('wave_period',        0.0)
-        myIndeps.add_output('mean_current_speed', 0.0)
+        myIndeps.add_output('water_depth',        0.0, units='m')
 
         # Design standards
         myIndeps.add_output('gamma_b', 0.0)
         myIndeps.add_output('gamma_n', 0.0)
 
-        # RNA
-        myIndeps.add_discrete_output('rna_weightM', True)
-        
         # Column
         myIndeps.add_output('morison_mass_coefficient', 2.0)
         myIndeps.add_output('material_density',         0.0, units='kg/m**3')
@@ -88,7 +84,6 @@ class MonopileTurbine(Group):
         myIndeps.add_output('painting_cost_rate',   0.0, units='USD/m**2')
         myIndeps.add_discrete_output('number_of_turbines', 0)
         myIndeps.add_output('annual_opex',          0.0, units='USD/kW/yr') # TODO: Replace with output connection
-        myIndeps.add_output('bos_costs',            0.0, units='USD/kW') # TODO: Replace with output connection
         myIndeps.add_output('fixed_charge_rate',    0.0)
         myIndeps.add_output('wake_loss_factor',     0.0)
         
@@ -116,7 +111,7 @@ class MonopileTurbine(Group):
         # Tower and substructure
         self.add_subsystem('tow',TowerSE(nLC=1,
                                          nPoints=Nsection_Tow+1,
-                                         nFull=5*Nsection_Tow+1,
+                                         nFull=3*Nsection_Tow+1,
                                          wind='PowerWind',
                                          topLevelFlag=False,
                                          monopile=True),
@@ -128,24 +123,51 @@ class MonopileTurbine(Group):
                                      'transition_piece_mass','transition_piece_height',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_add_gravity','tower_mass','tower_I_base','hub_height',
-                                     'foundation_height','monopile','soil_G','soil_nu',
-                                     'suctionpile_depth','gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue',
+                                     'foundation_height','soil_G','soil_nu','suctionpile_depth','suctionpile_depth_diam_ratio',
+                                     'monopile_mass','monopile_cost','monopile_length','tower_raw_cost',
+                                     'gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue',
                                      'labor_cost_rate','material_cost_rate','painting_cost_rate','z_full','d_full','t_full',
                                      'DC','shear','geom','tower_force_discretization','nM','Mmethod','lump','tol','shift'])
 
         # Turbine constraints
-        self.add_subsystem('tcons', TurbineConstraints(nFull=5*Nsection_Tow+1), promotes=['*'])
+        self.add_subsystem('tcons', TurbineConstraints(nFull=3*(Nsection_Tow+1)+1), promotes=['*'])
         
         # Turbine costs
         self.add_subsystem('tcost', Turbine_CostsSE_2015(verbosity=self.options['VerbosityCosts'], topLevelFlag=False), promotes=['*'])
 
+        # Use ORBIT for BOS costs
+        self.add_subsystem('orbit', Orbit(), promotes=['wtiv', 'feeder', 'num_feeders', 'oss_install_vessel',
+                                                       'hub_height',
+                                                       'number_of_turbines',
+                                                       'tower_mass',
+                                                       'monopile_length',
+                                                       'monopile_mass',
+                                                       'transition_piece_mass',
+                                                       'site_distance',
+                                                       'site_distance_to_landfall',
+                                                       'site_distance_to_interconnection',
+                                                       'plant_turbine_spacing',
+                                                       'plant_row_spacing',
+                                                       'plant_substation_distance',
+                                                       'tower_deck_space',
+                                                       'nacelle_deck_space',
+                                                       'blade_deck_space',
+                                                       'port_cost_per_month',
+                                                       'monopile_deck_space',
+                                                       'transition_piece_deck_space',
+                                                       #'scour_protection_depth',
+                                                       'commissioning_pct',
+                                                       'decommissioning_pct'])
+        
         # LCOE Calculation
-        self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']), promotes=['machine_rating','lcoe'])
+        self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']),
+                           promotes=['machine_rating','lcoe', 'fixed_charge_rate','wake_loss_factor'])
         
     
         # Set up connections
 
         # Connections to DriveSE
+        self.connect('nBlades',         'drive.number_of_blades')
         self.connect('diameter',        'drive.rotor_diameter')     
         self.connect('rated_Q',         'drive.rotor_torque')
         self.connect('rated_Omega',     'drive.rotor_rpm')
@@ -160,6 +182,7 @@ class MonopileTurbine(Group):
 
         self.connect('material_density', 'tow.tower.rho')
 
+        
         # Connections to TowerSE
         self.connect('drive.top_F',         'tow.pre.rna_F')
         self.connect('drive.top_M',         'tow.pre.rna_M')
@@ -179,22 +202,32 @@ class MonopileTurbine(Group):
         self.connect('rho',         'tow.windLoads.rho')
         self.connect('mu',          'tow.windLoads.mu')
         self.connect('wind_beta',   'tow.windLoads.beta')
-        
-        # Connections to TurbineConstraints
-        self.connect('nBlades',                 ['blade_number', 'drive.number_of_blades'])
+
+        self.connect('nBlades',                 'blade_number')
         self.connect('control_maxOmega',        'rotor_omega')
         self.connect('tow.post.structural_frequencies', 'tower_freq')        
                 
         # Connections to TurbineCostSE
-        self.connect('mass_one_blade',              'blade_mass')
+        self.connect('mass_one_blade',              ['blade_mass','orbit.blade_mass'])
         self.connect('drive.mainBearing.mb_mass',   'main_bearing_mass')
         self.connect('total_blade_cost',            'blade_cost_external')
+        self.connect('tower_raw_cost',              'tower_cost_external')
+
+        # Connections to ORBIT
+        self.connect('water_depth', 'orbit.site_depth')
+        self.connect('rs.gust.V_gust', 'orbit.site_mean_windspeed')
+        self.connect('machine_rating', 'orbit.turbine_rating')
+        self.connect('rated_V', 'orbit.turbine_rated_windspeed')
+        self.connect('turbine_cost_kW', 'orbit.turbine_capex')
+        self.connect('diameter', 'orbit.turbine_rotor_diameter')
+        self.connect('drive.nacelle_mass', 'orbit.nacelle_mass')
+        self.connect('tower_outer_diameter', 'orbit.monopile_diameter', src_indices=[0])
         
         # Connections to PlantFinanceSE
         self.connect('AEP',                 'plantfinancese.turbine_aep')
         self.connect('turbine_cost_kW',     'plantfinancese.tcc_per_kW')
         self.connect('number_of_turbines',  'plantfinancese.turbine_number')
-        self.connect('bos_costs',           'plantfinancese.bos_per_kW')
+        self.connect('orbit.total_capex_kW','plantfinancese.bos_per_kW')
         self.connect('annual_opex',         'plantfinancese.opex_per_kW')
     
 
@@ -213,7 +246,6 @@ def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt =
     prob['wind_beta'] = prob['wave_beta'] = 0.0
     prob['significant_wave_height']        = 5.0
     prob['significant_wave_period']        = 10.0
-    prob['monopile']                       = True
 
     # Steel properties for the tower
     prob['material_density']               = 7850.0
@@ -260,11 +292,9 @@ def Init_MonopileTurbine(prob, blade, Nsection_Tow, Analysis_Level = 0, fst_vt =
     prob['project_lifetime'] = prob['lifetime'] = 20.0    
     prob['number_of_turbines']             = 200. * 1.e+006 / prob['machine_rating']
     prob['annual_opex']                    = 43.56 # $/kW/yr
-    prob['bos_costs']                      = 517.0 # $/kW
     
     # For RNA
-    prob['rna_weightM'] = True
-    prob['tower_add_gravity'] = False # Don't double count
+    prob['tower_add_gravity'] = True # Don't double count
 
     # For turbine costs
     prob['offshore']             = True
@@ -321,10 +351,10 @@ if __name__ == "__main__":
         num_par_fd = MPI.COMM_WORLD.Get_size()
         prob = Problem(model=Group(num_par_fd=num_par_fd))
         prob.model.approx_totals(method='fd')
-        prob.model.add_subsystem('comp', LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True), promotes=['*'])
+        prob.model.add_subsystem('comp', MonopileTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True), promotes=['*'])
     else:
         prob = Problem()
-        prob.model=LandBasedTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True)
+        prob.model=MonopileTurbine(RefBlade=blade, Nsection_Tow = Nsection_Tow, VerbosityCosts = True)
     
     if optFlag:
         # --- Solver ---
@@ -385,21 +415,16 @@ if __name__ == "__main__":
 
     prob.setup(check=True)
     
-    prob = Init_LandBasedAssembly(prob, blade, Nsection_Tow)
+    prob = Init_MonopileTurbine(prob, blade, Nsection_Tow)
     prob.model.nonlinear_solver = NonlinearRunOnce()
     prob.model.linear_solver = DirectSolver()
 
     if not MPI:
         prob.model.approx_totals()
 
-    # prob.run_model()
+    prob.run_model()
     # prob.model.list_inputs(units=True)
     # prob.model.list_outputs(units=True)
-
-
-    prob.run_driver()
-    # prob.check_partials(compact_print=True, method='fd', step=1e-6, form='central')
-    
 
 
 

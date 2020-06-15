@@ -6,17 +6,14 @@ __maintainer__ = "Rob Hammond"
 __email__ = "robert.hammond@nrel.gov"
 
 
-import os
 from copy import deepcopy
 
 import numpy as np
 import pytest
 
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.phases.design import ArraySystemDesign, CustomArraySystemDesign
 from wisdem.orbit.core.exceptions import LibraryItemNotFoundError
-
-initialize_library(pytest.library)
 
 config_full_ring = extract_library_specs("config", "array_design_full_ring")
 

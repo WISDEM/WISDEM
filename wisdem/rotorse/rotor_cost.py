@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import math
 from scipy.optimize import brentq
 from openmdao.api import ExplicitComponent
+from wisdem.commonse.utilities import pmt
 
 class blade_bom(object):
 
@@ -3201,7 +3202,7 @@ class virtual_factory(object):
         tooling_annuity_tot                     = sum(tooling_annuity)
         building_annuity_tot                    = sum(building_annuity)
         
-        working_annuity                         = np.pmt(self.crr /100. / 12. , self.wcp, -(self.wcp / 12. * (total_maintenance_labor_cost_per_year + blade_variable_cost_w_overhead * self.n_blades))) * 12.
+        working_annuity                         = pmt(self.crr /100. / 12. , self.wcp, -(self.wcp / 12. * (total_maintenance_labor_cost_per_year + blade_variable_cost_w_overhead * self.n_blades))) * 12.
 
         annuity_tot_per_year                    = equipment_annuity_tot + tooling_annuity_tot + building_annuity_tot + working_annuity
         
@@ -3238,7 +3239,7 @@ def compute_cost_annuity(self, operation, investment, life, verbosity):
        
         cost_per_year   = investment / life
         cost_per_blade  = cost_per_year / self.n_blades
-        annuity         = np.pmt(self.crr / 100. / 12. , life * 12., -investment) * 12.
+        annuity         = pmt(self.crr / 100. / 12. , life * 12., -investment) * 12.
         
         if verbosity == 1:
             print('Activity: ' + operation)

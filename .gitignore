@@ -112,3 +112,10 @@ Thumbs.db
 *.png
 *.pdf
 *.docx
+
+# JetBrains Junk #
+##################
+.idea/
+
+# LandBOSSE test output
+test.csv

@@ -87,18 +87,14 @@ class Vessel(Agent):
         except KeyError:
             self.day_rate = np.NaN
 
-    def mobilize(self, days=7, mult=0.5):
+    def mobilize(self):
         """
         Submits an action log representing the cost to mobilize the vessel at
         the start of an installation based on the vessel day rate.
-
-        Parameters
-        ----------
-        days : int | float
-            Number of mobilization days.
-        mult : int | float
-            Operations cost multiplier.
         """
+
+        days = self._vessel_specs.get("mobilization_days", 3)
+        mult = self._vessel_specs.get("mobilization_mult", 0.5)
 
         self.submit_action_log("Mobilize", days * 24, cost_multiplier=mult)
 
@@ -163,17 +159,22 @@ class Vessel(Agent):
         except AttributeError:
             raise MissingComponent(self, "Cable Storage")
 
-    def extract_vessel_specs(self):
+    def initialize(self, mobilize=True):
         """
-        Extracts vessel specifications from self.config.
+        Initializes vessel by extracting vessel/component specifications and
+        running `self.mobilize()`.
         """
 
+        self._vessel_specs = self.config.get("vessel_specs", {})
         self.extract_transport_specs()
         self.extract_jacksys_specs()
         self.extract_crane_specs()
         self.extract_storage_specs()
         self.extract_cable_storage_specs()
         self.extract_scour_protection_specs()
+
+        if mobilize:
+            self.mobilize()
 
     def extract_transport_specs(self):
         """Extracts and defines transport related specifications."""

@@ -10,3 +10,4 @@ from .port import Port
 from .cargo import Cargo
 from .vessel import Vessel
 from .components import Crane, JackingSys
+from .environment import OrbitEnvironment as Environment

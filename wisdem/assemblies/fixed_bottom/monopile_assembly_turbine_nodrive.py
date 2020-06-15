@@ -54,9 +54,6 @@ class MonopileTurbine(om.Group):
         # Environment Offshore
         myIndeps.add_output('offshore',           True)
         myIndeps.add_output('water_depth',        0.0, units='m')
-        myIndeps.add_output('wave_height',        0.0, units='m')
-        myIndeps.add_output('wave_period',        0.0, units='s')
-        myIndeps.add_output('mean_current_speed', 0.0, units='m/s')
 
         # Design standards
         myIndeps.add_output('gamma_b', 0.0)
@@ -132,9 +129,9 @@ class MonopileTurbine(om.Group):
                                      'transition_piece_mass','transition_piece_height',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_add_gravity','tower_mass','tower_I_base','hub_height',
-                                     'foundation_height','soil_G','soil_nu',
-                                     'monopile_mass','monopile_cost','monopile_length',
-                                     'suctionpile_depth','gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue',
+                                     'foundation_height','soil_G','soil_nu','suctionpile_depth','suctionpile_depth_diam_ratio',
+                                     'monopile_mass','monopile_cost','monopile_length','tower_raw_cost',
+                                     'gamma_f','gamma_m','gamma_b','gamma_n','gamma_fatigue',
                                      'labor_cost_rate','material_cost_rate','painting_cost_rate','z_full','d_full','t_full',
                                      'DC','shear','geom','tower_force_discretization','nM','Mmethod','lump','tol','shift'])
 
@@ -164,11 +161,13 @@ class MonopileTurbine(om.Group):
                                                        'port_cost_per_month',
                                                        'monopile_deck_space',
                                                        'transition_piece_deck_space',
+                                                       #'scour_protection_depth',
                                                        'commissioning_pct',
                                                        'decommissioning_pct'])
         
         # LCOE Calculation
-        self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']), promotes=['machine_rating','lcoe'])
+        self.add_subsystem('plantfinancese', PlantFinance(verbosity=self.options['VerbosityCosts']), promotes=['machine_rating','lcoe',
+                                                                                                               'fixed_charge_rate','wake_loss_factor'])
         
     
         # Set up connections        
@@ -209,6 +208,7 @@ class MonopileTurbine(om.Group):
         # Connections to TurbineCostSE
         self.connect('mass_one_blade',              ['blade_mass','orbit.blade_mass'])
         self.connect('total_blade_cost',            'blade_cost_external')
+        self.connect('tower_raw_cost',          'tower_cost_external')
 
         # Connections to ORBIT
         self.connect('water_depth', 'orbit.site_depth')

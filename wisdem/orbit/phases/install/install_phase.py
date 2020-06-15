@@ -11,9 +11,8 @@ from itertools import groupby
 
 import numpy as np
 import simpy
-from marmot import Environment
 
-from wisdem.orbit.core import Port
+from wisdem.orbit.core import Port, Environment
 from wisdem.orbit.phases import BasePhase
 
 
@@ -44,7 +43,7 @@ class InstallPhase(BasePhase):
         """
 
         env_name = kwargs.get("env_name", "Environment")
-        self.env = Environment(name=env_name, state=weather)
+        self.env = Environment(name=env_name, state=weather, **kwargs)
 
     @abstractmethod
     def setup_simulation(self):

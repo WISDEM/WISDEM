@@ -12,6 +12,7 @@ from math import ceil
 from numbers import Number
 from itertools import product
 
+import numpy as np
 import pandas as pd
 
 from wisdem.orbit import library
@@ -23,6 +24,7 @@ from wisdem.orbit.phases.design import (
     ExportSystemDesign,
     ProjectDevelopment,
     ScourProtectionDesign,
+    CustomArraySystemDesign,
     OffshoreSubstationDesign,
 )
 from wisdem.orbit.phases.install import (
@@ -33,7 +35,11 @@ from wisdem.orbit.phases.install import (
     ScourProtectionInstallation,
     OffshoreSubstationInstallation,
 )
-from wisdem.orbit.core.exceptions import PhaseNotFound, WeatherProfileError
+from wisdem.orbit.core.exceptions import (
+    PhaseNotFound,
+    WeatherProfileError,
+    PhaseDependenciesInvalid,
+)
 
 
 class ProjectManager:
@@ -46,6 +52,7 @@ class ProjectManager:
         ProjectDevelopment,
         MonopileDesign,
         ArraySystemDesign,
+        CustomArraySystemDesign,
         ExportSystemDesign,
         ScourProtectionDesign,
         OffshoreSubstationDesign,
@@ -84,8 +91,9 @@ class ProjectManager:
             ],
         )
         self.config = self.resolve_project_capacity(config)
+        self.weather = self.transform_weather_input(weather)
 
-        self.weather = weather
+        self.phase_starts = {}
         self.phase_times = {}
         self.phase_costs = {}
         self._output_logs = []
@@ -123,11 +131,13 @@ class ProjectManager:
 
         self.run_all_design_phases(design_phases, **kwargs)
 
-        if isinstance(install_phases, list):
+        if isinstance(install_phases, (list, set)):
             self.run_multiple_phases_in_serial(install_phases, **kwargs)
 
         elif isinstance(install_phases, dict):
             self.run_multiple_phases_overlapping(install_phases, **kwargs)
+
+        self.progress = ProjectProgress(self.progress_logs)
 
     @property
     def phases(self):
@@ -168,6 +178,13 @@ class ProjectManager:
 
         config["commissioning"] = "float (optional, default: 0.01)"
         config["decommissioning"] = "float (optional, default: 0.15)"
+
+        config["ncf"] = "float (optional, default: 0.4)"
+        config["offtake_price"] = "$/MWh (optional, default: 80)"
+        config["project_lifetime"] = "yrs (optional, default: 25)"
+        config["discount_rate"] = "yearly (optional, default: .025)"
+        config["opex_rate"] = "$/kW/year (optional, default: 150)"
+
         config["design_phases"] = [*design_phases.keys()]
         config["install_phases"] = [*install_phases.keys()]
 
@@ -361,7 +378,7 @@ class ProjectManager:
 
         return phase_config
 
-    def run_install_phase(self, name, weather, **kwargs):
+    def run_install_phase(self, name, start, **kwargs):
         """
         Compiles the phase specific configuration input dictionary for input
         'name', checks the input against _class.expected_config and runs the
@@ -382,6 +399,12 @@ class ProjectManager:
         logs : list
             List of phase logs.
         """
+
+        if self.weather is not None:
+            weather = self.get_weather_profile(start)
+
+        else:
+            weather = None
 
         _catch = kwargs.get("catch_exceptions", False)
         _class = self.get_phase_class(name)
@@ -413,6 +436,7 @@ class ProjectManager:
         cost = phase.total_phase_cost
         logs = deepcopy(phase.env.logs)
 
+        self.phase_starts[name] = start
         self.phase_costs[name] = cost
         self.phase_times[name] = time
         self.detailed_outputs = self.merge_dicts(
@@ -507,16 +531,10 @@ class ProjectManager:
             List of installation phases to run.
         """
 
-        _start = 0
+        start = 0
 
         for name in phase_list:
-            if self.weather is not None:
-                weather = self.weather.iloc[ceil(_start) :].copy().to_records()
-
-            else:
-                weather = None
-
-            time, cost, logs = self.run_install_phase(name, weather, **kwargs)
+            _, time, logs = self.run_install_phase(name, start, **kwargs)
 
             if logs is None:
                 continue
@@ -524,39 +542,31 @@ class ProjectManager:
             else:
                 for l in logs:
                     try:
-                        l["time"] += _start
+                        l["time"] += start
                     except KeyError:
                         pass
 
                 self._output_logs.extend(logs)
-                _start = ceil(_start + time)
+                start = ceil(start + time)
 
-    def run_multiple_phases_overlapping(self, phase_dict, **kwargs):
+    def run_multiple_phases_overlapping(self, phases, **kwargs):
         """
-        Runs multiple phases with defined start days in
-        self.config['install_phases'].
+        Runs multiple phases overlapping using a mixture of dates, indices or
+        dependencies.
 
         Parameters
         ----------
-        phase_dict : dict
-            Dictionary of phases to run with keys that indicate start date.
+        phases : dict
+            Dictionary of phases to run.
         """
 
-        start_dates = {
-            k: dt.datetime.strptime(v, self.date_format_short)
-            for k, v in phase_dict.items()
-        }
+        defined, variable = self._parse_install_phase_values(phases)
+        zero = min(defined.values())
 
-        _zero = min(start_dates.values())
+        # Run defined
+        for name, start in defined.items():
 
-        for name, start in start_dates.items():
-            if self.weather is not None:
-                weather = self.get_weather_profile(start)
-
-            else:
-                weather = None
-
-            time, cost, logs = self.run_install_phase(name, weather, **kwargs)
+            _, _, logs = self.run_install_phase(name, start, **kwargs)
 
             if logs is None:
                 continue
@@ -564,11 +574,157 @@ class ProjectManager:
             else:
                 for l in logs:
                     try:
-                        l["time"] += (start - _zero).days * 24
+                        l["time"] += start - zero
                     except KeyError:
                         pass
 
                 self._output_logs.extend(logs)
+
+        # Run remaining phases
+        self.run_dependent_phases(variable, zero)
+
+    def run_dependent_phases(self, phases, zero, **kwargs):
+        """
+        Runs remaining phases that depend on other phase times.
+
+        Parameters
+        ----------
+        phases : dict
+            Dictionary of phases to run.
+        zero : int | float
+            Zero time for the simulation. Used to aggregate total logs.
+        """
+
+        while True:
+
+            progress = False
+            for name, (target, perc) in phases.items():
+
+                try:
+                    start = self.get_dependency_start_time(target, perc)
+                    cost, time, logs = self.run_install_phase(
+                        name, start, **kwargs
+                    )
+                    progress = True
+
+                    if logs is None:
+                        continue
+
+                    else:
+                        for l in logs:
+                            try:
+                                l["time"] += start - zero
+                            except KeyError:
+                                pass
+
+                        self._output_logs.extend(logs)
+
+                except KeyError:
+                    print(
+                        f"Skipped '{name}': Dependency '{target}' not found."
+                    )
+                    continue
+
+            if phases and progress is False:
+                raise PhaseDependenciesInvalid(phases)
+
+            else:
+                break
+
+    def get_dependency_start_time(self, target, perc):
+        """
+        Returns start time based on the `perc` complete of `target` phase.
+
+        Parameters
+        ----------
+        target : str
+            Phase that start time is dependent on.
+        perc : int | float
+            Percentage of the target phase completion time. `0`: starts at the
+            same time. `1`: starts when target phase is completed.
+        """
+
+        start = self.phase_starts[target]
+        elapsed = self.phase_times[target]
+
+        return start + elapsed * perc
+
+    @staticmethod
+    def transform_weather_input(weather):
+        """
+        Checks that an input weather profile matches the required format and
+        converts the index to a datetime index if necessary.
+
+        Parameters
+        ----------
+        weather : pd.DataFrame
+        """
+
+        if weather is None:
+            return None
+
+        else:
+            try:
+                weather = weather.set_index("datetime")
+                if not isinstance(weather.index, pd.DatetimeIndex):
+                    weather.index = pd.to_datetime(weather.index)
+
+            except KeyError:
+                pass
+
+            return weather
+
+    def _parse_install_phase_values(self, phases):
+        """
+        Parses the input dictionary `install_phases`, splitting them into
+        phases that have defined start times and ones that rely on other phases.
+
+        Parameters
+        ----------
+        phases : dict
+            Dictionary of installation phases to run.
+
+        Raises
+        ------
+        ValueError
+            Raised if no phases have a defined start date as the project can't
+            be tied to a specific part of the weather profile.
+        """
+
+        defined = {}
+        depends = {}
+
+        for k, v in phases.items():
+
+            if isinstance(v, (int, float)):
+                defined[k] = ceil(v)
+
+            elif isinstance(v, str):
+                _dt = dt.datetime.strptime(v, self.date_format_short)
+
+                try:
+                    i = self.weather.index.get_loc(_dt)
+                    defined[k] = i
+
+                except AttributeError:
+                    raise ValueError(
+                        f"No weather profile configured "
+                        f"for '{k}': '{v}' input type."
+                    )
+
+                except KeyError:
+                    raise WeatherProfileError(_dt, self.weather)
+
+            elif isinstance(v, tuple) and len(v) == 2:
+                depends[k] = v
+
+            else:
+                raise ValueError(f"Input type '{k}': '{v}' not recognized.")
+
+        if not defined:
+            raise ValueError("No phases have a defined start index/date.")
+
+        return defined, depends
 
     def get_weather_profile(self, start):
         """
@@ -586,15 +742,7 @@ class ProjectManager:
             Weather profile with first index at 'start'.
         """
 
-        if not isinstance(self.weather.index, pd.DatetimeIndex):
-            self.weather.index = pd.to_datetime(self.weather.index)
-
-        profile = self.weather.loc[start:].copy()
-
-        if profile.empty:
-            raise WeatherProfileError(start, self.weather)
-
-        return profile.to_records()
+        return self.weather.iloc[ceil(start) :].copy().to_records()
 
     @property
     def capacity(self):
@@ -609,6 +757,30 @@ class ProjectManager:
         return capacity
 
     @property
+    def num_turbines(self):
+        """Returns number of turbines in the project."""
+
+        try:
+            num_turbines = self.config["plant"]["num_turbines"]
+
+        except KeyError:
+            num_turbines = None
+
+        return num_turbines
+
+    @property
+    def turbine_rating(self):
+        """Returns turbine rating in MW"""
+
+        try:
+            rating = self.config["turbine"]["turbine_rating"]
+
+        except KeyError:
+            rating = None
+
+        return rating
+
+    @property
     def project_logs(self):
         """Returns list of all logs in the project."""
 
@@ -618,13 +790,161 @@ class ProjectManager:
         return self._output_logs
 
     @property
+    def project_time(self):
+        """Returns total project time as the time of the last log."""
+
+        return self.project_logs[-1]["time"]
+
+    @property
+    def month_bins(self):
+        """Returns bins representing project months."""
+
+        return np.arange(0, self.project_time + 730, 730)
+
+    @property
+    def monthly_expenses(self):
+        """Returns the monthly expenses of the project from development through
+        construction."""
+
+        opex = self.monthly_opex
+        lifetime = self.config.get("project_lifetime", 25)
+
+        _expense_logs = self._filter_logs(keys=["cost", "time"])
+        expenses = np.array(
+            _expense_logs, dtype=[("cost", "f8"), ("time", "i4")]
+        )
+        dig = np.digitize(expenses["time"], self.month_bins)
+
+        monthly = {}
+        for i in range(1, lifetime * 12):
+            monthly[i] = sum(expenses["cost"][dig == i]) + opex[i]
+
+        return monthly
+
+    @property
+    def monthly_opex(self):
+        """Returns the monthly OpEx expenditures based on project size."""
+
+        rate = self.config.get("opex_rate", 150)
+        lifetime = self.config.get("project_lifetime", 25)
+
+        try:
+            times, turbines = self.progress.energize_points
+            dig = list(np.digitize(times, self.month_bins))
+
+        except ValueError:
+            return {i: 0.0 for i in range(1, lifetime * 12)}
+
+        opex = {}
+        for i in range(1, lifetime * 12):
+            generating_strings = len([t for t in dig if i >= t])
+            generating_turbines = sum(turbines[:generating_strings])
+
+            opex[i] = (
+                generating_turbines * self.turbine_rating * rate * 1000 / 12
+            )
+
+        return opex
+
+    @property
+    def monthly_revenue(self):
+        """Returns the monthly revenue based on when array system strings can
+        be energized, eg. 'self.progress.energize_points'."""
+
+        ncf = self.config.get("ncf", 0.4)
+        price = self.config.get("offtake_price", 80)
+        lifetime = self.config.get("project_lifetime", 25)
+
+        times, turbines = self.progress.energize_points
+        dig = list(np.digitize(times, self.month_bins))
+
+        revenue = {}
+        for i in range(1, lifetime * 12):
+            generating_strings = len([t for t in dig if i >= t])
+            generating_turbines = sum(turbines[:generating_strings])
+            production = (
+                generating_turbines * self.turbine_rating * ncf * 730
+            )  # MWh
+            revenue[i] = production * price
+
+        return revenue
+
+    @property
+    def cash_flow(self):
+        """Returns the net cash flow based on `self.monthly_expenses` and
+        `self.monthly_revenue`."""
+
+        try:
+            revenue = self.monthly_revenue
+
+        except ValueError:
+            revenue = {}
+
+        expenses = self.monthly_expenses
+        return {
+            i: revenue.get(i, 0.0) - expenses.get(i, 0.0)
+            for i in range(1, max([*revenue.keys(), *expenses.keys()]) + 1)
+        }
+
+    @property
+    def npv(self):
+        """Returns the net present value of the project based on
+        `self.cash_flow`."""
+
+        dr = self.config.get("discount_rate", 0.025)
+        pr = (1 + dr) ** (1 / 12) - 1
+
+        cash_flow = self.cash_flow
+        _npv = [
+            (cash_flow[i] / (1 + pr) ** (i))
+            for i in range(1, max(cash_flow.keys()) + 1)
+        ]
+
+        return self.overnight_capex - sum(_npv)
+
+    @property
+    def progress_logs(self):
+        """Returns logs of progress points."""
+
+        return self._filter_logs(keys=["progress", "time"])
+
+    def _filter_logs(self, keys):
+        """Returns filtered list of logs."""
+
+        filtered = []
+        for l in self.project_logs:
+            try:
+                filtered.append(tuple(l[k] for k in keys))
+
+            except KeyError:
+                pass
+
+        return filtered
+
+    @property
+    def progress_summary(self):
+        """Returns a summary of progress by month."""
+
+        arr = np.array(
+            self.progress_logs, dtype=[("progress", "U32"), ("time", "i4")]
+        )
+        dig = np.digitize(arr["time"], self.month_bins)
+
+        summary = {}
+        for i in range(1, len(self.month_bins)):
+
+            unique, counts = np.unique(
+                arr["progress"][dig == i], return_counts=True
+            )
+            summary[i] = dict(zip(unique, counts))
+
+        return summary
+
+    @property
     def project_actions(self):
         """Returns list of all actions in the project."""
 
-        if not self._output_logs:
-            raise Exception("Project hasn't been ran yet.")
-
-        actions = [l for l in self._output_logs if l["level"] == "ACTION"]
+        actions = [l for l in self.project_logs if l["level"] == "ACTION"]
         return sorted(actions, key=lambda l: l["time"])
 
     @staticmethod
@@ -716,21 +1036,24 @@ class ProjectManager:
         return _dict
 
     @property
-    def total_capex(self):
-        """
-        Returns total BOS CAPEX including commissioning and decommissioning.
-        """
+    def overnight_capex(self):
+        """Returns the overnight capital cost of the project."""
 
-        return self.bos_capex + self.commissioning + self.decommissioning
+        design_phases = [p.__name__ for p in self._design_phases]
+        design_cost = sum(
+            [v for k, v in self.phase_costs.items() if k in design_phases]
+        )
+
+        return design_cost + self.turbine_capex
 
     @property
-    def total_capex_per_kw(self):
+    def overnight_capex_per_kw(self):
         """
-        Returns total BOS CAPEX/kW including commissioning and decommissioning.
+        Returns overnight CAPEX/kW.
         """
 
         try:
-            capex = self.total_capex / (self.capacity * 1000)
+            capex = self.overnight_capex / (self.capacity * 1000)
 
         except TypeError:
             capex = None
@@ -882,6 +1205,33 @@ class ProjectManager:
         _capex = self.config.get("turbine_capex", None)
         return _capex
 
+    @property
+    def total_capex(self):
+        """
+        Returns total project CAPEX including commissioning and decommissioning.
+        """
+
+        return (
+            self.bos_capex
+            + self.turbine_capex
+            + self.commissioning
+            + self.decommissioning
+        )
+
+    @property
+    def total_capex_per_kw(self):
+        """
+        Returns total BOS CAPEX/kW including commissioning and decommissioning.
+        """
+
+        try:
+            capex = self.total_capex / (self.capacity * 1000)
+
+        except TypeError:
+            capex = None
+
+        return capex
+
     def export_configuration(self, file_name):
         """
         Exports the configuration settings for the project to
@@ -894,3 +1244,94 @@ class ProjectManager:
         """
 
         library.export_library_specs("config", file_name, self.config)
+
+
+class ProjectProgress:
+    """Class to store, parse and return project progress data."""
+
+    def __init__(self, data):
+        """
+        Creates an instance of `ProjectProgress`.
+
+        Parameters
+        ----------
+        data : list
+            List of tuples representing progress points of the project.
+        """
+
+        self.data = data
+
+    @property
+    def complete_export_system(self):
+        """
+        Returns project time when the export system and offshore substations(s)
+        installations were completed (max of individual values).
+        """
+
+        export = self.parse_logs("Export System")
+        substations = self.parse_logs("Offshore Substation")
+
+        return max([*export, *substations])
+
+    @property
+    def complete_array_strings(self):
+        """
+        Returns list of times that the array strings and associated
+        substructure/turbine assembly installations were completed.
+        """
+
+        strings = self.parse_logs("Array String")
+        _subs = self.parse_logs("Substructure")
+        _turbines = self.parse_logs("Turbine")
+
+        per_string = len(_turbines) // len(strings)
+        if len(_turbines) % len(strings):
+            per_string += 1
+
+        subs = self.chunk_max(_subs, per_string)
+        turbines = self.chunk_max(_turbines, per_string)
+        num_turbines = list(self.chunk_len(_turbines, per_string))
+
+        data = list(zip(strings, subs, turbines))
+
+        return [max(l) for l in data], num_turbines
+
+    @property
+    def energize_points(self):
+        """
+        Returns list of times where an array string can be energized. Max of
+        each value in `self.complete_array_strings` and
+        `self.complete_export_system`.
+        """
+
+        export = self.complete_export_system
+        points = []
+
+        times, turbines = self.complete_array_strings
+        for t in times:
+            points.append(max([t, export]))
+
+        return points, turbines
+
+    def parse_logs(self, k):
+        """Parse `self.data` for specific progress points associated key `k`"""
+
+        pts = [p[1] for p in self.data if p[0] == k]
+        if not pts:
+            raise ValueError(f"Installed '{k}' not found in project logs.")
+
+        return pts
+
+    @staticmethod
+    def chunk_max(l, n):
+        """Yield max value of successive n-sized chunks from l."""
+
+        for i in range(0, len(l), n):
+            yield max(l[i : i + n])
+
+    @staticmethod
+    def chunk_len(l, n):
+        """Yield successive n-sized chunks from l."""
+
+        for i in range(0, len(l), n):
+            yield len(l[i : i + n])

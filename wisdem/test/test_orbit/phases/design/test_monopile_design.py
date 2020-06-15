@@ -51,13 +51,13 @@ def test_paramater_sweep(depth, mean_ws, turbine):
     assert 10 < m._outputs["monopile"]["length"] < 130
 
     # Check valid monopile diameter
-    assert 4 < m._outputs["monopile"]["diameter"] < 12
+    assert 4 < m._outputs["monopile"]["diameter"] < 13
 
     # Check valid monopile mass
-    assert 200 < m._outputs["monopile"]["mass"] < 2000
+    assert 200 < m._outputs["monopile"]["mass"] < 2500
 
     # Check valid transition piece diameter
-    assert 4 < m._outputs["transition_piece"]["diameter"] < 12
+    assert 4 < m._outputs["transition_piece"]["diameter"] < 14
 
 
 def test_monopile_kwargs():
