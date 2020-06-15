@@ -1,16 +1,6 @@
 DU30 airfoil with an aspect ratio of 17.  Original -180 to 180deg Cl, Cd, and Cm versus AOA data taken from Appendix A of DOWEC document 10046_009.pdf (numerical values obtained from Koert Lindenburg of ECN).
-Cl and Cd values corrected for rotational stall delay and Cd values corrected using the Viterna method for 0 to 90deg AOA by Jason Jonkman using AirfoilPrep_v2p0.xls.
-line
 1        Number of airfoil tables in this file
    1.0     Reynolds numbers in millions
- 0.0      Control setting
- 9.00     Stall angle (deg)
-  -2.3220   Zero Cn angle of attack (deg)
-   7.3326   Cn slope for zero lift (dimensionless)
-   1.4490   Cn extrapolated to value at positive stall angle of attack
-  -0.6138   Cn at stall value for negative angle of attack
-   0.00     Angle of attack for minimum CD (deg)
-   0.0087   Minimum CD value
 -180.00    0.000   0.0267   0.0000
 -175.00    0.274   0.0370   0.1379
 -170.00    0.547   0.0968   0.2778
