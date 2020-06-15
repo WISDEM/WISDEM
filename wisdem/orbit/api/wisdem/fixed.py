@@ -1,9 +1,9 @@
-"""WISDEM Monopile API"""
+'''WISDEM Monopile API'''
 
-__author__ = ["Jake Nunemaker"]
-__copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
-__maintainer__ = "Jake Nunemaker"
-__email__ = "jake.nunemaker@nrel.gov"
+__author__ = ['Jake Nunemaker']
+__copyright__ = 'Copyright 2020, National Renewable Energy Laboratory'
+__maintainer__ = 'Jake Nunemaker'
+__email__ = 'jake.nunemaker@nrel.gov'
 
 
 import os
@@ -17,35 +17,41 @@ class Orbit(om.Group):
     def setup(self):
         
         # Define all input variables from all models
-        myIndeps = om.IndepVarComp()
-        myIndeps.add_discrete_output('wtiv', 'example_wtiv')
-        myIndeps.add_discrete_output('feeder', 'example_feeder')
-        myIndeps.add_discrete_output('num_feeders', 0)
-        myIndeps.add_discrete_output('oss_install_vessel', 'example_heavy_lift_vessel')
-        myIndeps.add_output('site_distance', 0.0, units='km')
-        myIndeps.add_output('site_distance_to_landfall', 40.0, units='km')
-        myIndeps.add_output('site_distance_to_interconnection', 40.0, units='km')
-        myIndeps.add_output('plant_turbine_spacing', 7)
-        myIndeps.add_output('plant_row_spacing', 7)
-        myIndeps.add_output('plant_substation_distance', 1, units='km')
-        myIndeps.add_output('tower_deck_space', 0., units='m**2')
-        myIndeps.add_output('nacelle_deck_space', 0., units='m**2')
-        myIndeps.add_output('blade_deck_space', 0., units='m**2')
-        myIndeps.add_output('port_cost_per_month', 2e6, units='USD/mo')
-        myIndeps.add_output('monopile_deck_space', 0., units='m**2')
-        myIndeps.add_output('transition_piece_deck_space', 0., units='m**2')
-        myIndeps.add_output('commissioning_pct', 0.01)
-        myIndeps.add_output('decommissioning_pct', 0.15)
-        self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
+        ivc = om.IndepVarComp()
+        ivc.add_discrete_output('wtiv', 'example_wtiv')
+        ivc.add_discrete_output('feeder', 'example_feeder')
+        ivc.add_discrete_output('num_feeders', 0)
+        ivc.add_discrete_output('oss_install_vessel', 'example_heavy_lift_vessel')
+        ivc.add_output('site_distance', 0.0, units='km')
+        ivc.add_output('site_distance_to_landfall', 40.0, units='km')
+        ivc.add_output('site_distance_to_interconnection', 40.0, units='km')
+        ivc.add_output('plant_turbine_spacing', 7)
+        ivc.add_output('plant_row_spacing', 7)
+        ivc.add_output('plant_substation_distance', 1, units='km')
+        ivc.add_output('tower_deck_space', 0., units='m**2')
+        ivc.add_output('nacelle_deck_space', 0., units='m**2')
+        ivc.add_output('blade_deck_space', 0., units='m**2')
+        ivc.add_output('port_cost_per_month', 2e6, units='USD/mo')
+        ivc.add_output('monopile_deck_space', 0., units='m**2')
+        ivc.add_output('transition_piece_deck_space', 0., units='m**2')
+        ivc.add_output('commissioning_pct', 0.01)
+        ivc.add_output('decommissioning_pct', 0.15)
+        ivc.add_output('site_auction_price', 100e6, units='USD')
+        ivc.add_output('site_assessment_plan_cost', 1e6, units='USD')
+        ivc.add_output('site_assessment_cost', 25e6, units='USD')
+        ivc.add_output('construction_operations_plan_cost', 2.5e6, units='USD')
+        ivc.add_output('boem_review_cost', 0.0, units='USD')
+        ivc.add_output('design_install_plan_cost', 2.5e6, units='USD')        
+        self.add_subsystem('ivc', ivc, promotes=['*'])
 
         self.add_subsystem('orbit', OrbitWisdemFixed(), promotes=['*'])
         
 
 class OrbitWisdemFixed(om.ExplicitComponent):
-    """ORBIT-WISDEM Fixed Substructure API"""
+    '''ORBIT-WISDEM Fixed Substructure API'''
 
     def setup(self):
-        """"""
+        ''''''
         # Inputs
         # self.add_discrete_input('weather_file', 'block_island', desc='Weather file to use for installation times.')
 
@@ -94,10 +100,18 @@ class OrbitWisdemFixed(om.ExplicitComponent):
         self.add_input('transition_piece_mass', 250., units='t', desc='mass of an individual transition piece.')
         self.add_input('transition_piece_deck_space', 0., units='m**2', desc='Deck space required to transport a transition piece. Defaults to 0 in order to not be a constraint on installation.')
 
-        # Other
-        self.add_input('commissioning_pct', 0.01, desc="Commissioning percent.")
-        self.add_input('decommissioning_pct', 0.15, desc="Decommissioning percent.")
+        # Project
+        self.add_input('site_auction_price', 100e6, units='USD', desc='Cost to secure site lease')
+        self.add_input('site_assessment_plan_cost', 1e6, units='USD', desc='Cost to do engineering plan for site assessment')
+        self.add_input('site_assessment_cost', 25e6, units='USD', desc='Cost to execute site assessment')
+        self.add_input('construction_operations_plan_cost', 2.5e6, units='USD', desc='Cost to do construction planning')
+        self.add_input('boem_review_cost', 0.0, units='USD', desc='Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)')
+        self.add_input('design_install_plan_cost', 2.5e6, units='USD', desc='Cost to do installation planning')
 
+        # Other
+        self.add_input('commissioning_pct', 0.01, desc='Commissioning percent.')
+        self.add_input('decommissioning_pct', 0.15, desc='Decommissioning percent.')
+        
         # Outputs
         # Totals
         self.add_output('bos_capex', 0.0, units='USD', desc='Total BOS CAPEX not including commissioning or decommissioning.')
@@ -108,7 +122,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
 
 
     def compile_orbit_config_file(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        """"""
+        ''''''
 
         config = {
             # Vessels
@@ -194,33 +208,45 @@ class OrbitWisdemFixed(om.ExplicitComponent):
             
             # Electrical
             'array_system_design': {
-                'cables': ['XLPE_400mm_33kV', 'XLPE_630mm_33kV']
+                'cables': ['XLPE_630mm_66kV', 'XLPE_185mm_66kV'],
             },
 
             'export_system_design': {
-                'cables': 'XLPE_500mm_132kV',
+                'cables': 'XLPE_1000m_220kV',
+                'interconnection_distance': float(inputs['interconnection_distance']),
                 'percent_added_length': .1
             },
             
             # Phase Specific
-            "OffshoreSubstationInstallation": {
-                "oss_install_vessel": 'example_heavy_lift_vessel',
-                "feeder": "future_feeder",
-                "num_feeders": 1
+            'OffshoreSubstationInstallation': {
+                'oss_install_vessel': 'example_heavy_lift_vessel',
+                'feeder': 'future_feeder',
+                'num_feeders': 1
             },
 
+            # Project development costs
+            'project_development': {
+                'site_auction_price': float(inputs['site_auction_price']), #100e6,
+                'site_assessment_plan_cost': float(inputs['site_assessment_plan_cost']), #1e6,
+                'site_assessment_cost': float(inputs['site_assessment_cost']), #25e6,
+                'construction_operations_plan_cost': float(inputs['construction_operations_plan_cost']), #2.5e6,
+                'boem_review_cost': float(inputs['boem_review_cost']), #0,
+                'design_install_plan_cost': float(inputs['design_install_plan_cost']), #2.5e6
+            },
+            
             # Other
-            "commissioning": float(inputs["commissioning_pct"]),
-            "decomissioning": float(inputs["decommissioning_pct"]),
-            "turbine_capex": float(inputs["turbine_capex"]),
+            'commissioning': float(inputs['commissioning_pct']),
+            'decomissioning': float(inputs['decommissioning_pct']),
+            'turbine_capex': float(inputs['turbine_capex']),
             
             # Phases
             'design_phases': [
-                "MonopileDesign",
-                "ScourProtectionDesign",
-                "ArraySystemDesign",
-                "ExportSystemDesign",
-                "OffshoreSubstationDesign"
+                'ProjectDevelopment',
+                'MonopileDesign',
+                'ScourProtectionDesign',
+                'ArraySystemDesign',
+                'ExportSystemDesign',
+                'OffshoreSubstationDesign'
             ],
             
             'install_phases': [
@@ -229,7 +255,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 'TurbineInstallation',
                 'ArrayCableInstallation',
                 'ExportCableInstallation',
-                "OffshoreSubstationInstallation",
+                'OffshoreSubstationInstallation',
             ]
         }
 
@@ -251,7 +277,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
         outputs['installation_time'] = project.installation_time
         outputs['installation_capex'] = project.installation_capex
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     prob = om.Problem()
     prob.model = OrbitWisdemFixed()
