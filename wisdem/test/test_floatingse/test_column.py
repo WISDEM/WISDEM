@@ -34,7 +34,7 @@ class TestBulk(unittest.TestCase):
         self.bulk.compute(self.inputs, self.outputs)
 
         R_i = 0.5 * 10 - 0.05
-        m_bulk = np.pi * 1e3 * 1.1 * R_i**2 * 0.05 
+        m_bulk = np.pi * 1e3 * R_i**2 * 0.05 
         expect = np.zeros( self.inputs['z_full'].shape )
         expect[[0,3,9,NPTS-1]] = m_bulk
         ind = (expect > 0.0)
@@ -80,7 +80,6 @@ class TestBuoyancyTank(unittest.TestCase):
         self.inputs['buoyancy_tank_diameter'] = 12.0
         self.inputs['buoyancy_tank_height'] = 0.25
         self.inputs['buoyancy_tank_location'] = 0.0
-        self.inputs['buoyancy_tank_mass_factor'] = 1.1
         self.inputs['unit_cost'] = 1.0
         self.inputs['labor_cost_rate'] = 2.0
         self.inputs['painting_cost_rate'] = 10.0
@@ -94,7 +93,7 @@ class TestBuoyancyTank(unittest.TestCase):
         A_box = np.pi * (6*6 - 5*5)
         V_box = A_box * 0.25
         A_box = 2*A_box  + 0.25*2*np.pi*6
-        m_expect = A_box * (6.0/50.0) * 1e3 * 1.1
+        m_expect = A_box * (6.0/50.0) * 1e3
         self.assertEqual(self.outputs['buoyancy_tank_mass'], m_expect)
         self.assertEqual(self.outputs['buoyancy_tank_cg'], -0.5 + 0.5*0.25)
         self.assertAlmostEqual(self.outputs['buoyancy_tank_displacement'], V_box)
@@ -119,7 +118,7 @@ class TestBuoyancyTank(unittest.TestCase):
 
         A_box = np.pi * (6*6 - 5*5)
         V_box = np.pi * (6*6 - 5*5) * 0.5
-        m_expect = (2*A_box + 0.75*2*np.pi*6) * (6.0/50.0) * 1e3 * 1.1
+        m_expect = (2*A_box + 0.75*2*np.pi*6) * (6.0/50.0) * 1e3
         self.assertAlmostEqual(self.outputs['buoyancy_tank_mass'], m_expect)
         self.assertAlmostEqual(self.outputs['buoyancy_tank_cg'], -0.5 + 0.5*0.75)
         self.assertAlmostEqual(self.outputs['buoyancy_tank_displacement'], V_box)
@@ -130,7 +129,7 @@ class TestBuoyancyTank(unittest.TestCase):
 
         A_box = np.pi * (6*6 - 5*5)
         V_box = np.pi * (6*6 - 5*5) * 0.0
-        m_expect = (2*A_box + 0.25*2*np.pi*6) * (6.0/50.0) * 1e3 * 1.1
+        m_expect = (2*A_box + 0.25*2*np.pi*6) * (6.0/50.0) * 1e3
         self.assertAlmostEqual(self.outputs['buoyancy_tank_mass'], m_expect)
         self.assertAlmostEqual(self.outputs['buoyancy_tank_cg'], 0.1 + 0.5*0.25)
         self.assertAlmostEqual(self.outputs['buoyancy_tank_displacement'], V_box)
@@ -141,7 +140,7 @@ class TestBuoyancyTank(unittest.TestCase):
 
         A_box = np.pi * (6*6 - 5*5)
         V_box = np.pi * (6*6 - 5*5) * 0.0
-        m_expect = (2*A_box + 0.25*2*np.pi*6) * (6.0/50.0) * 1e3 * 1.1
+        m_expect = (2*A_box + 0.25*2*np.pi*6) * (6.0/50.0) * 1e3
         self.assertAlmostEqual(self.outputs['buoyancy_tank_mass'], 0.0)
         self.assertEqual(self.outputs['buoyancy_tank_cg'], -0.5 + 0.5*0.25)
         self.assertAlmostEqual(self.outputs['buoyancy_tank_displacement'], 0.0)
@@ -162,7 +161,6 @@ class TestStiff(unittest.TestCase):
         inputs['L_stiffener'] = 0.1*secones
         inputs['L_stiffener'][int(NPTS/2):] = 0.05
         inputs['rho'] = 1e3
-        inputs['ring_mass_factor'] = 1.1
         inputs['unit_cost'] = 1.0
         inputs['labor_cost_rate'] = 2.0
         inputs['painting_cost_rate'] = 10.0
@@ -184,7 +182,7 @@ class TestStiff(unittest.TestCase):
         V1 = np.pi*(Rwo**2 - Rwi**2)*0.5
         V2 = np.pi*(Rwi**2 - Rfi**2)*2.0 
         V = V1+V2
-        expect = 1.1*V*1e3
+        expect = V*1e3
         actual = outputs['stiffener_mass']
 
         # Test Mass
@@ -208,8 +206,8 @@ class TestStiff(unittest.TestCase):
         # Test moment
         inputs['L_stiffener'] = 1.2*secones
         stiff.compute(inputs, outputs)
-        I_web = column.I_tube(Rwi, Rwo, 0.5, V1*1e3*1.1)
-        I_fl  = column.I_tube(Rfi, Rwi, 2.0, V2*1e3*1.1)
+        I_web = column.I_tube(Rwi, Rwo, 0.5, V1*1e3)
+        I_fl  = column.I_tube(Rfi, Rwi, 2.0, V2*1e3)
         I_sec = I_web + I_fl
         z_sec = 0.6 + 1e-6
 
@@ -349,8 +347,7 @@ class TestProperties(unittest.TestCase):
         self.inputs['buoyancy_tank_cg'] = -15.0
         self.inputs['buoyancy_tank_location'] = 0.3
         self.inputs['buoyancy_tank_displacement'] = 300.0
-        self.inputs['column_mass_factor'] = 1.1
-        self.inputs['outfitting_mass_fraction'] = 0.05
+        self.inputs['outfitting_factor'] = 1.05
 
         self.inputs['shell_cost'] = 1.0
         self.inputs['stiffener_cost'] = 2.0
@@ -394,29 +391,28 @@ class TestProperties(unittest.TestCase):
         m_ballast = self.inputs['ballast_mass']
         cg_ballast = self.inputs['ballast_z_cg']
 
-        m_column = 1.1*(bulk.sum() + stiff.sum() + shell.sum() + box)
+        m_column = (bulk.sum() + stiff.sum() + shell.sum() + box)
         m_out    = 0.05 * m_column
         m_expect = m_column + m_ballast.sum() + m_out
 
         mysec = stiff+shell+bulk[:-1]
         mysec[-1] += bulk[-1]
         mysec[ibox] += box
-        mysec *= 1.1
         mysec += m_ballast
         mysec += (m_out/len(mysec))
 
-        mycg  = 1.1*(np.dot(bulk, self.inputs['z_full']) + box*boxcg + np.dot(stiff+shell, self.inputs['z_section']))/m_column
+        mycg  = (np.dot(bulk, self.inputs['z_full']) + box*boxcg + np.dot(stiff+shell, self.inputs['z_section']))/m_column
         cg_system = ((m_column+m_out)*mycg + m_ballast.sum()*cg_ballast) / m_expect
 
         Iones = np.r_[np.ones(3), np.zeros(3)]
-        I_expect = 1.05 * 1.1 * 5.6e6*Iones + 2e3*Iones
+        I_expect = 1.05 * 5.6e6*Iones + 2e3*Iones
         I_expect[0] = I_expect[1] = I_expect[0]-m_expect*(cg_system-self.inputs['z_full'][0])**2
 
         self.assertAlmostEqual(self.outputs['column_total_mass'].sum(), m_expect)
         self.assertAlmostEqual(self.outputs['z_center_of_mass'], cg_system)
         
         self.assertAlmostEqual(self.outputs['column_structural_mass'], m_column+m_out )
-        self.assertEqual(self.outputs['column_outfitting_mass'], m_out )
+        self.assertAlmostEqual(self.outputs['column_outfitting_mass'], m_out )
         npt.assert_equal(self.outputs['column_total_mass'], mysec)
         npt.assert_almost_equal(self.outputs['I_column'], I_expect)
 
@@ -469,9 +465,9 @@ class TestProperties(unittest.TestCase):
         self.outputs['column_total_mass'] = 25*np.ones(10)
         self.mycolumn.compute_cost(self.inputs, self.outputs)
 
-        self.assertEqual(self.outputs['column_structural_cost'], 1.1*(1+2+3+4))
+        self.assertEqual(self.outputs['column_structural_cost'], (1+2+3+4))
         self.assertEqual(self.outputs['column_outfitting_cost'], 1.0 * 25.0)
-        self.assertEqual(self.outputs['column_total_cost'], 1.1*(1+2+3+4) + 1.0*(25.0) + 5)
+        self.assertEqual(self.outputs['column_total_cost'], (1+2+3+4) + 1.0*(25.0) + 5)
 
         
 class TestBuckle(unittest.TestCase):
@@ -577,10 +573,7 @@ class TestGroup(unittest.TestCase):
         prob['mu_air'] = 1e-5
 
         prob['Tsig_wave'] = 10.0
-        prob['bulkhead_mass_factor'] = 1.0
-        prob['ring_mass_factor'] = 1.0
-        prob['column_mass_factor'] = 1.0
-        prob['outfitting_mass_fraction'] = 0.05
+        prob['outfitting_factor'] = 1.05
         prob['ballast_cost_rate'] = 5.0
         prob['unit_cost'] = 2.0
         prob['labor_cost_rate'] = 10.0

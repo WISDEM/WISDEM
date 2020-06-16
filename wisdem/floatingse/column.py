@@ -83,6 +83,7 @@ class BulkheadProperties(om.ExplicitComponent):
         self.add_input('t_full', np.zeros(n_full-1), units='m')
         self.add_input('rho', 0.0, units='kg/m**3')
         self.add_input('bulkhead_thickness', np.zeros(n_height), units='m')
+        self.add_input('bulkhead_location', np.zeros(n_height), units='m')
         self.add_input('shell_mass', np.zeros(n_full-1), units='kg')
         self.add_input('unit_cost', 0.0, units='USD/kg')
         self.add_input('labor_cost_rate', 0.0, units='USD/min')
@@ -1022,10 +1023,11 @@ class ColumnProperties(om.ExplicitComponent):
         # Mass with variable location
         m_column += m_box
         z_cg     += m_box*z_box
+        z_cg     /= m_column
 
         # Now calculate outfitting mass, evenly distributed so cg doesn't change
-        m_outfit  = out_frac * m_column
-
+        m_outfit  = (out_frac - 1.0) * m_column
+        
         # Add in ballast
         m_total   = m_column + m_outfit + m_ballast.sum()
         z_cg      = ( (m_column+m_outfit)*z_cg + m_ballast.sum()*z_ballast ) / m_total

@@ -200,8 +200,6 @@ class FloatingSE(om.Group):
         self.connect('main.L_stiffener','main_buckling_length')
         self.connect('off.L_stiffener','offset_buckling_length')
         
-        self.connect('bulkhead_mass_factor', 'buoyancy_tank_mass_factor')
-
         self.connect('main.z_full', ['main_z_nodes', 'main_z_full'])
         self.connect('main.d_full', 'main_d_full')
         self.connect('main.t_full', 'main_t_full')
@@ -276,10 +274,7 @@ def commonVars(prob, nsection):
     prob['permanent_ballast_density'] = 4492.0 # [kg/m^3]
 
     # Mass and cost scaling factors
-    prob['bulkhead_mass_factor']     = 1.0     # Scaling for unaccounted bulkhead mass
-    prob['ring_mass_factor']         = 1.0     # Scaling for unaccounted stiffener mass
-    prob['column_mass_factor']       = 1.05    # Scaling for unaccounted column mass
-    prob['outfitting_mass_fraction'] = 0.06    # Fraction of additional outfitting mass for each column
+    prob['outfitting_factor'] = 0.06    # Fraction of additional outfitting mass for each column
     prob['ballast_cost_rate']        = 0.1   # Cost factor for ballast mass [$/kg]
     prob['unit_cost']       = 1.1  # Cost factor for column mass [$/kg]
     prob['labor_cost_rate']          = 1.0  # Cost factor for labor time [$/min]

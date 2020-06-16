@@ -1538,7 +1538,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         costs_ivc.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
         costs_ivc.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
         costs_ivc.add_output('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
-        costs_ivc.add_output('labor_rate', 0.0, units='USD/hr')
+        costs_ivc.add_output('labor_rate', 0.0, units='USD/h')
         costs_ivc.add_output('painting_rate', 0.0, units='USD/m**2')
         
         # Assembly setup

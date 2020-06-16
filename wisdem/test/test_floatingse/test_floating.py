@@ -71,10 +71,7 @@ class TestOC3Mass(unittest.TestCase):
         prob['permanent_ballast_density'] = 5000.0 # [kg/m^3]
 
         # Mass and cost scaling factors
-        prob['bulkhead_mass_factor']     = 1.0     # Scaling for unaccounted bulkhead mass
-        prob['ring_mass_factor']         = 1.0     # Scaling for unaccounted stiffener mass
-        prob['column_mass_factor']       = 1.0    # Scaling for unaccounted column mass
-        prob['outfitting_mass_fraction'] = 0.0    # Fraction of additional outfitting mass for each column
+        prob['outfitting_factor'] = 0.0    # Fraction of additional outfitting mass for each column
         prob['ballast_cost_rate']        = 0.1   # Cost factor for ballast mass [$/kg]
         prob['material_cost_rate']       = 1.1  # Cost factor for column mass [$/kg]
         prob['labor_cost_rate']          = 1.0  # Cost factor for labor time [$/min]
