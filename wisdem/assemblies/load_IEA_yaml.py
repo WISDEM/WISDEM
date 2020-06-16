@@ -1953,10 +1953,6 @@ def assign_monopile_values(wt_opt, analysis_options, monopile):
     n_height        = analysis_options['monopile']['n_height'] # Number of points along monopile height
     n_layers        = analysis_options['monopile']['n_layers']
     
-    layer_name      = n_layers * ['']
-    layer_mat       = n_layers * ['']
-    thickness       = np.zeros((n_layers, n_height-1))
-
     svec = np.unique( np.r_[monopile['outer_shape_bem']['outer_diameter']['grid'],
                             monopile['outer_shape_bem']['reference_axis']['x']['grid'],
                             monopile['outer_shape_bem']['reference_axis']['y']['grid'],
@@ -1969,6 +1965,9 @@ def assign_monopile_values(wt_opt, analysis_options, monopile):
     wt_opt['monopile.ref_axis'][:,1]  = np.interp(svec, monopile['outer_shape_bem']['reference_axis']['y']['grid'], monopile['outer_shape_bem']['reference_axis']['y']['values'])
     wt_opt['monopile.ref_axis'][:,2]  = np.interp(svec, monopile['outer_shape_bem']['reference_axis']['z']['grid'], monopile['outer_shape_bem']['reference_axis']['z']['values'])
 
+    layer_name      = n_layers * ['']
+    layer_mat       = n_layers * ['']
+    thickness       = np.zeros((n_layers, n_height-1))
     for i in range(n_layers):
         layer_name[i]  = monopile['internal_structure_2d_fem']['layers'][i]['name']
         layer_mat[i]   = monopile['internal_structure_2d_fem']['layers'][i]['material']
@@ -1997,51 +1996,154 @@ def assign_foundation_values(wt_opt, foundation):
 
 def assign_floating_values(wt_opt, analysis_options, floating):
 
-    svec = np.unique( np.r_[floating['column']['outer_shape_bem']['outer_diameter']['grid'],
-                            floating['column']['outer_shape_bem']['reference_axis']['x']['grid'],
-                            floating['column']['outer_shape_bem']['reference_axis']['y']['grid'],
-                            floating['column']['outer_shape_bem']['reference_axis']['z']['grid']] )
-    
-    wt_opt['floating.radius_to_offset_column'] = floating['column']['offset']['reference_axis']['x']
+    dx = (floating['column']['main']['reference_axis']['x']['values'].mean() -
+          floating['column']['offset']['reference_axis']['x']['values'].mean() )
+    dy = (floating['column']['main']['reference_axis']['y']['values'].mean() -
+          floating['column']['offset']['reference_axis']['y']['values'].mean() )
+    wt_opt['floating.radius_to_offset_column'] = np.sqrt(dx**2 + dy**2)
         
-        ivc.add_output('radius_to_offset_column', 0.0, units='m')
-        ivc.add_discrete_output('number_of_offset_columns', 0)
-        ivc.add_output('fairlead_location', 0.0)
-        ivc.add_output('fairlead_offset_from_shell', 0.0, units='m')
-        ivc.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
-        ivc.add_discrete_output('loading', 'hydrostatic')
-        ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
-        ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
+    wt_opt['floating.number_of_offset_columns'] = len(floating['column']['repeat'])
+    for k in range(len(floating['mooring']['nodes'])):
+        if floating['mooring']['nodes'][k]['node_type'] == 'vessel':
+            wt_opt['fairlead_location'] = floating['mooring']['nodes'][k]['location']['z']
+            wt_opt['fairlead_offset_from_shell'] = 1.0 # TODO
+            break
 
-        # Replicate this main/offset
-        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the column axis.')
-        ivc.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the columnn structure.')
-        ivc.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the column structure.')
-        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the column structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the column sections.')
-        ivc.add_output('freeboard', 0.0, units='m') # Have to add here because cannot promote ivc from Column before needed by tower.  Grr
-        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of column')
-        ivc.add_output('stiffener_web_height', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_web_thickness', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_flange_width', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_flange_thickness', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_spacing', np.zeros(n_sect), units='m')
-        ivc.add_output('bulkhead_thickness', np.zeros(n_height), units='m')
-        ivc.add_output('permanent_ballast_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_diameter', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_location', 0.0, units='m')
+    wt_opt['floating.outfitting_cost_rate'] = 20.0 # Lookup material here?
+    wt_opt['floating.loading'] = 'hydrostatic' #if analysis_options['floating']['loading']['hydrostatic'] else 
 
-        ivc.add_output('mooring_line_length', 0.0, units='m')
-        ivc.add_output('anchor_radius', 0.0, units='m')
-        ivc.add_output('mooring_diameter', 0.0, units='m')
-        ivc.add_output('number_of_mooring_connections', 0)
-        ivc.add_output('mooring_lines_per_connection', 0)
-        ivc.add_discrete_output('mooring_type', 'chain')
-        ivc.add_discrete_output('anchor_type', 'SUCTIONPILE')
-        ivc.add_output('max_offset', 0.0, units='m')
-        ivc.add_output('operational_heel', 0.0, units='deg')
-        ivc.add_output('mooring_cost_factor', 0.0)
-        ivc.add_output('max_survival_heel', 0.0, units='deg')
+    # Main column
+    svec = np.unique( np.r_[floating['column']['main']['outer_shape_bem']['outer_diameter']['grid'],
+                            floating['column']['main']['outer_shape_bem']['reference_axis']['x']['grid'],
+                            floating['column']['main']['outer_shape_bem']['reference_axis']['y']['grid'],
+                            floating['column']['main']['outer_shape_bem']['reference_axis']['z']['grid']] )
+    
+    wt_opt['floating.main.s'] = svec
+    wt_opt['floating.main.diameter']   = np.interp(svec, floating['column']['main']['outer_shape_bem']['outer_diameter']['grid'], floating['column']['main']['outer_shape_bem']['outer_diameter']['values'])
+    
+    wt_opt['floating.main.ref_axis'][:,0]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['x']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['x']['values'])
+    wt_opt['floating.main.ref_axis'][:,1]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['y']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['y']['values'])
+    wt_opt['floating.main.ref_axis'][:,2]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['z']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['z']['values'])
+
+    wt_opt['floating.main.outfitting_factor']     = floating['columns']['main']['internal_structure']['outfitting_factor']    
+    wt_opt['floating.main.stiffener_web_height']  = floating['columns']['main']['internal_structure']['stiffener_web_height']
+    wt_opt['floating.main.stiffener_web_thickness']  = floating['columns']['main']['internal_structure']['stiffener_web_thickness']
+    wt_opt['floating.main.stiffener_flange_thickness']  = floating['columns']['main']['internal_structure']['stiffener_flange_thickness']
+    wt_opt['floating.main.stiffener_flange_width']  = floating['columns']['main']['internal_structure']['stiffener_flange_width']
+    wt_opt['floating.main.stiffener_spacing']  = floating['columns']['main']['internal_structure']['stiffener_spacing']
+    wt_opt['floating.main.permanent_ballast_volume']  = floating['columns']['main']['internal_structure']['ballast']['volume']
+
+    wt_opt['floating.main.bulkhead_thickness']  = floating['columns']['main']['internal_structure']['bulkhead']['thickness']['values']
+    # TODO- Add this variable in
+    wt_opt['floating.main.bulkhead_location']  = floating['columns']['main']['internal_structure']['bulkhead']['thickness']['grid']
+
+    layer_name      = n_layers * ['']
+    layer_mat       = n_layers * ['']
+    thickness       = np.zeros((n_layers, n_height-1))
+    for i in range(n_layers):
+        layer_name[i]  = floating['columns']['main']['internal_structure']['layers'][i]['name']
+        layer_mat[i]   = floating['columns']['main']['internal_structure']['layers'][i]['material']
+        thickness[i]   = floating['columns']['main']['internal_structure']['layers'][i]['thickness']['values']
+
+    wt_opt['floating.main.layer_name']     = layer_name
+    wt_opt['floating.main.layer_mat']      = layer_mat
+    wt_opt['floating.mainlayer_thickness'] = thickness
+
+
+    # Offset column
+    svec = np.unique( np.r_[floating['column']['offset']['outer_shape_bem']['outer_diameter']['grid'],
+                            floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['grid'],
+                            floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['grid'],
+                            floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['grid']] )
+    
+    wt_opt['floating.offset.s'] = svec
+    wt_opt['floating.offset.diameter']   = np.interp(svec, floating['column']['offset']['outer_shape_bem']['outer_diameter']['grid'], floating['column']['offset']['outer_shape_bem']['outer_diameter']['values'])
+    
+    wt_opt['floating.offset.ref_axis'][:,0]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['values'])
+    wt_opt['floating.offset.ref_axis'][:,1]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['values'])
+    wt_opt['floating.offset.ref_axis'][:,2]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['values'])
+
+    wt_opt['floating.offset.outfitting_factor']     = floating['columns']['offset']['internal_structure']['outfitting_factor']    
+    wt_opt['floating.offset.stiffener_web_height']  = floating['columns']['offset']['internal_structure']['stiffener_web_height']
+    wt_opt['floating.offset.stiffener_web_thickness']  = floating['columns']['offset']['internal_structure']['stiffener_web_thickness']
+    wt_opt['floating.offset.stiffener_flange_thickness']  = floating['columns']['offset']['internal_structure']['stiffener_flange_thickness']
+    wt_opt['floating.offset.stiffener_flange_width']  = floating['columns']['offset']['internal_structure']['stiffener_flange_width']
+    wt_opt['floating.offset.stiffener_spacing']  = floating['columns']['offset']['internal_structure']['stiffener_spacing']
+    wt_opt['floating.offset.permanent_ballast_volume']  = floating['columns']['offset']['internal_structure']['ballast']['volume']
+
+    wt_opt['floating.offset.bulkhead_thickness']  = floating['columns']['offset']['internal_structure']['bulkhead']['thickness']['values']
+    # TODO- Add this variable in
+    wt_opt['floating.offset.bulkhead_location']  = floating['columns']['offset']['internal_structure']['bulkhead']['thickness']['grid']
+
+    layer_name      = n_layers * ['']
+    layer_mat       = n_layers * ['']
+    thickness       = np.zeros((n_layers, n_height-1))
+    for i in range(n_layers):
+        layer_name[i]  = floating['columns']['offset']['internal_structure']['layers'][i]['name']
+        layer_mat[i]   = floating['columns']['offset']['internal_structure']['layers'][i]['material']
+        thickness[i]   = floating['columns']['offset']['internal_structure']['layers'][i]['thickness']['values']
+
+    wt_opt['floating.offset.layer_name']     = layer_name
+    wt_opt['floating.offset.layer_mat']      = layer_mat
+    wt_opt['floating.offsetlayer_thickness'] = thickness
+    
+    for k in range(len(floating['heave_plate'])):
+        if floating['heave_plate'][k]['member_name'].lower().find('main') >= 0:
+            # TODO: Might need grid/values on OD
+            wt_opt['floating.main.buoyancy_tank_diameter'] = floating['heave_plate'][k]['outer_diameter']
+            wt_opt['floating.main.buoyancy_tank_height']   = floating['heave_plate'][k]['wall_thickness']
+            # TODO: Accept nondimensional?
+            wt_opt['floating.main.buoyancy_tank_location'] = floating['heave_plate'][k]['grid_value']
+            
+        elif floating['heave_plate'][k]['member_name'].lower().find('off') >= 0:
+            # TODO: Might need grid/values on OD
+            wt_opt['floating.offset.buoyancy_tank_diameter'] = floating['heave_plate'][k]['outer_diameter']
+            wt_opt['floating.offset.buoyancy_tank_height']   = floating['heave_plate'][k]['wall_thickness']
+            # TODO: Accept nondimensional?
+            wt_opt['floating.offset.buoyancy_tank_location'] = floating['heave_plate'][k]['grid_value']
+            
+    
+    wt_opt['floating.transition_piece_height'] = wt_opt['floating.main.freeboard'] = floating['column']['main']['reference_axis']['z']['values'].max()
+    wt_opt['floating.transition_piece_mass']   = floating['transition_piece_mass']
+
+    line_length = np.zeros(len(floating['mooring']['lines']))
+    for k in range(line_length.size):
+        line_length[k] = floating['mooring']['lines'][k]['unstretched_length']
+        line_type      = floating['mooring']['lines'][k]['line_type']
+    wt_opt['floating.mooring.mooring_line_length'] = line_length.mean()
+
+    nodes_xyz = np.zeros( (len(floating['mooring']['nodes']), 3) )
+    for k in range(len(floating['mooring']['nodes'])):
+        nodes_xyz[k,0] = floating['mooring']['nodes'][k]['location']['x']
+        nodes_xyz[k,1] = floating['mooring']['nodes'][k]['location']['y']
+        nodes_xyz[k,2] = floating['mooring']['nodes'][k]['location']['z']
+
+    anchor_nodes = []
+    vessel_nodes = []
+    for k in range(len(floating['mooring']['nodes'])):
+        if floating['mooring']['nodes'][k]['node_type'] == 'fixed':
+            anchor_nodes.append( k )
+        elif floating['mooring']['nodes'][k]['node_type'] == 'vessel':
+            vessel_nodes.append( k )
+    wt_opt['floating.mooring.number_of_mooring_connections'] = len(vessel_nodes)
+    wt_opt['floating.mooring.mooring_lines_per_connection'] = len(floating['mooring']['lines']) / len(vessel_nodes)
+
+    center_xyz = nodes_xyz[anchor_nodes, :].mean(axis=0)
+    anchor_dist = nodes_xyz[anchor_nodes, :] - center_xyz[np.newaxis,:]
+    wt_opt['floating.mooring.anchor_radius'] = np.sqrt( np.sum(anchor_dist**2, axis=1) ).mean()
+
+    for k in range(len(floating['mooring']['line_type'])):
+        if floating['mooring']['line_type'][k]['name'] == line_type:
+            wt_opt['floating.mooring.mooring_diameter'] = floating['mooring']['line_type'][k]['diameter']
+            
+    wt_opt['floating.mooring.mooring_type'] = 'CHAIN'
+    wt_opt['floating.mooring.anchor_type'] = 'SUCTIONPILE'
+
+    # TODO- These should be set in constraints or analysis options
+    wt_opt['floating.mooring.mooring_cost_factor'] = 1.0
+    wt_opt['floating.mooring.max_offset'] = 50.0
+    wt_opt['floating.mooring.operational_heel'] = 6.0
+    wt_opt['floating.mooring.max_survival_heel'] = 10.0
         
     return wt_opt
 
