@@ -18,6 +18,8 @@ class TestOC3Mass(unittest.TestCase):
         opt['platform']['columns']['offset'] = {}
         opt['platform']['columns']['main']['n_height'] = npts
         opt['platform']['columns']['offset']['n_height'] = npts
+        opt['platform']['columns']['main']['n_bulkhead'] = 4
+        opt['platform']['columns']['offset']['n_bulkhead'] = 2
         opt['platform']['tower'] = {}
         opt['platform']['tower']['buckling_length'] = 30.0
         opt['platform']['frame3dd']            = {}
@@ -85,7 +87,8 @@ class TestOC3Mass(unittest.TestCase):
         prob['main.section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
         prob['main.outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
         prob['main.wall_thickness'] = 0.05 * np.ones(nsection)               # Shell thickness at each section node (linear lofting between) [m]
-        prob['main.bulkhead_thickness'] = 0.05*np.array([1, 1, 0, 1, 0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+        prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Locations/thickness of internal bulkheads at section interfaces [m]
+        prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.9, 1.0]) # Locations/thickness of internal bulkheads at section interfaces [m]
         prob['main.buoyancy_tank_diameter'] = 0.0
         prob['main.buoyancy_tank_height'] = 0.0
 

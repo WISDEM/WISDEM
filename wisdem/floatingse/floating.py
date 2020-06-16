@@ -37,6 +37,8 @@ class FloatingSE(om.Group):
         n_height_main = opt['columns']['main']['n_height']
         n_height_off  = opt['columns']['offset']['n_height']
         n_height_tow  = self.options['analysis_options']['tower']['n_height']
+        n_bulk_main   = opt['columns']['main']['n_bulkhead']
+        n_bulk_off    = opt['columns']['offset']['n_bulkhead']
         topLevelFlag  = self.options['topLevelFlag']
 
         # Define all input variables from all models
@@ -140,14 +142,14 @@ class FloatingSE(om.Group):
         
         # Next do main and ballast columns
         # Ballast columns are replicated from same design in the components
-        self.add_subsystem('main', Column(n_height=n_height_main, analysis_options=opt, topLevelFlag=False),
+        self.add_subsystem('main', Column(n_height=n_height_main, n_bulkhead=n_bulk_main, analysis_options=opt, topLevelFlag=False),
                            promotes=['E','nu','yield_stress','z0','rho_air','mu_air','rho_water','mu_water','rho',
                                      'Uref','zref','shearExp','yaw','Uc','hsig_wave','Tsig_wave','cd_usr','cm','loading',
                                      'max_draft','max_taper','min_d_to_t',
                                      'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
                                      'unit_cost','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
 
-        self.add_subsystem('off', Column(n_height=n_height_off, analysis_options=opt, topLevelFlag=False),
+        self.add_subsystem('off', Column(n_height=n_height_off, n_bulkhead=n_bulk_off, analysis_options=opt, topLevelFlag=False),
                            promotes=['E','nu','yield_stress','z0','rho_air','mu_air','rho_water','mu_water','rho',
                                      'Uref','zref','shearExp','yaw','Uc','hsig_wave','Tsig_wave','cd_usr','cm','loading',
                                      'max_draft','max_taper','min_d_to_t',
@@ -391,7 +393,8 @@ def sparExample():
     prob['main.section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
     prob['main.outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
     prob['main.wall_thickness'] = 0.05 * np.ones(nsection)               # Shell thickness at each section node (linear lofting between) [m]
-    prob['main.bulkhead_thickness'] = 0.05*np.array([1, 1, 0, 1, 0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+    prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Locations/thickness of internal bulkheads at section interfaces [m]
+    prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.75, 1.0]) # Locations/thickness of internal bulkheads at section interfaces [m]
     
     # Column ring stiffener parameters
     prob['main.stiffener_web_height']       = 0.10 * np.ones(nsection) # (by section) [m]
@@ -494,7 +497,8 @@ def semiExample():
     prob['main.section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
     prob['main.outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
     prob['main.wall_thickness'] = 0.05 * np.ones(nsection)               # Shell thickness at each section node (linear lofting between) [m]
-    prob['main.bulkhead_thickness'] = 0.05*np.array([1, 1, 0, 1, 0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+    prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Locations/thickness of internal bulkheads at section interfaces [m]
+    prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.75, 1.0]) # Locations/thickness of internal bulkheads at section interfaces [m]
 
     # Auxiliary column geometry
     prob['radius_to_offset_column']         = 33.333 * np.cos(np.pi/6) # Centerline of main column to centerline of offset column [m]

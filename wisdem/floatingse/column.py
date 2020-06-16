@@ -107,7 +107,7 @@ class BulkheadProperties(om.ExplicitComponent):
         nbulk      = s_bulk.size
 
         # Get z and R_id values of bulkhead locations
-        s_full    = z_full / (z_full[-1] - z_full[0])
+        s_full    = (z_full - z_full[0]) / (z_full[-1] - z_full[0])
         z_bulk    = np.interp(s_bulk, s_full, z_full)
         R_id_bulk = np.interp(s_bulk, s_full, R_id)
 
@@ -1340,6 +1340,7 @@ class Column(om.Group):
         self.options.declare('topLevelFlag', default=False)
         
     def setup(self):
+        n_bulk    = self.options['n_bulkhead']
         n_height  = self.options['n_height']
         n_sect    = n_height - 1
         n_full    = get_nfull(n_height)
@@ -1354,8 +1355,8 @@ class Column(om.Group):
         ivc.add_output('stiffener_flange_width', np.zeros(n_sect), units='m')
         ivc.add_output('stiffener_flange_thickness', np.zeros(n_sect), units='m')
         ivc.add_output('stiffener_spacing', np.zeros(n_sect), units='m')
-        ivc.add_output('bulkhead_thickness', np.zeros(n_height), units='m')
-        ivc.add_output('bulkhead_locations', np.zeros(n_height))
+        ivc.add_output('bulkhead_thickness', np.zeros(n_bulk), units='m')
+        ivc.add_output('bulkhead_locations', np.zeros(n_bulk))
         ivc.add_output('permanent_ballast_height', 0.0, units='m')
         ivc.add_output('buoyancy_tank_diameter', 0.0, units='m')
         ivc.add_output('buoyancy_tank_height', 0.0, units='m')
