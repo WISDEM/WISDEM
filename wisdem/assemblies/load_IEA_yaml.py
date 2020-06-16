@@ -292,6 +292,41 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['fiber_orientation']['grid'] = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
             self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['fiber_orientation']['values'] = np.zeros(len(wt_opt['blade.internal_structure_2d_fem.s'])).tolist()
 
+        # Elastic properties of the blade
+        self.wt_init['components']['blade']['elastic_properties_mb'] = {}
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six'] = {}
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['reference_axis'] = self.wt_init['components']['blade']['internal_structure_2d_fem']['reference_axis']
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['twist'] = self.wt_init['components']['blade']['outer_shape_bem']['twist']
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['stiff_matrix'] = {}
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['stiff_matrix']['grid'] = wt_opt['blade.outer_shape_bem.s'].tolist()
+        K = []
+        for i in range(self.analysis_options['blade']['n_span']):
+            Ki = np.zeros(21)
+            Ki[11] = wt_opt['elastic.EA'][i]
+            Ki[15] = wt_opt['elastic.EIxx'][i]
+            Ki[18] = wt_opt['elastic.EIyy'][i]
+            Ki[20] = wt_opt['elastic.GJ'][i]
+            K.append(Ki.tolist())
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['stiff_matrix']['values'] = K
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix'] = {}
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['grid'] = wt_opt['blade.outer_shape_bem.s'].tolist()
+        I = []
+        for i in range(self.analysis_options['blade']['n_span']):
+            Ii = np.zeros(21)
+            Ii[0]  = wt_opt['elastic.rhoA'][i]
+            Ii[5]  = - wt_opt['elastic.rhoA'][i] * wt_opt['elastic.precomp.y_cg'][i]
+            Ii[6]  = wt_opt['elastic.rhoA'][i]
+            Ii[10] = wt_opt['elastic.rhoA'][i] * wt_opt['elastic.precomp.x_cg'][i]
+            Ii[11] = wt_opt['elastic.rhoA'][i]
+            Ii[12] = wt_opt['elastic.rhoA'][i] * wt_opt['elastic.precomp.y_cg'][i]
+            Ii[13] = - wt_opt['elastic.rhoA'][i] * wt_opt['elastic.precomp.x_cg'][i]
+            Ii[15] = wt_opt['elastic.precomp.edge_iner'][i]
+            Ii[16] = wt_opt['elastic.precomp.edge_iner'][i]
+            # Ii[18] = wt_opt['elastic.precomp.edge_iner'][i]
+            Ii[20] = wt_opt['elastic.rhoJ'][i]
+            I.append(Ii.tolist())
+        self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'] = I
+
         if self.analysis_options['openfast']['update_hub_nacelle']:
             # Update hub
             self.wt_init['components']['hub']['outer_shape_bem']['diameter']   = float(wt_opt['hub.diameter'])
@@ -370,7 +405,7 @@ class Blade(om.Group):
         # Optimization parameters initialized as indipendent variable component
         opt_var = om.IndepVarComp()
         opt_var.add_output('s_opt_twist',      val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
-        opt_var.add_output('s_opt_chord',      val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
+        opt_var.add_output('s_opt_chord',      val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
         opt_var.add_output('twist_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']))
         opt_var.add_output('chord_opt_gain',   val = np.ones(opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']))
         opt_var.add_output('af_position',      val = np.ones(blade_init_options['n_af_span']))

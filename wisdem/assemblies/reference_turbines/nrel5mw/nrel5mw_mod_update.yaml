@@ -451,6 +451,7 @@ materials:
       Xt: 61.51e+006
       Xc: 65.36e+006
       orth: 0
+      unit_cost: 3.63
 assembly:
     turbine_class: I
     turbulence_class: B

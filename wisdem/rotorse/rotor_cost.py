@@ -770,8 +770,10 @@ class blade_bom(object):
         
         # Resin and hardener
         matrix                                             = {}
-        matrix['resin_unit_cost']                          = 3.63         # $/kg
-        matrix['hardener_unit_cost']                       = 3.63         # $/kg
+        if mat_dictionary['resin']['unit_cost'] == 0.:
+            exit('WARNING: The resin cost is not defined in the input yaml.')
+        matrix['resin_unit_cost']                          = mat_dictionary['resin']['unit_cost']         # $/kg
+        matrix['hardener_unit_cost']                       = mat_dictionary['resin']['unit_cost']         # $/kg
         matrix['mix_ratio']                                = 0.3          # Mix ratio by mass
         # Bonding   
         bonding                                            = {}

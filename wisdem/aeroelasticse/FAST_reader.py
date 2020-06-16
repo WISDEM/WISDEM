@@ -416,6 +416,8 @@ class InputReader_OpenFAST(InputReader_Common):
             self.read_SubDyn()
         if self.fst_vt['Fst']['CompMooring'] == 1: # only MAP++ implimented for mooring models
             self.read_MAP()
+        if self.fst_vt['Fst']['CompMooring'] == 3: # MoorDyn implimented
+            self.read_MoorDyn()
 
         if self.fst_vt['Fst']['CompElast'] == 2: # BeamDyn read assumes all 3 blades are the same
             self.read_BeamDyn()
@@ -1322,7 +1324,7 @@ class InputReader_OpenFAST(InputReader_Common):
         else:
             f.readline()
             self.fst_vt['ServoDyn']['DLL_FileName'] = self.path2dll
-        self.fst_vt['ServoDyn']['DLL_InFile']   = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['DLL_InFile']   = os.path.abspath(os.path.normpath(os.path.join(os.path.split(sd_file)[0], f.readline().split()[0][1:-1])))
         self.fst_vt['ServoDyn']['DLL_ProcName'] = f.readline().split()[0][1:-1]
         dll_dt_line = f.readline().split()[0]
         try:
@@ -2030,6 +2032,108 @@ class InputReader_OpenFAST(InputReader_Common):
         f.readline()
         f.readline()
         self.fst_vt['MAP']['Option']   = [str(val) for val in f.readline().strip().split()]
+
+
+    def read_MoorDyn(self):
+
+        moordyn_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['MooringFile']))
+
+        f = open(moordyn_file)
+
+        # MoorDyn
+        f.readline()
+        f.readline()
+        self.fst_vt['MoorDyn']['Echo']     = bool_read(f.readline().split()[0])
+        f.readline()
+        self.fst_vt['MoorDyn']['NTypes']   = int_read(f.readline().split()[0])
+        f.readline()
+        f.readline()
+        self.fst_vt['MoorDyn']['Name'] = []
+        self.fst_vt['MoorDyn']['Diam']     = []
+        self.fst_vt['MoorDyn']['MassDen']  = []
+        self.fst_vt['MoorDyn']['EA']       = []
+        self.fst_vt['MoorDyn']['BA_zeta']  = []
+        self.fst_vt['MoorDyn']['Can']      = []
+        self.fst_vt['MoorDyn']['Cat']      = []
+        self.fst_vt['MoorDyn']['Cdn']      = []
+        self.fst_vt['MoorDyn']['Cdt']      = []
+        for i in range(self.fst_vt['MoorDyn']['NTypes']):
+            data_line = f.readline().strip().split()
+            self.fst_vt['MoorDyn']['Name'].append(str(data_line[0]))
+            self.fst_vt['MoorDyn']['Diam'].append(float(data_line[1]))
+            self.fst_vt['MoorDyn']['MassDen'].append(float(data_line[2]))
+            self.fst_vt['MoorDyn']['EA'].append(float(data_line[3]))
+            self.fst_vt['MoorDyn']['BA_zeta'].append(float(data_line[4]))
+            self.fst_vt['MoorDyn']['Can'].append(float(data_line[5]))
+            self.fst_vt['MoorDyn']['Cat'].append(float(data_line[6]))
+            self.fst_vt['MoorDyn']['Cdn'].append(float(data_line[7]))
+            self.fst_vt['MoorDyn']['Cdt'].append(float(data_line[8]))
+        f.readline()
+        self.fst_vt['MoorDyn']['NConnects'] = int_read(f.readline().split()[0])
+        f.readline()
+        f.readline()
+        self.fst_vt['MoorDyn']['Node'] = []
+        self.fst_vt['MoorDyn']['Type'] = []
+        self.fst_vt['MoorDyn']['X']    = []
+        self.fst_vt['MoorDyn']['Y']    = []
+        self.fst_vt['MoorDyn']['Z']    = []
+        self.fst_vt['MoorDyn']['M']    = []
+        self.fst_vt['MoorDyn']['V']    = []
+        self.fst_vt['MoorDyn']['FX']   = []
+        self.fst_vt['MoorDyn']['FY']   = []
+        self.fst_vt['MoorDyn']['FZ']   = []
+        self.fst_vt['MoorDyn']['CdA']  = []
+        self.fst_vt['MoorDyn']['CA']   = []
+        for i in range(self.fst_vt['MoorDyn']['NConnects']):
+            data_line = f.readline().strip().split()
+            self.fst_vt['MoorDyn']['Node'].append(int(data_line[0]))
+            self.fst_vt['MoorDyn']['Type'].append(str(data_line[1]))
+            self.fst_vt['MoorDyn']['X'].append(float(data_line[2]))
+            self.fst_vt['MoorDyn']['Y'].append(float(data_line[3]))
+            self.fst_vt['MoorDyn']['Z'].append(float(data_line[4]))
+            self.fst_vt['MoorDyn']['M'].append(float(data_line[5]))
+            self.fst_vt['MoorDyn']['V'].append(float(data_line[6]))
+            self.fst_vt['MoorDyn']['FX'].append(float(data_line[7]))
+            self.fst_vt['MoorDyn']['FY'].append(float(data_line[8]))
+            self.fst_vt['MoorDyn']['FZ'].append(float(data_line[9]))
+            self.fst_vt['MoorDyn']['CdA'].append(float(data_line[10]))
+            self.fst_vt['MoorDyn']['CA'].append(float(data_line[11]))
+        f.readline()
+        self.fst_vt['MoorDyn']['NLines'] = int_read(f.readline().split()[0])
+        f.readline()
+        f.readline()
+        self.fst_vt['MoorDyn']['Line']          = []
+        self.fst_vt['MoorDyn']['LineType']      = []
+        self.fst_vt['MoorDyn']['UnstrLen']      = []
+        self.fst_vt['MoorDyn']['NumSegs']       = []
+        self.fst_vt['MoorDyn']['NodeAnch']      = []
+        self.fst_vt['MoorDyn']['NodeFair']      = []
+        self.fst_vt['MoorDyn']['Flags_Outputs'] = []
+        for i in range(self.fst_vt['MoorDyn']['NLines']):
+            data_line = f.readline().strip().split()
+            self.fst_vt['MoorDyn']['Line'].append(int(data_line[0]))
+            self.fst_vt['MoorDyn']['LineType'].append(str(data_line[1]))
+            self.fst_vt['MoorDyn']['UnstrLen'].append(float(data_line[2]))
+            self.fst_vt['MoorDyn']['NumSegs'].append(int(data_line[3]))
+            self.fst_vt['MoorDyn']['NodeAnch'].append(int(data_line[4]))
+            self.fst_vt['MoorDyn']['NodeFair'].append(int(data_line[5]))
+            self.fst_vt['MoorDyn']['Flags_Outputs'].append(str(data_line[6]))
+        f.readline()
+        self.fst_vt['MoorDyn']['dtM']       = float_read(f.readline().split()[0])
+        self.fst_vt['MoorDyn']['kbot']      = float_read(f.readline().split()[0])
+        self.fst_vt['MoorDyn']['cbot']      = float_read(f.readline().split()[0])
+        self.fst_vt['MoorDyn']['dtIC']      = float_read(f.readline().split()[0])
+        self.fst_vt['MoorDyn']['TmaxIC']    = float_read(f.readline().split()[0])
+        self.fst_vt['MoorDyn']['CdScaleIC'] = float_read(f.readline().split()[0])
+        self.fst_vt['MoorDyn']['threshIC']  = float_read(f.readline().split()[0])
+        f.readline()
+
+        data = f.readline()
+        while data.split()[0] != 'END':
+            channels = data.strip().strip('"').strip("'")
+            channel_list = channels.split(',')
+            self.set_outlist(self.fst_vt['outlist']['MoorDyn'], channel_list)
+            data = f.readline()
 
 
 class InputReader_FAST7(InputReader_Common):
