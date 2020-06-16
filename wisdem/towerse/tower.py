@@ -368,10 +368,12 @@ class TowerDiscretization(om.ExplicitComponent):
     """
     def initialize(self):
         self.options.declare('n_height')
+        self.options.declare('n_refine')
     
     def setup(self):
         n_height = self.options['n_height']
-        nFull = get_nfull(n_height)
+        n_refine = self.options['n_refine']
+        nFull = get_nfull(n_height, n_refine)
 
         self.add_input('hub_height', val=0.0, units='m')
         self.add_input('z_param', np.zeros(n_height), units='m')
@@ -458,10 +460,12 @@ class TowerMass(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('n_height')
+        self.options.declare('n_refine')
     
     def setup(self):
         n_height = self.options['n_height']
-        nFull = get_nfull(n_height)
+        n_refine = self.options['n_refine']
+        nFull = get_nfull(n_height, n_refine)
         
         self.add_input('cylinder_mass', val=np.zeros(nFull-1), units='kg')
         self.add_input('cylinder_cost', val=0.0, units='USD')
@@ -720,11 +724,13 @@ class TowerPreFrame(om.ExplicitComponent):
     """
     def initialize(self):
         self.options.declare('n_height')
+        self.options.declare('n_refine')
         self.options.declare('monopile', default=False)
     
     def setup(self):
         n_height = self.options['n_height']
-        nFull   = get_nfull(n_height)
+        n_refine = self.options['n_refine']
+        nFull = get_nfull(n_height, n_refine)
         
         self.add_input('z_full', np.zeros(nFull), units='m')
         self.add_input('d_full', np.zeros(nFull), units='m')
@@ -820,7 +826,8 @@ class TowerPreFrame(om.ExplicitComponent):
         
     def compute(self, inputs, outputs):
         n_height = self.options['n_height']
-        nFull   = get_nfull(n_height)
+        n_refine = self.options['n_refine']
+        nFull = get_nfull(n_height, n_refine)
         d = inputs['d_full']
         z = inputs['z_full']
         
@@ -948,12 +955,14 @@ class TowerPostFrame(om.ExplicitComponent):
     """
     def initialize(self):
         self.options.declare('n_height')
+        self.options.declare('n_refine')
         self.options.declare('analysis_options')
         #self.options.declare('nDEL')
 
     def setup(self):
         n_height = self.options['n_height']
-        nFull    = get_nfull(n_height)
+        n_refine = self.options['n_refine']
+        nFull = get_nfull(n_height, n_refine)
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
         self.add_input('z_full', np.zeros(nFull), units='m')
@@ -1149,10 +1158,11 @@ class TowerLeanSE(om.Group):
 
         n_height_tow = toweropt['n_height']
         n_layers_tow = toweropt['n_layers']
+        n_refine = toweropt['n_refine']
         n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
         n_layers_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_layers']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
-        nFull        = get_nfull(n_height)
+        nFull        = get_nfull(n_height, n_refine)
 
         n_mat        = self.options['analysis_options']['materials']['n_mat']
         
@@ -1199,13 +1209,13 @@ class TowerLeanSE(om.Group):
         self.add_subsystem('predisc', MonopileFoundation(monopile=monopile), promotes=['*'])
             
         # Promote all but foundation_height so that we can override
-        self.add_subsystem('geometry', CylinderDiscretization(nPoints=n_height), promotes=['z_param','z_full','d_full','t_full'])
+        self.add_subsystem('geometry', CylinderDiscretization(nPoints=n_height, n_refine=n_refine), promotes=['z_param','z_full','d_full','t_full'])
         
-        self.add_subsystem('tgeometry', TowerDiscretization(n_height=n_height), promotes=['*'])
+        self.add_subsystem('tgeometry', TowerDiscretization(n_height=n_height, n_refine=n_refine), promotes=['*'])
         
         self.add_subsystem('cm', CylinderMass(nPoints=nFull), promotes=['z_full','d_full','t_full',
                                                                         'labor_cost_rate','painting_cost_rate'])
-        self.add_subsystem('tm', TowerMass(n_height=n_height), promotes=['z_full',
+        self.add_subsystem('tm', TowerMass(n_height=n_height, n_refine=n_refine), promotes=['z_full',
                                                                    'tower_mass','tower_center_of_mass','tower_section_center_of_mass','tower_I_base',
                                                                    'tower_raw_cost','gravity_foundation_mass','foundation_height',
                                                                    'transition_piece_mass','transition_piece_height',
@@ -1248,10 +1258,11 @@ class TowerSE(om.Group):
         wind     = toweropt['wind']
         frame3dd_opt = toweropt['frame3dd']
         topLevelFlag = self.options['topLevelFlag']
-        n_height_tow = self.options['analysis_options']['tower']['n_height']
+        n_height_tow = toweropt['n_height']
+        n_refine = toweropt['n_refine']
         n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
-        nFull        = get_nfull(n_height)
+        nFull        = get_nfull(n_height, n_refine)
         n_mat        = self.options['analysis_options']['materials']['n_mat']
 
         # Independent variables that are only used in the user is calling TowerSE via python directly
@@ -1321,13 +1332,13 @@ class TowerSE(om.Group):
 
             self.add_subsystem('distLoads'+lc, AeroHydroLoads(nPoints=nFull), promotes=['yaw'])
 
-            self.add_subsystem('pre'+lc, TowerPreFrame(n_height=n_height, monopile=monopile), promotes=['transition_piece_mass',
+            self.add_subsystem('pre'+lc, TowerPreFrame(n_height=n_height, monopile=monopile, n_refine=n_refine), promotes=['transition_piece_mass',
                                                                                                         'transition_piece_height',
                                                                                                         'gravity_foundation_mass',
                                                                                                         'E','G','sigma_y','z_full','d_full'])
             self.add_subsystem('tower'+lc, CylinderFrame3DD(npts=nFull, nK=1, nMass=3, nPL=1,
                                                             frame3dd_opt=frame3dd_opt, buckling_length=toweropt['buckling_length']))
-            self.add_subsystem('post'+lc, TowerPostFrame(n_height=n_height, analysis_options=toweropt), promotes=['life','z_full','d_full','t_full'])
+            self.add_subsystem('post'+lc, TowerPostFrame(n_height=n_height, analysis_options=toweropt, n_refine=n_refine), promotes=['life','z_full','d_full','t_full'])
             
             self.connect('z_full', ['wind'+lc+'.z', 'windLoads'+lc+'.z', 'distLoads'+lc+'.z', 'tower'+lc+'.z'])
             self.connect('d_full', ['windLoads'+lc+'.d', 'tower'+lc+'.d'])
