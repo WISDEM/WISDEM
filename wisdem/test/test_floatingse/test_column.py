@@ -17,38 +17,40 @@ class TestBulk(unittest.TestCase):
         self.resid = None
 
         self.inputs['z_full'] = np.linspace(0, 1, NPTS)
-        self.inputs['z_param'] = np.linspace(0, 1, NHEIGHT)
         self.inputs['d_full'] = 10.0 * myones
         self.inputs['t_full'] = 0.05 * secones
         self.inputs['rho'] = 1e3
-        self.inputs['bulkhead_mass_factor'] = 1.1
-        self.inputs['bulkhead_thickness'] = 0.05 * np.array([0.0, 1.0, 0.0, 1.0, 0.0, 0.0])
+        self.inputs['bulkhead_locations'] = np.array([0.0, 1.0, 3.0, 5.0]) / 5.0
+        nbulk = len(self.inputs['bulkhead_locations'])
+        self.inputs['bulkhead_thickness'] = 0.05 * np.ones(nbulk)
         self.inputs['unit_cost'] = 1.0
         self.inputs['painting_cost_rate'] = 10.0
         self.inputs['labor_cost_rate'] = 2.0
         self.inputs['shell_mass'] = 500.0*np.ones(NPTS-1)
 
-        self.bulk = column.BulkheadProperties(n_height=NHEIGHT)
+        self.bulk = column.BulkheadProperties(n_height=NHEIGHT, n_bulkhead=nbulk)
 
     def testAll(self):
         self.bulk.compute(self.inputs, self.outputs)
 
         R_i = 0.5 * 10 - 0.05
         m_bulk = np.pi * 1e3 * R_i**2 * 0.05 
-        expect = np.zeros( self.inputs['z_full'].shape )
-        expect[[0,3,9,NPTS-1]] = m_bulk
+        expect = np.zeros( self.inputs['z_full'].size-1 )
+        expect[[0,3,9,NPTS-2]] = m_bulk
         ind = (expect > 0.0)
         npt.assert_almost_equal(self.outputs['bulkhead_mass'], expect)
 
         J0 = 0.50 * m_bulk * R_i**2
         I0 = 0.25 * m_bulk * R_i**2
 
+        z_bulk = s_bulk = self.inputs['bulkhead_locations']
+        
         I = np.zeros(6)
         I[2] = 4.0 * J0
-        I[0] = I0 + m_bulk*self.inputs['z_param'][0]**2
-        I[0] += I0 + m_bulk*self.inputs['z_param'][1]**2
-        I[0] += I0 + m_bulk*self.inputs['z_param'][3]**2
-        I[0] += I0 + m_bulk*self.inputs['z_param'][-1]**2
+        I[0] = I0 + m_bulk*z_bulk[0]**2
+        I[0] += I0 + m_bulk*z_bulk[1]**2
+        I[0] += I0 + m_bulk*z_bulk[2]**2
+        I[0] += I0 + m_bulk*z_bulk[3]**2
         I[1] = I[0]
         npt.assert_almost_equal(self.outputs['bulkhead_I_keel'], I)
 
@@ -337,7 +339,7 @@ class TestProperties(unittest.TestCase):
         self.inputs['buoyancy_tank_diameter'] = 15.0
         
         self.inputs['rho_water'] = 1e3
-        self.inputs['bulkhead_mass'] = 10.0*this_ones
+        self.inputs['bulkhead_mass'] = 10.0*this_sec
         self.inputs['shell_mass'] = 500.0*this_sec
         self.inputs['stiffener_mass'] = 100.0*this_sec
         self.inputs['ballast_mass'] = 20.0*this_sec
@@ -395,13 +397,12 @@ class TestProperties(unittest.TestCase):
         m_out    = 0.05 * m_column
         m_expect = m_column + m_ballast.sum() + m_out
 
-        mysec = stiff+shell+bulk[:-1]
-        mysec[-1] += bulk[-1]
+        mysec = stiff+shell+bulk
         mysec[ibox] += box
         mysec += m_ballast
         mysec += (m_out/len(mysec))
 
-        mycg  = (np.dot(bulk, self.inputs['z_full']) + box*boxcg + np.dot(stiff+shell, self.inputs['z_section']))/m_column
+        mycg  = (box*boxcg + np.dot(stiff+shell+bulk, self.inputs['z_section']))/m_column
         cg_system = ((m_column+m_out)*mycg + m_ballast.sum()*cg_ballast) / m_expect
 
         Iones = np.r_[np.ones(3), np.zeros(3)]
@@ -413,7 +414,7 @@ class TestProperties(unittest.TestCase):
         
         self.assertAlmostEqual(self.outputs['column_structural_mass'], m_column+m_out )
         self.assertAlmostEqual(self.outputs['column_outfitting_mass'], m_out )
-        npt.assert_equal(self.outputs['column_total_mass'], mysec)
+        npt.assert_almost_equal(self.outputs['column_total_mass'], mysec)
         npt.assert_almost_equal(self.outputs['I_column'], I_expect)
 
 
@@ -540,7 +541,7 @@ class TestGroup(unittest.TestCase):
 
         prob = om.Problem()
 
-        prob.model.add_subsystem('col', column.Column(n_height=3, analysis_options=opt,
+        prob.model.add_subsystem('col', column.Column(n_height=3, n_bulkhead=3, analysis_options=opt,
                                                       topLevelFlag=True), promotes=['*'])
         
         prob.setup()
@@ -554,6 +555,7 @@ class TestGroup(unittest.TestCase):
         prob['stiffener_flange_thickness'] = 0.3*np.ones(2)
         prob['stiffener_spacing'] = 0.1*np.ones(2)
         prob['bulkhead_thickness'] = 0.05*np.ones(3)
+        prob['bulkhead_locations'] = np.array([0.0, 0.5, 1.0])
         prob['permanent_ballast_height'] = 1.0
         prob['buoyancy_tank_diameter'] = 15.0
         prob['buoyancy_tank_height'] = 0.25

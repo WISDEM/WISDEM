@@ -36,17 +36,16 @@ class BulkheadProperties(om.ExplicitComponent):
     ----------
     z_full : numpy array[n_full], [m]
         z-coordinates of section nodes
-    z_param : numpy array[n_height], [m]
-        z-coordinates of section nodes
     d_full : numpy array[n_full], [m]
         cylinder diameter at corresponding locations
     t_full : numpy array[n_full-1], [m]
         shell thickness at corresponding locations
     rho : float, [kg/m**3]
         material density
-    bulkhead_thickness : numpy array[n_height], [m]
-        Nodal locations of bulkhead thickness, zero meaning no bulkhead, bottom to top
-        (length = nsection + 1)
+    bulkhead_locations : numpy array[n_bulkhead]
+        Vector of non-dimensional values (from 0.0 at the bottom bottom to 1.0 at the top) indicating the center locations of the bulkheads
+    bulkhead_thickness : numpy array[n_bulkhead], [m]
+        Vector of thicknesses of the bulkheads at the locations specified (length = n_bulkhead)
     shell_mass : numpy array[n_full-1], [kg]
         mass of column shell
     unit_cost : float, [USD/kg]
@@ -58,7 +57,7 @@ class BulkheadProperties(om.ExplicitComponent):
     
     Returns
     -------
-    bulkhead_mass : numpy array[n_full], [kg]
+    bulkhead_mass : numpy array[n_full-1], [kg]
         mass of column bulkheads
     bulkhead_cost : float, [USD]
         cost of column bulkheads
@@ -69,8 +68,10 @@ class BulkheadProperties(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('n_height')
+        self.options.declare('n_bulkhead')
         
     def setup(self):
+        n_bulk   = self.options['n_bulkhead']
         n_height = self.options['n_height']
         n_sect   = n_height - 1
         n_full   = get_nfull(n_height)
@@ -78,18 +79,17 @@ class BulkheadProperties(om.ExplicitComponent):
         self.bulk_full = np.zeros( n_full, dtype=np.int_)
 
         self.add_input('z_full', np.zeros(n_full), units='m')
-        self.add_input('z_param', np.zeros(n_height), units='m')
         self.add_input('d_full', np.zeros(n_full), units='m')
         self.add_input('t_full', np.zeros(n_full-1), units='m')
         self.add_input('rho', 0.0, units='kg/m**3')
-        self.add_input('bulkhead_thickness', np.zeros(n_height), units='m')
-        self.add_input('bulkhead_location', np.zeros(n_height), units='m')
+        self.add_input('bulkhead_thickness', np.zeros(n_bulk), units='m')
+        self.add_input('bulkhead_locations', np.zeros(n_bulk))
         self.add_input('shell_mass', np.zeros(n_full-1), units='kg')
         self.add_input('unit_cost', 0.0, units='USD/kg')
         self.add_input('labor_cost_rate', 0.0, units='USD/min')
         self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
 
-        self.add_output('bulkhead_mass', np.zeros(n_full), units='kg')
+        self.add_output('bulkhead_mass', np.zeros(n_full-1), units='kg')
         self.add_output('bulkhead_cost', 0.0, units='USD')
         self.add_output('bulkhead_I_keel', np.zeros(6), units='kg*m**2')
 
@@ -98,40 +98,40 @@ class BulkheadProperties(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         # Unpack variables
         z_full     = inputs['z_full'] # at section nodes
-        z_param    = inputs['z_param']
         R_od       = 0.5*inputs['d_full'] # at section nodes
         twall      = inputs['t_full'] # at section nodes
         R_id       = get_inner_radius(R_od, twall)
-        t_bulk     = inputs['bulkhead_thickness'] # at section nodes
+        s_bulk     = inputs['bulkhead_locations']
+        t_bulk     = inputs['bulkhead_thickness']
         rho        = inputs['rho']
-        
-        # Map bulkhead locations to finer computation grid
-        Zf,Zp = np.meshgrid(z_full, z_param)
-        idx = np.argmin( np.abs(Zf-Zp), axis=1 )
-        t_bulk_full = np.zeros( z_full.shape )
-        t_bulk_full[idx] = t_bulk
-        # Make sure top and bottom are capped
-        if (t_bulk_full[ 0] == 0.0): t_bulk_full[ 0] = twall[ 0]
-        if (t_bulk_full[-1] == 0.0): t_bulk_full[-1] = twall[-1]
-        
-        # Compute bulkhead volume at every section node
-        # Assume bulkheads are same thickness as shell wall
-        V_bulk = np.pi * R_id**2 * t_bulk_full
+        nbulk      = s_bulk.size
 
-        # Convert to mass
-        m_bulk = rho * V_bulk
+        # Get z and R_id values of bulkhead locations
+        s_full    = z_full / (z_full[-1] - z_full[0])
+        z_bulk    = np.interp(s_bulk, s_full, z_full)
+        R_id_bulk = np.interp(s_bulk, s_full, R_id)
 
+        # Compute bulkhead mass
+        m_bulk = rho * np.pi * R_id_bulk**2 * t_bulk
+
+        # Find sectional index for each bulkhead and assign appropriate mass
+        m_bulk_sec = np.zeros(z_full.size-1)
+        ibulk      = []
+        for k in range(nbulk):
+            idx = np.where(s_bulk[k] >= s_full[:-1])[0][-1]
+            ibulk.append(idx)
+            m_bulk_sec[idx] += m_bulk[k]
+        
         # Compute moments of inertia at keel
         # Assume bulkheads are just simple thin discs with radius R_od-t_wall and mass already computed
-        Izz = 0.5 * m_bulk * R_id**2
+        Izz = 0.5 * m_bulk * R_id_bulk**2
         Ixx = Iyy = 0.5 * Izz
+        dz  = z_bulk - z_full[0]
         I_keel = np.zeros((3,3))
-        dz  = z_full - z_full[0]
-        for k in range(m_bulk.size):
+        for k in range(nbulk):
             R = np.array([0.0, 0.0, dz[k]])
             Icg = assembleI( [Ixx[k], Iyy[k], Izz[k], 0.0, 0.0, 0.0] )
             I_keel += Icg + m_bulk[k]*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
-
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
         # All dimensions for correlations based on mm, not meters.
@@ -139,21 +139,19 @@ class BulkheadProperties(om.ExplicitComponent):
         k_f     = inputs['labor_cost_rate'] #1.0 # USD / min labor
         k_p     = inputs['painting_cost_rate'] #USD / m^2 painting
         m_shell = inputs['shell_mass'].sum()
-        nbulk   = np.count_nonzero(V_bulk)
-        bulkind = (V_bulk > 0.0)
         
         # Cost Step 1) Cutting flat plates using plasma cutter
-        cutLengths = 2.0 * np.pi * R_id * bulkind
+        cutLengths = 2.0 * np.pi * R_id_bulk
         # Cost Step 2) Fillet welds with GMAW-C (gas metal arc welding with CO2) of bulkheads to shell
         theta_w = 3.0 # Difficulty factor
 
         # Labor-based expenses
-        K_f = k_f * ( manufacture.steel_cutting_plasma_time(cutLengths, t_bulk_full) +
-                      manufacture.steel_filett_welding_time(theta_w, nbulk, m_bulk+m_shell, 2*np.pi*R_id, t_bulk_full) )
+        K_f = k_f * ( manufacture.steel_cutting_plasma_time(cutLengths, t_bulk) +
+                      manufacture.steel_filett_welding_time(theta_w, nbulk, m_bulk+m_shell, 2*np.pi*R_id_bulk, t_bulk) )
         
         # Cost Step 3) Painting (two sided)
         theta_p = 1.0
-        K_p  = k_p * theta_p * 2 * (np.pi * R_id**2.0 * bulkind).sum()
+        K_p  = k_p * theta_p * 2 * (np.pi * R_id_bulk**2.0).sum()
 
         # Material cost, without outfitting
         K_m = np.sum(k_m * m_bulk)
@@ -163,7 +161,7 @@ class BulkheadProperties(om.ExplicitComponent):
         
         # Store results
         outputs['bulkhead_I_keel'] = unassembleI(I_keel)
-        outputs['bulkhead_mass'] = m_bulk
+        outputs['bulkhead_mass'] = m_bulk_sec
         outputs['bulkhead_cost'] = c_bulk
 
     
@@ -817,7 +815,7 @@ class ColumnProperties(om.ExplicitComponent):
         mass of column shell
     stiffener_mass : numpy array[n_full-1], [kg]
         mass of column stiffeners
-    bulkhead_mass : numpy array[n_full], [kg]
+    bulkhead_mass : numpy array[n_full-1], [kg]
         mass of column bulkheads
     buoyancy_tank_mass : float, [kg]
         mass of heave plate
@@ -915,7 +913,7 @@ class ColumnProperties(om.ExplicitComponent):
         # Mass correction factors from simple rules here to real life
         self.add_input('shell_mass', np.zeros(n_full-1), units='kg')
         self.add_input('stiffener_mass', np.zeros(n_full-1), units='kg')
-        self.add_input('bulkhead_mass', np.zeros(n_full), units='kg')
+        self.add_input('bulkhead_mass', np.zeros(n_full-1), units='kg')
         self.add_input('buoyancy_tank_mass', 0.0, units='kg')
         self.add_input('ballast_mass', np.zeros(n_full-1), units='kg')
         
@@ -1013,12 +1011,8 @@ class ColumnProperties(om.ExplicitComponent):
         
         # Find mass of all of the sub-components of the column
         # Masses assumed to be focused at section centroids
-        m_column += (m_shell + m_stiffener).sum()
-        z_cg     += np.dot(m_shell+m_stiffener, z_section)
-
-        # Masses assumed to be centered at nodes
-        m_column += m_bulkhead.sum()
-        z_cg     += np.dot(m_bulkhead, z_nodes)
+        m_column += (m_shell + m_stiffener + m_bulkhead).sum()
+        z_cg     += np.dot(m_shell+m_stiffener+m_bulkhead, z_section)
 
         # Mass with variable location
         m_column += m_box
@@ -1041,9 +1035,8 @@ class ColumnProperties(om.ExplicitComponent):
         self.ibox = ibox
 
         # Now do tally by section
-        m_sections         = (m_shell + m_stiffener + m_bulkhead[:-1]) + m_ballast
+        m_sections         = (m_shell + m_stiffener + m_bulkhead) + m_ballast
         m_sections        += m_outfit / m_shell.size
-        m_sections[-1]    += m_bulkhead[-1]
         m_sections[ibox]  += m_box
 
         # Add up moments of inertia at keel, make sure to scale mass appropriately
@@ -1342,6 +1335,7 @@ class Column(om.Group):
 
     def initialize(self):
         self.options.declare('n_height')
+        self.options.declare('n_bulkhead')
         self.options.declare('analysis_options')
         self.options.declare('topLevelFlag', default=False)
         
@@ -1361,6 +1355,7 @@ class Column(om.Group):
         ivc.add_output('stiffener_flange_thickness', np.zeros(n_sect), units='m')
         ivc.add_output('stiffener_spacing', np.zeros(n_sect), units='m')
         ivc.add_output('bulkhead_thickness', np.zeros(n_height), units='m')
+        ivc.add_output('bulkhead_locations', np.zeros(n_height))
         ivc.add_output('permanent_ballast_height', 0.0, units='m')
         ivc.add_output('buoyancy_tank_diameter', 0.0, units='m')
         ivc.add_output('buoyancy_tank_height', 0.0, units='m')
@@ -1424,7 +1419,7 @@ class Column(om.Group):
 
         self.add_subsystem('col_geom', ColumnGeometry(n_height=n_height), promotes=['*'])
 
-        self.add_subsystem('bulk', BulkheadProperties(n_height=n_height), promotes=['*'])
+        self.add_subsystem('bulk', BulkheadProperties(n_height=n_height, n_bulkhead=self.options['n_bulkhead']), promotes=['*'])
 
         self.add_subsystem('stiff', StiffenerProperties(n_height=n_height), promotes=['*'])
 
