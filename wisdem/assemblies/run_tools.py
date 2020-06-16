@@ -70,12 +70,13 @@ class Convergence_Trends_Opt(ExplicitComponent):
                         rec_data[param].append(parameters[param])
 
             for param in rec_data.keys():
-                fig, ax = plt.subplots(1,1,figsize=(5.3, 4))
-                ax.plot(iterations, rec_data[param])
-                ax.set(xlabel='Number of Iterations' , ylabel=param)
-                fig_name = 'Convergence_trend_' + param + '.png'
-                fig.savefig(folder_output + fig_name)
-                plt.close(fig)
+                if param != 'tower.layer_thickness' and param != 'tower.diameter':
+                    fig, ax = plt.subplots(1,1,figsize=(5.3, 4))  
+                    ax.plot(iterations, rec_data[param])
+                    ax.set(xlabel='Number of Iterations' , ylabel=param)
+                    fig_name = 'Convergence_trend_' + param + '.png'
+                    fig.savefig(folder_output + fig_name)
+                    plt.close(fig)
 
 class Outputs_2_Screen(ExplicitComponent):
     # Class to print outputs on screen
