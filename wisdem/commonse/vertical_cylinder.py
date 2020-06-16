@@ -2,7 +2,7 @@ import numpy as np
 import openmdao.api as om
 from wisdem.commonse.tube import CylindricalShellProperties
 
-from wisdem.commonse import gravity, eps
+from wisdem.commonse import gravity, eps, NFREQ
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
@@ -11,7 +11,15 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
 
 RIGID = 1e30
-NFREQ = 6
+NREFINE = 3
+
+def get_nfull(npts):
+    nFull = int( 1 + NREFINE*(npts-1) )
+    return nFull
+
+def get_npts(nFull):
+    npts = int( 1 + (nFull-1)/NREFINE )
+    return npts
 
 # -----------------
 #  Components
@@ -49,7 +57,7 @@ class CylinderDiscretization(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('nPoints')
-        self.options.declare('nRefine')
+        self.options.declare('nRefine', default=NREFINE)
 
     def setup(self):
         nPoints = self.options['nPoints']

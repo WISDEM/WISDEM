@@ -16,7 +16,7 @@ def mode_fit(x, c2, c3, c4, c5, c6):
 
 def get_modal_coefficients(x, y, deg=6):
     # Normalize x input
-    xn = (x-x[0]) / (x[-1]-x[0])
+    xn = (x - x.min()) / (x.max() - x.min())
 
     # Get coefficients to 6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)

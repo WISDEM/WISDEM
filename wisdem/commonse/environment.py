@@ -160,7 +160,7 @@ class PowerWind(WindBase):
         self.declare_partials('U', ['Uref','z','zref'])
 
     def compute(self, inputs, outputs):
-
+        
         # rename
         z = inputs['z']
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])

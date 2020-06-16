@@ -2,10 +2,12 @@ import numpy as np
 import numpy.testing as npt
 import unittest
 import wisdem.floatingse.substructure as subs
-
+from wisdem.commonse.vertical_cylinder import get_nfull
 from wisdem.commonse import gravity as g
+
 NSECTIONS = 5
-NPTS = 100
+NHEIGHT   = NSECTIONS+1
+NPTS = get_nfull(NHEIGHT)
 
 class TestSubs(unittest.TestCase):
     def setUp(self):
@@ -37,9 +39,7 @@ class TestSubs(unittest.TestCase):
 
         self.inputs['pontoon_cost'] = 512.0
         
-
-        self.inputs['Hs'] = 10.0
-        self.inputs['wave_period'] = 50.0
+        self.inputs['hsig_wave'] = 10.0
         
         self.inputs['main_Iwaterplane'] = 150.0
         self.inputs['main_Awaterplane'] = 20.0
@@ -66,6 +66,7 @@ class TestSubs(unittest.TestCase):
         self.inputs['tower_mass'] = 2e2
         self.inputs['tower_shell_cost'] = 2e5
         self.inputs['tower_d_full'] = 5.0*np.ones(NPTS)
+        self.inputs['tower_d_base'] = self.inputs['tower_d_full'][0]
         self.inputs['tower_I_base'] = 1e5*np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         self.inputs['rna_mass'] = 6e1
         self.inputs['rna_cg'] = np.array([0.0, 0.0, 5.0])
@@ -78,17 +79,17 @@ class TestSubs(unittest.TestCase):
         self.inputs['radius_to_offset_column'] = 20.0
         self.inputs['z_center_of_buoyancy'] = -2.0
 
-        self.inputs['water_density'] = 1e3
+        self.inputs['rho_water'] = 1e3
         self.inputs['wave_period_range_low'] = 2.0
         self.inputs['wave_period_range_high'] = 20.0
 
-        self.mysemi = subs.Substructure(nFull=NPTS,nFullTow=NPTS)
-        self.mysemiG = subs.SubstructureGeometry(nFull=2,nFullTow=2)
+        self.mysemi = subs.Substructure(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT)
+        self.mysemiG = subs.SubstructureGeometry(n_height_main=NHEIGHT, n_height_off=NHEIGHT)
         
     def testSetGeometry(self):
         self.inputs['number_of_offset_columns'] = 3
         self.inputs['Rhub'] = 3.0
-        self.inputs['tower_d_full'] = 2.0*5.0*np.ones(3)
+        self.inputs['tower_d_base'] = 10.0
         self.inputs['main_d_full'] = 2*np.array([10.0, 10.0, 10.0])
         self.inputs['offset_d_full'] = 2*np.array([10.0, 10.0, 10.0])
         self.inputs['offset_z_nodes'] = np.array([-35.0, -15.0, 15.0])
@@ -105,7 +106,6 @@ class TestSubs(unittest.TestCase):
         self.assertEqual(self.outputs['fairlead_radius'], 11.0+25.0)
         self.assertEqual(self.outputs['main_offset_spacing'], 25.0 - 10.0 - 10.0)
         self.assertEqual(self.outputs['tower_transition_buffer'], 10-5.0)
-        self.assertEqual(self.outputs['nacelle_transition_buffer'], 4.0-5.0)
         self.assertEqual(self.outputs['offset_freeboard_heel_margin'], 10.0 - 25.0*np.sin(np.deg2rad(10.0)))
         self.assertEqual(self.outputs['offset_draft_heel_margin'], 15.0 - 25.0*np.sin(np.deg2rad(10.0)))
 
@@ -116,7 +116,6 @@ class TestSubs(unittest.TestCase):
         self.assertEqual(self.outputs['fairlead_radius'], 11.0)
         self.assertEqual(self.outputs['main_offset_spacing'], 25.0 - 10.0 - 10.0)
         self.assertEqual(self.outputs['tower_transition_buffer'], 10-5.0)
-        self.assertEqual(self.outputs['nacelle_transition_buffer'], 4.0-5.0)
 
         
     def testBalance(self):
@@ -201,7 +200,7 @@ class TestSubs(unittest.TestCase):
         A_expect[3:5] = self.inputs['main_added_mass'][3:5] + A_expect[0]*(2.0)**2
         npt.assert_equal(self.outputs['added_mass_matrix'], A_expect)
 
-        rho_w = self.inputs['water_density']
+        rho_w = self.inputs['rho_water']
         K_expect = np.zeros(6)
         K_expect[2] = rho_w * g * 20.0 # waterplane area for main
         K_expect[3:5] = rho_w * g * self.outputs['metacentric_height'] * 1e4 # Total displacement
