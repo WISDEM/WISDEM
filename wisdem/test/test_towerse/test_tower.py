@@ -376,10 +376,14 @@ class TestTowerSE(unittest.TestCase):
 
         # Store analysis options
         analysis_options = {}
+        analysis_options['materials'] = {}
+        analysis_options['materials']['n_mat'] = 1
+
         analysis_options['tower'] = {}
         analysis_options['tower']['buckling_length'] = 20.0
         analysis_options['tower']['monopile'] = False
         analysis_options['tower']['n_height'] = 3
+        analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
 
@@ -393,7 +397,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['frame3dd']['DC']      = 80.0
         analysis_options['tower']['frame3dd']['shear']   = True
         analysis_options['tower']['frame3dd']['geom']    = True
-        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['dx']      = -1
         analysis_options['tower']['frame3dd']['nM']      = 2
         analysis_options['tower']['frame3dd']['Mmethod'] = 1
         analysis_options['tower']['frame3dd']['lump']    = 0
@@ -410,18 +414,24 @@ class TestTowerSE(unittest.TestCase):
         prob['transition_piece_height'] = 0.0
         prob['transition_piece_mass'] = 0.0
         prob['gravity_foundation_mass'] = 0.0
-        prob['tower_section_height'] = 40.0*np.ones(2)
-        prob['tower_outer_diameter'] = 10.0*np.ones(3)
-        prob['tower_wall_thickness'] = 0.1*np.ones(2)
-        prob['outfitting_factor'] = 1.0
+        
+        prob['tower_s'] = np.linspace(0, 1, 3)
+        prob['tower_height'] = 80.0
+        #prob['tower_section_height'] = 40.0*np.ones(2)
+        prob['tower_outer_diameter_in'] = 10.0*np.ones(3)
+        prob['tower_layer_thickness'] = 0.1*np.ones(2).reshape((1,2))
+        prob['tower_outfitting_factor'] = 1.0
+        prob['tower_layer_materials'] = ['steel']
+        prob['material_names'] = ['steel']
+        prob['E_mat'] = 1e9*np.ones((1,3))
+        prob['G_mat'] = 1e8*np.ones((1,3))
+        prob['rho_mat'] = 1e4
+        prob['sigma_y_mat'] = 1e8
+
         prob['yaw'] = 0.0
         prob['suctionpile_depth'] = 0.0
         prob['G_soil'] = 1e7
         prob['nu_soil'] = 0.5
-        prob['E'] = 1e9
-        prob['G'] = 1e8
-        prob['rho'] = 1e4
-        prob['sigma_y'] = 1e8
         prob['rna_mass'] = 2e5
         prob['rna_I'] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob['rna_cg'] = np.array([-3., 0.0, 1.0])
@@ -492,10 +502,18 @@ class TestTowerSE(unittest.TestCase):
 
         # Store analysis options
         analysis_options = {}
+        analysis_options['materials'] = {}
+        analysis_options['materials']['n_mat'] = 1
+        
+        analysis_options['monopile'] = {}
+        analysis_options['monopile']['n_height'] = 3
+        analysis_options['monopile']['n_layers'] = 1
+
         analysis_options['tower'] = {}
         analysis_options['tower']['buckling_length'] = 20.0
         analysis_options['tower']['monopile'] = True
-        analysis_options['tower']['n_height'] = 5
+        analysis_options['tower']['n_height'] = 3
+        analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
 
@@ -509,7 +527,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['frame3dd']['DC']      = 80.0
         analysis_options['tower']['frame3dd']['shear']   = True
         analysis_options['tower']['frame3dd']['geom']    = True
-        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['dx']      = -1
         analysis_options['tower']['frame3dd']['nM']      = 2
         analysis_options['tower']['frame3dd']['Mmethod'] = 1
         analysis_options['tower']['frame3dd']['lump']    = 0
@@ -526,18 +544,30 @@ class TestTowerSE(unittest.TestCase):
         prob['transition_piece_height'] = 15.0
         prob['transition_piece_mass'] = 1e2
         prob['gravity_foundation_mass'] = 1e4
-        prob['tower_section_height'] = np.r_[15.0, 30.0*np.ones(3)]
-        prob['tower_outer_diameter'] = 10.0*np.ones(5)
-        prob['tower_wall_thickness'] = 0.1*np.ones(4)
+
+        prob['tower_s'] = np.linspace(0, 1, 3)
+        prob['tower_height'] = 60.0
+        prob['tower_outer_diameter_in'] = 10.0*np.ones(3)
+        prob['tower_layer_thickness'] = 0.1*np.ones(2).reshape((1,2))
+        prob['tower_outfitting_factor'] = 1.0
+        hval = np.array([15.0, 30.0])
+        prob['monopile_s'] = np.cumsum(np.r_[0, hval]) / hval.sum()
+        prob['monopile_height'] = hval.sum()
+        prob['monopile_outer_diameter_in'] = 10.0*np.ones(3)
+        prob['monopile_layer_thickness'] = 0.1*np.ones(2).reshape((1,2))
+        prob['monopile_outfitting_factor'] = 1.0
+        prob['tower_layer_materials'] = prob['monopile_layer_materials'] = ['steel']
+        prob['material_names'] = ['steel']
+        prob['E_mat'] = 1e9*np.ones((1,3))
+        prob['G_mat'] = 1e8*np.ones((1,3))
+        prob['rho_mat'] = 1e4
+        prob['sigma_y_mat'] = 1e8
+
         prob['suctionpile_depth'] = 15.0
         prob['outfitting_factor'] = 1.0
         prob['yaw'] = 0.0
         prob['G_soil'] = 1e7
         prob['nu_soil'] = 0.5
-        prob['E'] = 1e9*np.ones(4)
-        prob['G'] = 1e8*np.ones(4)
-        prob['rho'] = 1e4*np.ones(4)
-        prob['sigma_y'] = 1e8*np.ones(4)
         prob['rna_mass'] = 2e5
         prob['rna_I'] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob['rna_cg'] = np.array([-3., 0.0, 1.0])
@@ -615,13 +645,21 @@ class TestTowerSE(unittest.TestCase):
 
         # Store analysis options
         analysis_options = {}
+        analysis_options['materials'] = {}
+        analysis_options['materials']['n_mat'] = 1
+
+        analysis_options['monopile'] = {}
+        analysis_options['monopile']['n_height'] = 3
+        analysis_options['monopile']['n_layers'] = 1
+
         analysis_options['tower'] = {}
         analysis_options['tower']['buckling_length'] = 20.0
         analysis_options['tower']['monopile'] = True
-        analysis_options['tower']['n_height'] = 5
+        analysis_options['tower']['n_height'] = 3
+        analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
-
+        
         analysis_options['tower']['gamma_f'] = 1.0
         analysis_options['tower']['gamma_m'] = 1.0
         analysis_options['tower']['gamma_n'] = 1.0
@@ -632,7 +670,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['frame3dd']['DC']      = 80.0
         analysis_options['tower']['frame3dd']['shear']   = True
         analysis_options['tower']['frame3dd']['geom']    = True
-        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['dx']      = -1
         analysis_options['tower']['frame3dd']['nM']      = 2
         analysis_options['tower']['frame3dd']['Mmethod'] = 1
         analysis_options['tower']['frame3dd']['lump']    = 0
@@ -649,18 +687,29 @@ class TestTowerSE(unittest.TestCase):
         prob['transition_piece_height'] = 15.0
         prob['transition_piece_mass'] = 0.0
         prob['gravity_foundation_mass'] = 0.0
-        prob['tower_section_height'] = np.r_[15.0, 30.0*np.ones(3)]
-        prob['tower_outer_diameter'] = 10.0*np.ones(5)
-        prob['tower_wall_thickness'] = 0.1*np.ones(4)
+
+        prob['tower_s'] = np.linspace(0, 1, 3)
+        prob['tower_height'] = 60.0
+        prob['tower_outer_diameter_in'] = 10.0*np.ones(3)
+        prob['tower_layer_thickness'] = 0.1*np.ones(2).reshape((1,2))
+        prob['tower_outfitting_factor'] = 1.0
+        hval = np.array([15.0, 30.0])
+        prob['monopile_s'] = np.cumsum(np.r_[0, hval]) / hval.sum()
+        prob['monopile_height'] = hval.sum()
+        prob['monopile_outer_diameter_in'] = 10.0*np.ones(3)
+        prob['monopile_layer_thickness'] = 0.1*np.ones(2).reshape((1,2))
+        prob['monopile_outfitting_factor'] = 1.0
+        prob['tower_layer_materials'] = prob['monopile_layer_materials'] = ['steel']
+        prob['material_names'] = ['steel']
+        prob['E_mat'] = 1e9*np.ones((1,3))
+        prob['G_mat'] = 1e8*np.ones((1,3))
+        prob['rho_mat'] = 1e4
+        prob['sigma_y_mat'] = 1e8
+
         prob['suctionpile_depth'] = 15.0
-        prob['outfitting_factor'] = 1.0
         prob['yaw'] = 0.0
         prob['G_soil'] = 1e7
         prob['nu_soil'] = 0.5
-        prob['E'] = 1e9*np.ones(4)
-        prob['G'] = 1e8*np.ones(4)
-        prob['rho'] = 1e4*np.ones(4)
-        prob['sigma_y'] = 1e8*np.ones(4)
         prob['rna_mass'] = 0.0
         prob['rna_I'] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob['rna_cg'] = np.array([-3., 0.0, 1.0])
@@ -729,7 +778,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['frame3dd']['DC']      = 80.0
         analysis_options['tower']['frame3dd']['shear']   = True
         analysis_options['tower']['frame3dd']['geom']    = True
-        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['dx']      = -1
         analysis_options['tower']['frame3dd']['nM']      = 6
         analysis_options['tower']['frame3dd']['Mmethod'] = 1
         analysis_options['tower']['frame3dd']['lump']    = 0
@@ -739,8 +788,12 @@ class TestTowerSE(unittest.TestCase):
         # ---------------
 
         analysis_options['tower']['n_height'] = len(d_param)
+        analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
+
+        analysis_options['materials'] = {}
+        analysis_options['materials']['n_mat'] = 1
 
         prob = om.Problem()
         prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
@@ -749,10 +802,19 @@ class TestTowerSE(unittest.TestCase):
         # Set common and then customized parameters
         prob['hub_height'] = prob['wind_reference_height'] = 30+146.1679
         prob['foundation_height'] = 0.0 #-30.0
-        prob['tower_section_height'] = h_param
-        prob['tower_outer_diameter'] = d_param
-        prob['tower_wall_thickness'] = t_param
-        prob['outfitting_factor'] = 1.0
+
+        prob['tower_s'] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
+        prob['tower_height'] = h_param.sum()
+        prob['tower_outer_diameter_in'] = d_param
+        prob['tower_layer_thickness'] = t_param.reshape( (1,len(t_param)) )
+        prob['tower_outfitting_factor'] = 1.0
+        prob['tower_layer_materials'] = ['steel']
+        prob['material_names'] = ['steel']
+        prob['E_mat'] = 210e9*np.ones((1,3))
+        prob['G_mat'] = 79.3e9*np.ones((1,3))
+        prob['rho_mat'] = 7850.0
+        prob['sigma_y_mat'] = 345e6
+        
         prob['suctionpile_depth'] = 0.0 #45.0
         prob['yaw'] = 0.0
         prob['transition_piece_mass'] = 0.0 #100e3
@@ -769,11 +831,6 @@ class TestTowerSE(unittest.TestCase):
         prob['hsig_wave'] = 0.0 #4.52
         prob['Tsig_wave'] = 0.0 #9.52
         prob['life'] = 20.0
-
-        prob['E'] = 210e9
-        prob['G'] = 79.3e9 #80.8e9
-        prob['rho'] = 7850.0 #8500.0
-        prob['sigma_y'] = 345.0e6 #450.0e6
 
         mIxx = 379640227.0
         mIyy = 224477294.0
@@ -813,13 +870,13 @@ class TestTowerSE(unittest.TestCase):
         z_foundation = 0.0
         theta_stress = 0.0
         yaw = 0.0
-        Koutfitting = 1.07 * np.ones(2)
+        Koutfitting = 1.07
 
         # --- material props ---
-        E = 210e9 * np.ones(2)
-        G = 80.8e9 * np.ones(2)
-        rho = 8500.0 * np.ones(2)
-        sigma_y = 450.0e6 * np.ones(2)
+        E = 210e9
+        G = 80.8e9
+        rho = 8500.0
+        sigma_y = 450.0e6
 
         # --- extra mass ----
         m = np.array([285598.8])
@@ -900,7 +957,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['frame3dd']['DC']      = 80.0
         analysis_options['tower']['frame3dd']['shear']   = True
         analysis_options['tower']['frame3dd']['geom']    = True
-        analysis_options['tower']['frame3dd']['dx']      = 5.0
+        analysis_options['tower']['frame3dd']['dx']      = -1
         analysis_options['tower']['frame3dd']['nM']      = 2
         analysis_options['tower']['frame3dd']['Mmethod'] = 1
         analysis_options['tower']['frame3dd']['lump']    = 0
@@ -915,8 +972,12 @@ class TestTowerSE(unittest.TestCase):
         # ---------------
 
         analysis_options['tower']['n_height'] = len(d_param)
+        analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 2
+
+        analysis_options['materials'] = {}
+        analysis_options['materials']['n_mat'] = 1
 
         prob = om.Problem()
         prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
@@ -930,20 +991,25 @@ class TestTowerSE(unittest.TestCase):
         # --- geometry ----
         prob['hub_height'] = h_param.sum()
         prob['foundation_height'] = 0.0
-        prob['tower_section_height'] = h_param
-        prob['tower_outer_diameter'] = d_param
-        prob['tower_wall_thickness'] = t_param
-        prob['outfitting_factor'] = Koutfitting
+        #prob['tower_section_height'] = h_param
+        prob['tower_s'] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
+        prob['tower_height'] = h_param.sum()
+        prob['tower_outer_diameter_in'] = d_param
+        #prob['tower_wall_thickness'] = t_param
+        prob['tower_layer_thickness'] = t_param.reshape( (1,len(t_param)) )
+        prob['tower_outfitting_factor'] = Koutfitting
+        prob['tower_layer_materials'] = ['steel']
+        prob['material_names'] = ['steel']
         prob['yaw'] = yaw
         prob['suctionpile_depth'] = suction_depth
         prob['G_soil'] = soilG
         prob['nu_soil'] = soilnu
         # --- material props ---
-        prob['E'] = E
-        prob['G'] = G
-        prob['rho'] = rho
-        prob['sigma_y'] = sigma_y
-
+        prob['E_mat'] = E*np.ones((1,3))
+        prob['G_mat'] = G*np.ones((1,3))
+        prob['rho_mat'] = rho
+        prob['sigma_y_mat'] = sigma_y
+        
         # --- extra mass ----
         prob['rna_mass'] = m
         prob['rna_I'] = mI

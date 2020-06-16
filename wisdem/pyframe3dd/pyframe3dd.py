@@ -381,13 +381,21 @@ class Frame(object):
         self.nr = np.copy(nodes.r)
 
         # reactions
-        self.rnode = np.array(reactions.node).astype(np.int32)
-        self.rKx = np.array(reactions.Kx).astype(np.float64)  # convert rather than copy to allow old syntax of integers
-        self.rKy = np.array(reactions.Ky).astype(np.float64)
-        self.rKz = np.array(reactions.Kz).astype(np.float64)
-        self.rKtx = np.array(reactions.Ktx).astype(np.float64)
-        self.rKty = np.array(reactions.Kty).astype(np.float64)
-        self.rKtz = np.array(reactions.Ktz).astype(np.float64)
+
+        if len(reactions.node) == 0:
+            self.rnode = np.array([]).astype(np.int32)
+            self.rKx = self.rKy = self.rKz = self.rKtx = self.rKty = self.rKtz = np.array([]).astype(np.float64)
+            rigid = 1
+        else:
+            self.rnode = np.array(reactions.node).astype(np.int32)
+            self.rKx = np.array(reactions.Kx).astype(np.float64)  # convert rather than copy to allow old syntax of integers
+            self.rKy = np.array(reactions.Ky).astype(np.float64)
+            self.rKz = np.array(reactions.Kz).astype(np.float64)
+            self.rKtx = np.array(reactions.Ktx).astype(np.float64)
+            self.rKty = np.array(reactions.Kty).astype(np.float64)
+            self.rKtz = np.array(reactions.Ktz).astype(np.float64)
+            rigid = reactions.rigid
+
 
         # elements
         self.eelement = np.array(elements.element).astype(np.int32)
@@ -415,7 +423,7 @@ class Frame(object):
 
         self.c_reactions = C_Reactions(len(self.rnode), ip(self.rnode),
             dp(self.rKx), dp(self.rKy), dp(self.rKz),
-            dp(self.rKtx), dp(self.rKty), dp(self.rKtz), reactions.rigid)
+            dp(self.rKtx), dp(self.rKty), dp(self.rKtz), rigid)
 
         self.c_elements = C_Elements(len(self.eelement), ip(self.eelement),
             ip(self.eN1), ip(self.eN2), dp(self.eAx), dp(self.eAsy),

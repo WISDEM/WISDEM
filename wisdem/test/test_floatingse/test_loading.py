@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import copy
 import numpy as np
 import numpy.testing as npt
 import unittest
@@ -7,12 +8,35 @@ import time
 import wisdem.floatingse.loading as sP
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from wisdem.commonse.vertical_cylinder import get_nfull
 from wisdem.commonse import gravity as g
 
 
 NSECTIONS = 5
-NPTS = NSECTIONS+1
+NHEIGHT   = NSECTIONS+1
+NPTS = get_nfull(NHEIGHT)
+
+
+opt = {}
+opt['gamma_f'] = 1.35
+opt['gamma_m'] = 1.1
+opt['gamma_n'] = 1.0
+opt['gamma_b'] = 1.1
+opt['gamma_fatigue'] = 1.755
+
+opt['frame3dd']            = {}
+opt['frame3dd']['shear']   = True
+opt['frame3dd']['geom']    = False
+opt['frame3dd']['dx']      = -1
+opt['frame3dd']['nM']      = 6
+opt['frame3dd']['Mmethod'] = 1
+opt['frame3dd']['lump']    = 0
+opt['frame3dd']['tol']     = 1e-7
+
+opt['run_modal'] = False
+
+opt['tower'] = {}
+opt['tower']['buckling_length'] = 30
 
 def DrawTruss(mytruss):
     mynodes = {}
@@ -39,11 +63,11 @@ def getInputs():
 
     inputs['E'] = 200e9
     inputs['G'] = 79.3e9
-    inputs['material_density'] = 7850.0
+    inputs['rho'] = 7850.0
     inputs['yield_stress'] = 345e6
-    inputs['Hs'] = 10.0
+    inputs['hsig_wave'] = 10.0
 
-    inputs['water_density'] = 1025.0
+    inputs['rho_water'] = 1025.0
 
     discrete_inputs['cross_attachment_pontoons'] = True
     discrete_inputs['lower_attachment_pontoons'] = True
@@ -73,14 +97,17 @@ def getInputs():
     inputs['pontoon_outer_diameter'] = 2.0
     inputs['pontoon_wall_thickness'] = 1.0
 
-    inputs['main_z_full'] = np.array([-15.0, -12.5, -10.0, 0.0, 5.0, 10.0])
+    colz = np.r_[np.linspace(-15,-10,7)[:-1],
+                 np.linspace(-10,0,4)[:-1],
+                 np.linspace(0,10,7)]
+    inputs['main_z_full'] = colz.copy()
     inputs['main_d_full'] = 2*10.0 * np.ones(NPTS)
     inputs['main_t_full'] = 0.1 * np.ones(NPTS-1)
-    inputs['main_mass'] = 1e2 * np.ones(NSECTIONS)
-    inputs['main_buckling_length'] = 2.0 * np.ones(NSECTIONS)
-    inputs['main_displaced_volume'] = 1e2 * np.ones(NSECTIONS)
-    inputs['main_hydrostatic_force'] = np.zeros(NSECTIONS)
-    inputs['main_hydrostatic_force'][0] = inputs['main_displaced_volume'].sum()*g*inputs['water_density']
+    inputs['main_mass'] = 1e2 * np.ones(NPTS-1)
+    inputs['main_buckling_length'] = 2.0 * np.ones(NPTS-1)
+    inputs['main_displaced_volume'] = 1e2 * np.ones(NPTS-1)
+    inputs['main_hydrostatic_force'] = np.zeros(NPTS-1)
+    inputs['main_hydrostatic_force'][0] = inputs['main_displaced_volume'].sum()*g*inputs['rho_water']
     inputs['main_center_of_buoyancy'] = -10.0
     inputs['main_center_of_mass'] = -6.0
     inputs['main_Px'] = 50.0 * np.ones(NPTS)
@@ -88,14 +115,17 @@ def getInputs():
     inputs['main_Pz'] = np.zeros(NPTS)
     inputs['main_qdyn'] = 70.0 * np.ones(NPTS)
 
-    inputs['offset_z_full'] = np.array([-15.0, -10.0, -5.0, 0.0, 2.5, 10.0])
+    colz = np.r_[np.linspace(-15,0,10)[:-1],
+                 np.linspace(0,2.5,4)[:-1],
+                 np.linspace(2.5,10,4)]
+    inputs['offset_z_full'] = colz.copy()
     inputs['offset_d_full'] = 2*2.0 * np.ones(NPTS)
     inputs['offset_t_full'] = 0.05 * np.ones(NPTS-1)
-    inputs['offset_mass'] = 1e1 * np.ones(NSECTIONS)
-    inputs['offset_buckling_length'] = 2.0 * np.ones(NSECTIONS)
-    inputs['offset_displaced_volume'] = 1e1 * np.ones(NSECTIONS)
-    inputs['offset_hydrostatic_force'] = np.zeros(NSECTIONS)
-    inputs['offset_hydrostatic_force'][0] = inputs['main_displaced_volume'].sum()*g*inputs['water_density']
+    inputs['offset_mass'] = 1e1 * np.ones(NPTS-1)
+    inputs['offset_buckling_length'] = 2.0 * np.ones(NPTS-1)
+    inputs['offset_displaced_volume'] = 1e1 * np.ones(NPTS-1)
+    inputs['offset_hydrostatic_force'] = np.zeros(NPTS-1)
+    inputs['offset_hydrostatic_force'][0] = inputs['main_displaced_volume'].sum()*g*inputs['rho_water']
     inputs['offset_center_of_buoyancy'] = -5.0
     inputs['offset_center_of_mass'] = -3.0
     inputs['offset_Px'] = 50.0 * np.ones(NPTS)
@@ -106,7 +136,7 @@ def getInputs():
     inputs['tower_z_full'] = np.linspace(0, 90, NPTS)
     inputs['tower_d_full'] = 2*7.0 * np.ones(NPTS)
     inputs['tower_t_full'] = 0.5 * np.ones(NPTS-1)
-    inputs['tower_mass_section'] = 2e2 * np.ones(NSECTIONS)
+    inputs['tower_mass_section'] = 2e2 * np.ones(NPTS-1)
     inputs['tower_buckling_length'] = 25.0
     inputs['tower_center_of_mass'] = 50.0
     inputs['tower_Px'] = 50.0 * np.ones(NPTS)
@@ -119,12 +149,6 @@ def getInputs():
     inputs['rna_mass'] = 6e1
     inputs['rna_cg'] = np.array([3.05, 2.96, 2.13])
     inputs['rna_I'] = np.array([3.05284574e9, 2.96031642e9, 2.13639924e7, 0.0, 2.89884849e7, 0.0])
-
-    inputs['gamma_f'] = 1.35
-    inputs['gamma_m'] = 1.1
-    inputs['gamma_n'] = 1.0
-    inputs['gamma_b'] = 1.1
-    inputs['gamma_fatigue'] = 1.755
 
     inputs['material_cost_rate'] = 1.0
     inputs['painting_cost_rate'] = 10.0
@@ -140,7 +164,8 @@ class TestFrame(unittest.TestCase):
 
         self.outputs['pontoon_stress'] = np.zeros(70)
         
-        self.mytruss = sP.FloatingFrame(nFull=NPTS,nFullTow=NPTS)
+        self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
+                                        analysis_options=opt)
 
     def tearDown(self):
         self.mytruss = None
@@ -148,7 +173,7 @@ class TestFrame(unittest.TestCase):
     def testStandard(self):
         self.inputs['radius_to_offset_column'] = 20.0
         self.inputs['fairlead_radius'] = 30.0
-        self.inputs['offset_z_full'] = np.array([-15.0, -10.0, -5.0, 0.0, 2.5, 3.0])
+        #self.inputs['offset_z_full'] = np.array([-15.0, -10.0, -5.0, 0.0, 2.5, 3.0])
         self.mytruss.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(self.outputs['main_connection_ratio'], 0.25-0.1)
@@ -177,8 +202,8 @@ class TestFrame(unittest.TestCase):
         Roff   = 0.5*self.inputs['offset_d_full'][0]
         Ro     = 0.5*self.inputs['pontoon_outer_diameter']
         Ri     = Ro - self.inputs['pontoon_wall_thickness']
-        rho    = self.inputs['material_density']
-        rhoW   = self.inputs['water_density']
+        rho    = self.inputs['rho']
+        rhoW   = self.inputs['rho_water']
 
         self.inputs['fairlead_radius'] = 0.0
         self.inputs['fairlead_outer_diameter'] = 0.0
@@ -261,27 +286,27 @@ class TestFrame(unittest.TestCase):
 
 
     def testForces(self):
-        self.inputs['offset_z_full'] = np.linspace(-1e-4, 0.0, NPTS)
-        self.inputs['main_z_full'] = np.linspace(-1e-4, 0.0, NPTS)
-        self.inputs['tower_z_full'] = np.linspace(0, 1e-4, NPTS)
+        self.inputs['offset_z_full'] = np.linspace(-1e-2, 0.0, NPTS)
+        self.inputs['main_z_full'] = np.linspace(-1e-2, 0.0, NPTS)
+        self.inputs['tower_z_full'] = np.linspace(0, 1e-2, NPTS)
         self.inputs['fairlead'] = 0.0
         self.inputs['number_of_offset_columns'] = 0
-        self.inputs['main_mass'] = 1.0 * np.ones(NSECTIONS)
+        self.inputs['main_mass'] = 1.0 * np.ones(NPTS-1)
         self.inputs['main_center_of_mass'] = 0.0
-        self.inputs['main_hydrostatic_force'] = 1e-12 * np.ones(NSECTIONS)
-        self.inputs['offset_mass'] = 0.0 * np.ones(NSECTIONS)
+        self.inputs['main_hydrostatic_force'] = 1e-12 * np.ones(NPTS-1)
+        self.inputs['offset_mass'] = 0.0 * np.ones(NPTS-1)
         self.inputs['offset_center_of_mass'] = 0.0
-        self.inputs['offset_hydrostatic_force'] = 1e-12 * np.ones(NSECTIONS)
-        self.inputs['tower_mass_section'] = 1.0 * np.ones(NSECTIONS)
+        self.inputs['offset_hydrostatic_force'] = 1e-12 * np.ones(NPTS-1)
+        self.inputs['tower_mass_section'] = 1.0 * np.ones(NPTS-1)
         self.inputs['tower_center_of_mass'] = 0.0
         self.inputs['rna_mass'] = 1.0
         self.inputs['rna_force'] = 10.0*np.ones(3)
         self.inputs['rna_moment'] = 20.0*np.ones(3)
         self.inputs['rna_cg'] = np.array([0.0, 0.0, 0.0])
         self.inputs['rna_I'] = np.zeros(6)
-        self.inputs['main_Px'] = 0.0 * np.ones(NSECTIONS)
-        self.inputs['offset_Px'] = 0.0 * np.ones(NSECTIONS)
-        self.inputs['tower_Px'] = 0.0 * np.ones(NSECTIONS)
+        self.inputs['main_Px'] = 0.0 * np.ones(NPTS-1)
+        self.inputs['offset_Px'] = 0.0 * np.ones(NPTS-1)
+        self.inputs['tower_Px'] = 0.0 * np.ones(NPTS-1)
         self.inputs['main_qdyn'] = 0.0 * np.ones(NPTS)
         self.inputs['offset_qdyn'] = 0.0 * np.ones(NPTS)
         self.inputs['tower_qdyn'] = 0.0 * np.ones(NPTS)
@@ -293,7 +318,7 @@ class TestFrame(unittest.TestCase):
         self.discrete_inputs['outer_cross_pontoons'] = False
         self.inputs['main_pontoon_attach_upper'] = 1.0
         self.inputs['main_pontoon_attach_lower'] = 0.0
-        self.inputs['water_density'] = 1e-12
+        self.inputs['rho_water'] = 1e-12
         self.inputs['number_of_mooring_connections'] = 3
         self.inputs['mooring_lines_per_connection'] = 1
         self.inputs['mooring_neutral_load'] = 10.0*np.ones((15,3))
@@ -301,7 +326,7 @@ class TestFrame(unittest.TestCase):
         self.inputs['fairlead_radius'] = 10.1
         self.inputs['fairlead_support_outer_diameter'] = 2*np.sqrt(2.0/np.pi)
         self.inputs['fairlead_support_wall_thickness'] = np.sqrt(2.0/np.pi) - np.sqrt(1.0/np.pi)
-        self.inputs['material_density'] = 20.0
+        self.inputs['rho'] = 20.0
         self.inputs['radius_to_offset_column'] = 1.0
 
         goodRun = False
@@ -311,17 +336,17 @@ class TestFrame(unittest.TestCase):
             self.mytruss.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
             if self.outputs['substructure_mass'] < 1e3:
                 goodRun = True
-            if kiter > 10:
+            if kiter > 3:
                 self.assertTrue(goodRun)
             
-        msub = NSECTIONS + 3*20.0*1.0*0.1
-        mtowrna = NSECTIONS + 1
+        msub = (NPTS-1) + 3*20.0*1.0*0.1
+        mtowrna = (NPTS-1) + 1
         mtot = msub + mtowrna
 
         self.assertAlmostEqual(self.outputs['substructure_mass'], msub, 5)
         self.assertAlmostEqual(self.outputs['structural_mass'], mtot, 4)
         npt.assert_almost_equal(self.outputs['total_force'], 10*3 + np.array([10.0, 10.0, 10-mtot*g]), decimal=1)
-        npt.assert_almost_equal(self.outputs['total_moment'], np.array([20.0, 20.0, 20.0]), decimal=2)
+        npt.assert_almost_equal(self.outputs['total_moment'], np.array([20.0, 20.0, 20.0]), decimal=0)
 
         self.inputs['rna_cg'] = np.array([5.0, 5.0, 5.0])
         goodRun = False
@@ -335,6 +360,23 @@ class TestFrame(unittest.TestCase):
                 self.assertTrue(goodRun)
         npt.assert_almost_equal(self.outputs['total_force'], 3*10 + np.array([10.0, 10.0, 10-mtot*g]), decimal=1)
         #self.assertAlmostEqual(self.outputs['total_moment'][-1], 20.0)
+
+
+class TestModal(unittest.TestCase):
+    def testRunModal(self):
+        inputs, discrete_inputs = getInputs()
+        outputs = {}
+        discrete_outputs = {}
+        outputs['pontoon_stress'] = np.zeros(70)
+
+        newopt = copy.copy(opt)
+        newopt['run_modal'] = True
+        mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
+                                        analysis_options=newopt)
+
+        mytruss.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.assertTrue(True)
+    
         
 class TestSandbox(unittest.TestCase):
     def setUp(self):
@@ -342,7 +384,9 @@ class TestSandbox(unittest.TestCase):
         self.outputs = {}
         self.discrete_outputs = {}
         self.outputs['pontoon_stress'] = np.zeros(70)
-        self.mytruss = sP.FloatingFrame(nFull=NPTS,nFullTow=NPTS)
+        
+        self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
+                                        analysis_options=opt)
 
     def tearDown(self):
         self.mytruss = None
@@ -398,12 +442,13 @@ class TestSandbox(unittest.TestCase):
                                     if self.outputs['substructure_mass'] == 1e30:
                                         print(nc, cap, lap, uap, lrp, urp, ocp)
                                     self.assertNotEqual(self.outputs['substructure_mass'], 1e30)
-                                    time.sleep(1e-3)
+                                    time.sleep(1e-4)
 
         
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestFrame))
+    suite.addTest(unittest.makeSuite(TestModal))
     suite.addTest(unittest.makeSuite(TestSandbox))
     return suite
 
