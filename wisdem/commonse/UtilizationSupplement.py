@@ -864,8 +864,8 @@ def _compute_elastic_stress_limits(R_od, t_wall, h_section, h_web, t_web, w_flan
     n = np.zeros(R_od.shape)
     pressure_failure_peG = np.zeros(R_od.shape)
     for k in range(nsections):
-        peG = lambda x: ( E*lambda_G[k]**4*t_wall[k]/R[k]/(x**2+0.0*lambda_G[k]**2-1)/(x**2 + lambda_G[k]**2)**2 +
-                          E*Ier[k]*(x**2-1)/L_stiffener[k]/Rc[k]**2/R_od[k] )
+        peG = lambda x: ( E[k]*lambda_G[k]**4*t_wall[k]/R[k]/(x**2+0.0*lambda_G[k]**2-1)/(x**2 + lambda_G[k]**2)**2 +
+                          E[k]*Ier[k]*(x**2-1)/L_stiffener[k]/Rc[k]**2/R_od[k] )
         minout = minimize_scalar(peG, bounds=(2.0, 15.0), method='bounded')
         n[k] = minout.x
         pressure_failure_peG[k] = peG(n[k])

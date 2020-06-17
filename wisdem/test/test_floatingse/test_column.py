@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
+import openmdao.api as om
 import wisdem.floatingse.column as column
 from wisdem.commonse.vertical_cylinder import get_nfull
 from wisdem.commonse.utilities import nodal2sectional
@@ -9,6 +10,66 @@ NHEIGHT = 6
 NPTS = get_nfull(NHEIGHT)
 myones = np.ones((NPTS,))
 secones = np.ones((NPTS-1,))
+
+
+class TestInputs(unittest.TestCase):
+    def setUp(self):
+        self.inputs = {}
+        self.outputs = {}
+        self.discrete_inputs = {}
+        self.discrete_outputs = {}
+        
+    def testDiscYAML_1Material(self):
+
+        # Test land based, 1 material
+        self.inputs['s'] = np.linspace(0, 1, 5)
+        self.inputs['layer_thickness'] = 0.25*np.ones((1,4))
+        self.inputs['height'] = 1e2
+        self.inputs['outer_diameter_in'] = 8*np.ones(5)
+        self.discrete_inputs['layer_materials'] = ['steel']
+        self.inputs['E_mat'] = 1e9*np.ones((1,3))
+        self.inputs['G_mat'] = 1e8*np.ones((1,3))
+        self.inputs['sigma_y_mat'] = np.array([1e7])
+        self.inputs['rho_mat'] = np.array([1e4])
+        self.inputs['unit_cost_mat'] = np.array([1e1])
+        self.discrete_inputs['material_names'] = ['steel']
+        myobj = column.DiscretizationYAML(n_height=5, n_layers=1, n_mat=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        
+        npt.assert_equal(self.outputs['section_height'], 25.*np.ones(4))
+        npt.assert_equal(self.outputs['outer_diameter'], self.inputs['outer_diameter_in'])
+        npt.assert_equal(self.outputs['wall_thickness'], 0.25*np.ones(4))
+        npt.assert_equal(self.outputs['E'],             1e9*np.ones(4))
+        npt.assert_equal(self.outputs['G'],             1e8*np.ones(4))
+        npt.assert_equal(self.outputs['sigma_y'],       1e7*np.ones(4))
+        npt.assert_equal(self.outputs['rho'],           1e4*np.ones(4))
+        npt.assert_equal(self.outputs['unit_cost'],     1e1*np.ones(4))
+        
+    def testDiscYAML_2Materials(self):
+        # Test land based, 2 materials
+        self.inputs['s'] = np.linspace(0, 1, 5)
+        self.inputs['layer_thickness'] = np.array([[0.25, 0.25, 0.0, 0.0],[0.0, 0.0, 0.1, 0.1]])
+        self.inputs['height'] = 1e2
+        self.inputs['outer_diameter_in'] = 8*np.ones(5)
+        self.discrete_inputs['layer_materials'] = ['steel','other']
+        self.inputs['E_mat'] = 1e9*np.vstack( (np.ones((1,3)), 2*np.ones((1,3)) ) )
+        self.inputs['G_mat'] = 1e8*np.vstack( (np.ones((1,3)), 2*np.ones((1,3)) ) )
+        self.inputs['sigma_y_mat'] = np.array([1e7, 2e7])
+        self.inputs['rho_mat'] = np.array([1e4, 2e4])
+        self.inputs['unit_cost_mat'] = np.array([1e1, 2e1])
+        self.discrete_inputs['material_names'] = ['steel','other']
+        myobj = column.DiscretizationYAML(n_height=5, n_layers=1, n_mat=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        
+        npt.assert_equal(self.outputs['section_height'], 25.*np.ones(4))
+        npt.assert_equal(self.outputs['outer_diameter'], self.inputs['outer_diameter_in'])
+        npt.assert_equal(self.outputs['wall_thickness'], np.array([0.25, 0.25, 0.1, 0.1]))
+        npt.assert_equal(self.outputs['E'],             1e9*np.array([1,1,2,2]))
+        npt.assert_equal(self.outputs['G'],             1e8*np.array([1,1,2,2]))
+        npt.assert_equal(self.outputs['sigma_y'],       1e7*np.array([1,1,2,2]))
+        npt.assert_equal(self.outputs['rho'],           1e4*np.array([1,1,2,2]))
+        npt.assert_equal(self.outputs['unit_cost'],     1e1*np.array([1,1,2,2]))
+
 
 class TestBulk(unittest.TestCase):
     def setUp(self):
@@ -19,11 +80,11 @@ class TestBulk(unittest.TestCase):
         self.inputs['z_full'] = np.linspace(0, 1, NPTS)
         self.inputs['d_full'] = 10.0 * myones
         self.inputs['t_full'] = 0.05 * secones
-        self.inputs['rho'] = 1e3
+        self.inputs['rho_full'] = 1e3 * secones
         self.inputs['bulkhead_locations'] = np.array([0.0, 1.0, 3.0, 5.0]) / 5.0
         nbulk = len(self.inputs['bulkhead_locations'])
         self.inputs['bulkhead_thickness'] = 0.05 * np.ones(nbulk)
-        self.inputs['unit_cost'] = 1.0
+        self.inputs['unit_cost_full'] = 1.0 * secones
         self.inputs['painting_cost_rate'] = 10.0
         self.inputs['labor_cost_rate'] = 2.0
         self.inputs['shell_mass'] = 500.0*np.ones(NPTS-1)
@@ -57,13 +118,13 @@ class TestBulk(unittest.TestCase):
         A = np.pi*R_i**2
         Kp_exp = 10.0*2*A*ind.sum()
         self.inputs['painting_cost_rate'] = 10.0
-        self.inputs['unit_cost'] = 1.0
+        self.inputs['unit_cost_full'] = 1.0 * secones
         self.inputs['labor_cost_rate'] = 0.0
         self.bulk.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs['bulkhead_cost'], Kp_exp + m_bulk*ind.sum())
         
         self.inputs['painting_cost_rate'] = 0.0
-        self.inputs['unit_cost'] = 0.0
+        self.inputs['unit_cost_full'] = 0.0 * secones
         self.inputs['labor_cost_rate'] = 1.0
         self.bulk.compute(self.inputs, self.outputs)
         self.assertGreater(self.outputs['bulkhead_cost'], 2e3)
@@ -77,12 +138,12 @@ class TestBuoyancyTank(unittest.TestCase):
 
         self.inputs['d_full'] = 10.0*myones
         self.inputs['z_full'] = np.linspace(0, 1, NPTS) - 0.5
-        self.inputs['rho'] = 1e3
+        self.inputs['rho_full'] = 1e3*secones
         
         self.inputs['buoyancy_tank_diameter'] = 12.0
         self.inputs['buoyancy_tank_height'] = 0.25
         self.inputs['buoyancy_tank_location'] = 0.0
-        self.inputs['unit_cost'] = 1.0
+        self.inputs['unit_cost_full'] = 1.0 * secones
         self.inputs['labor_cost_rate'] = 2.0
         self.inputs['painting_cost_rate'] = 10.0
         self.inputs['shell_mass'] = 500.0*np.ones(NPTS-1)
@@ -101,13 +162,13 @@ class TestBuoyancyTank(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['buoyancy_tank_displacement'], V_box)
         #self.assertEqual(self.outputs['buoyancy_tank_I_keel'], 0.0)
         
-        self.inputs['unit_cost'] = 1.0
+        self.inputs['unit_cost_full'] = 1.0 * secones
         self.inputs['labor_cost_rate'] = 0.0
         self.inputs['painting_cost_rate'] = 10.0
         self.box.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs['buoyancy_tank_cost'], m_expect + 10*2*1.5*A_box)
         
-        self.inputs['unit_cost'] = 0.0
+        self.inputs['unit_cost_full'] = 0.0 * secones
         self.inputs['labor_cost_rate'] = 1.0
         self.inputs['painting_cost_rate'] = 0.0
         self.box.compute(self.inputs, self.outputs)
@@ -162,8 +223,8 @@ class TestStiff(unittest.TestCase):
         inputs['w_flange'] = 2.0*secones
         inputs['L_stiffener'] = 0.1*secones
         inputs['L_stiffener'][int(NPTS/2):] = 0.05
-        inputs['rho'] = 1e3
-        inputs['unit_cost'] = 1.0
+        inputs['rho_full'] = 1e3*secones
+        inputs['unit_cost_full'] = 1.0 * secones
         inputs['labor_cost_rate'] = 2.0
         inputs['painting_cost_rate'] = 10.0
         inputs['shell_mass'] = 500.0*np.ones(NPTS-1)
@@ -192,13 +253,13 @@ class TestStiff(unittest.TestCase):
 
         # Test cost
         A = 2*(np.pi*(Rwo**2-Rwi**2) + 2*np.pi*0.5*(Rfi+Rwi)*(0.3+2)) - 2*np.pi*Rwi*0.5
-        inputs['unit_cost'] = 1.0
+        inputs['unit_cost_full'] = 1.0 * secones
         inputs['labor_cost_rate'] = 0.0
         inputs['painting_cost_rate'] = 10.0
         stiff.compute(inputs, outputs)
         self.assertAlmostEqual(outputs['stiffener_cost'], (expect + 10*2*A)*(0.5/0.1 + 0.5/0.05) )
         
-        inputs['unit_cost'] = 0.0
+        inputs['unit_cost_full'] = 0.0 * secones
         inputs['labor_cost_rate'] = 1.0
         inputs['painting_cost_rate'] = 0.0
         stiff.compute(inputs, outputs)
@@ -284,6 +345,11 @@ class TestGeometry(unittest.TestCase):
         inputs['stiffener_spacing'] = np.array([0.1, 0.1])
         inputs['hsig_wave'] = 5.0
         inputs['max_draft'] = 70.0
+        inputs['unit_cost'] = 1.0*np.ones(2)
+        inputs['E'] = 2e9*np.ones(2)
+        inputs['G'] = 2e7*np.ones(2)
+        inputs['rho'] = 7850*np.ones(2)
+        inputs['sigma_y'] = 3e9*np.ones(2)
 
         geom = column.ColumnGeometry(n_height=this_nheight)
 
@@ -325,7 +391,7 @@ class TestProperties(unittest.TestCase):
         self.inputs['hsig_wave'] = 5.0
         self.inputs['max_draft'] = 70.0
         
-        self.inputs['t_full'] = 0.5*secones
+        self.inputs['t_full'] = 0.5*this_sec
         self.inputs['d_full'] = 2*10.0*this_ones
 
         self.inputs['stack_mass_in'] = 0.0
@@ -364,6 +430,12 @@ class TestProperties(unittest.TestCase):
 
         self.inputs['outfitting_cost_rate'] = 1.0
 
+        self.inputs['unit_cost'] = 1.0*np.ones(2)
+        self.inputs['E'] = 2e9*np.ones(2)
+        self.inputs['G'] = 2e7*np.ones(2)
+        self.inputs['rho'] = 7850*np.ones(2)
+        self.inputs['sigma_y'] = 3e9*np.ones(2)
+        
         self.inputs['stiffener_web_thickness'] = np.array([0.5, 0.5])
         self.inputs['stiffener_flange_thickness'] = np.array([0.3, 0.3])
         self.inputs['stiffener_web_height']  = np.array([1.0, 1.0])
@@ -497,9 +569,9 @@ class TestBuckle(unittest.TestCase):
         self.inputs['L_stiffener'] = 5.0 * onesec * ft_to_si
         #self.inputs['section_height'] = 50.0 * onesec0 * ft_to_si
         self.inputs['pressure'] = (64.0*lbperft3_to_si) * g * (60*ft_to_si) * onepts
-        self.inputs['E'] = 29e3 * ksi_to_si
-        self.inputs['nu'] = 0.3
-        self.inputs['yield_stress'] = 50 * ksi_to_si
+        self.inputs['E_full'] = 29e3 * ksi_to_si * onesec
+        self.inputs['nu_full'] = 0.3 * onesec
+        self.inputs['sigma_y_full'] = 50 * ksi_to_si * onesec
         self.inputs['wave_height'] = 0.0 # gives only static pressure
         self.inputs['stack_mass_in'] = 9000 * kip_to_si/g
         self.inputs['section_mass'] = 0.0 * np.ones((NPTS-1,))
@@ -531,24 +603,26 @@ class TestBuckle(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['external_local_api'][1], 1.07, 1)
         self.assertAlmostEqual(self.outputs['external_general_api'][1], 0.59, 1)
 
-import openmdao.api as om
 
 class TestGroup(unittest.TestCase):
     def testAll(self):
         opt = {}
         opt['gamma_f'] = 1.0
         opt['gamma_b'] = 1.0
+        opt['materials'] = {}
+        opt['materials']['n_mat'] = 1
 
         prob = om.Problem()
 
-        prob.model.add_subsystem('col', column.Column(n_height=3, n_bulkhead=3, analysis_options=opt,
-                                                      topLevelFlag=True), promotes=['*'])
+        prob.model.add_subsystem('col', column.Column(n_height=3, n_bulkhead=3, n_layers=1, n_mat=1,
+                                                      analysis_options=opt, topLevelFlag=True), promotes=['*'])
         
         prob.setup()
         prob['freeboard'] = 15.0
-        prob['section_height'] = np.array([20.0, 30.0])
-        prob['outer_diameter'] = 10.0*np.ones(3)
-        prob['wall_thickness'] = 0.05*np.ones(2)
+        prob['height'] = 50.0
+        prob['s'] = np.array([0.0, 0.4, 1.0])
+        prob['outer_diameter_in'] = 10.0*np.ones(3)
+        prob['layer_thickness'] = 0.05*np.ones((1,2))
         prob['stiffener_web_height'] = np.ones(2)
         prob['stiffener_web_thickness'] = 0.5*np.ones(2)
         prob['stiffener_flange_width'] = 2.0*np.ones(2)
@@ -560,7 +634,6 @@ class TestGroup(unittest.TestCase):
         prob['buoyancy_tank_diameter'] = 15.0
         prob['buoyancy_tank_height'] = 0.25
         prob['buoyancy_tank_location'] = 0.3
-        prob['rho'] = 1e4
         prob['rho_water'] = 1e3
         prob['mu_water'] = 1e-5
         prob['water_depth'] = 100.0
@@ -577,7 +650,7 @@ class TestGroup(unittest.TestCase):
         prob['Tsig_wave'] = 10.0
         prob['outfitting_factor'] = 1.05
         prob['ballast_cost_rate'] = 5.0
-        prob['unit_cost'] = 2.0
+        prob['unit_cost_mat'] = np.array([2.0])
         prob['labor_cost_rate'] = 10.0
         prob['painting_cost_rate'] = 20.0
         prob['outfitting_cost_rate'] = 300.0
@@ -590,9 +663,11 @@ class TestGroup(unittest.TestCase):
         prob['cm'] = 0.0
         prob['Uc'] = 0.0
         prob['yaw'] = 0.0
-        prob['E'] = 2e9
-        prob['nu'] = 0.3
-        prob['yield_stress'] = 3e6
+        prob['rho_mat'] = np.array([1e4])
+        prob['E_mat'] = 2e9*np.ones((1,3))
+        nu = 0.3
+        prob['G_mat'] = 0.5*prob['E_mat']/(1 + nu)
+        prob['sigma_y_mat'] = np.array([3e6])
         prob['gamma_f'] = 1.0
         prob['gamma_b'] = 1.0
         prob['max_draft'] = 70.0
@@ -601,6 +676,7 @@ class TestGroup(unittest.TestCase):
         
 def suite():
     suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestInputs))
     suite.addTest(unittest.makeSuite(TestBulk))
     suite.addTest(unittest.makeSuite(TestBuoyancyTank))
     suite.addTest(unittest.makeSuite(TestStiff))
