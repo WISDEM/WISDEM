@@ -247,35 +247,30 @@ class DiscretizationYAML(om.ExplicitComponent):
         mat_names = discrete_inputs['material_names']
 
         # Initialize sectional data
-        myzeros    = np.zeros(n_height - 1)
-        E_param    = myzeros.copy()
-        G_param    = myzeros.copy()
-        sigy_param = myzeros.copy()
-        rho_param  = myzeros.copy()
-        cost_param = myzeros.copy()
+        E_param    = np.zeros(twall.shape)
+        G_param    = np.zeros(twall.shape)
+        sigy_param = np.zeros(twall.shape)
+        rho_param  = np.zeros(n_height - 1)
+        cost_param = np.zeros(n_height - 1)
+
+        # Loop over materials and associate it with its thickness
         for k in range(len(layer_mat)):
             # Get the material name for this layer
             iname = layer_mat[k]
 
             # Get the index into the material list
             imat  = mat_names.index( iname )
-
-            # Thickness of this layer
-            tlay   = twall[k,:]
             
-            # Find sections where this layer is non-zero
-            ilay  = np.where(tlay > 0.0, 1.0, 0.0)
-
-            # For stiffness properties, take the maximum
-            E_param    = np.maximum(E_param, E[imat]*ilay)
-            G_param    = np.maximum(G_param, G[imat]*ilay)
-            sigy_param = np.maximum(sigy_param, sigy[imat]*ilay)
-
-            # For density, take thickness weighted layer
-            rho_param += rho[imat]*tlay
-
+            # For density, take mass weighted layer
+            rho_param += rho[imat] * twall[k,:]
+            
             # For cost, take mass weighted layer
-            cost_param += rho[imat]*tlay*cost[imat]
+            cost_param += rho[imat] * twall[k,:] * cost[imat]
+
+            # Store the value associated with this thickness
+            E_param[k,:] = E[imat]
+            G_param[k,:] = G[imat]
+            sigy_param[k,:] = sigy[imat]
 
         # Mass weighted cost (should really weight by radius too)
         cost_param /= rho_param
@@ -283,12 +278,23 @@ class DiscretizationYAML(om.ExplicitComponent):
         # Thickness weighted density (should really weight by radius too)
         rho_param /= twall.sum(axis=0)
 
-        # Find values at finer grid
+        # Mixtures of material properties: https://en.wikipedia.org/wiki/Rule_of_mixtures
+
+        # Volume fraction
+        vol_frac  = twall / twall.sum(axis=0)[np.newaxis,:]
+
+        # Average of upper and lower bounds
+        E_param    = 0.5*np.sum(vol_frac*E_param,    axis=0) + 0.5 / np.sum(vol_frac/E_param,    axis=0)
+        G_param    = 0.5*np.sum(vol_frac*G_param,    axis=0) + 0.5 / np.sum(vol_frac/G_param,    axis=0)
+        sigy_param = 0.5*np.sum(vol_frac*sigy_param, axis=0) + 0.5 / np.sum(vol_frac/sigy_param, axis=0)
+        
+        # Store values
         outputs['E']   = E_param
         outputs['G']   = G_param
         outputs['rho'] = rho_param
         outputs['sigma_y']   = sigy_param
         outputs['unit_cost'] = cost_param
+
 
         
 class MonopileFoundation(om.ExplicitComponent):
