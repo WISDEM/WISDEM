@@ -223,8 +223,6 @@ class ColumnGeometry(om.ExplicitComponent):
         z-coordinates of section nodes (length = nsection+1)
     z_param_in : numpy array[n_height], [m]
         z-coordinates of section nodes (length = nsection+1)
-    section_center_of_mass : numpy array[n_full-1], [m]
-        z position of center of mass of each can in the cylinder
     stiffener_web_height : numpy array[n_sect], [m]
         height of stiffener web (base of T) within each section bottom to top
         (length = nsection)
@@ -259,8 +257,6 @@ class ColumnGeometry(om.ExplicitComponent):
         z-coordinates of section nodes (length = nsection+1)
     draft : float, [m]
         Column draft (length of body under water)
-    z_section : numpy array[n_full-1], [m]
-        z-coordinates of section centers of mass (length = nsection)
     h_web : numpy array[n_full-1], [m]
         height of stiffener web (base of T) within each section bottom to top
     t_web : numpy array[n_full-1], [m]
@@ -305,7 +301,6 @@ class ColumnGeometry(om.ExplicitComponent):
         self.add_input('max_draft', 0.0, units='m')
         self.add_input('z_full_in', np.zeros(n_full), units='m')
         self.add_input('z_param_in', np.zeros(n_height), units='m')
-        self.add_input('section_center_of_mass', np.zeros(n_full-1), units='m')
         self.add_input('stiffener_web_height', np.zeros(n_sect), units='m')
         self.add_input('stiffener_web_thickness', np.zeros(n_sect), units='m')
         self.add_input('stiffener_flange_width', np.zeros(n_sect), units='m')
@@ -320,7 +315,6 @@ class ColumnGeometry(om.ExplicitComponent):
         self.add_output('z_full', np.zeros(n_full), units='m')
         self.add_output('z_param', np.zeros(n_height), units='m')
         self.add_output('draft', 0.0, units='m')
-        self.add_output('z_section', np.zeros(n_full-1), units='m')
         self.add_output('h_web', np.zeros(n_full-1), units='m')
         self.add_output('t_web', np.zeros(n_full-1), units='m')
         self.add_output('w_flange', np.zeros(n_full-1), units='m')
@@ -346,11 +340,9 @@ class ColumnGeometry(om.ExplicitComponent):
         draft     = inputs['z_param_in'][-1] - freeboard
         z_full    = inputs['z_full_in'] - draft 
         z_param   = inputs['z_param_in'] - draft 
-        z_section = inputs['section_center_of_mass'] - draft 
         outputs['draft']     = draft
         outputs['z_full']    = z_full
         outputs['z_param']   = z_param
-        outputs['z_section'] = z_section
 
         # Create constraint output that draft is less than water depth
         outputs['draft_margin'] = draft / inputs['max_draft']
@@ -359,6 +351,7 @@ class ColumnGeometry(om.ExplicitComponent):
         outputs['wave_height_freeboard_ratio'] = inputs['hsig_wave'] / np.abs(freeboard)
 
         # Material properties
+        z_section,_ = nodal2sectional( z_full )
         outputs['rho_full']     = sectionalInterp(z_section, z_param, inputs['rho'])
         outputs['E_full']       = sectionalInterp(z_section, z_param, inputs['E'])
         outputs['G_full']       = sectionalInterp(z_section, z_param, inputs['G'])
@@ -406,6 +399,8 @@ class BulkheadProperties(om.ExplicitComponent):
     -------
     bulkhead_mass : numpy array[n_full-1], [kg]
         mass of column bulkheads
+    bulkhead_z_cg : float, [m]
+        z-coordinate of center of gravity for all bulkheads
     bulkhead_cost : float, [USD]
         cost of column bulkheads
     bulkhead_I_keel : numpy array[6], [kg*m**2]
@@ -437,6 +432,7 @@ class BulkheadProperties(om.ExplicitComponent):
         self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
 
         self.add_output('bulkhead_mass', np.zeros(n_full-1), units='kg')
+        self.add_output('bulkhead_z_cg', 0.0, units='m')
         self.add_output('bulkhead_cost', 0.0, units='USD')
         self.add_output('bulkhead_I_keel', np.zeros(6), units='kg*m**2')
 
@@ -460,6 +456,7 @@ class BulkheadProperties(om.ExplicitComponent):
         
         # Compute bulkhead mass
         m_bulk = rho * np.pi * R_id_bulk**2 * t_bulk
+        z_cg   = 0.0 if m_bulk.sum() == 0.0 else np.dot(z_bulk, m_bulk) / m_bulk.sum()
 
         # Find sectional index for each bulkhead and assign appropriate mass
         m_bulk_sec = np.zeros(z_full.size-1)
@@ -509,6 +506,7 @@ class BulkheadProperties(om.ExplicitComponent):
         # Store results
         outputs['bulkhead_I_keel'] = unassembleI(I_keel)
         outputs['bulkhead_mass'] = m_bulk_sec
+        outputs['bulkhead_z_cg'] = z_cg
         outputs['bulkhead_cost'] = c_bulk
 
     
@@ -1132,6 +1130,7 @@ class ColumnProperties(om.ExplicitComponent):
         self.add_input('ballast_mass', np.zeros(n_full-1), units='kg')
         
         self.add_input('buoyancy_tank_cg', 0.0, units='m')
+        self.add_input('bulkhead_z_cg', 0.0, units='m')
         self.add_input('ballast_z_cg', 0.0, units='m')
         self.add_input('outfitting_factor', 0.0)
         
@@ -1204,6 +1203,7 @@ class ColumnProperties(om.ExplicitComponent):
         z_section    = inputs['z_section']
         z_box        = inputs['buoyancy_tank_cg']
         z_ballast    = inputs['ballast_z_cg']
+        z_bulkhead   = inputs['bulkhead_z_cg']
         m_shell      = inputs['shell_mass']
         m_stiffener  = inputs['stiffener_mass']
         m_bulkhead   = inputs['bulkhead_mass']
@@ -1224,12 +1224,13 @@ class ColumnProperties(om.ExplicitComponent):
         
         # Find mass of all of the sub-components of the column
         # Masses assumed to be focused at section centroids
-        m_column += (m_shell + m_stiffener + m_bulkhead).sum()
-        z_cg     += np.dot(m_shell+m_stiffener+m_bulkhead, z_section)
+        m_column += (m_shell + m_stiffener).sum()
+        z_cg     += np.dot(m_shell+m_stiffener, z_section)
 
         # Mass with variable location
-        m_column += m_box
-        z_cg     += m_box*z_box
+        m_column += m_box + m_bulkhead.sum()
+        z_cg     += m_box*z_box + m_bulkhead.sum()*z_bulkhead
+
         z_cg     /= m_column
 
         # Now calculate outfitting mass, evenly distributed so cg doesn't change
@@ -1248,8 +1249,7 @@ class ColumnProperties(om.ExplicitComponent):
         self.ibox = ibox
 
         # Now do tally by section
-        m_sections         = (m_shell + m_stiffener + m_bulkhead) + m_ballast
-        m_sections        += m_outfit / m_shell.size
+        m_sections         = (m_shell + m_stiffener + m_bulkhead) + m_ballast +  m_outfit/m_shell.size
         m_sections[ibox]  += m_box
 
         # Add up moments of inertia at keel, make sure to scale mass appropriately
@@ -1618,8 +1618,7 @@ class Column(om.Group):
         self.add_subsystem('col_geom', ColumnGeometry(n_height=n_height), promotes=['*'])
 
         self.add_subsystem('cyl_mass', CylinderMass(nPoints=n_full), promotes=['z_full','d_full','t_full',
-                                                                               'labor_cost_rate','painting_cost_rate',
-                                                                               'section_center_of_mass'])
+                                                                               'labor_cost_rate','painting_cost_rate'])
 
         self.connect('rho_full','cyl_mass.rho')
         self.connect('unit_cost_full','cyl_mass.material_cost_rate')
@@ -1652,6 +1651,7 @@ class Column(om.Group):
         self.connect('cyl_mass.mass', 'shell_mass')
         self.connect('cyl_mass.cost', 'shell_cost')
         self.connect('cyl_mass.I_base', 'shell_I_keel')
+        self.connect('cyl_mass.section_center_of_mass', 'z_section')
         
         self.connect('column_total_mass', 'section_mass')
 

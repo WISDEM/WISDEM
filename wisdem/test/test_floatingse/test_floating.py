@@ -9,7 +9,7 @@ npts = 5
 nsection = npts - 1
 
 class TestOC3Mass(unittest.TestCase):
-    def testMassProperties(self):
+    def testMassPropertiesSpar(self):
     
         opt = {}
         opt['platform'] = {}
@@ -17,9 +17,11 @@ class TestOC3Mass(unittest.TestCase):
         opt['platform']['columns']['main'] = {}
         opt['platform']['columns']['offset'] = {}
         opt['platform']['columns']['main']['n_height'] = npts
-        opt['platform']['columns']['offset']['n_height'] = npts
+        opt['platform']['columns']['main']['n_layers'] = 1
         opt['platform']['columns']['main']['n_bulkhead'] = 4
-        opt['platform']['columns']['offset']['n_bulkhead'] = 2
+        opt['platform']['columns']['offset']['n_height'] = npts
+        opt['platform']['columns']['offset']['n_layers'] = 1
+        opt['platform']['columns']['offset']['n_bulkhead'] = 4
         opt['platform']['tower'] = {}
         opt['platform']['tower']['buckling_length'] = 30.0
         opt['platform']['frame3dd']            = {}
@@ -31,11 +33,11 @@ class TestOC3Mass(unittest.TestCase):
         opt['platform']['frame3dd']['lump']    = 0
         opt['platform']['frame3dd']['tol']     = 1e-6
         #opt['platform']['frame3dd']['shift']   = 0.0
-        opt['platform']['gamma_f'] = 1.0  # Safety factor on loads
-        opt['platform']['gamma_m'] = 1.0   # Safety factor on materials
+        opt['platform']['gamma_f'] = 1.35  # Safety factor on loads
+        opt['platform']['gamma_m'] = 1.3   # Safety factor on materials
         opt['platform']['gamma_n'] = 1.0   # Safety factor on consequence of failure
-        opt['platform']['gamma_b'] = 1.0   # Safety factor on buckling
-        opt['platform']['gamma_fatigue'] = 1.0 # Not used
+        opt['platform']['gamma_b'] = 1.1   # Safety factor on buckling
+        opt['platform']['gamma_fatigue'] = 1.755 # Not used
         opt['platform']['run_modal'] = True # Not used
 
         opt['tower'] = {}
@@ -65,11 +67,10 @@ class TestOC3Mass(unittest.TestCase):
         prob['mu_water']  = 1.08e-3 # Viscosity of water [kg/m/s]
 
         # Material properties
-        prob['rho'] = 7850.0          # Steel [kg/m^3]
-        prob['E']                = 200e9           # Young's modulus [N/m^2]
-        prob['G']                = 79.3e9          # Shear modulus [N/m^2]
-        prob['yield_stress']     = 3.45e8          # Elastic yield stress [N/m^2]
-        prob['nu']               = 0.26            # Poisson's ratio
+        prob['rho_mat']     = np.array([7850.0])          # Steel [kg/m^3]
+        prob['E_mat']       = 200e9*np.ones((1,3))           # Young's modulus [N/m^2]
+        prob['G_mat']       = 79.3e9*np.ones((1,3))          # Shear modulus [N/m^2]
+        prob['sigma_y_mat'] = np.array([3.45e8])          # Elastic yield stress [N/m^2]
         prob['permanent_ballast_density'] = 5000.0 # [kg/m^3]
 
         # Mass and cost scaling factors
@@ -84,11 +85,15 @@ class TestOC3Mass(unittest.TestCase):
         # Column geometry
         prob['main.permanent_ballast_height'] = 0.0 # Height above keel for permanent ballast [m]
         prob['main_freeboard']                = 10.0 # Height extension above waterline [m]
-        prob['main.section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
-        prob['main.outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
-        prob['main.wall_thickness'] = 0.05 * np.ones(nsection)               # Shell thickness at each section node (linear lofting between) [m]
+
+        prob['main.height'] = np.sum([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
+        prob['main.s'] = np.cumsum([0.0, 49.0, 59.0, 8.0, 14.0]) / prob['main.height']
+        prob['main.outer_diameter_in'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
+        prob['main.layer_thickness'] = 0.05 * np.ones((1,nsection))               # Shell thickness at each section node (linear lofting between) [m]
+        
         prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Locations/thickness of internal bulkheads at section interfaces [m]
-        prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.9, 1.0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+        prob['main.bulkhead_locations'] = np.array([0.0, 0.37692308, 0.89230769, 1.0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+
         prob['main.buoyancy_tank_diameter'] = 0.0
         prob['main.buoyancy_tank_height'] = 0.0
 
@@ -127,9 +132,10 @@ class TestOC3Mass(unittest.TestCase):
 
         # Other variables to avoid divide by zeros, even though it won't matter
         prob['radius_to_offset_column'] = 15.0
-        prob['off.section_height'] = 1.0 * np.ones(nsection)
-        prob['off.outer_diameter'] = 5.0 * np.ones(nsection+1)
-        prob['off.wall_thickness'] = 0.1 * np.ones(nsection)
+        prob['off.height'] = 1.0
+        prob['off.s'] = np.linspace(0,1,nsection+1)
+        prob['off.outer_diameter_in'] = 5.0 * np.ones(nsection+1)
+        prob['off.layer_thickness'] = 0.1 * np.ones((1,nsection))
         prob['off.permanent_ballast_height'] = 0.1
         prob['off.stiffener_web_height'] = 0.1 * np.ones(nsection)
         prob['off.stiffener_web_thickness'] =  0.1 * np.ones(nsection)
@@ -156,11 +162,15 @@ class TestOC3Mass(unittest.TestCase):
 
         # Porperties of turbine tower
         nTower = prob.model.options['analysis_options']['tower']['n_height']-1
-        prob['tower_height'] = prob['hub_height']              = 77.6                              # Length from tower main to top (not including freeboard) [m]
-        prob['tower_s'] = np.linspace(0.0, 1.0, nTower+1)
-        prob['tower_outer_diameter_in']    = np.linspace(6.5, 3.87, nTower+1) # Diameter at each tower section node (linear lofting between) [m]
-        prob['tower_layer_thickness']    = np.linspace(0.027, 0.019, nTower).reshape((1,nTower)) # Diameter at each tower section node (linear lofting between) [m]
-        prob['tower_outfitting_factor'] = 1.07                              # Scaling for unaccounted tower mass in outfitting
+        prob['tower_height']            = prob['hub_height'] = 77.6
+        prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
+        prob['tower_outer_diameter_in'] = np.linspace(6.5, 3.87, nTower+1)
+        prob['tower_layer_thickness']   = np.linspace(0.027, 0.019, nTower).reshape((1,nTower))
+        prob['tower_outfitting_factor'] = 1.07
+
+        # Materials
+        prob['material_names'] = ['steel']
+        prob['main.layer_materials'] = prob['off.layer_materials'] = prob['tow.tower_layer_materials'] = ['steel']
 
         # Properties of rotor-nacelle-assembly (RNA)
         prob['rna_mass']   = 350e3 # Mass [kg]

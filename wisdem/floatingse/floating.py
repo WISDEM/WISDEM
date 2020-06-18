@@ -247,10 +247,10 @@ def commonVars(prob, nsection):
     prob['mu_water']  = 1.08e-3 # Viscosity of water [kg/m/s]
     
     # Material properties
-    prob['rho_mat'] = np.array([7850.0])          # Steel [kg/m^3]
-    prob['E_mat']                = 200e9*np.ones((1,3))           # Young's modulus [N/m^2]
-    prob['G_mat']                = 79.3e9*np.ones((1,3))          # Shear modulus [N/m^2]
-    prob['sigma_y_mat']     = np.array([3.45e8])          # Elastic yield stress [N/m^2]
+    prob['rho_mat']     = np.array([7850.0])          # Steel [kg/m^3]
+    prob['E_mat']       = 200e9*np.ones((1,3))           # Young's modulus [N/m^2]
+    prob['G_mat']       = 79.3e9*np.ones((1,3))          # Shear modulus [N/m^2]
+    prob['sigma_y_mat'] = np.array([3.45e8])          # Elastic yield stress [N/m^2]
     prob['permanent_ballast_density'] = 4492.0 # [kg/m^3]
 
     # Mass and cost scaling factors
@@ -557,7 +557,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1 and sys.argv[1].lower() in ['spar','column','col','oc3']:
-        semiExample()
-    else:
         sparExample()
+    else:
+        semiExample()
         

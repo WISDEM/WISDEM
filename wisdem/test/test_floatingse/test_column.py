@@ -335,7 +335,6 @@ class TestGeometry(unittest.TestCase):
         inputs['z_full_in'] = np.linspace(0, 50.0, this_npts)
         inputs['z_param_in'] = np.array([0.0, 20.0, 50.0])
         inputs['section_height'] = np.array([20.0, 30.0])
-        inputs['section_center_of_mass'],_ = nodal2sectional( inputs['z_full_in'] )
         inputs['freeboard'] = 15.0
         inputs['water_depth'] = 100.0
         inputs['stiffener_web_thickness'] = np.array([0.5, 0.5])
@@ -361,7 +360,6 @@ class TestGeometry(unittest.TestCase):
         self.assertEqual(outputs['draft_margin'], 0.5)
         npt.assert_equal(outputs['z_param'], np.array([-35.0, -15.0, 15.0]) )
         npt.assert_equal(outputs['z_full'], inputs['z_full_in']-35)
-        npt.assert_equal(outputs['z_section'], inputs['section_center_of_mass']-35)
         npt.assert_equal(outputs['t_web'], 0.5*this_ones)
         npt.assert_equal(outputs['t_flange'], 0.3*this_ones)
         npt.assert_equal(outputs['h_web'], 1.0*this_ones)
@@ -382,9 +380,10 @@ class TestProperties(unittest.TestCase):
         this_sec  = np.ones(this_npts-1)
         this_ones = np.ones(this_npts)
         self.inputs['z_full_in'] = np.linspace(0, 50.0, this_npts)
+        self.inputs['z_section'],_ = nodal2sectional( self.inputs['z_full_in'] )
+        
         self.inputs['z_param_in'] = np.array([0.0, 20.0, 50.0])
         self.inputs['section_height'] = np.array([20.0, 30.0])
-        self.inputs['section_center_of_mass'],_ = nodal2sectional( self.inputs['z_full_in'] )
         self.inputs['freeboard'] = 15.0
         self.inputs['fairlead'] = 10.0
         self.inputs['water_depth'] = 100.0
@@ -406,6 +405,7 @@ class TestProperties(unittest.TestCase):
         
         self.inputs['rho_water'] = 1e3
         self.inputs['bulkhead_mass'] = 10.0*this_sec
+        self.inputs['bulkhead_z_cg'] = -10.0
         self.inputs['shell_mass'] = 500.0*this_sec
         self.inputs['stiffener_mass'] = 100.0*this_sec
         self.inputs['ballast_mass'] = 20.0*this_sec
@@ -452,12 +452,14 @@ class TestProperties(unittest.TestCase):
         self.geom.compute(self.inputs, tempUnknowns)
         for pairs in tempUnknowns.items():
             self.inputs[pairs[0]] = pairs[1]
+        self.inputs['z_section'],_ = nodal2sectional( self.inputs['z_full'] )
 
     def testColumnMassCG(self):
         self.mycolumn.compute_column_mass_cg(self.inputs, self.outputs)
         ibox = self.mycolumn.ibox
         
         bulk  = self.inputs['bulkhead_mass']
+        bulkcg = self.inputs['bulkhead_z_cg']
         stiff = self.inputs['stiffener_mass']
         shell = self.inputs['shell_mass']
         box   = self.inputs['buoyancy_tank_mass']
@@ -474,7 +476,7 @@ class TestProperties(unittest.TestCase):
         mysec += m_ballast
         mysec += (m_out/len(mysec))
 
-        mycg  = (box*boxcg + np.dot(stiff+shell+bulk, self.inputs['z_section']))/m_column
+        mycg  = (box*boxcg + bulk.sum()*bulkcg + np.dot(stiff+shell, self.inputs['z_section']))/m_column
         cg_system = ((m_column+m_out)*mycg + m_ballast.sum()*cg_ballast) / m_expect
 
         Iones = np.r_[np.ones(3), np.zeros(3)]
@@ -611,13 +613,14 @@ class TestGroup(unittest.TestCase):
         opt['gamma_b'] = 1.0
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
-        opt['n_height'] = 3
-        opt['n_bulkhead'] = 3
-        opt['n_layers'] = 1
+        colopt = {}
+        colopt['n_height'] = 3
+        colopt['n_bulkhead'] = 3
+        colopt['n_layers'] = 1
 
         prob = om.Problem()
 
-        prob.model.add_subsystem('col', column.Column(n_mat=1, analysis_options=opt, topLevelFlag=True), promotes=['*'])
+        prob.model.add_subsystem('col', column.Column(column_options=colopt, analysis_options=opt, n_mat=1, topLevelFlag=True), promotes=['*'])
         
         prob.setup()
         prob['freeboard'] = 15.0
@@ -675,6 +678,7 @@ class TestGroup(unittest.TestCase):
         prob['max_draft'] = 70.0
         
         prob.run_model()
+        self.assertTrue(True)
         
 def suite():
     suite = unittest.TestSuite()
