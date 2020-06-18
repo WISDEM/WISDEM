@@ -611,11 +611,13 @@ class TestGroup(unittest.TestCase):
         opt['gamma_b'] = 1.0
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
+        opt['n_height'] = 3
+        opt['n_bulkhead'] = 3
+        opt['n_layers'] = 1
 
         prob = om.Problem()
 
-        prob.model.add_subsystem('col', column.Column(n_height=3, n_bulkhead=3, n_layers=1, n_mat=1,
-                                                      analysis_options=opt, topLevelFlag=True), promotes=['*'])
+        prob.model.add_subsystem('col', column.Column(n_mat=1, analysis_options=opt, topLevelFlag=True), promotes=['*'])
         
         prob.setup()
         prob['freeboard'] = 15.0

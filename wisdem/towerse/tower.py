@@ -359,6 +359,12 @@ class TowerDiscretization(om.ExplicitComponent):
         Unit costs of the materials along the tower sections.
     outfitting_factor : numpy array[n_height-1]
         Multiplier that accounts for secondary structure mass inside of cylinder
+    E : numpy array[n_height-1], [Pa]
+        Isotropic Youngs modulus of the materials along the tower sections.
+    G : numpy array[n_height-1], [Pa]
+        Isotropic shear modulus of the materials along the tower sections.
+    sigma_y : numpy array[n_height-1], [Pa]
+        Isotropic yield strength of the materials along the tower sections.
     
     Returns
     -------
@@ -370,6 +376,12 @@ class TowerDiscretization(om.ExplicitComponent):
         Unit costs of the materials along the tower sections.
     outfitting_full : numpy array[nFull-1]
         Multiplier that accounts for secondary structure mass inside of cylinder
+    E_full : numpy array[nFull-1], [Pa]
+        Isotropic Youngs modulus of the materials along the tower sections.
+    G_full : numpy array[nFull-1], [Pa]
+        Isotropic shear modulus of the materials along the tower sections.
+    sigma_y_full : numpy array[nFull-1], [Pa]
+        Isotropic yield strength of the materials along the tower sections.
     
     """
     def initialize(self):
@@ -385,11 +397,17 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_input('rho', val=np.zeros(n_height-1), units='kg/m**3')
         self.add_input('unit_cost', val=np.zeros(n_height-1), units='USD/kg')
         self.add_input('outfitting_factor', val=np.zeros(n_height-1))
+        self.add_input('E', val=np.zeros(n_height-1), units='Pa')
+        self.add_input('G', val=np.zeros(n_height-1), units='Pa')
+        self.add_input('sigma_y', val=np.zeros(n_height-1), units='Pa')
 
         self.add_output('height_constraint', val=0.0, units='m')
         self.add_output('rho_full', val=np.zeros(nFull-1), units='kg/m**3')
         self.add_output('unit_cost_full', val=np.zeros(nFull-1), units='USD/kg')
         self.add_output('outfitting_full', val=np.zeros(nFull-1))
+        self.add_output('E_full', val=np.zeros(nFull-1), units='Pa')
+        self.add_output('G_full', val=np.zeros(nFull-1), units='Pa')
+        self.add_output('sigma_y_full', val=np.zeros(nFull-1), units='Pa')
         
         self.declare_partials('height_constraint', ['hub_height', 'z_param'], method='fd')
         self.declare_partials('outfitting_full', ['outfitting_factor'], method='fd')
@@ -405,6 +423,9 @@ class TowerDiscretization(om.ExplicitComponent):
         outputs['rho_full']        = sectionalInterp(z_section, z_param, inputs['rho'])
         outputs['outfitting_full'] = sectionalInterp(z_section, z_param, inputs['outfitting_factor'])
         outputs['unit_cost_full']  = sectionalInterp(z_section, z_param, inputs['unit_cost'])
+        outputs['E_full']          = sectionalInterp(z_section, z_param, inputs['E'])
+        outputs['G_full']          = sectionalInterp(z_section, z_param, inputs['G'])
+        outputs['sigma_y_full']    = sectionalInterp(z_section, z_param, inputs['sigma_y'])
 
     #def compute_partials(self, inputs, J):
     #    n_height = self.options['n_height']
@@ -635,8 +656,6 @@ class TowerPreFrame(om.ExplicitComponent):
         location along tower. start at bottom and go to top
     d_full : numpy array[nFull], [m]
         diameter along tower
-    z_param : numpy array[n_height], [m]
-        parameterized locations along tower, linear lofting between
     mass : float, [kg]
         added mass
     mI : numpy array[6], [kg*m**2]
@@ -657,21 +676,9 @@ class TowerPreFrame(om.ExplicitComponent):
         rna moment
     k_monopile : numpy array[6], [N/m]
         Stiffness BCs for ocean soil. Only used if monoflag inputis True
-    E : numpy array[n_height-1], [Pa]
-        Isotropic Youngs modulus of the materials along the tower sections.
-    G : numpy array[n_height-1], [Pa]
-        Isotropic shear modulus of the materials along the tower sections.
-    sigma_y : numpy array[n_height-1], [Pa]
-        Isotropic yield strength of the materials along the tower sections.
     
     Returns
     -------
-    E_full : numpy array[nFull-1], [Pa]
-        Isotropic Youngs modulus of the materials along the tower sections.
-    G_full : numpy array[nFull-1], [Pa]
-        Isotropic shear modulus of the materials along the tower sections.
-    sigma_y_full : numpy array[nFull-1], [Pa]
-        Isotropic yield strength of the materials along the tower sections.
     kidx : numpy array[np.int_]
         indices of z where external stiffness reactions should be applied.
     kx : numpy array[nK], [N/m]
@@ -734,7 +741,6 @@ class TowerPreFrame(om.ExplicitComponent):
         
         self.add_input('z_full', np.zeros(nFull), units='m')
         self.add_input('d_full', np.zeros(nFull), units='m')
-        self.add_input('z_param', np.zeros(n_height), units='m')
         
         # extra mass
         self.add_input('mass', 0.0, units='kg')
@@ -751,16 +757,7 @@ class TowerPreFrame(om.ExplicitComponent):
         
         # Monopile handling
         self.add_input('k_monopile', np.zeros(6), units='N/m')
-        
-        # Material property discretization
-        self.add_input('E', val=np.zeros(n_height-1), units='Pa')
-        self.add_input('G', val=np.zeros(n_height-1), units='Pa')
-        self.add_input('sigma_y', val=np.zeros(n_height-1), units='Pa')
 
-        self.add_output('E_full', val=np.zeros(nFull-1), units='Pa')
-        self.add_output('G_full', val=np.zeros(nFull-1), units='Pa')
-        self.add_output('sigma_y_full', val=np.zeros(nFull-1), units='Pa')
-        
         # spring reaction data.
         nK = 1
         self.add_output('kidx', np.zeros(nK, dtype=np.int_))
@@ -822,7 +819,6 @@ class TowerPreFrame(om.ExplicitComponent):
         self.declare_partials('mrhoy', ['mrho'], method='fd')
         self.declare_partials('mrhoz', ['mrho'], method='fd')
         self.declare_partials('plidx', [], method='fd')
-        self.declare_partials('sigma_y_full', ['sigma_y'], method='fd')
         
     def compute(self, inputs, outputs):
         n_height = self.options['n_height']
@@ -877,13 +873,6 @@ class TowerPreFrame(om.ExplicitComponent):
             outputs['ktx']  = np.array([ RIGID ])
             outputs['kty']  = np.array([ RIGID ])
             outputs['ktz']  = np.array([ RIGID ])
-
-        # Material property discretization
-        z_param   = inputs['z_param']
-        z_section = 0.5*(z[:-1] + z[1:])
-        outputs['E_full']          = sectionalInterp(z_section, z_param, inputs['E'])
-        outputs['G_full']          = sectionalInterp(z_section, z_param, inputs['G'])
-        outputs['sigma_y_full']    = sectionalInterp(z_section, z_param, inputs['sigma_y'])
 
         
 class TowerPostFrame(om.ExplicitComponent):
@@ -1330,7 +1319,7 @@ class TowerSE(om.Group):
             self.add_subsystem('pre'+lc, TowerPreFrame(n_height=n_height, monopile=monopile), promotes=['transition_piece_mass',
                                                                                                         'transition_piece_height',
                                                                                                         'gravity_foundation_mass',
-                                                                                                        'E','G','sigma_y','z_full','d_full'])
+                                                                                                        'z_full','d_full'])
             self.add_subsystem('tower'+lc, CylinderFrame3DD(npts=nFull, nK=1, nMass=3, nPL=1,
                                                             frame3dd_opt=frame3dd_opt, buckling_length=toweropt['buckling_length']))
             self.add_subsystem('post'+lc, TowerPostFrame(n_height=n_height, analysis_options=toweropt), promotes=['life','z_full','d_full','t_full'])

@@ -1529,18 +1529,18 @@ class ColumnBuckling(om.ExplicitComponent):
 class Column(om.Group):
 
     def initialize(self):
-        self.options.declare('n_height')
-        self.options.declare('n_bulkhead')
-        self.options.declare('n_layers')
         self.options.declare('n_mat')
+        self.options.declare('column_options')
         self.options.declare('analysis_options')
         self.options.declare('topLevelFlag', default=False)
         
     def setup(self):
-        n_bulk    = self.options['n_bulkhead']
+        opt = self.options['analysis_options']
+        colopt = self.options['column_options']
+        n_layers  = colopt['n_layers']
+        n_height  = colopt['n_height']
+        n_bulk    = colopt['n_bulkhead']
         n_mat     = self.options['n_mat']
-        n_layers  = self.options['n_layers']
-        n_height  = self.options['n_height']
         n_sect    = n_height - 1
         n_full    = get_nfull(n_height)
         topLevelFlag = self.options['topLevelFlag']
@@ -1608,9 +1608,7 @@ class Column(om.Group):
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
-        self.add_subsystem('yaml', DiscretizationYAML(n_height=n_height, n_layers=n_layers,
-                                                      n_mat=self.options['analysis_options']['materials']['n_mat']),
-                           promotes=['*'])
+        self.add_subsystem('yaml', DiscretizationYAML(n_height=n_height, n_layers=n_layers, n_mat=n_mat), promotes=['*'])
             
         self.add_subsystem('gc', GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=['max_taper','min_d_to_t','manufacturability','weldability'])
 
@@ -1622,10 +1620,11 @@ class Column(om.Group):
         self.add_subsystem('cyl_mass', CylinderMass(nPoints=n_full), promotes=['z_full','d_full','t_full',
                                                                                'labor_cost_rate','painting_cost_rate',
                                                                                'section_center_of_mass'])
+
         self.connect('rho_full','cyl_mass.rho')
         self.connect('unit_cost_full','cyl_mass.material_cost_rate')
 
-        self.add_subsystem('bulk', BulkheadProperties(n_height=n_height, n_bulkhead=self.options['n_bulkhead']), promotes=['*'])
+        self.add_subsystem('bulk', BulkheadProperties(n_height=n_height, n_bulkhead=n_bulk), promotes=['*'])
 
         self.add_subsystem('stiff', StiffenerProperties(n_height=n_height), promotes=['*'])
 
@@ -1641,8 +1640,7 @@ class Column(om.Group):
         self.add_subsystem('waveLoads', CylinderWaveDrag(nPoints=n_full), promotes=['cm','cd_usr','beta_wave','rho_water','mu_water'])
         self.add_subsystem('distLoads', AeroHydroLoads(nPoints=n_full), promotes=['Px','Py','Pz','qdyn','yaw'])
 
-        self.add_subsystem('buck', ColumnBuckling(n_height=n_height,
-                                                  analysis_options=self.options['analysis_options']), promotes=['*'])
+        self.add_subsystem('buck', ColumnBuckling(n_height=n_height, analysis_options=opt), promotes=['*'])
 
         self.connect('outer_diameter', ['diameter', 'gc.d'])
         self.connect('wall_thickness', 'gc.t')
