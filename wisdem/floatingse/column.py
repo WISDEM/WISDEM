@@ -535,7 +535,7 @@ class BuoyancyTankProperties(om.ExplicitComponent):
         Radius of heave plate at bottom of column
     buoyancy_tank_height : float, [m]
         Radius of heave plate at bottom of column
-    buoyancy_tank_location : float, [m]
+    buoyancy_tank_location : float
         Radius of heave plate at bottom of column
     
     Returns
@@ -569,7 +569,7 @@ class BuoyancyTankProperties(om.ExplicitComponent):
         self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
         self.add_input('buoyancy_tank_diameter', 0.0, units='m')
         self.add_input('buoyancy_tank_height', 0.0, units='m')
-        self.add_input('buoyancy_tank_location', 0.0, units='m')
+        self.add_input('buoyancy_tank_location', 0.0)
 
         self.add_output('buoyancy_tank_mass', 0.0, units='kg')
         self.add_output('buoyancy_tank_cost', 0.0, units='USD')
@@ -1556,7 +1556,7 @@ class Column(om.Group):
         ivc.add_output('permanent_ballast_height', 0.0, units='m')
         ivc.add_output('buoyancy_tank_diameter', 0.0, units='m')
         ivc.add_output('buoyancy_tank_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_location', 0.0, units='m')
+        ivc.add_output('buoyancy_tank_location', 0.0)
         ivc.add_output('foundation_height', 0.0, units='m')
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
