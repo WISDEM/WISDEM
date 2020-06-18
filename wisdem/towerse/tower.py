@@ -792,7 +792,6 @@ class TowerPreFrame(om.ExplicitComponent):
         self.add_output('Myy', np.zeros(nPL), units='N*m')
         self.add_output('Mzz', np.zeros(nPL), units='N*m')
 
-        self.declare_partials('E_full', [], method='fd')
         self.declare_partials('Fx', ['rna_F'], method='fd')
         self.declare_partials('Fy', ['rna_F'], method='fd')
         self.declare_partials('Fz', ['rna_F'], method='fd')
@@ -1322,7 +1321,8 @@ class TowerSE(om.Group):
                                                                                                         'z_full','d_full'])
             self.add_subsystem('tower'+lc, CylinderFrame3DD(npts=nFull, nK=1, nMass=3, nPL=1,
                                                             frame3dd_opt=frame3dd_opt, buckling_length=toweropt['buckling_length']))
-            self.add_subsystem('post'+lc, TowerPostFrame(n_height=n_height, analysis_options=toweropt), promotes=['life','z_full','d_full','t_full'])
+            self.add_subsystem('post'+lc, TowerPostFrame(n_height=n_height, analysis_options=toweropt), promotes=['life','z_full','d_full','t_full',
+                                                                                                                  'rho_full','E_full','G_full','sigma_y_full'])
             
             self.connect('z_full', ['wind'+lc+'.z', 'windLoads'+lc+'.z', 'distLoads'+lc+'.z', 'tower'+lc+'.z'])
             self.connect('d_full', ['windLoads'+lc+'.d', 'tower'+lc+'.d'])
@@ -1336,10 +1336,9 @@ class TowerSE(om.Group):
                 self.connect('rna_cg', 'pre'+lc+'.mrho')
                 self.connect('rna_I', 'pre'+lc+'.mI')
 
-            self.connect('rho_full', ['tower'+lc+'.rho', 'post'+lc+'.rho_full'])
-            self.connect('pre'+lc+'.E_full', ['tower'+lc+'.E', 'post'+lc+'.E_full'])
-            self.connect('pre'+lc+'.G_full', ['tower'+lc+'.G', 'post'+lc+'.G_full'])
-            self.connect('pre'+lc+'.sigma_y_full', 'post'+lc+'.sigma_y_full')
+            self.connect('rho_full', 'tower'+lc+'.rho')
+            self.connect('E_full', 'tower'+lc+'.E')
+            self.connect('G_full', 'tower'+lc+'.G')
             
             self.connect('pre'+lc+'.kidx', 'tower'+lc+'.kidx')
             self.connect('pre'+lc+'.kx', 'tower'+lc+'.kx')
