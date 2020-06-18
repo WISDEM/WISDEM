@@ -188,7 +188,7 @@ class CylinderMass(om.ExplicitComponent):
         # Sum up each cylinder section using parallel axis theorem
         I_base = np.zeros((3,3))
         for k in range(Izz_section.size):
-            R = np.array([0.0, 0.0, cm_section[k]])
+            R = np.array([0.0, 0.0, cm_section[k]-zz[0]])
             Icg = util.assembleI( [Ixx_section[k], Iyy_section[k], Izz_section[k], 0.0, 0.0, 0.0] )
 
             I_base += Icg + mass[k]*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
