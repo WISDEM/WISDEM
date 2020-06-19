@@ -19,6 +19,7 @@ Module documentation
    wisdem/drivetrainse/generator/index
    wisdem/floatingse/index
    wisdem/nrelcsm/index
+   wisdem/orbit/index
    wisdem/plantfinancese/index
    wisdem/pymap/index
    wisdem/rotorse/index
