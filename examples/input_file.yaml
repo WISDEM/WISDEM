@@ -1,0 +1,10 @@
+# Inputs
+geometry_file: /home/username/project_folder/new_turbine.yaml
+modeling_file: /home/username/project_folder/model_options.yaml
+analysis_file: /home/username/project_folder/analysis_options.yaml
+
+# Outputs
+output_directory: /home/username/project_folder/outputs
+output_geometry_file: /home/username/project_folder/better_turbine.yaml
+
+
