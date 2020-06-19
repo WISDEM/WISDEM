@@ -418,7 +418,7 @@ def sparExample():
     prob['pontoon_wall_thickness'] = 0.1
     
     prob.run_model()
-    
+    return prob
 
 
 def semiExample():
@@ -539,18 +539,8 @@ def semiExample():
     prob['fairlead_support_wall_thickness'] = 0.0175 # Thickness of all fairlead support elements [m]
     
     prob.run_model()
-    
-    '''
-    f = open('deriv_semi.dat','w')
-    out = prob.check_total_derivatives(f)
-    #out = prob.check_partial_derivatives(f, compact_print=True)
-    f.close()
-    tol = 1e-4
-    for comp in out.keys():
-        for k in out[comp].keys():
-            if ( (out[comp][k]['rel error'][0] > tol) and (out[comp][k]['abs error'][0] > tol) ):
-                print k
-    '''
+    return prob
+
 
 if __name__ == "__main__":
     from openmdao.api import Problem
