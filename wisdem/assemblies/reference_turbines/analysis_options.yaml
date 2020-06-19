@@ -39,7 +39,6 @@ tower:             # Options of TowerSE module
   gamma_b: 1.1     # Safety factor for ...
   gamma_fatigue: 1.9305  # Safety factor for fatigue loads in TowerSE
   buckling_length: 30    # Buckling parameter in TowerSE
-  n_refine: 3
   frame3dd:
     DC: 80.0             # Options of beam solver frame3dd
     shear: True

@@ -11,13 +11,14 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
 
 RIGID = 1e30
+NREFINE = 3
 
-def get_nfull(npts, n_refine):
-    nFull = int( 1 + n_refine*(npts-1) )
+def get_nfull(npts):
+    nFull = int( 1 + NREFINE*(npts-1) )
     return nFull
 
-def get_npts(nFull, n_refine):
-    npts = int( 1 + (nFull-1)/n_refine )
+def get_npts(nFull):
+    npts = int( 1 + (nFull-1)/NREFINE )
     return npts
 
 # -----------------
@@ -52,15 +53,16 @@ class CylinderDiscretization(om.ExplicitComponent):
         shell thickness at corresponding locations
     
     """
+    """discretize geometry into finite element nodes"""
 
     def initialize(self):
         self.options.declare('nPoints')
-        self.options.declare('n_refine')
+        self.options.declare('nRefine', default=NREFINE)
 
     def setup(self):
         nPoints = self.options['nPoints']
-        n_refine = np.round( self.options['n_refine'] )
-        nFull   = int(n_refine * (nPoints-1) + 1)
+        nRefine = np.round( self.options['nRefine'] )
+        nFull   = int(nRefine * (nPoints-1) + 1)
         
         self.add_input('foundation_height', val=0.0, units='m')
         self.add_input('section_height', np.zeros(nPoints-1), units='m')
@@ -83,12 +85,12 @@ class CylinderDiscretization(om.ExplicitComponent):
         if np.any(inputs['diameter'] <= 0.0):
             raise ValueError('Diameter values must be greater than zero, '+str(inputs['diameter']))
         
-        n_refine = int(np.round( self.options['n_refine'] ))
+        nRefine = int(np.round( self.options['nRefine'] ))
         z_param = float(inputs['foundation_height']) + np.r_[0.0, np.cumsum(inputs['section_height'].flatten())]
         # Have to regine each element one at a time so that we preserve input nodes
         z_full = np.array([])
         for k in range(z_param.size-1):
-            zref = np.linspace(z_param[k], z_param[k+1], n_refine+1)
+            zref = np.linspace(z_param[k], z_param[k+1], nRefine+1)
             z_full = np.append(z_full, zref)
         z_full = np.unique(z_full)
         outputs['z_full']  = z_full

@@ -298,7 +298,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['G'] = 1e8 * np.ones(2)
         self.inputs['sigma_y'] = 1e8 * np.ones(2)
 
-        myobj = tow.TowerPreFrame(n_height=3, n_refine=3, monopile=False)
+        myobj = tow.TowerPreFrame(n_height=3, monopile=False)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs['kidx'], np.array([0]))
@@ -340,7 +340,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['rna_M'] = 1e6*np.array([2., 3., 4.,])
         self.inputs['k_monopile'] = 20. + np.arange(6)
 
-        myobj = tow.TowerPreFrame(n_height=5, n_refine=3, monopile=True)
+        myobj = tow.TowerPreFrame(n_height=5, monopile=True)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs['kidx'], np.array([0]))
@@ -383,7 +383,6 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['buckling_length'] = 20.0
         analysis_options['tower']['monopile'] = False
         analysis_options['tower']['n_height'] = 3
-        analysis_options['tower']['n_refine'] = 3
         analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
@@ -514,7 +513,6 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['buckling_length'] = 20.0
         analysis_options['tower']['monopile'] = True
         analysis_options['tower']['n_height'] = 3
-        analysis_options['tower']['n_refine'] = 3
         analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
@@ -658,7 +656,6 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['buckling_length'] = 20.0
         analysis_options['tower']['monopile'] = True
         analysis_options['tower']['n_height'] = 3
-        analysis_options['tower']['n_refine'] = 3
         analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
@@ -791,7 +788,6 @@ class TestTowerSE(unittest.TestCase):
         # ---------------
 
         analysis_options['tower']['n_height'] = len(d_param)
-        analysis_options['tower']['n_refine'] = 3
         analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 1
@@ -976,7 +972,6 @@ class TestTowerSE(unittest.TestCase):
         # ---------------
 
         analysis_options['tower']['n_height'] = len(d_param)
-        analysis_options['tower']['n_refine'] = 3
         analysis_options['tower']['n_layers'] = 1
         analysis_options['tower']['wind'] = 'PowerWind'
         analysis_options['tower']['nLC'] = 2
