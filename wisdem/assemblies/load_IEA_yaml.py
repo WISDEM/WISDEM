@@ -2060,17 +2060,16 @@ def assign_floating_values(wt_opt, analysis_options, floating):
     wt_opt['floating.main.ref_axis'][:,1]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['y']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['y']['values'])
     wt_opt['floating.main.ref_axis'][:,2]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['z']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['z']['values'])
 
-    wt_opt['floating.main.outfitting_factor']     = floating['columns']['main']['internal_structure']['outfitting_factor']    
-    wt_opt['floating.main.stiffener_web_height']  = floating['columns']['main']['internal_structure']['stiffener_web_height']
-    wt_opt['floating.main.stiffener_web_thickness']  = floating['columns']['main']['internal_structure']['stiffener_web_thickness']
-    wt_opt['floating.main.stiffener_flange_thickness']  = floating['columns']['main']['internal_structure']['stiffener_flange_thickness']
-    wt_opt['floating.main.stiffener_flange_width']  = floating['columns']['main']['internal_structure']['stiffener_flange_width']
-    wt_opt['floating.main.stiffener_spacing']  = floating['columns']['main']['internal_structure']['stiffener_spacing']
-    wt_opt['floating.main.permanent_ballast_volume']  = floating['columns']['main']['internal_structure']['ballast']['volume']
+    wt_opt['floating.main.outfitting_factor']          = floating['columns']['main']['internal_structure']['outfitting_factor']    
+    wt_opt['floating.main.stiffener_web_height']       = floating['columns']['main']['internal_structure']['stiffener_web_height']
+    wt_opt['floating.main.stiffener_web_thickness']    = floating['columns']['main']['internal_structure']['stiffener_web_thickness']
+    wt_opt['floating.main.stiffener_flange_thickness'] = floating['columns']['main']['internal_structure']['stiffener_flange_thickness']
+    wt_opt['floating.main.stiffener_flange_width']     = floating['columns']['main']['internal_structure']['stiffener_flange_width']
+    wt_opt['floating.main.stiffener_spacing']          = floating['columns']['main']['internal_structure']['stiffener_spacing']
+    wt_opt['floating.main.permanent_ballast_volume']   = floating['columns']['main']['internal_structure']['ballast']['volume']
 
-    wt_opt['floating.main.bulkhead_thickness']  = floating['columns']['main']['internal_structure']['bulkhead']['thickness']['values']
-    # TODO- Add this variable in
-    wt_opt['floating.main.bulkhead_location']  = floating['columns']['main']['internal_structure']['bulkhead']['thickness']['grid']
+    wt_opt['floating.main.bulkhead_thickness']         = floating['columns']['main']['internal_structure']['bulkhead']['thickness']['values']
+    wt_opt['floating.main.bulkhead_location']          = floating['columns']['main']['internal_structure']['bulkhead']['thickness']['grid']
 
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
@@ -2098,17 +2097,16 @@ def assign_floating_values(wt_opt, analysis_options, floating):
     wt_opt['floating.offset.ref_axis'][:,1]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['values'])
     wt_opt['floating.offset.ref_axis'][:,2]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['values'])
 
-    wt_opt['floating.offset.outfitting_factor']     = floating['columns']['offset']['internal_structure']['outfitting_factor']    
-    wt_opt['floating.offset.stiffener_web_height']  = floating['columns']['offset']['internal_structure']['stiffener_web_height']
-    wt_opt['floating.offset.stiffener_web_thickness']  = floating['columns']['offset']['internal_structure']['stiffener_web_thickness']
-    wt_opt['floating.offset.stiffener_flange_thickness']  = floating['columns']['offset']['internal_structure']['stiffener_flange_thickness']
-    wt_opt['floating.offset.stiffener_flange_width']  = floating['columns']['offset']['internal_structure']['stiffener_flange_width']
-    wt_opt['floating.offset.stiffener_spacing']  = floating['columns']['offset']['internal_structure']['stiffener_spacing']
-    wt_opt['floating.offset.permanent_ballast_volume']  = floating['columns']['offset']['internal_structure']['ballast']['volume']
+    wt_opt['floating.offset.outfitting_factor']          = floating['columns']['offset']['internal_structure']['outfitting_factor']    
+    wt_opt['floating.offset.stiffener_web_height']       = floating['columns']['offset']['internal_structure']['stiffener_web_height']
+    wt_opt['floating.offset.stiffener_web_thickness']    = floating['columns']['offset']['internal_structure']['stiffener_web_thickness']
+    wt_opt['floating.offset.stiffener_flange_thickness'] = floating['columns']['offset']['internal_structure']['stiffener_flange_thickness']
+    wt_opt['floating.offset.stiffener_flange_width']     = floating['columns']['offset']['internal_structure']['stiffener_flange_width']
+    wt_opt['floating.offset.stiffener_spacing']          = floating['columns']['offset']['internal_structure']['stiffener_spacing']
+    wt_opt['floating.offset.permanent_ballast_volume']   = floating['columns']['offset']['internal_structure']['ballast']['volume']
 
-    wt_opt['floating.offset.bulkhead_thickness']  = floating['columns']['offset']['internal_structure']['bulkhead']['thickness']['values']
-    # TODO- Add this variable in
-    wt_opt['floating.offset.bulkhead_location']  = floating['columns']['offset']['internal_structure']['bulkhead']['thickness']['grid']
+    wt_opt['floating.offset.bulkhead_thickness']         = floating['columns']['offset']['internal_structure']['bulkhead']['thickness']['values']
+    wt_opt['floating.offset.bulkhead_location']          = floating['columns']['offset']['internal_structure']['bulkhead']['thickness']['grid']
 
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
@@ -2127,14 +2125,12 @@ def assign_floating_values(wt_opt, analysis_options, floating):
             # TODO: Might need grid/values on OD
             wt_opt['floating.main.buoyancy_tank_diameter'] = floating['heave_plate'][k]['outer_diameter']
             wt_opt['floating.main.buoyancy_tank_height']   = floating['heave_plate'][k]['wall_thickness']
-            # TODO: Accept nondimensional?
             wt_opt['floating.main.buoyancy_tank_location'] = floating['heave_plate'][k]['grid_value']
             
         elif floating['heave_plate'][k]['member_name'].lower().find('off') >= 0:
             # TODO: Might need grid/values on OD
             wt_opt['floating.offset.buoyancy_tank_diameter'] = floating['heave_plate'][k]['outer_diameter']
             wt_opt['floating.offset.buoyancy_tank_height']   = floating['heave_plate'][k]['wall_thickness']
-            # TODO: Accept nondimensional?
             wt_opt['floating.offset.buoyancy_tank_location'] = floating['heave_plate'][k]['grid_value']
             
     
@@ -2161,7 +2157,7 @@ def assign_floating_values(wt_opt, analysis_options, floating):
         elif floating['mooring']['nodes'][k]['node_type'] == 'vessel':
             vessel_nodes.append( k )
     wt_opt['floating.mooring.number_of_mooring_connections'] = len(vessel_nodes)
-    wt_opt['floating.mooring.mooring_lines_per_connection'] = len(floating['mooring']['lines']) / len(vessel_nodes)
+    wt_opt['floating.mooring.mooring_lines_per_connection']  = len(floating['mooring']['lines']) / len(vessel_nodes)
 
     center_xyz = nodes_xyz[anchor_nodes, :].mean(axis=0)
     anchor_dist = nodes_xyz[anchor_nodes, :] - center_xyz[np.newaxis,:]
@@ -2176,9 +2172,9 @@ def assign_floating_values(wt_opt, analysis_options, floating):
 
     # TODO- These should be set in constraints or analysis options
     wt_opt['floating.mooring.mooring_cost_factor'] = 1.0
-    wt_opt['floating.mooring.max_offset'] = 50.0
-    wt_opt['floating.mooring.operational_heel'] = 6.0
-    wt_opt['floating.mooring.max_survival_heel'] = 10.0
+    wt_opt['floating.mooring.max_offset']          = 50.0
+    wt_opt['floating.mooring.operational_heel']    = 6.0
+    wt_opt['floating.mooring.max_survival_heel']   = 10.0
         
     return wt_opt
 
