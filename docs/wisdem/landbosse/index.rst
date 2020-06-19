@@ -8,9 +8,7 @@ Intro
 Capital costs associated with building land-based wind power plants
 *******************************************************************
 
-Capital costs associated with constructing a land-based wind power plant include turbine capital costs, transportation cost, and balance-fo-system cost. They are outline in Table 1 below.
-
-Table 1: The capital costs associated with building a land-based wind power plant.
+Capital costs associated with constructing a land-based wind power plant include turbine capital costs, transportation cost, and balance-fo-system cost. They are outlined in the table below:
 
 +----------------------------+-------------------------------------------------------------------+
 | Capital Cost               | Description                                                       |
@@ -44,10 +42,32 @@ LandBOSSE and OpenMDAO
 
 In WISDEM, LandBOSSE is presented as an OpenMDAO ``Group`` called ``LandBOSSE``. This group wraps an ``ExplicitComponent`` called ``LandBOSSE_API``. When using LandBOSSE in assemblies, LandBOSSE should be accessed via the ``LandBOSSE`` group.
 
-LandBOSSE Inputs
-****************
+LandBOSSE Inputs and Outputs
+****************************
 
-The ``LandBOSSE`` group takes input from a mix of continuous floating point values, discrete integers, and discrete dataframes. The dataframes are read from a ``.xlsx`` spreadsheet which contains the lookup tables with information about cranes, labor rates, and many more data needed to calculate balance-of-system costs.
+LandBOSSE models the construction of an entire wind plant, which itself is a project with a numerous operations. The number and diversity of inputs and outputs to and from the ``LandBOSSE`` component reflects this diversity of construction operations. Text and numeric data, both in single-value and tabular form, are the form of LandBOSSSE inputs and outputs.
+
+Inputs are grouped into three categories:
+
++------------------------------------------+------------------------------------------------------------------+
+| Category                                 | Examples                                                         |
++==========================================+==================================================================+
+| Continuous floating point numeric values | ``blade_mass``, ``tower_mass``, ``crane_breakdown_fraction``     |
++------------------------------------------+------------------------------------------------------------------+
+| Discrete integer numeric values          | ``rate_of_deliveries``, ``number_of_blades``, ``num_turbines``   |
++------------------------------------------+------------------------------------------------------------------+
+| Discrete Pandas dataframes               | ``crane_specs``, ``components``, ``weather_window``              |
++------------------------------------------+------------------------------------------------------------------+
+
+Similarly, outputs are grouped into two categories:
+
++------------------------------------------+-----------------------------------------------------------------------+
+| Category                                 | Examples                                                              |
++==========================================+=======================================================================+
+| Continuous numeric data                  | ``bos_capex_kW``, ``total_capex_kW``, ``installation_time_months``    |
++------------------------------------------+-----------------------------------------------------------------------+
+| Discrete Pandas dataframes               | ``landbosse_costs_by_module_type_operation``, ``erection_components`` |
++------------------------------------------+-----------------------------------------------------------------------+
 
 Theory
 ######
@@ -57,7 +77,7 @@ Modules
 
 Costs calculated in LandBOSSE are in eight modules. Four modules (erection, foundation, site preparation, and collection) are process based and calcualte costs based on models of physical processes that happen to accomplish the scope of work defined for each module. The other four modules (management, grid connection, substation, and development) are based on curve fits from empirical data. The operations modeled by each model are summarized in Table XX below. More details are in the technical report at https://www.nrel.gov/docs/fy19osti/72201.pdf.
 
-Table XX: (Key, et al)
+Table XX: [TODO: Update citation when paper is published]
 
 +------------------+-----------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Module           | Type      | Summary of costs included                                                                                                                                                                                                                                                                                 |
