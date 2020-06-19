@@ -182,11 +182,15 @@ class TipDeflectionConstraint(om.ExplicitComponent):
         # Find the radius of tower where blade passes
         z_interp = z_tower[-1] + tt2hub + blade_yaw.z
         
-        d_interp, ddinterp_dzinterp, ddinterp_dtowerz, ddinterp_dtowerd = interp_with_deriv(z_interp, z_tower, d_tower)
-        r_interp = 0.5 * d_interp
-        drinterp_dzinterp = 0.5 * ddinterp_dzinterp
-        drinterp_dtowerz  = 0.5 * ddinterp_dtowerz
-        drinterp_dtowerd  = 0.5 * ddinterp_dtowerd
+        if np.mean(d_tower) == 0.:
+            print('Warning: turbine_constraints.py : TipDeflectionConstraint.compute : No tower data for blade tip tower clearnace calculation.  Assuming 0m for tower radius, tip clearance estimates will be too conservative.')
+            r_interp = 0.
+        else:
+            d_interp, ddinterp_dzinterp, ddinterp_dtowerz, ddinterp_dtowerd = interp_with_deriv(z_interp, z_tower, d_tower)
+            r_interp = 0.5 * d_interp
+            drinterp_dzinterp = 0.5 * ddinterp_dzinterp
+            drinterp_dtowerz  = 0.5 * ddinterp_dtowerz
+            drinterp_dtowerd  = 0.5 * ddinterp_dtowerd
 
         # Max deflection before strike
         if discrete_inputs['rotor_orientation'] == 'upwind':

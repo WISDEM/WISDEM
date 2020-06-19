@@ -459,15 +459,16 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
 
         # Update ElastoDyn Tower Input File
-        fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
-        fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
-        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
-        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
-        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
-        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
-        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+        if self.analysis_options['Analysis_Flags']['TowerSE']:
+            fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
+            fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
+            fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
+            fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
+            fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
+            fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
+            fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
+            fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
+            fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])

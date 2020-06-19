@@ -10,6 +10,7 @@ import numpy as np
 from scipy.linalg import solve_banded
 from scipy.optimize import curve_fit
 
+np.seterr(invalid='raise') 
 
 def mode_fit(x, c2, c3, c4, c5, c6):
     return c2*x**2. + c3*x**3. + c4*x**4. + c5*x**5. + c6*x**6.
