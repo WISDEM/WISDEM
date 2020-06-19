@@ -8,7 +8,7 @@ import numpy as np
 import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
 
-plot_flag = True
+plot_flag = False
 opt_flag  = True
 
 n_control_points = 3
