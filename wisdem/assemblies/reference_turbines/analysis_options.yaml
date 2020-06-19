@@ -7,6 +7,7 @@ yaml:
 
 xfoil:
     path       : "wine /Users/nabbas/Documents/WindEnergyToolbox/XFOIL_exe/xfoil.exe"
+    run_parallel   : True
 
 rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
