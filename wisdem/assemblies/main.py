@@ -1,3 +1,11 @@
+try:
+    import ruamel_yaml as ry
+except:
+    try:
+        import ruamel.yaml as ry
+    except:
+        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
+
 import numpy as np
 import os, sys
 import matplotlib.pyplot as plt
@@ -22,9 +30,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     optimization_data       = Opt_Data()
     optimization_data.fname_opt_options = fname_opt_options
     optimization_data.folder_output     = folder_output    
-    
-    if not os.path.isdir(folder_output):
-        os.mkdir(folder_output)
 
     # Load yaml for turbine description into a pure python data structure.
     wt_initial                   = WindTurbineOntologyPython()
@@ -150,9 +155,14 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         rank    = MPI.COMM_WORLD.Get_rank()
         color_i = color_map[rank]
         comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+    elif MPI and not opt_options['opt_flag']:
+        exit('No design variables are defined in the optimization problem, but MPI is called. Please check the optimization setup or deactivate MPI.')
     else:
         color_i = 0
+        rank = 0
 
+    if rank == 0 and not os.path.isdir(folder_output):
+        os.mkdir(folder_output)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
@@ -208,11 +218,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 except:
                     exit('You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun.')
                 wt_opt.driver.opt_settings['Major optimality tolerance']  = float(opt_options['driver']['tol'])
-                wt_opt.driver.opt_settings['Major iterations limit']      = int(opt_options['driver']['max_iter'])
-                wt_opt.driver.opt_settings['Iterations limit']            = int(opt_options['driver']['max_function_calls'])
+                wt_opt.driver.opt_settings['Major iterations limit']      = int(opt_options['driver']['max_major_iter'])
+                wt_opt.driver.opt_settings['Iterations limit']            = int(opt_options['driver']['max_minor_iter'])
                 wt_opt.driver.opt_settings['Major feasibility tolerance'] = float(opt_options['driver']['tol'])
-                # wt_opt.driver.opt_settings['Summary file'] = 'SNOPT_Summary_file.txt'
-                # wt_opt.driver.opt_settings['Print file'] = 'SNOPT_Print_file.txt'
+                wt_opt.driver.opt_settings['Summary file']                = folder_output + 'SNOPT_Summary_file.txt'
+                wt_opt.driver.opt_settings['Print file']                  = folder_output + 'SNOPT_Print_file.txt'
                 if 'hist_file_name' in opt_options['driver']:
                     wt_opt.driver.hist_file = opt_options['driver']['hist_file_name']
                 if 'verify_level' in opt_options['driver']:
@@ -322,22 +332,40 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             # Set non-linear constraints
             blade_constraints = opt_options['constraints']['blade']
             if blade_constraints['strains_spar_cap_ss']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
+                if blade_opt_options['structure']['spar_cap_ss']['flag']:
+                    wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
+                else:
+                    print('WARNING: the strains of the suction-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['strains_spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.0)
+                if blade_opt_options['structure']['spar_cap_ps']['flag'] or blade_opt_options['structure']['spar_cap_ps']['equal_to_suction']:
+                    wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.0)
+                else:
+                    print('WARNING: the strains of the pressure-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['stall']['flag']:
-                wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.0) 
-                
+                if blade_opt_options['aero_shape']['twist']['flag']:
+                    wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.0) 
+                else:
+                    print('WARNING: the margin to stall is set to be constrained, but twist is not an active design variable. The constraint is not enforced.')
+
             if blade_constraints['tip_deflection']['flag']:
-                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= 1.0)
+                if blade_opt_options['structure']['spar_cap_ss']['flag'] or blade_opt_options['structure']['spar_cap_ps']['flag']:
+                    wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= 1.0)
+                else:
+                    print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['chord']['flag']:
-                wt_opt.model.add_constraint('blade.pa.max_chord_constr', upper= 1.0)
+                if blade_opt_options['aero_shape']['chord']['flag']:
+                    wt_opt.model.add_constraint('blade.pa.max_chord_constr', upper= 1.0)
+                else:
+                    print('WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['frequency']['flap_above_3P']:
-                wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
+                if blade_opt_options['structure']['spar_cap_ss']['flag'] or blade_opt_options['structure']['spar_cap_ps']['flag']:
+                    wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
+                else:
+                    print('WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
                 
             if blade_constraints['frequency']['edge_above_3P']:
                 wt_opt.model.add_constraint('rlds.constr.constr_edge_f_margin', upper= 0.0)
@@ -348,15 +376,17 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             # if blade_constraints['frequency']['edge_below_3P']:
             #     wt_opt.model.add_constraint('rlds.constr.constr_edge_f_below_3P', upper= 1.0)
                 
-            if blade_constraints['frequency']['flap_above_3P'] and blade_constraints['frequency']['flap_below_3P']:
-                exit('The blade flap frequency is constrained to be both above and below 3P. Please check the constraint flags.')
+            # if blade_constraints['frequency']['flap_above_3P'] and blade_constraints['frequency']['flap_below_3P']:
+            #     exit('The blade flap frequency is constrained to be both above and below 3P. Please check the constraint flags.')
                 
-            if blade_constraints['frequency']['edge_above_3P'] and blade_constraints['frequency']['edge_below_3P']:
-                exit('The blade edge frequency is constrained to be both above and below 3P. Please check the constraint flags.')
+            # if blade_constraints['frequency']['edge_above_3P'] and blade_constraints['frequency']['edge_below_3P']:
+            #     exit('The blade edge frequency is constrained to be both above and below 3P. Please check the constraint flags.')
                 
             if blade_constraints['rail_transport']['flag']:
                 if blade_constraints['rail_transport']['8_axle']:
-                    wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz', upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz',   lower = 0.8, upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_strainPS',         upper= 1.0)
+                    wt_opt.model.add_constraint('elastic.rail.constr_strainSS',         upper= 1.0)
                 elif blade_constraints['rail_transport']['4_axle']:
                     wt_opt.model.add_constraint('elastic.rail.constr_LV_4axle_horiz', upper= 1.0)
                 else:
@@ -407,7 +437,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             # filename supplied in the optimization yaml
             if 'recorder' in opt_options:
                 if opt_options['recorder']['flag']:
-                    recorder = om.SqliteRecorder(opt_options['recorder']['file_name'])
+                    recorder = om.SqliteRecorder(folder_output + opt_options['recorder']['file_name'])
                     wt_opt.driver.add_recorder(recorder)
                     wt_opt.add_recorder(recorder)
                     
@@ -527,14 +557,65 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     return wt_opt, analysis_options, opt_options
 
 
+def read_master_file( fyaml ):
+    if os.path.exists(fyaml):
+        print('...Reading master input file,',fyaml)
+    else:
+        raise FileNotFoundError('The master input file, '+fyaml+', cannot be found.')
+    
+    with open(fyaml, 'r') as f:
+        input_yaml = ry.load(f, Loader=ry.Loader)
+
+    check_list = ['geometry_file','modeling_file','analysis_file']
+    for f in check_list:
+        if not os.path.exists(input_yaml[f]):
+            raise FileNotFoundError('The '+f+' entry, '+input_yaml[f]+', cannot be found.')
+        
+    return input_yaml
+
+
+def wisdem_cmd():
+    usg_msg = 'WISDEM command line launcher\n  Arguments: wisdem input.yaml'
+
+    # Look for help message
+    help_flag = len(sys.argv) == 1
+    for k in range(len(sys.argv)):
+        if sys.argv[k] in ['-h','--help']:
+            help_flag = True
+
+    if help_flag:
+        print(usg_msg)
+        sys.exit( 0 )
+
+    # Warn for unparsed arguments
+    if len(sys.argv) > 2:
+        ignored = ''
+        for k in range(2,len(sys.argv)): ignored += ' '+sys.argv[k]
+        print('WARNING: The following arguments will be ignored,',ignored)
+        print(usg_msg)
+
+    # Grab master input file
+    yaml_dict = read_master_file( sys.argv[1] )
+    
+    # Run WISDEM
+    run_wisdem(yaml_dict['geometry_file'],
+               yaml_dict['modeling_file'],
+               yaml_dict['analysis_file'],
+               yaml_dict['output_geometry_file'],
+               yaml_dict['output_directory'])
+
+    sys.exit( 0 )
+
+    
+
 if __name__ == "__main__":
     
     ## File management
     run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'assemblies' + os.sep + 'reference_turbines' + os.sep
-    fname_wt_input         = run_dir + "nrel5mw/nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    fname_wt_input         = run_dir + "nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
     fname_opt_options      = run_dir + "optimization_options.yaml"
-    fname_wt_output        = run_dir + "nrel5mw/nrel5mw_mod_update_output.yaml"
-    folder_output          = run_dir + 'nrel5mw/'
+    fname_wt_output        = run_dir + "nrel5mw_mod_update_output.yaml"
+    folder_output          = run_dir + '/'
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)

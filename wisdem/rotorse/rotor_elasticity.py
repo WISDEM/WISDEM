@@ -73,7 +73,7 @@ class RunPreComp(ExplicitComponent):
         self.add_output('GJ',           val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
         self.add_output('rhoA',         val=np.zeros(n_span), units='kg/m',   desc='mass per unit length')
         self.add_output('rhoJ',         val=np.zeros(n_span), units='kg*m',   desc='polar mass moment of inertia per unit length')
-        self.add_output('Tw_iner',      val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_output('Tw_iner',      val=np.zeros(n_span), units='m',      desc='Orientation of the section principal inertia axes with respect the blade reference plane')
         self.add_output('x_ec',         val=np.zeros(n_span), units='m',      desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
         self.add_output('y_ec',         val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
         self.add_output('x_tc',         val=np.zeros(n_span), units='m',      desc='X-coordinate of the tension-center offset with respect to the XR-YR axes')
@@ -82,10 +82,6 @@ class RunPreComp(ExplicitComponent):
         self.add_output('y_sc',         val=np.zeros(n_span), units='m',      desc='Chordwise offset of the section shear-center with respect to the reference frame, XR-YR')
         self.add_output('x_cg',         val=np.zeros(n_span), units='m',      desc='X-coordinate of the center-of-mass offset with respect to the XR-YR axes')
         self.add_output('y_cg',         val=np.zeros(n_span), units='m',      desc='Chordwise offset of the section center of mass with respect to the XR-YR axes')
-
-        self.add_output('x_ec_abs',     val=np.zeros(n_span), units='m',      desc='x coordinate of the elastic center in the non-dimensional airfoil coordinate system')
-        self.add_output('y_ec_abs',     val=np.zeros(n_span), units='m',      desc='y coordinate of the elastic center in the non-dimensional airfoil coordinate system')
-
         self.add_output('flap_iner',    val=np.zeros(n_span), units='kg/m',   desc='Section flap inertia about the Y_G axis per unit length.')
         self.add_output('edge_iner',    val=np.zeros(n_span), units='kg/m',   desc='Section lag inertia about the X_G axis per unit length')
         # self.add_output('eps_crit_spar',    val=np.zeros(n_span), desc='critical strain in spar from panel buckling calculation')
@@ -423,9 +419,6 @@ class RunPreComp(ExplicitComponent):
                        sector_idx_strain_spar_cap_ps, sector_idx_strain_spar_cap_ss, sector_idx_strain_te_ps, sector_idx_strain_te_ss)
         EIxx, EIyy, GJ, EA, EIxy, x_ec, y_ec, rhoA, area, rhoJ, Tw_iner, flap_iner, edge_iner, x_tc, y_tc, x_sc, y_sc, x_cg, y_cg = beam.sectionProperties()
 
-        outputs['x_ec_abs'] = beam.x_ec_nose - inputs['pitch_axis'] * inputs['chord']
-        outputs['y_ec_abs'] = beam.y_ec_nose
-
         # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_cap_ss)
         # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_strain_te_ss)
 
@@ -562,8 +555,8 @@ class RotorElasticity(Group):
         opt_options     = self.options['opt_options']
 
         # Get elastic properties by running precomp
-        promote_list = ['chord','theta','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','x_ec_abs','y_ec_abs']
-        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=promote_list+['r','Tw_iner','precurve','presweep'])
+        promote_list = ['chord','theta','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ', 'x_sc','y_sc']
+        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=promote_list+['r','Tw_iner','precurve','presweep', 'x_ec', 'y_ec'])
         # Check rail transportabiliy
         if opt_options['constraints']['blade']['rail_transport']['flag']:
             self.add_subsystem('rail',  RailTransport(analysis_options = analysis_options), promotes=promote_list)

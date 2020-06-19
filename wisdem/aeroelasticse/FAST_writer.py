@@ -344,6 +344,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
             self.write_SubDyn()
         if self.fst_vt['Fst']['CompMooring'] == 1:
             self.write_MAP()
+        elif self.fst_vt['Fst']['CompMooring'] == 3:
+            self.write_MoorDyn()
 
         if self.fst_vt['Fst']['CompElast'] == 2:
             self.write_BeamDyn()
@@ -585,7 +587,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['QuasiStaticInit'], 'QuasiStaticInit', '- Use quasistatic pre-conditioning with centripetal accelerations in initialization (flag) [dynamic solve only]\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['rhoinf'], 'rhoinf', '- Numerical damping parameter for generalized-alpha integrator\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['quadrature'], 'quadrature', '- Quadrature method: 1=Gaussian; 2=Trapezoidal (switch)\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['refine'], 'refine', '- Refinement factor for trapezoidal quadrature (-). DEFAULT = 1 [used only when quadrature=2]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['refine'], 'refine', '- Refinement factor for trapezoidal quadrature (-). DEFAULT = 1 [used only when quadrature=2]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['n_fact'], 'n_fact', '- Factorization frequency (-). DEFAULT = 5\n'))
         f.write(float_default_out(self.fst_vt['BeamDyn']['DTBeam']) + '   {:<11} {:}'.format('DTBeam', '- Time step size (s).\n'))
         f.write(int_default_out(self.fst_vt['BeamDyn']['load_retries']) + '   {:<11} {:}'.format('load_retries', '- Number of factored load retries before quitting the aimulation\n'))
@@ -626,7 +628,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('---------------------- OUTPUTS -------------------------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['SumPrint'], 'SumPrint', '- Print summary data to "<RootName>.sum" (flag)\n'))
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['OutFmt']+'"', 'OutFmt', '- Format used for text tabular output, excluding the time channel.\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['NNodeOuts'], 'NNodeOuts', '- Number of nodes to output to file [0 - 9] (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['NNodeOuts'], 'NNodeOuts', '- Number of nodes to output to file [0 - 9] (-)\n'))
         f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['BeamDyn']['OutNd']), 'OutNd', '- Nodes whose values will be output  (-)\n'))
         f.write('          OutList            - The next line(s) contains a list of output parameters. See OutListParameters.xlsx for a listing of available output channels, (-)\n')
         outlist = self.get_outlist(self.fst_vt['outlist'], ['BeamDyn'])
@@ -1432,21 +1434,30 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('---------------------- PLATFORM ADDITIONAL STIFFNESS AND DAMPING  --------------\n')
         f.write(" ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddF0']])+"   AddF0    - Additional preload (N, N-m)\n")
         for j in range(6):
-            ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddCLin'][j,:]])
+            try:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddCLin'][j,:]])
+            except:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddCLin'][j]])
             if j == 0:
                 ln = ln + "   AddCLin  - Additional linear stiffness (N/m, N/rad, N-m/m, N-m/rad)\n"
             else:
                 ln = ln  + "\n"
             f.write(ln)
         for j in range(6):
-            ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBLin'][j,:]])
+            try:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBLin'][j,:]])
+            except:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBLin'][j]])
             if j == 0:
                 ln = ln + "   AddBLin  - Additional linear damping(N/(m/s), N/(rad/s), N-m/(m/s), N-m/(rad/s))\n"
             else:
                 ln = ln  + "\n"
             f.write(ln)
         for j in range(6):
-            ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBQuad'][j,:]])
+            try:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBQuad'][j,:]])
+            except:
+                ln = " ".join(['{:14}'.format(i) for i in self.fst_vt['HydroDyn']['AddBQuad'][j]])
             if j == 0:
                 ln = ln + "   AddBQuad - Additional quadratic drag(N/(m/s)^2, N/(rad/s)^2, N-m(m/s)^2, N-m/(rad/s)^2)\n"
             else:
@@ -1826,9 +1837,81 @@ class InputWriter_OpenFAST(InputWriter_Common):
 
         f.close()
 
-        # f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MAP'][''], '', '- \n'))
-        # f.write('\n')
-        
+    def write_MoorDyn(self):
+
+        self.fst_vt['Fst']['MooringFile'] = self.FAST_namingOut + '_MoorDyn.dat'
+        moordyn_file = os.path.join(self.FAST_runDirectory, self.fst_vt['Fst']['MooringFile'])
+        f = open(moordyn_file, 'w')
+
+        f.write('--------------------- MoorDyn Input File ------------------------------------\n')
+        f.write('Generated with AeroElasticSE FAST driver\n')
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['Echo'], 'Echo', '- echo the input file data (flag)\n'))
+        f.write('----------------------- LINE TYPES ------------------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NTypes'], 'NTypes', '- number of LineTypes\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Name', 'Diam', 'MassDen', 'EA', 'BA/-zeta', 'Can', 'Cat', 'Cdn', 'Cdt']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(m)', '(kg/m)', '(N)', '(N-s/-)', '(-)', '(-)', '(-)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NTypes']):
+            ln = []
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Name'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Diam'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['MassDen'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['EA'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['BA_zeta'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Can'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cat'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cdn'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cdt'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- CONNECTION PROPERTIES --------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NConnects'], 'NConnects', '- number of connections including anchors and fairleads\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Node', 'Type', 'X', 'Y', 'Z', 'M', 'V', 'FX', 'FY', 'FZ', 'CdA', 'CA']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(m)', '(m)', '(kg)', '(m^3)', '(kN)', '(kN)', '(kN)', '(m^2)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NConnects']):
+            ln = []
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Node'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Type'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['X'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Y'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Z'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['M'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['V'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FX'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FY'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FZ'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CdA'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CA'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- LINE PROPERTIES --------------------------------------\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NLines'], 'NLines', '- number of line objects\n'))
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'UnstrLen', 'NumSegs', 'NodeAnch', 'NodeFair', 'Flags/Outputs']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(-)', '(-)', '(-)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MoorDyn']['NLines']):
+            ln = []
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Line'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['LineType'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['UnstrLen'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NumSegs'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeAnch'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeFair'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Flags_Outputs'][i]))
+            f.write(" ".join(ln) + '\n')
+        f.write('---------------------- SOLVER OPTIONS ---------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['dtM'], 'dtM', '- time step to use in mooring integration (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['kbot'], 'kbot', '- bottom stiffness (Pa/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['cbot'], 'cbot', '- bottom damping (Pa-s/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['dtIC'], 'dtIC', '- time interval for analyzing convergence during IC gen (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['TmaxIC'], 'TmaxIC', '- max time for ic gen (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['CdScaleIC'], 'CdScaleIC', '- factor by which to scale drag coefficients during dynamic relaxation (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['threshIC'], 'threshIC', '- threshold for IC convergence (-)\n'))
+        f.write('------------------------ OUTPUTS --------------------------------------------\n')
+        outlist = self.get_outlist(self.fst_vt['outlist'], ['MoorDyn'])
+        for channel_list in outlist:
+            for i in range(len(channel_list)):
+                f.write('"' + channel_list[i] + '"\n')
+        f.write('END\n')
+        f.write('------------------------- need this line --------------------------------------\n')
+
+        f.close()        
 
 class InputWriter_FAST7(InputWriter_Common):
 

@@ -30,18 +30,18 @@ class WindBase(om.ExplicitComponent):
     
     Parameters
     ----------
-    Uref : float
+    Uref : float, [m/s]
         reference wind speed (usually at hub height)
-    zref : float
+    zref : float, [m]
         corresponding reference height
-    z : numpy array[npts]
+    z : numpy array[npts], [m]
         'heights where wind speed should be computed
-    z0 : float
+    z0 : float, [m]
         bottom of wind profile (height of ground/sea)
     
     Returns
     -------
-    U : numpy array[npts]
+    U : numpy array[npts], [m/s]
         magnitude of wind speed at each z location
     
     """
@@ -64,26 +64,26 @@ class WaveBase(om.ExplicitComponent):
     
     Parameters
     ----------
-    rho_water : float
+    rho_water : float, [kg/m**3]
         water density
-    z : numpy array[npts]
+    z : numpy array[npts], [m]
         heights where wave speed should be computed
-    z_surface : float
+    z_surface : float, [m]
         vertical location of water surface
-    z_floor : float
+    z_floor : float, [m]
         vertical location of sea floor
     
     Returns
     -------
-    U : numpy array[npts]
+    U : numpy array[npts], [m/s]
         horizontal wave velocity at each z location
-    W : numpy array[npts]
+    W : numpy array[npts], [m/s]
         vertical wave velocity at each z location
-    V : numpy array[npts]
+    V : numpy array[npts], [m/s]
         total wave velocity at each z location
-    A : numpy array[npts]
+    A : numpy array[npts], [m/s**2]
         horizontal wave acceleration at each z location
-    p : numpy array[npts]
+    p : numpy array[npts], [N/m**2]
         pressure oscillation at each z location
     
     """
@@ -133,20 +133,20 @@ class PowerWind(WindBase):
     
     Parameters
     ----------
-    Uref : float
+    Uref : float, [m/s]
         reference wind speed (usually at hub height)
-    zref : float
+    zref : float, [m]
         corresponding reference height
-    z : numpy array[npts]
+    z : numpy array[npts], [m]
         'heights where wind speed should be computed
-    z0 : float
+    z0 : float, [m]
         bottom of wind profile (height of ground/sea)
     shearExp : float
         shear exponent
     
     Returns
     -------
-    U : numpy array[npts]
+    U : numpy array[npts], [m/s]
         magnitude of wind speed at each z location
     
     """
@@ -160,7 +160,7 @@ class PowerWind(WindBase):
         self.declare_partials('U', ['Uref','z','zref'])
 
     def compute(self, inputs, outputs):
-
+        
         # rename
         z = inputs['z']
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])
@@ -239,20 +239,20 @@ class LogWind(WindBase):
     
     Parameters
     ----------
-    Uref : float
+    Uref : float, [m/s]
         reference wind speed (usually at hub height)
-    zref : float
+    zref : float, [m]
         corresponding reference height
-    z : numpy array[npts]
+    z : numpy array[npts], [m]
         'heights where wind speed should be computed
-    z0 : float
+    z0 : float, [m]
         bottom of wind profile (height of ground/sea)
-    z_roughness : float
+    z_roughness : float, [mm]
         surface roughness length
     
     Returns
     -------
-    U : numpy array[npts]
+    U : numpy array[npts], [m/s]
         magnitude of wind speed at each z location
     
     """
@@ -317,32 +317,32 @@ class LinearWaves(WaveBase):
     
     Parameters
     ----------
-    rho_water : float
+    rho_water : float, [kg/m**3]
         water density
-    z : numpy array[npts]
+    z : numpy array[npts], [m]
         heights where wave speed should be computed
-    z_surface : float
+    z_surface : float, [m]
         vertical location of water surface
-    z_floor : float
+    z_floor : float, [m]
         vertical location of sea floor
-    hsig_wave : float
+    hsig_wave : float, [m]
         Maximum wave height (crest-to-trough)
-    Tsig_wave : float
+    Tsig_wave : float, [s]
         period of maximum wave height
     
     Returns
     -------
-    U : numpy array[npts]
+    U : numpy array[npts], [m/s]
         horizontal wave velocity at each z location
-    W : numpy array[npts]
+    W : numpy array[npts], [m/s]
         vertical wave velocity at each z location
-    V : numpy array[npts]
+    V : numpy array[npts], [m/s]
         total wave velocity at each z location
-    A : numpy array[npts]
+    A : numpy array[npts], [m/s**2]
         horizontal wave acceleration at each z location
-    p : numpy array[npts]
+    p : numpy array[npts], [N/m**2]
         pressure oscillation at each z location
-    phase_speed : float
+    phase_speed : float, [m/s]
         Phase speed of wave
     
     """
@@ -476,21 +476,21 @@ class TowerSoil(om.ExplicitComponent):
     
     Parameters
     ----------
-    d0 : float
+    d0 : float, [m]
         diameter of base of tower
-    depth : float
+    depth : float, [m]
         depth of foundation in the soil
-    G : float
+    G : float, [Pa]
         shear modulus of soil
     nu : float
-        Poisson''s ratio of soil
-    k_usr : numpy array[6]
+        Poisson's ratio of soil
+    k_usr : numpy array[6], [N/m]
         User overrides of stiffness values. Use positive values and for rigid
         use np.inf. Order is x, theta_x, y, theta_y, z, theta_z
     
     Returns
     -------
-    k : numpy array[6]
+    k : numpy array[6], [N/m]
         Spring stiffness (x, theta_x, y, theta_y, z, theta_z)
     """
     def setup(self):

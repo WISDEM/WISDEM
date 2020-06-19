@@ -9,10 +9,10 @@ class TestRegression(unittest.TestCase):
     def testAssembly(self):
         
         ## NREL 5MW
-        fname_wt_input         = test_dir + 'nrel5mw' + os.sep + 'nrel5mw_mod_update.yaml'
+        fname_wt_input         = test_dir + os.sep + 'nrel5mw_mod_update.yaml'
         fname_analysis_options = test_dir + 'analysis_options.yaml'
         fname_opt_options      = test_dir + 'optimization_options.yaml'
-        fname_wt_output        = test_dir + 'nrel5mw' + os.sep + 'nrel5mw_mod_update_output.yaml'
+        fname_wt_output        = test_dir + os.sep + 'nrel5mw_mod_update_output.yaml'
         folder_output          = 'temp'
 
         wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
