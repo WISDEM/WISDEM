@@ -155,7 +155,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
         self.add_input('overhang', val=0.0, units='m')
         self.add_input('ref_axis_tower', val=np.zeros((n_height_tow, 3)), units='m')
         self.add_input('d_full', val=np.zeros(n_height_tow), units='m')
-        self.add_input('max_allowable_td_ratio', val=1.3)
+        self.add_input('max_allowable_td_ratio', val=1.35 * 1.05)
 
         self.add_output('tip_deflection_ratio', val=0.0)
         self.add_output('blade_tip_tower_clearance', val=0.0, units='m')
