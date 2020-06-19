@@ -482,6 +482,14 @@ class RunXFOIL(ExplicitComponent):
         self.KinVisc  = inputs['mu_air'] / inputs['rho_air']  # Kinematic viscosity (m^2/s) from yaml file
         self.SpdSound = inputs['speed_sound_air'] # speed of sound (m/s) from yaml file
         
+        # Initialize
+        cl_interp_flaps = inputs['cl_interp']
+        cd_interp_flaps = inputs['cd_interp']
+        cm_interp_flaps = inputs['cm_interp']
+        fa_control = np.zeros((self.n_span, self.n_Re, self.n_tab))
+        Re_loc = np.zeros((self.n_span, self.n_Re, self.n_tab))
+        Ma_loc = np.zeros((self.n_span, self.n_Re, self.n_tab))
+
         # Get polars for flap angles
         if self.n_te_flaps > 0:
             if 'cl_interp_flaps' not in self.saved_polar_data.keys():
@@ -508,13 +516,6 @@ class RunXFOIL(ExplicitComponent):
                 run_xfoil_params['r'] = inputs['r']
                 run_xfoil_params['aoa'] = inputs['aoa']
 
-
-                cl_interp_flaps = inputs['cl_interp']
-                cd_interp_flaps = inputs['cd_interp']
-                cm_interp_flaps = inputs['cm_interp']
-                fa_control = np.zeros((self.n_span, self.n_Re, self.n_tab))
-                Re_loc = np.zeros((self.n_span, self.n_Re, self.n_tab))
-                Ma_loc = np.zeros((self.n_span, self.n_Re, self.n_tab))
 
                 # Run XFoil as multiple processors with MPI
                 if MPI:
