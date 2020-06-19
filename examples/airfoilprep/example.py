@@ -7,6 +7,7 @@ import numpy as np
 from wisdem.airfoilprep import Polar, Airfoil
 
 
+airfoil = Airfoil.initFromAerodynFile('DU21_A17.dat')
 # ------
 
 # first polar
