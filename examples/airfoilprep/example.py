@@ -1,8 +1,13 @@
-# Imports and loading an airfoil
-from wisdem.airfoilprep import Polar, Airfoil
-import numpy as np
+# TODO : the input files for this shouldn't be duplicated.
+# Figure out how best to have them accessible here AND for test_ccblade
 
-airfoil = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU21_A17.dat')
+# Imports and loading an airfoil
+import os
+import numpy as np
+from wisdem.airfoilprep import Polar, Airfoil
+
+
+airfoil = Airfoil.initFromAerodynFile('DU21_A17.dat')
 # ------
 
 # first polar
@@ -77,8 +82,8 @@ af = Airfoil([p1, p2])
 # ------
 
 # read in airfoils from AeroDyn files
-airfoil1 = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU21_A17.dat')
-airfoil2 = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU25_A17.dat')
+airfoil1 = Airfoil.initFromAerodynFile('DU21_A17.dat')
+airfoil2 = Airfoil.initFromAerodynFile('DU25_A17.dat')
 
 # blend the two airfoils
 airfoil_blend = airfoil1.blend(airfoil2, 0.3)
