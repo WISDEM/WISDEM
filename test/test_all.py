@@ -6,4 +6,4 @@ testpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + os.path
     'wisdem' + os.path.sep + 'test' + os.path.sep
 
 if __name__ == '__main__':
-    sys.exit( pytest.main([testpath] )
+    sys.exit( pytest.main([testpath]) )
