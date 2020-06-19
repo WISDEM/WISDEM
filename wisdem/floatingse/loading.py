@@ -1346,7 +1346,7 @@ class FloatingFrame(om.ExplicitComponent):
             myframe0.enableDynamics(3*NFREQ, frame3dd_opt['Mmethod'], frame3dd_opt['lump'], float(frame3dd_opt['tol']), shift)
 
             # ---DEBUGGING---
-            myframe0.write('debug.3dd') # For debugging
+            #myframe0.write('debug.3dd') # For debugging
 
             try:
                 _, _, _, _, _, modal = myframe0.run()
