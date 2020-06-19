@@ -15,6 +15,8 @@ class TestExamples(unittest.TestCase):
     def testAllExamplesRun(self):
         for f in all_examples:
             try:
+                basepath = os.path.dirname(os.path.realpath(f))
+                os.chdir(basepath)
                 exec(open(f).read())
             except:
                 self.assertEqual(f, True)
