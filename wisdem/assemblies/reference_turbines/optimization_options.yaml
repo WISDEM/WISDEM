@@ -109,7 +109,7 @@ constraints:
     frequency:
       flap_above_3P: False
       edge_above_3P: False
-      flap_below_3P: True
+      flap_below_3P: False
       edge_below_3P: False
   tower:
     height_constraint:
@@ -134,7 +134,7 @@ constraints:
       upper_bound: 0.40
   control:
     flap_control:
-      flag: True
+      flag: False
       min: 0.0
       max: 0.1
 
