@@ -61,10 +61,11 @@ def getInputs():
     inputs = {}
     discrete_inputs = {}
 
-    inputs['E'] = 200e9
-    inputs['G'] = 79.3e9
-    inputs['rho'] = 7850.0
-    inputs['yield_stress'] = 345e6
+    inputs['main_E_full'] = inputs['offset_E_full'] = inputs['tower_E_full'] = 200e9 * np.ones(NPTS-1)
+    inputs['main_G_full'] = inputs['offset_G_full'] = inputs['tower_G_full'] = 79.3e9 * np.ones(NPTS-1)
+    inputs['main_rho_full'] = inputs['offset_rho_full'] = inputs['tower_rho_full'] = 7850.0 * np.ones(NPTS-1)
+    inputs['main_sigma_y_full'] = inputs['offset_sigma_y_full'] = inputs['tower_sigma_y_full'] = 345e6 * np.ones(NPTS-1)
+    
     inputs['hsig_wave'] = 10.0
 
     inputs['rho_water'] = 1025.0
@@ -202,7 +203,7 @@ class TestFrame(unittest.TestCase):
         Roff   = 0.5*self.inputs['offset_d_full'][0]
         Ro     = 0.5*self.inputs['pontoon_outer_diameter']
         Ri     = Ro - self.inputs['pontoon_wall_thickness']
-        rho    = self.inputs['rho']
+        rho    = self.inputs['main_rho_full'][0]
         rhoW   = self.inputs['rho_water']
 
         self.inputs['fairlead_radius'] = 0.0
@@ -326,7 +327,7 @@ class TestFrame(unittest.TestCase):
         self.inputs['fairlead_radius'] = 10.1
         self.inputs['fairlead_support_outer_diameter'] = 2*np.sqrt(2.0/np.pi)
         self.inputs['fairlead_support_wall_thickness'] = np.sqrt(2.0/np.pi) - np.sqrt(1.0/np.pi)
-        self.inputs['rho'] = 20.0
+        self.inputs['main_rho_full'] = self.inputs['offset_rho_full'] = self.inputs['tower_rho_full'] = 20.0 * np.ones(NPTS-1)
         self.inputs['radius_to_offset_column'] = 1.0
 
         goodRun = False

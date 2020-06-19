@@ -33,14 +33,6 @@ class FloatingFrame(om.ExplicitComponent):
     ----------
     rho_water : float, [kg/m**3]
         density of water
-    rho : float, [kg/m**3]
-        density of material
-    E : float, [Pa]
-        Modulus of elasticity (Youngs) of material
-    G : float, [Pa]
-        Shear modulus of material
-    yield_stress : float, [Pa]
-        yield stress of material
     hsig_wave : float, [m]
         wave significant height
     main_z_full : numpy array[n_full_main], [m]
@@ -49,6 +41,14 @@ class FloatingFrame(om.ExplicitComponent):
         outer radius at each section node bottom to top (length = nsection + 1)
     main_t_full : numpy array[n_full_main-1], [m]
         shell wall thickness at each section node bottom to top (length = nsection + 1)
+    main_rho : numpy array[n_full_main-1], [kg/m**3]
+        density of material
+    main_E : numpy array[n_full_main-1], [Pa]
+        Modulus of elasticity (Youngs) of material
+    main_G : numpy array[n_full_main-1], [Pa]
+        Shear modulus of material
+    main_sigma_y : numpy array[n_full_main-1], [Pa]
+        yield stress of material
     main_mass : numpy array[n_full_main-1], [kg]
         mass of main column by section
     main_buckling_length : numpy array[n_full_main-1], [m]
@@ -79,6 +79,14 @@ class FloatingFrame(om.ExplicitComponent):
         outer radius at each section node bottom to top (length = nsection + 1)
     offset_t_full : numpy array[n_full_off-1], [m]
         shell wall thickness at each section node bottom to top (length = nsection + 1)
+    offset_rho : numpy array[n_full_off-1], [kg/m**3]
+        density of material
+    offset_E : numpy array[n_full_off-1], [Pa]
+        Modulus of elasticity (Youngs) of material
+    offset_G : numpy array[n_full_off-1], [Pa]
+        Shear modulus of material
+    offset_sigma_y : numpy array[n_full_off-1], [Pa]
+        yield stress of material
     offset_mass : numpy array[n_full_off-1], [kg]
         mass of offset column by section
     offset_buckling_length : numpy array[n_full_off-1], [m]
@@ -105,6 +113,14 @@ class FloatingFrame(om.ExplicitComponent):
         outer radius at each section node bottom to top (length = nsection + 1)
     tower_t_full : numpy array[n_full_tow-1], [m]
         shell wall thickness at each section node bottom to top (length = nsection + 1)
+    tower_rho : numpy array[n_full_tow-1], [kg/m**3]
+        density of material
+    tower_E : numpy array[n_full_tow-1], [Pa]
+        Modulus of elasticity (Youngs) of material
+    tower_G : numpy array[n_full_tow-1], [Pa]
+        Shear modulus of material
+    tower_sigma_y : numpy array[n_full_tow-1], [Pa]
+        yield stress of material
     tower_mass_section : numpy array[n_full_tow-1], [kg]
         mass of tower column by section
     tower_buckling_length : float, [m]
@@ -302,18 +318,16 @@ class FloatingFrame(om.ExplicitComponent):
         self.myframe = None
 
         self.add_input('rho_water', val=0.0, units='kg/m**3')
-        
-        # Material properties
-        self.add_input('rho', val=0., units='kg/m**3')
-        self.add_input('E', val=0.0, units='Pa')
-        self.add_input('G', val=0.0, units='Pa')
-        self.add_input('yield_stress', val=0.0, units='Pa')
         self.add_input('hsig_wave', val=0.0, units='m')
         
         # Base column
         self.add_input('main_z_full', val=np.zeros(n_full_main), units='m')
         self.add_input('main_d_full', val=np.zeros(n_full_main), units='m')
         self.add_input('main_t_full', val=np.zeros(n_full_main-1), units='m')
+        self.add_input('main_rho_full', val=np.zeros(n_full_main-1), units='kg/m**3')
+        self.add_input('main_E_full', val=np.zeros(n_full_main-1), units='Pa')
+        self.add_input('main_G_full', val=np.zeros(n_full_main-1), units='Pa')
+        self.add_input('main_sigma_y_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('main_mass', val=np.zeros(n_full_main-1), units='kg')
         self.add_input('main_buckling_length', val=np.zeros(n_full_main-1), units='m')
         self.add_input('main_displaced_volume', val=np.zeros(n_full_main-1), units='m**3')
@@ -332,6 +346,10 @@ class FloatingFrame(om.ExplicitComponent):
         self.add_input('offset_z_full', val=np.zeros(n_full_off), units='m')
         self.add_input('offset_d_full', val=np.zeros(n_full_off), units='m')
         self.add_input('offset_t_full', val=np.zeros(n_full_off-1), units='m')
+        self.add_input('offset_rho_full', val=np.zeros(n_full_main-1), units='kg/m**3')
+        self.add_input('offset_E_full', val=np.zeros(n_full_main-1), units='Pa')
+        self.add_input('offset_G_full', val=np.zeros(n_full_main-1), units='Pa')
+        self.add_input('offset_sigma_y_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('offset_mass', val=np.zeros(n_full_off-1), units='kg')
         self.add_input('offset_buckling_length', val=np.zeros(n_full_off-1), units='m')
         self.add_input('offset_displaced_volume', val=np.zeros(n_full_off-1), units='m**3')
@@ -347,6 +365,10 @@ class FloatingFrame(om.ExplicitComponent):
         self.add_input('tower_z_full', val=np.zeros(n_full_tow), units='m')
         self.add_input('tower_d_full', val=np.zeros(n_full_tow), units='m')
         self.add_input('tower_t_full', val=np.zeros(n_full_tow-1), units='m')
+        self.add_input('tower_rho_full', val=np.zeros(n_full_main-1), units='kg/m**3')
+        self.add_input('tower_E_full', val=np.zeros(n_full_main-1), units='Pa')
+        self.add_input('tower_G_full', val=np.zeros(n_full_main-1), units='Pa')
+        self.add_input('tower_sigma_y_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('tower_mass_section', val=np.zeros(n_full_tow-1), units='kg')
         self.add_input('tower_buckling_length', 0.0, units='m')
         self.add_input('tower_center_of_mass', val=0.0, units='m')
@@ -463,20 +485,31 @@ class FloatingFrame(om.ExplicitComponent):
         R_semi         = inputs['radius_to_offset_column'] if ncolumn>0 else 0.0
         R_od_pontoon   = 0.5*inputs['pontoon_outer_diameter']
         R_od_main      = 0.5*inputs['main_d_full']
-        R_od_offset   = 0.5*inputs['offset_d_full']
+        R_od_offset    = 0.5*inputs['offset_d_full']
         R_od_tower     = 0.5*inputs['tower_d_full']
         R_od_fairlead  = 0.5*inputs['fairlead_support_outer_diameter']
 
         t_wall_main     = inputs['main_t_full']
-        t_wall_offset  = inputs['offset_t_full']
+        t_wall_offset   = inputs['offset_t_full']
         t_wall_pontoon  = inputs['pontoon_wall_thickness']
         t_wall_tower    = inputs['tower_t_full']
         t_wall_fairlead = inputs['fairlead_support_wall_thickness']
 
-        E              = inputs['E']
-        G              = inputs['G']
-        rho            = inputs['rho']
-        sigma_y        = inputs['yield_stress']
+        E_main         = inputs['main_E_full']
+        E_offset       = inputs['offset_E_full']
+        E_tower        = inputs['tower_E_full']
+
+        G_main         = inputs['main_G_full']
+        G_offset       = inputs['offset_G_full']
+        G_tower        = inputs['tower_G_full']
+        
+        rho_main       = inputs['main_rho_full']
+        rho_offset     = inputs['offset_rho_full']
+        rho_tower      = inputs['tower_rho_full']
+        
+        sigma_y_main   = inputs['main_sigma_y_full']
+        sigma_y_offset = inputs['offset_sigma_y_full']
+        sigma_y_tower  = inputs['tower_sigma_y_full']
         
         z_main         = inputs['main_z_full']
         z_offset       = inputs['offset_z_full']
@@ -486,7 +519,7 @@ class FloatingFrame(om.ExplicitComponent):
         z_fairlead     = -inputs['fairlead']
 
         m_main         = inputs['main_mass']
-        m_offset      = inputs['offset_mass']
+        m_offset       = inputs['offset_mass']
         m_tower        = inputs['tower_mass_section']
         
         m_rna          = float(inputs['rna_mass'])
@@ -498,16 +531,16 @@ class FloatingFrame(om.ExplicitComponent):
         rhoWater       = float(inputs['rho_water'])
         
         V_main         = inputs['main_displaced_volume']
-        V_offset      = inputs['offset_displaced_volume']
+        V_offset       = inputs['offset_displaced_volume']
 
         F_hydro_main    = inputs['main_hydrostatic_force']
-        F_hydro_offset = inputs['offset_hydrostatic_force']
+        F_hydro_offset  = inputs['offset_hydrostatic_force']
 
         z_cb_main      = inputs['main_center_of_buoyancy']
-        z_cb_offset   = inputs['offset_center_of_buoyancy']
+        z_cb_offset    = inputs['offset_center_of_buoyancy']
         
         cg_main        = np.r_[0.0, 0.0, inputs['main_center_of_mass']]
-        cg_offset     = np.r_[0.0, 0.0, inputs['offset_center_of_mass']]
+        cg_offset      = np.r_[0.0, 0.0, inputs['offset_center_of_mass']]
         cg_tower       = np.r_[0.0, 0.0, inputs['tower_center_of_mass']]
         
         n_connect      = int(inputs['number_of_mooring_connections'])
@@ -870,6 +903,7 @@ class FloatingFrame(om.ExplicitComponent):
             
         # TODO: Parameterize these for upper, lower, cross connections
         # Properties for the inner connectors
+        # Assumes same material as main column here
         mytube = Tube(2.0*R_od_pontoon, t_wall_pontoon)
         Ax    = mytube.Area * np.ones(N1.shape)
         As    = mytube.Asx  * np.ones(N1.shape)
@@ -877,14 +911,17 @@ class FloatingFrame(om.ExplicitComponent):
         I     = mytube.Jxx  * np.ones(N1.shape)
         S     = mytube.S    * np.ones(N1.shape)
         C     = mytube.C    * np.ones(N1.shape)
-        modE  = E   * np.ones(N1.shape)
-        modG  = G   * np.ones(N1.shape)
+        modE  = E_main[0]   * np.ones(N1.shape)
+        modG  = G_main[0]   * np.ones(N1.shape)
         roll  = 0.0 * np.ones(N1.shape)
-        dens  = rho * np.ones(N1.shape)
+        dens  = rho_main[0] * np.ones(N1.shape)
 
         # Add in fairlead support elements
         mooringEID = N1.size + 1
         mytube  = Tube(2.0*R_od_fairlead, t_wall_fairlead)
+        rho_fair = rho_main[0] if ncolumn==0 else rho_offset[0]
+        E_fair   = E_main[0]   if ncolumn==0 else E_offset[0]
+        G_fair   = G_main[0]   if ncolumn==0 else G_offset[0]
         for k in range(n_connect):
             kfair   = 0 if ncolumn==0 else k
             
@@ -904,10 +941,10 @@ class FloatingFrame(om.ExplicitComponent):
             I       = np.append(I   , mytube.Jxx )
             S       = np.append(S   , mytube.S )
             C       = np.append(C   , mytube.C )
-            modE    = np.append(modE, E )
-            modG    = np.append(modG, G )
+            modE    = np.append(modE, E_fair )
+            modG    = np.append(modG, G_fair )
             roll    = np.append(roll, 0.0 )
-            dens    = np.append(dens, rho )
+            dens    = np.append(dens, rho_fair )
 
         # Now mock up cylindrical columns as truss members even though long, slender assumption breaks down
         # Will set density = 0.0 so that we don't double count the mass
@@ -921,7 +958,7 @@ class FloatingFrame(om.ExplicitComponent):
         mytube  = Tube(2.0*R_od_main, t_wall_main)
         myrange = np.arange(R_od_main.size)
         myones  = np.ones(myrange.shape)
-        mydens  = m_main / mytube.Area / np.diff(z_main) + eps
+        mydens  = m_main / mytube.Area / np.diff(z_main) + eps # includes stiffeners, bulkheads, outfitting
         N1   = np.append(N1  , myrange + mainBeginID    )
         N2   = np.append(N2  , myrange + mainBeginID + 1)
         Ax   = np.append(Ax  , mytube.Area )
@@ -930,8 +967,8 @@ class FloatingFrame(om.ExplicitComponent):
         I    = np.append(I   , mytube.Jxx )
         S    = np.append(S   , mytube.S )
         C    = np.append(C   , mytube.C )
-        modE = np.append(modE, E*myones )
-        modG = np.append(modG, G*myones )
+        modE = np.append(modE, E_main )
+        modG = np.append(modG, G_main )
         roll = np.append(roll, np.zeros(myones.shape) )
         dens = np.append(dens, mydens )
 
@@ -940,7 +977,7 @@ class FloatingFrame(om.ExplicitComponent):
         mytube  = Tube(2.0*R_od_tower, t_wall_tower)
         myrange = np.arange(R_od_tower.size)
         myones  = np.ones(myrange.shape)
-        mydens  = m_tower / mytube.Area / np.diff(z_tower) + eps
+        mydens  = m_tower / mytube.Area / np.diff(z_tower) + eps # includes stiffeners, bulkheads, outfitting
         N1   = np.append(N1  , myrange + towerBeginID    )
         N2   = np.append(N2  , myrange + towerBeginID + 1)
         Ax   = np.append(Ax  , mytube.Area )
@@ -949,8 +986,8 @@ class FloatingFrame(om.ExplicitComponent):
         I    = np.append(I   , mytube.Jxx )
         S    = np.append(S   , mytube.S )
         C    = np.append(C   , mytube.C )
-        modE = np.append(modE, E*myones )
-        modG = np.append(modG, G*myones )
+        modE = np.append(modE, E_tower )
+        modG = np.append(modG, G_tower )
         roll = np.append(roll, np.zeros(myones.shape) )
         dens = np.append(dens, mydens ) 
 
@@ -974,7 +1011,7 @@ class FloatingFrame(om.ExplicitComponent):
         mytube     = Tube(2.0*R_od_offset, t_wall_offset)
         myrange    = np.arange(R_od_offset.size)
         myones     = np.ones(myrange.shape)
-        mydens     = m_offset / mytube.Area / np.diff(z_offset) + eps
+        mydens     = m_offset / mytube.Area / np.diff(z_offset) + eps # includes stiffeners, bulkheads, outfitting
         for k in range(ncolumn):
             offsetEID.append( N1.size + 1 )
             
@@ -986,8 +1023,8 @@ class FloatingFrame(om.ExplicitComponent):
             I    = np.append(I   , mytube.Jxx )
             S    = np.append(S   , mytube.S )
             C    = np.append(C   , mytube.C )
-            modE = np.append(modE, E*myones )
-            modG = np.append(modG, G*myones )
+            modE = np.append(modE, E_offset )
+            modG = np.append(modG, G_offset )
             roll = np.append(roll, np.zeros(myones.shape) )
             dens = np.append(dens, mydens ) # Mass added below
 
@@ -1197,7 +1234,7 @@ class FloatingFrame(om.ExplicitComponent):
 
             # Sum up mass and compute CofG.  Frame3DD does mass, but not CG
             ind             = mainEID-1
-            m_total         = Ax[:ind] * rho * elemL[:ind]
+            m_total         = Ax[:ind] * rho_main[0] * elemL[:ind]
             m_pontoon       = m_total.sum() #mass.struct_mass
             m_substructure += m_pontoon
             cg_pontoon      = np.sum( m_total[:,np.newaxis] * elemCoG[:ind,:], axis=0 ) / m_total.sum()
@@ -1309,7 +1346,7 @@ class FloatingFrame(om.ExplicitComponent):
             myframe0.enableDynamics(3*NFREQ, frame3dd_opt['Mmethod'], frame3dd_opt['lump'], float(frame3dd_opt['tol']), shift)
 
             # ---DEBUGGING---
-            myframe0.write('debug.3dd') # For debugging
+            #myframe0.write('debug.3dd') # For debugging
 
             try:
                 _, _, _, _, _, modal = myframe0.run()
@@ -1399,7 +1436,7 @@ class FloatingFrame(om.ExplicitComponent):
             sigma_h_pon  = util.hoopStress(2*R_od_pontoon, t_wall_pontoon, qdyn_pontoon) * np.ones(sigma_ax_pon.shape)
 
             outputs['pontoon_stress'][:npon] = util.vonMisesStressUtilization(sigma_ax_pon, sigma_h_pon, sigma_sh_pon,
-                                                                               gamma_f*gamma_m*gamma_n, sigma_y)
+                                                                               gamma_f*gamma_m*gamma_n, sigma_y_main[0])
         
         # Extract tower for Eurocode checks
         idx = towerEID-1 + np.arange(R_od_tower.size, dtype=np.int32)
@@ -1414,14 +1451,13 @@ class FloatingFrame(om.ExplicitComponent):
         outputs['tower_stress:hoop']  = sigma_h_tower
         outputs['tower_stress:hoopStiffen'] = util.hoopStressEurocode(z_tower, 2*R_od_tower, t_wall_tower, L_reinforced, qdyn_tower)
         outputs['tower_stress'] = util.vonMisesStressUtilization(sigma_ax_tower, sigma_h_tower, sigma_sh_tower,
-                                                                  gamma_f*gamma_m*gamma_n, sigma_y)
+                                                                  gamma_f*gamma_m*gamma_n, sigma_y_tower)
 
-        sigma_y_vec = sigma_y * np.ones(idx.shape)
         outputs['tower_shell_buckling'] = util.shellBucklingEurocode(2*R_od_tower, t_wall_tower, sigma_ax_tower, sigma_h_tower, sigma_sh_tower,
-                                                                      L_reinforced, modE[idx], sigma_y_vec, gamma_f, gamma_b)
+                                                                      L_reinforced, E_tower, sigma_y_tower, gamma_f, gamma_b)
 
         tower_height = z_tower[-1] - z_tower[0]
-        outputs['tower_global_buckling'] = util.bucklingGL(2*R_od_tower, t_wall_tower, Nx[idx], M[idx], tower_height, modE[idx], sigma_y_vec, gamma_f, gamma_b)
+        outputs['tower_global_buckling'] = util.bucklingGL(2*R_od_tower, t_wall_tower, Nx[idx], M[idx], tower_height, E_tower, sigma_y_tower, gamma_f, gamma_b)
         
         # Extract main column for Eurocode checks
         idx = mainEID-1 + np.arange(R_od_main.size, dtype=np.int32)
@@ -1436,14 +1472,13 @@ class FloatingFrame(om.ExplicitComponent):
         outputs['main_stress:hoop']  = sigma_h_main
         outputs['main_stress:hoopStiffen'] = util.hoopStressEurocode(z_main, 2*R_od_main, t_wall_main, L_reinforced, qdyn_main)
         outputs['main_stress'] = util.vonMisesStressUtilization(sigma_ax_main, sigma_h_main, sigma_sh_main,
-                                                                        gamma_f*gamma_m*gamma_n, sigma_y)
+                                                                        gamma_f*gamma_m*gamma_n, sigma_y_main)
 
-        sigma_y_vec = sigma_y * np.ones(idx.shape)
         outputs['main_shell_buckling'] = util.shellBucklingEurocode(2*R_od_main, t_wall_main, sigma_ax_main, sigma_h_main, sigma_sh_main,
-                                                                            L_reinforced, modE[idx], sigma_y_vec, gamma_f, gamma_b)
+                                                                            L_reinforced, E_main, sigma_y_main, gamma_f, gamma_b)
 
         main_height = z_main[-1] - z_main[0]
-        outputs['main_global_buckling'] = util.bucklingGL(2*R_od_main, t_wall_main, Nx[idx], M[idx], main_height, modE[idx], sigma_y_vec, gamma_f, gamma_b)
+        outputs['main_global_buckling'] = util.bucklingGL(2*R_od_main, t_wall_main, Nx[idx], M[idx], main_height, E_main, sigma_y_main, gamma_f, gamma_b)
 
         
         # Extract offset column for Eurocode checks
@@ -1460,14 +1495,13 @@ class FloatingFrame(om.ExplicitComponent):
             outputs['offset_stress:hoop']  = sigma_h_offset
             outputs['offset_stress:hoopStiffen'] = util.hoopStressEurocode(z_offset, 2*R_od_offset, t_wall_offset, L_reinforced, qdyn_offset)
             outputs['offset_stress'] = util.vonMisesStressUtilization(sigma_ax_offset, sigma_h_offset, sigma_sh_offset,
-                                                                            gamma_f*gamma_m*gamma_n, sigma_y)
+                                                                            gamma_f*gamma_m*gamma_n, sigma_y_offset)
 
-            sigma_y_vec = sigma_y * np.ones(idx.shape)
             outputs['offset_shell_buckling'] = util.shellBucklingEurocode(2*R_od_offset, t_wall_offset, sigma_ax_offset, sigma_h_offset, sigma_sh_offset,
-                                                                                L_reinforced, modE[idx], sigma_y_vec, gamma_f, gamma_b)
+                                                                                L_reinforced, E_offset, sigma_y_offset, gamma_f, gamma_b)
 
             offset_height = z_offset[-1] - z_offset[0]
-            outputs['offset_global_buckling'] = util.bucklingGL(2*R_od_offset, t_wall_offset, Nx[idx], M[idx], offset_height, modE[idx], sigma_y_vec, gamma_f, gamma_b)
+            outputs['offset_global_buckling'] = util.bucklingGL(2*R_od_offset, t_wall_offset, Nx[idx], M[idx], offset_height, E_offset, sigma_y_offset, gamma_f, gamma_b)
         
         # TODO: FATIGUE
         # Base and offset columns get API stress/buckling checked in Column Group because that takes into account stiffeners

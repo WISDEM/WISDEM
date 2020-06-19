@@ -7,24 +7,6 @@ from wisdem.towerse.tower import TowerLeanSE
 import numpy as np
 
 from wisdem.commonse.vertical_cylinder import get_nfull
-
-class TempVec(om.ExplicitComponent):
-    
-    def initialize(self):
-        self.options.declare('n_height')
-        
-    def setup(self):
-        n_height  = self.options['n_height']
-        n_full    = get_nfull(n_height)
-        self.add_input('rho', 0.0, units='kg/m**3')
-        self.add_input('unit_cost', 0.0, units='USD/kg')
-        self.add_output('rho_vec', np.zeros(n_full-1), units='kg/m**3')
-        self.add_output('unit_cost_vec', np.zeros(n_full-1), units='USD/kg')
-        
-    def compute(self, inputs, outputs):
-        npts    = get_nfull(self.options['n_height']) - 1
-        outputs['rho_vec'] = inputs['rho']*np.ones(npts)
-        outputs['unit_cost_vec'] = inputs['unit_cost']*np.ones(npts)
     
 class FloatingSE(om.Group):
 
@@ -34,6 +16,7 @@ class FloatingSE(om.Group):
 
     def setup(self):
         opt = self.options['analysis_options']['platform']
+        n_mat = self.options['analysis_options']['materials']['n_mat']
         n_height_main = opt['columns']['main']['n_height']
         n_height_off  = opt['columns']['offset']['n_height']
         n_height_tow  = self.options['analysis_options']['tower']['n_height']
@@ -69,7 +52,7 @@ class FloatingSE(om.Group):
         ivc.add_output('permanent_ballast_density', 0.0, units='kg/m**3')
         ivc.add_output('outfitting_factor', 0.0)
         ivc.add_output('ballast_cost_rate', 0.0, units='USD/kg')
-        ivc.add_output('unit_cost', 0.0, units='USD/kg')
+        ivc.add_output('unit_cost_mat', 0.0, units='USD/kg')
         ivc.add_output('labor_cost_rate', 0.0, units='USD/min')
         ivc.add_output('painting_cost_rate', 0.0, units='USD/m**2')
         ivc.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
@@ -87,7 +70,6 @@ class FloatingSE(om.Group):
         if topLevelFlag:
             sharedIndeps = om.IndepVarComp()
             sharedIndeps.add_output('hub_height', 0.0, units='m')
-            sharedIndeps.add_output('rho', 0.0, units='kg/m**3')
             sharedIndeps.add_output('rho_air', 0.0, units='kg/m**3')
             sharedIndeps.add_output('mu_air', 0.0, units='kg/m/s')
             sharedIndeps.add_output('shearExp', 0.0)
@@ -106,53 +88,40 @@ class FloatingSE(om.Group):
             sharedIndeps.add_output('beta_wave', 0.0, units='deg')
             sharedIndeps.add_output('wave_z0', 0.0, units='m')
             sharedIndeps.add_output('yaw', 0.0, units='deg')
-            sharedIndeps.add_output('E', 0.0, units='N/m**2')
-            sharedIndeps.add_output('G', 0.0, units='N/m**2')
-            sharedIndeps.add_output('nu', 0.0)
-            sharedIndeps.add_output('yield_stress', 0.0, units='N/m**2')
+            sharedIndeps.add_output('rho_mat', np.zeros(1), units='kg/m**3')
+            sharedIndeps.add_output('E_mat', np.zeros((1,3)), units='N/m**2')
+            sharedIndeps.add_output('G_mat', np.zeros((1,3)), units='N/m**2')
+            sharedIndeps.add_output('sigma_y_mat', np.zeros(1), units='N/m**2')
             sharedIndeps.add_output('DC', 0.0)
             sharedIndeps.add_output('life', 0.0)
             sharedIndeps.add_output('m_SN', 0.0)
             sharedIndeps.add_output('rna_mass', 0.0, units='kg')
             sharedIndeps.add_output('rna_I', np.zeros(6), units='kg*m**2')
             sharedIndeps.add_output('rna_cg', np.zeros(3), units='m')
+            sharedIndeps.add_discrete_output('material_names', ['steel'])
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
-        else:
-            # If using YAML for input, unpack to native variables
-            n_height_tow = self.options['analysis_options']['tower']['n_height']
-            n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
-            n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
-            n_layers_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_layers']
-            self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon,
-                                                          n_layers_tower=toweropt['n_layers'], n_layers_monopile=n_layers_mon,
-                                                          n_mat=self.options['analysis_options']['materials']['n_mat']),
-                               promotes=['*'])
 
-        self.add_subsystem('vec', TempVec(n_height=self.options['analysis_options']['tower']['n_height']), promotes=['*'])
         
         self.add_subsystem('tow', TowerLeanSE(analysis_options=self.options['analysis_options'], topLevelFlag=False),
                            promotes=['tower_s','tower_height','tower_outer_diameter_in','tower_layer_thickness','tower_outfitting_factor',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
-                                     'tower_mass','tower_I_base','hub_height',
-                                     'labor_cost_rate','painting_cost_rate'])
-        self.connect('unit_cost','tow.unit_cost_mat')
-        self.connect('rho','tow.rho_mat')
+                                     'tower_mass','tower_I_base','hub_height','material_names',
+                                     'labor_cost_rate','painting_cost_rate','unit_cost_mat','rho_mat','E_mat','G_mat','sigma_y_mat'])
         
         # Next do main and ballast columns
         # Ballast columns are replicated from same design in the components
-        self.add_subsystem('main', Column(n_height=n_height_main, analysis_options=opt, topLevelFlag=False),
-                           promotes=['E','nu','yield_stress','z0','rho_air','mu_air','rho_water','mu_water','rho',
-                                     'Uref','zref','shearExp','yaw','Uc','hsig_wave','Tsig_wave','cd_usr','cm','loading',
-                                     'max_draft','max_taper','min_d_to_t',
-                                     'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
-                                     'unit_cost','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
+        column_promotes = ['E_mat','G_mat','sigma_y_mat','z0','rho_air','mu_air','rho_water','mu_water','rho_mat',
+                           'Uref','zref','shearExp','yaw','Uc','water_depth',
+                           'hsig_wave','Tsig_wave','cd_usr','cm','loading','beta_wind','beta_wave',
+                           'max_draft','max_taper','min_d_to_t','material_names',
+                           'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
+                           'unit_cost_mat','labor_cost_rate','painting_cost_rate','outfitting_cost_rate']
+        
+        self.add_subsystem('main', Column(analysis_options=opt, column_options=opt['columns']['main'], n_mat=n_mat, topLevelFlag=False),
+                           promotes=column_promotes)
 
-        self.add_subsystem('off', Column(n_height=n_height_off, analysis_options=opt, topLevelFlag=False),
-                           promotes=['E','nu','yield_stress','z0','rho_air','mu_air','rho_water','mu_water','rho',
-                                     'Uref','zref','shearExp','yaw','Uc','hsig_wave','Tsig_wave','cd_usr','cm','loading',
-                                     'max_draft','max_taper','min_d_to_t',
-                                     'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
-                                     'unit_cost','labor_cost_rate','painting_cost_rate','outfitting_cost_rate'])
+        self.add_subsystem('off', Column(analysis_options=opt, column_options=opt['columns']['offset'], n_mat=n_mat, topLevelFlag=False),
+                           promotes=column_promotes)
 
         # Run Semi Geometry for interfaces
         self.add_subsystem('sg', SubstructureGeometry(n_height_main=n_height_main,
@@ -173,13 +142,17 @@ class FloatingSE(om.Group):
                                                 n_height_tow=n_height_tow), promotes=['*'])
         
         # Connect all input variables from all models
-        self.connect('main_freeboard', ['tow.foundation_height','main.freeboard'])
+        self.connect('main_freeboard', ['tow.foundation_height','main.freeboard','tow.transition_piece_height'])
         self.connect('offset_freeboard', 'off.freeboard')
 
         self.connect('tow.d_full', ['windLoads.d','tower_d_full'])
         self.connect('tow.d_full', 'tower_d_base', src_indices=[0])
         self.connect('tow.t_full', 'tower_t_full')
         self.connect('tow.z_full', ['loadingWind.z','windLoads.z','tower_z_full']) # includes tower_z_full
+        self.connect('tow.E_full', 'tower_E_full')
+        self.connect('tow.G_full', 'tower_G_full')
+        self.connect('tow.rho_full', 'tower_rho_full')
+        self.connect('tow.sigma_y_full', 'tower_sigma_y_full')
         self.connect('tow.cm.mass','tower_mass_section')
         self.connect('tow.turbine_mass','main.stack_mass_in')
         self.connect('tow.tower_center_of_mass','tower_center_of_mass')
@@ -203,10 +176,18 @@ class FloatingSE(om.Group):
         self.connect('main.z_full', ['main_z_nodes', 'main_z_full'])
         self.connect('main.d_full', 'main_d_full')
         self.connect('main.t_full', 'main_t_full')
+        self.connect('main.E_full', 'main_E_full')
+        self.connect('main.G_full', 'main_G_full')
+        self.connect('main.rho_full', 'main_rho_full')
+        self.connect('main.sigma_y_full', 'main_sigma_y_full')
 
         self.connect('off.z_full', ['offset_z_nodes', 'offset_z_full'])
         self.connect('off.d_full', 'offset_d_full')
         self.connect('off.t_full', 'offset_t_full')
+        self.connect('off.E_full', 'offset_E_full')
+        self.connect('off.G_full', 'offset_G_full')
+        self.connect('off.rho_full', 'offset_rho_full')
+        self.connect('off.sigma_y_full', 'offset_sigma_y_full')
 
         self.connect('max_offset_restoring_force', 'mooring_surge_restoring_force')
         self.connect('operational_heel_restoring_force', 'mooring_pitch_restoring_force')
@@ -266,17 +247,16 @@ def commonVars(prob, nsection):
     prob['mu_water']  = 1.08e-3 # Viscosity of water [kg/m/s]
     
     # Material properties
-    prob['rho'] = 7850.0          # Steel [kg/m^3]
-    prob['E']                = 200e9           # Young's modulus [N/m^2]
-    prob['G']                = 79.3e9          # Shear modulus [N/m^2]
-    prob['yield_stress']     = 3.45e8          # Elastic yield stress [N/m^2]
-    prob['nu']               = 0.26            # Poisson's ratio
+    prob['rho_mat']     = np.array([7850.0])          # Steel [kg/m^3]
+    prob['E_mat']       = 200e9*np.ones((1,3))           # Young's modulus [N/m^2]
+    prob['G_mat']       = 79.3e9*np.ones((1,3))          # Shear modulus [N/m^2]
+    prob['sigma_y_mat'] = np.array([3.45e8])          # Elastic yield stress [N/m^2]
     prob['permanent_ballast_density'] = 4492.0 # [kg/m^3]
 
     # Mass and cost scaling factors
     prob['outfitting_factor'] = 0.06    # Fraction of additional outfitting mass for each column
     prob['ballast_cost_rate']        = 0.1   # Cost factor for ballast mass [$/kg]
-    prob['unit_cost']       = 1.1  # Cost factor for column mass [$/kg]
+    prob['unit_cost_mat']       = np.array([1.1])  # Cost factor for column mass [$/kg]
     prob['labor_cost_rate']          = 1.0  # Cost factor for labor time [$/min]
     prob['painting_cost_rate']       = 14.4  # Cost factor for column surface finishing [$/m^2]
     prob['outfitting_cost_rate']     = 1.5*1.1  # Cost factor for outfitting mass [$/kg]
@@ -290,11 +270,15 @@ def commonVars(prob, nsection):
     
     # Porperties of turbine tower
     nTower = prob.model.options['analysis_options']['tower']['n_height']-1
-    prob['tower_height'] = prob['hub_height']              = 77.6                              # Length from tower main to top (not including freeboard) [m]
-    prob['tower_s'] = np.linspace(0.0, 1.0, nTower+1)
-    prob['tower_outer_diameter_in']    = np.linspace(6.5, 3.87, nTower+1) # Diameter at each tower section node (linear lofting between) [m]
-    prob['tower_layer_thickness']    = np.linspace(0.027, 0.019, nTower).reshape((1,nTower)) # Diameter at each tower section node (linear lofting between) [m]
+    prob['tower_height']            = prob['hub_height'] = 77.6       # Length from tower main to top (not including freeboard) [m]
+    prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
+    prob['tower_outer_diameter_in'] = np.linspace(6.5, 3.87, nTower+1) # Diameter at each tower section node (linear lofting between) [m]
+    prob['tower_layer_thickness']   = np.linspace(0.027, 0.019, nTower).reshape((1,nTower)) # Diameter at each tower section node (linear lofting between) [m]
     prob['tower_outfitting_factor'] = 1.07                              # Scaling for unaccounted tower mass in outfitting
+
+    # Materials
+    prob['material_names'] = ['steel']
+    prob['main.layer_materials'] = prob['off.layer_materials'] = prob['tow.tower_layer_materials'] = ['steel']
     
     # Properties of rotor-nacelle-assembly (RNA)
     prob['rna_mass']   = 350e3 # Mass [kg]
@@ -333,7 +317,11 @@ def sparExample():
     opt['platform']['columns']['main'] = {}
     opt['platform']['columns']['offset'] = {}
     opt['platform']['columns']['main']['n_height'] = npts
+    opt['platform']['columns']['main']['n_layers'] = 1
+    opt['platform']['columns']['main']['n_bulkhead'] = 4
     opt['platform']['columns']['offset']['n_height'] = npts
+    opt['platform']['columns']['offset']['n_layers'] = 1
+    opt['platform']['columns']['offset']['n_bulkhead'] = 4
     opt['platform']['tower'] = {}
     opt['platform']['tower']['buckling_length'] = 30.0
     opt['platform']['frame3dd']            = {}
@@ -388,10 +376,14 @@ def sparExample():
     # Column geometry
     prob['main.permanent_ballast_height'] = 10.0 # Height above keel for permanent ballast [m]
     prob['main_freeboard']                = 10.0 # Height extension above waterline [m]
-    prob['main.section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
-    prob['main.outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
-    prob['main.wall_thickness'] = 0.05 * np.ones(nsection)               # Shell thickness at each section node (linear lofting between) [m]
-    prob['main.bulkhead_thickness'] = 0.05*np.array([1, 1, 0, 1, 0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+
+    prob['main.height'] = np.sum([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
+    prob['main.s'] = np.cumsum([0.0, 49.0, 59.0, 8.0, 14.0]) / prob['main.height']
+    prob['main.outer_diameter_in'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
+    prob['main.layer_thickness'] = 0.05 * np.ones((1,nsection))               # Shell thickness at each section node (linear lofting between) [m]
+
+    prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Locations/thickness of internal bulkheads at section interfaces [m]
+    prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.9, 1.0]) # Locations/thickness of internal bulkheads at section interfaces [m]
     
     # Column ring stiffener parameters
     prob['main.stiffener_web_height']       = 0.10 * np.ones(nsection) # (by section) [m]
@@ -412,9 +404,10 @@ def sparExample():
     # Other variables to avoid divide by zeros, even though it won't matter
     prob['radius_to_offset_column'] = 15.0
     prob['offset_freeboard'] = 0.1
-    prob['off.section_height'] = 1.0 * np.ones(nsection)
-    prob['off.outer_diameter'] = 5.0 * np.ones(nsection+1)
-    prob['off.wall_thickness'] = 0.1 * np.ones(nsection)
+    prob['off.height'] = 1.0
+    prob['off.s'] = np.linspace(0,1,nsection+1)
+    prob['off.outer_diameter_in'] = 5.0 * np.ones(nsection+1)
+    prob['off.layer_thickness'] = 0.1 * np.ones((1,nsection))
     prob['off.permanent_ballast_height'] = 0.1
     prob['off.stiffener_web_height'] = 0.1 * np.ones(nsection)
     prob['off.stiffener_web_thickness'] =  0.1 * np.ones(nsection)
@@ -425,7 +418,7 @@ def sparExample():
     prob['pontoon_wall_thickness'] = 0.1
     
     prob.run_model()
-    
+    return prob
 
 
 def semiExample():
@@ -438,13 +431,18 @@ def semiExample():
     opt['platform']['columns']['main'] = {}
     opt['platform']['columns']['offset'] = {}
     opt['platform']['columns']['main']['n_height'] = npts
+    opt['platform']['columns']['main']['n_layers'] = 1
+    opt['platform']['columns']['main']['n_bulkhead'] = 4
     opt['platform']['columns']['offset']['n_height'] = npts
+    opt['platform']['columns']['offset']['n_layers'] = 1
+    opt['platform']['columns']['offset']['n_bulkhead'] = 4
     opt['platform']['tower'] = {}
     opt['platform']['tower']['buckling_length'] = 30.0
     opt['platform']['frame3dd']            = {}
     opt['platform']['frame3dd']['shear']   = True
     opt['platform']['frame3dd']['geom']    = False
     opt['platform']['frame3dd']['dx']      = -1
+    #opt['platform']['frame3dd']['nM']      = 2
     opt['platform']['frame3dd']['Mmethod'] = 1
     opt['platform']['frame3dd']['lump']    = 0
     opt['platform']['frame3dd']['tol']     = 1e-6
@@ -455,6 +453,7 @@ def semiExample():
     opt['platform']['gamma_b'] = 1.1   # Safety factor on buckling
     opt['platform']['gamma_fatigue'] = 1.755 # Not used
     opt['platform']['run_modal'] = True # Not used
+
     opt['tower'] = {}
     opt['tower']['monopile'] = False
     opt['tower']['n_height'] = npts
@@ -491,18 +490,24 @@ def semiExample():
     # Column geometry
     prob['main.permanent_ballast_height'] = 10.0 # Height above keel for permanent ballast [m]
     prob['main_freeboard']                = 10.0 # Height extension above waterline [m]
-    prob['main.section_height'] = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
-    prob['main.outer_diameter'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
-    prob['main.wall_thickness'] = 0.05 * np.ones(nsection)               # Shell thickness at each section node (linear lofting between) [m]
-    prob['main.bulkhead_thickness'] = 0.05*np.array([1, 1, 0, 1, 0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+
+    prob['main.height'] = np.sum([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
+    prob['main.s'] = np.cumsum([0.0, 49.0, 59.0, 8.0, 14.0]) / prob['main.height']
+    prob['main.outer_diameter_in'] = np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
+    prob['main.layer_thickness'] = 0.05 * np.ones((1,nsection))               # Shell thickness at each section node (linear lofting between) [m]
+
+    prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Locations/thickness of internal bulkheads at section interfaces [m]
+    prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.9, 1.0]) # Locations/thickness of internal bulkheads at section interfaces [m]
 
     # Auxiliary column geometry
-    prob['radius_to_offset_column']         = 33.333 * np.cos(np.pi/6) # Centerline of main column to centerline of offset column [m]
+    prob['radius_to_offset_column']      = 33.333 * np.cos(np.pi/6) # Centerline of main column to centerline of offset column [m]
     prob['off.permanent_ballast_height'] = 0.1                      # Height above keel for permanent ballast [m]
-    prob['offset_freeboard']                = 12.0                     # Height extension above waterline [m]
-    prob['off.section_height']           = np.array([6.0, 0.1, 15.9, 10]) # Length of each section [m]
-    prob['off.outer_diameter']           = np.array([24, 24, 12, 12, 12]) # Diameter at each section node (linear lofting between) [m]
-    prob['off.wall_thickness']           = 0.06 * np.ones(nsection)         # Shell thickness at each section node (linear lofting between) [m]
+    prob['offset_freeboard']             = 12.0                     # Height extension above waterline [m]
+    
+    prob['off.height']            = np.sum([6.0, 0.1, 15.9, 10]) # Length of each section [m]
+    prob['off.s']                 = np.cumsum([0.0, 6.0, 0.1, 15.9, 10])/prob['off.height']
+    prob['off.outer_diameter_in'] = np.array([24, 24, 12, 12, 12]) # Diameter at each section node (linear lofting between) [m]
+    prob['off.layer_thickness']   = 0.06 * np.ones((1,nsection))         # Shell thickness at each section node (linear lofting between) [m]
 
     # Column ring stiffener parameters
     prob['main.stiffener_web_height']       = 0.10 * np.ones(nsection) # (by section) [m]
@@ -534,18 +539,8 @@ def semiExample():
     prob['fairlead_support_wall_thickness'] = 0.0175 # Thickness of all fairlead support elements [m]
     
     prob.run_model()
-    
-    '''
-    f = open('deriv_semi.dat','w')
-    out = prob.check_total_derivatives(f)
-    #out = prob.check_partial_derivatives(f, compact_print=True)
-    f.close()
-    tol = 1e-4
-    for comp in out.keys():
-        for k in out[comp].keys():
-            if ( (out[comp][k]['rel error'][0] > tol) and (out[comp][k]['abs error'][0] > tol) ):
-                print k
-    '''
+    return prob
+
 
 if __name__ == "__main__":
     from openmdao.api import Problem
