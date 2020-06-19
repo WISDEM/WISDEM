@@ -135,13 +135,13 @@ The Python interface allows for more flexible usage or integration with other pr
 
 Airfoils can be created from AeroDyn formatted files,
 
-.. literalinclude:: /examples/airfoilprep/example.py
+.. literalinclude:: ../examples/airfoilprep/example.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
 or they can be created directly from airfoil data.
 
-.. literalinclude:: /examples/airfoilprep/example.py
+.. literalinclude:: ../examples/airfoilprep/example.py
     :start-after: # 2 ---
     :end-before: # 2 ---
 
@@ -149,14 +149,14 @@ or they can be created directly from airfoil data.
 
 Blending is easily accomplished just like in the :ref:`command-line interface <blend-cmdline-label>`.  There is no requirement that the two airfoils share a common set of angles of attack.
 
-.. literalinclude:: /examples/airfoilprep/example.py
+.. literalinclude:: ../examples/airfoilprep/example.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
 
 Applying 3-D corrections and high alpha extensions directly in Python, allows for a few additional options as compared to the command-line version.  The following example performs the same 3-D correction as in the :ref:`command-line version <convert-cmdline-label>`, followed by an alternative 3-D correction that utilizes some of the optional inputs.  See :py:meth:`correction3D <Airfoil.correction3D>` for more details on the optional parameters.
 
-.. literalinclude:: /examples/airfoilprep/example.py
+.. literalinclude:: ../examples/airfoilprep/example.py
     :start-after: # 4 ---
     :end-before: # 4 ---
 
@@ -164,14 +164,14 @@ Applying 3-D corrections and high alpha extensions directly in Python, allows fo
 The airfoil data can be extended to high angles of attack using the :py:meth:`extrapolate <Airfoil.correction3D>`
 method.  Just like the previous method, a few optional parameters are available through the Python interface.  The following example performs the same extrapolation as in the :ref:`command-line version <extrap-cmdline-label>`, followed by an alternative extrapolation that utilizes some of the optional inputs.
 
-.. literalinclude:: /examples/airfoilprep/example.py
+.. literalinclude:: ../examples/airfoilprep/example.py
     :start-after: # 5 ---
     :end-before: # 5 ---
 
 
 Some codes need to use the same set of angles of attack data for every Reynolds number defined in the airfoil.  The following example performs the same method as in the :ref:`command-line version <common-cmdline-label>` followed by an alternate approach where the user can specify the set of angles of attack to use.
 
-.. literalinclude:: /examples/airfoilprep/example.py
+.. literalinclude:: ../examples/airfoilprep/example.py
     :start-after: # 6 ---
     :end-before: # 6 ---
 
@@ -179,14 +179,14 @@ Some codes need to use the same set of angles of attack data for every Reynolds 
 
 For direct access to the underlying data in a grid format (if not already a grid, it is interpolated to a grid first), use the :py:meth:`createDataGrid <Airfoil.createDataGrid>` method as follows:
 
-.. literalinclude:: /examples/airfoilprep/example.py
+.. literalinclude:: ../examples/airfoilprep/example.py
     :start-after: # 7 ---
     :end-before: # 7 ---
 
 
 Finally, writing AeroDyn formatted files is straightforward.
 
-.. literalinclude:: /examples/airfoilprep/example.py
+.. literalinclude:: ../examples/airfoilprep/example.py
     :start-after: # 8 ---
     :end-before: # 8 ---
 

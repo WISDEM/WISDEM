@@ -1,18 +1,9 @@
-# just to hide path details from user in docs
-import os
-basepath = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', '5MW_files', '5MW_AFFiles')
-os.chdir(basepath)
-
-# just to temporarily change PYTHONPATH without installing
-import sys
-sys.path.append(os.path.expanduser('~') + '/Dropbox/NREL/SysEng/TWISTER/src/twister/rotoraero')
-
 # 1 ---------
 
-from airfoilprep import Polar, Airfoil
+from wisdem.airfoilprep import Polar, Airfoil
 import numpy as np
 
-airfoil = Airfoil.initFromAerodynFile('DU21_A17.dat')
+airfoil = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU21_A17.dat')
 
 # 1 ---------
 
@@ -41,8 +32,16 @@ cd = [0.0567, 0.0271, 0.0303, 0.0287, 0.0124, 0.0109, 0.0092, 0.0083, 0.0089,
       0.0139, 0.0147, 0.0158, 0.0181, 0.0211, 0.0255, 0.0301, 0.0347, 0.0401,
       0.0468, 0.0545, 0.0633, 0.0722, 0.0806, 0.0900, 0.0987, 0.1075, 0.1170,
       0.1270, 0.1368, 0.1464, 0.1562, 0.1664, 0.1770, 0.1878, 0.1987, 0.2100]
-
-p1 = Polar(Re, alpha, cl, cd)
+cm = [-0.0378, -0.0349, -0.0361, -0.0464, -0.0821, -0.0924, -0.1015, -0.1073,
+      -0.1083, -0.1112, -0.1146, -0.1172, -0.1194, -0.1213, -0.1232, -0.1252,
+      -0.1268, -0.1282, -0.1297, -0.1310, -0.1324, -0.1337, -0.1350, -0.1363,
+      -0.1374, -0.1385, -0.1395, -0.1403, -0.1406, -0.1398, -0.1390, -0.1378,
+      -0.1369, -0.1353, -0.1338, -0.1317, -0.1291, -0.1249, -0.1213, -0.1177,
+      -0.1142, -0.1103, -0.1066, -0.1032, -0.1002, -0.0971, -0.0940, -0.0909,
+      -0.0883, -0.0865, -0.0854, -0.0849, -0.0847, -0.0850, -0.0858, -0.0869,
+      -0.0883, -0.0901, -0.0922, -0.0949, -0.0980, -0.1017, -0.105]
+         
+p1 = Polar(Re, alpha, cl, cd, cm)
 
 # second polar
 Re = 9e6
@@ -66,7 +65,16 @@ cd = [0.1461, 0.1263, 0.1051, 0.0886, 0.0740, 0.0684, 0.0605, 0.0270, 0.0180,
       0.0103, 0.0107, 0.0112, 0.0125, 0.0155, 0.0171, 0.0192, 0.0219, 0.0255,
       0.0307, 0.0370, 0.0452, 0.0630, 0.0784, 0.0931, 0.1081, 0.1239, 0.1415,
       0.1592, 0.1743, 0.1903, 0.2044, 0.2186, 0.2324, 0.2455]
-p2 = Polar(Re, alpha, cl, cd)
+cm = [-0.0378, -0.0349, -0.0361, -0.0464, -0.0821, -0.0924, -0.1015, -0.1073,
+      -0.1083, -0.1112, -0.1146, -0.1172, -0.1194, -0.1213, -0.1232, -0.1252,
+      -0.1268, -0.1282, -0.1297, -0.1310, -0.1324, -0.1337, -0.1350, -0.1363,
+      -0.1374, -0.1385, -0.1395, -0.1403, -0.1406, -0.1398, -0.1390, -0.1378,
+      -0.1369, -0.1353, -0.1338, -0.1317, -0.1291, -0.1249, -0.1213, -0.1177,
+      -0.1142, -0.1103, -0.1066, -0.1032, -0.1002, -0.0971, -0.0940, -0.0909,
+      -0.0883, -0.0865, -0.0854, -0.0849, -0.0847, -0.0850, -0.0858, -0.0869,
+      -0.0883, -0.0901, -0.0922, -0.0949, -0.0980]
+      
+p2 = Polar(Re, alpha, cl, cd, cm)
 
 # create airfoil object (can contain as many polars as desired)
 af = Airfoil([p1, p2])
@@ -76,8 +84,8 @@ af = Airfoil([p1, p2])
 # 3 ---------
 
 
-airfoil1 = Airfoil.initFromAerodynFile('DU21_A17.dat')
-airfoil2 = Airfoil.initFromAerodynFile('DU25_A17.dat')
+airfoil1 = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU21_A17.dat')
+airfoil2 = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU25_A17.dat')
 
 # blend the two airfoils
 airfoil_blend = airfoil1.blend(airfoil2, 0.3)
@@ -137,7 +145,7 @@ af_common2 = af.interpToCommonAlpha(alpha)
 # 7 ---------
 
 # extract a data grid from airfoil
-alpha, Re, cl, cd = af.createDataGrid()
+alpha, Re, cl, cd, cm = af.createDataGrid()
 
 # cl[i, j] is the lift coefficient for alpha[i] and Re[j]
 
