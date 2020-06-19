@@ -612,7 +612,7 @@ def RotorSE_DAC_rated(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_
     # iec.dlc_inputs['U'] = [[U]]
     iec.dlc_inputs['U'] = [list(Vrated + np.arange(0, 10, 2))]
     # iec.dlc_inputs['Seeds'] = [[1]]
-    iec.dlc_inputs['Seeds'] = = [[13428, 1524]]  # nothing special about these seeds, randomly generated
+    iec.dlc_inputs['Seeds'] = [[13428, 1524]]  # nothing special about these seeds, randomly generated
     iec.dlc_inputs['Yaw'] = [[]]
     iec.transient_dir_change = '-'  # '+','-','both': sign for transient events in EDC, EWS
     iec.transient_shear_orientation = 'v'  # 'v','h','both': vertical or horizontal shear for EWS
