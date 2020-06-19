@@ -721,6 +721,10 @@ class FASTLoadCases(ExplicitComponent):
                 t_e = min(data['Time'][-1], 90.)
                 idx_s = list(data['Time']).index(t_s)
                 idx_e = list(data['Time']).index(t_e)
+            elif case_type == 4:
+                t_s = min(max(data['Time'][0], 30.), data['Time'][-2])
+                idx_s = list(data['Time']).index(t_s)
+                idx_e = -1
             else:
                 idx_s = 0
                 idx_e = -1
@@ -973,9 +977,9 @@ class FASTLoadCases(ExplicitComponent):
                     data_concat[var] = np.array(data_concat[var])
 
                 post_gust(data_concat, casei)
-                post_extreme(data_concat, casei)
+                # post_extreme(data_concat, casei)
                 Gust_Outputs = True
-                Extreme_Outputs = True
+                # Extreme_Outputs = True
 
 
     def writeCpsurfaces(self, inputs):
