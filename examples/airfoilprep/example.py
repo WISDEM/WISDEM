@@ -1,13 +1,9 @@
-# 1 ---------
-
+# Imports and loading an airfoil
 from wisdem.airfoilprep import Polar, Airfoil
 import numpy as np
 
 airfoil = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU21_A17.dat')
-
-# 1 ---------
-
-# 2 ---------
+# ------
 
 # first polar
 Re = 7e6
@@ -78,22 +74,17 @@ p2 = Polar(Re, alpha, cl, cd, cm)
 
 # create airfoil object (can contain as many polars as desired)
 af = Airfoil([p1, p2])
+# ------
 
-# 2 ---------
-
-# 3 ---------
-
-
+# read in airfoils from AeroDyn files
 airfoil1 = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU21_A17.dat')
 airfoil2 = Airfoil.initFromAerodynFile('../../wisdem/test/test_ccblade/5MW_AFFiles/DU25_A17.dat')
 
 # blend the two airfoils
 airfoil_blend = airfoil1.blend(airfoil2, 0.3)
+# ------
 
-# 3 ---------
-
-# 4 ---------
-
+# apply 3D corrections as desired
 r_over_R = 0.5
 chord_over_r = 0.15
 tsr = 5.0
@@ -110,11 +101,9 @@ af3D_ex2 = af.correction3D(r_over_R, chord_over_r, tsr,
                            alpha_max_corr=alpha_max_corr,
                            alpha_linear_min=alpha_linear_min,
                            alpha_linear_max=alpha_linear_max)
+# ------
 
-# 4 ---------
-
-# 5 ---------
-
+# extend airfoil data to high angles of attack with 3D effects
 cdmax = 1.3
 
 # compute a 3D corrected and extended airfoil
@@ -127,10 +116,7 @@ cdmin = 0.001  # minimum drag coefficient.  Viterna's method can occasionally pr
                # The passed in value is used to override the default.
 
 af_extrap2 = af.extrapolate(cdmax, AR=AR, cdmin=cdmin)
-
-# 5 ---------
-
-# 6 ---------
+# ------
 
 # create new airfoil that uses the same angles of attack at each Reynolds number
 af_common1 = af.interpToCommonAlpha()
@@ -139,20 +125,13 @@ af_common1 = af.interpToCommonAlpha()
 # alternatively, specify the exact angles to use
 alpha = np.arange(-180, 180)
 af_common2 = af.interpToCommonAlpha(alpha)
-
-# 6 ---------
-
-# 7 ---------
+# ------
 
 # extract a data grid from airfoil
 alpha, Re, cl, cd, cm = af.createDataGrid()
 
 # cl[i, j] is the lift coefficient for alpha[i] and Re[j]
 
-# 7 ---------
-
-# 8 ---------
-
+# write a new AeroDyn file
 af.writeToAerodynFile('output.dat')
-
-# 8 ---------
+# ------
