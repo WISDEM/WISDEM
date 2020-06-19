@@ -118,8 +118,8 @@ class TestUtilization(unittest.TestCase):
         t_flange = 1.0 * np.ones((3,)) * in_to_si
         w_flange = 10.0 * np.ones((3,)) * in_to_si
         L_stiffener = 5.0 * np.ones((3,)) * ft_to_si
-        E = 29e3 * ksi_to_si
-        nu = 0.3
+        E = 29e3 * ksi_to_si * np.ones((3,))
+        nu = 0.3 * np.ones((3,))
 
         pressure = 1e-3 * 64. * 60. / 144. * ksi_to_si
         axial    = 9000 * kip_to_si / (2*np.pi*(R_od[0]-0.5*t_wall[0])*t_wall[0])
@@ -144,9 +144,9 @@ class TestUtilization(unittest.TestCase):
         w_flange = 10.0 * np.ones((3,)) * in_to_si
         L_stiffener = 5.0 * np.ones((3,)) * ft_to_si
         h_section = 50.0 * np.ones((3,)) * ft_to_si
-        E = 29e3 * ksi_to_si
-        nu = 0.3
-        sigma_y = 50 * ksi_to_si
+        E = 29e3 * ksi_to_si * np.ones((3,))
+        nu = 0.3 * np.ones((3,))
+        sigma_y = 50 * ksi_to_si * np.ones((3,))
 
         KthG = 0.5748
         FxeL, FreL, FxeG, FreG = util._compute_elastic_stress_limits(R_od, t_wall, h_section, h_web, t_web, w_flange, t_flange,
@@ -182,9 +182,9 @@ class TestUtilization(unittest.TestCase):
         h_section = 50.0 * np.ones((3,)) * ft_to_si
         L_stiffener = 5.0 * np.ones((3,)) * ft_to_si
         rho = 64.0 * lbperft3_to_si
-        E = 29e3 * ksi_to_si
-        nu = 0.3
-        sigma_y = 50 * ksi_to_si
+        E = 29e3 * ksi_to_si * np.ones((3,))
+        nu = 0.3 * np.ones((3,))
+        sigma_y = 50 * ksi_to_si * np.ones((3,))
         
         # Find pressure to give "head" of 60ft- put mid-point of middle section at this depth
         z = 60 * ft_to_si

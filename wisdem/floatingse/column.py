@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+import copy
 
 from wisdem.commonse.utilities import nodal2sectional, sectional2nodal, assembleI, unassembleI, sectionalInterp
 import wisdem.commonse.frustum as frustum
@@ -28,6 +29,345 @@ def I_tube(r_i, r_o, h, m):
     return np.c_[Ixx, Iyy, Izz, np.zeros((n,3))]
     
 
+class DiscretizationYAML(om.ExplicitComponent):
+    """
+    Convert the YAML inputs into more native and easy to use variables.
+    
+    Parameters
+    ----------
+    s : numpy array[n_height_tow]
+        1D array of the non-dimensional grid defined along the column axis (0-column base,
+        1-column top)
+    layer_materials : list of strings
+        1D array of the names of the materials of each layer modeled in the column
+        structure.
+    layer_thickness : numpy array[n_layers_tow, n_height_tow-1], [m]
+        2D array of the thickness of the layers of the column structure. The first
+        dimension represents each layer, the second dimension represents each piecewise-
+        constant entry of the column sections.
+    height : float, [m]
+        Scalar of the column height computed along the z axis.
+    outer_diameter_in : numpy array[n_height_tow], [m]
+        cylinder diameter at corresponding locations
+    material_names : list of strings
+        1D array of names of materials.
+    E_mat : numpy array[n_mat, 3], [Pa]
+        2D array of the Youngs moduli of the materials. Each row represents a material,
+        the three columns represent E11, E22 and E33.
+    G_mat : numpy array[n_mat, 3], [Pa]
+        2D array of the shear moduli of the materials. Each row represents a material,
+        the three columns represent G12, G13 and G23.
+    sigma_y_mat : numpy array[n_mat], [Pa]
+        2D array of the yield strength of the materials. Each row represents a material,
+        the three columns represent Xt12, Xt13 and Xt23.
+    rho_mat : numpy array[n_mat], [kg/m**3]
+        1D array of the density of the materials. For composites, this is the density of
+        the laminate.
+    unit_cost_mat : numpy array[n_mat], [USD/kg]
+        1D array of the unit costs of the materials.
+    
+    Returns
+    -------
+    section_height : numpy array[n_height-1], [m]
+        parameterized section heights along cylinder
+    outer_diameter : numpy array[n_height], [m]
+        cylinder diameter at corresponding locations
+    wall_thickness : numpy array[n_height-1], [m]
+        shell thickness at corresponding locations
+    E : numpy array[n_height-1], [Pa]
+        Isotropic Youngs modulus of the materials along the column sections.
+    G : numpy array[n_height-1], [Pa]
+        Isotropic shear modulus of the materials along the column sections.
+    sigma_y : numpy array[n_height-1], [Pa]
+        Isotropic yield strength of the materials along the column sections.
+    rho : numpy array[n_height-1], [kg/m**3]
+        Density of the materials along the column sections.
+    unit_cost : numpy array[n_height-1], [USD/kg]
+        Unit costs of the materials along the column sections.
+    
+    """
+    def initialize(self):
+        self.options.declare('n_height')
+        self.options.declare('n_layers')
+        self.options.declare('n_mat')
+        
+    def setup(self):
+        n_height = self.options['n_height']
+        n_layers = self.options['n_layers']
+        n_mat    = self.options['n_mat']
+
+        # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
+        self.add_input('s', val=np.zeros(n_height))
+        self.add_discrete_input('layer_materials', val=n_layers * [''])
+        self.add_input('layer_thickness', val=np.zeros((n_layers, n_height-1)), units='m')
+        self.add_input('height', val = 0.0, units='m')
+        self.add_input('outer_diameter_in', np.zeros(n_height), units='m')
+        self.add_discrete_input('material_names', val=n_mat * [''])
+        self.add_input('E_mat', val=np.zeros([n_mat, 3]), units='Pa')
+        self.add_input('G_mat', val=np.zeros([n_mat, 3]), units='Pa')
+        self.add_input('sigma_y_mat', val=np.zeros(n_mat), units='Pa')
+        self.add_input('rho_mat', val=np.zeros(n_mat), units='kg/m**3')
+        self.add_input('unit_cost_mat', val=np.zeros(n_mat), units='USD/kg')
+
+        self.add_output('section_height', val=np.zeros(n_height-1), units='m')
+        self.add_output('outer_diameter', val=np.zeros(n_height), units='m')
+        self.add_output('wall_thickness', val=np.zeros(n_height-1), units='m')
+        self.add_output('E', val=np.zeros(n_height-1), units='Pa')
+        self.add_output('G', val=np.zeros(n_height-1), units='Pa')
+        self.add_output('sigma_y', val=np.zeros(n_height-1), units='Pa')
+        self.add_output('rho', val=np.zeros(n_height-1), units='kg/m**3')
+        self.add_output('unit_cost', val=np.zeros(n_height-1), units='USD/kg')
+
+        # self.declare_partials('*', '*', method='fd')
+        
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        # Unpack dimensions
+        n_height = self.options['n_height']
+        n_layers = self.options['n_layers']
+
+        # Unpack values
+        h_col  = inputs['height']
+        lthick = inputs['layer_thickness']
+        lmat   = copy.copy( discrete_inputs['layer_materials'] )
+        
+        outputs['section_height'] = np.diff( h_col * inputs['s'] )
+        outputs['wall_thickness'] = np.sum(inputs['layer_thickness'], axis=0)
+        outputs['outer_diameter'] = inputs['outer_diameter_in']
+        twall     = inputs['layer_thickness']
+        layer_mat = discrete_inputs['layer_materials']
+
+        # Check to make sure we have good values
+        if np.any(outputs['section_height'] <= 0.0):
+            raise ValueError('Section height values must be greater than zero, '+str(outputs['section_height']))
+        if np.any(outputs['wall_thickness'] <= 0.0):
+            raise ValueError('Wall thickness values must be greater than zero, '+str(outputs['wall_thickness']))
+        if np.any(outputs['outer_diameter'] <= 0.0):
+            raise ValueError('Diameter values must be greater than zero, '+str(outputs['outer_diameter']))
+
+        # DETERMINE MATERIAL PROPERTIES IN EACH SECTION
+        # Convert to isotropic material
+        E    = np.mean(inputs['E_mat'], axis=1)
+        G    = np.mean(inputs['G_mat'], axis=1)
+        sigy = inputs['sigma_y_mat']
+        rho  = inputs['rho_mat']
+        cost = inputs['unit_cost_mat']
+        mat_names = discrete_inputs['material_names']
+
+        # Initialize sectional data
+        E_param    = np.zeros(twall.shape)
+        G_param    = np.zeros(twall.shape)
+        sigy_param = np.zeros(twall.shape)
+        rho_param  = np.zeros(n_height - 1)
+        cost_param = np.zeros(n_height - 1)
+
+        # Loop over materials and associate it with its thickness
+        for k in range(len(layer_mat)):
+            # Get the material name for this layer
+            iname = layer_mat[k]
+
+            # Get the index into the material list
+            imat  = mat_names.index( iname )
+            
+            # For density, take mass weighted layer
+            rho_param += rho[imat] * twall[k,:]
+            
+            # For cost, take mass weighted layer
+            cost_param += rho[imat] * twall[k,:] * cost[imat]
+
+            # Store the value associated with this thickness
+            E_param[k,:] = E[imat]
+            G_param[k,:] = G[imat]
+            sigy_param[k,:] = sigy[imat]
+
+        # Mass weighted cost (should really weight by radius too)
+        cost_param /= rho_param
+        
+        # Thickness weighted density (should really weight by radius too)
+        rho_param /= twall.sum(axis=0)
+
+        # Mixtures of material properties: https://en.wikipedia.org/wiki/Rule_of_mixtures
+
+        # Volume fraction
+        vol_frac  = twall / twall.sum(axis=0)[np.newaxis,:]
+
+        # Average of upper and lower bounds
+        E_param    = 0.5*np.sum(vol_frac*E_param,    axis=0) + 0.5 / np.sum(vol_frac/E_param,    axis=0)
+        G_param    = 0.5*np.sum(vol_frac*G_param,    axis=0) + 0.5 / np.sum(vol_frac/G_param,    axis=0)
+        sigy_param = 0.5*np.sum(vol_frac*sigy_param, axis=0) + 0.5 / np.sum(vol_frac/sigy_param, axis=0)
+        
+        # Store values
+        outputs['E']   = E_param
+        outputs['G']   = G_param
+        outputs['rho'] = rho_param
+        outputs['sigma_y']   = sigy_param
+        outputs['unit_cost'] = cost_param
+
+
+        
+class ColumnGeometry(om.ExplicitComponent):
+    """
+    Compute geometric properties for vertical columns in substructure
+    for floating offshore wind turbines.
+    
+    Parameters
+    ----------
+    water_depth : float, [m]
+        water depth
+    hsig_wave : float, [m]
+        significant wave height
+    freeboard : float, [m]
+        Length of column above water line
+    max_draft : float, [m]
+        Maxmimum length of column below water line
+    z_full_in : numpy array[n_full], [m]
+        z-coordinates of section nodes (length = nsection+1)
+    z_param_in : numpy array[n_height], [m]
+        z-coordinates of section nodes (length = nsection+1)
+    stiffener_web_height : numpy array[n_sect], [m]
+        height of stiffener web (base of T) within each section bottom to top
+        (length = nsection)
+    stiffener_web_thickness : numpy array[n_sect], [m]
+        thickness of stiffener web (base of T) within each section bottom to top
+        (length = nsection)
+    stiffener_flange_width : numpy array[n_sect], [m]
+        height of stiffener flange (top of T) within each section bottom to top
+        (length = nsection)
+    stiffener_flange_thickness : numpy array[n_sect], [m]
+        thickness of stiffener flange (top of T) within each section bottom to top
+        (length = nsection)
+    stiffener_spacing : numpy array[n_sect], [m]
+        Axial distance from one ring stiffener to another within each section bottom to
+        top (length = nsection)
+    E : numpy array[n_height-1], [Pa]
+        Isotropic Youngs modulus of the materials along the column sections.
+    G : numpy array[n_height-1], [Pa]
+        Isotropic shear modulus of the materials along the column sections.
+    sigma_y : numpy array[n_height-1], [Pa]
+        Isotropic yield strength of the materials along the column sections.
+    rho : numpy array[n_height-1], [kg/m**3]
+        Density of the materials along the column sections.
+    unit_cost : numpy array[n_height-1], [USD/kg]
+        Unit costs of the materials along the column sections.
+    
+    Returns
+    -------
+    z_full : numpy array[n_full], [m]
+        z-coordinates of section nodes (length = nsection+1)
+    z_param : numpy array[n_height], [m]
+        z-coordinates of section nodes (length = nsection+1)
+    draft : float, [m]
+        Column draft (length of body under water)
+    h_web : numpy array[n_full-1], [m]
+        height of stiffener web (base of T) within each section bottom to top
+    t_web : numpy array[n_full-1], [m]
+        thickness of stiffener web (base of T) within each section bottom to top
+    w_flange : numpy array[n_full-1], [m]
+        height of stiffener flange (top of T) within each section bottom to top
+    t_flange : numpy array[n_full-1], [m]
+        thickness of stiffener flange (top of T) within each section bottom to top
+    L_stiffener : numpy array[n_full-1], [m]
+        Axial distance from one ring stiffener to another within each section bottom to
+        top
+    E_full : numpy array[n_full-1], [Pa]
+        Isotropic Youngs modulus of the materials along the column sections.
+    G_full : numpy array[n_full-1], [Pa]
+        Isotropic shear modulus of the materials along the column sections.
+    sigma_y_full : numpy array[n_full-1], [Pa]
+        Isotropic yield strength of the materials along the column sections.
+    rho_full : numpy array[n_full-1], [kg/m**3]
+        Density of the materials along the column sections.
+    unit_cost_full : numpy array[n_full-1], [USD/kg]
+        Unit costs of the materials along the column sections.
+    nu_full : numpy array[n_full-1]
+        Poisson's ratio assuming isotropic material
+    draft_margin : float
+        Ratio of draft to water depth
+    wave_height_freeboard_ratio : float
+        Ratio of maximum wave height (avg of top 1%) to freeboard
+    
+    """
+
+    def initialize(self):
+        self.options.declare('n_height')
+        
+    def setup(self):
+        n_height = self.options['n_height']
+        n_sect = n_height - 1
+        n_full    = get_nfull(n_height)
+
+        self.add_input('water_depth', 0.0, units='m')
+        self.add_input('hsig_wave', 0.0, units='m')
+        self.add_input('freeboard', 0.0, units='m')
+        self.add_input('max_draft', 0.0, units='m')
+        self.add_input('z_full_in', np.zeros(n_full), units='m')
+        self.add_input('z_param_in', np.zeros(n_height), units='m')
+        self.add_input('stiffener_web_height', np.zeros(n_sect), units='m')
+        self.add_input('stiffener_web_thickness', np.zeros(n_sect), units='m')
+        self.add_input('stiffener_flange_width', np.zeros(n_sect), units='m')
+        self.add_input('stiffener_flange_thickness', np.zeros(n_sect), units='m')
+        self.add_input('stiffener_spacing', np.zeros(n_sect), units='m')
+        self.add_input('E', val=np.zeros(n_sect), units='Pa')
+        self.add_input('G', val=np.zeros(n_sect), units='Pa')
+        self.add_input('sigma_y', val=np.zeros(n_sect), units='Pa')
+        self.add_input('rho', val=np.zeros(n_sect), units='kg/m**3')
+        self.add_input('unit_cost', val=np.zeros(n_sect), units='USD/kg')
+
+        self.add_output('z_full', np.zeros(n_full), units='m')
+        self.add_output('z_param', np.zeros(n_height), units='m')
+        self.add_output('draft', 0.0, units='m')
+        self.add_output('h_web', np.zeros(n_full-1), units='m')
+        self.add_output('t_web', np.zeros(n_full-1), units='m')
+        self.add_output('w_flange', np.zeros(n_full-1), units='m')
+        self.add_output('t_flange', np.zeros(n_full-1), units='m')
+        self.add_output('L_stiffener', np.zeros(n_full-1), units='m')
+        self.add_output('draft_margin', 0.0)
+        self.add_output('wave_height_freeboard_ratio', 0.0)
+        self.add_output('E_full', val=np.zeros(n_full-1), units='Pa')
+        self.add_output('G_full', val=np.zeros(n_full-1), units='Pa')
+        self.add_output('nu_full', val=np.zeros(n_full-1))
+        self.add_output('sigma_y_full', val=np.zeros(n_full-1), units='Pa')
+        self.add_output('rho_full', val=np.zeros(n_full-1), units='kg/m**3')
+        self.add_output('unit_cost_full', val=np.zeros(n_full-1), units='USD/kg')
+
+        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+
+    def compute(self, inputs, outputs):
+        # Unpack variables
+        freeboard = inputs['freeboard']
+
+        # With waterline at z=0, set the z-position of section nodes
+        # Note sections and nodes start at bottom of column and move up
+        draft     = inputs['z_param_in'][-1] - freeboard
+        z_full    = inputs['z_full_in'] - draft 
+        z_param   = inputs['z_param_in'] - draft 
+        outputs['draft']     = draft
+        outputs['z_full']    = z_full
+        outputs['z_param']   = z_param
+
+        # Create constraint output that draft is less than water depth
+        outputs['draft_margin'] = draft / inputs['max_draft']
+
+        # Make sure freeboard is more than 20% of hsig_wave (DNV-OS-J101)
+        outputs['wave_height_freeboard_ratio'] = inputs['hsig_wave'] / np.abs(freeboard)
+
+        # Material properties
+        z_section,_ = nodal2sectional( z_full )
+        outputs['rho_full']     = sectionalInterp(z_section, z_param, inputs['rho'])
+        outputs['E_full']       = sectionalInterp(z_section, z_param, inputs['E'])
+        outputs['G_full']       = sectionalInterp(z_section, z_param, inputs['G'])
+        outputs['nu_full']      = 0.5*outputs['E_full']/outputs['G_full'] - 1.0 
+        outputs['sigma_y_full'] = sectionalInterp(z_section, z_param, inputs['sigma_y'])
+        outputs['unit_cost_full'] = sectionalInterp(z_section, z_param, inputs['unit_cost'])
+        
+        # Sectional stiffener properties
+        outputs['t_web']        = sectionalInterp(z_section, z_param, inputs['stiffener_web_thickness'])
+        outputs['t_flange']     = sectionalInterp(z_section, z_param, inputs['stiffener_flange_thickness'])
+        outputs['h_web']        = sectionalInterp(z_section, z_param, inputs['stiffener_web_height'])
+        outputs['w_flange']     = sectionalInterp(z_section, z_param, inputs['stiffener_flange_width'])
+        outputs['L_stiffener']  = sectionalInterp(z_section, z_param, inputs['stiffener_spacing'])
+
+        
+        
 class BulkheadProperties(om.ExplicitComponent):
     """
     Compute bulkhead properties
@@ -36,20 +376,19 @@ class BulkheadProperties(om.ExplicitComponent):
     ----------
     z_full : numpy array[n_full], [m]
         z-coordinates of section nodes
-    z_param : numpy array[n_height], [m]
-        z-coordinates of section nodes
     d_full : numpy array[n_full], [m]
         cylinder diameter at corresponding locations
     t_full : numpy array[n_full-1], [m]
         shell thickness at corresponding locations
-    rho : float, [kg/m**3]
+    rho_full : numpy array[n_full-1], [kg/m**3]
         material density
-    bulkhead_thickness : numpy array[n_height], [m]
-        Nodal locations of bulkhead thickness, zero meaning no bulkhead, bottom to top
-        (length = nsection + 1)
+    bulkhead_locations : numpy array[n_bulkhead]
+        Vector of non-dimensional values (from 0.0 at the bottom bottom to 1.0 at the top) indicating the center locations of the bulkheads
+    bulkhead_thickness : numpy array[n_bulkhead], [m]
+        Vector of thicknesses of the bulkheads at the locations specified (length = n_bulkhead)
     shell_mass : numpy array[n_full-1], [kg]
         mass of column shell
-    unit_cost : float, [USD/kg]
+    unit_cost_full : numpy array[n_full-1], [USD/kg]
         Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg
     labor_cost_rate : float, [USD/min]
         Labor cost rate
@@ -58,8 +397,10 @@ class BulkheadProperties(om.ExplicitComponent):
     
     Returns
     -------
-    bulkhead_mass : numpy array[n_full], [kg]
+    bulkhead_mass : numpy array[n_full-1], [kg]
         mass of column bulkheads
+    bulkhead_z_cg : float, [m]
+        z-coordinate of center of gravity for all bulkheads
     bulkhead_cost : float, [USD]
         cost of column bulkheads
     bulkhead_I_keel : numpy array[6], [kg*m**2]
@@ -69,8 +410,10 @@ class BulkheadProperties(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('n_height')
+        self.options.declare('n_bulkhead')
         
     def setup(self):
+        n_bulk   = self.options['n_bulkhead']
         n_height = self.options['n_height']
         n_sect   = n_height - 1
         n_full   = get_nfull(n_height)
@@ -78,18 +421,18 @@ class BulkheadProperties(om.ExplicitComponent):
         self.bulk_full = np.zeros( n_full, dtype=np.int_)
 
         self.add_input('z_full', np.zeros(n_full), units='m')
-        self.add_input('z_param', np.zeros(n_height), units='m')
         self.add_input('d_full', np.zeros(n_full), units='m')
         self.add_input('t_full', np.zeros(n_full-1), units='m')
-        self.add_input('rho', 0.0, units='kg/m**3')
-        self.add_input('bulkhead_thickness', np.zeros(n_height), units='m')
-        self.add_input('bulkhead_location', np.zeros(n_height), units='m')
+        self.add_input('rho_full', np.zeros(n_full-1), units='kg/m**3')
+        self.add_input('bulkhead_thickness', np.zeros(n_bulk), units='m')
+        self.add_input('bulkhead_locations', np.zeros(n_bulk))
         self.add_input('shell_mass', np.zeros(n_full-1), units='kg')
-        self.add_input('unit_cost', 0.0, units='USD/kg')
+        self.add_input('unit_cost_full', np.zeros(n_full-1), units='USD/kg')
         self.add_input('labor_cost_rate', 0.0, units='USD/min')
         self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
 
-        self.add_output('bulkhead_mass', np.zeros(n_full), units='kg')
+        self.add_output('bulkhead_mass', np.zeros(n_full-1), units='kg')
+        self.add_output('bulkhead_z_cg', 0.0, units='m')
         self.add_output('bulkhead_cost', 0.0, units='USD')
         self.add_output('bulkhead_I_keel', np.zeros(6), units='kg*m**2')
 
@@ -98,62 +441,61 @@ class BulkheadProperties(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         # Unpack variables
         z_full     = inputs['z_full'] # at section nodes
-        z_param    = inputs['z_param']
         R_od       = 0.5*inputs['d_full'] # at section nodes
         twall      = inputs['t_full'] # at section nodes
         R_id       = get_inner_radius(R_od, twall)
-        t_bulk     = inputs['bulkhead_thickness'] # at section nodes
-        rho        = inputs['rho']
-        
-        # Map bulkhead locations to finer computation grid
-        Zf,Zp = np.meshgrid(z_full, z_param)
-        idx = np.argmin( np.abs(Zf-Zp), axis=1 )
-        t_bulk_full = np.zeros( z_full.shape )
-        t_bulk_full[idx] = t_bulk
-        # Make sure top and bottom are capped
-        if (t_bulk_full[ 0] == 0.0): t_bulk_full[ 0] = twall[ 0]
-        if (t_bulk_full[-1] == 0.0): t_bulk_full[-1] = twall[-1]
-        
-        # Compute bulkhead volume at every section node
-        # Assume bulkheads are same thickness as shell wall
-        V_bulk = np.pi * R_id**2 * t_bulk_full
+        s_bulk     = inputs['bulkhead_locations']
+        t_bulk     = inputs['bulkhead_thickness']
+        nbulk      = s_bulk.size
 
-        # Convert to mass
-        m_bulk = rho * V_bulk
+        # Get z and R_id values of bulkhead locations
+        s_full    = (z_full - z_full[0]) / (z_full[-1] - z_full[0])
+        z_bulk    = np.interp(s_bulk, s_full, z_full)
+        R_id_bulk = np.interp(s_bulk, s_full, R_id)
+        rho       = sectionalInterp(s_bulk, s_full, inputs['rho_full'])
+        
+        # Compute bulkhead mass
+        m_bulk = rho * np.pi * R_id_bulk**2 * t_bulk
+        z_cg   = 0.0 if m_bulk.sum() == 0.0 else np.dot(z_bulk, m_bulk) / m_bulk.sum()
 
+        # Find sectional index for each bulkhead and assign appropriate mass
+        m_bulk_sec = np.zeros(z_full.size-1)
+        ibulk      = []
+        for k in range(nbulk):
+            idx = np.where(s_bulk[k] >= s_full[:-1])[0][-1]
+            ibulk.append(idx)
+            m_bulk_sec[idx] += m_bulk[k]
+        
         # Compute moments of inertia at keel
         # Assume bulkheads are just simple thin discs with radius R_od-t_wall and mass already computed
-        Izz = 0.5 * m_bulk * R_id**2
+        Izz = 0.5 * m_bulk * R_id_bulk**2
         Ixx = Iyy = 0.5 * Izz
+        dz  = z_bulk - z_full[0]
         I_keel = np.zeros((3,3))
-        dz  = z_full - z_full[0]
-        for k in range(m_bulk.size):
+        for k in range(nbulk):
             R = np.array([0.0, 0.0, dz[k]])
             Icg = assembleI( [Ixx[k], Iyy[k], Izz[k], 0.0, 0.0, 0.0] )
             I_keel += Icg + m_bulk[k]*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
 
-
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
         # All dimensions for correlations based on mm, not meters.
-        k_m     = inputs['unit_cost'] #1.1 # USD / kg carbon steel plate
+        k_m     = sectionalInterp(s_bulk, s_full, inputs['unit_cost_full'])
         k_f     = inputs['labor_cost_rate'] #1.0 # USD / min labor
         k_p     = inputs['painting_cost_rate'] #USD / m^2 painting
         m_shell = inputs['shell_mass'].sum()
-        nbulk   = np.count_nonzero(V_bulk)
-        bulkind = (V_bulk > 0.0)
         
         # Cost Step 1) Cutting flat plates using plasma cutter
-        cutLengths = 2.0 * np.pi * R_id * bulkind
+        cutLengths = 2.0 * np.pi * R_id_bulk
         # Cost Step 2) Fillet welds with GMAW-C (gas metal arc welding with CO2) of bulkheads to shell
         theta_w = 3.0 # Difficulty factor
 
         # Labor-based expenses
-        K_f = k_f * ( manufacture.steel_cutting_plasma_time(cutLengths, t_bulk_full) +
-                      manufacture.steel_filett_welding_time(theta_w, nbulk, m_bulk+m_shell, 2*np.pi*R_id, t_bulk_full) )
+        K_f = k_f * ( manufacture.steel_cutting_plasma_time(cutLengths, t_bulk) +
+                      manufacture.steel_filett_welding_time(theta_w, nbulk, m_bulk+m_shell, 2*np.pi*R_id_bulk, t_bulk) )
         
         # Cost Step 3) Painting (two sided)
         theta_p = 1.0
-        K_p  = k_p * theta_p * 2 * (np.pi * R_id**2.0 * bulkind).sum()
+        K_p  = k_p * theta_p * 2 * (np.pi * R_id_bulk**2.0).sum()
 
         # Material cost, without outfitting
         K_m = np.sum(k_m * m_bulk)
@@ -163,7 +505,8 @@ class BulkheadProperties(om.ExplicitComponent):
         
         # Store results
         outputs['bulkhead_I_keel'] = unassembleI(I_keel)
-        outputs['bulkhead_mass'] = m_bulk
+        outputs['bulkhead_mass'] = m_bulk_sec
+        outputs['bulkhead_z_cg'] = z_cg
         outputs['bulkhead_cost'] = c_bulk
 
     
@@ -178,11 +521,11 @@ class BuoyancyTankProperties(om.ExplicitComponent):
         cylinder diameter at corresponding locations
     z_full : numpy array[n_full], [m]
         z-coordinates of section nodes
-    rho : float, [kg/m**3]
+    rho_full : numpy array[n_full-1], [kg/m**3]
         material density
     shell_mass : numpy array[n_full-1], [kg]
         mass of column shell
-    unit_cost : float, [USD/kg]
+    unit_cost_full : numpy array[n_full-1], [USD/kg]
         Raw material cost: steel $1.1/kg, aluminum $3.5/kg
     labor_cost_rate : float, [USD/min]
         Labor cost
@@ -192,7 +535,7 @@ class BuoyancyTankProperties(om.ExplicitComponent):
         Radius of heave plate at bottom of column
     buoyancy_tank_height : float, [m]
         Radius of heave plate at bottom of column
-    buoyancy_tank_location : float, [m]
+    buoyancy_tank_location : float
         Radius of heave plate at bottom of column
     
     Returns
@@ -219,14 +562,14 @@ class BuoyancyTankProperties(om.ExplicitComponent):
 
         self.add_input('d_full', np.zeros(n_full), units='m')
         self.add_input('z_full', np.zeros(n_full), units='m')
-        self.add_input('rho', 0.0, units='kg/m**3')
+        self.add_input('rho_full', np.zeros(n_full-1), units='kg/m**3')
         self.add_input('shell_mass', np.zeros(n_full-1), units='kg')
-        self.add_input('unit_cost', 0.0, units='USD/kg')
+        self.add_input('unit_cost_full', np.zeros(n_full-1), units='USD/kg')
         self.add_input('labor_cost_rate', 0.0, units='USD/min')
         self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
         self.add_input('buoyancy_tank_diameter', 0.0, units='m')
         self.add_input('buoyancy_tank_height', 0.0, units='m')
-        self.add_input('buoyancy_tank_location', 0.0, units='m')
+        self.add_input('buoyancy_tank_location', 0.0)
 
         self.add_output('buoyancy_tank_mass', 0.0, units='kg')
         self.add_output('buoyancy_tank_cost', 0.0, units='USD')
@@ -246,8 +589,6 @@ class BuoyancyTankProperties(om.ExplicitComponent):
 
         location  = float(inputs['buoyancy_tank_location'])
         
-        rho       = float(inputs['rho'])
-
         # Current hard-coded, coarse specification of shell thickness
         t_plate   = R_plate / 50.0
 
@@ -257,6 +598,7 @@ class BuoyancyTankProperties(om.ExplicitComponent):
         z_upper   = z_lower +     h_box
 
         # Mass and volume properties that subtract out central column contributions for no double-counting
+        rho       = sectionalInterp(z_lower, z_full, inputs['rho_full'])
         R_col     = np.interp([z_lower, z_upper], z_full, R_od)
         if not np.any(R_plate > R_col): R_plate = 0.0
         A_plate   = np.maximum(0.0, np.pi * (R_plate**2.0 - R_col**2.0))
@@ -300,7 +642,7 @@ class BuoyancyTankProperties(om.ExplicitComponent):
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
         # All dimensions for correlations based on mm, not meters.
-        k_m     = inputs['unit_cost'] #1.1 # USD / kg carbon steel plate
+        k_m     = sectionalInterp(z_lower, z_full, inputs['unit_cost_full'])
         k_f     = inputs['labor_cost_rate'] #1.0 # USD / min labor
         k_p     = inputs['painting_cost_rate'] #USD / m^2 painting
         m_shell = inputs['shell_mass'].sum()
@@ -357,11 +699,11 @@ class StiffenerProperties(om.ExplicitComponent):
         shell thickness at corresponding locations
     z_full : numpy array[n_full], [m]
         z-coordinates of section nodes
-    rho : float, [kg/m**3]
+    rho_full : numpy array[n_full-1], [kg/m**3]
         material density
     shell_mass : numpy array[n_full-1], [kg]
         mass of column shell
-    unit_cost : float, [USD/kg]
+    unit_cost_full : numpy array[n_full-1], [USD/kg]
         Raw material cost: steel $1.1/kg, aluminum $3.5/kg
     labor_cost_rate : float, [USD/min]
         Labor cost
@@ -407,9 +749,9 @@ class StiffenerProperties(om.ExplicitComponent):
         self.add_input('d_full', np.zeros(n_full), units='m')
         self.add_input('t_full', np.zeros(n_full-1), units='m')
         self.add_input('z_full', np.zeros(n_full), units='m')
-        self.add_input('rho', 0.0, units='kg/m**3')
+        self.add_input('rho_full', np.zeros(n_full-1), units='kg/m**3')
         self.add_input('shell_mass', np.zeros(n_full-1), units='kg')
-        self.add_input('unit_cost', 0.0, units='USD/kg')
+        self.add_input('unit_cost_full', np.zeros(n_full-1), units='USD/kg')
         self.add_input('labor_cost_rate', 0.0, units='USD/min')
         self.add_input('painting_cost_rate', 0.0, units='USD/m/m')
         self.add_input('h_web', np.zeros(n_full-1), units='m')
@@ -442,7 +784,7 @@ class StiffenerProperties(om.ExplicitComponent):
         w_flange     = inputs['w_flange']
         L_stiffener  = inputs['L_stiffener']
 
-        rho          = inputs['rho']
+        rho          = inputs['rho_full']
         
         # Outer and inner radius of web by section
         R_wo = R_od - t_wall
@@ -507,7 +849,7 @@ class StiffenerProperties(om.ExplicitComponent):
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
         # All dimensions for correlations based on mm, not meters.
-        k_m     = inputs['unit_cost'] #1.1 # USD / kg carbon steel plate
+        k_m     = inputs['unit_cost_full'] #1.1 # USD / kg carbon steel plate
         k_f     = inputs['labor_cost_rate'] #1.0 # USD / min labor
         k_p     = inputs['painting_cost_rate'] #USD / m^2 painting
         m_shell = inputs['shell_mass'].sum()
@@ -531,7 +873,7 @@ class StiffenerProperties(om.ExplicitComponent):
         K_p  = k_p * theta_p * (n_stiff*(2*np.pi*(R_wo**2.0-R_wi**2.0) + 2*np.pi*0.5*(R_fo+R_fi)*(2*w_flange + 2*t_flange) - 2*np.pi*R_fo*t_web)).sum()
         
         # Material cost, without outfitting
-        K_m = k_m * outputs['stiffener_mass'].sum()
+        K_m = np.sum(k_m * outputs['stiffener_mass'])
 
         # Total cost
         c_ring = K_m + K_f + K_p
@@ -661,139 +1003,9 @@ class BallastProperties(om.ExplicitComponent):
         outputs['ballast_I_keel'] = I_keel
         outputs['ballast_z_cg']   = z_cg_perm
         outputs['ballast_cost']   = inputs['ballast_cost_rate'] * m_perm
-
-
         
-        
-class ColumnGeometry(om.ExplicitComponent):
-    """
-    Compute geometric properties for vertical columns in substructure
-    for floating offshore wind turbines.
+
     
-    Parameters
-    ----------
-    water_depth : float, [m]
-        water depth
-    hsig_wave : float, [m]
-        significant wave height
-    freeboard : float, [m]
-        Length of column above water line
-    max_draft : float, [m]
-        Maxmimum length of column below water line
-    z_full_in : numpy array[n_full], [m]
-        z-coordinates of section nodes (length = nsection+1)
-    z_param_in : numpy array[n_height], [m]
-        z-coordinates of section nodes (length = nsection+1)
-    section_center_of_mass : numpy array[n_full-1], [m]
-        z position of center of mass of each can in the cylinder
-    stiffener_web_height : numpy array[n_sect], [m]
-        height of stiffener web (base of T) within each section bottom to top
-        (length = nsection)
-    stiffener_web_thickness : numpy array[n_sect], [m]
-        thickness of stiffener web (base of T) within each section bottom to top
-        (length = nsection)
-    stiffener_flange_width : numpy array[n_sect], [m]
-        height of stiffener flange (top of T) within each section bottom to top
-        (length = nsection)
-    stiffener_flange_thickness : numpy array[n_sect], [m]
-        thickness of stiffener flange (top of T) within each section bottom to top
-        (length = nsection)
-    stiffener_spacing : numpy array[n_sect], [m]
-        Axial distance from one ring stiffener to another within each section bottom to
-        top (length = nsection)
-    
-    Returns
-    -------
-    z_full : numpy array[n_full], [m]
-        z-coordinates of section nodes (length = nsection+1)
-    z_param : numpy array[n_height], [m]
-        z-coordinates of section nodes (length = nsection+1)
-    draft : float, [m]
-        Column draft (length of body under water)
-    z_section : numpy array[n_full-1], [m]
-        z-coordinates of section centers of mass (length = nsection)
-    h_web : numpy array[n_full-1], [m]
-        height of stiffener web (base of T) within each section bottom to top
-    t_web : numpy array[n_full-1], [m]
-        thickness of stiffener web (base of T) within each section bottom to top
-    w_flange : numpy array[n_full-1], [m]
-        height of stiffener flange (top of T) within each section bottom to top
-    t_flange : numpy array[n_full-1], [m]
-        thickness of stiffener flange (top of T) within each section bottom to top
-    L_stiffener : numpy array[n_full-1], [m]
-        Axial distance from one ring stiffener to another within each section bottom to
-        top
-    draft_margin : float
-        Ratio of draft to water depth
-    wave_height_freeboard_ratio : float
-        Ratio of maximum wave height (avg of top 1%) to freeboard
-    
-    """
-
-    def initialize(self):
-        self.options.declare('n_height')
-        
-    def setup(self):
-        n_height = self.options['n_height']
-        n_sect = n_height - 1
-        n_full    = get_nfull(n_height)
-
-        self.add_input('water_depth', 0.0, units='m')
-        self.add_input('hsig_wave', 0.0, units='m')
-        self.add_input('freeboard', 0.0, units='m')
-        self.add_input('max_draft', 0.0, units='m')
-        self.add_input('z_full_in', np.zeros(n_full), units='m')
-        self.add_input('z_param_in', np.zeros(n_height), units='m')
-        self.add_input('section_center_of_mass', np.zeros(n_full-1), units='m')
-        self.add_input('stiffener_web_height', np.zeros(n_sect), units='m')
-        self.add_input('stiffener_web_thickness', np.zeros(n_sect), units='m')
-        self.add_input('stiffener_flange_width', np.zeros(n_sect), units='m')
-        self.add_input('stiffener_flange_thickness', np.zeros(n_sect), units='m')
-        self.add_input('stiffener_spacing', np.zeros(n_sect), units='m')
-
-        self.add_output('z_full', np.zeros(n_full), units='m')
-        self.add_output('z_param', np.zeros(n_height), units='m')
-        self.add_output('draft', 0.0, units='m')
-        self.add_output('z_section', np.zeros(n_full-1), units='m')
-        self.add_output('h_web', np.zeros(n_full-1), units='m')
-        self.add_output('t_web', np.zeros(n_full-1), units='m')
-        self.add_output('w_flange', np.zeros(n_full-1), units='m')
-        self.add_output('t_flange', np.zeros(n_full-1), units='m')
-        self.add_output('L_stiffener', np.zeros(n_full-1), units='m')
-        self.add_output('draft_margin', 0.0)
-        self.add_output('wave_height_freeboard_ratio', 0.0)
-
-        self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
-
-    def compute(self, inputs, outputs):
-        # Unpack variables
-        freeboard = inputs['freeboard']
-
-        # With waterline at z=0, set the z-position of section nodes
-        # Note sections and nodes start at bottom of column and move up
-        draft     = inputs['z_param_in'][-1] - freeboard
-        z_full    = inputs['z_full_in'] - draft 
-        z_param   = inputs['z_param_in'] - draft 
-        z_section = inputs['section_center_of_mass'] - draft 
-        outputs['draft']     = draft
-        outputs['z_full']    = z_full
-        outputs['z_param']   = z_param
-        outputs['z_section'] = z_section
-
-        # Create constraint output that draft is less than water depth
-        outputs['draft_margin'] = draft / inputs['max_draft']
-
-        # Make sure freeboard is more than 20% of hsig_wave (DNV-OS-J101)
-        outputs['wave_height_freeboard_ratio'] = inputs['hsig_wave'] / np.abs(freeboard)
-
-        # Sectional stiffener properties
-        outputs['t_web']        = sectionalInterp(z_section, z_param, inputs['stiffener_web_thickness'])
-        outputs['t_flange']     = sectionalInterp(z_section, z_param, inputs['stiffener_flange_thickness'])
-        outputs['h_web']        = sectionalInterp(z_section, z_param, inputs['stiffener_web_height'])
-        outputs['w_flange']     = sectionalInterp(z_section, z_param, inputs['stiffener_flange_width'])
-        outputs['L_stiffener']  = sectionalInterp(z_section, z_param, inputs['stiffener_spacing'])
-        
-
 
 class ColumnProperties(om.ExplicitComponent):
     """
@@ -817,7 +1029,7 @@ class ColumnProperties(om.ExplicitComponent):
         mass of column shell
     stiffener_mass : numpy array[n_full-1], [kg]
         mass of column stiffeners
-    bulkhead_mass : numpy array[n_full], [kg]
+    bulkhead_mass : numpy array[n_full-1], [kg]
         mass of column bulkheads
     buoyancy_tank_mass : float, [kg]
         mass of heave plate
@@ -851,8 +1063,6 @@ class ColumnProperties(om.ExplicitComponent):
         cost of permanent ballast
     buoyancy_tank_cost : float, [USD]
         mass of heave plate
-    unit_cost : float, [USD/kg]
-        Raw material cost: steel $1.1/kg, aluminum $3.5/kg
     outfitting_cost_rate : float, [USD/kg]
         Cost per unit mass for outfitting column
     
@@ -915,11 +1125,12 @@ class ColumnProperties(om.ExplicitComponent):
         # Mass correction factors from simple rules here to real life
         self.add_input('shell_mass', np.zeros(n_full-1), units='kg')
         self.add_input('stiffener_mass', np.zeros(n_full-1), units='kg')
-        self.add_input('bulkhead_mass', np.zeros(n_full), units='kg')
+        self.add_input('bulkhead_mass', np.zeros(n_full-1), units='kg')
         self.add_input('buoyancy_tank_mass', 0.0, units='kg')
         self.add_input('ballast_mass', np.zeros(n_full-1), units='kg')
         
         self.add_input('buoyancy_tank_cg', 0.0, units='m')
+        self.add_input('bulkhead_z_cg', 0.0, units='m')
         self.add_input('ballast_z_cg', 0.0, units='m')
         self.add_input('outfitting_factor', 0.0)
         
@@ -939,7 +1150,6 @@ class ColumnProperties(om.ExplicitComponent):
         self.add_input('bulkhead_cost', 0.0, units='USD')
         self.add_input('ballast_cost', 0.0, units='USD')
         self.add_input('buoyancy_tank_cost', 0.0, units='USD')
-        self.add_input('unit_cost', 0.0, units='USD/kg')
         self.add_input('outfitting_cost_rate', 0.0, units='USD/kg')
 
         self.add_output('z_center_of_mass', 0.0, units='m')
@@ -993,6 +1203,7 @@ class ColumnProperties(om.ExplicitComponent):
         z_section    = inputs['z_section']
         z_box        = inputs['buoyancy_tank_cg']
         z_ballast    = inputs['ballast_z_cg']
+        z_bulkhead   = inputs['bulkhead_z_cg']
         m_shell      = inputs['shell_mass']
         m_stiffener  = inputs['stiffener_mass']
         m_bulkhead   = inputs['bulkhead_mass']
@@ -1016,13 +1227,10 @@ class ColumnProperties(om.ExplicitComponent):
         m_column += (m_shell + m_stiffener).sum()
         z_cg     += np.dot(m_shell+m_stiffener, z_section)
 
-        # Masses assumed to be centered at nodes
-        m_column += m_bulkhead.sum()
-        z_cg     += np.dot(m_bulkhead, z_nodes)
-
         # Mass with variable location
-        m_column += m_box
-        z_cg     += m_box*z_box
+        m_column += m_box + m_bulkhead.sum()
+        z_cg     += m_box*z_box + m_bulkhead.sum()*z_bulkhead
+
         z_cg     /= m_column
 
         # Now calculate outfitting mass, evenly distributed so cg doesn't change
@@ -1041,9 +1249,7 @@ class ColumnProperties(om.ExplicitComponent):
         self.ibox = ibox
 
         # Now do tally by section
-        m_sections         = (m_shell + m_stiffener + m_bulkhead[:-1]) + m_ballast
-        m_sections        += m_outfit / m_shell.size
-        m_sections[-1]    += m_bulkhead[-1]
+        m_sections         = (m_shell + m_stiffener + m_bulkhead) + m_ballast +  m_outfit/m_shell.size
         m_sections[ibox]  += m_box
 
         # Add up moments of inertia at keel, make sure to scale mass appropriately
@@ -1223,9 +1429,9 @@ class ColumnBuckling(om.ExplicitComponent):
         self.add_input('w_flange', np.zeros(n_full-1), units='m')
         self.add_input('t_flange', np.zeros(n_full-1), units='m')
         self.add_input('L_stiffener', np.zeros(n_full-1), units='m')
-        self.add_input('E', 0.0, units='Pa')
-        self.add_input('nu', 0.0)
-        self.add_input('yield_stress', 0.0, units='Pa')
+        self.add_input('E_full', np.zeros(n_full-1), units='Pa')
+        self.add_input('nu_full', np.zeros(n_full-1))
+        self.add_input('sigma_y_full', np.zeros(n_full-1), units='Pa')
         self.add_discrete_input('loading', 'hydro')
 
         self.add_output('flange_compactness', np.zeros(n_full-1))
@@ -1286,9 +1492,9 @@ class ColumnBuckling(om.ExplicitComponent):
         gamma_f      = self.options['analysis_options']['gamma_f']
         gamma_b      = self.options['analysis_options']['gamma_b']
         
-        E            = inputs['E'] # Young's modulus
-        nu           = inputs['nu'] # Poisson ratio
-        sigma_y      = inputs['yield_stress']
+        E            = inputs['E_full'] # Young's modulus
+        nu           = inputs['nu_full'] # Poisson ratio
+        sigma_y      = inputs['sigma_y_full']
         loading      = discrete_inputs['loading']
         nodalP,_     = nodal2sectional( inputs['pressure'] )
         pressure     = 1e-12 if loading in ['ax','axial','testing','test'] else nodalP+1e-12
@@ -1319,60 +1525,52 @@ class ColumnBuckling(om.ExplicitComponent):
         outputs['external_local_utilization']   = external_local_raw * gamma_f*gamma_b
         outputs['external_general_utilization'] = external_general_raw * gamma_f*gamma_b
 
-class TempRho(om.ExplicitComponent):
-    
-    def initialize(self):
-        self.options.declare('n_height')
-        
-    def setup(self):
-        n_height  = self.options['n_height']
-        n_full    = get_nfull(n_height)
-        self.add_input('rho', 0.0, units='kg/m**3')
-        self.add_input('unit_cost', 0.0, units='USD/kg')
-        self.add_output('rho_vec', np.zeros(n_full-1), units='kg/m**3')
-        self.add_output('unit_cost_vec', np.zeros(n_full-1), units='USD/kg')
-        
-    def compute(self, inputs, outputs):
-        npts    = get_nfull(self.options['n_height']) - 1
-        outputs['rho_vec'] = inputs['rho']*np.ones(npts)
-        outputs['unit_cost_vec'] = inputs['unit_cost']*np.ones(npts)
-
 
 class Column(om.Group):
 
     def initialize(self):
-        self.options.declare('n_height')
+        self.options.declare('n_mat')
+        self.options.declare('column_options')
         self.options.declare('analysis_options')
         self.options.declare('topLevelFlag', default=False)
         
     def setup(self):
-        n_height  = self.options['n_height']
+        opt = self.options['analysis_options']
+        colopt = self.options['column_options']
+        n_layers  = colopt['n_layers']
+        n_height  = colopt['n_height']
+        n_bulk    = colopt['n_bulkhead']
+        n_mat     = self.options['n_mat']
         n_sect    = n_height - 1
         n_full    = get_nfull(n_height)
         topLevelFlag = self.options['topLevelFlag']
 
         ivc = om.IndepVarComp()
-        ivc.add_output('section_height', np.zeros(n_sect), units='m')
-        ivc.add_output('outer_diameter', np.zeros(n_height), units='m')
-        ivc.add_output('wall_thickness', np.zeros(n_sect), units='m')
         ivc.add_output('stiffener_web_height', np.zeros(n_sect), units='m')
         ivc.add_output('stiffener_web_thickness', np.zeros(n_sect), units='m')
         ivc.add_output('stiffener_flange_width', np.zeros(n_sect), units='m')
         ivc.add_output('stiffener_flange_thickness', np.zeros(n_sect), units='m')
         ivc.add_output('stiffener_spacing', np.zeros(n_sect), units='m')
-        ivc.add_output('bulkhead_thickness', np.zeros(n_height), units='m')
+        ivc.add_output('bulkhead_thickness', np.zeros(n_bulk), units='m')
+        ivc.add_output('bulkhead_locations', np.zeros(n_bulk))
         ivc.add_output('permanent_ballast_height', 0.0, units='m')
         ivc.add_output('buoyancy_tank_diameter', 0.0, units='m')
         ivc.add_output('buoyancy_tank_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_location', 0.0, units='m')
+        ivc.add_output('buoyancy_tank_location', 0.0)
         ivc.add_output('foundation_height', 0.0, units='m')
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
         if topLevelFlag:
             sharedIndeps = om.IndepVarComp()
+            ivc.add_output('outer_diameter_in', np.zeros(n_height), units='m')
+            ivc.add_output('s', np.zeros(n_height))
+            ivc.add_output('height', 0.0, units='m')
+            ivc.add_output('layer_thickness', np.zeros((n_layers, n_height-1)), units='m')
+            ivc.add_discrete_output('layer_materials', ['steel'])
+            ivc.add_discrete_output('material_names', ['steel'])
+            
             sharedIndeps.add_output('freeboard', 0.0, units='m')
             sharedIndeps.add_output('permanent_ballast_density', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('rho', 0.0, units='kg/m**3')
             sharedIndeps.add_output('rho_air', 0.0, units='kg/m**3')
             sharedIndeps.add_output('mu_air', 0.0, units='kg/m/s')
             sharedIndeps.add_output('rho_water', 0.0, units='kg/m**3')
@@ -1388,7 +1586,6 @@ class Column(om.Group):
             sharedIndeps.add_output('wind_reference_speed', 0.0, units='m/s')
             sharedIndeps.add_output('outfitting_factor', 0.0)
             sharedIndeps.add_output('ballast_cost_rate', 0.0, units='USD/kg')
-            sharedIndeps.add_output('unit_cost', 0.0, units='USD/kg')
             sharedIndeps.add_output('labor_cost_rate', 0.0, units='USD/min')
             sharedIndeps.add_output('painting_cost_rate', 0.0, units='USD/m**2')
             sharedIndeps.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
@@ -1400,31 +1597,33 @@ class Column(om.Group):
             sharedIndeps.add_output('cm', 0.0)
             sharedIndeps.add_output('Uc', 0.0, units='m/s')
             sharedIndeps.add_output('yaw', 0.0, units='deg')
-            sharedIndeps.add_output('E', 0.0, units='N/m**2')
-            sharedIndeps.add_output('nu', 0.0)
-            sharedIndeps.add_output('yield_stress', 0.0, units='N/m**2')
+            sharedIndeps.add_output('rho_mat', np.zeros(1), units='kg/m**3')
+            sharedIndeps.add_output('E_mat', np.zeros((1,3)), units='N/m**2')
+            sharedIndeps.add_output('G_mat', np.zeros((1,3)), units='N/m**2')
+            sharedIndeps.add_output('sigma_y_mat', np.zeros(1), units='N/m**2')
+            sharedIndeps.add_output('unit_cost_mat', np.zeros(1), units='USD/kg')
             sharedIndeps.add_output('gamma_f', 0.0)
             sharedIndeps.add_output('gamma_b', 0.0)
             sharedIndeps.add_output('max_draft', 0.0, units='m')
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
+
+        # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
+        self.add_subsystem('yaml', DiscretizationYAML(n_height=n_height, n_layers=n_layers, n_mat=n_mat), promotes=['*'])
             
-        self.add_subsystem('trho', TempRho(n_height=n_height), promotes=['*'])
-        
+        self.add_subsystem('gc', GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=['max_taper','min_d_to_t','manufacturability','weldability'])
+
         self.add_subsystem('cyl_geom', CylinderDiscretization(nPoints=n_height), promotes=['section_height','diameter','wall_thickness',
                                                                                            'foundation_height','d_full','t_full'])
         
-        self.add_subsystem('gc', GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=['max_taper','min_d_to_t','manufacturability','weldability'])
-
-        self.add_subsystem('cyl_mass', CylinderMass(nPoints=n_full), promotes=['d_full','t_full',#'rho','unit_cost'
-                                                                               'labor_cost_rate','painting_cost_rate',
-                                                                               'section_center_of_mass'])
-
-        self.connect('rho_vec','cyl_mass.rho')
-        self.connect('unit_cost_vec','cyl_mass.material_cost_rate')
-
         self.add_subsystem('col_geom', ColumnGeometry(n_height=n_height), promotes=['*'])
 
-        self.add_subsystem('bulk', BulkheadProperties(n_height=n_height), promotes=['*'])
+        self.add_subsystem('cyl_mass', CylinderMass(nPoints=n_full), promotes=['z_full','d_full','t_full',
+                                                                               'labor_cost_rate','painting_cost_rate'])
+
+        self.connect('rho_full','cyl_mass.rho')
+        self.connect('unit_cost_full','cyl_mass.material_cost_rate')
+
+        self.add_subsystem('bulk', BulkheadProperties(n_height=n_height, n_bulkhead=n_bulk), promotes=['*'])
 
         self.add_subsystem('stiff', StiffenerProperties(n_height=n_height), promotes=['*'])
 
@@ -1440,19 +1639,19 @@ class Column(om.Group):
         self.add_subsystem('waveLoads', CylinderWaveDrag(nPoints=n_full), promotes=['cm','cd_usr','beta_wave','rho_water','mu_water'])
         self.add_subsystem('distLoads', AeroHydroLoads(nPoints=n_full), promotes=['Px','Py','Pz','qdyn','yaw'])
 
-        self.add_subsystem('buck', ColumnBuckling(n_height=n_height,
-                                                  analysis_options=self.options['analysis_options']), promotes=['*'])
+        self.add_subsystem('buck', ColumnBuckling(n_height=n_height, analysis_options=opt), promotes=['*'])
 
         self.connect('outer_diameter', ['diameter', 'gc.d'])
         self.connect('wall_thickness', 'gc.t')
         self.connect('cyl_geom.z_param', 'z_param_in')
-        self.connect('cyl_geom.z_full', ['cyl_mass.z_full','z_full_in'])
+        self.connect('cyl_geom.z_full', 'z_full_in')
         
         #self.connect('cyl_mass.section_center_of_mass', 'col_geom.section_center_of_mass')
         
         self.connect('cyl_mass.mass', 'shell_mass')
         self.connect('cyl_mass.cost', 'shell_cost')
         self.connect('cyl_mass.I_base', 'shell_I_keel')
+        self.connect('cyl_mass.section_center_of_mass', 'z_section')
         
         self.connect('column_total_mass', 'section_mass')
 

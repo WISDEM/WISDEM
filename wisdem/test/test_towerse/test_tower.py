@@ -246,10 +246,17 @@ class TestTowerSE(unittest.TestCase):
         self.inputs['rho'] = 1e3 * np.ones(2)
         self.inputs['outfitting_factor'] = 1.1 * np.ones(2)
         self.inputs['unit_cost'] = 5.0 * np.ones(2)
+        self.inputs['E'] = 6.0 * np.ones(2)
+        self.inputs['G'] = 7.0 * np.ones(2)
+        self.inputs['sigma_y'] = 8.0 * np.ones(2)
         myobj = tow.TowerDiscretization(n_height=3)
         myobj.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs['height_constraint'], 20.0)
-        
+        npt.assert_equal(self.outputs['rho_full'], self.inputs['rho'][0]*np.ones(6))
+        npt.assert_equal(self.outputs['E_full'], self.inputs['E'][0]*np.ones(6))
+        npt.assert_equal(self.outputs['G_full'], self.inputs['G'][0]*np.ones(6))
+        npt.assert_equal(self.outputs['sigma_y_full'], self.inputs['sigma_y'][0]*np.ones(6))
+        npt.assert_equal(self.outputs['unit_cost_full'], self.inputs['unit_cost'][0]*np.ones(6))
 
         
     def testTowerMass(self):

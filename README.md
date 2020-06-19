@@ -16,7 +16,7 @@ This software is a version 2.0.1.
 
 ## Documentation
 
-See local documentation in the `docs`-directory or access the online version at <http://wisdem.github.io/WISDEM/>
+See local documentation in the `docs`-directory or access the online version at <https://wisdem.readthedocs.io/en/latest/>
 
 ## Packages
 
