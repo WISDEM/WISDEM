@@ -67,10 +67,8 @@ class RailTransport(ExplicitComponent):
         self.add_input('GJ',           val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-axis of airfoil aligned coordinate system)')
         self.add_input('rhoA',         val=np.zeros(n_span), units='kg/m',   desc='mass per unit length')
         self.add_input('rhoJ',         val=np.zeros(n_span), units='kg*m',   desc='polar mass moment of inertia per unit length')
-        self.add_input('x_ec_abs',     val=np.zeros(n_span), units='m',      desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
-        self.add_input('y_ec_abs',     val=np.zeros(n_span), units='m',      desc='y-distance to elastic center from point about which above structural properties are computed')
-        self.add_input('x_ec',  val=np.zeros(n_span), units='m',        desc='x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)')
-        self.add_input('y_ec',  val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
+        self.add_input('x_sc',         val=np.zeros(n_span), units='m',      desc='X-coordinate of the shear-center offset with respect to the XR-YR axes')
+        self.add_input('y_sc',         val=np.zeros(n_span), units='m',      desc='Chordwise offset of the section shear-center with respect to the reference frame, XR-YR')
         
         # Outputs
         self.add_output('constr_LV_4axle_horiz', val=np.zeros(2), desc='Constraint for max L/V for a 4-axle flatcar on horiz curves, violated when bigger than 1')
@@ -95,8 +93,8 @@ class RailTransport(ExplicitComponent):
         blade_length = r[-1]
         theta = inputs['theta']
         chord = inputs['chord']
-        x_ec  = inputs['x_ec']
-        y_ec  = inputs['y_ec']
+        x_sc  = inputs['x_sc']
+        y_sc  = inputs['y_sc']
         A     = inputs['A']
         rhoA  = inputs['rhoA']
         rhoJ  = inputs['rhoJ']
@@ -131,13 +129,13 @@ class RailTransport(ExplicitComponent):
         #---------- Put airfoil cross sections into principle axes
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         EIxx_cs , EIyy_cs = EIyy.copy() , EIxx.copy()
-        x_ec_cs , y_ec_cs = y_ec.copy() , x_ec.copy()
+        x_sc_cs , y_sc_cs = y_sc.copy() , x_sc.copy()
         EIxy_cs = EIxy.copy()
 
         # translate to elastic center
-        EIxx_cs -= y_ec_cs**2 * EA
-        EIyy_cs -= x_ec_cs**2 * EA
-        EIxy_cs -= x_ec_cs * y_ec_cs * EA
+        EIxx_cs -= y_sc_cs**2 * EA
+        EIyy_cs -= x_sc_cs**2 * EA
+        EIxy_cs -= x_sc_cs * y_sc_cs * EA
 
         # get rotation angle
         alpha = 0.5*np.arctan2(2*EIxy_cs, EIyy_cs-EIxx_cs)
@@ -259,10 +257,10 @@ class RailTransport(ExplicitComponent):
             xnode_dim = xnode_dim_no_theta * np.cos(theta_rad) - ynode_dim_no_theta * np.sin(theta_rad)
             ynode_dim = xnode_dim_no_theta * np.sin(theta_rad) + ynode_dim_no_theta * np.cos(theta_rad)
 
-            yss[i] = max(ynode_dim) - y_ec[i]
-            yps[i] = y_ec[i] - min(ynode_dim)
-            xte[i] = max(xnode_dim) - x_ec[i]
-            xle[i] = x_ec[i] - min(xnode_dim)
+            yss[i] = max(ynode_dim) - y_sc[i]
+            yps[i] = y_sc[i] - min(ynode_dim)
+            xte[i] = max(xnode_dim) - x_sc[i]
+            xle[i] = x_sc[i] - min(xnode_dim)
 
         # Put these sectional points in airfoil principle directions
         xps_cs, yps_cs = yps, xps
