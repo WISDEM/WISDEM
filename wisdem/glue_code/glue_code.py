@@ -1,6 +1,6 @@
 import numpy as np
 from openmdao.api import ExplicitComponent, Group, Problem
-from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyOpenMDAO
+from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
 from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.towerse.tower import TowerSE
@@ -12,7 +12,7 @@ from wisdem.rotorse.dac import RunXFOIL
 from wisdem.servose.servose import ServoSE, ServoSE_ROSCO
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
 from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains, RunFrame3DD
-from wisdem.assemblies.run_tools import Outputs_2_Screen, Convergence_Trends_Opt
+from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 
 class WT_RNTA(Group):
     # Openmdao group to run the analysis of the wind turbine
