@@ -36,6 +36,7 @@ WISDEM
    wisdem/rotorse/index
    wisdem/towerse/index
    wisdem/turbine_costsse/index
+   wisdem/landbosse/index
 
 
 Indices and tables
