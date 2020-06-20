@@ -51,6 +51,6 @@ setup(
     packages         = find_packages(exclude=['docs', 'tests', 'ext']),
     license          = 'Apache License, Version 2.0',
     ext_modules      = [bemExt, pyframeExt, precompExt, pymapExt],
-    entry_points     = {'console_scripts': ['wisdem=wisdem.assemblies.main:wisdem_cmd']},
+    entry_points     = {'console_scripts': ['wisdem=wisdem.glue_code.main:wisdem_cmd']},
     zip_safe         = False
 )
