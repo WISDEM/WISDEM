@@ -14,7 +14,6 @@ from rotorse.rotor_structure import TotalLoads, RootMoment, MassProperties, TipD
     ExtremeLoads, GustETM, BladeCurvature, SetupPCModVarSpeed, BladeDeflection, DamageLoads, NREL5MW
 from rotorse import TURBULENCE_CLASS
 from openmdao.api import IndepVarComp, Problem, Group
-from enum import Enum
 
 from commonse_testing import check_gradient_unit_test, init_IndepVar_add, init_IndepVar_set# <- TODO give this a permanent home
 

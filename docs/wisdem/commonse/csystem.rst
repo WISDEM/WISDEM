@@ -5,14 +5,17 @@ Coordinate System
 
 .. currentmodule:: wisdem.commonse.csystem
 
-This module defines coordinate systems for horizontal axis wind turbines and provides convenience methods for transforming vectors between the various coordinate systems.  The supplied transformation methods are for *rotation only* and do not account for any offsets that may be necessary depending on the vector quantity (e.g., transfer of forces between coordinate system does not depend on the location where the force is defined, but position, velocity, moments, etc. do).  In other words the vectors are treated as directions only and are independent of the defined position.  How the vector should transform based on position is not generalizable and depends on the quantity of interest.  All coordinate systems obey the right-hand rule, :math:`x \times y = z`, and all angles must be input in **degrees**.  The turbine can be either an upwind or downwind configuration, but in either case it is assumed that that the blades rotate in the **clockwise** direction when looking downwind (more specifically the rotor is assumed to rotate about the :math:`+x_h` axis in :num:`Figure #yaw-hub-fig`).   The vectors allow for elementary operations (+, -, \*, /, +=, -=, \*=, /=) between other vectors of the same type, or with scalars (e.g., force_total = force1 + force2).
+This module defines coordinate systems for horizontal axis wind turbines and provides convenience methods for transforming vectors between the various coordinate systems.
+The supplied transformation methods are for *rotation only* and do not account for any offsets that may be necessary depending on the vector quantity (e.g., transfer of forces between coordinate system does not depend on the location where the force is defined, but position, velocity, moments, etc. do).
+In other words the vectors are treated as directions only and are independent of the defined position.
+How the vector should transform based on position is not generalizable and depends on the quantity of interest.
+
+All coordinate systems obey the right-hand rule, :math:`x \times y = z`, and all angles must be input in **degrees**.
+The turbine can be either an upwind or downwind configuration, but in either case it is assumed that that the blades rotate in the **clockwise** direction when looking downwind (more specifically the rotor is assumed to rotate about the :math:`+x_h` axis in :numref:`Figure %s <yaw-hub-fig>`.
+The vectors allow for elementary operations (+, -, \*, /, +=, -=, \*=, /=) between other vectors of the same type, or with scalars (e.g., force_total = force1 + force2).
 
 
 .. autoclass:: DirectionVector
-
-.. Four types of vectors are defined: :class:`Force` defines force vectors (or vectors that depend only on the orientation of the frame), :class:`~DirectionVector` defines position vectors, :class:`Velocity` defines velocity vectors, :class:`ForceMoment` defines forces
-
-
 
 .. _inertial_wind_coord:
 
@@ -27,7 +30,10 @@ Inertial and Wind-aligned
 
     Inertial and Wind-aligned axes.
 
-:num:`Figure #inertial-wind-fig` defines the transformation between the inertial and wind-aligned coordinate systems.  The two coordinate systems share a common origin, and a common z-direction.  The wind angle :math:`\beta` is positive for rotation about the +z axis.  The direction of wave loads are defined similarly to the wind loads, but there is no wave-aligned coordinate system.
+:numref:`Figure %s <inertial-wind-fig>` defines the transformation between the inertial and wind-aligned coordinate systems.
+The two coordinate systems share a common origin, and a common z-direction.
+The wind angle :math:`\beta` is positive for rotation about the +z axis.
+The direction of wave loads are defined similarly to the wind loads, but there is no wave-aligned coordinate system.
 
 
 *Inertial coordinate system*
@@ -94,9 +100,12 @@ Wind-aligned and Yaw-aligned
     :width: 6.5in
     :align: center
 
-    Wind-aligned and yaw-aligned axes.  :math:`\Psi` is the rotor yaw angle.
+    Wind-aligned and yaw-aligned axes.
+    :math:`\Psi` is the rotor yaw angle.
 
-:num:`Figure #wind-yaw-fig` defines the transformation between the wind-aligned and yaw-aligned coordinate systems.  The two coordinate systems are offset by the height :math:`h_t` along the common z-axis.  The yaw angle :math:`\Psi` is positive when rotating about the +z axis, and should be between -180 and +180 degrees.
+:numref:`Figure %s <wind-yaw-fig>` defines the transformation between the wind-aligned and yaw-aligned coordinate systems.
+The two coordinate systems are offset by the height :math:`h_t` along the common z-axis.
+The yaw angle :math:`\Psi` is positive when rotating about the +z axis, and should be between -180 and +180 degrees.
 
 .. For a downwind machine the yaw angle will be near +/-180 degrees, and the :math:`\hat{x}_y` and :math:`\hat{x}_w` will point in nominally opposite directions.
 
@@ -104,7 +113,9 @@ Wind-aligned and Yaw-aligned
 
     **origin**: Tower top (center of the yaw bearing system)
 
-    **x-axis**: along projection of rotor shaft in horizontal plane (aligned with rotor shaft for zero tilt angle).  The positive direction is defined such that the x-axis points downwind at its design operating orientation (i.e., at zero yaw :math:`x_y` is the same direction as :math:`x_w`).  Thus, for a downwind machine the :math:`x_y` axis would still be downind at zero yaw, but in terms of nacelle orientation it would point from the back of the nacelle toward the hub.
+    **x-axis**: along projection of rotor shaft in horizontal plane (aligned with rotor shaft for zero tilt angle).
+    The positive direction is defined such that the x-axis points downwind at its design operating orientation (i.e., at zero yaw :math:`x_y` is the same direction as :math:`x_w`).
+    Thus, for a downwind machine the :math:`x_y` axis would still be downwind at zero yaw, but in terms of nacelle orientation it would point from the back of the nacelle toward the hub.
 
     **y-axis**: follows from the right-hand rule
 
@@ -151,9 +162,12 @@ Yaw-aligned and Hub-aligned
     :width: 3.5in
     :align: center
 
-    Yaw-aligned and hub-aligned axes.  :math:`\Theta` is the rotor tilt angle.
+    Yaw-aligned and hub-aligned axes.
+    :math:`\Theta` is the rotor tilt angle.
 
-:num:`Figure #yaw-hub-fig` defines the transformation between the yaw-aligned and hub-aligned coordinate systems.  The two coordinate systems share a common y axis.  The tilt angle :math:`\Theta` is positive when rotating about the +y axis, which tilts the rotor up for an upwind machine (tilts the rotor down for a downwind machine).
+:numref:`Figure %s <yaw-hub-fig>` defines the transformation between the yaw-aligned and hub-aligned coordinate systems.
+The two coordinate systems share a common y axis.
+The tilt angle :math:`\Theta` is positive when rotating about the +y axis, which tilts the rotor up for an upwind machine (tilts the rotor down for a downwind machine).
 
 *Hub-aligned coordinate system*
 
@@ -206,13 +220,18 @@ Hub-aligned and Azimuth-aligned
     :width: 4.5in
     :align: center
 
-    Hub-aligned and azimuth-aligned axes.  :math:`\Lambda` is the (local) blade azimuth angle.
+    Hub-aligned and azimuth-aligned axes.
+    :math:`\Lambda` is the (local) blade azimuth angle.
 
-:num:`Figure #hub-azimuth-fig` defines the transformation between the hub-aligned and azimuth-aligned coordinate systems.  The two coordinate systems share a common x-axis.  The azimuth angle :math:`\Lambda` is positive when rotating about the +x axis.  The blade can employ a variable azimuth angle along the blade axis, to allow for swept blades.
+:numref:`Figure %s <hub-azimuth-fig>` defines the transformation between the hub-aligned and azimuth-aligned coordinate systems.
+The two coordinate systems share a common x-axis.
+The azimuth angle :math:`\Lambda` is positive when rotating about the +x axis.
+The blade can employ a variable azimuth angle along the blade axis, to allow for swept blades.
 
 *Azimuth-aligned coordinate system*
 
-    A rotating coordinate system---about the :math:`x_h` axis.  The coordinate-system is locally-defined for the case of a variable-swept blade.
+    A rotating coordinate system---about the :math:`x_h` axis.
+    The coordinate-system is locally-defined for the case of a variable-swept blade.
 
     **origin**: blade pitch axis, local to the blade section
 
@@ -263,16 +282,24 @@ Azimuth-aligned and Blade-aligned
     :width: 3.5in
     :align: center
 
-    Azimuth-aligned and blade-aligned axes.  :math:`\Phi` is the (local) blade precone angle.
+    Azimuth-aligned and blade-aligned axes.
+    :math:`\Phi` is the (local) blade precone angle.
 
 
-:num:`Figure #azimuth-blade-fig` defines the transformation between the azimuth-aligned and blade-aligned coordinate systems.  The :math:`y_b` and :math:`y_z` axes are in the same direction.  The two coordinate systems rotate together such that the :math:`x_b` - :math:`z_b` plane is always coplanar with the :math:`x_z` - :math:`z_z` plane. The precone angle :math:`\Phi` is positive when rotating about the -:math:`y_z` axis, and causes the blades to tilt away from the nacelle/tower for a downwind machine (tilts toward tower for upwind machine).  The blade can employ a variable precone angle along the blade axis.  The blade-aligned coordinate system is considered local to a section of the blade.
+:numref:`Figure %s <azimuth-blade-fig>` defines the transformation between the azimuth-aligned and blade-aligned coordinate systems.
+The :math:`y_b` and :math:`y_z` axes are in the same direction.
+The two coordinate systems rotate together such that the :math:`x_b` - :math:`z_b` plane is always coplanar with the :math:`x_z` - :math:`z_z` plane.
+The precone angle :math:`\Phi` is positive when rotating about the -:math:`y_z` axis, and causes the blades to tilt away from the nacelle/tower for a downwind machine (tilts toward tower for upwind machine).
+The blade can employ a variable precone angle along the blade axis.
+The blade-aligned coordinate system is considered local to a section of the blade.
 
 .. _blade_coord:
 
 *Blade-aligned coordinate system*
 
-    A rotating coordinate system that rotates with the azimuth-aligned coordinate system.  The coordinate-system is locally-defined along the blade radius. The direction of blade rotation is in the negative y-axis.  A force in the x-axis would be a flapwise shear, and a force in the y-axis would be a lead-lag shear.
+    A rotating coordinate system that rotates with the azimuth-aligned coordinate system.
+    The coordinate-system is locally-defined along the blade radius. The direction of blade rotation is in the negative y-axis.
+    A force in the x-axis would be a flapwise shear, and a force in the y-axis would be a lead-lag shear.
 
     **origin**: blade pitch axis, local to the blade section
 
@@ -324,9 +351,13 @@ Blade-aligned and Airfoil-aligned
     :width: 6in
     :align: center
 
-    Blade-aligned and airfoil-aligned coordinate systems.  :math:`\theta` is the airfoil twist + pitch angle.  For convenience the local wind vector and angle of attack is shown.
+    Blade-aligned and airfoil-aligned coordinate systems.
+    :math:`\theta` is the airfoil twist + pitch angle.
+    For convenience the local wind vector and angle of attack is shown.
 
-:num:`Figure #blade-airfoil-fig` defines the transformation between the blade-aligned and airfoil-aligned coordinate systems.  The :math:`z_b` and :math:`z_a` axes are in the same direction.  The twist angle :math:`\theta` is positive when rotating about the -:math:`z_a` axis, and causes the angle of attack to decrease.
+:numref:`Figure %s <blade-airfoil-fig>` defines the transformation between the blade-aligned and airfoil-aligned coordinate systems.
+The :math:`z_b` and :math:`z_a` axes are in the same direction.
+The twist angle :math:`\theta` is positive when rotating about the -:math:`z_a` axis, and causes the angle of attack to decrease.
 
 *Airfoil-aligned coordinate system*
 
@@ -384,7 +415,8 @@ Airfoil-aligned and Profile
 
     Airfoil-aligned and profile coordinate systems.
 
-:num:`Figure #airfoil-profile-fig` defines the transformation between the airfoil-aligned and profile coordinate systems.  The profile coordinate system is generally used only to define airfoil profile data.
+:numref:`Figure %s <airfoil-profile-fig>` defines the transformation between the airfoil-aligned and profile coordinate systems.
+The profile coordinate system is generally used only to define airfoil profile data.
 
 *Profile coordinate system*
 

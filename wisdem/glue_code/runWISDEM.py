@@ -1,3 +1,11 @@
+try:
+    import ruamel_yaml as ry
+except:
+    try:
+        import ruamel.yaml as ry
+    except:
+        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
+
 import numpy as np
 import os, sys
 import matplotlib.pyplot as plt
@@ -551,14 +559,65 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
     return wt_opt, analysis_options, opt_options
 
 
+def read_master_file( fyaml ):
+    if os.path.exists(fyaml):
+        print('...Reading master input file,',fyaml)
+    else:
+        raise FileNotFoundError('The master input file, '+fyaml+', cannot be found.')
+    
+    with open(fyaml, 'r') as f:
+        input_yaml = ry.load(f, Loader=ry.Loader)
+
+    check_list = ['geometry_file','modeling_file','analysis_file']
+    for f in check_list:
+        if not os.path.exists(input_yaml[f]):
+            raise FileNotFoundError('The '+f+' entry, '+input_yaml[f]+', cannot be found.')
+        
+    return input_yaml
+
+
+def wisdem_cmd():
+    usg_msg = 'WISDEM command line launcher\n  Arguments: wisdem input.yaml'
+
+    # Look for help message
+    help_flag = len(sys.argv) == 1
+    for k in range(len(sys.argv)):
+        if sys.argv[k] in ['-h','--help']:
+            help_flag = True
+
+    if help_flag:
+        print(usg_msg)
+        sys.exit( 0 )
+
+    # Warn for unparsed arguments
+    if len(sys.argv) > 2:
+        ignored = ''
+        for k in range(2,len(sys.argv)): ignored += ' '+sys.argv[k]
+        print('WARNING: The following arguments will be ignored,',ignored)
+        print(usg_msg)
+
+    # Grab master input file
+    yaml_dict = read_master_file( sys.argv[1] )
+    
+    # Run WISDEM
+    run_wisdem(yaml_dict['geometry_file'],
+               yaml_dict['modeling_file'],
+               yaml_dict['analysis_file'],
+               yaml_dict['output_geometry_file'],
+               yaml_dict['output_directory'])
+
+    sys.exit( 0 )
+
+    
+
 if __name__ == "__main__":
     
     ## File management
     run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'glue_code' + os.sep + 'reference_turbines' + os.sep
-    fname_wt_input         = run_dir + "nrel5mw/nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    fname_wt_input         = run_dir + "nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
     fname_opt_options      = run_dir + "optimization_options.yaml"
-    fname_wt_output        = run_dir + "nrel5mw/nrel5mw_mod_update_output.yaml"
-    folder_output          = run_dir + 'nrel5mw/'
+    fname_wt_output        = run_dir + "nrel5mw_mod_update_output.yaml"
+    folder_output          = run_dir + '/'
 
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)

@@ -16,7 +16,10 @@ All wind models currently inherit from :class:`WindBase`:
     :end-before: missing_deriv
     :prepend: class WindBase(Component):
 
-This module defines a wind speed profile at locations `z`, all wind speeds below `z_0` are 0.  The parameters `Uref` and `zref` allow for scaling of a profile shape.  Specific implementations of this base component include :class:`PowerWind` and :class:`LogWind`.  PowerWind assumes a power-law distribution of wind speeds of the form
+This module defines a wind speed profile at locations `z`, all wind speeds below `z_0` are 0.
+The parameters `Uref` and `zref` allow for scaling of a profile shape.
+Specific implementations of this base component include :class:`PowerWind` and :class:`LogWind`.
+PowerWind assumes a power-law distribution of wind speeds of the form
 
 .. math:: U(z) = U_{ref} \left(\frac{z - z_0}{z_{ref} - z_0}\right)^\alpha
 
@@ -76,7 +79,13 @@ All wind models currently inherit from :class:`SoilBase`:
     :prepend: class SoilBase(Component):
 
 
-The soil is assumed to not contribute any inertial or applied forces, but to only affect the stiffness of the foundation.  The user may specify directions which are considered rigid.  For the other directions, effective spring constants are estimated based on the soil properties (:class:`TowerSoil`).  A simple textbook model is used in this implementation [1]_.   The model allows for computation of an effective spring constant for all six degrees of freedom, each computed as a function of the shear modulus and Poisson's ratio of the soil.  For example:
+The soil is assumed to not contribute any inertial or applied forces and only affects the stiffness of the foundation.
+The user may specify directions which are considered rigid.
+For the other directions, effective spring constants are estimated based on the soil properties (:class:`TowerSoil`).
+A simple textbook model is used in this implementation [1]_.
+The model allows for computation of an effective spring constant for all six degrees of freedom, each computed as a function of the shear modulus and Poisson's ratio of the soil.
+
+For example:
 
 .. math:: k_z = \frac{4 G r}{1- \nu} \left( 1 + 0.6(1-\nu)\frac{h}{r}  \right)
 

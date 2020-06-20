@@ -1,6 +1,4 @@
 #-------------------------------------------------------------------------
-# Name:        SegIntersect.py
-# Purpose: It Calculates Intersection of 2 segments in space. Also contains a simple 2-point distance calculator.
 #
 # Author:      RRD
 #
