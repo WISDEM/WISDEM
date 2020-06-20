@@ -15,12 +15,3 @@ CCBlade
     tutorial
     documentation
     theory
-
-.. only:: html
-
-    .. rubric:: Appendix
-
-.. toctree::
-
-    csystem
-

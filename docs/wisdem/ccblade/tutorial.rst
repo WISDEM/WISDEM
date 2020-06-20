@@ -5,20 +5,23 @@
 Tutorial
 --------
 
-Three examples are shown below.  The first is a complete setup for the :ref:`NREL 5-MW model <5MW-example>`, the second shows how to model blade :ref:`precurvature <curvature-example>`, and the final shows how to get the provided :ref:`analytic gradients <gradient-example>`.
+Three examples are shown below.
+The first is a complete setup for the :ref:`NREL 5-MW model <5MW-example>`, the second shows how to model blade :ref:`precurvature <curvature-example>`, and the final shows how to get the provided :ref:`analytic gradients <gradient-example>`.
 
 .. _5MW-example:
 
 NREL 5-MW
 ^^^^^^^^^
 
-One example of a CCBlade application is the simulation of the NREL 5-MW reference model's aerodynamic performance.  First, define the geometry and atmospheric properties.
+One example of a CCBlade application is the simulation of the NREL 5-MW reference model's aerodynamic performance.
+First, define the geometry and atmospheric properties.
 
 .. literalinclude:: /examples/ccblade/example.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
-Airfoil aerodynamic data is specified using the :class:`CCAirfoil` class.  Rather than use the default constructor, this example uses the special constructor designed to read AeroDyn files directly :meth:`CCAirfoil.initFromAerodynFile`.
+Airfoil aerodynamic data is specified using the :class:`CCAirfoil` class.
+Rather than use the default constructor, this example uses the special constructor designed to read AeroDyn files directly :meth:`CCAirfoil.initFromAerodynFile`.
 
 .. literalinclude:: /examples/ccblade/example.py
     :start-after: # 2 ---
@@ -57,7 +60,9 @@ as shown in :num:`Figure #distributed-fig`.
     Flapwise and lead-lag aerodynamic loads along blade.
 
 
-To get the power, thrust, and torque at the same conditions (in both absolute and coefficient form), use the :meth:`evaluate <ccblade.CCBlade.evaluate>` method.  This is generally used for generating power curves so it expects ``array_like`` input.  For this example a list of size one is used.
+To get the power, thrust, and torque at the same conditions (in both absolute and coefficient form), use the :meth:`evaluate <ccblade.CCBlade.evaluate>` method.
+This is generally used for generating power curves so it expects ``array_like`` input.
+For this example a list of size one is used.
 
 .. literalinclude:: /examples/ccblade/example.py
     :start-after: # 6 ---
@@ -70,7 +75,8 @@ The result is
 >>> CT = [ 0.76926398]
 >>> CQ = [ 0.0616323]
 
-Note that the outputs are numpy arrays (of length 1 for this example).  To generate a nondimensional power curve (:math:`\lambda` vs :math:`c_p`):
+Note that the outputs are numpy arrays (of length 1 for this example).
+To generate a nondimensional power curve (:math:`\lambda` vs :math:`c_p`):
 
 .. literalinclude:: /examples/ccblade/example.py
     :start-after: # 7 ---
@@ -88,7 +94,8 @@ Note that the outputs are numpy arrays (of length 1 for this example).  To gener
     Power coefficient as a function of tip-speed ratio.
 
 
-CCBlade provides a few additional options in its constructor.  The other options are shown in the following example with their default values.
+CCBlade provides a few additional options in its constructor.
+The other options are shown in the following example with their default values.
 
 .. code-block:: python
 
@@ -97,20 +104,35 @@ CCBlade provides a few additional options in its constructor.  The other options
                     precone, tilt, yaw, shearExp, hubHt, nSector
                     tiploss=True, hubloss=True, wakerotation=True, usecd=True, iterRe=1)
 
-The parameters :code:`tiploss` and :code:`hubloss` toggle Prandtl tip and hub losses repsectively. The parameter :code:`wakerotation` toggles wake swirl (i.e., :math:`a^\prime = 0`).  The parameter :code:`usecd` can be used to disable the inclusion of drag in the calculation of the induction factors (it is always used in calculations of the distributed loads).  However, doing so may cause potential failure in the solution methodology (see :cite:`Ning2013A-simple-soluti`).  In practice, it should work fine, but special care for that particular case has not yet been examined, and the default implementation allows for the possibility of convergence failure.  All four of these parameters are ``True`` by default.  The parameter :code:`iterRe` is for advanced usage.  Referring to :cite:`Ning2013A-simple-soluti`, this parameter controls the number of internal iterations on the Reynolds number.  One iteration is almost always sufficient, but for high accuracy in the Reynolds number :code:`iterRe` could be set at 2.  Anything larger than that is unnecessary.
+The parameters :code:`tiploss` and :code:`hubloss` toggle Prandtl tip and hub losses respectively. The parameter :code:`wakerotation` toggles wake swirl (i.e., :math:`a^\prime = 0`).
+The parameter :code:`usecd` can be used to disable the inclusion of drag in the calculation of the induction factors (it is always used in calculations of the distributed loads).
+However, doing so may cause potential failure in the solution methodology (see :cite:`Ning2013A-simple-soluti`).
+In practice, it should work fine, but special care for that particular case has not yet been examined, and the default implementation allows for the possibility of convergence failure.
+All four of these parameters are ``True`` by default.
+The parameter :code:`iterRe` is for advanced usage.
+Referring to :cite:`Ning2013A-simple-soluti`, this parameter controls the number of internal iterations on the Reynolds number.
+One iteration is almost always sufficient, but for high accuracy in the Reynolds number :code:`iterRe` could be set at 2.
+Anything larger than that is unnecessary.
 
 .. _curvature-example:
 
 Precurve
 ^^^^^^^^
 
-CCBlade can also simulate blades with precurve.  This is done by using the ``precurve`` and ``precurveTip`` parameters.  These correspond precisely to the ``r`` and ``Rtip`` parameters.  Precurve is defined as the position of the blade reference axis in the x-direciton of the :ref:`blade-aligned coordinate system <azimuth_blade_coord>` (r is the position in the z-direction of the same coordinate system).  Presweep can be specified in the same manner, by using the ``presweep`` and ``presweepTip`` parameters (position in blade-aligned y-axis).  Generally, it is advsiable to set ``precone=0`` for blades with precurve.  There is no loss of generality in defining the blade shape, and including a nonzero precone would change the rotor diameter in a nonlinear way. As an example, a downwind machine with significant curvature could be simulated using:
+CCBlade can also simulate blades with precurve.
+This is done by using the ``precurve`` and ``precurveTip`` parameters.
+These correspond precisely to the ``r`` and ``Rtip`` parameters.
+Precurve is defined as the position of the blade reference axis in the x-direction of the :ref:`blade-aligned coordinate system <azimuth_blade_coord>` (r is the position in the z-direction of the same coordinate system).
+Presweep can be specified in the same manner, by using the ``presweep`` and ``presweepTip`` parameters (position in blade-aligned y-axis).
+Generally, it is advisable to set ``precone=0`` for blades with precurve.
+There is no loss of generality in defining the blade shape, and including a nonzero precone would change the rotor diameter in a nonlinear way. As an example, a downwind machine with significant curvature could be simulated using:
 
 .. literalinclude:: /examples/ccblade/precurve.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
-The shape of the blade is seen in :num:`Figure #shape-fig`.  Note that the radius of the blade is preserved because we have set the precone angle to zero.
+The shape of the blade is seen in :num:`Figure #shape-fig`.
+Note that the radius of the blade is preserved because we have set the precone angle to zero.
 
 .. _shape-fig:
 
@@ -125,19 +147,25 @@ The shape of the blade is seen in :num:`Figure #shape-fig`.  Note that the radiu
 Gradients
 ^^^^^^^^^
 
-CCBlade optinally provides analytic gradients of every output with respect to all design variables.  This is accomplished using an adjoint method (direct method is identical because there is only one state variable at each blade section).  Partial derivatives are provided by `Tapenade <http://www-tapenade.inria.fr:8080/tapenade/index.jsp>`_ and hand calculations.  Starting with the previous example for the NREL 5-MW reference model we add the keyword value ``derivatives=True`` in the constructor.
+CCBlade optionally provides analytic gradients of every output with respect to all design variables.
+This is accomplished using an adjoint method (direct method is identical because there is only one state variable at each blade section).
+Partial derivatives are provided by `Tapenade <http://www-tapenade.inria.fr:8080/tapenade/index.jsp>`_ and hand calculations.
+Starting with the previous example for the NREL 5-MW reference model we add the keyword value ``derivatives=True`` in the constructor.
 
 .. literalinclude:: /examples/ccblade/gradients.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
-Now when we ask for the distributed loads, we also get the gradients.  The gradients are returned as a dictionary containing 2D arrays.  These can be accessed as follows:
+Now when we ask for the distributed loads, we also get the gradients.
+The gradients are returned as a dictionary containing 2D arrays.
+These can be accessed as follows:
 
 .. literalinclude:: /examples/ccblade/gradients.py
     :start-after: # 5 ---
     :end-before: # 5 ---
 
-Even though many of the matrices are diagonal, the full Jacobian is returned for consistency.  We can compare against finite differencing as follows (with a randomly chosen station along the blade):
+Even though many of the matrices are diagonal, the full Jacobian is returned for consistency.
+We can compare against finite differencing as follows (with a randomly chosen station along the blade):
 
 .. literalinclude:: /examples/ccblade/gradients.py
     :start-after: # 7 ---
@@ -148,7 +176,8 @@ The output is:
 >>> (analytic) dNp_i/dr_i = 107.680395098
 >>> (fin diff) dNp_i/dr_i = 107.680370762
 
-Similarly, when we compute thrust, torque, and power we also get the gradients (for either the nondimensional or dimensional form).  The gradients are also returned as a dictionary containing 2D Jacobians.
+Similarly, when we compute thrust, torque, and power we also get the gradients (for either the non-dimensional or dimensional form).
+The gradients are also returned as a dictionary containing 2D Jacobians.
 
 .. literalinclude:: /examples/ccblade/gradients.py
     :start-after: # 6 ---
