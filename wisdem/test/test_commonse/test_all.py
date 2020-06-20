@@ -1,7 +1,6 @@
 import unittest
 
 from wisdem.test.test_commonse import test_WindWaveDrag
-from wisdem.test.test_commonse import test_enum
 from wisdem.test.test_commonse import test_environment
 from wisdem.test.test_commonse import test_frustum
 from wisdem.test.test_commonse import test_tube
@@ -14,7 +13,6 @@ import numpy.testing as npt
 
 def suite():
     suite = unittest.TestSuite( (test_WindWaveDrag.suite(),
-                                 test_enum.suite(),
                                  test_environment.suite(),
                                  test_frustum.suite(),
                                  test_tube.suite(),

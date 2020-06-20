@@ -8,7 +8,7 @@ Copyright (c) NREL. All rights reserved.
 
 """ config file for global variables """
 
-from csmPPI import *
+from csmPPI import PPI
 
 # Initialize ref and current YYYYMM
 # Calling program can override these

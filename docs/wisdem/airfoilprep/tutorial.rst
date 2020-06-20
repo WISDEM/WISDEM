@@ -77,7 +77,7 @@ For example,
 
    $ python airfoilprep.py DU21_A17.dat --stall3D 0.2 0.3 5.0 --plot
 
-displays :num:`Figure #stall-fig` (only one Reynolds number shown) along with producing the output file.
+displays :numref:`Figure %s <stall-fig>` (only one Reynolds number shown) along with producing the output file.
 
 .. _stall-fig:
 
@@ -122,7 +122,7 @@ The command
 
    $ python airfoilprep.py DU21_A17_3D.dat --extrap 1.3 --plot
 
-displays :num:`Figure #extrap-fig` (only one Reynolds number shown) along with producing the output file.
+displays :numref:`Figure %s <extrap-fig>` (only one Reynolds number shown) along with producing the output file.
 
 .. _extrap-fig:
 

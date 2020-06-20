@@ -14,7 +14,6 @@ from rotorse.rotor_aeropower import SetupRunVarSpeed, RegulatedPowerCurve, AEP, 
 from ccblade.ccblade_component import CCBladeLoads, CCBladeGeometry
 from commonse.distribution import WeibullCDF, WeibullWithMeanCDF, RayleighCDF
 
-from enum import Enum
 from openmdao.api import IndepVarComp, Component, Problem, Group, SqliteRecorder, BaseRecorder
 import os
 
