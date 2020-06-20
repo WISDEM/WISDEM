@@ -6,7 +6,10 @@ from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rate
 try:
     import ruamel_yaml as ry
 except:
-    raise ImportError('No module named ruamel.yaml or ruamel_yaml')
+    try:
+        import ruamel.yaml as ry
+    except:
+        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 import jsonschema as json
 
 
