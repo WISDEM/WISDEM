@@ -18,9 +18,11 @@ Module documentation
    wisdem/drivetrainse/drivese/index
    wisdem/drivetrainse/generator/index
    wisdem/floatingse/index
+   wisdem/landbosse/index
    wisdem/nrelcsm/index
    wisdem/orbit/index
    wisdem/plantfinancese/index
+   wisdem/pyframe3dd/index
    wisdem/pymap/index
    wisdem/rotorse/index
    wisdem/towerse/index

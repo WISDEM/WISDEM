@@ -528,7 +528,7 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
                 if self.options['analysis_options']['openfast']['generate_af_coords']:
-                    fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = i
+                    fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '@"AF{:02d}_Coords.txt"'.format(i)
                 else:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
                 fst_vt['AeroDyn15']['af_data'][i][j]['NumTabs']   = self.n_tab

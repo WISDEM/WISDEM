@@ -12,6 +12,16 @@ try:
 except:
     ROSCO = False
 
+def readline_filterComments(f):
+            read = True
+            while read:
+                line = f.readline().strip()
+                if len(line)>0:
+                    if line[0] != '!':
+                        read = False
+            return line
+
+
 
 def fix_path(name):
     """ split a path, then reconstruct it using os.path.join """
@@ -1102,6 +1112,7 @@ class InputReader_OpenFAST(InputReader_Common):
 
         self.read_AeroDyn15Blade()
         self.read_AeroDyn15Polar()
+        self.read_AeroDyn15Coord()
 
     def read_AeroDyn15Blade(self):
         # AeroDyn v5.00 Blade Definition File
@@ -1138,16 +1149,7 @@ class InputReader_OpenFAST(InputReader_Common):
     def read_AeroDyn15Polar(self):
         # AirfoilInfo v1.01
 
-        def readline_filterComments(f):
-            read = True
-            while read:
-                line = f.readline().strip()
-                if len(line)>0:
-                    if line[0] != '!':
-                        read = False
-            return line
-
-
+        
         self.fst_vt['AeroDyn15']['af_data'] = [None]*self.fst_vt['AeroDyn15']['NumAFfiles']
 
         for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
@@ -1225,6 +1227,34 @@ class InputReader_OpenFAST(InputReader_Common):
                 self.fst_vt['AeroDyn15']['af_data'][afi][tab] = copy.copy(polar) # For multiple tables
             
             f.close()
+
+    def read_AeroDyn15Coord(self):
+        
+        self.fst_vt['AeroDyn15']['af_coord'] = []
+        self.fst_vt['AeroDyn15']['rthick']   = np.zeros(len(self.fst_vt['AeroDyn15']['AFNames']))
+
+        for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
+            self.fst_vt['AeroDyn15']['af_coord'].append({})
+            if self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'] != 0:
+                coord_filename = af_filename[0:af_filename.rfind(os.sep)] + os.sep + self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'][2:-1]
+                f = open(coord_filename)
+                n_coords = int_read(readline_filterComments(f).split()[0])
+                x = np.zeros(n_coords)
+                y = np.zeros(n_coords)
+                f.readline()
+                f.readline()
+                f.readline()
+                self.fst_vt['AeroDyn15']['rthick'][afi] = float(f.readline().split()[0])
+                f.readline()
+                f.readline()
+                f.readline()
+                for j in range(n_coords - 1):
+                    x[j], y[j] = f.readline().split()
+
+                self.fst_vt['AeroDyn15']['af_coord'][afi]['x'] = x
+                self.fst_vt['AeroDyn15']['af_coord'][afi]['y'] = y
+
+                f.close()
 
     def read_ServoDyn(self):
         # ServoDyn v1.05 Input File
