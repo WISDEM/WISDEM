@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
 
-from wisdem.assemblies.load_IEA_yaml import ComputeGrid
+from wisdem.glue_code.gc_WT_DataStruc import ComputeGrid
 
 
 class Test(unittest.TestCase):
