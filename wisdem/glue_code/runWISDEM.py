@@ -11,10 +11,12 @@ import os, sys
 import matplotlib.pyplot as plt
 import openmdao.api as om
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver, CaseReader
-from wisdem.assemblies.load_IEA_yaml import WindTurbineOntologyPython, WindTurbineOntologyOpenMDAO, yaml2openmdao
-from wisdem.assemblies.run_tools import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
-from wisdem.assemblies.wt_land_based import WindPark
-from wisdem.commonse.mpi_tools import MPI
+from wisdem.glue_code.gc_LoadInputs   import WindTurbineOntologyPython
+from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
+from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
+from wisdem.glue_code.gc_RunTools     import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
+from wisdem.glue_code.glue_code       import WindPark
+from wisdem.commonse.mpi_tools        import MPI
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -611,7 +613,7 @@ def wisdem_cmd():
 if __name__ == "__main__":
     
     ## File management
-    run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'assemblies' + os.sep + 'reference_turbines' + os.sep
+    run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'glue_code' + os.sep + 'reference_turbines' + os.sep
     fname_wt_input         = run_dir + "nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
     fname_opt_options      = run_dir + "optimization_options.yaml"

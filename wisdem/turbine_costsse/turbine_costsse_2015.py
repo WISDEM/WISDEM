@@ -980,7 +980,10 @@ class TowerCost2015(om.ExplicitComponent):
             outputs['tower_parts_cost'] = tower_mass_cost_coeff * tower_mass
         else:
             outputs['tower_parts_cost'] = inputs['tower_cost_external']
-        
+
+        if outputs['tower_parts_cost'] == 0.:
+            if self.options['verbosity'] == True:
+                print('Warning: turbine_costsse_2015.py : TowerCost2015.compute : No tower mass provided.  Assuming $0 for tower cost, LCOE will be artificially low.')
         
 #-------------------------------------------------------------------------------
 class TowerCostAdder2015(om.ExplicitComponent):

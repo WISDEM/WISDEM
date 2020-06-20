@@ -1,8 +1,8 @@
 import unittest
 import os
-from wisdem.assemblies.main import run_wisdem
+from wisdem.glue_code.runWISDEM import run_wisdem
 
-test_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'assemblies' + os.sep + 'reference_turbines' + os.sep
+test_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'glue_code' + os.sep + 'reference_turbines' + os.sep
 
 class TestRegression(unittest.TestCase):
     
