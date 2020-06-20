@@ -5,7 +5,8 @@ This module contains a collection of utilities for use across the WISDEM model s
 
 Differentiability
 =================
-Differentiable versions of several functions are provided (along with their derivatives).  These are summarized in the below table
+Differentiable versions of several functions are provided (along with their derivatives).
+These are summarized in the below table
 
 .. currentmodule:: wisdem.commonse.utilities
 
