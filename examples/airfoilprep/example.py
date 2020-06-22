@@ -7,7 +7,7 @@ import numpy as np
 from wisdem.airfoilprep import Polar, Airfoil
 
 
-airfoil = Airfoil.initFromAerodynFile('DU21_A17.dat')
+airfoil = Airfoil.initFromAerodynFile('../5MW_airfoil_files/DU21_A17.dat')
 # ------
 
 # first polar
@@ -82,8 +82,8 @@ af = Airfoil([p1, p2])
 # ------
 
 # read in airfoils from AeroDyn files
-airfoil1 = Airfoil.initFromAerodynFile('DU21_A17.dat')
-airfoil2 = Airfoil.initFromAerodynFile('DU25_A17.dat')
+airfoil1 = Airfoil.initFromAerodynFile('../5MW_airfoil_files/DU21_A17.dat')
+airfoil2 = Airfoil.initFromAerodynFile('../5MW_airfoil_files/DU25_A17.dat')
 
 # blend the two airfoils
 airfoil_blend = airfoil1.blend(airfoil2, 0.3)

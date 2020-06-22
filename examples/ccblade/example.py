@@ -1,21 +1,13 @@
-# just to hide path details from user in docs
-import os
-basepath = os.path.join(os.path.expanduser('~'), 'Dropbox', 'NREL', '5MW_files', '5MW_AFFiles')
-os.chdir(basepath)
-
-# just to temporarily change PYTHONPATH without installing
-import sys
-sys.path.append(os.path.expanduser('~') + '/Dropbox/NREL/CCBlade/src')
-
-
 # 1 ---------
 
 import numpy as np
 from math import pi
 import matplotlib.pyplot as plt
 
-from ccblade import CCAirfoil, CCBlade
+from wisdem.ccblade import CCAirfoil, CCBlade
 
+
+plot_flag = False
 
 # geometry
 Rhub = 1.5
@@ -53,14 +45,14 @@ afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
 
 # load all airfoils
 airfoil_types = [0]*8
-airfoil_types[0] = afinit('Cylinder1.dat')
-airfoil_types[1] = afinit('Cylinder2.dat')
-airfoil_types[2] = afinit('DU40_A17.dat')
-airfoil_types[3] = afinit('DU35_A17.dat')
-airfoil_types[4] = afinit('DU30_A17.dat')
-airfoil_types[5] = afinit('DU25_A17.dat')
-airfoil_types[6] = afinit('DU21_A17.dat')
-airfoil_types[7] = afinit('NACA64_A17.dat')
+airfoil_types[0] = afinit('../5MW_airfoil_files/Cylinder1.dat')
+airfoil_types[1] = afinit('../5MW_airfoil_files/Cylinder2.dat')
+airfoil_types[2] = afinit('../5MW_airfoil_files/DU40_A17.dat')
+airfoil_types[3] = afinit('../5MW_airfoil_files/DU35_A17.dat')
+airfoil_types[4] = afinit('../5MW_airfoil_files/DU30_A17.dat')
+airfoil_types[5] = afinit('../5MW_airfoil_files/DU25_A17.dat')
+airfoil_types[6] = afinit('../5MW_airfoil_files/DU21_A17.dat')
+airfoil_types[7] = afinit('../5MW_airfoil_files/NACA64_A17.dat')
 
 # place at appropriate radial stations
 af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -89,7 +81,9 @@ Omega = Uinf*tsr/Rtip * 30.0/pi  # convert to RPM
 azimuth = 0.0
 
 # evaluate distributed loads
-Np, Tp = rotor.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+loads, derivs = rotor.distributedAeroLoads(Uinf, Omega, pitch, azimuth)
+Np = loads['Np']
+Tp = loads['Tp']
 
 # 4 ----------
 
@@ -103,13 +97,14 @@ rstar = np.concatenate([[0.0], rstar, [1.0]])
 Np = np.concatenate([[0.0], Np, [0.0]])
 Tp = np.concatenate([[0.0], Tp, [0.0]])
 
-plt.plot(rstar, Tp/1e3, label='lead-lag')
-plt.plot(rstar, Np/1e3, label='flapwise')
-plt.xlabel('blade fraction')
-plt.ylabel('distributed aerodynamic loads (kN)')
-plt.legend(loc='upper left')
-plt.grid()
-plt.show()
+if plot_flag:
+    plt.plot(rstar, Tp/1e3, label='lead-lag')
+    plt.plot(rstar, Np/1e3, label='flapwise')
+    plt.xlabel('blade fraction')
+    plt.ylabel('distributed aerodynamic loads (kN)')
+    plt.legend(loc='upper left')
+    plt.grid()
+    plt.show()
 # 5 ----------
 
 # plt.savefig('/Users/sning/Dropbox/NREL/SysEng/TWISTER/ccblade-beta-setup/docs/images/distributedAeroLoads.pdf')
@@ -117,9 +112,17 @@ plt.show()
 
 # 6 ----------
 
-P, T, Q = rotor.evaluate([Uinf], [Omega], [pitch])
+outputs, derivs = rotor.evaluate([Uinf], [Omega], [pitch])
 
-CP, CT, CQ = rotor.evaluate([Uinf], [Omega], [pitch], coefficient=True)
+P = outputs['P']
+T = outputs['T']
+Q = outputs['Q']
+
+outputs, derivs = rotor.evaluate([Uinf], [Omega], [pitch], coefficients=True)
+
+CP = outputs['CP']
+CT = outputs['CT']
+CQ = outputs['CQ']
 
 print('CP =', CP)
 print('CT =', CT)
@@ -135,13 +138,18 @@ Omega = 10.0 * np.ones_like(tsr)
 Uinf = Omega*pi/30.0 * Rtip/tsr
 pitch = np.zeros_like(tsr)
 
-CP, CT, CQ = rotor.evaluate(Uinf, Omega, pitch, coefficient=True)
+outputs, derivs = rotor.evaluate(Uinf, Omega, pitch, coefficients=True)
 
-plt.figure()
-plt.plot(tsr, CP)
-plt.xlabel('$\lambda$')
-plt.ylabel('$c_p$')
-plt.show()
+CP = outputs['CP']
+CT = outputs['CT']
+CQ = outputs['CQ']
+
+if plot_flag:
+    plt.figure()
+    plt.plot(tsr, CP)
+    plt.xlabel('$\lambda$')
+    plt.ylabel('$c_p$')
+    plt.show()
 # 7 ----------
 
 # plt.savefig('/Users/sning/Dropbox/NREL/SysEng/TWISTER/ccblade-beta-setup/docs/images/cp.pdf')
