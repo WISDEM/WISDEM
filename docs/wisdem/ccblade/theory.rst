@@ -1,4 +1,4 @@
-.. _theory:
+.. _ccblade_theory:
 
 Theory
 ------

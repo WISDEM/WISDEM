@@ -7,6 +7,7 @@ Tutorial
 
 Three examples are shown below.
 The first is a complete setup for the :ref:`NREL 5-MW model <5MW-example>`, the second shows how to model blade :ref:`precurvature <curvature-example>`, and the final shows how to get the provided :ref:`analytic gradients <gradient-example>`.
+Each complete example is also included within the ``WISDEM/examples/ccblade`` directory.
 
 .. _5MW-example:
 

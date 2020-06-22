@@ -23,12 +23,6 @@ The airfoil objects used in CCBlade need only implement the following evaluate()
 Although using :ref:`CCAirfoil <ccairfoil-class-label>` for the implementation is recommended, any custom class can be used.
 
 
-.. rubric:: Class Summary:
-
-.. autointerface:: AirfoilInterface
-
-
-
 .. _ccairfoil-class-label:
 
 CCAirfoil Class
