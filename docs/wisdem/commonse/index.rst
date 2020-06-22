@@ -13,7 +13,5 @@ CommonSE
 
     csystem
     environment
-    ppi
-    rna
     utilities
 
