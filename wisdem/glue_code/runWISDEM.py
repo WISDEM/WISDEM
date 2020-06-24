@@ -7,16 +7,17 @@ except:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
 import numpy as np
-import os, sys
+import os
+import sys
 import matplotlib.pyplot as plt
 import openmdao.api as om
-from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver, CaseReader
 from wisdem.glue_code.gc_LoadInputs   import WindTurbineOntologyPython
 from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from wisdem.glue_code.gc_RunTools     import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
 from wisdem.glue_code.glue_code       import WindPark
 from wisdem.commonse.mpi_tools        import MPI
+from wisdem.commonse                  import fileIO
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -174,12 +175,12 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 analysis_options['openfast']['FASTpref']['mpi_comm_map_down'] = comm_map_down
                 analysis_options['openfast']['FASTpref']['cores']             = n_OF_runs_parallel            
             # Parallel settings for OpenMDAO
-            wt_opt = Problem(model=Group(num_par_fd=n_FD), comm=comm_i)
+            wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
             wt_opt.model.add_subsystem('comp', WindPark(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
             analysis_options['openfast']['FASTpref']['cores'] = 1
-            wt_opt = Problem(model=WindPark(analysis_options = analysis_options, opt_options = opt_options))
+            wt_opt = om.Problem(model=WindPark(analysis_options = analysis_options, opt_options = opt_options))
 
         # If at least one of the design variables is active, setup an optimization
         if opt_options['opt_flag']:
@@ -194,7 +195,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             
             # Set optimization solver and options. First, Scipy's SLSQP
             if opt_options['driver']['solver'] == 'SLSQP':
-                wt_opt.driver  = ScipyOptimizeDriver()
+                wt_opt.driver  = om.ScipyOptimizeDriver()
                 wt_opt.driver.options['optimizer'] = opt_options['driver']['solver']
                 wt_opt.driver.options['tol']       = opt_options['driver']['tol']
                 wt_opt.driver.options['maxiter']   = opt_options['driver']['max_iter']
@@ -532,17 +533,14 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 
         sys.stdout.flush()
         # Run openmdao problem
-        wt_opt.run_driver()
-
-        if MPI:
-            if rank == 0:
-                # Save data coming from openmdao to an output yaml file
-                wt_initial.write_ontology(wt_opt, fname_wt_output)
+        if opt_options['opt_flag']:
+            wt_opt.run_driver()
         else:
+            wt_opt.run_model()
+
+        if (not MPI) or (MPI and rank == 0):
             # Save data coming from openmdao to an output yaml file
             wt_initial.write_ontology(wt_opt, fname_wt_output)
-        
-        
 
     if MPI and analysis_options['openfast']['run_openfast']:
         # subprocessor ranks spin, waiting for FAST simulations to run
@@ -556,7 +554,12 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
+    # Save data to numpy and matlab arrays
+    fileIO.save_data(fname_wt_output, wt_opt)
+        
     return wt_opt, analysis_options, opt_options
+
+
 
 
 def read_master_file( fyaml ):
@@ -574,6 +577,7 @@ def read_master_file( fyaml ):
             raise FileNotFoundError('The '+f+' entry, '+input_yaml[f]+', cannot be found.')
         
     return input_yaml
+
 
 
 def wisdem_cmd():
@@ -599,12 +603,12 @@ def wisdem_cmd():
     # Grab master input file
     yaml_dict = read_master_file( sys.argv[1] )
     
-    # Run WISDEM
-    run_wisdem(yaml_dict['geometry_file'],
-               yaml_dict['modeling_file'],
-               yaml_dict['analysis_file'],
-               yaml_dict['output_geometry_file'],
-               yaml_dict['output_directory'])
+    # Run WISDEM (also saves output)
+    wt_opt, analysis_options, opt_options = run_wisdem(yaml_dict['geometry_file'],
+                                                       yaml_dict['modeling_file'],
+                                                       yaml_dict['analysis_file'],
+                                                       yaml_dict['output_geometry_file'],
+                                                       yaml_dict['output_directory'])
 
     sys.exit( 0 )
 
