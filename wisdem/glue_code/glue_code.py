@@ -70,11 +70,16 @@ class WT_RNTA(Group):
         self.connect('assembly.hub_height',             'ccblade.hub_height')
         self.connect('hub.cone',                        'ccblade.precone')
         self.connect('nacelle.uptilt',                  'ccblade.tilt')
+        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
+        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurveTip', src_indices=[(-1, 0)])
+        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweep', src_indices=[(i, 1) for i in np.arange(n_span)])
+        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweepTip', src_indices=[(-1, 1)])
         self.connect('configuration.n_blades',          'ccblade.nBlades')
         self.connect('control.rated_pitch' ,            'ccblade.pitch')
         self.connect('pc.tsr_opt',                      'ccblade.tsr')
         self.connect('env.rho_air',                     'ccblade.rho')
         self.connect('env.mu_air',                      'ccblade.mu')
+        self.connect('env.shear_exp',                   'ccblade.shearExp') 
 
         # Connections to wind turbine class
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
