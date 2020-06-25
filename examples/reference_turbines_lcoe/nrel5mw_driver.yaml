@@ -1,0 +1,10 @@
+# Inputs
+geometry_file: nrel5mw.yaml
+modeling_file: modeling_options.yaml
+analysis_file: analysis_options.yaml
+
+# Outputs
+output_directory: /Users/gbarter/devel/WISDEM/examples/reference_turbines_lcoe/output
+output_geometry_file: /Users/gbarter/devel/WISDEM/examples/reference_turbines_lcoe/output/nrel5mw_output.yaml
+
+
