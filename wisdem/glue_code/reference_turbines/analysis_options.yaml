@@ -58,6 +58,7 @@ tower:             # Options of TowerSE module
     add_gravity: True
 
 servose:
+    run_servose: True              # Run servose
     n_pc: 20                        # Number of wind speeds to compute the power curve
     n_pc_spline: 200                # Number of wind speeds to spline the power curve 
     n_pitch_perf_surfaces: 20       # Number of pitch angles to determine the Cp-Ct-Cq-surfaces

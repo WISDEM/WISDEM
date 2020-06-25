@@ -179,8 +179,8 @@ class CCBladeLoads(ExplicitComponent):
         self.n_tab         = n_tab     = af_init_options['n_tab']  # Number of tabulated data. For distributed aerodynamic control this could be > 1
 
         # inputs
-        self.add_input('V_load',        val=0.0, units='m/s')
-        self.add_input('Omega_load',    val=0.0, units='rpm')
+        self.add_input('V_load',        val=20.0, units='m/s')
+        self.add_input('Omega_load',    val=9.0, units='rpm')
         self.add_input('pitch_load',    val=0.0, units='deg')
         self.add_input('azimuth_load',  val=0.0, units='deg')
 
@@ -311,7 +311,226 @@ class CCBladeLoads(ExplicitComponent):
         J['loads_Py',     'pitch_load']    = -np.squeeze(dTp['dpitch'])
         J['loads_Py',     'azimuth_load']  = -np.squeeze(dTp['dazimuth'])
         J['loads_Py',     'precurve']      = -dTp['dprecurve']
-    
+
+class CCBladeTwist(ExplicitComponent):
+
+    def initialize(self):
+        self.options.declare('analysis_options')
+        self.options.declare('opt_options')
+
+    def setup(self):
+        analysis_options = self.options['analysis_options']
+        opt_options      = self.options['opt_options']
+        self.n_span      = n_span    = analysis_options['blade']['n_span']
+        # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
+        self.n_aoa       = n_aoa     = analysis_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re        = n_Re      = analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab       = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        n_opt_chord      = opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']
+        n_opt_twist      = opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']
+        
+        # Inputs
+        self.add_input('Uhub',          val=9.0,              units='m/s',          desc='Undisturbed wind speed')
+
+        self.add_input('tsr',           val=0.0,                                    desc='Tip speed ratio')
+        self.add_input('pitch',         val=0.0,              units='deg',          desc='Pitch angle')     
+        self.add_input('r',             val=np.zeros(n_span), units='m',            desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
+        self.add_input('s_opt_chord',   val=np.zeros(n_opt_chord),                  desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade chord')
+        self.add_input('s_opt_twist',   val=np.zeros(n_opt_twist),                  desc='1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade twist')
+        self.add_input('chord',         val=np.zeros(n_span), units='m',            desc='chord length at each section')
+        self.add_input('twist',         val=np.zeros(n_span), units='rad',          desc='twist angle at each section (positive decreases angle of attack)')
+        self.add_input('airfoils_aoa',  val=np.zeros((n_aoa)),units='deg',          desc='angle of attack grid for polars')
+        self.add_input('airfoils_cl',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
+        self.add_input('airfoils_cd',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
+        self.add_input('airfoils_cm',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
+        self.add_input('airfoils_Re',   val=np.zeros((n_Re)),                       desc='Reynolds numbers of polars')
+        self.add_input('Rhub',          val=0.0,     units='m',                     desc='hub radius')
+        self.add_input('Rtip',          val=0.0,     units='m',                     desc='tip radius')
+        self.add_input('rthick',        val=np.zeros(n_span),                       desc='1D array of the relative thicknesses of the blade defined along span.')
+        self.add_input('precurve',      val=np.zeros(n_span), units='m',            desc='precurve at each section')
+        self.add_input('precurveTip',   val=0.0,              units='m',            desc='precurve at tip')
+        self.add_input('presweep',      val=np.zeros(n_span), units='m',            desc='presweep at each section')
+        self.add_input('presweepTip',   val=0.0,              units='m',            desc='presweep at tip')
+        self.add_input('hub_height',    val=0.0,     units='m',                     desc='hub height')            
+        self.add_input('precone',       val=0.0,     units='deg',                   desc='precone angle', )
+        self.add_input('tilt',          val=0.0,     units='deg',                   desc='shaft tilt', )
+        self.add_input('yaw',           val=0.0,     units='deg',                   desc='yaw error', )
+        self.add_discrete_input('nBlades',val=0,                                    desc='number of blades')
+        self.add_input('rho',           val=1.225,   units='kg/m**3',               desc='density of air')
+        self.add_input('mu',            val=1.81e-5, units='kg/(m*s)',              desc='dynamic viscosity of air')
+        self.add_input('shearExp',      val=0.0,                                    desc='shear exponent')
+        self.add_discrete_input('nSector',   val=4,                                 desc='number of sectors to divide rotor face into in computing thrust and power')
+        self.add_discrete_input('tiploss',   val=True,                              desc='include Prandtl tip loss model')
+        self.add_discrete_input('hubloss',   val=True,                              desc='include Prandtl hub loss model')
+        self.add_discrete_input('wakerotation',val=True,                            desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
+        self.add_discrete_input('usecd',     val=True,                              desc='use drag coefficient in computing induction factors')
+        
+        # Outputs   
+        self.add_output('theta', val=np.zeros(n_span), units='rad',   desc='Twist angle at each section (positive decreases angle of attack)')
+        self.add_output('CP',    val=0.0,                             desc='Rotor power coefficient')
+        self.add_output('CM',    val=0.0,                             desc='Blade flapwise moment coefficient')
+        self.add_output('a',     val=np.zeros(n_span),                desc='Axial induction  along blade span')
+        self.add_output('ap',    val=np.zeros(n_span),                desc='Tangential induction along blade span')
+        self.add_output('alpha', val=np.zeros(n_span), units='deg',   desc='Angles of attack along blade span')
+        self.add_output('cl',    val=np.zeros(n_span),                desc='Lift coefficients along blade span')
+        self.add_output('cd',    val=np.zeros(n_span),                desc='Drag coefficients along blade span')
+        n_opt = opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']
+        self.add_output('cl_n_opt',    val=np.zeros(n_opt),           desc='Lift coefficients along blade span')
+        self.add_output('cd_n_opt',    val=np.zeros(n_opt),           desc='Drag coefficients along blade span')
+        self.add_output('Px_b',  val=np.zeros(n_span), units='N/m',   desc='Distributed loads in blade-aligned x-direction')
+        self.add_output('Py_b',  val=np.zeros(n_span), units='N/m',   desc='Distributed loads in blade-aligned y-direction')
+        self.add_output('Pz_b',  val=np.zeros(n_span), units='N/m',   desc='Distributed loads in blade-aligned z-direction')
+        self.add_output('Px_af', val=np.zeros(n_span), units='N/m',   desc='Distributed loads in airfoil x-direction')
+        self.add_output('Py_af', val=np.zeros(n_span), units='N/m',   desc='Distributed loads in airfoil y-direction')
+        self.add_output('Pz_af', val=np.zeros(n_span), units='N/m',   desc='Distributed loads in airfoil z-direction')
+        self.add_output('LiftF', val=np.zeros(n_span), units='N/m',   desc='Distributed lift force')
+        self.add_output('DragF', val=np.zeros(n_span), units='N/m',   desc='Distributed drag force')
+        self.add_output('L_n_opt', val=np.zeros(n_opt),units='N/m',   desc='Distributed lift force')
+        self.add_output('D_n_opt', val=np.zeros(n_opt),units='N/m',   desc='Distributed drag force')
+                
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        
+        # Create Airfoil class instances
+        af = [None]*self.n_span
+        for i in range(self.n_span):
+            if self.n_tab > 1:
+                ref_tab = int(np.floor(self.n_tab/2))
+                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,ref_tab], inputs['airfoils_cd'][i,:,:,ref_tab], inputs['airfoils_cm'][i,:,:,ref_tab])
+            else:
+                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
+
+        if self.options['opt_options']['optimization_variables']['blade']['aero_shape']['twist']['inverse']:
+            # Find cl and cd for max efficiency
+            cl      = np.zeros(self.n_span)
+            cd      = np.zeros(self.n_span)
+            alpha   = np.zeros(self.n_span)
+            Eff     = np.zeros(self.n_span)
+
+            Omega = inputs['tsr'] * inputs['Uhub'] / inputs['r'][-1] 
+
+            margin2stall = self.options['opt_options']['constraints']['blade']['stall']['margin'] * 180. / np.pi
+            Re      = np.array(Omega * inputs['r'] * inputs['chord'] * inputs['rho'] / inputs['mu'])
+            for i in range(self.n_span):
+                unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,0], inputs['airfoils_cd'][i,:,0,0], inputs['airfoils_cm'][i,:,0,0])
+                alpha[i]    = (unsteady['alpha1'] - margin2stall) / 180. * np.pi
+                cl[i], cd[i]    = af[i].evaluate(alpha[i], Re[i])
+            Eff   = cl/cd
+
+            # overwrite aoa of high thickness airfoils at root
+            idx_min = [i for i, thk in enumerate(inputs['rthick']) if thk<95.][0]
+            alpha[0:idx_min] = alpha[idx_min]
+            
+            eta = inputs['r'] / inputs['r'][-1]
+            n_points         = 30
+            r_interp_alpha   = np.linspace(eta[0],eta[-1],n_points)
+            # r_interp_alpha   = np.array([prob['eta'][0],0.2,0.45, 0.6, prob['eta'][-1]])
+            alpha_control_p  = np.interp(r_interp_alpha, eta, alpha)
+            alpha_spline     = PchipInterpolator(r_interp_alpha, alpha_control_p)
+            alphafit         = alpha_spline(eta)
+            
+            
+            # find cl/cd for smooth alpha
+            for i, (aoa, afi) in enumerate(zip(alphafit, af)):
+                cl[i], cd[i] = afi.evaluate(aoa, Re[i])
+                Eff[i] = cl[i]/cd[i]
+
+            # import matplotlib.pyplot as plt
+            # plt.figure()
+            # plt.plot(inputs['r'], alpha*180./np.pi, 'k')
+            # plt.plot(inputs['r'], alphafit*180./np.pi, 'r')
+            # plt.xlabel('blade fraction')
+            # plt.ylabel('aoa (deg)')
+            # plt.legend(loc='upper left')
+            # plt.figure()
+            # plt.plot(inputs['r'], cl, 'k')
+            # plt.plot(inputs['r'], cd, 'r')
+            # plt.xlabel('blade fraction')
+            # plt.ylabel('cl and cd (-)')
+            # plt.legend(loc='upper left')
+            # plt.figure()
+            # plt.plot(inputs['r'], Eff, 'k')
+            # plt.xlabel('blade fraction')
+            # plt.ylabel('Eff (-)')
+            # plt.legend(loc='upper left')
+            # plt.show()
+            # exit()
+
+            get_twist = CCBlade(inputs['r'], inputs['chord'], np.zeros_like(inputs['chord']), af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])        
+            
+            get_twist.inverse_analysis = True
+            get_twist.alpha            = alphafit
+            get_twist.cl               = cl
+            get_twist.cd               = cd
+            
+
+            # Compute omega given TSR
+            Omega   = inputs['Uhub']*inputs['tsr']/inputs['Rtip'] * 30.0/np.pi
+            
+            _, _= get_twist.evaluate([inputs['Uhub']], [Omega], [inputs['pitch']], coefficients=False)
+            
+            
+            # Cap twist root region
+            for i in range(len(get_twist.theta)):
+                if get_twist.theta[-i -1] > 20. / 180. * np.pi:
+                    get_twist.theta[0:len(get_twist.theta)-i] = 20. / 180. * np.pi
+                    break       
+            
+        
+            twist = get_twist.theta
+        else:
+            twist = inputs['twist']
+
+        get_cp_cm = CCBlade(inputs['r'], inputs['chord'], twist * 180. / np.pi, af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])   
+        get_cp_cm.inverse_analysis = False
+        get_cp_cm.induction        = True
+        # get_cp_cm.alpha            = alpha
+        # get_cp_cm.cl               = cl
+        # get_cp_cm.cd               = cd
+
+
+        # Compute omega given TSR
+        Omega   = inputs['Uhub']*inputs['tsr']/inputs['Rtip'] * 30.0/np.pi
+        
+
+        myout, derivs = get_cp_cm.evaluate([inputs['Uhub']], [Omega], [inputs['pitch']], coefficients=True)
+        _, _, _, _, CP, CT, CQ, CM = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
+                
+        # if self.options['opt_options']['optimization_variables']['blade']['aero_shape']['twist']['flag']:
+        get_cp_cm.induction        = False
+        get_cp_cm.induction_inflow = True
+        loads, deriv = get_cp_cm.distributedAeroLoads(inputs['Uhub'][0], Omega[0], inputs['pitch'][0], 0.0)
+        # get_cp_cm.induction_inflow = False
+        # Np, Tp = get_cp_cm.distributedAeroLoads(inputs['Uhub'][0], Omega[0], inputs['pitch'][0], 0.0)
+
+        # Return twist angle
+        outputs['theta']   = twist
+        outputs['CP']      = CP[0]
+        outputs['CM']      = CM[0]
+        outputs['a']       = loads['a']
+        outputs['ap']      = loads['ap']
+        outputs['alpha']   = loads['alpha']
+        outputs['cl']      = loads['Cl']
+        outputs['cd']      = loads['Cd']
+        s                  = (inputs['r'] - inputs['r'][0]) / (inputs['r'][-1] - inputs['r'][0])
+        outputs['cl_n_opt']  = np.interp(inputs['s_opt_twist'], s, loads['Cl'])
+        outputs['cd_n_opt']  = np.interp(inputs['s_opt_twist'], s, loads['Cd'])
+        # Forces in the blade coordinate system, pag 21 of https://www.nrel.gov/docs/fy13osti/58819.pdf
+        outputs['Px_b']    = loads['Np']
+        outputs['Py_b']    = -loads['Tp']
+        outputs['Pz_b']    = 0*loads['Np']
+        # Forces in the airfoil coordinate system, pag 21 of https://www.nrel.gov/docs/fy13osti/58819.pdf
+        P_b = DirectionVector(loads['Np'], -loads['Tp'], 0)
+        P_af = P_b.bladeToAirfoil(twist * 180. / np.pi)
+        outputs['Px_af']    = P_af.x
+        outputs['Py_af']    = P_af.y
+        outputs['Pz_af']    = P_af.z
+        # Lift and drag forces
+        F = P_b.bladeToAirfoil(twist * 180. / np.pi + loads['alpha'] + inputs['pitch'])
+        outputs['LiftF']    = F.x
+        outputs['DragF']    = F.y
+        outputs['L_n_opt']  = np.interp(inputs['s_opt_twist'], s, F.x)
+        outputs['D_n_opt']  = np.interp(inputs['s_opt_twist'], s, F.y)
+        # print(CP[0])
 
 class AeroHubLoads(ExplicitComponent):
     """
