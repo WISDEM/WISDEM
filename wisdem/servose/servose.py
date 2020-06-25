@@ -36,7 +36,7 @@ class ServoSE(Group):
         self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         self.add_subsystem('gust',              GustETM())
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=analysis_options['servose']['n_pc_spline']))
-        self.add_subsystem('aep',               AEP(), promotes=['AEP'])
+        self.add_subsystem('aep',               AEP(nspline=analysis_options['servose']['n_pc_spline']), promotes=['AEP'])
 
 
         # Connections to the Weibull CDF
@@ -961,11 +961,12 @@ class NoStallConstraint(ExplicitComponent):
 
 
 class AEP(ExplicitComponent):
-    # def initialize(self):
-    #     self.options.declare('n_pc_spline', default = 200)
+    def initialize(self):
+
+        self.options.declare('nspline')
     
     def setup(self):
-        n_pc_spline = 200
+        n_pc_spline      = self.options['nspline']
         """integrate to find annual energy production"""
 
         # inputs

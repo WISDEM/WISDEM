@@ -1,7 +1,7 @@
 import numpy as np
 import time
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_DAC_rated
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_DAC_rated, RotorSE_steady_wind
 
 try:
     import ruamel_yaml as ry
@@ -47,7 +47,7 @@ class WindTurbineOntologyPython(object):
         FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
         FASTpref['DLC_gust']            = None      # Max deflection
         FASTpref['DLC_extrm']           = None      # Max strain
-        FASTpref['DLC_turbulent']       = RotorSE_DAC_rated
+        FASTpref['DLC_turbulent']       = RotorSE_steady_wind
         FASTpref['DLC_powercurve']      = None      # AEP
         if FASTpref['Analysis_Level'] > 0:
             fast = InputReader_OpenFAST(FAST_ver=FASTpref['FAST_ver'], dev_branch=FASTpref['dev_branch'])

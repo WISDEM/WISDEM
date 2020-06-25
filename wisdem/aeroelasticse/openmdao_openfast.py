@@ -764,8 +764,11 @@ class FASTLoadCases(ExplicitComponent):
             elif blade_root_bending_moment_max == 2:
                 outputs['Mxyz'] = np.array([data['RootMxc3'][idx_s+idx]*1.e3, data['RootMyc3'][idx_s+idx]*1.e3, data['RootMzc3'][idx_s+idx]*1.e3])
                 outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
+            
+            if 'BLFLAP1' in data.keys():
+                outputs['flp1_std'] = np.std(data['BLFLAP1'])
 
-            outputs['flp1_std'] = np.std(data['BLFLAP1'])
+            outputs['Cp']          = np.mean(data["RtAeroCp"])
 
         def post_extreme(data, case_type):
 
