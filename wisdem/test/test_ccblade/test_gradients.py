@@ -42,7 +42,7 @@ class TestGradients(unittest.TestCase):
         self.mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-        basepath = path.join(path.dirname(path.realpath(__file__)), '5MW_AFFiles') + path.sep
+        basepath = path.join(path.dirname(path.realpath(__file__)), '../../../examples/5MW_airfoil_files') + path.sep
 
         # load all airfoils
         airfoil_types = [0]*8
@@ -1763,7 +1763,7 @@ class TestGradientsNotRotating(unittest.TestCase):
         self.mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-        basepath = path.join(path.dirname(path.realpath(__file__)), '5MW_AFFiles') + path.sep
+        basepath = path.join(path.dirname(path.realpath(__file__)), '../../../examples/5MW_airfoil_files') + path.sep
 
         # load all airfoils
         airfoil_types = [0]*8
@@ -2323,7 +2323,7 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         self.mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-        basepath = path.join(path.dirname(path.realpath(__file__)), '5MW_AFFiles') + path.sep
+        basepath = path.join(path.dirname(path.realpath(__file__)), '../../../examples/5MW_airfoil_files') + path.sep
 
         # load all airfoils
         airfoil_types = [0]*8

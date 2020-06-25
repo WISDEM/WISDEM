@@ -32,4 +32,5 @@ Excel Wrapper
 
     ExcelWrapper
 
-Example code for using the xcel_wrapper is included in the xcel_wrapper.py file.  A path to the user's workbook will need to be specified for its use.
+Example code for using the xcel_wrapper is included in the xcel_wrapper.py file.
+A path to the user's workbook will need to be specified for its use.
