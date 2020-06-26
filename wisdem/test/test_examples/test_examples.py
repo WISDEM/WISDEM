@@ -1,6 +1,6 @@
 import unittest
 import os
-
+import importlib
 from pathlib import Path
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -15,9 +15,18 @@ class TestExamples(unittest.TestCase):
     def testAllExamplesRun(self):
         for f in all_examples:
             try:
+                # Go to location due to relative path use for airfoil files
                 basepath = os.path.dirname(os.path.realpath(f))
                 os.chdir(basepath)
-                exec(open(f).read())
+
+                # Get script/module name
+                froot = os.path.splitext(os.path.basename(f))[0]
+
+                # Use dynamic import capabilities
+                # https://www.blog.pythonlibrary.org/2016/05/27/python-201-an-intro-to-importlib/
+                spec = importlib.util.spec_from_file_location(froot, os.path.realpath(f))
+                mod  = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
             except:
                 self.assertEqual(f, True)
  
