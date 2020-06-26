@@ -4,53 +4,8 @@ Package Documentation
 =====================
 
 *FloatingSE* is a module within the larger `WISDEM <http://www.github.com/WISDEM>`_ project, developed
-primarily by engineers at the `National Renewable Energy Laboratory (NREL) <http://www.nrel.gov>`_. *FloatingSE* is open-source and the project repository is housed
-on GitHub at `<https://github.com/WISDEM/FloatingSE>`_
+primarily by engineers at the `National Renewable Energy Laboratory (NREL) <http://www.nrel.gov>`_.
 
-Installation
-------------
-.. admonition:: Prerequisites
-   :class: warning
-
-	General: NumPy, SciPy, OpenMDAO
-
-	WISDEM-Models: `CommonSE <http://www.github.com/WISDEM/CommonSE>`_, `TowerSE <http://www.github.com/WISDEM/TowerSE>`_, `pyMAP <http://www.github.com/WISDEM/pyMAP>`_, `pyFrame3DD <http://www.github.com/WISDEM/pyFrame3DD>`_, `Akima <http://www.github.com/WISDEM/akima>`_
-
-	Supporting python packages: Sphinx, Sphinxcontrib-bibtex, Numpydoc
-
-	Optional visualization packages: Mayavi, VTK
-
-Clone the repository at `<https://github.com/WISDEM/FloatingSE>`_.
-
-Install *FloatingSE* with the following command for a permanent installation:
-
-.. code-block:: bash
-
-   $ python setup.py install
-
-For a development installation use:
-
-.. code-block:: bash
-
-   $ python setup.py develop --user
-
-To check if installation was successful try to import the module:
-
-.. code-block:: bash
-
-    $ python
-
-.. code-block:: python
-
-    > import floatingse
-
-or run the unit tests:
-
-.. code-block:: bash
-
-   $ python test/package.py
-
-An "OK" signifies that all the tests passed.
     
 Package Files
 -------------
