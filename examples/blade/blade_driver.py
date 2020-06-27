@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-show_plots = True
+show_plots = False
 
 ## File management
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
