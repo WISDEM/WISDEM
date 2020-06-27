@@ -1,7 +1,8 @@
-from openmdao.api import ExplicitComponent, Group, Problem
+import openmdao.api as om
 import numpy as np
 
-class PlantFinance(ExplicitComponent):
+
+class PlantFinance(om.ExplicitComponent):
     """
     Compute LCOE for the wind plant
     
@@ -150,28 +151,3 @@ class PlantFinance(ExplicitComponent):
 
     def compute_partials(self, inputs, J, discrete_inputs):
         J = self.J
-
-    
-class Finance(Group):
-    
-    def setup(self):
-        self.add_subsystem('plantfinancese', PlantFinance(verbosity = True), promotes=['*'])
-
-
-if __name__ == "__main__":
-    # Initialize OpenMDAO problem and FloatingSE Group
-    prob = Problem()
-    prob.model=Finance() # runs script
-    prob.setup()
-
-    prob['machine_rating']          = 2.32 * 1.e+003       # kW
-    prob['tcc_per_kW']              = 1093                 # USD/kW
-    prob['turbine_number']          = 87.
-    prob['opex_per_kW']             = 43.56                # USD/kW/yr Source: 70 $/kW/yr, updated from report, (70 is on the high side)
-    prob['fixed_charge_rate']       = 0.079216644          # 7.9 % confirmed from report
-    prob['bos_per_kW']              = 517.                 # USD/kW from appendix of report
-    prob['wake_loss_factor']        = 0.15                 # confirmed from report 
-    prob['turbine_aep']             = 9915.95 * 1.e+003    # confirmed from report 
-    
-    prob.run_driver()
-
