@@ -65,7 +65,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # TODO : need to set these options correctly; right now the members are placeholders
 autodoc_default_options = {
-    'members': 'var1, var2',
+    'members': 'var1',
     'member-order': 'bysource',
     'undoc-members': True,
     'exclude-members': '__weakref__'
