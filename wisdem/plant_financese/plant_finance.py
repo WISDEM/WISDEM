@@ -36,7 +36,7 @@ class PlantFinance(om.ExplicitComponent):
     
     """
     def initialize(self):
-        self.options.declare('verbosity',default=False)
+        self.options.declare('verbosity', default=False)
         
     def setup(self):
 

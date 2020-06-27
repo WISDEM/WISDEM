@@ -22,7 +22,7 @@ class TestPlantFinance(unittest.TestCase):
 
         self.discrete_inputs['turbine_number'] = 50
         
-        self.mypfin = pf.PlantFinance()
+        self.mypfin = pf.PlantFinance(verbosity=True)
 
     def testRun(self):
         # Park AEP way
