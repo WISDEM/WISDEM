@@ -48,33 +48,6 @@ and others are discrete variables that can only take integer values
 application is the number of offset columns or the number of mooring
 line connections.
 
-Gradient-Based versus Derivative-Free Algorithms
-------------------------------------------------
-
-Derivative-free optimization algorithms are preferable for substructure
-optimization problems for a few reasons, despite their known performance
-drawbacks in terms of wall-clock time. First, to do a complete
-configuration optimization of the substructure, a mixed-integer capable
-algorithm is required. No gradient-based optimization algorithm is
-capable of handling these types of variables directly (unless a rounding
-approximation is used). A genetic algorithm, properly designed, can
-support mixed-integer variables for a global design space optimization.
-
-Another reason for the selection of derivative-free algorithms is that
-the *FloatingSE* uses a number of third-party, black box tools or
-algorithms that do not come with analytical gradients. This includes
-`Frame3DD <http://frame3dd.sourceforge.net>`_, `MAP++ <https://nwtc.nrel.gov/MAP>`_, and some of the API 2U procedures that rely on roots of
-nonlinear equations. Thus, gradient-based optimization algorithms would
-be forced to use finite difference approximations around these tools at
-the very least. However, derivatives approximated with finite
-differences are expensive to compute accurately. If computed
-inaccurately, for the sake of reducing computational time, finite
-difference derivatives can easily lead an optimization algorithm astray,
-especially in highly nonlinear or tightly constrained regions of the
-design space. This is another reason for the use of derivative-free
-algorithms, even when conducting local neighborhood design space
-optimization and/or sensitivity studies.
-
 Design Variables
 ----------------
 
