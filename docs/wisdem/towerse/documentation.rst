@@ -5,12 +5,6 @@
 Documentation
 -------------
 
-The following inputs and outputs are defined for TowerSE:
-
-.. embed-n2::
-  ../wisdem/towerse/tower.py
-
-
 Referenced Tower Modules
 ========================
 

@@ -12,7 +12,7 @@ Dynamics for floating turbines are not included in TowerSE.
 Theory for the finite element code is available at the website: `Frame3DD <http://frame3dd.sourceforge.net/>`_. 
 The RNA (rotor/nacelle/assembly) affects the stiffness of the structure and top loads.
 It is assumed that the RNA is a rigid body with respect to the tower modes.
-The RNA mass properties are transfered to the tower top using the generalized parallel axis theorem.
+The RNA mass properties are transferred to the tower top using the generalized parallel axis theorem.
 Two different buckling approaches are implemented.
 A shell buckling method from Eurocode :cite:`European-Committee-for-Standardisation1993` and a global buckling method from Germanischer Lloyd :cite:`GL2005`.
 The implementation of the Eurocode buckling is modified slightly so as to produce continuously differentiable output.
@@ -36,10 +36,6 @@ With that assumption the two remaining forces per unit length are given as
 The calculation of the resulting drag is separated from the actual velocity distributions, which are handled in the commonse.environment module.
 The environment model provides default implementations for power-law wind profiles, logarithmic-law wind profiles, and linear wave theory.
 A textbook model is used for soil stiffness properties :cite:`Arya1979`.
-
-.. only:: html
-
-    :bib:`Bibliography`
 
 .. bibliography:: references.bib
     :style: unsrt
