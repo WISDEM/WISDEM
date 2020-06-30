@@ -254,8 +254,6 @@ class RunXFOIL(ExplicitComponent):
         self.flap_profiles = [{} for i in range(self.n_span)]
         outputs['span_start'] = inputs['span_end'] - inputs['span_ext']
         if self.n_te_flaps > 0:
-            print('FLAPS')
-            exit()
             try:
                 from scipy.ndimage import gaussian_filter
             except:
