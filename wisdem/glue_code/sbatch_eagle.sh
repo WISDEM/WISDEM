@@ -1,17 +1,18 @@
 #!/bin/bash
 #SBATCH --account=bar
-#SBATCH --time=24:00:00
+#SBATCH --time=01:00:00
 #SBATCH --job-name=Design1
-#SBATCH --nodes=32
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=36
 #SBATCH --mail-user pbortolo@nrel.gov
 #SBATCH --mail-type BEGIN,END,FAIL
-#SBATCH --output=/projects/windse/importance_sampling/logs/job_DeISgn_Case1.%j.out
+#SBATCH --output=job_DeISgn_Case1.%j.out
+####SBATCH --qos=high
+####SBATCH --partition=debug
 
-
-nDV = 11  # Number of design variables (x2 for central difference)
-nOF = 100 # Number of openfast runs per finite-difference evaluation
-nC  = $(( nDV + nDV * nOF ))   # Number of cores needed. Make sure to request an appropriate number of nodes = N / 36
+nDV=11  # Number of design variables (x2 for central difference)
+nOF=100 # Number of openfast runs per finite-difference evaluation
+nC=$(( nDV + nDV * nOF ))   # Number of cores needed. Make sure to request an appropriate number of nodes = N / 36
 
 source deactivate
 
@@ -22,4 +23,4 @@ module load gcc/8.2.0
 
 conda activate wisdem-env
 
-mpirun -np $nC python main.py
+mpirun -np $nC python runWISDEM.py
