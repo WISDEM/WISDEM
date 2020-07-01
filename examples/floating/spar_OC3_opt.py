@@ -57,9 +57,10 @@ prob.model = FloatingSE(analysis_options=opt)
 
 # Setup up optimization problem
 if opt_flag:
-    prob.driver = om.pyOptSparseDriver() #ScipyOptimizeDriver() #
-    prob.driver.options['optimizer'] = 'SNOPT' #SLSQP' #'
-    #prob.driver.options['tol'] = 1e-4
+    prob.driver = om.ScipyOptimizeDriver() #pyOptSparseDriver() #
+    prob.driver.options['optimizer'] = 'SLSQP' #'SNOPT' #
+    prob.driver.options['tol'] = 1e-4
+    prob.driver.options['maxiter'] = 400
 
     # --- Objective ---
     prob.model.add_objective('structural_mass', scaler=1e-6)
@@ -264,11 +265,10 @@ prob['pontoon_outer_diameter'] = 1.0
 prob['pontoon_wall_thickness'] = 0.1
 
 # Use FD and run optimization
-for k in range(3):
-    if opt_flag:
-        prob.model.approx_totals(form='central', step=1e-4)
-        prob.run_driver()
-    else:
-        prob.run_model()
-    fileIO.save_data('spar.pickle', prob)
+if opt_flag:
+    prob.model.approx_totals(form='central', step=1e-4)
+    prob.run_driver()
+else:
+    prob.run_model()
+fileIO.save_data('spar.pickle', prob)
 
