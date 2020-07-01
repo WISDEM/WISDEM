@@ -459,7 +459,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
 
         # Update ElastoDyn Tower Input File
-        if self.analysis_options['Analysis_Flags']['TowerSE']:
+        if self.options['analysis_options']['Analysis_Flags']['TowerSE']:
             fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
             fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
             fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
