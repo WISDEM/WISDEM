@@ -451,12 +451,12 @@ class MapMooring(om.ExplicitComponent):
         OUTPUTS  : none (multiple unknown dictionary values set)
         """
         # Unpack variables
-        rhoWater      = inputs['rho_water']
-        waterDepth    = inputs['water_depth']
-        fairleadDepth = inputs['fairlead']
-        Dmooring      = inputs['mooring_diameter']
-        offset        = inputs['max_offset']
-        heel          = inputs['operational_heel']
+        rhoWater      = float( inputs['rho_water'] )
+        waterDepth    = float( inputs['water_depth'] )
+        fairleadDepth = float( inputs['fairlead'] )
+        Dmooring      = float( inputs['mooring_diameter'] )
+        offset        = float( inputs['max_offset'] )
+        heel          = float( inputs['operational_heel'] )
         gamma         = self.options['analysis_options']['gamma_f']
         n_connect     = int(inputs['number_of_mooring_connections'])
         n_lines       = int(inputs['mooring_lines_per_connection'])

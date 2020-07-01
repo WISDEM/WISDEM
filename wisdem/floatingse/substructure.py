@@ -672,7 +672,8 @@ class Substructure(om.ExplicitComponent):
         T_wave_low  = inputs['wave_period_range_low']
         T_wave_high = inputs['wave_period_range_high']
         f_struct    = inputs['structural_frequencies']
-        T_struct    = 1.0 / f_struct
+        T_struct    = np.zeros(f_struct.shape)
+        for k in range(T_struct.size): T_struct[k] = 0.0 if f_struct[k]==0.0 else 1/f_struct[k]
 
         # Waves cannot excite yaw, so removing that constraint
         

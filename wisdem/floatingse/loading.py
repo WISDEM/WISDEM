@@ -51,8 +51,6 @@ class FloatingFrame(om.ExplicitComponent):
         yield stress of material
     main_mass : numpy array[n_full_main-1], [kg]
         mass of main column by section
-    main_buckling_length : numpy array[n_full_main-1], [m]
-        distance between ring stiffeners
     main_displaced_volume : numpy array[n_full_main-1], [m**3]
         column volume of water displaced by section
     main_hydrostatic_force : numpy array[n_full_main-1], [N]
@@ -89,8 +87,6 @@ class FloatingFrame(om.ExplicitComponent):
         yield stress of material
     offset_mass : numpy array[n_full_off-1], [kg]
         mass of offset column by section
-    offset_buckling_length : numpy array[n_full_off-1], [m]
-        distance between ring stiffeners
     offset_displaced_volume : numpy array[n_full_off-1], [m**3]
         column volume of water displaced by section
     offset_hydrostatic_force : numpy array[n_full_off-1], [N]
@@ -123,8 +119,6 @@ class FloatingFrame(om.ExplicitComponent):
         yield stress of material
     tower_mass_section : numpy array[n_full_tow-1], [kg]
         mass of tower column by section
-    tower_buckling_length : float, [m]
-        buckling length
     tower_center_of_mass : float, [m]
         z-position of center of tower mass
     tower_Px : numpy array[n_full_tow], [N/m]
@@ -329,7 +323,6 @@ class FloatingFrame(om.ExplicitComponent):
         self.add_input('main_G_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('main_sigma_y_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('main_mass', val=np.zeros(n_full_main-1), units='kg')
-        self.add_input('main_buckling_length', val=np.zeros(n_full_main-1), units='m')
         self.add_input('main_displaced_volume', val=np.zeros(n_full_main-1), units='m**3')
         self.add_input('main_hydrostatic_force', val=np.zeros(n_full_main-1), units='N')
         self.add_input('main_center_of_buoyancy', val=0.0, units='m')
@@ -351,7 +344,6 @@ class FloatingFrame(om.ExplicitComponent):
         self.add_input('offset_G_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('offset_sigma_y_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('offset_mass', val=np.zeros(n_full_off-1), units='kg')
-        self.add_input('offset_buckling_length', val=np.zeros(n_full_off-1), units='m')
         self.add_input('offset_displaced_volume', val=np.zeros(n_full_off-1), units='m**3')
         self.add_input('offset_hydrostatic_force', val=np.zeros(n_full_off-1), units='N')
         self.add_input('offset_center_of_buoyancy', val=0.0, units='m')
@@ -370,7 +362,6 @@ class FloatingFrame(om.ExplicitComponent):
         self.add_input('tower_G_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('tower_sigma_y_full', val=np.zeros(n_full_main-1), units='Pa')
         self.add_input('tower_mass_section', val=np.zeros(n_full_tow-1), units='kg')
-        self.add_input('tower_buckling_length', 0.0, units='m')
         self.add_input('tower_center_of_mass', val=0.0, units='m')
         self.add_input('tower_Px', np.zeros(n_full_tow), units='N/m')
         self.add_input('tower_Py', np.zeros(n_full_tow), units='N/m')
@@ -1363,25 +1354,28 @@ class FloatingFrame(om.ExplicitComponent):
             NFREQ2    = int(NFREQ/2)
             mshapes_x = np.zeros((NFREQ2, 5))
             mshapes_y = np.zeros((NFREQ2, 5))
+            myfreqs   = np.zeros(NFREQ)
             ix = 0
             iy = 0
-            im = []
+            im = 0
             for m in range(len(modal.freq)):
                 if mpfs[m,:].max() < 1e-11: continue
                 imode = np.argmax(mpfs[m,:])
                 if imode == 0 and ix<NFREQ2:
                     mshapes_x[ix,:] = xpolys[m,:]
+                    myfreqs[im] = modal.freq[m]
                     ix += 1
-                    im.append(m)
+                    im += 1
                 elif imode == 1 and iy<NFREQ2:
                     mshapes_y[iy,:] = ypolys[m,:]
+                    myfreqs[im] = modal.freq[m]
                     iy += 1
-                    im.append(m)
+                    im += 1
                 #else:
                 #    print('Warning: Unknown mode shape')
             outputs['x_mode_shapes'] = mshapes_x
             outputs['y_mode_shapes'] = mshapes_y
-            outputs['structural_frequencies'] = modal.freq[im]
+            outputs['structural_frequencies'] = myfreqs
 
 
         # ---RUN STRESS ANALYSIS---
@@ -1461,7 +1455,7 @@ class FloatingFrame(om.ExplicitComponent):
         
         # Extract main column for Eurocode checks
         idx = mainEID-1 + np.arange(R_od_main.size, dtype=np.int32)
-        L_reinforced  = inputs['main_buckling_length']
+        L_reinforced  = opt['columns']['main']['buckling_length'] * np.ones(idx.shape)
         sigma_ax_main = sigma_ax[idx]
         sigma_sh_main = sigma_sh[idx]
         qdyn_main,_   = nodal2sectional( inputs['main_qdyn'] )
@@ -1484,7 +1478,7 @@ class FloatingFrame(om.ExplicitComponent):
         # Extract offset column for Eurocode checks
         if ncolumn > 0:
             idx = offsetEID[0]-1 + np.arange(R_od_offset.size, dtype=np.int32)
-            L_reinforced    = inputs['offset_buckling_length']
+            L_reinforced    = opt['columns']['offset']['buckling_length'] * np.ones(idx.shape)
             sigma_ax_offset = sigma_ax[idx]
             sigma_sh_offset = sigma_sh[idx]
             qdyn_offset,_   = nodal2sectional( inputs['offset_qdyn'] )
@@ -1503,8 +1497,6 @@ class FloatingFrame(om.ExplicitComponent):
             offset_height = z_offset[-1] - z_offset[0]
             outputs['offset_global_buckling'] = util.bucklingGL(2*R_od_offset, t_wall_offset, Nx[idx], M[idx], offset_height, E_offset, sigma_y_offset, gamma_f, gamma_b)
         
-        # TODO: FATIGUE
-        # Base and offset columns get API stress/buckling checked in Column Group because that takes into account stiffeners
 
 
 
