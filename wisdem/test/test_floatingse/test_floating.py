@@ -19,9 +19,11 @@ class TestOC3Mass(unittest.TestCase):
         opt['platform']['columns']['main']['n_height'] = npts
         opt['platform']['columns']['main']['n_layers'] = 1
         opt['platform']['columns']['main']['n_bulkhead'] = 4
+        opt['platform']['columns']['main']['buckling_length'] = 30.0
         opt['platform']['columns']['offset']['n_height'] = npts
         opt['platform']['columns']['offset']['n_layers'] = 1
         opt['platform']['columns']['offset']['n_bulkhead'] = 4
+        opt['platform']['columns']['offset']['buckling_length'] = 30.0
         opt['platform']['tower'] = {}
         opt['platform']['tower']['buckling_length'] = 30.0
         opt['platform']['frame3dd']            = {}

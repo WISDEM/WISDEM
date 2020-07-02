@@ -36,7 +36,12 @@ opt['frame3dd']['tol']     = 1e-7
 opt['run_modal'] = False
 
 opt['tower'] = {}
-opt['tower']['buckling_length'] = 30
+opt['tower']['buckling_length'] = 30.0
+
+opt['columns'] = {}
+opt['columns']['main'] = {}
+opt['columns']['offset'] = {}
+opt['columns']['main']['buckling_length'] = opt['columns']['offset']['buckling_length'] = 30.0
 
 def DrawTruss(mytruss):
     mynodes = {}
