@@ -7,7 +7,7 @@ from wisdem.floatingse import FloatingSE
 from wisdem.commonse import fileIO
 
 plot_flag = False
-opt_flag  = True
+opt_flag  = False
 
 npts = 20
 nsection = npts - 1
@@ -66,6 +66,7 @@ if opt_flag:
     prob.model.add_objective('structural_mass', scaler=1e-6)
     # ----------------------
 
+    # --- Design Variables ---
     # Mooring system
     #prob.model.add_design_var('mooring_diameter', lower=1e-3, upper=0.35)
     #prob.model.add_design_var('mooring_line_length', lower=1.0, upper=10e4)
@@ -84,6 +85,13 @@ if opt_flag:
     #prob.model.add_design_var('main.stiffener_flange_width', lower=1e-2, upper=1.0)
     #prob.model.add_design_var('main.stiffener_flange_thickness', lower=1e-3, upper=1e-1)
     #prob.model.add_design_var('main.stiffener_spacing', lower=2.0, upper=10.0)
+
+    # Tower geometry
+    #prob.model.add_design_var('tower_height', lower=40.0, upper=200.0)
+    #prob.model.add_design_var('tower_s', lower=0.0, upper=1.0)
+    #prob.model.add_design_var('tower_outer_diameter_in', lower=min_diam, upper=max_diam)
+    #prob.model.add_design_var('tower_layer_thickness', lower=2e-3, upper=8e-1)
+    # ----------------------
     
     # --- Constraints ---
     # Ensure that draft is greater than 0 (spar length>0) and that less than water depth
@@ -111,9 +119,13 @@ if opt_flag:
     #prob.model.add_constraint('main.external_local_api', upper=1.0)
     #prob.model.add_constraint('main.external_general_api', upper=1.0)
 
+    # Eurocode constraints
     prob.model.add_constraint('main_stress', upper=1.0)
     prob.model.add_constraint('main_shell_buckling', upper=1.0)
     prob.model.add_constraint('main_global_buckling', upper=1.0)
+    #prob.model.add_constraint('tower_stress', upper=1.0)
+    #prob.model.add_constraint('tower_shell_buckling', upper=1.0)
+    #prob.model.add_constraint('tower_global_buckling', upper=1.0)
 
     # Achieving non-zero variable ballast height means the semi can be balanced with margin as conditions change
     prob.model.add_constraint('variable_ballast_height_ratio', lower=0.0, upper=1.0)
@@ -131,7 +143,7 @@ if opt_flag:
 prob.setup()
 
 
-# Set environment to that used in OC4 testing campaign
+# Set environment
 prob['shearExp']    = 0.11   # Shear exponent in wind power law
 prob['cm']          = 2.0    # Added mass coefficient
 prob['Uc']          = 0.0    # Mean current speed
@@ -224,13 +236,13 @@ prob['wind_reference_height'] = 119.0  # Wind reference height [m]
 prob['main.permanent_ballast_height'] = 5.0 # Height above keel for permanent ballast [m]
 prob['main_freeboard']                = 10.0 # Height extension above waterline [m]
 
-prob['main.height'] = 100.0 #np.sum([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
-prob['main.s'] = np.linspace(0,1,npts) #np.cumsum([0.0, 49.0, 59.0, 8.0, 14.0]) / prob['main.height']
-prob['main.outer_diameter_in'] = np.linspace(max_diam, min_diam, npts) #np.array([9.4, 9.4, 9.4, 6.5, 6.5]) # Diameter at each section node (linear lofting between) [m]
-prob['main.layer_thickness'] = prob['main.outer_diameter_in'][:-1].reshape((1,nsection))/100.0               # Shell thickness at each section node (linear lofting between) [m]
+prob['main.height'] = 100.0 # m
+prob['main.s'] = np.linspace(0,1,npts) # Non dimensional section pointns
+prob['main.outer_diameter_in'] = np.linspace(max_diam, min_diam, npts) # m
+prob['main.layer_thickness'] = prob['main.outer_diameter_in'][:-1].reshape((1,nsection))/100.0 # m
 
-prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Locations/thickness of internal bulkheads at section interfaces [m]
-prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.9, 1.0]) # Locations/thickness of internal bulkheads at section interfaces [m]
+prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Thickness of internal bulkheads [m]
+prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.9, 1.0]) # Locations of internal bulkheads
 
 # Column ring stiffener parameters
 prob['main.stiffener_web_height']       = 0.10 * np.ones(nsection) # (by section) [m]
@@ -268,7 +280,13 @@ prob['pontoon_wall_thickness'] = 0.1
 if opt_flag:
     prob.model.approx_totals(form='central', step=1e-4)
     prob.run_driver()
+    fileIO.save_data('spar.pickle', prob)
 else:
     prob.run_model()
-fileIO.save_data('spar.pickle', prob)
 
+# Visualize with mayavi, which can be difficult to install
+if plot_flag:
+    import wisdem.floatingse.visualize as viz
+    vizobj = viz.Visualize(prob)
+    vizobj.draw_spar()
+    
