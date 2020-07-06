@@ -100,8 +100,8 @@ if opt_flag:
     #prob.model.add_constraint('wave_height_fairlead_ratio', upper=1.0)
 
     # Ensure that the radius doesn't change dramatically over a section
-    prob.model.add_constraint('main.manufacturability', lower=0.0)
-    prob.model.add_constraint('main.weldability', upper=0.0)
+    prob.model.add_constraint('main.constr_taper', lower=0.0)
+    prob.model.add_constraint('main.constr_d_to_t', upper=0.0)
 
     # Ensure max mooring line tension is less than X% of MBL: 60% for intact mooring, 80% for damanged
     #prob.model.add_constraint('axial_unity', lower=0.0, upper=1.0)

@@ -411,11 +411,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             if tower_constraints['shell_buckling']['flag']:
                 wt_opt.model.add_constraint('towerse.post.shell_buckling', upper=1.0)
                 
-            if tower_constraints['weldability']['flag']:
-                wt_opt.model.add_constraint('towerse.weldability', upper=0.0)
+            if tower_constraints['constr_d_to_t']['flag']:
+                wt_opt.model.add_constraint('towerse.constr_d_to_t', upper=0.0)
                 
-            if tower_constraints['manufacturability']['flag']:
-                wt_opt.model.add_constraint('towerse.manufacturability', lower=0.0)
+            if tower_constraints['constr_taper']['flag']:
+                wt_opt.model.add_constraint('towerse.constr_taper', lower=0.0)
                 
             if tower_constraints['slope']['flag']:
                 wt_opt.model.add_constraint('towerse.slope', upper=1.0)
