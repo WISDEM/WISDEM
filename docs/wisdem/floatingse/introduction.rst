@@ -14,7 +14,7 @@ principles for conceptual design and preliminary analysis, and link to
 financial modules for LCOE estimation.
 
 The `WISDEM <http://www.github.com/WISDEM>`_ modules, including *FloatingSE*, are built around the
-`OpenMDAO 1.x <http://openmdao.org/>`_ library :cite:`openmdao`, an open-source high-performance computing platform for
+`OpenMDAO <http://openmdao.org/>`_ library :cite:`openmdao`, an open-source high-performance computing platform for
 systems analysis and multidisciplinary optimization, written in Python .
 Due to the structure of `OpenMDAO <http://openmdao.org/>`_, and modular design of `WISDEM <http://www.github.com/WISDEM>`_,
 individual modules can be exercised individually or in unison for
@@ -36,3 +36,41 @@ helps to understand the analysis execution flow described in Section
 optimization problems in Section :ref:`optimization-label`. Finally, some discussion of
 how *FloatingSE* can be linked to other `WISDEM <http://www.github.com/WISDEM>`_ modules via a high-level
 OpenMDAO Group is described in Section :ref:`other-label`.
+
+
+Package Files
+-------------
+
+The files that comprise the *FloatingSE* package are found in the
+:file:`src/floatingse` directory in accordance with standard Python package
+conventions. In addition to these files, there are also affiliated unit
+tests that probe the behavior of individual functions. These are located
+in the :file:`test` sub-directory. A summary of all package files is
+included in :numref:`tbl_package`.
+
+.. _tbl_package:
+
+.. table::
+   File contents of the :file:`src/floatingse` Python package within *FloatingSE*.
+
+   +---------------------------------------+-----------------------------+----------------------------------------------------------------------------------------+
+   | **File Name**                         | **Description**                                                                                                      |
+   +=======================================+=============================+========================================================================================+
+   | :file:`floating.py`                   | Top level *FloatingSE* OpenMDAO Group                                                                                |
+   +---------------------------------------+-----------------------------+----------------------------------------------------------------------------------------+
+   | :file:`column.py`                     | Components calculating mass, buoyancy, and static stability of vertical frustum columns                              |
+   +---------------------------------------+-----------------------------+----------------------------------------------------------------------------------------+
+   | :file:`loading.py`                    | Components for `Frame3DD <http://frame3dd.sourceforge.net>`_ analysis of structure, mass summation, and displacement |
+   +---------------------------------------+-----------------------------+----------------------------------------------------------------------------------------+
+   | :file:`map_mooring.py`                | Mooring analysis using `pyMAP <http://www.github.com/WISDEM/pyMAP>`_ module                                          |
+   +---------+-----------------------------+----------------------------------------------------------------------------------------------------------------------+
+   | :file:`substructure.py`               | Final buoyancyand stability checks of the substructure                                                               |
+   +---------------------------------------+-----------------------------+----------------------------------------------------------------------------------------+
+   | :file:`instance/floating_instance.py` | Parent class controlling optimization drivers, constraints, and visualization                                        |
+   +---------+-----------------------------+----------------------------------------------------------------------------------------+
+   | :file:`instance/spar_instance.py`     | Spar example implementing design parameters and visualization                                                        |
+   +---------------------------------------+-----------------------------+----------------------------------------------------------------------------------------+
+   | :file:`instance/semi_instance.py`     | Semisubmersible example implementing design parameters and visualization                                             |
+   +---------------------------------------+-----------------------------+----------------------------------------------------------------------------------------+
+   | :file:`instance/tlp_instance.py`      | Tension leg platform example implementing design parameters and visualization                                        |
+   +---------------------------------------+-----------------------------+----------------------------------------------------------------------------------------+

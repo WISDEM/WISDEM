@@ -1204,7 +1204,7 @@ class TowerLeanSE(om.Group):
                                                                    'tower_raw_cost','gravity_foundation_mass','foundation_height',
                                                                    'transition_piece_mass','transition_piece_height',
                                                                    'monopile_mass','monopile_cost','monopile_length'])
-        self.add_subsystem('gc', Util.GeometricConstraints(nPoints=n_height), promotes=['min_d_to_t','max_taper','manufacturability','weldability','slope'])
+        self.add_subsystem('gc', Util.GeometricConstraints(nPoints=n_height), promotes=['min_d_to_t','max_taper','constr_taper','constr_d_to_t','slope'])
         self.add_subsystem('turb', TurbineMass(), promotes=['turbine_mass','monopile_mass',
                                                             'tower_mass','tower_center_of_mass','tower_I_base',
                                                             'rna_mass', 'rna_cg', 'rna_I','hub_height'])
@@ -1595,9 +1595,9 @@ if __name__ == '__main__':
         prob.model.add_constraint('post2.stress',          upper=1.0)
         prob.model.add_constraint('post2.global_buckling', upper=1.0)
         prob.model.add_constraint('post2.shell_buckling',  upper=1.0)
-        prob.model.add_constraint('weldability',          upper=0.0)
-        prob.model.add_constraint('manufacturability',    lower=0.0)
-        prob.model.add_constraint('slope',                upper=1.0)
+        prob.model.add_constraint('constr_d_to_t',         upper=0.0)
+        prob.model.add_constraint('constr_taper',          lower=0.0)
+        prob.model.add_constraint('slope',                 upper=1.0)
         prob.model.add_constraint('tower1.f1',             lower=0.13, upper=0.40)
         prob.model.add_constraint('tower2.f1',             lower=0.13, upper=0.40)
         # ----------------------
@@ -1696,8 +1696,8 @@ if __name__ == '__main__':
     print('ts=', prob['t_full'])
     print('mass (kg) =', prob['tower_mass'])
     print('cg (m) =', prob['tower_center_of_mass'])
-    print('weldability =', prob['weldability'])
-    print('manufacturability =', prob['manufacturability'])
+    print('d:t constraint =', prob['constr_d_to_t'])
+    print('taper ratio constraint =', prob['constr_taper'])
     print('\nwind: ', prob['wind1.Uref'])
     print('freq (Hz) =', prob['post1.structural_frequencies'])
     print('Fore-aft mode shapes:', prob['post1.fore_aft_modes'])

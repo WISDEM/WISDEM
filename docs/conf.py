@@ -63,12 +63,12 @@ master_doc = 'index'
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-# TODO : need to set these options correctly; right now the members are placeholders
+# TODO : need to set these options correctly.
+# Right now we list out all OpenMDAO methods we don't want to document.
 autodoc_default_options = {
-    'members': 'var1, var2',
     'member-order': 'bysource',
     'undoc-members': True,
-    'exclude-members': '__weakref__'
+    'exclude-members': '__weakref__, add_constraint, add_design_var, add_discrete_input, add_discrete_output, add_input, add_objective, add_output, add_recorder, add_response, check_config, cleanup, compute, compute_jacvec_product, compute_partials, convert2units, declare_coloring, declare_partials, get_approx_coloring_fname, get_constraints, get_design_vars, get_linear_vectors, get_nonlinear_vectors, get_objectives, get_responses, initialize, is_active, list_inputs, list_outputs, reconfigure, record_iteration, resetup, run_apply_linear, run_apply_nonlinear, run_linearize, run_solve_linear, run_solve_nonlinear, set_check_partial_options, set_initial_values, set_solver_print, setup, system_iter, use_fixed_coloring, add_subsystem, approx_totals, compute_sys_graph, configure, connect, guess_nonlinear, promotes, set_order',
 }
 
 # -- Options for HTML output ----------------------------------------------

@@ -12,7 +12,7 @@ TowerSE
 .. toctree::
 
     intro
+    theory
     tutorial
     documentation
-    theory
 

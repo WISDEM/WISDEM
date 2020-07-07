@@ -202,7 +202,7 @@ class RunXFOIL(ExplicitComponent):
         except KeyError:
             self.cores = 1
         
-        if MPI:
+        if MPI and self.options['analysis_options']['openfast']['run_openfast']:
             self.mpi_comm_map_down = FASTpref['mpi_comm_map_down']
 
         # Inputs blade outer shape
@@ -254,8 +254,6 @@ class RunXFOIL(ExplicitComponent):
         self.flap_profiles = [{} for i in range(self.n_span)]
         outputs['span_start'] = inputs['span_end'] - inputs['span_ext']
         if self.n_te_flaps > 0:
-            print('FLAPS')
-            exit()
             try:
                 from scipy.ndimage import gaussian_filter
             except:

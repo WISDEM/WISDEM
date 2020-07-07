@@ -324,7 +324,7 @@ class Visualize(object):
             if len(fpart) == 1 or not fpart[-1].lower() in ['jpg','png','bmp']:
                 fname += '.png'
             mlab.savefig(fname, figure=self.fig)
-        mlab.show(stop=True)
+        mlab.show()
 
         
     

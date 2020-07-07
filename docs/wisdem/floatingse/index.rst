@@ -12,10 +12,9 @@ FloatingSE
 .. toctree::
 
     introduction
-    package
     geometry
     theory
     verification
     execution
     optimization
-    zz_other
+    documentation

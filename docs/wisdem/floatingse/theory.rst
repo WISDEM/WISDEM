@@ -619,3 +619,16 @@ calculated, they are compared against the standard wave frequencies
 range, , and expressed as a design constraint (with a partial safety
 factor).
 
+
+
+References
+----------
+
+.. only:: html
+
+    :bib:`Bibliography`
+
+.. bibliography:: references.bib
+   :cited:
+   :style: unsrt
+

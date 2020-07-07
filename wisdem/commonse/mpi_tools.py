@@ -1,6 +1,9 @@
 import os
 import sys
-from mpi4py import MPI
+try:
+    from mpi4py import MPI
+except:
+    MPI = False
 
 def under_mpirun():
     """Return True if we're being executed under mpirun."""

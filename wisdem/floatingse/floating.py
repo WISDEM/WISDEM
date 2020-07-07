@@ -170,9 +170,6 @@ class FloatingSE(om.Group):
             self.connect('wind_reference_speed','Uref')
             
         
-        self.connect('main.L_stiffener','main_buckling_length')
-        self.connect('off.L_stiffener','offset_buckling_length')
-        
         self.connect('main.z_full', ['main_z_nodes', 'main_z_full'])
         self.connect('main.d_full', 'main_d_full')
         self.connect('main.t_full', 'main_t_full')
@@ -319,9 +316,11 @@ def sparExample():
     opt['platform']['columns']['main']['n_height'] = npts
     opt['platform']['columns']['main']['n_layers'] = 1
     opt['platform']['columns']['main']['n_bulkhead'] = 4
+    opt['platform']['columns']['main']['buckling_length'] = 30.0
     opt['platform']['columns']['offset']['n_height'] = npts
     opt['platform']['columns']['offset']['n_layers'] = 1
     opt['platform']['columns']['offset']['n_bulkhead'] = 4
+    opt['platform']['columns']['offset']['buckling_length'] = 30.0
     opt['platform']['tower'] = {}
     opt['platform']['tower']['buckling_length'] = 30.0
     opt['platform']['frame3dd']            = {}
@@ -433,9 +432,11 @@ def semiExample():
     opt['platform']['columns']['main']['n_height'] = npts
     opt['platform']['columns']['main']['n_layers'] = 1
     opt['platform']['columns']['main']['n_bulkhead'] = 4
+    opt['platform']['columns']['main']['buckling_length'] = 30.0
     opt['platform']['columns']['offset']['n_height'] = npts
     opt['platform']['columns']['offset']['n_layers'] = 1
     opt['platform']['columns']['offset']['n_bulkhead'] = 4
+    opt['platform']['columns']['offset']['buckling_length'] = 30.0
     opt['platform']['tower'] = {}
     opt['platform']['tower']['buckling_length'] = 30.0
     opt['platform']['frame3dd']            = {}
