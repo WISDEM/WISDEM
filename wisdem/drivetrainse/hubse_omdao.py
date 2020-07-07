@@ -129,7 +129,7 @@ class Hub_OM(ExplicitComponent):
         # variables
         self.add_input('blade_root_diameter', val=0.0, units='m',   desc='blade root diameter')
         self.add_input('machine_rating',      val=0.0, units='kW',  desc='machine rating of turbine')
-        self.add_input('rotor_rpm',           val=0.0, units='rpm', desc='RPM at rated power')
+        self.add_input('rotor_rpm',           val=9.0, units='rpm', desc='RPM at rated power')
         self.add_input('blade_mass',          val=0.0, units='kg',  desc='mass of one blade')
         self.add_input('rotor_diameter',      val=0.0, units='m',   desc='diameter of rotor')
         self.add_input('blade_length',        val=0.0, units='m',   desc='length of blade')

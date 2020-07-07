@@ -366,7 +366,8 @@ def assign_nacelle_values(wt_opt, assembly, nacelle):
     wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['inertia']
     
     wt_opt['nacelle.gear_ratio']        = nacelle['drivetrain']['gear_ratio']
-    wt_opt['nacelle.drivetrain_eff']    = nacelle['drivetrain']['efficiency']
+    wt_opt['nacelle.gearbox_efficiency']    = nacelle['drivetrain']['gearbox_efficiency']
+    wt_opt['nacelle.generator_efficiency']  = nacelle['drivetrain']['generator_efficiency']
     if assembly['drivetrain'].upper() != 'DIRECT DRIVE':
         wt_opt['nacelle.shaft_ratio']       = nacelle['drivetrain']['shaft_ratio']
         wt_opt['nacelle.planet_numbers']    = nacelle['drivetrain']['planet_numbers']

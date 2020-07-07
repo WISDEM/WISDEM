@@ -459,7 +459,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
 
         # Update ElastoDyn Tower Input File
-        if self.options['analysis_options']['Analysis_Flags']['TowerSE']:
+        if self.options['analysis_options']['tower']['run_towerse']:
             fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
             fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
             fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
@@ -764,8 +764,11 @@ class FASTLoadCases(ExplicitComponent):
             elif blade_root_bending_moment_max == 2:
                 outputs['Mxyz'] = np.array([data['RootMxc3'][idx_s+idx]*1.e3, data['RootMyc3'][idx_s+idx]*1.e3, data['RootMzc3'][idx_s+idx]*1.e3])
                 outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
+            
+            if 'BLFLAP1' in data.keys():
+                outputs['flp1_std'] = np.std(data['BLFLAP1'])
 
-            outputs['flp1_std'] = np.std(data['BLFLAP1'])
+            outputs['Cp']          = np.mean(data["RtAeroCp"])
 
         def post_extreme(data, case_type):
 

@@ -353,7 +353,8 @@ components:
           hss_input_length: 1.5
           distance_hub2mb: 1.912
           yaw_motors_number: 1
-          efficiency: 0.93
+          gearbox_efficiency: 1.0
+          generator_efficiency: 0.9655
         # mass:
         #   generator: 371.95
         #   turret: 13.362
