@@ -592,7 +592,7 @@ materials:
       Xt: 360.e+006
       Xc: 360.e+006
       S: 0
-      sigma_y: 450.e+6
+      Xy: 450.e+6
    -  name: glass_uni
       description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
