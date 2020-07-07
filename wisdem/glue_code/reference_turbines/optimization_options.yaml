@@ -153,8 +153,9 @@ constraints:
 
 driver:
     tol: 1.e-2            # Optimality tolerance
-    max_major_iter: 10    # Maximum number of major design iterations
-    max_minor_iter: 100   # Maximum number of minor design iterations
+    max_iter: 10          # Maximum number of design iterations for SLSQP
+    max_major_iter: 10    # Maximum number of major design iterations for SNOPT
+    max_minor_iter: 100   # Maximum number of minor design iterations for SNOPT
     solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     step_size: 1.e-3      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central

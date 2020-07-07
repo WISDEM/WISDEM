@@ -39,7 +39,7 @@ class WT_RNTA(Group):
     
         if analysis_options['openfast']['run_openfast'] == True:
             self.add_subsystem('freq_rotor',  RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
-            #if analysis_options['Analysis_Flags']['TowerSE']:
+            #if analysis_options['tower']['run_towerse']:
             self.add_subsystem('freq_tower',  TowerSE(analysis_options=analysis_options, topLevelFlag=False))
             self.add_subsystem('sse_tune',    ServoSE_ROSCO(analysis_options = analysis_options)) # Aero analysis
             self.add_subsystem('aeroelastic', FASTLoadCases(analysis_options = analysis_options))
@@ -48,7 +48,7 @@ class WT_RNTA(Group):
         self.add_subsystem('drivese',   DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
-        #if analysis_options['Analysis_Flags']['TowerSE']:
+        #if analysis_options['tower']['run_towerse']:
         self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
@@ -173,7 +173,8 @@ class WT_RNTA(Group):
             self.connect('pc.tsr_opt' ,                    'sse.tsr_operational')
             self.connect('control.rated_pitch' ,           'sse.control_pitch')
             self.connect('configuration.gearbox_type' ,    'sse.drivetrainType')
-            self.connect('nacelle.drivetrain_eff',         'sse.drivetrainEff')
+            self.connect('nacelle.gearbox_efficiency',     'sse.powercurve.gearbox_efficiency')
+            self.connect('nacelle.generator_efficiency',   'sse.powercurve.generator_efficiency')
             self.connect('assembly.r_blade',               'sse.r')
             # self.connect('blade.pa.chord_param',           'sse.chord')
             # self.connect('blade.pa.twist_param',           'sse.theta')
@@ -237,7 +238,7 @@ class WT_RNTA(Group):
             self.connect('elastic.precomp.yl_strain_te',    'freq_rotor.yl_strain_te')
             self.connect('blade.outer_shape_bem.s',         'freq_rotor.constr.s')
 
-            #if analysis_options['Analysis_Flags']['TowerSE']:
+            #if analysis_options['tower']['run_towerse']:
             self.connect('drivese.top_F',                   'freq_tower.pre.rna_F')
             self.connect('drivese.top_M',                   'freq_tower.pre.rna_M')
             self.connect('drivese.rna_I_TT',               ['freq_tower.rna_I','freq_tower.pre.mI'])
@@ -314,7 +315,7 @@ class WT_RNTA(Group):
             self.connect('elastic.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
             self.connect('freq_rotor.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
             self.connect('freq_rotor.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
-            self.connect('nacelle.drivetrain_eff',          'sse_tune.tune_rosco.gen_eff')
+            self.connect('nacelle.generator_efficiency',    'sse_tune.tune_rosco.gen_eff')
             self.connect('control.max_pitch',               'sse_tune.tune_rosco.max_pitch') 
             self.connect('control.min_pitch',               'sse_tune.tune_rosco.min_pitch')
             self.connect('control.max_pitch_rate' ,         'sse_tune.tune_rosco.max_pitch_rate')
@@ -413,10 +414,11 @@ class WT_RNTA(Group):
         self.connect('nacelle.hss_input_length',   'drivese.hss_input_length')
         self.connect('nacelle.distance_hub2mb',    'drivese.distance_hub2mb')
         self.connect('nacelle.yaw_motors_number',  'drivese.yaw_motors_number')
-        self.connect('nacelle.drivetrain_eff',     'drivese.drivetrain_efficiency')
+        self.connect('nacelle.gearbox_efficiency', 'drivese.gearbox_efficiency')
+        self.connect('nacelle.generator_efficiency','drivese.generator_efficiency')
         self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
 
-        #if analysis_options['Analysis_Flags']['TowerSE']:
+        #if analysis_options['tower']['run_towerse']:
         # Connections to TowerSE
         self.connect('drivese.top_F',                 'towerse.pre.rna_F')
         self.connect('drivese.top_M',                 'towerse.pre.rna_M')
@@ -488,7 +490,7 @@ class WT_RNTA(Group):
             self.connect('nacelle.nacelle_I',               'aeroelastic.nacelle_I')
             self.connect('nacelle.nacelle_cm',              'aeroelastic.nacelle_cm')
 
-            #if analysis_options['Analysis_Flags']['TowerSE']:
+            #if analysis_options['tower']['run_towerse']:
             self.connect('freq_tower.post.mass_den',           'aeroelastic.mass_den')
             self.connect('freq_tower.post.foreaft_stff',       'aeroelastic.foreaft_stff')
             self.connect('freq_tower.post.sideside_stff',      'aeroelastic.sideside_stff')
@@ -572,7 +574,7 @@ class WT_RNTA(Group):
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
         # Temporary
 
-        #if analysis_options['Analysis_Flags']['TowerSE']:
+        #if analysis_options['tower']['run_towerse']:
         self.connect('towerse.tower_mass',          'tcc.tower_mass')
 
 class WindPark(Group):

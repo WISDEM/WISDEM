@@ -72,7 +72,8 @@ class LowSpeedShaft4pt_OM(ExplicitComponent):
         self.add_input('carrier_mass',           val=0.0, units='kg',  desc='Carrier mass')
         self.add_input('overhang',               val=0.0, units='m',   desc='Overhang distance')
         self.add_input('distance_hub2mb',        val=0.0, units='m',   desc='distance between hub center and upwind main bearing')
-        self.add_input('drivetrain_efficiency',  val=0.0,              desc='overall drivettrain efficiency')
+        self.add_input('gearbox_efficiency',     val=0.0,              desc='gearbox efficiency')
+        self.add_input('generator_efficiency',   val=0.0,              desc='generator efficiency')
 
         # parameters
         self.add_input('shrink_disc_mass', val=0.0,         units='kg',  desc='Mass of the shrink disc')
@@ -89,6 +90,7 @@ class LowSpeedShaft4pt_OM(ExplicitComponent):
         self.add_discrete_input('IEC_Class', val='B', desc='IEC turbulence class (A/B/C)')
         
         # outputs
+        self.add_output('drivetrain_efficiency',   val=0.0,                      desc='overall drivetrain efficiency')
         self.add_output('lss_design_torque',       val=0.0,         units='N*m', desc='lss design torque')
         self.add_output('lss_design_bending_load', val=0.0,         units='N',   desc='lss design bending load')
         self.add_output('lss_length',              val=0.0,         units='m',   desc='lss length')
@@ -106,13 +108,15 @@ class LowSpeedShaft4pt_OM(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        outputs['drivetrain_efficiency'] = inputs['gearbox_efficiency'] * inputs['generator_efficiency']
+
         lss4pt = dc.LowSpeedShaft4pt(discrete_inputs['mb1Type'], discrete_inputs['mb2Type'], discrete_inputs['IEC_Class'], debug=self.options['debug'])
 
         (outputs['lss_design_torque'], outputs['lss_design_bending_load'], outputs['lss_length'], outputs['lss_diameter1'], outputs['lss_diameter2'], outputs['lss_mass'], outputs['lss_cm'], outputs['lss_I'], \
          outputs['lss_mb1_facewidth'], outputs['lss_mb2_facewidth'], outputs['lss_mb1_mass'], outputs['lss_mb2_mass'], outputs['lss_mb1_cm'], outputs['lss_mb2_cm']) \
                 = lss4pt.compute(inputs['rotor_diameter'], inputs['rotor_mass'], inputs['rotor_thrust'], inputs['rotor_force_y'], inputs['rotor_force_z'], \
                                     inputs['rotor_bending_moment_x'], inputs['rotor_bending_moment_y'], inputs['rotor_bending_moment_z'], \
-                                    inputs['overhang'], inputs['machine_rating'], inputs['drivetrain_efficiency'], \
+                                    inputs['overhang'], inputs['machine_rating'], outputs['drivetrain_efficiency'], \
                                     inputs['gearbox_mass'], inputs['carrier_mass'], inputs['gearbox_cm'], inputs['gearbox_length'], \
                                     inputs['shrink_disc_mass'], inputs['flange_length'], inputs['distance_hub2mb'], inputs['shaft_angle'], inputs['shaft_ratio'], \
                                     inputs['hub_flange_thickness'])
@@ -146,7 +150,8 @@ class LowSpeedShaft3pt_OM(ExplicitComponent):
         self.add_input('carrier_mass',           val=0.0, units='kg',  desc='Carrier mass')
         self.add_input('overhang',               val=0.0, units='m',   desc='Overhang distance')
         self.add_input('distance_hub2mb',        val=0.0, units='m',   desc='distance between hub center and upwind main bearing')
-        self.add_input('drivetrain_efficiency',  val=0.0,              desc='overall drivettrain efficiency')
+        self.add_input('gearbox_efficiency',     val=0.0,              desc='gearbox efficiency')
+        self.add_input('generator_efficiency',   val=0.0,              desc='generator efficiency')
 
         # parameters
         self.add_input('shrink_disc_mass', val=0.0,         units='kg',  desc='Mass of the shrink disc')
@@ -162,6 +167,7 @@ class LowSpeedShaft3pt_OM(ExplicitComponent):
         self.add_discrete_input('IEC_Class', val='B', desc='IEC turbulence class (A/B/C)')
         
         # outputs
+        self.add_output('drivetrain_efficiency',   val=0.0,                      desc='overall drivetrain efficiency')
         self.add_output('lss_design_torque',       val=0.0,         units='N*m', desc='lss design torque')
         self.add_output('lss_design_bending_load', val=0.0,         units='N',   desc='lss design bending load')
         self.add_output('lss_length',              val=0.0,         units='m',   desc='lss length')
@@ -180,13 +186,15 @@ class LowSpeedShaft3pt_OM(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        outputs['drivetrain_efficiency'] = inputs['gearbox_efficiency'] * inputs['generator_efficiency']
+
         lss3pt = dc.LowSpeedShaft3pt(discrete_inputs['mb1Type'], discrete_inputs['IEC_Class'], debug=self.options['debug'])
         
         (outputs['lss_design_torque'], outputs['lss_design_bending_load'], outputs['lss_length'], outputs['lss_diameter1'], outputs['lss_diameter2'], outputs['lss_mass'], outputs['lss_cm'], outputs['lss_I'], \
          outputs['lss_mb1_facewidth'], outputs['lss_mb2_facewidth'], outputs['lss_mb1_mass'], outputs['lss_mb2_mass'], outputs['lss_mb1_cm'], outputs['lss_mb2_cm']) \
                 = lss3pt.compute(inputs['rotor_diameter'], inputs['rotor_mass'], inputs['rotor_thrust'], inputs['rotor_force_y'], inputs['rotor_force_z'], \
                                     inputs['rotor_bending_moment_x'], inputs['rotor_bending_moment_y'], inputs['rotor_bending_moment_z'], \
-                                    inputs['overhang'], inputs['machine_rating'], inputs['drivetrain_efficiency'], \
+                                    inputs['overhang'], inputs['machine_rating'], outputs['drivetrain_efficiency'], \
                                     inputs['gearbox_mass'], inputs['carrier_mass'], inputs['gearbox_cm'], inputs['gearbox_length'], \
                                     inputs['shrink_disc_mass'], inputs['flange_length'], inputs['distance_hub2mb'], inputs['shaft_angle'], inputs['shaft_ratio'],
                                     inputs['hub_flange_thickness'])       
@@ -926,7 +934,8 @@ class DriveSE(Group):
             sharedIndeps.add_output('blade_root_diameter',    0.0, units='m')
             sharedIndeps.add_output('blade_length',           0.0, units='m')
             sharedIndeps.add_output('blades_I',               np.zeros(6), units='kg*m**2')
-            sharedIndeps.add_output('drivetrain_efficiency',  0.0)
+            sharedIndeps.add_output('gearbox_efficiency',     0.0)
+            sharedIndeps.add_output('generator_efficiency',   0.0)
             sharedIndeps.add_output('tile',                   0.0, units='deg')
             sharedIndeps.add_output('machine_rating',         0.0, units='kW')
             self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
@@ -1004,8 +1013,9 @@ def nacelle_example_5MW_baseline_3pt(debug=False):
     prob['rotor_rpm'] = 12.1  # rpm m/s
     prob['tilt'] = 5.0 # deg
     prob['machine_rating'] = 5000.0
-    prob['drivetrain_efficiency'] = 0.95
-    prob['rotor_torque'] = 1.5 * (prob['machine_rating'] * 1000 / prob['drivetrain_efficiency']) \
+    prob['gearbox_efficiency']   = 0.975
+    prob['generator_efficiency'] = 0.975
+    prob['rotor_torque'] = 1.5 * (prob['machine_rating'] * 1000 / (prob['gearbox_efficiency'] * prob['generator_efficiency'])) \
                               / (prob['rotor_rpm'] * (np.pi / 30))
     #prob['rotor_thrust'] = 599610.0  # N
     prob['rotor_mass'] = 0.0  # accounted for in F_z # kg
@@ -1073,9 +1083,10 @@ def nacelle_example_5MW_baseline_4pt(debug=False):
     prob['rotor_rpm'] = 12.1  # rpm m/s
     prob['tilt'] = 5.0 # deg
     prob['machine_rating'] = 5000.0
-    prob['drivetrain_efficiency'] = 0.95
+    prob['gearbox_efficiency']   = 0.975
+    prob['generator_efficiency'] = 0.975
     prob['rotor_torque'] = 1.5 * (prob['machine_rating'] * 1000 / \
-                             prob['drivetrain_efficiency']) / (prob['rotor_rpm'] * (np.pi / 30))
+                             (prob['gearbox_efficiency'] * prob['generator_efficiency'])) / (prob['rotor_rpm'] * (np.pi / 30))
     prob['rotor_mass'] = 0.0  # accounted for in F_z # kg
     prob['Mxyz'] = np.array([330770.0, -16665000.0, 2896300.0])  # Nm
     prob['Fxyz'] = np.array([ 599610.0, 186780.0, -842710.0])  # N

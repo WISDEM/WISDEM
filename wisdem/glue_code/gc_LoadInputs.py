@@ -290,7 +290,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']   = wt_opt['drivese.nacelle_cm'].tolist()
             self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']       = wt_opt['drivese.nacelle_I'].tolist()
 
-        #if self.analysis_options['Analysis_Flags']['TowerSE']:
+        #if self.analysis_options['tower']['run_towerse']:
         # Update tower
         self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['tower.s'].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['tower.diameter'].tolist()

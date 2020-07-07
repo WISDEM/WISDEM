@@ -76,7 +76,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         nacelle.add_output('hss_input_length', val=0.0, units='m')
         nacelle.add_output('distance_hub2mb',  val=0.0, units='m')
         nacelle.add_discrete_output('yaw_motors_number', val = 0)
-        nacelle.add_output('drivetrain_eff',   val=0.0)
+        nacelle.add_output('gearbox_efficiency',   val=0.0, desc='Efficiency of the gearbox. Set it equal to 1 for direct-drive machines')
+        nacelle.add_output('generator_efficiency', val=0.0, desc='Efficiency of the generator.')
         self.add_subsystem('nacelle', nacelle)
         
         # Tower inputs

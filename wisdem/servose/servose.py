@@ -33,7 +33,7 @@ class ServoSE(Group):
     def setup(self):
         analysis_options = self.options['analysis_options']
 
-        self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         self.add_subsystem('gust',              GustETM())
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=analysis_options['servose']['n_pc_spline']))
         self.add_subsystem('aep',               AEP(nspline=analysis_options['servose']['n_pc_spline']), promotes=['AEP'])
@@ -141,7 +141,8 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_input('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
         self.add_input('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
-        self.add_input('gen_eff',           val=0.0,                                desc='Drivetrain efficiency')
+        self.add_input('gearbox_efficiency',val=0.0,                                desc='Gearbox efficiency')
+        self.add_input('generator_efficiency', val=0.0,                             desc='Generator efficiency')
         # 
         self.add_input('max_pitch',         val=0.0,        units='rad',            desc='')
         self.add_input('min_pitch',         val=0.0,        units='rad',            desc='')
@@ -248,7 +249,7 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rho          = inputs['rho'][0]
         WISDEM_turbine.rotor_radius = inputs['R'][0]
         WISDEM_turbine.Ng           = inputs['gear_ratio'][0]
-        WISDEM_turbine.gen_eff      = inputs['gen_eff'][0]
+        WISDEM_turbine.gen_eff      = inputs['generator_efficiency'][0]
         WISDEM_turbine.rated_rotor_speed   = inputs['rated_rotor_speed'][0]
         WISDEM_turbine.rated_power  = inputs['rated_power'][0]
         WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * WISDEM_turbine.gen_eff
@@ -439,7 +440,8 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input('tsr_operational',        val=0.0,               desc='tip-speed ratio in Region 2 (should be optimized externally)')
         self.add_input('control_pitch',      val=0.0, units='deg',  desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
         self.add_discrete_input('drivetrainType',     val='GEARED')
-        self.add_input('drivetrainEff',     val=0.0,               desc='overwrite drivetrain model with a given efficiency, used for FAST analysis')
+        self.add_input('gearbox_efficiency',     val=0.0,               desc='Gearbox efficiency')
+        self.add_input('generator_efficiency',   val=0.0,               desc='Generator efficiency')
         
         self.add_input('r',         val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
         self.add_input('chord',     val=np.zeros(n_span), units='m',   desc='chord length at each section')
@@ -537,7 +539,7 @@ class ComputePowerCurve(ExplicitComponent):
         R_tip     = inputs['Rtip']
         tsr       = inputs['tsr_operational']
         driveType = discrete_inputs['drivetrainType']
-        driveEta  = inputs['drivetrainEff']
+        driveEta  = inputs['gearbox_efficiency'] * inputs['generator_efficiency']
         
         # Set rotor speed based on TSR
         Omega_tsr = Uhub * tsr / R_tip
