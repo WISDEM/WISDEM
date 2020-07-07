@@ -489,6 +489,9 @@ class WT_RNTA(Group):
             self.connect('nacelle.yaw_mass',                'aeroelastic.yaw_mass')
             self.connect('nacelle.nacelle_I',               'aeroelastic.nacelle_I')
             self.connect('nacelle.nacelle_cm',              'aeroelastic.nacelle_cm')
+            self.connect('nacelle.gear_ratio',              'aeroelastic.gearbox_ratio'
+            self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency'
+            self.connect('nacelle.generator_efficiency',    'aeroelastic.generator_efficiency'
 
             #if analysis_options['tower']['run_towerse']:
             self.connect('freq_tower.post.mass_den',           'aeroelastic.mass_den')

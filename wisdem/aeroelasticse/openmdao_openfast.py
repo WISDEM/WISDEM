@@ -231,6 +231,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('beam:EIxx',             val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
         self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
         self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+        self.add_input('gearbox_efficiency',    val=0.0,               desc='Gearbox efficiency')
+        self.add_input('gearbox_ratio',         val=0.0,               desc='Gearbox ratio')
+
+        # ServoDyn Inputs
+        self.add_input('generator_efficiency',   val=0.0,              desc='Generator efficiency')
 
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -433,6 +438,11 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
         fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
         fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
+        fst_vt['ElastoDyn']['GBoxEff']    = inputs['gearbox_efficiency'][0] * 100.
+        fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
+
+        # Update ServoDyn
+        fst_vt['ElastoDyn']['GenEff']     = inputs['generator_efficiency'][0] * 100.
 
 
         # Masses from DriveSE
