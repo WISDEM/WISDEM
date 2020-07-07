@@ -252,7 +252,7 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.gen_eff      = inputs['generator_efficiency'][0]
         WISDEM_turbine.rated_rotor_speed   = inputs['rated_rotor_speed'][0]
         WISDEM_turbine.rated_power  = inputs['rated_power'][0]
-        WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * WISDEM_turbine.gen_eff
+        WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / (WISDEM_turbine.Ng * inputs['gearbox_efficiency'][0] * inputs['generator_efficiency'][0])
         WISDEM_turbine.v_rated      = inputs['v_rated'][0]
         WISDEM_turbine.v_min        = inputs['v_min'][0]
         WISDEM_turbine.v_max        = inputs['v_max'][0]

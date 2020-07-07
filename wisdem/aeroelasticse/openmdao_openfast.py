@@ -442,7 +442,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ElastoDyn']['GenEff']     = inputs['generator_efficiency'][0] * 100.
+        fst_vt['ServoDyn']['GenEff']      = inputs['generator_efficiency'][0] * 100.
 
 
         # Masses from DriveSE
