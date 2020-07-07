@@ -554,8 +554,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
-    # Save data to numpy and matlab arrays
-    fileIO.save_data(fname_wt_output, wt_opt)
+    if rank == 0:
+        # Save data to numpy and matlab arrays
+        fileIO.save_data(fname_wt_output, wt_opt)
         
     return wt_opt, analysis_options, opt_options
 
