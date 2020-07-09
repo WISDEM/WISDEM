@@ -228,6 +228,8 @@ class WT_RNTA(Group):
             self.connect('elastic.EA',                      'modes_elastodyn.EA')
             self.connect('elastic.GJ',                      'modes_elastodyn.GJ')
             self.connect('elastic.EIxy',                    'modes_elastodyn.EIxy')
+            self.connect('materials.G',                     'modes_elastodyn.G')
+
             self.connect('modes_elastodyn.EA_stiff',        'freq_rotor.EA')
             self.connect('modes_elastodyn.GJ_stiff',        'freq_rotor.GJ')
             self.connect('modes_elastodyn.EIxy_zero',       'freq_rotor.EIxy')
@@ -270,7 +272,7 @@ class WT_RNTA(Group):
             self.connect('tower.layer_mat',                 'freq_tower.tower_layer_materials')
             self.connect('materials.name',                  'freq_tower.material_names')
             self.connect('materials.E',                     'freq_tower.E_mat')
-            self.connect('materials.G',                     'freq_tower.G_mat')
+            self.connect('modes_elastodyn.G_stiff',         'freq_tower.G_mat')
             self.connect('materials.rho',                   'freq_tower.rho_mat')
             self.connect('materials.sigma_y',               'freq_tower.sigma_y_mat')
             self.connect('materials.unit_cost',             'freq_tower.unit_cost_mat')
