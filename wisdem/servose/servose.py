@@ -932,7 +932,6 @@ class NoStallConstraint(ExplicitComponent):
         self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         
         self.add_input('s',                     val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
-        self.add_input('stall_angle_along_span',val=np.zeros(n_span), units = 'deg', desc = 'Stall angle along blade span')
         self.add_input('aoa_along_span',        val=np.zeros(n_span), units = 'deg', desc = 'Angle of attack along blade span')
         self.add_input('stall_margin',          val=3.0,            units = 'deg', desc = 'Minimum margin from the stall angle')
         self.add_input('min_s',                 val=0.25,            desc = 'Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)')
@@ -941,7 +940,8 @@ class NoStallConstraint(ExplicitComponent):
         self.add_input('airfoils_cm',           val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
         self.add_input('airfoils_aoa',          val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
         
-        self.add_output('no_stall_constraint',  val=np.zeros(n_span), desc = 'Constraint, ratio between angle of attack plus a margin and stall angle')
+        self.add_output('no_stall_constraint',   val=np.zeros(n_span), desc = 'Constraint, ratio between angle of attack plus a margin and stall angle')
+        self.add_output('stall_angle_along_span',val=np.zeros(n_span), units = 'deg', desc = 'Stall angle along blade span')
 
     def compute(self, inputs, outputs):
         
@@ -951,12 +951,12 @@ class NoStallConstraint(ExplicitComponent):
         
         for i in range(self.n_span):
             unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,0], inputs['airfoils_cd'][i,:,0,0], inputs['airfoils_cm'][i,:,0,0])
-            inputs['stall_angle_along_span'][i] = unsteady['alpha1']
-            if inputs['stall_angle_along_span'][i] == 0:
-                inputs['stall_angle_along_span'][i] = 1e-6 # To avoid nan
+            outputs['stall_angle_along_span'][i] = unsteady['alpha1']
+            if outputs['stall_angle_along_span'][i] == 0:
+                outputs['stall_angle_along_span'][i] = 1e-6 # To avoid nan
         
         for i in range(i_min, self.n_span):
-            outputs['no_stall_constraint'][i] = (inputs['aoa_along_span'][i] + inputs['stall_margin']) / inputs['stall_angle_along_span'][i]
+            outputs['no_stall_constraint'][i] = (inputs['aoa_along_span'][i] + inputs['stall_margin']) / outputs['stall_angle_along_span'][i]
         
             if verbosity == True:
                 if outputs['no_stall_constraint'][i] > 1:

@@ -2,20 +2,20 @@ import unittest
 import os
 from wisdem.glue_code.runWISDEM import run_wisdem
 
-test_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'glue_code' + os.sep + 'reference_turbines' + os.sep
+test_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
 
 class TestRegression(unittest.TestCase):
     
     def testAssembly(self):
         
         ## NREL 5MW
-        fname_wt_input         = test_dir + os.sep + 'nrel5mw_mod_update.yaml'
+        fname_wt_input         = test_dir + os.sep + 'nrel5mw.yaml'
+        fname_modeling_options = test_dir + 'modeling_options.yaml'
         fname_analysis_options = test_dir + 'analysis_options.yaml'
-        fname_opt_options      = test_dir + 'optimization_options.yaml'
-        fname_wt_output        = test_dir + os.sep + 'nrel5mw_mod_update_output.yaml'
+        fname_wt_output        = test_dir + os.sep + 'nrel5mw_update_output.yaml'
         folder_output          = 'temp'
 
-        wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
+        wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
 
         #print(wt_opt['elastic.precomp.blade_mass'])
 

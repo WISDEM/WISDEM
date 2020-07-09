@@ -8,7 +8,7 @@ from wisdem.towerse.tower import TowerSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
-from wisdem.aeroelasticse.openmdao_openfast import FASTLoadCases
+from wisdem.aeroelasticse.openmdao_openfast import FASTLoadCases, ModesElastoDyn
 from wisdem.rotorse.dac import RunXFOIL
 from wisdem.servose.servose import ServoSE, ServoSE_ROSCO, NoStallConstraint
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
@@ -35,14 +35,15 @@ class WT_RNTA(Group):
         self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
         if analysis_options['servose']['run_servose']:
             self.add_subsystem('sse',       ServoSE(analysis_options = analysis_options)) # Aero analysis
-        self.add_subsystem('stall_check', NoStallConstraint(analysis_options = analysis_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
+        self.add_subsystem('stall_check', NoStallConstraint(analysis_options = analysis_options))
     
         if analysis_options['openfast']['run_openfast'] == True:
-            self.add_subsystem('freq_rotor',  RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
+            self.add_subsystem('modes_elastodyn',   ModesElastoDyn(analysis_options = analysis_options))
+            self.add_subsystem('freq_rotor',        RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
             #if analysis_options['tower']['run_towerse']:
-            self.add_subsystem('freq_tower',  TowerSE(analysis_options=analysis_options, topLevelFlag=False))
-            self.add_subsystem('sse_tune',    ServoSE_ROSCO(analysis_options = analysis_options)) # Aero analysis
-            self.add_subsystem('aeroelastic', FASTLoadCases(analysis_options = analysis_options))
+            self.add_subsystem('freq_tower',        TowerSE(analysis_options=analysis_options, topLevelFlag=False))
+            self.add_subsystem('sse_tune',          ServoSE_ROSCO(analysis_options = analysis_options)) # Aero analysis
+            self.add_subsystem('aeroelastic',       FASTLoadCases(analysis_options = analysis_options))
 
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
         self.add_subsystem('drivese',   DriveSE(debug=False,
@@ -203,6 +204,10 @@ class WT_RNTA(Group):
 
         # Connections to the stall check
         self.connect('blade.outer_shape_bem.s',        'stall_check.s')
+        self.connect('airfoils.aoa',                   'stall_check.airfoils_aoa')
+        self.connect('xf.cl_interp_flaps',             'stall_check.airfoils_cl')
+        self.connect('xf.cd_interp_flaps',             'stall_check.airfoils_cd')
+        self.connect('xf.cm_interp_flaps',             'stall_check.airfoils_cm')
         if analysis_options['servose']['run_servose']:
             self.connect('sse.powercurve.aoa_regII',   'stall_check.aoa_along_span')
         else:
@@ -219,11 +224,16 @@ class WT_RNTA(Group):
             self.connect('blade.ps.s_opt_spar_cap_ss',      'freq_rotor.constr.s_opt_spar_cap_ss')
             self.connect('blade.ps.s_opt_spar_cap_ps',      'freq_rotor.constr.s_opt_spar_cap_ps')
 
+            # Stiffen up the terms modeled by frame3dd and not by ElastoDyn, namely EA, GJ, and EIxy
+            self.connect('elastic.EA',                      'modes_elastodyn.EA')
+            self.connect('elastic.GJ',                      'modes_elastodyn.GJ')
+            self.connect('elastic.EIxy',                    'modes_elastodyn.EIxy')
+            self.connect('modes_elastodyn.EA_stiff',        'freq_rotor.EA')
+            self.connect('modes_elastodyn.GJ_stiff',        'freq_rotor.GJ')
+            self.connect('modes_elastodyn.EIxy_zero',       'freq_rotor.EIxy')
             self.connect('elastic.A',                       'freq_rotor.A')
-            self.connect('elastic.EA',                      'freq_rotor.EA')
             self.connect('elastic.EIxx',                    'freq_rotor.EIxx')
             self.connect('elastic.EIyy',                    'freq_rotor.EIyy')
-            self.connect('elastic.GJ',                      'freq_rotor.GJ')
             self.connect('elastic.rhoA',                    'freq_rotor.rhoA')
             self.connect('elastic.rhoJ',                    'freq_rotor.rhoJ')
             self.connect('elastic.x_ec',                    'freq_rotor.x_ec')
