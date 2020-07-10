@@ -231,6 +231,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('beam:EIxx',             val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
         self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
         self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+        self.add_input('gearbox_efficiency',    val=0.0,               desc='Gearbox efficiency')
+        self.add_input('gearbox_ratio',         val=0.0,               desc='Gearbox ratio')
+
+        # ServoDyn Inputs
+        self.add_input('generator_efficiency',   val=0.0,              desc='Generator efficiency')
 
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -433,6 +438,11 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
         fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
         fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
+        fst_vt['ElastoDyn']['GBoxEff']    = inputs['gearbox_efficiency'][0] * 100.
+        fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
+
+        # Update ServoDyn
+        fst_vt['ServoDyn']['GenEff']      = inputs['generator_efficiency'][0] * 100.
 
 
         # Masses from DriveSE
@@ -1042,5 +1052,57 @@ class FASTLoadCases(ExplicitComponent):
         return file_name
 
 
-                
+class ModesElastoDyn(ExplicitComponent):
+    """
+    Component that adds a multiplicative factor to axial, torsional, and flap-edge coupling stiffness to mimic ElastoDyn
+    
+    Parameters
+    ----------
+    EA : numpy array[n_span], [N]
+        1D array of the actual axial stiffness
+    EIxy : numpy array[n_span], [Nm2]
+        1D array of the actual flap-edge coupling stiffness
+    GJ : numpy array[n_span], [Nm2]
+        1D array of the actual torsional stiffness
+    G  : numpy array[n_mat], [N/m2]
+        1D array of the actual shear stiffness of the materials
+    
+    Returns
+    -------
+    EA_stiff : numpy array[n_span], [N]
+        1D array of the stiff axial stiffness
+    EIxy_stiff : numpy array[n_span], [Nm2]
+        1D array of the stiff flap-edge coupling stiffness
+    GJ_stiff : numpy array[n_span], [Nm2]
+        1D array of the stiff torsional stiffness
+    G_stiff  : numpy array[n_mat], [N/m2]
+        1D array of the stiff shear stiffness of the materials
+    
+    """    
+    def initialize(self):
+        self.options.declare('analysis_options')
 
+    def setup(self):
+        n_span          = self.options['analysis_options']['blade']['n_span']
+        n_mat           = self.options['analysis_options']['materials']['n_mat']
+
+        self.add_input('EA',    val=np.zeros(n_span), units='N',        desc='axial stiffness')
+        self.add_input('EIxy',  val=np.zeros(n_span), units='N*m**2',   desc='coupled flap-edge stiffness')
+        self.add_input('GJ',    val=np.zeros(n_span), units='N*m**2',   desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
+
+        self.add_input('G',     val=np.zeros([n_mat, 3]), units='Pa',   desc='2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
+
+
+        self.add_output('EA_stiff',  val=np.zeros(n_span), units='N',        desc='artifically stiff axial stiffness')
+        self.add_output('EIxy_zero', val=np.zeros(n_span), units='N*m**2',   desc='artifically stiff coupled flap-edge stiffness')
+        self.add_output('GJ_stiff',  val=np.zeros(n_span), units='N*m**2',   desc='artifically stiff torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
+        self.add_output('G_stiff',   val=np.zeros([n_mat, 3]), units='Pa',   desc='artificially stif 2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.')
+
+    def compute(self, inputs, outputs):
+
+        k = 100.
+
+        outputs['EA_stiff']   = inputs['EA']   * k
+        outputs['EIxy_zero']  = inputs['EIxy'] * 0.
+        outputs['GJ_stiff']   = inputs['GJ']   * k
+        outputs['G_stiff']    = inputs['G']    * k

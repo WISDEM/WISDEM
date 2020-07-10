@@ -495,7 +495,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
         wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
         wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
-        
+
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
         # so these values are correctly placed in the problem.
@@ -643,11 +643,11 @@ def wisdem_cmd():
 if __name__ == "__main__":
     
     ## File management
-    run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'glue_code' + os.sep + 'reference_turbines' + os.sep
-    fname_wt_input         = run_dir + "nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
+    fname_wt_input         = run_dir + "nrel5mw.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    fname_modeling_options = run_dir + "modeling_options.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
-    fname_opt_options      = run_dir + "optimization_options.yaml"
-    fname_wt_output        = run_dir + "nrel5mw_mod_update_output.yaml"
+    fname_wt_output        = run_dir + "nrel5mw_output.yaml"
     folder_output          = run_dir + '/'
 
-    wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
+    wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)

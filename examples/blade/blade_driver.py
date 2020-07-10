@@ -137,9 +137,9 @@ f.savefig(folder_output + fig_name)
 
 # Angle of attack and stall angle
 faoa, axaoa = plt.subplots(1,1,figsize=(5.3, 4))
-axaoa.plot(wt_opt1['sse.stall_check.s'], wt_opt1['sse.stall_check.aoa_along_span'],'--',color='tab:red', label=label1)
-axaoa.plot(wt_opt2['sse.stall_check.s'], wt_opt2['sse.stall_check.aoa_along_span'],'-',color='tab:blue', label=label2)
-axaoa.plot(wt_opt1['sse.stall_check.s'], wt_opt1['sse.stall_check.stall_angle_along_span'],':',color='tab:green', label='Stall')
+axaoa.plot(wt_opt1['stall_check.s'], wt_opt1['stall_check.aoa_along_span'],'--',color='tab:red', label=label1)
+axaoa.plot(wt_opt2['stall_check.s'], wt_opt2['stall_check.aoa_along_span'],'-',color='tab:blue', label=label2)
+axaoa.plot(wt_opt1['stall_check.s'], wt_opt1['stall_check.stall_angle_along_span'],':',color='tab:green', label='Stall')
 axaoa.legend(fontsize=fs)
 axaoa.set_ylim([0, 20])
 plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
