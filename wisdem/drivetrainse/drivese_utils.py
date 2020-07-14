@@ -43,29 +43,29 @@ def get_distance_hub2mb(rotor_diameter, deriv=False):
 # -------------------------------------------------
 # Bearing support functions
 # returns facewidth, mass for bearings without fatigue analysis
-def resize_for_bearings(D_shaft, type, deriv):
+def resize_for_bearings(D_shaft, btype, deriv):
     # assume low load rating for bearing
-    if type == 'CARB':  # p = Fr, so X=1, Y=0
+    if btype == 'CARB':  # p = Fr, so X=1, Y=0
         out = [D_shaft, .2663 * D_shaft + .0435, 1561.4 * D_shaft**2.6007]
         if deriv == True:
             out.extend([1., .2663, 1561.4 * 2.6007 * D_shaft**1.6007])
-    elif type == 'SRB':
+    elif btype == 'SRB':
         out = [D_shaft, .2762 * D_shaft, 876.7 * D_shaft**1.7195]
         if deriv == True:
             out.extend([1., .2762, 876.7 * 1.7195 * D_shaft**0.7195])
-    elif type == 'TRB1':
+    elif btype == 'TRB1':
         out = [D_shaft, .0740, 92.863 * D_shaft**.8399]
         if deriv == True:
             out.extend([1., 0., 92.863 * 0.8399 * D_shaft**(0.8399 - 1.)])
-    elif type == 'CRB':
+    elif btype == 'CRB':
         out = [D_shaft, .1136 * D_shaft, 304.19 * D_shaft**1.8885]
         if deriv == True:
             out.extend([1., .1136, 304.19 * 1.8885 * D_shaft**0.8885])
-    elif type == 'TRB2':
+    elif btype == 'TRB2':
         out = [D_shaft, .1499 * D_shaft, 543.01 * D_shaft**1.9043]
         if deriv == True:
             out.extend([1., .1499, 543.01 * 1.9043 * D_shaft**.9043])
-    elif type == 'RB':  # factors depend on ratio Fa/C0, C0 depends on bearing... TODO: add this functionality
+    elif btype == 'RB':  # factors depend on ratio Fa/C0, C0 depends on bearing... TODO: add this functionality
         out = [D_shaft, .0839, 229.47 * D_shaft**1.8036]
         if deriv == True:
             out.extend([1.0, 0.0, 229.47 * 1.8036 * D_shaft**0.8036])

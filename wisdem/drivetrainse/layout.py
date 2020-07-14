@@ -23,10 +23,10 @@ class Layout(om.ExplicitComponent):
         self.add_input('L_2n', 0.0, units='m', desc='Length from bedplate / end of nose to bearing #2')
         self.add_input('L_grs', 0.0, units='m', desc='Length from shaft-hub flange to generator rotor attachment point on shaft')
         self.add_input('L_gsn', 0.0, units='m', desc='Length from nose-bedplate flange to generator stator attachment point on nose')
-        self.add_input('L_hub',0.0, units='m', desc='Length of hub') 
-        self.add_input('L_bedplate',0.0, units='m', desc='Length of bedplate') 
+        self.add_input('L_hub', 0.0, units='m', desc='Length of hub') 
+        self.add_input('L_bedplate', 0.0, units='m', desc='Length of bedplate') 
         self.add_input('H_bedplate', 0.0, units='m', desc='height of bedplate')
-        self.add_input('tilt',0.0, units='deg', desc='Shaft tilt') 
+        self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
         self.add_input('access_diameter',0.0, units='m', desc='Minimum diameter required for maintenance access') 
 
         self.add_input('shaft_diameter', np.zeros(n_points), units='m', desc='Shaft outer diameter from hub to bearing 2')
@@ -160,7 +160,44 @@ class Layout(om.ExplicitComponent):
         outputs['D_bedplate'] = D_bed
         outputs['t_bedplate'] = t_bed
         # ------------------------------------
-       
+
+        
+        '''
+        s_disc = 0.5*np.ones(2)
+        s_drive = np.array([0.0, L_2n*s_disc, L_12*s_disc, L_h1*s_disc, L_hub*s_disc])
+        L_drive = s_drive.sum()
+
+        s_drive = np.cumsum(s_drive)
+        s_drive = np.r_[s_drive, L_drive-L_hub-L_grs, L_gsn] / L_drive
+        
+        x_drive = s_drive*np.cos(tilt)
+        z_drive = s_drive*np.sin(tilt)
+        if upwind:
+            x_drive *= -1
+
+        x_drive += x_c[0]
+        z_drive += z_c[0]
+        
+        x_mb1 = x_drive[4]
+        z_mb1 = z_drive[4]
+        x_mb2 = x_drive[2]
+        z_mb2 = z_drive[2]
+
+        x_stator = x_drive[-1]
+        z_stator = z_drive[-1]
+        x_rotor  = x_drive[-2]
+        z_rotor  = z_drive[-2]
+
+        s_nose   = np.r_[s_drive[:5], s_drive[-1]]
+        x_nose   = np.r_[x_drive[:5], x_drive[-1]]
+        z_nose   = np.r_[z_drive[:5], z_drive[-1]]
+
+        s_shaft  = np.r_[s_drive[2:-1], s_drive[-2]]
+        x_shaft  = np.r_[x_drive[2:-1], x_drive[-2]]
+        z_shaft  = np.r_[z_drive[2:-1], z_drive[-2]]
+        '''
+
+        
         # ------- Nose, shaft, and bearing coordinates ----------------
         # Length of shaft and nose
         L_shaft = L_12 + L_h1

@@ -11,11 +11,11 @@ import wisdem.commonse.tube as tube
 from wisdem.commonse.utilities import nodal2sectional
 from wisdem.commonse import gravity
 
-RIGID = 1e30
+RIGID = 1
+FREE  = 0
 
-
-class Curved_Bedplate(om.ExplicitComponent):
-    """discretize geometry into finite element nodes"""
+class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
+    """Run structural analysis of nose/turret with the generator stator and bedplate"""
     
     def initialize(self):
         self.options.declare('n_points')
@@ -188,7 +188,7 @@ class Curved_Bedplate(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        myframe.write('myframe.3dd') # Debugging
+        #myframe.write('myframe.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
         
         # ------------ Bedplate "curved beam" geometry for post-processing -------------
@@ -251,7 +251,237 @@ class Curved_Bedplate(om.ExplicitComponent):
                                                                              gamma_f*gamma_m*gamma_n, sigma_y)
 
 
+
+
+
+
+
+class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
+    """Run structural analysis of hub system with the generator rotor and main shaft."""
+    
+    def initialize(self):
+        self.options.declare('n_points')
+        self.options.declare('n_dlcs')
+    
+    def setup(self):
+        n_points = self.options['n_points']
+        n_dlcs   = self.options['n_dlcs']
+
+        self.add_input('x_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized x-coordinates')
+        self.add_input('z_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized z-coordinates')
+        self.add_input('D_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized diameter values at coordinates')
+        self.add_input('t_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized thickness values at coordinates')
+
+        self.add_input('L_hub', 0.0, units='m', desc='Length of hub') 
+        self.add_input('D_hub', 0.0, units='m', desc='Diameter of hub') 
+        self.add_input('m_hub', 0.0, units='m', desc='Hub system mass') 
+        self.add_input('I_hub', np.zeros(6), units='m', desc='Hub system moment of inertia') 
+        self.add_input('x_hub', val=0.0, units='m', desc='Hub center (blade attachment plane) x-coordinate')
+        self.add_input('z_hub', val=0.0, units='m', desc='Hub center (blade attachment plane) z-coordinate')
+        self.add_input('F_hub', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to the hub (WITH WEIGHT???)')
+        self.add_input('M_hub', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to the hub')
+
+        self.add_input('x_mb1', val=0.0, units='m', desc='Bearing 1 x-coordinate')
+        self.add_input('z_mb1', val=0.0, units='m', desc='Bearing 1 z-coordinate')
+        self.add_input('x_mb2', val=0.0, units='m', desc='Bearing 2 x-coordinate')
+        self.add_input('z_mb2', val=0.0, units='m', desc='Bearing 2 z-coordinate')
         
+        self.add_input('x_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft x-coordinate')
+        self.add_input('z_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft z-coordinate')
+        self.add_input('m_rotor', val=0.0, units='kg', desc='Generator rotor mass')
+        self.add_input('cm_rotor', val=0.0, units='kg', desc='Generator rotor center of mass (measured from attachment)')
+        self.add_input('I_rotor', val=0.0, units='kg', desc='Generator rotor moment of inertia (measured from attachment)')
+        
+        self.add_input('E', val=0.0, units='N/m**2', desc='modulus of elasticity')
+        self.add_input('G', val=0.0, units='N/m**2', desc='shear modulus')
+        self.add_input('rho', val=0.0, units='kg/m**3', desc='material density')
+        self.add_input('sigma_y', val=0.0, units='N/m**2', desc='yield stress')
+        self.add_input('gamma_f', val=0.0, units='m', desc='safety factor')
+        self.add_input('gamma_m', 0.0, desc='safety factor on materials')
+        self.add_input('gamma_n', 0.0, desc='safety factor on consequence of failure')
+        
+        self.add_output('top_deflection', np.zeros(n_points), units='m', desc='Deflection of Curved_beam top in yaw-aligned +x direction')
+        self.add_output('axial_stress', np.zeros((n_points+2,n_dlcs)), units='N/m**2', desc='Axial stress in Curved_beam structure')
+        self.add_output('shear_stress', np.zeros((n_points+2,n_dlcs)), units='N/m**2', desc='Shear stress in Curved_beam structure')
+        self.add_output('bending_stress', np.zeros((n_points+2,n_dlcs)), units='N/m**2', desc='Hoop stress in Curved_beam structure calculated with Roarks formulae')
+        self.add_output('constr_vonmises', np.zeros((2*n_points+1,n_dlcs)), desc='Sigma_y/Von_Mises')
+        self.add_output('F_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to bearing 1')
+        self.add_output('F_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to bearing 2')
+        self.add_output('M_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 1')
+        self.add_output('M_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 2')
+
+
+        
+    def compute(self, inputs, outputs):
+
+        # Unpack inputs
+        x_shaft    = inputs['x_shaft']
+        z_shaft    = inputs['z_shaft']
+        D_shaft    = inputs['D_shaft']
+        t_shaft    = inputs['t_shaft']
+
+        x_mb1      = float(inputs['x_mb1'])
+        z_mb1      = float(inputs['z_mb1'])
+        x_mb2      = float(inputs['x_mb2'])
+        z_mb2      = float(inputs['z_mb2'])
+        
+        x_rotor   = float(inputs['x_rotor'])
+        z_rotor   = float(inputs['z_rotor'])
+        m_rotor   = float(inputs['m_rotor'])
+        cm_rotor  = inputs['cm_rotor']
+        I_rotor   = inputs['I_rotor']
+        
+        rho        = float(inputs['rho'])
+        E          = float(inputs['E'])
+        G          = float(inputs['G'])
+        sigma_y    = float(inputs['sigma_y'])
+        gamma_f    = float(inputs['gamma_f'])
+        gamma_m    = float(inputs['gamma_m'])
+        gamma_n    = float(inputs['gamma_n'])
+
+        x_hub      = float(inputs['x_hub'])
+        z_hub      = float(inputs['z_hub'])
+        L_hub      = float(inputs['L_hub'])
+        D_hub      = float(inputs['D_hub'])
+        m_hub      = float(inputs['m_hub'])
+        F_hub      = inputs['F_hub']
+        M_hub      = inputs['M_hub']
+
+        # ------- node data ----------------
+        n     = len(x_shaft) + 1
+        inode = np.arange(1, n+1)
+        ynode = rnode = np.zeros(n)
+        xnode = np.r_[x_hub, x_shaft]
+        znode = np.r_[z_hub, z_shaft]
+        nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
+        # Grab indices for later
+        irotor = inode[np.logical_and(xnode==x_rotor, znode==z_rotor)]
+        i1 = inode[np.logical_and(xnode==x_mb1, znode==z_mb1)]
+        i2 = inode[np.logical_and(xnode==x_mb2, znode==z_mb2)]
+        # ------------------------------------
+        
+        # ------ reaction data ------------
+        # Reactions at main bearings
+        rnode = np.r_[i1, i2]
+        Rx  = np.array([FREE, RIGID]) # WHY?
+        Ry  = np.array([FREE, RIGID]) # WHY?
+        Rz  = np.array([FREE, RIGID]) # WHY?
+        Rxx = np.array([FREE,  FREE]) # pass the torque to the generator
+        Ryy = np.array([RIGID,  FREE]) # upwind tapered bearing carry Ryy
+        Rzz = np.array([RIGID,  FREE]) # upwind tapered bearing carry Rzz
+        # George's way
+        #rnode = np.r_[irotor, i1, i2]
+        #Rx  = np.array([FREE,  RIGID, FREE]) # WHY?
+        #Ry  = np.array([FREE,  RIGID, RIGID]) # WHY?
+        #Rz  = np.array([FREE,  RIGID, RIGID]) # WHY?
+        #Rxx = np.array([RIGID, FREE,  FREE]) # pass the torque to the generator
+        #Ryy = np.array([FREE,  RIGID,  FREE]) # upwind tapered bearing carry Ryy
+        #Rzz = np.array([FREE,  RIGID,  FREE]) # upwind tapered bearing carry Rzz
+        reactions = frame3dd.ReactionData(rnode, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
+        # -----------------------------------
+
+        # ------ frame element data ------------
+        hubcyl   = tube.Tube(nodal2sectional(D_hub)[0], nodal2sectional(t_shaft)[0])
+        shaftcyl = tube.Tube(nodal2sectional(D_shaft)[0], nodal2sectional(t_shaft)[0])
+        ielement = np.arange(1, n)
+        N1       = np.arange(1, n)
+        N2       = np.arange(2, n+1)
+        roll     = np.zeros(n-1)
+        myones   = np.ones(n-1)
+        Ax = np.r_[m_hub/L_hub, shaftcyl.Area]
+        As = np.r_[bedcyl.Asx, shaftcyl.Asx]
+        S  = np.r_[hub_I/hub_r, shaftcyl.S]
+        C  = np.r_[hub_I/hub_r, shaftcyl.C]
+        J0 = np.r_[hub_I[0], shaftcyl.J0]
+        Jx = np.r_[hub_I[1], shaftcyl.Jxx]
+        
+        elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E*myones, G*myones, roll, rho*myones)
+        # -----------------------------------
+
+        # ------ options ------------
+        shear = geom = True
+        dx = -1
+        options = frame3dd.Options(shear, geom, dx)
+        # -----------------------------------
+
+        # initialize frameDD3 object
+        myframe = frame3dd.Frame(nodes, reactions, elements, options)
+
+        # ------ add rotor extra mass ------------
+        myframe.changeExtraNodeMass(irotor, [m_rotor], [I_rotor[0]], [I_rotor[1]], [I_rotor[2]], [I_rotor[3]], [I_rotor[4]], [I_rotor[5]],
+                                    [cm_rotor[0]], [cm_rotor[1]], [cm_rotor[2]], True)
+        # ------------------------------------
+
+        # ------- NO dynamic analysis ----------
+        #myframe.enableDynamics(NFREQ, discrete_inputs['Mmethod'], discrete_inputs['lump'], float(inputs['tol']), float(inputs['shift']))
+        # ----------------------------
+
+        # ------ static load cases ------------
+        n_dlcs   = self.options['n_dlcs']
+        gx = gy = 0.0
+        gz = -gravity
+        for k in range(n_dlcs):
+            # gravity in the X, Y, Z, directions (global)
+            load = frame3dd.StaticLoadCase(gx, gy, gz)
+            
+            # point loads
+            # TODO: Are input loads aligned with the shaft? If so they need to be rotated.
+            load.changePointLoads([1], F_hub[0], F_hub[1], F_hub[2], M_hub[0], M_hub[1], M_hub[2])
+            # -----------------------------------
+
+            # Put all together and run
+            myframe.addLoadCase(load)
+            
+        #myframe.write('myframe.3dd') # Debugging
+        displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
+        
+        # Loop over DLCs and append to outputs
+        outputs['F_mb1'] = np.zeros((3, n_dlcs))
+        outputs['F_mb2'] = np.zeros((3, n_dlcs))
+        outputs['M_mb1'] = np.zeros((3, n_dlcs))
+        outputs['M_mb2'] = np.zeros((3, n_dlcs))
+        outputs['axial_stress'] = np.zeros((n-1, n_dlcs))
+        outputs['shear_stress'] = np.zeros((n-1, n_dlcs))
+        outputs['bending_stress'] = np.zeros((n-1, n_dlcs))
+        outputs['constr_vonmises'] = np.zeros((n-1, n_dlcs))
+        for k in range(n_dlcs):
+            # natural frequncies
+            #outputs['f1'] = modal.freq[0]
+            #outputs['f2'] = modal.freq[1]
+            
+            # deflections - at bearings?
+            #outputs['top_deflection'] = np.sqrt(displacements.dx[k, n-1]**2 +
+            #                                    displacements.dy[k, n-1]**2 +
+            #                                    displacements.dz[k, n-1]**2)
+
+            # shear and bending, one per element (convert from local to global c.s.)
+            Fz =  forces.Nx[k, 1::2]
+            Vy =  forces.Vy[k, 1::2]
+            Vx = -forces.Vz[k, 1::2]
+            F  =  np.sqrt(Vx**2 + Vy**2)
+
+            Mzz =  forces.Txx[k, 1::2]
+            Myy =  forces.Myy[k, 1::2]
+            Mxx = -forces.Mzz[k, 1::2]
+            M   =  np.sqrt(Myy**2 + Mxx**2)
+
+            # Record total forces and moments
+            outputs['F_mb1'][:,k] = -1.0 * np.array([reactions.Fx[k,0], reactions.Fy[k,0], reactions.Fz[k,0]])
+            outputs['F_mb2'][:,k] = -1.0 * np.array([reactions.Fx[k,1], reactions.Fy[k,1], reactions.Fz[k,1]])
+            outputs['M_mb1'][:,k] = -1.0 * np.array([reactions.Mxx[k,0], reactions.Myy[k,0], reactions.Mzz[k,0]])
+            outputs['M_mb2'][:,k] = -1.0 * np.array([reactions.Mxx[k,1], reactions.Myy[k,1], reactions.Mzz[k,1]])
+
+            outputs['axial_stress'][:,k] = Fz/Ax + M/S
+            outputs['shear_stress'][:,k] = 2.0*F/As + Mzz/C
+            hoop = np.zeros(F.shape)
+        
+            outputs['constr_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['axial_stress'][:,k],
+                                                                             hoop,
+                                                                             outputs['shear_stress'][:,k],
+                                                                             gamma_f*gamma_m*gamma_n, sigma_y)
+
+
+            
 if __name__ == '__main__':
 
     n_points = 15
