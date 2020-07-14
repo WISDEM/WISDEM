@@ -176,6 +176,7 @@ components:
         elastic_properties_mb:
           system_mass: 24589.692742185867
           system_inertia: [120668.15942377393, 120668.15942377393, 120668.15942377393, 0.0, 0.0, 0.0]
+          system_center_mass: [5.0, 0.0, 0.0]
     nacelle:
         outer_shape_bem:
           uptilt_angle: 0.08726
@@ -197,7 +198,8 @@ components:
           hss_input_length: 1.5
           distance_hub2mb: 1.912
           yaw_motors_number: 1
-          efficiency: 0.95
+          gearbox_efficiency: 0.975
+          generator_efficiency: 0.975
     tower:
         outer_shape_bem:
             reference_axis: &ref_axis_tower
