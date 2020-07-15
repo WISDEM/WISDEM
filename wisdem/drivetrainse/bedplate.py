@@ -344,6 +344,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         L_hub      = float(inputs['L_hub'])
         D_hub      = float(inputs['D_hub'])
         m_hub      = float(inputs['m_hub'])
+        I_hub      = inputs['I_hub']
         F_hub      = inputs['F_hub']
         M_hub      = inputs['M_hub']
 
@@ -363,12 +364,12 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         # ------ reaction data ------------
         # Reactions at main bearings
         rnode = np.r_[i1, i2]
-        Rx  = np.array([FREE, RIGID]) # WHY?
-        Ry  = np.array([FREE, RIGID]) # WHY?
-        Rz  = np.array([FREE, RIGID]) # WHY?
+        Rx  = np.array([RIGID, RIGID]) # WHY?
+        Ry  = np.array([RIGID, RIGID]) # WHY?
+        Rz  = np.array([RIGID, RIGID]) # WHY?
         Rxx = np.array([FREE,  FREE]) # pass the torque to the generator
-        Ryy = np.array([RIGID,  FREE]) # upwind tapered bearing carry Ryy
-        Rzz = np.array([RIGID,  FREE]) # upwind tapered bearing carry Rzz
+        Ryy = np.array([FREE,  RIGID]) # upwind tapered bearing carry Ryy
+        Rzz = np.array([FREE,  RIGID]) # upwind tapered bearing carry Rzz
         # George's way
         #rnode = np.r_[irotor, i1, i2]
         #Rx  = np.array([FREE,  RIGID, FREE]) # WHY?
@@ -381,7 +382,6 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         # -----------------------------------
 
         # ------ frame element data ------------
-        hubcyl   = tube.Tube(nodal2sectional(D_hub)[0], nodal2sectional(t_shaft)[0])
         shaftcyl = tube.Tube(nodal2sectional(D_shaft)[0], nodal2sectional(t_shaft)[0])
         ielement = np.arange(1, n)
         N1       = np.arange(1, n)
@@ -389,11 +389,11 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         roll     = np.zeros(n-1)
         myones   = np.ones(n-1)
         Ax = np.r_[m_hub/L_hub, shaftcyl.Area]
-        As = np.r_[bedcyl.Asx, shaftcyl.Asx]
-        S  = np.r_[hub_I/hub_r, shaftcyl.S]
-        C  = np.r_[hub_I/hub_r, shaftcyl.C]
-        J0 = np.r_[hub_I[0], shaftcyl.J0]
-        Jx = np.r_[hub_I[1], shaftcyl.Jxx]
+        As = np.r_[m_hub/L_hub, shaftcyl.Asx]
+        S  = np.r_[I_hub[0]/(0.5*D_hub), shaftcyl.S]
+        C  = np.r_[I_hub[2]/(0.5*D_hub), shaftcyl.C]
+        J0 = np.r_[I_hub[2], shaftcyl.J0]
+        Jx = np.r_[I_hub[0], shaftcyl.Jxx]
         
         elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E*myones, G*myones, roll, rho*myones)
         # -----------------------------------
