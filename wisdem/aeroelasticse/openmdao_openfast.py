@@ -1,30 +1,21 @@
-# from __future__ import print_function
-
 import numpy as np
-# from scipy.optimize import curve_fit
-from scipy.interpolate import PchipInterpolator
 import os, copy, warnings, shutil
-from openmdao.api import ExplicitComponent
-from wisdem.commonse.mpi_tools import MPI
-from wisdem.commonse.vertical_cylinder import NFREQ
-from wisdem.towerse.tower import get_nfull
+from scipy.interpolate                      import PchipInterpolator
+from openmdao.api                           import ExplicitComponent
+from wisdem.commonse.mpi_tools              import MPI
+from wisdem.commonse.vertical_cylinder      import NFREQ
+from wisdem.towerse.tower                   import get_nfull
 
-# from wisdem.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
-from wisdem.aeroelasticse.FAST_writer import InputWriter_OpenFAST
-# from wisdem.aeroelasticse.FAST_wrapper import FastWrapper
+from wisdem.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
-# from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve
-from wisdem.aeroelasticse.FAST_post import return_timeseries
+from wisdem.aeroelasticse.FAST_post         import return_timeseries, return_fname, FAST_IO_timeseries
+from wisdem.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
+from pCrunch import Analysis, pdTools
 
 if MPI:
-    #from openmdao.api import PetscImpl as impl
-    from mpi4py import MPI
+    from mpi4py   import MPI
     from petsc4py import PETSc
-# else:
-    # from openmdao.api import BasicImpl as impl
-
-
 
 def eval_unsteady(alpha, cl, cd, cm):
     # calculate unsteady coefficients from polars for OpenFAST's Aerodyn
@@ -186,7 +177,6 @@ def eval_unsteady(alpha, cl, cd, cm):
 
     # plt.show()
 
-
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
         self.options.declare('analysis_options')
@@ -200,10 +190,6 @@ class FASTLoadCases(ExplicitComponent):
         self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
         self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
         self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
-        # self.min_TSR       = blade_init_options['min_TSR']
-        # self.max_TSR       = blade_init_options['max_TSR']
-        # self.min_pitch     = blade_init_options['min_pitch']
-        # self.max_pitch     = blade_init_options['max_pitch']
 
         af_init_options    = self.options['analysis_options']['airfoils']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
@@ -217,7 +203,7 @@ class FASTLoadCases(ExplicitComponent):
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(self.options['analysis_options']['blade']['n_freq']/2)
 
-        FASTpref = self.options['analysis_options']['openfast']['FASTpref']
+        FASTpref = self.options['analysis_options']['openfast']
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -269,8 +255,6 @@ class FASTLoadCases(ExplicitComponent):
         
         # Airfoil coordinates
         self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
-        # self.add_input('airfoils_coord_x',  val=np.zeros((n_xy, n_span)), desc='x airfoil coordinate, spanwise')
-        # self.add_input('airfoils_coord_y',  val=np.zeros((n_xy, n_span)), desc='y airfoil coordinate, spanwise')
         
         # Turbine level inputs
         self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
@@ -313,35 +297,23 @@ class FASTLoadCases(ExplicitComponent):
 
         # FAST run preferences
         self.FASTpref            = FASTpref 
-        self.Analysis_Level      = FASTpref['Analysis_Level']
-        self.FAST_ver            = FASTpref['FAST_ver']
-        self.FAST_exe            = os.path.abspath(FASTpref['FAST_exe'])
-        self.FAST_directory      = os.path.abspath(FASTpref['FAST_directory'])
-        self.Turbsim_exe         = os.path.abspath(FASTpref['Turbsim_exe'])
-        self.debug_level         = FASTpref['debug_level']
-        self.FAST_InputFile      = FASTpref['FAST_InputFile']
+        self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
+        self.debug_level         = FASTpref['analysis_settings']['debug_level']
+        self.FAST_ver            = FASTpref['file_management']['FAST_ver']
+        self.FAST_exe            = os.path.abspath(FASTpref['file_management']['FAST_exe'])
+        self.FAST_directory      = os.path.abspath(FASTpref['file_management']['FAST_directory'])
+        self.Turbsim_exe         = os.path.abspath(FASTpref['file_management']['Turbsim_exe'])
+        self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
-            self.FAST_runDirectory = os.path.join(FASTpref['FAST_runDirectory'],'rank_%000d'%int(rank))
-            self.FAST_namingOut  = FASTpref['FAST_namingOut']+'_%000d'%int(rank)
-            # try:
-            #     if not os.path.exists(directory):
-            #         os.makedirs(self.FAST_runDirectory)
-            # except:
-            #     pass
+            self.FAST_runDirectory = os.path.join(FASTpref['file_management']['FAST_runDirectory'],'rank_%000d'%int(rank))
+            self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']+'_%000d'%int(rank)
         else:
-            self.FAST_runDirectory = FASTpref['FAST_runDirectory']
-            self.FAST_namingOut  = FASTpref['FAST_namingOut']
-        self.dev_branch          = FASTpref['dev_branch']
-        self.cores               = FASTpref['cores']
+            self.FAST_runDirectory = FASTpref['file_management']['FAST_runDirectory']
+            self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']
+        self.cores               = FASTpref['analysis_settings']['cores']
         self.case                = {}
         self.channels            = {}
-
-        # DLC Flags
-        self.DLC_powercurve      = FASTpref['DLC_powercurve']
-        self.DLC_gust            = FASTpref['DLC_gust']
-        self.DLC_extrm           = FASTpref['DLC_extrm']
-        self.DLC_turbulent       = FASTpref['DLC_turbulent']
 
         self.clean_FAST_directory = False
         if 'clean_FAST_directory' in FASTpref.keys():
@@ -349,9 +321,9 @@ class FASTLoadCases(ExplicitComponent):
 
         self.mpi_run             = False
         if 'mpi_run' in FASTpref.keys():
-            self.mpi_run         = FASTpref['mpi_run']
+            self.mpi_run         = FASTpref['analysis_settings']['mpi_run']
             if self.mpi_run:
-                self.mpi_comm_map_down   = FASTpref['mpi_comm_map_down']
+                self.mpi_comm_map_down   = FASTpref['analysis_settings']['mpi_comm_map_down']
         
         self.add_output('dx_defl', val=0., desc='deflection of blade section in airfoil x-direction under max deflection loading')
         self.add_output('dy_defl', val=0., desc='deflection of blade section in airfoil y-direction under max deflection loading')
@@ -388,15 +360,14 @@ class FASTLoadCases(ExplicitComponent):
 
         fst_vt, R_out = self.update_FAST_model(inputs, discrete_inputs)
         
-        # if MPI:
-            # rank = int(PETSc.COMM_WORLD.getRank())
-            # self.FAST_namingOut = self.FAST_namingOut + '_%00d'%rank
-
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
-            list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
-            FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
-            self.post_process(FAST_Output, case_keys, R_out, inputs, discrete_inputs, outputs)
+
+            FAST_Output, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+            self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs)
+
+            # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
+            # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
 
         elif self.Analysis_Level == 1:
             # Write FAST files, do not run
@@ -411,7 +382,6 @@ class FASTLoadCases(ExplicitComponent):
             except:
                 print('Failed to delete directory: %s'%self.FAST_runDirectory)
 
-        #print(impl.world_comm().rank, 'Rotor_fast','end')
 
     def update_FAST_model(self, inputs, discrete_inputs):
 
@@ -436,7 +406,7 @@ class FASTLoadCases(ExplicitComponent):
 
 
         # Masses from DriveSE
-        if self.options['analysis_options']['openfast']['update_hub_nacelle']:
+        if self.options['analysis_options']['openfast']['analysis_settings']['update_hub_nacelle']:
             fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
             fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
             fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
@@ -449,17 +419,21 @@ class FASTLoadCases(ExplicitComponent):
 
         
 
-        #tower2hub = fst_vt['InflowWind']['RefHt'] - fst_vt['ElastoDyn']['TowerHt']
-        fst_vt['ElastoDyn']['TowerBsHt'] = inputs['tower_base_height'][0] # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
-        fst_vt['ElastoDyn']['PtfmRefzt'] = inputs['tower_base_height'][0] # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
-        fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][0] + fst_vt['ElastoDyn']['TowerBsHt'] # Height of tower above ground level [onshore] or MSL [offshore] (meters)
-
-        # Update Inflowwind
-        fst_vt['InflowWind']['RefHt'] = inputs['hub_height'][0]
-        fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
-
-        # Update ElastoDyn Tower Input File
         if self.options['analysis_options']['Analysis_Flags']['TowerSE']:
+            # TODO: there are issues here
+            #   - running the 15MW caused 120 tower points, some where nonunique heights
+            #   - hub height is wrong, not adding the tower top to hub correctly
+
+            tower_base_height = max(inputs['tower_base_height'][0], fst_vt['ElastoDyn']['PtfmCMzt'])
+            fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
+            fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
+            fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][-1] + tower_base_height # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+
+            # Update Inflowwind
+            fst_vt['InflowWind']['RefHt'] = inputs['hub_height'][0]
+            fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
+
+            # Update ElastoDyn Tower Input File
             fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
             fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
             fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
@@ -469,6 +443,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
             fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
             fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+            
+            fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'])
+            fst_vt['AeroDyn15']['TwrElev']   = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
+            fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter']
+            fst_vt['AeroDyn15']['TwrCd']     = np.ones_like(fst_vt['AeroDyn15']['TwrDiam']) * np.mean(fst_vt['AeroDyn15']['TwrCd'])
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -476,7 +455,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
         fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
         fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location']
-        # fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['beam:Tw_iner']
         fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['theta'] # to do: structural twist is not nessessarily (nor likely to be) the same as aero twist
         fst_vt['ElastoDynBlade']['BMassDen']   = inputs['beam:rhoA']
         fst_vt['ElastoDynBlade']['FlpStff']    = inputs['beam:EIyy']
@@ -489,10 +467,6 @@ class FASTLoadCases(ExplicitComponent):
         # Update AeroDyn15
         fst_vt['AeroDyn15']['AirDens']   = inputs['rho'][0]
         fst_vt['AeroDyn15']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
-        fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'])
-        fst_vt['AeroDyn15']['TwrElev']   = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
-        fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter']
-        fst_vt['AeroDyn15']['TwrCd']     = np.ones_like(fst_vt['AeroDyn15']['TwrDiam']) * np.mean(fst_vt['AeroDyn15']['TwrCd'])
 
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
@@ -528,7 +502,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
-                if self.options['analysis_options']['openfast']['generate_af_coords']:
+                if self.options['analysis_options']['openfast']['analysis_settings']['generate_af_coords']:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '@"AF{:02d}_Coords.txt"'.format(i)
                 else:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
@@ -598,90 +572,63 @@ class FASTLoadCases(ExplicitComponent):
 
         return fst_vt, R_out
 
-    def DLC_creation(self, inputs, discrete_inputs, fst_vt):
-        # Case Generations
 
-        TMax = 99999. # Overwrite runtime if TMax is less than predefined DLC length (primarily for debugging purposes)
-        # TMax = 5.
+    def run_FAST(self, inputs, discrete_inputs, fst_vt):
 
-        list_cases        = []
-        list_casenames    = []
-        required_channels = []
-        case_keys         = []
+        case_list      = []
+        case_name_list = []
+        dlc_list       = []
 
-        turbulence_class = discrete_inputs['turbulence_class']
-        turbine_class    = discrete_inputs['turbine_class']
+        if self.FASTpref['dlc_settings']['run_IEC']:
+            case_list_IEC, case_name_list_IEC, dlc_list_IEC = self.DLC_creation_IEC(inputs, discrete_inputs, fst_vt)
+            case_list      += case_list_IEC
+            case_name_list += case_name_list_IEC
+            dlc_list       += dlc_list_IEC
 
-        if self.DLC_powercurve != None:
-            self.U_init     = copy.deepcopy(inputs['U_init'])
-            self.Omega_init = copy.deepcopy(inputs['Omega_init'])
-            self.pitch_init = copy.deepcopy(inputs['pitch_init'])
-            # self.max_omega  = min([inputs['control_maxTS'] / inputs['Rtip'], inputs['control_maxOmega']*np.pi/30.])*30/np.pi
-            # print('U_init    ', self.U_init    )
-            # print('Omega_init', self.Omega_init)
-            # print('pitch_init', self.pitch_init)
-            # for i, (Ui, Omegai, pitchi) in enumerate(zip(self.U_init, self.Omega_init, self.pitch_init)):
-            #     if pitchi > 0. and Omegai < self.max_omega*0.99:
-            #         self.pitch_init[i] = 0.
-            # print('U_init    ', self.U_init    )
-            # print('Omega_init', self.Omega_init)
-            # print('pitch_init', self.pitch_init)
-
-            list_cases_PwrCrv, list_casenames_PwrCrv, requited_channels_PwrCrv = self.DLC_powercurve(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'], U_init=self.U_init, Omega_init=self.Omega_init, pitch_init=self.pitch_init, V_R25=inputs['V_R25'])
-            list_cases        += list_cases_PwrCrv
-            list_casenames    += list_casenames_PwrCrv
-            required_channels += requited_channels_PwrCrv
-            case_keys         += [1]*len(list_cases_PwrCrv)    
-
-        if self.DLC_gust != None:
-            list_cases_gust, list_casenames_gust, requited_channels_gust = self.DLC_gust(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['V_mean_iec'], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'])
-            list_cases        += list_cases_gust
-            list_casenames    += list_casenames_gust
-            required_channels += requited_channels_gust
-            case_keys         += [2]*len(list_cases_gust)
-
-        if self.DLC_extrm != None:
-            list_cases_rated, list_casenames_rated, requited_channels_rated = self.DLC_extrm(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vextreme'])
-            list_cases        += list_cases_rated
-            list_casenames    += list_casenames_rated
-            required_channels += requited_channels_rated
-            case_keys         += [3]*len(list_cases_rated)
-
-        if self.DLC_turbulent != None:
-            if self.mpi_run:
-                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores, mpi_run=self.mpi_run, mpi_comm_map_down=self.mpi_comm_map_down)
-            else:
-                list_cases_turb, list_casenames_turb, requited_channels_turb = self.DLC_turbulent(fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, inputs['Vrated'][0], U_init=inputs['U_init'], Omega_init=inputs['Omega_init'], pitch_init=inputs['pitch_init'], Turbsim_exe=self.Turbsim_exe, debug_level=self.debug_level, cores=self.cores)
-            list_cases        += list_cases_turb
-            list_casenames    += list_casenames_turb
-            required_channels += requited_channels_turb
-            case_keys         += [4]*len(list_cases_turb)
-
-        required_channels = sorted(list(set(required_channels)))
-        channels_out = {}
-        for var in required_channels:
-            channels_out[var] = True
-
-        return list_cases, list_casenames, channels_out, case_keys
+        if self.FASTpref['dlc_settings']['run_power_curve']:
+            case_list_pc, case_name_list_pc, dlc_list_pc = self.DLC_creation_powercurve(inputs, discrete_inputs, fst_vt)
+            case_list      += case_list_pc
+            case_name_list += case_name_list_pc
+            dlc_list       += dlc_list_pc
+           
+        # Mandatory output channels to include 
+        # TODO: what else is needed here?
+        channels_out  = ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxc3", "TipDyc3", "TipDzc3"]
+        channels_out  = ["TipDxb1", "TipDyb1", "TipDzb1", "TipDxb2", "TipDyb2", "TipDzb2", "TipDxb3", "TipDyb3", "TipDzb3"]
+        channels_out += ["RootMxc1", "RootMyc1", "RootMzc1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxc3", "RootMyc3", "RootMzc3"]
+        channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2", "RootMxb3", "RootMyb3", "RootMzb3"]
+        channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2", "RootFxc3", "RootFyc3", "RootFzc3"]
+        channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2", "RootFxb3", "RootFyb3", "RootFzb3"]
+        channels_out += ["RtAeroCp", "RtAeroCt", "RotTorq", "RotThrust", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1"]
+        channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
+        channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
+        channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
+        channels_out += ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
+        channels_out += ["RootMxb1", "Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1"]
+        channels_out += ["RootMyb1", "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
 
 
-    def run_FAST(self, fst_vt, case_list, case_name_list, channels):
+        channels = {}
+        for var in channels_out:
+            channels[var] = True
 
         # FAST wrapper setup
         fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
+        fastBatch.channels = channels
 
         fastBatch.FAST_exe          = self.FAST_exe
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
         fastBatch.debug_level       = self.debug_level
-        fastBatch.dev_branch        = self.dev_branch
         fastBatch.fst_vt            = fst_vt
-        fastBatch.post              = return_timeseries
+        fastBatch.post              = FAST_IO_timeseries
 
         fastBatch.case_list         = case_list
         fastBatch.case_name_list    = case_name_list
         fastBatch.channels          = channels
+
+        fastBatch.overwrite_outfiles = True  #<--- Debugging only
 
         # Run FAST
         if self.mpi_run:
@@ -694,14 +641,223 @@ class FASTLoadCases(ExplicitComponent):
 
         self.fst_vt = fst_vt
 
-        return FAST_Output
+        return FAST_Output, case_list, dlc_list
+
+    def DLC_creation_IEC(self, inputs, discrete_inputs, fst_vt, powercurve=False):
+
+        iec = CaseGen_IEC()
+
+        # Turbine Data
+        iec.Turbine_Class    = discrete_inputs['turbine_class']
+        iec.Turbulence_Class = discrete_inputs['turbulence_class']
+        iec.D                = fst_vt['ElastoDyn']['TipRad']*2.
+        iec.z_hub            = fst_vt['InflowWind']['RefHt']
+
+        # Turbine initial conditions
+        iec.init_cond = {} # can leave as {} if data not available
+        iec.init_cond[("ElastoDyn","RotSpeed")]        = {'U':inputs['U_init']}
+        iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = inputs['Omega_init']
+        iec.init_cond[("ElastoDyn","BlPitch1")]        = {'U':inputs['U_init']}
+        iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = inputs['pitch_init']
+        iec.init_cond[("ElastoDyn","BlPitch2")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
+        iec.init_cond[("ElastoDyn","BlPitch3")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
+
+        # Todo: need a way to handle Metocean conditions for Offshore
+        # if offshore:
+        #     iec.init_cond[("HydroDyn","WaveHs")]        = {'U':[3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 25, 40, 50]}
+        #     iec.init_cond[("HydroDyn","WaveHs")]['val'] = [1.101917033, 1.101917033, 1.179052649, 1.315715154, 1.536867124, 1.835816514, 2.187994638, 2.598127096, 3.061304068, 3.617035443, 4.027470219, 4.51580671, 4.51580671, 6.98, 10.7]
+        #     iec.init_cond[("HydroDyn","WaveTp")]        = {'U':[3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 25, 40, 50]}
+        #     iec.init_cond[("HydroDyn","WaveTp")]['val'] = [8.515382435, 8.515382435, 8.310063688, 8.006300889, 7.6514231, 7.440581338, 7.460834063, 7.643300307, 8.046899942, 8.521314105, 8.987021024, 9.451641026, 9.451641026, 11.7, 14.2]
+
+        # Setup dlc settings
+        iec.dlc_inputs = {}
+        iec.dlc_inputs['DLC']   = []
+        iec.dlc_inputs['U']     = []
+        iec.dlc_inputs['Seeds'] = []
+        iec.dlc_inputs['Yaw']   = []
+
+        if powercurve:
+            # running turbulent power curve
+            iec.dlc_inputs['DLC'].append(1.1)
+            iec.dlc_inputs['U'].append(self.FASTpref['dlc_settings']['Power_Curve']['U'])
+            iec.dlc_inputs['Seeds'].append(self.FASTpref['dlc_settings']['Power_Curve']['Seeds'])
+            iec.dlc_inputs['Yaw'].append([])
+
+        else:
+
+            for dlc in self.FASTpref['dlc_settings']['IEC']:
+
+                if 'DLC' in dlc.keys():
+                    iec.dlc_inputs['DLC'].append(dlc['DLC'])
+                else:
+                    iec.dlc_inputs['DLC'].append([])
+
+                if 'U' in dlc.keys():
+                    iec.dlc_inputs['U'].append(dlc['U'])
+                else:
+                    iec.dlc_inputs['U'].append([])
+
+                if 'Seeds' in dlc.keys():
+                    iec.dlc_inputs['Seeds'].append(dlc['Seeds'])
+                else:
+                    iec.dlc_inputs['Seeds'].append([])
+
+                if 'Yaw' in dlc.keys():
+                    iec.dlc_inputs['Yaw'].append(dlc['Seeds'])
+                else:
+                    iec.dlc_inputs['Yaw'].append([])
+
+        iec.transient_dir_change        = '-'
+        iec.transient_shear_orientation = 'v'
+        if ("Fst", "TStart") in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
+            T0                          = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TStart")]
+        else:
+            T0                          = 120.
+        if ("Fst", "TMax") in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
+            iec.TMax                    = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")]
+        else:
+            iec.TMax                    = 720.
+
+        iec.TStart                      = (iec.TMax-T0)/2. + T0
+
+        # path management
+        iec.wind_dir        = self.FAST_runDirectory
+        iec.Turbsim_exe     = self.Turbsim_exe
+        iec.debug_level     = self.debug_level
+        iec.parallel_windfile_gen = False  # TODO: need to update this to use the mpi pool if available
+        iec.overwrite       = False # TODO: elevate these options to analysis input file
+        iec.run_dir         = self.FAST_runDirectory
+
+        if powercurve:
+            iec.case_name_base  = self.FAST_namingOut + '_powercurve'
+        else:
+            iec.case_name_base  = self.FAST_namingOut + '_IEC'
+
+        # OpenFAST Settings
+        # load user overwrite settings
+        case_inputs = {}
+        for var in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
+            case_inputs[var] = {'vals':[self.options['analysis_options']['openfast']['fst_settings'][var]], 'group':0}
+
+        # Run case setup, generate wind inputs
+        case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
+
+        return case_list, case_name_list, dlc_list
+
+    def DLC_creation_powercurve(self, inputs, discrete_inputs, fst_vt):
+        
+        if self.FASTpref['dlc_settings']['Power_Curve']['turbulent_power_curve']:
+
+            case_list, case_name, dlc_list_IEC = self.DLC_creation_IEC(inputs, discrete_inputs, fst_vt, powercurve=True)
+
+        else:
+            U     = self.FASTpref['dlc_settings']['Power_Curve']['U']
+            omega = np.interp(U, inputs['U_init'], inputs['Omega_init'])
+            pitch = np.interp(U, inputs['U_init'], inputs['pitch_init'])
+
+            # User defined simulation settings
+            case_inputs = {}
+            for var in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
+                case_inputs[var] = {'vals':[self.options['analysis_options']['openfast']['fst_settings'][var]], 'group':0}
+            # wind speeds
+            case_inputs[("InflowWind","HWindSpeed")] = {'vals':U, 'group':1}
+            case_inputs[("ElastoDyn","RotSpeed")]    = {'vals':omega, 'group':1}
+            case_inputs[("ElastoDyn","BlPitch1")]    = {'vals':pitch, 'group':1}
+            case_inputs[("ElastoDyn","BlPitch2")]    = case_inputs[("ElastoDyn","BlPitch1")]
+            case_inputs[("ElastoDyn","BlPitch3")]    = case_inputs[("ElastoDyn","BlPitch1")]
+
+            case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
+
+        dlc_list = [0.]*len(case_name)
+
+        return case_list, case_name, dlc_list
+
+    def post_process(self, FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs):
+
+        # Load pCrunch Analysis
+        loads_analysis = Analysis.Loads_Analysis()
+        if self.debug_level > 0:
+            loads_analysis.verbose = True
+
+        # Initial time, ranking variables and assosiated stats should be in an input yaml probably, of defined by the desired cost function
+        loads_analysis.t0 = self.options['analysis_options']['openfast']['fst_settings'][('Fst','TStart')]
+        loads_analysis.ranking_vars = [   ["RotSpeed"], 
+                                ["TipDxc1", "TipDxc2", "TipDxc3"], 
+                                ["TipDyc1", "TipDyc2", "TipDyc3"], 
+                                ['RootMyb1', 'RootMyb2', 'RootMyb3'], 
+                                ['RootMxb1', 'RootMxb2', 'RootMxb3'],
+                                ['TwrBsFyt'],
+                                ['TwrBsFxt']
+                                ]  # List of lists
+
+        loads_analysis.ranking_stats = [  'max',
+                                'max',
+                                'max',
+                                'max',
+                                'max',
+                                    ]
+        # get summary stats
+        sum_stats = loads_analysis.summary_stats(FAST_Output)
+
+
+        ## Get AEP
+        if self.FASTpref['dlc_settings']['run_power_curve']:
+
+            # sort out power curve stats
+            idx_pwrcrv   = [i for i, dlc in enumerate(dlc_list) if dlc==0.]
+            stats_pwrcrv = {}
+            for var in sum_stats.keys():
+                if var != 'meta':
+                    stats_pwrcrv[var] = {}
+                    for stat in sum_stats[var].keys():
+                        stats_pwrcrv[var][stat] = [x for i, x in enumerate(sum_stats[var][stat]) if i in idx_pwrcrv]
+
+            stats_pwrcrv['meta'] = sum_stats['meta']
+
+            # get wind speed 
+            U = []
+            for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list) if i in idx_pwrcrv]:
+                fname = os.path.split(fname)[-1]
+                ntm      = fname.split('NTM')[-1].split('_')
+                ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
+                ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
+                U.append(ntm_U)
+
+            # calc AEP
+            pp               = Analysis.Power_Production()
+            pp.windspeeds    = U
+            pp.turbine_class = discrete_inputs['turbine_class']
+            AEP              = pp.AEP(stats_pwrcrv, U)
+            print(AEP)
+
+            # print(inputs['V_out'])
+            # print(inputs['V_mean_iec'])
+
+            # bnums = len(list(set(U)))
+            # p     = pp.gen_windPDF(inputs['V_mean_iec'], bnums, Vrange)
+
+
+            
+
+
+        # print(sum_stats)
+        # print(stats_pwrcrv)
+        # print(dlc_list)
+        # print(idx_pwrcrv)
+
+        # DELs
+        # del_channels = [('RootMyb1',10), ('RootMyb2',10), ('RootMyb3',10)]
+        # dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
+        # outputs['DEL_RootMyb'] = np.mean([np.mean(dels['RootMyb1']), np.mean(dels['RootMyb2']), np.mean(dels['RootMyb3'])])
+        
+        # Output
+        # outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
         writer.fst_vt            = fst_vt
         writer.FAST_runDirectory = self.FAST_runDirectory
         writer.FAST_namingOut    = self.FAST_namingOut
-        writer.dev_branch        = self.dev_branch
         writer.execute()
 
         discrete_outputs['FASTpref_updated'] = copy.deepcopy(self.FASTpref)
@@ -709,284 +865,283 @@ class FASTLoadCases(ExplicitComponent):
         discrete_outputs['FASTpref_updated']['FAST_directory']    = self.FAST_runDirectory
         discrete_outputs['FASTpref_updated']['FAST_InputFile']    = os.path.split(writer.FAST_InputFileOut)[-1]
 
-        discrete_outputs['model_updated'] = True
+        discrete_outputs['model_updated'] = False
         if self.debug_level > 0:
             print('RAN UPDATE: ', self.FAST_runDirectory, self.FAST_namingOut)
 
-    def post_process(self, FAST_Output, case_keys, R_out, inputs, discrete_inputs, outputs):
+    # def post_process(self, FAST_Output, case_keys, R_out, inputs, discrete_inputs, outputs):
 
-        def post_gust(data, case_type):
+        # def post_gust(data, case_type):
 
-            if case_type == 2:
-                t_s = min(max(data['Time'][0], 30.), data['Time'][-2])
-                t_e = min(data['Time'][-1], 90.)
-                idx_s = list(data['Time']).index(t_s)
-                idx_e = list(data['Time']).index(t_e)
-            elif case_type == 4:
-                t_s = min(max(data['Time'][0], 30.), data['Time'][-2])
-                idx_s = list(data['Time']).index(t_s)
-                idx_e = -1
-            else:
-                idx_s = 0
-                idx_e = -1
+        #     if case_type == 2:
+        #         t_s = min(max(data['Time'][0], 30.), data['Time'][-2])
+        #         t_e = min(data['Time'][-1], 90.)
+        #         idx_s = list(data['Time']).index(t_s)
+        #         idx_e = list(data['Time']).index(t_e)
+        #     elif case_type == 4:
+        #         t_s = min(max(data['Time'][0], 30.), data['Time'][-2])
+        #         idx_s = list(data['Time']).index(t_s)
+        #         idx_e = -1
+        #     else:
+        #         idx_s = 0
+        #         idx_e = -1
 
-            # Tip Deflections
-            # return tip x,y,z for max out of plane deflection
-            blade_max_tip = np.argmax([max(data['TipDxc1'][idx_s:idx_e]), max(data['TipDxc2'][idx_s:idx_e]), max(data['TipDxc3'][idx_s:idx_e])])
-            if blade_max_tip == 0:
-                tip_var = ["TipDxc1", "TipDyc1", "TipDzc1"]
-            elif blade_max_tip == 1:
-                tip_var = ["TipDxc2", "TipDyc2", "TipDzc2"]
-            elif blade_max_tip == 2:
-                tip_var = ["TipDxc3", "TipDyc3", "TipDzc3"]
-            idx_max_tip = np.argmax(data[tip_var[0]][idx_s:idx_e])
-            outputs['dx_defl'] = data[tip_var[0]][idx_s+idx_max_tip]
-            outputs['dy_defl'] = data[tip_var[1]][idx_s+idx_max_tip]
-            outputs['dz_defl'] = data[tip_var[2]][idx_s+idx_max_tip]
+        #     # Tip Deflections
+        #     # return tip x,y,z for max out of plane deflection
+        #     blade_max_tip = np.argmax([max(data['TipDxc1'][idx_s:idx_e]), max(data['TipDxc2'][idx_s:idx_e]), max(data['TipDxc3'][idx_s:idx_e])])
+        #     if blade_max_tip == 0:
+        #         tip_var = ["TipDxc1", "TipDyc1", "TipDzc1"]
+        #     elif blade_max_tip == 1:
+        #         tip_var = ["TipDxc2", "TipDyc2", "TipDzc2"]
+        #     elif blade_max_tip == 2:
+        #         tip_var = ["TipDxc3", "TipDyc3", "TipDzc3"]
+        #     idx_max_tip = np.argmax(data[tip_var[0]][idx_s:idx_e])
+        #     outputs['dx_defl'] = data[tip_var[0]][idx_s+idx_max_tip]
+        #     outputs['dy_defl'] = data[tip_var[1]][idx_s+idx_max_tip]
+        #     outputs['dz_defl'] = data[tip_var[2]][idx_s+idx_max_tip]
 
-            # Root bending moments
-            # return root bending moment for blade with the highest blade bending moment magnitude
-            root_bending_moment_1 = np.sqrt(data['RootMxc1'][idx_s:idx_e]**2. + data['RootMyc1'][idx_s:idx_e]**2. + data['RootMzc1'][idx_s:idx_e]**2.)
-            root_bending_moment_2 = np.sqrt(data['RootMxc2'][idx_s:idx_e]**2. + data['RootMyc2'][idx_s:idx_e]**2. + data['RootMzc2'][idx_s:idx_e]**2.)
-            root_bending_moment_3 = np.sqrt(data['RootMxc3'][idx_s:idx_e]**2. + data['RootMyc3'][idx_s:idx_e]**2. + data['RootMzc3'][idx_s:idx_e]**2.)
-            root_bending_moment_max       = [max(root_bending_moment_1), max(root_bending_moment_2), max(root_bending_moment_3)]
-            root_bending_moment_idxmax    = [np.argmax(root_bending_moment_1), np.argmax(root_bending_moment_2), np.argmax(root_bending_moment_3)]
-            blade_root_bending_moment_max = np.argmax(root_bending_moment_max)
+        #     # Root bending moments
+        #     # return root bending moment for blade with the highest blade bending moment magnitude
+        #     root_bending_moment_1 = np.sqrt(data['RootMxc1'][idx_s:idx_e]**2. + data['RootMyc1'][idx_s:idx_e]**2. + data['RootMzc1'][idx_s:idx_e]**2.)
+        #     root_bending_moment_2 = np.sqrt(data['RootMxc2'][idx_s:idx_e]**2. + data['RootMyc2'][idx_s:idx_e]**2. + data['RootMzc2'][idx_s:idx_e]**2.)
+        #     root_bending_moment_3 = np.sqrt(data['RootMxc3'][idx_s:idx_e]**2. + data['RootMyc3'][idx_s:idx_e]**2. + data['RootMzc3'][idx_s:idx_e]**2.)
+        #     root_bending_moment_max       = [max(root_bending_moment_1), max(root_bending_moment_2), max(root_bending_moment_3)]
+        #     root_bending_moment_idxmax    = [np.argmax(root_bending_moment_1), np.argmax(root_bending_moment_2), np.argmax(root_bending_moment_3)]
+        #     blade_root_bending_moment_max = np.argmax(root_bending_moment_max)
 
-            outputs['root_bending_moment'] = root_bending_moment_max[blade_root_bending_moment_max]*1.e3
-            idx = root_bending_moment_idxmax[blade_root_bending_moment_max]
-            if blade_root_bending_moment_max == 0:
-                outputs['Mxyz'] = np.array([data['RootMxc1'][idx_s+idx]*1.e3, data['RootMyc1'][idx_s+idx]*1.e3, data['RootMzc1'][idx_s+idx]*1.e3])
-                outputs['My_std'] = np.std(data['RootMyc1'][idx_s:idx_e]*1.e3)
-            elif blade_root_bending_moment_max == 1:
-                outputs['Mxyz'] = np.array([data['RootMxc2'][idx_s+idx]*1.e3, data['RootMyc2'][idx_s+idx]*1.e3, data['RootMzc2'][idx_s+idx]*1.e3])
-                outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
-            elif blade_root_bending_moment_max == 2:
-                outputs['Mxyz'] = np.array([data['RootMxc3'][idx_s+idx]*1.e3, data['RootMyc3'][idx_s+idx]*1.e3, data['RootMzc3'][idx_s+idx]*1.e3])
-                outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
+        #     outputs['root_bending_moment'] = root_bending_moment_max[blade_root_bending_moment_max]*1.e3
+        #     idx = root_bending_moment_idxmax[blade_root_bending_moment_max]
+        #     if blade_root_bending_moment_max == 0:
+        #         outputs['Mxyz'] = np.array([data['RootMxc1'][idx_s+idx]*1.e3, data['RootMyc1'][idx_s+idx]*1.e3, data['RootMzc1'][idx_s+idx]*1.e3])
+        #         outputs['My_std'] = np.std(data['RootMyc1'][idx_s:idx_e]*1.e3)
+        #     elif blade_root_bending_moment_max == 1:
+        #         outputs['Mxyz'] = np.array([data['RootMxc2'][idx_s+idx]*1.e3, data['RootMyc2'][idx_s+idx]*1.e3, data['RootMzc2'][idx_s+idx]*1.e3])
+        #         outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
+        #     elif blade_root_bending_moment_max == 2:
+        #         outputs['Mxyz'] = np.array([data['RootMxc3'][idx_s+idx]*1.e3, data['RootMyc3'][idx_s+idx]*1.e3, data['RootMzc3'][idx_s+idx]*1.e3])
+        #         outputs['My_std'] = np.std(data['RootMyc2'][idx_s:idx_e]*1.e3)
 
-            outputs['flp1_std'] = np.std(data['BLFLAP1'])
+        #     outputs['flp1_std'] = np.std(data['BLFLAP1'])
 
-        def post_extreme(data, case_type):
+        # def post_extreme(data, case_type):
 
-            if case_type == 3:
-                t_s = min(max(data['Time'][0], 30.), data['Time'][-2])
-                t_e = min(data['Time'][-1], 90.)
-                idx_s = list(data['Time']).index(t_s)
-                idx_e = list(data['Time']).index(t_e)
-            else:
-                idx_s = 0
-                idx_e = -1
+        #     if case_type == 3:
+        #         t_s = min(max(data['Time'][0], 30.), data['Time'][-2])
+        #         t_e = min(data['Time'][-1], 90.)
+        #         idx_s = list(data['Time']).index(t_s)
+        #         idx_e = list(data['Time']).index(t_e)
+        #     else:
+        #         idx_s = 0
+        #         idx_e = -1
 
-            Time = data['Time'][idx_s:idx_e]
-            var_Fx = ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
-            var_Fy = ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
-            for i, (varFxi, varFyi) in enumerate(zip(var_Fx, var_Fy)):
-                if i == 0:
-                    Fx = np.array(data[varFxi][idx_s:idx_e])
-                    Fy = np.array(data[varFyi][idx_s:idx_e])
-                else:
-                    Fx = np.column_stack((Fx, np.array(data[varFxi][idx_s:idx_e])))
-                    Fy = np.column_stack((Fy, np.array(data[varFyi][idx_s:idx_e])))
+        #     Time = data['Time'][idx_s:idx_e]
+        #     var_Fx = ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
+        #     var_Fy = ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
+        #     for i, (varFxi, varFyi) in enumerate(zip(var_Fx, var_Fy)):
+        #         if i == 0:
+        #             Fx = np.array(data[varFxi][idx_s:idx_e])
+        #             Fy = np.array(data[varFyi][idx_s:idx_e])
+        #         else:
+        #             Fx = np.column_stack((Fx, np.array(data[varFxi][idx_s:idx_e])))
+        #             Fy = np.column_stack((Fy, np.array(data[varFyi][idx_s:idx_e])))
 
-            Fx_sum = np.zeros_like(Time)
-            Fy_sum = np.zeros_like(Time)
-            for i in range(len(Time)):
-                Fx_sum[i] = np.trapz(Fx[i,:], R_out)
-                Fy_sum[i] = np.trapz(Fy[i,:], R_out)
-            idx_max_strain = np.argmax(np.sqrt(Fx_sum**2.+Fy_sum**2.))
+        #     Fx_sum = np.zeros_like(Time)
+        #     Fy_sum = np.zeros_like(Time)
+        #     for i in range(len(Time)):
+        #         Fx_sum[i] = np.trapz(Fx[i,:], R_out)
+        #         Fy_sum[i] = np.trapz(Fy[i,:], R_out)
+        #     idx_max_strain = np.argmax(np.sqrt(Fx_sum**2.+Fy_sum**2.))
 
-            Fx = [data[Fxi][idx_max_strain] for Fxi in var_Fx]
-            Fy = [data[Fyi][idx_max_strain] for Fyi in var_Fy]
-            spline_Fx = PchipInterpolator(R_out, Fx)
-            spline_Fy = PchipInterpolator(R_out, Fy)
+        #     Fx = [data[Fxi][idx_max_strain] for Fxi in var_Fx]
+        #     Fy = [data[Fyi][idx_max_strain] for Fyi in var_Fy]
+        #     spline_Fx = PchipInterpolator(R_out, Fx)
+        #     spline_Fy = PchipInterpolator(R_out, Fy)
 
-            r = inputs['r']-inputs['Rhub']
-            Fx_out = spline_Fx(r)
-            Fy_out = spline_Fy(r)
-            Fz_out = np.zeros_like(Fx_out)
+        #     r = inputs['r']-inputs['Rhub']
+        #     Fx_out = spline_Fx(r)
+        #     Fy_out = spline_Fy(r)
+        #     Fz_out = np.zeros_like(Fx_out)
 
-            outputs['loads_Px'] = Fx_out
-            outputs['loads_Py'] = Fy_out*-1.
-            outputs['loads_Pz'] = Fz_out
+        #     outputs['loads_Px'] = Fx_out
+        #     outputs['loads_Py'] = Fy_out*-1.
+        #     outputs['loads_Pz'] = Fz_out
 
-            outputs['loads_Omega'] = data['RotSpeed'][idx_max_strain]
-            outputs['loads_pitch'] = data['BldPitch1'][idx_max_strain]
-            outputs['loads_azimuth'] = data['Azimuth'][idx_max_strain]
+        #     outputs['loads_Omega'] = data['RotSpeed'][idx_max_strain]
+        #     outputs['loads_pitch'] = data['BldPitch1'][idx_max_strain]
+        #     outputs['loads_azimuth'] = data['Azimuth'][idx_max_strain]
 
-        # def post_AEP_fit(data):
-        #     def my_cubic(f, x):
-        #         return np.array([f[3]+ f[2]*xi + f[1]*xi**2. + f[0]*xi**3. for xi in x])
+        # # def post_AEP_fit(data):
+        # #     def my_cubic(f, x):
+        # #         return np.array([f[3]+ f[2]*xi + f[1]*xi**2. + f[0]*xi**3. for xi in x])
 
-        #     U = np.array([np.mean(datai['Wind1VelX']) for datai in data])
-        #     P = np.array([np.mean(datai['GenPwr']) for datai in data])*1000.
-        #     P_coef = np.polyfit(U, P, 3)
+        # #     U = np.array([np.mean(datai['Wind1VelX']) for datai in data])
+        # #     P = np.array([np.mean(datai['GenPwr']) for datai in data])*1000.
+        # #     P_coef = np.polyfit(U, P, 3)
 
-        #     P_out = my_cubic(P_coef, inputs['V_out'])
-        #     np.place(P_out, P_out>inputs['control_ratedPower'], inputs['control_ratedPower'])
+        # #     P_out = my_cubic(P_coef, inputs['V_out'])
+        # #     np.place(P_out, P_out>inputs['control_ratedPower'], inputs['control_ratedPower'])
+        # #     outputs['P_out'] = P_out
+
+        # #     # import matplotlib.pyplot as plt
+        # #     # plt.plot(U, P, 'o')
+        # #     # plt.plot(inputs['V_out'], outputs['P_out'])            
+        # #     # plt.show()
+
+        # def post_AEP(data):
+        #     U = list(sorted([4., 6., 8., 9., 10., 10.5, 11., 11.5, 11.75, 12., 12.5, 13., 14., 19., 25., inputs['Vrated']]))
+        #     if inputs['V_R25'] != 0.:
+        #         U.append(inputs['V_R25'])
+        #         U = list(sorted(U))
+        #     U = np.array(U)
+
+        #     U_below = [Vi for Vi in U if Vi <= inputs['Vrated']]
+        #     # P_below = np.array([np.mean(datai['GenPwr'])*1000. for datai in data])
+        #     P_below = np.array([np.mean(datai['GenPwr'])*1000. for datai, Vi in zip(data, U) if Vi <= inputs['Vrated']])
+        #     np.place(P_below, P_below>inputs['control_ratedPower'], inputs['control_ratedPower'])
+
+        #     U_rated = [Vi for Vi in U if Vi > inputs['Vrated']]
+        #     P_rated = [inputs['control_ratedPower']]*len(U_rated)
+
+        #     if len(U_below) < len(U):
+        #         P_fast = np.array(P_below.tolist() + P_rated)
+        #     else:
+        #         P_fast = P_below
+
+        #     data_rated = data[-1]
+
+        #     # U_fit = np.array([4.,8.,9.,10.])
+
+        #     ## Find rated 
+        #     # def my_cubic(f, x):
+        #         # return np.array([f[3]+ f[2]*xi + f[1]*xi**2. + f[0]*xi**3. for xi in x])
+
+        #     # idx_fit = [U.tolist().index(Ui) for Ui in U_fit]
+        #     # P_fit = np.array([np.mean(data[i]['GenPwr']) for i in idx_fit])
+        #     # P_coef = np.polyfit(U_fit, P_fit, 3)
+
+        #     # P_find_rated = my_cubic(P_coef, inputs['V_out'])
+        #     # np.place(P_find_rated, P_find_rated>inputs['control_ratedPower'], inputs['control_ratedPower'])
+        #     # idx_rated = min([i for i, Pi in enumerate(P_find_rated) if Pi*1000 >= inputs['control_ratedPower']])
+        #     # outputs['rated_V'] = inputs['V_out'][idx_rated]
+
+        #     # if outputs['rated_V'] not in U:
+        #     #     ## Run Rated
+        #     #     TMax = 99999.
+        #     #     # TMax = 10.
+        #     #     turbulence_class = TURBULENCE_CLASS[inputs['turbulence_class']]
+        #     #     turbine_class    = TURBINE_CLASS[inputs['turbine_class']]
+        #     #     list_cases_rated, list_casenames_rated, requited_channels_rated = RotorSE_rated(self.fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, outputs['rated_V'], U_init=self.U_init, Omega_init=self.Omega_init, pitch_init=np.zeros_like(self.Omega_init))
+        #     #     requited_channels_rated = sorted(list(set(requited_channels_rated)))
+        #     #     channels_out = {}
+        #     #     for var in requited_channels_rated:
+        #     #         channels_out[var] = True
+        #     #     data_rated = self.run_FAST(self.fst_vt, list_cases_rated, list_casenames_rated, channels_out)[0]
+
+        #     #     ## Sort in Rated Power
+        #     #     U_wR = []
+        #     #     data_wR = []
+        #     #     U_added = False
+        #     #     for i in range(len(U)):
+        #     #         if outputs['rated_V']<U[i] and U_added == False:
+        #     #             U_wR.append(outputs['rated_V'])
+        #     #             data_wR.append(data_rated)
+        #     #             U_added = True
+        #     #         U_wR.append(U[i])
+        #     #         data_wR.append(data[i])
+        #     # else:
+        #     #     U_wR = U
+
+        #     # P_fast = np.array([np.mean(datai['GenPwr']) for datai in data_wR])*1000.
+        #     # for i, (Pi, Vi) in enumerate(zip(P_fast, U_wR)):
+        #     #     if Vi > outputs['rated_V']:
+        #     #         if np.abs((Pi-inputs['control_ratedPower'])/inputs['control_ratedPower']) > 0.2:
+        #     #             P_fast[i] = inputs['control_ratedPower']
+        #     #             above_rate_power_warning = "FAST instability expected at U=%f m/s, abs(outputted power) > +/-20%% of rated power.  Replaceing %f with %f"%(Vi, Pi, inputs['control_ratedPower'])
+        #     #             warnings.warn(above_rate_power_warning)
+
+        #     # P_spline = PchipInterpolator(U_wR, P_fast)
+
+        #     P_spline = PchipInterpolator(U, P_fast)
+
+        #     P_out = P_spline(inputs['V_out'])
+        #     # np.place(P_out, P_out>inputs['control_ratedPower'], inputs['control_ratedPower'])
         #     outputs['P_out'] = P_out
+
+        #     P = P_spline(inputs['V'])
+        #     # np.place(P, P>inputs['control_ratedPower'], inputs['control_ratedPower'])
+        #     outputs['P'] = P
+
+
+        #     outputs['Cp']          = np.mean(data_rated["RtAeroCp"])
+        #     outputs['rated_V']     = np.mean(data_rated["Wind1VelX"])
+        #     outputs['rated_Omega'] = np.mean(data_rated["RotSpeed"])
+        #     outputs['rated_pitch'] = np.mean(data_rated["BldPitch1"])
+        #     outputs['rated_T']     = np.mean(data_rated["RotThrust"])*1000
+        #     outputs['rated_Q']     = np.mean(data_rated["RotTorq"])*1000
 
         #     # import matplotlib.pyplot as plt
         #     # plt.plot(U, P, 'o')
         #     # plt.plot(inputs['V_out'], outputs['P_out'])            
         #     # plt.show()
 
-        def post_AEP(data):
-            U = list(sorted([4., 6., 8., 9., 10., 10.5, 11., 11.5, 11.75, 12., 12.5, 13., 14., 19., 25., inputs['Vrated']]))
-            if inputs['V_R25'] != 0.:
-                U.append(inputs['V_R25'])
-                U = list(sorted(U))
-            U = np.array(U)
+        # ############
 
-            U_below = [Vi for Vi in U if Vi <= inputs['Vrated']]
-            # P_below = np.array([np.mean(datai['GenPwr'])*1000. for datai in data])
-            P_below = np.array([np.mean(datai['GenPwr'])*1000. for datai, Vi in zip(data, U) if Vi <= inputs['Vrated']])
-            np.place(P_below, P_below>inputs['control_ratedPower'], inputs['control_ratedPower'])
+        # Gust_Outputs = False
+        # Extreme_Outputs = False
+        # AEP_Outputs = False
+        # #
+        # for casei in case_keys:
+        #     if Gust_Outputs and Extreme_Outputs:
+        #         break
 
-            U_rated = [Vi for Vi in U if Vi > inputs['Vrated']]
-            P_rated = [inputs['control_ratedPower']]*len(U_rated)
+        #     if casei == 1:
+        #         # power curve
+        #         if AEP_Outputs:
+        #             pass
+        #         else:
+        #             idx_AEP = [i for i, casej in enumerate(case_keys) if casej==1]
+        #             data = [datai for i, datai in enumerate(FAST_Output) if i in idx_AEP]
+        #             post_AEP(data)
+        #             AEP_Outputs = True
 
-            if len(U_below) < len(U):
-                P_fast = np.array(P_below.tolist() + P_rated)
-            else:
-                P_fast = P_below
+        #     if casei in [2]:
+        #         # gust: return tip deflections and bending moments
+        #         idx_gust = case_keys.index(casei)
+        #         data = FAST_Output[idx_gust]
+        #         post_gust(data, casei)
+        #         Gust_Outputs = True
 
-            data_rated = data[-1]
+        #     if casei in [3]:
+        #         # extreme wind speed: return aeroloads for strains
+        #         idx_extreme = case_keys.index(casei)
+        #         data = FAST_Output[idx_extreme]
+        #         post_extreme(data, casei)
+        #         Extreme_Outputs = True
 
-            # U_fit = np.array([4.,8.,9.,10.])
+        #     if casei in [4]:
+        #         # turbulent wind with multiplt seeds
+        #         idx_turb = [i for i, casej in enumerate(case_keys) if casej==4]
+        #         data_concat = {}
+        #         for i, fast_out_idx in enumerate(idx_turb):
+        #             datai = FAST_Output[idx_turb[fast_out_idx]]
 
-            ## Find rated 
-            # def my_cubic(f, x):
-                # return np.array([f[3]+ f[2]*xi + f[1]*xi**2. + f[0]*xi**3. for xi in x])
+        #             for var in datai.keys():
+        #                 if i == 0:
+        #                     data_concat[var] = []
+        #                 data_concat[var].extend(list(datai[var]))
 
-            # idx_fit = [U.tolist().index(Ui) for Ui in U_fit]
-            # P_fit = np.array([np.mean(data[i]['GenPwr']) for i in idx_fit])
-            # P_coef = np.polyfit(U_fit, P_fit, 3)
+        #         for var in data_concat.keys():
+        #             data_concat[var] = np.array(data_concat[var])
 
-            # P_find_rated = my_cubic(P_coef, inputs['V_out'])
-            # np.place(P_find_rated, P_find_rated>inputs['control_ratedPower'], inputs['control_ratedPower'])
-            # idx_rated = min([i for i, Pi in enumerate(P_find_rated) if Pi*1000 >= inputs['control_ratedPower']])
-            # outputs['rated_V'] = inputs['V_out'][idx_rated]
-
-            # if outputs['rated_V'] not in U:
-            #     ## Run Rated
-            #     TMax = 99999.
-            #     # TMax = 10.
-            #     turbulence_class = TURBULENCE_CLASS[inputs['turbulence_class']]
-            #     turbine_class    = TURBINE_CLASS[inputs['turbine_class']]
-            #     list_cases_rated, list_casenames_rated, requited_channels_rated = RotorSE_rated(self.fst_vt, self.FAST_runDirectory, self.FAST_namingOut, TMax, turbine_class, turbulence_class, outputs['rated_V'], U_init=self.U_init, Omega_init=self.Omega_init, pitch_init=np.zeros_like(self.Omega_init))
-            #     requited_channels_rated = sorted(list(set(requited_channels_rated)))
-            #     channels_out = {}
-            #     for var in requited_channels_rated:
-            #         channels_out[var] = True
-            #     data_rated = self.run_FAST(self.fst_vt, list_cases_rated, list_casenames_rated, channels_out)[0]
-
-            #     ## Sort in Rated Power
-            #     U_wR = []
-            #     data_wR = []
-            #     U_added = False
-            #     for i in range(len(U)):
-            #         if outputs['rated_V']<U[i] and U_added == False:
-            #             U_wR.append(outputs['rated_V'])
-            #             data_wR.append(data_rated)
-            #             U_added = True
-            #         U_wR.append(U[i])
-            #         data_wR.append(data[i])
-            # else:
-            #     U_wR = U
-
-            # P_fast = np.array([np.mean(datai['GenPwr']) for datai in data_wR])*1000.
-            # for i, (Pi, Vi) in enumerate(zip(P_fast, U_wR)):
-            #     if Vi > outputs['rated_V']:
-            #         if np.abs((Pi-inputs['control_ratedPower'])/inputs['control_ratedPower']) > 0.2:
-            #             P_fast[i] = inputs['control_ratedPower']
-            #             above_rate_power_warning = "FAST instability expected at U=%f m/s, abs(outputted power) > +/-20%% of rated power.  Replaceing %f with %f"%(Vi, Pi, inputs['control_ratedPower'])
-            #             warnings.warn(above_rate_power_warning)
-
-            # P_spline = PchipInterpolator(U_wR, P_fast)
-
-            P_spline = PchipInterpolator(U, P_fast)
-
-            P_out = P_spline(inputs['V_out'])
-            # np.place(P_out, P_out>inputs['control_ratedPower'], inputs['control_ratedPower'])
-            outputs['P_out'] = P_out
-
-            P = P_spline(inputs['V'])
-            # np.place(P, P>inputs['control_ratedPower'], inputs['control_ratedPower'])
-            outputs['P'] = P
-
-
-            outputs['Cp']          = np.mean(data_rated["RtAeroCp"])
-            outputs['rated_V']     = np.mean(data_rated["Wind1VelX"])
-            outputs['rated_Omega'] = np.mean(data_rated["RotSpeed"])
-            outputs['rated_pitch'] = np.mean(data_rated["BldPitch1"])
-            outputs['rated_T']     = np.mean(data_rated["RotThrust"])*1000
-            outputs['rated_Q']     = np.mean(data_rated["RotTorq"])*1000
-
-            # import matplotlib.pyplot as plt
-            # plt.plot(U, P, 'o')
-            # plt.plot(inputs['V_out'], outputs['P_out'])            
-            # plt.show()
-
-        ############
-
-        Gust_Outputs = False
-        Extreme_Outputs = False
-        AEP_Outputs = False
-        #
-        for casei in case_keys:
-            if Gust_Outputs and Extreme_Outputs:
-                break
-
-            if casei == 1:
-                # power curve
-                if AEP_Outputs:
-                    pass
-                else:
-                    idx_AEP = [i for i, casej in enumerate(case_keys) if casej==1]
-                    data = [datai for i, datai in enumerate(FAST_Output) if i in idx_AEP]
-                    post_AEP(data)
-                    AEP_Outputs = True
-
-            if casei in [2]:
-                # gust: return tip deflections and bending moments
-                idx_gust = case_keys.index(casei)
-                data = FAST_Output[idx_gust]
-                post_gust(data, casei)
-                Gust_Outputs = True
-
-            if casei in [3]:
-                # extreme wind speed: return aeroloads for strains
-                idx_extreme = case_keys.index(casei)
-                data = FAST_Output[idx_extreme]
-                post_extreme(data, casei)
-                Extreme_Outputs = True
-
-            if casei in [4]:
-                # turbulent wind with multiplt seeds
-                idx_turb = [i for i, casej in enumerate(case_keys) if casej==4]
-                data_concat = {}
-                for i, fast_out_idx in enumerate(idx_turb):
-                    datai = FAST_Output[idx_turb[fast_out_idx]]
-
-                    for var in datai.keys():
-                        if i == 0:
-                            data_concat[var] = []
-                        data_concat[var].extend(list(datai[var]))
-
-                for var in data_concat.keys():
-                    data_concat[var] = np.array(data_concat[var])
-
-                post_gust(data_concat, casei)
-                # post_extreme(data_concat, casei)
-                Gust_Outputs = True
-                # Extreme_Outputs = True
-
+        #         post_gust(data_concat, casei)
+        #         # post_extreme(data_concat, casei)
+        #         Gust_Outputs = True
+        #         # Extreme_Outputs = True
 
     def writeCpsurfaces(self, inputs):
         
         FASTpref  = self.options['analysis_options']['openfast']['FASTpref']
-        file_name = os.path.join(FASTpref['FAST_runDirectory'], FASTpref['FAST_namingOut'] + '_Cp_Ct_Cq.dat')
+        file_name = os.path.join(FASTpref['file_management']['FAST_runDirectory'], FASTpref['file_management']['FAST_namingOut'] + '_Cp_Ct_Cq.dat')
         
         # Write Cp-Ct-Cq-TSR tables file
         n_pitch = len(inputs['pitch_vector'])

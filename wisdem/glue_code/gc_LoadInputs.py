@@ -1,5 +1,5 @@
 import numpy as np
-import time
+import time, os
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_DAC_rated
 
@@ -33,32 +33,19 @@ class WindTurbineOntologyPython(object):
         self.openmdao_vectors()
         
         # Openfast
-        FASTpref                        = {}
-        FASTpref['Analysis_Level']      = self.analysis_options['openfast']['Analysis_Level']
-        FASTpref['FAST_ver']            = self.analysis_options['openfast']['FAST_ver']
-        FASTpref['dev_branch']          = self.analysis_options['openfast']['dev_branch']
-        FASTpref['FAST_exe']            = self.analysis_options['openfast']['FAST_exe']
-        FASTpref['FAST_directory']      = self.analysis_options['openfast']['FAST_directory']
-        FASTpref['FAST_InputFile']      = self.analysis_options['openfast']['FAST_InputFile']
-        FASTpref['Turbsim_exe']         = self.analysis_options['openfast']['Turbsim_exe']
-        FASTpref['FAST_namingOut']      = self.analysis_options['openfast']['FAST_namingOut']
-        FASTpref['FAST_runDirectory']   = self.analysis_options['openfast']['FAST_runDirectory']
-        FASTpref['path2dll']            = self.analysis_options['openfast']['path2dll']
-        FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
-        FASTpref['DLC_gust']            = None      # Max deflection
-        FASTpref['DLC_extrm']           = None      # Max strain
-        FASTpref['DLC_turbulent']       = RotorSE_DAC_rated
-        FASTpref['DLC_powercurve']      = None      # AEP
-        if FASTpref['Analysis_Level'] > 0:
-            fast = InputReader_OpenFAST(FAST_ver=FASTpref['FAST_ver'], dev_branch=FASTpref['dev_branch'])
-            fast.FAST_InputFile = FASTpref['FAST_InputFile']
-            fast.FAST_directory = FASTpref['FAST_directory']
-            fast.path2dll = FASTpref['path2dll']
+        if self.analysis_options['openfast']['analysis_settings']['Analysis_Level'] > 0:
+            # Load Input OpenFAST model variable values
+            fast                = InputReader_OpenFAST(FAST_ver=self.analysis_options['openfast']['file_management']['FAST_ver'])
+            fast.FAST_InputFile = self.analysis_options['openfast']['file_management']['FAST_InputFile']
+            fast.FAST_directory = self.analysis_options['openfast']['file_management']['FAST_directory']
+            fast.path2dll       = self.analysis_options['openfast']['file_management']['path2dll']
             fast.execute()
             self.analysis_options['openfast']['fst_vt']   = fast.fst_vt
+
+            if os.path.exists(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']):
+                self.analysis_options['openfast']['fst_settings'] = dict(self.load_yaml(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']))
         else:
             self.analysis_options['openfast']['fst_vt']   = {}
-        self.analysis_options['openfast']['FASTpref'] = FASTpref
 
         return self.analysis_options, self.wt_init
 
@@ -276,7 +263,7 @@ class WindTurbineOntologyPython(object):
             I.append(Ii.tolist())
         self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'] = I
 
-        if self.analysis_options['openfast']['update_hub_nacelle']:
+        if self.analysis_options['openfast']['analysis_settings']['update_hub_nacelle']:
             # Update hub
             self.wt_init['components']['hub']['outer_shape_bem']['diameter']   = float(wt_opt['hub.diameter'])
             self.wt_init['components']['hub']['outer_shape_bem']['cone_angle'] = float(wt_opt['hub.cone'])

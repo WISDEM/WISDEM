@@ -138,16 +138,52 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             exit('ERROR: the parallelization logic only works for an even number of cores available')
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
-        if analysis_options['openfast']['run_openfast']:
+        if analysis_options['Analysis_Flags']['OpenFAST']:
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, otherwise it is half of the number of DV (rounded to the lower integer). We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
             if max_cores > 2. * n_DV:
                 n_FD = n_DV
             else:
                 n_FD = int(np.floor(max_cores / 2))
+
             # The number of OpenFAST runs is the minimum between the actual number of requested OpenFAST simulations, and the number of cores available (minus the number of DV, which sit and wait for OF to complete)
-            n_OF_runs = analysis_options['openfast']['n_simulations']
+            
+            # need to calculate the number of OpenFAST runs from the user input
+            n_OF_runs = 0
+            if analysis_options['openfast']['dlc_settings']['run_power_curve']:
+                if analysis_options['openfast']['dlc_settings']['Power_Curve']['turbulent_power_curve']:
+                    n_OF_runs += len(analysis_options['openfast']['dlc_settings']['Power_Curve']['U'])*len(analysis_options['openfast']['dlc_settings']['Power_Curve']['Seeds'])
+                else:
+                    n_OF_runs += len(analysis_options['openfast']['dlc_settings']['Power_Curve']['U'])
+            if analysis_options['openfast']['dlc_settings']['run_IEC']:
+                for dlc in analysis_options['openfast']['dlc_settings']['IEC']:
+                    dlc_vars = list(dlc.keys())
+                    # Number of wind speeds
+                    if 'U' not in dlc_vars:
+                        if dlc['DLC'] == 1.4: # assuming 1.4 is run at [V_rated-2, V_rated, V_rated] and +/- direction change
+                            n_U = 6
+                        elif dlc['DLC'] == 5.1: # assuming 1.4 is run at [V_rated-2, V_rated, V_rated]
+                            n_U = 3
+                        elif dlc['DLC'] in [6.1, 6.3]: # assuming V_50 for [-8, 8] deg yaw error
+                            n_U = 2
+                        else:
+                            print('Warning: for OpenFAST DLC %1.1f specified in the Analysis Options, wind speeds "U" must be provided'%dlc['DLC'])
+                    else:
+                        n_U = len(dlc['U'])
+                    # Number of seeds
+                    if 'Seeds' not in dlc_vars:
+                        if dlc['DLC'] == 1.4: # not turbulent
+                            n_Seeds = 1
+                        else:
+                            print('Warning: for OpenFAST DLC %1.1f specified in the Analysis Options, turbulent seeds "Seeds" must be provided'%dlc['DLC'])
+                    else:
+                        n_Seeds = len(dlc['Seeds'])
+
+                    n_OF_runs += n_U*n_Seeds
+
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
+
+            analysis_options['openfast']['dlc_settings']['n_OF_runs'] = n_OF_runs
         else:
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
             n_FD = min([max_cores, n_DV])
@@ -169,17 +205,17 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
-            if analysis_options['openfast']['run_openfast']:
+            if analysis_options['Analysis_Flags']['OpenFAST']:
                 # Parallel settings for OpenFAST
-                analysis_options['openfast']['FASTpref']['mpi_run']           = True
-                analysis_options['openfast']['FASTpref']['mpi_comm_map_down'] = comm_map_down
-                analysis_options['openfast']['FASTpref']['cores']             = n_OF_runs_parallel            
+                analysis_options['openfast']['analysis_settings']['mpi_run']           = True
+                analysis_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
+                analysis_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
             # Parallel settings for OpenMDAO
             wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
             wt_opt.model.add_subsystem('comp', WindPark(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
-            analysis_options['openfast']['FASTpref']['cores'] = 1
+            analysis_options['openfast']['analysis_settings']['cores'] = 1
             wt_opt = om.Problem(model=WindPark(analysis_options = analysis_options, opt_options = opt_options))
 
         # If at least one of the design variables is active, setup an optimization
@@ -427,7 +463,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             
             control_constraints = opt_options['constraints']['control']
             if control_constraints['flap_control']['flag']:
-                if analysis_options['openfast']['run_openfast'] != True:
+                if analysis_options['Analysis_Flags']['OpenFAST'] != True:
                     exit('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
                 wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Kp',
                     lower = control_constraints['flap_control']['min'],
@@ -542,7 +578,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             # Save data coming from openmdao to an output yaml file
             wt_initial.write_ontology(wt_opt, fname_wt_output)
 
-    if MPI and analysis_options['openfast']['run_openfast']:
+    if MPI and analysis_options['Analysis_Flags']['OpenFAST']:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
@@ -555,7 +591,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         sys.stdout.flush()
 
     # Save data to numpy and matlab arrays
-    fileIO.save_data(fname_wt_output, wt_opt)
+    #fileIO.save_data(fname_wt_output, wt_opt)  # TODO: EMG, this was throwing errors, need to track it down
         
     return wt_opt, analysis_options, opt_options
 
@@ -618,7 +654,7 @@ if __name__ == "__main__":
     
     ## File management
     run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'glue_code' + os.sep + 'reference_turbines' + os.sep
-    fname_wt_input         = run_dir + "nrel5mw_mod_update.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    fname_wt_input         = run_dir + "IEA-15-240-RWT_WISDEMieaontology4all.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
     fname_opt_options      = run_dir + "optimization_options.yaml"
     fname_wt_output        = run_dir + "nrel5mw_mod_update_output.yaml"

@@ -33,7 +33,7 @@ class WT_RNTA(Group):
         self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
         self.add_subsystem('sse',       ServoSE(analysis_options = analysis_options)) # Aero analysis
             
-        if analysis_options['openfast']['run_openfast'] == True:
+        if analysis_options['Analysis_Flags']['OpenFAST'] == True:
             self.add_subsystem('freq_rotor',  RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
             #if analysis_options['Analysis_Flags']['TowerSE']:
             self.add_subsystem('freq_tower',  TowerSE(analysis_options=analysis_options, topLevelFlag=False))
@@ -162,7 +162,7 @@ class WT_RNTA(Group):
         self.connect('env.weibull_k',                  'sse.cdf.k')
 
         
-        if analysis_options['openfast']['run_openfast']:
+        if analysis_options['Analysis_Flags']['OpenFAST']:
 
             self.connect('sse.powercurve.rated_V',         ['sse_tune.tune_rosco.v_rated'])
             self.connect('sse.gust.V_gust',                ['freq_rotor.aero_gust.V_load', 'freq_rotor.aero_hub_loads.V_load'])
@@ -264,7 +264,7 @@ class WT_RNTA(Group):
             self.connect('pc.tsr_opt',                      'sse_tune.tsr_operational')
             self.connect('control.rated_power',             'sse_tune.rated_power')
 
-            self.connect('nacelle.gear_ratio',              'sse_tune.tune_rosco.gear_ratio')
+            # self.connect('nacelle.gear_ratio',              'sse_tune.tune_rosco.gear_ratio')
             self.connect('assembly.rotor_radius',           'sse_tune.tune_rosco.R')
             self.connect('elastic.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
             self.connect('freq_rotor.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
@@ -414,7 +414,7 @@ class WT_RNTA(Group):
         #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
           
         # Connections to aeroelasticse
-        if analysis_options['openfast']['run_openfast'] == True:
+        if analysis_options['Analysis_Flags']['OpenFAST'] == True:
             self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
             self.connect('assembly.r_blade',                'aeroelastic.r')
@@ -557,7 +557,7 @@ class WindPark(Group):
         self.connect('sse.AEP',                    'outputs_2_screen.aep')
         self.connect('elastic.precomp.blade_mass', 'outputs_2_screen.blade_mass')
         self.connect('financese.lcoe',             'outputs_2_screen.lcoe')
-        if analysis_options['openfast']['run_openfast'] == True:
+        if analysis_options['Analysis_Flags']['OpenFAST'] == True:
             self.connect('aeroelastic.My_std',         'outputs_2_screen.My_std')
             self.connect('aeroelastic.flp1_std',       'outputs_2_screen.flp1_std')
             self.connect('control.PC_omega',        'outputs_2_screen.PC_omega')
