@@ -292,7 +292,7 @@ class CaseGen_IEC():
         # Save case matrix file
         self.save_joined_case_matrix(case_list_all, dlc_all, case_names_all)
 
-        return case_list_all, case_names_all
+        return case_list_all, case_names_all, dlc_all
 
 
     def join_case_dicts(self, caselist, caselist_add):

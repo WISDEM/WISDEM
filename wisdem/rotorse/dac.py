@@ -191,7 +191,7 @@ class RunXFOIL(ExplicitComponent):
 
         # Use openfast cores for parallelization of xfoil 
         # nja - Probably want to change this so XFOIL parallelization is a flag?
-        FASTpref = self.options['analysis_options']['openfast']['FASTpref']
+        FASTpref = self.options['analysis_options']['openfast']
         xfoilpref = self.options['analysis_options']['xfoil']
 
         try:
@@ -202,8 +202,8 @@ class RunXFOIL(ExplicitComponent):
         except KeyError:
             self.cores = 1
         
-        if MPI and self.options['analysis_options']['openfast']['run_openfast']:
-            self.mpi_comm_map_down = FASTpref['mpi_comm_map_down']
+        if MPI and self.options['analysis_options']['Analysis_Flags']['OpenFAST']:
+            self.mpi_comm_map_down = FASTpref['analysis_settings']['mpi_comm_map_down']
 
         # Inputs blade outer shape
         self.add_input('s',          val=np.zeros(n_span),                      desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
