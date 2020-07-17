@@ -2,15 +2,13 @@
 import numpy as np
 import openmdao.api as om
 from layout import Geometry
-from generator import Generator
+#from generator import Generator
 import drive_structure as ds
 from rna import RNAMass
 import drive_components as dc
 
-#--------------------------------------------
-
         
-class DriveSE(om.Group):
+class DrivetrainSE(om.Group):
     ''' Class Drive4pt defines an OpenMDAO group that represents a wind turbine drivetrain with a 4-point suspension
       (two main bearings). This Group can serve as the root of an OpenMDAO Problem.
     '''
@@ -81,4 +79,11 @@ class DriveSE(om.Group):
         self.add_subsystem('rna', RNAMass(), promotes=['*'])
         self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(), promotes=['*'])
         #self.add_subsystem('loads', RotorLoads(), promotes=['*']) Get this from Frame3DD reaction forces, although careful about mass/force inclusion
-            
+
+        
+if __name__ == '__main__':
+    prob = om.Problem()
+    prob.model = DrivetrainSE(topLevelFlag=False, n_points=5)
+    prob.setup()
+    prob.run()
+    
