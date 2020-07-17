@@ -257,10 +257,10 @@ class RailTransport(ExplicitComponent):
             xnode_dim = xnode_dim_no_theta * np.cos(theta_rad) - ynode_dim_no_theta * np.sin(theta_rad)
             ynode_dim = xnode_dim_no_theta * np.sin(theta_rad) + ynode_dim_no_theta * np.cos(theta_rad)
 
-            yss[i] = max(ynode_dim) - y_sc[i]
-            yps[i] = y_sc[i] - min(ynode_dim)
-            xte[i] = max(xnode_dim) - x_sc[i]
-            xle[i] = x_sc[i] - min(xnode_dim)
+            yss[i] = max(ynode_dim) - y_sc_cs[i]
+            yps[i] = y_sc_cs[i] - min(ynode_dim)
+            xte[i] = max(xnode_dim) - x_sc_cs[i]
+            xle[i] = x_sc_cs[i] - min(xnode_dim)
 
         # Put these sectional points in airfoil principle directions
         xps_cs, yps_cs = yps, xps

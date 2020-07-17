@@ -69,7 +69,6 @@ class InputReader_Common(object):
     def __init__(self, **kwargs):
 
         self.FAST_ver = 'OPENFAST'
-        self.dev_branch = False      # branch: pullrequest/ganesh : 5b78391
         self.FAST_InputFile = None   # FAST input file (ext=.fst)
         self.FAST_directory = None   # Path to fst directory files
         self.path2dll       = None   # Path to dll file
@@ -1035,8 +1034,7 @@ class InputReader_OpenFAST(InputReader_Common):
         # Blade-Element/Momentum Theory Options
         f.readline()
         self.fst_vt['AeroDyn15']['SkewMod']               = int(f.readline().split()[0])
-        if self.dev_branch:
-            self.fst_vt['AeroDyn15']['SkewModFactor']     = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SkewModFactor']     = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TipLoss']               = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['HubLoss']               = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TanInd']                = bool_read(f.readline().split()[0])
@@ -1046,10 +1044,9 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['AeroDyn15']['MaxIter']               = int(f.readline().split()[0])
 
         # Dynamic Blade-Element/Momentum Theory Options 
-        if self.dev_branch:
-            f.readline()
-            self.fst_vt['AeroDyn15']['DBEMT_Mod']          = int(f.readline().split()[0])
-            self.fst_vt['AeroDyn15']['tau1_const']         = int(f.readline().split()[0])
+        f.readline()
+        self.fst_vt['AeroDyn15']['DBEMT_Mod']          = int(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['tau1_const']         = int(f.readline().split()[0])
 
         # Beddoes-Leishman Unsteady Airfoil Aerodynamics Options
         f.readline()
@@ -2454,7 +2451,6 @@ if __name__=="__main__":
     
     FAST_ver = 'OpenFAST'
     read_yaml = False
-    dev_branch = True
 
     if read_yaml:
         fast = InputReader_Common(FAST_ver=FAST_ver)
@@ -2473,7 +2469,7 @@ if __name__=="__main__":
             fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/FAST_v8.16.00a-bjj/ref/5mw_onshore/'   # Path to fst directory files
 
         elif FAST_ver.lower() == 'openfast':
-            fast = InputReader_OpenFAST(FAST_ver=FAST_ver, dev_branch=dev_branch)
+            fast = InputReader_OpenFAST(FAST_ver=FAST_ver)
             fast.FAST_InputFile = '5MW_OC3Spar_DLL_WTurb_WavesIrr.fst'   # FAST input file (ext=.fst)
             fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_OC3Spar_DLL_WTurb_WavesIrr'   # Path to fst directory files
 

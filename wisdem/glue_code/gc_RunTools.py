@@ -107,7 +107,7 @@ class Outputs_2_Screen(ExplicitComponent):
         print('Turbine AEP: {:8.10f} GWh'.format(inputs['aep'][0]))
         print('Blade Mass:  {:8.10f} kg'.format(inputs['blade_mass'][0]))
         print('LCOE:        {:8.10f} USD/MWh'.format(inputs['lcoe'][0]))
-        if self.options['analysis_options']['openfast']['run_openfast'] == True: 
+        if self.options['analysis_options']['Analysis_Flags']['OpenFAST'] == True: 
             if self.options['opt_options']['optimization_variables']['control']['servo']['pitch_control']['flag'] == True:
                 print('Pitch PI gain inputs: pc_omega = {:2.3f}, pc_zeta = {:2.3f}'.format(inputs['PC_omega'][0], inputs['PC_zeta'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['torque_control']['flag'] == True:
