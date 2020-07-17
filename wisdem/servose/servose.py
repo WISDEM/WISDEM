@@ -33,14 +33,11 @@ class ServoSE(Group):
     def setup(self):
         analysis_options = self.options['analysis_options']
 
-        self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','drivetrainEff','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+        self.add_subsystem('powercurve',        RegulatedPowerCurve(analysis_options   = analysis_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         self.add_subsystem('gust',              GustETM())
-        self.add_subsystem('stall_check',       NoStallConstraint(analysis_options   = analysis_options), promotes = ['airfoils_aoa','airfoils_cl','airfoils_cd','airfoils_cm'])
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=analysis_options['servose']['n_pc_spline']))
-        self.add_subsystem('aep',               AEP(), promotes=['AEP'])
+        self.add_subsystem('aep',               AEP(nspline=analysis_options['servose']['n_pc_spline']), promotes=['AEP'])
 
-        # Connections to the stall check
-        self.connect('powercurve.aoa_regII','stall_check.aoa_along_span')
 
         # Connections to the Weibull CDF
         self.connect('powercurve.V_spline', 'cdf.x')
@@ -144,7 +141,8 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_input('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
         self.add_input('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
-        self.add_input('gen_eff',           val=0.0,                                desc='Drivetrain efficiency')
+        self.add_input('gearbox_efficiency',val=0.0,                                desc='Gearbox efficiency')
+        self.add_input('generator_efficiency', val=0.0,                             desc='Generator efficiency')
         # 
         self.add_input('max_pitch',         val=0.0,        units='rad',            desc='')
         self.add_input('min_pitch',         val=0.0,        units='rad',            desc='')
@@ -251,10 +249,11 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rho          = inputs['rho'][0]
         WISDEM_turbine.rotor_radius = inputs['R'][0]
         WISDEM_turbine.Ng           = inputs['gear_ratio'][0]
-        WISDEM_turbine.gen_eff      = inputs['gen_eff'][0]
+        WISDEM_turbine.GenEff       = inputs['generator_efficiency'][0]
+        WISDEM_turbine.GBoxEff      = inputs['gearbox_efficiency'][0]
         WISDEM_turbine.rated_rotor_speed   = inputs['rated_rotor_speed'][0]
         WISDEM_turbine.rated_power  = inputs['rated_power'][0]
-        WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * WISDEM_turbine.gen_eff
+        WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / (WISDEM_turbine.Ng * inputs['gearbox_efficiency'][0] * inputs['generator_efficiency'][0])
         WISDEM_turbine.v_rated      = inputs['v_rated'][0]
         WISDEM_turbine.v_min        = inputs['v_min'][0]
         WISDEM_turbine.v_max        = inputs['v_max'][0]
@@ -442,7 +441,8 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input('tsr_operational',        val=0.0,               desc='tip-speed ratio in Region 2 (should be optimized externally)')
         self.add_input('control_pitch',      val=0.0, units='deg',  desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
         self.add_discrete_input('drivetrainType',     val='GEARED')
-        self.add_input('drivetrainEff',     val=0.0,               desc='overwrite drivetrain model with a given efficiency, used for FAST analysis')
+        self.add_input('gearbox_efficiency',     val=0.0,               desc='Gearbox efficiency')
+        self.add_input('generator_efficiency',   val=0.0,               desc='Generator efficiency')
         
         self.add_input('r',         val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
         self.add_input('chord',     val=np.zeros(n_span), units='m',   desc='chord length at each section')
@@ -540,7 +540,7 @@ class ComputePowerCurve(ExplicitComponent):
         R_tip     = inputs['Rtip']
         tsr       = inputs['tsr_operational']
         driveType = discrete_inputs['drivetrainType']
-        driveEta  = inputs['drivetrainEff']
+        driveEta  = inputs['gearbox_efficiency'] * inputs['generator_efficiency']
         
         # Set rotor speed based on TSR
         Omega_tsr = Uhub * tsr / R_tip
@@ -932,7 +932,6 @@ class NoStallConstraint(ExplicitComponent):
         self.n_tab         = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         
         self.add_input('s',                     val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
-        self.add_input('stall_angle_along_span',val=np.zeros(n_span), units = 'deg', desc = 'Stall angle along blade span')
         self.add_input('aoa_along_span',        val=np.zeros(n_span), units = 'deg', desc = 'Angle of attack along blade span')
         self.add_input('stall_margin',          val=3.0,            units = 'deg', desc = 'Minimum margin from the stall angle')
         self.add_input('min_s',                 val=0.25,            desc = 'Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)')
@@ -941,7 +940,8 @@ class NoStallConstraint(ExplicitComponent):
         self.add_input('airfoils_cm',           val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
         self.add_input('airfoils_aoa',          val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
         
-        self.add_output('no_stall_constraint',  val=np.zeros(n_span), desc = 'Constraint, ratio between angle of attack plus a margin and stall angle')
+        self.add_output('no_stall_constraint',   val=np.zeros(n_span), desc = 'Constraint, ratio between angle of attack plus a margin and stall angle')
+        self.add_output('stall_angle_along_span',val=np.zeros(n_span), units = 'deg', desc = 'Stall angle along blade span')
 
     def compute(self, inputs, outputs):
         
@@ -951,12 +951,12 @@ class NoStallConstraint(ExplicitComponent):
         
         for i in range(self.n_span):
             unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,0], inputs['airfoils_cd'][i,:,0,0], inputs['airfoils_cm'][i,:,0,0])
-            inputs['stall_angle_along_span'][i] = unsteady['alpha1']
-            if inputs['stall_angle_along_span'][i] == 0:
-                inputs['stall_angle_along_span'][i] = 1e-6 # To avoid nan
+            outputs['stall_angle_along_span'][i] = unsteady['alpha1']
+            if outputs['stall_angle_along_span'][i] == 0:
+                outputs['stall_angle_along_span'][i] = 1e-6 # To avoid nan
         
         for i in range(i_min, self.n_span):
-            outputs['no_stall_constraint'][i] = (inputs['aoa_along_span'][i] + inputs['stall_margin']) / inputs['stall_angle_along_span'][i]
+            outputs['no_stall_constraint'][i] = (inputs['aoa_along_span'][i] + inputs['stall_margin']) / outputs['stall_angle_along_span'][i]
         
             if verbosity == True:
                 if outputs['no_stall_constraint'][i] > 1:
@@ -964,11 +964,12 @@ class NoStallConstraint(ExplicitComponent):
 
 
 class AEP(ExplicitComponent):
-    # def initialize(self):
-    #     self.options.declare('n_pc_spline', default = 200)
+    def initialize(self):
+
+        self.options.declare('nspline')
     
     def setup(self):
-        n_pc_spline = 200
+        n_pc_spline      = self.options['nspline']
         """integrate to find annual energy production"""
 
         # inputs

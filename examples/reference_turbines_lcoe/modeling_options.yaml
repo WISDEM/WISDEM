@@ -4,7 +4,8 @@ general:
 Analysis_Flags:
     # Control which WISDEM modules are executed.
     # (GOAL) If inputs are missing for a module, a warning will be written to the screen and the module disabled.
-    TowerSE: True
+    OpenFAST: True   # Flag to run aeroelasticse, the wrapper of OpenFAST
+    TowerSE:  False
 
 yaml:
     validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
@@ -20,23 +21,54 @@ rotorse:
     n_span: 30        # Number of spanwise stations used to define the blade properties
 
 openfast:
-    run_openfast: False         # Flag to run aeroelasticse, the wrapper of OpenFAST
-    Analysis_Level: 0           # Flag to set the call to OpenFAST. 0 - no call, 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
-    FAST_ver: OpenFAST          # Version of OpenFAST, do not change
-    dev_branch: True            # Git branch of OpenFAST, do not change
-    FAST_exe: openfast/build/glue-codes/openfast/openfast    # Path to OpenFAST executable
-    FAST_directory: "/Model_xyz/"  # Path to folder with the OpenFAST input files
-    FAST_InputFile: model.fst             # Name of the main OpenFAST input file (.fst)
-    path2dll: Controller/libdiscon.so     # Path to the the compiled ROSCO controller
-    Turbsim_exe: /install/bin/turbsim_dev   # Path to TurbSim executable
-    FAST_namingOut: WISDEM_BAR2011n         # Name of the OpenFAST output files
-    FAST_runDirectory: temp_bar             # Path to folder with the OpenFAST output files
-    n_simulations: 4  # Number of OpenFAST simulations to run per evaluation of the objective function
-    debug_level: 2    # Flag to set the debug level, do not change
-    update_hub_nacelle: True
-    generate_af_coords: False
+    analysis_settings:
+        Analysis_Level:     2           # Flag to set the call to OpenFAST. 0 - no call, 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
+        update_hub_nacelle: False
+        update_tower:       False
+        generate_af_coords: False
+        debug_level:        2    # Flag to set the debug level, do not change
+    file_management:
+        FAST_ver:          OpenFAST          # Version of OpenFAST, do not change
+        FAST_exe:          /bin/openfast    # Path to OpenFAST executable
+        FAST_directory:    "/mnt/c/Users/egaertne/RefModels/IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/"  # Path to folder with the OpenFAST input files
+        FAST_InputFile:    IEA-15-240-RWT-Monopile.fst             # Name of the main OpenFAST input file (.fst)
+        path2dll:          "/mnt/c/Users/egaertne/RefModels/IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/ServoData/libdiscon.so"     # Path to the the compiled ROSCO controller
+        Turbsim_exe:       /bin/turbsim   # Path to TurbSim executable
+        FAST_namingOut:    Testing         # Name of the OpenFAST output files
+        FAST_runDirectory: temp/Testing             # Path to folder with the OpenFAST output files
+        Simulation_Settings_File: "../../examples/reference_turbines_lcoe/openfast_settings.yaml"
+    dlc_settings:
+        run_power_curve: True
+        run_IEC:         True
+        IEC: # Currently supported: 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3
+            - DLC:   1.1
+              U:     [9.]
+              Seeds: [11, 12]
+            # - DLC:   1.1
+            #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+            #   Seeds: [11, 12, 13, 14, 15, 16]
+            # - DLC:   1.3
+            #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+            #   Seeds: [11, 12, 13, 14, 15, 16]
+            # - DLC:   1.4
+            # - DLC:   1.5
+            #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+            #   Seeds: [11, 12, 13, 14, 15, 16]
+            # - DLC:   5.1
+            #   Seeds: [11, 12, 13, 14, 15, 16]
+            # - DLC:   6.1
+            #   Seeds: [11, 12, 13, 14, 15, 16]
+            # - DLC:   6.3
+            #   Seeds: [11, 12, 13, 14, 15, 16]
+        Power_Curve:
+            turbulent_power_curve: True # False: Steady Wind, True: Turbulent Inflow
+            U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+            # Seeds: [11, 12, 13, 14, 15, 16] # Used only when turbulent_power_curve=True
+            # U:     [3., 9., 11., 15.]
+            Seeds: [11, 12] # Used only when turbulent_power_curve=True
 
 tower:             # Options of TowerSE module
+  run_towerse: True
   nLC: 1           # Number of design load cases in TowerSE
   wind: PowerWind  # Wind used in TowerSE
   gamma_f: 1.35    # Safety factor for fatigue loads in TowerSE
@@ -58,6 +90,7 @@ tower:             # Options of TowerSE module
     add_gravity: True
 
 servose:
+    run_servose: True
     n_pc: 20                        # Number of wind speeds to compute the power curve
     n_pc_spline: 200                # Number of wind speeds to spline the power curve 
     n_pitch_perf_surfaces: 20       # Number of pitch angles to determine the Cp-Ct-Cq-surfaces

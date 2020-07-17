@@ -76,7 +76,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         nacelle.add_output('hss_input_length', val=0.0, units='m')
         nacelle.add_output('distance_hub2mb',  val=0.0, units='m')
         nacelle.add_discrete_output('yaw_motors_number', val = 0)
-        nacelle.add_output('drivetrain_eff',   val=0.0)
+        nacelle.add_output('gearbox_efficiency',   val=0.0, desc='Efficiency of the gearbox. Set it equal to 1 for direct-drive machines')
+        nacelle.add_output('generator_efficiency', val=0.0, desc='Efficiency of the generator.')
         self.add_subsystem('nacelle', nacelle)
         
         # Tower inputs
@@ -905,6 +906,7 @@ class Hub(om.Group):
 
         ivc.add_output('system_mass',  val=0.0,         units='kg',        desc='Mass of hub system')
         ivc.add_output('system_I',     val=np.zeros(6), units='kg*m**2',   desc='Mass moments of Inertia of hub [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass in yaw-aligned c.s.')
+        ivc.add_output('system_cm',    val=np.zeros(3), units='m',         desc='Center of mass in yaw-aligned c.s.')
         
         exec_comp = om.ExecComp('radius = 0.5 * diameter', units='m', radius={'desc' : 'Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.'})
         self.add_subsystem('compute_radius', exec_comp, promotes=['*'])

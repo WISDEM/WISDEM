@@ -9,6 +9,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver, CaseReader
+from wisdem.commonse.mpi_tools        import MPI
 
 class Opt_Data(object):
     # Pure python class to set the optimization parameters:
@@ -51,8 +52,11 @@ class Convergence_Trends_Opt(ExplicitComponent):
         
         folder_output       = self.options['opt_options']['folder_output']
         optimization_log    = self.options['opt_options']['optimization_log']
-
-        if os.path.exists(optimization_log):
+        if MPI:
+            rank = MPI.COMM_WORLD.Get_rank()
+        else:
+            rank = 0
+        if os.path.exists(optimization_log) and rank == 0:
         
             cr = CaseReader(optimization_log)
             cases = cr.list_cases()

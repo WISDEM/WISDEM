@@ -144,7 +144,6 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 n_FD = n_DV
             else:
                 n_FD = int(np.floor(max_cores / 2))
-
             # The number of OpenFAST runs is the minimum between the actual number of requested OpenFAST simulations, and the number of cores available (minus the number of DV, which sit and wait for OF to complete)
             
             # need to calculate the number of OpenFAST runs from the user input
@@ -287,7 +286,10 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             elif opt_options['merit_figure'] == 'tower_cost':
                 wt_opt.model.add_objective('tcc.tower_cost')
             elif opt_options['merit_figure'] == 'Cp':
-                wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
+                if analysis_options['servose']['run_servose']:
+                    wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
+                else:
+                    wt_opt.model.add_objective('ccblade.CP', ref = -1.)
             elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
                 wt_opt.model.add_objective('aeroelastic.My_std', ref = 1.e6)
             elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
@@ -384,7 +386,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 
             if blade_constraints['stall']['flag']:
                 if blade_opt_options['aero_shape']['twist']['flag']:
-                    wt_opt.model.add_constraint('sse.stall_check.no_stall_constraint', upper= 1.0) 
+                    wt_opt.model.add_constraint('stall_check.no_stall_constraint', upper= 1.0) 
                 else:
                     print('WARNING: the margin to stall is set to be constrained, but twist is not an active design variable. The constraint is not enforced.')
 
@@ -431,7 +433,29 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 else:
                     exit('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
                     
-                    
+            if opt_options['constraints']['blade']['moment_coefficient']['flag']:
+                wt_opt.model.add_constraint('ccblade.CM', lower= opt_options['constraints']['blade']['moment_coefficient']['min'], upper= opt_options['constraints']['blade']['moment_coefficient']['max'])
+            if opt_options['constraints']['blade']['match_cl_cd']['flag_cl'] or opt_options['constraints']['blade']['match_cl_cd']['flag_cd']:
+                data_target = np.loadtxt(opt_options['constraints']['blade']['match_cl_cd']['filename'])
+                eta_opt     = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
+                target_cl   = np.interp(eta_opt, data_target[:,0], data_target[:,3])
+                target_cd   = np.interp(eta_opt, data_target[:,0], data_target[:,4])
+                eps_cl = 1.e-2
+                if opt_options['constraints']['blade']['match_cl_cd']['flag_cl']:
+                    wt_opt.model.add_constraint('ccblade.cl_n_opt', lower = target_cl-eps_cl, upper = target_cl+eps_cl)
+                if opt_options['constraints']['blade']['match_cl_cd']['flag_cd']:
+                    wt_opt.model.add_constraint('ccblade.cd_n_opt', lower = target_cd-eps_cl, upper = target_cd+eps_cl)
+            if opt_options['constraints']['blade']['match_L_D']['flag_L'] or opt_options['constraints']['blade']['match_L_D']['flag_D']:
+                data_target = np.loadtxt(opt_options['constraints']['blade']['match_L_D']['filename'])
+                eta_opt     = np.linspace(0., 1., opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
+                target_L   = np.interp(eta_opt, data_target[:,0], data_target[:,7])
+                target_D   = np.interp(eta_opt, data_target[:,0], data_target[:,8])
+            eps_L  = 1.e+2
+            if opt_options['constraints']['blade']['match_L_D']['flag_L']:
+                wt_opt.model.add_constraint('ccblade.L_n_opt', lower = target_L-eps_L, upper = target_L+eps_L)
+            if opt_options['constraints']['blade']['match_L_D']['flag_D']:
+                wt_opt.model.add_constraint('ccblade.D_n_opt', lower = target_D-eps_L, upper = target_D+eps_L)
+
             tower_constraints = opt_options['constraints']['tower']
             if tower_constraints['height_constraint']['flag']:
                 wt_opt.model.add_constraint('towerse.height_constraint',
@@ -447,11 +471,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             if tower_constraints['shell_buckling']['flag']:
                 wt_opt.model.add_constraint('towerse.post.shell_buckling', upper=1.0)
                 
-            if tower_constraints['weldability']['flag']:
-                wt_opt.model.add_constraint('towerse.weldability', upper=0.0)
+            if tower_constraints['constr_d_to_t']['flag']:
+                wt_opt.model.add_constraint('towerse.constr_d_to_t', upper=0.0)
                 
-            if tower_constraints['manufacturability']['flag']:
-                wt_opt.model.add_constraint('towerse.manufacturability', lower=0.0)
+            if tower_constraints['constr_taper']['flag']:
+                wt_opt.model.add_constraint('towerse.constr_taper', lower=0.0)
                 
             if tower_constraints['slope']['flag']:
                 wt_opt.model.add_constraint('towerse.slope', upper=1.0)
@@ -505,8 +529,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt_options['structure']['spar_cap_ps']['n_opt'])
         wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
         wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
-        wt_opt['sse.stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
-        
+        wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
+
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
         # so these values are correctly placed in the problem.
@@ -590,8 +614,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
-    # Save data to numpy and matlab arrays
-    #fileIO.save_data(fname_wt_output, wt_opt)  # TODO: EMG, this was throwing errors, need to track it down
+    if rank == 0:
+        # Save data to numpy and matlab arrays
+        fileIO.save_data(fname_wt_output, wt_opt)
         
     return wt_opt, analysis_options, opt_options
 
@@ -651,13 +676,13 @@ def wisdem_cmd():
     
 
 if __name__ == "__main__":
-    
+
     ## File management
-    run_dir = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep + 'glue_code' + os.sep + 'reference_turbines' + os.sep
-    fname_wt_input         = run_dir + "IEA-15-240-RWT_WISDEMieaontology4all.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
+    fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    fname_modeling_options = run_dir + "modeling_options.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
-    fname_opt_options      = run_dir + "optimization_options.yaml"
-    fname_wt_output        = run_dir + "nrel5mw_mod_update_output.yaml"
+    fname_wt_output        = run_dir + "output.yaml"
     folder_output          = run_dir + '/'
 
-    wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output)
+    wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)

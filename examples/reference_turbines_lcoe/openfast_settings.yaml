@@ -1,8 +1,8 @@
 # Variables are case sensitive.
 # [Fst, TStart]          : 120.
 # [Fst, TMax]            : 720.
-[Fst, TStart]          : 10.
-[Fst, TMax]            : 30.
+[Fst, TStart]          : 60.
+[Fst, TMax]            : 180.
 [Fst, OutFileFmt]      : 2
 
 [AeroDyn15, TwrPotent] : 0

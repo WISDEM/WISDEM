@@ -267,8 +267,9 @@ class WindTurbineOntologyPython(object):
             # Update hub
             self.wt_init['components']['hub']['outer_shape_bem']['diameter']   = float(wt_opt['hub.diameter'])
             self.wt_init['components']['hub']['outer_shape_bem']['cone_angle'] = float(wt_opt['hub.cone'])
-            self.wt_init['components']['hub']['elastic_properties_mb']['system_mass']      = float(wt_opt['drivese.hub_system_mass'])
-            self.wt_init['components']['hub']['elastic_properties_mb']['system_inertia']   = wt_opt['drivese.hub_system_I'].tolist()
+            self.wt_init['components']['hub']['elastic_properties_mb']['system_mass']        = float(wt_opt['drivese.hub_system_mass'])
+            self.wt_init['components']['hub']['elastic_properties_mb']['system_inertia']     = wt_opt['drivese.hub_system_I'].tolist()
+            self.wt_init['components']['hub']['elastic_properties_mb']['system_center_mass'] = wt_opt['drivese.hub_system_cm'].tolist()
             # Update nacelle
             self.wt_init['components']['nacelle']['outer_shape_bem']['uptilt_angle']        = float(wt_opt['nacelle.uptilt'])
             self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub']     = float(wt_opt['nacelle.distance_tt_hub'])
@@ -305,6 +306,12 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['monopile.s'].tolist()
                 self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['monopile.layer_thickness'][i,:].tolist()
 
+        # Update rotor nacelle assembly
+        self.wt_init['components']['RNA'] = {}
+        self.wt_init['components']['RNA']['elastic_properties_mb'] = {}
+        self.wt_init['components']['RNA']['elastic_properties_mb']['mass']        = float(wt_opt['drivese.rna_mass'])
+        self.wt_init['components']['RNA']['elastic_properties_mb']['inertia']     = wt_opt['drivese.rna_I_TT'].tolist()
+        self.wt_init['components']['RNA']['elastic_properties_mb']['center_mass'] = wt_opt['drivese.rna_cm'].tolist()
 
         # Update controller
         self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])

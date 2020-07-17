@@ -3,6 +3,7 @@ optimization_variables:
     aero_shape:
       twist:
         flag: False  # Flag to optimize the twist
+        inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
         n_opt: 8     # Number of control points along blade span
         lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647]          # Lower bounds for the twist in [rad] at the n_opt locations
         upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # Upper bounds for the twist in [rad] at the n_opt locations
@@ -111,6 +112,18 @@ constraints:
       edge_above_3P: False
       flap_below_3P: False
       edge_below_3P: False
+    moment_coefficient:
+      flag: False
+      max: 0.15 #0.16333
+      min: 0.13
+    match_cl_cd:
+      flag_cl: False
+      flag_cd: False
+      filename: /path2file.txt
+    match_L_D:
+      flag_L: False
+      flag_D: False
+      filename: /path2file.txt
   tower:
     height_constraint:
       flag: False
@@ -122,9 +135,9 @@ constraints:
       flag: False
     shell_buckling:
       flag: False
-    weldability:
+    constr_d_to_t:
       flag: False
-    manufacturability:
+    constr_taper:
       flag: False
     slope:
       flag: False
@@ -140,8 +153,9 @@ constraints:
 
 driver:
     tol: 1.e-2            # Optimality tolerance
-    max_major_iter: 10    # Maximum number of major design iterations
-    max_minor_iter: 100   # Maximum number of minor design iterations
+    max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
+    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
+    max_iter: 100         # Maximum number of iterations (SLSQP)
     solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     step_size: 1.e-3      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central

@@ -318,6 +318,7 @@ components:
         elastic_properties_mb:
             system_mass: 124613.72589731665
             system_inertia: [928666.5134633644, 928666.5134633644, 928666.5134633644, 0.0, 0.0, 0.0]
+            system_center_mass: [7.0, 0.0, 0.0]
     nacelle:
         outer_shape_bem:
             uptilt_angle: 0.10471975511965977 # 6 deg
@@ -339,7 +340,8 @@ components:
             hss_input_length: 1.5
             distance_hub2mb: 1.912
             yaw_motors_number: 6
-            efficiency: 0.95
+            gearbox_efficiency: 0.95
+            generator_efficiency: 0.98
     tower:
         outer_shape_bem:
             reference_axis: &ref_axis_tower
@@ -656,7 +658,7 @@ control:
     Vin: 4.0
     Vout: 25.0
     minOmega: 0.0
-    maxOmega: 2.0
+    maxOmega: 0.9927432785343746
     tsr: 10.5
     pitch: 0.
     maxTS: 85.
