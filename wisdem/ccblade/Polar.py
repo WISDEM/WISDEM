@@ -5,6 +5,11 @@ import os
   - Polar: class to represent a polar (computes steady/unsteady parameters, corrections etc.)
   - blend: function to blend two polars
   - thicknessinterp_from_one_set: interpolate polars at different thickeness based on one set of polars 
+  
+  JPJ 7/20 : This class can probably be combined with Polar() from airfoilprep.py.
+  They do not have one-to-one matching for the methods.
+  Because both are not tested extensively, we first need to write tests for both
+  before attempting to combine them.
 """
 
 
@@ -19,18 +24,20 @@ class Polar(object):
         - cl_interp         : cl at given alpha values
         - cd_interp         : cd at given alpha values
         - cm_interp         : cm at given alpha values
+        - cn_interp         : cn at given alpha values
         - f_st_interp       : separation function (compared to fully separated polar)
         - cl_fs_interp      : cl fully separated at given alpha values
-        - fromfile          : reads of polar from csv of FAST AD15 file
+        - cl_inv_interp     : cl at given alpha values
         - correction3D      : apply 3D rotatational correction
         - extrapolate       : extend polar data set using Viterna's method
         - unsteadyParams    : computes unsteady params e.g. needed by AeroDyn15
-        - unsteadyparam     : same but (old)
-        - plot              : plot's the polar
-        - alpha0            : computes and return alpha0, also stored in _alpha0
+        - plot              : plots the polar
+        - alpha0            : computes and returns alpha0, also stored in _alpha0
+        - linear_region     : determines the alpha and cl values in the linear region
         - cl_max            : cl_max
         - cl_linear_slope   : linear slope and the linear region
-        - cl_fully_separated: fully separated cl
+        - cl_fully_separated : fully separated cl
+        - dynaStallOye_DiscreteStep : compute aerodynamical force from aerodynamic data
     """
 
     def __init__(self, Re, alpha, cl, cd, cm, compute_params=False, radians=None):
@@ -108,47 +115,6 @@ class Polar(object):
         else:
             return self.cl*np.cos(self.alpha*np.pi/180) + self.cd*np.sin(self.alpha*np.pi/180)
 
-
-    @classmethod
-    def fromfile(cls,filename,fformat='auto',compute_params=False, to_radians=False):
-        """Constructor based on a filename"""
-        if not os.path.exists(filename):
-            raise Exception('File not found:',filename)
-        try: 
-            import weio
-        except:
-            print('[WARN] Module `weio` not present, only delimited file format supported ')
-            fformat='delimited'
-        if fformat=='delimited':
-            try:
-                M=np.loadtxt(filename,comments=['#','!'])
-            except:
-                # Trying an AD15 file
-                M=pd.read_csv(filename, skiprows = 53, header=None, delim_whitespace=True, names=['Alpha','Cl','Cd','Cm']).values
-            Re    = np.nan
-        elif fformat=='auto':
-            try:
-                M = weio.CSVFile(filename).toDataFrame().values
-            except:
-                df = weio.read(filename).toDataFrame()
-                if type(df) is dict:
-                    M=df[list(df.keys())[0]].values
-                else:
-                    M=df.values
-        else:
-            raise NotImplementedError('Format not implemented: {}'.format(fformat))
-
-        if M.shape[1]!=4:
-            raise Exception('Only supporting polars with 4 columns: alpha cl cd cm')
-        if to_radians:
-            M[:,0]=M[:,0]*np.pi/180
-        alpha = M[:,0]
-        cl    = M[:,1]
-        cd    = M[:,2]
-        cm    = M[:,3]
-        Re    = np.nan
-        return cls(Re,alpha,cl,cd,cm,compute_params,radians=to_radians)
-
     def correction3D(self, r_over_R, chord_over_r, tsr, alpha_max_corr=30,
                      alpha_linear_min=-5, alpha_linear_max=5):
         """Applies 3-D corrections for rotating sections from the 2-D data.
@@ -214,6 +180,12 @@ class Polar(object):
         cl_linear = m*(alpha-alpha0)
         cl_3d = cl_2d + fcl*(cl_linear-cl_2d)*adj
 
+        # JPJ 7/20 :
+        # This drag correction is what differs between airfoilprep's Polar and
+        # this class. If we use the Du-Selig correction for drag here,
+        # the `test_stall` results match exactly.
+        # I'm leaving it as-is so dac.py and other untested scripts are not affected.
+        
         # Eggers 2003 correction for drag
         delta_cl = cl_3d-cl_2d
 
@@ -221,8 +193,6 @@ class Polar(object):
         cd_3d = cd_2d + delta_cd
 
         return type(self)(self.Re, np.degrees(alpha), cl_3d, cd_3d, self.cm)
-
-
 
     def extrapolate(self, cdmax, AR=None, cdmin=0.001, nalpha=15):
         """Extrapolates force coefficients up to +/- 180 degrees using Viterna's method
@@ -368,9 +338,6 @@ class Polar(object):
                     cm_ext[i] = cm_new
         cm = np.interp(np.degrees(alpha), alpha_cm, cm_ext)
         return type(self)(self.Re, np.degrees(alpha), cl, cd, cm)
-
-
-
 
     def __Viterna(self, alpha, cl_adj):
         """private method to perform Viterna extrapolation"""
@@ -600,70 +567,6 @@ class Polar(object):
             cnSlope = cnSlope*180/np.pi
         return (alpha0,alpha1,alpha2,cnSlope,cn1,cn2,cd0,cm0)
 
-    def unsteadyparam(self, alpha_linear_min=-5, alpha_linear_max=5):
-        """compute unsteady aero parameters used in AeroDyn input file
-
-        Parameters
-        ----------
-        alpha_linear_min : float, optional (deg)
-            angle of attack where linear portion of lift curve slope begins
-        alpha_linear_max : float, optional (deg)
-            angle of attack where linear portion of lift curve slope ends
-
-        Returns
-        -------
-        aerodynParam : tuple of floats
-            (control setting, stall angle, alpha for 0 cn, cn slope,
-            cn at stall+, cn at stall-, alpha for min CD, min(CD))
-
-        """
-
-        alpha = np.radians(self.alpha)
-        cl = self.cl
-        cd = self.cd
-
-        alpha_linear_min = np.radians(alpha_linear_min)
-        alpha_linear_max = np.radians(alpha_linear_max)
-
-        cn = cl*np.cos(alpha) + cd*np.sin(alpha)
-
-        # find linear region
-        idx = np.logical_and(alpha >= alpha_linear_min,
-                             alpha <= alpha_linear_max)
-
-        # checks for inppropriate data (like cylinders)
-        if len(idx) < 10 or len(np.unique(cl)) < 10:
-            return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,0.0
-
-        # linear fit
-        p = np.polyfit(alpha[idx], cn[idx], 1)
-        m = p[0]
-        alpha0 = -p[1]/m
-
-        # find cn at "stall onset" locations, when cn deviates from the linear region
-        alphaUpper    = np.radians(np.arange(40.0))
-        alphaLower    = np.radians(np.arange(5.0, -40.0, -1))
-        cnUpper       = np.interp(alphaUpper, alpha, cn)
-        cnLower       = np.interp(alphaLower, alpha, cn)
-        cnLinearUpper = m*(alphaUpper - alpha0)
-        cnLinearLower = m*(alphaLower - alpha0)
-        deviation     = 0.05                  # threshold for cl in detecting stall
-
-        alphaU = np.interp(deviation, cnLinearUpper-cnUpper, alphaUpper)
-        alphaL = np.interp(deviation, cnLower-cnLinearLower, alphaLower)
-
-        # compute cn at stall according to linear fit
-        cnStallUpper = m*(alphaU-alpha0)
-        cnStallLower = m*(alphaL-alpha0)
-
-        # find min cd
-        minIdx = cd.argmin()
-
-        # return: control setting, stall angle, alpha for 0 cn, cn slope,
-        #         cn at stall+, cn at stall-, alpha for min CD, min(CD)
-        return (0.0, np.degrees(alphaU), np.degrees(alpha0), m,
-                cnStallUpper, cnStallLower, alpha[minIdx], cd[minIdx])
-
     def plot(self):
         """plot cl/cd/cm polar
 
@@ -742,7 +645,7 @@ class Polar(object):
             return self.cl, self.alpha
 
         # Ensuring window is within our alpha values
-        window = _alpha_window_in_bounds(alpha,window)
+        window = _alpha_window_in_bounds(self.alpha,window)
         
         # Finding max within window
         iwindow=np.where((self.alpha>=window[0]) & (self.alpha<=window[1]))
@@ -762,7 +665,6 @@ class Polar(object):
 # 
 #         alpha0=alpha_zc[0]
         return cl_max, alpha_cl_max
-
 
     def cl_linear_slope(self,window=None,method='optim',radians=False):
         """ Find slope of linear region 
