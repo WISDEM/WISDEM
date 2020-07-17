@@ -7,6 +7,20 @@ from scipy.special import ellipeinc
 import wisdem.commonse.tube as tube
 from wisdem.commonse.utilities import nodal2sectional
 
+class Geometry(om.Group):
+    def initialize(self):
+        self.options.declare('n_points')
+    
+    def setup(self):
+        n_points = self.options['n_points']
+        self.add_subsystem('lay',Layout(n_points=n_points), promotes=['*'])
+        self.add_subsystem('mass',Mass(n_points=n_points), promotes=['*'])
+
+                           
+class Mass(om.ExplicitComponent):
+    pass
+
+
 class Layout(om.ExplicitComponent):
     """Calculate lengths, heights, and diameters of key drivetrain components in a direct drive system (valid for upwind or downwind)."""
     

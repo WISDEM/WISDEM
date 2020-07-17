@@ -32,7 +32,7 @@ class MainBearing(om.ExplicitComponent):
 
         elif btype == 'CRB':
             face_width = 0.1136 * D_shaf
-            tmass = 304.19 * D_shaft**1.8885
+            mass = 304.19 * D_shaft**1.8885
             Bearing_Limit = 4.0 / 60.0 / 180.0 * pi
 
         elif btype == 'SRB':
@@ -40,17 +40,17 @@ class MainBearing(om.ExplicitComponent):
             mass = 876.7 * D_shaft**1.7195
             Bearing_Limit = 0.078
 
-        elif btype == 'RB':  # factors depend on ratio Fa/C0, C0 depends on bearing... TODO: add this functionality
-            face_width = 0.0839
-            mass = 229.47 * D_shaft**1.8036
-            Bearing_Limit = 0.002
+        #elif btype == 'RB':  # factors depend on ratio Fa/C0, C0 depends on bearing... TODO: add this functionality
+        #    face_width = 0.0839
+        #    mass = 229.47 * D_shaft**1.8036
+        #    Bearing_Limit = 0.002
 
-        elif btype == 'TRB1':
-            face_width = 0.0740
-            mass = 92.863 * D_shaft**.8399
-            Bearing_Limit = 3.0 / 60.0 / 180.0 * pi
+        #elif btype == 'TRB1':
+        #    face_width = 0.0740
+        #    mass = 92.863 * D_shaft**.8399
+        #    Bearing_Limit = 3.0 / 60.0 / 180.0 * pi
 
-        elif btype == 'TRB2':
+        elif btype == 'TRB':
             face_width = 0.1499 * D_shaf
             tmass = 543.01 * D_shaft**1.9043
             Bearing_Limit = 3.0 / 60.0 / 180.0 * pi
@@ -238,131 +238,77 @@ class YawSystem(om.ExplicitComponent):
         outputs['yaw_I']  = np.zeros(6)
         
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------------------
 
-class AboveYawMassAdder_OM(om.ExplicitComponent):
-    ''' AboveYawMassAdder_OM class
-          The AboveYawMassAdder_OM class is used to represent the masses of all parts of a wind turbine drivetrain that
-          are above the yaw system.
-          It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
-          It contains an update method to determine the mass, mass properties, and dimensions of the component.
-    '''
-    def initialize(self):
-        self.options.declare('debug', default=False)
+class MiscNacelleComponents(om.ExplicitComponent):
+    ''' Estimate mass properties of miscellaneous other ancillary components in the nacelle.'''
 
     def setup(self):
         # variables
-        self.add_input('machine_rating', val=0.0, units='kW', desc='machine rating')
-        self.add_input('lss_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('mb1_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('mb2_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('gearbox_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('hss_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('generator_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('bedplate_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('bedplate_length', val=0.0, units='m', desc='component length')
-        self.add_input('bedplate_width', val=0.0, units='m', desc='component width')
-        self.add_input('electronics_mass', val=0.0, units='kg', desc='component mass')
-
-        self.add_discrete_input('crane', val=True, desc='onboard crane present')
+        self.add_input('L_bedplate', 0.0, units='m', desc='Length of bedplate') 
+        self.add_input('H_bedplate', 0.0, units='m', desc='height of bedplate')
+        self.add_input('D_bedplate_base', val=np.zeros(n_points), units='m', desc='Bedplate diameters')
+        self.add_input('rho_fiberglass', val=0.0, units='kg/m**3', desc='material density of fiberglass')
         
-        # returns
-        self.add_output('electrical_mass', val=0.0, units='kg', desc='component mass')
-        self.add_output('converter_mass', val=0.0, units='kg', desc='component mass')
+        # outputs
         self.add_output('hvac_mass', val=0.0, units='kg', desc='component mass')
-        self.add_output('controls_mass', val=0.0, units='kg', desc='component mass')
-        self.add_output('platforms_mass', val=0.0, units='kg', desc='component mass')
-        self.add_output('crane_mass', val=0.0, units='kg', desc='component mass')
+        self.add_output('hvac_cm', val=np.zeros(3), units='m', desc='component center of mass')
+        self.add_output('hvac_I', val=np.zeros(3), units='m', desc='component mass moments of inertia')
+        
         self.add_output('mainframe_mass', val=0.0, units='kg', desc='component mass')
+        self.add_output('mainframe_cm', val=np.zeros(3), units='m', desc='component center of mass')
+        self.add_output('mainframe_I', val=np.zeros(3), units='m', desc='component mass moments of inertia')
+        
         self.add_output('cover_mass', val=0.0, units='kg', desc='component mass')
-        self.add_output('above_yaw_mass', val=0.0, units='kg', desc='total mass above yaw system')
-        self.add_output('nacelle_length', val=0.0, units='m', desc='component length')
-        self.add_output('nacelle_width', val=0.0, units='m', desc='component width')
-        self.add_output('nacelle_height', val=0.0, units='m', desc='component height')
-        
-
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        aboveyawmass = dc.AboveYawMassAdder(discrete_inputs['crane'])
-
-        (outputs['electrical_mass'], outputs['converter_mass'], outputs['hvac_mass'], outputs['controls_mass'], 
-         outputs['platforms_mass'], outputs['crane_mass'], outputs['mainframe_mass'], outputs['cover_mass'], 
-         outputs['above_yaw_mass'], outputs['nacelle_length'], outputs['nacelle_width'], outputs['nacelle_height']) \
-            = aboveyawmass.compute(inputs['machine_rating'], inputs['lss_mass'], inputs['mb1_mass'], inputs['mb2_mass'], 
-                    inputs['gearbox_mass'], inputs['hss_mass'], inputs['generator_mass'], inputs['bedplate_mass'], 
-                    inputs['bedplate_length'], inputs['bedplate_width'], inputs['electronics_mass'])
-        
-        if self.options['debug']:
-            print('AYMA IN: {:.1f} kW BPl {:.1f} m BPw {:.1f} m'.format(
-                  inputs['machine_rating'],inputs['bedplate_length'], inputs['bedplate_width']))
-            print('AYMA IN  masses (kg): LSS {:.1f} MB1 {:.1f} MB2 {:.1f} GBOX {:.1f} HSS {:.1f} GEN {:.1f} BP {:.1f} TFRM {:.1f}'.format(
-                  inputs['lss_mass'], inputs['mb1_mass'], inputs['mb2_mass'], inputs['gearbox_mass'],
-                  inputs['hss_mass'], inputs['generator_mass'], inputs['bedplate_mass'], inputs['electronics_mass']))
-            print('AYMA OUT masses (kg) : E {:.1f} VSE {:.1f} HVAC {:.1f} CNTL {:.1f} PTFM {:.1f} CRN {:.1f} MNFRM {:.1f} CVR {:.1f} AYM {:.1f}'.format( 
-                  outputs['electrical_mass'], outputs['converter_mass'], outputs['hvac_mass'], outputs['controls_mass'],
-                  outputs['platforms_mass'], outputs['crane_mass'], outputs['mainframe_mass'], outputs['cover_mass'],
-                  outputs['above_yaw_mass']))
-            print('AYMA OUT nacelle (m): L {:.2f} W {:.2f} H {:.2f}'.format( 
-                 outputs['nacelle_length'], outputs['nacelle_width'], outputs['nacelle_height']))
+        self.add_output('cover_cm', val=np.zeros(3), units='m', desc='component center of mass')
+        self.add_output('cover_I', val=np.zeros(3), units='m', desc='component mass moments of inertia')
 
 
-        # variables
-        rating = inputs['machine_rating']
-        self.lss_mass = lss_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.mb1_mass = mb1_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.mb2_mass = mb2_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.gearbox_mass = gearbox_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.hss_mass = hss_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.generator_mass = generator_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.bedplate_mass = bedplate_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.bedplate_length = bedplate_length #Float(iotype = 'in', units='m', desc='component length')
-        self.bedplate_width = bedplate_width #Float(iotype = 'in', units='m', desc='component width')
-        self.electronics_mass = electronics_mass #Float(iotype = 'in', units='kg', desc='component mass')
-    
-        # electronic systems, hydraulics and controls
-        self.electrical_mass = 0.0
-        
-        self.converter_mass = 0 #2.4445*rating + 1599.0 accounted for in electronics calcs
-        
-        self.hvac_mass = 0.08 * rating
-        
-        self.controls_mass     = 0.0
-        
-        # mainframe system including bedplate, platforms, crane and miscellaneous hardware
-        self.platforms_mass = 0.125 * self.bedplate_mass
-        
-        if (self.crane):
-            self.crane_mass =  3000.0
-        else:
-            self.crane_mass = 0.0
-            
-        self.mainframe_mass  = self.bedplate_mass + self.crane_mass + self.platforms_mass
-        
-        nacelleCovArea      = 2 * (self.bedplate_length ** 2)              # this calculation is based on Sunderland
-        self.cover_mass = (84.1 * nacelleCovArea) / 2          # this calculation is based on Sunderland - divided by 2 in order to approach CSM
-        
-        # yaw system weight calculations based on total system mass above yaw system
-        m_above_yaw =  (self.lss_mass + 
-                                self.mb1_mass + self.mb2_mass + 
-                                self.gearbox_mass + 
-                                self.hss_mass + 
-                                self.generator_mass + 
-                                self.mainframe_mass + 
-                                self.electronics_mass +
-                                self.electrical_mass + 
-                                self.converter_mass + 
-                                self.hvac_mass +
-                                self.cover_mass)
+    def compute(self, inputs, outputs):
 
-        self.length      = self.bedplate_length                              # nacelle length [m] based on bedplate length
-        self.width       = self.bedplate_width                        # nacelle width [m] based on bedplate width
-        self.height      = (2.0 / 3.0) * self.length                         # nacelle height [m] calculated based on cladding area
+        # Unpack inputs
+        D_generator = float(inputs['generator_outer_diameter'])
+        L_bedplate  = float(inputs['L_bedplate'])
+        H_bedplate  = float(inputs['H_bedplate'])
+        D_bedplate  = float(inputs['D_bedplate_base'])
+        D_generator = float(inputs['D_generator'])
+        overhang    = float(inputs['overhang'])
+        rho_fiberglass = float(inputs['rho_fiberglass'])
 
-        return(self.electrical_mass, self.converter_mass, self.hvac_mass, self.controls_mass, self.platforms_mass, self.crane_mass, \
-               self.mainframe_mass, self.cover_mass, m_above_yaw, self.length, self.width, self.height)
+        # For the nacelle cover, imagine a box from the bedplate to the hub in length and around the generator in width, height, with 10% margin in each dim
+        L_cover  = 1.1 * (overhang + 0.5*D_bedplate[-1])
+        W_cover  = 1.1 * D_generator
+        H_cover  = 1.1 * (0.5*D_generator + H_bedplate)
+        A_cover  = 2*(L_cover*W_cover + L_cover*H_cover + H_cover*W_cover)
+        t_cover  = 0.05 # cm thick walls?
+        m_cover  = A_cover * t_cover * rho_fiberglass
+        cm_cover = np.array([0.5*L_cover-0.5*D_bedplate[-1], 0.0, 0.5*H_cover])
+        I_cover  = m_cover*np.array([H_cover**2 + W_cover**2 - (H_cover-t_cover)**2 - (W_cover-t_cover)**2,
+                                     H_cover**2 + L_cover**2 - (H_cover-t_cover)**2 - (L_cover-t_cover)**2,
+                                     W_cover**2 + L_cover**2 - (W_cover-t_cover)**2 - (L_cover-t_cover)**2]) / 12.
+        if upwind: cm_cover[0] *= -1.0
+        outputs['cover_mass'] = m_cover
+        outputs['cover_cm']   = cm_cover
+        outputs['cover_I' ]   = I_cover
         
+        # Regression based estimate on HVAC mass
+        m_hvac       = 0.08 * rating
+        cm_hvac      = cm_generator.copy()
+        I_hvac       = (m_hvac / m_generator) * I_generator
+        outputs['hvac_mass'] = m_hvac
+        outputs['hvac_cm']   = cm_hvac
+        outputs['hvac_I' ]   = I_hvac
+
+        # Platforms as a fraction of bedplate mass and bundling it to call it 'mainframe'
+        m_mainframe  = platforms_coeff * m_bedplate
+        cm_mainframe = cm_bedplate.copy()
+        I_mainframe  = platforms_coeff * I_bedplate
+        outputs['mainframe_mass'] = m_mainframe
+        outputs['mainframe_cm']   = cm_mainframe
+        outputs['mainframe_I' ]   = I_mainframe
 
 #--------------------------------------------
-class NacelleSystemAdder_OM(om.ExplicitComponent): #added to drive to include electronics
+class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include electronics
     ''' NacelleSystem class
           The Nacelle class is used to represent the overall nacelle of a wind turbine.
           It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
@@ -370,121 +316,152 @@ class NacelleSystemAdder_OM(om.ExplicitComponent): #added to drive to include el
     '''
 
     def setup(self):
+        self.add_discrete_input('crane', val=True, desc='onboard crane present')
 
-        # variables
-        self.add_input('above_yaw_mass', val=0.0, units='kg', desc='mass above yaw system')
-        self.add_input('yaw_mass', val=0.0, units='kg', desc='mass of yaw system')
+        self.add_input('machine_rating', val=0.0, units='kW', desc='machine rating')
+
         self.add_input('lss_mass', val=0.0, units='kg', desc='component mass')
+        self.add_input('lss_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
+        self.add_input('lss_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
+
         self.add_input('mb1_mass', val=0.0, units='kg', desc='component mass')
         self.add_input('mb2_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('gearbox_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('hss_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('generator_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('bedplate_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('mainframe_mass', val=0.0, units='kg', desc='component mass')
-        self.add_input('lss_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
         self.add_input('mb1_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
         self.add_input('mb2_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
-        self.add_input('gearbox_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
-        self.add_input('hss_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
-        self.add_input('generator_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
-        self.add_input('bedplate_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
-        self.add_input('lss_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
         self.add_input('mb1_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
         self.add_input('mb2_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
+
+        self.add_input('gearbox_mass', val=0.0, units='kg', desc='component mass')
+        self.add_input('gearbox_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
         self.add_input('gearbox_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
+
+        self.add_input('hss_mass', val=0.0, units='kg', desc='component mass')
+        self.add_input('hss_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
         self.add_input('hss_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
+
+        self.add_input('generator_mass', val=0.0, units='kg', desc='component mass')
+        self.add_input('generator_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
         self.add_input('generator_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
-        self.add_input('bedplate_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
+
         self.add_input('electronics_mass', val=0.0, units='kg', desc='component mass')
         self.add_input('electronics_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
         self.add_input('electronics_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
 
+        self.add_input('yaw_mass', val=0.0, units='kg', desc='mass of yaw system')
+        self.add_input('mainframe_mass', val=0.0, units='kg', desc='component mass')
+
+        self.add_input('bedplate_mass', val=0.0, units='kg', desc='component mass')
+        self.add_input('bedplate_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='component CM')
+        self.add_input('bedplate_length', val=0.0, units='m', desc='component length')
+        self.add_input('bedplate_width', val=0.0, units='m', desc='component width')
+        self.add_input('bedplate_I', val=np.array([0.0,0.0,0.0]), units='kg*m**2', desc='component I')
+
         # returns
+
+        self.add_output('nacelle_length', val=0.0, units='m', desc='component length')
+        self.add_output('nacelle_width', val=0.0, units='m', desc='component width')
+        self.add_output('nacelle_height', val=0.0, units='m', desc='component height')
         self.add_output('nacelle_mass', val=0.0, units='kg', desc='overall component mass')
         self.add_output('nacelle_cm', val=np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('nacelle_I', val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
 
         
     def compute(self, inputs, outputs):
-        nacelleadder = dc.NacelleSystemAdder()
+        # Unpack inputs
+        yaw_mass = yaw_mass
+        lss_mass = lss_mass
+        mb1_mass = mb1_mass
+        mb2_mass = mb2_mass
+        gearbox_mass = gearbox_mass
+        hss_mass = hss_mass
+        generator_mass = generator_mass
+        bedplate_mass = bedplate_mass
+        mainframe_mass = mainframe_mass
+        lss_cm = lss_cm
+        mb1_cm = mb1_cm
+        mb2_cm = mb2_cm
+        cm_gearbox = gearbox_cm
+        hss_cm = hss_cm
+        generator_cm = generator_cm
+        bedplate_cm = bedplate_cm
+        lss_I = lss_I
+        mb1_I = mb1_I
+        mb2_I = mb2_I
+        gearbox_I = gearbox_I
+        hss_I = hss_I
+        generator_I = generator_I
+        bedplate_I = bedplate_I
+        electronics_mass = electronics_mass
+        electronics_cm = electronics_cm
+        electronics_I = electronics_I
+        rating = inputs['machine_rating']
+        lss_mass = lss_mass
+        mb1_mass = mb1_mass
+        mb2_mass = mb2_mass
+        gearbox_mass = gearbox_mass
+        hss_mass = hss_mass
+        generator_mass = generator_mass
+        bedplate_mass = bedplate_mass
+        bedplate_length = bedplate_length
+        bedplate_width = bedplate_width
+        electronics_mass = electronics_mass
+        
+        # yaw system weight calculations based on total system mass above yaw system
+        m_above_yaw =  (lss_mass + 
+                                mb1_mass + mb2_mass + 
+                                gearbox_mass + 
+                                hss_mass + 
+                                generator_mass + 
+                                mainframe_mass + 
+                                electronics_mass +
+                                electrical_mass + 
+                                converter_mass + 
+                                hvac_mass +
+                                cover_mass)
 
-        (outputs['nacelle_mass'], outputs['nacelle_cm'], outputs['nacelle_I']) \
-                    = nacelleadder.compute(inputs['above_yaw_mass'], inputs['yaw_mass'], inputs['lss_mass'], inputs['mb1_mass'], inputs['mb2_mass'], inputs['gearbox_mass'], \
-                      inputs['hss_mass'], inputs['generator_mass'], inputs['bedplate_mass'], inputs['mainframe_mass'], \
-                      inputs['lss_cm'], inputs['mb1_cm'], inputs['mb2_cm'], inputs['gearbox_cm'], inputs['hss_cm'], inputs['generator_cm'], inputs['bedplate_cm'], \
-                      inputs['lss_I'], inputs['mb1_I'], inputs['mb2_I'], inputs['gearbox_I'], inputs['hss_I'], inputs['generator_I'], inputs['bedplate_I'], \
-                      inputs['electronics_mass'], inputs['electronics_cm'], inputs['electronics_I'])
-
-        # variables
-        m_above_yaw = above_yaw_mass #Float(iotype='in', units='kg', desc='mass above yaw system')
-        self.yaw_mass = yaw_mass #Float(iotype='in', units='kg', desc='mass of yaw system')
-        self.lss_mass = lss_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.mb1_mass = mb1_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.mb2_mass = mb2_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.gearbox_mass = gearbox_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.hss_mass = hss_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.generator_mass = generator_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.bedplate_mass = bedplate_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.mainframe_mass = mainframe_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.lss_cm = lss_cm #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component CM')
-        self.mb1_cm = mb1_cm #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component CM')
-        self.mb2_cm = mb2_cm #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component CM')
-        cm_gearbox = gearbox_cm #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component CM')
-        self.hss_cm = hss_cm #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component CM')
-        self.generator_cm = generator_cm #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component CM')
-        self.bedplate_cm = bedplate_cm #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component CM')
-        self.lss_I = lss_I #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component I')
-        self.mb1_I = mb1_I #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component I')
-        self.mb2_I = mb2_I #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component I')
-        self.gearbox_I = gearbox_I #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component I')
-        self.hss_I = hss_I #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component I')
-        self.generator_I = generator_I #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component I')
-        self.bedplate_I = bedplate_I #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component I')
-        self.electronics_mass = electronics_mass #Float(iotype = 'in', units='kg', desc='component mass')
-        self.electronics_cm = electronics_cm #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component CM')
-        self.electronics_I = electronics_I #Array(np.array([0.0,0.0,0.0]),iotype = 'in', units='kg', desc='component I')
-    
+        length      = bedplate_length                              # nacelle length [m] based on bedplate length
+        width       = bedplate_width                        # nacelle width [m] based on bedplate width
+        height      = (2.0 / 3.0) * length                         # nacelle height [m] calculated based on cladding area
+        
         # returns
-        self.nacelle_mass = 0.0 #Float(0.0, iotype='out', units='kg', desc='overall component mass')
-        self.nacelle_cm = np.zeros(3) #Array(np.array([0.0, 0.0, 0.0]), units='m', iotype='out', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-        self.nacelle_I = np.zeros(3) # Array(np.array([0.0, 0.0, 0.0]), units='kg*m**2', iotype='out', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        nacelle_mass = 0.0 #Float(0.0, iotype='out', units='kg', desc='overall component mass')
+        nacelle_cm = np.zeros(3) #Array(np.array([0.0, 0.0, 0.0]), units='m', iotype='out', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+        nacelle_I = np.zeros(3) # Array(np.array([0.0, 0.0, 0.0]), units='kg*m**2', iotype='out', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
 
         # aggregation of nacelle mass
-        self.nacelle_mass = (m_above_yaw + self.yaw_mass)
+        nacelle_mass = (m_above_yaw + yaw_mass)
   
         # calculation of mass center and moments of inertia
-        self.nacelle_cm = ( (self.lss_mass*self.lss_cm
-                           + self.electronics_mass*self.electronics_cm 
-                           + self.mb1_mass*self.mb1_cm 
-                           + self.mb2_mass*self.mb2_cm 
-                           + self.gearbox_mass*cm_gearbox 
-                           + self.hss_mass*self.hss_cm 
-                           + self.generator_mass*self.generator_cm 
-                           + self.mainframe_mass*self.bedplate_cm 
-                           + self.yaw_mass*np.zeros(3))
-                      / (self.lss_mass + self.mb1_mass + self.mb2_mass + self.gearbox_mass +
-                         self.hss_mass + self.generator_mass + self.mainframe_mass + self.yaw_mass) )
+        nacelle_cm = ( (lss_mass*lss_cm
+                           + electronics_mass*electronics_cm 
+                           + mb1_mass*mb1_cm 
+                           + mb2_mass*mb2_cm 
+                           + gearbox_mass*cm_gearbox 
+                           + hss_mass*hss_cm 
+                           + generator_mass*generator_cm 
+                           + mainframe_mass*bedplate_cm 
+                           + yaw_mass*np.zeros(3))
+                      / (lss_mass + mb1_mass + mb2_mass + gearbox_mass +
+                         hss_mass + generator_mass + mainframe_mass + yaw_mass) )
   
         # calculating MOI, at nacelle center of gravity with origin at tower top center / yaw mass center, ignoring masses of non-drivetrain components / auxiliary systems
 
         def appendI(xmass, xcm, xI):
-            r    = xcm - self.nacelle_cm
+            r    = xcm - nacelle_cm
             Icg  = assembleI( np.r_[xI, np.zeros(3)] ) # not used
             Iadd = xmass*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
             return Iadd
 
         I   = np.zeros((3,3))
-        I += appendI(self.lss_mass, self.lss_cm, self.lss_I)
-        I += appendI(self.hss_mass, self.hss_cm, self.hss_I)
-        I += appendI(self.mb1_mass, self.mb1_cm, self.mb1_I)
-        I += appendI(self.mb2_mass, self.mb2_cm, self.mb2_I)
-        I += appendI(self.gearbox_mass, cm_gearbox, self.gearbox_I)
-        I += appendI(self.electronics_mass, self.electronics_cm, self.electronics_I)
-        I += appendI(self.generator_mass, self.generator_cm, self.generator_I)
+        I += appendI(lss_mass, lss_cm, lss_I)
+        I += appendI(hss_mass, hss_cm, hss_I)
+        I += appendI(mb1_mass, mb1_cm, mb1_I)
+        I += appendI(mb2_mass, mb2_cm, mb2_I)
+        I += appendI(gearbox_mass, cm_gearbox, gearbox_I)
+        I += appendI(electronics_mass, electronics_cm, electronics_I)
+        I += appendI(generator_mass, generator_cm, generator_I)
         # Mainframe mass includes bedplate mass and other components that assume the bedplate cm
-        I += appendI(self.mainframe_mass, self.bedplate_cm, (self.mainframe_mass/self.bedplate_mass)*self.bedplate_I)
-        self.nacelle_I = unassembleI(I)
+        I += appendI(mainframe_mass, bedplate_cm, (mainframe_mass/bedplate_mass)*bedplate_I)
+        nacelle_I = unassembleI(I)
 
-        return(self.nacelle_mass, self.nacelle_cm, self.nacelle_I)
 

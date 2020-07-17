@@ -61,6 +61,41 @@ class Generator_Cost(ExplicitComponent):
         outputs['Costs'] = K_gen + Cost_str
         
 
+
+#----------------------------------------------------------------------------------------------
+
+class GeneratorSimple(om.ExplicitComponent):
+    '''Generator class
+          The Generator class is used to represent the generator of a wind turbine drivetrain.
+          It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
+          It contains an update method to determine the mass, mass properties, and dimensions of the component.
+    '''
+
+        
+    def setup(self):
+        # variables
+        self.add_input('rotor_diameter', val=0.0, units='m', desc='rotor diameter')
+        self.add_input('machine_rating', val=0.0, units='kW', desc='machine rating of generator')
+        self.add_input('gear_ratio', val=0.0, desc='overall gearbox ratio')
+        self.add_input('hss_length', val=0.0, units='m', desc='length of high speed shaft and brake')
+        self.add_input('hss_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='cm of high speed shaft and brake')
+        self.add_input('rotor_rpm', val=0.0, units='rpm', desc='Speed of rotor at rated power')
+        
+        self.add_discrete_input('drivetrain_design', val='geared', desc='geared or single_stage or multi_drive or pm_direct_drive')
+
+        #returns
+        self.add_output('generator_mass', val=0.0, units='kg', desc='overall component mass')
+        self.add_output('generator_cm', val=np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+
+        mygen = dc.Generator(discrete_inputs['drivetrain_design'])
+        
+        (outputs['generator_mass'], outputs['generator_cm'], outputs['generator_I']) \
+            = mygen.compute(inputs['rotor_diameter'], inputs['machine_rating'], inputs['gear_ratio'], inputs['hss_length'], inputs['hss_cm'], inputs['rotor_rpm'])
+
+        
         
 
 class Generator(Group):
