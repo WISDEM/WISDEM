@@ -4,7 +4,7 @@ general:
 Analysis_Flags:
     # Control which WISDEM modules are executed.
     # (GOAL) If inputs are missing for a module, a warning will be written to the screen and the module disabled.
-    OpenFAST: True   # Flag to run aeroelasticse, the wrapper of OpenFAST
+    OpenFAST: False   # Flag to run aeroelasticse, the wrapper of OpenFAST
     TowerSE:  False
 
 yaml:
@@ -22,17 +22,17 @@ rotorse:
 
 openfast:
     analysis_settings:
-        Analysis_Level:     2           # Flag to set the call to OpenFAST. 0 - no call, 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
-        update_hub_nacelle: False
-        update_tower:       False
-        generate_af_coords: False
+        Analysis_Level:     0           # Flag to set the call to OpenFAST. 0 - no call, 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
+        update_hub_nacelle: True
+        update_tower:       True
+        generate_af_coords: True
         debug_level:        2    # Flag to set the debug level, do not change
     file_management:
         FAST_ver:          OpenFAST          # Version of OpenFAST, do not change
         FAST_exe:          /bin/openfast    # Path to OpenFAST executable
-        FAST_directory:    "/mnt/c/Users/egaertne/RefModels/IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/"  # Path to folder with the OpenFAST input files
+        FAST_directory:    "IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/"  # Path to folder with the OpenFAST input files
         FAST_InputFile:    IEA-15-240-RWT-Monopile.fst             # Name of the main OpenFAST input file (.fst)
-        path2dll:          "/mnt/c/Users/egaertne/RefModels/IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/ServoData/libdiscon.so"     # Path to the the compiled ROSCO controller
+        path2dll:          "IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/ServoData/libdiscon.so"     # Path to the the compiled ROSCO controller
         Turbsim_exe:       /bin/turbsim   # Path to TurbSim executable
         FAST_namingOut:    Testing         # Name of the OpenFAST output files
         FAST_runDirectory: temp/Testing             # Path to folder with the OpenFAST output files
