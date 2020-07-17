@@ -1,7 +1,7 @@
 import numpy as np
-import time
+import time, os
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_DAC_rated, RotorSE_steady_wind
+from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_DAC_rated
 
 try:
     import ruamel_yaml as ry
@@ -33,32 +33,19 @@ class WindTurbineOntologyPython(object):
         self.openmdao_vectors()
         
         # Openfast
-        FASTpref                        = {}
-        FASTpref['Analysis_Level']      = self.analysis_options['openfast']['Analysis_Level']
-        FASTpref['FAST_ver']            = self.analysis_options['openfast']['FAST_ver']
-        FASTpref['dev_branch']          = self.analysis_options['openfast']['dev_branch']
-        FASTpref['FAST_exe']            = self.analysis_options['openfast']['FAST_exe']
-        FASTpref['FAST_directory']      = self.analysis_options['openfast']['FAST_directory']
-        FASTpref['FAST_InputFile']      = self.analysis_options['openfast']['FAST_InputFile']
-        FASTpref['Turbsim_exe']         = self.analysis_options['openfast']['Turbsim_exe']
-        FASTpref['FAST_namingOut']      = self.analysis_options['openfast']['FAST_namingOut']
-        FASTpref['FAST_runDirectory']   = self.analysis_options['openfast']['FAST_runDirectory']
-        FASTpref['path2dll']            = self.analysis_options['openfast']['path2dll']
-        FASTpref['debug_level']         = self.analysis_options['openfast']['debug_level']
-        FASTpref['DLC_gust']            = None      # Max deflection
-        FASTpref['DLC_extrm']           = None      # Max strain
-        FASTpref['DLC_turbulent']       = RotorSE_steady_wind
-        FASTpref['DLC_powercurve']      = None      # AEP
-        if FASTpref['Analysis_Level'] > 0:
-            fast = InputReader_OpenFAST(FAST_ver=FASTpref['FAST_ver'], dev_branch=FASTpref['dev_branch'])
-            fast.FAST_InputFile = FASTpref['FAST_InputFile']
-            fast.FAST_directory = FASTpref['FAST_directory']
-            fast.path2dll = FASTpref['path2dll']
+        if self.analysis_options['openfast']['analysis_settings']['Analysis_Level'] > 0:
+            # Load Input OpenFAST model variable values
+            fast                = InputReader_OpenFAST(FAST_ver=self.analysis_options['openfast']['file_management']['FAST_ver'])
+            fast.FAST_InputFile = self.analysis_options['openfast']['file_management']['FAST_InputFile']
+            fast.FAST_directory = self.analysis_options['openfast']['file_management']['FAST_directory']
+            fast.path2dll       = self.analysis_options['openfast']['file_management']['path2dll']
             fast.execute()
             self.analysis_options['openfast']['fst_vt']   = fast.fst_vt
+
+            if os.path.exists(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']):
+                self.analysis_options['openfast']['fst_settings'] = dict(self.load_yaml(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']))
         else:
             self.analysis_options['openfast']['fst_vt']   = {}
-        self.analysis_options['openfast']['FASTpref'] = FASTpref
 
         return self.analysis_options, self.wt_init
 
@@ -276,12 +263,13 @@ class WindTurbineOntologyPython(object):
             I.append(Ii.tolist())
         self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'] = I
 
-        if self.analysis_options['openfast']['update_hub_nacelle']:
+        if self.analysis_options['openfast']['analysis_settings']['update_hub_nacelle']:
             # Update hub
             self.wt_init['components']['hub']['outer_shape_bem']['diameter']   = float(wt_opt['hub.diameter'])
             self.wt_init['components']['hub']['outer_shape_bem']['cone_angle'] = float(wt_opt['hub.cone'])
-            self.wt_init['components']['hub']['elastic_properties_mb']['system_mass']      = float(wt_opt['drivese.hub_system_mass'])
-            self.wt_init['components']['hub']['elastic_properties_mb']['system_inertia']   = wt_opt['drivese.hub_system_I'].tolist()
+            self.wt_init['components']['hub']['elastic_properties_mb']['system_mass']        = float(wt_opt['drivese.hub_system_mass'])
+            self.wt_init['components']['hub']['elastic_properties_mb']['system_inertia']     = wt_opt['drivese.hub_system_I'].tolist()
+            self.wt_init['components']['hub']['elastic_properties_mb']['system_center_mass'] = wt_opt['drivese.hub_system_cm'].tolist()
             # Update nacelle
             self.wt_init['components']['nacelle']['outer_shape_bem']['uptilt_angle']        = float(wt_opt['nacelle.uptilt'])
             self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub']     = float(wt_opt['nacelle.distance_tt_hub'])
@@ -290,7 +278,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']   = wt_opt['drivese.nacelle_cm'].tolist()
             self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']       = wt_opt['drivese.nacelle_I'].tolist()
 
-        #if self.analysis_options['tower']['run_towerse']:
+        #if self.analysis_options['Analysis_Flags']['TowerSE']:
         # Update tower
         self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['tower.s'].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['tower.diameter'].tolist()
@@ -318,6 +306,12 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['monopile.s'].tolist()
                 self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['monopile.layer_thickness'][i,:].tolist()
 
+        # Update rotor nacelle assembly
+        self.wt_init['components']['RNA'] = {}
+        self.wt_init['components']['RNA']['elastic_properties_mb'] = {}
+        self.wt_init['components']['RNA']['elastic_properties_mb']['mass']        = float(wt_opt['drivese.rna_mass'])
+        self.wt_init['components']['RNA']['elastic_properties_mb']['inertia']     = wt_opt['drivese.rna_I_TT'].tolist()
+        self.wt_init['components']['RNA']['elastic_properties_mb']['center_mass'] = wt_opt['drivese.rna_cm'].tolist()
 
         # Update controller
         self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])

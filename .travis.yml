@@ -23,7 +23,11 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - conda activate test-environment
   - conda install -q --yes compilers matplotlib pytest pytest-cov coveralls pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy sympy shapely
-  - conda install -c nikhar-abbas rosco-toolbox 
+  - pip install rosco-toolbox
+  - git clone https://github.com/nrel/pcrunch
+  - cd pcrunch
+  - python setup.py install
+  - cd ..
   - pip install simpy marmot-agents
   
   # Install ROSCO_toolbox

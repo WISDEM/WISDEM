@@ -906,6 +906,7 @@ class Hub(om.Group):
 
         ivc.add_output('system_mass',  val=0.0,         units='kg',        desc='Mass of hub system')
         ivc.add_output('system_I',     val=np.zeros(6), units='kg*m**2',   desc='Mass moments of Inertia of hub [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass in yaw-aligned c.s.')
+        ivc.add_output('system_cm',    val=np.zeros(3), units='m',         desc='Center of mass in yaw-aligned c.s.')
         
         exec_comp = om.ExecComp('radius = 0.5 * diameter', units='m', radius={'desc' : 'Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.'})
         self.add_subsystem('compute_radius', exec_comp, promotes=['*'])

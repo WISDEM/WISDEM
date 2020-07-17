@@ -117,7 +117,7 @@ def save_yaml(outdir, fname, data_out):
 
     if not os.path.isdir(outdir) and outdir!='':
         os.makedirs(outdir)
-        fname = os.path.join(outdir, fname)
+    fname = os.path.join(outdir, fname)
 
     data_out = remove_numpy(data_out)
 
