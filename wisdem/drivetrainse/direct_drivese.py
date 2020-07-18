@@ -23,7 +23,9 @@ class DrivetrainSE(om.Group):
 
         # Independent variables that are unique to DriveSE
         ivc = om.IndepVarComp()
-        # ivc.add_output('gear_ratio', 0.0)
+        ivc.add_output('gear_ratio', 1.0)
+        ivc.add_output('L_bedplate', 0.0, units='m')
+        ivc.add_output('H_bedplate', 0.0, units='m')
         #ivc.add_output('tilt', 0.0, units='deg')
         # ivc.add_output('shaft_ratio', 0.0)
         # ivc.add_output('shrink_disc_mass', 0.0, units='kg')
@@ -40,10 +42,11 @@ class DrivetrainSE(om.Group):
         ivc.add_discrete_output('mb2Type', 'SRB')
         #ivc.add_discrete_output('IEC_Class', 'B')
         #ivc.add_discrete_output('shaft_factor', 'normal')
-        ivc.add_discrete_output('uptower_transformer', True)
+        ivc.add_discrete_output('uptower_electronics', True)
         #ivc.add_discrete_output('crane', True)
         #ivc.add_discrete_output('rna_weightM', True)
         ivc.add_discrete_output('upwind', True)
+        ivc.add_discrete_output('direct_drive', True)
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
         # Independent variables that may be duplicated at higher levels of aggregation
@@ -58,7 +61,7 @@ class DrivetrainSE(om.Group):
             sivc.add_output('gamma_f', 0.0)
             sivc.add_output('gamma_m', 0.0)
             sivc.add_output('gamma_n', 0.0)
-            #sivc.add_output('tower_top_diameter',     0.0, units='m')
+            sivc.add_output('D_top',     0.0, units='m')
             #sivc.add_output('rotor_diameter',         0.0, units='m')
             #sivc.add_output('rotor_rpm',              0.0, units='rpm')
             #sivc.add_output('rotor_torque',           0.0, units='N*m')
@@ -84,10 +87,10 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('gear', dc.Gearbox(), promotes=['*']) 
 
         self.add_subsystem('hss', dc.HighSpeedSide(), promotes=['*']) # TODO- Include in generatorSE?
-        #self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
-        #self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
-        #self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
-        #self.add_subsystem('nacelleSystem', dc.NacelleSystemAdder(), promotes=['*'])
+        self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
+        self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
+        self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
+        #self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         #self.add_subsystem('rna', RNAMass(), promotes=['*'])
         self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
         #self.add_subsystem('loads', RotorLoads(), promotes=['*']) Get this from Frame3DD reaction forces, although careful about mass/force inclusion
@@ -99,6 +102,7 @@ class DrivetrainSE(om.Group):
         self.connect('D_bearing2','bear2.D_bearing')
         self.connect('mb1Type', 'bear1.bearing_type')
         self.connect('mb2Type', 'bear2.bearing_type')
+        self.connect('D_bedplate','D_bedplate_base', src_indices=[0])
         
 if __name__ == '__main__':
     prob = om.Problem()
@@ -106,6 +110,7 @@ if __name__ == '__main__':
     prob.setup()
 
     prob['upwind'] = True
+    prob['direct_drive'] = True
 
     prob['L_12'] = 2.0
     prob['L_h1'] = 1.0

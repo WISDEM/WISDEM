@@ -38,20 +38,20 @@ class Layout(om.ExplicitComponent):
         #self.add_input('L_hub', 0.0, units='m', desc='Length of hub') 
         self.add_input('L_bedplate', 0.0, units='m', desc='Length of bedplate') 
         self.add_input('H_bedplate', 0.0, units='m', desc='height of bedplate')
-        #self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
+        self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
         self.add_input('access_diameter',0.0, units='m', desc='Minimum diameter required for maintenance access') 
 
-        self.add_input('shaft_diameter', np.zeros(5), units='m', desc='Shaft outer diameter from hub to bearing 2')
+        self.add_input('lss_diameter', np.zeros(5), units='m', desc='Shaft outer diameter from hub to bearing 2')
         self.add_input('nose_diameter', np.zeros(5), units='m', desc='Nose outer diameter from bearing 1 to bedplate')
         self.add_input('D_top', 0.0, units='m', desc='Tower top outer diameter')
-        self.add_input('shaft_wall_thickness', np.zeros(5), units='m', desc='Shaft wall thickness')
+        self.add_input('lss_wall_thickness', np.zeros(5), units='m', desc='Shaft wall thickness')
         self.add_input('nose_wall_thickness', np.zeros(5), units='m', desc='Nose wall thickness')
-        self.add_input('bedplate_wall_thickness', np.zeros(n_points), units='m', desc='Shaft wall thickness')
+        self.add_input('bedplate_wall_thickness', np.zeros(n_points), units='m', desc='Bedplate wall thickness')
 
         self.add_input('rho', val=0.0, units='kg/m**3', desc='material density')
         
-        #self.add_output('overhang',0.0, units='m', desc='Overhang of rotor from tower along x-axis in yaw-aligned c.s.') 
-        #self.add_output('drive_height',0.0, units='m', desc='Hub height above tower top')
+        self.add_output('overhang',0.0, units='m', desc='Overhang of rotor from tower along x-axis in yaw-aligned c.s.') 
+        self.add_output('drive_height',0.0, units='m', desc='Hub height above tower top')
         self.add_output('L_nose',0.0, units='m', desc='Length of nose') 
         self.add_output('L_shaft',0.0, units='m', desc='Length of nose') 
         self.add_output('L_generator',0.0, units='m', desc='Generator stack width') 
@@ -64,20 +64,18 @@ class Layout(om.ExplicitComponent):
         self.add_output('constr_L_gsn', 0.0, units='m', desc='Margin for generator stator attachment distance (should be > 0)') 
 
         self.add_output('s_nose', val=np.zeros(6), units='m', desc='Nose discretized hub-aligned s-coordinates')
-        #self.add_output('z_nose', val=np.zeros(n_points+2), units='m', desc='Nose discretized z-coordinates')
         self.add_output('D_nose', val=np.zeros(6), units='m', desc='Nose discretized diameter values at coordinates')
         self.add_output('t_nose', val=np.zeros(6), units='m', desc='Nose discretized thickness values at coordinates')
         self.add_output('nose_mass', val=0.0, units='kg', desc='Nose mass')
         self.add_output('nose_cm', val=0.0, units='m', desc='Nose center of mass along nose axis from bedplate')
         self.add_output('nose_I', val=np.zeros(3), units='kg*m**2', desc='Nose moment of inertia around cm in axial (hub-aligned) c.s.')
 
-        self.add_output('s_shaft', val=np.zeros(6), units='m', desc='Shaft discretized x-coordinates')
-        #self.add_output('z_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized z-coordinates')
+        self.add_output('s_shaft', val=np.zeros(6), units='m', desc='Shaft discretized s-coordinates')
         self.add_output('D_shaft', val=np.zeros(6), units='m', desc='Shaft discretized diameter values at coordinates')
         self.add_output('t_shaft', val=np.zeros(6), units='m', desc='Shaft discretized thickness values at coordinates')
-        self.add_output('shaft_mass', val=0.0, units='kg', desc='Shaft mass')
-        self.add_output('shaft_cm', val=0.0, units='m', desc='Shaft center of mass along shaft axis from bedplate')
-        self.add_output('shaft_I', val=np.zeros(3), units='kg*m**2', desc='Shaft moment of inertia around cm in axial (hub-aligned) c.s.')
+        self.add_output('lss_mass', val=0.0, units='kg', desc='LSS mass')
+        self.add_output('lss_cm', val=0.0, units='m', desc='LSS center of mass along shaft axis from bedplate')
+        self.add_output('lss_I', val=np.zeros(3), units='kg*m**2', desc='LSS moment of inertia around cm in axial (hub-aligned) c.s.')
 
         self.add_output('x_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate centerline x-coordinates')
         self.add_output('z_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate centerline z-coordinates')
@@ -89,17 +87,12 @@ class Layout(om.ExplicitComponent):
         self.add_output('t_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate wall thickness (mirrors input)')
         self.add_output('bedplate_mass', val=0.0, units='kg', desc='Bedplate mass')
         self.add_output('bedplate_cm', val=np.zeros(3), units='m', desc='Bedplate center of mass')
+        self.add_output('bedplate_I', val=np.zeros(3), units='kg*m**2', desc='Bedplate mass moment of inertia about base')
 
         self.add_output('s_mb1', val=0.0, units='m', desc='Bearing 1 s-coordinate along drivetrain, measured from bedplate')
-        #self.add_output('z_mb1', val=0.0, units='m', desc='Bearing 1 z-coordinate')
         self.add_output('s_mb2', val=0.0, units='m', desc='Bearing 2 s-coordinate along drivetrain, measured from bedplate')
-        #self.add_output('z_mb2', val=0.0, units='m', desc='Bearing 2 z-coordinate')
         self.add_output('s_stator', val=0.0, units='m', desc='Generator stator attachment to nose x-coordinate')
-        #self.add_output('z_stator', val=0.0, units='m', desc='Generator stator attachment to nose z-coordinate')
         self.add_output('s_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft x-coordinate')
-        #self.add_output('z_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft z-coordinate')
-        #self.add_output('x_hub', val=0.0, units='m', desc='Hub center (blade attachment plane) x-coordinate')
-        #self.add_output('z_hub', val=0.0, units='m', desc='Hub center (blade attachment plane) z-coordinate')
         
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -113,7 +106,7 @@ class Layout(om.ExplicitComponent):
         L_gsn      = float(inputs['L_gsn'])
         L_bedplate = float(inputs['L_bedplate'])
         H_bedplate = float(inputs['H_bedplate'])
-        #tilt       = float(np.deg2rad(inputs['tilt']))
+        tilt       = float(np.deg2rad(inputs['tilt']))
         D_access   = float(inputs['access_diameter'])
         D_nose     = inputs['nose_diameter']
         D_shaft    = inputs['shaft_diameter']
@@ -162,11 +155,17 @@ class Layout(om.ExplicitComponent):
         arc = L_bedplate*np.abs(ellipeinc(rad2,ecc))    # Arc length via incomplete elliptic integral of the second kind
 
         # Mass and MoI properties
-        mass = nodal2sectional(A_bed)[0] * arc * rho
-        outputs['bedplate_mass'] = mass.sum()
         x_c_sec = nodal2sectional( x_c )[0]
         z_c_sec = nodal2sectional( z_c )[0]
-        outputs['bedplate_cm'] = np.array([np.sum(mass*x_c_sec), 0.0, np.sum(mass*z_c_sec)]) / mass.sum()
+        R_c_sec = np.sqrt( x_c_sec**2 + z_c_sec**2 )
+        mass    = nodal2sectional(A_bed)[0] * arc * rho
+        mass_tot = mass.sum()
+        cm      = np.array([np.sum(mass*x_c_sec), 0.0, np.sum(mass*z_c_sec)]) / mass_tot
+        I       = mass[:,np.newaxis] * np.c_[x_c_sec**2, R_c_sec**2, z_c_sec**2]
+        I       = I.sum(axis=0) + mass_tot*np.array([0.0, x_c[0]**2, 0.0]) # parallel axis theorem to move to base
+        outputs['bedplate_mass'] = mass_tot
+        outputs['bedplate_cm']   = cm
+        outputs['bedplate_I']    = I
 
         # Now shift originn to be at tower top
         x_inner -= x_c[0]
@@ -198,10 +197,11 @@ class Layout(om.ExplicitComponent):
         outputs['L_drive']  = L_drive
 
         # Overhang from center of tower measured in yaw-aligned c.s. (parallel to ground)
-        #outputs['overhang'] = L_drive*np.cos(tilt) + L_bedplate
+        # TODO: Add in distance from hub flange?
+        outputs['overhang'] = L_drive*np.cos(tilt) + L_bedplate
 
         # Total height (to ensure correct hub height can be enforced)
-        #outputs['drive_height'] = L_drive*np.sin(tilt) + H_bedplate
+        outputs['drive_height'] = L_drive*np.sin(tilt) + H_bedplate
 
         # Discretize the drivetrain from bedplate to hub
         s_drive  = np.r_[np.cumsum(s_drive), L_drive-L_grs, L_gsn]
@@ -235,7 +235,6 @@ class Layout(om.ExplicitComponent):
         outputs['D_bearing2'] = D_shaft[-1] - t_shaft[-1] - D_nose[-1]
 
         # Compute center of mass based on area
-        # Will have to rotate https://calcresource.com/moment-of-inertia-rotation.html
         m_nose, cm_nose, I_nose = rod_prop(s_nose[:-1], D_nose, t_nose, L_nose, rho)
         outputs['nose_mass'] = m_nose
         outputs['nose_cm']   = cm_nose
