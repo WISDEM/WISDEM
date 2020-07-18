@@ -1,7 +1,10 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
+import openmdao.api as om
+from openmdao.utils.assert_utils import assert_check_partials
 import wisdem.commonse.WindWaveDrag as wwd
+
 
 npts = 100
 myones = np.ones((npts,))
@@ -70,6 +73,64 @@ class TestDrag(unittest.TestCase):
         Fp = Fi + D
         self.wave.compute(self.params, self.unknowns)
         npt.assert_equal(self.unknowns['waveLoads_Px'], Fp)
+        
+    def test_wave_derivs(self):
+        nPoints = 5
+        
+        prob = om.Problem()
+    
+        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
+    
+        # Add some arbitrary inputs
+        ivc.add_output('U', np.arange(nPoints), units='m/s')
+        ivc.add_output('A', np.ones(nPoints), units='m/s**2')
+        ivc.add_output('p', np.ones(nPoints)*0.5, units='N/m**2')
+        ivc.add_output('z', np.linspace(0., 10., nPoints), units='m')
+        ivc.add_output('d', np.ones(nPoints), units='m')
+        ivc.add_output('beta_wave', 1.2, units='deg')
+        ivc.add_output('rho_water', 1.0, units='kg/m**3')
+        ivc.add_output('mu_water', 0.001, units='kg/(m*s)')
+        ivc.add_output('cm', 10.0)
+        ivc.add_output('cd_usr', 0.01)
+    
+        comp = wwd.CylinderWaveDrag(nPoints=nPoints)
+        prob.model.add_subsystem('comp', comp, promotes=['*'])
+    
+        prob.setup(force_alloc_complex=True)
+    
+        prob.run_model()
+        
+        check = prob.check_partials(out_stream=None, compact_print=True, method='fd')
+    
+        assert_check_partials(check, rtol=5e-5, atol=1e-1)
+        
+    def test_wind_derivs(self):
+        nPoints = 5
+        
+        prob = om.Problem()
+    
+        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
+    
+        # Add some arbitrary inputs
+        ivc.add_output('U', np.arange(nPoints), units='m/s')
+        ivc.add_output('z', np.linspace(0., 10., nPoints), units='m')
+        ivc.add_output('d', np.ones(nPoints), units='m')
+        ivc.add_output('beta_wind', 1.2, units='deg')
+        ivc.add_output('rho_air', 1.0, units='kg/m**3')
+        ivc.add_output('mu_air', 0.001, units='kg/(m*s)')
+        ivc.add_output('cd_usr', 0.01)
+    
+        comp = wwd.CylinderWindDrag(nPoints=nPoints)
+        prob.model.add_subsystem('comp', comp, promotes=['*'])
+    
+        prob.setup(force_alloc_complex=True)
+    
+        prob.run_model()
+        
+        check = prob.check_partials(out_stream=None, compact_print=True, method='fd')
+    
+        assert_check_partials(check, rtol=5e-5, atol=1e-1)
+    
         
 def suite():
     suite = unittest.TestSuite()
