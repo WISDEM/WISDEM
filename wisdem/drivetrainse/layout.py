@@ -109,10 +109,10 @@ class Layout(om.ExplicitComponent):
         tilt       = float(np.deg2rad(inputs['tilt']))
         D_access   = float(inputs['access_diameter'])
         D_nose     = inputs['nose_diameter']
-        D_shaft    = inputs['shaft_diameter']
+        D_shaft    = inputs['lss_diameter']
         D_top      = float(inputs['D_top'])
         t_nose     = inputs['nose_wall_thickness']
-        t_shaft    = inputs['shaft_wall_thickness']
+        t_shaft    = inputs['lss_wall_thickness']
         t_bed      = inputs['bedplate_wall_thickness']
         upwind     = discrete_inputs['upwind']
         rho        = float(inputs['rho'])
@@ -241,9 +241,9 @@ class Layout(om.ExplicitComponent):
         outputs['nose_I']    = I_nose
 
         m_shaft, cm_shaft, I_shaft = rod_prop(s_shaft[:-1], D_shaft, t_shaft, L_shaft, rho)
-        outputs['shaft_mass'] = m_shaft
-        outputs['shaft_cm']   = cm_shaft
-        outputs['shaft_I']    = I_shaft
+        outputs['lss_mass'] = m_shaft
+        outputs['lss_cm']   = cm_shaft
+        outputs['lss_I']    = I_shaft
 
         # Add in generator rotor and stator attachment points here because otherwise it is more difficult after points are sorted
         D_nose = np.r_[D_nose, np.interp(s_nose[-1], s_nose[:-1], D_nose)]

@@ -1,6 +1,7 @@
 
 import numpy as np
 import openmdao.api as om
+import wisdem.commonse.utilities as util
 
 #-------------------------------------------------------------------------
 
@@ -439,7 +440,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        Cup = -1.0 if discrete_inputs['upwind'] else 1.0
+        Cup  = -1.0 if discrete_inputs['upwind'] else 1.0
+        tilt = float(np.deg2rad(inputs['tilt']))
         
         components = ['mb1','mb2','lss','hss','gearbox','generator','hvac',
                       'nose','bedplate', 'mainframe','yaw','cover']
@@ -463,24 +465,24 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         cm_nac /= m_nac
 
         # Now find total I about nacelle CofM
-        I_nac  = assembleI( np.zeros(6) )
+        I_nac  = util.assembleI( np.zeros(6) )
         for k in components:
             m_i  = inputs[k+'_mass']
             cm_i = inputs[k+'_cm']
             I_i  = inputs[k+'_I']
 
-            # Rotate MofI if in hub c.s. ( https://calcresource.com/moment-of-inertia-rotation.html )
+            # Rotate MofI if in hub c.s.
             if len(cm_i) == 1:
-                I_i = moi_rotate(I_i, -tilt)
+                I_i = util.rotateI(I_i, -Cup*tilt, axis='y')
             else:
                 I_i = np.r_[I_i, np.zeros(3)]
                 
             r       = cm_i - cm_nac
-            I_nac  += assembleI(I_i) + m_i*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
+            I_nac  += util.assembleI(I_i) + m_i*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
 
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac
-        outputs['nacelle_I']    = unassemble(I)
+        outputs['nacelle_I']    = util.unassembleI(I_nac)
         # Future yaw system weight calculations based on total system mass above yaw system
         #m_above_yaw = m_nac - inputs['yaw_mass']
 
