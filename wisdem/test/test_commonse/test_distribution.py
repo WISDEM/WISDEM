@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
     
         check = prob.check_partials(out_stream=None, compact_print=True, method='fd')
     
-        assert_check_partials(check)
+        assert_check_partials(check, atol=1e-5)
     
         
 def suite():
