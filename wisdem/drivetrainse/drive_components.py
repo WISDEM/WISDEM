@@ -18,22 +18,26 @@ class MainBearing(om.ExplicitComponent):
         self.add_input('D_shaft', val=0.0, units='m', desc='Diameter of LSS shaft at bearing location')
 
         self.add_output('mb_mass', val=0.0, units='kg', desc='overall component mass')
-        self.add_output('mb_cm',   val=np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+        #self.add_output('mb_cm',   val=np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('mb_I',    val=np.zeros(3), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        btype = discrete_inputs['bearing_type']
+        D_shaft = inputs['D_shaft']
+        D_bearing = inputs['D_bearing']
+        
         # assume low load rating for bearing
         if btype == 'CARB':  # p = Fr, so X=1, Y=0
             face_width = 0.2663 * D_shaft + .0435
             mass = 1561.4 * D_shaft**2.6007
-            Bearing_Limit = 0.5 / 180 * pi
+            Bearing_Limit = 0.5 / 180 * np.pi
 
         elif btype == 'CRB':
             face_width = 0.1136 * D_shaf
             mass = 304.19 * D_shaft**1.8885
-            Bearing_Limit = 4.0 / 60.0 / 180.0 * pi
+            Bearing_Limit = 4.0 / 60.0 / 180.0 * np.pi
 
         elif btype == 'SRB':
             face_width = 0.2762 * D_shaft
@@ -48,18 +52,47 @@ class MainBearing(om.ExplicitComponent):
         #elif btype == 'TRB1':
         #    face_width = 0.0740
         #    mass = 92.863 * D_shaft**.8399
-        #    Bearing_Limit = 3.0 / 60.0 / 180.0 * pi
+        #    Bearing_Limit = 3.0 / 60.0 / 180.0 * np.pi
 
         elif btype == 'TRB':
             face_width = 0.1499 * D_shaf
             tmass = 543.01 * D_shaft**1.9043
-            Bearing_Limit = 3.0 / 60.0 / 180.0 * pi
+            Bearing_Limit = 3.0 / 60.0 / 180.0 * np.pi
         
         # add housing weight, but pg 23 of report says factor is 2.92 whereas this is 2.963
         mass += mass*(8000.0/2700.0)  
 
         b1I0 = mass * (0.5*D_bearing)** 2
         I = np.r_[b1I0, 0.5*b1I0*np.ones(2)]
+        outputs['mb_mass'] = mass
+        outputs['mb_I'] = I
+        
+
+#-------------------------------------------------------------------
+
+class Gearbox(om.ExplicitComponent):
+    '''
+    HighSpeedShaft class
+          The HighSpeedShaft class is used to represent the high speed shaft and mechanical brake components of a wind turbine drivetrain.
+          It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
+          It contains an update method to determine the mass, mass properties, and dimensions of the component.
+    '''
+
+    def setup(self):
+
+        self.add_discrete_input('direct_drive', False)
+
+        # returns
+        self.add_output('gearbox_mass', val=0.0, units='kg', desc='overall component mass')
+        self.add_output('gearbox_cm', val=np.zeros(3), units='m', desc='Gearbox center of mass [x,y,z] measure along shaft from bedplate')
+        self.add_output('gearbox_I', val=np.zeros(3), units='kg*m**2', desc='Gearbox mass moments of inertia [Ixx, Iyy, Izz] around its center of mass')
+        self.add_output('L_gearbox', val=0.0, units='m', desc='length of gearbox')
+        self.add_output('H_gearbox', val=0.0, units='m', desc='length of gearbox')
+
+        
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        if discrete_inputs['direct_drive']: return
+        
         
 
 #-------------------------------------------------------------------
@@ -74,15 +107,17 @@ class HighSpeedSide(om.ExplicitComponent):
 
     def setup(self):
 
-        # variables
+        self.add_discrete_input('direct_drive', False)
+
         self.add_input('rotor_diameter', val=0.0, units='m', desc='rotor diameter')
         self.add_input('rotor_torque', val=0.0, units='N*m', desc='rotor torque at rated power')
-        self.add_input('gear_ratio', val=0.0, desc='overall gearbox ratio')
+        self.add_input('gear_ratio', val=1.0, desc='overall gearbox ratio')
         self.add_input('D_shaft_end', val=0.0, units='m', desc='low speed shaft outer diameter')
         self.add_input('gearbox_length', val=0.0, units='m', desc='gearbox length')
         self.add_input('gearbox_height', val=0.0, units='m', desc='gearbox height')
         self.add_input('gearbox_cm', val=np.zeros(3), units='m', desc='gearbox cm [x,y,z]')
         self.add_input('hss_input_length', val=0.0, units='m', desc='high speed shaft length determined by user. Default 0.5m')
+        self.add_input('rho', val=0.0, units='kg/m**3', desc='material density')
 
         # returns
         self.add_output('hss_mass', val=0.0, units='kg', desc='overall component mass')
@@ -91,17 +126,19 @@ class HighSpeedSide(om.ExplicitComponent):
         self.add_output('hss_length', val=0.0, units='m', desc='length of high speed shaft')
         self.add_output('hss_diameter', val=0.0, units='m', desc='diameter of high speed shaft')
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
+        direct      = discrete_inputs['direct_drive']
         D_rotor     = float(inputs['rotor_diameter'])
         Q_rotor     = float(inputs['rotor_torque'])
         gear_ratio  = float(inputs['gear_ratio'])
         D_shaft     = float(inputs['D_shaft_end'])
         L_gearbox   = float(inputs['gearbox_length'])
         H_gearbox   = float(inputs['gearbox_height'])
-        cm_gearbox  = float(inputs['gearbox_cm'])
+        cm_gearbox  = inputs['gearbox_cm']
         L_hss_input = float(inputs['hss_input_length'])
+        rho         = float(inputs['rho'])
 
         # Regression based sizing
         # relationship derived from HSS multiplier for University of Sunderland model compared to NREL CSM for 750 kW and 1.5 MW turbines
@@ -129,7 +166,7 @@ class HighSpeedSide(om.ExplicitComponent):
             cm[2] = z_rotor
         else:
             cm = cm_gearbox.copy()
-            cm[0] += 0.5*L_gearbox + 0.5*hss_length
+            cm[0] += 0.5*L_gearbox + 0.5*L_hss_shaft
             cm[2] += 0.2*H_gearbox
   
             I[0]  += m_hss_shaft *     (0.5*D_hss_shaft)**2                   / 2.
@@ -231,7 +268,7 @@ class YawSystem(om.ExplicitComponent):
         m_frictionPlate = rho * np.pi*D_top * (0.1*D_top) * (1e-3*D_rotor)
 
         # Total mass estimate
-        outputs['yaw_mass'] = m_frictionPlate frictionPlateMass + n_motors*m_motor
+        outputs['yaw_mass'] = m_frictionPlate + n_motors*m_motor
   
         # Assume cm is at tower top (cm=0,0,0) and mass is non-rotating (I=0,..), so just set them directly
         outputs['yaw_cm'] = np.zeros(3)
@@ -247,7 +284,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         # variables
         self.add_input('L_bedplate', 0.0, units='m', desc='Length of bedplate') 
         self.add_input('H_bedplate', 0.0, units='m', desc='height of bedplate')
-        self.add_input('D_bedplate_base', val=np.zeros(n_points), units='m', desc='Bedplate diameters')
+        self.add_input('D_bedplate_base', val=0.0, units='m', desc='Bedplate diameters')
         self.add_input('rho_fiberglass', val=0.0, units='kg/m**3', desc='material density of fiberglass')
         
         # outputs

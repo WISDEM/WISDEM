@@ -7,18 +7,16 @@ from scipy.special import ellipeinc
 import wisdem.commonse.tube as tube
 from wisdem.commonse.utilities import nodal2sectional
 
-class Geometry(om.Group):
-    def initialize(self):
-        self.options.declare('n_points')
-    
-    def setup(self):
-        n_points = self.options['n_points']
-        self.add_subsystem('lay',Layout(n_points=n_points), promotes=['*'])
-        self.add_subsystem('mass',Mass(n_points=n_points), promotes=['*'])
-
-                           
-class Mass(om.ExplicitComponent):
-    pass
+def rod_prop(s, D, t, L, rho):
+    y  = 0.25 * rho * np.pi * (D**2  - (D - t)**2)
+    m  = np.trapz(y, s)
+    cm = np.trapz(y*s, s) / m
+    Dm = D.mean()
+    tm = t.mean()
+    I  = np.array([0.5     *   0.25*(Dm**2  + (Dm - tm)**2),
+                  (1./12.)*(3*0.25*(Dm**2  + (Dm - tm)**2) + L**2),
+                  (1./12.)*(3*0.25*(Dm**2  + (Dm - tm)**2) + L**2) ])
+    return m, cm, m*I
 
 
 class Layout(om.ExplicitComponent):
@@ -37,38 +35,49 @@ class Layout(om.ExplicitComponent):
         self.add_input('L_2n', 0.0, units='m', desc='Length from bedplate / end of nose to bearing #2')
         self.add_input('L_grs', 0.0, units='m', desc='Length from shaft-hub flange to generator rotor attachment point on shaft')
         self.add_input('L_gsn', 0.0, units='m', desc='Length from nose-bedplate flange to generator stator attachment point on nose')
-        self.add_input('L_hub', 0.0, units='m', desc='Length of hub') 
+        #self.add_input('L_hub', 0.0, units='m', desc='Length of hub') 
         self.add_input('L_bedplate', 0.0, units='m', desc='Length of bedplate') 
         self.add_input('H_bedplate', 0.0, units='m', desc='height of bedplate')
-        self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
+        #self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
         self.add_input('access_diameter',0.0, units='m', desc='Minimum diameter required for maintenance access') 
 
-        self.add_input('shaft_diameter', np.zeros(n_points), units='m', desc='Shaft outer diameter from hub to bearing 2')
-        self.add_input('nose_diameter', np.zeros(n_points), units='m', desc='Nose outer diameter from bearing 1 to bedplate')
+        self.add_input('shaft_diameter', np.zeros(5), units='m', desc='Shaft outer diameter from hub to bearing 2')
+        self.add_input('nose_diameter', np.zeros(5), units='m', desc='Nose outer diameter from bearing 1 to bedplate')
         self.add_input('D_top', 0.0, units='m', desc='Tower top outer diameter')
-        self.add_input('shaft_wall_thickness', np.zeros(n_points), units='m', desc='Shaft wall thickness')
-        self.add_input('nose_wall_thickness', np.zeros(n_points), units='m', desc='Nose wall thickness')
+        self.add_input('shaft_wall_thickness', np.zeros(5), units='m', desc='Shaft wall thickness')
+        self.add_input('nose_wall_thickness', np.zeros(5), units='m', desc='Nose wall thickness')
         self.add_input('bedplate_wall_thickness', np.zeros(n_points), units='m', desc='Shaft wall thickness')
 
         self.add_input('rho', val=0.0, units='kg/m**3', desc='material density')
         
-        self.add_output('overhang',0.0, units='m', desc='Overhang of rotor from tower along x-axis in yaw-aligned c.s.') 
-        self.add_output('drive_height',0.0, units='m', desc='Hub height above tower top')
+        #self.add_output('overhang',0.0, units='m', desc='Overhang of rotor from tower along x-axis in yaw-aligned c.s.') 
+        #self.add_output('drive_height',0.0, units='m', desc='Hub height above tower top')
         self.add_output('L_nose',0.0, units='m', desc='Length of nose') 
         self.add_output('L_shaft',0.0, units='m', desc='Length of nose') 
+        self.add_output('L_generator',0.0, units='m', desc='Generator stack width') 
+        self.add_output('L_drive',0.0, units='m', desc='Length of drivetrain from bedplate to hub flang') 
         self.add_output('D_bearing1',0.0, units='m', desc='Diameter of bearing #1 (closer to hub)') 
         self.add_output('D_bearing2',0.0, units='m', desc='Diameter of bearing #2 (closer to tower)') 
-        self.add_output('constr_access', 0.0, units='m', desc='Margin for allowing maintenance access (should be > 0)') 
 
-        self.add_output('x_nose', val=np.zeros(n_points+2), units='m', desc='Nose discretized x-coordinates')
-        self.add_output('z_nose', val=np.zeros(n_points+2), units='m', desc='Nose discretized z-coordinates')
-        self.add_output('D_nose', val=np.zeros(n_points+2), units='m', desc='Nose discretized diameter values at coordinates')
-        self.add_output('t_nose', val=np.zeros(n_points+2), units='m', desc='Nose discretized thickness values at coordinates')
+        self.add_output('constr_access', np.zeros(5), units='m', desc='Margin for allowing maintenance access (should be > 0)') 
+        self.add_output('constr_L_grs', 0.0, units='m', desc='Margin for generator rotor attachment distance (should be > 0)') 
+        self.add_output('constr_L_gsn', 0.0, units='m', desc='Margin for generator stator attachment distance (should be > 0)') 
 
-        self.add_output('x_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized x-coordinates')
-        self.add_output('z_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized z-coordinates')
-        self.add_output('D_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized diameter values at coordinates')
-        self.add_output('t_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized thickness values at coordinates')
+        self.add_output('s_nose', val=np.zeros(6), units='m', desc='Nose discretized hub-aligned s-coordinates')
+        #self.add_output('z_nose', val=np.zeros(n_points+2), units='m', desc='Nose discretized z-coordinates')
+        self.add_output('D_nose', val=np.zeros(6), units='m', desc='Nose discretized diameter values at coordinates')
+        self.add_output('t_nose', val=np.zeros(6), units='m', desc='Nose discretized thickness values at coordinates')
+        self.add_output('nose_mass', val=0.0, units='kg', desc='Nose mass')
+        self.add_output('nose_cm', val=0.0, units='m', desc='Nose center of mass along nose axis from bedplate')
+        self.add_output('nose_I', val=np.zeros(3), units='kg*m**2', desc='Nose moment of inertia around cm in axial (hub-aligned) c.s.')
+
+        self.add_output('s_shaft', val=np.zeros(6), units='m', desc='Shaft discretized x-coordinates')
+        #self.add_output('z_shaft', val=np.zeros(n_points+2), units='m', desc='Shaft discretized z-coordinates')
+        self.add_output('D_shaft', val=np.zeros(6), units='m', desc='Shaft discretized diameter values at coordinates')
+        self.add_output('t_shaft', val=np.zeros(6), units='m', desc='Shaft discretized thickness values at coordinates')
+        self.add_output('shaft_mass', val=0.0, units='kg', desc='Shaft mass')
+        self.add_output('shaft_cm', val=0.0, units='m', desc='Shaft center of mass along shaft axis from bedplate')
+        self.add_output('shaft_I', val=np.zeros(3), units='kg*m**2', desc='Shaft moment of inertia around cm in axial (hub-aligned) c.s.')
 
         self.add_output('x_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate centerline x-coordinates')
         self.add_output('z_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate centerline z-coordinates')
@@ -79,18 +88,18 @@ class Layout(om.ExplicitComponent):
         self.add_output('D_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate diameters')
         self.add_output('t_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate wall thickness (mirrors input)')
         self.add_output('bedplate_mass', val=0.0, units='kg', desc='Bedplate mass')
-        self.add_output('bedplate_center_of_mass', val=np.zeros(3), units='m', desc='Bedplate center of mass')
+        self.add_output('bedplate_cm', val=np.zeros(3), units='m', desc='Bedplate center of mass')
 
-        self.add_output('x_mb1', val=0.0, units='m', desc='Bearing 1 x-coordinate')
-        self.add_output('z_mb1', val=0.0, units='m', desc='Bearing 1 z-coordinate')
-        self.add_output('x_mb2', val=0.0, units='m', desc='Bearing 2 x-coordinate')
-        self.add_output('z_mb2', val=0.0, units='m', desc='Bearing 2 z-coordinate')
-        self.add_output('x_stator', val=0.0, units='m', desc='Generator stator attachment to nose x-coordinate')
-        self.add_output('z_stator', val=0.0, units='m', desc='Generator stator attachment to nose z-coordinate')
-        self.add_output('x_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft x-coordinate')
-        self.add_output('z_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft z-coordinate')
-        self.add_output('x_hub', val=0.0, units='m', desc='Hub center (blade attachment plane) x-coordinate')
-        self.add_output('z_hub', val=0.0, units='m', desc='Hub center (blade attachment plane) z-coordinate')
+        self.add_output('s_mb1', val=0.0, units='m', desc='Bearing 1 s-coordinate along drivetrain, measured from bedplate')
+        #self.add_output('z_mb1', val=0.0, units='m', desc='Bearing 1 z-coordinate')
+        self.add_output('s_mb2', val=0.0, units='m', desc='Bearing 2 s-coordinate along drivetrain, measured from bedplate')
+        #self.add_output('z_mb2', val=0.0, units='m', desc='Bearing 2 z-coordinate')
+        self.add_output('s_stator', val=0.0, units='m', desc='Generator stator attachment to nose x-coordinate')
+        #self.add_output('z_stator', val=0.0, units='m', desc='Generator stator attachment to nose z-coordinate')
+        self.add_output('s_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft x-coordinate')
+        #self.add_output('z_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft z-coordinate')
+        #self.add_output('x_hub', val=0.0, units='m', desc='Hub center (blade attachment plane) x-coordinate')
+        #self.add_output('z_hub', val=0.0, units='m', desc='Hub center (blade attachment plane) z-coordinate')
         
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -99,12 +108,12 @@ class Layout(om.ExplicitComponent):
         L_12       = float(inputs['L_12'])
         L_h1       = float(inputs['L_h1'])
         L_2n       = float(inputs['L_2n'])
-        L_hub      = float(inputs['L_hub'])
+        #L_hub      = float(inputs['L_hub'])
         L_grs      = float(inputs['L_grs'])
         L_gsn      = float(inputs['L_gsn'])
         L_bedplate = float(inputs['L_bedplate'])
         H_bedplate = float(inputs['H_bedplate'])
-        tilt       = float(np.deg2rad(inputs['tilt']))
+        #tilt       = float(np.deg2rad(inputs['tilt']))
         D_access   = float(inputs['access_diameter'])
         D_nose     = inputs['nose_diameter']
         D_shaft    = inputs['shaft_diameter']
@@ -121,9 +130,9 @@ class Layout(om.ExplicitComponent):
         # The end point of 90 deg isn't exactly right for non-zero tilt, but leaving that for later
         n_points = self.options['n_points']
         if upwind:
-            rad = np.linspace(0.5*np.pi, 0, n_points)
+            rad = np.linspace(0.0, 0.5*np.pi, n_points)
         else:
-            rad = np.linspace(0.5*np.pi, np.pi, n_points)
+            rad = np.linspace(np.pi, 0.5*np.pi, n_points)
 
         # Centerline
         x_c = L_bedplate*np.cos(rad)
@@ -134,11 +143,11 @@ class Layout(om.ExplicitComponent):
         
         # Points on the outermost ellipse
         x_outer = (L_bedplate + 0.5*D_top )*np.cos(rad)
-        z_outer = (H_bedplate + 0.5*D_nose[-1])*np.sin(rad)
+        z_outer = (H_bedplate + 0.5*D_nose[0])*np.sin(rad)
 
         # Points on the innermost ellipse
         x_inner = (L_bedplate - 0.5*D_top )*np.cos(rad)
-        z_inner = (H_bedplate - 0.5*D_nose[-1])*np.sin(rad)
+        z_inner = (H_bedplate - 0.5*D_nose[0])*np.sin(rad)
 
         # Cross-sectional properties
         D_bed   = np.sqrt( (z_outer-z_inner)**2 + (x_outer-x_inner)**2 )
@@ -147,7 +156,7 @@ class Layout(om.ExplicitComponent):
         A_bed   = np.pi * (r_bed_o**2 - r_bed_i**2)
 
         # This finds the central angle (rad2) given the parametric angle (rad)
-        rad2 = np.arctan( (L_bedplate + 0.5*D_top) / (H_bedplate + 0.5*D_nose[-1]) * np.tan(np.diff(rad)) )
+        rad2 = np.arctan( (L_bedplate + 0.5*D_top) / (H_bedplate + 0.5*D_nose[0]) * np.tan(np.diff(rad)) )
             
         # arc length
         arc = L_bedplate*np.abs(ellipeinc(rad2,ecc))    # Arc length via incomplete elliptic integral of the second kind
@@ -160,9 +169,9 @@ class Layout(om.ExplicitComponent):
         outputs['bedplate_cm'] = np.array([np.sum(mass*x_c_sec), 0.0, np.sum(mass*z_c_sec)]) / mass.sum()
 
         # Now shift originn to be at tower top
-        x_inner -= x_c[-1]
-        x_outer -= x_c[-1]
-        x_c     -= x_c[-1]
+        x_inner -= x_c[0]
+        x_outer -= x_c[0]
+        x_c     -= x_c[0]
         
         # Geometry outputs
         outputs['x_bedplate'] = x_c
@@ -174,18 +183,89 @@ class Layout(om.ExplicitComponent):
         outputs['D_bedplate'] = D_bed
         outputs['t_bedplate'] = t_bed
         # ------------------------------------
+        
+        # ------- Discretization ----------------
+        # Length of shaft and nose
+        L_shaft = L_12 + L_h1
+        L_nose  = L_12 + L_2n
+        outputs['L_shaft'] = L_shaft
+        outputs['L_nose']  = L_nose
+
+        # Total length from bedplate to hub flange
+        ds      = 0.5*np.ones(2)
+        s_drive = np.r_[0.0, L_2n*ds, L_12*ds, L_h1*ds]
+        L_drive = s_drive.sum()
+        outputs['L_drive']  = L_drive
+
+        # Overhang from center of tower measured in yaw-aligned c.s. (parallel to ground)
+        #outputs['overhang'] = L_drive*np.cos(tilt) + L_bedplate
+
+        # Total height (to ensure correct hub height can be enforced)
+        #outputs['drive_height'] = L_drive*np.sin(tilt) + H_bedplate
+
+        # Discretize the drivetrain from bedplate to hub
+        s_drive  = np.r_[np.cumsum(s_drive), L_drive-L_grs, L_gsn]
+        s_mb1    = s_drive[4]
+        s_mb2    = s_drive[2]
+        s_rotor  = s_drive[-2]
+        s_stator = s_drive[-1]
+        s_nose   = np.r_[s_drive[:5], s_drive[-1]]
+        s_shaft  = s_drive[2:-1]
+
+        # Store outputs
+        outputs['L_generator'] = L_drive - L_grs - L_gsn
+        #outputs['s_drive']   = np.sort(s_drive)
+        outputs['s_rotor']  = s_rotor
+        outputs['s_stator'] = s_stator
+        outputs['s_mb1']    = s_mb1
+        outputs['s_mb2']    = s_mb2
+        # ------------------------------------
+        
+        # ------- Constraints ----------------
+        outputs['constr_L_gsn'] = L_2n - L_gsn # Must be > 0
+        outputs['constr_L_grs'] = L_shaft - L_grs # Must be > 0
+        outputs['constr_access'] = D_nose - t_nose - D_access
+        # ------------------------------------
+        
+        # ------- Nose, shaft, and bearing properties ----------------
+        #cmarray = np.array([np.cos(tilt), 0.0, np.cos(tilt)])
+
+        # Now is a good time to set bearing diameters
+        outputs['D_bearing1'] = D_shaft[-1] - t_shaft[-1] - D_nose[0]
+        outputs['D_bearing2'] = D_shaft[-1] - t_shaft[-1] - D_nose[-1]
+
+        # Compute center of mass based on area
+        # Will have to rotate https://calcresource.com/moment-of-inertia-rotation.html
+        m_nose, cm_nose, I_nose = rod_prop(s_nose[:-1], D_nose, t_nose, L_nose, rho)
+        outputs['nose_mass'] = m_nose
+        outputs['nose_cm']   = cm_nose
+        outputs['nose_I']    = I_nose
+
+        m_shaft, cm_shaft, I_shaft = rod_prop(s_shaft[:-1], D_shaft, t_shaft, L_shaft, rho)
+        outputs['shaft_mass'] = m_shaft
+        outputs['shaft_cm']   = cm_shaft
+        outputs['shaft_I']    = I_shaft
+
+        # Add in generator rotor and stator attachment points here because otherwise it is more difficult after points are sorted
+        D_nose = np.r_[D_nose, np.interp(s_nose[-1], s_nose[:-1], D_nose)]
+        t_nose = np.r_[t_nose, np.interp(t_nose[-1], s_nose[:-1], t_nose)]
+
+        D_shaft = np.r_[D_shaft, np.interp(s_shaft[-1], s_shaft[:-1], D_shaft)]
+        t_shaft = np.r_[t_shaft, np.interp(t_shaft[-1], s_shaft[:-1], t_shaft)]
+
+        # Sort everything before storing it for easier use in Frame3DD
+        ind = np.argsort(s_nose)
+        outputs['s_nose'] = s_nose[ind]
+        outputs['D_nose'] = D_nose[ind]
+        outputs['t_nose'] = t_nose[ind]
+
+        ind = np.argsort(s_shaft)
+        outputs['s_shaft'] = s_shaft[ind]
+        outputs['D_shaft'] = D_shaft[ind]
+        outputs['t_shaft'] = t_shaft[ind]
 
         
         '''
-        s_disc = 0.5*np.ones(2)
-        s_drive = np.array([0.0, L_2n*s_disc, L_12*s_disc, L_h1*s_disc, L_hub*s_disc])
-        L_drive = s_drive.sum()
-
-        s_drive = np.cumsum(s_drive)
-        s_drive = np.r_[s_drive, L_drive-L_hub-L_grs, L_gsn] / L_drive
-        
-        x_drive = s_drive*np.cos(tilt)
-        z_drive = s_drive*np.sin(tilt)
         if upwind:
             x_drive *= -1
 
@@ -202,23 +282,14 @@ class Layout(om.ExplicitComponent):
         x_rotor  = x_drive[-2]
         z_rotor  = z_drive[-2]
 
-        s_nose   = np.r_[s_drive[:5], s_drive[-1]]
         x_nose   = np.r_[x_drive[:5], x_drive[-1]]
         z_nose   = np.r_[z_drive[:5], z_drive[-1]]
 
-        s_shaft  = np.r_[s_drive[2:-1], s_drive[-2]]
         x_shaft  = np.r_[x_drive[2:-1], x_drive[-2]]
         z_shaft  = np.r_[z_drive[2:-1], z_drive[-2]]
-        '''
 
         
         # ------- Nose, shaft, and bearing coordinates ----------------
-        # Length of shaft and nose
-        L_shaft = L_12 + L_h1
-        L_nose  = L_12 + L_2n
-        outputs['L_shaft'] = L_shaft
-        outputs['L_nose']  = L_nose
-
         # Set arc length and uncorrected x-z values
         npts    = len(D_nose)
         
@@ -279,10 +350,6 @@ class Layout(om.ExplicitComponent):
         z_shaft = np.r_[z_shaft, z_stator, z_mb1]
         s_shaft = np.r_[s_shaft, snew]
 
-        # Now is a good time to set bearing diameters
-        outputs['D_bearing1'] = D_shaft[-1] - t_shaft[-1] - D_nose[0]
-        outputs['D_bearing2'] = D_shaft[-1] - t_shaft[-1] - D_nose[-1]
-
         # For upwind, sort from lowest x-value to highest, downwind vice-versa
         isort = np.argsort(x_nose)
         if not upwind: isort = np.flipud(isort)
@@ -325,13 +392,4 @@ class Layout(om.ExplicitComponent):
         # Total length from bedplate to hub blade attachment
         L_drive = L_hub + L_h1 + L_12 + L_2n
 
-        # Overhang from center of tower measured in yaw-aligned c.s. (parallel to ground)
-        outputs['overhang'] = L_drive*np.cos(tilt) + L_bedplate
-
-        # Total height (to ensure correct hub height can be enforced)
-        outputs['drive_height'] = L_drive*np.sin(tilt) + H_bedplate
-
-        # Ensure maintenance access space
-        D_nose_i  = D_nose - t_nose
-        outputs['constr_access'] = D_nose_i - D_access
-        # ------------------------------------
+        '''

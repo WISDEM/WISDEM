@@ -1,11 +1,11 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import wisdem.drivetrainse.bedplate as bed
+import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.layout as lay
 import openmdao.api as om
 
-npts = 14
+npts = 10
 
 class TestLayout(unittest.TestCase):
     def setUp(self):
@@ -26,20 +26,22 @@ class TestLayout(unittest.TestCase):
         self.inputs['tilt'] = 4.0
         self.inputs['access_diameter'] = 0.9
 
-        myones = np.ones(npts)
+        myones = np.ones(5)
         self.inputs['shaft_diameter'] = 3.3*myones
         self.inputs['nose_diameter'] = 2.2*myones
         self.inputs['shaft_wall_thickness'] = 0.45*myones
         self.inputs['nose_wall_thickness'] = 0.1*myones
-        self.inputs['bedplate_wall_thickness'] = 0.06*myones
+        self.inputs['bedplate_wall_thickness'] = 0.06*np.ones(npts)
         self.inputs['D_top'] = 6.5
 
+        self.inputs['m_other'] = 200e3
+
         self.inputs['m_stator'] = 100e3
-        self.inputs['cm_stator'] = np.array([-.3, 0.0, 0.0])
+        self.inputs['cm_stator'] = -0.3
         self.inputs['I_stator'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
         
         self.inputs['m_rotor'] = 100e3
-        self.inputs['cm_rotor'] = np.array([-.3, 0.0, 0.0])
+        self.inputs['cm_rotor'] = -0.3
         self.inputs['I_rotor'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
         
         self.inputs['F_mb1'] = np.array([2409.750e3, -1716.429e3, 74.3529e3]).reshape((3,1))
@@ -48,8 +50,7 @@ class TestLayout(unittest.TestCase):
         self.inputs['M_mb2'] = np.array([-1.83291e7, 6171.7324e3, 5785.82946e3]).reshape((3,1))
 
         self.inputs['m_hub'] = 100e3
-        self.inputs['D_hub'] = 6.0
-        self.inputs['L_hub'] = 2.0
+        self.inputs['cm_hub'] = 2.0
         self.inputs['I_hub'] = np.array([2409.750e3, -1716.429e3, 74.3529e3, 0.0, 0.0, 0.0])
         self.inputs['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
         self.inputs['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))
@@ -70,13 +71,12 @@ class TestLayout(unittest.TestCase):
         
     def testRunFixed(self):
         self.compute_layout()
-        myobj = bed.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
-        myobj.compute(self.inputs, self.outputs)
-        
+        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         
     def testRunRotating(self):
         self.compute_layout()
-        myobj = bed.Hub_Rotor_Shaft_Frame(n_points=npts, n_dlcs=1)
+        myobj = ds.Hub_Rotor_Shaft_Frame(n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
         
         #self.assertAlmostEqual(self.outputs['mass'], 71319.91743405)
