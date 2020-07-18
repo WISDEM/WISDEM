@@ -1,23 +1,13 @@
 import numpy as np
 from math import gamma
-from openmdao.api import ExplicitComponent
+import openmdao.api as om
 
 # ---------------------
 # Map Design Variables to Discretization
 # ---------------------
 
-class PDFBase(ExplicitComponent):
-    """probability distribution function"""
-    def initialize(self):
-        self.options.declare('nspline')
-    def setup(self):
-        nspline = self.options['nspline']
-        self.add_input('x', shape=nspline)
 
-        self.add_output('f', shape=nspline)
-
-
-class CDFBase(ExplicitComponent):
+class CDFBase(om.ExplicitComponent):
     """cumulative distribution function"""
     def initialize(self):
         self.options.declare('nspline')
@@ -37,7 +27,9 @@ class WeibullCDF(CDFBase):
 
         self.add_input('A', shape=1, desc='scale factor')
         
-        self.declare_partials('F', 'x')
+        arange = np.arange(self.options['nspline'])
+        self.declare_partials('F', 'x', rows=arange, cols=arange)
+        self.declare_partials('F', ['A', 'k'])
 
     def compute(self, inputs, outputs):
         outputs['F'] = 1.0 - np.exp(-(inputs['x']/inputs['A'])**inputs['k'])
@@ -48,9 +40,10 @@ class WeibullCDF(CDFBase):
         A = inputs['A']
         k = inputs['k']
         
-        J['F', 'x'] = np.diag(np.exp(-(x/A)**k)*(x/A)**(k-1)*k/A)
+        J['F', 'x'] = np.exp(-(x/A)**k)*(x/A)**(k-1)*k/A
+        J['F', 'A'] = -k / A * np.exp(-(x/A)**k) * (x/A)**k
+        J['F', 'k'] = np.exp(-(x/A)**k) * (x / A)**k * np.log(x/A)
         
-
 
 class WeibullWithMeanCDF(CDFBase):
     def setup(self):
@@ -61,6 +54,7 @@ class WeibullWithMeanCDF(CDFBase):
 
         self.declare_partials('F', 'x')
         self.declare_partials('F', 'xbar')
+        self.declare_partials('F', 'k', method='fd')
         
     def compute(self, inputs, outputs):
 
@@ -79,7 +73,6 @@ class WeibullWithMeanCDF(CDFBase):
         
         J['F', 'x'] = dx
         J['F', 'xbar'] = dxbar
-
         
 
 class RayleighCDF(CDFBase):
