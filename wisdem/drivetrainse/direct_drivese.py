@@ -94,7 +94,7 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
-        #self.add_subsystem('rna', RNAMass(), promotes=['*'])
+        self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
         #self.add_subsystem('loads', RotorLoads(), promotes=['*']) Get this from Frame3DD reaction forces, although careful about mass/force inclusion
 
         self.connect('D_shaft','D_shaft_end', src_indices=[-1])

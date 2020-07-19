@@ -375,7 +375,6 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_discrete_input('uptower', True, desc='Power electronics are placed in the nacelle at the tower top')
 
         self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
-        #self.add_input('machine_rating', 0.0, units='kW', desc='machine rating')
 
         self.add_input('mb1_mass', 0.0, units='kg', desc='component mass')
         self.add_input('mb1_cm', 0.0, units='m', desc='component CM')
@@ -430,9 +429,6 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('cover_I', np.zeros(3), units='m', desc='component mass moments of inertia')
         
         # returns
-        #self.add_output('nacelle_length', 0.0, units='m', desc='component length')
-        #self.add_output('nacelle_width', 0.0, units='m', desc='component width')
-        #self.add_output('nacelle_height', 0.0, units='m', desc='component height')
         self.add_output('nacelle_mass', 0.0, units='kg', desc='overall component mass')
         self.add_output('nacelle_cm', np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('nacelle_I', np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
@@ -486,4 +482,64 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         # Future yaw system weight calculations based on total system mass above yaw system
         #m_above_yaw = m_nac - inputs['yaw_mass']
 
+#--------------------------------------------
 
+
+class RNA_Adder(om.ExplicitComponent):
+    
+    def setup(self):
+
+        self.add_discrete_input('upwind', True, desc='Flag whether the design is upwind or downwind') 
+        self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
+        self.add_input('L_drive',0.0, units='m', desc='Length of drivetrain from bedplate to hub flang') 
+
+        self.add_input('blades_mass', 0.0, units='kg', desc='Mass of all bladea')
+        self.add_input('hub_system_mass', 0.0, units='kg', desc='Mass of hub system (hub + spinner + pitch)')
+        self.add_input('nacelle_mass', 0.0, units='kg', desc='Mass of nacelle system')
+
+        self.add_input('hub_system_cm', 0.0, units='m', desc='Hub center of mass from hub flange in hub c.s.')
+        self.add_input('nacelle_cm', np.zeros(3), units='m', desc='Nacelle center of mass relative to tower top in yaw-aligned c.s.')
+
+        self.add_input('blades_I', np.zeros(6), units='kg*m**2', desc='Mass moments of inertia of all blades about hub center')
+        self.add_input('hub_system_I', np.zeros(3), units='kg*m**2', desc='Mass moments of inertia of hub system about its CofM')
+        self.add_input('nacelle_I', np.zeros(6), units='kg*m**2', desc='Mass moments of inertia of nacelle about its CofM')
+
+        # outputs
+        self.add_output('rotor_mass', 0.0, units='kg', desc='Mass of blades and hub system')
+        self.add_output('rna_mass', 0.0, units='kg', desc='Total RNA mass')
+        self.add_output('rna_cm', np.zeros(3), units='m', desc='RNA center of mass relative to tower top in yaw-aligned c.s.')
+        self.add_output('rna_I_TT', np.zeros(6), units='kg*m**2', desc='Mass moments of inertia of RNA about tower top in yaw-aligned coordinate system')
+
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+
+        Cup  = -1.0 if discrete_inputs['upwind'] else 1.0
+        tilt = float(np.deg2rad(inputs['tilt']))
+        
+        rotor_mass = inputs['blades_mass'] + inputs['hub_system_mass']
+        nac_mass   = inputs['nacelle_mass']
+        
+        # rna mass
+        outputs['rotor_mass'] = rotor_mass
+        outputs['rna_mass']   = rotor_mass + nac_mass
+
+        # rna cm
+        hub_cm  = inputs['hub_system_cm']
+        L_drive = inputs['L_drive']
+        hub_cm  = (L_drive+hub_cm) * np.array([Cup*np.cos(tilt), 0.0, np.sin(tilt)])
+        outputs['rna_cm'] = (rotor_mass*hub_cm + nac_mass*inputs['nacelle_cm']) / outputs['rna_mass']
+
+        # rna I
+        hub_I    = util.assembleI( util.rotateI(inputs['hub_system_I'], -Cup*tilt, axis='y') )
+        blades_I = util.assembleI(inputs['blades_I'])
+        nac_I    = util.assembleI(inputs['nacelle_I'])
+        rotor_I  = blades_I + hub_I
+
+        R = inputs['hub_system_cm']
+        rotor_I_TT = rotor_I + rotor_mass*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
+
+        R = inputs['nacelle_cm']
+        nac_I_TT = nac_I + nac_mass*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
+
+        outputs['rna_I_TT'] = util.unassembleI(rotor_I_TT + nac_I_TT)
+#--------------------------------------------
