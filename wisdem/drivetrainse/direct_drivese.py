@@ -1,6 +1,7 @@
 
 import numpy as np
 import openmdao.api as om
+from hub import Hub_System
 from layout import Layout
 #from generator import Generator
 import drive_structure as ds
@@ -52,11 +53,12 @@ class DrivetrainSE(om.Group):
         # Independent variables that may be duplicated at higher levels of aggregation
         if self.options['topLevelFlag']:
             sivc = om.IndepVarComp()
-            sivc.add_discrete_output('number_of_blades', 0)
+            sivc.add_discrete_output('n_blades', 3)
             sivc.add_output('tilt', 0.0, units='deg')
             sivc.add_output('E', 0.0, units='Pa')
             sivc.add_output('G', 0.0, units='Pa')
             sivc.add_output('sigma_y', 0.0, units='Pa')
+            sivc.add_output('Xy', 0.0, units='Pa')
             sivc.add_output('rho', 0.0, units='kg/m**3')
             sivc.add_output('gamma_f', 0.0)
             sivc.add_output('gamma_m', 0.0)
@@ -78,7 +80,7 @@ class DrivetrainSE(om.Group):
             self.add_subsystem('sivc', sivc, promotes=['*'])
 
         # select components
-        #self.add_subsystem('hub', HubSE(mass_only=True, topLevelFlag=False, debug=debug), promotes=['*'])
+        self.add_subsystem('hub', Hub_System(), promotes=['*'])
         self.add_subsystem('layout', Layout(n_points=n_points), promotes=['*'])
         #self.add_subsystem('generator', Generator(), promotes=['*'])
         self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
@@ -111,6 +113,7 @@ if __name__ == '__main__':
 
     prob['upwind'] = True
     prob['direct_drive'] = True
+    prob['n_blades'] = 3
 
     prob['L_12'] = 2.0
     prob['L_h1'] = 1.0
@@ -159,6 +162,40 @@ if __name__ == '__main__':
     prob['gamma_f'] = 1.35
     prob['gamma_m'] = 1.3
     prob['gamma_n'] = 1.0
+    
+    prob['pitch_system.blade_mass']         = 17000.
+    prob['pitch_system.BRFM']               = 1.e+6
+    prob['pitch_system.scaling_factor']     = 0.54
+    prob['pitch_system.rho']                = 7850.
+    prob['pitch_system.Xy']                 = 371.e+6
+
+    prob['hub_shell.blade_root_diameter']   = 4.
+    prob['hub_shell.flange_t2shell_t']      = 4.
+    prob['hub_shell.flange_OD2hub_D']       = 0.5
+    prob['hub_shell.flange_ID2flange_OD']   = 0.8
+    prob['hub_shell.rho']                   = 7200.
+    prob['hub_shell.in2out_circ']           = 1.2 
+    prob['hub_shell.max_torque']            = 30.e+6
+    prob['hub_shell.Xy']                    = 200.e+6
+    prob['hub_shell.stress_concentration']  = 2.5
+    prob['hub_shell.reserve_factor']        = 2.0
+    prob['hub_shell.metal_cost']            = 3.00
+
+    prob['spinner.n_front_brackets']        = 3
+    prob['spinner.n_rear_brackets']         = 3
+    prob['spinner.blade_root_diameter']     = 4.
+    prob['spinner.clearance_hub_spinner']   = 0.5
+    prob['spinner.spin_hole_incr']          = 1.2
+    prob['spinner.gust_ws']                 = 70
+    prob['spinner.load_scaling']            = 1.5
+    prob['spinner.composite_Xt']            = 60.e6
+    prob['spinner.composite_SF']            = 1.5
+    prob['spinner.composite_rho']           = 1600.
+    prob['spinner.Xy']                      = 225.e+6
+    prob['spinner.metal_SF']                = 1.5
+    prob['spinner.metal_rho']               = 7850.
+    prob['spinner.composite_cost']          = 7.00
+    prob['spinner.metal_cost']              = 3.00
     
     prob.run_model()
     

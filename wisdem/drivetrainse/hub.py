@@ -429,11 +429,13 @@ class Hub_System(om.Group):
         # analysis_options = self.options['analysis_options']
         # opt_options     = self.options['opt_options']
 
-        self.add_subsystem('hub_shell',      HubShell(), promotes=['*'])
-        self.add_subsystem('spinner',        Spinner(), promotes=['*'])
-        self.add_subsystem('pitch_system',   PitchSystem(), promotes=['*'])
-        self.add_subsystem('adder',          Hub_Adder(), promotes=['*'])
-
+        self.add_subsystem('hub_shell',      HubShell(),    promotes=['n_blades', 'hub_mass', 'hub_diameter', 'hub_cost', 'hub_cm', 'hub_I'])
+        self.add_subsystem('spinner',        Spinner(),     promotes=['n_blades', 'hub_diameter', 'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I'])
+        self.add_subsystem('pitch_system',   PitchSystem(), promotes=['n_blades', 'hub_diameter', 'pitch_mass', 'pitch_cost', 'pitch_I'])
+        self.add_subsystem('adder',          Hub_Adder(), promotes=['hub_mass', 'hub_cost', 'hub_cm', 'hub_I',
+                                                                    'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I',
+                                                                    'pitch_mass', 'pitch_cost', 'pitch_I',
+                                                                    'hub_system_mass', 'hub_system_cost', 'hub_system_cm', 'hub_system_I'])
 
 
 if __name__ == "__main__":
