@@ -1,5 +1,6 @@
 import unittest
 import os
+import numpy as np
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 test_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
@@ -22,6 +23,7 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(wt_opt['elastic.precomp.blade_mass'][0], 16403.682326940743)
         self.assertAlmostEqual(wt_opt['sse.AEP'][0]*1.e-6, 24.48408190614509)
         self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 101.19655206273262)
+        np.testing.assert_almost_equal(wt_opt['wt.elastic.rail.constr_LV_4axle_horiz'], np.array([3.60953685e-01, 3.51236129e-11]))
 
         # ## IEA 15MW
         # fname_wt_input         = test_dir + 'IEA-15-240-RWT_WISDEMieaontology4all.yaml'
