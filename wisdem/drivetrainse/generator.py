@@ -10,7 +10,73 @@ import numpy as np
 import generator_models as gm
 
 
-class Generator_Cost(ExplicitComponent):
+class Constraints(om.ExplicitComponent):
+    """ Provides a material cost estimate for a PMSG _arms generator. Manufacturing costs are excluded"""
+    def setup(self):
+        self.add_input('u_all_s', val=0.0, units='m')
+        self.add_input('u_As', val=0.0, units='m')
+        self.add_input('z_all_s', val=0.0, units='m')
+        self.add_input('z_A_s', val=0.0, units='m')
+        self.add_input('y_all', val=0.0, units='m')
+        self.add_input('y_As', val=0.0, units='m')
+        self.add_input('b_all_s', val=0.0, units='m')
+        self.add_input('b_st', val=0.0, units='m')
+        self.add_input('u_all_r', val=0.0, units='m')
+        self.add_input('u_Ar', val=0.0, units='m')
+        self.add_input('y_Ar', val=0.0, units='m')
+        self.add_input('z_all_r', val=0.0, units='m')
+        self.add_input('z_A_r', val=0.0, units='m')
+        self.add_input('b_all_r', val=0.0, units='m')
+        self.add_input('b_arm', val=0.0, units='m')
+        self.add_input('TC1', val=0.0, units='m**3')
+        self.add_input('TC2', val=0.0, units='m**3')
+        self.add_input('TC3', val=0.0, units='m**3')
+        self.add_input('B_g', val=0.0, units='T')
+        self.add_input('B_smax', val=0.0, units='T')
+        self.add_input('K_rad', val=0.0)
+        self.add_input('K_rad_LL', val=0.0)
+        self.add_input('K_rad_UL', val=0.0)
+        self.add_input('D_ratio', val=0.0)
+        self.add_input('D_ratio_LL', val=0.0)
+        self.add_input('D_ratio_UL', val=0.0)
+        
+        self.add_output('con_uAs', val=0.0, units='m')
+        self.add_output('con_zAs',  val=0.0, units='m')
+        self.add_output('con_yAs',  val=0.0, units='m')
+        self.add_output('con_bst',  val=0.0, units='m')
+        self.add_output('con_uAr',  val=0.0, units='m')
+        self.add_output('con_yAr',  val=0.0, units='m')
+        self.add_output('con_zAr',  val=0.0, units='m')
+        self.add_output('con_br',  val=0.0, units='m')
+        self.add_output('TC', val=0.0, units='m**3')
+        self.add_output('con_TC2',  val=0.0, units='m**3')
+        self.add_output('con_TC3',  val=0.0, units='m**3')
+        self.add_output('con_Bsmax',  val=0.0, units='T')    
+        self.add_output('K_rad_L', val=0.0)
+        self.add_output('K_rad_U', val=0.0)
+        self.add_output('D_ratio_L', val=0.0)
+        self.add_output('D_ratio_U', val=0.0)
+        
+    def compute(self, inputs, outputs):
+        outputs['con_uAs'] = inputs['u_all_s'] - inputs['u_As']
+        outputs['con_zAs'] = inputs['z_all_s'] - inputs['z_A_s']
+        outputs['con_yAs'] = inputs['y_all'] - inputs['y_As']
+        outputs['con_bst'] = inputs['b_all_s'] - inputs['b_st']   #b_st={'units':'m'}
+        outputs['con_uAr'] = inputs['u_all_r'] - inputs['u_Ar']
+        outputs['con_yAr'] = inputs['y_all'] - inputs['y_Ar']
+        outputs['con_TC2'] = inputs['TC2'] - inputs['TC1']
+        outputs['con_TC3'] = inputs['TC3'] - inputs['TC1']
+        outputs['con_Bsmax'] = inputs['B_g'] - inputs['B_smax']
+        outputs['con_zAr'] = inputs['z_all_r'] - inputs['z_A_r']
+        outputs['con_br'] = inputs['b_all_r'] - inputs['b_arm'] # b_r={'units':'m'}
+        outputs['TC'] = inputs['TC2'] - inputs['TC1']
+        outputs['K_rad_L'] = inputs['K_rad'] - inputs['K_rad_LL']
+        outputs['K_rad_U'] = inputs['K_rad'] - inputs['K_rad_UL']
+        outputs['D_ratio_L'] = inputs['D_ratio'] - inputs['D_ratio_LL']
+        outputs['D_ratio_U'] = inputs['D_ratio'] - inputs['D_ratio_UL']
+
+        
+class Cost(om.ExplicitComponent):
     """ Provides a material cost estimate for a PMSG _arms generator. Manufacturing costs are excluded"""
     def setup(self):
         
@@ -119,7 +185,7 @@ class GeneratorSimple(om.ExplicitComponent):
 #----------------------------------------------------------------------------------------------
 
 
-class Generator(Group):
+class Generator(om.Group):
 
     def initialize(self):
         genTypes = ['scig','dfig','eesg','pmsg_arms','pmsg_disc']
@@ -130,57 +196,57 @@ class Generator(Group):
         topLevelFlag = self.options['topLevelFlag']
         genType      = self.options['design']
         
-        generatorIndeps = IndepVarComp()
-        generatorIndeps.add_output('shaft_cm', val=np.zeros(3), units='m')
-        generatorIndeps.add_output('shaft_length', val=0.0, units='m')
+        ivc = om.IndepVarComp()
+        ivc.add_output('shaft_cm', val=np.zeros(3), units='m')
+        ivc.add_output('shaft_length', val=0.0, units='m')
         
-        generatorIndeps.add_output('Gearbox_efficiency', val=0.0)
-        generatorIndeps.add_output('r_s',   val=0.0, units='m')
-        generatorIndeps.add_output('len_s', val=0.0, units='m')
-        generatorIndeps.add_output('h_s',   val=0.0, units='m')
-        generatorIndeps.add_output('h_r',   val=0.0, units='m')
-        generatorIndeps.add_output('h_m',   val=0.0, units='m')
-        generatorIndeps.add_output('S_Nmax', val=0.0, units='T')
-        generatorIndeps.add_output('I_0',   val=0.0, units='A')
+        ivc.add_output('Gearbox_efficiency', val=0.0)
+        ivc.add_output('r_s',   val=0.0, units='m')
+        ivc.add_output('len_s', val=0.0, units='m')
+        ivc.add_output('h_s',   val=0.0, units='m')
+        ivc.add_output('h_r',   val=0.0, units='m')
+        ivc.add_output('h_m',   val=0.0, units='m')
+        ivc.add_output('S_Nmax', val=0.0, units='T')
+        ivc.add_output('I_0',   val=0.0, units='A')
 
         if genType.lower() in ['eesg','pmsg_arms','pmsg_disc']:
-            generatorIndeps.add_output('tau_p', val=0.0, units='m')
-            generatorIndeps.add_output('h_ys',  val=0.0, units='m')
-            generatorIndeps.add_output('h_yr',  val=0.0, units='m')
-            generatorIndeps.add_output('b_r',   val=0.0, units='m')
+            ivc.add_output('tau_p', val=0.0, units='m')
+            ivc.add_output('h_ys',  val=0.0, units='m')
+            ivc.add_output('h_yr',  val=0.0, units='m')
+            ivc.add_output('b_arm',   val=0.0, units='m')
         elif genType.lower() in ['scig','dfig']:
-            generatorIndeps.add_output('B_symax', val=0.0)
+            ivc.add_output('B_symax', val=0.0, units='T')
             
-        generatorIndeps.add_output('I_f',  val=0.0, units='A')
-        generatorIndeps.add_output('N_f',  val=0.0, units='A')
-        generatorIndeps.add_output('n_s',  val=0.0)
-        generatorIndeps.add_output('b_st', val=0.0, units='m')
-        generatorIndeps.add_output('n_r',  val=0.0)
-        generatorIndeps.add_output('d_r',  val=0.0, units='m')
-        generatorIndeps.add_output('d_s',  val=0.0, units='m')
-        generatorIndeps.add_output('t_d',  val=0.0, units='m')
-        generatorIndeps.add_output('t_wr', val=0.0, units='m')
-        generatorIndeps.add_output('t_ws', val=0.0, units='m')
-        generatorIndeps.add_output('R_o',  val=0.0, units='m')
+        ivc.add_output('I_f',  val=0.0, units='A')
+        ivc.add_output('N_f',  val=0.0, units='A')
+        ivc.add_output('n_s',  val=0.0)
+        ivc.add_output('b_st', val=0.0, units='m')
+        ivc.add_output('n_r',  val=0.0)
+        ivc.add_output('d_r',  val=0.0, units='m')
+        ivc.add_output('d_s',  val=0.0, units='m')
+        ivc.add_output('t_d',  val=0.0, units='m')
+        ivc.add_output('t_wr', val=0.0, units='m')
+        ivc.add_output('t_ws', val=0.0, units='m')
+        ivc.add_output('R_o',  val=0.0, units='m')
         
-        generatorIndeps.add_output('rho_Fes',    val=0.0, units='kg/m**3')
-        generatorIndeps.add_output('rho_Fe',     val=0.0, units='kg/m**3')
-        generatorIndeps.add_output('rho_Copper', val=0.0, units='kg/m**3')
-        generatorIndeps.add_output('rho_PM',     val=0.0, units='kg/m**3')
+        ivc.add_output('rho_Fes',    val=0.0, units='kg/m**3')
+        ivc.add_output('rho_Fe',     val=0.0, units='kg/m**3')
+        ivc.add_output('rho_Copper', val=0.0, units='kg/m**3')
+        ivc.add_output('rho_PM',     val=0.0, units='kg/m**3')
         
-        generatorIndeps.add_output('C_Cu',  val=0.0, units='USD/kg')
-        generatorIndeps.add_output('C_Fe',  val=0.0, units='USD/kg')
-        generatorIndeps.add_output('C_Fes', val=0.0, units='USD/kg')
-        generatorIndeps.add_output('C_PM',  val=0.0, units='USD/kg')
+        ivc.add_output('C_Cu',  val=0.0, units='USD/kg')
+        ivc.add_output('C_Fe',  val=0.0, units='USD/kg')
+        ivc.add_output('C_Fes', val=0.0, units='USD/kg')
+        ivc.add_output('C_PM',  val=0.0, units='USD/kg')
         
-        self.add_subsystem('generatorIndeps', generatorIndeps, promotes=['*'])
+        self.add_subsystem('ivc', ivc, promotes=['*'])
 
         if topLevelFlag:
-            sharedIndeps = IndepVarComp()
-            sharedIndeps.add_output('machine_rating', 0.0, units='W')
-            sharedIndeps.add_output('n_nom', 0.0, units='rpm')
-            sharedIndeps.add_output('Torque', 0.0, units='N*m')
-            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
+            sivc = om.IndepVarComp()
+            sivc.add_output('machine_rating', 0.0, units='W')
+            sivc.add_output('n_nom', 0.0, units='rpm')
+            sivc.add_output('Torque', 0.0, units='N*m')
+            self.add_subsystem('sivc', sivc, promotes=['*'])
         
         # Add generator design component and cost
         if genType.lower() == 'scig':
@@ -199,41 +265,15 @@ class Generator(Group):
             mygen = gm.PMSG_Disc
             
         self.add_subsystem('generator', mygen(), promotes=['*'])
-        self.add_subsystem('gen_cost', Generator_Cost(), promotes=['*'])
-
-        # Now add constraints
-        if genType.lower() in ['eesg', 'pmsg_arms', 'pmsg_disc']:
-            self.add_subsystem('con_uAs', ExecComp('con_uAs =u_all_s-u_As'), promotes=['*'])
-            self.add_subsystem('con_zAs', ExecComp('con_zAs =z_all_s-z_A_s'), promotes=['*'])
-            self.add_subsystem('con_yAs', ExecComp('con_yAs =y_all-y_As'), promotes=['*'])
-            self.add_subsystem('con_bst', ExecComp('con_bst =b_all_s-b_st',
-                                                   b_st={'units':'m'}), promotes=['*'])
-            self.add_subsystem('con_uAr', ExecComp('con_uAr =u_all_r-u_Ar'), promotes=['*'])
-            self.add_subsystem('con_yAr', ExecComp('con_yAr =y_all-y_Ar'), promotes=['*'])
-            self.add_subsystem('con_TC2', ExecComp('con_TC2 =TC2-TC1'), promotes=['*'])
-            self.add_subsystem('con_TC3', ExecComp('con_TC3 =TC3-TC1'), promotes=['*'])
-
-        if genType.lower() in ['pmsg_arms', 'pmsg_disc']:
-            self.add_subsystem('con_Bsmax', ExecComp('con_Bsmax =B_g-B_smax'), promotes=['*'])
-            
-        if genType.lower() in ['eesg', 'pmsg_arms']:
-            self.add_subsystem('con_zAr', ExecComp('con_zAr =z_all_r-z_A_r'), promotes=['*'])
-            self.add_subsystem('con_br', ExecComp('con_br =b_all_r-b_r',
-                                                  b_r={'units':'m'}), promotes=['*'])
-            
-        if genType.lower() in ['scig','dfig']:
-            self.add_subsystem('TC', ExecComp('TC = TC2-TC1'), promotes=['*'])
-            self.add_subsystem('K_rad_L',ExecComp('K_rad_L = K_rad-K_rad_LL'), promotes=['*'])
-            self.add_subsystem('K_rad_U',ExecComp('K_rad_U = K_rad-K_rad_UL'), promotes=['*'])
-            self.add_subsystem('D_ratio_L',ExecComp('D_ratio_L = D_ratio-D_ratio_LL'), promotes=['*'])
-            self.add_subsystem('D_ratio_U',ExecComp('D_ratio_U = D_ratio-D_ratio_UL'), promotes=['*'])
+        self.add_subsystem('gen_cost', Cost(), promotes=['*'])
+        self.add_subsystem('constr', Constraints(), promotes=['*'])
             
 
 def optimization_example(genType, exportFlag=False):
     genType = genType.lower()
     
     #Example optimization of a generator for costs on a 5 MW reference turbine
-    opt_problem=Problem()
+    opt_problem=om.Problem()
     opt_problem.model = Generator(design=genType, topLevelFlag=True)
     
     # add optimizer and set-up problem (using user defined input on objective function)
@@ -302,7 +342,7 @@ def optimization_example(genType, exportFlag=False):
         opt_problem.model.add_design_var('n_r',    lower=5.0,   upper=15.0)
         opt_problem.model.add_design_var('h_yr',   lower=0.01,  upper=0.25)
         opt_problem.model.add_design_var('h_ys',   lower=0.01,  upper=0.25)
-        opt_problem.model.add_design_var('b_r',    lower=0.1,   upper=1.5)
+        opt_problem.model.add_design_var('b_arm',    lower=0.1,   upper=1.5)
         opt_problem.model.add_design_var('d_r',    lower=0.1,   upper=1.5)
         opt_problem.model.add_design_var('t_wr',   lower=0.001, upper=0.2)
         opt_problem.model.add_design_var('n_s',    lower=5.0,   upper=15.0)
@@ -337,7 +377,7 @@ def optimization_example(genType, exportFlag=False):
         opt_problem.model.add_constraint('E_p', lower=500.0, upper=5000.0)
 
     if genType == 'pmsg_arms':
-        opt_problem.model.add_design_var('b_r',  lower=0.1,   upper=1.5)
+        opt_problem.model.add_design_var('b_arm',  lower=0.1,   upper=1.5)
         opt_problem.model.add_design_var('d_r',  lower=0.1,   upper=1.5)
         opt_problem.model.add_design_var('t_wr', lower=0.001, upper=0.2)
         
@@ -488,7 +528,7 @@ def optimization_example(genType, exportFlag=False):
     
     #Run optimization
     opt_problem.model.approx_totals()
-    opt_problem.run_driver()
+    opt_problem.run_model()
     opt_problem.model.list_inputs(units=True) #values = False, hierarchical=False)
     opt_problem.model.list_outputs(units=True) #values = False, hierarchical=False)    
 
@@ -1564,6 +1604,7 @@ if __name__=='__main__':
     
     # Run example optimizations for all generator types
     #for m in ['eesg',]:
-    #for m in ['scig','dfig','eesg','pmsg_arms','pmsg_disc']:
-    for m in ['pmsg_disc']:
+    #for m in ['pmsg_disc']:
+    for m in ['scig','dfig','eesg','pmsg_arms','pmsg_disc']:
+        print('Running, '+m)
         optimization_example(m, exportFlag=True)
