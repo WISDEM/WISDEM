@@ -23,7 +23,6 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(wt_opt['elastic.precomp.blade_mass'][0], 16403.682326940743)
         self.assertAlmostEqual(wt_opt['sse.AEP'][0]*1.e-6, 24.48408190614509)
         self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 101.19655206273262)
-        self.assertAlmostEqual(np.linalg.norm(wt_opt['wt.elastic.rail.constr_strainPS']), 0.511403665)
 
         # ## IEA 15MW
         # fname_wt_input         = test_dir + 'IEA-15-240-RWT_WISDEMieaontology4all.yaml'
