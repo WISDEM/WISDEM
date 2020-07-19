@@ -429,6 +429,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('cover_I', np.zeros(3), units='m', desc='component mass moments of inertia')
         
         # returns
+        self.add_output('other_mass', 0.0, units='kg', desc='overall component mass')
         self.add_output('nacelle_mass', 0.0, units='kg', desc='overall component mass')
         self.add_output('nacelle_cm', np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('nacelle_I', np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
@@ -440,7 +441,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         tilt = float(np.deg2rad(inputs['tilt']))
         
         components = ['mb1','mb2','lss','hss','gearbox','generator','hvac',
-                      'nose','bedplate', 'mainframe','yaw','cover']
+                      'nose','bedplate','mainframe','yaw','cover']
         if discrete_inputs['uptower']: components.append('electronics')
 
         # Mass and CofM summaries first because will need them for I later
@@ -479,6 +480,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac
         outputs['nacelle_I']    = util.unassembleI(I_nac)
+        outputs['other_mass']   = inputs['hss'] + inputs['hvac'] + inputs['mainframe'] + inputs['yaw'] + inputs['cover']
         # Future yaw system weight calculations based on total system mass above yaw system
         #m_above_yaw = m_nac - inputs['yaw_mass']
 

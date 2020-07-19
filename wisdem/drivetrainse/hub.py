@@ -113,7 +113,7 @@ class HubShell(om.ExplicitComponent):
         outputs['hub_mass']     = hub_mass
         outputs['hub_cost']     = hub_cost
         outputs['hub_cm']       = hub_cm
-        outputs['hub_I']        = (1./3.) * hub_mass * (0.5*dsgn_hub_diam)**2 * np.ones(3) # Hemispherical shell
+        outputs['hub_I']        = (2./3.) * hub_mass * (0.5*dsgn_hub_diam)**2 * np.ones(3) # Hemispherical shell
 
         if self.options['verbosity']:
             sys.stderr.write('Spherical_Hub:\n')
@@ -270,7 +270,7 @@ class Spinner(om.ExplicitComponent):
         outputs['spinner_mass']             = mass
         outputs['spinner_cm']               = sph_spin_diam / 2.
         outputs['spinner_cost']             = spin_shell_mass * inputs['composite_cost'] + bracket_mass_total * inputs['metal_cost']
-        outputs['spinner_I']                = (1./3.) * mass * (0.5*sph_spin_diam)**2 * np.ones(3) # Hemispherical shell
+        outputs['spinner_I']                = (2./3.) * mass * (0.5*sph_spin_diam)**2 * np.ones(3) # Hemispherical shell
         
         # Print to screen if verbosity option is on
         if self.options['verbosity']:

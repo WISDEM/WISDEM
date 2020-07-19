@@ -6,22 +6,8 @@ Electromagnetic design based on conventional magnetic circuit laws
 Structural design based on McDonald's thesis """
 
 import openmdao.api as om
-from om import Group, Problem, ExplicitComponent, ExecComp, IndepVarComp
-#from openmdao.api import ScipyOptimizeDriver, pyOptSparseDriver
-#from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
-
 import numpy as np
-#from scig import SCIG
-#from dfig import DFIG
-#from eesg import EESG
-#from pmsg_arms import PMSG_Arms
-#from pmsg_disc import PMSG_Disc
-
-from scigOM import SCIG_OM
-from dfigOM import DFIG_OM
-from eesgOM import EESG_OM
-from pmsg_armsOM import PMSG_Arms_OM
-from pmsg_discOM import PMSG_Disc_OM
+import generator_models as gm
 
 
 class Generator_Cost(ExplicitComponent):
@@ -81,7 +67,7 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('hss_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='cm of high speed shaft and brake')
         self.add_input('rotor_rpm', val=0.0, units='rpm', desc='Speed of rotor at rated power')
         
-        self.add_discrete_input('drivetrain_design', val='geared', desc='geared or single_stage or multi_drive or pm_direct_drive')
+        self.add_discrete_input('direct_drive', False)
 
         #returns
         self.add_output('generator_mass', val=0.0, units='kg', desc='overall component mass')
@@ -90,13 +76,48 @@ class GeneratorSimple(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        mygen = dc.Generator(discrete_inputs['drivetrain_design'])
+        # Unpack inputs
+        rotor_diameter = inputs['rotor_diameter']
+        machine_rating = inputs['machine_rating']
+        gear_ratio = inputs['gear_ratio']
+        hss_length = inputs['hss_length']
+        hss_cm = inputs['hss_cm']
+        rotor_rpm = inputs['rotor_rpm']
+        direct = discrete_inputs['direct_drive']
         
-        (outputs['generator_mass'], outputs['generator_cm'], outputs['generator_I']) \
-            = mygen.compute(inputs['rotor_diameter'], inputs['machine_rating'], inputs['gear_ratio'], inputs['hss_length'], inputs['hss_cm'], inputs['rotor_rpm'])
+        # coefficients based on generator configuration
+        massCoeff = 37.68 if direct else np.mean([6.4737, 10.51, 5.34])
+        massExp   = 1.0 if direct else 0.9223
+        CalcTorque = (machine_rating*1.1) / (rotor_rpm * pi/30)
+  
+        if direct:
+            mass = (massCoeff[drivetrain_design] * CalcTorque ** massExp[drivetrain_design])
+        else:
+            mass = (massCoeff[drivetrain_design] * machine_rating ** massExp[drivetrain_design])
+        outputs['generator_mass'] = mass
+        
+        # calculate mass properties
+        length = 1.8 * 0.015 * rotor_diameter
+        depth = 0.015 * rotor_diameter
+        width = 0.5 * depth
+  
+        cm = np.zeros(3)
+        cm[0]  = hss_cm[0] + hss_length/2. + length/2.
+        cm[1]  = hss_cm[1]
+        cm[2]  = hss_cm[2]
+        outputs['generator_cm'] = cm
+  
+        I = np.zeros(3)
+        I[0]   = 4.86e-5 * rotor_diameter**5.333 \
+                + (2./3. * mass) * (depth**2 + width**2) / 8.
+        I[1]   = I[0] / 2. / gear_ratio**2 \
+                 + 1. / 3. * mass * length**2 / 12. \
+                 + 2. / 3. * mass * (depth**2. + width**2. + 4./3. * length**2.) / 16.
+        I[2]   = I[1]
+        outputs['generator_I'] = I
 
-        
-        
+#----------------------------------------------------------------------------------------------
+
 
 class Generator(Group):
 
@@ -163,19 +184,19 @@ class Generator(Group):
         
         # Add generator design component and cost
         if genType.lower() == 'scig':
-            mygen = SCIG_OM
+            mygen = gm.SCIG
             
         elif genType.lower() == 'dfig':
-            mygen = DFIG_OM
+            mygen = gm.DFIG
             
         elif genType.lower() == 'eesg':
-            mygen = EESG_OM
+            mygen = gm.EESG
             
         elif genType.lower() == 'pmsg_arms':
-            mygen = PMSG_Arms_OM
+            mygen = gm.PMSG_Arms
             
         elif genType.lower() == 'pmsg_disc':
-            mygen = PMSG_Disc_OM
+            mygen = gm.PMSG_Disc
             
         self.add_subsystem('generator', mygen(), promotes=['*'])
         self.add_subsystem('gen_cost', Generator_Cost(), promotes=['*'])
