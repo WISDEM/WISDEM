@@ -1,5 +1,6 @@
 import openmdao.api as om
 import numpy as np
+from wisdem.commonse import gravity
 import sys
 
 # Convenience functions for computing McDonald's C and F parameters
@@ -61,6 +62,41 @@ perMin_to_Hz = 1. / 60.
 class GeneratorBase(om.ExplicitComponent):
     """ Base class for generators """
     def setup(self):
+
+        # Constants and parameters
+        self.add_input('B_r', val=1.2, units='T', desc='Remnant flux density')
+        self.add_input('E', val=2e11, units='Pa', desc='youngs modulus')
+        self.add_input('P_Fe0e', val=1.0, units='W/kg', desc='specific eddy losses @ 1.5T, 50Hz')
+        self.add_input('P_Fe0h', val=4.0, units='W/kg', desc='specific hysteresis losses W / kg @ 1.5 T @50 Hz')
+        self.add_input('S_N', val=-0.002 ,desc='Slip')
+        self.add_input('alpha_p', val=0.5*np.pi*0.7)
+        self.add_input('b_r_tau_r', val=0.45, desc='Rotor Slot width / Slot pitch ratio')
+        self.add_input('b_ro', val=0.004, units='m', desc='Rotor slot opening width')
+        self.add_input('b_s_tau_s', val=0.45, desc='Stator Slot width/Slot pitch ratio')
+        self.add_input('b_so', val=0.004, units='m', desc='Stator slot opening width')
+        self.add_input('cofi', val=0.85, desc='power factor')
+        self.add_input('freq', val=60, units='Hz', desc='grid frequency')
+        self.add_input('h_i', val=0.001, units='m', desc='coil insulation thickness')
+        self.add_input('h_sy0', val=0.0)
+        self.add_input('h_w', val=0.005, units='m', desc='Slot wedge height')
+        self.add_input('k_fes', val=0.9, desc='Stator iron fill factor per Grauers')
+        self.add_input('k_fillr', val=0.7, desc='Rotor  slot fill factor')
+        self.add_input('k_fills', val=0.65, desc='Stator Slot fill factor')
+        self.add_input('k_s', val=0.2, desc='magnetic saturation factor for iron')
+        self.add_discrete_input('m', val=3, desc='Number of phases')
+        self.add_input('mu_0', val=np.pi*4e-7, units='m*kg/s**2/A**2', desc='permeability of free space')
+        self.add_input('mu_r', val=1.06, units='m*kg/s**2/A**2', desc='relative permeability (neodymium)')
+        self.add_discrete_input('p', val=3, desc='number of pole pairs')
+        self.add_input('phi', val=np.deg2rad(90), units='rad', desc='tilt angle (during transportation)')
+        self.add_discrete_input('q1', val=6, desc='Stator slots per pole per phase')
+        self.add_discrete_input('q2', val=4, desc='Rotor  slots per pole per phase')
+        self.add_input('ratio_mw2pp', val=0.7, desc='ratio of magnet width to pole pitch(bm / self.tau_p)')
+        self.add_input('resist_Cu', val=1.8e-8*1.4, units='ohm/m', desc='Copper resistivity')
+        self.add_input('sigma', val=40e3, units='Pa', desc='assumed max shear stress')
+        self.add_input('v', val=0.3, desc='poisson ratio')
+        self.add_input('y_tau_p', val=1.0, desc='Stator coil span to pole pitch')
+        self.add_input('y_tau_pr', val=10. / 12, desc='Rotor coil span to pole pitch')
+        
         # General inputs
         #self.add_input('r_s', val=0.0, units='m', desc='airgap radius r_s')
         self.add_input('Gearbox_efficiency', val=0.0, desc='Gearbox efficiency')
@@ -109,7 +145,6 @@ class GeneratorBase(om.ExplicitComponent):
         
         # Rotor magnet dimension
         self.add_output('b_m', val=0.0, desc='magnet width')
-        self.add_output('p', val=0.0, desc='No of pole pairs')
         
         # Mass Outputs
         self.add_output('mass_PM', val=0.0, units='kg', desc='Magnet mass')
@@ -172,7 +207,6 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_output('b_r', val=0.0, desc='rotor slot width')
         self.add_output('b_tr', val=0.0, desc='rotor tooth width')
         self.add_output('b_trmin', val=0.0, desc='minimum tooth width')
-        self.add_output('q1', val=0.0, desc='Slots per pole per phase')
 
         
 #----------------------------------------------------------------------------------------
@@ -187,7 +221,7 @@ class PMSG_Disc(GeneratorBase):
         self.add_input('t_d',  val=0.0, units='m', desc='disc thickness')
         self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
         rad_ag            = inputs['rad_ag']
         len_s             = inputs['len_s']
@@ -213,13 +247,45 @@ class PMSG_Disc(GeneratorBase):
         rho_PM            = inputs['rho_PM']
         shaft_cm          = inputs['shaft_cm']
         shaft_length      = inputs['shaft_length']
-	
+
+        # Grab constant values
+        B_r         = inputs['B_r']
+        E           = inputs['E']
+        P_Fe0e      = inputs['P_Fe0e']
+        P_Fe0h      = inputs['P_Fe0h']
+        S_N         = inputs['S_N']
+        alpha_p     = inputs['alpha_p']
+        b_r_tau_r   = inputs['b_r_tau_r']
+        b_ro        = inputs['b_ro']
+        b_s_tau_s   = inputs['b_s_tau_s']
+        b_so        = inputs['b_so']
+        cofi        = inputs['cofi']
+        freq        = inputs['freq']
+        h_i         = inputs['h_i']
+        h_sy0       = inputs['h_sy0']
+        h_w         = inputs['h_w']
+        k_fes       = inputs['k_fes']
+        k_fillr     = inputs['k_fillr']
+        k_fills     = inputs['k_fills']
+        k_s         = inputs['k_s']
+        m           = discrete_inputs['m']
+        mu_0        = inputs['mu_0']
+        mu_r        = inputs['mu_r']
+        p           = discrete_inputs['p']
+        phi         = inputs['phi']
+        q1          = discrete_inputs['q1']
+        ratio_mw2pp = inputs['ratio_mw2pp']
+        resist_Cu   = inputs['resist_Cu']
+        sigma       = inputs['sigma']
+        v           = inputs['v']
+        y_tau_p     = inputs['y_tau_p']
+        y_tau_pr    = inputs['y_tau_pr']
+        
+        '''
         # Assign values to universal constants
         B_r    = 1.2                 # remnant flux density (Tesla = kg / (s^2 A))
-        gravity = 9.81               # m / s^2 acceleration due to gravity
         E      = 2e11                # N / m^2 young's modulus
         sigma  = 40000.0             # shear stress assumed
-        sigma = sigma * PSI_2_PASCAL # added GNS 2019 11 04
         ratio_mw2pp  = 0.7           # ratio of magnet width to pole pitch(bm / self.tau_p)
         mu_0   = np.pi * 4e-7           # permeability of free space in m * kg / (s**2 * A**2)
         mu_r   = 1.06                # relative permeability (probably for neodymium magnets, often given as 1.05 - GNS)
@@ -232,14 +298,15 @@ class PMSG_Disc(GeneratorBase):
         m       = 3                  # no of phases
         q1      = 1                  # no of slots per pole per phase
         b_s_tau_s = 0.45             # slot width / slot pitch ratio
-        k_sfil = 0.65                # Slot fill factor
+        k_fills = 0.65                # Slot fill factor
         P_Fe0h = 4.0                 # specific hysteresis losses W / kg @ 1.5 T 
         P_Fe0e = 1.0                 # specific hysteresis losses W / kg @ 1.5 T 
-        rho_Cu = 1.8e-8 * 1.4        # resistivity of copper
+        resist_Cu = 1.8e-8 * 1.4        # resistivity of copper
         b_so  =  0.004               # stator slot opening
         k_fes = 0.9                  # useful iron stack length
         #T =   Torque
         v = 0.3                      # poisson's ratio
+        '''
         
         # back iron thickness for rotor and stator
         t_s = h_ys    
@@ -293,9 +360,9 @@ class PMSG_Disc(GeneratorBase):
         l_Cus     = 2 * N_s * (2 * tau_p + L_t)
         A_s       = b_s *          (h_s - h_w) *          q1 * p
         A_scalc   = b_s * M_2_MM * (h_s - h_w) * M_2_MM * q1 * p
-        A_Cus     = A_s     * k_sfil / N_s
-        A_Cuscalc = A_scalc * k_sfil / N_s
-        R_s       = l_Cus * rho_Cu / A_Cus
+        A_Cus     = A_s     * k_fills / N_s
+        A_Cuscalc = A_scalc * k_fills / N_s
+        R_s       = l_Cus * resist_Cu / A_Cus
         
         # Calculating leakage inductance in stator
         L_m        = 2 * mu_0 * N_s**2 / p * m * k_wd**2 * tau_p * L_t / np.pi**2 / g_eff
@@ -574,7 +641,6 @@ class PMSG_Disc(GeneratorBase):
         outputs['b_t']               =  b_t
         outputs['A_Cuscalc']         =  A_Cuscalc
         outputs['b_m']               =  b_m
-        outputs['p']                 =  p
         outputs['E_p']               =  E_p
         outputs['f']                 =  f
 
@@ -628,7 +694,7 @@ class PMSG_Arms(GeneratorBase):
         self.add_input('tau_p', val=0.0, units='m', desc='Pole pitch self.tau_p')
         self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
         #r_s               = inputs['r_s']
         rad_ag            = inputs['rad_ag']
@@ -658,13 +724,46 @@ class PMSG_Arms(GeneratorBase):
         rho_PM            = inputs['rho_PM']
         shaft_cm          = inputs['shaft_cm']
         shaft_length      = inputs['shaft_length']
-                
+
+        # Grab constant values
+        B_r         = inputs['B_r']
+        E           = inputs['E']
+        P_Fe0e      = inputs['P_Fe0e']
+        P_Fe0h      = inputs['P_Fe0h']
+        S_N         = inputs['S_N']
+        alpha_p     = inputs['alpha_p']
+        b_r_tau_r   = inputs['b_r_tau_r']
+        b_ro        = inputs['b_ro']
+        b_s_tau_s   = inputs['b_s_tau_s']
+        b_so        = inputs['b_so']
+        cofi        = inputs['cofi']
+        freq        = inputs['freq']
+        h_i         = inputs['h_i']
+        h_sy0       = inputs['h_sy0']
+        h_w         = inputs['h_w']
+        k_fes       = inputs['k_fes']
+        k_fillr     = inputs['k_fillr']
+        k_fills     = inputs['k_fills']
+        k_s         = inputs['k_s']
+        m           = discrete_inputs['m']
+        mu_0        = inputs['mu_0']
+        mu_r        = inputs['mu_r']
+        p           = discrete_inputs['p']
+        phi         = inputs['phi']
+        q1          = discrete_inputs['q1']
+        ratio_mw2pp = inputs['ratio_mw2pp']
+        resist_Cu   = inputs['resist_Cu']
+        sigma       = inputs['sigma']
+        v           = inputs['v']
+        y_tau_p     = inputs['y_tau_p']
+        y_tau_pr    = inputs['y_tau_pr']
+
+        '''        
         # Assign values to universal constants
         B_r    = 1.2                 # Tesla remnant flux density
-        g1     = 9.81                # m / s^2 acceleration due to gravity
         E      = 2e11                # N / m^2 young's modulus
         sigma  = 40e3                # shear stress assumed (yield strength of ?? steel, in psi - GNS)
-        ratio  = 0.7                 # ratio of magnet width to pole pitch(bm / tau_p)
+        ratio_mw2pp  = 0.7                 # ratio of magnet width to pole pitch(bm / tau_p)
         mu_0   = np.pi * 4e-7           # permeability of free space in m * kg / (s**2 * A**2)
         mu_r   = 1.06                # relative permeability (probably for neodymium magnets, often given as 1.05 - GNS) 
         phi    = np.deg2rad(90)         # tilt angle (rotor tilt -90 degrees during transportation)
@@ -677,13 +776,14 @@ class PMSG_Arms(GeneratorBase):
         m         = 3                # no of phases
         q1        = 1                # no of slots per pole per phase
         b_s_tau_s = 0.45             # slot width to slot pitch ratio
-        k_sfil    = 0.65             # Slot fill factor
+        k_fills    = 0.65             # Slot fill factor
         P_Fe0h    = 4                # specific hysteresis losses W / kg @ 1.5 T 
         P_Fe0e    = 1                # specific eddy losses W / kg @ 1.5 T 
-        rho_Cu    = 1.8e-8 * 1.4     # Copper resisitivty
+        resist_Cu    = 1.8e-8 * 1.4     # Copper resisitivty
         k_fes     = 0.9              # Stator iron fill factor per Grauers
         b_so      = 0.004            # Slot opening
         alpha_p   = np.pi / 2 * 0.7
+        '''
 
         # back iron thickness for rotor and stator
         t_s = h_ys    
@@ -747,9 +847,9 @@ class PMSG_Arms(GeneratorBase):
         l_Cus     = 2 * N_s * (2 * tau_p + L_t)
         A_s       = b_s        * (h_s - h_w)        * q1 * p
         A_scalc   = b_s * 1000 * (h_s - h_w) * 1000 * q1 * p
-        A_Cus     = A_s * k_sfil / N_s
-        A_Cuscalc = A_scalc * k_sfil / N_s
-        R_s       = l_Cus * rho_Cu / A_Cus
+        A_Cus     = A_s * k_fills / N_s
+        A_Cuscalc = A_scalc * k_fills / N_s
+        R_s       = l_Cus * resist_Cu / A_Cus
         
         # Calculating leakage inductance in  stator
         L_m        = 2 * mu_0 * N_s**2 / p * m * k_wd**2 * tau_p * L_t / np.pi**2 / g_eff
@@ -845,7 +945,7 @@ class PMSG_Arms(GeneratorBase):
         
         b_all_r     = 2 * np.pi * R_o / N_r                                   # allowable circumferential arm dimension for rotor
         q3          = B_g**2 / 2 / mu_0                                    # normal component of Maxwell stress
-        mass_PM     = 2 * np.pi * (R + 0.5 * t) * L_t * h_m * ratio * rho_PM  # magnet mass
+        mass_PM     = 2 * np.pi * (R + 0.5 * t) * L_t * h_m * ratio_mw2pp * rho_PM  # magnet mass
         
         # Calculating radial deflection of the rotor
         Numer = R**3 * ((0.25 * (np.sin(theta_r) - (theta_r * np.cos(theta_r))) / (np.sin(theta_r))**2) - (0.5 / np.sin(theta_r)) + (0.5 / theta_r))
@@ -857,9 +957,9 @@ class PMSG_Arms(GeneratorBase):
         
         # Calculating axial deflection of the rotor under its own weight
         
-        w_r         = rho_Fes * g1 * np.sin(phi) * a_r * N_r                     # uniformly distributed load of the weight of the rotor arm
+        w_r         = rho_Fes * gravity * np.sin(phi) * a_r * N_r                     # uniformly distributed load of the weight of the rotor arm
         mass_st_lam = rho_Fe * 2*np.pi * R * L_t * h_yr                          # mass of rotor yoke steel
-        W           = g1 * np.sin(phi) * (mass_st_lam / N_r + mass_PM / N_r)     # weight of 1/nth of rotor cylinder
+        W           = gravity * np.sin(phi) * (mass_st_lam / N_r + mass_PM / N_r)     # weight of 1/nth of rotor cylinder
         
         y_a1 = W   * l_ir**3  / 12 / E / I_arm_axi_r                          # deflection from weight component of back iron
         y_a2 = w_r * l_iir**4 / 24 / E / I_arm_axi_r                          # deflection from weight component of the arms
@@ -898,9 +998,9 @@ class PMSG_Arms(GeneratorBase):
         l_iiis  = l_is                    # distance at which the weight of the stator cylinder acts
         
         mass_st_lam_s = M_Fest + np.pi * L_t * rho_Fe * ((R_st + 0.5 * h_ys)**2 - (R_st - 0.5 * h_ys)**2)
-        W_is          = 0.5 * g1 * np.sin(phi) * (rho_Fes * L_t  *d_s**2)                      # length of stator arm beam at which self-weight acts
-        W_iis         = g1 * np.sin(phi) * (mass_st_lam_s + V_Cus * rho_Copper) / 2/N_st       # weight of stator cylinder and teeth
-        w_s           = rho_Fes * g1 * np.sin(phi) * a_s * N_st                                # uniformly distributed load of the arms
+        W_is          = 0.5 * gravity * np.sin(phi) * (rho_Fes * L_t  *d_s**2)                      # length of stator arm beam at which self-weight acts
+        W_iis         = gravity * np.sin(phi) * (mass_st_lam_s + V_Cus * rho_Copper) / 2/N_st       # weight of stator cylinder and teeth
+        w_s           = rho_Fes * gravity * np.sin(phi) * a_s * N_st                                # uniformly distributed load of the arms
                 
         mass_stru_steel  = 2 * (N_st * (R_1s - R_o) * a_s * rho_Fes)                        # Structural mass of stator arms
         
@@ -959,7 +1059,6 @@ class PMSG_Arms(GeneratorBase):
         outputs['b_t']               =  b_t
         outputs['A_Cuscalc']         =  A_Cuscalc
         outputs['b_m']               =  b_m
-        outputs['p']                 =  p
         outputs['E_p']               =  E_p
         outputs['f']                 =  f
         outputs['I_s']               =  I_s
@@ -1013,7 +1112,7 @@ class DFIG(GeneratorBase):
         self.add_output('tau_p', val=0.0, desc='Pole pitch')
         self.add_output('Current_ratio', val=0.0,         desc='Rotor current ratio')
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
         rad_ag               = inputs['rad_ag']
         len_s                = inputs['len_s']
@@ -1033,9 +1132,43 @@ class DFIG(GeneratorBase):
         
         shaft_cm             = inputs['shaft_cm']
         shaft_length         = inputs['shaft_length']
+
+        # Grab constant values
+        B_r         = inputs['B_r']
+        E           = inputs['E']
+        P_Fe0e      = inputs['P_Fe0e']
+        P_Fe0h      = inputs['P_Fe0h']
+        S_N         = inputs['S_N']
+        alpha_p     = inputs['alpha_p']
+        b_r_tau_r   = inputs['b_r_tau_r']
+        b_ro        = inputs['b_ro']
+        b_s_tau_s   = inputs['b_s_tau_s']
+        b_so        = inputs['b_so']
+        cofi        = inputs['cofi']
+        freq        = inputs['freq']
+        h_i         = inputs['h_i']
+        h_sy0       = inputs['h_sy0']
+        h_w         = inputs['h_w']
+        k_fes       = inputs['k_fes']
+        k_fillr     = inputs['k_fillr']
+        k_s         = inputs['k_s']
+        m           = discrete_inputs['m']
+        mu_0        = inputs['mu_0']
+        mu_r        = inputs['mu_r']
+        p           = discrete_inputs['p']
+        phi         = inputs['phi']
+        q1          = discrete_inputs['q1']
+        q2 = q1 - 1                     # Rotor  slots per pole per phase
+        ratio_mw2pp = inputs['ratio_mw2pp']
+        resist_Cu   = inputs['resist_Cu']
+        sigma       = inputs['sigma']
+        v           = inputs['v']
+        y_tau_p     = inputs['y_tau_p']
+        y_tau_pr    = inputs['y_tau_pr']
+
         
+        '''
         #Assign values to universal constants
-        g1          = 9.81             # m/s^2 acceleration due to gravity
         sigma       = 21.5e3           # shear stress in psi (what material? Al, brass, Cu?) ~148e6 Pa
         mu_0        = np.pi * 4e-7        # permeability of free space in m * kg / (s**2 * A**2)
         cofi        = 0.9              # power factor
@@ -1048,7 +1181,6 @@ class DFIG(GeneratorBase):
         b_so = 0.004                    # Stator slot opening width
         b_ro = 0.004                    # Rotor  slot opening width
         q1 = 5                          # Stator slots per pole per phase
-        q2 = q1 - 1                     # Rotor  slots per pole per phase
         b_s_tau_s = 0.45                # Stator slot-width / slot-pitch ratio
         b_r_tau_r = 0.45                # Rotor  slot-width / slot-pitch ratio
         y_tau_p  = 12. / 15             # Stator coil span to pole pitch    
@@ -1057,9 +1189,9 @@ class DFIG(GeneratorBase):
         p = 3                           # pole pairs
         freq = 60                       # grid frequency in Hz
         k_fillr = 0.55                  # Rotor Slot fill factor
-        k_fills = 0.65                  # Stator Slot fill factor (will be set later)
         P_Fe0h = 4                      # specific hysteresis losses W / kg @ 1.5 T 
         P_Fe0e = 1                      # specific eddy losses W / kg @ 1.5 T 
+        '''
         
         K_rs     = 1 / ( -1 * S_Nmax)              # Winding turns ratio between rotor and Stator        
         I_SN   = machine_rating / (np.sqrt(3) * 3000) # Rated current
@@ -1291,7 +1423,6 @@ class DFIG(GeneratorBase):
         outputs['B_tsmax']            = B_tsmax
         outputs['B_trmax']            = B_trmax
 
-        outputs['q1']                 = q1
         outputs['N_s']                = N_s
         outputs['S']                  = S
         outputs['h_ys']               = h_ys
@@ -1304,7 +1435,6 @@ class DFIG(GeneratorBase):
         outputs['h_yr']               = h_yr
 
         outputs['tau_p']              = tau_p
-        outputs['p']                  = p
         outputs['Q_r']                = Q_r
         outputs['N_r']                = N_r
         outputs['b_r']                = b_r
@@ -1359,10 +1489,9 @@ class SCIG(GeneratorBase):
         self.add_output('K_rad_UL',   val=0.0, desc='Aspect ratio upper limit')
         self.add_output('K_rad_LL',   val=0.0, desc='Aspect ratio Lower limit')
         self.add_output('rad_r',              val=0.0, desc='rotor radius')
-        self.add_output('S_N',        val=0.0, desc='Slip')
         self.add_output('A_bar',              val=0.0, desc='Rotor Conductor cross-section mm^2')
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
         rad_ag               = inputs['rad_ag']
         len_s                = inputs['len_s']
@@ -1378,9 +1507,41 @@ class SCIG(GeneratorBase):
         shaft_cm             = inputs['shaft_cm']
         shaft_length         = inputs['shaft_length']
 
-        
+        # Grab constant values
+        B_r         = inputs['B_r']
+        E           = inputs['E']
+        P_Fe0e      = inputs['P_Fe0e']
+        P_Fe0h      = inputs['P_Fe0h']
+        S_N         = inputs['S_N']
+        alpha_p     = inputs['alpha_p']
+        b_r_tau_r   = inputs['b_r_tau_r']
+        b_ro        = inputs['b_ro']
+        b_s_tau_s   = inputs['b_s_tau_s']
+        b_so        = inputs['b_so']
+        cofi        = inputs['cofi']
+        freq        = inputs['freq']
+        h_i         = inputs['h_i']
+        h_sy0       = inputs['h_sy0']
+        h_w         = inputs['h_w']
+        k_fes       = inputs['k_fes']
+        k_fillr     = inputs['k_fillr']
+        k_s         = inputs['k_s']
+        m           = discrete_inputs['m']
+        mu_0        = inputs['mu_0']
+        mu_r        = inputs['mu_r']
+        p           = discrete_inputs['p']
+        phi         = inputs['phi']
+        q1          = discrete_inputs['q1']
+        q2          = discrete_inputs['q2']
+        ratio_mw2pp = inputs['ratio_mw2pp']
+        resist_Cu   = inputs['resist_Cu']
+        sigma       = inputs['sigma']
+        v           = inputs['v']
+        y_tau_p     = inputs['y_tau_p']
+        y_tau_pr    = inputs['y_tau_pr']
+
+        '''
         # Assign values to universal constants
-        g1    = 9.81              # m/s^2 acceleration due to gravity
         sigma = 21.5e3            # shear stress (psi) what material?
         mu_0  = np.pi*4e-7           # permeability of free space in m * kg / (s**2 * A**2)
         cofi  = 0.9               # power factor
@@ -1400,11 +1561,12 @@ class SCIG(GeneratorBase):
         p         = 3                         # number of pole pairs
         freq      = 60                        # frequency in Hz
         k_fillr   = 0.7                       # Rotor  slot fill factor
-        k_fills   = None                      # Stator slot fill factor - to be assigned later
         P_Fe0h    = 4                         # specific hysteresis losses W / kg @ 1.5 T @50 Hz
         P_Fe0e    = 1                         # specific eddy losses W / kg @ 1.5 T @50 Hz
         
         S_N       = -0.002                    # Slip
+        '''
+        
         n_1       = n_nom / (1 - S_N)         # actual rotor speed (rpm)
         
         # Calculating winding factor 
@@ -1667,7 +1829,6 @@ class SCIG(GeneratorBase):
         outputs['B_rymax']            = B_rymax
         outputs['B_g']                = B_g
         outputs['B_g1']               = B_g1
-        outputs['q1']                 = q1
         outputs['N_s']                = N_s
         outputs['S']                  = S
         outputs['h_ys']               = h_ys
@@ -1680,13 +1841,11 @@ class SCIG(GeneratorBase):
         outputs['Slot_aspect_ratio1'] = Slot_aspect_ratio1
         outputs['h_yr']               = h_yr
         outputs['tau_p']              = tau_p
-        outputs['p']                  = p
         outputs['Q_r']                = Q_r
         outputs['b_r']                = b_r
         outputs['b_trmin']            = b_trmin
         outputs['b_tr']               = b_tr
         outputs['rad_r']              = rad_r
-        outputs['S_N']                = S_N
         outputs['A_bar']              = A_bar
         outputs['Slot_aspect_ratio2'] = Slot_aspect_ratio2
         outputs['E_p']                = E_p
@@ -1742,7 +1901,7 @@ class EESG(GeneratorBase):
         self.add_output('Power_ratio',       val=0.0,             desc='Power_ratio')
         self.add_output('Load_mmf_ratio', val=0.0,                  desc='mmf_ratio')
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
         rad_ag            = inputs['rad_ag']
         len_s             = inputs['len_s']
@@ -1771,9 +1930,43 @@ class EESG(GeneratorBase):
         rho_Fes           = inputs['rho_Fes']
         shaft_cm          = inputs['shaft_cm']
         shaft_length      = inputs['shaft_length']
+
+        # Grab constant values
+        B_r         = inputs['B_r']
+        E           = inputs['E']
+        P_Fe0e      = inputs['P_Fe0e']
+        P_Fe0h      = inputs['P_Fe0h']
+        S_N         = inputs['S_N']
+        alpha_p     = inputs['alpha_p']
+        b_r_tau_r   = inputs['b_r_tau_r']
+        b_ro        = inputs['b_ro']
+        b_s_tau_s   = inputs['b_s_tau_s']
+        b_so        = inputs['b_so']
+        cofi        = inputs['cofi']
+        freq        = inputs['freq']
+        h_i         = inputs['h_i']
+        h_sy0       = inputs['h_sy0']
+        h_w         = inputs['h_w']
+        k_fes       = inputs['k_fes']
+        k_fillr     = inputs['k_fillr']
+        k_fills     = inputs['k_fills']
+        k_s         = inputs['k_s']
+        m           = discrete_inputs['m']
+        mu_0        = inputs['mu_0']
+        mu_r        = inputs['mu_r']
+        p           = discrete_inputs['p']
+        phi         = inputs['phi']
+        q1          = discrete_inputs['q1']
+        q2          = discrete_inputs['q2']
+        ratio_mw2pp = inputs['ratio_mw2pp']
+        resist_Cu   = inputs['resist_Cu']
+        sigma       = inputs['sigma']
+        v           = inputs['v']
+        y_tau_p     = inputs['y_tau_p']
+        y_tau_pr    = inputs['y_tau_pr']
         
+        '''
         # Assign values to universal constants
-        g1     = 9.81                # m / s^2 acceleration due to gravity
         E      = 2e11                # N / m^2 young's modulus
         sigma  = 48.373e3            # shear stress of steel in psi (~333 MPa)
         mu_0   = np.pi * 4e-7           # permeability of free space in m * kg / (s**2 * A**2)
@@ -1785,16 +1978,16 @@ class EESG(GeneratorBase):
         m         = 3                  # number of phases
         q1        = 2                  # no of stator slots per pole per phase
         b_s_tau_s = 0.45               # ratio of slot width to slot pitch
-        k_sfil    = 0.65               # Slot fill factor (not used)
         P_Fe0h    = 4                  # specific hysteresis losses W / kg @ 1.5 T @50 Hz
         P_Fe0e    = 1                  # specific eddy losses W / kg @ 1.5 T @50 Hz
-        rho_Cu    = 1.8e-8 * 1.4       # resisitivity of copper # ohm-meter  (Why the 1.4 factor?)
+        resist_Cu    = 1.8e-8 * 1.4       # resisitivity of copper # ohm-meter  (Why the 1.4 factor?)
         k_fes     = 0.9                # iron fill factor (not used)
         y_tau_p   = 1                  # coil span / pole pitch fullpitch
         k_fillr   = 0.7                # rotor slot fill factor
         k_s       = 0.2                # magnetic saturation factor for iron
+        cofi   = 0.85               # power factor
+        '''
         T         = Torque
-        cos_phi   = 0.85               # power factor
         
         # back iron thickness for rotor and stator
         t_s = h_ys
@@ -1862,12 +2055,12 @@ class EESG(GeneratorBase):
         A_scalc   = b_s * 1000 * (h_s - h_w) * 1000            # cross section in mm^2
         A_Cus     = A_s     * q1 * p * K_fills / N_s
         A_Cuscalc = A_scalc * q1 * p * K_fills / N_s
-        R_s = l_Cus * rho_Cu / A_Cus
+        R_s = l_Cus * resist_Cu / A_Cus
         
         # field winding design, conductor length, cross-section and resistance
         
         N_f       = np.round(N_f)            # rounding the field winding turns to the nearest integer
-        I_srated  = machine_rating / (np.sqrt(3) * 5000 * cos_phi)
+        I_srated  = machine_rating / (np.sqrt(3) * 5000 * cofi)
         l_pole    = len_s - 0.050 + 0.120  # 50mm smaller than stator and 120mm longer to accommodate end stack
         K_fe      = 0.95                    
         l_pfe     = l_pole * K_fe
@@ -1875,7 +2068,7 @@ class EESG(GeneratorBase):
         A_Cur     = k_fillr * h_pc        * 0.5 / N_f    * (np.pi * (r_r - h_pc - h_ps) / p - b_pc)
         A_Curcalc = k_fillr * h_pc * 1000 * 0.5 / N_f    * (np.pi * (r_r - h_pc - h_ps) / p - b_pc) * 1000 
         Slot_Area = A_Cur * 2 * N_f / k_fillr # (not used)
-        R_r       = rho_Cu * l_Cur / A_Cur # ohms
+        R_r       = resist_Cu * l_Cur / A_Cur # ohms
         
         # field winding current density
         
@@ -1996,7 +2189,7 @@ class EESG(GeneratorBase):
         M_Fery = V_Fery * rho_Fe
         Iron = M_Fest + M_Fesy + M_Fert + M_Fery
         
-        I_snom = machine_rating / (3 * E_s * cos_phi)
+        I_snom = machine_rating / (3 * E_s * cofi)
         
         ## Optional## Calculating mmf ratio
         F_1no_load = 3 * 2**0.5 * N_s * k_wd * I_s / (np.pi * p) # (not used)
@@ -2071,9 +2264,9 @@ class EESG(GeneratorBase):
         
         # Calculating axial deflection of rotor structure
         
-        w_r         = rho_Fes * g1 * np.sin(phi) * a_r * N_r
+        w_r         = rho_Fes * gravity * np.sin(phi) * a_r * N_r
         mass_st_lam = rho_Fe * 2*np.pi * (R + 0.5 * h_yr) * len_s * h_yr                         # mass of rotor yoke steel
-        W           = g1 * np.sin(phi) * (mass_st_lam + (V_Cusr * rho_Copper) + M_Fert) / N_r  # weight of rotor cylinder
+        W           = gravity * np.sin(phi) * (mass_st_lam + (V_Cusr * rho_Copper) + M_Fert) / N_r  # weight of rotor cylinder
         l_ir        = R                                      # length of rotor arm beam at which rotor cylinder acts
         l_iir       = R_1
         
@@ -2121,9 +2314,9 @@ class EESG(GeneratorBase):
         l_iis         = l_is
         l_iiis        = l_is                                                  # length of rotor arm beam at which self-weight acts
         mass_st_lam_s = M_Fest + np.pi * len_s * rho_Fe * ((R_st + 0.5 * h_ys)**2 - (R_st - 0.5 * h_ys)**2)
-        W_is          = g1 * np.sin(phi) * (rho_Fes * len_s * d_s**2 * 0.5) # weight of rotor cylinder                              
-        W_iis         = g1 * np.sin(phi) * (V_Cuss * rho_Copper + mass_st_lam_s) / 2/N_st
-        w_s           = rho_Fes * g1 * np.sin(phi) * a_s * N_st
+        W_is          = gravity * np.sin(phi) * (rho_Fes * len_s * d_s**2 * 0.5) # weight of rotor cylinder                              
+        W_iis         = gravity * np.sin(phi) * (V_Cuss * rho_Copper + mass_st_lam_s) / 2/N_st
+        w_s           = rho_Fes * gravity * np.sin(phi) * a_s * N_st
         
         X_comp1 = W_is  * l_is**3   / (12 * E * I_arm_axi_s)
         X_comp2 = W_iis * l_iis**4  / (24 * E * I_arm_axi_s)
@@ -2171,7 +2364,6 @@ class EESG(GeneratorBase):
         outputs['A_Curcalc']         = A_Curcalc
         outputs['b_p']               = b_p
         outputs['h_p']               = h_p
-        outputs['p']                 = p
         outputs['E_s']               = E_s
         outputs['f']                 = f
 

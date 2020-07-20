@@ -8,7 +8,7 @@ Structural design based on McDonald's thesis """
 import openmdao.api as om
 import numpy as np
 import generator_models as gm
-
+import wisdem.commonse.fileIO as fio
 
 class Constraints(om.ExplicitComponent):
     """ Provides a material cost estimate for a PMSG _arms generator. Manufacturing costs are excluded"""
@@ -420,9 +420,14 @@ def optimization_example(genType, exportFlag=False):
     if genType in ['scig', 'dfig']:
         opt_problem['n_nom']              = 1200.0
         opt_problem['Gearbox_efficiency'] = 0.955
+        opt_problem['cofi'] = 0.9
+        opt_problem['y_tau_p'] = 12./15.
+        opt_problem['sigma'] = 21.5e3
+        
     elif genType in ['eesg', 'pmsg_arms','pmsg_disc']:
         opt_problem['Torque']             = 4.143289e6
         opt_problem['n_nom']              = 12.1
+        opt_problem['sigma'] = 48.373e3
 
         
     if genType == 'scig':
@@ -433,6 +438,7 @@ def optimization_example(genType, exportFlag=False):
         opt_problem['h_r']     = 0.050 #0.04 # 0.050 #meter
         opt_problem['I_0']     = 140  #139.995232826 #140  #Ampere
         opt_problem['B_symax'] = 1.4 #1.86140258387 #1.4 #Tesla
+        opt_problem['q1']      = 6
         
     elif genType == 'dfig':
         #opt_problem['r_s']     = 0.61 #0.493167295965 #0.61 #meter
@@ -443,6 +449,8 @@ def optimization_example(genType, exportFlag=False):
         opt_problem['I_0']     = 40.0 # 40.0191207049 #40.0 #Ampere
         opt_problem['B_symax'] = 1.3 #1.59611292026 #1.3 #Tesla
         opt_problem['S_Nmax']  = -0.2 #-0.3 #-0.2
+        opt_problem['k_fillr']  = 0.55
+        opt_problem['q1']      = 5
 
     elif genType == 'eesg':
         # Initial design variables 
@@ -464,6 +472,7 @@ def optimization_example(genType, exportFlag=False):
         opt_problem['t_wr']    = 0.140
         opt_problem['t_ws']    = 0.070
         opt_problem['R_o']     = 0.43      #10MW: 0.523950817,#5MW: 0.43, #3MW:0.363882632 #1.5MW: 0.2775  0.75MW: 0.17625
+        opt_problem['q1']      = 2
 
     elif genType == 'pmsg_arms':
         #opt_problem['r_s']     = 3.26
@@ -483,6 +492,7 @@ def optimization_example(genType, exportFlag=False):
         opt_problem['t_wr']    = 0.06
         opt_problem['t_ws']    = 0.06
         opt_problem['R_o']     = 0.43           #0.523950817  #0.43  #0.523950817 #0.17625 #0.2775 #0.363882632 ##0.35 #0.523950817 #0.43 #523950817 #0.43 #0.523950817 #0.523950817 #0.17625 #0.2775 #0.363882632 #0.43 #0.523950817 #0.43
+        opt_problem['q1']      = 1
 
     elif genType == 'pmsg_disc':
         #opt_problem['r_s']     = 3.49 #3.494618182
@@ -499,6 +509,7 @@ def optimization_example(genType, exportFlag=False):
         opt_problem['d_s']     = 0.350 #0.35031 #
         opt_problem['t_ws']    = 0.150 #=0.14720 #
         opt_problem['R_o']     = 0.43 #0.43
+        opt_problem['q1']      = 1
 
     #----------------- try 15MW PMSG_disc --------------
     #  testing 2019 11 04
@@ -531,7 +542,9 @@ def optimization_example(genType, exportFlag=False):
     opt_problem.run_model()
     opt_problem.model.list_inputs(units=True) #values = False, hierarchical=False)
     opt_problem.model.list_outputs(units=True) #values = False, hierarchical=False)    
+    fio.save_data(genType.upper(), opt_problem, npz_file=False, mat_file=False, xls_file=True)
 
+    '''
     # Export results
     if exportFlag:
         import pandas as pd
@@ -1599,6 +1612,7 @@ def optimization_example(genType, exportFlag=False):
         print(df)
         df.to_excel(genType.upper() + '_' + str(float(opt_problem['machine_rating']/1e6)) + '_MW.xlsx')
         df.to_csv(genType.upper() + '_' + str(float(opt_problem['machine_rating']/1e6)) + '_MW.csv')
+    '''
             
 if __name__=='__main__':
     
