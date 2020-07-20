@@ -3,9 +3,8 @@ import numpy as np
 import openmdao.api as om
 from hub import Hub_System
 from layout import Layout
-#from generator import Generator
+from generator import Generator
 import drive_structure as ds
-from rna import RNAMass
 import drive_components as dc
 
         
@@ -16,6 +15,7 @@ class DrivetrainSE(om.Group):
     def initialize(self):
         self.options.declare('n_points')
         self.options.declare('n_dlcs')
+        self.options.declare('model_generator')
         self.options.declare('topLevelFlag', default=True)
     
     def setup(self):
@@ -82,7 +82,10 @@ class DrivetrainSE(om.Group):
         # select components
         self.add_subsystem('hub', Hub_System(), promotes=['*'])
         self.add_subsystem('layout', Layout(n_points=n_points), promotes=['*'])
-        #self.add_subsystem('generator', Generator(), promotes=['*'])
+        if self.options['model_generator']:
+            self.add_subsystem('generator', Generator(), promotes=['*'])
+        else:
+            self.add_subsystem('gensimp', dc.GeneratorSimple(), promotes=['*'])
         self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
         self.add_subsystem('bear1', dc.MainBearing())
         self.add_subsystem('bear2', dc.MainBearing())
@@ -108,12 +111,13 @@ class DrivetrainSE(om.Group):
         
 if __name__ == '__main__':
     prob = om.Problem()
-    prob.model = DrivetrainSE(topLevelFlag=True, n_points=10, n_dlcs=1)
+    prob.model = DrivetrainSE(topLevelFlag=True, n_points=10, n_dlcs=1, model_generator=False)
     prob.setup()
 
     prob['upwind'] = True
     prob['direct_drive'] = True
     prob['n_blades'] = 3
+    prob['rotor_rpm'] = 10.0
 
     prob['L_12'] = 2.0
     prob['L_h1'] = 1.0

@@ -1,5 +1,6 @@
 import openmdao.api as om
 import numpy as np
+import pandas as pd
 from wisdem.commonse import gravity
 import sys
 
@@ -51,9 +52,130 @@ def carterFactorSalientPole(airGap, slotWidth, slotPitch):
     slotPitch - slotWidth == toothWidth
 	'''
     return (slotPitch + 10 * airGap) / (slotPitch - slotWidth + 10 * airGap)  # salient pole rotor
-#%%---------------------------------
+#---------------------------------
+def array_seq(q1,b,c,Total_number):
+    Seq	  = np.array([1,0,0,1,0])
+    diff  = Total_number*5/6
+    G     = np.prod(Seq.shape)
+    return Seq, diff,G
+#---------------------------------
+def winding_factor(Sin, b, c, p, m):
+    S = int(Sin)
+    
+    #Step 1 Writing q1 as a fraction
+    q1=b/c
+    
+    # Step 2: Writing a binary sequence of b-c zeros and b ones
+    Total_number=int(S/b)
+    L = array_seq(q1,b,c,Total_number)
+    
+    # STep 3 : Repeat binary sequence Q_s/b times
+    New_seq=np.tile(L[0],Total_number)
+    Actual_seq1=(pd.DataFrame(New_seq[:,None].T))
+    Winding_sequence=['A','C1','B','A1','C','B1']
+    
+    New_seq2=np.tile(Winding_sequence,int(L[1]))
+    Actual_seq2= pd.DataFrame(New_seq2[:,None].T)
+    Seq_f= pd.concat([Actual_seq1, Actual_seq2],ignore_index=True)
+    Seq_f.reset_index(drop=True)
+    
+    Slots=S
+    R=S if S%2 ==0 else S+1
+        
+    Windings_arrange=(pd.DataFrame(index=Seq_f.index,columns=Seq_f.columns[1:R])).fillna(0)
+    counter=1
+
+    #Step #4 Arranging winding in Slots
+    for i in range(0,len(New_seq)):
+        if Seq_f.loc[0,i]==1:
+            Windings_arrange.loc[0,counter]=Seq_f.loc[1,i]
+            counter=counter+1
+            
+    Windings_arrange.loc[1,1]='C1'
+    
+    for k in range(1,R):
+        if Windings_arrange.loc[0,k]=='A':
+            Windings_arrange.loc[1,k+1]='A1'
+        elif Windings_arrange.loc[0,k]=='B':
+            Windings_arrange.loc[1,k+1]='B1'
+        elif Windings_arrange.loc[0,k]=='C':
+            Windings_arrange.loc[1,k+1]='C1'
+        elif Windings_arrange.loc[0,k]=='A1':
+            Windings_arrange.loc[1,k+1]='A'
+        elif Windings_arrange.loc[0,k]=='B1':
+            Windings_arrange.loc[1,k+1]='B'
+        elif Windings_arrange.loc[0,k]=='C1':
+            Windings_arrange.loc[1,k+1]='C'
+	
+    Phase_A=np.zeros((1000,1),dtype=float)
+    counter_A=0
+    #Windings_arrange.to_excel('test.xlsx')
+    # Winding vector, W_A for Phase A
+    for l in range(1,R):
+        if Windings_arrange.loc[0,l]=='A' and Windings_arrange.loc[1,l]=='A':
+            Phase_A[counter_A,0]=l
+            Phase_A[counter_A+1,0]=l
+            counter_A=counter_A+2
+        elif Windings_arrange.loc[0,l]== 'A1' and Windings_arrange.loc[1,l]=='A1':
+            Phase_A[counter_A,0]=-1*l
+            Phase_A[counter_A+1,0]=-1*l
+            counter_A=counter_A+2
+        elif Windings_arrange.loc[0,l]=='A' or Windings_arrange.loc[1,l]=='A':
+            Phase_A[counter_A,0]=l
+            counter_A=counter_A+1
+        elif Windings_arrange.loc[0,l]=='A1' or Windings_arrange.loc[1,l]=='A1':
+            Phase_A[counter_A,0]=-1*l
+            counter_A=counter_A+1
+    
+    W_A=(np.trim_zeros(Phase_A)).T
+    # Calculate winding factor
+    K_w=0
+    
+    for r in range(0,int(2*(S)/3)):
+        Gamma=2*np.pi*p*np.abs(W_A[0,r])/S
+        K_w+=np.sign(W_A[0,r])*(np.exp(Gamma*1j))
+
+    K_w       = np.abs(K_w)/(2*S/3)
+    CPMR      = np.lcm(S,int(2*p))
+    N_cog_s   = CPMR/S
+    N_cog_p   = CPMR/p
+    N_cog_t   = CPMR*0.5/p
+    A         = np.lcm(S,int(2*p))
+    b_p_tau_p = 2*1*p/S-0
+    b_t_tau_s = (2)*S*0.5/p-2
+        
+    return K_w
+#---------------------------------
+def shell_constant(R,t,l,x,E,v):
+    
+    Lambda     = (3*(1-v**2)/(R**2*t**2))**0.25
+    D          = E*t**3/(12*(1-v**2))
+    C_14       = (np.sinh(Lambda*l))**2+ (np.sin(Lambda*l))**2
+    C_11       = (np.sinh(Lambda*l))**2- (np.sin(Lambda*l))**2
+    F_2        = np.cosh(Lambda*x)*np.sin(Lambda*x) + np.sinh (Lambda*x)* np.cos(Lambda*x)
+    C_13       = np.cosh(Lambda*l)*np.sinh(Lambda*l) - np.cos(Lambda*l)* np.sin(Lambda*l)
+    F_1        = np.cosh(Lambda*x)*np.cos(Lambda*x)
+    F_4        = np.cosh(Lambda*x)*np.sin(Lambda*x)-np.sinh(Lambda*x)*np.cos(Lambda*x)
+    
+    return D,Lambda,C_14,C_11,F_2,C_13,F_1,F_4
+#---------------------------------
+def plate_constant(a,b,E,v,r_o,t):
+    
+    D          = E*t**3/(12*(1-v**2))
+    C_2        = 0.25*(1-(b/a)**2*(1+2*np.log(a/b)))
+    C_3        = 0.25*(b/a)*(((b/a)**2+1)*np.log(a/b)+(b/a)**2 -1)
+    C_5        = 0.5*(1-(b/a)**2)
+    C_6        = 0.25*(b/a)*((b/a)**2-1+2*np.log(a/b))
+    C_8        = 0.5*(1+v+(1-v)*(b/a)**2)
+    C_9        = (b/a)*(0.5*(1+v)*np.log(a/b)+0.25*(1-v)*(1-(b/a)**2))
+    L_11       = (1/64)*(1+4*(r_o/a)**2-5*(r_o/a)**4-4*(r_o/a)**2*(2+(r_o/a)**2)*np.log(a/r_o))
+    L_17       = 0.25*(1-0.25*(1-v)*((1-(r_o/a)**4)-(r_o/a)**2*(1+(1+v)*np.log(a/r_o))))
+            
+    return D,C_2,C_3,C_5,C_6,C_8,C_9,L_11,L_17
+#---------------------------------
 
 debug = False
+#---------------------------------
 
 class GeneratorBase(om.ExplicitComponent):
     """ Base class for generators """
@@ -62,6 +184,7 @@ class GeneratorBase(om.ExplicitComponent):
         # Constants and parameters
         self.add_input('B_r', val=1.2, units='T', desc='Remnant flux density')
         self.add_input('E', val=2e11, units='Pa', desc='youngs modulus')
+        self.add_input('G', val=79.3e9, units='Pa', desc='Shear modulus')
         self.add_input('P_Fe0e', val=1.0, units='W/kg', desc='specific eddy losses @ 1.5T, 50Hz')
         self.add_input('P_Fe0h', val=4.0, units='W/kg', desc='specific hysteresis losses W / kg @ 1.5 T @50 Hz')
         self.add_input('S_N', val=-0.002 ,desc='Slip')
@@ -82,7 +205,7 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_discrete_input('m', val=3, desc='Number of phases')
         self.add_input('mu_0', val=np.pi*4e-7, units='m*kg/s**2/A**2', desc='permeability of free space')
         self.add_input('mu_r', val=1.06, units='m*kg/s**2/A**2', desc='relative permeability (neodymium)')
-        self.add_discrete_input('p', val=3, desc='number of pole pairs')
+        self.add_input('p', val=3.0, desc='number of pole pairs (taken as int within code)')
         self.add_input('phi', val=np.deg2rad(90), units='rad', desc='tilt angle (during transportation)')
         self.add_discrete_input('q1', val=6, desc='Stator slots per pole per phase')
         self.add_discrete_input('q2', val=4, desc='Rotor  slots per pole per phase')
@@ -97,12 +220,12 @@ class GeneratorBase(om.ExplicitComponent):
         #self.add_input('r_s', val=0.0, units='m', desc='airgap radius r_s')
         self.add_input('Gearbox_efficiency', val=0.0, desc='Gearbox efficiency')
         self.add_input('I_0', val=0.0, units='A', desc='no-load excitation current')
-        self.add_input('Torque', val=0.0, units ='N*m', desc='Rated torque ')
+        self.add_input('T_rated', val=0.0, units ='N*m', desc='Rated torque ')
         self.add_input('d_r', val=0.0, units='m', desc='arm depth d_r')
         self.add_input('h_m', val=0.0, units='m', desc='magnet height')
-        self.add_input('h_r', val=0.0, units ='m', desc='Rotor slot height')
+        self.add_input('h_0', val=0.0, units ='m', desc='Slot height')
         self.add_input('h_s', val=0.0, units='m', desc='Yoke height h_s')
-        self.add_input('len_s', val=0.0, units='m', desc='Stator core length l_s')
+        self.add_input('len_s', val=0.0, units='m', desc='Stator core length')
         self.add_input('machine_rating', val=0.0, units ='W', desc='Machine rating')
         self.add_input('n_nom', val=0.0, units ='rpm', desc='rated speed')
         self.add_input('n_r', val=0.0, desc='number of arms n')
@@ -124,12 +247,10 @@ class GeneratorBase(om.ExplicitComponent):
 
         # Magnetic loading
         self.add_output('B_rymax', val=0.0, units='T', desc='Peak Rotor yoke flux density')
-        self.add_output('B_smax', val=0.0, desc='Peak Stator flux density')
-        self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
-        self.add_output('B_trmax', val=0.0, desc='maximum tooth flux density in rotor')
-        self.add_output('B_tsmax', val=0.0, desc='maximum tooth flux density in stator')
+        self.add_output('B_trmax', val=0.0, units='T', desc='maximum tooth flux density in rotor')
+        self.add_output('B_tsmax', val=0.0, units='T', desc='maximum tooth flux density in stator')
         self.add_output('B_g', val=0.0, units='T', desc='Peak air gap flux density B_g')
-        self.add_output('B_g1', val=0.0, desc='air gap flux density fundamental ')
+        self.add_output('B_g1', val=0.0, units='T', desc='air gap flux density fundamental ')
         self.add_output('B_pm1', val=0.0, desc='Fundamental component of peak air gap flux density')
 
         # Stator design
@@ -147,15 +268,14 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_output('Copper', val=0.0, units='kg', desc='Copper Mass')
         self.add_output('Iron', val=0.0, units='kg', desc='Electrical Steel Mass')
         self.add_output('Structural_mass', val=0.0, units='kg', desc='Structural Mass')
-        self.add_output('Mass', val=0.0, units='kg', desc='Actual mass')
+        self.add_output('generator_mass', val=0.0, units='kg', desc='Actual mass')
         
         # Electrical performance
-        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
         self.add_output('f', val=0.0, desc='Generator output frequency')
         self.add_output('I_s', val=0.0, units='A', desc='Generator output phase current')
         self.add_output('R_s', val=0.0, units='ohm', desc='Stator resistance')
         self.add_output('L_s', val=0.0, desc='Stator synchronising inductance')
-        self.add_output('J_s', val=0.0, units='A*m**-2', desc='Stator Current density')
+        self.add_output('J_s', val=0.0, units='A*m**-2', desc='Stator winding current density')
         self.add_output('A_1' , val=0.0, desc='Specific current loading')
 
         # Objective functions
@@ -164,22 +284,23 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_output('gen_eff', val=0.0, desc='Generator efficiency')
     
         # Structural performance
-        self.add_output('u_Ar', val=0.0, units='m', desc='Rotor radial deflection')
-        self.add_output('u_As', val=0.0, units='m', desc='Stator radial deflection')
-        self.add_output('u_all_r', val=0.0, units='m', desc='Allowable radial rotor')
-        self.add_output('u_all_s', val=0.0, units='m', desc='Allowable radial stator')
-        self.add_output('y_Ar', val=0.0, units='m', desc='Rotor axial deflection')
-        self.add_output('y_As', val=0.0, units='m', desc='Stator axial deflection')
-        self.add_output('y_all', val=0.0, units='m', desc='Allowable axial')
-        self.add_output('z_A_r', val=0.0, units='m', desc='Rotor circumferential deflection')
-        self.add_output('z_A_s', val=0.0, units='m', desc='Stator circumferential deflection')  
-        self.add_output('z_all_r', val=0.0, units='m', desc='Allowable circum rotor')
-        self.add_output('z_all_s', val=0.0, units='m', desc='Allowable circum stator')
-        self.add_output('b_all_r', val=0.0, units='m', desc='Allowable arm dimensions')
-        self.add_output('b_all_s', val=0.0, units='m', desc='Allowable arm')
+        self.add_output('u_ar', val=0.0, units='m', desc='Rotor radial deflection')
+        self.add_output('u_as', val=0.0, units='m', desc='Stator radial deflection')
+        self.add_output('u_allow_r', val=0.0, units='m', desc='Allowable radial rotor')
+        self.add_output('u_allow_s', val=0.0, units='m', desc='Allowable radial stator')
+        self.add_output('y_ar', val=0.0, units='m', desc='Rotor axial deflection')
+        self.add_output('y_as', val=0.0, units='m', desc='Stator axial deflection')
+        self.add_output('y_allow_r', val=0.0, units='m', desc='Allowable axial')
+        self.add_output('y_allow_s', val=0.0, units='m', desc='Allowable axial')
+        self.add_output('z_ar', val=0.0, units='m', desc='Rotor circumferential deflection')
+        self.add_output('z_as', val=0.0, units='m', desc='Stator circumferential deflection')  
+        self.add_output('z_allow_r', val=0.0, units='m', desc='Allowable circum rotor')
+        self.add_output('z_allow_s', val=0.0, units='m', desc='Allowable circum stator')
+        self.add_output('b_allow_r', val=0.0, units='m', desc='Allowable arm dimensions')
+        self.add_output('b_allow_s', val=0.0, units='m', desc='Allowable arm')
         self.add_output('TC1', val=0.0, units='m**3', desc='Torque constraint')
-        self.add_output('TC2', val=0.0, units='m**3', desc='Torque constraint-rotor')
-        self.add_output('TC3', val=0.0, units='m**3', desc='Torque constraint-stator')
+        self.add_output('TC2r', val=0.0, units='m**3', desc='Torque constraint-rotor')
+        self.add_output('TC2s', val=0.0, units='m**3', desc='Torque constraint-stator')
         
         # Other parameters
         self.add_output('R_out', val=0.0, units ='m', desc='Outer radius')
@@ -191,8 +312,8 @@ class GeneratorBase(om.ExplicitComponent):
         # DriveSE Interface
         self.add_input('shaft_cm', val=np.zeros(3), units='m', desc='Main Shaft CM')
         self.add_input('shaft_length', val=0.0, units='m', desc='main shaft length')
-        self.add_output('I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
-        self.add_output('cm', val=np.zeros(3), units='m', desc='COM [x,y,z]')
+        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        self.add_output('generator_cm', val=np.zeros(3), units='m', desc='COM [x,y,z]')
 
         self.add_output('D_ratio', val=0.0, desc='Stator diameter ratio')
         self.add_output('J_r', val=0.0, desc='Rotor winding Current density')
@@ -204,6 +325,383 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_output('b_tr', val=0.0, desc='rotor tooth width')
         self.add_output('b_trmin', val=0.0, desc='minimum tooth width')
 
+#----------------------------------------------------------------------------------------
+
+class PMSG_Outer(GeneratorBase):
+    """ Estimates overall electromagnetic dimensions and Efficiency of PMSG -arms generator. """
+    
+    def setup(self):
+        super(PMSG_Outer, self).setup()
+    
+        self.add_input('r_g',0.0, units ='m', desc='airgap radius')
+        self.add_input('P_mech', units ='W', desc='Shaft mechanical power')
+        self.add_input('N_c',0.0, desc='Number of turns per coil')
+        self.add_input('b',0.0, desc='Slot pole combination')
+        self.add_input('c',0.0, desc='Slot pole combination')
+        self.add_input('E_p',0.0, units ='V', desc='Stator phase voltage')
+        
+        # PMSG_structrual inputs
+        self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
+        self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
+        self.add_input('h_sr',0.0,units='m',desc='Structural Mass')
+        self.add_input('h_ss',0.0, units ='m', desc='Stator yoke height')
+        self.add_input('t_r',0.0, units ='m', desc='Rotor disc thickness')
+        self.add_input('t_s',0.0, units ='m', desc='Stator disc thickness')
+        self.add_input('R_sh',0.0, units ='m', desc='airgap radius')
+        self.add_input('y_sh', units ='W', desc='Machine rating')
+        self.add_input('theta_sh', 0.0, units = 'rad', desc='slope')
+        self.add_input('R_no',0.0, units ='m', desc='Nose outer radius')
+        self.add_input('y_bd', units ='W', desc='Deflection of the bedplate')
+        self.add_input('theta_bd', 0.0, units = 'm', desc='Slope at the bedplate')
+        self.add_input('u_allow_pcent',0.0,desc='Radial deflection as a percentage of air gap diameter')
+        self.add_input('y_allow_pcent',0.0,desc='Radial deflection as a percentage of air gap diameter')
+        self.add_input('z_allow_deg',0.0,units='deg',desc='Allowable torsional twist')
+        
+        # Magnetic loading
+        self.add_input('B_tmax',0.0, units='T', desc='Peak Teeth flux density')
+        self.add_output('B_smax',0.0, units='T', desc='Peak Stator flux density')
+        self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator flux density')
+        self.add_output('tau_p',0.0, units ='m',desc='Pole pitch')
+        self.add_output('q',0.0, units ='N/m**2',desc='Normal stress')
+        self.add_output('len_ag',0.0,units='m',desc='Air gap length')
+        
+        #Stator design
+        self.add_output('h_t',0.0, units = 'm', desc ='tooth height')
+        self.add_output('tau_s', 0.0, units='m',desc='Slot pitch')
+        
+        # Electrical performance
+        self.add_output('J_actual',0.0, units ='A/m**2', desc='Current density')
+        self.add_output('T_e',0.0,units='N*m',desc='Electromagnetic torque')
+        
+        # Material properties
+        self.add_output('twist_r', 0.0, units ='deg', desc='torsional twist')
+        self.add_output('twist_s', 0.0, units ='deg', desc='Stator torsional twist')
+
+        # Mass Outputs
+        self.add_output('Structural_mass_rotor',0.0, units='kg', desc='Rotor mass (kg)')
+        self.add_output('Structural_mass_stator',0.0, units='kg', desc='Stator mass (kg)')
+        self.add_output('Mass_tooth_stator',0.0, units = 'kg', desc='Teeth and copper mass')
+        self.add_output('Mass_yoke_rotor',0.0, units = 'kg', desc='yoke mass')
+        self.add_output('Mass_yoke_stator',0.0, units = 'kg', desc='yoke mass')
+
+        
+        
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        # Unpack inputs
+        r_g     = float(inputs['r_g'])
+        l_s     = float(inputs['len_s'])
+        p       = float(inputs['p'])
+        b       = float(inputs['b'])
+        c       = float(inputs['c'])
+        h_m     = float(inputs['h_m'])
+        h_ys    = float(inputs['h_ys'])
+        h_yr    = float(inputs['h_yr'])
+        h_s     = float(inputs['h_s'])
+        h_ss    = float(inputs['h_ss'])
+        h_0     = float(inputs['h_0'])
+        B_tmax  = float(inputs['B_tmax'])
+        E_p     = float(inputs['E_p'])
+        P_mech  = float(inputs['P_mech'])
+        P_av_v  = float(inputs['machine_rating'])
+        h_sr    = float(inputs['h_sr'])
+        t_r     = float(inputs['t_r'])
+        t_s     = float(inputs['t_s'])
+        R_sh    = float(inputs['R_sh'])
+        R_no    = float(inputs['R_no'])
+        y_sh    = float(inputs['y_sh'])
+        y_bd    = float(inputs['y_bd'])
+        rho_Fes = float(inputs['rho_Fes'])
+        rho_Fe  = float(inputs['rho_Fe'])
+        sigma   = float(inputs['sigma'])
+
+        # Grab constant values
+        B_r         = inputs['B_r']
+        E           = inputs['E']
+        P_Fe0e      = inputs['P_Fe0e']
+        P_Fe0h      = inputs['P_Fe0h']
+        cofi        = inputs['cofi']
+        h_w         = inputs['h_w']
+        k_fes       = inputs['k_fes']
+        k_fills     = inputs['k_fills']
+        m           = discrete_inputs['m']
+        mu_0        = inputs['mu_0']
+        mu_r        = inputs['mu_r']
+        p           = inputs['p']
+        phi         = inputs['phi']
+        ratio_mw2pp = inputs['ratio_mw2pp']
+        resist_Cu   = inputs['resist_Cu']
+        v           = inputs['v']
+        
+        '''
+        #Assign values to universal constants
+        B_r        = 1.279      # Tesla remnant flux density
+        E          = 2e11       # N/m^2 young's modulus
+        ratio      = 0.8        # ratio of magnet width to pole pitch(bm/self.tau_p)
+        mu_0       = np.pi*4e-7 # permeability of free space
+        mu_r       = 1.06       # relative permeability
+        cofi       = 0.85       # power factor
+
+        #Assign values to design constants
+        h_0        = 0.005 # Slot opening height
+        h_w        = 0.004 # Slot wedge height
+        m          = 3     # no of phases
+        #b_s_tau_s = 0.45   # slot width to slot pitch ratio
+        k_fills     = 0.65  # Slot fill factor
+        P_Fe0h     = 4	   # specific hysteresis losses W/kg @ 1.5 T 
+        P_Fe0e     = 1	   # specific hysteresis losses W/kg @ 1.5 T
+        k_fes      = 0.8   # Iron fill factor
+
+        #Assign values to universal constants
+        phi        = 90*2*np.pi/360 # tilt angle (rotor tilt -90 degrees during transportation)
+        v          = 0.3            # Poisson's ratio
+        G          = 79.3e9
+        '''
+
+        ######################## Electromagnetic design ###################################
+        K_rad = l_s/(2* r_g) # Aspect ratio
+        outputs['K_rad'] = K_rad
+        
+        # Calculating air gap length
+        dia		 = 2* r_g            # air gap diameter
+        len_ag           = 0.001*dia         # air gap length
+        r_s		 = r_g-len_ag             #Stator outer radius
+        b_so		 = 2*len_ag               # Slot opening
+        tau_p            = (np.pi*dia/(2*p)) # pole pitch
+        outputs['len_ag'] = len_ag
+        outputs['tau_p']  = tau_p
+        
+        # Calculating winding factor
+        Slot_pole    = b/c
+        S            = Slot_pole*2*p*m
+        testval      = S/(m*np.gcd(int(S),int(p)))
+        outputs['S'] = S
+    
+        if float(testval).is_integer():
+            k_w		     = winding_factor(int(S),b,c,int(p),m)
+            b_m              = ratio_mw2pp*tau_p  # magnet width
+            alpha_p	     = np.pi/2*ratio_mw2pp
+            tau_s            = np.pi*(dia-2*len_ag)/S
+            outputs['tau_s'] = tau_s
+            outputs['b_m']   = b_m
+            
+            # Calculating Carter factor for statorand effective air gap length
+            gamma	 = 4/np.pi*(b_so/2/(len_ag+h_m/mu_r)*np.arctan(b_so/2/(len_ag+ h_m/mu_r))-np.log(np.sqrt(1+(b_so/2/(len_ag+h_m/mu_r))**2)))
+            k_C		 = tau_s/(tau_s-gamma*(len_ag+h_m/mu_r))   # carter coefficient
+            g_eff	 = k_C*(len_ag+ h_m/mu_r)
+            
+            # angular frequency in radians
+            om_m	 = 2*np.pi*inputs['n_nom']/60
+            om_e	 = p*om_m
+            outputs['f'] = om_e/2/np.pi # outout frequency
+            
+            # Calculating magnetic loading
+            B_pm1              =  B_r*h_m/mu_r/(g_eff)
+            B_g                =  B_r*h_m/(mu_r*g_eff)*(4/np.pi)*np.sin(alpha_p)
+            B_symax            =  B_pm1* b_m/(2*h_ys)*k_fes
+            B_rymax            =  B_pm1*b_m*k_fes/(2*h_yr)
+            b_t                =  B_pm1*tau_s/B_tmax
+            N_c                =  2    # Number of turns per coil
+            q                  = (B_g)**2/2/mu_0
+            outputs['B_pm1']   =  B_pm1
+            outputs['B_g']     =  B_g
+            outputs['B_symax'] =  B_symax
+            outputs['B_rymax'] =  B_rymax
+            outputs['b_t']     =  b_t
+            outputs['q']       = (B_g)**2/2/mu_0
+            
+            # Stator winding length ,cross-section and resistance
+            l_Cus = (2*(l_s+np.pi/4*(tau_s+b_t)))  # length of a turn
+            
+            # Calculating no-load voltage induced in the stator
+            N_s            = np.rint(E_p/(np.sqrt(2)*l_s*r_s*k_w*om_m*B_g))
+            Z              = (P_av_v/(m*E_p))
+            outputs['N_s'] = N_s
+            
+            # Calculating leakage inductance in  stator
+            V_1            = E_p/1.1
+            I_n		   = P_av_v/3/cofi/V_1
+            J_s            = 6.0
+            A_Cuscalc      = I_n/J_s
+            A_slot         = 2*N_c*A_Cuscalc*(10**-6)/k_fills
+            tau_s_new      = np.pi*(dia-2*len_ag-2*h_w-2*h_0)/S
+            b_s2	   = tau_s_new-b_t # Slot top width
+            b_s1	   = np.sqrt(b_s2**2-4*np.pi*A_slot/S)
+            b_s            = (b_s1+b_s2)*0.5
+            N_coil         = 2*S
+            P_s            = mu_0*(h_s/3/b_s +h_w*2/(b_s2+b_so)+h_0/b_so)    #Slot permeance function
+            L_ssigmas      = S/3*4*N_c**2*l_s*P_s  #slot leakage inductance
+            L_ssigmaew     = N_coil*N_c**2*mu_0*tau_s*np.log((0.25*np.pi*tau_s**2)/(0.5*h_s*b_s))     #end winding leakage inductance
+            L_aa           = 2*np.pi/3*(N_c**2*mu_0*l_s*r_s/g_eff)
+            L_ab           = 0.0
+            L_m            = L_aa
+            L_ssigma       = (L_ssigmas+L_ssigmaew)
+            L_s            = L_m+L_ssigma
+            G              = E_p**4-1/9*(P_av_v*om_e*L_s)**2
+            outputs['A_Cuscalc']         = A_Cuscalc
+            outputs['b_s']               = b_s
+            outputs['L_s']               = L_s
+            outputs['J_s']               = J_s
+            outputs['Slot_aspect_ratio'] = h_s/b_s
+
+            # Calculating stator current and electrical loading
+            I_s                 = np.sqrt(2*((E_p)**2-G**0.5)/(om_e*L_s)**2)
+            outputs['I_s']      = I_s
+            outputs['A_1']      = 6*I_s*N_s/np.pi/dia
+            outputs['J_actual'] = I_s/(A_Cuscalc*2**0.5)
+            L_Cus               = N_s*l_Cus
+            outputs['R_s']      = inputs['resist_Cu']*(N_s)*l_Cus/(A_Cuscalc*(10**-6))
+            outputs['B_smax']   = np.sqrt(2)*I_s*mu_0/g_eff
+
+            # Calculating Electromagnetically active mass
+            wedge_area         = (b_s*0.5-b_so*0.5)*(2*h_0+h_w)
+            V_Cus 	       = m*L_Cus*(A_Cuscalc*(10**-6))     # copper volume
+            h_t                = (h_s+h_w+h_0)
+            outputs['h_t']     = h_t
+            V_Fest	       = l_s*S*(b_t*(h_s+h_w+h_0)+wedge_area)# volume of iron in stator tooth
+            V_Fesy	       = l_s*np.pi*((r_g-len_ag-h_s-h_w-h_0)**2-(r_g-len_ag-h_s-h_w-h_0-h_ys)**2) # volume of iron in stator yoke
+            V_Fery	       = l_s*np.pi*((r_g+h_m+h_yr)**2-(r_g+h_m)**2)
+            outputs['Copper']  = V_Cus*inputs['rho_Copper']
+            M_Fest	       = V_Fest*rho_Fe    # Mass of stator tooth
+            M_Fesy	       = V_Fesy*rho_Fe    # Mass of stator yoke
+            M_Fery	       = V_Fery*rho_Fe    # Mass of rotor yoke
+            outputs['Iron']    = M_Fest+M_Fesy+M_Fery
+            mass_PM            = 2*np.pi*(r_g+ h_m)*l_s*h_m*ratio_mw2pp*inputs['rho_PM']
+            outputs['mass_PM'] = mass_PM
+            
+            # Calculating Losses
+            ##1. Copper Losses
+            K_R       = 1.0   # Skin effect correction co-efficient
+            P_Cu      = m*(I_s/2**0.5)**2*outputs['R_s']*K_R
+            
+            # Iron Losses ( from Hysteresis and eddy currents)
+            P_Hyys    = M_Fesy*(B_symax/1.5)**2*(P_Fe0h*om_e/(2*np.pi*60)) # Hysteresis losses in stator yoke
+            P_Ftys    = M_Fesy*((B_symax/1.5)**2)*(P_Fe0e*(om_e/(2*np.pi*60))**2) # Eddy losses in stator yoke
+            P_Fesynom = P_Hyys+P_Ftys
+            P_Hyd     = M_Fest*(B_tmax/1.5)**2*(P_Fe0h*om_e/(2*np.pi*60))  # Hysteresis losses in stator teeth
+            P_Ftd     = M_Fest*(B_tmax/1.5)**2*(P_Fe0e*(om_e/(2*np.pi*60))**2) # Eddy losses in stator teeth
+            P_Festnom = P_Hyd+P_Ftd
+                
+            # Iron Losses ( from Hysteresis and eddy currents)
+            P_Hyyr    = M_Fery*(B_rymax/1.5)**2*(P_Fe0h*om_e/(2*np.pi*60)) # Hysteresis losses in stator yoke
+            P_Ftyr    = M_Fery*((B_rymax/1.5)**2)*(P_Fe0e*(om_e/(2*np.pi*60))**2) # Eddy losses in stator yoke
+            P_Ferynom = P_Hyyr+P_Ftyr
+
+            # additional stray losses due to leakage flux
+            P_ad           = 0.2*(P_Hyys + P_Ftys + P_Hyd + P_Ftd +P_Hyyr+P_Ftyr )
+            pFtm           = 300 # specific magnet loss
+            P_Ftm          = pFtm*2*p*b_m*l_s
+            Losses         = P_Cu+P_Festnom+P_Fesynom+P_ad+P_Ftm+P_Ferynom 
+            gen_eff        = (P_mech-Losses)/(P_mech)*100
+            I_snom	   = gen_eff*(P_mech/m/E_p/cofi) #rated current
+            I_qnom	   = gen_eff*P_mech/(m* E_p)
+            X_snom	   = om_e*(L_m+L_ssigma)
+            outputs['T_e'] = np.pi*r_g**2*l_s*2*sigma
+            Stator         = M_Fesy+M_Fest+outputs['Copper'] #modified mass_stru_steel
+            Rotor          = M_Fery + mass_PM  #modified (N_r*(R_1-self.R_o)*a_r*self.rho_Fes))
+
+            outputs['Mass_tooth_stator'] = M_Fest+outputs['Copper']
+            outputs['Mass_yoke_rotor']   = M_Fery
+            outputs['Mass_yoke_stator']  = M_Fesy
+            outputs['R_out']             = (dia+2*h_m+2*h_yr+2*inputs['h_sr'])*0.5
+            outputs['Losses']            = Losses
+            outputs['gen_eff']           = gen_eff
+        else:
+            pass
+
+        ######################## Rotor inactive (structural) design ###################################
+        # Radial deformation of rotor
+        R               = r_g+h_m
+        L_r             = l_s+t_r+0.125
+        constants_x_0   = shell_constant(R,t_r,L_r,0,E,v)
+        constants_x_L   = shell_constant(R,t_r,L_r,L_r,E,v)
+        f_d_denom1      = R/(E*((R)**2-(R_sh)**2))*((1-v)*R**2+(1+v)*(R_sh)**2)
+        f_d_denom2      = t_r/(2*constants_x_0[0]*(constants_x_0[1])**3)*(constants_x_0[2]/(2*constants_x_0[3])*constants_x_0[4]-constants_x_0[5]/constants_x_0[3]*constants_x_0[6]-0.5*constants_x_0[7])
+        f               = q*(R)**2*t_r/(E*(h_yr+h_sr)*(f_d_denom1+f_d_denom2))
+        u_d             = f/(constants_x_L[0]*(constants_x_L[1])**3)*((constants_x_L[2]/(2*constants_x_L[3])*constants_x_L[4] -constants_x_L[5]/constants_x_L[3]*constants_x_L[6]-0.5*constants_x_L[7]))+y_sh
+ 
+        outputs['u_ar'] = (q*(R)**2)/(E*(h_yr+h_sr))-u_d
+        outputs['u_ar'] = np.abs(outputs['u_ar'] + y_sh)
+        outputs['u_allow_r'] =2*r_g/1000*inputs['u_allow_pcent']/100
+        
+        # axial deformation of rotor
+        W_back_iron =  plate_constant(R+h_sr+h_yr,R_sh,E,v,0.5*h_yr+R,t_r)
+        W_ssteel    =  plate_constant(R+h_sr+h_yr,R_sh,E,v,h_yr+R+h_sr*0.5,t_r)
+        W_mag       =  plate_constant(R+h_sr+h_yr,R_sh,E,v,h_yr+R-0.5*h_m,t_r)
+        W_ir        =  rho_Fe*gravity*np.sin(phi)*(L_r-t_r)*h_yr
+        y_ai1r      = -W_ir*(0.5*h_yr+R)**4/(R_sh*W_back_iron[0])*(W_back_iron[1]*W_back_iron[4]/W_back_iron[3]-W_back_iron[2])
+        W_sr        =  rho_Fes*gravity*np.sin(phi)*(L_r-t_r)*h_sr
+        y_ai2r      = -W_sr*(h_sr*0.5+h_yr+R)**4/(R_sh*W_ssteel[0])*(W_ssteel[1]*W_ssteel[4]/W_ssteel[3]-W_ssteel[2])
+        W_m         =  np.sin(phi)*mass_PM/(2*np.pi*(R-h_m*0.5))
+        y_ai3r      = -W_m*(R-h_m)**4/(R_sh*W_mag[0])*(W_mag[1]*W_mag[4]/W_mag[3]-W_mag[2])
+        w_disc_r    = rho_Fes*gravity*np.sin(phi)*t_r
+        a_ii        = R+h_sr+h_yr
+        r_oii       = R_sh
+        M_rb        = -w_disc_r*a_ii**2/W_ssteel[5]*(W_ssteel[6]*0.5/(a_ii*R_sh)*(a_ii**2-r_oii**2)-W_ssteel[8])
+        Q_b         =  w_disc_r*0.5/R_sh*(a_ii**2-r_oii**2)
+        y_aiir      =  M_rb*a_ii**2/W_ssteel[0]*W_ssteel[1]+Q_b*a_ii**3/W_ssteel[0]*W_ssteel[2]-w_disc_r*a_ii**4/W_ssteel[0]*W_ssteel[7]
+        I           = np.pi*0.25*(R**4-(R_sh)**4)
+        F_ecc       = q*2*np.pi*K_rad*r_g**3
+        M_ar        = F_ecc*L_r*0.5
+        outputs['y_ar'] = np.abs(y_ai1r+y_ai2r+y_ai3r)+y_aiir+(R+h_yr+h_sr)*inputs['theta_sh']+M_ar*L_r**2*0/(2*E*I)
+        outputs['y_allow_r'] = L_r/100*inputs['y_allow_pcent']
+        
+        # Torsional deformation of rotor
+        J_dr            = 0.5*np.pi*((R+h_yr+h_sr)**4-R_sh**4)
+        J_cylr          = 0.5*np.pi*((R+h_yr+h_sr)**4-R**4)
+        outputs['twist_r'] = 180/np.pi*inputs['T_rated']/G*(t_r/J_dr+(L_r-t_r)/J_cylr)
+        outputs['Structural_mass_rotor'] = rho_Fes*np.pi*(((R+h_yr+h_sr)**2-(R_sh)**2)*t_r+\
+                                           ((R+h_yr+h_sr)**2-(R+h_yr)**2)*l_s)
+        outputs['TC1']  = inputs['T_rated']/(2*np.pi*sigma)
+        outputs['TC2r']  = (R+(h_yr+h_sr))**2*L_r
+            
+        ######################## Stator inactive (structural) design ###################################
+        # Radial deformation of Stator
+        L_s             = l_s+t_s+0.1
+        R_s             = r_g-len_ag-h_t-h_ys-h_ss
+        constants_x_0   = shell_constant(R_s,t_s,L_s,0,E,v)
+        constants_x_L   = shell_constant(R_s,t_s,L_s,L_s,E,v)
+        f_d_denom1      = R_s/(E*((R_s)**2-(R_no)**2))*((1-v)*R_s**2+(1+v)*(R_no)**2)
+        f_d_denom2      = t_s/(2*constants_x_0[0]*(constants_x_0[1])**3)*(constants_x_0[2]/(2*constants_x_0[3])*constants_x_0[4]-constants_x_0[5]/constants_x_0[3]*constants_x_0[6]-0.5*constants_x_0[7])
+        f               = q*(R_s)**2*t_s/(E*(h_ys+h_ss)*(f_d_denom1+f_d_denom2))
+        outputs['u_as'] = (q*(R_s)**2)/(E*(h_ys+h_ss))-f*0/(constants_x_L[0]*(constants_x_L[1])**3)*((constants_x_L[2]/(2*constants_x_L[3])*constants_x_L[4] -constants_x_L[5]/constants_x_L[3]*constants_x_L[6]-1/2*constants_x_L[7]))+y_bd
+        outputs['u_as'] = np.abs(outputs['u_as'] + y_bd)
+        outputs['u_allow_s'] =2*r_g/1000*inputs['u_allow_pcent']/100
+        
+        # axial deformation of stator
+        W_back_iron =  plate_constant(R_s+h_ss+h_ys+h_t,R_no,E,v,0.5*h_ys+h_ss+R_s,t_s)
+        W_ssteel    =  plate_constant(R_s+h_ss+h_ys+h_t,R_no,E,v,R_s+h_ss*0.5,t_s)
+        W_active    =  plate_constant(R_s+h_ss+h_ys+h_t,R_no,E,v,R_s+h_ss+h_ys+h_t*0.5,t_s)
+        W_is        =  rho_Fe*gravity*np.sin(phi)*(L_s-t_s)*h_ys
+        y_ai1s      = -W_is*(0.5*h_ys+R_s)**4/(R_no*W_back_iron[0])*(W_back_iron[1]*W_back_iron[4]/W_back_iron[3]-W_back_iron[2])
+        W_ss        =  rho_Fes*gravity*np.sin(phi)*(L_s-t_s)*h_ss
+        y_ai2s      = -W_ss*(h_ss*0.5+h_ys+R_s)**4/(R_no*W_ssteel[0])*(W_ssteel[1]*W_ssteel[4]/W_ssteel[3]-W_ssteel[2])
+        W_cu        =  np.sin(phi)*outputs['Mass_tooth_stator']/(2*np.pi*(R_s+h_ss+h_ys+h_t*0.5))
+        y_ai3s      = -W_cu*(R_s+h_ss+h_ys+h_t*0.5)**4/(R_no*W_active[0])*(W_active[1]*W_active[4]/W_active[3]-W_active[2])
+        w_disc_s    = rho_Fes*gravity*np.sin(phi)*t_s
+        a_ii        = R_s+h_ss+h_ys+h_t
+        r_oii       = R_no
+        M_rb        = -w_disc_s*a_ii**2/W_ssteel[5]*(W_ssteel[6]*0.5/(a_ii*R_no)*(a_ii**2-r_oii**2)-W_ssteel[8])
+        Q_b         =  w_disc_s*0.5/R_no*(a_ii**2-r_oii**2)
+        y_aiis      =  M_rb*a_ii**2/W_ssteel[0]*W_ssteel[1]+Q_b*a_ii**3/W_ssteel[0]*W_ssteel[2]-w_disc_s*a_ii**4/W_ssteel[0]*W_ssteel[7]
+        I           = np.pi*0.25*(R_s**4-(R_no)**4)
+        F_ecc       = q*2*np.pi*K_rad*r_g**2
+        M_as        = F_ecc*L_s*0.5
+        
+        outputs['y_as'] = np.abs(y_ai1s+y_ai2s+y_ai3s+y_aiis+(R_s+h_ys+h_ss+h_t)*inputs['theta_bd'])+M_as*L_s**2*0/(2*E*I)
+        outputs['y_allow_s'] = L_s*inputs['y_allow_pcent']/100
+        
+        # Torsional deformation of stator
+        J_ds            = 0.5*np.pi*((R_s+h_ys+h_ss+h_t)**4-R_no**4)
+        J_cyls          = 0.5*np.pi*((R_s+h_ys+h_ss+h_t)**4-R_s**4)
+        outputs['twist_s']= 180.0/np.pi*inputs['T_rated']/G*(t_s/J_ds+(L_s-t_s)/J_cyls)
+        
+        outputs['Structural_mass_stator'] = rho_Fes*(np.pi*((R_s+h_ys+h_ss+h_t)**2-(R_no)**2)*t_s+\
+                                            np.pi*((R_s+h_ss)**2-R_s**2)*l_s)
+        outputs['TC2s']  = (R_s+h_ys+h_ss+h_t)**2*L_s
+
+        ######################## Mass adders ###################################
+        outputs['Structural_mass'] = outputs['Structural_mass_rotor']+outputs['Structural_mass_stator']
+        outputs['generator_mass']  = Stator+Rotor+outputs['Structural_mass']
         
 #----------------------------------------------------------------------------------------
 class PMSG_Disc(GeneratorBase):
@@ -211,11 +709,13 @@ class PMSG_Disc(GeneratorBase):
     
     def setup(self):
         super(PMSG_Disc, self).setup()
-        self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
-        self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
         self.add_input('tau_p', val=0.0, units='m', desc='Pole pitch self.tau_p')
         self.add_input('t_d',  val=0.0, units='m', desc='disc thickness')
+        self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
+        self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
+        self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
         self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
+        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
@@ -228,7 +728,7 @@ class PMSG_Disc(GeneratorBase):
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
         n_nom             = inputs['n_nom']
-        Torque            = inputs['Torque']
+        Torque            = inputs['T_rated']
         
         b_st              = inputs['b_st']
         d_s               = inputs['d_s']
@@ -267,7 +767,7 @@ class PMSG_Disc(GeneratorBase):
         m           = discrete_inputs['m']
         mu_0        = inputs['mu_0']
         mu_r        = inputs['mu_r']
-        p           = discrete_inputs['p']
+        p           = inputs['p']
         phi         = inputs['phi']
         q1          = discrete_inputs['q1']
         ratio_mw2pp = inputs['ratio_mw2pp']
@@ -390,7 +890,7 @@ class PMSG_Disc(GeneratorBase):
         
         # Calculating stator current and electrical loading
         I_s = np.sqrt(Z**2 + (((E_p - G**0.5) / (om_e * L_s)**2)**2))       
-        B_smax = np.sqrt(2) * I_s * mu_0 / g_eff
+        B_symax = np.sqrt(2) * I_s * mu_0 / g_eff
         J_s    = I_s / A_Cuscalc
         A_1    = 6 * N_s * I_s / (np.pi * dia_ag)
         I_snom = machine_rating / (m * E_p * cofi) # rated current
@@ -440,8 +940,8 @@ class PMSG_Disc(GeneratorBase):
         a       = R - 0.5 * t     # same as R_b
         a_1     = R_b             # same as R_b, a
         c       = R / 500
-        u_all_r = c / 20                           # allowable radial deflection
-        y_all   = 2 * L_t / 100                    # allowable axial deflection
+        u_allow_r = c / 20                           # allowable radial deflection
+        y_allow   = 2 * L_t / 100                    # allowable axial deflection
         R_1     = R - 0.5 * t                      # inner radius of rotor cylinder # same as R_b, a, a_1 (not used)
         K       = 4 * (np.sin(ratio_mw2pp * np.pi / 2)) / np.pi # (not used)
         q3      = B_g**2 / (2 * mu_0 )             # normal component of Maxwell's stress
@@ -516,7 +1016,7 @@ class PMSG_Disc(GeneratorBase):
         Part_5 = q3 * R_b**2 / (E * (R_a - R_b))
         f_d    = Part_5 / (Part_1 - t_d * (Part_4 * Part_2 * F_2_ls2 - Part_3 * 2*Part_4 * F_1_ls2 - Part_4 * F_a4_ls2))
         fr     = f_d * t_d
-        u_Ar   = abs(Part_5 \
+        u_ar   = abs(Part_5 \
                      + fr / (2 * D_r * lamb**3) \
                      * (( -F_1_x0 / C_11)     * (C_3 * C_a2 - C_4 * C_a1) \
                         + (F_2_x0 / 2 / C_11) * (C_2 * C_a2 - 2 * C_3 * C_a1) \
@@ -552,9 +1052,9 @@ class PMSG_Disc(GeneratorBase):
               + Q_b  * R_a**3 * C_3p / D_ax \
               - w    * R_a**4 * L_11 / D_ax
         
-        y_Ar = abs(y_ai + y_aii)
+        y_ar = abs(y_ai + y_aii)
         
-        z_all_r = np.deg2rad(0.05 * R)  # allowable torsional deflection of rotor
+        z_allow_r = np.deg2rad(0.05 * R)  # allowable torsional deflection of rotor
         
                 
         # stator structure deflection calculation
@@ -570,7 +1070,7 @@ class PMSG_Disc(GeneratorBase):
         I_arm_tor_s = ((d_s * b_st**3) - ((d_s  - 2 * t_ws) * (b_st - 2 * t_ws)**3)) / 12  # second moment of area of rotot arm w.r.t torsion
         R_st        = rad_ag + h_s + h_ys * 0.5
         k_2         = np.sqrt(I_st / A_st)  # radius of gyration
-        b_all_s     = 2 * np.pi * R_o / N_st
+        b_allow_s     = 2 * np.pi * R_o / N_st
         m2          = (k_2 / R_st)**2
         c1          = R_st / 500
         R_1s        = R_st - t_s * 0.5
@@ -583,7 +1083,7 @@ class PMSG_Disc(GeneratorBase):
         Lovs = (R_1s - R_o) * 0.5 / a_s
         Denoms = I_st * (Povs - Qovs + Lovs)
         
-        u_As   = (q3 * R_st**2 / E / t_s) * (1 + Numers / Denoms)
+        u_as   = (q3 * R_st**2 / E / t_s) * (1 + Numers / Denoms)
         
         # Calculation of axial deflection of stator
         mass_st_lam_s = M_Fest + np.pi * L_t * rho_Fe * ((R_st + 0.5 * h_ys)**2 - (R_st - 0.5 * h_ys)**2)
@@ -591,25 +1091,25 @@ class PMSG_Disc(GeneratorBase):
         W_iis         = gravity * np.sin(phi) * (mass_st_lam_s + V_Cus * rho_Copper) / 2 / N_st     # weight of stator cylinder and teeth
         w_s           = rho_Fes * gravity * np.sin(phi) * a_s * N_st                                # uniformly distributed load of the arms
         
-        l_is          = R_st - R_o                                                          # distance at which the weight of the stator cylinder acts
-        l_iis         = l_is                                                                # distance at which the weight of the stator cylinder acts
-        l_iiis        = l_is                                                                # distance at which the weight of the stator cylinder acts
-        u_all_s       = c1 / 20
+        l_is    = R_st - R_o                               # distance at which the weight of the stator cylinder acts
+        l_iis   = l_is                                     # distance at which the weight of the stator cylinder acts
+        l_iiis  = l_is                                     # distance at which the weight of the stator cylinder acts
+        u_allow_s = c1 / 20
         
-        X_comp1 = W_is  * l_is**3   / 12 / E / I_arm_axi_s                                   # deflection component due to stator arm beam at which self-weight acts
-        X_comp2 = W_iis * l_iis**4  / 24 / E / I_arm_axi_s                                   # deflection component due to 1/nth of stator cylinder
-        X_comp3 = w_s   * l_iiis**4 / 24 / E / I_arm_axi_s                                   # deflection component due to weight of arms
-        y_As    = X_comp1 + X_comp2 + X_comp3  # axial deflection
+        X_comp1 = W_is  * l_is**3   / 12 / E / I_arm_axi_s # deflection component due to stator arm beam at which self-weight acts
+        X_comp2 = W_iis * l_iis**4  / 24 / E / I_arm_axi_s # deflection component due to 1/nth of stator cylinder
+        X_comp3 = w_s   * l_iiis**4 / 24 / E / I_arm_axi_s # deflection component due to weight of arms
+        y_as    = X_comp1 + X_comp2 + X_comp3              # axial deflection
         
         # Stator circumferential deflection
-        z_all_s = np.deg2rad(0.05 * R_st)  # allowable torsional deflection
-        z_A_s   = 2 * np.pi * (R_st + 0.5 * t_s) * L_t / (2 * N_st) * sigma * (l_is + 0.5 * t_s)**3 / (3 * E * I_arm_tor_s)
+        z_allow_s = np.deg2rad(0.05 * R_st)  # allowable torsional deflection
+        z_as   = 2 * np.pi * (R_st + 0.5 * t_s) * L_t / (2 * N_st) * sigma * (l_is + 0.5 * t_s)**3 / (3 * E * I_arm_tor_s)
 
         mass_stru_steel  = 2 * (N_st * (R_1s - R_o) * a_s * rho_Fes)
         
         TC1 = Torque * 1.0 / (2 * np.pi * sigma)  # Torque / shear stress
-        TC2 = R**2 * L_t                    # Evaluating Torque constraint for rotor
-        TC3 = R_st**2 * L_t                 # Evaluating Torque constraint for stator
+        TC2r = R**2 * L_t                    # Evaluating Torque constraint for rotor
+        TC2s = R_st**2 * L_t                 # Evaluating Torque constraint for stator
         Structural_mass = mass_stru_steel + (np.pi * (R**2 - R_o**2) * t_d * rho_Fes)
         
         Mass =  Structural_mass + Iron + Copper + mass_PM        
@@ -625,10 +1125,9 @@ class PMSG_Disc(GeneratorBase):
         cm[1]  = shaft_cm[1]
         cm[2]  = shaft_cm[2]
 		
-        outputs['B_symax']           =  B_symax
         outputs['B_tmax']            =  B_tmax
         outputs['B_rymax']           =  B_rymax
-        outputs['B_smax']            =  B_smax
+        outputs['B_symax']           =  B_symax
         outputs['B_pm1']             =  B_pm1
         outputs['B_g']               =  B_g
         outputs['N_s']               =  N_s
@@ -653,29 +1152,29 @@ class PMSG_Disc(GeneratorBase):
         outputs['Slot_aspect_ratio'] =  Slot_aspect_ratio
         outputs['Copper']            =  Copper
         outputs['Iron']              =  Iron
-        outputs['u_Ar']              =  u_Ar
-        outputs['y_Ar']              =  y_Ar
+        outputs['u_ar']              =  u_ar
+        outputs['y_ar']              =  y_ar
 
-        outputs['u_As']              =  u_As
-        outputs['y_As']              =  y_As
-        outputs['z_A_s']             =  z_A_s
-        outputs['u_all_r']           =  u_all_r
-        outputs['u_all_s']           =  u_all_s
+        outputs['u_as']              =  u_as
+        outputs['y_as']              =  y_as
+        outputs['z_as']             =  z_as
+        outputs['u_allow_r']           =  u_allow_r
+        outputs['u_allow_s']           =  u_allow_s
 
-        outputs['y_all']             =  y_all
-        outputs['z_all_s']           =  z_all_s
-        outputs['z_all_r']           =  z_all_r
-        outputs['b_all_s']           =  b_all_s
+        outputs['y_allow_r'] = outputs['y_allow_s'] =  y_allow
+        outputs['z_allow_s']           =  z_allow_s
+        outputs['z_allow_r']           =  z_allow_r
+        outputs['b_allow_s']           =  b_allow_s
         outputs['TC1']               =  TC1
 
-        outputs['TC2']               =  TC2
-        outputs['TC3']               =  TC3
+        outputs['TC2r']               =  TC2r
+        outputs['TC2s']               =  TC2s
         outputs['R_out']             =  R_out
         outputs['Structural_mass']   =  Structural_mass
-        outputs['Mass']              =  Mass
+        outputs['generator_mass']              =  Mass
         outputs['mass_PM']           =  mass_PM
-        outputs['cm']                =  cm
-        outputs['I']                 =  I
+        outputs['generator_cm']                =  cm
+        outputs['generator_I']                 =  I
         
 
 #----------------------------------------------------------------------------------------
@@ -685,10 +1184,12 @@ class PMSG_Arms(GeneratorBase):
     def setup(self):
         super(PMSG_Arms, self).setup()
         self.add_input('b_arm', val=0.0, units='m', desc='arm width')
+        self.add_input('tau_p', val=0.0, units='m', desc='Pole pitch self.tau_p')
         self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
         self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
-        self.add_input('tau_p', val=0.0, units='m', desc='Pole pitch self.tau_p')
+        self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
         self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
+        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
@@ -702,7 +1203,7 @@ class PMSG_Arms(GeneratorBase):
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
         n_nom             = inputs['n_nom']
-        Torque            = inputs['Torque']
+        Torque            = inputs['T_rated']
         
         b_st              = inputs['b_st']
         d_s               = inputs['d_s']
@@ -744,7 +1245,7 @@ class PMSG_Arms(GeneratorBase):
         m           = discrete_inputs['m']
         mu_0        = inputs['mu_0']
         mu_r        = inputs['mu_r']
-        p           = discrete_inputs['p']
+        p           = inputs['p']
         phi         = inputs['phi']
         q1          = discrete_inputs['q1']
         ratio_mw2pp = inputs['ratio_mw2pp']
@@ -878,7 +1379,7 @@ class PMSG_Arms(GeneratorBase):
         I_qnom  = machine_rating / (m * E_p)
         X_snom  = om_e * (L_m + L_ssigma)
                 
-        B_smax  = np.sqrt(2) * I_s * mu_0 / g_eff
+        B_symax  = np.sqrt(2) * I_s * mu_0 / g_eff
         
         # Calculating Electromagnetically active mass
         
@@ -931,7 +1432,7 @@ class PMSG_Arms(GeneratorBase):
         I_arm_tor_r = ((d_r * b_r**3) - ((d_r - 2 * t_wr) * (b_r - 2 * t_wr)**3)) / 12  # second moment of area of rotot arm w.r.t torsion
         R           = rad_ag - len_ag - h_m - 0.5 * t                         # Rotor mean radius
         c           = R / 500                                              
-        u_all_r     = c / 20                                               # allowable radial deflection
+        u_allow_r     = c / 20                                               # allowable radial deflection
         R_1         = R - t * 0.5                                          # inner radius of rotor cylinder
         k_1         = np.sqrt(I_r / A_r)                                      # radius of gyration
         m1          = (k_1 / R)**2                                         
@@ -939,7 +1440,7 @@ class PMSG_Arms(GeneratorBase):
         l_iir       = R_1
         
         
-        b_all_r     = 2 * np.pi * R_o / N_r                                   # allowable circumferential arm dimension for rotor
+        b_allow_r     = 2 * np.pi * R_o / N_r                                   # allowable circumferential arm dimension for rotor
         q3          = B_g**2 / 2 / mu_0                                    # normal component of Maxwell stress
         mass_PM     = 2 * np.pi * (R + 0.5 * t) * L_t * h_m * ratio_mw2pp * rho_PM  # magnet mass
         
@@ -949,7 +1450,7 @@ class PMSG_Arms(GeneratorBase):
         Qov   = R**3 / (2 * I_r * theta_r * (m1 + 1))
         Lov   = (R_1 - R_o) / a_r
         Denom = I_r * (Pov - Qov + Lov) # radial deflection % rotor        
-        u_Ar  = (q3 * R**2 / E / t) * (1 + Numer / Denom)
+        u_ar  = (q3 * R**2 / E / t) * (1 + Numer / Denom)
         
         # Calculating axial deflection of the rotor under its own weight
         
@@ -959,14 +1460,14 @@ class PMSG_Arms(GeneratorBase):
         
         y_a1 = W   * l_ir**3  / 12 / E / I_arm_axi_r                          # deflection from weight component of back iron
         y_a2 = w_r * l_iir**4 / 24 / E / I_arm_axi_r                          # deflection from weight component of the arms
-        y_Ar = y_a1 + y_a2 # axial deflection
+        y_ar = y_a1 + y_a2 # axial deflection
         
-        y_all     = 2 * L_t / 100    # allowable axial deflection
+        y_allow     = 2 * L_t / 100    # allowable axial deflection
         
         # Calculating # circumferential deflection of the rotor
         
-        z_all_r     = np.deg2rad(0.05  * R)                                   # allowable torsional deflection
-        z_A_r       = (2 * np.pi * (R - 0.5 * t) * L_t / N_r) * sigma \
+        z_allow_r     = np.deg2rad(0.05  * R)                                   # allowable torsional deflection
+        z_ar       = (2 * np.pi * (R - 0.5 * t) * L_t / N_r) * sigma \
                       * (l_ir - 0.5 * t)**3 / 3 / E / I_arm_tor_r          # circumferential deflection
         
         val_str_rotor = mass_PM + (mass_st_lam + (N_r * (R_1 - R_o) * a_r * rho_Fes))           # rotor mass
@@ -987,7 +1488,7 @@ class PMSG_Arms(GeneratorBase):
         
         # allowable radial deflection of stator
         c1      = R_st / 500
-        u_all_s = c1 / 20
+        u_allow_s = c1 / 20
         R_out   = (R / 0.995 + h_s + h_ys)
         l_is    = R_st - R_o              # distance at which the weight of the stator cylinder acts
         l_iis   = l_is                    # distance at which the weight of the stator cylinder acts
@@ -1007,25 +1508,25 @@ class PMSG_Arms(GeneratorBase):
         Qovs   = R_st**3 / (2 * I_st * theta_s * (m2 + 1))
         Lovs   = (R_1s - R_o) * 0.5 / a_s
         Denoms = I_st * (Povs - Qovs + Lovs)
-        u_As   = (q3 * R_st**2 / E / t_s) * (1 + Numers / Denoms)
+        u_as   = (q3 * R_st**2 / E / t_s) * (1 + Numers / Denoms)
 
         # Calculating axial deflection of the stator
         X_comp1 = W_is  * l_is**3   / 12 / E / I_arm_axi_s  # deflection component due to stator arm beam at which self-weight acts
         X_comp2 = W_iis * l_iis**4  / 24 / E / I_arm_axi_s  # deflection component due to 1 / nth of stator cylinder
         X_comp3 = w_s   * l_iiis**4 / 24 / E / I_arm_axi_s  # deflection component due to weight of arms
-        y_As    = X_comp1 + X_comp2 + X_comp3               # axial deflection
+        y_as    = X_comp1 + X_comp2 + X_comp3               # axial deflection
         
         # Calculating circumferential deflection of the stator
-        z_A_s   = 2 * np.pi * (R_st + 0.5 * t_s) * L_t / (2 * N_st) * sigma * (l_is + 0.5 * t_s)**3 / 3 / E / I_arm_tor_s 
-        z_all_s = np.deg2rad(0.05 * R_st)               # allowable torsional deflection
-        b_all_s = 2 * np.pi * R_o / N_st                # allowable circumferential arm dimension
+        z_as   = 2 * np.pi * (R_st + 0.5 * t_s) * L_t / (2 * N_st) * sigma * (l_is + 0.5 * t_s)**3 / 3 / E / I_arm_tor_s 
+        z_allow_s = np.deg2rad(0.05 * R_st)               # allowable torsional deflection
+        b_allow_s = 2 * np.pi * R_o / N_st                # allowable circumferential arm dimension
         
         val_str_stator = mass_stru_steel + mass_st_lam_s   
         val_str_mass   = val_str_rotor + val_str_stator
         
         TC1 = Torque / (2 * np.pi * sigma)  # Desired shear stress
-        TC2 = R**2 * L_t            # Evaluating Torque constraint for rotor
-        TC3 = R_st**2 * L_t         # Evaluating Torque constraint for stator
+        TC2r = R**2 * L_t            # Evaluating Torque constraint for rotor
+        TC2s = R_st**2 * L_t         # Evaluating Torque constraint for stator
         
         Structural_mass = mass_stru_steel + (N_r * (R_1 - R_o) * a_r * rho_Fes)
         Stator = mass_st_lam_s + mass_stru_steel + Copper
@@ -1044,10 +1545,9 @@ class PMSG_Arms(GeneratorBase):
         cm[1]  = shaft_cm[1]
         cm[2]  = shaft_cm[2]
 
-        outputs['B_symax']           =  B_symax
         outputs['B_tmax']            =  B_tmax
         outputs['B_rymax']           =  B_rymax
-        outputs['B_smax']            =  B_smax
+        outputs['B_symax']           =  B_symax
         outputs['B_pm1']             =  B_pm1
         outputs['B_g']               =  B_g
         outputs['N_s']               =  N_s
@@ -1069,28 +1569,28 @@ class PMSG_Arms(GeneratorBase):
         outputs['Slot_aspect_ratio'] =  Slot_aspect_ratio
         outputs['Copper']            =  Copper
         outputs['Iron']              =  Iron
-        outputs['u_Ar']              =  u_Ar
-        outputs['y_Ar']              =  y_Ar
-        outputs['z_A_r']             =  z_A_r
-        outputs['u_As']              =  u_As
-        outputs['y_As']              =  y_As
-        outputs['z_A_s']             =  z_A_s
-        outputs['u_all_r']           =  u_all_r
-        outputs['u_all_s']           =  u_all_s
-        outputs['y_all']             =  y_all
-        outputs['z_all_s']           =  z_all_s
-        outputs['z_all_r']           =  z_all_r
-        outputs['b_all_s']           =  b_all_s
-        outputs['b_all_r']           =  b_all_r
+        outputs['u_ar']              =  u_ar
+        outputs['y_ar']              =  y_ar
+        outputs['z_ar']              =  z_ar
+        outputs['u_as']              =  u_as
+        outputs['y_as']              =  y_as
+        outputs['z_as']              =  z_as
+        outputs['u_allow_r']         =  u_allow_r
+        outputs['u_allow_s']         =  u_allow_s
+        outputs['y_allow_r'] = outputs['y_allow_s'] =  y_allow
+        outputs['z_allow_s']         =  z_allow_s
+        outputs['z_allow_r']         =  z_allow_r
+        outputs['b_allow_s']         =  b_allow_s
+        outputs['b_allow_r']         =  b_allow_r
         outputs['TC1']               =  TC1
-        outputs['TC2']               =  TC2
-        outputs['TC3']               =  TC3
+        outputs['TC2r']              =  TC2r
+        outputs['TC2s']              =  TC2s
         outputs['R_out']             =  R_out
         outputs['Structural_mass']   =  Structural_mass
-        outputs['Mass']              =  Mass
+        outputs['generator_mass']    =  Mass
         outputs['mass_PM']           =  mass_PM
-        outputs['cm']                =  cm
-        outputs['I']                 =  I
+        outputs['generator_cm']      =  cm
+        outputs['generator_I']       =  I
 
 
 #----------------------------------------------------------------------------------------
@@ -1107,13 +1607,14 @@ class DFIG(GeneratorBase):
         self.add_output('h_ys', val=0.0, desc='Stator Yoke height')
         self.add_output('tau_p', val=0.0, desc='Pole pitch')
         self.add_output('Current_ratio', val=0.0,         desc='Rotor current ratio')
+        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
         rad_ag               = inputs['rad_ag']
         len_s                = inputs['len_s']
         h_s                  = inputs['h_s']
-        h_r                  = inputs['h_r']
+        h_0                  = inputs['h_0']
         I_0                  = inputs['I_0']
         
         machine_rating       = inputs['machine_rating']
@@ -1151,7 +1652,7 @@ class DFIG(GeneratorBase):
         m           = discrete_inputs['m']
         mu_0        = inputs['mu_0']
         mu_r        = inputs['mu_r']
-        p           = discrete_inputs['p']
+        p           = inputs['p']
         phi         = inputs['phi']
         q1          = discrete_inputs['q1']
         q2 = q1 - 1                     # Rotor  slots per pole per phase
@@ -1228,7 +1729,7 @@ class DFIG(GeneratorBase):
         W_r   = (b_r / mu_rr) * 1e-3  # Rotor,  in m
         
         Slot_aspect_ratio1 = h_s / b_s
-        Slot_aspect_ratio2 = h_r / b_r
+        Slot_aspect_ratio2 = h_0 / b_r
         
         # Calculating Carter factor for stator,rotor and effective air gap length
         
@@ -1284,7 +1785,7 @@ class DFIG(GeneratorBase):
         # Stator winding resistance
         
         R_s = l_Cus * resist_Cu / A_Cus
-        tau_r_min = np.pi * (ag_dia - 2 * (ag_len + h_r)) / Q_r
+        tau_r_min = np.pi * (ag_dia - 2 * (ag_len + h_0)) / Q_r
         
         # Peak magnetic loading on the rotor tooth
         
@@ -1308,8 +1809,8 @@ class DFIG(GeneratorBase):
         K_02 = 1 - 0.033 * (W_r**2 / ag_len / tau_r)
         sigma_dr = 0.0062
         
-        l_fr = (0.015 + y_tau_pr * tau_r / 2 / np.cos(np.deg2rad(40))) + np.pi * h_r                                       # Rotor end connection length
-        L_rsl = (mu_0 * len_s * (2 * n_c2)**2 * Q_r / m) * ((h_r - h_w) / (3 * b_r) + h_w / b_ro)                 # slot leakage inductance
+        l_fr = (0.015 + y_tau_pr * tau_r / 2 / np.cos(np.deg2rad(40))) + np.pi * h_0                                       # Rotor end connection length
+        L_rsl = (mu_0 * len_s * (2 * n_c2)**2 * Q_r / m) * ((h_0 - h_w) / (3 * b_r) + h_w / b_ro)                 # slot leakage inductance
         L_rel = (mu_0 * len_s * (2 * n_c2)**2 * Q_r / m) * 0.34 * q2 * (l_fr - 0.64 * tau_r * y_tau_pr) / len_s   # end winding leakage inductance
         L_rtl = (mu_0 * len_s * (2 * n_c2)**2 * Q_r / m) * (0.9 * tau_s * q2 * k_wd2 * K_02 * sigma_dr / g_eff)   # tooth tip leakage inductance
         L_r = (L_rsl + L_rtl + L_rel) / K_rs**2                                                                   # rotor leakage inductance
@@ -1318,7 +1819,7 @@ class DFIG(GeneratorBase):
         # Rotor Field winding
         
         # conductor cross-section
-        diff = h_r - h_w
+        diff = h_0 - h_w
         A_Cur = k_fillr * p*q2 * b_r * diff / N_r
         A_Curcalc = A_Cur * 1e6
         
@@ -1349,8 +1850,8 @@ class DFIG(GeneratorBase):
         V_Cusr = m * L_cur * A_Cur
         V_Fest = len_s * np.pi * ((rad_ag + h_s)**2 - rad_ag**2) - (2 * m*q1 * p*b_s * h_s * len_s)
         V_Fesy = len_s * np.pi * ((rad_ag + h_s + h_ys)**2    - (rad_ag + h_s)**2)
-        V_Fert = len_s * np.pi * (rad_r**2 - (rad_r - h_r)**2) - 2 * m*q2 * p*b_r * h_r * len_s
-        V_Fery = len_s * np.pi * ((rad_r - h_r)**2           - (rad_r - h_r - h_yr)**2)
+        V_Fert = len_s * np.pi * (rad_r**2 - (rad_r - h_0)**2) - 2 * m*q2 * p*b_r * h_0 * len_s
+        V_Fery = len_s * np.pi * ((rad_r - h_0)**2           - (rad_r - h_0 - h_yr)**2)
         Copper = (V_Cuss + V_Cusr) * rho_Copper
         M_Fest = V_Fest * rho_Fe
         M_Fesy = V_Fesy * rho_Fe
@@ -1400,7 +1901,7 @@ class DFIG(GeneratorBase):
         # Calculating for tangential stress constraints
         
         TC1 = T_e / (2 * np.pi * sigma)
-        TC2 = rad_ag**2 * len_s
+        TC2r = rad_ag**2 * len_s
         
         # Calculating mass moments of inertia and center of mass
         I = np.zeros(3)
@@ -1452,7 +1953,7 @@ class DFIG(GeneratorBase):
         outputs['L_r']                = L_r
         outputs['L_s']                = L_s
         outputs['L_sm']               = L_sm
-        outputs['Mass']               = Mass
+        outputs['generator_mass']               = Mass
         outputs['K_rad']              = K_rad
         outputs['Losses']             = Losses
 
@@ -1461,12 +1962,12 @@ class DFIG(GeneratorBase):
         outputs['Iron']               = Iron
         outputs['Structural_mass']    = Structural_mass
         outputs['TC1']                = TC1
-        outputs['TC2']                = TC2
+        outputs['TC2r']                = TC2r
 
         outputs['Current_ratio']      = Current_ratio
         outputs['Overall_eff']        = Overall_eff
-        outputs['cm']                 = cm
-        outputs['I']                  =  I
+        outputs['generator_cm']                 = cm
+        outputs['generator_I']                  =  I
 
 
 
@@ -1486,13 +1987,14 @@ class SCIG(GeneratorBase):
         self.add_output('K_rad_LL',   val=0.0, desc='Aspect ratio Lower limit')
         self.add_output('rad_r',              val=0.0, desc='rotor radius')
         self.add_output('A_bar',              val=0.0, desc='Rotor Conductor cross-section mm^2')
+        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
         rad_ag               = inputs['rad_ag']
         len_s                = inputs['len_s']
         h_s                  = inputs['h_s']
-        h_r                  = inputs['h_r']
+        h_0                  = inputs['h_0']
         machine_rating       = inputs['machine_rating']
         n_nom                = inputs['n_nom']
         Gearbox_efficiency   = inputs['Gearbox_efficiency']
@@ -1525,7 +2027,7 @@ class SCIG(GeneratorBase):
         m           = discrete_inputs['m']
         mu_0        = inputs['mu_0']
         mu_r        = inputs['mu_r']
-        p           = discrete_inputs['p']
+        p           = inputs['p']
         phi         = inputs['phi']
         q1          = discrete_inputs['q1']
         q2          = discrete_inputs['q2']
@@ -1591,7 +2093,7 @@ class SCIG(GeneratorBase):
         tau_r      = np.pi * (ag_dia - 2 * ag_len) / Q_r # Rotor slot pitch
         b_r        = b_r_tau_r * tau_r        # Rotor slot width
         b_tr       = tau_r - b_r              # Rotor tooth width
-        tau_r_min  = np.pi * (ag_dia - 2 * (ag_len + h_r)) / Q_r
+        tau_r_min  = np.pi * (ag_dia - 2 * (ag_len + h_0)) / Q_r
         b_trmin    = tau_r_min - b_r_tau_r * tau_r_min # minumum rotor tooth width
         
         
@@ -1602,7 +2104,7 @@ class SCIG(GeneratorBase):
         W_r         = (b_r / mu_rr) * 1e-3  # Rotor,  in m
         
         Slot_aspect_ratio1 = h_s / b_s      # Stator slot aspect ratio
-        Slot_aspect_ratio2 = h_r / b_r      # Rotor slot aspect ratio
+        Slot_aspect_ratio2 = h_0 / b_r      # Rotor slot aspect ratio
 	                             
         # Calculating Carter factor for stator,rotor and effective air gap length
         '''
@@ -1683,10 +2185,10 @@ class SCIG(GeneratorBase):
         I_srated    = machine_rating / (3 * E_p * cofi)
         
         #Rotor design
-        diff        = h_r - h_w
+        diff        = h_0 - h_w
         A_bar       = b_r * diff                                # bar cross section
         Beta_skin   = np.sqrt(np.pi * mu_0 * freq / 2 / resist_Cu)    # coefficient for skin effect correction
-        k_rm        = Beta_skin * h_r                           # coefficient for skin effect correction
+        k_rm        = Beta_skin * h_0                           # coefficient for skin effect correction
         J_b         = 6e+06                                     # Bar current density
         K_i         = 0.864
         I_b         = 2 * m * N_s * k_wd * I_srated / Q_r       # bar current
@@ -1697,7 +2199,7 @@ class SCIG(GeneratorBase):
         I_er        = I_b / (2 * np.sin(np.pi * p / Q_r))             # End ring current
         J_er        = 0.8 * J_b                                 # End ring current density
         A_er        = I_er / J_er                               # End ring cross-section
-        b           = h_r                                       # End ring dimension
+        b           = h_0                                       # End ring dimension
         a           = A_er / b                                  # End ring dimension
         D_er        = (rad_ag * 2 - 2 * ag_len) - 0.003         # End ring diameter
         l_er        = np.pi * (D_er - b) / Q_r                     # End ring segment length
@@ -1733,10 +2235,10 @@ class SCIG(GeneratorBase):
         
         # Calculating leakage inductance in  rotor
         lambda_ei = 2.3 * D_er / (4 * Q_r * len_s * (np.sin(np.pi * p / Q_r)**2)) * np.log(4.7 * ag_dia / (a + 2 * b))
-        lambda_b  = h_r / (3 * b_r) + h_w / b_ro
+        lambda_b  = h_0 / (3 * b_r) + h_w / b_ro
         L_i       = np.pi * ag_dia / Q_r
         
-        L_rsl = mu_0 * len_s * ((h_r - h_w) / (3 * b_r) + h_w / b_ro)       # slot        leakage inductance
+        L_rsl = mu_0 * len_s * ((h_0 - h_w) / (3 * b_r) + h_w / b_ro)       # slot        leakage inductance
         L_rel = mu_0 * (len_s * lambda_b + 2 * lambda_ei * L_i)             # end winding leakage inductance
         L_rtl = mu_0 * len_s * (0.9 * tau_r * 0.09 / g_eff)                 # tooth tip   leakage inductance
         L_rsigma = (L_rsl + L_rtl + L_rel) * 4 * m * (k_wd * N_s)**2 / Q_r  # rotor       leakage inductance
@@ -1760,8 +2262,8 @@ class SCIG(GeneratorBase):
         V_Fesy = len_s * np.pi * ((rad_ag + h_s + h_ys)**2 - (rad_ag + h_s)**2)                       # Volume of iron in stator yoke
         rad_r = rad_ag - ag_len                                                               # rotor radius
         
-        V_Fert = np.pi * len_s * (rad_r**2 - (rad_r - h_r)**2) - 2 * m * q2 * p * b_r * h_r * len_s # Volume of iron in rotor teeth
-        V_Fery = np.pi * len_s * ((rad_r - h_r)**2 - (rad_r - h_r - h_yr)**2)                     # Volume of iron in rotor yoke
+        V_Fert = np.pi * len_s * (rad_r**2 - (rad_r - h_0)**2) - 2 * m * q2 * p * b_r * h_0 * len_s # Volume of iron in rotor teeth
+        V_Fery = np.pi * len_s * ((rad_r - h_0)**2 - (rad_r - h_0 - h_yr)**2)                     # Volume of iron in rotor yoke
         Copper = (V_Cuss + V_Cusr) * rho_Copper            # Mass of Copper
         M_Fest = V_Fest * rho_Fe                           # Mass of stator teeth
         M_Fesy = V_Fesy * rho_Fe                           # Mass of stator yoke
@@ -1806,7 +2308,7 @@ class SCIG(GeneratorBase):
         
         # Calculating Tangential stress constraints
         TC1 = T_e / (2 * np.pi * sigma)
-        TC2 = rad_ag**2 * len_s
+        TC2r = rad_ag**2 * len_s
         
         # Calculating mass moments of inertia and center of mass
         
@@ -1854,7 +2356,7 @@ class SCIG(GeneratorBase):
         outputs['R_R']                = R_R
         outputs['L_s']                = L_s
         outputs['L_sm']               = L_sm
-        outputs['Mass']               = Mass
+        outputs['generator_mass']               = Mass
         outputs['K_rad']              = K_rad
         outputs['K_rad_UL']           = K_rad_UL
         outputs['K_rad_LL']           = K_rad_LL
@@ -1864,10 +2366,10 @@ class SCIG(GeneratorBase):
         outputs['Iron']               = Iron
         outputs['Structural_mass']    = Structural_mass
         outputs['TC1']                = TC1
-        outputs['TC2']                = TC2
+        outputs['TC2r']                = TC2r
         outputs['Overall_eff']        = Overall_eff
-        outputs['cm']                 = cm
-        outputs['I']                  = I
+        outputs['generator_cm']                 = cm
+        outputs['generator_I']                  = I
 
         
 
@@ -1889,6 +2391,7 @@ class EESG(GeneratorBase):
         self.add_output('b_p',       val=0.0, units ='m',    desc='Pole width')
         self.add_output('L_m',            val=0.0, units='H',       desc='Stator synchronising inductance')
         self.add_output('R_r',            val=0.0, units='ohm',     desc='Rotor resistance')
+        self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
         self.add_output('B_gfm',   val=0.0, units='T', desc='Average air gap flux density B_g')
         self.add_output('B_pc',    val=0.0, units='T', desc='Pole core flux density')
         self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
@@ -1909,7 +2412,7 @@ class EESG(GeneratorBase):
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
         n_nom             = inputs['n_nom']
-        Torque            = inputs['Torque']
+        Torque            = inputs['T_rated']
         
         b_st              = inputs['b_st']
         d_s               = inputs['d_s']
@@ -1950,7 +2453,7 @@ class EESG(GeneratorBase):
         m           = discrete_inputs['m']
         mu_0        = inputs['mu_0']
         mu_r        = inputs['mu_r']
-        p           = discrete_inputs['p']
+        p           = inputs['p']
         phi         = inputs['phi']
         q1          = discrete_inputs['q1']
         q2          = discrete_inputs['q2']
@@ -2247,8 +2750,8 @@ class EESG(GeneratorBase):
         m1          = (k_1 / R)**2 
         c           = R / 500 # (not used)
         
-        u_all_r     = R / 10000           # allowable radial deflection 
-        b_all_r     = 2 * np.pi * R_o / N_r  # allowable circumferential arm dimension 
+        u_allow_r     = R / 10000           # allowable radial deflection 
+        b_allow_r     = 2 * np.pi * R_o / N_r  # allowable circumferential arm dimension 
         
         # Calculating radial deflection of rotor structure according to Mc Donald's
         Numer = R**3 * ((0.25 * (np.sin(theta_r) - (theta_r * np.cos(theta_r))) / (np.sin(theta_r))**2) - (0.5 / np.sin(theta_r)) + (0.5 / theta_r))
@@ -2256,7 +2759,7 @@ class EESG(GeneratorBase):
         Qov   = R**3 / (2 * I_r * theta_r * (m1 + 1))
         Lov   = (R_1 - R_o) / a_r
         Denom = I_r * (Pov - Qov + Lov) # radial deflection % rotor
-        u_Ar  = (q3 * R**2 / E / h_yr) * (1 + Numer / Denom)
+        u_ar  = (q3 * R**2 / E / h_yr) * (1 + Numer / Denom)
         
         # Calculating axial deflection of rotor structure
         
@@ -2266,12 +2769,12 @@ class EESG(GeneratorBase):
         l_ir        = R                                      # length of rotor arm beam at which rotor cylinder acts
         l_iir       = R_1
         
-        y_Ar        = (W * l_ir**3 / 12 / E / I_arm_axi_r) + (w_r * l_iir**4 / 24 / E / I_arm_axi_r)  # axial deflection
+        y_ar        = (W * l_ir**3 / 12 / E / I_arm_axi_r) + (w_r * l_iir**4 / 24 / E / I_arm_axi_r)  # axial deflection
         
         # Calculating torsional deflection of rotor structure
         
-        z_all_r     = np.deg2rad(0.05 * R)  # allowable torsional deflection
-        z_A_r       = (2 * np.pi * (R - 0.5 * h_yr) * len_s / N_r) * sigma * (l_ir - 0.5 * h_yr)**3 / (3 * E * I_arm_tor_r) # circumferential deflection
+        z_allow_r     = np.deg2rad(0.05 * R)  # allowable torsional deflection
+        z_ar       = (2 * np.pi * (R - 0.5 * h_yr) * len_s / N_r) * sigma * (l_ir - 0.5 * h_yr)**3 / (3 * E * I_arm_tor_r) # circumferential deflection
         
         # STATOR structure
         
@@ -2289,10 +2792,10 @@ class EESG(GeneratorBase):
         
         # allowable deflections
         
-        b_all_s   = 2 * np.pi * R_o / N_st
-        u_all_s   = R_st / 10000
-        y_all     = 2 * len_s / 100       # allowable axial     deflection
-        z_all_s   = np.deg2rad(0.05 * R_st)  # allowable torsional deflection
+        b_allow_s   = 2 * np.pi * R_o / N_st
+        u_allow_s   = R_st / 10000
+        y_allow     = 2 * len_s / 100       # allowable axial     deflection
+        z_allow_s   = np.deg2rad(0.05 * R_st)  # allowable torsional deflection
         
         # Calculating radial deflection according to McDonald's
         
@@ -2302,7 +2805,7 @@ class EESG(GeneratorBase):
         Lovs   = (R_1s - R_o) * 0.5 / a_s
         Denoms = I_st * (Povs - Qovs + Lovs)
         R_out  = R / 0.995 + h_s + h_ys
-        u_As   = (q3 * R_st**2 / E / t_s) * (1 + Numers / Denoms)
+        u_as   = (q3 * R_st**2 / E / t_s) * (1 + Numers / Denoms)
         
         # Calculating axial deflection according to McDonald
         
@@ -2318,17 +2821,17 @@ class EESG(GeneratorBase):
         X_comp2 = W_iis * l_iis**4  / (24 * E * I_arm_axi_s)
         X_comp3 = w_s   * l_iiis**4 / (24 * E * I_arm_axi_s)
         
-        y_As    = X_comp1 + X_comp2 + X_comp3  # axial deflection
+        y_as    = X_comp1 + X_comp2 + X_comp3  # axial deflection
         
         # Calculating torsional deflection
         
-        z_A_s  = 2 * np.pi * (R_st + 0.5 * t_s) * len_s / (2 * N_st) * sigma * (l_is + 0.5 * t_s)**3 / (3 * E * I_arm_tor_s)
+        z_as  = 2 * np.pi * (R_st + 0.5 * t_s) * len_s / (2 * N_st) * sigma * (l_is + 0.5 * t_s)**3 / (3 * E * I_arm_tor_s)
         
         # tangential stress constraints
         
         TC1 = T / (2 * np.pi * sigma)
-        TC2 = R**2 * len_s
-        TC3 = R_st**2 * len_s
+        TC2r = R**2 * len_s
+        TC2s = R_st**2 * len_s
         
         # Calculating inactive mass and total mass
         
@@ -2382,28 +2885,28 @@ class EESG(GeneratorBase):
         outputs['Slot_aspect_ratio'] = Slot_aspect_ratio
         outputs['Copper']            = Copper
         outputs['Iron']              = Iron
-        outputs['u_Ar']              = u_Ar
-        outputs['y_Ar']              = y_Ar
+        outputs['u_ar']              = u_ar
+        outputs['y_ar']              = y_ar
 
-        outputs['z_A_r']             = z_A_r
-        outputs['u_As']              = u_As
-        outputs['y_As']              = y_As
-        outputs['z_A_s']             = z_A_s
-        outputs['u_all_r']           = u_all_r
-        outputs['u_all_s']           = u_all_s
+        outputs['z_ar']             = z_ar
+        outputs['u_as']              = u_as
+        outputs['y_as']              = y_as
+        outputs['z_as']             = z_as
+        outputs['u_allow_r']           = u_allow_r
+        outputs['u_allow_s']           = u_allow_s
 
-        outputs['y_all']             = y_all
-        outputs['z_all_s']           = z_all_s
-        outputs['z_all_r']           = z_all_r
-        outputs['b_all_s']           = b_all_s
-        outputs['b_all_r']           = b_all_r
+        outputs['y_allow_r'] = outputs['y_allow_s'] =  y_allow
+        outputs['z_allow_s']           = z_allow_s
+        outputs['z_allow_r']           = z_allow_r
+        outputs['b_allow_s']           = b_allow_s
+        outputs['b_allow_r']           = b_allow_r
         outputs['TC1']               = TC1
 
-        outputs['TC2']               = TC2
-        outputs['TC3']               = TC3
+        outputs['TC2r']               = TC2r
+        outputs['TC2s']               = TC2s
         outputs['R_out']             = R_out
         outputs['Structural_mass']   = Structural_mass
-        outputs['Mass']              = Mass
-        outputs['cm']                = cm
-        outputs['I']                 = I
+        outputs['generator_mass']              = Mass
+        outputs['generator_cm']                = cm
+        outputs['generator_I']                 = I
 #----------------------------------------------------------------------------------------

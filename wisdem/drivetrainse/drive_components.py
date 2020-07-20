@@ -177,7 +177,75 @@ class HighSpeedSide(om.ExplicitComponent):
         outputs['hss_length'] = L_hss_shaft
         outputs['hss_diameter'] = D_hss_shaft
         
+#----------------------------------------------------------------------------------------------
         
+
+class GeneratorSimple(om.ExplicitComponent):
+    '''Generator class
+          The Generator class is used to represent the generator of a wind turbine drivetrain.
+          It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
+          It contains an update method to determine the mass, mass properties, and dimensions of the component.
+    '''
+
+        
+    def setup(self):
+        # variables
+        self.add_input('rotor_diameter', val=0.0, units='m', desc='rotor diameter')
+        self.add_input('machine_rating', val=0.0, units='kW', desc='machine rating of generator')
+        self.add_input('gear_ratio', val=0.0, desc='overall gearbox ratio')
+        self.add_input('hss_length', val=0.0, units='m', desc='length of high speed shaft and brake')
+        self.add_input('hss_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='cm of high speed shaft and brake')
+        self.add_input('rotor_rpm', val=0.0, units='rpm', desc='Speed of rotor at rated power')
+        
+        self.add_discrete_input('direct_drive', False)
+
+        #returns
+        self.add_output('generator_mass', val=0.0, units='kg', desc='overall component mass')
+        self.add_output('generator_cm', val=np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+
+        # Unpack inputs
+        rotor_diameter = inputs['rotor_diameter']
+        machine_rating = inputs['machine_rating']
+        gear_ratio = inputs['gear_ratio']
+        hss_length = inputs['hss_length']
+        hss_cm = inputs['hss_cm']
+        rotor_rpm = inputs['rotor_rpm']
+        direct = discrete_inputs['direct_drive']
+        
+        # coefficients based on generator configuration
+        massCoeff = 37.68 if direct else np.mean([6.4737, 10.51, 5.34])
+        massExp   = 1.0 if direct else 0.9223
+        CalcTorque = (machine_rating*1.1) / (rotor_rpm * np.pi/30)
+  
+        if direct:
+            mass = (massCoeff * CalcTorque ** massExp)
+        else:
+            mass = (massCoeff * machine_rating ** massExp)
+        outputs['generator_mass'] = mass
+        
+        # calculate mass properties
+        length = 1.8 * 0.015 * rotor_diameter
+        depth = 0.015 * rotor_diameter
+        width = 0.5 * depth
+  
+        cm = np.zeros(3)
+        cm[0]  = hss_cm[0] + hss_length/2. + length/2.
+        cm[1]  = hss_cm[1]
+        cm[2]  = hss_cm[2]
+        outputs['generator_cm'] = cm
+  
+        I = np.zeros(3)
+        I[0]   = 4.86e-5 * rotor_diameter**5.333 \
+                + (2./3. * mass) * (depth**2 + width**2) / 8.
+        I[1]   = I[0] / 2. / gear_ratio**2 \
+                 + 1. / 3. * mass * length**2 / 12. \
+                 + 2. / 3. * mass * (depth**2. + width**2. + 4./3. * length**2.) / 16.
+        I[2]   = I[1]
+        outputs['generator_I'] = I
+
         
 #-------------------------------------------------------------------------------
 
@@ -480,7 +548,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac
         outputs['nacelle_I']    = util.unassembleI(I_nac)
-        outputs['other_mass']   = inputs['hss'] + inputs['hvac'] + inputs['mainframe'] + inputs['yaw'] + inputs['cover']
+        outputs['other_mass']   = inputs['hss_mass'] + inputs['hvac_mass'] + inputs['mainframe_mass'] + inputs['yaw_mass'] + inputs['cover_mass']
         # Future yaw system weight calculations based on total system mass above yaw system
         #m_above_yaw = m_nac - inputs['yaw_mass']
 
