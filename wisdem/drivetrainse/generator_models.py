@@ -54,10 +54,6 @@ def carterFactorSalientPole(airGap, slotWidth, slotPitch):
 #%%---------------------------------
 
 debug = False
-PSI_2_PASCAL = 6894.76
-MIN_2_SEC = 60
-M_2_MM = 1000
-perMin_to_Hz = 1. / 60.
 
 class GeneratorBase(om.ExplicitComponent):
     """ Base class for generators """
@@ -326,7 +322,7 @@ class PMSG_Disc(GeneratorBase):
         l_e  = len_s + 2 * 0.001 * rad_ag       # equivalent core length
         r_r  = rad_ag - len_ag                  # rotor radius
         p    = np.round(np.pi * rad_ag / tau_p)    # pole pairs   Eq.(11)
-        f    = p * n_nom / MIN_2_SEC            # frequency (Hz)
+        f    = p * n_nom / 60.            # rpm to frequency (Hz)
         S    = 2 * p * q1 * m                   # Stator slots Eq.(12)
         N_conductors = S * 2
         N_s   = N_conductors / 2 / m            # Stator turns per phase
@@ -342,7 +338,7 @@ class PMSG_Disc(GeneratorBase):
         g_eff =  k_C * (len_ag + h_m / mu_r)
         
         # angular frequency in radians / sec
-        om_m  =  2 * np.pi * (n_nom / MIN_2_SEC)
+        om_m  =  2 * np.pi * (n_nom / 60.) # rpm to rad/s
         om_e  =  p * om_m / 2
         
         # Calculating magnetic loading
@@ -358,8 +354,8 @@ class PMSG_Disc(GeneratorBase):
         
         # Stator winding length, cross-section and resistance
         l_Cus     = 2 * N_s * (2 * tau_p + L_t)
-        A_s       = b_s *          (h_s - h_w) *          q1 * p
-        A_scalc   = b_s * M_2_MM * (h_s - h_w) * M_2_MM * q1 * p
+        A_s       = b_s *       (h_s - h_w) *       q1 * p # m^2
+        A_scalc   = b_s * 1e3 * (h_s - h_w) * 1e3 * q1 * p # mm^2
         A_Cus     = A_s     * k_fills / N_s
         A_Cuscalc = A_scalc * k_fills / N_s
         R_s       = l_Cus * resist_Cu / A_Cus
@@ -808,7 +804,7 @@ class PMSG_Arms(GeneratorBase):
         r_r   =  rad_ag - len_ag           # rotor radius
         
         p            = np.round(np.pi * dia_ag / (2 * tau_p)) # pole pairs
-        f            = n_nom * p * perMin_to_Hz            # outout frequency
+        f            = n_nom * p / 60.            # outout frequency rpm to Hz
         S            = 2 * p * q1 * m                      # Stator slots
         N_conductors = S * 2                               
         N_s          = N_conductors / (2 * m)              # Stator turns per phase
@@ -825,7 +821,7 @@ class PMSG_Arms(GeneratorBase):
         g_eff  =  k_C * ahm
         
         # angular frequency in radians
-        om_m   =  2 * np.pi * n_nom * perMin_to_Hz # radians per second
+        om_m   =  2 * np.pi * n_nom / 60. # rpm to radians per second
         om_e   =  p * om_m / 2                  # electrical output frequency (Hz)
 
         
