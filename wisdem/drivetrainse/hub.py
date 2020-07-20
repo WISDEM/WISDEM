@@ -6,7 +6,7 @@ import sys
 
 class HubShell(om.ExplicitComponent):
     """
-    Size the shell of the wind turbine rotor hub
+    Size the wind turbine rotor hub, modeled as a spherical shell
     
     Parameters
     ----------
@@ -23,15 +23,15 @@ class HubShell(om.ExplicitComponent):
     blade_root_diameter : float
         Outer diameter of blade root
     in2out_circ : float
-        Safety factor applied on hub circumference
+        Safety factor applied on hub circumference. This factor determines the extra material needed between blade cutouts/holes in the hub to provide enough load carrying material. Good values are usually 1.15/1.2
     max_torque : float
-        Safety factor applied on hub circumference
+        Max torque that the hub needs to resist (Mx in a hub aliged reference system)
     Xy : float
-        Yield strength metal for hub (200MPa)
+        Yield strength metal for hub (200MPa is a good value for SN Cast Iron GJS-350 for thick sections)
     stress_concentration : float
-        Stress concentration factor
+        Stress concentration factor. Stress concentration occurs at all fillets, notches, lifting lugs, hatches and are accounted for by assigning a stress concentration factor
     reserve_factor : float
-        Safety factor
+        Design safety factor
     metal_cost : float
         Unit cost metal
 
@@ -89,12 +89,12 @@ class HubShell(om.ExplicitComponent):
         dsgn_hub_rad            = dsgn_hub_diam * 0.5
         # Determine max stress
         stress_allow_pa = inputs['Xy'] / (inputs['stress_concentration'] * inputs['reserve_factor']) 
-        # Size shell thickness
+        # Size shell thickness, assuming max torsional stress from torque can not exceed design allowable stress, and solving, torsional stress (t=Tr/J), and polar moment of inertia (J=PI/32(Do^4-Di^4), for thickness.
         sph_hub_shell_thick = (((dsgn_hub_diam**4. - 32. / np.pi*inputs['max_torque']*dsgn_hub_rad/stress_allow_pa)**(1./4.)) - dsgn_hub_diam) / (-2.)
         # Compute volume and mass of the shell  
-        sph_hub_vol = 0.5 * 4./3. * np.pi * (dsgn_hub_rad**3. - (dsgn_hub_rad - sph_hub_shell_thick)**3.)
+        sph_hub_vol = 4./3. * np.pi * (dsgn_hub_rad**3. - (dsgn_hub_rad - sph_hub_shell_thick)**3.)
         sph_hub_mass = sph_hub_vol * inputs['rho']
-        # Compute outer (OD) and inner diameter (ID) of the flanges
+        # Assume outer (OD) and inner diameter (ID) of the flanges based on hub diameter
         main_flange_OD    = dsgn_hub_diam  * inputs['flange_OD2hub_D']
         main_flange_ID    = main_flange_OD * inputs['flange_ID2flange_OD']
         # Compute thickness, volume, and mass of main flange
@@ -113,7 +113,7 @@ class HubShell(om.ExplicitComponent):
         outputs['hub_mass']     = hub_mass
         outputs['hub_cost']     = hub_cost
         outputs['hub_cm']       = hub_cm
-        outputs['hub_I']        = (2./3.) * hub_mass * (0.5*dsgn_hub_diam)**2 * np.ones(3) # Hemispherical shell
+        outputs['hub_I']        = (2./3.) * hub_mass * (0.5*dsgn_hub_diam)**2 * np.ones(3) # Spherical shell
 
         if self.options['verbosity']:
             sys.stderr.write('Spherical_Hub:\n')
@@ -124,7 +124,7 @@ class HubShell(om.ExplicitComponent):
 
 class Spinner(om.ExplicitComponent):
     """
-    Size wind turbine rotor spinner
+    Size the wind turbine rotor hub spinner, modeled as a spherical shell that wraps the hub 
     
     Parameters
     ----------
@@ -141,13 +141,13 @@ class Spinner(om.ExplicitComponent):
     clearance_hub_spinner : float
         Clearance between spinner and hub
     spin_hole_incr : float
-        Ratio between access hole diameter in the spinner and blade root diameter
+        Ratio between access hole diameter in the spinner and blade root diameter. Typical value 1.2
     gust_ws : float
         Extreme gust wind speed
     load_scaling : float
         Scaling factor of the thrust forces on spinner
     composite_Xt : float
-        Tensile strength of the composite material of the shell
+        Tensile strength of the composite material of the shell. A glass CFM (continuous fiber mat) is often used.
     composite_SF : float
         Safety factor composite shell
     composite_rho : float
@@ -172,7 +172,7 @@ class Spinner(om.ExplicitComponent):
     spinner_cost : float
         Cost of the spinner
     spinner_cm : float
-        Radius / Distance between center of mass of the spinner and outer surface
+        Distance between center of mass of the spinner and main flange
     spinner_I : numpy array[3]
         Total mass moment of inertia of the spinner about its cm
     
@@ -224,10 +224,11 @@ class Spinner(om.ExplicitComponent):
         # Compute max allowable tensile strength of composite and max allowable yield strength metal given material properties and safety factors
         allow_tensile_strength  = inputs['composite_Xt'] / inputs['composite_SF']
         allow_yield_strength    = inputs['Xy'] / inputs['metal_SF']
-        # Estimate thickness of the shell of the spinner
+        # Estimate thickness of the shell of the spinner. Stress equation for a flat plate with simply supported edges, with a load equal to the extreme gust pressure load.  
+        # The equation is [Stress=(.75*P*b^2)/(t^2*(1.61*(b/a)^3 +1)).  See Roarks for reference.  Shell is curved and not flat but simplifying for calculation purposes.
         spin_shell_thickness    = np.sqrt((0.75 * extr_gust_dsgn_pressure * spin_panel_width ** 2.) / (allow_tensile_strength*(1.61*(spin_panel_width/sph_spin_diam) ** 3. + 1.)))
         # Compute volume and mass of the spinner shell
-        spin_shell_volume       = 0.5 * (4./3.) * np.pi * (sph_spin_rad ** 3. - ((sph_spin_diam - 2.*spin_shell_thickness)/2.) ** 3.)
+        spin_shell_volume       = (4./3.) * np.pi * (sph_spin_rad ** 3. - ((sph_spin_diam - 2.*spin_shell_thickness)/2.) ** 3.)
         spin_shell_mass         = spin_shell_volume * inputs['composite_rho']
         # Estimate area, volume, and mass of the spherical caps that are removed because of blade access
         sph_cap_area            = 2.  * np.pi * sph_spin_rad * (sph_spin_rad - np.sqrt(sph_spin_rad ** 2. - (spin_acc_hole_diam/2.) ** 2.))
@@ -268,16 +269,16 @@ class Spinner(om.ExplicitComponent):
         # Compute outputs and assign them to openmdao outputs
         outputs['spinner_diameter']         = sph_spin_diam
         outputs['spinner_mass']             = mass
-        outputs['spinner_cm']               = sph_spin_diam / 2.
+         # Spinner and hub are assumed to be concentric (spinner wraps hub)
+        outputs['spinner_cm']               = inputs['hub_diameter'] / 2.
         outputs['spinner_cost']             = spin_shell_mass * inputs['composite_cost'] + bracket_mass_total * inputs['metal_cost']
-        outputs['spinner_I']                = (2./3.) * mass * (0.5*sph_spin_diam)**2 * np.ones(3) # Hemispherical shell
+        outputs['spinner_I']                = (2./3.) * mass * (0.5*sph_spin_diam)**2 * np.ones(3) # Spherical shell
         
         # Print to screen if verbosity option is on
         if self.options['verbosity']:
             sys.stderr.write('Spherical spinner: mass {:.1f} kg = Shell {:.1f} kg + Bracket structures {:.1f} kg\n'.format(float(outputs['total_mass']), float(spin_shell_mass), float(bracket_mass_total)))
             sys.stderr.write('Spherical spinner: spinner outer diameter {:.1f} m\n'.format(float(sph_spin_diam)))
             sys.stderr.write('Spherical spinner: cost ${:.2f}  center of mass {:.2f} m\n'.format(float(outputs['cost']), float(outputs['cm'])))
-
 
 class PitchSystem(om.ExplicitComponent):
     """
@@ -339,9 +340,7 @@ class PitchSystem(om.ExplicitComponent):
         if self.options['verbosity']:
             sys.stderr.write('PitchSystem IN : blade mass {:.1f} kg rbmy {:.1f} Nm\n'.format(float(inputs['blade_mass']), float(inputs['BRFM'])))
             sys.stderr.write('PitchSystem OUT: mass {:.1f} kg\n'.format(float(mass)))
-
-
-            
+    
 class Hub_Adder(om.ExplicitComponent):
     """
     Aggregates components for total hub system mass, center of mass, and mass moment of inertia
@@ -368,6 +367,18 @@ class Hub_Adder(om.ExplicitComponent):
         Radius / Distance between center of mass of the spinner and outer surface
     spinner_I : numpy array[3]
         Total mass moment of inertia of the spinner about its cm
+
+    Returns
+    -------
+    hub_system_mass : float
+        Total mass of the hub system
+    hub_system_cost : float
+        Cost of the hub system
+    hub_system_cm : float
+        Distance between hub/main shaft flange and center of mass of the hub system
+    hub_system_I : numpy array[3]
+        Total mass moment of inertia of the hub system about its center of mass
+
     """
     def setup(self):
         self.add_input('pitch_mass',           val = 0.0, units = 'kg')
@@ -417,8 +428,7 @@ class Hub_Adder(om.ExplicitComponent):
         outputs['hub_system_cost'] = c_total
         outputs['hub_system_cm']   = cm_total
         outputs['hub_system_I']    = util.unassembleI( I_total )[:3]
-        
-        
+    
 class Hub_System(om.Group):
     """
     Openmdao group to model the hub system, which includes pitch system, spinner, and hub
@@ -437,7 +447,6 @@ class Hub_System(om.Group):
                                                                     'pitch_mass', 'pitch_cost', 'pitch_I',
                                                                     'hub_system_mass', 'hub_system_cost', 'hub_system_cm', 'hub_system_I'])
 
-
 if __name__ == "__main__":
 
     hub_prob = om.Problem(model=Hub_System())
@@ -450,14 +459,14 @@ if __name__ == "__main__":
     hub_prob['pitch_system.rho']                = 7850.
     hub_prob['pitch_system.Xy']                 = 371.e+6
 
-    hub_prob['hub_shell.blade_root_diameter']   = 4.
+    hub_prob['hub_shell.blade_root_diameter']   = 4.5
     hub_prob['hub_shell.n_blades']              = 3
     hub_prob['hub_shell.flange_t2shell_t']      = 4.
     hub_prob['hub_shell.flange_OD2hub_D']       = 0.5
     hub_prob['hub_shell.flange_ID2flange_OD']   = 0.8
     hub_prob['hub_shell.rho']                   = 7200.
     hub_prob['hub_shell.in2out_circ']           = 1.2 
-    hub_prob['hub_shell.max_torque']            = 30.e+6
+    hub_prob['hub_shell.max_torque']            = 199200777.51 # Value assumed during model development
     hub_prob['hub_shell.Xy']                    = 200.e+6
     hub_prob['hub_shell.stress_concentration']  = 2.5
     hub_prob['hub_shell.reserve_factor']        = 2.0
@@ -466,7 +475,7 @@ if __name__ == "__main__":
     hub_prob['spinner.n_front_brackets']        = 3
     hub_prob['spinner.n_rear_brackets']         = 3
     hub_prob['spinner.n_blades']                = 3
-    hub_prob['spinner.blade_root_diameter']     = 4.
+    hub_prob['spinner.blade_root_diameter']     = hub_prob['hub_shell.blade_root_diameter']
     hub_prob['spinner.clearance_hub_spinner']   = 0.5
     hub_prob['spinner.spin_hole_incr']          = 1.2
     hub_prob['spinner.gust_ws']                 = 70
@@ -487,7 +496,14 @@ if __name__ == "__main__":
     print('Hub shell outer diameter: ' + str(hub_prob['hub_shell.hub_diameter'][0]) + ' m')
     print('Hub shell cost: ' + str(hub_prob['hub_shell.hub_cost'][0]) + ' USD')
     print('Distance btw flange and cm of hub shell: ' + str(hub_prob['hub_shell.hub_cm'][0]) + ' m')
+    print('Mass moment of inertia of hub shell: ' + str(hub_prob['hub_shell.hub_I']) + 'kg * m2')
     print('Spinner mass: ' + str(hub_prob['spinner.spinner_mass'][0]) + ' kg')
     print('Spinner outer diameter: ' + str(hub_prob['spinner.spinner_diameter'][0]) + ' m')
     print('Spinner cost: ' + str(hub_prob['spinner.spinner_cost'][0]) + ' USD')
-    print('Distance between center of mass of the spinner and outer surface: ' + str(hub_prob['spinner.spinner_cm'][0]) + ' m')
+    print('Distance btw flange and cm of spinner: ' + str(hub_prob['spinner.spinner_cm'][0]) + ' m')
+    print('Mass moment of inertia of spinner: ' + str(hub_prob['spinner.spinner_I']) + 'kg * m2')
+    print('Overall hub system mass: ' + str(hub_prob['adder.hub_system_mass'][0]) + ' kg')
+    print('Overall hub system cost: ' + str(hub_prob['adder.hub_system_cost'][0]) + ' USD')
+    print('Distance btw shaft flange and cm of overall hub system: ' + str(hub_prob['adder.hub_system_cm'][0]) + ' m')
+    print('Mass moment of inertia of the overall hub system: ' + str(hub_prob['adder.hub_system_I']) + 'kg * m2')
+
