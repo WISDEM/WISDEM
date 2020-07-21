@@ -123,7 +123,7 @@ class HighSpeedSide(om.ExplicitComponent):
 
         # returns
         self.add_output('hss_mass', 0.0, units='kg', desc='overall component mass')
-        self.add_output('hss_cm', np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+        self.add_output('hss_cm', 0.0, units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('hss_I', np.zeros(3), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
         self.add_output('hss_length', 0.0, units='m', desc='length of high speed shaft')
         self.add_output('hss_diameter', 0.0, units='m', desc='diameter of high speed shaft')
@@ -193,15 +193,13 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('rotor_diameter', val=0.0, units='m', desc='rotor diameter')
         self.add_input('machine_rating', val=0.0, units='kW', desc='machine rating of generator')
         self.add_input('gear_ratio', val=0.0, desc='overall gearbox ratio')
-        self.add_input('hss_length', val=0.0, units='m', desc='length of high speed shaft and brake')
-        self.add_input('hss_cm', val=np.array([0.0,0.0,0.0]), units='m', desc='cm of high speed shaft and brake')
         self.add_input('rotor_rpm', val=0.0, units='rpm', desc='Speed of rotor at rated power')
         
         self.add_discrete_input('direct_drive', False)
 
         #returns
+        self.add_output('R_generator', val=0.0, units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('generator_mass', val=0.0, units='kg', desc='overall component mass')
-        self.add_output('generator_cm', val=np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -210,8 +208,6 @@ class GeneratorSimple(om.ExplicitComponent):
         rotor_diameter = inputs['rotor_diameter']
         machine_rating = inputs['machine_rating']
         gear_ratio = inputs['gear_ratio']
-        hss_length = inputs['hss_length']
-        hss_cm = inputs['hss_cm']
         rotor_rpm = inputs['rotor_rpm']
         direct = discrete_inputs['direct_drive']
         
@@ -230,13 +226,8 @@ class GeneratorSimple(om.ExplicitComponent):
         length = 1.8 * 0.015 * rotor_diameter
         depth = 0.015 * rotor_diameter
         width = 0.5 * depth
-  
-        cm = np.zeros(3)
-        cm[0]  = hss_cm[0] + hss_length/2. + length/2.
-        cm[1]  = hss_cm[1]
-        cm[2]  = hss_cm[2]
-        outputs['generator_cm'] = cm
-  
+        outputs['R_generator'] = 0.5*depth
+        
         I = np.zeros(3)
         I[0]   = 4.86e-5 * rotor_diameter**5.333 \
                 + (2./3. * mass) * (depth**2 + width**2) / 8.
@@ -361,7 +352,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         self.add_input('bedplate_mass', 0.0, units='kg', desc='Bedplate mass')
         self.add_input('bedplate_cm', np.zeros(3), units='m', desc='Bedplate center of mass')
         self.add_input('bedplate_I', np.zeros(3), units='kg*m**2', desc='Bedplate mass moment of inertia about base')
-        self.add_input('D_generator', 0.0, units='m', desc='Generatour outer diameter')
+        self.add_input('R_generator', 0.0, units='m', desc='Generatour outer diameter')
         self.add_input('overhang',0.0, units='m', desc='Overhang of rotor from tower along x-axis in yaw-aligned c.s.') 
         self.add_input('s_rotor', 0.0, units='m', desc='Generator rotor attachment to shaft s-coordinate')
         self.add_input('s_stator', 0.0, units='m', desc='Generator stator attachment to nose s-coordinate')
@@ -388,7 +379,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         L_bedplate  = float(inputs['L_bedplate'])
         H_bedplate  = float(inputs['H_bedplate'])
         D_bedplate  = float(inputs['D_bedplate_base'])
-        D_generator = float(inputs['D_generator'])
+        R_generator = float(inputs['R_generator'])
         m_bedplate  = float(inputs['bedplate_mass'])
         cm_bedplate = inputs['bedplate_cm']
         I_bedplate  = inputs['bedplate_I']
@@ -399,8 +390,8 @@ class MiscNacelleComponents(om.ExplicitComponent):
 
         # For the nacelle cover, imagine a box from the bedplate to the hub in length and around the generator in width, height, with 10% margin in each dim
         L_cover  = 1.1 * (overhang + 0.5*D_bedplate)
-        W_cover  = 1.1 * D_generator
-        H_cover  = 1.1 * (0.5*D_generator + np.maximum(0.5*D_generator,H_bedplate))
+        W_cover  = 1.1 * 2*R_generator
+        H_cover  = 1.1 * (R_generator + np.maximum(R_generator,H_bedplate))
         A_cover  = 2*(L_cover*W_cover + L_cover*H_cover + H_cover*W_cover)
         t_cover  = 0.05 # cm thick walls?
         m_cover  = A_cover * t_cover * rho_fiberglass
@@ -416,7 +407,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         # Regression based estimate on HVAC mass
         m_hvac       = 0.08 * rating
         cm_hvac      = 0.5*(s_rotor + s_stator)
-        I_hvac       = m_hvac * (0.75*0.5*D_generator)**2
+        I_hvac       = m_hvac * (0.75*R_generator)**2
         outputs['hvac_mass'] = m_hvac
         outputs['hvac_cm']   = cm_hvac
         outputs['hvac_I' ]   = I_hvac
@@ -457,11 +448,11 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('gearbox_I', np.zeros(3), units='kg*m**2', desc='component I')
 
         self.add_input('hss_mass', 0.0, units='kg', desc='component mass')
-        self.add_input('hss_cm', np.zeros(3), units='m', desc='component CM')
+        self.add_input('hss_cm', 0.0, units='m', desc='component CM')
         self.add_input('hss_I', np.zeros(3), units='kg*m**2', desc='component I')
 
         self.add_input('generator_mass', 0.0, units='kg', desc='component mass')
-        self.add_input('generator_cm', np.zeros(3), units='m', desc='component CM')
+        self.add_input('generator_cm', 0.0, units='m', desc='component CM')
         self.add_input('generator_I', np.zeros(3), units='kg*m**2', desc='component I')
 
         self.add_input('nose_mass', val=0.0, units='kg', desc='Nose mass')

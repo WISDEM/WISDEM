@@ -27,14 +27,23 @@ class DrivetrainSE(om.Group):
         ivc.add_output('gear_ratio', 1.0)
         ivc.add_output('L_bedplate', 0.0, units='m')
         ivc.add_output('H_bedplate', 0.0, units='m')
+        ivc.add_output('L_12', 0.0, units='m')
+        ivc.add_output('L_h1', 0.0, units='m')
+        ivc.add_output('L_2n', 0.0, units='m')
+        ivc.add_output('L_grs', 0.0, units='m')
+        ivc.add_output('L_gsn', 0.0, units='m')
+        ivc.add_output('access_diameter',0.0, units='m')
+
+        ivc.add_output('lss_diameter', np.zeros(5), units='m')
+        ivc.add_output('nose_diameter', np.zeros(5), units='m')
+        ivc.add_output('lss_wall_thickness', np.zeros(5), units='m')
+        ivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
+        ivc.add_output('bedplate_wall_thickness', np.zeros(n_points), units='m')
         #ivc.add_output('tilt', 0.0, units='deg')
         # ivc.add_output('shaft_ratio', 0.0)
         # ivc.add_output('shrink_disc_mass', 0.0, units='kg')
         # ivc.add_output('carrier_mass', 0.0, units='kg')
         # ivc.add_output('flange_length', 0.0, units='m')
-        # ivc.add_output('overhang', 0.0, units='m')
-        # ivc.add_output('distance_hub2mb', 0.0, units='m')
-        # ivc.add_output('gearbox_input_xcm', 0.0, units='m')
         # ivc.add_output('hss_input_length', 0.0, units='m')
         # ivc.add_discrete_output('planet_numbers', np.array([0, 0, 0]))
         # ivc.add_discrete_output('drivetrain_design', 'geared')
@@ -43,9 +52,8 @@ class DrivetrainSE(om.Group):
         ivc.add_discrete_output('mb2Type', 'SRB')
         #ivc.add_discrete_output('IEC_Class', 'B')
         #ivc.add_discrete_output('shaft_factor', 'normal')
-        ivc.add_discrete_output('uptower_electronics', True)
+        ivc.add_discrete_output('uptower', True)
         #ivc.add_discrete_output('crane', True)
-        #ivc.add_discrete_output('rna_weightM', True)
         ivc.add_discrete_output('upwind', True)
         ivc.add_discrete_output('direct_drive', True)
         self.add_subsystem('ivc', ivc, promotes=['*'])
@@ -57,6 +65,7 @@ class DrivetrainSE(om.Group):
             sivc.add_output('tilt', 0.0, units='deg')
             sivc.add_output('E', 0.0, units='Pa')
             sivc.add_output('G', 0.0, units='Pa')
+            sivc.add_output('v', 0.0)
             sivc.add_output('sigma_y', 0.0, units='Pa')
             sivc.add_output('Xy', 0.0, units='Pa')
             sivc.add_output('rho', 0.0, units='kg/m**3')
@@ -64,34 +73,34 @@ class DrivetrainSE(om.Group):
             sivc.add_output('gamma_m', 0.0)
             sivc.add_output('gamma_n', 0.0)
             sivc.add_output('D_top',     0.0, units='m')
-            #sivc.add_output('rotor_diameter',         0.0, units='m')
-            #sivc.add_output('rotor_rpm',              0.0, units='rpm')
-            #sivc.add_output('rotor_torque',           0.0, units='N*m')
+            sivc.add_output('rotor_diameter',         0.0, units='m')
+            sivc.add_output('rotor_rpm',              0.0, units='rpm')
+            sivc.add_output('rotor_torque',           0.0, units='N*m')
             #sivc.add_output('Fxyz',                   np.zeros(3), units='N')
             #sivc.add_output('Mxyz',                   np.zeros(3), units='N*m')
+            #sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
             #sivc.add_output('blade_mass',             0.0, units='kg')
             #sivc.add_output('blade_root_diameter',    0.0, units='m')
             #sivc.add_output('blade_length',           0.0, units='m')
-            #sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
             #sivc.add_output('gearbox_efficiency',     0.0)
             #sivc.add_output('generator_efficiency',   0.0)
             #sivc.add_output('tile',                   0.0, units='deg')
-            #sivc.add_output('machine_rating',         0.0, units='kW')
+            sivc.add_output('machine_rating',         0.0, units='kW')
             self.add_subsystem('sivc', sivc, promotes=['*'])
 
         # select components
         self.add_subsystem('hub', Hub_System(), promotes=['*'])
         self.add_subsystem('layout', Layout(n_points=n_points), promotes=['*'])
-        if self.options['model_generator']:
-            self.add_subsystem('generator', Generator(), promotes=['*'])
-        else:
-            self.add_subsystem('gensimp', dc.GeneratorSimple(), promotes=['*'])
         self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
         self.add_subsystem('bear1', dc.MainBearing())
         self.add_subsystem('bear2', dc.MainBearing())
         self.add_subsystem('gear', dc.Gearbox(), promotes=['*']) 
 
         self.add_subsystem('hss', dc.HighSpeedSide(), promotes=['*']) # TODO- Include in generatorSE?
+        if self.options['model_generator']:
+            self.add_subsystem('generator', Generator(topLevelFlag=False, design='pmsg_outer'), promotes=['generator_mass','generator_I','E','G','v','machine_rating'])
+        else:
+            self.add_subsystem('gensimp', dc.GeneratorSimple(), promotes=['*'])
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
@@ -107,11 +116,23 @@ class DrivetrainSE(om.Group):
         self.connect('D_bearing2','bear2.D_bearing')
         self.connect('mb1Type', 'bear1.bearing_type')
         self.connect('mb2Type', 'bear2.bearing_type')
+        self.connect('bear1.mb_mass','mb1_mass')
+        self.connect('bear1.mb_I','mb1_I')
+        self.connect('s_mb1','mb1_cm')
+        self.connect('bear2.mb_mass','mb2_mass')
+        self.connect('bear2.mb_I','mb2_I')
+        self.connect('s_mb2','mb2_cm')
         self.connect('D_bedplate','D_bedplate_base', src_indices=[0])
+        if self.options['model_generator']:
+            self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
+            self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
+            self.connect('generator.R_out','R_generator')
+            self.connect('rotor_torque','generator.T_rated')
+            self.connect('rotor_rpm','generator.n_nom')
         
 if __name__ == '__main__':
     prob = om.Problem()
-    prob.model = DrivetrainSE(topLevelFlag=True, n_points=10, n_dlcs=1, model_generator=False)
+    prob.model = DrivetrainSE(topLevelFlag=True, n_points=10, n_dlcs=1, model_generator=True)
     prob.setup()
 
     prob['upwind'] = True
@@ -138,8 +159,6 @@ if __name__ == '__main__':
     prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
     prob['D_top'] = 6.5
 
-    prob['m_other'] = 200e3
-
     prob['m_stator'] = 100e3
     prob['cm_stator'] = -0.3
     prob['I_stator'] = np.array([1e6, 5e5, 5e5])
@@ -153,53 +172,51 @@ if __name__ == '__main__':
     #prob['M_mb1'] = np.array([-1.83291e7, 6171.7324e3, 5785.82946e3]).reshape((3,1))
     #prob['M_mb2'] = np.array([-1.83291e7, 6171.7324e3, 5785.82946e3]).reshape((3,1))
 
-    prob['m_hub'] = 100e3
-    prob['cm_hub'] = 2.0
-    prob['I_hub'] = np.array([2409.750e3, -1716.429e3, 74.3529e3])
     prob['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
     prob['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))
 
     prob['E'] = 210e9
     prob['G'] = 80.8e9
+    prob['v'] = 0.3
     prob['rho'] = 7850.
     prob['sigma_y'] = 250e6
     prob['gamma_f'] = 1.35
     prob['gamma_m'] = 1.3
     prob['gamma_n'] = 1.0
     
-    prob['pitch_system.blade_mass']         = 17000.
-    prob['pitch_system.BRFM']               = 1.e+6
-    prob['pitch_system.scaling_factor']     = 0.54
-    prob['pitch_system.rho']                = 7850.
-    prob['pitch_system.Xy']                 = 371.e+6
+    prob['pitch_system.blade_mass']       = 17000.
+    prob['pitch_system.BRFM']             = 1.e+6
+    prob['pitch_system.scaling_factor']   = 0.54
+    prob['pitch_system.rho']              = 7850.
+    prob['pitch_system.Xy']               = 371.e+6
 
-    prob['hub_shell.blade_root_diameter']   = 4.
-    prob['hub_shell.flange_t2shell_t']      = 4.
-    prob['hub_shell.flange_OD2hub_D']       = 0.5
-    prob['hub_shell.flange_ID2flange_OD']   = 0.8
-    prob['hub_shell.rho']                   = 7200.
-    prob['hub_shell.in2out_circ']           = 1.2 
-    prob['hub_shell.max_torque']            = 30.e+6
-    prob['hub_shell.Xy']                    = 200.e+6
-    prob['hub_shell.stress_concentration']  = 2.5
-    prob['hub_shell.reserve_factor']        = 2.0
-    prob['hub_shell.metal_cost']            = 3.00
+    prob['hub_shell.blade_root_diameter'] = 4.
+    prob['flange_t2shell_t']              = 4.
+    prob['flange_OD2hub_D']               = 0.5
+    prob['flange_ID2flange_OD']           = 0.8
+    prob['hub_shell.rho']                 = 7200.
+    prob['in2out_circ']                   = 1.2 
+    prob['hub_shell.max_torque']          = 30.e+6
+    prob['hub_shell.Xy']                  = 200.e+6
+    prob['stress_concentration']          = 2.5
+    prob['hub_shell.gamma']               = 2.0
+    prob['hub_shell.metal_cost']          = 3.00
 
-    prob['spinner.n_front_brackets']        = 3
-    prob['spinner.n_rear_brackets']         = 3
-    prob['spinner.blade_root_diameter']     = 4.
-    prob['spinner.clearance_hub_spinner']   = 0.5
-    prob['spinner.spin_hole_incr']          = 1.2
-    prob['spinner.gust_ws']                 = 70
-    prob['spinner.load_scaling']            = 1.5
-    prob['spinner.composite_Xt']            = 60.e6
-    prob['spinner.composite_SF']            = 1.5
-    prob['spinner.composite_rho']           = 1600.
-    prob['spinner.Xy']                      = 225.e+6
-    prob['spinner.metal_SF']                = 1.5
-    prob['spinner.metal_rho']               = 7850.
-    prob['spinner.composite_cost']          = 7.00
-    prob['spinner.metal_cost']              = 3.00
+    prob['n_front_brackets']              = 3
+    prob['n_rear_brackets']               = 3
+    prob['spinner.blade_root_diameter']   = 4.
+    prob['clearance_hub_spinner']         = 0.5
+    prob['spin_hole_incr']                = 1.2
+    prob['spinner.gust_ws']               = 70
+    prob['spinner.gamma']                 = 1.5
+    prob['spinner.composite_Xt']          = 60.e6
+    prob['spinner.composite_SF']          = 1.5
+    prob['spinner.composite_rho']         = 1600.
+    prob['spinner.Xy']                    = 225.e+6
+    prob['spinner.metal_SF']              = 1.5
+    prob['spinner.metal_rho']             = 7850.
+    prob['spinner.composite_cost']        = 7.00
+    prob['spinner.metal_cost']            = 3.00
     
     prob.run_model()
     

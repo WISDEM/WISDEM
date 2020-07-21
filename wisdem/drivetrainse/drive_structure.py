@@ -43,6 +43,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
 
         self.add_input('s_mb1', val=0.0, units='m', desc='Bearing 1 s-coordinate along drivetrain, measured from bedplate')
         self.add_input('s_mb2', val=0.0, units='m', desc='Bearing 2 s-coordinate along drivetrain, measured from bedplate')
+        self.add_input('mb1_mass', 0.0, units='kg', desc='component mass')
+        self.add_input('mb1_I', np.zeros(3), units='kg*m**2', desc='component I')
+        self.add_input('mb2_mass', 0.0, units='kg', desc='component mass')
+        self.add_input('mb2_I', np.zeros(3), units='kg*m**2', desc='component I')
         
         self.add_input('s_stator', val=0.0, units='m', desc='Generator stator attachment to shaft s-coordinate measured from bedplate')
         self.add_input('m_stator', val=0.0, units='kg', desc='Generator stator mass')
@@ -54,7 +58,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_input('M_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 1 in hub c.s.')
         self.add_input('M_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 2 in hub c.s.')
 
-        self.add_input('m_other', val=0.0, units='kg', desc='Mass of other nacelle components that rest on mainplate')
+        self.add_input('other_mass', val=0.0, units='kg', desc='Mass of other nacelle components that rest on mainplate')
 
         self.add_input('E', val=0.0, units='N/m**2', desc='modulus of elasticity')
         self.add_input('G', val=0.0, units='N/m**2', desc='shear modulus')
@@ -98,6 +102,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         
         s_mb1      = float(inputs['s_mb1'])
         s_mb2      = float(inputs['s_mb2'])
+        m_mb1      = float(inputs['mb1_mass'])
+        m_mb2      = float(inputs['mb2_mass'])
+        I_mb1      = float(inputs['mb1_I'])
+        I_mb2      = float(inputs['mb2_I'])
         
         s_stator   = float(inputs['s_stator'])
         m_stator   = float(inputs['m_stator'])
@@ -117,7 +125,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         M_mb1      = inputs['M_mb1']
         M_mb2      = inputs['M_mb2']
 
-        m_other    = float(inputs['m_other'])
+        m_other    = float(inputs['other_mass'])
         
         # ------- node data ----------------
         n     = len(x_c) + len(x_nose)
@@ -168,9 +176,12 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         myframe = frame3dd.Frame(nodes, reactions, elements, options)
 
         # ------ add misc nacelle components at base and stator extra mass ------------
-        myframe.changeExtraNodeMass(np.r_[inode[0], istator], [m_other, m_stator],
-                                    [0.0, I_stator[0]], [0.0, I_stator[1]], [0.0, I_stator[2]], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0],
-                                    [0.0, cm_stator], [0.0, 0.0], [0.0, 0.0], True)
+        myframe.changeExtraNodeMass(np.r_[inode[0], istator, i1, i2], [m_other, m_stator, m_mb1, m_mb2],
+                                    [0.0, I_stator[0], I_mb1[0], I_mb2[0]],
+                                    [0.0, I_stator[1], I_mb1[1], I_mb2[1]],
+                                    [0.0, I_stator[2], I_mb1[2], I_mb2[2]],
+                                    np.zeros(4), np.zeros(4), np.zeros(4), 
+                                    [0.0, cm_stator, 0.0, 0.0], np.zeros(4), np.zeros(4), True)
         # ------------------------------------
 
         # ------- NO dynamic analysis ----------
@@ -281,9 +292,9 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         self.add_input('D_shaft', val=np.zeros(6), units='m', desc='Shaft discretized diameter values at coordinates')
         self.add_input('t_shaft', val=np.zeros(6), units='m', desc='Shaft discretized thickness values at coordinates')
 
-        self.add_input('m_hub', 0.0, units='m', desc='Hub system mass') 
-        self.add_input('cm_hub', 0.0, units='m', desc='Hub system center of mass distance from hub flange') 
-        self.add_input('I_hub', np.zeros(3), units='m', desc='Hub system moment of inertia') 
+        self.add_input('hub_system_mass', 0.0, units='kg', desc='Hub system mass') 
+        self.add_input('hub_system_cm', 0.0, units='m', desc='Hub system center of mass distance from hub flange') 
+        self.add_input('hub_system_I', np.zeros(3), units='kg*m**2', desc='Hub system moment of inertia') 
         self.add_input('F_hub', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to the hub (WITH WEIGHT???)')
         self.add_input('M_hub', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to the hub')
 
@@ -340,9 +351,9 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         gamma_m    = float(inputs['gamma_m'])
         gamma_n    = float(inputs['gamma_n'])
 
-        m_hub      = float(inputs['m_hub'])
-        cm_hub     = float(inputs['cm_hub'])
-        I_hub      = inputs['I_hub']
+        m_hub      = float(inputs['hub_system_mass'])
+        cm_hub     = float(inputs['hub_system_cm'])
+        I_hub      = inputs['hub_system_I']
         F_hub      = inputs['F_hub']
         M_hub      = inputs['M_hub']
 

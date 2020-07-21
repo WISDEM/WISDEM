@@ -30,7 +30,7 @@ class HubShell(om.ExplicitComponent):
         Yield strength metal for hub (200MPa is a good value for SN Cast Iron GJS-350 for thick sections)
     stress_concentration : float
         Stress concentration factor. Stress concentration occurs at all fillets, notches, lifting lugs, hatches and are accounted for by assigning a stress concentration factor
-    reserve_factor : float
+    gamma : float
         Design safety factor
     metal_cost : float
         Unit cost metal
@@ -65,7 +65,7 @@ class HubShell(om.ExplicitComponent):
         self.add_input('max_torque',                val = 0.0, units = 'N*m')
         self.add_input('Xy',                        val = 0.0, units = 'Pa')
         self.add_input('stress_concentration',      val = 0.0)
-        self.add_input('reserve_factor',            val = 0.0)
+        self.add_input('gamma',                     val = 0.0)
         self.add_input('metal_cost',                val = 0.0, units = 'USD/kg')
 
         # Outputs
@@ -88,7 +88,7 @@ class HubShell(om.ExplicitComponent):
         dsgn_hub_diam           = dsgn_hub_circ / np.pi
         dsgn_hub_rad            = dsgn_hub_diam * 0.5
         # Determine max stress
-        stress_allow_pa = inputs['Xy'] / (inputs['stress_concentration'] * inputs['reserve_factor']) 
+        stress_allow_pa = inputs['Xy'] / (inputs['stress_concentration'] * inputs['gamma']) 
         # Size shell thickness, assuming max torsional stress from torque can not exceed design allowable stress, and solving, torsional stress (t=Tr/J), and polar moment of inertia (J=PI/32(Do^4-Di^4), for thickness.
         sph_hub_shell_thick = (((dsgn_hub_diam**4. - 32. / np.pi*inputs['max_torque']*dsgn_hub_rad/stress_allow_pa)**(1./4.)) - dsgn_hub_diam) / (-2.)
         # Compute volume and mass of the shell  
@@ -144,7 +144,7 @@ class Spinner(om.ExplicitComponent):
         Ratio between access hole diameter in the spinner and blade root diameter. Typical value 1.2
     gust_ws : float
         Extreme gust wind speed
-    load_scaling : float
+    gamma : float
         Scaling factor of the thrust forces on spinner
     composite_Xt : float
         Tensile strength of the composite material of the shell. A glass CFM (continuous fiber mat) is often used.
@@ -191,7 +191,7 @@ class Spinner(om.ExplicitComponent):
         self.add_input('clearance_hub_spinner',     val = 0.0, units = 'm')
         self.add_input('spin_hole_incr',            val = 0.0)
         self.add_input('gust_ws',                   val = 0.0, units = 'm/s')
-        self.add_input('load_scaling',              val = 0.0)
+        self.add_input('gamma',              val = 0.0)
         self.add_input('composite_Xt',              val = 0.0, units = 'Pa')
         self.add_input('composite_SF',              val = 0.0)
         self.add_input('composite_rho',             val = 0.0, units = 'kg/m**3')
@@ -220,7 +220,7 @@ class Spinner(om.ExplicitComponent):
         # Compute the access hole diameter given blade root diameter
         spin_acc_hole_diam      = inputs['blade_root_diameter'] * inputs['spin_hole_incr']
         # Estimate thrust pressure on spinner given a wind speed and a multiplicative factor
-        extr_gust_dsgn_pressure = 0.5 * 1.225 * (inputs['gust_ws'] ** 2.)* inputs['load_scaling'] 
+        extr_gust_dsgn_pressure = 0.5 * 1.225 * (inputs['gust_ws'] ** 2.)* inputs['gamma'] 
         # Compute max allowable tensile strength of composite and max allowable yield strength metal given material properties and safety factors
         allow_tensile_strength  = inputs['composite_Xt'] / inputs['composite_SF']
         allow_yield_strength    = inputs['Xy'] / inputs['metal_SF']
@@ -438,9 +438,23 @@ class Hub_System(om.Group):
     def setup(self):
         # analysis_options = self.options['analysis_options']
         # opt_options     = self.options['opt_options']
-
-        self.add_subsystem('hub_shell',      HubShell(),    promotes=['n_blades', 'hub_mass', 'hub_diameter', 'hub_cost', 'hub_cm', 'hub_I'])
-        self.add_subsystem('spinner',        Spinner(),     promotes=['n_blades', 'hub_diameter', 'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I'])
+        ivc = om.IndepVarComp()
+        ivc.add_output('flange_t2shell_t',          val = 0.0)
+        ivc.add_output('flange_OD2hub_D',           val = 0.0)
+        ivc.add_output('flange_ID2flange_OD',       val = 0.0)
+        ivc.add_output('in2out_circ',               val = 0.0)
+        ivc.add_output('stress_concentration',      val = 0.0)
+        ivc.add_discrete_output('n_front_brackets', val = 0)
+        ivc.add_discrete_output('n_rear_brackets',  val = 0)
+        ivc.add_output('clearance_hub_spinner',     val = 0.0, units = 'm')
+        ivc.add_output('spin_hole_incr',            val = 0.0)
+        
+        self.add_subsystem('ivc', ivc, promotes=['*'])
+        self.add_subsystem('hub_shell',      HubShell(),    promotes=['n_blades', 'hub_mass', 'hub_diameter', 'hub_cost', 'hub_cm', 'hub_I',
+                                                                      'flange_t2shell_t','flange_OD2hub_D','flange_ID2flange_OD','in2out_circ',
+                                                                      'stress_concentration'])
+        self.add_subsystem('spinner',        Spinner(),     promotes=['n_blades', 'hub_diameter', 'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I',
+                                                                      'n_front_brackets','n_rear_brackets','clearance_hub_spinner','spin_hole_incr'])
         self.add_subsystem('pitch_system',   PitchSystem(), promotes=['n_blades', 'hub_diameter', 'pitch_mass', 'pitch_cost', 'pitch_I'])
         self.add_subsystem('adder',          Hub_Adder(), promotes=['hub_mass', 'hub_cost', 'hub_cm', 'hub_I',
                                                                     'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I',
@@ -469,7 +483,7 @@ if __name__ == "__main__":
     hub_prob['hub_shell.max_torque']            = 199200777.51 # Value assumed during model development
     hub_prob['hub_shell.Xy']                    = 200.e+6
     hub_prob['hub_shell.stress_concentration']  = 2.5
-    hub_prob['hub_shell.reserve_factor']        = 2.0
+    hub_prob['hub_shell.gamma']                 = 2.0
     hub_prob['hub_shell.metal_cost']            = 3.00
 
     hub_prob['spinner.n_front_brackets']        = 3
@@ -479,7 +493,7 @@ if __name__ == "__main__":
     hub_prob['spinner.clearance_hub_spinner']   = 0.5
     hub_prob['spinner.spin_hole_incr']          = 1.2
     hub_prob['spinner.gust_ws']                 = 70
-    hub_prob['spinner.load_scaling']            = 1.5
+    hub_prob['spinner.gamma']                   = 1.5
     hub_prob['spinner.composite_Xt']            = 60.e6
     hub_prob['spinner.composite_SF']            = 1.5
     hub_prob['spinner.composite_rho']           = 1600.

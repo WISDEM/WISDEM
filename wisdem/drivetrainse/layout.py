@@ -91,8 +91,9 @@ class Layout(om.ExplicitComponent):
 
         self.add_output('s_mb1', val=0.0, units='m', desc='Bearing 1 s-coordinate along drivetrain, measured from bedplate')
         self.add_output('s_mb2', val=0.0, units='m', desc='Bearing 2 s-coordinate along drivetrain, measured from bedplate')
-        self.add_output('s_stator', val=0.0, units='m', desc='Generator stator attachment to nose x-coordinate')
-        self.add_output('s_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft x-coordinate')
+        self.add_output('s_stator', val=0.0, units='m', desc='Generator stator attachment to nose s-coordinate')
+        self.add_output('s_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft s-coordinate')
+        self.add_output('generator_cm', val=0.0, units='m', desc='Overall generator cm')
         
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -217,6 +218,7 @@ class Layout(om.ExplicitComponent):
         #outputs['s_drive']   = np.sort(s_drive)
         outputs['s_rotor']  = s_rotor
         outputs['s_stator'] = s_stator
+        outputs['generator_cm'] = 0.5*(s_rotor + s_stator)
         outputs['s_mb1']    = s_mb1
         outputs['s_mb2']    = s_mb2
         # ------------------------------------

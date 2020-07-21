@@ -82,6 +82,24 @@ class Constraints(om.ExplicitComponent):
 
 #----------------------------------------------------------------------------------------------
         
+class MofI(om.ExplicitComponent):
+    def setup(self):
+        self.add_input('R_out', val=0.0, units ='m', desc='Outer radius')
+        self.add_input('generator_mass', val=0.0, units='kg', desc='Actual mass')
+        self.add_input('len_s', val=0.0, units='m', desc='Stator core length')
+        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        
+    def compute(self, inputs, outputs):
+        R_out = inputs['R_out']
+        Mass  = inputs['generator_mass']
+        len_s = inputs['len_s']
+
+        I = np.zeros(3)
+        I[0] = 0.50*Mass*R_out**2
+        I[1] = I[2] = 0.5*I[0] + Mass*len_s**2 / 12.
+        outputs['generator_I'] = I
+#----------------------------------------------------------------------------------------------
+        
 class Cost(om.ExplicitComponent):
     """ Provides a material cost estimate for a PMSG _arms generator. Manufacturing costs are excluded"""
     def setup(self):
@@ -118,11 +136,7 @@ class Cost(om.ExplicitComponent):
         Cost_str         = C_Fes*Structural_mass
         outputs['Costs'] = K_gen + Cost_str
         
-
-
 #----------------------------------------------------------------------------------------------
-
-
 class Generator(om.Group):
 
     def initialize(self):
@@ -135,32 +149,90 @@ class Generator(om.Group):
         genType      = self.options['design']
         
         ivc = om.IndepVarComp()
-        ivc.add_output('shaft_cm', val=np.zeros(3), units='m')
-        ivc.add_output('shaft_length', val=0.0, units='m')
-        
-        ivc.add_output('Gearbox_efficiency', val=0.0)
-        ivc.add_output('r_s',   val=0.0, units='m')
-        ivc.add_output('len_s', val=0.0, units='m')
-        ivc.add_output('h_s',   val=0.0, units='m')
-        ivc.add_output('h_r',   val=0.0, units='m')
-        ivc.add_output('h_m',   val=0.0, units='m')
-        ivc.add_output('S_Nmax', val=0.0, units='T')
-        ivc.add_output('I_0',   val=0.0, units='A')
-        ivc.add_output('sigma', 0.0,units='N/m**2',desc='shear stress')
-        ivc.add_output('p', 0.0, desc='Pole pairs')
+        sivc = om.IndepVarComp()
 
+        ivc.add_output('B_r', val=1.2, units='T')
+        ivc.add_output('P_Fe0e', val=1.0, units='W/kg')
+        ivc.add_output('P_Fe0h', val=4.0, units='W/kg')
+        ivc.add_output('S_N', val=-0.002 ,desc='Slip')
+        ivc.add_output('alpha_p', val=0.5*np.pi*0.7)
+        ivc.add_output('b_r_tau_r', val=0.45)
+        ivc.add_output('b_ro', val=0.004, units='m')
+        ivc.add_output('b_s_tau_s', val=0.45)
+        ivc.add_output('b_so', val=0.004, units='m')
+        ivc.add_output('cofi', val=0.85)
+        ivc.add_output('freq', val=60, units='Hz')
+        ivc.add_output('h_i', val=0.001, units='m')
+        ivc.add_output('h_sy0', val=0.0)
+        ivc.add_output('h_w', val=0.005, units='m')
+        ivc.add_output('k_fes', val=0.9)
+        ivc.add_output('k_fillr', val=0.7)
+        ivc.add_output('k_fills', val=0.65)
+        ivc.add_output('k_s', val=0.2)
+        ivc.add_discrete_output('m', val=3)
+        ivc.add_output('mu_0', val=np.pi*4e-7, units='m*kg/s**2/A**2')
+        ivc.add_output('mu_r', val=1.06, units='m*kg/s**2/A**2')
+        ivc.add_output('p', val=3.0)
+        ivc.add_output('phi', val=np.deg2rad(90), units='rad')
+        ivc.add_discrete_output('q1', val=6)
+        ivc.add_discrete_output('q2', val=4)
+        ivc.add_output('ratio_mw2pp', val=0.7)
+        ivc.add_output('resist_Cu', val=1.8e-8*1.4, units='ohm/m')
+        ivc.add_output('sigma', val=40e3, units='Pa')
+        ivc.add_output('y_tau_p', val=1.0)
+        ivc.add_output('y_tau_pr', val=10. / 12)
+
+        ivc.add_output('Gearbox_efficiency', val=0.0)
+        ivc.add_output('I_0', val=0.0, units='A')
+        ivc.add_output('d_r', val=0.0, units='m')
+        ivc.add_output('h_m', val=0.0, units='m')
+        ivc.add_output('h_0', val=0.0, units ='m')
+        ivc.add_output('h_s', val=0.0, units='m')
+        ivc.add_output('len_s', val=0.0, units='m')
+        ivc.add_output('n_r', val=0.0)
+        ivc.add_output('rad_ag', val=0.0, units='m')
+        ivc.add_output('t_wr', val=0.0, units='m')
+        
+        ivc.add_output('n_s', val=0.0)
+        ivc.add_output('b_st', val=0.0, units='m')
+        ivc.add_output('d_s', val=0.0, units='m')
+        ivc.add_output('t_ws', val=0.0, units='m')
+        
+        ivc.add_output('rho_Copper', val=0.0, units='kg*m**-3')
+        ivc.add_output('rho_Fe', val=0.0, units='kg*m**-3')
+        ivc.add_output('rho_Fes', val=0.0, units='kg*m**-3')
+        ivc.add_output('rho_PM', val=0.0, units='kg*m**-3')
+
+        ivc.add_output('C_Cu',  val=0.0, units='USD/kg')
+        ivc.add_output('C_Fe',  val=0.0, units='USD/kg')
+        ivc.add_output('C_Fes', val=0.0, units='USD/kg')
+        ivc.add_output('C_PM',  val=0.0, units='USD/kg')
+        
         if genType.lower() in ['pmsg_outer']:
-            ivc.add_output('r_g', 0.0,units='m',desc='Air gap radius')
-            ivc.add_output('h_ys',  val=0.0, units='m')
-            ivc.add_output('h_yr',  val=0.0, units='m')
-            ivc.add_output('B_tmax',0.0, units='T', desc='Teeth flux density')
-            ivc.add_output('t_r', 0.0,units='m',desc='Rotor disc thickness')
-            ivc.add_output('t_s', 0.0,units='m',desc='Stator disc thickness' )
-            ivc.add_output('h_ss',0.0,units='m',desc='Stator rim thickness')
-            ivc.add_output('h_sr', 0.0,units='m',desc='Rotor rim thickness')    
-            ivc.add_output('u_allow_pcent', 0.0,desc='% radial deflection')
-            ivc.add_output('y_allow_pcent', 0.0,desc='% axial deflection')
-            ivc.add_output('z_allow_deg',0.0,units='deg',desc='Allowable torsional twist')
+            ivc.add_output('r_g',0.0, units ='m')
+            ivc.add_output('N_c',0.0)
+            ivc.add_output('b',0.0)
+            ivc.add_output('c',0.0)
+            ivc.add_output('E_p',0.0, units ='V')
+            ivc.add_output('h_yr', val=0.0, units ='m')
+            ivc.add_output('h_ys', val=0.0, units ='m')
+            ivc.add_output('h_sr',0.0,units='m',desc='Structural Mass')
+            ivc.add_output('h_ss',0.0, units ='m')
+            ivc.add_output('t_r',0.0, units ='m')
+            ivc.add_output('t_s',0.0, units ='m')
+
+            # Only if topLevelFlag
+            sivc.add_output('P_mech', 0.0, units='W')
+            sivc.add_output('y_sh', units ='m')
+            sivc.add_output('theta_sh', 0.0, units='rad')
+            sivc.add_output('D_nose',0.0, units ='m')
+            sivc.add_output('y_bd', units ='m')
+            sivc.add_output('theta_bd', 0.0, units='rad')
+            
+            ivc.add_output('u_allow_pcent',0.0)
+            ivc.add_output('y_allow_pcent',0.0)
+            ivc.add_output('z_allow_deg',0.0,units='deg')
+            ivc.add_output('B_tmax',0.0, units='T')
             
         if genType.lower() in ['eesg','pmsg_arms','pmsg_disc']:
             ivc.add_output('tau_p', val=0.0, units='m')
@@ -169,36 +241,17 @@ class Generator(om.Group):
             ivc.add_output('b_arm',   val=0.0, units='m')
         elif genType.lower() in ['scig','dfig']:
             ivc.add_output('B_symax', val=0.0, units='T')
-            
-        ivc.add_output('I_f',  val=0.0, units='A')
-        ivc.add_output('N_f',  val=0.0, units='A')
-        ivc.add_output('n_s',  val=0.0)
-        ivc.add_output('b_st', val=0.0, units='m')
-        ivc.add_output('n_r',  val=0.0)
-        ivc.add_output('d_r',  val=0.0, units='m')
-        ivc.add_output('d_s',  val=0.0, units='m')
-        ivc.add_output('t_d',  val=0.0, units='m')
-        ivc.add_output('t_wr', val=0.0, units='m')
-        ivc.add_output('t_ws', val=0.0, units='m')
-        ivc.add_output('R_o',  val=0.0, units='m')
-        
-        ivc.add_output('rho_Fes',    val=0.0, units='kg/m**3')
-        ivc.add_output('rho_Fe',     val=0.0, units='kg/m**3')
-        ivc.add_output('rho_Copper', val=0.0, units='kg/m**3')
-        ivc.add_output('rho_PM',     val=0.0, units='kg/m**3')
-        
-        ivc.add_output('C_Cu',  val=0.0, units='USD/kg')
-        ivc.add_output('C_Fe',  val=0.0, units='USD/kg')
-        ivc.add_output('C_Fes', val=0.0, units='USD/kg')
-        ivc.add_output('C_PM',  val=0.0, units='USD/kg')
         
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
         if topLevelFlag:
-            sivc = om.IndepVarComp()
             sivc.add_output('machine_rating', 0.0, units='W')
             sivc.add_output('n_nom', 0.0, units='rpm')
             sivc.add_output('T_rated', 0.0, units='N*m')
+            sivc.add_output('D_shaft', val=0.0, units='m')
+            sivc.add_output('v', val=0.3)
+            sivc.add_output('E', val=2e11, units='Pa')
+            sivc.add_output('G', val=79.3e9, units='Pa')
             self.add_subsystem('sivc', sivc, promotes=['*'])
         
         # Add generator design component and cost
@@ -221,6 +274,7 @@ class Generator(om.Group):
             mygen = gm.PMSG_Outer
             
         self.add_subsystem('generator', mygen(), promotes=['*'])
+        self.add_subsystem('mofi', MofI(), promotes=['*'])
         self.add_subsystem('gen_cost', Cost(), promotes=['*'])
         self.add_subsystem('constr', Constraints(), promotes=['*'])
             
@@ -461,7 +515,7 @@ def optimization_example(genType, exportFlag=False):
         prob['d_s']     = 0.400
         prob['t_wr']    = 0.140
         prob['t_ws']    = 0.070
-        prob['R_o']     = 0.43      #10MW: 0.523950817,#5MW: 0.43, #3MW:0.363882632 #1.5MW: 0.2775  0.75MW: 0.17625
+        prob['D_shaft'] = 2*0.43      #10MW: 0.523950817,#5MW: 0.43, #3MW:0.363882632 #1.5MW: 0.2775  0.75MW: 0.17625
         prob['q1']      = 2
 
     elif genType == 'pmsg_arms':
@@ -481,7 +535,7 @@ def optimization_example(genType, exportFlag=False):
         prob['d_s']     = 0.350
         prob['t_wr']    = 0.06
         prob['t_ws']    = 0.06
-        prob['R_o']     = 0.43           #0.523950817  #0.43  #0.523950817 #0.17625 #0.2775 #0.363882632 ##0.35 #0.523950817 #0.43 #523950817 #0.43 #0.523950817 #0.523950817 #0.17625 #0.2775 #0.363882632 #0.43 #0.523950817 #0.43
+        prob['D_shaft'] = 2*0.43           #0.523950817  #0.43  #0.523950817 #0.17625 #0.2775 #0.363882632 ##0.35 #0.523950817 #0.43 #523950817 #0.43 #0.523950817 #0.523950817 #0.17625 #0.2775 #0.363882632 #0.43 #0.523950817 #0.43
         prob['q1']      = 1
 
     elif genType == 'pmsg_disc':
@@ -498,7 +552,7 @@ def optimization_example(genType, exportFlag=False):
         prob['t_d']     = 0.105 #0.10 
         prob['d_s']     = 0.350 #0.35031 #
         prob['t_ws']    = 0.150 #=0.14720 #
-        prob['R_o']     = 0.43 #0.43
+        prob['D_shaft'] = 2*0.43 #0.43
         prob['q1']      = 1
 
     elif genType == 'pmsg_outer':
@@ -517,8 +571,8 @@ def optimization_example(genType, exportFlag=False):
         prob['c']              = 5.0
         prob['B_tmax']         = 1.9
         prob['E_p']            = 3300/np.sqrt(3)
-        prob['R_no']           = 1.1             # Nose outer radius
-        prob['R_sh']           = 1.34            # Shaft outer radius =(2+0.25*2+0.3*2)*0.5
+        prob['D_nose']         = 2*1.1             # Nose outer radius
+        prob['D_shaft']        = 2*1.34            # Shaft outer radius =(2+0.25*2+0.3*2)*0.5
         prob['t_r']            = 0.05          # Rotor disc thickness
         prob['h_sr']           = 0.04          # Rotor cylinder thickness
         prob['t_s']            = 0.053         # Stator disc thickness
@@ -561,9 +615,6 @@ def optimization_example(genType, exportFlag=False):
     prob['rho_Copper']   = 8900.0        # copper density Kg/m3
     prob['rho_PM']       = 7450.0        # typical density Kg/m3 of neodymium magnets (added 2019 09 18) - for pmsg_[disc|arms]
             
-    prob['shaft_cm']     = np.zeros(3)
-    prob['shaft_length'] = 2.0
-    
     #Run optimization
     prob.model.approx_totals()
     prob.run_model()
@@ -575,7 +626,7 @@ if __name__=='__main__':
     
     # Run example optimizations for all generator types
     #for m in ['eesg',]:
-    #for m in ['pmsg_disc']:
-    for m in ['scig','dfig','eesg','pmsg_arms','pmsg_disc','pmsg_outer']:
+    for m in ['pmsg_outer']:
+    #for m in ['scig','dfig','eesg','pmsg_arms','pmsg_disc','pmsg_outer']:
         print('Running, '+m)
         optimization_example(m, exportFlag=True)
