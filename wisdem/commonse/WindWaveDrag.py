@@ -231,7 +231,19 @@ class CylinderWindDrag(om.ExplicitComponent):
         self.add_output('windLoads_d', np.zeros(nPoints), units='m')
         self.add_output('windLoads_beta', 0.0, units='deg')
 
-        self.declare_partials('*', '*')
+        arange = np.arange(nPoints)
+        self.declare_partials('windLoads_Px', 'U', rows=arange, cols=arange)
+        self.declare_partials('windLoads_Px', 'd', rows=arange, cols=arange)
+
+        self.declare_partials('windLoads_Py', 'U', rows=arange, cols=arange)
+        self.declare_partials('windLoads_Py', 'd', rows=arange, cols=arange)
+        self.declare_partials(['windLoads_Px', 'windLoads_Py'], 'cd_usr', method='fd')
+
+        self.declare_partials('windLoads_qdyn', 'U', rows=arange, cols=arange)
+        self.declare_partials('windLoads_qdyn', 'rho_air', method='fd')        
+
+        self.declare_partials('windLoads_z', 'z', rows=arange, cols=arange, val=1.0)
+        self.declare_partials('windLoads_beta', 'beta_wind', val=1.0)
 
     def compute(self, inputs, outputs):
 
@@ -299,31 +311,14 @@ class CylinderWindDrag(om.ExplicitComponent):
         dPx_dd = const*cosd(beta)
         dPy_dd = const*sind(beta)
 
-        n = len(inputs['z'])
+        J['windLoads_Px', 'U'] = dPx_dU
+        J['windLoads_Px', 'd'] = dPx_dd
 
-        zeron = np.zeros((n, n))
-        
-        J['windLoads_Px', 'U'] = np.diag(dPx_dU)
-        J['windLoads_Px', 'z'] = zeron
-        J['windLoads_Px', 'd'] = np.diag(dPx_dd)
+        J['windLoads_Py', 'U'] = dPy_dU
+        J['windLoads_Py', 'd'] = dPy_dd
 
-        J['windLoads_Py', 'U'] = np.diag(dPy_dU)
-        J['windLoads_Py', 'z'] = zeron
-        J['windLoads_Py', 'd'] = np.diag(dPy_dd)
+        J['windLoads_qdyn', 'U'] = dq_dU
 
-        J['windLoads_Pz', 'U'] = zeron
-        J['windLoads_Pz', 'z'] = zeron
-        J['windLoads_Pz', 'd'] = zeron
-
-        J['windLoads_qdyn', 'U'] = np.diag(dq_dU)
-        J['windLoads_qdyn', 'z'] = zeron
-        J['windLoads_qdyn', 'd'] = zeron
-
-        J['windLoads_z', 'U'] = zeron
-        J['windLoads_z', 'z'] = np.eye(n)
-        J['windLoads_z', 'd'] = zeron
-
-        
 
 # -----------------
 
@@ -402,8 +397,21 @@ class CylinderWaveDrag(om.ExplicitComponent):
         self.add_output('waveLoads_d', np.zeros(nPoints), units='m')
         self.add_output('waveLoads_beta', 0.0, units='deg')
 
-        self.declare_partials('*', '*')
-
+        self.declare_partials('*', 'rho_water', method='fd')
+        
+        arange = np.arange(nPoints)
+        self.declare_partials(['waveLoads_Px', 'waveLoads_Py'], ['U', 'd', 'cm', 'cd_usr', 'beta_wave'], method='fd')
+        self.declare_partials('waveLoads_Px', 'A', rows=arange, cols=arange)
+        
+        self.declare_partials('waveLoads_Py', 'A', rows=arange, cols=arange)
+        
+        self.declare_partials('waveLoads_qdyn', 'U', rows=arange, cols=arange)
+        self.declare_partials('waveLoads_pt', 'U', rows=arange, cols=arange)
+        self.declare_partials('waveLoads_pt', 'p', rows=arange, cols=arange, val=1.0)
+        self.declare_partials('waveLoads_z', 'z', rows=arange, cols=arange, val=1.0)
+        self.declare_partials('waveLoads_d', 'd', rows=arange, cols=arange, val=1.0)
+        self.declare_partials('waveLoads_beta', 'beta_wave', val=1.0)
+        
     def compute(self, inputs, outputs):
 
         #wlevel = inputs['wlevel']
@@ -518,46 +526,10 @@ class CylinderWaveDrag(om.ExplicitComponent):
         dPx_dA = const*cosd(beta)
         dPy_dA = const*sind(beta)
 
-        n = len(inputs['z'])
-
-        zeron = np.zeros((n, n))
-        
-        J['waveLoads.Px', 'U'] = np.diag(dPx_dU)
-        J['waveLoads.Px', 'A'] = np.diag(dPx_dA)
-        J['waveLoads.Px', 'z'] = zeron
-        J['waveLoads.Px', 'd'] = np.diag(dPx_dd)
-        J['waveLoads.Px', 'p'] = zeron
-
-        J['waveLoads.Py', 'U'] = np.diag(dPy_dU)
-        J['waveLoads.Py', 'A'] = np.diag(dPy_dA)
-        J['waveLoads.Py', 'z'] = zeron
-        J['waveLoads.Py', 'd'] = np.diag(dPy_dd)
-        J['waveLoads.Py', 'p'] = zeron
-
-        J['waveLoads.Pz', 'U'] = zeron
-        J['waveLoads.Pz', 'A'] = zeron
-        J['waveLoads.Pz', 'z'] = zeron
-        J['waveLoads.Pz', 'd'] = zeron
-        J['waveLoads.Pz', 'p'] = zeron
-
-        J['waveLoads.qdyn', 'U'] = np.diag(dq_dU)
-        J['waveLoads.qdyn', 'A'] = zeron
-        J['waveLoads.qdyn', 'z'] = zeron
-        J['waveLoads.qdyn', 'd'] = zeron
-        J['waveLoads.qdyn', 'p'] = zeron
-
-        J['waveLoads.pt', 'U'] = np.diag(dq_dU)
-        J['waveLoads.pt', 'A'] = zeron
-        J['waveLoads.pt', 'z'] = zeron
-        J['waveLoads.pt', 'd'] = zeron
-        J['waveLoads.pt', 'p'] = 1.0
-
-        J['waveLoads.z', 'U'] = zeron
-        J['waveLoads.z', 'A'] = zeron
-        J['waveLoads.z', 'z'] = np.eye(n)
-        J['waveLoads.z', 'd'] = zeron
-        J['waveLoads.z', 'p'] = zeron
-
+        J['waveLoads_Px', 'A'] = dPx_dA
+        J['waveLoads_Py', 'A'] = dPy_dA
+        J['waveLoads_qdyn', 'U'] = dq_dU
+        J['waveLoads_pt', 'U'] = dq_dU
         
 
 #___________________________________________#
