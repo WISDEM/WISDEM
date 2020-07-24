@@ -7,8 +7,7 @@ except:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
 import numpy as np
-import os
-import sys
+import os, sys, time
 import matplotlib.pyplot as plt
 import openmdao.api as om
 from wisdem.glue_code.gc_LoadInputs   import WindTurbineOntologyPython
@@ -97,7 +96,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
-    if MPI and opt_options['opt_flag']:
+    if MPI:
         # Determine the number of design variables
         n_DV = 0
         if blade_opt_options['aero_shape']['twist']['flag']:
@@ -179,6 +178,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
                     n_OF_runs += n_U*n_Seeds
 
+            n_DV = max([n_DV, 1])
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
 
@@ -189,12 +189,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             n_OF_runs_parallel = 1
         
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
+        n_FD = max([n_FD, 1])
         comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
         rank    = MPI.COMM_WORLD.Get_rank()
         color_i = color_map[rank]
         comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
-    elif MPI and not opt_options['opt_flag']:
-        exit('No design variables are defined in the optimization problem, but MPI is called. Please check the optimization setup or deactivate MPI.')
     else:
         color_i = 0
         rank = 0
@@ -333,10 +332,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             if spar_cap_ps_options['flag'] and not spar_cap_ps_options['equal_to_suction']:
                 indices  = range(1, spar_cap_ps_options['n_opt'] - 1)
                 wt_opt.model.add_design_var('blade.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=spar_cap_ps_options['min_gain'], upper=spar_cap_ps_options['max_gain'])
-                
-            if opt_options['optimization_variables']['control']['tsr']['flag']:
-                wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=opt_options['optimization_variables']['control']['tsr']['min_gain'], upper=opt_options['optimization_variables']['control']['tsr']['max_gain'])
-                
+                                
             if 'dac' in blade_opt_options:
                 if blade_opt_options['dac']['te_flap_end']['flag']:
                     wt_opt.model.add_design_var('blade.opt_var.te_flap_end', lower=blade_opt_options['dac']['te_flap_end']['min_end'], upper=blade_opt_options['dac']['te_flap_end']['max_end'])
@@ -601,6 +597,9 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if (not MPI) or (MPI and rank == 0):
             # Save data coming from openmdao to an output yaml file
             wt_initial.write_ontology(wt_opt, fname_wt_output)
+            
+            # Save data to numpy and matlab arrays
+            fileIO.save_data(fname_wt_output, wt_opt)
 
     if MPI and analysis_options['Analysis_Flags']['OpenFAST']:
         # subprocessor ranks spin, waiting for FAST simulations to run
@@ -614,11 +613,11 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
-    if rank == 0:
-        # Save data to numpy and matlab arrays
-        fileIO.save_data(fname_wt_output, wt_opt)
         
-    return wt_opt, analysis_options, opt_options
+    if rank == 0:
+        return wt_opt, analysis_options, opt_options
+    else:
+        return [], [], []
 
 
 
@@ -685,4 +684,16 @@ if __name__ == "__main__":
     fname_wt_output        = run_dir + "output.yaml"
     folder_output          = run_dir + '/'
 
+
+    tt = time.time()
     wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
+    
+    if MPI:
+        rank = MPI.COMM_WORLD.Get_rank()
+    else:
+        rank = 0
+    if rank == 0:
+        print('Run time: %f'%(time.time()-tt))
+        sys.stdout.flush()
+
+    

@@ -39,13 +39,13 @@ class WT_RNTA(Group):
     
         if analysis_options['Analysis_Flags']['OpenFAST'] == True:
             self.add_subsystem('modes_elastodyn',   ModesElastoDyn(analysis_options = analysis_options))
-            self.add_subsystem('freq_rotor',        RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
+            self.add_subsystem('freq_rotor',        RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options, freq_run=True))
             #if analysis_options['tower']['run_towerse']:
             self.add_subsystem('freq_tower',        TowerSE(analysis_options=analysis_options, topLevelFlag=False))
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(analysis_options = analysis_options)) # Aero analysis
             self.add_subsystem('aeroelastic',       FASTLoadCases(analysis_options = analysis_options))
 
-        self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options))
+        self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options, freq_run=False))
         self.add_subsystem('drivese',   DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
@@ -88,7 +88,9 @@ class WT_RNTA(Group):
         # Connections from blade aero parametrization to other modules
         self.connect('blade.pa.twist_param',           ['elastic.theta','rlds.theta'])
         #self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
-        self.connect('blade.pa.chord_param',           ['xf.chord', 'elastic.chord', 'rlds.chord'])
+        self.connect('blade.pa.chord_param',           ['xf.chord', 'elastic.chord'])
+        if not analysis_options['Analysis_Flags']['OpenFAST']:
+            self.connect('blade.pa.chord_param',           ['rlds.chord'])
         if analysis_options['servose']['run_servose']:
             self.connect('blade.pa.twist_param',           'sse.theta')
             self.connect('blade.pa.chord_param',           'sse.chord')
@@ -140,9 +142,10 @@ class WT_RNTA(Group):
         # self.connect('sse.powercurve.rated_V',        'rlds.aero_rated.V_load')
         if analysis_options['servose']['run_servose']:
             self.connect('sse.powercurve.rated_V',        'sse.gust.V_hub')
-            self.connect('sse.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
-            self.connect('sse.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.aeroloads_Omega', 'rlds.constr.rated_Omega'])
-            self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.aeroloads_pitch'])
+            if not analysis_options['Analysis_Flags']['OpenFAST']:
+                self.connect('sse.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
+                self.connect('sse.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.tot_loads_gust.aeroloads_Omega', 'rlds.constr.rated_Omega'])
+                self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.tot_loads_gust.aeroloads_pitch'])
         
         # Connections to run xfoil for te flaps
         self.connect('blade.outer_shape_bem.s',               'xf.s')
@@ -216,8 +219,8 @@ class WT_RNTA(Group):
         if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['servose']['run_servose']:
             self.connect('sse.powercurve.rated_V',         ['sse_tune.tune_rosco.v_rated'])
             self.connect('sse.gust.V_gust',                ['freq_rotor.aero_gust.V_load', 'freq_rotor.aero_hub_loads.V_load'])
-            self.connect('sse.powercurve.rated_Omega',     ['freq_rotor.Omega_load', 'freq_rotor.aeroloads_Omega', 'freq_rotor.constr.rated_Omega', 'sse_tune.tune_rosco.rated_rotor_speed'])
-            self.connect('sse.powercurve.rated_pitch',     ['freq_rotor.pitch_load', 'freq_rotor.aeroloads_pitch'])
+            self.connect('sse.powercurve.rated_Omega',     ['freq_rotor.Omega_load', 'freq_rotor.tot_loads_gust.aeroloads_Omega', 'freq_rotor.constr.rated_Omega', 'sse_tune.tune_rosco.rated_rotor_speed'])
+            self.connect('sse.powercurve.rated_pitch',     ['freq_rotor.pitch_load', 'freq_rotor.tot_loads_gust.aeroloads_pitch'])
             self.connect('sse.powercurve.rated_Q',          'sse_tune.tune_rosco.rated_torque')
 
             self.connect('blade.ps.s_opt_spar_cap_ss',      'freq_rotor.constr.s_opt_spar_cap_ss')
@@ -352,6 +355,30 @@ class WT_RNTA(Group):
             pass
 
         # Connections to rotor load analysis
+        if analysis_options['Analysis_Flags']['OpenFAST']:
+            self.connect('aeroelastic.loads_Px',      'rlds.tot_loads_gust.aeroloads_Px')
+            self.connect('aeroelastic.loads_Py',      'rlds.tot_loads_gust.aeroloads_Py')
+            self.connect('aeroelastic.loads_Pz',      'rlds.tot_loads_gust.aeroloads_Pz')
+            self.connect('aeroelastic.loads_Omega',   'rlds.tot_loads_gust.aeroloads_Omega')
+            self.connect('aeroelastic.loads_pitch',   'rlds.tot_loads_gust.aeroloads_pitch')
+            self.connect('aeroelastic.loads_azimuth', 'rlds.tot_loads_gust.aeroloads_azimuth')
+        else:
+            self.connect('xf.cl_interp_flaps',        'rlds.airfoils_cl')
+            self.connect('xf.cd_interp_flaps',        'rlds.airfoils_cd')
+            self.connect('xf.cm_interp_flaps',        'rlds.airfoils_cm')
+            self.connect('airfoils.aoa',              'rlds.airfoils_aoa')
+            self.connect('airfoils.Re',               'rlds.airfoils_Re')
+            self.connect('assembly.rotor_radius',     'rlds.Rtip')
+            self.connect('hub.radius',                'rlds.Rhub')
+            self.connect('env.rho_air',               'rlds.rho')
+            self.connect('env.mu_air',                'rlds.mu')
+            self.connect('env.shear_exp',             'rlds.aero_hub_loads.shearExp')
+            self.connect('assembly.hub_height',       'rlds.hub_height')
+            self.connect('configuration.n_blades',    'rlds.nBlades')
+        self.connect('assembly.r_blade',          'rlds.r')
+        self.connect('hub.cone',                  'rlds.precone')
+        self.connect('nacelle.uptilt',            'rlds.tilt')
+
         self.connect('elastic.A',    'rlds.A')
         self.connect('elastic.EA',   'rlds.EA')
         self.connect('elastic.EIxx', 'rlds.EIxx')
@@ -370,26 +397,26 @@ class WT_RNTA(Group):
         self.connect('elastic.precomp.yu_strain_te',   'rlds.yu_strain_te')
         self.connect('elastic.precomp.yl_strain_te',   'rlds.yl_strain_te')
         self.connect('blade.outer_shape_bem.s','rlds.constr.s')
-        self.connect('xf.cl_interp_flaps',             'rlds.airfoils_cl')
-        self.connect('xf.cd_interp_flaps',             'rlds.airfoils_cd')
-        self.connect('xf.cm_interp_flaps',             'rlds.airfoils_cm')
 
-        self.connect('assembly.r_blade',                'rlds.r')
-        self.connect('assembly.rotor_radius',           'rlds.Rtip')
-        self.connect('hub.radius',                      'rlds.Rhub')
-        self.connect('assembly.hub_height',             'rlds.hub_height')
-        self.connect('hub.cone',                        'rlds.precone')
-        self.connect('nacelle.uptilt',                  'rlds.tilt')
-        self.connect('airfoils.aoa',                    'rlds.airfoils_aoa')
-        self.connect('airfoils.Re',                     'rlds.airfoils_Re')
-        self.connect('configuration.n_blades',          'rlds.nBlades')
-        self.connect('env.rho_air',                     'rlds.rho')
-        self.connect('env.mu_air',                      'rlds.mu')
-        self.connect('env.shear_exp',                   'rlds.aero_hub_loads.shearExp')
         
-        # self.connect('wt_class.V_extreme1',             'rlds.aero_storm_1yr.V_load')
-        # self.connect('wt_class.V_extreme50',            'rlds.aero_storm_50yr.V_load')
-        
+        if analysis_options['rotorse']['FatigueMode'] > 0:
+            self.connect('elastic.precomp.x_tc',                            'rlds.x_tc')
+            self.connect('elastic.precomp.y_tc',                            'rlds.y_tc')
+            self.connect('materials.E',                                     'rlds.E')
+            self.connect('materials.Xt',                                    'rlds.Xt')
+            self.connect('materials.Xc',                                    'rlds.Xc')
+            self.connect('blade.outer_shape_bem.pitch_axis',                'rlds.pitch_axis')
+            self.connect('elastic.sc_ss_mats',                              'rlds.sc_ss_mats')
+            self.connect('elastic.sc_ps_mats',                              'rlds.sc_ps_mats')
+            self.connect('elastic.te_ss_mats',                              'rlds.te_ss_mats')
+            self.connect('elastic.te_ps_mats',                              'rlds.te_ps_mats')
+            self.connect('blade.interp_airfoils.r_thick_interp',            'rlds.rthick')
+            self.connect('blade.internal_structure_2d_fem.layer_name',      'rlds.layer_name')
+            self.connect('blade.internal_structure_2d_fem.layer_mat',       'rlds.layer_mat')
+            self.connect('blade.internal_structure_2d_fem.definition_layer','rlds.definition_layer')
+            # self.connect('gamma_m',     'rlds.gamma_m')
+            # self.connect('gamma_f',     'rlds.gamma_f') # TODO
+
         # Connections to rotorse-rc
         # self.connect('blade.length',                                    'rotorse.rc.blade_length')
         # self.connect('blade.outer_shape_bem.s',                         'rotorse.rc.s')
@@ -412,8 +439,12 @@ class WT_RNTA(Group):
         if analysis_options['servose']['run_servose']:
             self.connect('sse.powercurve.rated_Q',         'drivese.rotor_torque')
             self.connect('sse.powercurve.rated_Omega',     'drivese.rotor_rpm')
-        self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.Fxyz')
-        self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.Mxyz')
+        if analysis_options['Analysis_Flags']['OpenFAST']:
+            self.connect('aeroelastic.Fxyz', 'drivese.Fxyz')
+            self.connect('aeroelastic.Mxyz', 'drivese.Mxyz')
+        else:
+            self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.Fxyz')
+            self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.Mxyz')
         self.connect('elastic.precomp.I_all_blades',   'drivese.blades_I')
         self.connect('elastic.precomp.blade_mass', 'drivese.blade_mass')
         self.connect('blade.pa.chord_param',       'drivese.blade_root_diameter', src_indices=[0])
@@ -482,7 +513,7 @@ class WT_RNTA(Group):
         #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
           
         # Connections to aeroelasticse
-        if analysis_options['Analysis_Flags']['OpenFAST'] == True:
+        if analysis_options['Analysis_Flags']['OpenFAST']:
             self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
             self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
             self.connect('assembly.r_blade',                'aeroelastic.r')
@@ -540,7 +571,10 @@ class WT_RNTA(Group):
             self.connect('sse.powercurve.V_R25',            'aeroelastic.V_R25')
             self.connect('sse.powercurve.rated_V',          'aeroelastic.Vrated')
             self.connect('sse.gust.V_gust',                 'aeroelastic.Vgust')
+            self.connect('wt_class.V_extreme1',             'aeroelastic.V_extreme1')
+            self.connect('wt_class.V_extreme50',            'aeroelastic.V_extreme50')
             self.connect('wt_class.V_mean',                 'aeroelastic.V_mean_iec')
+            self.connect('control.V_out',                   'aeroelastic.V_cutout')
             self.connect('control.rated_power',             'aeroelastic.control_ratedPower')
             self.connect('control.max_TS',                  'aeroelastic.control_maxTS')
             self.connect('control.maxOmega',                'aeroelastic.control_maxOmega')
@@ -615,7 +649,10 @@ class WindPark(Group):
 
         # Inputs to plantfinancese from wt group
         if analysis_options['servose']['run_servose']:
-            self.connect('sse.AEP',                 'financese.turbine_aep')
+            if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve']:
+                self.connect('aeroelastic.AEP',     'financese.turbine_aep')
+            else:
+                self.connect('sse.AEP',             'financese.turbine_aep')
             self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
             # Inputs to plantfinancese from input yaml
             self.connect('control.rated_power',     'financese.machine_rating')
@@ -628,12 +665,16 @@ class WindPark(Group):
 
         # Connections to outputs to screen
         if analysis_options['servose']['run_servose']:
-            self.connect('sse.AEP',                    'outputs_2_screen.aep')
-            self.connect('financese.lcoe',             'outputs_2_screen.lcoe')
-        self.connect('elastic.precomp.blade_mass', 'outputs_2_screen.blade_mass')
-        if analysis_options['Analysis_Flags']['OpenFAST'] == True:
-            self.connect('aeroelastic.My_std',         'outputs_2_screen.My_std')
-            self.connect('aeroelastic.flp1_std',       'outputs_2_screen.flp1_std')
+            if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve']:
+                self.connect('aeroelastic.AEP',     'outputs_2_screen.aep')
+            else:
+                self.connect('sse.AEP',             'outputs_2_screen.aep')
+            self.connect('financese.lcoe',          'outputs_2_screen.lcoe')
+        self.connect('elastic.precomp.blade_mass',  'outputs_2_screen.blade_mass')
+        self.connect('rlds.tip_pos.tip_deflection', 'outputs_2_screen.tip_deflection')
+        if analysis_options['Analysis_Flags']['OpenFAST']:
+            self.connect('aeroelastic.My_std',      'outputs_2_screen.My_std')
+            self.connect('aeroelastic.flp1_std',    'outputs_2_screen.flp1_std')
             self.connect('control.PC_omega',        'outputs_2_screen.PC_omega')
             self.connect('control.PC_zeta',         'outputs_2_screen.PC_zeta')
             self.connect('control.VS_omega',        'outputs_2_screen.VS_omega')

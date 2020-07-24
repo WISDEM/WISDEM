@@ -1,5 +1,6 @@
 import unittest
 import os
+import numpy as np
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 test_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep

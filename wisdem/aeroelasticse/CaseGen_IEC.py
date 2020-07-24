@@ -186,6 +186,8 @@ class CaseGen_IEC():
                 self.dlc_inputs['Yaw'][i] = [0.]
                 case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[5], 'group':0}
                 case_inputs_i[("AeroDyn15","AFAeroMod")]= {'vals':[2], 'group':0}
+                case_inputs_i[("ElastoDyn","GenDOF")]   = {'vals':["True"], 'group':0}
+                case_inputs_i[("ElastoDyn","YawDOF")]   = {'vals':["True"], 'group':0}
 
 
             # Matrix combining N dlc variables that affect wind file generation
@@ -240,18 +242,18 @@ class CaseGen_IEC():
                 U_out = []
                 WindFile_out = []
                 WindFile_type_out = []
-                for i in range(N_loops):
-                    idx_s    = i*size
-                    idx_e    = min((i+1)*size, N_cases)
+                for j in range(N_loops):
+                    idx_s    = j*size
+                    idx_e    = min((j+1)*size, N_cases)
 
-                    for j, var_vals in enumerate(matrix_out[idx_s:idx_e]):
+                    for k, var_vals in enumerate(matrix_out[idx_s:idx_e]):
                         data   = [gen_windfile, [iecwind, IEC_WindType, change_vars, var_vals]]
-                        rank_j = sub_ranks[j]
-                        comm.send(data, dest=rank_j, tag=0)
+                        rank_k = sub_ranks[k]
+                        comm.send(data, dest=rank_k, tag=0)
 
-                    for j, var_vals in enumerate(matrix_out[idx_s:idx_e]):
-                        rank_j = sub_ranks[j]
-                        data_out = comm.recv(source=rank_j, tag=1)
+                    for k, var_vals in enumerate(matrix_out[idx_s:idx_e]):
+                        rank_k = sub_ranks[k]
+                        data_out = comm.recv(source=rank_k, tag=1)
                         U_out.extend(data_out[0])
                         WindFile_out.extend(data_out[1])
                         WindFile_type_out.extend(data_out[2])

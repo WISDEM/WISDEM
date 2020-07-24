@@ -107,3 +107,10 @@ Analysis output is available using the same keywords as the Frame3DD manual, and
 .. literalinclude:: /../examples/structural_analysis/exB.py
     :start-after: # 11 ---
     :end-before: # 11 ---
+
+
+Lastly, we can also output a Frame3DD file using a built-in method.
+
+.. literalinclude:: /../examples/structural_analysis/exB.py
+    :start-after: # 12 ---
+    :end-before: # 12 ---

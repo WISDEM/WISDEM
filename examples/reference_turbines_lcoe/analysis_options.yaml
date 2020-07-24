@@ -98,9 +98,9 @@ constraints:
     tip_deflection:
       flag: False     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
     rail_transport:
-      flag: False
+      flag: True
       8_axle: False
-      4_axle: False
+      4_axle: True
     stall:
       flag: False     # Constraint on minimum stall margin
       margin: 0.05233 # Value of minimum stall margin in [rad]
