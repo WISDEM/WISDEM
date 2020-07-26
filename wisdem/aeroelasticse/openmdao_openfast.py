@@ -11,8 +11,6 @@ from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_py
 from wisdem.aeroelasticse.FAST_post         import return_timeseries, return_fname, FAST_IO_timeseries
 from wisdem.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
-from pCrunch import Analysis, pdTools
-
 if MPI:
     from mpi4py   import MPI
     from petsc4py import PETSc
@@ -815,6 +813,7 @@ class FASTLoadCases(ExplicitComponent):
             return [], [], []
 
     def post_process(self, FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs):
+        from pCrunch import Analysis, pdTools
 
         # Load pCrunch Analysis
         loads_analysis = Analysis.Loads_Analysis()

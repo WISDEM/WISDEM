@@ -16,6 +16,7 @@ class TestExamples(unittest.TestCase):
         for f in all_examples:
             try:
                 # Go to location due to relative path use for airfoil files
+                print(f)
                 basepath = os.path.dirname(os.path.realpath(f))
                 os.chdir(basepath)
 
@@ -28,7 +29,7 @@ class TestExamples(unittest.TestCase):
                 mod  = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(mod)
             except:
-                self.assertEqual(f, True)
+                self.assertTrue(False)
  
 def suite():
     suite = unittest.TestSuite()
