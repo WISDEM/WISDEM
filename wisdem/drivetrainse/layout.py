@@ -5,17 +5,18 @@ import numpy as np
 import openmdao.api as om
 from scipy.special import ellipeinc
 import wisdem.commonse.tube as tube
-from wisdem.commonse.utilities import nodal2sectional
+import wisdem.commonse.utilities as util
 
-def rod_prop(s, D, t, L, rho):
-    y  = 0.25 * rho * np.pi * (D**2  - (D - t)**2)
+def rod_prop(s, D, t, rho):
+    y  = 0.25 * rho * np.pi * (D**2  - (D - 2*t)**2)
+    L  = s.max() - s.min()
     m  = np.trapz(y, s)
     cm = np.trapz(y*s, s) / m
     Dm = D.mean()
     tm = t.mean()
-    I  = np.array([0.5     *   0.25*(Dm**2  + (Dm - tm)**2),
-                  (1./12.)*(3*0.25*(Dm**2  + (Dm - tm)**2) + L**2),
-                  (1./12.)*(3*0.25*(Dm**2  + (Dm - tm)**2) + L**2) ])
+    I  = np.array([0.5     *   0.25*(Dm**2  + (Dm - 2*tm)**2),
+                  (1./12.)*(3*0.25*(Dm**2  + (Dm - 2*tm)**2) + L**2),
+                  (1./12.)*(3*0.25*(Dm**2  + (Dm - 2*tm)**2) + L**2) ])
     return m, cm, m*I
 
 
@@ -35,7 +36,6 @@ class Layout(om.ExplicitComponent):
         self.add_input('L_2n', 0.0, units='m', desc='Length from bedplate / end of nose to bearing #2')
         self.add_input('L_grs', 0.0, units='m', desc='Length from shaft-hub flange to generator rotor attachment point on shaft')
         self.add_input('L_gsn', 0.0, units='m', desc='Length from nose-bedplate flange to generator stator attachment point on nose')
-        #self.add_input('L_hub', 0.0, units='m', desc='Length of hub') 
         self.add_input('L_bedplate', 0.0, units='m', desc='Length of bedplate') 
         self.add_input('H_bedplate', 0.0, units='m', desc='height of bedplate')
         self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
@@ -102,7 +102,6 @@ class Layout(om.ExplicitComponent):
         L_12       = float(inputs['L_12'])
         L_h1       = float(inputs['L_h1'])
         L_2n       = float(inputs['L_2n'])
-        #L_hub      = float(inputs['L_hub'])
         L_grs      = float(inputs['L_grs'])
         L_gsn      = float(inputs['L_gsn'])
         L_bedplate = float(inputs['L_bedplate'])
@@ -156,22 +155,34 @@ class Layout(om.ExplicitComponent):
         arc = L_bedplate*np.abs(ellipeinc(rad2,ecc))    # Arc length via incomplete elliptic integral of the second kind
 
         # Mass and MoI properties
-        x_c_sec = nodal2sectional( x_c )[0]
-        z_c_sec = nodal2sectional( z_c )[0]
+        x_c_sec = util.nodal2sectional( x_c )[0]
+        z_c_sec = util.nodal2sectional( z_c )[0]
         R_c_sec = np.sqrt( x_c_sec**2 + z_c_sec**2 )
-        mass    = nodal2sectional(A_bed)[0] * arc * rho
+        mass    = util.nodal2sectional(A_bed)[0] * arc * rho
         mass_tot = mass.sum()
         cm      = np.array([np.sum(mass*x_c_sec), 0.0, np.sum(mass*z_c_sec)]) / mass_tot
-        I       = mass[:,np.newaxis] * np.c_[x_c_sec**2, R_c_sec**2, z_c_sec**2]
-        I       = I.sum(axis=0) + mass_tot*np.array([0.0, x_c[0]**2, 0.0]) # parallel axis theorem to move to base
-        outputs['bedplate_mass'] = mass_tot
-        outputs['bedplate_cm']   = cm
-        outputs['bedplate_I']    = I
+        # For I, could do integral over sectional I, rotate axes by rad2, and then parallel axis theorem
+        # we simplify by assuming lumped point mass.  TODO: Find a good way to check this?  Torus shell?
+        I_bed  = util.assembleI( np.zeros(6) )
+        for k in range(len(mass)):
+            r_bed_o_k = 0.5*(r_bed_o[k] + r_bed_o[k+1])
+            r_bed_i_k = 0.5*(r_bed_i[k] + r_bed_i[k+1])
+            I_sec = mass[k]*np.array([0.5     *   (r_bed_o_k**2  + r_bed_i_k**2),
+                                      (1./12.)*(3*(r_bed_o_k**2  + r_bed_i_k**2) + arc[k]**2),
+                                      (1./12.)*(3*(r_bed_o_k**2  + r_bed_i_k**2) + arc[k]**2) ])
+            I_sec_rot = util.rotateI(I_sec, 0.5*np.pi-rad2[k], axis='y')
+            R_k       = np.array([x_c_sec[k]-x_c[0], 0.0, z_c_sec[k]])
+            I_bed    += util.assembleI(I_sec_rot) + mass[k]*(np.dot(R_k, R_k)*np.eye(3) - np.outer(R_k, R_k))
 
         # Now shift originn to be at tower top
+        cm[0]   -= x_c[0]
         x_inner -= x_c[0]
         x_outer -= x_c[0]
         x_c     -= x_c[0]
+        
+        outputs['bedplate_mass'] = mass_tot
+        outputs['bedplate_cm']   = cm
+        outputs['bedplate_I']    = I_bed
         
         # Geometry outputs
         outputs['x_bedplate'] = x_c
@@ -230,19 +241,17 @@ class Layout(om.ExplicitComponent):
         # ------------------------------------
         
         # ------- Nose, shaft, and bearing properties ----------------
-        #cmarray = np.array([np.cos(tilt), 0.0, np.cos(tilt)])
-
         # Now is a good time to set bearing diameters
         outputs['D_bearing1'] = D_shaft[-1] - t_shaft[-1] - D_nose[0]
         outputs['D_bearing2'] = D_shaft[-1] - t_shaft[-1] - D_nose[-1]
 
         # Compute center of mass based on area
-        m_nose, cm_nose, I_nose = rod_prop(s_nose[:-1], D_nose, t_nose, L_nose, rho)
+        m_nose, cm_nose, I_nose = rod_prop(s_nose[:-1], D_nose, t_nose, rho)
         outputs['nose_mass'] = m_nose
         outputs['nose_cm']   = cm_nose
         outputs['nose_I']    = I_nose
 
-        m_shaft, cm_shaft, I_shaft = rod_prop(s_shaft[:-1], D_shaft, t_shaft, L_shaft, rho)
+        m_shaft, cm_shaft, I_shaft = rod_prop(s_shaft[:-1], D_shaft, t_shaft, rho)
         outputs['lss_mass'] = m_shaft
         outputs['lss_cm']   = cm_shaft
         outputs['lss_I']    = I_shaft
@@ -264,133 +273,3 @@ class Layout(om.ExplicitComponent):
         outputs['s_shaft'] = s_shaft[ind]
         outputs['D_shaft'] = D_shaft[ind]
         outputs['t_shaft'] = t_shaft[ind]
-
-        
-        '''
-        if upwind:
-            x_drive *= -1
-
-        x_drive += x_c[0]
-        z_drive += z_c[0]
-        
-        x_mb1 = x_drive[4]
-        z_mb1 = z_drive[4]
-        x_mb2 = x_drive[2]
-        z_mb2 = z_drive[2]
-
-        x_stator = x_drive[-1]
-        z_stator = z_drive[-1]
-        x_rotor  = x_drive[-2]
-        z_rotor  = z_drive[-2]
-
-        x_nose   = np.r_[x_drive[:5], x_drive[-1]]
-        z_nose   = np.r_[z_drive[:5], z_drive[-1]]
-
-        x_shaft  = np.r_[x_drive[2:-1], x_drive[-2]]
-        z_shaft  = np.r_[z_drive[2:-1], z_drive[-2]]
-
-        
-        # ------- Nose, shaft, and bearing coordinates ----------------
-        # Set arc length and uncorrected x-z values
-        npts    = len(D_nose)
-        
-        s_shaft = np.linspace(L_shaft, 0, npts)
-        x_shaft = s_shaft*np.cos(tilt)
-        z_shaft = s_shaft*np.sin(tilt)
-        
-        s_nose  = np.linspace(L_nose, 0, npts)
-        x_nose  = s_nose*np.cos(tilt)
-        z_nose  = s_nose*np.sin(tilt)
-        
-        if upwind:
-            x_shaft *= -1.0
-            x_nose  *= -1.0
-
-        # Set starting position for nose
-        x_nose  += x_c[0]
-        z_nose  += z_c[0]
-
-        # Set bearing positions
-        x_mb1  = x_nose[0]
-        z_mb1  = z_nose[0]
-        x_mb2  = np.interp(L_nose - L_12, s_nose, x_nose, period=L_nose)
-        z_mb2  = z_nose[0] if tilt == 0.0 else np.interp(L_nose - L_12, s_nose, z_nose, period=L_nose)
-        outputs['x_mb1'] = x_mb1
-        outputs['z_mb1'] = z_mb1
-        outputs['x_mb2'] = x_mb2
-        outputs['z_mb2'] = z_mb2
-        
-        # Set starting position for shaft
-        x_shaft += x_mb2
-        z_shaft += z_mb2
-
-        # Set points for generator rotor and stator attachment
-        x_rotor  = np.interp(L_shaft - L_grs, s_shaft, x_shaft, period=L_shaft)
-        z_rotor  = z_shaft[0] if tilt == 0.0 else np.interp(L_shaft - L_grs, s_shaft, z_shaft, period=L_shaft)
-        x_stator = np.interp(L_gsn, s_nose, x_nose, period=L_nose)
-        z_stator = z_nose[0] if tilt == 0.0 else np.interp(L_gsn, s_nose, z_nose, period=L_nose)
-        outputs['x_rotor']  = x_rotor
-        outputs['z_rotor']  = z_rotor
-        outputs['x_stator'] = x_stator
-        outputs['z_stator'] = z_stator
-
-        # Insert point for stator attachment point and bearings in nose and shaft arrays (for applied forces points)
-        # For nose, mb1 point is the same as end point
-        snew   = np.array( [L_gsn, L_nose-L_12] )
-        D_nose = np.r_[D_nose, np.interp(snew, s_nose, D_nose, period=L_nose)]
-        t_nose = np.r_[t_nose, np.interp(snew, s_nose, t_nose, period=L_nose)]
-        x_nose = np.r_[x_nose, x_stator, x_mb2]
-        z_nose = np.r_[z_nose, z_stator, z_mb2]
-        s_nose = np.r_[s_nose, snew]
-
-        # For shaft, mb2 point is the same as end point
-        snew   = np.array( [L_shaft-L_grs, L_shaft-L_h1] )
-        D_shaft = np.r_[D_shaft, np.interp(snew, s_shaft, D_shaft, period=L_shaft)]
-        t_shaft = np.r_[t_shaft, np.interp(snew, s_shaft, t_shaft, period=L_shaft)]
-        x_shaft = np.r_[x_shaft, x_stator, x_mb1]
-        z_shaft = np.r_[z_shaft, z_stator, z_mb1]
-        s_shaft = np.r_[s_shaft, snew]
-
-        # For upwind, sort from lowest x-value to highest, downwind vice-versa
-        isort = np.argsort(x_nose)
-        if not upwind: isort = np.flipud(isort)
-        x_nose = x_nose[isort]
-        z_nose = z_nose[isort]
-        D_nose = D_nose[isort]
-        t_nose = t_nose[isort]
-        s_nose = s_nose[isort]
-        outputs['x_nose'] = x_nose
-        outputs['z_nose'] = z_nose
-        outputs['D_nose'] = D_nose
-        outputs['t_nose'] = t_nose
-        
-        # For upwind, sort from lowest x-value to highest, downwind vice-versa
-        isort = np.argsort(x_shaft)
-        if not upwind: isort = np.flipud(isort)
-        x_shaft = x_shaft[isort]
-        z_shaft = z_shaft[isort]
-        D_shaft = D_shaft[isort]
-        t_shaft = t_shaft[isort]
-        s_shaft = s_shaft[isort]
-        outputs['x_shaft'] = x_shaft
-        outputs['z_shaft'] = z_shaft
-        outputs['D_shaft'] = D_shaft
-        outputs['t_shaft'] = t_shaft
-        # ------------------------------------
-        
-
-        # ------- Hub and summary coordinates ----------------
-        x_hub = L_hub*np.cos(tilt)
-        z_hub = L_hub*np.sin(tilt)
-        if upwind: x_hub *= -1.0
-
-        x_hub += x_shaft[0]
-        z_hub += z_shaft[0]
-
-        outputs['x_hub'] = x_hub
-        outputs['z_hub'] = z_hub
-        
-        # Total length from bedplate to hub blade attachment
-        L_drive = L_hub + L_h1 + L_12 + L_2n
-
-        '''
