@@ -977,12 +977,6 @@ class FASTLoadCases(ExplicitComponent):
         writer.FAST_namingOut    = self.FAST_namingOut
         writer.execute()
 
-        discrete_outputs['FASTpref_updated'] = copy.deepcopy(self.FASTpref)
-        discrete_outputs['FASTpref_updated']['FAST_runDirectory'] = self.FAST_runDirectory
-        discrete_outputs['FASTpref_updated']['FAST_directory']    = self.FAST_runDirectory
-        discrete_outputs['FASTpref_updated']['FAST_InputFile']    = os.path.split(writer.FAST_InputFileOut)[-1]
-
-        discrete_outputs['model_updated'] = False
         if self.debug_level > 0:
             print('RAN UPDATE: ', self.FAST_runDirectory, self.FAST_namingOut)
 
