@@ -10,6 +10,8 @@ import wisdem.commonse.UtilizationSupplement as Util
 import wisdem.commonse.tube as tube
 from wisdem.commonse.utilities import nodal2sectional
 from wisdem.commonse import gravity
+from wisdem.commonse.csystem import DirectionVector
+
 
 RIGID = 1
 FREE  = 0
@@ -69,6 +71,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_input('gamma_n', 0.0, desc='safety factor on consequence of failure')
         
         #self.add_output('top_deflection', np.zeros(n_points), units='m', desc='Deflection of Curved_beam top in yaw-aligned +x direction')
+        self.add_output('mb1_displacement', val=np.zeros(n_dlcs), units='m', desc='Total deflection distance of bearing 1')
+        self.add_output('mb2_displacement', val=np.zeros(n_dlcs), units='m', desc='Total deflection distance of bearing 2')
+        self.add_output('mb1_rotation', val=np.zeros(n_dlcs), units='rad', desc='Total rotation angle of bearing 1')
+        self.add_output('mb2_rotation', val=np.zeros(n_dlcs), units='rad', desc='Total rotation angle of bearing 2')
         self.add_output('base_F', val=np.zeros((3,n_dlcs)), units='N', desc='Total reaction force at bedplate base')
         self.add_output('base_M', val=np.zeros((3,n_dlcs)), units='N*m', desc='Total reaction moment at bedplate base')
         self.add_output('nose_axial_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Axial stress in Curved_beam structure')
@@ -82,7 +88,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         # Unpack inputs
         upwind     = discrete_inputs['upwind']
         Cup        = -1.0 if upwind else 1.0
-        tilt       = float(np.deg2rad(inputs['tilt']))
+        tiltD      = float(inputs['tilt'])
+        tiltR      = np.deg2rad(tiltD)
         
         x_c        = inputs['x_bedplate']
         z_c        = inputs['z_bedplate']
@@ -191,8 +198,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         # ------ static load cases ------------
         n_dlcs   = self.options['n_dlcs']
         gy = 0.0
-        gx = -gravity*np.sin(tilt)
-        gz = -gravity*np.cos(tilt)
+        gx = -gravity*np.sin(tiltR)
+        gz = -gravity*np.cos(tiltR)
         for k in range(n_dlcs):
             # gravity in the X, Y, Z, directions (global)
             load = frame3dd.StaticLoadCase(gx, gy, gz)
@@ -209,7 +216,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             
         #myframe.write('myframe.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
-        
+
         # ------------ Bedplate "curved beam" geometry for post-processing -------------
         # Need to compute neutral axis, so shift points such that bedplate top is at x=0
         R_c = np.sqrt( (x_c    -x_c[-1])**2 + z_c**2)
@@ -226,21 +233,22 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         # ------------------------------------
         
         # Loop over DLCs and append to outputs
-        outputs['base_F'] = np.zeros((3, n_dlcs))
-        outputs['base_M'] = np.zeros((3, n_dlcs))
-        outputs['nose_axial_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['nose_shear_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['nose_bending_stress'] = np.zeros((n-1, n_dlcs))
+        outputs['mb1_deflection']       = np.zeros(n_dlcs)
+        outputs['mb2_deflection']       = np.zeros(n_dlcs)
+        outputs['mb1_rotation']         = np.zeros(n_dlcs)
+        outputs['mb2_rotation']         = np.zeros(n_dlcs)
+        outputs['base_F']               = np.zeros((3, n_dlcs))
+        outputs['base_M']               = np.zeros((3, n_dlcs))
+        outputs['nose_axial_stress']    = np.zeros((n-1, n_dlcs))
+        outputs['nose_shear_stress']    = np.zeros((n-1, n_dlcs))
+        outputs['nose_bending_stress']  = np.zeros((n-1, n_dlcs))
         outputs['constr_nose_vonmises'] = np.zeros((n-1, n_dlcs))
         for k in range(n_dlcs):
-            # natural frequncies
-            #outputs['f1'] = modal.freq[0]
-            #outputs['f2'] = modal.freq[1]
-            
-            # deflections - at bearings?
-            #outputs['top_deflection'] = np.sqrt(displacements.dx[k, n-1]**2 +
-            #                                    displacements.dy[k, n-1]**2 +
-            #                                    displacements.dz[k, n-1]**2)
+            # Deflections and rotations at bearings- how to sum up rotation angles?
+            outputs['mb1_deflection'][k] = np.sqrt(displacements.dx[k,i1-1]**2 + displacements.dy[k,i1-1]**2 + displacements.dz[k,i1-1]**2)
+            outputs['mb2_deflection'][k] = np.sqrt(displacements.dx[k,i2-1]**2 + displacements.dy[k,i2-1]**2 + displacements.dz[k,i2-1]**2)
+            outputs['mb1_rotation'][k]   = displacements.dxrot[k,i1-1] + displacements.dyrot[k,i1-1] + displacements.dzrot[k,i1-1]
+            outputs['mb2_rotation'][k]   = displacements.dxrot[k,i2-1] + displacements.dyrot[k,i2-1] + displacements.dzrot[k,i2-1]
 
             # shear and bending, one per element (convert from local to global c.s.)
             Fz =  forces.Nx[k, 1::2]
@@ -254,8 +262,12 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             M   =  np.sqrt(Myy**2 + Mxx**2)
 
             # Record total forces and moments
-            outputs['base_F'][:,k] = -1.0 * np.array([reactions.Fx[k,:].sum(), reactions.Fy[k,:].sum(), reactions.Fz[k,:].sum()])
-            outputs['base_M'][:,k] = -1.0 * np.array([reactions.Mxx[k,:].sum(), reactions.Myy[k,:].sum(), reactions.Mzz[k,:].sum()])
+            F_base_k = DirectionVector(-reactions.Fx[k,:].sum(), -reactions.Fy[k,:].sum(), -reactions.Fz[k,:].sum())
+            M_base_k = DirectionVector(-reactions.Mxx[k,:].sum(), -reactions.Myy[k,:].sum(), -reactions.Mzz[k,:].sum())
+
+            # Rotate vector from tilt axes to yaw/tower axes
+            outputs['base_F'][:,k] = F_base_k.hubToYaw(-tiltD).toArray()
+            outputs['base_M'][:,k] = M_base_k.hubToYaw(-tiltD).toArray()
 
             outputs['nose_axial_stress'][:,k] = Fz/Ax + M/S
             outputs['nose_shear_stress'][:,k] = 2.0*F/As + Mzz/C

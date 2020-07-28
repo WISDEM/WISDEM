@@ -116,17 +116,147 @@ class TestRun(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 2*self.inputs['F_mb2'][:2])
         npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity+2*50e2)
+        
+    def testBaseF_BaseM_withTilt(self):
+        self.inputs['tilt'] = 5.0
+        self.inputs['F_mb1'] = np.zeros(3).reshape((3,1))
+        self.inputs['F_mb2'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
+        self.compute_layout()
+        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
+        npt.assert_almost_equal(self.outputs['base_M'][-1], 0.0)
+        F0 = self.outputs['base_F']
+        M0 = self.outputs['base_M']
+        
+        self.inputs['other_mass'] += 500e3
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1])
+        npt.assert_almost_equal(self.outputs['base_M'][2], 0.0)
+
+        self.inputs['M_mb1'] = 10e3*np.arange(1,4).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1]+self.inputs['M_mb1'][1], decimal=0)
+
+        self.inputs['M_mb2'] = 20e3*np.arange(1,4).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1]+self.inputs['M_mb1'][1]+self.inputs['M_mb2'][1], decimal=-1)
+
+        self.inputs['F_mb1'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
+        self.inputs['F_mb2'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][1], 2*self.inputs['F_mb2'][1])
 
         
+    def testBaseF_BaseM_Downwind(self):
+        self.inputs['tilt'] = 0.0
+        self.discrete_inputs['upwind'] = False
+        self.inputs['F_mb1'] = np.zeros(3).reshape((3,1))
+        self.inputs['F_mb2'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
+        self.compute_layout()
+        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
+        npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
+        npt.assert_almost_equal(self.outputs['base_M'][-1], 0.0)
+        F0 = self.outputs['base_F']
+        M0 = self.outputs['base_M']
+
+        m = self.inputs['mb1_mass']+self.inputs['mb2_mass']+self.inputs['m_stator']+self.outputs['nose_mass']+self.outputs['bedplate_mass']+self.inputs['other_mass']
+        
+        self.inputs['other_mass'] += 500e3
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1])
+        npt.assert_almost_equal(self.outputs['base_M'][2], 0.0)
+
+        self.inputs['M_mb1'] = 10e3*np.arange(1,4).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'], M0+self.inputs['M_mb1'], decimal=0)
+
+        self.inputs['M_mb2'] = 20e3*np.arange(1,4).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'], M0+self.inputs['M_mb1']+self.inputs['M_mb2'], decimal=-1)
+
+        self.inputs['F_mb1'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
+        self.inputs['F_mb2'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 2*self.inputs['F_mb2'][:2])
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity+2*50e2)
+        
+        
+    def testBaseF_BaseM_withTilt_Downwind(self):
+        self.inputs['tilt'] = 5.0
+        self.discrete_inputs['upwind'] = False
+        self.inputs['F_mb1'] = np.zeros(3).reshape((3,1))
+        self.inputs['F_mb2'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
+        self.compute_layout()
+        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
+        npt.assert_almost_equal(self.outputs['base_M'][-1], 0.0)
+        F0 = self.outputs['base_F']
+        M0 = self.outputs['base_M']
+        
+        self.inputs['other_mass'] += 500e3
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1])
+        npt.assert_almost_equal(self.outputs['base_M'][2], 0.0)
+
+        self.inputs['M_mb1'] = 10e3*np.arange(1,4).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1]+self.inputs['M_mb1'][1], decimal=0)
+
+        self.inputs['M_mb2'] = 20e3*np.arange(1,4).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1]+self.inputs['M_mb1'][1]+self.inputs['M_mb2'][1], decimal=-1)
+
+        self.inputs['F_mb1'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
+        self.inputs['F_mb2'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][1], 2*self.inputs['F_mb2'][1])
+
+        
+        
     def testRunRotating(self):
+        self.inputs['tilt'] = 0.0
+        self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
         myobj = ds.Hub_Rotor_Shaft_Frame(n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
-        
-        #self.assertAlmostEqual(self.outputs['mass'], 71319.91743405)
-        #npt.assert_almost_equal(self.outputs['base_F'], [ 2409749.99999992, -1716429.        ,  -426142.52407101])
-        #npt.assert_almost_equal(self.outputs['base_M'], [-9981495.84990769, 17606406.25680009, 13770321.10702468])
-
+        #print(self.outputs['F_mb1'])
+        #print(self.outputs['F_mb2'])
+        #print(self.outputs['M_mb1'])
+        #print(self.outputs['M_mb2'])
                     
         
 def suite():
