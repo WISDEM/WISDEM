@@ -453,10 +453,16 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
             fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
             
-            fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'])
-            fst_vt['AeroDyn15']['TwrElev']   = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
-            fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter']
-            fst_vt['AeroDyn15']['TwrCd']     = np.ones_like(fst_vt['AeroDyn15']['TwrDiam']) * np.mean(fst_vt['AeroDyn15']['TwrCd'])
+            twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
+            tip_height= twr_elev[-1]-inputs['Rtip']
+            twr_index = np.argmin(abs(twr_elev - tip_height))
+            if twr_elev[twr_index] > tip_height:
+                twr_index -= 1
+
+            fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
+            fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
+            fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
+            fst_vt['AeroDyn15']['TwrCd']     = np.ones_like(fst_vt['AeroDyn15']['TwrDiam']) * np.mean(fst_vt['AeroDyn15']['TwrCd'][twr_index:])
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -608,7 +614,7 @@ class FASTLoadCases(ExplicitComponent):
         # channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2", "RootMxb3", "RootMyb3", "RootMzb3"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2", "RootFxc3", "RootFyc3", "RootFzc3"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2", "RootFxb3", "RootFyb3", "RootFzb3"]
-        channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
+        channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3", "Azimuth"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
         channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
         channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
@@ -665,7 +671,7 @@ class FASTLoadCases(ExplicitComponent):
         # Turbine Data
         iec.Turbine_Class    = discrete_inputs['turbine_class']
         iec.Turbulence_Class = discrete_inputs['turbulence_class']
-        iec.D                = fst_vt['ElastoDyn']['TipRad']*2.
+        iec.D                = np.min([fst_vt['InflowWind']['RefHt']*1.9 , fst_vt['ElastoDyn']['TipRad']*2.5])
         iec.z_hub            = fst_vt['InflowWind']['RefHt']
 
         # Turbine initial conditions
@@ -733,14 +739,13 @@ class FASTLoadCases(ExplicitComponent):
 
         iec.transient_dir_change        = '-'
         iec.transient_shear_orientation = 'v'
-        if ("Fst", "TStart") in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
-            T0                          = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TStart")]
-        else:
-            T0                          = 120.
-        if ("Fst", "TMax") in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
-            iec.TMax                    = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")]
-        else:
-            iec.TMax                    = 720.
+        if ("Fst", "TStart") not in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
+            self.options['analysis_options']['openfast']['fst_settings'][('Fst','TStart')] = 120.
+        T0                          = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TStart")]
+
+        if ("Fst", "TMax") not in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
+            self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")] = 720.
+        iec.TMax                    = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")]
 
         iec.TStart                      = (iec.TMax-T0)/2. + T0
 
