@@ -104,8 +104,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         s_mb2      = float(inputs['s_mb2'])
         m_mb1      = float(inputs['mb1_mass'])
         m_mb2      = float(inputs['mb2_mass'])
-        I_mb1      = float(inputs['mb1_I'])
-        I_mb2      = float(inputs['mb2_I'])
+        I_mb1      = inputs['mb1_I']
+        I_mb2      = inputs['mb2_I']
         
         s_stator   = float(inputs['s_stator'])
         m_stator   = float(inputs['m_stator'])
@@ -358,7 +358,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         M_hub      = inputs['M_hub']
 
         # ------- node data ----------------
-        n     = len(s_shaft)# + 1
+        n     = len(s_shaft)
         inode = np.arange(1, n+1)
         ynode = znode = rnode = np.zeros(n)
         xnode = s_shaft.copy()
@@ -444,7 +444,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
             
         #myframe.write('myframe.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
-        
+
         # Loop over DLCs and append to outputs
         outputs['F_mb1'] = np.zeros((3, n_dlcs))
         outputs['F_mb2'] = np.zeros((3, n_dlcs))
