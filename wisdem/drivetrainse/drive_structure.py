@@ -205,7 +205,6 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             load = frame3dd.StaticLoadCase(gx, gy, gz)
             
             # point loads
-            # TODO: Are input loads aligned with the shaft? If so they need to be rotated.
             F_12 = np.c_[F_mb2[:,k], F_mb1[:,k]]
             M_12 = np.c_[M_mb2[:,k], M_mb1[:,k]]
             load.changePointLoads(np.r_[i2, i1], F_12[0,:], F_12[1,:], F_12[2,:], M_12[0,:], M_12[1,:], M_12[2,:])
