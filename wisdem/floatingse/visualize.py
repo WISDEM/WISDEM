@@ -82,8 +82,7 @@ class Visualize(object):
 
         self.draw_ocean()
 
-        mooringMat = self.prob['mooring_plot_matrix']
-        self.draw_mooring(mooringMat)
+        self.draw_mooring(self.prob['mooring_plot_matrix'])
 
         pontoonMat = self.prob['plot_matrix']
         zcut = 1.0 + np.maximum( self.prob['main_freeboard'], self.prob['offset_freeboard'] )
@@ -96,7 +95,7 @@ class Visualize(object):
         self.draw_ballast([0.0, 0.0], self.prob['main_freeboard'], self.prob['main.section_height'],
                           0.5*self.prob['main.outer_diameter']-t_full,
                           self.prob['main.permanent_ballast_height'], self.prob['variable_ballast_height'])
-        
+
         if self.prob['main.buoyancy_tank_mass'] > 0.0:
             self.draw_buoyancy_tank([0.0, 0.0], self.prob['main_freeboard'],
                                         self.prob['main.section_height'],
@@ -104,8 +103,8 @@ class Visualize(object):
                                         0.5*self.prob['main.buoyancy_tank_diameter'],
                                         self.prob['main.buoyancy_tank_height'])
 
-        R_semi  = self.prob['radius_to_off.column']
-        ncolumn = int(self.prob['number_of_off.columns'])
+        R_semi  = self.prob['radius_to_offset_column']
+        ncolumn = int(self.prob['number_of_offset_columns'])
         angles = np.linspace(0, 2*np.pi, ncolumn+1)
         x = R_semi * np.cos( angles )
         y = R_semi * np.sin( angles )
@@ -126,8 +125,8 @@ class Visualize(object):
                                             self.prob['off.buoyancy_tank_height'])
             
             
-        self.draw_column([0.0, 0.0], self.prob['hub_height'], self.prob['tow.section_height'],
-                         0.5*self.prob['tow.outer_diameter'], None, (0.9,)*3)
+        self.draw_column([0.0, 0.0], self.prob['hub_height'], self.prob['tow.tower_section_height'],
+                         0.5*self.prob['tow.tower_outer_diameter'], None, (0.9,)*3)
 
             
         self.set_figure(fname)
@@ -182,6 +181,7 @@ class Visualize(object):
         npts    = 100
         
         # Sea floor
+        print(self.prob['anchor_radius'])
         r  = np.linspace(0, self.prob['anchor_radius'], npts)
         th = np.linspace(0, 2*np.pi, npts)
         R, TH = np.meshgrid(r, th)

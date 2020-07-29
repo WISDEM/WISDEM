@@ -44,6 +44,10 @@ class WindTurbineOntologyPython(object):
 
             if os.path.exists(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']):
                 self.analysis_options['openfast']['fst_settings'] = dict(self.load_yaml(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']))
+            else:
+                print('WARNING: OpenFAST is called, but no file with settings is found.')
+                self.analysis_options['openfast']['fst_settings'] = {}
+
         else:
             self.analysis_options['openfast']['fst_vt']   = {}
 

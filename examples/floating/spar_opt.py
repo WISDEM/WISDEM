@@ -153,77 +153,73 @@ prob['beta_wind'] = prob['beta_wave'] = 0.0    # Wind/water beta angle
 prob['cd_usr']      = -1.0 # Compute drag coefficient
 
 # Wind and water properties
-prob['rho_air'] = 1.226   # Density of air [kg/m^3]
-prob['mu_air']  = 1.78e-5 # Viscosity of air [kg/m/s]
-prob['rho_water']      = 1025.0  # Density of water [kg/m^3]
+prob['rho_air']   = 1.226   # Density of air [kg/m^3]
+prob['mu_air']    = 1.78e-5 # Viscosity of air [kg/m/s]
+prob['rho_water'] = 1025.0  # Density of water [kg/m^3]
 prob['mu_water']  = 1.08e-3 # Viscosity of water [kg/m/s]
 
 # Material properties
-prob['rho_mat']     = np.array([7850.0])          # Steel [kg/m^3]
-prob['E_mat']       = 200e9*np.ones((1,3))           # Young's modulus [N/m^2]
-prob['G_mat']       = 79.3e9*np.ones((1,3))          # Shear modulus [N/m^2]
-prob['sigma_y_mat'] = np.array([3.70e8])          # Elastic yield stress [N/m^2]
+prob['rho_mat']                   = np.array([7850.0])          # Steel [kg/m^3]
+prob['E_mat']                     = 200e9*np.ones((1,3))           # Young's modulus [N/m^2]
+prob['G_mat']                     = 79.3e9*np.ones((1,3))          # Shear modulus [N/m^2]
+prob['sigma_y_mat']               = np.array([3.70e8])          # Elastic yield stress [N/m^2]
 prob['permanent_ballast_density'] = 4492.0 # [kg/m^3]
 
 # Mass and cost scaling factors
-prob['outfitting_factor'] = 0.06    # Fraction of additional outfitting mass for each column
-prob['ballast_cost_rate']        = 0.1   # Cost factor for ballast mass [$/kg]
-prob['unit_cost_mat']       = np.array([1.1])  # Cost factor for column mass [$/kg]
-prob['labor_cost_rate']          = 1.0  # Cost factor for labor time [$/min]
-prob['painting_cost_rate']       = 14.4  # Cost factor for column surface finishing [$/m^2]
-prob['outfitting_cost_rate']     = 1.5*1.1  # Cost factor for outfitting mass [$/kg]
-prob['mooring_cost_factor']      = 1.1     # Cost factor for mooring mass [$/kg]
+prob['outfitting_factor']    = 0.06    # Fraction of additional outfitting mass for each column
+prob['ballast_cost_rate']    = 0.1   # Cost factor for ballast mass [$/kg]
+prob['unit_cost_mat']        = np.array([1.1])  # Cost factor for column mass [$/kg]
+prob['labor_cost_rate']      = 1.0  # Cost factor for labor time [$/min]
+prob['painting_cost_rate']   = 14.4  # Cost factor for column surface finishing [$/m^2]
+prob['outfitting_cost_rate'] = 1.5*1.1  # Cost factor for outfitting mass [$/kg]
+prob['mooring_cost_factor']  = 1.1     # Cost factor for mooring mass [$/kg]
 
 # Mooring parameters
 prob['number_of_mooring_connections'] = 3             # Evenly spaced around structure
-prob['mooring_lines_per_connection'] = 1             # Evenly spaced around structure
-prob['mooring_type']               = 'chain'       # Options are chain, nylon, polyester, fiber, or iwrc
-prob['anchor_type']                = 'DRAGEMBEDMENT' # Options are SUCTIONPILE or DRAGEMBEDMENT
+prob['mooring_lines_per_connection']  = 1             # Evenly spaced around structure
+prob['mooring_type']                  = 'chain'       # Options are chain, nylon, polyester, fiber, or iwrc
+prob['anchor_type']                   = 'DRAGEMBEDMENT' # Options are SUCTIONPILE or DRAGEMBEDMENT
 
 # Porperties of turbine tower
-nTower = prob.model.options['analysis_options']['tower']['n_height']-1
-prob['tower_height']            = prob['hub_height'] = 77.6       # Length from tower main to top (not including freeboard) [m]
+nTower                          = prob.model.options['analysis_options']['tower']['n_height']-1
+prob['tower_height']            = prob['hub_height'] = 77.6
 prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
-prob['tower_outer_diameter_in'] = np.linspace(min_diam, 3.87, nTower+1) # Diameter at each tower section node (linear lofting between) [m]
-prob['tower_layer_thickness']   = np.linspace(0.04, 0.02, nTower).reshape((1,nTower)) # Diameter at each tower section node (linear lofting between) [m]
-prob['tower_outfitting_factor'] = 1.07                              # Scaling for unaccounted tower mass in outfitting
+prob['tower_outer_diameter_in'] = np.linspace(min_diam, 3.87, nTower+1)
+prob['tower_layer_thickness']   = np.linspace(0.04, 0.02, nTower).reshape((1,nTower))
+prob['tower_outfitting_factor'] = 1.07
 
 # Materials
 prob['material_names'] = ['steel']
 prob['main.layer_materials'] = prob['off.layer_materials'] = prob['tow.tower_layer_materials'] = ['steel']
 
 # Properties of rotor-nacelle-assembly (RNA)
-prob['rna_mass']   = 350e3 # Mass [kg]
-prob['rna_I']      = 1e5*np.array([1149.307, 220.354, 187.597, 0, 5.037, 0]) # Moment of intertia (xx,yy,zz,xy,xz,yz) [kg/m^2]
-prob['rna_cg']     = np.array([-1.132, 0, 0.509])                       # Offset of RNA center of mass from tower top (x,y,z) [m]
-# Max thrust
-prob['rna_force']  = np.array([1284744.196, 0, -112400.5527])           # Net force acting on RNA (x,y,z) [N]
-prob['rna_moment'] = np.array([3963732.762, 896380.8464, -346781.682]) # Net moment acting on RNA (x,y,z) [N*m]
-# Max wind speed
-#prob['rna_force']  = np.array([188038.8045, 0,  -16451.2637]) # Net force acting on RNA (x,y,z) [N]
-#prob['rna_moment'] = np.array([0.0, 131196.8431,  0.0]) # Net moment acting on RNA (x,y,z) [N*m]
+prob['rna_mass']   = 350e3
+prob['rna_I']      = 1e5*np.array([1149.307, 220.354, 187.597, 0, 5.037, 0])
+prob['rna_cg']     = np.array([-1.132, 0, 0.509])
+prob['rna_force']  = np.array([1284744.196, 0, -112400.5527])
+prob['rna_moment'] = np.array([3963732.762, 896380.8464, -346781.682])
 
 # Mooring constraints
-prob['max_draft'] = 150.0 # Max surge/sway offset [m]      
-prob['max_offset'] = 100.0 # Max surge/sway offset [m]      
-prob['operational_heel']   = 10.0 # Max heel (pitching) angle [deg]
+prob['max_draft']        = 150.0 # Max surge/sway offset [m]      
+prob['max_offset']       = 100.0 # Max surge/sway offset [m]      
+prob['operational_heel'] = 10.0 # Max heel (pitching) angle [deg]
 
 # Design constraints
-prob['max_taper_ratio'] = 0.2                # For manufacturability of rolling steel
+prob['max_taper_ratio']              = 0.2  # For manufacturability of rolling steel
 prob['min_diameter_thickness_ratio'] = 80.0 # For weld-ability
-prob['connection_ratio_max']      = 0.25 # For welding pontoons to columns
+prob['connection_ratio_max']         = 0.25 # For welding pontoons to columns
 
 # API 2U flag
 prob['loading'] = 'hydrostatic'
 
-# Remove all offset columns
-prob['number_of_offset_columns'] = 0
-prob['cross_attachment_pontoons_int']   = 0
-prob['lower_attachment_pontoons_int']   = 0
-prob['upper_attachment_pontoons_int']   = 0
-prob['lower_ring_pontoons_int']         = 0
-prob['upper_ring_pontoons_int']         = 0
-prob['outer_cross_pontoons_int']        = 0
+# Remove all offset columns and pontoons
+prob['number_of_offset_columns']      = 0
+prob['cross_attachment_pontoons_int'] = 0
+prob['lower_attachment_pontoons_int'] = 0
+prob['upper_attachment_pontoons_int'] = 0
+prob['lower_ring_pontoons_int']       = 0
+prob['upper_ring_pontoons_int']       = 0
+prob['outer_cross_pontoons_int']      = 0
 
 # Set environment to that used in OC3 testing campaign
 prob['water_depth']           = 320.0  # Distance to sea floor [m]
@@ -235,14 +231,12 @@ prob['wind_reference_height'] = 119.0  # Wind reference height [m]
 # Column geometry
 prob['main.permanent_ballast_height'] = 5.0 # Height above keel for permanent ballast [m]
 prob['main_freeboard']                = 10.0 # Height extension above waterline [m]
-
-prob['main.height'] = 100.0 # m
-prob['main.s'] = np.linspace(0,1,npts) # Non dimensional section pointns
-prob['main.outer_diameter_in'] = np.linspace(max_diam, min_diam, npts) # m
-prob['main.layer_thickness'] = prob['main.outer_diameter_in'][:-1].reshape((1,nsection))/100.0 # m
-
-prob['main.bulkhead_thickness'] = 0.05*np.ones(4) # Thickness of internal bulkheads [m]
-prob['main.bulkhead_locations'] = np.array([0.0, 0.25, 0.9, 1.0]) # Locations of internal bulkheads
+prob['main.height']                   = 100.0 # m
+prob['main.s']                        = np.linspace(0,1,npts) # Non dimensional section pointns
+prob['main.outer_diameter_in']        = np.linspace(max_diam, min_diam, npts) # m
+prob['main.layer_thickness']          = prob['main.outer_diameter_in'][:-1].reshape((1,nsection))/100.0 # m
+prob['main.bulkhead_thickness']       = 0.05*np.ones(4) # Thickness of internal bulkheads [m]
+prob['main.bulkhead_locations']       = np.array([0.0, 0.25, 0.9, 1.0]) # Locations of internal bulkheads
 
 # Column ring stiffener parameters
 prob['main.stiffener_web_height']       = 0.10 * np.ones(nsection) # (by section) [m]
@@ -261,20 +255,20 @@ prob['fairlead_support_outer_diameter'] = 3.2    # Diameter of all fairlead supp
 prob['fairlead_support_wall_thickness'] = 0.0175 # Thickness of all fairlead support elements [m]
 
 # Other variables to avoid divide by zeros, even though it won't matter
-prob['radius_to_offset_column'] = 15.0
-prob['offset_freeboard'] = 0.1
-prob['off.height'] = 1.0
-prob['off.s'] = np.linspace(0,1,nsection+1)
-prob['off.outer_diameter_in'] = 5.0 * np.ones(nsection+1)
-prob['off.layer_thickness'] = 0.1 * np.ones((1,nsection))
-prob['off.permanent_ballast_height'] = 0.1
-prob['off.stiffener_web_height'] = 0.1 * np.ones(nsection)
-prob['off.stiffener_web_thickness'] =  0.1 * np.ones(nsection)
-prob['off.stiffener_flange_width'] =  0.1 * np.ones(nsection)
-prob['off.stiffener_flange_thickness'] =  0.1 * np.ones(nsection)
-prob['off.stiffener_spacing'] =  0.1 * np.ones(nsection)
-prob['pontoon_outer_diameter'] = 1.0
-prob['pontoon_wall_thickness'] = 0.1
+prob['radius_to_offset_column']        = 15.0
+prob['offset_freeboard']               = 0.1
+prob['off.height']                     = 1.0
+prob['off.s']                          = np.linspace(0,1,nsection+1)
+prob['off.outer_diameter_in']          = 5.0 * np.ones(nsection+1)
+prob['off.layer_thickness']            = 0.1 * np.ones((1,nsection))
+prob['off.permanent_ballast_height']   = 0.1
+prob['off.stiffener_web_height']       = 0.1 * np.ones(nsection)
+prob['off.stiffener_web_thickness']    = 0.1 * np.ones(nsection)
+prob['off.stiffener_flange_width']     = 0.1 * np.ones(nsection)
+prob['off.stiffener_flange_thickness'] = 0.1 * np.ones(nsection)
+prob['off.stiffener_spacing']          = 0.1 * np.ones(nsection)
+prob['pontoon_outer_diameter']         = 1.0
+prob['pontoon_wall_thickness']         = 0.1
 
 # Use FD and run optimization
 if opt_flag:

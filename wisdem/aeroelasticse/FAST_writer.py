@@ -1023,7 +1023,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
             f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
             if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != 0:
-                f.write('@"AF{:02d}_Coords.txt"       {:<11} {:}'.format(afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
+                f.write('@"{:}_AF{:02d}_Coords.txt"       {:<11} {:}'.format(self.FAST_namingOut, afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             else:
                 f.write('{:<22d}       {:<11} {:}'.format(0, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             # f.write('AF{:02d}_BL.txt              {:<11} {:}'.format(afi, 'BL_file', '! The file name including the boundary layer characteristics of the profile. Ignored if the aeroacoustic module is not called.\n'))
@@ -1134,12 +1134,12 @@ class InputWriter_OpenFAST(InputWriter_Common):
         self.fst_vt['AeroDyn15']['AFNames_coord'] = ['']*self.fst_vt['AeroDyn15']['NumAFfiles']
         
         for afi in range(int(self.fst_vt['AeroDyn15']['NumAFfiles'])):
+            self.fst_vt['AeroDyn15']['AFNames_coord'][afi] = os.path.join('Airfoils', self.FAST_namingOut + '_AF%02d_Coords.txt'%afi)
             
             x     = self.fst_vt['AeroDyn15']['af_coord'][afi]['x']
             y     = self.fst_vt['AeroDyn15']['af_coord'][afi]['y']
             coord = np.vstack((x, y)).T
 
-            self.fst_vt['AeroDyn15']['AFNames_coord'][afi] = os.path.join('Airfoils/AF%02d_Coords.txt'%afi)
             af_file = os.path.join(self.FAST_runDirectory, self.fst_vt['AeroDyn15']['AFNames_coord'][afi])
             f = open(af_file, 'w')
             
