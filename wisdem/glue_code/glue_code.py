@@ -43,7 +43,7 @@ class WT_RNTA(Group):
             #if analysis_options['tower']['run_towerse']:
             self.add_subsystem('freq_tower',        TowerSE(analysis_options=analysis_options, topLevelFlag=False))
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(analysis_options = analysis_options)) # Aero analysis
-            self.add_subsystem('aeroelastic',       FASTLoadCases(analysis_options = analysis_options))
+            self.add_subsystem('aeroelastic',       FASTLoadCases(analysis_options = analysis_options, opt_options = opt_options))
 
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options, freq_run=False))
         self.add_subsystem('drivese',   DriveSE(debug=False,
@@ -399,21 +399,21 @@ class WT_RNTA(Group):
         self.connect('blade.outer_shape_bem.s','rlds.constr.s')
 
         
-        if analysis_options['rotorse']['FatigueMode'] > 0:
-            self.connect('elastic.precomp.x_tc',                            'rlds.x_tc')
-            self.connect('elastic.precomp.y_tc',                            'rlds.y_tc')
-            self.connect('materials.E',                                     'rlds.E')
-            self.connect('materials.Xt',                                    'rlds.Xt')
-            self.connect('materials.Xc',                                    'rlds.Xc')
-            self.connect('blade.outer_shape_bem.pitch_axis',                'rlds.pitch_axis')
-            self.connect('elastic.sc_ss_mats',                              'rlds.sc_ss_mats')
-            self.connect('elastic.sc_ps_mats',                              'rlds.sc_ps_mats')
-            self.connect('elastic.te_ss_mats',                              'rlds.te_ss_mats')
-            self.connect('elastic.te_ps_mats',                              'rlds.te_ps_mats')
-            self.connect('blade.interp_airfoils.r_thick_interp',            'rlds.rthick')
-            self.connect('blade.internal_structure_2d_fem.layer_name',      'rlds.layer_name')
-            self.connect('blade.internal_structure_2d_fem.layer_mat',       'rlds.layer_mat')
-            self.connect('blade.internal_structure_2d_fem.definition_layer','rlds.definition_layer')
+        if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_blade_fatigue']:
+            self.connect('elastic.precomp.x_tc',                            'aeroelastic.x_tc')
+            self.connect('elastic.precomp.y_tc',                            'aeroelastic.y_tc')
+            self.connect('materials.E',                                     'aeroelastic.E')
+            self.connect('materials.Xt',                                    'aeroelastic.Xt')
+            self.connect('materials.Xc',                                    'aeroelastic.Xc')
+            self.connect('blade.outer_shape_bem.pitch_axis',                'aeroelastic.pitch_axis')
+            self.connect('elastic.sc_ss_mats',                              'aeroelastic.sc_ss_mats')
+            self.connect('elastic.sc_ps_mats',                              'aeroelastic.sc_ps_mats')
+            self.connect('elastic.te_ss_mats',                              'aeroelastic.te_ss_mats')
+            self.connect('elastic.te_ps_mats',                              'aeroelastic.te_ps_mats')
+            # self.connect('blade.interp_airfoils.r_thick_interp',            'aeroelastic.rthick')
+            # self.connect('blade.internal_structure_2d_fem.layer_name',      'aeroelastic.layer_name')
+            # self.connect('blade.internal_structure_2d_fem.layer_mat',       'aeroelastic.layer_mat')
+            self.connect('blade.internal_structure_2d_fem.definition_layer','aeroelastic.definition_layer')
             # self.connect('gamma_m',     'rlds.gamma_m')
             # self.connect('gamma_f',     'rlds.gamma_f') # TODO
 

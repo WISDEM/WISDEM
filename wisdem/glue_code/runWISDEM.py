@@ -152,7 +152,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                     n_OF_runs += len(analysis_options['openfast']['dlc_settings']['Power_Curve']['U'])*len(analysis_options['openfast']['dlc_settings']['Power_Curve']['Seeds'])
                 else:
                     n_OF_runs += len(analysis_options['openfast']['dlc_settings']['Power_Curve']['U'])
-            if analysis_options['openfast']['dlc_settings']['run_IEC']:
+            if analysis_options['openfast']['dlc_settings']['run_IEC'] or analysis_options['openfast']['dlc_settings']['run_blade_fatigue']:
                 for dlc in analysis_options['openfast']['dlc_settings']['IEC']:
                     dlc_vars = list(dlc.keys())
                     # Number of wind speeds
@@ -699,4 +699,4 @@ if __name__ == "__main__":
         print('Run time: %f'%(time.time()-tt))
         sys.stdout.flush()
 
-    
+        # print(wt_opt['aeroelastic.C_miners_SC_PS'])
