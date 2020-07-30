@@ -111,17 +111,17 @@ class FloatingSE(om.Group):
         
         # Next do main and ballast columns
         # Ballast columns are replicated from same design in the components
-        column_promotes = ['E_mat','G_mat','sigma_y_mat','z0','rho_air','mu_air','rho_water','mu_water','rho_mat',
-                           'Uref','zref','shearExp','yaw','Uc','water_depth',
+        column_promotes = ['E_mat','G_mat','sigma_y_mat','rho_air','mu_air','rho_water','mu_water','rho_mat',
+                           'shearExp','yaw','Uc','water_depth',
                            'hsig_wave','Tsig_wave','cd_usr','cm','loading','beta_wind','beta_wave',
                            'max_draft','max_taper','min_d_to_t','material_names',
                            'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
                            'unit_cost_mat','labor_cost_rate','painting_cost_rate','outfitting_cost_rate']
         
-        self.add_subsystem('main', Column(analysis_options=opt, column_options=opt['columns']['main'], n_mat=n_mat, topLevelFlag=False),
+        self.add_subsystem('main', Column(analysis_options=opt, column_options=opt['columns']['main'], n_mat=n_mat),
                            promotes=column_promotes)
 
-        self.add_subsystem('off', Column(analysis_options=opt, column_options=opt['columns']['offset'], n_mat=n_mat, topLevelFlag=False),
+        self.add_subsystem('off', Column(analysis_options=opt, column_options=opt['columns']['offset'], n_mat=n_mat),
                            promotes=column_promotes)
 
         # Run Semi Geometry for interfaces
@@ -161,15 +161,6 @@ class FloatingSE(om.Group):
         
         self.connect('max_taper_ratio', 'max_taper')
         self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
-        
-        # To do: connect these to independent variables
-        if topLevelFlag:
-            self.connect('water_depth',['main.wave.z_floor','off.wave.z_floor'])
-            self.connect('wave_z0',['main.wave.z_surface','off.wave.z_surface'])
-            self.connect('wind_z0','z0')
-            self.connect('wind_reference_height','zref')
-            self.connect('wind_reference_speed','Uref')
-            
         
         self.connect('main.z_full', ['main_z_nodes', 'main_z_full'])
         self.connect('main.d_full', 'main_d_full')

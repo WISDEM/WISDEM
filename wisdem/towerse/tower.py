@@ -1148,24 +1148,21 @@ class TowerLeanSE(om.Group):
         nFull        = get_nfull(n_height)	
         n_mat        = self.options['analysis_options']['materials']['n_mat']
         
-        # Independent variables that are only used in the user is calling TowerSE via python directly
-        if self.options['topLevelFlag']:
-            self.set_input_defaults('gravity_foundation_mass', 0.0, units='kg')
-            self.set_input_defaults('transition_piece_mass', 0.0, units='kg')
-            self.set_input_defaults('transition_piece_height', 0.0, units='m')
-            self.set_input_defaults('suctionpile_depth', 0.0, units='m')
-            self.set_input_defaults('suctionpile_depth_diam_ratio', 0.0)
-            self.set_input_defaults('tower_outer_diameter', np.ones(n_height), units='m')
-            # self.set_input_defaults('tower_section_height', np.zeros(n_height-1), units='m')
-            self.set_input_defaults('tower_wall_thickness', np.ones(n_height-1), units='m')
-            self.set_input_defaults('outfitting_factor', np.zeros(n_height-1))
-            self.set_input_defaults('foundation_height', 0.0, units='m')
-            self.set_input_defaults('hub_height', 0.0, units='m')
-            self.set_input_defaults('rho', np.zeros(n_height-1), units='kg/m**3')
-            self.set_input_defaults('unit_cost', np.zeros(n_height-1), units='USD/kg')
-            self.set_input_defaults('labor_cost_rate', 0.0, units='USD/min')
-            self.set_input_defaults('painting_cost_rate', 0.0, units='USD/m**2')
-            
+        self.set_input_defaults('gravity_foundation_mass', 0.0, units='kg')
+        self.set_input_defaults('transition_piece_mass', 0.0, units='kg')
+        self.set_input_defaults('transition_piece_height', 0.0, units='m')
+        self.set_input_defaults('suctionpile_depth', 0.0, units='m')
+        self.set_input_defaults('suctionpile_depth_diam_ratio', 0.0)
+        self.set_input_defaults('tower_outer_diameter', np.ones(n_height), units='m')
+        self.set_input_defaults('tower_wall_thickness', np.ones(n_height-1), units='m')
+        self.set_input_defaults('outfitting_factor', np.zeros(n_height-1))
+        self.set_input_defaults('foundation_height', 0.0, units='m')
+        self.set_input_defaults('hub_height', 0.0, units='m')
+        self.set_input_defaults('rho', np.zeros(n_height-1), units='kg/m**3')
+        self.set_input_defaults('unit_cost', np.zeros(n_height-1), units='USD/kg')
+        self.set_input_defaults('labor_cost_rate', 0.0, units='USD/min')
+        self.set_input_defaults('painting_cost_rate', 0.0, units='USD/m**2')
+        
         # Inputs here are the outputs from the Tower component in load_IEA_yaml
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon,

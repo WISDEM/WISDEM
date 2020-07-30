@@ -620,7 +620,7 @@ class TestGroup(unittest.TestCase):
 
         prob = om.Problem()
 
-        prob.model.add_subsystem('col', column.Column(column_options=colopt, analysis_options=opt, n_mat=1, topLevelFlag=True), promotes=['*'])
+        prob.model.add_subsystem('col', column.Column(column_options=colopt, analysis_options=opt, n_mat=1), promotes=['*'])
         
         prob.setup()
         prob['freeboard'] = 15.0
@@ -660,8 +660,8 @@ class TestGroup(unittest.TestCase):
         prob['painting_cost_rate'] = 20.0
         prob['outfitting_cost_rate'] = 300.0
         prob['loading'] = 'hydrostatic'
-        prob['max_taper_ratio'] = 0.4
-        prob['min_diameter_thickness_ratio'] = 120.0
+        prob['max_taper'] = 0.4
+        prob['min_d_to_t'] = 120.0
         prob['shearExp'] = 0.1
         prob['beta_wind'] = 0.0
         prob['cd_usr'] = -1.0
@@ -673,8 +673,6 @@ class TestGroup(unittest.TestCase):
         nu = 0.3
         prob['G_mat'] = 0.5*prob['E_mat']/(1 + nu)
         prob['sigma_y_mat'] = np.array([3e6])
-        prob['gamma_f'] = 1.0
-        prob['gamma_b'] = 1.0
         prob['max_draft'] = 70.0
         
         prob.run_model()
