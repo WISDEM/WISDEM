@@ -116,7 +116,10 @@ class RunPreComp(ExplicitComponent):
         self.add_output('total_blade_cost', val=0.0, units='USD', desc='total blade cost')
         self.add_output('total_blade_mass', val=0.0, units='USD', desc='total blade cost')
 
-
+        self.add_output('sc_ss_mats', val=np.zeros((n_span, n_mat)), desc="spar cap, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_output('sc_ps_mats', val=np.zeros((n_span, n_mat)), desc="spar cap, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_output('te_ss_mats', val=np.zeros((n_span, n_mat)), desc="trailing edge reinforcement, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_output('te_ps_mats', val=np.zeros((n_span, n_mat)), desc="trailing edge reinforcement, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
 
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -425,6 +428,22 @@ class RunPreComp(ExplicitComponent):
         xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = beam.criticalStrainLocations(sector_idx_strain_spar_cap_ss, sector_idx_strain_spar_cap_ps)
         xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = beam.criticalStrainLocations(sector_idx_strain_te_ss, sector_idx_strain_te_ps)
         
+        # Store what materials make up the composites for SC/TE
+        for i in range(self.n_span):
+            for j in range(self.n_mat):
+                if sector_idx_strain_spar_cap_ss[i]:
+                    if j in upperCS[i].mat_idx[sector_idx_strain_spar_cap_ss[i]]:
+                        outputs['sc_ss_mats'][i,j] = 1.
+                if sector_idx_strain_spar_cap_ps[i]:
+                    if j in lowerCS[i].mat_idx[sector_idx_strain_spar_cap_ps[i]]:
+                        outputs['sc_ps_mats'][i,j] = 1.
+                if sector_idx_strain_te_ss[i]:
+                    if j in upperCS[i].mat_idx[sector_idx_strain_te_ss[i]]:
+                        outputs['te_ss_mats'][i,j] = 1.
+                if sector_idx_strain_te_ps[i]:
+                    if j in lowerCS[i].mat_idx[sector_idx_strain_te_ps[i]]:
+                        outputs['te_ps_mats'][i,j] = 1.
+
         outputs['z']         = inputs['r']
         outputs['EIxx']      = EIxx
         outputs['EIyy']      = EIyy
@@ -556,7 +575,7 @@ class RotorElasticity(Group):
 
         # Get elastic properties by running precomp
         promote_list = ['chord','theta','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ', 'x_sc','y_sc']
-        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=promote_list+['r','Tw_iner','precurve','presweep', 'x_ec', 'y_ec'])
+        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=promote_list+['r','Tw_iner','precurve','presweep', 'x_ec', 'y_ec', 'sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats'])
         # Check rail transportabiliy
         if opt_options['constraints']['blade']['rail_transport']['flag']:
             self.add_subsystem('rail',  RailTransport(analysis_options = analysis_options), promotes=promote_list)
