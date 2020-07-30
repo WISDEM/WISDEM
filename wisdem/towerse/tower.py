@@ -1125,7 +1125,7 @@ class TowerPostFrame(om.ExplicitComponent):
         return outputs
 
 # -----------------
-#  Assembly
+#  Groups
 # -----------------
 
 class TowerLeanSE(om.Group):
@@ -1197,10 +1197,6 @@ class TowerLeanSE(om.Group):
         
         # Connections for geometry and mass
         self.connect('z_start', 'geometry.foundation_height')
-        # self.connect('tower_section_height', 'geometry.section_height')
-        # self.connect('tower_outer_diameter', ['geometry.diameter', 'gc.d'])
-        # self.connect('tower_outer_diameter', 'base_diameter', src_indices=[0])
-        # self.connect('tower_wall_thickness', ['geometry.wall_thickness', 'gc.t'])
 
         self.connect('rho_full', 'cm.rho')
         self.connect('outfitting_full', 'cm.outfitting_factor')
@@ -1239,16 +1235,8 @@ class TowerSE(om.Group):
             self.set_input_defaults('rho_air', 1.225, units='kg/m**3')
             self.set_input_defaults('mu_air', 1.81206e-5, units='kg/m/s')
             self.set_input_defaults('shearExp', 0.0)
-            # self.set_input_defaults('wind_reference_height', 0.0, units='m')
-            # self.set_input_defaults('wind_z0', 0.0, units='m')
             self.set_input_defaults('beta_wind', 0.0, units='deg')
             
-            # self.set_input_defaults('rho_water', 1025.0, units='kg/m**3')
-            # self.set_input_defaults('mu_water', 8.9e-4, units='kg/m/s')
-            # self.set_input_defaults('beta_wave', 0.0, units='deg')
-            # self.set_input_defaults('hsig_wave', 0.0, units='m')
-            # self.set_input_defaults('Tsig_wave', 0.0, units='s')
-            # 
             self.set_input_defaults('cd_usr', -1.)
             self.set_input_defaults('yaw', 0.0, units='deg')
             self.set_input_defaults('E', np.zeros(n_height-1), units='N/m**2')
@@ -1260,7 +1248,6 @@ class TowerSE(om.Group):
             self.set_input_defaults('rna_cg', np.zeros(3), units='m')
             self.set_input_defaults('rna_I', np.zeros(6), units='kg*m**2')
             self.set_input_defaults('life', 0.0)
-            #self.set_input_defaults('m_SN', 0.0)
 
         # Load baseline discretization
         self.add_subsystem('geom', TowerLeanSE(analysis_options=self.options['analysis_options'], topLevelFlag=topLevelFlag), promotes=['*'])
@@ -1272,9 +1259,6 @@ class TowerSE(om.Group):
         self.connect('t_full', 'props.t')
         if monopile:
             self.connect('d_full', 'soil.d0', src_indices=[0])
-            # self.connect('suctionpile_depth', 'soil.depth')
-            # self.connect('G_soil', 'soil.G')
-            # self.connect('nu_soil', 'soil.nu')
         
         # Add in all Components that drive load cases
         # Note multiple load cases have to be handled by replicating components and not groups/assemblies.
@@ -1316,11 +1300,6 @@ class TowerSE(om.Group):
             if monopile:
                 self.connect('z_full', ['wave'+lc+'.z', 'waveLoads'+lc+'.z'])
                 self.connect('d_full', 'waveLoads'+lc+'.d')
-
-            # if topLevelFlag:
-            #     self.connect('rna_mass', 'pre'+lc+'.mass')
-            #     self.connect('rna_cg', 'pre'+lc+'.mrho')
-            #     self.connect('rna_I', 'pre'+lc+'.mI')
 
             self.connect('rho_full', 'tower'+lc+'.rho')
             self.connect('E_full', 'tower'+lc+'.E')
@@ -1365,17 +1344,9 @@ class TowerSE(om.Group):
             self.connect('tower'+lc+'.hoop_stress_euro', 'post'+lc+'.hoop_stress')
             self.connect('tower'+lc+'.top_deflection', 'post'+lc+'.top_deflection_in')
         
-            # # connections to wind, wave
-            # if topLevelFlag:
-            #     self.connect('wind_reference_height', 'wind'+lc+'.zref')
-            #     self.connect('wind_z0', 'wind'+lc+'.z0')
-            #     if monopile:
-            #         self.connect('wind_z0', 'wave'+lc+'.z_surface')
-                
             self.connect('wind'+lc+'.U', 'windLoads'+lc+'.U')
             if monopile:
                 # connections to waveLoads1
-                # self.connect('foundation_height', 'z_floor')
                 self.connect('wave'+lc+'.U', 'waveLoads'+lc+'.U')
                 self.connect('wave'+lc+'.A', 'waveLoads'+lc+'.A')
                 self.connect('wave'+lc+'.p', 'waveLoads'+lc+'.p')
@@ -1386,11 +1357,6 @@ class TowerSE(om.Group):
             self.connect('windLoads'+lc+'.windLoads_Pz', 'distLoads'+lc+'.windLoads_Pz')
             self.connect('windLoads'+lc+'.windLoads_qdyn', 'distLoads'+lc+'.windLoads_qdyn')
             self.connect('windLoads'+lc+'.windLoads_beta', 'distLoads'+lc+'.windLoads_beta')
-            #self.connect('windLoads'+lc+'.windLoads_Px0', 'distLoads'+lc+'.windLoads_Px0')
-            #self.connect('windLoads'+lc+'.windLoads_Py0', 'distLoads'+lc+'.windLoads_Py0')
-            #self.connect('windLoads'+lc+'.windLoads_Pz0', 'distLoads'+lc+'.windLoads_Pz0')
-            #self.connect('windLoads'+lc+'.windLoads_qdyn0', 'distLoads'+lc+'.windLoads_qdyn0')
-            #self.connect('windLoads'+lc+'.windLoads_beta0', 'distLoads'+lc+'.windLoads_beta0')
             self.connect('windLoads'+lc+'.windLoads_z', 'distLoads'+lc+'.windLoads_z')
             self.connect('windLoads'+lc+'.windLoads_d', 'distLoads'+lc+'.windLoads_d')
 
@@ -1400,11 +1366,6 @@ class TowerSE(om.Group):
                 self.connect('waveLoads'+lc+'.waveLoads_Pz', 'distLoads'+lc+'.waveLoads_Pz')
                 self.connect('waveLoads'+lc+'.waveLoads_pt', 'distLoads'+lc+'.waveLoads_qdyn')
                 self.connect('waveLoads'+lc+'.waveLoads_beta', 'distLoads'+lc+'.waveLoads_beta')
-                #self.connect('waveLoads'+lc+'.waveLoads_Px0', 'distLoads'+lc+'.waveLoads_Px0')
-                #self.connect('waveLoads'+lc+'.waveLoads_Py0', 'distLoads'+lc+'.waveLoads_Py0')
-                #self.connect('waveLoads'+lc+'.waveLoads_Pz0', 'distLoads'+lc+'.waveLoads_Pz0')
-                #self.connect('waveLoads'+lc+'.waveLoads_qdyn0', 'distLoads'+lc+'.waveLoads_qdyn0')
-                #self.connect('waveLoads'+lc+'.waveLoads_beta0', 'distLoads'+lc+'.waveLoads_beta0')
                 self.connect('waveLoads'+lc+'.waveLoads_z', 'distLoads'+lc+'.waveLoads_z')
                 self.connect('waveLoads'+lc+'.waveLoads_d', 'distLoads'+lc+'.waveLoads_d')
 
