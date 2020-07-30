@@ -367,6 +367,7 @@ class FASTLoadCases(ExplicitComponent):
         
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
+        self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
 
         self.add_output('V_out',       val=np.zeros(n_pc), units='m/s',  desc='wind vector')
@@ -887,6 +888,9 @@ class FASTLoadCases(ExplicitComponent):
         loads_analysis.channels_extreme_table += ["RootMxc1", "RootMyc1", "RootMzc1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxc3", "RootMyc3", "RootMzc3"]
         loads_analysis.channels_extreme_table += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
 
+        # DEL info 
+        loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
 
@@ -1027,10 +1031,10 @@ class FASTLoadCases(ExplicitComponent):
         # DELs
         # del_channels = [('RootMyb1',10), ('RootMyb2',10), ('RootMyb3',10)]
         # dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
-        # outputs['DEL_RootMyb'] = np.mean([np.mean(dels['RootMyb1']), np.mean(dels['RootMyb2']), np.mean(dels['RootMyb3'])])
         
         # Output
-        # outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+        outputs['DEL_RootMyb'] = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL']), np.max(sum_stats['RootMyb3']['DEL'])])
+        outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
