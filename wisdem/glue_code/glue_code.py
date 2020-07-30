@@ -41,7 +41,7 @@ class WT_RNTA(Group):
             self.add_subsystem('modes_elastodyn',   ModesElastoDyn(analysis_options = analysis_options))
             self.add_subsystem('freq_rotor',        RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options, freq_run=True))
             #if analysis_options['tower']['run_towerse']:
-            self.add_subsystem('freq_tower',        TowerSE(analysis_options=analysis_options, topLevelFlag=False))
+            self.add_subsystem('freq_tower',        TowerSE(analysis_options=analysis_options))
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(analysis_options = analysis_options)) # Aero analysis
             self.add_subsystem('aeroelastic',       FASTLoadCases(analysis_options = analysis_options))
 
@@ -50,7 +50,7 @@ class WT_RNTA(Group):
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
         #if analysis_options['Analysis_Flags']['TowerSE']:
-        self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
+        self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options))
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
 

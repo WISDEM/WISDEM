@@ -1135,7 +1135,6 @@ class TowerLeanSE(om.Group):
     
     def initialize(self):
         self.options.declare('analysis_options')
-        self.options.declare('topLevelFlag')
         
     def setup(self):
         toweropt = self.options['analysis_options']['tower']	
@@ -1212,7 +1211,6 @@ class TowerSE(om.Group):
 
     def initialize(self):
         self.options.declare('analysis_options')
-        self.options.declare('topLevelFlag')
         
     def setup(self):
         toweropt = self.options['analysis_options']['tower']
@@ -1220,34 +1218,31 @@ class TowerSE(om.Group):
         nLC      = toweropt['nLC']
         wind     = toweropt['wind']
         frame3dd_opt = toweropt['frame3dd']
-        topLevelFlag = self.options['topLevelFlag']
         n_height_tow = self.options['analysis_options']['tower']['n_height']
         n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
         nFull        = get_nfull(n_height)
         n_mat        = self.options['analysis_options']['materials']['n_mat']
 
-        # Independent variables that are only used in the user is calling TowerSE via python directly
-        if topLevelFlag:
-            self.set_input_defaults('rho_air', 1.225, units='kg/m**3')
-            self.set_input_defaults('mu_air', 1.81206e-5, units='kg/m/s')
-            self.set_input_defaults('shearExp', 0.0)
-            self.set_input_defaults('beta_wind', 0.0, units='deg')
-            
-            self.set_input_defaults('cd_usr', -1.)
-            self.set_input_defaults('yaw', 0.0, units='deg')
-            self.set_input_defaults('E', np.zeros(n_height-1), units='N/m**2')
-            self.set_input_defaults('G', np.zeros(n_height-1), units='N/m**2')
-            self.set_input_defaults('G_soil', 0.0, units='N/m**2')
-            self.set_input_defaults('nu_soil', 0.0)
-            self.set_input_defaults('sigma_y', np.zeros(n_height-1), units='N/m**2')
-            self.set_input_defaults('rna_mass', 0.0, units='kg')
-            self.set_input_defaults('rna_cg', np.zeros(3), units='m')
-            self.set_input_defaults('rna_I', np.zeros(6), units='kg*m**2')
-            self.set_input_defaults('life', 0.0)
+        self.set_input_defaults('rho_air', 1.225, units='kg/m**3')
+        self.set_input_defaults('mu_air', 1.81206e-5, units='kg/m/s')
+        self.set_input_defaults('shearExp', 0.0)
+        self.set_input_defaults('beta_wind', 0.0, units='deg')
+        
+        self.set_input_defaults('cd_usr', -1.)
+        self.set_input_defaults('yaw', 0.0, units='deg')
+        self.set_input_defaults('E', np.zeros(n_height-1), units='N/m**2')
+        self.set_input_defaults('G', np.zeros(n_height-1), units='N/m**2')
+        self.set_input_defaults('G_soil', 0.0, units='N/m**2')
+        self.set_input_defaults('nu_soil', 0.0)
+        self.set_input_defaults('sigma_y', np.zeros(n_height-1), units='N/m**2')
+        self.set_input_defaults('rna_mass', 0.0, units='kg')
+        self.set_input_defaults('rna_cg', np.zeros(3), units='m')
+        self.set_input_defaults('rna_I', np.zeros(6), units='kg*m**2')
+        self.set_input_defaults('life', 0.0)
 
         # Load baseline discretization
-        self.add_subsystem('geom', TowerLeanSE(analysis_options=self.options['analysis_options'], topLevelFlag=topLevelFlag), promotes=['*'])
+        self.add_subsystem('geom', TowerLeanSE(analysis_options=self.options['analysis_options']), promotes=['*'])
         self.add_subsystem('props', CylindricalShellProperties(nFull=nFull))
         self.add_subsystem('soil', TowerSoil(), promotes=[('G', 'G_soil'), ('nu', 'nu_soil'), ('depth', 'suctionpile_depth')])
 

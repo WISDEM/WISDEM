@@ -126,8 +126,8 @@ class TestOC3Mass(unittest.TestCase):
 
         # Design constraints
         prob['max_draft'] = 200.0                # For manufacturability of rolling steel
-        prob['max_taper_ratio'] = 0.4                # For manufacturability of rolling steel
-        prob['min_diameter_thickness_ratio'] = 120.0 # For weld-ability
+        prob['max_taper'] = 0.4                # For manufacturability of rolling steel
+        prob['min_d_to_t'] = 120.0 # For weld-ability
 
         # API 2U flag
         prob['loading'] = 'axial' #'hydrostatic'
@@ -152,12 +152,9 @@ class TestOC3Mass(unittest.TestCase):
         prob['water_depth']           = 320.0  # Distance to sea floor [m]
         prob['hsig_wave']             = 0.0    # Significant wave height [m]
         prob['Tsig_wave']             = 1e3    # Wave period [s]
-        prob['wind_reference_speed']  = 0.0    # Wind reference speed [m/s]
-        prob['wind_reference_height'] = 119.0  # Wind reference height [m]
         prob['shearExp']              = 0.11   # Shear exponent in wind power law
         prob['cm']                    = 2.0    # Added mass coefficient
         prob['Uc']                    = 0.0    # Mean current speed
-        prob['wind_z0']               = 0.0    # Water line
         prob['yaw']                   = 0.0    # Turbine yaw angle
         prob['beta_wind']             = prob['beta_wave'] = 0.0
         prob['cd_usr']                = -1.0 # Compute drag coefficient

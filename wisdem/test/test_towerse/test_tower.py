@@ -413,7 +413,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['frame3dd']['add_gravity'] = True
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(analysis_options=analysis_options)
         prob.setup()
 
         prob['hub_height'] = 80.0
@@ -538,7 +538,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['frame3dd']['add_gravity'] = True
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(analysis_options=analysis_options)
         prob.setup()
 
         prob['hub_height'] = 80.0
@@ -681,7 +681,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['tower']['frame3dd']['add_gravity'] = True
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(analysis_options=analysis_options)
         prob.setup()
 
         prob['hub_height'] = 80.0
@@ -798,7 +798,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['materials']['n_mat'] = 1
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(analysis_options=analysis_options)
         prob.setup()
         
         # Set common and then customized parameters
@@ -977,7 +977,7 @@ class TestTowerSE(unittest.TestCase):
         analysis_options['materials']['n_mat'] = 1
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(analysis_options=analysis_options)
         prob.setup()
 
         if analysis_options['tower']['wind'] == 'PowerWind':

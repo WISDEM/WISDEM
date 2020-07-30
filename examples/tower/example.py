@@ -58,7 +58,7 @@ analysis_options["materials"]["n_mat"] = n_materials
 
 # Instantiate OpenMDAO problem and create a model using the TowerSE group
 prob = om.Problem()
-prob.model = TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+prob.model = TowerSE(analysis_options=analysis_options)
 # ---
 
 # If performing optimization, set up the optimizer and problem formulation
