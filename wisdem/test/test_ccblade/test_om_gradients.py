@@ -19,18 +19,15 @@ class Test(unittest.TestCase):
     
         prob = om.Problem()
     
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-    
-        # Add some arbitrary inputs
-        ivc.add_output('Rtip', val=80., units='m')
-        ivc.add_output('precurve_in', val=np.random.rand(n_span), units='m')
-        ivc.add_output('presweep_in', val=np.random.rand(n_span), units='m')
-        ivc.add_output('precone', val=2.2, units='deg')
-    
         comp = CCBladeGeometry(n_span=n_span)
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
+        
+        prob.set_val('Rtip', 80., units='m')
+        prob.set_val('precurve_in', np.random.rand(n_span), units='m')
+        prob.set_val('presweep_in', np.random.rand(n_span), units='m')
+        prob.set_val('precone', 2.2, units='deg')
     
         prob.run_model()
     
@@ -40,50 +37,14 @@ class Test(unittest.TestCase):
     
     def test_ccblade_loads(self):
         prob = om.Problem()
-    
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-    
-        # Add some arbitrary inputs        
+        
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'smaller_dataset.npz', allow_pickle=True)
-        ivc.add_output('airfoils_aoa', npzfile['aoa'], units='deg')
-        ivc.add_output('airfoils_Re', npzfile['Re'])
-        ivc.add_output('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('r', npzfile['r'], units='m')
-        ivc.add_output('chord', npzfile['chord'], units='m')
-        ivc.add_output('theta', npzfile['theta'], units='deg')
-    
+        
         n_span = npzfile['r'].size
         n_aoa = npzfile['aoa'].size
         n_Re = npzfile['Re'].size
-    
-        # parameters
-        ivc.add_output('V_load', 12., units='m/s')
-        ivc.add_output('Omega_load', 7.0, units='rpm')
-        ivc.add_output('pitch_load', val=2.0, units='deg', desc='blade pitch setting')
-        ivc.add_output('azimuth_load', val=3.0, units='deg', desc='blade azimuthal location')
-    
-        ivc.add_output('Rhub', 1., units='m')
-        ivc.add_output('Rtip', 70., units='m')
-        ivc.add_output('hub_height', 100., units='m')
-        ivc.add_output('precone', 0., units='deg')
-        ivc.add_output('tilt', 0., units='deg')
-        ivc.add_output('yaw', 0., units='deg')
-        ivc.add_output('precurve', np.zeros(n_span), units='m')
-        ivc.add_output('precurveTip', 0., units='m')
-    
-        ivc.add_output('rho', 1.225, units='kg/m**3')
-        ivc.add_output('mu', 1.81206e-5, units='kg/(m*s)')
-        ivc.add_output('shearExp', 0.25)
-        ivc.add_discrete_output('nBlades', 3)
-        ivc.add_discrete_output('nSector', 4)
-        ivc.add_discrete_output('tiploss', True)
-        ivc.add_discrete_output('hubloss', True)
-        ivc.add_discrete_output('wakerotation', True)
-        ivc.add_discrete_output('usecd', True)
-    
+            
         analysis_options = {}
         analysis_options['blade'] = {}
         analysis_options['blade']['n_span'] = n_span
@@ -101,6 +62,43 @@ class Test(unittest.TestCase):
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
+        
+        # Add some arbitrary inputs        
+        prob.set_val('airfoils_aoa', npzfile['aoa'], units='deg')
+        prob.set_val('airfoils_Re', npzfile['Re'])
+        prob.set_val('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('r', npzfile['r'], units='m')
+        prob.set_val('chord', npzfile['chord'], units='m')
+        prob.set_val('theta', npzfile['theta'], units='deg')
+    
+
+    
+        # parameters
+        prob.set_val('V_load', 12., units='m/s')
+        prob.set_val('Omega_load', 7.0, units='rpm')
+        prob.set_val('pitch_load', 2.0, units='deg')
+        prob.set_val('azimuth_load', 3.0, units='deg')
+    
+        prob.set_val('Rhub', 1., units='m')
+        prob.set_val('Rtip', 70., units='m')
+        prob.set_val('hub_height', 100., units='m')
+        prob.set_val('precone', 0., units='deg')
+        prob.set_val('tilt', 0., units='deg')
+        prob.set_val('yaw', 0., units='deg')
+        prob.set_val('precurve', np.zeros(n_span), units='m')
+        prob.set_val('precurveTip', 0., units='m')
+    
+        prob.set_val('rho', 1.225, units='kg/m**3')
+        prob.set_val('mu', 1.81206e-5, units='kg/(m*s)')
+        prob.set_val('shearExp', 0.25)
+        prob.set_val('nBlades', 3)
+        prob.set_val('nSector', 4)
+        prob.set_val('tiploss', True)
+        prob.set_val('hubloss', True)
+        prob.set_val('wakerotation', True)
+        prob.set_val('usecd', True)
     
         prob.run_model()
     
@@ -125,47 +123,12 @@ class Test(unittest.TestCase):
         """
         prob = om.Problem()
     
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-    
         # Add some arbitrary inputs        
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'smaller_dataset.npz', allow_pickle=True)
-        ivc.add_output('airfoils_aoa', npzfile['aoa'], units='deg')
-        ivc.add_output('airfoils_Re', npzfile['Re'])
-        ivc.add_output('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('r', npzfile['r'], units='m')
-        ivc.add_output('chord', npzfile['chord'], units='m')
-        ivc.add_output('theta', npzfile['theta'], units='deg')
-    
         n_span = npzfile['r'].size
         n_aoa = npzfile['aoa'].size
         n_Re = npzfile['Re'].size
-    
-        # parameters
-        ivc.add_output('V_load', 12., units='m/s')
-        ivc.add_output('Omega_load', 7.0, units='rpm')
-        ivc.add_output('pitch_load', val=2.0, units='deg', desc='blade pitch setting')
-    
-        ivc.add_output('Rhub', 1., units='m')
-        ivc.add_output('Rtip', 70., units='m')
-        ivc.add_output('hub_height', 100., units='m')
-        ivc.add_output('precone', 0., units='deg')
-        ivc.add_output('tilt', 0., units='deg')
-        ivc.add_output('yaw', 0., units='deg')
-        ivc.add_output('precurve', np.zeros(n_span), units='m')
-        ivc.add_output('precurveTip', 0., units='m')
-    
-        ivc.add_output('rho', 1.225, units='kg/m**3')
-        ivc.add_output('mu', 1.81206e-5, units='kg/(m*s)')
-        ivc.add_output('shearExp', 0.25)
-        ivc.add_discrete_output('nBlades', 3)
-        ivc.add_discrete_output('nSector', 4)
-        ivc.add_discrete_output('tiploss', True)
-        ivc.add_discrete_output('hubloss', True)
-        ivc.add_discrete_output('wakerotation', True)
-        ivc.add_discrete_output('usecd', True)
     
         analysis_options = {}
         analysis_options['blade'] = {}
@@ -187,6 +150,38 @@ class Test(unittest.TestCase):
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
+
+        prob.set_val('airfoils_aoa', npzfile['aoa'], units='deg')
+        prob.set_val('airfoils_Re', npzfile['Re'])
+        prob.set_val('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('r', npzfile['r'], units='m')
+        prob.set_val('chord', npzfile['chord'], units='m')
+        prob.set_val('theta', npzfile['theta'], units='deg')
+
+        # parameters
+        prob.set_val('V_load', 12., units='m/s')
+        prob.set_val('Omega_load', 7.0, units='rpm')
+        prob.set_val('pitch_load', 2.0, units='deg')
+
+        prob.set_val('Rhub', 1., units='m')
+        prob.set_val('Rtip', 70., units='m')
+        prob.set_val('hub_height', 100., units='m')
+        prob.set_val('precone', 0., units='deg')
+        prob.set_val('tilt', 0., units='deg')
+        prob.set_val('yaw', 0., units='deg')
+        prob.set_val('precurve', np.zeros(n_span), units='m')
+        prob.set_val('precurveTip', 0., units='m')
+
+        prob.set_val('rho', 1.225, units='kg/m**3')
+        prob.set_val('mu', 1.81206e-5, units='kg/(m*s)')
+        prob.set_val('shearExp', 0.25)
+        prob.set_val('nBlades', 3)
+        prob.set_val('tiploss', True)
+        prob.set_val('hubloss', True)
+        prob.set_val('wakerotation', True)
+        prob.set_val('usecd', True)
     
         prob.run_model()
     
@@ -211,46 +206,14 @@ class Test(unittest.TestCase):
         """
         prob = om.Problem()
     
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-    
         # Add some arbitrary inputs        
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'smaller_dataset.npz', allow_pickle=True)
-        ivc.add_output('airfoils_aoa', npzfile['aoa'], units='deg')
-        ivc.add_output('airfoils_Re', npzfile['Re'])
-        ivc.add_output('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('r', npzfile['r'], units='m')
-        ivc.add_output('chord', npzfile['chord'], units='m')
-    
         n_span = npzfile['r'].size
         n_aoa = npzfile['aoa'].size
         n_Re = npzfile['Re'].size
-    
-        # parameters
-        ivc.add_output('V_load', 12., units='m/s')
-        ivc.add_output('Omega_load', 7.0, units='rpm')
-        ivc.add_output('pitch_load', val=2.0, units='deg', desc='blade pitch setting')
-    
-        ivc.add_output('Rhub', 1., units='m')
-        ivc.add_output('Rtip', 70., units='m')
-        ivc.add_output('hub_height', 100., units='m')
-        ivc.add_output('precone', 0., units='deg')
-        ivc.add_output('tilt', 0., units='deg')
-        ivc.add_output('yaw', 0., units='deg')
-        ivc.add_output('precurve', np.zeros(n_span), units='m')
-        ivc.add_output('precurveTip', 0., units='m')
-    
-        ivc.add_output('rho', 1.225, units='kg/m**3')
-        ivc.add_output('mu', 1.81206e-5, units='kg/(m*s)')
-        ivc.add_output('shearExp', 0.25)
-        ivc.add_discrete_output('nBlades', 3)
-        ivc.add_discrete_output('nSector', 4)
-        ivc.add_discrete_output('tiploss', True)
-        ivc.add_discrete_output('hubloss', True)
-        ivc.add_discrete_output('wakerotation', True)
-        ivc.add_discrete_output('usecd', True)
+        
+        
     
         analysis_options = {}
         analysis_options['blade'] = {}
@@ -286,6 +249,33 @@ class Test(unittest.TestCase):
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
+        
+        prob.set_val('airfoils_aoa', npzfile['aoa'], units='deg')
+        prob.set_val('airfoils_Re', npzfile['Re'])
+        prob.set_val('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('r', npzfile['r'], units='m')
+        prob.set_val('chord', npzfile['chord'], units='m')
+    
+        prob.set_val('Rhub', 1., units='m')
+        prob.set_val('Rtip', 70., units='m')
+        prob.set_val('hub_height', 100., units='m')
+        prob.set_val('precone', 0., units='deg')
+        prob.set_val('tilt', 0., units='deg')
+        prob.set_val('yaw', 0., units='deg')
+        prob.set_val('precurve', np.zeros(n_span), units='m')
+        prob.set_val('precurveTip', 0., units='m')
+    
+        prob.set_val('rho', 1.225, units='kg/m**3')
+        prob.set_val('mu', 1.81206e-5, units='kg/(m*s)')
+        prob.set_val('shearExp', 0.25)
+        prob.set_val('nBlades', 3)
+        prob.set_val('nSector', 4)
+        prob.set_val('tiploss', True)
+        prob.set_val('hubloss', True)
+        prob.set_val('wakerotation', True)
+        prob.set_val('usecd', True)
     
         prob.run_model()
     
@@ -307,47 +297,14 @@ class Test(unittest.TestCase):
         """
         prob = om.Problem()
     
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-    
         # Add some arbitrary inputs        
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'smaller_dataset.npz', allow_pickle=True)
-        ivc.add_output('airfoils_aoa', npzfile['aoa'], units='deg')
-        ivc.add_output('airfoils_Re', npzfile['Re'])
-        ivc.add_output('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('r', npzfile['r'], units='m')
-        ivc.add_output('chord', npzfile['chord'], units='m')
-        ivc.add_output('theta', npzfile['theta'], units='deg')
-    
         n_span = npzfile['r'].size
         n_aoa = npzfile['aoa'].size
         n_Re = npzfile['Re'].size
     
-        # parameters
-        ivc.add_output('V_load', 12., units='m/s')
-        ivc.add_output('Omega_load', 7.0, units='rpm')
-        ivc.add_output('pitch_load', val=0.5, units='deg', desc='blade pitch setting')
-    
-        ivc.add_output('Rhub', 1., units='m')
-        ivc.add_output('Rtip', 70., units='m')
-        ivc.add_output('hub_height', 100., units='m')
-        ivc.add_output('precone', 0.1, units='deg')
-        ivc.add_output('tilt', 0.2, units='deg')
-        ivc.add_output('yaw', 0.2, units='deg')
-        ivc.add_output('precurve', np.ones(n_span), units='m')
-        ivc.add_output('precurveTip', 0.1, units='m')
-    
-        ivc.add_output('rho', 1.225, units='kg/m**3')
-        ivc.add_output('mu', 1.81206e-5, units='kg/(m*s)')
-        ivc.add_output('shearExp', 0.25)
-        ivc.add_discrete_output('nBlades', 3)
-        ivc.add_discrete_output('nSector', 4)
-        ivc.add_discrete_output('tiploss', True)
-        ivc.add_discrete_output('hubloss', True)
-        ivc.add_discrete_output('wakerotation', True)
-        ivc.add_discrete_output('usecd', True)
+
     
         analysis_options = {}
         analysis_options['blade'] = {}
@@ -369,6 +326,39 @@ class Test(unittest.TestCase):
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
+        
+        prob.set_val('airfoils_aoa', npzfile['aoa'], units='deg')
+        prob.set_val('airfoils_Re', npzfile['Re'])
+        prob.set_val('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('r', npzfile['r'], units='m')
+        prob.set_val('chord', npzfile['chord'], units='m')
+        prob.set_val('theta', npzfile['theta'], units='deg')
+
+        # parameters
+        prob.set_val('V_load', 12., units='m/s')
+        prob.set_val('Omega_load', 7.0, units='rpm')
+        prob.set_val('pitch_load', 0.5, units='deg')
+    
+        prob.set_val('Rhub', 1., units='m')
+        prob.set_val('Rtip', 70., units='m')
+        prob.set_val('hub_height', 100., units='m')
+        prob.set_val('precone', 0.1, units='deg')
+        prob.set_val('tilt', 0.2, units='deg')
+        prob.set_val('yaw', 0.2, units='deg')
+        prob.set_val('precurve', np.ones(n_span), units='m')
+        prob.set_val('precurveTip', 0.1, units='m')
+    
+        prob.set_val('rho', 1.225, units='kg/m**3')
+        prob.set_val('mu', 1.81206e-5, units='kg/(m*s)')
+        prob.set_val('shearExp', 0.25)
+        prob.set_val('nBlades', 3)
+        prob.set_val('nSector', 4)
+        prob.set_val('tiploss', True)
+        prob.set_val('hubloss', True)
+        prob.set_val('wakerotation', True)
+        prob.set_val('usecd', True)
     
         prob.run_model()
     
