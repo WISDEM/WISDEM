@@ -320,8 +320,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
         self.add_input('gamma_m',      val=1.1,                              desc='safety factor on materials')
         self.add_input('E',            val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
-        self.add_input('Xt',           val=np.zeros([n_mat, 3]),             desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
-        self.add_input('Xc',           val=np.zeros([n_mat, 3]),             desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
+        self.add_input('Xt',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+        self.add_input('Xc',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
         self.add_input('m',            val=np.zeros([n_mat]),                desc='2D array of the S-N fatigue slope exponent for the materials') 
 
         # Blade composit layup info (used for fatigue analysis)
@@ -1165,10 +1165,6 @@ class FASTLoadCases(ExplicitComponent):
         r       = (inputs['r']-inputs['r'][0])/(inputs['r'][-1]-inputs['r'][0])
         m_default = 10. # assume default m=10  (8 or 12 also reasonable)
         m       = [mi if mi > 0. else m_default for mi in inputs['m']]  # Assumption: if no S-N slope is given for a material, use default value TODO: input['m'] is not connected, only using the default currently
-
-        print(inputs['Xt'])
-        print(inputs['Xc'])
-        print(inputs['E'])
 
         eps_uts = inputs['Xt'][:,0]/inputs['E'][:,0]
         eps_ucs = inputs['Xc'][:,0]/inputs['E'][:,0]

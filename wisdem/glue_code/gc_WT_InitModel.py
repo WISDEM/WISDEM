@@ -670,7 +670,11 @@ def assign_configuration_values(wt_opt, assembly):
     wt_opt['configuration.turb_class']          = assembly['turbulence_class']
     wt_opt['configuration.gearbox_type']         = assembly['drivetrain']
     wt_opt['configuration.rotor_orientation']     = assembly['rotor_orientation'].lower()
-    wt_opt['configuration.n_blades']     = assembly['number_of_blades']
+    wt_opt['configuration.n_blades']     = int(assembly['number_of_blades'])
+
+    # Checks for errors
+    if int(assembly['number_of_blades']) - assembly['number_of_blades'] != 0:
+        print('ERROR: the number of blades must be an integer')
 
     return wt_opt
 
