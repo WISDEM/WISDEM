@@ -844,15 +844,6 @@ class TurbineMassAdder(om.ExplicitComponent):
 class nrel_csm_mass_2015(om.Group):
     
     def setup(self):
-        ivc = om.IndepVarComp()
-        ivc.add_output('machine_rating',     units='kW', val=0.0)
-        ivc.add_output('rotor_diameter',         units='m', val=0.0)
-        ivc.add_output('hub_height',         units='m', val=0.0)
-        ivc.add_discrete_output('blade_number',  val=0)
-        ivc.add_discrete_output('main_bearing_number',  val=0)
-        ivc.add_discrete_output('crane', val=False)
-        self.add_subsystem('ivc', ivc, promotes=['*'])
-
         self.add_subsystem('blade', BladeMass(), promotes=['*'])
         self.add_subsystem('hub', HubMass(), promotes=['*'])
         self.add_subsystem('pitch', PitchSystemMass(), promotes=['*'])

@@ -45,58 +45,14 @@ class TestServo(unittest.TestCase):
     def testRegulationTrajectory(self):
         prob = om.Problem()
         
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-        
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(ARCHIVE)
-        ivc.add_output('airfoils_aoa', npzfile['aoa'], units='deg')
-        ivc.add_output('airfoils_Re', npzfile['Re'])
-        ivc.add_output('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('r', npzfile['r'], units='m')
-        ivc.add_output('chord', npzfile['chord'], units='m')
-        ivc.add_output('theta', npzfile['theta'], units='deg')
-
+        
         n_span = npzfile['r'].size
         n_aoa = npzfile['aoa'].size
         n_Re = npzfile['Re'].size
         n_pc = 22
         
-        # parameters
-        ivc.add_output('v_min', 4., units='m/s')
-        ivc.add_output('v_max', 25., units='m/s')
-        ivc.add_output('rated_power', 5e6, units='W')
-        ivc.add_output('omega_min', 0.0, units='rpm')
-        ivc.add_output('omega_max', 100.0, units='rpm')
-        ivc.add_output('control_maxTS', 90., units='m/s')
-        ivc.add_output('tsr_operational', 10.)
-        ivc.add_output('control_pitch', 0.0, units='deg')
-        ivc.add_output('gearbox_efficiency', 0.975)
-        ivc.add_output('generator_efficiency', 0.975)
-        ivc.add_discrete_output('drivetrainType', 'GEARED')
-        
-        ivc.add_output('Rhub', 1., units='m')
-        ivc.add_output('Rtip', 70., units='m')
-        ivc.add_output('hub_height', 100., units='m')
-        ivc.add_output('precone', 0., units='deg')
-        ivc.add_output('tilt', 0., units='deg')
-        ivc.add_output('yaw', 0., units='deg')
-        ivc.add_output('precurve', np.zeros(n_span), units='m')
-        ivc.add_output('precurveTip', 0., units='m')
-        ivc.add_output('presweep', np.zeros(n_span), units='m')
-        ivc.add_output('presweepTip', 0., units='m')
-        
-        ivc.add_output('rho', 1.225, units='kg/m**3')
-        ivc.add_output('mu', 1.81206e-5, units='kg/(m*s)')
-        ivc.add_output('shearExp', 0.25)
-        ivc.add_discrete_output('nBlades', 3)
-        ivc.add_discrete_output('nSector', 4)
-        ivc.add_discrete_output('tiploss', True)
-        ivc.add_discrete_output('hubloss', True)
-        ivc.add_discrete_output('wakerotation', True)
-        ivc.add_discrete_output('usecd', True)
-
         analysis_options = {}
         analysis_options['blade'] = {}
         analysis_options['blade']['n_span'] = n_span
@@ -117,6 +73,48 @@ class TestServo(unittest.TestCase):
         prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(analysis_options=analysis_options), promotes=['*'])
         
         prob.setup()
+        
+        prob.set_val('airfoils_aoa', npzfile['aoa'], units='deg')
+        prob.set_val('airfoils_Re', npzfile['Re'])
+        prob.set_val('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('r', npzfile['r'], units='m')
+        prob.set_val('chord', npzfile['chord'], units='m')
+        prob.set_val('theta', npzfile['theta'], units='deg')
+
+        prob.set_val('v_min', 4., units='m/s')
+        prob.set_val('v_max', 25., units='m/s')
+        prob.set_val('rated_power', 5e6, units='W')
+        prob.set_val('omega_min', 0.0, units='rpm')
+        prob.set_val('omega_max', 100.0, units='rpm')
+        prob.set_val('control_maxTS', 90., units='m/s')
+        prob.set_val('tsr_operational', 10.)
+        prob.set_val('control_pitch', 0.0, units='deg')
+        prob.set_val('gearbox_efficiency', 0.975)
+        prob.set_val('generator_efficiency', 0.975)
+        prob.set_val('drivetrainType', 'GEARED')
+
+        prob.set_val('Rhub', 1., units='m')
+        prob.set_val('Rtip', 70., units='m')
+        prob.set_val('hub_height', 100., units='m')
+        prob.set_val('precone', 0., units='deg')
+        prob.set_val('tilt', 0., units='deg')
+        prob.set_val('yaw', 0., units='deg')
+        prob.set_val('precurve', np.zeros(n_span), units='m')
+        prob.set_val('precurveTip', 0., units='m')
+        prob.set_val('presweep', np.zeros(n_span), units='m')
+        prob.set_val('presweepTip', 0., units='m')
+
+        prob.set_val('rho', 1.225, units='kg/m**3')
+        prob.set_val('mu', 1.81206e-5, units='kg/(m*s)')
+        prob.set_val('shearExp', 0.25)
+        prob.set_val('nBlades', 3)
+        prob.set_val('nSector', 4)
+        prob.set_val('tiploss', True)
+        prob.set_val('hubloss', True)
+        prob.set_val('wakerotation', True)
+        prob.set_val('usecd', True)
 
         # All reg 2: no maxTS, no max rpm, no power limit
         prob['omega_max'] = 1e3
@@ -283,57 +281,12 @@ class TestServo(unittest.TestCase):
     def testRegulationTrajectoryNoRegion3(self):
         prob = om.Problem()
         
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-        
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(ARCHIVE)
-        ivc.add_output('airfoils_aoa', npzfile['aoa'], units='deg')
-        ivc.add_output('airfoils_Re', npzfile['Re'])
-        ivc.add_output('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
-        ivc.add_output('r', npzfile['r'], units='m')
-        ivc.add_output('chord', npzfile['chord'], units='m')
-        ivc.add_output('theta', npzfile['theta'], units='deg')
-
         n_span = npzfile['r'].size
         n_aoa = npzfile['aoa'].size
         n_Re = npzfile['Re'].size
         n_pc = 22
-        
-        # parameters
-        ivc.add_output('v_min', 4., units='m/s')
-        ivc.add_output('v_max', 25., units='m/s')
-        ivc.add_output('rated_power', 5e6, units='W')
-        ivc.add_output('omega_min', 0.0, units='rpm')
-        ivc.add_output('omega_max', 100.0, units='rpm')
-        ivc.add_output('control_maxTS', 90., units='m/s')
-        ivc.add_output('tsr_operational', 10.)
-        ivc.add_output('control_pitch', 0.0, units='deg')
-        ivc.add_output('gearbox_efficiency', 0.975)
-        ivc.add_output('generator_efficiency', 0.975)
-        ivc.add_discrete_output('drivetrainType', 'GEARED')
-        
-        ivc.add_output('Rhub', 1., units='m')
-        ivc.add_output('Rtip', 70., units='m')
-        ivc.add_output('hub_height', 100., units='m')
-        ivc.add_output('precone', 0., units='deg')
-        ivc.add_output('tilt', 0., units='deg')
-        ivc.add_output('yaw', 0., units='deg')
-        ivc.add_output('precurve', np.zeros(n_span), units='m')
-        ivc.add_output('precurveTip', 0., units='m')
-        ivc.add_output('presweep', np.zeros(n_span), units='m')
-        ivc.add_output('presweepTip', 0., units='m')
-        
-        ivc.add_output('rho', 1.225, units='kg/m**3')
-        ivc.add_output('mu', 1.81206e-5, units='kg/(m*s)')
-        ivc.add_output('shearExp', 0.25)
-        ivc.add_discrete_output('nBlades', 3)
-        ivc.add_discrete_output('nSector', 4)
-        ivc.add_discrete_output('tiploss', True)
-        ivc.add_discrete_output('hubloss', True)
-        ivc.add_discrete_output('wakerotation', True)
-        ivc.add_discrete_output('usecd', True)
 
         analysis_options = {}
         analysis_options['blade'] = {}
@@ -355,6 +308,49 @@ class TestServo(unittest.TestCase):
         prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(analysis_options=analysis_options), promotes=['*'])
         
         prob.setup()
+        
+        prob.set_val('airfoils_aoa', npzfile['aoa'], units='deg')
+        prob.set_val('airfoils_Re', npzfile['Re'])
+        prob.set_val('airfoils_cl', np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cd', np.moveaxis(npzfile['cd'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('airfoils_cm', np.moveaxis(npzfile['cm'][:,:,:,np.newaxis], 0, 1))
+        prob.set_val('r', npzfile['r'], units='m')
+        prob.set_val('chord', npzfile['chord'], units='m')
+        prob.set_val('theta', npzfile['theta'], units='deg')
+
+        # parameters
+        prob.set_val('v_min', 4., units='m/s')
+        prob.set_val('v_max', 25., units='m/s')
+        prob.set_val('rated_power', 5e6, units='W')
+        prob.set_val('omega_min', 0.0, units='rpm')
+        prob.set_val('omega_max', 100.0, units='rpm')
+        prob.set_val('control_maxTS', 90., units='m/s')
+        prob.set_val('tsr_operational', 10.)
+        prob.set_val('control_pitch', 0.0, units='deg')
+        prob.set_val('gearbox_efficiency', 0.975)
+        prob.set_val('generator_efficiency', 0.975)
+        prob.set_val('drivetrainType', 'GEARED')
+
+        prob.set_val('Rhub', 1., units='m')
+        prob.set_val('Rtip', 70., units='m')
+        prob.set_val('hub_height', 100., units='m')
+        prob.set_val('precone', 0., units='deg')
+        prob.set_val('tilt', 0., units='deg')
+        prob.set_val('yaw', 0., units='deg')
+        prob.set_val('precurve', np.zeros(n_span), units='m')
+        prob.set_val('precurveTip', 0., units='m')
+        prob.set_val('presweep', np.zeros(n_span), units='m')
+        prob.set_val('presweepTip', 0., units='m')
+
+        prob.set_val('rho', 1.225, units='kg/m**3')
+        prob.set_val('mu', 1.81206e-5, units='kg/(m*s)')
+        prob.set_val('shearExp', 0.25)
+        prob.set_val('nBlades', 3)
+        prob.set_val('nSector', 4)
+        prob.set_val('tiploss', True)
+        prob.set_val('hubloss', True)
+        prob.set_val('wakerotation', True)
+        prob.set_val('usecd', True)
         
         # All reg 2: no maxTS, no max rpm, no power limit
         prob['omega_max'] = 1e3
