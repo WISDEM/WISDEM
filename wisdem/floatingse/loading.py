@@ -1586,22 +1586,12 @@ class Loading(om.Group):
         n_full_off    = get_nfull(n_height_off)
         n_full_tow    = get_nfull(n_height_tow)
         
-        # Independent variables that are unique to this Group
-        loadingIndeps = om.IndepVarComp()
-        loadingIndeps.add_output('main_pontoon_attach_lower', 0.0)
-        loadingIndeps.add_output('main_pontoon_attach_upper', 0.0)
-        loadingIndeps.add_output('pontoon_outer_diameter', 0.0, units='m')
-        loadingIndeps.add_output('pontoon_wall_thickness', 0.0, units='m')
-        loadingIndeps.add_output('outer_cross_pontoons_int', 1)
-        loadingIndeps.add_output('cross_attachment_pontoons_int', 1)
-        loadingIndeps.add_output('lower_attachment_pontoons_int', 1)
-        loadingIndeps.add_output('upper_attachment_pontoons_int', 1)
-        loadingIndeps.add_output('lower_ring_pontoons_int', 1)
-        loadingIndeps.add_output('upper_ring_pontoons_int', 1)
-        loadingIndeps.add_output('connection_ratio_max', 0.0)
-        loadingIndeps.add_output('fairlead_support_outer_diameter', 0.0, units='m')
-        loadingIndeps.add_output('fairlead_support_wall_thickness', 0.0, units='m')
-        self.add_subsystem('loadingIndeps', loadingIndeps, promotes=['*'])
+        self.set_input_defaults('outer_cross_pontoons_int', 1)
+        self.set_input_defaults('cross_attachment_pontoons_int', 1)
+        self.set_input_defaults('lower_attachment_pontoons_int', 1)
+        self.set_input_defaults('upper_attachment_pontoons_int', 1)
+        self.set_input_defaults('lower_ring_pontoons_int', 1)
+        self.set_input_defaults('upper_ring_pontoons_int', 1)
         
         # All the components
         self.add_subsystem('loadingWind', PowerWind(nPoints=n_full_tow), promotes=['z0','Uref','shearExp','zref'])
