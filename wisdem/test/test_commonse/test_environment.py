@@ -3,6 +3,9 @@ import numpy.testing as npt
 import unittest
 import wisdem.commonse.environment as env
 from wisdem.commonse import gravity as g
+import openmdao.api as om
+from openmdao.utils.assert_utils import assert_check_partials
+
 
 npts = 100
 myones = np.ones((npts,))
@@ -111,10 +114,117 @@ class TestLinearWaves(unittest.TestCase):
         npt.assert_equal(self.unknowns['p'], p_exp)
         
         
+class TestPowerWindGradients(unittest.TestCase):
+
+    def test(self):
+
+        z = np.linspace(0.0, 100.0, 20)
+        nPoints = len(z)
+
+        prob = om.Problem()
+        root = prob.model = om.Group()
+        root.add_subsystem('p', env.PowerWind(nPoints=nPoints))
+
+        prob.setup()
+
+        prob['p.Uref'] = 10.0
+        prob['p.zref'] = 100.0
+        prob['p.z0'] = 0.001  # Fails when z0 = 0, What to do here?
+        prob['p.shearExp'] = 0.2
+
+        prob.run_model()
+
+        check = prob.check_partials(out_stream=None, compact_print=True, method='fd')
+    
+        assert_check_partials(check)
+
+class TestLogWindGradients(unittest.TestCase):
+
+    def test(self):
+
+        nPoints = 20
+        z = np.linspace(0.1, 100.0, nPoints)
+
+        prob = om.Problem()
+        root = prob.model = om.Group()
+        root.add_subsystem('p', env.LogWind(nPoints=nPoints))
+
+        prob.setup()
+
+        prob['p.Uref'] = 10.0
+        prob['p.zref'] = 100.0
+        prob['p.z0'] = 0.1 #Fails when z0 = 0
+
+        prob.run_model()
+
+        check = prob.check_partials(out_stream=None, compact_print=True, method='fd')
+    
+        assert_check_partials(check)
+
+
+### These partials are wrong; do not test
+# class TestLinearWaveGradients(unittest.TestCase):
+# 
+#     def test(self):
+# 
+#         z_floor = 0.1
+#         z_surface = 20.
+#         z = np.linspace(z_floor, z_surface, 20)
+#         nPoints = len(z)
+# 
+#         prob = om.Problem()
+#         root = prob.model = om.Group()
+#         root.add_subsystem('p', env.LinearWaves(nPoints=nPoints))
+# 
+#         prob.setup()
+# 
+#         prob['p.Uc'] = 7.0
+#         prob['p.z_floor'] = z_floor
+#         prob['p.z_surface'] = z_surface
+#         prob['p.hsig_wave'] = 10.0
+#         prob['p.Tsig_wave'] = 2.0
+# 
+#         prob.run_model()
+# 
+#         check = prob.check_partials(out_stream=None, compact_print=True, method='fd')
+# 
+#         assert_check_partials(check)
+
+
+### The partials are currently not correct, so skip this test
+# class TestSoilGradients(unittest.TestCase):
+# 
+#     def test(self):
+# 
+#         d0 = 10.0
+#         depth = 30.0
+#         G = 140e6
+#         nu = 0.4
+# 
+#         prob = om.Problem()
+#         root = prob.model = om.Group()
+#         root.add_subsystem('p', env.TowerSoil())
+# 
+#         prob.setup()
+# 
+#         prob['p.G'] = G
+#         prob['p.nu'] = nu
+#         prob['p.d0'] = d0
+#         prob['p.depth'] = depth
+# 
+#         prob.run_model()
+# 
+#         check = prob.check_partials(out_stream=None, compact_print=True, method='fd')
+# 
+#         assert_check_partials(check)
+        
+        
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestPowerWind))
     suite.addTest(unittest.makeSuite(TestLinearWaves))
+    suite.addTest(unittest.makeSuite(TestPowerWindGradients))
+    suite.addTest(unittest.makeSuite(TestLogWindGradients))
     return suite
 
 if __name__ == '__main__':

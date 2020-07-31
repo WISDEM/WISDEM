@@ -418,6 +418,10 @@ class LinearWaves(WaveBase):
         outputs['p'][idx] = 0.0
 
     def compute_partials(self, inputs, J):
+        outputs = {}
+        self.compute(inputs, outputs)
+        
+        
         # rename
         z_floor = inputs['z_floor']
         if z_floor > 0.0: z_floor *= -1.0
@@ -428,6 +432,9 @@ class LinearWaves(WaveBase):
         k = self.k
         z_rel = z - inputs['z_surface']
 
+        # Amplitude
+        a = 0.5 * h
+        
         # derivatives
         dU_dz = h/2.0*omega*np.sinh(k*(z_rel + d))/np.sinh(k*d)*k
         dU_dUc = np.ones_like(z)
