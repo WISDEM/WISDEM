@@ -6,18 +6,16 @@ import wisdem.commonse.utilities as util
 #-------------------------------------------------------------------------
 
 class MainBearing(om.ExplicitComponent):
-    ''' MainBearings class
-          The MainBearings class is used to represent the main bearing components of a wind turbine drivetrain. It contains two subcomponents (main bearing and second bearing) which also inherit from the SubComponent class.
-          It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
-          It contains an update method to determine the mass, mass properties, and dimensions of the component.
+    ''' 
+    MainBearings class is used to represent the main bearing components of a wind turbine drivetrain.
     '''
-
         
     def setup(self):
         self.add_discrete_input('bearing_type', 'CARB', desc='bearing mass type')
         self.add_input('D_bearing', 0.0, units='m', desc='bearing diameter/facewidth')
         self.add_input('D_shaft', 0.0, units='m', desc='Diameter of LSS shaft at bearing location')
 
+        self.add_output('mb_max_defl_ang', 0.0, units='rad', desc='Maximum allowable deflection angle')
         self.add_output('mb_mass', 0.0, units='kg', desc='overall component mass')
         #self.add_output('mb_cm',   np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('mb_I',    np.zeros(3), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
@@ -25,7 +23,8 @@ class MainBearing(om.ExplicitComponent):
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        btype = discrete_inputs['bearing_type']
+        if type(discrete_inputs['bearing_type']) != type(''): raise ValueError('Bearing type input must be a string')
+        btype = discrete_inputs['bearing_type'].upper()
         D_shaft = inputs['D_shaft']
         D_bearing = inputs['D_bearing']
         
@@ -33,67 +32,46 @@ class MainBearing(om.ExplicitComponent):
         if btype == 'CARB':  # p = Fr, so X=1, Y=0
             face_width = 0.2663 * D_shaft + .0435
             mass = 1561.4 * D_shaft**2.6007
-            Bearing_Limit = 0.5 / 180 * np.pi
+            max_ang = np.deg2rad(0.5)
 
         elif btype == 'CRB':
-            face_width = 0.1136 * D_shaf
+            face_width = 0.1136 * D_shaft
             mass = 304.19 * D_shaft**1.8885
-            Bearing_Limit = 4.0 / 60.0 / 180.0 * np.pi
+            max_ang = np.deg2rad(4.0 / 60.0)
 
         elif btype == 'SRB':
             face_width = 0.2762 * D_shaft
             mass = 876.7 * D_shaft**1.7195
-            Bearing_Limit = 0.078
+            max_ang = 0.078
 
         #elif btype == 'RB':  # factors depend on ratio Fa/C0, C0 depends on bearing... TODO: add this functionality
         #    face_width = 0.0839
         #    mass = 229.47 * D_shaft**1.8036
-        #    Bearing_Limit = 0.002
+        #    max_ang = 0.002
 
         #elif btype == 'TRB1':
         #    face_width = 0.0740
         #    mass = 92.863 * D_shaft**.8399
-        #    Bearing_Limit = 3.0 / 60.0 / 180.0 * np.pi
+        #    max_ang = 3.0 / 60.0 / 180.0 * np.pi
 
         elif btype == 'TRB':
-            face_width = 0.1499 * D_shaf
-            tmass = 543.01 * D_shaft**1.9043
-            Bearing_Limit = 3.0 / 60.0 / 180.0 * np.pi
-        
+            face_width = 0.1499 * D_shaft
+            mass = 543.01 * D_shaft**1.9043
+            max_ang = np.deg2rad(3.0 / 60.0)
+
+        else:
+            raise ValueError('Bearing type must be CARB / CRB / SRB / TRB')
+            
         # add housing weight, but pg 23 of report says factor is 2.92 whereas this is 2.963
         mass += mass*(8000.0/2700.0)  
 
-        b1I0 = mass * (0.5*D_bearing)** 2
-        I = np.r_[b1I0, 0.5*b1I0*np.ones(2)]
+        # Consider the bearings a torus for MoI (https://en.wikipedia.org/wiki/List_of_moments_of_inertia)
+        I0 = 0.25*mass  * (4*(0.5*D_shaft)**2 + 3*(0.5*D_bearing)**2)
+        I1 = 0.125*mass * (4*(0.5*D_shaft)**2 + 5*(0.5*D_bearing)**2)
+        I = np.r_[I0, I1, I1]
         outputs['mb_mass'] = mass
         outputs['mb_I'] = I
-        
-
-#-------------------------------------------------------------------
-
-class Gearbox(om.ExplicitComponent):
-    '''
-    HighSpeedShaft class
-          The HighSpeedShaft class is used to represent the high speed shaft and mechanical brake components of a wind turbine drivetrain.
-          It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
-          It contains an update method to determine the mass, mass properties, and dimensions of the component.
-    '''
-
-    def setup(self):
-
-        self.add_discrete_input('direct_drive', False)
-
-        # returns
-        self.add_output('gearbox_mass', 0.0, units='kg', desc='overall component mass')
-        self.add_output('gearbox_cm', np.zeros(3), units='m', desc='Gearbox center of mass [x,y,z] measure along shaft from bedplate')
-        self.add_output('gearbox_I', np.zeros(3), units='kg*m**2', desc='Gearbox mass moments of inertia [Ixx, Iyy, Izz] around its center of mass')
-        self.add_output('L_gearbox', 0.0, units='m', desc='length of gearbox')
-        self.add_output('H_gearbox', 0.0, units='m', desc='length of gearbox')
-
-        
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        if discrete_inputs['direct_drive']: return
-        
+        outputs['mb_max_defl_ang'] = max_ang
         
 
 #-------------------------------------------------------------------
@@ -115,9 +93,7 @@ class HighSpeedSide(om.ExplicitComponent):
         self.add_input('gear_ratio', 1.0, desc='overall gearbox ratio')
         self.add_input('D_shaft_end', 0.0, units='m', desc='low speed shaft outer diameter')
         self.add_input('s_rotor', 0.0, units='m', desc='Generator rotor attachment to shaft s-coordinate')
-        self.add_input('gearbox_length', 0.0, units='m', desc='gearbox length')
-        self.add_input('gearbox_height', 0.0, units='m', desc='gearbox height')
-        self.add_input('gearbox_cm', np.zeros(3), units='m', desc='gearbox cm [x,y,z]')
+        self.add_input('s_gearbox', 0.0, units='m', desc='Gearbox s-coordinate measured from bedplate')
         self.add_input('hss_input_length', 0.0, units='m', desc='high speed shaft length determined by user. Default 0.5m')
         self.add_input('rho', 0.0, units='kg/m**3', desc='material density')
 
@@ -136,10 +112,8 @@ class HighSpeedSide(om.ExplicitComponent):
         Q_rotor     = float(inputs['rotor_torque'])
         gear_ratio  = float(inputs['gear_ratio'])
         D_shaft     = float(inputs['D_shaft_end'])
-        L_gearbox   = float(inputs['gearbox_length'])
-        H_gearbox   = float(inputs['gearbox_height'])
-        cm_gearbox  = inputs['gearbox_cm']
         s_rotor     = float(inputs['s_rotor'])
+        s_gearbox   = float(inputs['s_gearbox'])
         L_hss_input = float(inputs['hss_input_length'])
         rho         = float(inputs['rho'])
 
@@ -149,14 +123,15 @@ class HighSpeedSide(om.ExplicitComponent):
         if direct:
             m_hss_shaft = 0.0
             m_brake     = 1220. * 1e-6 * Q_rotor
+            D_hss_shaft = L_hss_shaft = 0.0
         else:
             m_hss_shaft = 0.025 * Q_rotor / gear_ratio
             m_brake     = 0.5 * m_hss_shaft 
+            D_hss_shaft = 1.5 * D_shaft # based on WindPACT relationships for full HSS / mechanical brake assembly
+            L_hss_shaft = L_hss_input if L_hss_input > 0.0 else m_hss_shaft / (np.pi * (0.5*D_hss_shaft)**2 * rho)
         mass = m_brake + m_hss_shaft
-  
-        D_hss_shaft = 1.5 * D_shaft # based on WindPACT relationships for full HSS / mechanical brake assembly
-        L_hss_shaft = L_hss_input if L_hss_input > 0.0 else m_hss_shaft / (np.pi * (0.5*D_hss_shaft)**2 * rho)
-  
+
+    
         # Assume brake disc diameter and simple MoI
         D_disc = 0.01*D_rotor
         I      = np.zeros(3)
@@ -190,12 +165,10 @@ class GeneratorSimple(om.ExplicitComponent):
         
     def setup(self):
         # variables
+        self.add_discrete_input('direct_drive', False)
         self.add_input('rotor_diameter', val=0.0, units='m', desc='rotor diameter')
         self.add_input('machine_rating', val=0.0, units='kW', desc='machine rating of generator')
-        self.add_input('gear_ratio', val=0.0, desc='overall gearbox ratio')
-        self.add_input('rotor_rpm', val=0.0, units='rpm', desc='Speed of rotor at rated power')
-        
-        self.add_discrete_input('direct_drive', False)
+        self.add_input('rotor_torque', 0.0, units='N*m', desc='rotor torque at rated power')
 
         #returns
         self.add_output('R_generator', val=0.0, units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
@@ -205,37 +178,29 @@ class GeneratorSimple(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        rotor_diameter = inputs['rotor_diameter']
-        machine_rating = inputs['machine_rating']
-        gear_ratio = inputs['gear_ratio']
-        rotor_rpm = inputs['rotor_rpm']
-        direct = discrete_inputs['direct_drive']
-        
-        # coefficients based on generator configuration
-        massCoeff = 37.68 if direct else np.mean([6.4737, 10.51, 5.34])
-        massExp   = 1.0 if direct else 0.9223
-        CalcTorque = (machine_rating*1.1) / (rotor_rpm * np.pi/30)
+        direct  = discrete_inputs['direct_drive']
+        rating  = float(inputs['machine_rating'])
+        D_rotor = float(inputs['rotor_diameter'])
+        Q_rotor = float(inputs['rotor_torque'])
   
         if direct:
-            mass = (massCoeff * CalcTorque ** massExp)
+            massCoeff = 1e-3 * 37.68
+            mass = massCoeff * Q_rotor
         else:
-            mass = (massCoeff * machine_rating ** massExp)
+            massCoeff = np.mean([6.4737, 10.51, 5.34])
+            massExp   = 0.9223
+            mass = (massCoeff * rating ** massExp)
         outputs['generator_mass'] = mass
         
         # calculate mass properties
-        length = 1.8 * 0.015 * rotor_diameter
-        depth = 0.015 * rotor_diameter
-        width = 0.5 * depth
-        outputs['R_generator'] = 0.5*depth
+        length = 1.8 * 0.015 * D_rotor
+        R_generator = 0.5 * 0.015 * D_rotor
+        outputs['R_generator'] = R_generator
         
         I = np.zeros(3)
-        I[0]   = 4.86e-5 * rotor_diameter**5.333 \
-                + (2./3. * mass) * (depth**2 + width**2) / 8.
-        I[1]   = I[0] / 2. / gear_ratio**2 \
-                 + 1. / 3. * mass * length**2 / 12. \
-                 + 2. / 3. * mass * (depth**2. + width**2. + 4./3. * length**2.) / 16.
-        I[2]   = I[1]
-        outputs['generator_I'] = I
+        I[0] = 0.5*R_generator**2
+        I[1:] = (1./12.)*(3*R_generator**2 + length**2)
+        outputs['generator_I'] = mass*I
 
         
 #-------------------------------------------------------------------------------
@@ -251,7 +216,6 @@ class Electronics(om.ExplicitComponent):
         self.add_input('D_top', 0.0, units='m', desc='Tower top outer diameter')
         self.add_input('D_bedplate_base', 0.0, units='m', desc='Diameter of bedplate at base')
         self.add_input('rotor_diameter', 0.0, units='m', desc='rotor diameter of turbine')
-        #self.add_discrete_input('uptower', True)
 
         self.add_output('electronics_mass', 0.0, units='kg', desc='overall component mass')
         self.add_output('electronics_cm', np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')

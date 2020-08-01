@@ -4,6 +4,7 @@ import openmdao.api as om
 from hub import Hub_System
 from layout import Layout
 from generator import Generator
+from gearbox import Gearbox
 import drive_structure as ds
 import drive_components as dc
 
@@ -94,7 +95,7 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
         self.add_subsystem('bear1', dc.MainBearing())
         self.add_subsystem('bear2', dc.MainBearing())
-        self.add_subsystem('gear', dc.Gearbox(), promotes=['*']) 
+        self.add_subsystem('gear', Gearbox(), promotes=['*']) 
 
         self.add_subsystem('hss', dc.HighSpeedSide(), promotes=['*']) # TODO- Include in generatorSE?
         if self.options['model_generator']:
