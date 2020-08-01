@@ -8,7 +8,7 @@ from wisdem.commonse import gravity
 
 npts = 10
 
-class TestRun(unittest.TestCase):
+class TestStructure(unittest.TestCase):
     def setUp(self):
         self.inputs = {}
         self.outputs = {}
@@ -246,22 +246,105 @@ class TestRun(unittest.TestCase):
 
         
         
-    def testRunRotating(self):
+    def testRunRotating_noTilt(self):
         self.inputs['tilt'] = 0.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
         myobj = ds.Hub_Rotor_Shaft_Frame(n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
-        #print(self.outputs['F_mb1'])
-        #print(self.outputs['F_mb2'])
-        #print(self.outputs['M_mb1'])
-        #print(self.outputs['M_mb2'])
-                    
+        F0 = self.outputs['F_mb1'].flatten()
+        M0 = self.outputs['M_mb2'].flatten()
+        self.assertGreater(0.0, F0[-1])
+        self.assertGreater(0.0, M0[1])
+        npt.assert_almost_equal(self.outputs['F_mb1'][:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_rotor'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb1'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb2'][[0,2]], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_rotor'], 0.0, decimal=2)
+
+        g = np.array([30e2, 40e2, 50e2])
+        self.inputs['F_hub'] = g.reshape((3,1))
+        self.inputs['M_hub'] = 2*g.reshape((3,1))
+        self.compute_layout()
+        myobj = ds.Hub_Rotor_Shaft_Frame(n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs)
+        npt.assert_almost_equal(self.outputs['F_mb1'].flatten(), g+F0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_rotor'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb1'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[0], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[1], -g[-1]*1+2*g[1]+M0[1], decimal=2) #*1=*L_h1
+        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[2], g[1]*1+2*g[2], decimal=2) #*1=*L_h1
+        npt.assert_almost_equal(self.outputs['M_rotor'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
+
+
+        
+    def testRunRotating_withTilt(self):
+        self.inputs['tilt'] = 5.0
+        self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
+        self.compute_layout()
+        myobj = ds.Hub_Rotor_Shaft_Frame(n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs)
+        F0 = self.outputs['F_mb1'].flatten()
+        M0 = self.outputs['M_mb2'].flatten()
+        self.assertGreater(0.0, F0[0])
+        self.assertGreater(0.0, F0[-1])
+        self.assertGreater(0.0, M0[1])
+        npt.assert_almost_equal(self.outputs['F_mb1'][1], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_rotor'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb1'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb2'][[0,2]], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_rotor'], 0.0, decimal=2)
+
+        g = np.array([30e2, 40e2, 50e2])
+        self.inputs['F_hub'] = g.reshape((3,1))
+        self.inputs['M_hub'] = 2*g.reshape((3,1))
+        self.compute_layout()
+        myobj = ds.Hub_Rotor_Shaft_Frame(n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs)
+        npt.assert_almost_equal(self.outputs['F_mb1'].flatten(), g+F0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_rotor'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb1'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[0], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[1], -g[-1]*1+2*g[1]+M0[1], decimal=2) #*1=*L_h1
+        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[2], g[1]*1+2*g[2], decimal=2) #*1=*L_h1
+        npt.assert_almost_equal(self.outputs['M_rotor'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
+
+        
+    def testShaftTheory(self):
+        # https://www.engineersedge.com/calculators/torsional-stress-calculator.htm
+        self.inputs['tilt'] = 0.0
+        self.inputs['L_grs'] = 1.5
+        self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_hub'] = np.array([1e5, 0.0, 0.0]).reshape((3,1))
+        self.inputs['m_rotor'] = 0.0
+        self.inputs['cm_rotor'] = 0.0
+        self.inputs['I_rotor'] = np.zeros(6)
+        self.inputs['hub_system_mass'] = 0.0
+        self.inputs['hub_system_cm'] = 0.0
+        self.inputs['hub_system_I'] = np.zeros(6)
+        myones = np.ones(5)
+        self.inputs['lss_diameter'] = 5*myones
+        self.inputs['lss_wall_thickness'] = 0.5*myones
+        self.inputs['G'] = 100e9
+        self.inputs['rho'] = 1e-6
+        self.compute_layout()
+        myobj = ds.Hub_Rotor_Shaft_Frame(n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs)
+        J = 0.5*np.pi*(2.5**4 - 2**4)
+        sigma = 1e5/J*2.5
+        npt.assert_almost_equal(self.outputs['rotor_axial_stress'], 0.0, decimal=5)
+        npt.assert_almost_equal(self.outputs['rotor_shear_stress'].flatten(), np.r_[np.zeros(2), sigma*np.ones(3)], decimal=4)
+
         
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRun))
+    suite.addTest(unittest.makeSuite(TestStructure))
     return suite
 
 

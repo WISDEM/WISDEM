@@ -77,10 +77,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_output('mb2_rotation', val=np.zeros(n_dlcs), units='rad', desc='Total rotation angle of bearing 2')
         self.add_output('base_F', val=np.zeros((3,n_dlcs)), units='N', desc='Total reaction force at bedplate base')
         self.add_output('base_M', val=np.zeros((3,n_dlcs)), units='N*m', desc='Total reaction moment at bedplate base')
-        self.add_output('nose_axial_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Axial stress in Curved_beam structure')
-        self.add_output('nose_shear_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Shear stress in Curved_beam structure')
-        self.add_output('nose_bending_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Hoop stress in Curved_beam structure calculated with Roarks formulae')
-        self.add_output('constr_nose_vonmises', np.zeros((n_points+4,n_dlcs)), desc='Sigma_y/Von_Mises')
+        self.add_output('bedplate_nose_axial_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Axial stress in Curved_beam structure')
+        self.add_output('bedplate_nose_shear_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Shear stress in Curved_beam structure')
+        self.add_output('bedplate_nose_bending_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Hoop stress in Curved_beam structure calculated with Roarks formulae')
+        self.add_output('constr_bedplate_nose_vonmises', np.zeros((n_points+4,n_dlcs)), desc='Sigma_y/Von_Mises')
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -238,10 +238,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         outputs['mb2_rotation']         = np.zeros(n_dlcs)
         outputs['base_F']               = np.zeros((3, n_dlcs))
         outputs['base_M']               = np.zeros((3, n_dlcs))
-        outputs['nose_axial_stress']    = np.zeros((n-1, n_dlcs))
-        outputs['nose_shear_stress']    = np.zeros((n-1, n_dlcs))
-        outputs['nose_bending_stress']  = np.zeros((n-1, n_dlcs))
-        outputs['constr_nose_vonmises'] = np.zeros((n-1, n_dlcs))
+        outputs['bedplate_nose_axial_stress']    = np.zeros((n-1, n_dlcs))
+        outputs['bedplate_nose_shear_stress']    = np.zeros((n-1, n_dlcs))
+        outputs['bedplate_nose_bending_stress']  = np.zeros((n-1, n_dlcs))
+        outputs['constr_bedplate_nose_vonmises'] = np.zeros((n-1, n_dlcs))
         for k in range(n_dlcs):
             # Deflections and rotations at bearings- how to sum up rotation angles?
             outputs['mb1_deflection'][k] = np.sqrt(displacements.dx[k,i1-1]**2 + displacements.dy[k,i1-1]**2 + displacements.dz[k,i1-1]**2)
@@ -268,16 +268,16 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             outputs['base_F'][:,k] = F_base_k.hubToYaw(-tiltD).toArray()
             outputs['base_M'][:,k] = M_base_k.hubToYaw(-tiltD).toArray()
 
-            outputs['nose_axial_stress'][:,k] = Fz/Ax + M/S
-            outputs['nose_shear_stress'][:,k] = 2.0*F/As + Mzz/C
+            outputs['bedplate_nose_axial_stress'][:,k] = np.abs(Fz)/Ax + M/S
+            outputs['bedplate_nose_shear_stress'][:,k] = 2.0*F/As + np.abs(Mzz)/C
 
             Bending_stress_outer = M[:(inose-1)] * nodal2sectional( (Ro-R_n) / (A_bed*e_cn*Ro) )[0]
             Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
-            outputs['nose_bending_stress'][:(inose-1),k] = Bending_stress_outer
+            outputs['bedplate_nose_bending_stress'][:(inose-1),k] = Bending_stress_outer
         
-            outputs['constr_nose_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['nose_axial_stress'][:,k],
-                                                                                  outputs['nose_bending_stress'][:,k],
-                                                                                  outputs['nose_shear_stress'][:,k],
+            outputs['constr_bedplate_nose_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],
+                                                                                  outputs['bedplate_nose_bending_stress'][:,k],
+                                                                                  outputs['bedplate_nose_shear_stress'][:,k],
                                                                                   gamma_f*gamma_m*gamma_n, sigma_y)
 
 
@@ -332,8 +332,10 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         self.add_output('constr_rotor_vonmises', np.zeros((5,n_dlcs)), desc='Sigma_y/Von_Mises')
         self.add_output('F_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to bearing 1 in hub c.s.')
         self.add_output('F_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to bearing 2 in hub c.s.')
+        self.add_output('F_rotor', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to generator rotor in hub c.s.')
         self.add_output('M_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 1 in hub c.s.')
         self.add_output('M_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 2 in hub c.s.')
+        self.add_output('M_rotor', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to generator rotor in hub c.s.')
 
 
         
@@ -447,7 +449,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
             
             # point loads
             # TODO: Are input loads aligned with the shaft? If so they need to be rotated.
-            load.changePointLoads([1], F_hub[0], F_hub[1], F_hub[2], M_hub[0], M_hub[1], M_hub[2])
+            load.changePointLoads([inode[-1]], [F_hub[0,k]], [F_hub[1,k]], [F_hub[2,k]], [M_hub[0,k]], [M_hub[1,k]], [M_hub[2,k]])
             # -----------------------------------
 
             # Put all together and run
@@ -459,22 +461,15 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         # Loop over DLCs and append to outputs
         outputs['F_mb1'] = np.zeros((3, n_dlcs))
         outputs['F_mb2'] = np.zeros((3, n_dlcs))
+        outputs['F_rotor'] = np.zeros((3, n_dlcs))
         outputs['M_mb1'] = np.zeros((3, n_dlcs))
         outputs['M_mb2'] = np.zeros((3, n_dlcs))
+        outputs['M_rotor'] = np.zeros((3, n_dlcs))
         outputs['rotor_axial_stress'] = np.zeros((n-1, n_dlcs))
         outputs['rotor_shear_stress'] = np.zeros((n-1, n_dlcs))
         outputs['rotor_bending_stress'] = np.zeros((n-1, n_dlcs))
         outputs['constr_rotor_vonmises'] = np.zeros((n-1, n_dlcs))
         for k in range(n_dlcs):
-            # natural frequncies
-            #outputs['f1'] = modal.freq[0]
-            #outputs['f2'] = modal.freq[1]
-            
-            # deflections - at bearings?
-            #outputs['top_deflection'] = np.sqrt(displacements.dx[k, n-1]**2 +
-            #                                    displacements.dy[k, n-1]**2 +
-            #                                    displacements.dz[k, n-1]**2)
-
             # shear and bending, one per element (convert from local to global c.s.)
             Fz =  forces.Nx[k, 1::2]
             Vy =  forces.Vy[k, 1::2]
@@ -487,13 +482,14 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
             M   =  np.sqrt(Myy**2 + Mxx**2)
 
             # Record total forces and moments
-            outputs['F_mb1'][:,k] = -1.0 * np.array([reactions.Fx[k,0], reactions.Fy[k,0], reactions.Fz[k,0]])
-            outputs['F_mb2'][:,k] = -1.0 * np.array([reactions.Fx[k,1], reactions.Fy[k,1], reactions.Fz[k,1]])
-            outputs['M_mb1'][:,k] = -1.0 * np.array([reactions.Mxx[k,0], reactions.Myy[k,0], reactions.Mzz[k,0]])
-            outputs['M_mb2'][:,k] = -1.0 * np.array([reactions.Mxx[k,1], reactions.Myy[k,1], reactions.Mzz[k,1]])
-
-            outputs['rotor_axial_stress'][:,k] = Fz/Ax + M/S
-            outputs['rotor_shear_stress'][:,k] = 2.0*F/As + Mzz/C
+            outputs['F_mb1'][:,k]   = -1.0 * np.array([reactions.Fx[k,0], reactions.Fy[k,0], reactions.Fz[k,0]])
+            outputs['F_mb2'][:,k]   = -1.0 * np.array([reactions.Fx[k,1], reactions.Fy[k,1], reactions.Fz[k,1]])
+            outputs['F_rotor'][:,k] = -1.0 * np.array([reactions.Fx[k,2], reactions.Fy[k,2], reactions.Fz[k,2]])
+            outputs['M_mb1'][:,k]   = -1.0 * np.array([reactions.Mxx[k,0], reactions.Myy[k,0], reactions.Mzz[k,0]])
+            outputs['M_mb2'][:,k]   = -1.0 * np.array([reactions.Mxx[k,1], reactions.Myy[k,1], reactions.Mzz[k,1]])
+            outputs['M_rotor'][:,k] = -1.0 * np.array([reactions.Mxx[k,2], reactions.Myy[k,2], reactions.Mzz[k,2]])
+            outputs['rotor_axial_stress'][:,k] = np.abs(Fz)/Ax + M/S
+            outputs['rotor_shear_stress'][:,k] = 2.0*F/As + np.abs(Mzz)/C
             hoop = np.zeros(F.shape)
         
             outputs['constr_rotor_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['rotor_axial_stress'][:,k],
