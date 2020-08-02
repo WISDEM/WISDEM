@@ -2,9 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import unittest
 import wisdem.drivetrainse.drive_components as dc
-import openmdao.api as om
 
-npts = 20
 
 class TestComponents(unittest.TestCase):
     def testBearing(self):
@@ -332,7 +330,51 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs['other_mass'], 1e3*6)
         self.assertEqual(outputs['nacelle_mass'], 1e3*(len(components)-1))
         npt.assert_almost_equal(outputs['nacelle_cm'], np.r_[3.0*np.cos(tr), 0.0, 3.0*np.sin(tr)])
-        #npt.assert_equal(outputs['nacelle_I'], 1e3*(len(components)-1)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
+
+
+
+    def testRNA(self):
+        inputs = {}
+        outputs = {}
+        discrete_inputs = {}
+        discrete_outputs = {}
+        myobj = dc.RNA_Adder()
+
+        discrete_inputs['upwind'] = True
+        inputs['tilt'] = 0.0
+        inputs['L_drive'] = 10.0
+        inputs['blades_mass'] = 100e3
+        inputs['blades_I'] = 100e3*np.arange(1,7)
+        inputs['nacelle_mass'] = 200e3
+        inputs['nacelle_I'] = 200e3*np.arange(1,7)
+        inputs['nacelle_cm'] = np.array([-5.0, 0.0, 0.0])
+        inputs['hub_system_mass'] = 25e3
+        inputs['hub_system_I'] = 25e3*np.arange(1,7)
+        inputs['hub_system_cm'] = 2.0
+                
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.assertEqual(outputs['rotor_mass'], 125e3)
+        self.assertEqual(outputs['rna_mass'], 325e3)
+        npt.assert_equal(outputs['rna_cm'], np.r_[(-125*12-200*5)/325, 0.0, 0.0])
+        I0 = 325e3*np.arange(1,7)
+        I0[1:3] += 125e3*12**2
+        I0[1:3] += 200e3*5**2
+        npt.assert_equal(outputs['rna_I_TT'], I0)
+                
+        discrete_inputs['upwind'] = False
+        inputs['nacelle_cm'] = np.array([5.0, 0.0, 0.0])
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.assertEqual(outputs['rotor_mass'], 125e3)
+        self.assertEqual(outputs['rna_mass'], 325e3)
+        npt.assert_equal(outputs['rna_cm'], np.r_[(125*12+200*5)/325, 0.0, 0.0])
+        npt.assert_equal(outputs['rna_I_TT'], I0)
+                
+        inputs['tilt'] = 5.0
+        tr = 5*np.pi/180.
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.assertEqual(outputs['rotor_mass'], 125e3)
+        self.assertEqual(outputs['rna_mass'], 325e3)
+        npt.assert_almost_equal(outputs['rna_cm'], np.r_[(125*12*np.cos(tr)+200*5)/325, 0.0, 125*12*np.sin(tr)/325])
         
         
 def suite():

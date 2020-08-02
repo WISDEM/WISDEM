@@ -542,7 +542,7 @@ class RNA_Adder(om.ExplicitComponent):
         nac_I    = util.assembleI(inputs['nacelle_I'])
         rotor_I  = blades_I + hub_I
 
-        R = inputs['hub_system_cm']
+        R = hub_cm
         rotor_I_TT = rotor_I + rotor_mass*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
 
         R = inputs['nacelle_cm']
