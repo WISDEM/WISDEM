@@ -374,8 +374,10 @@ class PMSG_Outer(GeneratorBase):
         self.add_output('Structural_mass_rotor',0.0, units='kg', desc='Rotor mass (kg)')
         self.add_output('Structural_mass_stator',0.0, units='kg', desc='Stator mass (kg)')
         self.add_output('Mass_tooth_stator',0.0, units = 'kg', desc='Teeth and copper mass')
-        self.add_output('Mass_yoke_rotor',0.0, units = 'kg', desc='yoke mass')
-        self.add_output('Mass_yoke_stator',0.0, units = 'kg', desc='yoke mass')
+        self.add_output('Mass_yoke_rotor',0.0, units = 'kg', desc='Rotor yoke mass')
+        self.add_output('Mass_yoke_stator',0.0, units = 'kg', desc='Stator yoke mass')
+        self.add_output('rotor_mass',0.0, units = 'kg', desc='Total rotor mass')
+        self.add_output('stator_mass',0.0, units = 'kg', desc='Total stator mass')
 
         
         
@@ -695,7 +697,9 @@ class PMSG_Outer(GeneratorBase):
 
         ######################## Mass adders ###################################
         outputs['Structural_mass'] = outputs['Structural_mass_rotor']+outputs['Structural_mass_stator']
-        outputs['generator_mass']  = Stator+Rotor+outputs['Structural_mass']
+        outputs['stator_mass']  = Stator + outputs['Structural_mass_stator']
+        outputs['rotor_mass']  = Rotor + outputs['Structural_mass_rotor']
+        outputs['generator_mass']  = Stator + Rotor + outputs['Structural_mass']
         
 #----------------------------------------------------------------------------------------
 class PMSG_Disc(GeneratorBase):

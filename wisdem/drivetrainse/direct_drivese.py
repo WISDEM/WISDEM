@@ -40,21 +40,16 @@ class DrivetrainSE(om.Group):
         ivc.add_output('lss_wall_thickness', np.zeros(5), units='m')
         ivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
         ivc.add_output('bedplate_wall_thickness', np.zeros(n_points), units='m')
-        #ivc.add_output('tilt', 0.0, units='deg')
         # ivc.add_output('shaft_ratio', 0.0)
         # ivc.add_output('shrink_disc_mass', 0.0, units='kg')
         # ivc.add_output('carrier_mass', 0.0, units='kg')
         # ivc.add_output('flange_length', 0.0, units='m')
-        # ivc.add_output('hss_input_length', 0.0, units='m')
-        # ivc.add_discrete_output('planet_numbers', np.array([0, 0, 0]))
-        # ivc.add_discrete_output('drivetrain_design', 'geared')
+        ivc.add_output('hss_input_length', 0.0, units='m')
+        ivc.add_discrete_output('planet_numbers', np.array([0, 0, 0]))
         # ivc.add_discrete_output('gear_configuration', 'eep')
         ivc.add_discrete_output('mb1Type', 'CARB')
         ivc.add_discrete_output('mb2Type', 'SRB')
-        #ivc.add_discrete_output('IEC_Class', 'B')
-        #ivc.add_discrete_output('shaft_factor', 'normal')
         ivc.add_discrete_output('uptower', True)
-        #ivc.add_discrete_output('crane', True)
         ivc.add_discrete_output('upwind', True)
         ivc.add_discrete_output('direct_drive', True)
         self.add_subsystem('ivc', ivc, promotes=['*'])
@@ -77,38 +72,33 @@ class DrivetrainSE(om.Group):
             sivc.add_output('rotor_diameter',         0.0, units='m')
             sivc.add_output('rotor_rpm',              0.0, units='rpm')
             sivc.add_output('rotor_torque',           0.0, units='N*m')
-            #sivc.add_output('Fxyz',                   np.zeros(3), units='N')
-            #sivc.add_output('Mxyz',                   np.zeros(3), units='N*m')
             #sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
             #sivc.add_output('blade_mass',             0.0, units='kg')
             #sivc.add_output('blade_root_diameter',    0.0, units='m')
             #sivc.add_output('blade_length',           0.0, units='m')
             #sivc.add_output('gearbox_efficiency',     0.0)
             #sivc.add_output('generator_efficiency',   0.0)
-            #sivc.add_output('tile',                   0.0, units='deg')
             sivc.add_output('machine_rating',         0.0, units='kW')
             self.add_subsystem('sivc', sivc, promotes=['*'])
 
         # select components
         self.add_subsystem('hub', Hub_System(), promotes=['*'])
         self.add_subsystem('layout', Layout(n_points=n_points), promotes=['*'])
-        self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
-        self.add_subsystem('bear1', dc.MainBearing())
-        self.add_subsystem('bear2', dc.MainBearing())
-        self.add_subsystem('gear', Gearbox(), promotes=['*']) 
-
-        self.add_subsystem('hss', dc.HighSpeedSide(), promotes=['*']) # TODO- Include in generatorSE?
         if self.options['model_generator']:
             self.add_subsystem('generator', Generator(topLevelFlag=False, design='pmsg_outer'), promotes=['generator_mass','generator_I','E','G','v','machine_rating'])
         else:
             self.add_subsystem('gensimp', dc.GeneratorSimple(), promotes=['*'])
+        self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
+        self.add_subsystem('bear1', dc.MainBearing())
+        self.add_subsystem('bear2', dc.MainBearing())
+        self.add_subsystem('gear', Gearbox(), promotes=['*']) 
+        self.add_subsystem('hss', dc.HighSpeedSide(), promotes=['*']) # TODO- Include in generatorSE?
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
-        #self.add_subsystem('loads', RotorLoads(), promotes=['*']) Get this from Frame3DD reaction forces, although careful about mass/force inclusion
 
         self.connect('D_shaft','D_shaft_end', src_indices=[-1])
         self.connect('D_shaft','bear1.D_shaft', src_indices=[0])
@@ -119,17 +109,22 @@ class DrivetrainSE(om.Group):
         self.connect('mb2Type', 'bear2.bearing_type')
         self.connect('bear1.mb_mass','mb1_mass')
         self.connect('bear1.mb_I','mb1_I')
+        self.connect('bear1.mb_max_defl_ang','mb1_max_defl_ang')
         self.connect('s_mb1','mb1_cm')
         self.connect('bear2.mb_mass','mb2_mass')
         self.connect('bear2.mb_I','mb2_I')
+        self.connect('bear2.mb_max_defl_ang','mb2_max_defl_ang')
         self.connect('s_mb2','mb2_cm')
-        self.connect('D_bedplate','D_bedplate_base', src_indices=[0])
         if self.options['model_generator']:
             self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
             self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
             self.connect('generator.R_out','R_generator')
             self.connect('rotor_torque','generator.T_rated')
             self.connect('rotor_rpm','generator.n_nom')
+            self.connect('generator.rotor_mass','m_rotor')
+            self.connect('generator.rotor_I','I_rotor')
+            self.connect('generator.stator_mass','m_stator')
+            self.connect('generator.stator_I','I_stator')
         
 if __name__ == '__main__':
     prob = om.Problem()
@@ -140,6 +135,7 @@ if __name__ == '__main__':
     prob['direct_drive'] = True
     prob['n_blades'] = 3
     prob['rotor_rpm'] = 10.0
+    prob['machine_rating'] = 5e3
 
     prob['L_12'] = 2.0
     prob['L_h1'] = 1.0
@@ -218,6 +214,48 @@ if __name__ == '__main__':
     prob['spinner.metal_rho']             = 7850.
     prob['spinner.composite_cost']        = 7.00
     prob['spinner.metal_cost']            = 3.00
-    
+
+    prob['generator.T_rated']        = 10.25e6       #rev 1 9.94718e6
+    prob['generator.P_mech']         = 10.71947704e6 #rev 1 9.94718e6
+    prob['generator.n_nom']          = 10            #8.68                # rpm 9.6
+    prob['generator.r_g']            = 4.0           # rev 1  4.92
+    prob['generator.len_s']          = 1.7           # rev 2.3
+    prob['generator.h_s']            = 0.7            # rev 1 0.3
+    prob['generator.p']              = 70            #100.0    # rev 1 160
+    prob['generator.h_m']            = 0.005         # rev 1 0.034
+    prob['generator.h_ys']           = 0.04          # rev 1 0.045
+    prob['generator.h_yr']           = 0.06          # rev 1 0.045
+    prob['generator.b']              = 2.
+    prob['generator.c']              = 5.0
+    prob['generator.B_tmax']         = 1.9
+    prob['generator.E_p']            = 3300/np.sqrt(3)
+    prob['generator.D_nose']         = 2*1.1             # Nose outer radius
+    prob['generator.D_shaft']        = 2*1.34            # Shaft outer radius =(2+0.25*2+0.3*2)*0.5
+    prob['generator.t_r']            = 0.05          # Rotor disc thickness
+    prob['generator.h_sr']           = 0.04          # Rotor cylinder thickness
+    prob['generator.t_s']            = 0.053         # Stator disc thickness
+    prob['generator.h_ss']           = 0.04          # Stator cylinder thickness
+    prob['generator.y_sh']           = 0.0005*0      # Shaft deflection
+    prob['generator.theta_sh']       = 0.00026*0     # Slope at shaft end
+    prob['generator.y_bd']           = 0.0005*0      # deflection at bedplate
+    prob['generator.theta_bd']       = 0.00026*0      # Slope at bedplate end
+    prob['generator.u_allow_pcent']  = 8.5            # % radial deflection
+    prob['generator.y_allow_pcent']  = 1.0            # % axial deflection
+    prob['generator.z_allow_deg']    = 0.05           # torsional twist
+    prob['generator.sigma']          = 60.0e3         # Shear stress
+    prob['generator.B_r']            = 1.279
+    prob['generator.ratio_mw2pp']    = 0.8
+    prob['generator.h_0']            = 5e-3
+    prob['generator.h_w']            = 4e-3
+    prob['generator.k_fes']          = 0.8
+    prob['generator.C_Cu']         = 4.786         # Unit cost of Copper $/kg
+    prob['generator.C_Fe']         = 0.556         # Unit cost of Iron $/kg
+    prob['generator.C_Fes']        = 0.50139       # specific cost of Structural_mass $/kg
+    prob['generator.C_PM']         =   95.0
+    prob['generator.rho_Fe']       = 7700.0        # Steel density Kg/m3
+    prob['generator.rho_Fes']      = 7850          # structural Steel density Kg/m3
+    prob['generator.rho_Copper']   = 8900.0        # copper density Kg/m3
+    prob['generator.rho_PM']       = 7450.0        # typical density Kg/m3 of neodymium magnets
+
     prob.run_model()
     

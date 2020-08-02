@@ -298,7 +298,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         self.add_input('D_top', 0.0, units='m', desc='Tower top outer diameter')
         self.add_input('bedplate_mass', 0.0, units='kg', desc='Bedplate mass')
         self.add_input('bedplate_cm', np.zeros(3), units='m', desc='Bedplate center of mass')
-        self.add_input('bedplate_I', np.zeros(3), units='kg*m**2', desc='Bedplate mass moment of inertia about base')
+        self.add_input('bedplate_I', np.zeros(6), units='kg*m**2', desc='Bedplate mass moment of inertia about base')
         self.add_input('R_generator', 0.0, units='m', desc='Generatour outer diameter')
         self.add_input('overhang',0.0, units='m', desc='Overhang of rotor from tower along x-axis in yaw-aligned c.s.') 
         self.add_input('s_rotor', 0.0, units='m', desc='Generator rotor attachment to shaft s-coordinate')
@@ -311,7 +311,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         
         self.add_output('mainframe_mass', 0.0, units='kg', desc='component mass')
         self.add_output('mainframe_cm', np.zeros(3), units='m', desc='component center of mass')
-        self.add_output('mainframe_I', np.zeros(3), units='m', desc='component mass moments of inertia')
+        self.add_output('mainframe_I', np.zeros(6), units='m', desc='component mass moments of inertia')
         
         self.add_output('cover_mass', 0.0, units='kg', desc='component mass')
         self.add_output('cover_cm', np.zeros(3), units='m', desc='component center of mass')
@@ -419,7 +419,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
 
         self.add_input('bedplate_mass', 0.0, units='kg', desc='component mass')
         self.add_input('bedplate_cm', np.zeros(3), units='m', desc='component CM')
-        self.add_input('bedplate_I', np.zeros(3), units='kg*m**2', desc='component I')
+        self.add_input('bedplate_I', np.zeros(6), units='kg*m**2', desc='component I')
 
         self.add_input('hvac_mass', 0.0, units='kg', desc='component mass')
         self.add_input('hvac_cm', 0.0, units='m', desc='component center of mass')
@@ -427,7 +427,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         
         self.add_input('mainframe_mass', 0.0, units='kg', desc='component mass')
         self.add_input('mainframe_cm', np.zeros(3), units='m', desc='component center of mass')
-        self.add_input('mainframe_I', np.zeros(3), units='m', desc='component mass moments of inertia')
+        self.add_input('mainframe_I', np.zeros(6), units='m', desc='component mass moments of inertia')
         
         self.add_input('cover_mass', 0.0, units='kg', desc='component mass')
         self.add_input('cover_cm', np.zeros(3), units='m', desc='component center of mass')

@@ -85,19 +85,29 @@ class Constraints(om.ExplicitComponent):
 class MofI(om.ExplicitComponent):
     def setup(self):
         self.add_input('R_out', val=0.0, units ='m', desc='Outer radius')
+        self.add_input('stator_mass', val=0.0, units='kg', desc='Total rotor mass')
+        self.add_input('rotor_mass', val=0.0, units='kg', desc='Total rotor mass')
         self.add_input('generator_mass', val=0.0, units='kg', desc='Actual mass')
         self.add_input('len_s', val=0.0, units='m', desc='Stator core length')
         self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        self.add_output('rotor_I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the rotor about its center of mass')
+        self.add_output('stator_I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the stator about its center of mass')
         
     def compute(self, inputs, outputs):
         R_out = inputs['R_out']
         Mass  = inputs['generator_mass']
+        m_stator = inputs['stator_mass']
+        m_rotor  = inputs['rotor_mass']
         len_s = inputs['len_s']
 
         I = np.zeros(3)
         I[0] = 0.50*Mass*R_out**2
         I[1] = I[2] = 0.5*I[0] + Mass*len_s**2 / 12.
         outputs['generator_I'] = I
+        coeff = m_stator / Mass if m_stator > 0.0 else 0.5
+        outputs['stator_I'] = coeff * I
+        coeff = m_rotor / Mass if m_rotor > 0.0 else 0.5
+        outputs['rotor_I'] = coeff * I
 #----------------------------------------------------------------------------------------------
         
 class Cost(om.ExplicitComponent):

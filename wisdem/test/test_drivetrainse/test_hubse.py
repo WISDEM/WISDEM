@@ -1,14 +1,43 @@
 import unittest
 import os
-from wisdem.drivetrainse.hub import Hub_System
+import  wisdem.drivetrainse.hub as hub
 import openmdao.api as om
-
+from math import pi
 
 class TestRegression(unittest.TestCase):
     
+    
+    def testPitch(self):
+
+        pitch = hub.PitchSystem()
+        inputs = {}
+        outputs = {}
+        discrete_inputs = {}
+        discrete_outputs = {}
+        
+        inputs['blade_mass'] = 17740.0 # kg
+        discrete_inputs['n_blades']  = 3
+        inputs['hub_diameter'] = 4.0
+        inputs['rho'] = 7850.
+        inputs['Xy'] = 250e6
+
+        AirDensity= 1.225 # kg/(m^3)
+        Solidity  = 0.0517
+        RatedWindSpeed = 11.05 # m/s
+        rotor_diameter = 126.0
+        inputs['BRFM'] = (3.06 * pi / 8) * AirDensity * (RatedWindSpeed ** 2) * (Solidity * (rotor_diameter ** 3)) / discrete_inputs['n_blades']
+
+        inputs['scaling_factor'] = 1.0
+
+        pitch.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        m = outputs['pitch_mass']
+        self.assertAlmostEqual(outputs['pitch_I'][0], m*4)
+        self.assertAlmostEqual(outputs['pitch_I'][1], m*2)
+        self.assertAlmostEqual(outputs['pitch_I'][2], m*2)
+
     def testHubSE(self):
         
-        hub_prob = om.Problem(model=Hub_System())
+        hub_prob = om.Problem(model=hub.Hub_System())
         hub_prob.setup()
         
         hub_prob['pitch_system.blade_mass']        = 17000.

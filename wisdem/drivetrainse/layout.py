@@ -87,7 +87,7 @@ class Layout(om.ExplicitComponent):
         self.add_output('t_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate wall thickness (mirrors input)')
         self.add_output('bedplate_mass', val=0.0, units='kg', desc='Bedplate mass')
         self.add_output('bedplate_cm', val=np.zeros(3), units='m', desc='Bedplate center of mass')
-        self.add_output('bedplate_I', val=np.zeros(3), units='kg*m**2', desc='Bedplate mass moment of inertia about base')
+        self.add_output('bedplate_I', val=np.zeros(6), units='kg*m**2', desc='Bedplate mass moment of inertia about base')
 
         self.add_output('s_mb1', val=0.0, units='m', desc='Bearing 1 s-coordinate along drivetrain, measured from bedplate')
         self.add_output('s_mb2', val=0.0, units='m', desc='Bearing 2 s-coordinate along drivetrain, measured from bedplate')
@@ -182,7 +182,7 @@ class Layout(om.ExplicitComponent):
         
         outputs['bedplate_mass'] = mass_tot
         outputs['bedplate_cm']   = cm
-        outputs['bedplate_I']    = I_bed
+        outputs['bedplate_I']    = util.unassembleI(I_bed)
         
         # Geometry outputs
         outputs['x_bedplate'] = x_c

@@ -1,5 +1,5 @@
 import openmdao.api as om
-import nupy as np
+import numpy as np
 
 
 class Gearbox(om.ExplicitComponent):
