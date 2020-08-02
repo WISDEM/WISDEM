@@ -1,12 +1,12 @@
 
 import numpy as np
 import openmdao.api as om
-from hub import Hub_System
-from layout import Layout
-from generator import Generator
-from gearbox import Gearbox
-import drive_structure as ds
-import drive_components as dc
+from wisdem.drivetrainse.hub import Hub_System
+from wisdem.drivetrainse.layout import Layout
+from wisdem.drivetrainse.generator import Generator
+from wisdem.drivetrainse.gearbox import Gearbox
+import wisdem.drivetrainse.drive_structure as ds
+import wisdem.drivetrainse.drive_components as dc
 
         
 class DrivetrainSE(om.Group):
@@ -155,19 +155,6 @@ if __name__ == '__main__':
     prob['nose_wall_thickness'] = 0.1*myones
     prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
     prob['D_top'] = 6.5
-
-    prob['m_stator'] = 100e3
-    prob['cm_stator'] = -0.3
-    prob['I_stator'] = np.array([1e6, 5e5, 5e5])
-
-    prob['m_rotor'] = 100e3
-    prob['cm_rotor'] = -0.3
-    prob['I_rotor'] = np.array([1e6, 5e5, 5e5])
-
-    #prob['F_mb1'] = np.array([2409.750e3, -1716.429e3, 74.3529e3]).reshape((3,1))
-    #prob['F_mb2'] = np.array([2409.750e3, -1716.429e3, 74.3529e3]).reshape((3,1))
-    #prob['M_mb1'] = np.array([-1.83291e7, 6171.7324e3, 5785.82946e3]).reshape((3,1))
-    #prob['M_mb2'] = np.array([-1.83291e7, 6171.7324e3, 5785.82946e3]).reshape((3,1))
 
     prob['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
     prob['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))

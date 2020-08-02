@@ -35,7 +35,7 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(outputs['pitch_I'][1], m*2)
         self.assertAlmostEqual(outputs['pitch_I'][2], m*2)
 
-    def testHubSE(self):
+    def testHubSystem(self):
         
         hub_prob = om.Problem(model=hub.Hub_System())
         hub_prob.setup()
