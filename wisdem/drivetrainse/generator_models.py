@@ -240,10 +240,10 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_input('D_shaft', val=0.0, units='m', desc='Shaft diameter')
         
         # Material properties
-        self.add_input('rho_Copper', val=0.0, units='kg*m**-3', desc='Copper density ')
-        self.add_input('rho_Fe', val=0.0, units='kg*m**-3', desc='Magnetic Steel density ')
-        self.add_input('rho_Fes', val=0.0, units='kg*m**-3', desc='Structural Steel density ')
-        self.add_input('rho_PM', val=0.0, units='kg*m**-3', desc='Magnet density ')
+        self.add_input('rho_Copper', val=8900.0, units='kg*m**-3', desc='Copper density ')
+        self.add_input('rho_Fe', val=7700.0, units='kg*m**-3', desc='Magnetic Steel density ')
+        self.add_input('rho_Fes', val=7850.0, units='kg*m**-3', desc='Structural Steel density ')
+        self.add_input('rho_PM', val=7450.0, units='kg*m**-3', desc='Magnet density ')
 
         # Magnetic loading
         self.add_output('B_rymax', val=0.0, units='T', desc='Peak Rotor yoke flux density')
@@ -962,10 +962,10 @@ class PMSG_Disc(GeneratorBase):
         Fa4arg = np.pi / 180 * lamb * (0.5 * len_s - a)
         F_a4_ls2 = chsMshc(Fa4arg)
         
-        print('pmsg_disc: F_a4_ls2, Fa4arg, lamb, len_s, a ', F_a4_ls2, Fa4arg, lamb, len_s, a)
-        if np.isnan(F_a4_ls2):
-            sys.stderr.write('*** pmsg_discSE error: F_a4_ls2 is nan\n')
-            sys.exit()
+        #print('pmsg_disc: F_a4_ls2, Fa4arg, lamb, len_s, a ', F_a4_ls2, Fa4arg, lamb, len_s, a)
+        #if np.isnan(F_a4_ls2):
+        #    sys.stderr.write('*** pmsg_discSE error: F_a4_ls2 is nan\n')
+        #    sys.exit()
             
         #C_2 = np.cosh(x1) * np.sin(x1) + np.sinh(x1) * np.cos(x1)
         C_3 = np.sinh(x1) * np.sin(x1)
