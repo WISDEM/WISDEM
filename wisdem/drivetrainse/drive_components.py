@@ -210,51 +210,33 @@ class Electronics(om.ExplicitComponent):
         
     def setup(self):
 
-        self.add_discrete_input('direct_drive', False)
-
         self.add_input('machine_rating', 0.0, units='kW', desc='machine rating of the turbine')
-        self.add_input('D_top', 0.0, units='m', desc='Tower top outer diameter')
-        self.add_input('D_bedplate_base', 0.0, units='m', desc='Diameter of bedplate at base')
         self.add_input('rotor_diameter', 0.0, units='m', desc='rotor diameter of turbine')
+        self.add_input('D_top', 0.0, units='m', desc='Tower top outer diameter')
 
         self.add_output('electronics_mass', 0.0, units='kg', desc='overall component mass')
         self.add_output('electronics_cm', np.zeros(3), units='m', desc='center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_output('electronics_I', np.zeros(3), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')    
 
         
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
 
         # Unpack inputs
-        direct  = discrete_inputs['direct_drive']
         rating  = float(inputs['machine_rating'])
-        D_top   = float(inputs['D_top'])
         D_rotor = float(inputs['rotor_diameter'])
-        D_bed   = float(inputs['D_bedplate_base'])
+        D_top   = float(inputs['D_top'])
     
-        # Correlation based trends
+        # Correlation based trends, assume box
         mass   = 2.4445*rating + 1599.0
-        width  = 0.5*D_top
-        height = 0.016*D_rotor #similar to gearbox
-        length = 0.012*D_rotor #similar to gearbox
+        sides  = 0.015*D_rotor
 
-        # CM location- can be a user input
+        # CM location, just assume off to the side of the bedplate
         cm = np.zeros(3)
-        if direct:
-            # Assume gets placed on platform at base of bedplate
-            cm[:2] = D_bed
-        else:
-            cm[0] = inputs['x_electronics']
-            cm[2] = 0.6*inputs['cm_generator'][2]
+        cm[1] = 0.5*D_top + 0.5*sides
+        cm[2] = 0.5*sides
 
         # MoI
-        def get_I(d1, d2):
-            return (d1**2 + d2**2)/12.
-            
-        I = np.zeros(3)
-        I[0] = get_I(height, width)
-        I[1] = get_I(length, height)
-        I[2] = get_I(length, width)
-        I *= mass
+        I = (1./6.)*mass*sides**2*np.ones(3)
         
         # Outputs
         outputs['electronics_mass'] = mass
@@ -299,7 +281,8 @@ class YawSystem(om.ExplicitComponent):
         outputs['yaw_mass'] = m_frictionPlate + n_motors*m_motor
   
         # Assume cm is at tower top (cm=0,0,0) and mass is non-rotating (I=0,..), so leave at default value of 0s
-        
+        outputs['yaw_cm'] = np.zeros(3)
+        outputs['yaw_I']  = np.zeros(3)
 
 #---------------------------------------------------------------------------------------------------------------
 
@@ -312,7 +295,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         self.add_input('machine_rating', 0.0, units='kW', desc='machine rating of the turbine')
         self.add_input('L_bedplate', 0.0, units='m', desc='Length of bedplate') 
         self.add_input('H_bedplate', 0.0, units='m', desc='height of bedplate')
-        self.add_input('D_bedplate_base', 0.0, units='m', desc='Bedplate diameters')
+        self.add_input('D_top', 0.0, units='m', desc='Tower top outer diameter')
         self.add_input('bedplate_mass', 0.0, units='kg', desc='Bedplate mass')
         self.add_input('bedplate_cm', np.zeros(3), units='m', desc='Bedplate center of mass')
         self.add_input('bedplate_I', np.zeros(3), units='kg*m**2', desc='Bedplate mass moment of inertia about base')
@@ -342,7 +325,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         rating      = float(inputs['machine_rating'])
         L_bedplate  = float(inputs['L_bedplate'])
         H_bedplate  = float(inputs['H_bedplate'])
-        D_bedplate  = float(inputs['D_bedplate_base'])
+        D_bedplate  = float(inputs['D_top'])
         R_generator = float(inputs['R_generator'])
         m_bedplate  = float(inputs['bedplate_mass'])
         cm_bedplate = inputs['bedplate_cm']
@@ -357,7 +340,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         W_cover  = 1.1 * 2*R_generator
         H_cover  = 1.1 * (R_generator + np.maximum(R_generator,H_bedplate))
         A_cover  = 2*(L_cover*W_cover + L_cover*H_cover + H_cover*W_cover)
-        t_cover  = 0.05 # cm thick walls?
+        t_cover  = 0.04 # 5cm thick walls?
         m_cover  = A_cover * t_cover * rho_fiberglass
         cm_cover = np.array([0.5*L_cover-0.5*D_bedplate, 0.0, 0.5*H_cover])
         I_cover  = m_cover*np.array([H_cover**2 + W_cover**2 - (H_cover-t_cover)**2 - (W_cover-t_cover)**2,
@@ -374,15 +357,14 @@ class MiscNacelleComponents(om.ExplicitComponent):
         I_hvac       = m_hvac * (0.75*R_generator)**2
         outputs['hvac_mass'] = m_hvac
         outputs['hvac_cm']   = cm_hvac
-        outputs['hvac_I' ]   = I_hvac
+        outputs['hvac_I' ]   = I_hvac*np.array([1.0, 0.5, 0.5])
 
         # Platforms as a fraction of bedplate mass and bundling it to call it 'mainframe'
         platforms_coeff = 0.125
         m_mainframe  = platforms_coeff * m_bedplate
-        cm_mainframe = np.zeros(3)
         I_mainframe  = platforms_coeff * I_bedplate
         outputs['mainframe_mass'] = m_mainframe
-        outputs['mainframe_cm']   = cm_mainframe
+        outputs['mainframe_cm']   = np.zeros(3)
         outputs['mainframe_I' ]   = I_mainframe
 
 #--------------------------------------------
@@ -493,9 +475,10 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
 
             # Rotate MofI if in hub c.s.
             if len(cm_i) == 1:
-                I_i = util.rotateI(I_i, -Cup*tilt, axis='y')
+                cm_i = cm_i * np.array([Cup*np.cos(tilt), 0.0, np.sin(tilt)])
+                I_i  = util.rotateI(I_i, -Cup*tilt, axis='y')
             else:
-                I_i = np.r_[I_i, np.zeros(3)]
+                I_i  = np.r_[I_i, np.zeros(3)]
                 
             r       = cm_i - cm_nac
             I_nac  += util.assembleI(I_i) + m_i*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
@@ -503,9 +486,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac
         outputs['nacelle_I']    = util.unassembleI(I_nac)
-        outputs['other_mass']   = inputs['hss_mass'] + inputs['hvac_mass'] + inputs['mainframe_mass'] + inputs['yaw_mass'] + inputs['cover_mass']
-        # Future yaw system weight calculations based on total system mass above yaw system
-        #m_above_yaw = m_nac - inputs['yaw_mass']
+        outputs['other_mass']   = (inputs['hss_mass'] + inputs['hvac_mass'] + inputs['mainframe_mass'] +
+                                   inputs['yaw_mass'] + inputs['cover_mass'] + inputs['electronics_mass'])
 
 #--------------------------------------------
 
