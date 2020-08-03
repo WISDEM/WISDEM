@@ -35,7 +35,7 @@ for line in content:
         if '#' in line[0]:
             continue
 
-    if 'Component):' in line:
+    if 'Component):' in line or 'GeneratorBase):' in line:
         class_name = line.split()[1]
         in_class_flag = True
         
@@ -76,12 +76,20 @@ for line in content:
             left = val_str.count('(')
             right = val_str.count(')')
             i_paren = 1
-            while left != right:
-                val_str += ', ' + stripped_line[1+i_paren]
-                i_paren += 1
-                right = val_str.count(')')
-            if '=' in val_str:
-                val_str = val_str.split('=')[1].strip()
+            
+            try:
+                while left != right:
+                    val_str += ', ' + stripped_line[1+i_paren]
+                    i_paren += 1
+                    right = val_str.count(')')
+                if '=' in val_str:
+                    val_str = val_str.split('=')[1].strip()
+                    
+            except IndexError:
+                if 'False' in val_str or 'True' in val_str:
+                    type_ = 'boolean'
+                else:
+                    type_ = 'TODO: add type by hand, could not be parsed automatically'
                 
             if 'np' in val_str:
                 split_str = val_str.split('(')[-1].split(')')[0]
@@ -215,7 +223,7 @@ for line in orig_content:
             full_file.append(line)
             continue
 
-    if 'Component):' in line:
+    if 'Component):' in line or 'GeneratorBase):' in line:
         class_name = line.split()[1]
         in_class_flag = True
         full_file.append(line)
@@ -249,7 +257,7 @@ for line in orig_content:
                     
                 full_file.append(f'    {new_line}')
                 i_docs += 1
-            elif 'Component)' in new_line:
+            elif 'Component)' in new_line  or 'GeneratorBase):' in new_line:
                 i_docs += 1
                 adds_done = True
                 break

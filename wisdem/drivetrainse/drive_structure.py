@@ -18,7 +18,84 @@ FREE  = 0
 
 
 class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
-    """Run structural analysis of hub system with the generator rotor and main shaft."""
+    """
+    Run structural analysis of hub system with the generator rotor and main shaft.
+    
+    Parameters
+    ----------
+    tilt : float, [deg]
+        Shaft tilt
+    s_shaft : numpy array[6], [m]
+        Discretized s-coordinates along drivetrain, measured from bedplate
+    D_shaft : numpy array[6], [m]
+        Shaft discretized diameter values at coordinates
+    t_shaft : numpy array[6], [m]
+        Shaft discretized thickness values at coordinates
+    hub_system_mass : float, [kg]
+        Hub system mass
+    hub_system_cm : float, [m]
+        Hub system center of mass distance from hub flange
+    hub_system_I : numpy array[3], [kg*m**2]
+        Hub system moment of inertia
+    F_hub : numpy array[3, n_dlcs], [N]
+        Force vector applied to the hub (WITH WEIGHT???)
+    M_hub : numpy array[3, n_dlcs], [N]
+        Moment vector applied to the hub
+    s_mb1 : float, [m]
+        Bearing 1 s-coordinate along drivetrain, measured from bedplate
+    s_mb2 : float, [m]
+        Bearing 2 s-coordinate along drivetrain, measured from bedplate
+    s_rotor : float, [m]
+        Generator rotor attachment to shaft s-coordinate measured from bedplate
+    m_rotor : float, [kg]
+        Generator rotor mass
+    cm_rotor : float, [kg]
+        Generator rotor center of mass (measured along nose from bedplate)
+    I_rotor : numpy array[3], [kg*m**2]
+        Generator rotor moment of inertia (measured about its cm)
+    E : float, [N/m**2]
+        modulus of elasticity
+    G : float, [N/m**2]
+        shear modulus
+    rho : float, [kg/m**3]
+        material density
+    sigma_y : float, [N/m**2]
+        yield stress
+    gamma_f : float
+        safety factor
+    gamma_m : float
+        safety factor on materials
+    gamma_n : float
+        safety factor on consequence of failure
+    
+    Returns
+    -------
+    rotor_deflection : float, [m]
+        Maximum deflection distance at rotor attachment
+    rotor_rotation : float, [rad]
+        Maximum rotation angle at rotor attachment
+    rotor_axial_stress : numpy array[5, n_dlcs], [N/m**2]
+        Axial stress in Curved_beam structure
+    rotor_shear_stress : numpy array[5, n_dlcs], [N/m**2]
+        Shear stress in Curved_beam structure
+    rotor_bending_stress : numpy array[5, n_dlcs], [N/m**2]
+        Hoop stress in Curved_beam structure calculated with Roarks formulae
+    constr_rotor_vonmises : numpy array[5, n_dlcs]
+        Sigma_y/Von_Mises
+    F_mb1 : numpy array[3, n_dlcs], [N]
+        Force vector applied to bearing 1 in hub c.s.
+    F_mb2 : numpy array[3, n_dlcs], [N]
+        Force vector applied to bearing 2 in hub c.s.
+    F_rotor : numpy array[3, n_dlcs], [N]
+        Force vector applied to generator rotor in hub c.s.
+    M_mb1 : numpy array[3, n_dlcs], [N]
+        Moment vector applied to bearing 1 in hub c.s.
+    M_mb2 : numpy array[3, n_dlcs], [N]
+        Moment vector applied to bearing 2 in hub c.s.
+    M_rotor : numpy array[3, n_dlcs], [N]
+        Moment vector applied to generator rotor in hub c.s.
+    
+    """
     
     def initialize(self):
         self.options.declare('n_points')
@@ -28,47 +105,41 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         n_points = self.options['n_points']
         n_dlcs   = self.options['n_dlcs']
 
-        self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
+        self.add_input('tilt', 0.0, units='deg')
+        self.add_input('s_shaft', val=np.zeros(6), units='m', measured from bedplate')
+        self.add_input('D_shaft', val=np.zeros(6), units='m')
+        self.add_input('t_shaft', val=np.zeros(6), units='m')
+        self.add_input('hub_system_mass', 0.0, units='kg')
+        self.add_input('hub_system_cm', 0.0, units='m')
+        self.add_input('hub_system_I', np.zeros(3), units='kg*m**2')
+        self.add_input('F_hub', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_input('M_hub', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_input('s_mb1', val=0.0, units='m', measured from bedplate')
+        self.add_input('s_mb2', val=0.0, units='m', measured from bedplate')
+        self.add_input('s_rotor', val=0.0, units='m')
+        self.add_input('m_rotor', val=0.0, units='kg')
+        self.add_input('cm_rotor', val=0.0, units='kg')
+        self.add_input('I_rotor', val=np.zeros(3), units='kg*m**2')
+        self.add_input('E', val=0.0, units='N/m**2')
+        self.add_input('G', val=0.0, units='N/m**2')
+        self.add_input('rho', val=0.0, units='kg/m**3')
+        self.add_input('sigma_y', val=0.0, units='N/m**2')
+        self.add_input('gamma_f', val=0.0)
+        self.add_input('gamma_m', 0.0)
+        self.add_input('gamma_n', 0.0)
 
-        self.add_input('s_shaft', val=np.zeros(6), units='m', desc='Discretized s-coordinates along drivetrain, measured from bedplate')
-        self.add_input('D_shaft', val=np.zeros(6), units='m', desc='Shaft discretized diameter values at coordinates')
-        self.add_input('t_shaft', val=np.zeros(6), units='m', desc='Shaft discretized thickness values at coordinates')
-
-        self.add_input('hub_system_mass', 0.0, units='kg', desc='Hub system mass') 
-        self.add_input('hub_system_cm', 0.0, units='m', desc='Hub system center of mass distance from hub flange') 
-        self.add_input('hub_system_I', np.zeros(3), units='kg*m**2', desc='Hub system moment of inertia') 
-        self.add_input('F_hub', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to the hub (WITH WEIGHT???)')
-        self.add_input('M_hub', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to the hub')
-
-        self.add_input('s_mb1', val=0.0, units='m', desc='Bearing 1 s-coordinate along drivetrain, measured from bedplate')
-        self.add_input('s_mb2', val=0.0, units='m', desc='Bearing 2 s-coordinate along drivetrain, measured from bedplate')
-        
-        self.add_input('s_rotor', val=0.0, units='m', desc='Generator rotor attachment to shaft s-coordinate measured from bedplate')
-        self.add_input('m_rotor', val=0.0, units='kg', desc='Generator rotor mass')
-        self.add_input('cm_rotor', val=0.0, units='kg', desc='Generator rotor center of mass (measured along nose from bedplate)')
-        self.add_input('I_rotor', val=np.zeros(3), units='kg*m**2', desc='Generator rotor moment of inertia (measured about its cm)')
-        
-        self.add_input('E', val=0.0, units='N/m**2', desc='modulus of elasticity')
-        self.add_input('G', val=0.0, units='N/m**2', desc='shear modulus')
-        self.add_input('rho', val=0.0, units='kg/m**3', desc='material density')
-        self.add_input('sigma_y', val=0.0, units='N/m**2', desc='yield stress')
-        self.add_input('gamma_f', val=0.0, desc='safety factor')
-        self.add_input('gamma_m', 0.0, desc='safety factor on materials')
-        self.add_input('gamma_n', 0.0, desc='safety factor on consequence of failure')
-        
-        self.add_output('rotor_deflection', val=0.0, units='m', desc='Maximum deflection distance at rotor attachment')
-        self.add_output('rotor_rotation', val=0.0, units='rad', desc='Maximum rotation angle at rotor attachment')
-        self.add_output('rotor_axial_stress', np.zeros((5,n_dlcs)), units='N/m**2', desc='Axial stress in Curved_beam structure')
-        self.add_output('rotor_shear_stress', np.zeros((5,n_dlcs)), units='N/m**2', desc='Shear stress in Curved_beam structure')
-        self.add_output('rotor_bending_stress', np.zeros((5,n_dlcs)), units='N/m**2', desc='Hoop stress in Curved_beam structure calculated with Roarks formulae')
-        self.add_output('constr_rotor_vonmises', np.zeros((5,n_dlcs)), desc='Sigma_y/Von_Mises')
-        self.add_output('F_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to bearing 1 in hub c.s.')
-        self.add_output('F_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to bearing 2 in hub c.s.')
-        self.add_output('F_rotor', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to generator rotor in hub c.s.')
-        self.add_output('M_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 1 in hub c.s.')
-        self.add_output('M_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 2 in hub c.s.')
-        self.add_output('M_rotor', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to generator rotor in hub c.s.')
-
+        self.add_output('rotor_deflection', val=0.0, units='m')
+        self.add_output('rotor_rotation', val=0.0, units='rad')
+        self.add_output('rotor_axial_stress', np.zeros((5, n_dlcs)), units='N/m**2')
+        self.add_output('rotor_shear_stress', np.zeros((5, n_dlcs)), units='N/m**2')
+        self.add_output('rotor_bending_stress', np.zeros((5, n_dlcs)), units='N/m**2')
+        self.add_output('constr_rotor_vonmises', np.zeros((5, n_dlcs)))
+        self.add_output('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_output('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_output('F_rotor', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_output('M_mb1', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_output('M_mb2', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_output('M_rotor', val=np.zeros((3, n_dlcs)), units='N')
 
     def compute(self, inputs, outputs):
 
@@ -235,13 +306,121 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
                                                                                    gamma_f*gamma_m*gamma_n, sigma_y)
         outputs['rotor_deflection'] = rotor_deflection.max()
         outputs['rotor_rotation']  = rotor_rotation.max()
-
-
-   
     
 
 class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
-    """Run structural analysis of nose/turret with the generator stator and bedplate"""
+    """
+    Run structural analysis of nose/turret with the generator stator and bedplate
+    
+    Parameters
+    ----------
+    upwind : boolean
+        Flag whether the design is upwind or downwind
+    tilt : float, [deg]
+        Shaft tilt
+    s_nose : numpy array[6], [m]
+        Discretized s-coordinates along drivetrain, measured from bedplate
+    D_nose : numpy array[6], [m]
+        Nose discretized diameter values at coordinates
+    t_nose : numpy array[6], [m]
+        Nose discretized thickness values at coordinates
+    x_bedplate : numpy array[n_points], [m]
+        Bedplate centerline x-coordinates
+    z_bedplate : numpy array[n_points], [m]
+        Bedplate centerline z-coordinates
+    x_bedplate_inner : numpy array[n_points], [m]
+        Bedplate lower curve x-coordinates
+    z_bedplate_inner : numpy array[n_points], [m]
+        Bedplate lower curve z-coordinates
+    x_bedplate_outer : numpy array[n_points], [m]
+        Bedplate outer curve x-coordinates
+    z_bedplate_outer : numpy array[n_points], [m]
+        Bedplate outer curve z-coordinates
+    D_bedplate : numpy array[n_points], [m]
+        Bedplate diameters
+    t_bedplate : numpy array[n_points], [m]
+        Bedplate wall thickness (mirrors input)
+    s_mb1 : float, [m]
+        Bearing 1 s-coordinate along drivetrain, measured from bedplate
+    s_mb2 : float, [m]
+        Bearing 2 s-coordinate along drivetrain, measured from bedplate
+    mb1_mass : float, [kg]
+        component mass
+    mb1_I : numpy array[3], [kg*m**2]
+        component I
+    mb1_max_defl_ang : float, [rad]
+        Maximum allowable deflection angle
+    mb2_mass : float, [kg]
+        component mass
+    mb2_I : numpy array[3], [kg*m**2]
+        component I
+    mb2_max_defl_ang : float, [rad]
+        Maximum allowable deflection angle
+    s_stator : float, [m]
+        Generator stator attachment to shaft s-coordinate measured from bedplate
+    m_stator : float, [kg]
+        Generator stator mass
+    cm_stator : float, [kg]
+        Generator stator center of mass (measured along drivetrain from bedplate)
+    I_stator : numpy array[3], [kg*m**2]
+        Generator stator moment of inertia (measured about cm)
+    F_mb1 : numpy array[3, n_dlcs], [N]
+        Force vector applied to bearing 1 in hub c.s.
+    F_mb2 : numpy array[3, n_dlcs], [N]
+        Force vector applied to bearing 2 in hub c.s.
+    M_mb1 : numpy array[3, n_dlcs], [N]
+        Moment vector applied to bearing 1 in hub c.s.
+    M_mb2 : numpy array[3, n_dlcs], [N]
+        Moment vector applied to bearing 2 in hub c.s.
+    other_mass : float, [kg]
+        Mass of other nacelle components that rest on mainplate
+    E : float, [N/m**2]
+        modulus of elasticity
+    G : float, [N/m**2]
+        shear modulus
+    rho : float, [kg/m**3]
+        material density
+    sigma_y : float, [N/m**2]
+        yield stress
+    gamma_f : float
+        safety factor
+    gamma_m : float
+        safety factor on materials
+    gamma_n : float
+        safety factor on consequence of failure
+    
+    Returns
+    -------
+    mb1_deflection : numpy array[n_dlcs], [m]
+        Total deflection distance of bearing 1
+    mb2_deflection : numpy array[n_dlcs], [m]
+        Total deflection distance of bearing 2
+    stator_deflection : float, [m]
+        Maximum deflection distance at stator attachment
+    mb1_rotation : numpy array[n_dlcs], [rad]
+        Total rotation angle of bearing 1
+    mb2_rotation : numpy array[n_dlcs], [rad]
+        Total rotation angle of bearing 2
+    stator_rotation : float, [rad]
+        Maximum rotation angle at stator attachment
+    base_F : numpy array[3, n_dlcs], [N]
+        Total reaction force at bedplate base
+    base_M : numpy array[3, n_dlcs], [N*m]
+        Total reaction moment at bedplate base
+    bedplate_nose_axial_stress : numpy array[n_points+4, n_dlcs], [N/m**2]
+        Axial stress in Curved_beam structure
+    bedplate_nose_shear_stress : numpy array[n_points+4, n_dlcs], [N/m**2]
+        Shear stress in Curved_beam structure
+    bedplate_nose_bending_stress : numpy array[n_points+4, n_dlcs], [N/m**2]
+        Hoop stress in Curved_beam structure calculated with Roarks formulae
+    constr_bedplate_nose_vonmises : numpy array[n_points+4, n_dlcs]
+        Sigma_y/Von_Mises
+    constr_mb1_defl : numpy array[n_dlcs]
+        Angular deflection relative to limit of bearing 1 (should be <1)
+    constr_mb2_defl : numpy array[n_dlcs]
+        Angular deflection relative to limit of bearing 2 (should be <1)
+    
+    """
     
     def initialize(self):
         self.options.declare('n_points')
@@ -251,68 +430,59 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         n_points = self.options['n_points']
         n_dlcs   = self.options['n_dlcs']
 
-        self.add_discrete_input('upwind', True, desc='Flag whether the design is upwind or downwind') 
-        self.add_input('tilt', 0.0, units='deg', desc='Shaft tilt') 
+        self.add_discrete_input('upwind', True)
+        self.add_input('tilt', 0.0, units='deg')
+        self.add_input('s_nose', val=np.zeros(6), units='m', measured from bedplate')
+        self.add_input('D_nose', val=np.zeros(6), units='m')
+        self.add_input('t_nose', val=np.zeros(6), units='m')
+        self.add_input('x_bedplate', val=np.zeros(n_points), units='m')
+        self.add_input('z_bedplate', val=np.zeros(n_points), units='m')
+        self.add_input('x_bedplate_inner', val=np.zeros(n_points), units='m')
+        self.add_input('z_bedplate_inner', val=np.zeros(n_points), units='m')
+        self.add_input('x_bedplate_outer', val=np.zeros(n_points), units='m')
+        self.add_input('z_bedplate_outer', val=np.zeros(n_points), units='m')
+        self.add_input('D_bedplate', val=np.zeros(n_points), units='m')
+        self.add_input('t_bedplate', val=np.zeros(n_points), units='m')
+        self.add_input('s_mb1', val=0.0, units='m', measured from bedplate')
+        self.add_input('s_mb2', val=0.0, units='m', measured from bedplate')
+        self.add_input('mb1_mass', 0.0, units='kg')
+        self.add_input('mb1_I', np.zeros(3), units='kg*m**2')
+        self.add_input('mb1_max_defl_ang', 0.0, units='rad')
+        self.add_input('mb2_mass', 0.0, units='kg')
+        self.add_input('mb2_I', np.zeros(3), units='kg*m**2')
+        self.add_input('mb2_max_defl_ang', 0.0, units='rad')
+        self.add_input('s_stator', val=0.0, units='m')
+        self.add_input('m_stator', val=0.0, units='kg')
+        self.add_input('cm_stator', val=0.0, units='kg')
+        self.add_input('I_stator', val=np.zeros(3), units='kg*m**2')
+        self.add_input('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_input('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_input('M_mb1', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_input('M_mb2', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_input('other_mass', val=0.0, units='kg')
+        self.add_input('E', val=0.0, units='N/m**2')
+        self.add_input('G', val=0.0, units='N/m**2')
+        self.add_input('rho', val=0.0, units='kg/m**3')
+        self.add_input('sigma_y', val=0.0, units='N/m**2')
+        self.add_input('gamma_f', val=0.0)
+        self.add_input('gamma_m', 0.0)
+        self.add_input('gamma_n', 0.0)
 
-        self.add_input('s_nose', val=np.zeros(6), units='m', desc='Discretized s-coordinates along drivetrain, measured from bedplate')
-        self.add_input('D_nose', val=np.zeros(6), units='m', desc='Nose discretized diameter values at coordinates')
-        self.add_input('t_nose', val=np.zeros(6), units='m', desc='Nose discretized thickness values at coordinates')
+        self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m')
+        self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m')
+        self.add_output('stator_deflection', val=0.0, units='m')
+        self.add_output('mb1_rotation', val=np.zeros(n_dlcs), units='rad')
+        self.add_output('mb2_rotation', val=np.zeros(n_dlcs), units='rad')
+        self.add_output('stator_rotation', val=0.0, units='rad')
+        self.add_output('base_F', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_output('base_M', val=np.zeros((3, n_dlcs)), units='N*m')
+        self.add_output('bedplate_nose_axial_stress', np.zeros((n_points+4, n_dlcs)), units='N/m**2')
+        self.add_output('bedplate_nose_shear_stress', np.zeros((n_points+4, n_dlcs)), units='N/m**2')
+        self.add_output('bedplate_nose_bending_stress', np.zeros((n_points+4, n_dlcs)), units='N/m**2')
+        self.add_output('constr_bedplate_nose_vonmises', np.zeros((n_points+4, n_dlcs)))
+        self.add_output('constr_mb1_defl', val=np.zeros(n_dlcs))
+        self.add_output('constr_mb2_defl', val=np.zeros(n_dlcs))
 
-        self.add_input('x_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate centerline x-coordinates')
-        self.add_input('z_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate centerline z-coordinates')
-        self.add_input('x_bedplate_inner', val=np.zeros(n_points), units='m', desc='Bedplate lower curve x-coordinates')
-        self.add_input('z_bedplate_inner', val=np.zeros(n_points), units='m', desc='Bedplate lower curve z-coordinates')
-        self.add_input('x_bedplate_outer', val=np.zeros(n_points), units='m', desc='Bedplate outer curve x-coordinates')
-        self.add_input('z_bedplate_outer', val=np.zeros(n_points), units='m', desc='Bedplate outer curve z-coordinates')
-        self.add_input('D_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate diameters')
-        self.add_input('t_bedplate', val=np.zeros(n_points), units='m', desc='Bedplate wall thickness (mirrors input)')
-
-        self.add_input('s_mb1', val=0.0, units='m', desc='Bearing 1 s-coordinate along drivetrain, measured from bedplate')
-        self.add_input('s_mb2', val=0.0, units='m', desc='Bearing 2 s-coordinate along drivetrain, measured from bedplate')
-        self.add_input('mb1_mass', 0.0, units='kg', desc='component mass')
-        self.add_input('mb1_I', np.zeros(3), units='kg*m**2', desc='component I')
-        self.add_input('mb1_max_defl_ang', 0.0, units='rad', desc='Maximum allowable deflection angle')
-        self.add_input('mb2_mass', 0.0, units='kg', desc='component mass')
-        self.add_input('mb2_I', np.zeros(3), units='kg*m**2', desc='component I')
-        self.add_input('mb2_max_defl_ang', 0.0, units='rad', desc='Maximum allowable deflection angle')
-        
-        self.add_input('s_stator', val=0.0, units='m', desc='Generator stator attachment to shaft s-coordinate measured from bedplate')
-        self.add_input('m_stator', val=0.0, units='kg', desc='Generator stator mass')
-        self.add_input('cm_stator', val=0.0, units='kg', desc='Generator stator center of mass (measured along drivetrain from bedplate)')
-        self.add_input('I_stator', val=np.zeros(3), units='kg*m**2', desc='Generator stator moment of inertia (measured about cm)')
-        
-        self.add_input('F_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to bearing 1 in hub c.s.')
-        self.add_input('F_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Force vector applied to bearing 2 in hub c.s.')
-        self.add_input('M_mb1', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 1 in hub c.s.')
-        self.add_input('M_mb2', val=np.zeros((3,n_dlcs)), units='N', desc='Moment vector applied to bearing 2 in hub c.s.')
-
-        self.add_input('other_mass', val=0.0, units='kg', desc='Mass of other nacelle components that rest on mainplate')
-
-        self.add_input('E', val=0.0, units='N/m**2', desc='modulus of elasticity')
-        self.add_input('G', val=0.0, units='N/m**2', desc='shear modulus')
-        self.add_input('rho', val=0.0, units='kg/m**3', desc='material density')
-        self.add_input('sigma_y', val=0.0, units='N/m**2', desc='yield stress')
-        self.add_input('gamma_f', val=0.0, desc='safety factor')
-        self.add_input('gamma_m', 0.0, desc='safety factor on materials')
-        self.add_input('gamma_n', 0.0, desc='safety factor on consequence of failure')
-        
-        #self.add_output('top_deflection', np.zeros(n_points), units='m', desc='Deflection of Curved_beam top in yaw-aligned +x direction')
-        self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m', desc='Total deflection distance of bearing 1')
-        self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m', desc='Total deflection distance of bearing 2')
-        self.add_output('stator_deflection', val=0.0, units='m', desc='Maximum deflection distance at stator attachment')
-        self.add_output('mb1_rotation', val=np.zeros(n_dlcs), units='rad', desc='Total rotation angle of bearing 1')
-        self.add_output('mb2_rotation', val=np.zeros(n_dlcs), units='rad', desc='Total rotation angle of bearing 2')
-        self.add_output('stator_rotation', val=0.0, units='rad', desc='Maximum rotation angle at stator attachment')
-        self.add_output('base_F', val=np.zeros((3,n_dlcs)), units='N', desc='Total reaction force at bedplate base')
-        self.add_output('base_M', val=np.zeros((3,n_dlcs)), units='N*m', desc='Total reaction moment at bedplate base')
-        self.add_output('bedplate_nose_axial_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Axial stress in Curved_beam structure')
-        self.add_output('bedplate_nose_shear_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Shear stress in Curved_beam structure')
-        self.add_output('bedplate_nose_bending_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Hoop stress in Curved_beam structure calculated with Roarks formulae')
-        self.add_output('constr_bedplate_nose_vonmises', np.zeros((n_points+4,n_dlcs)), desc='Sigma_y/Von_Mises')
-        self.add_output('constr_mb1_defl', val=np.zeros(n_dlcs), desc='Angular deflection relative to limit of bearing 1 (should be <1)')
-        self.add_output('constr_mb2_defl', val=np.zeros(n_dlcs), desc='Angular deflection relative to limit of bearing 2 (should be <1)')
-
-        
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs

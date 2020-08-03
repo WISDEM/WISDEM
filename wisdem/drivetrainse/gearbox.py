@@ -3,31 +3,68 @@ import numpy as np
 
 
 class Gearbox(om.ExplicitComponent):
-    '''
+    """
     Gearbox class is used to represent the high speed shaft and mechanical brake components of a wind turbine drivetrain.
-    '''
+    
+    Parameters
+    ----------
+    direct_drive : boolean
+        True if system is direct drive        
+    gear_configuration : string
+        string that represents the configuration of the gearbox (stage number and types)
+    shaft_factor : string
+        normal or short shaft length
+    planet_numbers : numpy array[0, 0, 0, ]
+        number of planets in each stage
+    gear_ratio : float
+        overall gearbox speedup ratio
+    rotor_rpm : float, [rpm]
+        rotor rpm at rated power
+    D_rotor : float, [m]
+        rotor diameter
+    Q_rotor : float, [N*m]
+        rotor torque at rated power
+    s_gearbox : float, [m]
+        gearbox position along x-axis
+    
+    Returns
+    -------
+    stage_masses : numpy array[3], [kg]
+        individual gearbox stage gearbox_masses
+    gearbox_mass : float, [kg]
+        overall component mass
+    gearbox_cm : numpy array[3], [m]
+        Gearbox center of mass [x,y,z] measure along shaft from bedplate
+    gearbox_I : numpy array[3], [kg*m**2]
+        Gearbox mass moments of inertia [Ixx, Iyy, Izz] around its center of mass
+    L_gearbox : float, [m]
+        length of gearbox
+    H_gearbox : float, [m]
+        height of gearbox
+    D_gearbox : float, [m]
+        diameter of gearbox
+    
+    """
 
     def setup(self):
 
         self.add_discrete_input('direct_drive', False)
-        self.add_discrete_input('gear_configuration', val='eep', desc='string that represents the configuration of the gearbox (stage number and types)')
-        self.add_discrete_input('shaft_factor', val='normal', desc='normal or short shaft length')
-        self.add_discrete_input('planet_numbers', val=np.array([0, 0, 0,]), desc='number of planets in each stage')
+        self.add_discrete_input('gear_configuration', val='eep')
+        self.add_discrete_input('shaft_factor', val='normal')
+        self.add_discrete_input('planet_numbers', val=np.array([0, 0, 0, ]))
+        self.add_input('gear_ratio', val=1.0)
+        self.add_input('rotor_rpm', val=0.0, units='rpm')
+        self.add_input('D_rotor', val=0.0, units='m')
+        self.add_input('Q_rotor', val=0.0, units='N*m')
+        self.add_input('s_gearbox', val=0.00, units='m')
 
-        self.add_input('gear_ratio', val=1.0, desc='overall gearbox speedup ratio')
-        self.add_input('rotor_rpm', val=0.0, units='rpm', desc='rotor rpm at rated power')
-        self.add_input('D_rotor', val=0.0, units='m', desc='rotor diameter')
-        self.add_input('Q_rotor', val=0.0, units='N*m', desc='rotor torque at rated power')
-        self.add_input('s_gearbox', val=0.00, units='m', desc='gearbox position along x-axis')
-        
-        # outputs
-        self.add_output('stage_masses', val=np.zeros(3), units='kg', desc='individual gearbox stage gearbox_masses')
-        self.add_output('gearbox_mass', 0.0, units='kg', desc='overall component mass')
-        self.add_output('gearbox_cm', np.zeros(3), units='m', desc='Gearbox center of mass [x,y,z] measure along shaft from bedplate')
-        self.add_output('gearbox_I', np.zeros(3), units='kg*m**2', desc='Gearbox mass moments of inertia [Ixx, Iyy, Izz] around its center of mass')
-        self.add_output('L_gearbox', 0.0, units='m', desc='length of gearbox')
-        self.add_output('H_gearbox', 0.0, units='m', desc='height of gearbox')
-        self.add_output('D_gearbox', 0.0, units='m', desc='diameter of gearbox')
+        self.add_output('stage_masses', val=np.zeros(3), units='kg')
+        self.add_output('gearbox_mass', 0.0, units='kg')
+        self.add_output('gearbox_cm', np.zeros(3), units='m', y, z] measure along shaft from bedplate')
+        self.add_output('gearbox_I', np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('L_gearbox', 0.0, units='m')
+        self.add_output('H_gearbox', 0.0, units='m')
+        self.add_output('D_gearbox', 0.0, units='m')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         if discrete_inputs['direct_drive']: return
