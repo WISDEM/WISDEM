@@ -6,12 +6,14 @@ from wisdem.commonse.mpi_tools              import MPI
 from wisdem.commonse.vertical_cylinder      import NFREQ
 from wisdem.towerse.tower                   import get_nfull
 
+from wisdem.rotorse.geometry_tools.geometry import remap2grid
 from wisdem.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
 from wisdem.aeroelasticse.FAST_post         import return_timeseries, return_fname, FAST_IO_timeseries
 from wisdem.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
 from pCrunch import Analysis, pdTools
+import fatpack
 
 if MPI:
     from mpi4py   import MPI
@@ -185,17 +187,26 @@ class FASTLoadCases(ExplicitComponent):
     def setup(self):
         blade_init_options   = self.options['analysis_options']['blade']
         servose_init_options = self.options['analysis_options']['servose']
+        mat_init_options     = self.options['analysis_options']['materials']
+
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_pc          = n_pc      = servose_init_options['n_pc']
         self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
         self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
         self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
+        self.n_mat         = n_mat    = mat_init_options['n_mat']
+        self.n_layers      = n_layers = blade_init_options['n_layers']
 
         af_init_options    = self.options['analysis_options']['airfoils']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        
+        self.te_ss_var       = self.options['opt_options']['optimization_variables']['blade']['structure']['te_ss']['name']
+        self.te_ps_var       = self.options['opt_options']['optimization_variables']['blade']['structure']['te_ps']['name']
+        self.spar_cap_ss_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
+        self.spar_cap_ps_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
         n_height_tow = self.options['analysis_options']['tower']['n_height']
         nFull        = get_nfull(self.options['analysis_options']['tower']['n_height'])
@@ -204,6 +215,7 @@ class FASTLoadCases(ExplicitComponent):
         n_freq_blade = int(self.options['analysis_options']['blade']['n_freq']/2)
 
         FASTpref = self.options['analysis_options']['openfast']
+        # self.FatigueFile   = self.options['analysis_options']['rotorse']['FatigueFile']
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -215,6 +227,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('beam:rhoA',             val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
         self.add_input('beam:EIyy',             val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
         self.add_input('beam:EIxx',             val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+        self.add_input('x_tc',                  val=np.zeros(n_span), units='m',      desc='x-distance to the neutral axis (torsion center)')
+        self.add_input('y_tc',                  val=np.zeros(n_span), units='m',      desc='y-distance to the neutral axis (torsion center)')
         self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
         self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
         self.add_input('gearbox_efficiency',    val=0.0,               desc='Gearbox efficiency')
@@ -243,10 +257,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('nacelle_I',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
 
         # AeroDyn Inputs
-        self.add_input('ref_axis_blade',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+        self.add_input('ref_axis_blade',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
         self.add_input('chord',             val=np.zeros(n_span), units='m', desc='chord at airfoil locations')
         self.add_input('theta',             val=np.zeros(n_span), units='deg', desc='twist at airfoil locations')
         self.add_input('rthick',            val=np.zeros(n_span), desc='relative thickness of airfoil distribution')
+        self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
         self.add_input('airfoils_cl',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
@@ -300,6 +315,25 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
         self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
+        
+        # Blade composite material properties (used for fatigue analysis)
+        self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
+        self.add_input('gamma_m',      val=1.1,                              desc='safety factor on materials')
+        self.add_input('E',            val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
+        self.add_input('Xt',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+        self.add_input('Xc',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
+        self.add_input('m',            val=np.zeros([n_mat]),                desc='2D array of the S-N fatigue slope exponent for the materials') 
+
+        # Blade composit layup info (used for fatigue analysis)
+        self.add_input('sc_ss_mats',   val=np.zeros((n_span, n_mat)),        desc="spar cap, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_input('sc_ps_mats',   val=np.zeros((n_span, n_mat)),        desc="spar cap, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_input('te_ss_mats',   val=np.zeros((n_span, n_mat)),        desc="trailing edge reinforcement, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_input('te_ps_mats',   val=np.zeros((n_span, n_mat)),        desc="trailing edge reinforcement, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+        self.add_discrete_input('definition_layer', val=np.zeros(n_layers),  desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+        # self.add_discrete_input('layer_name',       val=n_layers * [''],     desc='1D array of the names of the layers modeled in the blade structure.')
+        # self.add_discrete_input('layer_web',        val=n_layers * [''],     desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
+        # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
+        self.layer_name = blade_init_options['layer_name']
 
         # FAST run preferences
         self.FASTpref            = FASTpref 
@@ -359,6 +393,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('Fxyz',        val=np.zeros(3),    units='N')
         self.add_output('Mxyz',        val=np.zeros(3),    units='N*m')
 
+        self.add_output('C_miners_SC_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, suction side")
+        self.add_output('C_miners_SC_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, pressure side")
+        # self.add_output('C_miners_TE_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, suction side")
+        # self.add_output('C_miners_TE_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, pressure side")
+
         self.add_discrete_output('fst_vt_out', val={})
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -371,7 +410,7 @@ class FASTLoadCases(ExplicitComponent):
             # Run FAST with ElastoDyn
 
             FAST_Output, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
-            self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs)
+            self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
             # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
@@ -455,10 +494,16 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
             fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
             
-            fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'])
-            fst_vt['AeroDyn15']['TwrElev']   = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
-            fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter']
-            fst_vt['AeroDyn15']['TwrCd']     = np.ones_like(fst_vt['AeroDyn15']['TwrDiam']) * np.mean(fst_vt['AeroDyn15']['TwrCd'])
+            twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
+            tip_height= twr_elev[-1]-inputs['Rtip']
+            twr_index = np.argmin(abs(twr_elev - tip_height))
+            if twr_elev[twr_index] > tip_height:
+                twr_index -= 1
+
+            fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
+            fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
+            fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
+            fst_vt['AeroDyn15']['TwrCd']     = np.ones_like(fst_vt['AeroDyn15']['TwrDiam']) * np.mean(fst_vt['AeroDyn15']['TwrCd'][twr_index:])
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -574,12 +619,15 @@ class FASTLoadCases(ExplicitComponent):
                 
         # AeroDyn spanwise output positions
         r = r/r[-1]
-        r_out_target = [0.0, 0.1, 0.20, 0.40, 0.6, 0.75, 0.85, 0.925, 1.0]
+        r_out_target = [0.1, 0.20, 0.30, 0.45, 0.6, 0.75, 0.85, 0.925, 1.0]
         idx_out      = [np.argmin(abs(r-ri)) for ri in r_out_target]
         self.R_out   = [fst_vt['AeroDynBlade']['BlSpn'][i] for i in idx_out]
         
-        fst_vt['AeroDyn15']['BlOutNd'] = [str(idx+1) for idx in idx_out]
-        fst_vt['AeroDyn15']['NBlOuts'] = len(idx_out)
+        fst_vt['AeroDyn15']['BlOutNd']  = [str(idx+1) for idx in idx_out]
+        fst_vt['AeroDyn15']['NBlOuts']  = len(idx_out)
+
+        fst_vt['ElastoDyn']['BldGagNd'] = [idx+1 for idx in idx_out]
+        fst_vt['ElastoDyn']['NBlGages'] = len(idx_out)
 
         return fst_vt
 
@@ -590,7 +638,7 @@ class FASTLoadCases(ExplicitComponent):
         case_name_list = []
         dlc_list       = []
 
-        if self.FASTpref['dlc_settings']['run_IEC']:
+        if self.FASTpref['dlc_settings']['run_IEC'] or self.FASTpref['dlc_settings']['run_blade_fatigue']:
             case_list_IEC, case_name_list_IEC, dlc_list_IEC = self.DLC_creation_IEC(inputs, discrete_inputs, fst_vt)
             case_list      += case_list_IEC
             case_name_list += case_name_list_IEC
@@ -610,7 +658,7 @@ class FASTLoadCases(ExplicitComponent):
         # channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2", "RootMxb3", "RootMyb3", "RootMzb3"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2", "RootFxc3", "RootFyc3", "RootFzc3"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2", "RootFxb3", "RootFyb3", "RootFzb3"]
-        channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
+        channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3", "Azimuth"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
         channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
         channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
@@ -667,7 +715,7 @@ class FASTLoadCases(ExplicitComponent):
         # Turbine Data
         iec.Turbine_Class    = discrete_inputs['turbine_class']
         iec.Turbulence_Class = discrete_inputs['turbulence_class']
-        iec.D                = fst_vt['ElastoDyn']['TipRad']*2.
+        iec.D                = np.min([fst_vt['InflowWind']['RefHt']*1.9 , fst_vt['ElastoDyn']['TipRad']*2.5])
         iec.z_hub            = fst_vt['InflowWind']['RefHt']
 
         # Turbine initial conditions
@@ -735,16 +783,18 @@ class FASTLoadCases(ExplicitComponent):
 
         iec.transient_dir_change        = '-'
         iec.transient_shear_orientation = 'v'
-        if ("Fst", "TStart") in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
-            T0                          = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TStart")]
-        else:
-            T0                          = 120.
-        if ("Fst", "TMax") in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
-            iec.TMax                    = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")]
-        else:
-            iec.TMax                    = 720.
+        if ("Fst", "TStart") not in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
+            self.options['analysis_options']['openfast']['fst_settings'][('Fst','TStart')] = 120.
+        T0                          = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TStart")]
+
+        if ("Fst", "TMax") not in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
+            self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")] = 720.
+        iec.TMax                    = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")]
 
         iec.TStart                      = (iec.TMax-T0)/2. + T0
+        self.simtime                    = iec.TMax - T0
+        self.TMax                       = iec.TMax
+        self.T0                         = T0
 
         # path management
         iec.wind_dir        = self.FAST_runDirectory
@@ -773,10 +823,6 @@ class FASTLoadCases(ExplicitComponent):
 
         # Run case setup, generate wind inputs
         case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
-
-        # for dlc, case, in zip(dlc_list, case_list):
-        #     print(dlc, case)
-        #     sys.stdout.flush()
 
 
         return case_list, case_name_list, dlc_list
@@ -814,14 +860,13 @@ class FASTLoadCases(ExplicitComponent):
         else:
             return [], [], []
 
-    def post_process(self, FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs):
+    def post_process(self, FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
 
         # Load pCrunch Analysis
-        loads_analysis = Analysis.Loads_Analysis()
-        if self.debug_level > 0:
-            loads_analysis.verbose = True
+        loads_analysis         = Analysis.Loads_Analysis()
+        loads_analysis.verbose = self.options['analysis_options']['general']['verbosity']
 
-        # Initial time, ranking variables and assosiated stats should be in an input yaml probably, of defined by the desired cost function
+        # Initial time
         loads_analysis.t0 = self.options['analysis_options']['openfast']['fst_settings'][('Fst','TStart')]
         
         # Calc summary stats on the magnitude of a vector
@@ -843,7 +888,7 @@ class FASTLoadCases(ExplicitComponent):
         loads_analysis.channels_extreme_table += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
 
         # get summary stats
-        sum_stats = loads_analysis.summary_stats(FAST_Output)
+        sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
 
         
         ## Post process loads
@@ -870,8 +915,8 @@ class FASTLoadCases(ExplicitComponent):
                 bld_pitch_chan = "BldPitch3"
 
             # Return spanwise forces at instance of largest deflection
-            Fx = [sum_stats[tip_max_chan]['extreme_table'][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fx]
-            Fy = [sum_stats[tip_max_chan]['extreme_table'][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fy]
+            Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var]['val'] for var in blade_chans_Fx]
+            Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var]['val'] for var in blade_chans_Fy]
             spline_Fx = PchipInterpolator(self.R_out, Fx)
             spline_Fy = PchipInterpolator(self.R_out, Fy)
 
@@ -884,9 +929,9 @@ class FASTLoadCases(ExplicitComponent):
             outputs['loads_Px']      = Fx_out
             outputs['loads_Py']      = Fy_out*-1.
             outputs['loads_Pz']      = Fz_out
-            outputs['loads_Omega']   = sum_stats[tip_max_chan]['extreme_table'][np.argmax(sum_stats[tip_max_chan]['max'])]['RotSpeed']
-            outputs['loads_pitch']   = sum_stats[tip_max_chan]['extreme_table'][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']
-            outputs['loads_azimuth'] = sum_stats[tip_max_chan]['extreme_table'][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']
+            outputs['loads_Omega']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['RotSpeed']['val']
+            outputs['loads_pitch']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']['val']
+            outputs['loads_azimuth'] = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']['val']
 
             # # Determine blade with the maximum root moment
             # defl_mag = [max(sum_stats['RootMc1']['max']), max(sum_stats['RootMc2']['max']), max(sum_stats['RootMc3']['max'])]
@@ -898,12 +943,29 @@ class FASTLoadCases(ExplicitComponent):
             #     outputs['Mxyz'] = np.array(["RootMxc3", "RootMyc3", "RootMzc3"])*1.e3
 
             ## Get hub momements and forces in the non-rotating frame
-            outputs['Fxyz'] = np.array([sum_stats['LSShftF']['extreme_table'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust'],
-                                        sum_stats['LSShftF']['extreme_table'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFys'],
-                                        sum_stats['LSShftF']['extreme_table'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFzs']])*1.e3
-            outputs['Mxyz'] = np.array([sum_stats['LSShftM']['extreme_table'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
-                                        sum_stats['LSShftM']['extreme_table'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys'],
-                                        sum_stats['LSShftM']['extreme_table'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']])*1.e3
+            outputs['Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust']['val'],
+                                        extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFys']['val'],
+                                        extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFzs']['val']])*1.e3
+            outputs['Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq']['val'],
+                                        extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys']['val'],
+                                        extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']['val']])*1.e3
+
+        if self.FASTpref['dlc_settings']['run_blade_fatigue']:
+
+            # determine which dlc will be used for fatigue calculations, checks for dlc 1.2, then dlc 1.1
+            idx_fat_12 = [i for i, dlc in enumerate(dlc_list) if dlc==1.2]
+            idx_fat_11 = [i for i, dlc in enumerate(dlc_list) if dlc==1.1]
+            if len(idx_fat_12) > 0:
+                idx_fat = idx_fat_12
+            elif len(idx_fat_11) > 0:
+                idx_fat = idx_fat_11
+            else:
+                print('Warning: User turned on "run_blade_fatigue", but IEC DLC 1.1 or 1.2 are not being run. Fatigue analysis will not be run.')
+                sys.stdout.flush()
+
+            if len(idx_fat) > 0:
+                outputs, discrete_outputs = self.BladeFatigue(FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs)
+
 
         ## Get AEP and power curve
         if self.FASTpref['dlc_settings']['run_power_curve']:
@@ -925,13 +987,16 @@ class FASTLoadCases(ExplicitComponent):
             stats_pwrcrv['meta'] = sum_stats['meta']
 
             # get wind speed 
-            U = []
-            for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list) if i in idx_pwrcrv]:
-                fname = os.path.split(fname)[-1]
-                ntm      = fname.split('NTM')[-1].split('_')
-                ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
-                ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
-                U.append(ntm_U)
+            if self.FASTpref['dlc_settings']['Power_Curve']['turbulent_power_curve']:
+                U = []
+                for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list) if i in idx_pwrcrv]:
+                    fname = os.path.split(fname)[-1]
+                    ntm      = fname.split('NTM')[-1].split('_')
+                    ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
+                    ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
+                    U.append(ntm_U)
+            else:
+                U = [float(case[('InflowWind', 'HWindSpeed')]) for i, case in enumerate(case_list) if i in idx_pwrcrv]
 
             # calc AEP
             pp               = Analysis.Power_Production()
@@ -957,10 +1022,6 @@ class FASTLoadCases(ExplicitComponent):
             # outputs['rated_Q']     = 
 
 
-        # print(sum_stats)
-        # print(stats_pwrcrv)
-        # print(dlc_list)
-        # print(idx_pwrcrv)
 
         ## Is Nikhar actively using this?
         # DELs
@@ -978,12 +1039,6 @@ class FASTLoadCases(ExplicitComponent):
         writer.FAST_namingOut    = self.FAST_namingOut
         writer.execute()
 
-        discrete_outputs['FASTpref_updated'] = copy.deepcopy(self.FASTpref)
-        discrete_outputs['FASTpref_updated']['FAST_runDirectory'] = self.FAST_runDirectory
-        discrete_outputs['FASTpref_updated']['FAST_directory']    = self.FAST_runDirectory
-        discrete_outputs['FASTpref_updated']['FAST_InputFile']    = os.path.split(writer.FAST_InputFileOut)[-1]
-
-        discrete_outputs['model_updated'] = False
         if self.debug_level > 0:
             print('RAN UPDATE: ', self.FAST_runDirectory, self.FAST_namingOut)
 
@@ -1044,6 +1099,249 @@ class FASTLoadCases(ExplicitComponent):
 
         return file_name
 
+
+    def BladeFatigue(self, FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs):
+
+        # Perform rainflow counting
+        if self.options['analysis_options']['general']['verbosity']:
+            print('Running Rainflow Counting')
+            sys.stdout.flush()
+
+        rainflow = {}
+        var_rainflow = ["RootMxb1", "Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1", "RootMyb1", "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
+        for i, (datai, casei, dlci) in enumerate(zip(FAST_Output, case_list, dlc_list)):
+            if dlci in [1.1, 1.2]:
+            
+                # Get wind speed and seed of output file
+                ntm  = casei[('InflowWind', 'Filename')].split('NTM')[-1].split('_')
+                U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
+                Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
+
+                if U not in list(rainflow.keys()):
+                    rainflow[U]       = {}
+                if Seed not in list(rainflow[U].keys()):
+                    rainflow[U][Seed] = {}
+                
+                # Rainflow counting by var
+                if len(var_rainflow) == 0:
+                    var_rainflow = list(datai.keys())
+
+
+                # index for start/end of time series
+                idx_s = np.argmax(datai["Time"] >= self.T0)
+                idx_e = np.argmax(datai["Time"] >= self.TMax) + 1
+
+                print(dlci, i)
+                print(self.T0, self.TMax)
+                print(min(datai["Time"]), max(datai["Time"]))
+                print(len(datai["Time"]))
+                print(idx_s, idx_e)
+                print('---')
+                sys.stdout.flush()
+
+                for var in var_rainflow:
+                    print(var)
+                    print(np.mean(datai[var][idx_s:idx_e]), np.std(datai[var][idx_s:idx_e]))
+                    sys.stdout.flush()
+                    ranges, means = fatpack.find_rainflow_ranges(datai[var][idx_s:idx_e], return_means=True)
+
+                    rainflow[U][Seed][var] = {}
+                    rainflow[U][Seed][var]['rf_amp']  = ranges.tolist()
+                    rainflow[U][Seed][var]['rf_mean'] = means.tolist()
+                    rainflow[U][Seed][var]['mean']    = float(np.mean(datai[var]))
+
+        # save_yaml(self.FAST_resultsDirectory, 'rainflow.yaml', rainflow)
+        # rainflow = load_yaml(self.FatigueFile, package=1)
+
+        # Setup fatigue calculations
+        U       = list(rainflow.keys())
+        Seeds   = list(rainflow[U[0]].keys())
+        chans   = list(rainflow[U[0]][Seeds[0]].keys())
+        r_gage  = np.r_[0., self.R_out]
+        simtime = self.simtime
+        n_seeds = float(len(Seeds))
+        n_gage  = len(r_gage)
+
+        r       = (inputs['r']-inputs['r'][0])/(inputs['r'][-1]-inputs['r'][0])
+        m_default = 10. # assume default m=10  (8 or 12 also reasonable)
+        m       = [mi if mi > 0. else m_default for mi in inputs['m']]  # Assumption: if no S-N slope is given for a material, use default value TODO: input['m'] is not connected, only using the default currently
+
+        eps_uts = inputs['Xt'][:,0]/inputs['E'][:,0]
+        eps_ucs = inputs['Xc'][:,0]/inputs['E'][:,0]
+        gamma_m = inputs['gamma_m']
+        gamma_f = inputs['gamma_f']
+        yrs     = 20.  # TODO
+        t_life  = 60.*60.*24*365.24*yrs
+        U_bar   = 10.  # TODO
+
+        # pdf of wind speeds
+        binwidth = np.diff(U)
+        U_bins   = np.r_[[U[0] - binwidth[0]/2.], [np.mean([U[i-1], U[i]]) for i in range(1,len(U))], [U[-1] + binwidth[-1]/2.]]
+        pdf = np.diff(RayleighCDF(U_bins, xbar=U_bar))
+        if sum(pdf) < 0.9:
+            print('Warning: Cummulative probability of wind speeds in rotor_loads_defl_strains.BladeFatigue is low, sum of weights: %f' % sum(pdf))
+            print('Mean winds speed: %f' % U_bar)
+            print('Simulated wind speeds: ', U)
+            sys.stdout.flush()
+
+        # Materials of analysis layers
+        te_ss_var_ok       = False
+        te_ps_var_ok       = False
+        spar_cap_ss_var_ok = False
+        spar_cap_ps_var_ok = False
+        for i_layer in range(self.n_layers):
+            if self.te_ss_var in self.layer_name:
+                te_ss_var_ok        = True
+            if self.te_ps_var in self.layer_name:
+                te_ps_var_ok        = True
+            if self.spar_cap_ss_var in self.layer_name:
+                spar_cap_ss_var_ok  = True
+            if self.spar_cap_ps_var in self.layer_name:
+                spar_cap_ps_var_ok  = True
+
+        # if te_ss_var_ok == False:
+        #     print('The layer at the trailing edge suction side is set for Fatigue Analysis, but "%s" does not exist in the input yaml. Please check.'%self.te_ss_var)
+        # if te_ps_var_ok == False:
+        #     print('The layer at the trailing edge pressure side is set for Fatigue Analysis, but "%s" does not exist in the input yaml. Please check.'%self.te_ps_var)
+        if spar_cap_ss_var_ok == False:
+            print('The layer at the spar cap suction side is set for Fatigue Analysis, but "%s" does not exist in the input yaml. Please check.'%self.spar_cap_ss_var)
+        if spar_cap_ps_var_ok == False:
+            print('The layer at the spar cap pressure side is set for Fatigue Analysis, but "%s" does not exist in the input yaml. Please check.'%self.spar_cap_ps_var)
+        sys.stdout.flush()
+
+        # Get blade properties at gage locations
+        y_tc       = remap2grid(r, inputs['y_tc'], r_gage)
+        x_tc       = remap2grid(r, inputs['x_tc'], r_gage)
+        chord      = remap2grid(r, inputs['x_tc'], r_gage)
+        rthick     = remap2grid(r, inputs['rthick'], r_gage)
+        pitch_axis = remap2grid(r, inputs['pitch_axis'], r_gage)
+        EIyy       = remap2grid(r, inputs['beam:EIyy'], r_gage)
+        EIxx       = remap2grid(r, inputs['beam:EIxx'], r_gage)
+
+        te_ss_mats = np.floor(remap2grid(r, inputs['te_ss_mats'], r_gage, axis=0)) # materials is section
+        te_ps_mats = np.floor(remap2grid(r, inputs['te_ps_mats'], r_gage, axis=0))
+        sc_ss_mats = np.floor(remap2grid(r, inputs['sc_ss_mats'], r_gage, axis=0))
+        sc_ps_mats = np.floor(remap2grid(r, inputs['sc_ps_mats'], r_gage, axis=0))
+
+        c_TE       = chord*(1.-pitch_axis) + y_tc
+        c_SC       = chord*rthick + x_tc #this is overly simplistic, using maximum thickness point, should use the actual profiles
+
+        C_miners_SC_SS_gage = np.zeros((n_gage, self.n_mat, 2))
+        C_miners_SC_PS_gage = np.zeros((n_gage, self.n_mat, 2))
+        C_miners_TE_SS_gage = np.zeros((n_gage, self.n_mat, 2))
+        C_miners_TE_PS_gage = np.zeros((n_gage, self.n_mat, 2))
+
+        # Map channels to output matrix
+        chan_map   = {}
+        for i_var, var in enumerate(chans):
+            # Determine spanwise position
+            if 'Root' in var:
+                i_span = 0
+            elif 'Spn' in var and 'M' in var:
+                i_span = int(var.strip('Spn').split('M')[0])
+            else:
+                # not a spanwise output channel, skip
+                print('Fatigue Model: Skipping channel: %s, not a spanwise moment' % var)
+                sys.stdout.flush()
+                chans.remove(var)
+                continue
+            # Determine if edgewise of flapwise moment
+            if 'M' in var and 'x' in var:
+                # Edgewise
+                axis = 0
+            elif 'M' in var and 'y' in var:
+                # Flapwise
+                axis = 1
+            else:
+                # not an edgewise / flapwise moment, skip
+                print('Fatigue Model: Skipping channel: "%s", not an edgewise/flapwise moment' % var)
+                sys.stdout.flush()
+                continue
+
+            chan_map[var] = {}
+            chan_map[var]['i_gage'] = i_span
+            chan_map[var]['axis']   = axis
+
+        # Map composite sections
+        composite_map = [['TE', 'SS', te_ss_var_ok],
+                         ['TE', 'PS', te_ps_var_ok],
+                         ['SC', 'SS', spar_cap_ss_var_ok],
+                         ['SC', 'PS', spar_cap_ps_var_ok]]
+
+        if self.options['analysis_options']['general']['verbosity']:
+            print("Running Miner's Rule calculations")
+            sys.stdout.flush()
+
+        ########
+        # Loop through composite sections, materials, output channels, and simulations (wind speeds * seeds)
+        for comp_i in composite_map:
+
+            #skip this composite section?
+            if not comp_i[2]:
+                continue
+
+            #
+            C_miners = np.zeros((n_gage, self.n_mat, 2))
+            if comp_i[0]       == 'TE':
+                c = c_TE
+                if comp_i[1]   == 'SS':
+                    mats = te_ss_mats
+                elif comp_i[1] == 'PS':
+                    mats = te_ps_mats
+            elif comp_i[0]     == 'SC':
+                c = c_SC
+                if comp_i[1]   == 'SS':
+                    mats = sc_ss_mats
+                elif comp_i[1] == 'PS':
+                    mats = sc_ps_mats
+
+            for i_mat in range(self.n_mat):
+
+                for i_var, var in enumerate(chans):
+                    i_gage = chan_map[var]['i_gage']
+                    axis   = chan_map[var]['axis']
+
+                    # skip if material at this spanwise location is not included in the composite section
+                    if mats[i_gage, i_mat] == 0.:
+                        continue
+
+                    # Determine if edgewise of flapwise moment
+                    pitch_axis_i = pitch_axis[i_gage]
+                    chord_i      = chord[i_gage]
+                    c_i          = c[i_gage]
+                    if axis == 0:
+                        EI_i     = EIyy[i_gage]
+                    else:
+                        EI_i     = EIxx[i_gage]
+
+                    for i_u, u in enumerate(U):
+                        for i_s, seed in enumerate(Seeds):
+                            M_mean = np.array(rainflow[u][seed][var]['rf_mean']) #* 1.e3
+                            M_amp  = np.array(rainflow[u][seed][var]['rf_amp']) #* 1.e3
+
+                            for M_mean_i, M_amp_i in zip(M_mean, M_amp):
+                                n_cycles = 1.
+                                eps_mean = M_mean_i*c_i/EI_i 
+                                eps_amp  = M_amp_i*c_i/EI_i
+
+                                Nf = ((eps_uts[i_mat] + np.abs(eps_ucs[i_mat]) - np.abs(2.*eps_mean*gamma_m*gamma_f - eps_uts[i_mat] + np.abs(eps_ucs[i_mat]))) / (2.*eps_amp*gamma_m*gamma_f))**m[i_mat]
+                                n  = n_cycles * t_life * pdf[i_u] / (simtime * n_seeds)
+                                C_miners[i_gage, i_mat, axis]  += n/Nf
+
+            # Assign outputs
+            if comp_i[0] == 'SC' and comp_i[1] == 'SS':
+                outputs['C_miners_SC_SS'] = remap2grid(r_gage, C_miners, r, axis=0)
+            elif comp_i[0] == 'SC' and comp_i[1] == 'PS':
+                outputs['C_miners_SC_PS'] = remap2grid(r_gage, C_miners, r, axis=0)
+            # elif comp_i[0] == 'TE' and comp_i[1] == 'SS':
+            #     outputs['C_miners_TE_SS'] = remap2grid(r_gage, C_miners, r, axis=0)
+            # elif comp_i[0] == 'TE' and comp_i[1] == 'PS':
+            #     outputs['C_miners_TE_PS'] = remap2grid(r_gage, C_miners, r, axis=0)
+
+        return outputs, discrete_outputs
+
+def RayleighCDF(x, xbar=10.):
+    return 1.0 - np.exp(-np.pi/4.0*(x/xbar)**2)
 
 class ModesElastoDyn(ExplicitComponent):
     """
