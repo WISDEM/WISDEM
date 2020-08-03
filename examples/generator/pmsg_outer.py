@@ -60,7 +60,6 @@ prob.setup()
 
 # Specify Target machine parameters
 
-prob['machine_rating'] = 5000000.0
 prob['machine_rating'] = 10.321e6
 prob['T_rated']        = 10.25e6       #rev 1 9.94718e6
 prob['P_mech']         = 10.71947704e6 #rev 1 9.94718e6

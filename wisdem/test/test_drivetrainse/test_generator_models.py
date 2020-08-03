@@ -53,6 +53,77 @@ class TestGenerators(unittest.TestCase):
         self.inputs['y_tau_p']        = 1.0
         self.inputs['y_tau_pr']       = 10. / 12
         
+    def testPMSG_Outer(self):
+
+        myobj = gm.PMSG_Outer()
+
+        self.inputs['machine_rating'] = 10.321e6
+        self.inputs['T_rated']        = 10.25e6       #rev 1 9.94718e6
+        self.inputs['P_mech']         = 10.71947704e6 #rev 1 9.94718e6
+        self.inputs['n_nom']          = 10            #8.68                # rpm 9.6
+        self.inputs['r_g']            = 4.0           # rev 1  4.92
+        self.inputs['len_s']          = 1.7           # rev 2.3
+        self.inputs['h_s']            = 0.7            # rev 1 0.3
+        self.inputs['p']              = 70            #100.0    # rev 1 160
+        self.inputs['h_m']            = 0.005         # rev 1 0.034
+        self.inputs['h_ys']           = 0.04          # rev 1 0.045
+        self.inputs['h_yr']           = 0.06          # rev 1 0.045
+        self.inputs['b']              = 2.
+        self.inputs['c']              = 5.0
+        self.inputs['B_tmax']         = 1.9
+        self.inputs['E_p']            = 3300/np.sqrt(3)
+        self.inputs['D_nose']         = 2*1.1             # Nose outer radius
+        self.inputs['D_shaft']        = 2*1.34            # Shaft outer radius =(2+0.25*2+0.3*2)*0.5
+        self.inputs['t_r']            = 0.05          # Rotor disc thickness
+        self.inputs['h_sr']           = 0.04          # Rotor cylinder thickness
+        self.inputs['t_s']            = 0.053         # Stator disc thickness
+        self.inputs['h_ss']           = 0.04          # Stator cylinder thickness
+        self.inputs['y_sh']           = 0.0005*0      # Shaft deflection
+        self.inputs['theta_sh']       = 0.00026*0     # Slope at shaft end
+        self.inputs['y_bd']           = 0.0005*0      # deflection at bedplate
+        self.inputs['theta_bd']       = 0.00026*0      # Slope at bedplate end
+        self.inputs['u_allow_pcent']  = 8.5            # % radial deflection
+        self.inputs['y_allow_pcent']  = 1.0            # % axial deflection
+        self.inputs['z_allow_deg']    = 0.05           # torsional twist
+        self.inputs['sigma']          = 60.0e3         # Shear stress
+        self.inputs['B_r']            = 1.279
+        self.inputs['ratio_mw2pp']    = 0.8
+        self.inputs['h_0']            = 5e-3
+        self.inputs['h_w']            = 4e-3
+        self.inputs['k_fes']          = 0.8
+
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        self.assertAlmostEqual(self.outputs['R_out'], 4.105)
+        self.assertAlmostEqual(self.outputs['K_rad'], 0.2125)
+        self.assertAlmostEqual(self.outputs['Slot_aspect_ratio'], 6.24779759)
+        self.assertAlmostEqual(self.outputs['tau_p'], 0.17951958)
+        self.assertAlmostEqual(self.outputs['tau_s'], 0.14930045)
+        self.assertAlmostEqual(self.outputs['b_s'], 0.11203948)
+        self.assertAlmostEqual(self.outputs['b_t'], 0.03652435)
+        self.assertAlmostEqual(self.outputs['h_t'], 0.709)
+        self.assertAlmostEqual(self.outputs['b_m'], 0.14361566)
+        self.assertAlmostEqual(self.outputs['B_g'], 0.56284833)
+        self.assertAlmostEqual(self.outputs['B_symax'], 0.66753916)
+        self.assertAlmostEqual(self.outputs['B_rymax'], 0.44502611)
+        self.assertAlmostEqual(self.outputs['B_pm1'], 0.46480944)
+        self.assertAlmostEqual(self.outputs['B_smax'], 0.26668356)
+        self.assertAlmostEqual(self.outputs['f'], 11.66666667)
+        self.assertAlmostEqual(self.outputs['I_s'], 1947.74064708)
+        self.assertAlmostEqual(self.outputs['R_s'], 0.0862357)
+        self.assertAlmostEqual(self.outputs['L_s'], 0.01000474)
+        self.assertAlmostEqual(self.outputs['S'], 168.)
+        self.assertAlmostEqual(self.outputs['N_s'], 361.)
+        self.assertAlmostEqual(self.outputs['A_Cuscalc'], 389.46615218)
+        self.assertAlmostEqual(self.outputs['J_actual'], 3.53627809)
+        self.assertAlmostEqual(self.outputs['A_1'], 167860.96682314)
+        self.assertAlmostEqual(self.outputs['gen_eff'], 94.43514428)
+        self.assertAlmostEqual(self.outputs['Iron'], 89073.14254723)
+        #self.assertAlmostEqual(self.outputs['mass_PM'], 1266.26038805)
+        self.assertAlmostEqual(self.outputs['Copper'], 13859.17179278)
+        #self.assertAlmostEqual(self.outputs['twist_r'], 0.00032341)
+        #self.assertAlmostEqual(self.outputs['twist_s'], 5.8057978e-05)
+        #self.assertAlmostEqual(self.outputs['generator_mass'], 104198.57472807)
+
     def testPMSG_Arms(self):
 
         myobj = gm.PMSG_Arms()
