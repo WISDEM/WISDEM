@@ -118,11 +118,12 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['A_1'], 167860.96682314)
         self.assertAlmostEqual(self.outputs['gen_eff'], 94.43514428)
         self.assertAlmostEqual(self.outputs['Iron'], 89073.14254723)
-        #self.assertAlmostEqual(self.outputs['mass_PM'], 1266.26038805)
+        self.assertAlmostEqual(self.outputs['mass_PM'], 1274.81620149)
         self.assertAlmostEqual(self.outputs['Copper'], 13859.17179278)
-        #self.assertAlmostEqual(self.outputs['twist_r'], 0.00032341)
-        #self.assertAlmostEqual(self.outputs['twist_s'], 5.8057978e-05)
-        #self.assertAlmostEqual(self.outputs['generator_mass'], 104198.57472807)
+        self.assertAlmostEqual(self.outputs['twist_r'], 0.00032341)
+        self.assertAlmostEqual(self.outputs['twist_s'], 5.8057978e-05)
+        self.assertAlmostEqual(self.outputs['Structural_mass'], 62323.08483264)
+        self.assertAlmostEqual(self.outputs['generator_mass'], 166530.21537414)
 
     def testPMSG_Arms(self):
 

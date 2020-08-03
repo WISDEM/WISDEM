@@ -412,6 +412,7 @@ class PMSG_Outer(GeneratorBase):
         # Grab constant values
         B_r         = inputs['B_r']
         E           = inputs['E']
+        G           = inputs['G']
         P_Fe0e      = inputs['P_Fe0e']
         P_Fe0h      = inputs['P_Fe0h']
         cofi        = inputs['cofi']
@@ -531,7 +532,7 @@ class PMSG_Outer(GeneratorBase):
             L_m            = L_aa
             L_ssigma       = (L_ssigmas+L_ssigmaew)
             L_s            = L_m+L_ssigma
-            G              = E_p**4-1/9*(P_av_v*om_e*L_s)**2
+            G_leak         = E_p**4-1/9*(P_av_v*om_e*L_s)**2
             outputs['A_Cuscalc']         = A_Cuscalc
             outputs['b_s']               = b_s
             outputs['L_s']               = L_s
@@ -539,7 +540,7 @@ class PMSG_Outer(GeneratorBase):
             outputs['Slot_aspect_ratio'] = h_s/b_s
 
             # Calculating stator current and electrical loading
-            I_s                 = np.sqrt(2*((E_p)**2-G**0.5)/(om_e*L_s)**2)
+            I_s                 = np.sqrt(2*((E_p)**2-G_leak**0.5)/(om_e*L_s)**2)
             outputs['I_s']      = I_s
             outputs['A_1']      = 6*I_s*N_s/np.pi/dia
             outputs['J_actual'] = I_s/(A_Cuscalc*2**0.5)
