@@ -9,10 +9,11 @@ import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
 
         
-class DrivetrainSE(om.Group):
-    ''' Class Drive4pt defines an OpenMDAO group that represents a wind turbine drivetrain with a 4-point suspension
-      (two main bearings). This Group can serve as the root of an OpenMDAO Problem.
+class DirectDriveSE(om.Group):
+    ''' 
+    DirectDriveSE defines an OpenMDAO group that represents a wind turbine drivetrain without a gearbox and two main bearings.
     '''
+    
     def initialize(self):
         self.options.declare('n_points')
         self.options.declare('n_dlcs')
@@ -44,9 +45,9 @@ class DrivetrainSE(om.Group):
         # ivc.add_output('shrink_disc_mass', 0.0, units='kg')
         # ivc.add_output('carrier_mass', 0.0, units='kg')
         # ivc.add_output('flange_length', 0.0, units='m')
+        # ivc.add_discrete_output('gear_configuration', 'eep')
         ivc.add_output('hss_input_length', 0.0, units='m')
         ivc.add_discrete_output('planet_numbers', np.array([0, 0, 0]))
-        # ivc.add_discrete_output('gear_configuration', 'eep')
         ivc.add_discrete_output('mb1Type', 'CARB')
         ivc.add_discrete_output('mb2Type', 'SRB')
         ivc.add_discrete_output('uptower', True)
@@ -88,7 +89,6 @@ class DrivetrainSE(om.Group):
             self.add_subsystem('generator', Generator(topLevelFlag=False, design='pmsg_outer'), promotes=['generator_mass','generator_I','E','G','v','machine_rating'])
         else:
             self.add_subsystem('gensimp', dc.GeneratorSimple(), promotes=['*'])
-        self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
         self.add_subsystem('bear1', dc.MainBearing())
         self.add_subsystem('bear2', dc.MainBearing())
         self.add_subsystem('gear', Gearbox(), promotes=['*']) 
@@ -97,9 +97,14 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
-        self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
+        self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
+        self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
 
+        self.linear_solver = lbgs = om.LinearBlockGS()
+        self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+        nlbgs.options['maxiter'] = 3
+        
         self.connect('D_shaft','D_shaft_end', src_indices=[-1])
         self.connect('D_shaft','bear1.D_shaft', src_indices=[0])
         self.connect('D_shaft','bear2.D_shaft', src_indices=[-1])
@@ -121,6 +126,10 @@ class DrivetrainSE(om.Group):
             self.connect('generator.R_out','R_generator')
             self.connect('rotor_torque','generator.T_rated')
             self.connect('rotor_rpm','generator.n_nom')
+            self.connect('rotor_deflection', 'generator.y_sh')
+            self.connect('rotor_rotation', 'generator.theta_sh')
+            self.connect('stator_deflection', 'generator.y_bd')
+            self.connect('stator_rotation', 'generator.theta_bd')
             self.connect('generator.rotor_mass','m_rotor')
             self.connect('generator.rotor_I','I_rotor')
             self.connect('generator.stator_mass','m_stator')
@@ -222,10 +231,6 @@ if __name__ == '__main__':
     prob['generator.h_sr']           = 0.04          # Rotor cylinder thickness
     prob['generator.t_s']            = 0.053         # Stator disc thickness
     prob['generator.h_ss']           = 0.04          # Stator cylinder thickness
-    prob['generator.y_sh']           = 0.0005*0      # Shaft deflection
-    prob['generator.theta_sh']       = 0.00026*0     # Slope at shaft end
-    prob['generator.y_bd']           = 0.0005*0      # deflection at bedplate
-    prob['generator.theta_bd']       = 0.00026*0      # Slope at bedplate end
     prob['generator.u_allow_pcent']  = 8.5            # % radial deflection
     prob['generator.y_allow_pcent']  = 1.0            # % axial deflection
     prob['generator.z_allow_deg']    = 0.05           # torsional twist

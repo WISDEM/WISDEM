@@ -1,6 +1,6 @@
 import unittest
 import os
-from wisdem.drivetrainse.direct_drivese import DrivetrainSE
+import  wisdem.drivetrainse.direct_drivese as dd
 import openmdao.api as om
 import numpy as np
 
@@ -9,7 +9,7 @@ class TestGroup(unittest.TestCase):
     def testDirectDrive(self):
         
         prob = om.Problem()
-        prob.model = DrivetrainSE(topLevelFlag=True, n_points=10, n_dlcs=1, model_generator=True)
+        prob.model = dd.DirectDriveSE(topLevelFlag=True, n_points=10, n_dlcs=1, model_generator=True)
         prob.setup()
 
         prob['upwind'] = True
@@ -103,10 +103,6 @@ class TestGroup(unittest.TestCase):
         prob['generator.h_sr']           = 0.04          # Rotor cylinder thickness
         prob['generator.t_s']            = 0.053         # Stator disc thickness
         prob['generator.h_ss']           = 0.04          # Stator cylinder thickness
-        prob['generator.y_sh']           = 0.0005*0      # Shaft deflection
-        prob['generator.theta_sh']       = 0.00026*0     # Slope at shaft end
-        prob['generator.y_bd']           = 0.0005*0      # deflection at bedplate
-        prob['generator.theta_bd']       = 0.00026*0      # Slope at bedplate end
         prob['generator.u_allow_pcent']  = 8.5            # % radial deflection
         prob['generator.y_allow_pcent']  = 1.0            # % axial deflection
         prob['generator.z_allow_deg']    = 0.05           # torsional twist

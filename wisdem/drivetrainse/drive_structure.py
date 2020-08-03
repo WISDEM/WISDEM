@@ -56,7 +56,8 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         self.add_input('gamma_m', 0.0, desc='safety factor on materials')
         self.add_input('gamma_n', 0.0, desc='safety factor on consequence of failure')
         
-        #self.add_output('top_deflection', np.zeros(n_points), units='m', desc='Deflection of Curved_beam top in yaw-aligned +x direction')
+        self.add_output('rotor_deflection', val=0.0, units='m', desc='Maximum deflection distance at rotor attachment')
+        self.add_output('rotor_rotation', val=0.0, units='rad', desc='Maximum rotation angle at rotor attachment')
         self.add_output('rotor_axial_stress', np.zeros((5,n_dlcs)), units='N/m**2', desc='Axial stress in Curved_beam structure')
         self.add_output('rotor_shear_stress', np.zeros((5,n_dlcs)), units='N/m**2', desc='Shear stress in Curved_beam structure')
         self.add_output('rotor_bending_stress', np.zeros((5,n_dlcs)), units='N/m**2', desc='Hoop stress in Curved_beam structure calculated with Roarks formulae')
@@ -189,6 +190,8 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
+        rotor_deflection = np.zeros(n_dlcs)
+        rotor_rotation   = np.zeros(n_dlcs)
         outputs['F_mb1'] = np.zeros((3, n_dlcs))
         outputs['F_mb2'] = np.zeros((3, n_dlcs))
         outputs['F_rotor'] = np.zeros((3, n_dlcs))
@@ -200,6 +203,10 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         outputs['rotor_bending_stress'] = np.zeros((n-1, n_dlcs))
         outputs['constr_rotor_vonmises'] = np.zeros((n-1, n_dlcs))
         for k in range(n_dlcs):
+            # Deflections and rotations at rotor attachment
+            rotor_deflection[k] = np.sqrt(displacements.dx[k,irotor-1]**2 + displacements.dy[k,irotor-1]**2 + displacements.dz[k,irotor-1]**2)
+            rotor_rotation[k]   = displacements.dxrot[k,irotor-1] + displacements.dyrot[k,irotor-1] + displacements.dzrot[k,irotor-1]
+            
             # shear and bending, one per element (convert from local to global c.s.)
             Fz =  forces.Nx[k, 1::2]
             Vy =  forces.Vy[k, 1::2]
@@ -226,6 +233,8 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
                                                                                    hoop,
                                                                                    outputs['rotor_shear_stress'][:,k],
                                                                                    gamma_f*gamma_m*gamma_n, sigma_y)
+        outputs['rotor_deflection'] = rotor_deflection.max()
+        outputs['rotor_rotation']  = rotor_rotation.max()
 
 
    
@@ -290,8 +299,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         #self.add_output('top_deflection', np.zeros(n_points), units='m', desc='Deflection of Curved_beam top in yaw-aligned +x direction')
         self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m', desc='Total deflection distance of bearing 1')
         self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m', desc='Total deflection distance of bearing 2')
+        self.add_output('stator_deflection', val=0.0, units='m', desc='Maximum deflection distance at stator attachment')
         self.add_output('mb1_rotation', val=np.zeros(n_dlcs), units='rad', desc='Total rotation angle of bearing 1')
         self.add_output('mb2_rotation', val=np.zeros(n_dlcs), units='rad', desc='Total rotation angle of bearing 2')
+        self.add_output('stator_rotation', val=0.0, units='rad', desc='Maximum rotation angle at stator attachment')
         self.add_output('base_F', val=np.zeros((3,n_dlcs)), units='N', desc='Total reaction force at bedplate base')
         self.add_output('base_M', val=np.zeros((3,n_dlcs)), units='N*m', desc='Total reaction moment at bedplate base')
         self.add_output('bedplate_nose_axial_stress', np.zeros((n_points+4,n_dlcs)), units='N/m**2', desc='Axial stress in Curved_beam structure')
@@ -451,12 +462,14 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         # ------------------------------------
         
         # Loop over DLCs and append to outputs
-        outputs['mb1_deflection']       = np.zeros(n_dlcs)
-        outputs['mb2_deflection']       = np.zeros(n_dlcs)
-        outputs['mb1_rotation']         = np.zeros(n_dlcs)
-        outputs['mb2_rotation']         = np.zeros(n_dlcs)
-        outputs['base_F']               = np.zeros((3, n_dlcs))
-        outputs['base_M']               = np.zeros((3, n_dlcs))
+        outputs['mb1_deflection'] = np.zeros(n_dlcs)
+        outputs['mb2_deflection'] = np.zeros(n_dlcs)
+        stator_deflection         = np.zeros(n_dlcs)
+        outputs['mb1_rotation']   = np.zeros(n_dlcs)
+        outputs['mb2_rotation']   = np.zeros(n_dlcs)
+        stator_rotation           = np.zeros(n_dlcs)
+        outputs['base_F']         = np.zeros((3, n_dlcs))
+        outputs['base_M']         = np.zeros((3, n_dlcs))
         outputs['bedplate_nose_axial_stress']    = np.zeros((n-1, n_dlcs))
         outputs['bedplate_nose_shear_stress']    = np.zeros((n-1, n_dlcs))
         outputs['bedplate_nose_bending_stress']  = np.zeros((n-1, n_dlcs))
@@ -465,8 +478,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             # Deflections and rotations at bearings- how to sum up rotation angles?
             outputs['mb1_deflection'][k] = np.sqrt(displacements.dx[k,i1-1]**2 + displacements.dy[k,i1-1]**2 + displacements.dz[k,i1-1]**2)
             outputs['mb2_deflection'][k] = np.sqrt(displacements.dx[k,i2-1]**2 + displacements.dy[k,i2-1]**2 + displacements.dz[k,i2-1]**2)
+            stator_deflection[k]         = np.sqrt(displacements.dx[k,istator-1]**2 + displacements.dy[k,istator-1]**2 + displacements.dz[k,istator-1]**2)
             outputs['mb1_rotation'][k]   = displacements.dxrot[k,i1-1] + displacements.dyrot[k,i1-1] + displacements.dzrot[k,i1-1]
             outputs['mb2_rotation'][k]   = displacements.dxrot[k,i2-1] + displacements.dyrot[k,i2-1] + displacements.dzrot[k,i2-1]
+            stator_rotation[k]           = displacements.dxrot[k,istator-1] + displacements.dyrot[k,istator-1] + displacements.dzrot[k,istator-1]
 
             # shear and bending, one per element (convert from local to global c.s.)
             Fz =  forces.Nx[k, 1::2]
@@ -502,6 +517,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         # Evaluate bearing limits
         outputs['constr_mb1_defl'] = outputs['mb1_rotation'] / inputs['mb1_max_defl_ang']
         outputs['constr_mb2_defl'] = outputs['mb2_rotation'] / inputs['mb2_max_defl_ang']
-
+        outputs['stator_deflection'] = stator_deflection.max()
+        outputs['stator_rotation']   = stator_rotation.max()
 
 

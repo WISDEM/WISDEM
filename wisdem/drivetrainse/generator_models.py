@@ -712,6 +712,7 @@ class PMSG_Disc(GeneratorBase):
         self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
         self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
         self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
+        self.add_output('B_smax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
         self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
         self.add_output('E_p', val=0.0, desc='Stator phase voltage')
 
@@ -886,7 +887,7 @@ class PMSG_Disc(GeneratorBase):
         
         # Calculating stator current and electrical loading
         I_s = np.sqrt(Z**2 + (((E_p - G**0.5) / (om_e * L_s)**2)**2))       
-        B_symax = np.sqrt(2) * I_s * mu_0 / g_eff
+        B_smax = np.sqrt(2) * I_s * mu_0 / g_eff
         J_s    = I_s / A_Cuscalc
         A_1    = 6 * N_s * I_s / (np.pi * dia_ag)
         I_snom = machine_rating / (m * E_p * cofi) # rated current
@@ -1113,6 +1114,7 @@ class PMSG_Disc(GeneratorBase):
         outputs['B_tmax']            =  B_tmax
         outputs['B_rymax']           =  B_rymax
         outputs['B_symax']           =  B_symax
+        outputs['B_smax']            =  B_smax
         outputs['B_pm1']             =  B_pm1
         outputs['B_g']               =  B_g
         outputs['N_s']               =  N_s
@@ -1171,6 +1173,7 @@ class PMSG_Arms(GeneratorBase):
         self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
         self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
         self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
+        self.add_output('B_smax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
         self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
         self.add_output('E_p', val=0.0, desc='Stator phase voltage')
 
@@ -1360,7 +1363,7 @@ class PMSG_Arms(GeneratorBase):
         I_qnom  = machine_rating / (m * E_p)
         X_snom  = om_e * (L_m + L_ssigma)
                 
-        B_symax  = np.sqrt(2) * I_s * mu_0 / g_eff
+        B_smax  = np.sqrt(2) * I_s * mu_0 / g_eff
         
         # Calculating Electromagnetically active mass
         
@@ -1518,6 +1521,7 @@ class PMSG_Arms(GeneratorBase):
         outputs['B_tmax']            =  B_tmax
         outputs['B_rymax']           =  B_rymax
         outputs['B_symax']           =  B_symax
+        outputs['B_smax']           =  B_smax
         outputs['B_pm1']             =  B_pm1
         outputs['B_g']               =  B_g
         outputs['N_s']               =  N_s
