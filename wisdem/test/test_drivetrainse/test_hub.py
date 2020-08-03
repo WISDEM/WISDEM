@@ -40,32 +40,31 @@ class TestRegression(unittest.TestCase):
         hub_prob = om.Problem(model=hub.Hub_System())
         hub_prob.setup()
         
+        hub_prob['n_blades']                       = 3
+        hub_prob['flange_t2shell_t']               = 4.
+        hub_prob['flange_OD2hub_D']                = 0.5
+        hub_prob['flange_ID2flange_OD']            = 0.8
+        hub_prob['in2out_circ']                    = 1.2 
+        hub_prob['stress_concentration']           = 2.5
+        hub_prob['n_front_brackets']               = 3
+        hub_prob['n_rear_brackets']                = 3
+        hub_prob['clearance_hub_spinner']          = 0.5
+        hub_prob['spin_hole_incr']                 = 1.2
+
         hub_prob['pitch_system.blade_mass']        = 17000.
         hub_prob['pitch_system.BRFM']              = 1.e+6
-        hub_prob['pitch_system.n_blades']          = 3
         hub_prob['pitch_system.scaling_factor']    = 0.54
         hub_prob['pitch_system.rho']               = 7850.
         hub_prob['pitch_system.Xy']                = 371.e+6
 
         hub_prob['hub_shell.blade_root_diameter']  = 4.5
-        hub_prob['hub_shell.n_blades']             = 3
-        hub_prob['hub_shell.flange_t2shell_t']     = 4.
-        hub_prob['hub_shell.flange_OD2hub_D']      = 0.5
-        hub_prob['hub_shell.flange_ID2flange_OD']  = 0.8
         hub_prob['hub_shell.rho']                  = 7200.
-        hub_prob['hub_shell.in2out_circ']          = 1.2 
         hub_prob['hub_shell.max_torque']           = 199200777.51
         hub_prob['hub_shell.Xy']                   = 200.e+6
-        hub_prob['hub_shell.stress_concentration'] = 2.5
         hub_prob['hub_shell.gamma']                = 2.0
         hub_prob['hub_shell.metal_cost']           = 3.00
-
-        hub_prob['spinner.n_front_brackets']       = 3
-        hub_prob['spinner.n_rear_brackets']        = 3
-        hub_prob['spinner.n_blades']               = 3
+        
         hub_prob['spinner.blade_root_diameter']    = hub_prob['hub_shell.blade_root_diameter']
-        hub_prob['spinner.clearance_hub_spinner']  = 0.5
-        hub_prob['spinner.spin_hole_incr']         = 1.2
         hub_prob['spinner.gust_ws']                = 70
         hub_prob['spinner.gamma']                  = 1.5
         hub_prob['spinner.composite_Xt']           = 60.e6
