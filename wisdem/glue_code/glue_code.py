@@ -52,7 +52,7 @@ class WT_RNTA(Group):
         #if analysis_options['Analysis_Flags']['TowerSE']:
         self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options))
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
-        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
+        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity']))
 
         # Conncetions to ccblade
         self.connect('blade.pa.chord_param',            'ccblade.chord')

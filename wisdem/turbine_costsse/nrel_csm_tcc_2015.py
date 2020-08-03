@@ -868,4 +868,4 @@ class nrel_csm_2015(om.Group):
     
     def setup(self):
         self.add_subsystem('nrel_csm_mass', nrel_csm_mass_2015(), promotes=['*'])
-        self.add_subsystem('turbine_costs', Turbine_CostsSE_2015(verbosity=False, topLevelFlag=False), promotes=['*'])
+        self.add_subsystem('turbine_costs', Turbine_CostsSE_2015(verbosity=False), promotes=['*'])

@@ -1316,7 +1316,6 @@ class Turbine_CostsSE_2015(om.Group):
     
     def initialize(self):
         self.options.declare('verbosity', default=False)
-        self.options.declare('topLevelFlag', default=True)
 
     def setup(self):
         self.verbosity = self.options['verbosity']
