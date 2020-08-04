@@ -13,7 +13,104 @@ import wisdem.commonse.fileIO as fio
 #----------------------------------------------------------------------------------------------
 
 class Constraints(om.ExplicitComponent):
-    """ Provides a material cost estimate for a PMSG _arms generator. Manufacturing costs are excluded"""
+    """
+    Provides a material cost estimate for a PMSG _arms generator. Manufacturing costs are excluded.
+    
+    Parameters
+    ----------
+    u_allow_s : float, [m]
+        
+    u_as : float, [m]
+        
+    z_allow_s : float, [m]
+        
+    z_as : float, [m]
+        
+    y_allow_s : float, [m]
+        
+    y_as : float, [m]
+        
+    b_allow_s : float, [m]
+        
+    b_st : float, [m]
+        
+    u_allow_r : float, [m]
+        
+    u_ar : float, [m]
+        
+    y_allow_r : float, [m]
+        
+    y_ar : float, [m]
+        
+    z_allow_r : float, [m]
+        
+    z_ar : float, [m]
+        
+    b_allow_r : float, [m]
+        
+    b_arm : float, [m]
+        
+    TC1 : float, [m**3]
+        
+    TC2r : float, [m**3]
+        
+    TC2s : float, [m**3]
+        
+    B_g : float, [T]
+        
+    B_smax : float, [T]
+        
+    K_rad : float
+        
+    K_rad_LL : float
+        
+    K_rad_UL : float
+        
+    D_ratio : float
+        
+    D_ratio_LL : float
+        
+    D_ratio_UL : float
+        
+    
+    Returns
+    -------
+    con_uas : float, [m]
+        
+    con_zas : float, [m]
+        
+    con_yas : float, [m]
+        
+    con_bst : float, [m]
+        
+    con_uar : float, [m]
+        
+    con_yar : float, [m]
+        
+    con_zar : float, [m]
+        
+    con_br : float, [m]
+        
+    TCr : float, [m**3]
+        
+    TCs : float, [m**3]
+        
+    con_TC2r : float, [m**3]
+        
+    con_TC2s : float, [m**3]
+        
+    con_Bsmax : float, [T]
+        
+    K_rad_L : float
+        
+    K_rad_U : float
+        
+    D_ratio_L : float
+        
+    D_ratio_U : float
+        
+    
+    """
     def setup(self):
         self.add_input('u_allow_s', val=0.0, units='m')
         self.add_input('u_as', val=0.0, units='m')
@@ -42,24 +139,25 @@ class Constraints(om.ExplicitComponent):
         self.add_input('D_ratio', val=0.0)
         self.add_input('D_ratio_LL', val=0.0)
         self.add_input('D_ratio_UL', val=0.0)
-        
+
         self.add_output('con_uas', val=0.0, units='m')
-        self.add_output('con_zas',  val=0.0, units='m')
-        self.add_output('con_yas',  val=0.0, units='m')
-        self.add_output('con_bst',  val=0.0, units='m')
-        self.add_output('con_uar',  val=0.0, units='m')
-        self.add_output('con_yar',  val=0.0, units='m')
-        self.add_output('con_zar',  val=0.0, units='m')
-        self.add_output('con_br',  val=0.0, units='m')
+        self.add_output('con_zas', val=0.0, units='m')
+        self.add_output('con_yas', val=0.0, units='m')
+        self.add_output('con_bst', val=0.0, units='m')
+        self.add_output('con_uar', val=0.0, units='m')
+        self.add_output('con_yar', val=0.0, units='m')
+        self.add_output('con_zar', val=0.0, units='m')
+        self.add_output('con_br', val=0.0, units='m')
         self.add_output('TCr', val=0.0, units='m**3')
         self.add_output('TCs', val=0.0, units='m**3')
-        self.add_output('con_TC2r',  val=0.0, units='m**3')
-        self.add_output('con_TC2s',  val=0.0, units='m**3')
-        self.add_output('con_Bsmax',  val=0.0, units='T')    
+        self.add_output('con_TC2r', val=0.0, units='m**3')
+        self.add_output('con_TC2s', val=0.0, units='m**3')
+        self.add_output('con_Bsmax', val=0.0, units='T')
         self.add_output('K_rad_L', val=0.0)
         self.add_output('K_rad_U', val=0.0)
         self.add_output('D_ratio_L', val=0.0)
         self.add_output('D_ratio_U', val=0.0)
+        
         
     def compute(self, inputs, outputs):
         outputs['con_uas'] = inputs['u_allow_s'] - inputs['u_as']
@@ -83,15 +181,42 @@ class Constraints(om.ExplicitComponent):
 #----------------------------------------------------------------------------------------------
         
 class MofI(om.ExplicitComponent):
+    """
+    Compute moments of inertia.
+    
+    Parameters
+    ----------
+    R_out : float, [m]
+        Outer radius
+    stator_mass : float, [kg]
+        Total rotor mass
+    rotor_mass : float, [kg]
+        Total rotor mass
+    generator_mass : float, [kg]
+        Actual mass
+    len_s : float, [m]
+        Stator core length
+    
+    Returns
+    -------
+    generator_I : numpy array[3], [kg*m**2]
+        Moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
+    rotor_I : numpy array[3], [kg*m**2]
+        Moments of Inertia for the rotor about its center of mass
+    stator_I : numpy array[3], [kg*m**2]
+        Moments of Inertia for the stator about its center of mass
+    
+    """
     def setup(self):
-        self.add_input('R_out', val=0.0, units ='m', desc='Outer radius')
-        self.add_input('stator_mass', val=0.0, units='kg', desc='Total rotor mass')
-        self.add_input('rotor_mass', val=0.0, units='kg', desc='Total rotor mass')
-        self.add_input('generator_mass', val=0.0, units='kg', desc='Actual mass')
-        self.add_input('len_s', val=0.0, units='m', desc='Stator core length')
-        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
-        self.add_output('rotor_I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the rotor about its center of mass')
-        self.add_output('stator_I', val=np.zeros(3), units='kg*m**2', desc='Moments of Inertia for the stator about its center of mass')
+        self.add_input('R_out', val=0.0, units ='m')
+        self.add_input('stator_mass', val=0.0, units='kg')
+        self.add_input('rotor_mass', val=0.0, units='kg')
+        self.add_input('generator_mass', val=0.0, units='kg')
+        self.add_input('len_s', val=0.0, units='m')
+
+        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('rotor_I', val=np.zeros(3), units='kg*m**2')
+        self.add_output('stator_I', val=np.zeros(3), units='kg*m**2')
         
     def compute(self, inputs, outputs):
         R_out = inputs['R_out']
@@ -111,23 +236,50 @@ class MofI(om.ExplicitComponent):
 #----------------------------------------------------------------------------------------------
         
 class Cost(om.ExplicitComponent):
-    """ Provides a material cost estimate for a PMSG _arms generator. Manufacturing costs are excluded"""
+    """
+    Provides a material cost estimate for a PMSG _arms generator. Manufacturing costs are excluded.
+    
+    Parameters
+    ----------
+    C_Cu : float, [USD/kg]
+        Specific cost of copper
+    C_Fe : float, [USD/kg]
+        Specific cost of magnetic steel/iron
+    C_Fes : float, [USD/kg]
+        Specific cost of structural steel
+    C_PM : float, [USD/kg]
+        Specific cost of Magnet
+    Copper : float, [kg]
+        Copper mass
+    Iron : float, [kg]
+        Iron mass
+    mass_PM : float, [kg]
+        Magnet mass
+    Structural_mass : float, [kg]
+        Structural mass
+    
+    Returns
+    -------
+    Costs : float, [USD]
+        Total cost
+    
+    """
     def setup(self):
         
         # Specific cost of material by type
-        self.add_input('C_Cu',  val=0.0, units='USD/kg', desc='Specific cost of copper')
-        self.add_input('C_Fe',  val=0.0, units='USD/kg', desc='Specific cost of magnetic steel/iron')
-        self.add_input('C_Fes', val=0.0, units='USD/kg', desc='Specific cost of structural steel')
-        self.add_input('C_PM',  val=0.0, units='USD/kg', desc='Specific cost of Magnet')  
+        self.add_input('C_Cu', val=0.0, units='USD/kg')
+        self.add_input('C_Fe', val=0.0, units='USD/kg')
+        self.add_input('C_Fes', val=0.0, units='USD/kg')
+        self.add_input('C_PM', val=0.0, units='USD/kg')
         
         # Mass of each material type
-        self.add_input('Copper',          val=0.0, units='kg', desc='Copper mass')
-        self.add_input('Iron',            val=0.0, units='kg', desc='Iron mass')
-        self.add_input('mass_PM' ,        val=0.0, units='kg', desc='Magnet mass')
-        self.add_input('Structural_mass', val=0.0, units='kg', desc='Structural mass')
-        
+        self.add_input('Copper', val=0.0, units='kg')
+        self.add_input('Iron', val=0.0, units='kg')
+        self.add_input('mass_PM', val=0.0, units='kg')
+        self.add_input('Structural_mass', val=0.0, units='kg')
+
         # Outputs
-        self.add_output('Costs', val=0.0, units='USD', desc='Total cost')
+        self.add_output('Costs', val=0.0, units='USD')
 
         #self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         

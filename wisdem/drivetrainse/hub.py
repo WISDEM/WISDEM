@@ -18,34 +18,34 @@ class HubShell(om.ExplicitComponent):
         Ratio of flange outer diameter to hub diameter
     flange_ID2flange_OD : float
         Ratio of flange inner diameter to flange outer diameter (adjust to match shaft ID if necessary)
-    rho : float
+    rho : float, [kg/m**3]
         Density metal
-    blade_root_diameter : float
+    blade_root_diameter : float, [m]
         Outer diameter of blade root
     in2out_circ : float
         Safety factor applied on hub circumference. This factor determines the extra material needed between blade cutouts/holes in the hub to provide enough load carrying material. Good values are usually 1.15/1.2
-    max_torque : float
+    max_torque : float, [N*m]
         Max torque that the hub needs to resist (Mx in a hub aliged reference system)
-    Xy : float
+    Xy : float, [Pa]
         Yield strength metal for hub (200MPa is a good value for SN Cast Iron GJS-350 for thick sections)
     stress_concentration : float
         Stress concentration factor. Stress concentration occurs at all fillets, notches, lifting lugs, hatches and are accounted for by assigning a stress concentration factor
     gamma : float
         Design safety factor
-    metal_cost : float
+    metal_cost : float, [USD/kg]
         Unit cost metal
 
     Returns
     -------
-    hub_mass : float
+    hub_mass : float, [kg]
         Total mass of the hub shell, including the flanges
-    hub_diameter : float
+    hub_diameter : float, [m]
         Outer diameter of the hub
-    hub_cost : float
+    hub_cost : float, [USD]
         Cost of the hub shell, including flanges
-    hub_cm : float
+    hub_cm : float, [m]
         Distance between hub/shaft flange and hub center of mass
-    hub_I : numpy array[3]
+    hub_I : numpy array[3], [kg*m**2]
         Total mass moment of inertia of the hub about its cm
     
     """
@@ -134,46 +134,46 @@ class Spinner(om.ExplicitComponent):
         Number of front spinner brackets
     n_rear_brackets : integer
         Number of rear spinner brackets
-    blade_root_diameter : float
+    blade_root_diameter : float, [m]
         Outer diameter of blade root
-    hub_diameter : float
+    hub_diameter : float, [m]
         Outer diameter of the hub
-    clearance_hub_spinner : float
+    clearance_hub_spinner : float, [m]
         Clearance between spinner and hub
     spin_hole_incr : float
         Ratio between access hole diameter in the spinner and blade root diameter. Typical value 1.2
-    gust_ws : float
+    gust_ws : float, [m/s]
         Extreme gust wind speed
     gamma : float
         Scaling factor of the thrust forces on spinner
-    composite_Xt : float
+    composite_Xt : float, [Pa]
         Tensile strength of the composite material of the shell. A glass CFM (continuous fiber mat) is often used.
     composite_SF : float
         Safety factor composite shell
-    composite_rho : float
+    composite_rho : float, [kg/m**3]
         Density of composite of the shell
-    Xy : float
+    Xy : float, [Pa]
         Yield strength metal
     metal_SF : float
         Safety factor metal
-    metal_rho : float
+    metal_rho : float, [kg/m**3]
         Density metal
-    composite_cost : float
+    composite_cost : float, [USD/kg]
         Unit cost composite of the shell
-    metal_cost : float
+    metal_cost : float, [USD/kg]
         Unit cost metal
 
     Returns
     -------
-    spinner_mass : float
+    spinner_mass : float, [m]
         Total mass of the spinner
-    spinner_diameter : float
+    spinner_diameter : float, [kg]
         Outer diameter of the spinner
-    spinner_cost : float
+    spinner_cost : float, [kg]
         Cost of the spinner
-    spinner_cm : float
+    spinner_cm : float, [m]
         Distance between center of mass of the spinner and main flange
-    spinner_I : numpy array[3]
+    spinner_I : numpy array[3], [kg*m**2]
         Total mass moment of inertia of the spinner about its cm
     
     """
@@ -288,24 +288,26 @@ class PitchSystem(om.ExplicitComponent):
     ----------
     n_blades : integer
         Number of rotor blades
-    blade_mass : float
+    blade_mass : float, [kg]
         Total mass of one blade
-    rho : float
+    rho : float, [kg/m**3]
         Density of the material used for the pitch system
-    scaling_factor : float
+    Xy : float, [Pa]
+        Yield strength metal
+    scaling_factor : float, [kg/m**3]
         Scaling factor to tune the total mass (0.54 is recommended for modern designs)
-    BRFM : float
+    BRFM : float, [N*m]
         Flapwise bending moment at blade root
-    hub_diameter : float
+    hub_diameter : float, [m]
         Outer diameter of the hub
 
     Returns
     -------
-    pitch_mass : float
+    pitch_mass : float, [kg]
         Total mass of the pitch system
-    pitch_cost : float
+    pitch_cost : float, [USD]
         Cost of the pitch system
-    pitch_I : float
+    pitch_I : float, [kg*m**2]
         Total mass moment of inertia of the pitch system about central point
     
     """
@@ -347,36 +349,38 @@ class Hub_Adder(om.ExplicitComponent):
     
     Parameters
     ----------
-    pitch_mass : float
+    pitch_mass : float, [kg]
         Total mass of the pitch system
-    pitch_I : numpy array[3]
+    pitch_cost : float, [kg]
+        Cost of the pitch system
+    pitch_I : numpy array[3], [kg*m**2]
         Total mass moment of inertia of the pitch system about central point
-    hub_mass : float
+    hub_mass : float, [kg]
         Total mass of the hub shell, including the flanges
-    hub_cost : float
+    hub_cost : float, [USD]
         Cost of the hub shell, including flanges
-    hub_cm : float
+    hub_cm : float, [m]
         Distance between hub/shaft flange and hub center of mass
-    hub_I : numpy array[3]
+    hub_I : numpy array[3], [kg*m**2]
         Total mass moment of inertia of the hub about its cm
-    spinner_mass : float
+    spinner_mass : float, [kg]
         Total mass of the spinner
-    spinner_cost : float
+    spinner_cost : float, [kg]
         Cost of the spinner
-    spinner_cm : float
+    spinner_cm : float, [m]
         Radius / Distance between center of mass of the spinner and outer surface
-    spinner_I : numpy array[3]
+    spinner_I : numpy array[3], [kg*m**2]
         Total mass moment of inertia of the spinner about its cm
 
     Returns
     -------
-    hub_system_mass : float
+    hub_system_mass : float, [kg]
         Total mass of the hub system
-    hub_system_cost : float
+    hub_system_cost : float, [USD]
         Cost of the hub system
-    hub_system_cm : float
+    hub_system_cm : float, [m]
         Distance between hub/main shaft flange and center of mass of the hub system
-    hub_system_I : numpy array[3]
+    hub_system_I : numpy array[3], [kg*m**2]
         Total mass moment of inertia of the hub system about its center of mass
 
     """
