@@ -97,11 +97,6 @@ class HighSpeedSide(om.ExplicitComponent):
     The HighSpeedShaft class is used to represent the high speed shaft and
     mechanical brake components of a wind turbine drivetrain.
     
-    It contains the general properties for a wind turbine component as well as
-    additional design load and dimensional attributes as listed below.
-    It contains an update method to determine the mass, mass properties, and
-    dimensions of the component.
-    
     Parameters
     ----------
     direct_drive : boolean
@@ -207,12 +202,9 @@ class HighSpeedSide(om.ExplicitComponent):
 
 class GeneratorSimple(om.ExplicitComponent):
     """
-    The Generator class is used to represent the generator of a wind turbine drivetrain.
-    
-    It contains the general properties for a wind turbine component as well as
-    additional design load and dimensional attributes as listed below.
-    It contains an update method to determine the mass, mass properties, and
-    dimensions of the component.
+    The Generator class is used to represent the generator of a wind turbine drivetrain 
+    using simple scaling laws.  For a more detailed electromagnetic and structural design, 
+    please see the other generator components.
     
     Parameters
     ----------
@@ -529,11 +521,6 @@ class MiscNacelleComponents(om.ExplicitComponent):
 class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include electronics
     """
     The Nacelle class is used to represent the overall nacelle of a wind turbine.
-    
-    It contains the general properties for a wind turbine component as well as
-    additional design load and dimensional attributes as listed below.
-    It contains an update method to determine the mass, mass properties, and
-    dimensions of the component.
     
     Parameters
     ----------

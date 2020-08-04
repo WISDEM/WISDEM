@@ -3,7 +3,7 @@ from openmdao.api import ExplicitComponent, Group, Problem
 from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
 from wisdem.ccblade.ccblade_component import CCBladeTwist
 from wisdem.commonse.turbine_class import TurbineClass
-from wisdem.drivetrainse.drivese_omdao import DriveSE
+from wisdem.drivetrainse.direct_drivese import DirectDriveSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.plant_financese.plant_finance import PlantFinance
@@ -46,9 +46,7 @@ class WT_RNTA(Group):
             self.add_subsystem('aeroelastic',       FASTLoadCases(analysis_options = analysis_options, opt_options = opt_options))
 
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(analysis_options = analysis_options, opt_options = opt_options, freq_run=False))
-        self.add_subsystem('drivese',   DriveSE(debug=False,
-                                            number_of_main_bearings=1,
-                                            topLevelFlag=False))
+        self.add_subsystem('drivese',   DirectDriveSE(n_points=15, n_dlcs=1, model_generator=True, topLevelFlag=False))
         #if analysis_options['Analysis_Flags']['TowerSE']:
         self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
