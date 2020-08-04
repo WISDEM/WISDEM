@@ -214,7 +214,7 @@ class MofI(om.ExplicitComponent):
         self.add_input('generator_mass', val=0.0, units='kg')
         self.add_input('len_s', val=0.0, units='m')
 
-        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('rotor_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('stator_I', val=np.zeros(3), units='kg*m**2')
         

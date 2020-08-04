@@ -14,7 +14,7 @@ class Gearbox(om.ExplicitComponent):
         string that represents the configuration of the gearbox (stage number and types)
     shaft_factor : string
         normal or short shaft length
-    planet_numbers : numpy array[0, 0, 0, ]
+    planet_numbers : numpy array[3]
         number of planets in each stage
     gear_ratio : float
         overall gearbox speedup ratio
@@ -60,8 +60,8 @@ class Gearbox(om.ExplicitComponent):
 
         self.add_output('stage_masses', val=np.zeros(3), units='kg')
         self.add_output('gearbox_mass', 0.0, units='kg')
-        self.add_output('gearbox_cm', np.zeros(3), units='m', y, z] measure along shaft from bedplate')
-        self.add_output('gearbox_I', np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('gearbox_cm', np.zeros(3), units='m')
+        self.add_output('gearbox_I', np.zeros(3), units='kg*m**2')
         self.add_output('L_gearbox', 0.0, units='m')
         self.add_output('H_gearbox', 0.0, units='m')
         self.add_output('D_gearbox', 0.0, units='m')

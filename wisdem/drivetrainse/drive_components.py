@@ -36,7 +36,7 @@ class MainBearing(om.ExplicitComponent):
 
         self.add_output('mb_max_defl_ang', 0.0, units='rad')
         self.add_output('mb_mass', 0.0, units='kg')
-        self.add_output('mb_I', np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('mb_I', np.zeros(3), units='kg*m**2')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         if type(discrete_inputs['bearing_type']) != type(''): raise ValueError('Bearing type input must be a string')
@@ -94,10 +94,13 @@ class MainBearing(om.ExplicitComponent):
 
 class HighSpeedSide(om.ExplicitComponent):
     """
-    The HighSpeedShaft class is used to represent the high speed shaft and mechanical brake components of a wind turbine drivetrain.
+    The HighSpeedShaft class is used to represent the high speed shaft and
+    mechanical brake components of a wind turbine drivetrain.
     
-    It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
-    It contains an update method to determine the mass, mass properties, and dimensions of the component.
+    It contains the general properties for a wind turbine component as well as
+    additional design load and dimensional attributes as listed below.
+    It contains an update method to determine the mass, mass properties, and
+    dimensions of the component.
     
     Parameters
     ----------
@@ -146,8 +149,8 @@ class HighSpeedSide(om.ExplicitComponent):
         self.add_input('rho', 0.0, units='kg/m**3')
 
         self.add_output('hss_mass', 0.0, units='kg')
-        self.add_output('hss_cm', 0.0, units='m', y, z] for an arbitrary coordinate system')
-        self.add_output('hss_I', np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('hss_cm', 0.0, units='m')
+        self.add_output('hss_I', np.zeros(3), units='kg*m**2')
         self.add_output('hss_length', 0.0, units='m')
         self.add_output('hss_diameter', 0.0, units='m')
 
@@ -206,8 +209,10 @@ class GeneratorSimple(om.ExplicitComponent):
     """
     The Generator class is used to represent the generator of a wind turbine drivetrain.
     
-    It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
-    It contains an update method to determine the mass, mass properties, and dimensions of the component.
+    It contains the general properties for a wind turbine component as well as
+    additional design load and dimensional attributes as listed below.
+    It contains an update method to determine the mass, mass properties, and
+    dimensions of the component.
     
     Parameters
     ----------
@@ -237,9 +242,9 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rotor_torque', 0.0, units='N*m')
 
-        self.add_output('R_generator', val=0.0, units='m', y, z] for an arbitrary coordinate system')
+        self.add_output('R_generator', val=0.0, units='m')
         self.add_output('generator_mass', val=0.0, units='kg')
-        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -273,7 +278,8 @@ class GeneratorSimple(om.ExplicitComponent):
 
 class Electronics(om.ExplicitComponent):
     """
-    Estimate mass of electronics based on rating, rotor diameter, and tower top diameter. Empirical only, no load analysis.
+    Estimate mass of electronics based on rating, rotor diameter, and tower top diameter.
+    Empirical only, no load analysis.
     
     Parameters
     ----------
@@ -332,7 +338,8 @@ class Electronics(om.ExplicitComponent):
 
 class YawSystem(om.ExplicitComponent):
     """
-    Estimate mass of yaw system based on rotor diameter and tower top diameter.  Empirical only, no load analysis.
+    Estimate mass of yaw system based on rotor diameter and tower top diameter.
+    Empirical only, no load analysis.
     
     Parameters
     ----------
@@ -361,8 +368,8 @@ class YawSystem(om.ExplicitComponent):
         self.add_input('rho', 0.0, units='kg/m**3')
 
         self.add_output('yaw_mass', 0.0, units='kg')
-        self.add_output('yaw_cm', np.zeros(3), units='m', y, z] for an arbitrary coordinate system')
-        self.add_output('yaw_I', np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('yaw_cm', np.zeros(3), units='m')
+        self.add_output('yaw_I', np.zeros(3), units='kg*m**2')
 
     def compute(self, inputs, outputs):
         # Unpack inputs
@@ -523,8 +530,10 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
     """
     The Nacelle class is used to represent the overall nacelle of a wind turbine.
     
-    It contains the general properties for a wind turbine component as well as additional design load and dimensional attributes as listed below.
-    It contains an update method to determine the mass, mass properties, and dimensions of the component.
+    It contains the general properties for a wind turbine component as well as
+    additional design load and dimensional attributes as listed below.
+    It contains an update method to determine the mass, mass properties, and
+    dimensions of the component.
     
     Parameters
     ----------
@@ -654,8 +663,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('electronics_cm', np.zeros(3), units='m')
         self.add_input('electronics_I', np.zeros(3), units='kg*m**2')
         self.add_input('yaw_mass', 0.0, units='kg')
-        self.add_input('yaw_cm', np.zeros(3), units='m', y, z] for an arbitrary coordinate system')
-        self.add_input('yaw_I', np.zeros(3), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_input('yaw_cm', np.zeros(3), units='m')
+        self.add_input('yaw_I', np.zeros(3), units='kg*m**2')
         self.add_input('bedplate_mass', 0.0, units='kg')
         self.add_input('bedplate_cm', np.zeros(3), units='m')
         self.add_input('bedplate_I', np.zeros(6), units='kg*m**2')
@@ -671,8 +680,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
 
         self.add_output('other_mass', 0.0, units='kg')
         self.add_output('nacelle_mass', 0.0, units='kg')
-        self.add_output('nacelle_cm', np.zeros(3), units='m', y, z] for an arbitrary coordinate system')
-        self.add_output('nacelle_I', np.zeros(6), units='kg*m**2', Iyy, Izz] around its center of mass')
+        self.add_output('nacelle_cm', np.zeros(3), units='m')
+        self.add_output('nacelle_I', np.zeros(6), units='kg*m**2')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 

@@ -22,7 +22,8 @@ def rod_prop(s, D, t, rho):
 
 class Layout(om.ExplicitComponent):
     """
-    Calculate lengths, heights, and diameters of key drivetrain components in a direct drive system (valid for upwind or downwind).
+    Calculate lengths, heights, and diameters of key drivetrain components in a
+    direct drive system (valid for upwind or downwind).
     
     Parameters
     ----------
@@ -202,8 +203,8 @@ class Layout(om.ExplicitComponent):
         self.add_output('bedplate_mass', val=0.0, units='kg')
         self.add_output('bedplate_cm', val=np.zeros(3), units='m')
         self.add_output('bedplate_I', val=np.zeros(6), units='kg*m**2')
-        self.add_output('s_mb1', val=0.0, units='m', measured from bedplate')
-        self.add_output('s_mb2', val=0.0, units='m', measured from bedplate')
+        self.add_output('s_mb1', val=0.0, units='m')
+        self.add_output('s_mb2', val=0.0, units='m')
         self.add_output('s_stator', val=0.0, units='m')
         self.add_output('s_rotor', val=0.0, units='m')
         self.add_output('generator_cm', val=0.0, units='m')

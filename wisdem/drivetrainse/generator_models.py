@@ -195,7 +195,7 @@ class GeneratorBase(om.ExplicitComponent):
         specific hysteresis losses W / kg @ 1.5 T @50 Hz
     S_N : float
         Slip
-    alpha_p : numpy array[val=0.5*np.pi*0.7]
+    alpha_p : float
         
     b_r_tau_r : float
         Rotor Slot width / Slot pitch ratio
@@ -225,7 +225,7 @@ class GeneratorBase(om.ExplicitComponent):
         magnetic saturation factor for iron
     m : int
         Number of phases
-    mu_0 : numpy array[np.pi*4e-7], [m*kg/s**2/A**2]
+    mu_0 : float, [m*kg/s**2/A**2]
         permeability of free space
     mu_r : float, [m*kg/s**2/A**2]
         relative permeability (neodymium)
@@ -418,7 +418,7 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_input('B_r', val=1.2, units='T')
         self.add_input('E', val=2e11, units='Pa')
         self.add_input('G', val=79.3e9, units='Pa')
-        self.add_input('P_Fe0e', val=1.0, units='W/kg', 50Hz')
+        self.add_input('P_Fe0e', val=1.0, units='W/kg')
         self.add_input('P_Fe0h', val=4.0, units='W/kg')
         self.add_input('S_N', val=-0.002 )
         self.add_input('alpha_p', val=0.5*np.pi*0.7)
@@ -2793,7 +2793,6 @@ class EESG(GeneratorBase):
         Power_ratio
     Load_mmf_ratio : float
         mmf_ratio
-    
     """
     
     def setup(self):

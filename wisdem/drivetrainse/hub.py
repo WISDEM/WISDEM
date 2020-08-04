@@ -17,19 +17,25 @@ class HubShell(om.ExplicitComponent):
     flange_OD2hub_D : float
         Ratio of flange outer diameter to hub diameter
     flange_ID2flange_OD : float
-        Ratio of flange inner diameter to flange outer diameter (adjust to match shaft ID if necessary)
+        Ratio of flange inner diameter to flange outer diameter
+        (adjust to match shaft ID if necessary)
     rho : float, [kg/m**3]
         Density metal
     blade_root_diameter : float, [m]
         Outer diameter of blade root
     in2out_circ : float
-        Safety factor applied on hub circumference. This factor determines the extra material needed between blade cutouts/holes in the hub to provide enough load carrying material. Good values are usually 1.15/1.2
+        Safety factor applied on hub circumference. This factor determines the
+        extra material needed between blade cutouts/holes in the hub to provide
+        enough load carrying material. Good values are usually 1.15/1.2
     max_torque : float, [N*m]
         Max torque that the hub needs to resist (Mx in a hub aliged reference system)
     Xy : float, [Pa]
-        Yield strength metal for hub (200MPa is a good value for SN Cast Iron GJS-350 for thick sections)
+        Yield strength metal for hub (200MPa is a good value for SN Cast Iron
+        GJS-350 for thick sections)
     stress_concentration : float
-        Stress concentration factor. Stress concentration occurs at all fillets, notches, lifting lugs, hatches and are accounted for by assigning a stress concentration factor
+        Stress concentration factor. Stress concentration occurs at all fillets,
+        notches, lifting lugs, hatches and are accounted for by assigning a
+        stress concentration factor
     gamma : float
         Design safety factor
     metal_cost : float, [USD/kg]
@@ -141,13 +147,15 @@ class Spinner(om.ExplicitComponent):
     clearance_hub_spinner : float, [m]
         Clearance between spinner and hub
     spin_hole_incr : float
-        Ratio between access hole diameter in the spinner and blade root diameter. Typical value 1.2
+        Ratio between access hole diameter in the spinner and blade root diameter.
+        Typical value 1.2
     gust_ws : float, [m/s]
         Extreme gust wind speed
     gamma : float
         Scaling factor of the thrust forces on spinner
     composite_Xt : float, [Pa]
-        Tensile strength of the composite material of the shell. A glass CFM (continuous fiber mat) is often used.
+        Tensile strength of the composite material of the shell.
+        A glass CFM (continuous fiber mat) is often used.
     composite_SF : float
         Safety factor composite shell
     composite_rho : float, [kg/m**3]
