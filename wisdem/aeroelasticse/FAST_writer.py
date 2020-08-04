@@ -688,10 +688,6 @@ class InputWriter_OpenFAST(InputWriter_Common):
                 f.write(" ".join(['{: 2.15e}'.format(i) for i in self.fst_vt['BeamDynBlade']['beam_inertia'][i,j,:]])+'\n')
             f.write('\n')
 
-        print(np.shape(self.fst_vt['BeamDynBlade']['radial_stations']))
-        print(self.fst_vt['BeamDynBlade']['radial_stations'])
-
-
         f.write('\n')
 
 
