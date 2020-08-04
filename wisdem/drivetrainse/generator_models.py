@@ -178,208 +178,525 @@ debug = False
 #---------------------------------
 
 class GeneratorBase(om.ExplicitComponent):
-    """ Base class for generators """
+    """
+    Base class for generators
+    
+    Parameters
+    ----------
+    B_r : float, [T]
+        Remnant flux density
+    E : float, [Pa]
+        youngs modulus
+    G : float, [Pa]
+        Shear modulus
+    P_Fe0e : float, [W/kg]
+        specific eddy losses @ 1.5T, 50Hz
+    P_Fe0h : float, [W/kg]
+        specific hysteresis losses W / kg @ 1.5 T @50 Hz
+    S_N : float
+        Slip
+    alpha_p : numpy array[val=0.5*np.pi*0.7]
+        
+    b_r_tau_r : float
+        Rotor Slot width / Slot pitch ratio
+    b_ro : float, [m]
+        Rotor slot opening width
+    b_s_tau_s : float
+        Stator Slot width/Slot pitch ratio
+    b_so : float, [m]
+        Stator slot opening width
+    cofi : float
+        power factor
+    freq : float, [Hz]
+        grid frequency
+    h_i : float, [m]
+        coil insulation thickness
+    h_sy0 : float
+        
+    h_w : float, [m]
+        Slot wedge height
+    k_fes : float
+        Stator iron fill factor per Grauers
+    k_fillr : float
+        Rotor slot fill factor
+    k_fills : float
+        Stator Slot fill factor
+    k_s : float
+        magnetic saturation factor for iron
+    m : int
+        Number of phases
+    mu_0 : numpy array[np.pi*4e-7], [m*kg/s**2/A**2]
+        permeability of free space
+    mu_r : float, [m*kg/s**2/A**2]
+        relative permeability (neodymium)
+    p : float
+        number of pole pairs (taken as int within code)
+    phi : numpy array[90], [rad]
+        tilt angle (during transportation)
+    q1 : int
+        Stator slots per pole per phase
+    q2 : int
+        Rotor slots per pole per phase
+    ratio_mw2pp : float
+        ratio of magnet width to pole pitch(bm / self.tau_p)
+    resist_Cu : float, [ohm/m]
+        Copper resistivity
+    sigma : float, [Pa]
+        assumed max shear stress
+    v : float
+        poisson ratio
+    y_tau_p : float
+        Stator coil span to pole pitch
+    y_tau_pr : float
+        Rotor coil span to pole pitch
+    Gearbox_efficiency : float
+        Gearbox efficiency
+    I_0 : float, [A]
+        no-load excitation current
+    T_rated : float, [N*m]
+        Rated torque
+    d_r : float, [m]
+        arm depth d_r
+    h_m : float, [m]
+        magnet height
+    h_0 : float, [m]
+        Slot height
+    h_s : float, [m]
+        Yoke height h_s
+    len_s : float, [m]
+        Stator core length
+    machine_rating : float, [W]
+        Machine rating
+    n_nom : float, [rpm]
+        rated speed
+    n_r : float
+        number of arms n
+    rad_ag : float, [m]
+        airgap radius
+    t_wr : float, [m]
+        arm depth thickness
+    n_s : float
+        number of stator arms n_s
+    b_st : float, [m]
+        arm width b_st
+    d_s : float, [m]
+        arm depth d_s
+    t_ws : float, [m]
+        arm depth thickness
+    D_shaft : float, [m]
+        Shaft diameter
+    rho_Copper : float, [kg*m**-3]
+        Copper density
+    rho_Fe : float, [kg*m**-3]
+        Magnetic Steel density
+    rho_Fes : float, [kg*m**-3]
+        Structural Steel density
+    rho_PM : float, [kg*m**-3]
+        Magnet density
+    
+    Returns
+    -------
+    B_rymax : float, [T]
+        Peak Rotor yoke flux density
+    B_trmax : float, [T]
+        maximum tooth flux density in rotor
+    B_tsmax : float, [T]
+        maximum tooth flux density in stator
+    B_g : float, [T]
+        Peak air gap flux density B_g
+    B_g1 : float, [T]
+        air gap flux density fundamental
+    B_pm1 : float
+        Fundamental component of peak air gap flux density
+    N_s : float
+        Number of turns in the stator winding
+    b_s : float, [m]
+        slot width
+    b_t : float, [m]
+        tooth width
+    A_Curcalc : float, [mm**2]
+        Conductor cross-section mm^2
+    A_Cuscalc : float, [mm**2]
+        Stator Conductor cross-section mm^2
+    b_m : float
+        magnet width
+    mass_PM : float, [kg]
+        Magnet mass
+    Copper : float, [kg]
+        Copper Mass
+    Iron : float, [kg]
+        Electrical Steel Mass
+    Structural_mass : float, [kg]
+        Structural Mass
+    generator_mass : float, [kg]
+        Actual mass
+    f : float
+        Generator output frequency
+    I_s : float, [A]
+        Generator output phase current
+    R_s : float, [ohm]
+        Stator resistance
+    L_s : float
+        Stator synchronising inductance
+    J_s : float, [A*m**-2]
+        Stator winding current density
+    A_1 : float
+        Specific current loading
+    K_rad : float
+        Stack length ratio
+    Losses : float, [W]
+        Total loss
+    gen_eff : float
+        Generator efficiency
+    u_ar : float, [m]
+        Rotor radial deflection
+    u_as : float, [m]
+        Stator radial deflection
+    u_allow_r : float, [m]
+        Allowable radial rotor
+    u_allow_s : float, [m]
+        Allowable radial stator
+    y_ar : float, [m]
+        Rotor axial deflection
+    y_as : float, [m]
+        Stator axial deflection
+    y_allow_r : float, [m]
+        Allowable axial
+    y_allow_s : float, [m]
+        Allowable axial
+    z_ar : float, [m]
+        Rotor circumferential deflection
+    z_as : float, [m]
+        Stator circumferential deflection
+    z_allow_r : float, [m]
+        Allowable circum rotor
+    z_allow_s : float, [m]
+        Allowable circum stator
+    b_allow_r : float, [m]
+        Allowable arm dimensions
+    b_allow_s : float, [m]
+        Allowable arm
+    TC1 : float, [m**3]
+        Torque constraint
+    TC2r : float, [m**3]
+        Torque constraint-rotor
+    TC2s : float, [m**3]
+        Torque constraint-stator
+    R_out : float, [m]
+        Outer radius
+    S : float
+        Stator slots
+    Slot_aspect_ratio : float
+        Slot aspect ratio
+    Slot_aspect_ratio1 : float
+        Stator slot aspect ratio
+    Slot_aspect_ratio2 : float
+        Rotor slot aspect ratio
+    D_ratio : float
+        Stator diameter ratio
+    J_r : float
+        Rotor winding Current density
+    L_sm : float
+        mutual inductance
+    Overall_eff : float
+        Overall drivetrain efficiency
+    Q_r : float
+        Rotor slots
+    R_R : float
+        Rotor resistance
+    b_r : float
+        rotor slot width
+    b_tr : float
+        rotor tooth width
+    b_trmin : float
+        minimum tooth width
+    
+    """
     def setup(self):
 
         # Constants and parameters
-        self.add_input('B_r', val=1.2, units='T', desc='Remnant flux density')
-        self.add_input('E', val=2e11, units='Pa', desc='youngs modulus')
-        self.add_input('G', val=79.3e9, units='Pa', desc='Shear modulus')
-        self.add_input('P_Fe0e', val=1.0, units='W/kg', desc='specific eddy losses @ 1.5T, 50Hz')
-        self.add_input('P_Fe0h', val=4.0, units='W/kg', desc='specific hysteresis losses W / kg @ 1.5 T @50 Hz')
-        self.add_input('S_N', val=-0.002 ,desc='Slip')
+        self.add_input('B_r', val=1.2, units='T')
+        self.add_input('E', val=2e11, units='Pa')
+        self.add_input('G', val=79.3e9, units='Pa')
+        self.add_input('P_Fe0e', val=1.0, units='W/kg', 50Hz')
+        self.add_input('P_Fe0h', val=4.0, units='W/kg')
+        self.add_input('S_N', val=-0.002 )
         self.add_input('alpha_p', val=0.5*np.pi*0.7)
-        self.add_input('b_r_tau_r', val=0.45, desc='Rotor Slot width / Slot pitch ratio')
-        self.add_input('b_ro', val=0.004, units='m', desc='Rotor slot opening width')
-        self.add_input('b_s_tau_s', val=0.45, desc='Stator Slot width/Slot pitch ratio')
-        self.add_input('b_so', val=0.004, units='m', desc='Stator slot opening width')
-        self.add_input('cofi', val=0.85, desc='power factor')
-        self.add_input('freq', val=60, units='Hz', desc='grid frequency')
-        self.add_input('h_i', val=0.001, units='m', desc='coil insulation thickness')
+        self.add_input('b_r_tau_r', val=0.45)
+        self.add_input('b_ro', val=0.004, units='m')
+        self.add_input('b_s_tau_s', val=0.45)
+        self.add_input('b_so', val=0.004, units='m')
+        self.add_input('cofi', val=0.85)
+        self.add_input('freq', val=60, units='Hz')
+        self.add_input('h_i', val=0.001, units='m')
         self.add_input('h_sy0', val=0.0)
-        self.add_input('h_w', val=0.005, units='m', desc='Slot wedge height')
-        self.add_input('k_fes', val=0.9, desc='Stator iron fill factor per Grauers')
-        self.add_input('k_fillr', val=0.7, desc='Rotor  slot fill factor')
-        self.add_input('k_fills', val=0.65, desc='Stator Slot fill factor')
-        self.add_input('k_s', val=0.2, desc='magnetic saturation factor for iron')
-        self.add_discrete_input('m', val=3, desc='Number of phases')
-        self.add_input('mu_0', val=np.pi*4e-7, units='m*kg/s**2/A**2', desc='permeability of free space')
-        self.add_input('mu_r', val=1.06, units='m*kg/s**2/A**2', desc='relative permeability (neodymium)')
-        self.add_input('p', val=3.0, desc='number of pole pairs (taken as int within code)')
-        self.add_input('phi', val=np.deg2rad(90), units='rad', desc='tilt angle (during transportation)')
-        self.add_discrete_input('q1', val=6, desc='Stator slots per pole per phase')
-        self.add_discrete_input('q2', val=4, desc='Rotor  slots per pole per phase')
-        self.add_input('ratio_mw2pp', val=0.7, desc='ratio of magnet width to pole pitch(bm / self.tau_p)')
-        self.add_input('resist_Cu', val=1.8e-8*1.4, units='ohm/m', desc='Copper resistivity')
-        self.add_input('sigma', val=40e3, units='Pa', desc='assumed max shear stress')
-        self.add_input('v', val=0.3, desc='poisson ratio')
-        self.add_input('y_tau_p', val=1.0, desc='Stator coil span to pole pitch')
-        self.add_input('y_tau_pr', val=10. / 12, desc='Rotor coil span to pole pitch')
+        self.add_input('h_w', val=0.005, units='m')
+        self.add_input('k_fes', val=0.9)
+        self.add_input('k_fillr', val=0.7)
+        self.add_input('k_fills', val=0.65)
+        self.add_input('k_s', val=0.2)
+        self.add_discrete_input('m', val=3)
+        self.add_input('mu_0', val=np.pi*4e-7, units='m*kg/s**2/A**2')
+        self.add_input('mu_r', val=1.06, units='m*kg/s**2/A**2')
+        self.add_input('p', val=3.0)
+        self.add_input('phi', val=np.deg2rad(90), units='rad')
+        self.add_discrete_input('q1', val=6)
+        self.add_discrete_input('q2', val=4)
+        self.add_input('ratio_mw2pp', val=0.7)
+        self.add_input('resist_Cu', val=1.8e-8*1.4, units='ohm/m')
+        self.add_input('sigma', val=40e3, units='Pa')
+        self.add_input('v', val=0.3)
+        self.add_input('y_tau_p', val=1.0)
+        self.add_input('y_tau_pr', val=10. / 12)
         
         # General inputs
         #self.add_input('r_s', val=0.0, units='m', desc='airgap radius r_s')
-        self.add_input('Gearbox_efficiency', val=0.0, desc='Gearbox efficiency')
-        self.add_input('I_0', val=0.0, units='A', desc='no-load excitation current')
-        self.add_input('T_rated', val=0.0, units ='N*m', desc='Rated torque ')
-        self.add_input('d_r', val=0.0, units='m', desc='arm depth d_r')
-        self.add_input('h_m', val=0.0, units='m', desc='magnet height')
-        self.add_input('h_0', val=0.0, units ='m', desc='Slot height')
-        self.add_input('h_s', val=0.0, units='m', desc='Yoke height h_s')
-        self.add_input('len_s', val=0.0, units='m', desc='Stator core length')
-        self.add_input('machine_rating', val=0.0, units ='W', desc='Machine rating')
-        self.add_input('n_nom', val=0.0, units ='rpm', desc='rated speed')
-        self.add_input('n_r', val=0.0, desc='number of arms n')
-        self.add_input('rad_ag', val=0.0, units='m', desc='airgap radius')
-        self.add_input('t_wr', val=0.0, units='m', desc='arm depth thickness')
+        self.add_input('Gearbox_efficiency', val=0.0)
+        self.add_input('I_0', val=0.0, units='A')
+        self.add_input('T_rated', val=0.0, units ='N*m')
+        self.add_input('d_r', val=0.0, units='m')
+        self.add_input('h_m', val=0.0, units='m')
+        self.add_input('h_0', val=0.0, units ='m')
+        self.add_input('h_s', val=0.0, units='m')
+        self.add_input('len_s', val=0.0, units='m')
+        self.add_input('machine_rating', val=0.0, units ='W')
+        self.add_input('n_nom', val=0.0, units ='rpm')
+        self.add_input('n_r', val=0.0)
+        self.add_input('rad_ag', val=0.0, units='m')
+        self.add_input('t_wr', val=0.0, units='m')
         
         # Structural design variables
-        self.add_input('n_s', val=0.0, desc='number of stator arms n_s')
-        self.add_input('b_st', val=0.0, units='m', desc='arm width b_st')
-        self.add_input('d_s', val=0.0, units='m', desc='arm depth d_s')
-        self.add_input('t_ws', val=0.0, units='m', desc='arm depth thickness ')
-        self.add_input('D_shaft', val=0.0, units='m', desc='Shaft diameter')
+        self.add_input('n_s', val=0.0)
+        self.add_input('b_st', val=0.0, units='m')
+        self.add_input('d_s', val=0.0, units='m')
+        self.add_input('t_ws', val=0.0, units='m')
+        self.add_input('D_shaft', val=0.0, units='m')
         
         # Material properties
-        self.add_input('rho_Copper', val=8900.0, units='kg*m**-3', desc='Copper density ')
-        self.add_input('rho_Fe', val=7700.0, units='kg*m**-3', desc='Magnetic Steel density ')
-        self.add_input('rho_Fes', val=7850.0, units='kg*m**-3', desc='Structural Steel density ')
-        self.add_input('rho_PM', val=7450.0, units='kg*m**-3', desc='Magnet density ')
-
+        self.add_input('rho_Copper', val=8900.0, units='kg*m**-3')
+        self.add_input('rho_Fe', val=7700.0, units='kg*m**-3')
+        self.add_input('rho_Fes', val=7850.0, units='kg*m**-3')
+        self.add_input('rho_PM', val=7450.0, units='kg*m**-3')
+        
         # Magnetic loading
-        self.add_output('B_rymax', val=0.0, units='T', desc='Peak Rotor yoke flux density')
-        self.add_output('B_trmax', val=0.0, units='T', desc='maximum tooth flux density in rotor')
-        self.add_output('B_tsmax', val=0.0, units='T', desc='maximum tooth flux density in stator')
-        self.add_output('B_g', val=0.0, units='T', desc='Peak air gap flux density B_g')
-        self.add_output('B_g1', val=0.0, units='T', desc='air gap flux density fundamental ')
-        self.add_output('B_pm1', val=0.0, desc='Fundamental component of peak air gap flux density')
-
+        self.add_output('B_rymax', val=0.0, units='T')
+        self.add_output('B_trmax', val=0.0, units='T')
+        self.add_output('B_tsmax', val=0.0, units='T')
+        self.add_output('B_g', val=0.0, units='T')
+        self.add_output('B_g1', val=0.0, units='T')
+        self.add_output('B_pm1', val=0.0)
+        
         # Stator design
-        self.add_output('N_s', val=0.0, desc='Number of turns in the stator winding')
-        self.add_output('b_s', val=0.0, units ='m', desc='slot width')
-        self.add_output('b_t', val=0.0, units ='m', desc='tooth width')
-        self.add_output('A_Curcalc', val=0.0, units='mm**2', desc='Conductor cross-section mm^2')
-        self.add_output('A_Cuscalc', val=0.0, units='mm**2', desc='Stator Conductor cross-section mm^2')
+        self.add_output('N_s', val=0.0)
+        self.add_output('b_s', val=0.0, units ='m')
+        self.add_output('b_t', val=0.0, units ='m')
+        self.add_output('A_Curcalc', val=0.0, units='mm**2')
+        self.add_output('A_Cuscalc', val=0.0, units='mm**2')
         
         # Rotor magnet dimension
-        self.add_output('b_m', val=0.0, desc='magnet width')
+        self.add_output('b_m', val=0.0)
         
         # Mass Outputs
-        self.add_output('mass_PM', val=0.0, units='kg', desc='Magnet mass')
-        self.add_output('Copper', val=0.0, units='kg', desc='Copper Mass')
-        self.add_output('Iron', val=0.0, units='kg', desc='Electrical Steel Mass')
-        self.add_output('Structural_mass', val=0.0, units='kg', desc='Structural Mass')
-        self.add_output('generator_mass', val=0.0, units='kg', desc='Actual mass')
+        self.add_output('mass_PM', val=0.0, units='kg')
+        self.add_output('Copper', val=0.0, units='kg')
+        self.add_output('Iron', val=0.0, units='kg')
+        self.add_output('Structural_mass', val=0.0, units='kg')
+        self.add_output('generator_mass', val=0.0, units='kg')
         
         # Electrical performance
-        self.add_output('f', val=0.0, desc='Generator output frequency')
-        self.add_output('I_s', val=0.0, units='A', desc='Generator output phase current')
-        self.add_output('R_s', val=0.0, units='ohm', desc='Stator resistance')
-        self.add_output('L_s', val=0.0, desc='Stator synchronising inductance')
-        self.add_output('J_s', val=0.0, units='A*m**-2', desc='Stator winding current density')
-        self.add_output('A_1' , val=0.0, desc='Specific current loading')
-
+        self.add_output('f', val=0.0)
+        self.add_output('I_s', val=0.0, units='A')
+        self.add_output('R_s', val=0.0, units='ohm')
+        self.add_output('L_s', val=0.0)
+        self.add_output('J_s', val=0.0, units='A*m**-2')
+        self.add_output('A_1', val=0.0)
+        
         # Objective functions
-        self.add_output('K_rad', val=0.0, desc='Stack length ratio')
-        self.add_output('Losses', val=0.0, units='W', desc='Total loss')
-        self.add_output('gen_eff', val=0.0, desc='Generator efficiency')
-    
+        self.add_output('K_rad', val=0.0)
+        self.add_output('Losses', val=0.0, units='W')
+        self.add_output('gen_eff', val=0.0)
+        
         # Structural performance
-        self.add_output('u_ar', val=0.0, units='m', desc='Rotor radial deflection')
-        self.add_output('u_as', val=0.0, units='m', desc='Stator radial deflection')
-        self.add_output('u_allow_r', val=0.0, units='m', desc='Allowable radial rotor')
-        self.add_output('u_allow_s', val=0.0, units='m', desc='Allowable radial stator')
-        self.add_output('y_ar', val=0.0, units='m', desc='Rotor axial deflection')
-        self.add_output('y_as', val=0.0, units='m', desc='Stator axial deflection')
-        self.add_output('y_allow_r', val=0.0, units='m', desc='Allowable axial')
-        self.add_output('y_allow_s', val=0.0, units='m', desc='Allowable axial')
-        self.add_output('z_ar', val=0.0, units='m', desc='Rotor circumferential deflection')
-        self.add_output('z_as', val=0.0, units='m', desc='Stator circumferential deflection')  
-        self.add_output('z_allow_r', val=0.0, units='m', desc='Allowable circum rotor')
-        self.add_output('z_allow_s', val=0.0, units='m', desc='Allowable circum stator')
-        self.add_output('b_allow_r', val=0.0, units='m', desc='Allowable arm dimensions')
-        self.add_output('b_allow_s', val=0.0, units='m', desc='Allowable arm')
-        self.add_output('TC1', val=0.0, units='m**3', desc='Torque constraint')
-        self.add_output('TC2r', val=0.0, units='m**3', desc='Torque constraint-rotor')
-        self.add_output('TC2s', val=0.0, units='m**3', desc='Torque constraint-stator')
+        self.add_output('u_ar', val=0.0, units='m')
+        self.add_output('u_as', val=0.0, units='m')
+        self.add_output('u_allow_r', val=0.0, units='m')
+        self.add_output('u_allow_s', val=0.0, units='m')
+        self.add_output('y_ar', val=0.0, units='m')
+        self.add_output('y_as', val=0.0, units='m')
+        self.add_output('y_allow_r', val=0.0, units='m')
+        self.add_output('y_allow_s', val=0.0, units='m')
+        self.add_output('z_ar', val=0.0, units='m')
+        self.add_output('z_as', val=0.0, units='m')
+        self.add_output('z_allow_r', val=0.0, units='m')
+        self.add_output('z_allow_s', val=0.0, units='m')
+        self.add_output('b_allow_r', val=0.0, units='m')
+        self.add_output('b_allow_s', val=0.0, units='m')
+        self.add_output('TC1', val=0.0, units='m**3')
+        self.add_output('TC2r', val=0.0, units='m**3')
+        self.add_output('TC2s', val=0.0, units='m**3')
         
         # Other parameters
-        self.add_output('R_out', val=0.0, units ='m', desc='Outer radius')
-        self.add_output('S', val=0.0, desc='Stator slots')
-        self.add_output('Slot_aspect_ratio', val=0.0, desc='Slot aspect ratio')
-        self.add_output('Slot_aspect_ratio1', val=0.0, desc='Stator slot aspect ratio')
-        self.add_output('Slot_aspect_ratio2', val=0.0, desc='Rotor slot aspect ratio')
-
-        self.add_output('D_ratio', val=0.0, desc='Stator diameter ratio')
-        self.add_output('J_r', val=0.0, desc='Rotor winding Current density')
-        self.add_output('L_sm', val=0.0, desc='mutual inductance')
-        self.add_output('Overall_eff', val=0.0, desc='Overall drivetrain efficiency')
-        self.add_output('Q_r', val=0.0, desc='Rotor slots')
-        self.add_output('R_R', val=0.0, desc='Rotor resistance')
-        self.add_output('b_r', val=0.0, desc='rotor slot width')
-        self.add_output('b_tr', val=0.0, desc='rotor tooth width')
-        self.add_output('b_trmin', val=0.0, desc='minimum tooth width')
-
+        self.add_output('R_out', val=0.0, units ='m')
+        self.add_output('S', val=0.0)
+        self.add_output('Slot_aspect_ratio', val=0.0)
+        self.add_output('Slot_aspect_ratio1', val=0.0)
+        self.add_output('Slot_aspect_ratio2', val=0.0)
+        
+        self.add_output('D_ratio', val=0.0)
+        self.add_output('J_r', val=0.0)
+        self.add_output('L_sm', val=0.0)
+        self.add_output('Overall_eff', val=0.0)
+        self.add_output('Q_r', val=0.0)
+        self.add_output('R_R', val=0.0)
+        self.add_output('b_r', val=0.0)
+        self.add_output('b_tr', val=0.0)
+        self.add_output('b_trmin', val=0.0)
+        
 #----------------------------------------------------------------------------------------
 
 class PMSG_Outer(GeneratorBase):
-    """ Estimates overall electromagnetic dimensions and Efficiency of PMSG -arms generator. """
+    """
+    Estimates overall electromagnetic dimensions and Efficiency of PMSG -arms generator.
+    
+    Parameters
+    ----------
+    r_g : float, [m]
+        airgap radius
+    P_mech : float, [W]
+        Shaft mechanical power
+    N_c : float
+        Number of turns per coil
+    b : float
+        Slot pole combination
+    c : float
+        Slot pole combination
+    E_p : float, [V]
+        Stator phase voltage
+    h_yr : float, [m]
+        rotor yoke height
+    h_ys : float, [m]
+        Yoke height
+    h_sr : float, [m]
+        Structural Mass
+    h_ss : float, [m]
+        Stator yoke height
+    t_r : float, [m]
+        Rotor disc thickness
+    t_s : float, [m]
+        Stator disc thickness
+    y_sh : float, [m]
+        Shaft deflection
+    theta_sh : float, [rad]
+        slope of shaft
+    D_nose : float, [m]
+        Nose outer diameter
+    y_bd : float, [m]
+        Deflection of the bedplate
+    theta_bd : float, [rad]
+        Slope at the bedplate
+    u_allow_pcent : float
+        Radial deflection as a percentage of air gap diameter
+    y_allow_pcent : float
+        Radial deflection as a percentage of air gap diameter
+    z_allow_deg : float, [deg]
+        Allowable torsional twist
+    B_tmax : float, [T]
+        Peak Teeth flux density
+    
+    Returns
+    -------
+    B_smax : float, [T]
+        Peak Stator flux density
+    B_symax : float, [T]
+        Peak Stator flux density
+    tau_p : float, [m]
+        Pole pitch
+    q : float, [N/m**2]
+        Normal stress
+    len_ag : float, [m]
+        Air gap length
+    h_t : float, [m]
+        tooth height
+    tau_s : float, [m]
+        Slot pitch
+    J_actual : float, [A/m**2]
+        Current density
+    T_e : float, [N*m]
+        Electromagnetic torque
+    twist_r : float, [deg]
+        torsional twist
+    twist_s : float, [deg]
+        Stator torsional twist
+    Structural_mass_rotor : float, [kg]
+        Rotor mass (kg)
+    Structural_mass_stator : float, [kg]
+        Stator mass (kg)
+    Mass_tooth_stator : float, [kg]
+        Teeth and copper mass
+    Mass_yoke_rotor : float, [kg]
+        Rotor yoke mass
+    Mass_yoke_stator : float, [kg]
+        Stator yoke mass
+    rotor_mass : float, [kg]
+        Total rotor mass
+    stator_mass : float, [kg]
+        Total stator mass
+    
+    """
     
     def setup(self):
         super(PMSG_Outer, self).setup()
     
-        self.add_input('r_g',0.0, units ='m', desc='airgap radius')
-        self.add_input('P_mech', units ='W', desc='Shaft mechanical power')
-        self.add_input('N_c',0.0, desc='Number of turns per coil')
-        self.add_input('b',0.0, desc='Slot pole combination')
-        self.add_input('c',0.0, desc='Slot pole combination')
-        self.add_input('E_p',0.0, units ='V', desc='Stator phase voltage')
-        
         # PMSG_structrual inputs
-        self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
-        self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
-        self.add_input('h_sr',0.0,units='m',desc='Structural Mass')
-        self.add_input('h_ss',0.0, units ='m', desc='Stator yoke height')
-        self.add_input('t_r',0.0, units ='m', desc='Rotor disc thickness')
-        self.add_input('t_s',0.0, units ='m', desc='Stator disc thickness')
-        self.add_input('y_sh', units ='m', desc='Shaft deflection')
-        self.add_input('theta_sh', 0.0, units = 'rad', desc='slope of shaft')
-        self.add_input('D_nose',0.0, units ='m', desc='Nose outer diameter')
-        self.add_input('y_bd', units ='m', desc='Deflection of the bedplate')
-        self.add_input('theta_bd', 0.0, units = 'rad', desc='Slope at the bedplate')
-        self.add_input('u_allow_pcent',0.0,desc='Radial deflection as a percentage of air gap diameter')
-        self.add_input('y_allow_pcent',0.0,desc='Radial deflection as a percentage of air gap diameter')
-        self.add_input('z_allow_deg',0.0,units='deg',desc='Allowable torsional twist')
+        self.add_input('r_g', 0.0, units ='m')
+        self.add_input('P_mech', units ='W')
+        self.add_input('N_c', 0.0)
+        self.add_input('b', 0.0)
+        self.add_input('c', 0.0)
+        self.add_input('E_p', 0.0, units ='V')
+        self.add_input('h_yr', val=0.0, units ='m')
+        self.add_input('h_ys', val=0.0, units ='m')
+        self.add_input('h_sr', 0.0, units='m')
+        self.add_input('h_ss', 0.0, units ='m')
+        self.add_input('t_r', 0.0, units ='m')
+        self.add_input('t_s', 0.0, units ='m')
+        self.add_input('y_sh', units ='m')
+        self.add_input('theta_sh', 0.0, units = 'rad')
+        self.add_input('D_nose', 0.0, units ='m')
+        self.add_input('y_bd', units ='m')
+        self.add_input('theta_bd', 0.0, units = 'rad')
+        self.add_input('u_allow_pcent', 0.0)
+        self.add_input('y_allow_pcent', 0.0)
+        self.add_input('z_allow_deg', 0.0, units='deg')
         
         # Magnetic loading
-        self.add_input('B_tmax',0.0, units='T', desc='Peak Teeth flux density')
-        self.add_output('B_smax',0.0, units='T', desc='Peak Stator flux density')
-        self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator flux density')
-        self.add_output('tau_p',0.0, units ='m',desc='Pole pitch')
-        self.add_output('q',0.0, units ='N/m**2',desc='Normal stress')
-        self.add_output('len_ag',0.0,units='m',desc='Air gap length')
+        self.add_input('B_tmax', 0.0, units='T')
+        self.add_output('B_smax', 0.0, units='T')
+        self.add_output('B_symax', val=0.0, units='T')
+        self.add_output('tau_p', 0.0, units ='m')
+        self.add_output('q', 0.0, units ='N/m**2')
+        self.add_output('len_ag', 0.0, units='m')
         
-        #Stator design
-        self.add_output('h_t',0.0, units = 'm', desc ='tooth height')
-        self.add_output('tau_s', 0.0, units='m',desc='Slot pitch')
+        # Stator design
+        self.add_output('h_t', 0.0, units = 'm')
+        self.add_output('tau_s', 0.0, units='m')
         
         # Electrical performance
-        self.add_output('J_actual',0.0, units ='A/m**2', desc='Current density')
-        self.add_output('T_e',0.0,units='N*m',desc='Electromagnetic torque')
+        self.add_output('J_actual', 0.0, units ='A/m**2')
+        self.add_output('T_e', 0.0, units='N*m')
         
         # Material properties
-        self.add_output('twist_r', 0.0, units ='deg', desc='torsional twist')
-        self.add_output('twist_s', 0.0, units ='deg', desc='Stator torsional twist')
-
-        # Mass Outputs
-        self.add_output('Structural_mass_rotor',0.0, units='kg', desc='Rotor mass (kg)')
-        self.add_output('Structural_mass_stator',0.0, units='kg', desc='Stator mass (kg)')
-        self.add_output('Mass_tooth_stator',0.0, units = 'kg', desc='Teeth and copper mass')
-        self.add_output('Mass_yoke_rotor',0.0, units = 'kg', desc='Rotor yoke mass')
-        self.add_output('Mass_yoke_stator',0.0, units = 'kg', desc='Stator yoke mass')
-        self.add_output('rotor_mass',0.0, units = 'kg', desc='Total rotor mass')
-        self.add_output('stator_mass',0.0, units = 'kg', desc='Total stator mass')
-
+        self.add_output('twist_r', 0.0, units ='deg')
+        self.add_output('twist_s', 0.0, units ='deg')
         
+        # Mass Outputs
+        self.add_output('Structural_mass_rotor', 0.0, units='kg')
+        self.add_output('Structural_mass_stator', 0.0, units='kg')
+        self.add_output('Mass_tooth_stator', 0.0, units = 'kg')
+        self.add_output('Mass_yoke_rotor', 0.0, units = 'kg')
+        self.add_output('Mass_yoke_stator', 0.0, units = 'kg')
+        self.add_output('rotor_mass', 0.0, units = 'kg')
+        self.add_output('stator_mass', 0.0, units = 'kg')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
@@ -704,18 +1021,44 @@ class PMSG_Outer(GeneratorBase):
         
 #----------------------------------------------------------------------------------------
 class PMSG_Disc(GeneratorBase):
-    """ Estimates overall mass dimensions and Efficiency of PMSG-disc rotor generator. """
+    """
+    Estimates overall mass dimensions and Efficiency of PMSG-disc rotor generator.
+    
+    Parameters
+    ----------
+    tau_p : float, [m]
+        Pole pitch self.tau_p
+    t_d : float, [m]
+        disc thickness
+    h_yr : float, [m]
+        rotor yoke height
+    h_ys : float, [m]
+        Yoke height
+    
+    Returns
+    -------
+    B_tmax : float, [T]
+        Peak Teeth flux density
+    B_smax : float, [T]
+        Peak Stator Yoke flux density B_ymax
+    B_symax : float, [T]
+        Peak Stator Yoke flux density B_ymax
+    E_p : float
+        Stator phase voltage
+    
+    """
     
     def setup(self):
         super(PMSG_Disc, self).setup()
-        self.add_input('tau_p', val=0.0, units='m', desc='Pole pitch self.tau_p')
-        self.add_input('t_d',  val=0.0, units='m', desc='disc thickness')
-        self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
-        self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
-        self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
-        self.add_output('B_smax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
-        self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
-        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
+        self.add_input('tau_p', val=0.0, units='m')
+        self.add_input('t_d', val=0.0, units='m')
+        self.add_input('h_yr', val=0.0, units ='m')
+        self.add_input('h_ys', val=0.0, units ='m')
+
+        self.add_output('B_tmax', val=0.0, units='T')
+        self.add_output('B_smax', val=0.0, units='T')
+        self.add_output('B_symax', val=0.0, units='T')
+        self.add_output('E_p', val=0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
@@ -1165,18 +1508,44 @@ class PMSG_Disc(GeneratorBase):
 
 #----------------------------------------------------------------------------------------
 class PMSG_Arms(GeneratorBase):
-    """ Estimates overall mass dimensions and Efficiency of PMSG-disc rotor generator. """
+    """
+    Estimates overall mass dimensions and Efficiency of PMSG-disc rotor generator.
+    
+    Parameters
+    ----------
+    b_arm : float, [m]
+        arm width
+    tau_p : float, [m]
+        Pole pitch self.tau_p
+    h_yr : float, [m]
+        rotor yoke height
+    h_ys : float, [m]
+        Yoke height
+    
+    Returns
+    -------
+    B_tmax : float, [T]
+        Peak Teeth flux density
+    B_smax : float, [T]
+        Peak Stator Yoke flux density B_ymax
+    B_symax : float, [T]
+        Peak Stator Yoke flux density B_ymax
+    E_p : float
+        Stator phase voltage
+    
+    """
     
     def setup(self):
         super(PMSG_Arms, self).setup()
-        self.add_input('b_arm', val=0.0, units='m', desc='arm width')
-        self.add_input('tau_p', val=0.0, units='m', desc='Pole pitch self.tau_p')
-        self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
-        self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
-        self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
-        self.add_output('B_smax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
-        self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
-        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
+        self.add_input('b_arm', val=0.0, units='m')
+        self.add_input('tau_p', val=0.0, units='m')
+        self.add_input('h_yr', val=0.0, units ='m')
+        self.add_input('h_ys', val=0.0, units ='m')
+
+        self.add_output('B_tmax', val=0.0, units='T')
+        self.add_output('B_smax', val=0.0, units='T')
+        self.add_output('B_symax', val=0.0, units='T')
+        self.add_output('E_p', val=0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
@@ -1568,19 +1937,47 @@ class PMSG_Arms(GeneratorBase):
 
 #----------------------------------------------------------------------------------------
 class DFIG(GeneratorBase):
-    """ Estimates overall mass, dimensions and Efficiency of DFIG generator. """
+    """
+    Estimates overall mass, dimensions and Efficiency of DFIG generator.
+    
+    Parameters
+    ----------
+    S_Nmax : float, [T]
+        Max rated Slip
+    B_symax : float, [T]
+        Peak Stator Yoke flux density B_ymax
+    
+    Returns
+    -------
+    N_r : float
+        Rotor turns
+    L_r : float
+        Rotor inductance
+    h_yr : float
+        rotor yoke height
+    h_ys : float
+        Stator Yoke height
+    tau_p : float
+        Pole pitch
+    Current_ratio : float
+        Rotor current ratio
+    E_p : float
+        Stator phase voltage
+    
+    """
     
     def setup(self):
         super(DFIG, self).setup()
-        self.add_input('S_Nmax',  val=0.0, units='T', desc='Max rated Slip ')
-        self.add_input('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
-        self.add_output('N_r',                val=0.0, desc='Rotor turns')
-        self.add_output('L_r',  val=0.0, desc='Rotor inductance')
-        self.add_output('h_yr', val=0.0, desc='rotor yoke height')
-        self.add_output('h_ys', val=0.0, desc='Stator Yoke height')
-        self.add_output('tau_p', val=0.0, desc='Pole pitch')
-        self.add_output('Current_ratio', val=0.0,         desc='Rotor current ratio')
-        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
+        self.add_input('S_Nmax', val=0.0, units='T')
+        self.add_input('B_symax', val=0.0, units='T')
+
+        self.add_output('N_r', val=0.0)
+        self.add_output('L_r', val=0.0)
+        self.add_output('h_yr', val=0.0)
+        self.add_output('h_ys', val=0.0)
+        self.add_output('tau_p', val=0.0)
+        self.add_output('Current_ratio', val=0.0)
+        self.add_output('E_p', val=0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
@@ -1930,21 +2327,53 @@ class DFIG(GeneratorBase):
 
 #----------------------------------------------------------------------------------------
 class SCIG(GeneratorBase):
-    """ Estimates overall mass dimensions and Efficiency of Squirrel cage Induction generator. """
+    """
+    Estimates overall mass dimensions and Efficiency of Squirrel cage Induction generator.
+    
+    Parameters
+    ----------
+    B_symax : float, [T]
+        Peak Stator Yoke flux density B_ymax
+    
+    Returns
+    -------
+    h_yr : float
+        rotor yoke height
+    h_ys : float
+        Stator Yoke height
+    tau_p : float
+        Pole pitch
+    D_ratio_UL : float
+        Dia ratio upper limit
+    D_ratio_LL : float
+        Dia ratio Lower limit
+    K_rad_UL : float
+        Aspect ratio upper limit
+    K_rad_LL : float
+        Aspect ratio Lower limit
+    rad_r : float
+        rotor radius
+    A_bar : float
+        Rotor Conductor cross-section mm^2
+    E_p : float
+        Stator phase voltage
+    
+    """
     
     def setup(self):
         super(SCIG, self).setup()
-        self.add_input('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
-        self.add_output('h_yr', val=0.0, desc='rotor yoke height')
-        self.add_output('h_ys', val=0.0, desc='Stator Yoke height')
-        self.add_output('tau_p', val=0.0, desc='Pole pitch')
-        self.add_output('D_ratio_UL', val=0.0, desc='Dia ratio upper limit')
-        self.add_output('D_ratio_LL', val=0.0, desc='Dia ratio Lower limit')
-        self.add_output('K_rad_UL',   val=0.0, desc='Aspect ratio upper limit')
-        self.add_output('K_rad_LL',   val=0.0, desc='Aspect ratio Lower limit')
-        self.add_output('rad_r',              val=0.0, desc='rotor radius')
-        self.add_output('A_bar',              val=0.0, desc='Rotor Conductor cross-section mm^2')
-        self.add_output('E_p', val=0.0, desc='Stator phase voltage')
+        self.add_input('B_symax', val=0.0, units='T')
+
+        self.add_output('h_yr', val=0.0)
+        self.add_output('h_ys', val=0.0)
+        self.add_output('tau_p', val=0.0)
+        self.add_output('D_ratio_UL', val=0.0)
+        self.add_output('D_ratio_LL', val=0.0)
+        self.add_output('K_rad_UL', val=0.0)
+        self.add_output('K_rad_LL', val=0.0)
+        self.add_output('rad_r', val=0.0)
+        self.add_output('A_bar', val=0.0)
+        self.add_output('E_p', val=0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
@@ -2318,30 +2747,78 @@ class SCIG(GeneratorBase):
 
 #----------------------------------------------------------------------------------------
 class EESG(GeneratorBase):
-    """ Estimates overall mass dimensions and Efficiency of Electrically Excited Synchronous generator. """
+    """
+    Estimates overall mass dimensions and Efficiency of Electrically Excited Synchronous generator.
+    
+    Parameters
+    ----------
+    I_f : float, [A]
+        Excitation current
+    N_f : float
+        field turns
+    b_arm : float, [m]
+        arm width
+    h_yr : float, [m]
+        rotor yoke height
+    h_ys : float, [m]
+        Yoke height
+    tau_p : float, [m]
+        Pole pitch self.tau_p
+    
+    Returns
+    -------
+    n_brushes : float
+        number of brushes
+    h_p : float, [m]
+        Pole height
+    b_p : float, [m]
+        Pole width
+    L_m : float, [H]
+        Stator synchronising inductance
+    R_r : float, [ohm]
+        Rotor resistance
+    B_tmax : float, [T]
+        Peak Teeth flux density
+    B_gfm : float, [T]
+        Average air gap flux density B_g
+    B_pc : float, [T]
+        Pole core flux density
+    B_symax : float, [T]
+        Peak Stator Yoke flux density B_ymax
+    E_s : float, [V]
+        Stator phase voltage
+    J_f : float, [A*m**-2]
+        rotor Current density
+    Power_ratio : float
+        Power_ratio
+    Load_mmf_ratio : float
+        mmf_ratio
+    
+    """
     
     def setup(self):
         super(EESG, self).setup()
-        self.add_input('I_f',            val=0.0, units='A',    desc='Excitation current')
-        self.add_input('N_f',            val=0.0, desc='field turns')
-        self.add_input('b_arm', val=0.0, units='m', desc='arm width')
-        self.add_input('h_yr', val=0.0, units ='m', desc='rotor yoke height')
-        self.add_input('h_ys', val=0.0, units ='m', desc='Yoke height')
-        self.add_input('tau_p', val=0.0, units='m', desc='Pole pitch self.tau_p')
+        self.add_input('I_f', val=0.0, units='A')
+        self.add_input('N_f', val=0.0)
+        self.add_input('b_arm', val=0.0, units='m')
+        self.add_input('h_yr', val=0.0, units ='m')
+        self.add_input('h_ys', val=0.0, units ='m')
+        self.add_input('tau_p', val=0.0, units='m')
 
-        self.add_output('n_brushes', val=0.0,                desc='number of brushes')
-        self.add_output('h_p',       val=0.0, units ='m',    desc='Pole height')
-        self.add_output('b_p',       val=0.0, units ='m',    desc='Pole width')
-        self.add_output('L_m',            val=0.0, units='H',       desc='Stator synchronising inductance')
-        self.add_output('R_r',            val=0.0, units='ohm',     desc='Rotor resistance')
-        self.add_output('B_tmax', val=0.0, units='T', desc='Peak Teeth flux density')
-        self.add_output('B_gfm',   val=0.0, units='T', desc='Average air gap flux density B_g')
-        self.add_output('B_pc',    val=0.0, units='T', desc='Pole core flux density')
-        self.add_output('B_symax', val=0.0, units='T', desc='Peak Stator Yoke flux density B_ymax')
-        self.add_output('E_s',            val=0.0, units='V',       desc='Stator phase voltage')
-        self.add_output('J_f',            val=0.0, units='A*m**-2', desc='rotor Current density')
-        self.add_output('Power_ratio',       val=0.0,             desc='Power_ratio')
-        self.add_output('Load_mmf_ratio', val=0.0,                  desc='mmf_ratio')
+        self.add_output('n_brushes', val=0.0)
+        self.add_output('h_p', val=0.0, units ='m')
+        self.add_output('b_p', val=0.0, units ='m')
+        self.add_output('L_m', val=0.0, units='H')
+        self.add_output('R_r', val=0.0, units='ohm')
+        self.add_output('B_tmax', val=0.0, units='T')
+        self.add_output('B_gfm', val=0.0, units='T')
+        self.add_output('B_pc', val=0.0, units='T')
+        self.add_output('B_symax', val=0.0, units='T')
+        self.add_output('E_s', val=0.0, units='V')
+        self.add_output('J_f', val=0.0, units='A*m**-2')
+        self.add_output('Power_ratio', val=0.0)
+        self.add_output('Load_mmf_ratio', val=0.0)
+
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs

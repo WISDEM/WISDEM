@@ -257,7 +257,7 @@ for line in orig_content:
                     
                 full_file.append(f'    {new_line}')
                 i_docs += 1
-            elif 'Component)' in new_line  or 'GeneratorBase):' in new_line:
+            elif 'Component)' in new_line  or 'GeneratorBase)' in new_line:
                 i_docs += 1
                 adds_done = True
                 break
