@@ -137,7 +137,7 @@ class DirectDriveSE(om.Group):
         
 if __name__ == '__main__':
     prob = om.Problem()
-    prob.model = DrivetrainSE(topLevelFlag=True, n_points=10, n_dlcs=1, model_generator=True)
+    prob.model = DirectDriveSE(topLevelFlag=True, n_points=10, n_dlcs=1, model_generator=True)
     prob.setup()
 
     prob['upwind'] = True
