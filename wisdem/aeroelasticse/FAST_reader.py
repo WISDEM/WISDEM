@@ -1514,6 +1514,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['HydroDyn']['PtfmVol0']      = float_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['PtfmCOBxt']     = float_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['PtfmCOByt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['ExctnMod']      = int_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnMod']       = int_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnTMax']      = float_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnDT']        = float_read(f.readline().split()[0])

@@ -715,7 +715,7 @@ class FASTLoadCases(ExplicitComponent):
         # Turbine Data
         iec.Turbine_Class    = discrete_inputs['turbine_class']
         iec.Turbulence_Class = discrete_inputs['turbulence_class']
-        iec.D                = np.min([fst_vt['InflowWind']['RefHt']*1.9 , fst_vt['ElastoDyn']['TipRad']*2.5])
+        iec.D                = np.min([fst_vt['InflowWind']['RefHt']*1.8 , fst_vt['ElastoDyn']['TipRad']*2.5])
         iec.z_hub            = fst_vt['InflowWind']['RefHt']
 
         # Turbine initial conditions
