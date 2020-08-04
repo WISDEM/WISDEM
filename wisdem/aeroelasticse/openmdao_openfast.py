@@ -619,7 +619,7 @@ class FASTLoadCases(ExplicitComponent):
                 
         # AeroDyn spanwise output positions
         r = r/r[-1]
-        r_out_target = [0.1, 0.20, 0.30, 0.45, 0.6, 0.75, 0.85, 0.925, 1.0]
+        r_out_target = [0.1, 0.20, 0.30, 0.45, 0.6, 0.75, 0.85, 0.9125, 0.975]
         idx_out      = [np.argmin(abs(r-ri)) for ri in r_out_target]
         self.R_out   = [fst_vt['AeroDynBlade']['BlSpn'][i] for i in idx_out]
         
@@ -715,7 +715,7 @@ class FASTLoadCases(ExplicitComponent):
         # Turbine Data
         iec.Turbine_Class    = discrete_inputs['turbine_class']
         iec.Turbulence_Class = discrete_inputs['turbulence_class']
-        iec.D                = np.min([fst_vt['InflowWind']['RefHt']*1.9 , fst_vt['ElastoDyn']['TipRad']*2.5])
+        iec.D                = fst_vt['ElastoDyn']['TipRad']*2. #np.min([fst_vt['InflowWind']['RefHt']*1.9 , fst_vt['ElastoDyn']['TipRad']*2.5])
         iec.z_hub            = fst_vt['InflowWind']['RefHt']
 
         # Turbine initial conditions
@@ -1131,18 +1131,7 @@ class FASTLoadCases(ExplicitComponent):
                 idx_s = np.argmax(datai["Time"] >= self.T0)
                 idx_e = np.argmax(datai["Time"] >= self.TMax) + 1
 
-                print(dlci, i)
-                print(self.T0, self.TMax)
-                print(min(datai["Time"]), max(datai["Time"]))
-                print(len(datai["Time"]))
-                print(idx_s, idx_e)
-                print('---')
-                sys.stdout.flush()
-
                 for var in var_rainflow:
-                    print(var)
-                    print(np.mean(datai[var][idx_s:idx_e]), np.std(datai[var][idx_s:idx_e]))
-                    sys.stdout.flush()
                     ranges, means = fatpack.find_rainflow_ranges(datai[var][idx_s:idx_e], return_means=True)
 
                     rainflow[U][Seed][var] = {}
@@ -1158,25 +1147,22 @@ class FASTLoadCases(ExplicitComponent):
         Seeds   = list(rainflow[U[0]].keys())
         chans   = list(rainflow[U[0]][Seeds[0]].keys())
         r_gage  = np.r_[0., self.R_out]
+        r_gage /= r_gage[-1]
         simtime = self.simtime
         n_seeds = float(len(Seeds))
         n_gage  = len(r_gage)
 
         r       = (inputs['r']-inputs['r'][0])/(inputs['r'][-1]-inputs['r'][0])
-        m_default = 10. # assume default m=10  (8 or 12 also reasonable)
+        m_default = 8. # assume default m=10  (8 or 12 also reasonable)
         m       = [mi if mi > 0. else m_default for mi in inputs['m']]  # Assumption: if no S-N slope is given for a material, use default value TODO: input['m'] is not connected, only using the default currently
-
-        print(inputs['Xt'])
-        print(inputs['Xc'])
-        print(inputs['E'])
 
         eps_uts = inputs['Xt'][:,0]/inputs['E'][:,0]
         eps_ucs = inputs['Xc'][:,0]/inputs['E'][:,0]
-        gamma_m = inputs['gamma_m']
-        gamma_f = inputs['gamma_f']
+        gamma_m = 1.#inputs['gamma_m']
+        gamma_f = 1.#inputs['gamma_f']
         yrs     = 20.  # TODO
         t_life  = 60.*60.*24*365.24*yrs
-        U_bar   = 10.  # TODO
+        U_bar   = inputs['V_mean_iec']
 
         # pdf of wind speeds
         binwidth = np.diff(U)
@@ -1216,11 +1202,31 @@ class FASTLoadCases(ExplicitComponent):
         # Get blade properties at gage locations
         y_tc       = remap2grid(r, inputs['y_tc'], r_gage)
         x_tc       = remap2grid(r, inputs['x_tc'], r_gage)
-        chord      = remap2grid(r, inputs['x_tc'], r_gage)
+        chord      = remap2grid(r, inputs['chord'], r_gage)
         rthick     = remap2grid(r, inputs['rthick'], r_gage)
         pitch_axis = remap2grid(r, inputs['pitch_axis'], r_gage)
         EIyy       = remap2grid(r, inputs['beam:EIyy'], r_gage)
         EIxx       = remap2grid(r, inputs['beam:EIxx'], r_gage)
+
+        print(r)
+        print(r_gage)
+        print(y_tc)
+        print(x_tc)
+        print(chord)
+        print(rthick)
+        print(pitch_axis)
+        print(EIyy)
+        print(EIxx)
+        print(simtime)
+        print(pdf)
+        print(m)
+        print(eps_uts)
+        print(eps_ucs)
+        print(inputs['gamma_m'])
+        print(inputs['gamma_f'])
+        print(inputs['Xt'][:,0])
+        print(inputs['Xc'][:,0])
+        print(inputs['E'][:,0])
 
         te_ss_mats = np.floor(remap2grid(r, inputs['te_ss_mats'], r_gage, axis=0)) # materials is section
         te_ps_mats = np.floor(remap2grid(r, inputs['te_ps_mats'], r_gage, axis=0))
@@ -1228,7 +1234,10 @@ class FASTLoadCases(ExplicitComponent):
         sc_ps_mats = np.floor(remap2grid(r, inputs['sc_ps_mats'], r_gage, axis=0))
 
         c_TE       = chord*(1.-pitch_axis) + y_tc
-        c_SC       = chord*rthick + x_tc #this is overly simplistic, using maximum thickness point, should use the actual profiles
+        c_SC       = chord*rthick/2. + x_tc #this is overly simplistic, using maximum thickness point, should use the actual profiles
+        print(c_TE)
+        print(c_SC)
+        sys.stdout.flush()
 
         C_miners_SC_SS_gage = np.zeros((n_gage, self.n_mat, 2))
         C_miners_SC_PS_gage = np.zeros((n_gage, self.n_mat, 2))
@@ -1251,11 +1260,11 @@ class FASTLoadCases(ExplicitComponent):
                 continue
             # Determine if edgewise of flapwise moment
             if 'M' in var and 'x' in var:
-                # Edgewise
-                axis = 0
-            elif 'M' in var and 'y' in var:
                 # Flapwise
                 axis = 1
+            elif 'M' in var and 'y' in var:
+                # Edgewise
+                axis = 0
             else:
                 # not an edgewise / flapwise moment, skip
                 print('Fatigue Model: Skipping channel: "%s", not an edgewise/flapwise moment' % var)
@@ -1314,23 +1323,24 @@ class FASTLoadCases(ExplicitComponent):
                     chord_i      = chord[i_gage]
                     c_i          = c[i_gage]
                     if axis == 0:
-                        EI_i     = EIyy[i_gage]
-                    else:
                         EI_i     = EIxx[i_gage]
+                    else:
+                        EI_i     = EIyy[i_gage]
 
                     for i_u, u in enumerate(U):
                         for i_s, seed in enumerate(Seeds):
-                            M_mean = np.array(rainflow[u][seed][var]['rf_mean']) #* 1.e3
-                            M_amp  = np.array(rainflow[u][seed][var]['rf_amp']) #* 1.e3
+                            M_mean = np.array(rainflow[u][seed][var]['rf_mean']) * 1.e3
+                            M_amp  = np.array(rainflow[u][seed][var]['rf_amp']) * 1.e3
 
                             for M_mean_i, M_amp_i in zip(M_mean, M_amp):
                                 n_cycles = 1.
                                 eps_mean = M_mean_i*c_i/EI_i 
                                 eps_amp  = M_amp_i*c_i/EI_i
 
-                                Nf = ((eps_uts[i_mat] + np.abs(eps_ucs[i_mat]) - np.abs(2.*eps_mean*gamma_m*gamma_f - eps_uts[i_mat] + np.abs(eps_ucs[i_mat]))) / (2.*eps_amp*gamma_m*gamma_f))**m[i_mat]
-                                n  = n_cycles * t_life * pdf[i_u] / (simtime * n_seeds)
-                                C_miners[i_gage, i_mat, axis]  += n/Nf
+                                if eps_amp != 0.:
+                                    Nf = ((eps_uts[i_mat] + np.abs(eps_ucs[i_mat]) - np.abs(2.*eps_mean*gamma_m*gamma_f - eps_uts[i_mat] + np.abs(eps_ucs[i_mat]))) / (2.*eps_amp*gamma_m*gamma_f))**m[i_mat]
+                                    n  = n_cycles * t_life * pdf[i_u] / (simtime * n_seeds)
+                                    C_miners[i_gage, i_mat, axis]  += n/Nf
 
             # Assign outputs
             if comp_i[0] == 'SC' and comp_i[1] == 'SS':
