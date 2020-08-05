@@ -33,7 +33,7 @@ class WindTurbineOntologyPython(object):
         self.openmdao_vectors()
         
         # Openfast
-        if self.analysis_options['openfast']['analysis_settings']['Analysis_Level'] > 0:
+        if self.analysis_options['Analysis_Flags']['OpenFAST'] == True:
             # Load Input OpenFAST model variable values
             fast                = InputReader_OpenFAST(FAST_ver=self.analysis_options['openfast']['file_management']['FAST_ver'])
             fast.FAST_InputFile = self.analysis_options['openfast']['file_management']['FAST_InputFile']

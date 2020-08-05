@@ -5,7 +5,8 @@ Analysis_Flags:
     # Control which WISDEM modules are executed.
     # (GOAL) If inputs are missing for a module, a warning will be written to the screen and the module disabled.
     OpenFAST: False   # Flag to run aeroelasticse, the wrapper of OpenFAST
-    TowerSE:  False
+    TowerSE:  True
+    ServoSE:  True
 
 yaml:
     validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
@@ -19,11 +20,10 @@ rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
     n_xy: 200         # Number of angles of coordinate points used to discretize each airfoil
     n_span: 30        # Number of spanwise stations used to define the blade properties
-    FatigueMode: 0
 
 openfast:
     analysis_settings:
-        Analysis_Level:     0           # Flag to set the call to OpenFAST. 0 - no call, 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
+        Analysis_Level:     1           # Flag to set the call to OpenFAST. 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
         update_hub_nacelle: True
         update_tower:       True
         generate_af_coords: True
@@ -70,7 +70,6 @@ openfast:
             Seeds: [11, 12] # Used only when turbulent_power_curve=True
 
 tower:             # Options of TowerSE module
-  run_towerse: True
   nLC: 1           # Number of design load cases in TowerSE
   wind: PowerWind  # Wind used in TowerSE
   gamma_f: 1.35    # Safety factor for fatigue loads in TowerSE
@@ -92,7 +91,6 @@ tower:             # Options of TowerSE module
     add_gravity: True
 
 servose:
-    run_servose: True
     n_pc: 20                        # Number of wind speeds to compute the power curve
     n_pc_spline: 200                # Number of wind speeds to spline the power curve 
     n_pitch_perf_surfaces: 20       # Number of pitch angles to determine the Cp-Ct-Cq-surfaces

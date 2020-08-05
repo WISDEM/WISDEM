@@ -90,7 +90,7 @@ class InputWriter_Common(object):
         # make sure update dictionary is not empty
         if self.fst_update:
             # if update dictionary uses list keys, convert to nested dictionaries
-            if type(list(self.fst_update.keys())[0]) in [list, tuple]:
+            if type(list(self.fst_update.keys())) in [list, tuple]:
                 fst_update = copy.copy(self.fst_update)
                 self.fst_update = {}
                 for var_list in fst_update.keys():
@@ -101,6 +101,8 @@ class InputWriter_Common(object):
                         branch.append(var)
 
                     get_dict(self.fst_update, branch)[var_list[-1]] = fst_update[var_list]
+            else:
+                print('WARNING: OpenFAST user settings not correctly applied. Please check the modeling_options.yaml')
 
             # set fast variables to update values
             loop_dict(self.fst_update, [])

@@ -187,10 +187,12 @@ class FASTLoadCases(ExplicitComponent):
     def setup(self):
         blade_init_options   = self.options['analysis_options']['blade']
         servose_init_options = self.options['analysis_options']['servose']
+        openfast_init_options = self.options['analysis_options']['openfast']
         mat_init_options     = self.options['analysis_options']['materials']
 
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_pc          = n_pc      = servose_init_options['n_pc']
+        n_OF     = len(openfast_init_options['dlc_settings']['Power_Curve']['U'])
         self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
         self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
         self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
@@ -369,11 +371,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
 
-        self.add_output('V_out',       val=np.zeros(n_pc), units='m/s',  desc='wind vector')
-        self.add_output('P_out',       val=np.zeros(n_pc), units='W',    desc='rotor electrical power')
-        self.add_output('Cp_out',      val=np.zeros(n_pc),               desc='rotor aero power coefficient')
-        self.add_output('Omega_out',   val=np.zeros(n_pc), units='rpm',  desc='rotation speeds to run')
-        self.add_output('pitch_out',   val=np.zeros(n_pc), units='deg',  desc='pitch angles to run')
+        self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
+        self.add_output('P_out',       val=np.zeros(n_OF), units='W',    desc='rotor electrical power')
+        self.add_output('Cp_out',      val=np.zeros(n_OF),               desc='rotor aero power coefficient')
+        self.add_output('Omega_out',   val=np.zeros(n_OF), units='rpm',  desc='rotation speeds to run')
+        self.add_output('pitch_out',   val=np.zeros(n_OF), units='deg',  desc='pitch angles to run')
 
         self.add_output('rated_V',     val=0.0,            units='m/s',  desc='rated wind speed')
         self.add_output('rated_Omega', val=0.0,            units='rpm',  desc='rotor rotation speed at rated')
@@ -469,7 +471,7 @@ class FASTLoadCases(ExplicitComponent):
 
         
 
-        if self.options['analysis_options']['Analysis_Flags']['TowerSE']:
+        if self.options['analysis_options']['openfast']['analysis_settings']['update_tower']:
             # TODO: there are issues here
             #   - running the 15MW caused 120 tower points, some where nonunique heights
             #   - hub height is wrong, not adding the tower top to hub correctly
@@ -619,9 +621,12 @@ class FASTLoadCases(ExplicitComponent):
                 
         # AeroDyn spanwise output positions
         r = r/r[-1]
-        r_out_target = [0.1, 0.20, 0.30, 0.45, 0.6, 0.75, 0.85, 0.9125, 0.975]
+        r_out_target = [0.1, 0.20, 0.30, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
         idx_out      = [np.argmin(abs(r-ri)) for ri in r_out_target]
         self.R_out   = [fst_vt['AeroDynBlade']['BlSpn'][i] for i in idx_out]
+
+        if len(self.R_out) != len(np.unique(self.R_out)):
+            exit('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
         
         fst_vt['AeroDyn15']['BlOutNd']  = [str(idx+1) for idx in idx_out]
         fst_vt['AeroDyn15']['NBlOuts']  = len(idx_out)
@@ -999,19 +1004,30 @@ class FASTLoadCases(ExplicitComponent):
                 U = [float(case[('InflowWind', 'HWindSpeed')]) for i, case in enumerate(case_list) if i in idx_pwrcrv]
 
             # calc AEP
-            pp               = Analysis.Power_Production()
-            pp.windspeeds    = U
-            pp.turbine_class = discrete_inputs['turbine_class']
-            pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
-            AEP, perf_data   = pp.AEP(stats_pwrcrv, U, U_pwr_curve=inputs['U_init'], pwr_curve_vars=pwr_curve_vars)
+            
+            if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
+                pp               = Analysis.Power_Production()
+                pp.windspeeds    = U
+                pp.turbine_class = discrete_inputs['turbine_class']
+                pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
+                AEP, perf_data   = pp.AEP(stats_pwrcrv, U, pwr_curve_vars=pwr_curve_vars)
+                outputs['P_out']       = perf_data['GenPwr']['mean']
+                outputs['Cp_out']      = perf_data['RtAeroCp']['mean']
+                outputs['Omega_out']   = perf_data['RotSpeed']['mean']
+                outputs['pitch_out']   = perf_data['BldPitch1']['mean']
+                outputs['AEP']         = AEP
+            else:
+                outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
+                outputs['AEP']         = 0.0
+                outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
+                outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
+                if self.fst_vt['Fst']['CompServo'] == 1:
+                    outputs['P_out']       = stats_pwrcrv['GenPwr']['mean']
+                print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
+
             
 
-            outputs['V_out']       = inputs['U_init']
-            outputs['P_out']       = perf_data['GenPwr']
-            outputs['Cp_out']      = perf_data['RtAeroCp']
-            outputs['Omega_out']   = perf_data['RotSpeed']
-            outputs['pitch_out']   = perf_data['BldPitch1']
-            outputs['AEP']         = AEP
+            outputs['V_out']       = np.unique(U)
 
             ## TODO: solve for V rated with the power curve data
             ## Maybe fit a least squares linear line above input rated wind speed, least squares quadratic to below rate, find intersection
@@ -1208,26 +1224,6 @@ class FASTLoadCases(ExplicitComponent):
         EIyy       = remap2grid(r, inputs['beam:EIyy'], r_gage)
         EIxx       = remap2grid(r, inputs['beam:EIxx'], r_gage)
 
-        print(r)
-        print(r_gage)
-        print(y_tc)
-        print(x_tc)
-        print(chord)
-        print(rthick)
-        print(pitch_axis)
-        print(EIyy)
-        print(EIxx)
-        print(simtime)
-        print(pdf)
-        print(m)
-        print(eps_uts)
-        print(eps_ucs)
-        print(inputs['gamma_m'])
-        print(inputs['gamma_f'])
-        print(inputs['Xt'][:,0])
-        print(inputs['Xc'][:,0])
-        print(inputs['E'][:,0])
-
         te_ss_mats = np.floor(remap2grid(r, inputs['te_ss_mats'], r_gage, axis=0)) # materials is section
         te_ps_mats = np.floor(remap2grid(r, inputs['te_ps_mats'], r_gage, axis=0))
         sc_ss_mats = np.floor(remap2grid(r, inputs['sc_ss_mats'], r_gage, axis=0))
@@ -1235,8 +1231,6 @@ class FASTLoadCases(ExplicitComponent):
 
         c_TE       = chord*(1.-pitch_axis) + y_tc
         c_SC       = chord*rthick/2. + x_tc #this is overly simplistic, using maximum thickness point, should use the actual profiles
-        print(c_TE)
-        print(c_SC)
         sys.stdout.flush()
 
         C_miners_SC_SS_gage = np.zeros((n_gage, self.n_mat, 2))
