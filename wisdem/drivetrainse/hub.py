@@ -458,7 +458,7 @@ class Hub_System(om.Group):
         ivc.add_output('stress_concentration',      val = 0.0)
         ivc.add_discrete_output('n_front_brackets', val = 0)
         ivc.add_discrete_output('n_rear_brackets',  val = 0)
-        ivc.add_discrete_output('n_blades',         val = 0)
+        #ivc.add_discrete_output('n_blades',         val = 0)
         ivc.add_output('clearance_hub_spinner',     val = 0.0, units = 'm')
         ivc.add_output('spin_hole_incr',            val = 0.0)
         

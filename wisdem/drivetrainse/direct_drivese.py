@@ -85,16 +85,16 @@ class DirectDriveSE(om.Group):
         # select components
         self.add_subsystem('hub', Hub_System(), promotes=['*'])
         self.add_subsystem('layout', Layout(n_points=n_points), promotes=['*'])
-        if self.options['model_generator']:
-            self.add_subsystem('generator', Generator(topLevelFlag=False, design='pmsg_outer'), promotes=['generator_mass','generator_I','E','G','v','machine_rating'])
-        else:
-            self.add_subsystem('gensimp', dc.GeneratorSimple(), promotes=['*'])
         self.add_subsystem('bear1', dc.MainBearing())
         self.add_subsystem('bear2', dc.MainBearing())
         self.add_subsystem('gear', Gearbox(), promotes=['*']) 
         self.add_subsystem('hss', dc.HighSpeedSide(), promotes=['*']) # TODO- Include in generatorSE?
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
+        if self.options['model_generator']:
+            self.add_subsystem('generator', Generator(topLevelFlag=False, design='pmsg_outer'), promotes=['generator_mass','generator_I','E','G','v','machine_rating'])
+        else:
+            self.add_subsystem('gensimp', dc.GeneratorSimple(), promotes=['*'])
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
