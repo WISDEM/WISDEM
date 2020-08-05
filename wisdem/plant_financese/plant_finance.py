@@ -84,14 +84,13 @@ class PlantFinance(om.ExplicitComponent):
             print('WARNING: The Opex costs of the turbine are not initialized correctly and they are currently equal to 0 USD. Check the connections to Plant_FinanceSE')
         
         if inputs['park_aep'] == 0:
-            if turb_aep != 0:
-                park_aep     =  n_turbine * turb_aep * (1. - wlf)
-                dpark_dtaep  =  n_turbine            * (1. - wlf)
-                dpark_dnturb =              turb_aep * (1. - wlf)
-                dpark_dwlf   = -n_turbine * turb_aep
-                dpark_dpaep  = 0.0
-            else:
-                exit('ERROR: AEP is not connected properly. Both turbine_aep and park_aep are currently equal to 0 Wh. Check the connections to Plant_FinanceSE')
+            if turb_aep == 0:
+                print('WARNING: AEP is not computed properly or it is not connected to PlantFinanceSE. Both turbine_aep and park_aep are currently equal to 0 Wh. Check the connections to Plant_FinanceSE')
+            park_aep     =  n_turbine * turb_aep * (1. - wlf)
+            dpark_dtaep  =  n_turbine            * (1. - wlf)
+            dpark_dnturb =              turb_aep * (1. - wlf)
+            dpark_dwlf   = -n_turbine * turb_aep
+            dpark_dpaep  = 0.0
         else:
             park_aep    = inputs['park_aep']
             dpark_dpaep = 1.0

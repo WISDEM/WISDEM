@@ -33,7 +33,7 @@ class WT_RNTA(Group):
         self.add_subsystem('wt_class',  TurbineClass())
         self.add_subsystem('elastic',   RotorElasticity(analysis_options = analysis_options, opt_options = opt_options))
         self.add_subsystem('xf',        RunXFOIL(analysis_options = analysis_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             self.add_subsystem('sse',       ServoSE(analysis_options = analysis_options)) # Aero analysis
         self.add_subsystem('stall_check', NoStallConstraint(analysis_options = analysis_options))
     
@@ -49,8 +49,8 @@ class WT_RNTA(Group):
         self.add_subsystem('drivese',   DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
-        #if analysis_options['Analysis_Flags']['TowerSE']:
-        self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
+        if analysis_options['Analysis_Flags']['TowerSE']:
+            self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
 
@@ -91,7 +91,7 @@ class WT_RNTA(Group):
         self.connect('blade.pa.chord_param',           ['xf.chord', 'elastic.chord'])
         if not analysis_options['Analysis_Flags']['OpenFAST']:
             self.connect('blade.pa.chord_param',           ['rlds.chord'])
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('blade.pa.twist_param',           'sse.theta')
             self.connect('blade.pa.chord_param',           'sse.chord')
 
@@ -140,7 +140,7 @@ class WT_RNTA(Group):
 
         # Connection from ra to rs for the rated conditions
         # self.connect('sse.powercurve.rated_V',        'rlds.aero_rated.V_load')
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_V',        'sse.gust.V_hub')
             if not analysis_options['Analysis_Flags']['OpenFAST']:
                 self.connect('sse.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
@@ -167,7 +167,7 @@ class WT_RNTA(Group):
         self.connect('blade.interp_airfoils.cm_interp',       'xf.cm_interp')
 
         # Connections to ServoSE
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('control.V_in' ,                  'sse.v_min')
             self.connect('control.V_out' ,                 'sse.v_max')
             self.connect('control.rated_power' ,           'sse.rated_power')
@@ -211,12 +211,12 @@ class WT_RNTA(Group):
         self.connect('xf.cl_interp_flaps',             'stall_check.airfoils_cl')
         self.connect('xf.cd_interp_flaps',             'stall_check.airfoils_cd')
         self.connect('xf.cm_interp_flaps',             'stall_check.airfoils_cm')
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.aoa_regII',   'stall_check.aoa_along_span')
         else:
             self.connect('ccblade.alpha',  'stall_check.aoa_along_span')
 
-        if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_V',         ['sse_tune.tune_rosco.v_rated'])
             self.connect('sse.gust.V_gust',                ['freq_rotor.aero_gust.V_load', 'freq_rotor.aero_hub_loads.V_load'])
             self.connect('sse.powercurve.rated_Omega',     ['freq_rotor.Omega_load', 'freq_rotor.tot_loads_gust.aeroloads_Omega', 'freq_rotor.constr.rated_Omega', 'sse_tune.tune_rosco.rated_rotor_speed'])
@@ -254,7 +254,6 @@ class WT_RNTA(Group):
             self.connect('elastic.precomp.yl_strain_te',    'freq_rotor.yl_strain_te')
             self.connect('blade.outer_shape_bem.s',         'freq_rotor.constr.s')
 
-            #if analysis_options['Analysis_Flags']['TowerSE']:
             self.connect('drivese.top_F',                   'freq_tower.pre.rna_F')
             self.connect('drivese.top_M',                   'freq_tower.pre.rna_M')
             self.connect('drivese.rna_I_TT',               ['freq_tower.rna_I','freq_tower.pre.mI'])
@@ -349,7 +348,7 @@ class WT_RNTA(Group):
             if analysis_options['servose']['Flp_Mode'] > 0:
                 self.connect('control.Flp_omega',           'sse_tune.tune_rosco.Flp_omega')
                 self.connect('control.Flp_zeta',            'sse_tune.tune_rosco.Flp_zeta')
-        elif analysis_options['Analysis_Flags']['OpenFAST']==True and analysis_options['servose']['run_servose']==False:
+        elif analysis_options['Analysis_Flags']['OpenFAST']==True and analysis_options['Analysis_Flags']['ServoSE']==False:
             exit("ERROR: WISDEM does not support openfast without the tuning of ROSCO")
         else:
             pass
@@ -436,7 +435,7 @@ class WT_RNTA(Group):
         self.connect('nacelle.overhang',           'drivese.overhang') 
         self.connect('nacelle.uptilt',             'drivese.shaft_angle')
         self.connect('configuration.n_blades',     'drivese.number_of_blades') 
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_Q',         'drivese.rotor_torque')
             self.connect('sse.powercurve.rated_Omega',     'drivese.rotor_rpm')
         if analysis_options['Analysis_Flags']['OpenFAST']:
@@ -463,50 +462,50 @@ class WT_RNTA(Group):
         self.connect('nacelle.generator_efficiency','drivese.generator_efficiency')
         self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
 
-        #if analysis_options['Analysis_Flags']['TowerSE']:
         # Connections to TowerSE
-        self.connect('drivese.top_F',                 'towerse.pre.rna_F')
-        self.connect('drivese.top_M',                 'towerse.pre.rna_M')
-        self.connect('drivese.rna_I_TT',             ['towerse.rna_I','towerse.pre.mI'])
-        self.connect('drivese.rna_cm',               ['towerse.rna_cg','towerse.pre.mrho'])
-        self.connect('drivese.rna_mass',             ['towerse.rna_mass','towerse.pre.mass'])
-        if analysis_options['servose']['run_servose']:
-            self.connect('sse.gust.V_gust',               'towerse.wind.Uref')
-        self.connect('assembly.hub_height',           'towerse.wind.zref')  # TODO- environment
-        self.connect('foundation.height',             'towerse.wind.z0') # TODO- environment
-        self.connect('env.rho_air',                   'towerse.rho_air')
-        self.connect('env.mu_air',                    'towerse.mu_air')                    
-        self.connect('env.shear_exp',                 'towerse.shearExp')                    
-        self.connect('assembly.hub_height',           'towerse.hub_height')
-        self.connect('foundation.height',             'towerse.foundation_height')
-        self.connect('tower.diameter',                'towerse.tower_outer_diameter_in')
-        self.connect('tower.height',                  'towerse.tower_height')
-        self.connect('tower.s',                       'towerse.tower_s')
-        self.connect('tower.layer_thickness',         'towerse.tower_layer_thickness')
-        self.connect('tower.outfitting_factor',       'towerse.tower_outfitting_factor')
-        self.connect('tower.layer_mat',               'towerse.tower_layer_materials')
-        self.connect('materials.name',                'towerse.material_names')
-        self.connect('materials.E',                   'towerse.E_mat')
-        self.connect('materials.G',                   'towerse.G_mat')
-        self.connect('materials.rho',                 'towerse.rho_mat')
-        self.connect('materials.sigma_y',             'towerse.sigma_y_mat')
-        self.connect('materials.unit_cost',           'towerse.unit_cost_mat')
-        if analysis_options['tower']['monopile']:
-            self.connect('env.rho_water',                    'towerse.rho_water')
-            self.connect('env.mu_water',                     'towerse.mu_water')                    
-            self.connect('env.G_soil',                       'towerse.G_soil')                    
-            self.connect('env.nu_soil',                      'towerse.nu_soil')                    
-            self.connect('monopile.diameter',                'towerse.monopile_outer_diameter_in')
-            self.connect('monopile.height',                  'towerse.monopile_height')
-            self.connect('monopile.s',                       'towerse.monopile_s')
-            self.connect('monopile.layer_thickness',         'towerse.monopile_layer_thickness')
-            self.connect('monopile.layer_mat',               'towerse.monopile_layer_materials')
-            self.connect('monopile.outfitting_factor',       'towerse.monopile_outfitting_factor')
-            self.connect('monopile.transition_piece_height', 'towerse.transition_piece_height')
-            self.connect('monopile.transition_piece_mass',   'towerse.transition_piece_maxx')
-            self.connect('monopile.gravity_foundation_mass', 'towerse.gravity_foundation_mass')
-            self.connect('monopile.suctionpile_depth',       'towerse.suctionpile_depth')
-            self.connect('monopile.suctionpile_depth_diam_ratio', 'towerse.suctionpile_depth_diam_ratio')
+        if analysis_options['Analysis_Flags']['TowerSE']:
+            self.connect('drivese.top_F',                 'towerse.pre.rna_F')
+            self.connect('drivese.top_M',                 'towerse.pre.rna_M')
+            self.connect('drivese.rna_I_TT',             ['towerse.rna_I','towerse.pre.mI'])
+            self.connect('drivese.rna_cm',               ['towerse.rna_cg','towerse.pre.mrho'])
+            self.connect('drivese.rna_mass',             ['towerse.rna_mass','towerse.pre.mass'])
+            if analysis_options['Analysis_Flags']['ServoSE']:
+                self.connect('sse.gust.V_gust',               'towerse.wind.Uref')
+            self.connect('assembly.hub_height',           'towerse.wind.zref')  # TODO- environment
+            self.connect('foundation.height',             'towerse.wind.z0') # TODO- environment
+            self.connect('env.rho_air',                   'towerse.rho_air')
+            self.connect('env.mu_air',                    'towerse.mu_air')                    
+            self.connect('env.shear_exp',                 'towerse.shearExp')                    
+            self.connect('assembly.hub_height',           'towerse.hub_height')
+            self.connect('foundation.height',             'towerse.foundation_height')
+            self.connect('tower.diameter',                'towerse.tower_outer_diameter_in')
+            self.connect('tower.height',                  'towerse.tower_height')
+            self.connect('tower.s',                       'towerse.tower_s')
+            self.connect('tower.layer_thickness',         'towerse.tower_layer_thickness')
+            self.connect('tower.outfitting_factor',       'towerse.tower_outfitting_factor')
+            self.connect('tower.layer_mat',               'towerse.tower_layer_materials')
+            self.connect('materials.name',                'towerse.material_names')
+            self.connect('materials.E',                   'towerse.E_mat')
+            self.connect('materials.G',                   'towerse.G_mat')
+            self.connect('materials.rho',                 'towerse.rho_mat')
+            self.connect('materials.sigma_y',             'towerse.sigma_y_mat')
+            self.connect('materials.unit_cost',           'towerse.unit_cost_mat')
+            if analysis_options['tower']['monopile']:
+                self.connect('env.rho_water',                    'towerse.rho_water')
+                self.connect('env.mu_water',                     'towerse.mu_water')                    
+                self.connect('env.G_soil',                       'towerse.G_soil')                    
+                self.connect('env.nu_soil',                      'towerse.nu_soil')                    
+                self.connect('monopile.diameter',                'towerse.monopile_outer_diameter_in')
+                self.connect('monopile.height',                  'towerse.monopile_height')
+                self.connect('monopile.s',                       'towerse.monopile_s')
+                self.connect('monopile.layer_thickness',         'towerse.monopile_layer_thickness')
+                self.connect('monopile.layer_mat',               'towerse.monopile_layer_materials')
+                self.connect('monopile.outfitting_factor',       'towerse.monopile_outfitting_factor')
+                self.connect('monopile.transition_piece_height', 'towerse.transition_piece_height')
+                self.connect('monopile.transition_piece_mass',   'towerse.transition_piece_maxx')
+                self.connect('monopile.gravity_foundation_mass', 'towerse.gravity_foundation_mass')
+                self.connect('monopile.suctionpile_depth',       'towerse.suctionpile_depth')
+                self.connect('monopile.suctionpile_depth_diam_ratio', 'towerse.suctionpile_depth_diam_ratio')
 
         #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
         #self.connect('max_taper_ratio',         'max_taper') # TODO- 
@@ -625,8 +624,8 @@ class WT_RNTA(Group):
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
         # Temporary
 
-        #if analysis_options['Analysis_Flags']['TowerSE']:
-        self.connect('towerse.tower_mass',          'tcc.tower_mass')
+        if analysis_options['Analysis_Flags']['TowerSE']:
+            self.connect('towerse.tower_mass',          'tcc.tower_mass')
 
 class WindPark(Group):
     # Openmdao group to run the cost analysis of a wind park
@@ -640,7 +639,7 @@ class WindPark(Group):
         opt_options     = self.options['opt_options']
 
         self.add_subsystem('wt',        WT_RNTA(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(analysis_options = analysis_options, opt_options = opt_options))
@@ -648,7 +647,7 @@ class WindPark(Group):
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # Inputs to plantfinancese from wt group
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve']:
                 self.connect('aeroelastic.AEP',     'financese.turbine_aep')
             else:
@@ -664,7 +663,7 @@ class WindPark(Group):
             self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
 
         # Connections to outputs to screen
-        if analysis_options['servose']['run_servose']:
+        if analysis_options['Analysis_Flags']['ServoSE']:
             if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve']:
                 self.connect('aeroelastic.AEP',     'outputs_2_screen.aep')
             else:
