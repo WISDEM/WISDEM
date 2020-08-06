@@ -27,7 +27,7 @@ from wisdem.orbit.phases.install.oss_install.common import (
 def test_task(env, wtiv, task, log, args):
 
     env.register(wtiv)
-    wtiv.extract_vessel_specs()
+    wtiv.initialize(mobilize=False)
 
     task(wtiv, *args, site_depth=10)
     env.run()
@@ -46,7 +46,7 @@ def test_task(env, wtiv, task, log, args):
 def test_task_fails(env, feeder, task, log, args):
 
     env.register(feeder)
-    feeder.extract_vessel_specs()
+    feeder.initialize(mobilize=False)
 
     with pytest.raises(MissingComponent):
         task(feeder, *args, site_depth=10)

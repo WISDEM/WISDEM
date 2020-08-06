@@ -5,16 +5,13 @@ __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Rob Hammond"
 __email__ = "robert.hammond@nrel.gov"
 
+from copy import deepcopy
 
-import copy
-
-import numpy as np
 import pytest
 
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.phases.design import ExportSystemDesign
 
-initialize_library(pytest.library)
 config = extract_library_specs("config", "export_design")
 
 
@@ -98,9 +95,29 @@ def test_design_result():
     export = ExportSystemDesign(config)
     export.run()
 
-    cable_name = export.cable.name
+    _ = export.cable.name
     cables = export.design_result["export_system"]["cable"]
 
     assert cables["sections"] == [export.length]
     assert cables["number"] == 11
     assert cables["linear_density"] == export.cable.linear_density
+
+
+def test_floating_length_calculations():
+
+    base = deepcopy(config)
+    base["site"]["depth"] = 250
+    base["export_system_design"]["touchdown_distance"] = 0
+
+    sim = ExportSystemDesign(base)
+    sim.run()
+
+    base_length = sim.total_length
+
+    with_cat = deepcopy(config)
+    with_cat["site"]["depth"] = 250
+
+    new = ExportSystemDesign(with_cat)
+    new.run()
+
+    assert new.total_length < base_length

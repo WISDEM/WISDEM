@@ -3,7 +3,6 @@ plant:
   turbine_spacing: 5
 port:
   monthly_rate: 100000
-  num_cranes: 1
 scour_protection:
   tons_per_substructure: 2000
 spi_vessel: test_scour_protection_vessel

@@ -5,26 +5,40 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 from copy import deepcopy
-from datetime import datetime
 
 import pandas as pd
 import pytest
 
 from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
+from wisdem.orbit.manager import ProjectProgress
 from wisdem.orbit.core.exceptions import (
     MissingInputs,
     PhaseNotFound,
     WeatherProfileError,
+    PhaseDependenciesInvalid,
 )
 
 weather_df = pd.DataFrame(test_weather).set_index("datetime")
 
-initialize_library(pytest.library)
 config = extract_library_specs("config", "project_manager")
+complete_project = extract_library_specs("config", "complete_project")
+
+### Top Level
+@pytest.mark.parametrize("weather", (None, weather_df))
+def test_complete_run(weather):
+
+    project = ProjectManager(config, weather=weather)
+    project.run_project()
+
+    actions = pd.DataFrame(project.project_actions)
+
+    phases = ["MonopileInstallation", "TurbineInstallation"]
+    assert all(p in list(actions["phase"]) for p in phases)
 
 
+### Module Integrations
 def test_for_required_phase_structure():
     """
     Automated integration test to verify that all classes listed in
@@ -41,33 +55,10 @@ def test_for_required_phase_structure():
         assert isinstance(p.output_config, dict)
 
 
-def test_exceptions():
-
-    incomplete_config = deepcopy(config)
-    _ = incomplete_config["site"].pop("depth")
-
-    with pytest.raises(MissingInputs):
-        project = ProjectManager(incomplete_config)
-        project.run_project()
-
-    wrong_phases = deepcopy(config)
-    wrong_phases["install_phases"].append("IncorrectPhaseName")
-
-    with pytest.raises(PhaseNotFound):
-        project = ProjectManager(wrong_phases)
-        project.run_project()
-
-    bad_dates = deepcopy(config)
-    bad_dates["install_phases"] = {
-        "MonopileInstallation": "03/01/2015",
-        "TurbineInstallation": "05/01/2015",
-    }
-
-    with pytest.raises(WeatherProfileError):
-        project = ProjectManager(bad_dates, weather=weather_df)
-        project.run_project()
+# TODO: Expand these tests
 
 
+### Config Management
 def test_phase_specific_definitions():
     """
     Tests that phase specific information makes it to phase_config.
@@ -116,139 +107,6 @@ def test_expected_config_merging():
     }
 
 
-@pytest.mark.parametrize("weather", (None, weather_df))
-def test_complete_run(weather):
-
-    project = ProjectManager(config, weather=weather)
-    project.run_project()
-
-    actions = pd.DataFrame(project.project_actions)
-
-    phases = ["MonopileInstallation", "TurbineInstallation"]
-    assert all(p in list(actions["phase"]) for p in phases)
-
-
-@pytest.mark.parametrize(
-    "m_start, t_start",
-    [
-        ("03/01/2010", "03/01/2010"),
-        ("03/01/2010", "04/01/2010"),
-        ("03/01/2010", "05/01/2010"),
-        ("04/01/2010", "06/01/2010"),
-    ],
-)
-def test_phase_start_dates(m_start, t_start):
-    """
-    Tests functionality related to passing start dates into 'install_phases' sub-dict.
-    """
-    config_with_start_dates = deepcopy(config)
-    config_with_start_dates["install_phases"] = {
-        "MonopileInstallation": m_start,
-        "TurbineInstallation": t_start,
-    }
-
-    project = ProjectManager(config_with_start_dates)
-    project.run_project()
-
-    df = pd.DataFrame(project.project_actions)
-    _fmt = "%m/%d/%Y"
-    _target_diff = (
-        datetime.strptime(t_start, _fmt) - datetime.strptime(m_start, _fmt)
-    ).days * 24
-
-    _m = df.loc[df["phase"] == "MonopileInstallation"].iloc[0]
-    _t = df.loc[df["phase"] == "TurbineInstallation"].iloc[0]
-
-    _diff = (_t["time"] - _t["duration"]) - (_m["time"] - _m["duration"])
-    assert _diff == _target_diff
-
-
-def test_phase_start_dates_with_weather():
-    m_start = "03/01/2010"
-    t_start = "05/01/2010"
-
-    config_with_start_dates = deepcopy(config)
-    config_with_start_dates["install_phases"] = {
-        "MonopileInstallation": m_start,
-        "TurbineInstallation": t_start,
-    }
-
-    project = ProjectManager(config_with_start_dates, weather=weather_df)
-    project.run_project()
-
-    df = pd.DataFrame(project.project_actions)
-    _fmt = "%m/%d/%Y"
-    _target_diff = (
-        datetime.strptime(t_start, _fmt) - datetime.strptime(m_start, _fmt)
-    ).days * 24
-
-    _m = df.loc[df["phase"] == "MonopileInstallation"].iloc[0]
-    _t = df.loc[df["phase"] == "TurbineInstallation"].iloc[0]
-
-    _diff = (_t["time"] - _t["duration"]) - (_m["time"] - _m["duration"])
-    assert _diff == _target_diff
-
-
-def test_duplicate_phase_simulations():
-    config_with_duplicates = deepcopy(config)
-    config_with_duplicates["MonopileInstallation_1"] = {
-        "plant": {"num_turbines": 5}
-    }
-
-    config_with_duplicates["MonopileInstallation_2"] = {
-        "plant": {"num_turbines": 5},
-        "site": {"distance": 100},
-    }
-
-    config_with_duplicates["install_phases"] = {
-        "MonopileInstallation_1": "03/01/2010",
-        "MonopileInstallation_2": "04/01/2010",
-        "TurbineInstallation": "05/01/2010",
-    }
-
-    project = ProjectManager(config_with_duplicates)
-    project.run_project()
-
-    df = (
-        pd.DataFrame(project.project_actions)
-        .groupby(["phase", "action"])
-        .count()["time"]
-    )
-
-    assert df.loc[("MonopileInstallation_1", "Drive Monopile")] == 5
-    assert df.loc[("MonopileInstallation_2", "Drive Monopile")] == 5
-    assert df.loc[("TurbineInstallation", "Attach Tower Section")] == 10
-
-
-def test_design_phases():
-
-    config_with_design = deepcopy(config)
-
-    # Add MonopileDesign
-    config_with_design["design_phases"] = ["MonopileDesign"]
-
-    # Add required parameters
-    config_with_design["site"]["mean_windspeed"] = 9
-    config_with_design["turbine"]["rotor_diameter"] = 200
-    config_with_design["turbine"]["rated_windspeed"] = 10
-    config_with_design["monopile_design"] = {}
-
-    # Remove monopile sub dictionary
-    _ = config_with_design.pop("monopile")
-    project = ProjectManager(config_with_design)
-    project.run_project()
-
-    assert isinstance(project.config["monopile"], dict)
-
-    config_with_design["install_phases"] = {
-        "MonopileInstallation": "03/01/2010",
-        "TurbineInstallation": "05/01/2010",
-    }
-
-    project = ProjectManager(config_with_design, weather=weather_df)
-    project.run_project()
-
-
 def test_find_key_match():
     class SpecificTurbineInstallation:
         expected_config = {}
@@ -288,6 +146,164 @@ def test_find_key_match():
         assert TestProjectManager.find_key_match(f) is None
 
 
+### Overlapping Install Phases
+def test_install_phase_start_parsing():
+
+    config_mixed_starts = deepcopy(config)
+    config_mixed_starts["install_phases"] = {
+        "MonopileInstallation": 0,
+        "TurbineInstallation": "10/22/2009",
+        "ArrayCableInstallation": ("MonopileInstallation", 0.5),
+    }
+
+    project = ProjectManager(config_mixed_starts, weather=weather_df)
+    defined, depends = project._parse_install_phase_values(
+        config_mixed_starts["install_phases"]
+    )
+    assert len(defined) == 2
+    assert len(depends) == 1
+
+    assert defined["MonopileInstallation"] == 0
+    assert defined["TurbineInstallation"] == 1
+
+
+def test_chained_dependencies():
+
+    config_chained = deepcopy(config)
+    config_chained["spi_vessel"] = "test_scour_protection_vessel"
+    config_chained["scour_protection"] = {"tons_per_substructure": 200}
+    config_chained["install_phases"] = {
+        "ScourProtectionInstallation": 0,
+        "MonopileInstallation": ("ScourProtectionInstallation", 0.1),
+        "TurbineInstallation": ("MonopileInstallation", 0.5),
+    }
+
+    project = ProjectManager(config_chained)
+    project.run_project()
+
+    df = pd.DataFrame(project.project_actions)
+    sp = list(df.loc[df["phase"] == "ScourProtectionInstallation"]["time"])
+    mp = list(df.loc[df["phase"] == "MonopileInstallation"]["time"])
+    tu = list(df.loc[df["phase"] == "TurbineInstallation"]["time"])
+
+    assert min(sp) == 0
+    assert min(mp) == (max(sp) - min(sp)) * 0.1
+    assert min(tu) == (max(mp) - min(mp)) * 0.5 + min(mp)
+
+
+@pytest.mark.parametrize(
+    "m_start, t_start", [(0, 0), (0, 100), (100, 100), (100, 200)]
+)
+def test_index_starts(m_start, t_start):
+    """
+    Tests functionality related to passing index starts into 'install_phases' sub-dict.
+    """
+    _target_diff = t_start - m_start
+
+    config_with_index_starts = deepcopy(config)
+    config_with_index_starts["install_phases"] = {
+        "MonopileInstallation": m_start,
+        "TurbineInstallation": t_start,
+    }
+
+    project = ProjectManager(config_with_index_starts)
+    project.run_project()
+
+    df = pd.DataFrame(project.project_actions)
+
+    _m = df.loc[df["phase"] == "MonopileInstallation"].iloc[0]
+    _t = df.loc[df["phase"] == "TurbineInstallation"].iloc[0]
+
+    _diff = (_t["time"] - _t["duration"]) - (_m["time"] - _m["duration"])
+    assert _diff == _target_diff
+
+
+@pytest.mark.parametrize(
+    "m_start, t_start, expected",
+    [
+        (0, 0, 0),
+        (0, 1000, 1000),
+        (0, "05/01/2010", 4585),
+        ("03/01/2010", "03/01/2010", 0),
+        ("03/01/2010", "05/01/2010", 1464),
+    ],
+)
+def test_start_dates_with_weather(m_start, t_start, expected):
+
+    config_with_defined_starts = deepcopy(config)
+    config_with_defined_starts["install_phases"] = {
+        "MonopileInstallation": m_start,
+        "TurbineInstallation": t_start,
+    }
+
+    project = ProjectManager(config_with_defined_starts, weather=weather_df)
+    project.run_project()
+    df = pd.DataFrame(project.project_actions)
+
+    _m = df.loc[df["phase"] == "MonopileInstallation"].iloc[0]
+    _t = df.loc[df["phase"] == "TurbineInstallation"].iloc[0]
+
+    _diff = (_t["time"] - _t["duration"]) - (_m["time"] - _m["duration"])
+    assert _diff == expected
+
+
+def test_duplicate_phase_definitions():
+    config_with_duplicates = deepcopy(config)
+    config_with_duplicates["MonopileInstallation_1"] = {
+        "plant": {"num_turbines": 5}
+    }
+
+    config_with_duplicates["MonopileInstallation_2"] = {
+        "plant": {"num_turbines": 5},
+        "site": {"distance": 100},
+    }
+
+    config_with_duplicates["install_phases"] = {
+        "MonopileInstallation_1": 0,
+        "MonopileInstallation_2": 800,
+        "TurbineInstallation": 1600,
+    }
+
+    project = ProjectManager(config_with_duplicates)
+    project.run_project()
+
+    df = (
+        pd.DataFrame(project.project_actions)
+        .groupby(["phase", "action"])
+        .count()["time"]
+    )
+
+    assert df.loc[("MonopileInstallation_1", "Drive Monopile")] == 5
+    assert df.loc[("MonopileInstallation_2", "Drive Monopile")] == 5
+    assert df.loc[("TurbineInstallation", "Attach Tower Section")] == 10
+
+
+### Design Phase Interactions
+def test_design_phases():
+
+    config_with_design = deepcopy(config)
+
+    # Add MonopileDesign
+    config_with_design["design_phases"] = ["MonopileDesign"]
+
+    # Add required parameters
+    config_with_design["site"]["mean_windspeed"] = 9
+    config_with_design["turbine"]["rotor_diameter"] = 200
+    config_with_design["turbine"]["rated_windspeed"] = 10
+    config_with_design["monopile_design"] = {}
+
+    # Remove monopile sub dictionary
+    _ = config_with_design.pop("monopile")
+    project = ProjectManager(config_with_design)
+    project.run_project()
+
+    assert isinstance(project.config["monopile"], dict)
+
+    project = ProjectManager(config_with_design)
+    project.run_project()
+
+
+### Outputs
 def test_resolve_project_capacity():
 
     # Missing turbine rating
@@ -344,7 +360,7 @@ def test_resolve_project_capacity():
     }
 
     with pytest.raises(AttributeError):
-        out5 = ProjectManager.resolve_project_capacity(config5)
+        _ = ProjectManager.resolve_project_capacity(config5)
 
     # Test for not enough information
     config6 = {"plant": {"capacity": 600}}
@@ -353,7 +369,256 @@ def test_resolve_project_capacity():
     assert out6["plant"]["capacity"] == config6["plant"]["capacity"]
 
     with pytest.raises(KeyError):
-        turbine_rating = out6["turbine"]["turbine_rating"]
+        _ = out6["turbine"]["turbine_rating"]
 
     with pytest.raises(KeyError):
-        num_turbines = out6["plant"]["num_turbines"]
+        _ = out6["plant"]["num_turbines"]
+
+
+### Exceptions
+def test_incomplete_config():
+
+    incomplete_config = deepcopy(config)
+    _ = incomplete_config["site"].pop("depth")
+
+    with pytest.raises(MissingInputs):
+        project = ProjectManager(incomplete_config)
+        project.run_project()
+
+
+def test_wrong_phases():
+
+    wrong_phases = deepcopy(config)
+    wrong_phases["install_phases"].append("IncorrectPhaseName")
+
+    with pytest.raises(PhaseNotFound):
+        project = ProjectManager(wrong_phases)
+        project.run_project()
+
+
+def test_bad_dates():
+
+    bad_dates = deepcopy(config)
+    bad_dates["install_phases"] = {
+        "MonopileInstallation": "03/01/2015",
+        "TurbineInstallation": "05/01/2015",
+    }
+
+    with pytest.raises(WeatherProfileError):
+        project = ProjectManager(bad_dates, weather=weather_df)
+        project.run_project()
+
+
+def test_no_defined_start():
+
+    missing_start = deepcopy(config)
+    missing_start["install_phases"] = {
+        "MonopileInstallation": ("TurbineInstallation", 0.1),
+        "TurbineInstallation": ("MonopileInstallation", 0.1),
+    }
+
+    with pytest.raises(ValueError):
+        project = ProjectManager(missing_start)
+        project.run_project()
+
+
+def test_circular_dependencies():
+
+    circular_deps = deepcopy(config)
+    circular_deps["spi_vessel"] = "test_scour_protection_vessel"
+    circular_deps["scour_protection"] = {"tons_per_substructure": 200}
+    circular_deps["install_phases"] = {
+        "ScourProtectionInstallation": 0,
+        "MonopileInstallation": ("TurbineInstallation", 0.1),
+        "TurbineInstallation": ("MonopileInstallation", 0.1),
+    }
+
+    with pytest.raises(PhaseDependenciesInvalid):
+        project = ProjectManager(circular_deps)
+        project.run_project()
+
+
+def test_dependent_phase_ordering():
+
+    wrong_order = deepcopy(config)
+    wrong_order["spi_vessel"] = "test_scour_protection_vessel"
+    wrong_order["scour_protection"] = {"tons_per_substructure": 200}
+    wrong_order["install_phases"] = {
+        "ScourProtectionInstallation": ("TurbineInstallation", 0.1),
+        "TurbineInstallation": ("MonopileInstallation", 0.1),
+        "MonopileInstallation": 0,
+    }
+
+    project = ProjectManager(wrong_order)
+    project.run_project()
+
+    assert len(project.phase_times) == 3
+
+
+def test_ProjectProgress():
+
+    data = [
+        ("Export System", 10),
+        ("Offshore Substation", 20),
+        ("Array String", 15),
+        ("Array String", 25),
+        ("Turbine", 5),
+        ("Turbine", 10),
+        ("Turbine", 15),
+        ("Turbine", 20),
+        ("Turbine", 25),
+        ("Substructure", 6),
+        ("Substructure", 9),
+        ("Substructure", 14),
+        ("Substructure", 22),
+        ("Substructure", 26),
+    ]
+
+    progress = ProjectProgress(data)
+
+    assert progress.parse_logs("Export System") == [10]
+
+    turbines = progress.parse_logs("Turbine")
+    assert len(turbines) == 5
+
+    chunks = list(progress.chunk_max(turbines, 2))
+    assert chunks[0] == 10
+    assert chunks[1] == 20
+    assert chunks[2] == 25
+
+    assert progress.complete_export_system == 20
+    times, _ = progress.complete_array_strings
+    assert times == [15, 26]
+
+    times, turbines = progress.energize_points
+    assert times == [20, 26]
+    assert sum(turbines) == 5
+
+
+def test_ProjectProgress_with_incomplete_project():
+
+    project = ProjectManager(config)
+    project.run_project()
+
+    _ = project.progress.parse_logs("Substructure")
+    _ = project.progress.parse_logs("Turbine")
+
+    with pytest.raises(ValueError):
+        project.progress.complete_export_system
+
+    with pytest.raises(ValueError):
+        project.progress.complete_array_strings
+
+
+def test_ProjectProgress_with_complete_project():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+
+    _ = project.progress.parse_logs("Substructure")
+    _ = project.progress.parse_logs("Turbine")
+    _ = project.progress.parse_logs("Array String")
+    _ = project.progress.parse_logs("Export System")
+    _ = project.progress.parse_logs("Offshore Substation")
+
+    _ = project.progress.complete_export_system
+    _ = project.progress.complete_array_strings
+
+    _ = project.progress.energize_points
+
+    new = deepcopy(complete_project)
+    new["plant"]["num_turbines"] = 61
+
+    # Uneven strings
+    project = ProjectManager(new)
+    project.run_project()
+
+    _ = project.progress.energize_points
+
+
+def test_monthly_expenses():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+    _ = project.monthly_expenses
+
+    # Still report expenses for "incomplete" project
+    config = deepcopy(complete_project)
+    _ = config["install_phases"].pop("TurbineInstallation")
+
+    project = ProjectManager(config)
+    project.run_project()
+
+    _ = project.monthly_expenses
+
+
+def test_monthly_revenue():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+    _ = project.monthly_revenue
+
+    # Can't generate revenue with "incomplete" project
+    config = deepcopy(complete_project)
+    _ = config["install_phases"].pop("TurbineInstallation")
+
+    project = ProjectManager(config)
+    project.run_project()
+
+    with pytest.raises(ValueError):
+        _ = project.monthly_revenue
+
+
+def test_cash_flow():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+    _ = project.cash_flow
+
+    # Can't generate revenue with "incomplete" project but cash flow will still
+    # be reported
+    config = deepcopy(complete_project)
+    _ = config["install_phases"].pop("TurbineInstallation")
+
+    project = ProjectManager(config)
+    project.run_project()
+
+    cash_flow = project.cash_flow
+    assert all(v <= 0 for v in cash_flow.values())
+
+
+def test_npv():
+
+    project = ProjectManager(complete_project)
+    project.run_project()
+    baseline = project.npv
+
+    config = deepcopy(complete_project)
+    config["ncf"] = 0.35
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
+
+    config = deepcopy(complete_project)
+    config["offtake_price"] = 70
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
+
+    config = deepcopy(complete_project)
+    config["project_lifetime"] = 30
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
+
+    config = deepcopy(complete_project)
+    config["discount_rate"] = 0.03
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
+
+    config = deepcopy(complete_project)
+    config["opex_rate"] = 120
+    project = ProjectManager(config)
+    project.run_project()
+    assert project.npv != baseline
