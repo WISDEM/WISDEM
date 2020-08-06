@@ -354,7 +354,7 @@ class WT_RNTA(Group):
             pass
 
         # Connections to rotor load analysis
-        if analysis_options['Analysis_Flags']['OpenFAST']:
+        if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
             self.connect('aeroelastic.loads_Px',      'rlds.tot_loads_gust.aeroloads_Px')
             self.connect('aeroelastic.loads_Py',      'rlds.tot_loads_gust.aeroloads_Py')
             self.connect('aeroelastic.loads_Pz',      'rlds.tot_loads_gust.aeroloads_Pz')
@@ -438,7 +438,7 @@ class WT_RNTA(Group):
         if analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_Q',         'drivese.rotor_torque')
             self.connect('sse.powercurve.rated_Omega',     'drivese.rotor_rpm')
-        if analysis_options['Analysis_Flags']['OpenFAST']:
+        if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
             self.connect('aeroelastic.Fxyz', 'drivese.Fxyz')
             self.connect('aeroelastic.Mxyz', 'drivese.Mxyz')
         else:
@@ -648,7 +648,7 @@ class WindPark(Group):
 
         # Inputs to plantfinancese from wt group
         if analysis_options['Analysis_Flags']['ServoSE']:
-            if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve']:
+            if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
                 self.connect('aeroelastic.AEP',     'financese.turbine_aep')
             else:
                 self.connect('sse.AEP',             'financese.turbine_aep')
@@ -664,14 +664,14 @@ class WindPark(Group):
 
         # Connections to outputs to screen
         if analysis_options['Analysis_Flags']['ServoSE']:
-            if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve']:
+            if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
                 self.connect('aeroelastic.AEP',     'outputs_2_screen.aep')
             else:
                 self.connect('sse.AEP',             'outputs_2_screen.aep')
             self.connect('financese.lcoe',          'outputs_2_screen.lcoe')
         self.connect('elastic.precomp.blade_mass',  'outputs_2_screen.blade_mass')
         self.connect('rlds.tip_pos.tip_deflection', 'outputs_2_screen.tip_deflection')
-        if analysis_options['Analysis_Flags']['OpenFAST']:
+        if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
             self.connect('aeroelastic.My_std',      'outputs_2_screen.My_std')
             self.connect('aeroelastic.flp1_std',    'outputs_2_screen.flp1_std')
             self.connect('control.PC_omega',        'outputs_2_screen.PC_omega')
