@@ -6,6 +6,8 @@ from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivese_omdao import DriveSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from wisdem.orbit.api.wisdem.fixed import Orbit
+from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
 from wisdem.aeroelasticse.openmdao_openfast import FASTLoadCases, ModesElastoDyn
@@ -200,7 +202,7 @@ class WT_RNTA(Group):
             self.connect('env.rho_air',                    'sse.rho')
             self.connect('env.mu_air',                     'sse.mu')
             self.connect('wt_class.V_mean',                'sse.cdf.xbar')
-            self.connect('env.weibull_k',                  'sse.cdf.k')
+            self.connect('dlc.weibull_k',                  'sse.cdf.k')
             # Connections to rotorse-rs-gustetm
             self.connect('wt_class.V_mean',                 'sse.gust.V_mean')
             self.connect('configuration.turb_class',        'sse.gust.turbulence_class')
@@ -639,28 +641,61 @@ class WindPark(Group):
         opt_options     = self.options['opt_options']
 
         self.add_subsystem('wt',        WT_RNTA(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
-        if analysis_options['Analysis_Flags']['ServoSE']:
-            self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
+        self.add_subsystem('orbit',     Orbit())
+        self.add_subsystem('landbosse', LandBOSSE())
+        self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
+            
         # Post-processing
         self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(analysis_options = analysis_options, opt_options = opt_options))
         if opt_options['opt_flag']:
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
+        # Inputs into LandBOSSE
+        self.connect('assembly.hub_height',           'landbosse.hub_height_meters')
+        self.connect('costs.turbine_number',          'landbosse.num_turbines')
+        self.connect('control.rated_power',           'landbosse.turbine_rating_MW')
+        self.connect('env.shear_exp',                 'landbosse.wind_shear_exponent')
+        self.connect('assembly.rotor_diameter',       'landbosse.rotor_diameter_m')
+        self.connect('configuration.n_blades',        'landbosse.number_of_blades')
+        self.connect('sse.powercurve.rated_T',        'landbosse.rated_thrust_N')
+        self.connect('towerse.tower_mass',            'landbosse.tower_mass')
+        self.connect('nacelle.nacelle_mass',          'landbosse.nacelle_mass')
+        self.connect('elastic.precomp.blade_mass',    'landbosse.blade_mass')
+        self.connect('foundation.height',             'landbosse.foundation_height')
+        
+        # Inputs into ORBIT
+        self.connect('control.rated_power',           'orbit.machine_rating')
+        self.connect('dlc.water_depth',               'orbit.site_depth')
+        self.connect('costs.turbine_number',          'orbit.number_of_turbines')
+        self.connect('assembly.hub_height',           'orbit.hub_height')
+        self.connect('assembly.rotor_diameter',       'orbit.turbine_rotor_diameter')     
+        self.connect('towerse.tower_mass',            'orbit.tower_mass')
+        self.connect('towerse.monopile_mass',         'orbit.monopile_mass')
+        self.connect('towerse.monopile_length',       'orbit.monopile_length')
+        self.connect('towerse.transition_piece_mass', 'orbit.transition_piece_mass')
+        self.connect('elastic.precomp.blade_mass',    'orbit.blade_mass')
+        self.connect('tcc.turbine_cost_kW',           'orbit.turbine_capex')
+        self.connect('nacelle.nacelle_mass',          'orbit.nacelle_mass')
+        self.connect('monopile.diameter',             'orbit.monopile_diameter', src_indices=[0])
+        self.connect('wt_class.V_mean',               'orbit.site_mean_windspeed')
+        self.connect('sse.powercurve.rated_V',        'orbit.turbine_rated_windspeed')
+        
         # Inputs to plantfinancese from wt group
-        if analysis_options['Analysis_Flags']['ServoSE']:
-            if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
-                self.connect('aeroelastic.AEP',     'financese.turbine_aep')
-            else:
-                self.connect('sse.AEP',             'financese.turbine_aep')
-            self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
-            # Inputs to plantfinancese from input yaml
-            self.connect('control.rated_power',     'financese.machine_rating')
-            self.connect('costs.turbine_number',    'financese.turbine_number')
-            self.connect('costs.bos_per_kW',        'financese.bos_per_kW')
-            self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
-            self.connect('costs.offset_tcc_per_kW', 'financese.offset_tcc_per_kW')
-            self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
-            self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
+        if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
+            self.connect('aeroelastic.AEP',     'financese.turbine_aep')
+        else:
+            self.connect('sse.AEP',             'financese.turbine_aep')
+
+        self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
+        self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
+        self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
+        # Inputs to plantfinancese from input yaml
+        self.connect('control.rated_power',     'financese.machine_rating')
+        self.connect('costs.turbine_number',    'financese.turbine_number')
+        self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
+        self.connect('costs.offset_tcc_per_kW', 'financese.offset_tcc_per_kW')
+        self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
+        self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
 
         # Connections to outputs to screen
         if analysis_options['Analysis_Flags']['ServoSE']:
