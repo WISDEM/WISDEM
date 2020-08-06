@@ -89,8 +89,8 @@ class WT_RNTA(Group):
         self.connect('blade.pa.twist_param',           ['elastic.theta','rlds.theta'])
         #self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
         self.connect('blade.pa.chord_param',           ['xf.chord', 'elastic.chord'])
-        if not analysis_options['Analysis_Flags']['OpenFAST']:
-            self.connect('blade.pa.chord_param',           ['rlds.chord'])
+        self.connect('blade.pa.chord_param',           ['rlds.chord'])
+        # if not analysis_options['Analysis_Flags']['OpenFAST']:
         if analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('blade.pa.twist_param',           'sse.theta')
             self.connect('blade.pa.chord_param',           'sse.chord')
