@@ -490,13 +490,19 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Fst
         f.readline()
-        self.fst_vt['Fst']['linearize'] = f.readline().split()[0]
-        self.fst_vt['Fst']['NLinTimes'] = f.readline().split()[0]
-        self.fst_vt['Fst']['LinTimes'] = re.findall(r'[^,\s]+', f.readline())[0:2]
-        self.fst_vt['Fst']['LinInputs'] = f.readline().split()[0]
+        self.fst_vt['Fst']['Linearize']  = f.readline().split()[0]
+        self.fst_vt['Fst']['CalcSteady'] = f.readline().split()[0]
+        self.fst_vt['Fst']['TrimCase']   = f.readline().split()[0]
+        self.fst_vt['Fst']['TrimTol']    = f.readline().split()[0]
+        self.fst_vt['Fst']['TrimGain']   = f.readline().split()[0]
+        self.fst_vt['Fst']['Twr_Kdmp']   = f.readline().split()[0]
+        self.fst_vt['Fst']['Bld_Kdmp']   = f.readline().split()[0]
+        self.fst_vt['Fst']['NLinTimes']  = f.readline().split()[0]
+        self.fst_vt['Fst']['LinTimes']   = re.findall(r'[^,\s]+', f.readline())[0:2]
+        self.fst_vt['Fst']['LinInputs']  = f.readline().split()[0]
         self.fst_vt['Fst']['LinOutputs'] = f.readline().split()[0]
-        self.fst_vt['Fst']['LinOutJac'] = f.readline().split()[0]
-        self.fst_vt['Fst']['LinOutMod'] = f.readline().split()[0]
+        self.fst_vt['Fst']['LinOutJac']  = f.readline().split()[0]
+        self.fst_vt['Fst']['LinOutMod']  = f.readline().split()[0]
 
         # Visualization ()
         f.readline()
@@ -1020,6 +1026,8 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['AeroDyn15']['FrozenWake']    = bool_read(f.readline().split()[0])
         if self.FAST_ver.lower() != 'fast8':
                 self.fst_vt['AeroDyn15']['CavitCheck']    = bool_read(f.readline().split()[0])
+                self.fst_vt['AeroDyn15']['CompAA']        = bool_read(f.readline().split()[0])
+                self.fst_vt['AeroDyn15']['AA_InputFile']  = f.readline().split()[0]
 
         # Environmental Conditions
         f.readline()
@@ -1043,11 +1051,16 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['AeroDyn15']['IndToler']              = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['MaxIter']               = int(f.readline().split()[0])
 
+
         # Dynamic Blade-Element/Momentum Theory Options 
         f.readline()
         self.fst_vt['AeroDyn15']['DBEMT_Mod']          = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['tau1_const']         = int(f.readline().split()[0])
 
+        # Olaf -- cOnvecting LAgrangian Filaments (Free Vortex Wake) Theory Options
+        f.readline()
+        self.fst_vt['AeroDyn15']['OLAFInputFileName']  = f.readline().split()[0]
+        
         # Beddoes-Leishman Unsteady Airfoil Aerodynamics Options
         f.readline()
         self.fst_vt['AeroDyn15']['UAMod']                  = int(f.readline().split()[0])
@@ -1158,6 +1171,7 @@ class InputReader_OpenFAST(InputReader_Common):
             polar['InterpOrd']      = int_read(readline_filterComments(f).split()[0])
             polar['NonDimArea']     = int_read(readline_filterComments(f).split()[0])
             polar['NumCoords']      = readline_filterComments(f).split()[0]
+            polar['BL_file']        = readline_filterComments(f).split()[0]
             polar['NumTabs']        = int_read(readline_filterComments(f).split()[0])
             self.fst_vt['AeroDyn15']['af_data'][afi] = [None]*polar['NumTabs']
 
