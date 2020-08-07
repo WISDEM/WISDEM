@@ -13,6 +13,28 @@ except:
 import jsonschema as json
 
 
+def nested_get(indict, keylist):
+    rv = indict
+    for k in keylist:
+        rv = rv[k]
+    return rv
+
+def nested_set(indict, keylist, val):
+    rv = indict
+    for k in keylist:
+        if k == keylist[-1]:
+            rv[k] = val
+        else:
+            rv = rv[k]
+                
+def load_yaml(fname_input):
+    with open(fname_input, 'r') as myfile:
+        inputs = myfile.read()
+    return ry.YAML().load(inputs)
+
+fdefaults = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'defaults.yaml')
+fschema   = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'IEAontology_schema.yaml')
+
 class WindTurbineOntologyPython(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
     #   - analysis_options: dictionary with all the inputs that will be passed as options to the openmdao components, such as the length of the arrays
@@ -25,16 +47,16 @@ class WindTurbineOntologyPython(object):
     def initialize(self, fname_input_wt, fname_input_analysis):
         # Class instance to break the yaml into sub dictionaries
         
-        self.analysis_options = self.load_yaml(fname_input_analysis)
+        self.analysis_options = load_yaml(fname_input_analysis)
 
         # Load wind turbine yaml input
         self.fname_input = fname_input_wt
-        self.wt_init     = self.load_ontology(self.fname_input, validate=self.analysis_options['yaml']['validate'], fname_schema=self.analysis_options['yaml']['path2schema'])
+        self.defaults    = load_yaml(fdefaults)
+        self.wt_init     = load_yaml(self.fname_input)
+        self.integrate_defaults()
+        self.set_component_flags()
         self.openmdao_vectors()
 
-        # Offshore flag
-        self.analysis_options['offshore'] = 'water_depth' in self.wt_init['environment'] and self.wt_init['environment']['water_depth'] > 0.0
-        
         # Openfast
         if self.analysis_options['Analysis_Flags']['OpenFAST'] == True:
             # Load Input OpenFAST model variable values
@@ -46,7 +68,7 @@ class WindTurbineOntologyPython(object):
             self.analysis_options['openfast']['fst_vt']   = fast.fst_vt
 
             if os.path.exists(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']):
-                self.analysis_options['openfast']['fst_settings'] = dict(self.load_yaml(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']))
+                self.analysis_options['openfast']['fst_settings'] = dict(load_yaml(self.analysis_options['openfast']['file_management']['Simulation_Settings_File']))
             else:
                 print('WARNING: OpenFAST is called, but no file with settings is found.')
                 self.analysis_options['openfast']['fst_settings'] = {}
@@ -132,42 +154,43 @@ class WindTurbineOntologyPython(object):
         # Assembly
         self.analysis_options['assembly'] = {}
         self.analysis_options['assembly']['number_of_blades'] = int(self.wt_init['assembly']['number_of_blades'])
+
         
-    def load_ontology(self, fname_input, validate=False, fname_schema=''):
-        """ Load inputs IEA turbine ontology yaml inputs, optional validation """
-        # Read IEA turbine ontology yaml input file
-        t_load = time.time()
-        with open(fname_input, 'r') as myfile:
-            inputs = myfile.read()
+    def integrate_defaults(self):
+        # Load in schema as yaml
+        with open(fschema, 'r') as myfile:
+            schema = myfile.read()
+        yaml_schema = ry.YAML().load(schema)
 
-        # Validate the turbine input with the IEA turbine ontology schema
-        yaml = ry.YAML()
-        if validate:
-            t_validate = time.time()
+        # Prep iterative validator
+        validator = json.Draft7Validator(yaml_schema)
+        errors = validator.iter_errors(self.wt_init)
 
-            with open(fname_schema, 'r') as myfile:
-                schema = myfile.read()
-            json.validate(yaml.load(inputs), yaml.load(schema))
+        # Loop over errors
+        for e in errors:
+            if e.validator == 'required':
+                for k in e.validator_value:
+                    if not k in e.instance.keys():
+                        mypath = e.absolute_path.copy()
+                        mypath.append(k)
+                        v = nested_get(self.defaults, mypath)
+                        if isinstance(v, dict) or isinstance(v, list) or v in ['name','material']:
+                            # Too complicated to just copy over default, so give it back to the user
+                            raise(e)
+                        else:
+                            print('WARNING: Missing required value,',list(mypath),', so setting to:',v)
+                            nested_set(self.wt_init, mypath, v)
 
-            t_validate = time.time()-t_validate
-            if self.analysis_options['general']['verbosity']:
-                print('Complete: Schema "%s" validation: \t%f s'%(fname_schema, t_validate))
-        else:
-            t_validate = 0.
+                            
+    def set_component_flags(self):
+        # Create components flag struct
+        self.analysis_options['component_flags'] = {}
+        for k in self.defaults['components']:
+            self.analysis_options['component_flags'][k] = k in self.wt_init['components']
 
-        if self.analysis_options['general']['verbosity']:
-            t_load = time.time() - t_load - t_validate
-            print('Complete: Load Input File: \t%f s'%(t_load))
-        
-        return yaml.load(inputs)
+        # Offshore flag
+        self.analysis_options['offshore'] = 'water_depth' in self.wt_init['environment'] and self.wt_init['environment']['water_depth'] > 0.0
     
-    def load_yaml(self, fname_input):
-        """ Load optimization options """
-        with open(fname_input, 'r') as myfile:
-            inputs = myfile.read()
-        yaml = ry.YAML()
-        
-        return yaml.load(inputs)
 
     def write_ontology(self, wt_opt, fname_output):
 
@@ -348,5 +371,3 @@ class WindTurbineOntologyPython(object):
 
         return None
 
-if __name__ == "__main__":
-    pass
