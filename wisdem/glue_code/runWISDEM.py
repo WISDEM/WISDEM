@@ -500,7 +500,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                     wt_opt.driver.add_recorder(recorder)
                     wt_opt.add_recorder(recorder)
                     
-                    wt_opt.driver.recording_options['includes'] = ['*']
+                    wt_opt.driver.recording_options['excludes'] = ['*_df']
                     wt_opt.driver.recording_options['record_constraints'] = True 
                     wt_opt.driver.recording_options['record_desvars'] = True 
                     wt_opt.driver.recording_options['record_objectives'] = True

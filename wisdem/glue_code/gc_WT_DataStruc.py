@@ -158,9 +158,10 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
         self.connect('hub.radius',                      'assembly.hub_radius')
         self.connect('tower.height',                    'assembly.tower_height')
-        self.connect('monopile.height',                 'assembly.monopile_height')
         self.connect('foundation.height',               'assembly.foundation_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
+        if analysis_options['tower']['monopile']:
+            self.connect('monopile.height',                 'assembly.monopile_height')
 
         # Setup TSR optimization
         opt_var = self.add_subsystem('opt_var', om.IndepVarComp())

@@ -685,6 +685,9 @@ environment:
     shear_exp: 0.2
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
+    water_depth: 0.0
+    significant_wave_height: 0.0
+    significant_wave_period: 0.0
     soil_shear_modulus: 140e6
     soil_poisson: 0.4
 costs:
