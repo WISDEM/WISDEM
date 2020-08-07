@@ -404,10 +404,7 @@ components:
     monopile:
         transition_piece_height: 15.0
         transition_piece_mass: 100e3
-        transition_piece_cost: 0.0
-        gravity_foundation_mass: 0.0
         suctionpile_depth: 45.0
-        suctionpile_depth_diam_ratio: 0.0
         outer_shape_bem:
             reference_axis:  &ref_axis_mono
                 x:
@@ -657,10 +654,10 @@ materials:
       nu: [0.27, 0.27, 0.27]
       Xt: [1546.e6, 0.0, 0.0]
       Xc: [1047.e6, 0.0, 0.0]
-      S: [None, None, None]
-      GIc: None
-      GIIc: None
-      alp0: None
+      S: [0.0, 0.0, 0.0]
+      GIc: 0.0
+      GIIc: 0.0
+      alp0: 0.0
       fvf: 0.5384615384615385
       fwf: 0.6461538461538463
       ply_t: 0.0010317460317460314

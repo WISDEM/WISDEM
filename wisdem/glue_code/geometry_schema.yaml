@@ -25,12 +25,14 @@ properties:
         type: string
     components: 
         type: object
-        required:
+        optional:
             - blade
             - hub
             - nacelle
             - tower
+            - monopile
             - foundation
+            - RNA
         properties: 
             blade: 
                 type: object
@@ -455,6 +457,132 @@ properties:
                                                     $ref: "#/definitions/distributed_data/grid_nd"
                                                 values: 
                                                     $ref: "#/definitions/distributed_data/length"
+            monopile:
+                type: object
+                required:
+                    - outer_shape_bem
+                    - internal_structure_2d_fem
+                    - transition_piece_height
+                    - transition_piece_mass
+                    - transition_piece_cost
+                    - gravity_foundation_mass
+                    - suctionpile_depth
+                    - suctionpile_depth_diam_ratio
+                properties:
+                    transition_piece_height:
+                        type: number
+                        description: Height of transition piece top where tower attaches
+                        unit: m
+                        minimum: 0.0
+                        maximum: 100.0
+                    transition_piece_mass:
+                        type: number
+                        description: Total mass of transition piece
+                        unit: kg
+                        minimum: 0.0
+                    transition_piece_cost:
+                        type: number
+                        description: Total cost of transition piece
+                        unit: USD
+                        minimum: 0.0
+                    gravity_foundation_mass:
+                        type: number
+                        description: Total mass of gravity foundation addition onto monopile
+                        unit: kg
+                        minimum: 0.0
+                    suctionpile_depth:
+                        type: number
+                        description: Depth below sea floor that monopile length extends
+                        unit: m
+                        minimum: 0.0
+                        maximum: 100.0
+                    suctionpile_depth_diam_ratio:
+                        type: number
+                        description: Let suction pile depth be determined by multiplying this value by the monopile diameter at the mudline
+                        unit: m
+                        minimum: 0.0
+                        maximum: 50.0
+
+                    outer_shape_bem:                    
+                        type: object
+                        required:
+                            - reference_axis
+                            - outer_diameter
+                            - drag_coefficient
+                        properties:                              
+                            reference_axis:
+                                $ref: "#/definitions/distributed_data/axis_coordinates"
+                            outer_diameter:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties: 
+                                    grid: 
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values: 
+                                        $ref: "#/definitions/distributed_data/length"
+                            drag_coefficient:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties: 
+                                    grid: 
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values: 
+                                        $ref: "#/definitions/distributed_data/grid_nd"        
+                    elastic_properties_mb:
+                        type: object
+                        properties:
+                            timoschenko_hawc:
+                                $ref: "#/definitions/beam/timoschenko_hawc"
+                            cp_lambda_beam:
+                                $ref: "#/definitions/beam/cp_lambda_beam"
+                            six_x_six:
+                                $ref: "#/definitions/beam/six_x_six"
+                    internal_structure_2d_fem:
+                        type: object
+                        required:
+                            - outfitting_factor
+                            - reference_axis
+                            - layers
+                        properties: 
+                            outfitting_factor:
+                                type: number
+                                description: Scaling factor for the tower mass to account for auxiliary structures, such as elevator, ladders, cables, platforms, etc
+                                unit: none
+                                minimum: 1
+                                maximum: 2
+                            reference_axis:
+                                $ref: "#/definitions/distributed_data/axis_coordinates"
+                            layers:
+                                type: array
+                                description: ...
+                                items:
+                                    type: object
+                                    required:
+                                        - name
+                                        - material
+                                        - thickness
+                                    properties:
+                                        name:
+                                            type: string
+                                            description: structural component identifier
+                                        material:
+                                            type: string
+                                            description: material identifier
+                                        thickness:
+                                            type: object
+                                            description: thickness of the laminate
+                                            required:
+                                                - grid
+                                                - values
+                                            properties: 
+                                                grid: 
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values: 
+                                                    $ref: "#/definitions/distributed_data/length"
             foundation:
                 type: object
                 required:
@@ -464,7 +592,7 @@ properties:
                         type: number
                         description: Height of the onshore foundation above ground, always defined positive.
                         unit: meter
-                        minimum: 0
+                        minimum: -1000
                         maximum: 100
             RNA:
                 type: object

@@ -32,8 +32,8 @@ def load_yaml(fname_input):
         inputs = myfile.read()
     return ry.YAML().load(inputs)
 
-fdefaults = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'defaults.yaml')
-fschema   = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'IEAontology_schema.yaml')
+fdefaults = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'geometry_defaults.yaml')
+fschema   = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'geometry_schema.yaml')
 
 class WindTurbineOntologyPython(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
@@ -163,6 +163,7 @@ class WindTurbineOntologyPython(object):
         yaml_schema = ry.YAML().load(schema)
 
         # Prep iterative validator
+        #json.validate(self.wt_init, yaml_schema)
         validator = json.Draft7Validator(yaml_schema)
         errors = validator.iter_errors(self.wt_init)
 
@@ -178,8 +179,10 @@ class WindTurbineOntologyPython(object):
                             # Too complicated to just copy over default, so give it back to the user
                             raise(e)
                         else:
-                            print('WARNING: Missing required value,',list(mypath),', so setting to:',v)
+                            print('WARNING: Missing value,',list(mypath),', so setting to:',v)
                             nested_set(self.wt_init, mypath, v)
+            else:
+                raise(e)
 
                             
     def set_component_flags(self):
