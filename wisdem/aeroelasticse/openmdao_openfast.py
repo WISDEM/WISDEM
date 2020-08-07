@@ -850,6 +850,7 @@ class FASTLoadCases(ExplicitComponent):
                 for var in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
                     case_inputs[var] = {'vals':[self.options['analysis_options']['openfast']['fst_settings'][var]], 'group':0}
                 # wind speeds
+                case_inputs[("InflowWind","WindType")]   = {'vals':[1], 'group':0}
                 case_inputs[("InflowWind","HWindSpeed")] = {'vals':U, 'group':1}
                 case_inputs[("ElastoDyn","RotSpeed")]    = {'vals':omega, 'group':1}
                 case_inputs[("ElastoDyn","BlPitch1")]    = {'vals':pitch, 'group':1}
