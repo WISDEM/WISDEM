@@ -407,10 +407,6 @@ def assign_tower_values(wt_opt, analysis_options, tower):
     n_height        = analysis_options['tower']['n_height'] # Number of points along tower height
     n_layers        = analysis_options['tower']['n_layers']
     
-    layer_name      = n_layers * ['']
-    layer_mat       = n_layers * ['']
-    thickness       = np.zeros((n_layers, n_height-1))
-
     svec = np.unique( np.r_[tower['outer_shape_bem']['outer_diameter']['grid'],
                             tower['outer_shape_bem']['reference_axis']['x']['grid'],
                             tower['outer_shape_bem']['reference_axis']['y']['grid'],
@@ -423,14 +419,17 @@ def assign_tower_values(wt_opt, analysis_options, tower):
     wt_opt['tower.ref_axis'][:,1]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['y']['grid'], tower['outer_shape_bem']['reference_axis']['y']['values'])
     wt_opt['tower.ref_axis'][:,2]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['z']['grid'], tower['outer_shape_bem']['reference_axis']['z']['values'])
 
+    layer_name      = n_layers * ['']
+    layer_mat       = n_layers * ['']
+    thickness       = np.zeros((n_layers, n_height))
     for i in range(n_layers):
         layer_name[i]  = tower['internal_structure_2d_fem']['layers'][i]['name']
         layer_mat[i]   = tower['internal_structure_2d_fem']['layers'][i]['material']
-        thickness[i]   = np.interp(svec, tower['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], tower['internal_structure_2d_fem']['layers'][i]['thickness']['values'])[0: -1]
+        thickness[i]   = np.interp(svec, tower['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], tower['internal_structure_2d_fem']['layers'][i]['thickness']['values'])
 
     wt_opt['tower.layer_name']        = layer_name
     wt_opt['tower.layer_mat']         = layer_mat
-    wt_opt['tower.layer_thickness']   = thickness
+    wt_opt['tower.layer_thickness']   = 0.5*(thickness[:,:-1]+thickness[:,1:])
     
     wt_opt['tower.outfitting_factor'] = tower['internal_structure_2d_fem']['outfitting_factor']    
     
@@ -455,19 +454,20 @@ def assign_monopile_values(wt_opt, analysis_options, monopile):
 
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
-    thickness       = np.zeros((n_layers, n_height-1))
+    thickness       = np.zeros((n_layers, n_height))
     for i in range(n_layers):
         layer_name[i]  = monopile['internal_structure_2d_fem']['layers'][i]['name']
         layer_mat[i]   = monopile['internal_structure_2d_fem']['layers'][i]['material']
-        thickness[i]   = monopile['internal_structure_2d_fem']['layers'][i]['thickness']['values']
+        thickness[i]   = np.interp(svec, monopile['internal_structure_2d_fem']['layers'][i]['thickness']['grid'], monopile['internal_structure_2d_fem']['layers'][i]['thickness']['values'])
 
     wt_opt['monopile.layer_name']        = layer_name
     wt_opt['monopile.layer_mat']         = layer_mat
-    wt_opt['monopile.layer_thickness']   = thickness
+    wt_opt['monopile.layer_thickness']   = 0.5*(thickness[:,:-1]+thickness[:,1:])
 
-    wt_opt['monopile.outfitting_factor']          = monopile['outfitting_factor']    
+    wt_opt['monopile.outfitting_factor']          = monopile['internal_structure_2d_fem']['outfitting_factor']    
     wt_opt['monopile.transition_piece_height']    = monopile['transition_piece_height']
     wt_opt['monopile.transition_piece_mass']      = monopile['transition_piece_mass']
+    wt_opt['monopile.transition_piece_cost']      = monopile['transition_piece_cost']
     wt_opt['monopile.gravity_foundation_mass']    = monopile['gravity_foundation_mass']
     wt_opt['monopile.suctionpile_depth']          = monopile['suctionpile_depth']
     wt_opt['monopile.suctionpile_depth_diam_ratio']          = monopile['suctionpile_depth_diam_ratio']
@@ -666,11 +666,11 @@ def assign_control_values(wt_opt, analysis_options, control):
 
 def assign_configuration_values(wt_opt, assembly):
 
-    wt_opt['configuration.ws_class']   = assembly['turbine_class']
-    wt_opt['configuration.turb_class']          = assembly['turbulence_class']
-    wt_opt['configuration.gearbox_type']         = assembly['drivetrain']
-    wt_opt['configuration.rotor_orientation']     = assembly['rotor_orientation'].lower()
-    wt_opt['configuration.n_blades']     = int(assembly['number_of_blades'])
+    wt_opt['configuration.ws_class']          = assembly['turbine_class']
+    wt_opt['configuration.turb_class']        = assembly['turbulence_class']
+    wt_opt['configuration.gearbox_type']      = assembly['drivetrain']
+    wt_opt['configuration.rotor_orientation'] = assembly['rotor_orientation'].lower()
+    wt_opt['configuration.n_blades']          = int(assembly['number_of_blades'])
 
     # Checks for errors
     if int(assembly['number_of_blades']) - assembly['number_of_blades'] != 0:
@@ -680,22 +680,24 @@ def assign_configuration_values(wt_opt, assembly):
 
 def assign_environment_values(wt_opt, environment):
 
-    wt_opt['env.rho_air']   = environment['air_density']
-    wt_opt['env.mu_air']    = environment['air_dyn_viscosity']
-    wt_opt['env.rho_water']   = environment['water_density']
-    wt_opt['env.mu_water']    = environment['water_dyn_viscosity']
-    wt_opt['env.weibull_k'] = environment['weib_shape_parameter']
+    wt_opt['env.rho_air']         = environment['air_density']
+    wt_opt['env.mu_air']          = environment['air_dyn_viscosity']
+    wt_opt['env.rho_water']       = environment['water_density']
+    wt_opt['env.mu_water']        = environment['water_dyn_viscosity']
+    wt_opt['env.water_depth']     = environment['water_depth']
+    wt_opt['env.hsig_wave']       = environment['significant_wave_height']
+    wt_opt['env.Tsig_wave']       = environment['significant_wave_period']
+    wt_opt['env.weibull_k']       = environment['weib_shape_parameter']
     wt_opt['env.speed_sound_air'] = environment['air_speed_sound']
-    wt_opt['env.shear_exp'] = environment['shear_exp']
-    wt_opt['env.G_soil'] = environment['soil_shear_modulus']
-    wt_opt['env.nu_soil'] = environment['soil_poisson']
+    wt_opt['env.shear_exp']       = environment['shear_exp']
+    wt_opt['env.G_soil']          = environment['soil_shear_modulus']
+    wt_opt['env.nu_soil']         = environment['soil_poisson']
 
     return wt_opt
 
 def assign_costs_values(wt_opt, costs):
 
     wt_opt['costs.turbine_number']      = costs['turbine_number']
-    wt_opt['costs.bos_per_kW']          = costs['bos_per_kW']
     wt_opt['costs.opex_per_kW']         = costs['opex_per_kW']
     wt_opt['costs.wake_loss_factor']    = costs['wake_loss_factor']
     wt_opt['costs.fixed_charge_rate']   = costs['fixed_charge_rate']

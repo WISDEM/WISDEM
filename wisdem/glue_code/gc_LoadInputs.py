@@ -31,6 +31,9 @@ class WindTurbineOntologyPython(object):
         self.fname_input = fname_input_wt
         self.wt_init     = self.load_ontology(self.fname_input, validate=self.analysis_options['yaml']['validate'], fname_schema=self.analysis_options['yaml']['path2schema'])
         self.openmdao_vectors()
+
+        # Offshore flag
+        self.analysis_options['offshore'] = 'water_depth' in self.wt_init['environment'] and self.wt_init['environment']['water_depth'] > 0.0
         
         # Openfast
         if self.analysis_options['Analysis_Flags']['OpenFAST'] == True:
@@ -115,7 +118,7 @@ class WindTurbineOntologyPython(object):
         self.analysis_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
         self.analysis_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
 
-        # Monopile 
+        # Monopile
         self.analysis_options['monopile']              = {}
         self.analysis_options['tower']['monopile']  = 'monopile' in self.wt_init['components']
         if self.analysis_options['tower']['monopile']:
@@ -292,12 +295,19 @@ class WindTurbineOntologyPython(object):
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['tower.ref_axis'][:,0].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['tower.ref_axis'][:,1].tolist()
         self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['tower.ref_axis'][:,2].tolist()
+        self.wt_init['components']['tower']['internal_structure_2d_fem']['outfitting_factor']     = float( wt_opt['tower.outfitting_factor'] )
         for i in range(self.analysis_options['tower']['n_layers']):
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower.s'].tolist()
             self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = np.hstack((wt_opt['tower.layer_thickness'][i,:], wt_opt['tower.layer_thickness'][i,-1])).tolist()
 
         # Update monopile
         if self.analysis_options['tower']['monopile']:
+            self.wt_init['components']['monopile']['transition_piece_height']      = float( wt_opt['monopile.transition_piece_height'] )
+            self.wt_init['components']['monopile']['transition_piece_mass']        = float( wt_opt['monopile.transition_piece_mass'] )
+            self.wt_init['components']['monopile']['transition_piece_cost']        = float( wt_opt['monopile.transition_piece_cost'] )
+            self.wt_init['components']['monopile']['gravity_foundation_mass']      = float( wt_opt['monopile.gravity_foundation_mass'] )
+            self.wt_init['components']['monopile']['suctionpile_depth']            = float( wt_opt['monopile.suctionpile_depth'] )
+            self.wt_init['components']['monopile']['suctionpile_depth_diam_ratio'] = float( wt_opt['monopile.suctionpile_depth_diam_ratio'] )
             self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['monopile.s'].tolist()
             self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['monopile.diameter'].tolist()
             self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['monopile.s'].tolist()
@@ -306,6 +316,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['monopile.ref_axis'][:,0].tolist()
             self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['monopile.ref_axis'][:,1].tolist()
             self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['monopile.ref_axis'][:,2].tolist()
+            self.wt_init['components']['monopile']['internal_structure_2d_fem']['outfitting_factor']     = float( wt_opt['monopile.outfitting_factor'] )
             for i in range(self.analysis_options['monopile']['n_layers']):
                 self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['monopile.s'].tolist()
                 self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['monopile.layer_thickness'][i,:].tolist()

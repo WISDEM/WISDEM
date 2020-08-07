@@ -132,18 +132,20 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         env_ivc = self.add_subsystem('env', om.IndepVarComp())
         env_ivc.add_output('rho_air',      val=1.225,       units='kg/m**3',    desc='Density of air')
         env_ivc.add_output('mu_air',       val=1.81e-5,     units='kg/(m*s)',   desc='Dynamic viscosity of air')
-        env_ivc.add_output('weibull_k',    val=2.0,                             desc='Shape parameter of the Weibull probability density function of the wind.')
         env_ivc.add_output('shear_exp',    val=0.2,                             desc='Shear exponent of the wind.')
         env_ivc.add_output('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
+        env_ivc.add_output('weibull_k',    val=2.0,                             desc='Shape parameter of the Weibull probability density function of the wind.')
         env_ivc.add_output('rho_water',    val=1025.,       units='kg/m**3',    desc='Density of ocean water')
         env_ivc.add_output('mu_water',     val=1.3351e-3,   units='kg/(m*s)',   desc='Dynamic viscosity of ocean water')
+        env_ivc.add_output('water_depth',  val=0.0,         units='m',          desc='Water depth for analysis.  Values > 0 mean offshore')
+        env_ivc.add_output('hsig_wave',    val=0.0,         units='m',          desc='Significant wave height')
+        env_ivc.add_output('Tsig_wave',    val=0.0,         units='s',          desc='Significant wave period')
         env_ivc.add_output('G_soil',       val=140e6,       units='N/m**2',     desc='Shear stress of soil')
         env_ivc.add_output('nu_soil',      val=0.4,                             desc='Poisson ratio of soil')
-
+        
         # Cost analysis inputs
         costs_ivc = self.add_subsystem('costs', om.IndepVarComp())
         costs_ivc.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
-        costs_ivc.add_output('bos_per_kW',        val=0.0, units='USD/kW',    desc='Balance of system costs of the turbine')
         costs_ivc.add_output('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
         costs_ivc.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
         costs_ivc.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
@@ -156,6 +158,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
         self.connect('hub.radius',                      'assembly.hub_radius')
         self.connect('tower.height',                    'assembly.tower_height')
+        self.connect('monopile.height',                 'assembly.monopile_height')
         self.connect('foundation.height',               'assembly.foundation_height')
         self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
 
@@ -910,28 +913,6 @@ class Hub(om.Group):
         
         exec_comp = om.ExecComp('radius = 0.5 * diameter', units='m', radius={'desc' : 'Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.'})
         self.add_subsystem('compute_radius', exec_comp, promotes=['*'])
-        
-class Tower(om.Group):
-    
-    def initialize(self):
-        self.options.declare('tower_init_options')
-        
-    def setup(self):
-        tower_init_options = self.options['tower_init_options']
-        n_height           = tower_init_options['n_height']
-        n_layers           = tower_init_options['n_layers']
-        
-        ivc = self.add_subsystem('tower_indep_vars', om.IndepVarComp(), promotes=['*'])
-        ivc.add_output('ref_axis', val=np.zeros((n_height, 3)), units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
-        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
-        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
-        ivc.add_discrete_output('layer_name', val=[],         desc='1D array of the names of the layers modeled in the tower structure.')
-        ivc.add_discrete_output('layer_mat',  val=[],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-        
-        self.add_subsystem('compute_tower_grid',
-            ComputeGrid(init_options=tower_init_options),
-            promotes=['*'])
 
 class ComputeGrid(om.ExplicitComponent):
     """
@@ -964,7 +945,7 @@ class ComputeGrid(om.ExplicitComponent):
         
     def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
-        outputs['height'] = inputs['ref_axis'][-1,2]
+        outputs['height'] = inputs['ref_axis'][-1,2] - inputs['ref_axis'][0,2]
         myarc = arc_length(inputs['ref_axis'])
         outputs['length'] = myarc[-1]
         
@@ -982,6 +963,28 @@ class ComputeGrid(om.ExplicitComponent):
         low_d_high = arc_distances[-1] * d_arc_distances_d_points
         high_d_low = np.outer(arc_distances, d_arc_distances_d_points[-1, :])
         partials['s', 'ref_axis'] = (low_d_high - high_d_low) / arc_distances[-1]**2
+        
+class Tower(om.Group):
+    
+    def initialize(self):
+        self.options.declare('tower_init_options')
+        
+    def setup(self):
+        tower_init_options = self.options['tower_init_options']
+        n_height           = tower_init_options['n_height']
+        n_layers           = tower_init_options['n_layers']
+        
+        ivc = self.add_subsystem('tower_indep_vars', om.IndepVarComp(), promotes=['*'])
+        ivc.add_output('ref_axis', val=np.zeros((n_height, 3)), units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
+        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
+        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
+        ivc.add_discrete_output('layer_name', val=[],         desc='1D array of the names of the layers modeled in the tower structure.')
+        ivc.add_discrete_output('layer_mat',  val=[],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
+        
+        self.add_subsystem('compute_tower_grid',
+            ComputeGrid(init_options=tower_init_options),
+            promotes=['*'])
             
 class Monopile(om.Group):
     
@@ -1001,6 +1004,7 @@ class Monopile(om.Group):
         ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
         ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
         ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
+        ivc.add_output('transition_piece_cost',   val = 0.0, units='USD', desc='cost of transition piece')
         ivc.add_output('gravity_foundation_mass', val = 0.0, units='kg', desc='extra mass of gravity foundation')
         ivc.add_output('suctionpile_depth',       val = 0.0, units='m',  desc='depth of foundation in the soil')
         ivc.add_output('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
@@ -1198,6 +1202,7 @@ class WT_Assembly(om.ExplicitComponent):
 
         self.add_input('blade_ref_axis',        val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
         self.add_input('hub_radius',            val=0.0, units='m',         desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
+        self.add_input('monopile_height',       val=0.0,    units='m',      desc='Scalar of the monopile height computed along its axis from monopile base.')
         self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed along its axis from tower base.')
         self.add_input('foundation_height',     val=0.0,    units='m',      desc='Scalar of the foundation height computed along its axis.')
         self.add_input('distance_tt_hub',       val=0.0,    units='m',      desc='Vertical distance from tower top to hub center.')
@@ -1212,7 +1217,7 @@ class WT_Assembly(om.ExplicitComponent):
         outputs['r_blade']        = inputs['blade_ref_axis'][:,2] + inputs['hub_radius']
         outputs['rotor_radius']   = outputs['r_blade'][-1]
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
-        outputs['hub_height']     = inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
+        outputs['hub_height']     = inputs['monopile_height'] + inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
 
 if __name__ == "__main__":
 
