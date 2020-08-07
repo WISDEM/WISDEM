@@ -1103,7 +1103,7 @@ class TowerLeanSE(om.Group):
         
     def setup(self):
         toweropt = self.options['analysis_options']['tower']
-        monopile = toweropt['monopile']
+        monopile = self.options['analysis_options']['flags']['monopile']
 
         n_height_tow = toweropt['n_height']
         n_layers_tow = toweropt['n_layers']
@@ -1202,9 +1202,9 @@ class TowerSE(om.Group):
         
     def setup(self):
         toweropt = self.options['analysis_options']['tower']
-        monopile = toweropt['monopile']
-        nLC      = toweropt['nLC']
-        wind     = toweropt['wind']
+        monopile = self.options['analysis_options']['flags']['monopile']
+        nLC      = toweropt['nLC'] # not yet supported
+        wind     = toweropt['wind'] # not yet supported
         frame3dd_opt = toweropt['frame3dd']
         topLevelFlag = self.options['topLevelFlag']
         n_height_tow = self.options['analysis_options']['tower']['n_height']

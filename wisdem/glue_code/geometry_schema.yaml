@@ -12,11 +12,12 @@ type: object
 required: 
     - name
     - components
-    - airfoils
     - materials
     - assembly
-    - control
+optional: 
     - environment
+    - airfoils
+    - control
     - costs
 # additionalProperties: true
 properties:
@@ -32,6 +33,7 @@ properties:
             - tower
             - monopile
             - foundation
+            - floating
             - RNA
         properties: 
             blade: 
@@ -594,6 +596,8 @@ properties:
                         unit: meter
                         minimum: -1000
                         maximum: 100
+            floating:
+                type: object
             RNA:
                 type: object
                 properties: 

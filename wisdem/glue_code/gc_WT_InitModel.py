@@ -6,43 +6,85 @@ from wisdem.commonse.csystem import DirectionVector
 def yaml2openmdao(wt_opt, analysis_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
     
-    blade           = wt_init['components']['blade']
-    hub             = wt_init['components']['hub']
-    nacelle         = wt_init['components']['nacelle']
-    tower           = wt_init['components']['tower']
-    foundation      = wt_init['components']['foundation']
-    control         = wt_init['control']
+    # These are the required components
     assembly        = wt_init['assembly']
-    environment     = wt_init['environment']
-    costs           = wt_init['costs']
-    airfoils        = wt_init['airfoils']
+    wt_opt = assign_configuration_values(wt_opt, assembly)
+
     materials       = wt_init['materials']
-    if 'RNA' in wt_init['components'].keys():
+    wt_opt = assign_material_values(wt_opt, analysis_options, materials)
+
+    # Now all of the optional components
+    if analysis_options['flags']['environment']:
+        environment     = wt_init['environment']
+        wt_opt = assign_environment_values(wt_opt, environment)
+    else:
+        environment = {}
+
+    if analysis_options['flags']['blade']:
+        blade           = wt_init['components']['blade']
+        wt_opt = assign_blade_values(wt_opt, analysis_options, blade)
+    else:
+        blade = {}
+
+    if analysis_options['flags']['airfoils']:
+        airfoils        = wt_init['airfoils']
+        wt_opt = assign_airfoil_values(wt_opt, analysis_options, airfoils)
+    else:
+        airfoils = {}
+        
+    if analysis_options['flags']['control']:
+        control         = wt_init['control']
+        wt_opt = assign_control_values(wt_opt, analysis_options, control)
+    else:
+        control = {}
+        
+    if analysis_options['flags']['hub']:
+        hub    = wt_init['components']['hub']
+        wt_opt = assign_hub_values(wt_opt, hub)
+    else:
+        hub = {}
+        
+    if analysis_options['flags']['nacelle']:
+        nacelle         = wt_init['components']['nacelle']
+        wt_opt = assign_nacelle_values(wt_opt, assembly, nacelle)
+    else:
+        nacelle = {}
+        
+    if analysis_options['flags']['RNA']:
         RNA = wt_init['components']['RNA']
     else:
         RNA = {}
-    
-    wt_opt = assign_blade_values(wt_opt, analysis_options, blade)
-    wt_opt = assign_hub_values(wt_opt, hub)
-    wt_opt = assign_nacelle_values(wt_opt, assembly, nacelle)
-    wt_opt = assign_tower_values(wt_opt, analysis_options, tower)
-    
-    if analysis_options['tower']['monopile']:
+        
+    if analysis_options['flags']['tower']:
+        tower           = wt_init['components']['tower']
+        wt_opt = assign_tower_values(wt_opt, analysis_options, tower)
+    else:
+        tower = {}
+
+    if analysis_options['flags']['monopile']:
         monopile = wt_init['components']['monopile']
         wt_opt   = assign_monopile_values(wt_opt, analysis_options, monopile)
+    else:
+        monopile = {}
         
-    if analysis_options['floating']['flag']:
+    if analysis_options['flags']['floating']:
         floating = wt_init['components']['floating']
         wt_opt   = assign_floating_values(wt_opt, analysis_options, floating)
     else:
-        wt_opt = assign_foundation_values(wt_opt, foundation)
+        floating = {}
         
-    wt_opt = assign_control_values(wt_opt, analysis_options, control)
-    wt_opt = assign_configuration_values(wt_opt, assembly)
-    wt_opt = assign_environment_values(wt_opt, environment)
-    wt_opt = assign_costs_values(wt_opt, costs)
-    wt_opt = assign_airfoil_values(wt_opt, analysis_options, airfoils)
-    wt_opt = assign_material_values(wt_opt, analysis_options, materials)
+    if analysis_options['flags']['foundation']:
+        foundation      = wt_init['components']['foundation']
+        wt_opt = assign_foundation_values(wt_opt, foundation)
+    else:
+        foundation = {}
+
+    if analysis_options['flags']['costs']:
+        costs           = wt_init['costs']
+        wt_opt = assign_costs_values(wt_opt, costs)
+    else:
+        costs = {}
+        
     if 'elastic_properties_mb' in blade.keys():
         wt_opt = assign_RNA_values(wt_opt, analysis_options, blade, RNA)
 

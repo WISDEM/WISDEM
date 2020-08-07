@@ -51,7 +51,7 @@ class WT_RNTA(Group):
         self.add_subsystem('drivese',   DriveSE(debug=False,
                                             number_of_main_bearings=1,
                                             topLevelFlag=False))
-        if analysis_options['Analysis_Flags']['TowerSE']:
+        if analysis_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(analysis_options=analysis_options, topLevelFlag=False))
         self.add_subsystem('tcons',     TurbineConstraints(analysis_options = analysis_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=analysis_options['general']['verbosity'], topLevelFlag=False))
@@ -281,7 +281,7 @@ class WT_RNTA(Group):
             self.connect('materials.rho',                   'freq_tower.rho_mat')
             self.connect('materials.sigma_y',               'freq_tower.sigma_y_mat')
             self.connect('materials.unit_cost',             'freq_tower.unit_cost_mat')
-            if analysis_options['tower']['monopile']:
+            if analysis_options['flags']['monopile']:
                 self.connect('env.rho_water',                    'freq_tower.rho_water')
                 self.connect('env.mu_water',                     'freq_tower.mu_water')                    
                 self.connect('env.hsig_wave',                    'freq_tower.hsig_wave')                    
@@ -467,7 +467,7 @@ class WT_RNTA(Group):
         self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
 
         # Connections to TowerSE
-        if analysis_options['Analysis_Flags']['TowerSE']:
+        if analysis_options['flags']['tower']:
             self.connect('drivese.top_F',                 'towerse.pre.rna_F')
             self.connect('drivese.top_M',                 'towerse.pre.rna_M')
             self.connect('drivese.rna_I_TT',             ['towerse.rna_I','towerse.pre.mI'])
@@ -494,7 +494,7 @@ class WT_RNTA(Group):
             self.connect('materials.rho',                 'towerse.rho_mat')
             self.connect('materials.sigma_y',             'towerse.sigma_y_mat')
             self.connect('materials.unit_cost',           'towerse.unit_cost_mat')
-            if analysis_options['tower']['monopile']:
+            if analysis_options['flags']['monopile']:
                 self.connect('env.rho_water',                    'towerse.rho_water')
                 self.connect('env.mu_water',                     'towerse.mu_water')                    
                 self.connect('env.G_soil',                       'towerse.soil.G')                    
@@ -543,7 +543,7 @@ class WT_RNTA(Group):
             self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency')
             self.connect('nacelle.generator_efficiency',    'aeroelastic.generator_efficiency')
 
-            #if analysis_options['Analysis_Flags']['TowerSE']:
+            #if analysis_options['flags']['tower']:
             self.connect('freq_tower.post.mass_den',           'aeroelastic.mass_den')
             self.connect('freq_tower.post.foreaft_stff',       'aeroelastic.foreaft_stff')
             self.connect('freq_tower.post.sideside_stff',      'aeroelastic.sideside_stff')
@@ -630,7 +630,7 @@ class WT_RNTA(Group):
         self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
         # Temporary
 
-        if analysis_options['Analysis_Flags']['TowerSE']:
+        if analysis_options['flags']['tower']:
             self.connect('towerse.tower_mass',          'tcc.tower_mass')
 
 class WindPark(Group):

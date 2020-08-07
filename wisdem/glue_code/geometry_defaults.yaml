@@ -253,6 +253,8 @@ components:
     # Foundation
     foundation:
         height: 0.
+    # Floating
+    floating:
     # RNA
     RNA:
         elastic_properties_mb:
