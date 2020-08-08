@@ -38,8 +38,8 @@ class LandBOSSE(om.Group):
 
         if self.options['topLevelFlag']:
             sivc = om.IndepVarComp()
-            sivc.add_output('plant_turbine_spacing', 7)
-            sivc.add_output('plant_row_spacing', 7)
+            sivc.add_output('plant_turbine_spacing', 4)
+            sivc.add_output('plant_row_spacing', 10)
             sivc.add_output('commissioning_pct', 0.01)
             sivc.add_output('decommissioning_pct', 0.15)
             sivc.add_output('trench_len_to_substation_km', 50.0, units='km')
@@ -48,7 +48,7 @@ class LandBOSSE(om.Group):
 
             sivc.add_output('hub_height', 80.0, units='m')
             sivc.add_output('foundation_height', 0.0, units='m')
-            sivc.add_output('blade_mass', 8000.0, units='kg')
+            sivc.add_output('blade_mass', use_default_component_data, units='kg')
             sivc.add_output('hub_mass', use_default_component_data, units='kg')
             sivc.add_output('nacelle_mass', use_default_component_data, units='kg')
             sivc.add_output('tower_mass', 240e3, units='kg')
