@@ -160,7 +160,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc.add_output('decommissioning_pct', 0.15)
             bos_ivc.add_output('distance_to_substation', 50.0, units='km')
             bos_ivc.add_output('distance_to_interconnection', 5.0, units='km')
-            bos_ivc.add_output('interconnect_voltage', 130.0, units='kV')
             if analysis_options['offshore']:
                 bos_ivc.add_output('site_distance', 40.0, units='km')
                 bos_ivc.add_output('distance_to_landfall', 40.0, units='km')
@@ -170,8 +169,10 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 bos_ivc.add_output('site_assessment_cost', 25e6, units='USD')
                 bos_ivc.add_output('construction_operations_plan_cost', 2.5e6, units='USD')
                 bos_ivc.add_output('boem_review_cost', 0.0, units='USD')
-                bos_ivc.add_output('design_install_plan_cost', 2.5e6, units='USD')        
-            
+                bos_ivc.add_output('design_install_plan_cost', 2.5e6, units='USD')
+            else:
+                bos_ivc.add_output('interconnect_voltage', 130.0, units='kV')
+                
         # Cost analysis inputs
         if analysis_options['flags']['costs']:
             costs_ivc = self.add_subsystem('costs', om.IndepVarComp())

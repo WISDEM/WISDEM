@@ -43,12 +43,14 @@ class TestOC3Mass(unittest.TestCase):
         opt['platform']['run_modal'] = True # Not used
 
         opt['tower'] = {}
-        opt['tower']['monopile'] = False
         opt['tower']['n_height'] = npts
         opt['tower']['n_layers'] = 1
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
-    
+
+        opt['flags'] = {}
+        opt['flags']['monopile'] = False
+        
         prob = Problem()
         prob.model=FloatingSE(analysis_options=opt)
         prob.setup()

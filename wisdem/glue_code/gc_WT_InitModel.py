@@ -751,7 +751,6 @@ def assign_bos_values(wt_opt, bos, offshore):
     wt_opt['bos.decommissioning_pct']         = bos['decommissioning_pct']
     wt_opt['bos.distance_to_substation']      = bos['distance_to_substation']
     wt_opt['bos.distance_to_interconnection'] = bos['distance_to_interconnection']
-    wt_opt['bos.interconnect_voltage']        = bos['interconnect_voltage']
     if offshore:
         wt_opt['bos.site_distance']                     = bos['distance_to_site']
         wt_opt['bos.distance_to_landfall']              = bos['distance_to_landfall']
@@ -762,6 +761,8 @@ def assign_bos_values(wt_opt, bos, offshore):
         wt_opt['bos.construction_operations_plan_cost'] = bos['construction_operations_plan_cost']
         wt_opt['bos.boem_review_cost']                  = bos['boem_review_cost']
         wt_opt['bos.design_install_plan_cost']          = bos['design_install_plan_cost']
+    else:
+        wt_opt['bos.interconnect_voltage']        = bos['interconnect_voltage']
 
     return wt_opt
 
