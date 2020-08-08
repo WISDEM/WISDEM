@@ -18,7 +18,7 @@ m_per_ft = 0.3048
 
 class Point(object):
     def __init__(self, x, y):
-        if type(x) == type(pd.Series()):
+        if type(x) == type(pd.Series(dtype='float64')):
             self.x = float(x.values[0])
             self.y = float(y.values[0])
         elif type(x) == type(np.array([])):

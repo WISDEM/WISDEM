@@ -43,7 +43,7 @@ class LandBOSSE(om.Group):
             sivc.add_output('commissioning_pct', 0.01)
             sivc.add_output('decommissioning_pct', 0.15)
             sivc.add_output('trench_len_to_substation_km', 50.0, units='km')
-            sivc.add_output('distance_to_interconnect_km', 5.0, units='km')
+            sivc.add_output('distance_to_interconnect_km', 8.04672, units='km')
             sivc.add_output('interconnect_voltage_kV', 130.0, units='kV')
 
             sivc.add_output('hub_height', 80.0, units='m')

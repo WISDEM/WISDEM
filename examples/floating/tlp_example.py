@@ -42,8 +42,10 @@ opt['platform']['gamma_b'] = 1.1   # Safety factor on buckling
 opt['platform']['gamma_fatigue'] = 1.755 # Not used
 opt['platform']['run_modal'] = True # Not used
 
+opt['flags'] = {}
+opt['flags']['monopile'] = False
+
 opt['tower'] = {}
-opt['tower']['monopile'] = False
 opt['tower']['n_height'] = npts
 opt['tower']['n_layers'] = 1
 opt['materials'] = {}

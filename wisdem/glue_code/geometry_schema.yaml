@@ -279,7 +279,6 @@ properties:
                                     minItems: 3
                                     maxItems: 3
                                     uniqueItems: false
-                                    minimum: 0
             nacelle:
                 type: object
                 properties: 
@@ -633,7 +632,6 @@ properties:
                                     minItems: 3
                                     maxItems: 3
                                     uniqueItems: false
-                                    minimum: 0
     airfoils:
         type: array
         description: Database of airfoils
