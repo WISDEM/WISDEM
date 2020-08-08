@@ -48,7 +48,7 @@ class LandBOSSE(om.Group):
 
             sivc.add_output('hub_height', 80.0, units='m')
             sivc.add_output('foundation_height', 0.0, units='m')
-            sivc.add_output('blade_mass', use_default_component_data, units='kg')
+            sivc.add_output('blade_mass', 8000., units='kg')
             sivc.add_output('hub_mass', use_default_component_data, units='kg')
             sivc.add_output('nacelle_mass', use_default_component_data, units='kg')
             sivc.add_output('tower_mass', 240e3, units='kg')
