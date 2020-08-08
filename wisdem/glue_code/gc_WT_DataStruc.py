@@ -975,9 +975,7 @@ class ComputeGrid(om.ExplicitComponent):
         self.add_output('length', val=0.0, units='m', desc='Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.')
         
         # Declare all partial derivatives.
-        # For height wrt ref_axis, the Jacobian is fixed and is only populated
-        # in one entry, so we define that entry and the value here.
-        self.declare_partials('height', 'ref_axis', rows=[0], cols=[n_height*3-1], val=1.)
+        self.declare_partials('height', 'ref_axis')
         self.declare_partials('length', 'ref_axis')
         self.declare_partials('s', 'ref_axis')
         
@@ -991,6 +989,10 @@ class ComputeGrid(om.ExplicitComponent):
             outputs['s'] = myarc / myarc[-1]
             
     def compute_partials(self, inputs, partials):
+        n_height = self.options['init_options']['n_height']
+        partials['height','ref_axis'] = np.zeros((1,n_height*3))
+        partials['height','ref_axis'][0,-1] = 1.0
+        partials['height','ref_axis'][0,2] = -1.0
         arc_distances, d_arc_distances_d_points = arc_length_deriv(inputs['ref_axis'])
         
         # The length is based on only the final point in the arc,
