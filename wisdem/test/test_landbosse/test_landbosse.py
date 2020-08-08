@@ -31,7 +31,7 @@ def test_landbosse(landbosse_costs_by_module_type_operation):
         OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_expected_validation')
     costs_by_module_type_operation = expected_validation_data_sheets['costs_by_module_type_operation']
     result = compare_expected_to_actual(
-        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, 'test.csv')
+        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, 'truth.csv')
     assert result
 
 
