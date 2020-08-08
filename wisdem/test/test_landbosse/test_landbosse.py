@@ -93,7 +93,7 @@ def compare_expected_to_actual(expected_df, actual_module_type_operation_list, v
     # in a different order than the originals.
     #
     # Round the difference to a given number of decimal places.
-    failed_rows = comparison[~pd.isnull(comparison['% delta']) & comparison['% delta'].round(decimals=-1) != 0]
+    failed_rows = comparison[~pd.isnull(comparison['% delta']) & comparison['% delta'].round(decimals=0) != 0]
 
     if len(failed_rows) > 0:
         print('=' * 80)

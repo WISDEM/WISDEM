@@ -59,6 +59,8 @@ class LandBOSSE(om.Group):
 
         if self.options['topLevelFlag']:
             self.connect('hub_height', 'hub_height_meters')
+            self.connect('plant_turbine_spacing','turbine_spacing_rotor_diameters')
+            self.connect('plant_row_spacing','row_spacing_rotor_diameters')
 
             # machine_rating is in kW by turbine_rating_MW is in MW. However,
             # these units are specified to OpenMDAO so it can convert units.
@@ -82,8 +84,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         This method sets up the inputs.
         """
-        self.add_input('plant_turbine_spacing', 7)
-        self.add_input('plant_row_spacing', 7)
         self.add_input('blade_drag_coefficient', use_default_component_data)  # Unitless
         self.add_input('blade_lever_arm', use_default_component_data, units='m')
         self.add_input('blade_install_cycle_time', use_default_component_data, units='h')
