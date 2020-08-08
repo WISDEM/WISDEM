@@ -18,6 +18,7 @@ optional:
     - environment
     - airfoils
     - control
+    - bos
     - costs
 # additionalProperties: true
 properties:
@@ -1210,6 +1211,122 @@ properties:
                 unit: none
                 minimum: 0
                 maximum: 0.6
+    bos:
+        type: object
+        required:
+            - plant_turbine_spacing
+            - plant_row_spacing
+            - commissioning_pct
+            - decommissioning_pct
+            - distance_to_substation
+            - distance_to_interconnection
+            - interconnect_voltage
+            - distance_to_site
+            - distance_to_landfall
+            - port_cost_per_month
+            - site_auction_price
+            - site_assessment_plan_cost
+            - site_assessment_cost
+            - construction_operations_plan_cost
+            - boem_review_cost
+            - design_install_plan_cost
+        properties:
+            plant_turbine_spacing:
+                type: number
+                description: Distance between turbines in the primary grid streamwise direction in rotor diameters
+                unit: none
+                minimum: 1
+                maximum: 100
+            plant_row_spacing:
+                type: number
+                description: Distance between turbine rows in the cross-wind direction in rotor diameters
+                unit: none
+                minimum: 1
+                maximum: 100
+            commissioning_pct:
+                type: number
+                description: Fraction of total BOS cost that is due to commissioning
+                unit: none
+                minimum: 0
+                maximum: 1
+            decommissioning_pct:
+                type: number
+                description: Fraction of total BOS cost that is due to decommissioning
+                unit: none
+                minimum: 0
+                maximum: 1
+            distance_to_substation:
+                type: number
+                description: Distance from centroid of plant to substation in km
+                unit: km
+                minimum: 0
+                maximum: 1000
+            distance_to_interconnection:
+                type: number
+                description: Distance from substation to grid connection in km
+                unit: km
+                minimum: 0
+                maximum: 1000
+            distance_to_landfall:
+                type: number
+                description: Distance from plant centroid to export cable landfall for offshore plants
+                unit: km
+                minimum: 0
+                maximum: 1000
+            distance_to_site:
+                type: number
+                description: Distance from port to plant centroid for offshore plants
+                unit: km
+                minimum: 0
+                maximum: 1000
+            interconnect_voltage:
+                type: number
+                description: Voltage of cabling to grid interconnection
+                unit: kV
+                minimum: 0
+                maximum: 1000
+            port_cost_per_month:
+                type: number
+                description: Monthly port rental fees
+                unit: USD
+                minimum: 0
+                maximum: 1e9
+            site_auction_price:
+                type: number
+                description: Cost to secure site lease
+                unit: USD
+                minimum: 0
+                maximum: 1e9
+            site_assessment_plan_cost:
+                type: number
+                description: Cost to do engineering plan for site assessment
+                unit: USD
+                minimum: 0
+                maximum: 1e9
+            site_assessment_cost:
+                type: number
+                description: Cost to execute site assessment
+                unit: USD
+                minimum: 0
+                maximum: 1e9
+            construction_operations_plan_cost:
+                type: number
+                description: Cost to do construction planning
+                unit: USD
+                minimum: 0
+                maximum: 1e9
+            boem_review_cost:
+                type: number
+                description: Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
+                unit: USD
+                minimum: 0
+                maximum: 1e9
+            design_install_plan_cost:
+                type: number
+                description: Cost to do installation planning
+                unit: USD
+                minimum: 0
+                maximum: 1e9
     costs:
         type: object
         required:

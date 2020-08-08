@@ -239,7 +239,10 @@ class WindTurbineOntologyPython(object):
             raise ValueError('Cannot have both floating and foundation components')
         if flags['floating'] and flags['monopile']:
             raise ValueError('Cannot have both floating and monopile components')
-            
+
+        # Offshore flag
+        if not self.analysis_options['offshore'] and (flags['monopile'] or flags['floating']):
+            raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
 
     def write_ontology(self, wt_opt, fname_output):
 

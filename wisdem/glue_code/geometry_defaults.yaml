@@ -345,11 +345,29 @@ environment:
     water_depth: 0.0
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
+# Balance of station
+bos:
+    plant_turbine_spacing: 7
+    plant_row_spacing: 7
+    commissioning_pct: 0.01
+    decommissioning_pct: 0.15
+    distance_to_substation: 50.0
+    distance_to_interconnection: 8.
+    interconnect_voltage: 130
+    distance_to_site: 115.
+    distance_to_landfall: 50.
+    port_cost_per_month: 2e6
+    site_auction_price: 100e6
+    site_assessment_plan_cost: 1e6
+    site_assessment_cost: 25e6
+    construction_operations_plan_cost: 2.5e6
+    boem_review_cost: 0.0
+    design_install_plan_cost: 2.5e6
 # Costs
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075
-    bos_per_kW: 459.
-    opex_per_kW: 44.
-    turbine_number: 178
+    bos_per_kW: 0.0
+    opex_per_kW: 0.0
+    turbine_number: 100
 # EOF

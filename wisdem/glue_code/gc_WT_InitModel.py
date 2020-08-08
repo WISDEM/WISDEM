@@ -79,6 +79,12 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     else:
         foundation = {}
 
+    if analysis_options['flags']['bos']:
+        bos           = wt_init['bos']
+        wt_opt = assign_bos_values(wt_opt, bos, analysis_options['offshore'])
+    else:
+        costs = {}
+
     if analysis_options['flags']['costs']:
         costs           = wt_init['costs']
         wt_opt = assign_costs_values(wt_opt, costs)
@@ -737,10 +743,33 @@ def assign_environment_values(wt_opt, environment):
 
     return wt_opt
 
+def assign_bos_values(wt_opt, bos, offshore):
+
+    wt_opt['bos.plant_turbine_spacing']       = bos['plant_turbine_spacing']
+    wt_opt['bos.plant_row_spacing']           = bos['plant_row_spacing']
+    wt_opt['bos.commissioning_pct']           = bos['commissioning_pct']
+    wt_opt['bos.decommissioning_pct']         = bos['decommissioning_pct']
+    wt_opt['bos.distance_to_substation']      = bos['distance_to_substation']
+    wt_opt['bos.distance_to_interconnection'] = bos['distance_to_interconnection']
+    wt_opt['bos.interconnect_voltage']        = bos['interconnect_voltage']
+    if offshore:
+        wt_opt['bos.site_distance']                     = bos['distance_to_site']
+        wt_opt['bos.distance_to_landfall']              = bos['distance_to_landfall']
+        wt_opt['bos.port_cost_per_month']               = bos['port_cost_per_month']
+        wt_opt['bos.site_auction_price']                = bos['site_auction_price']
+        wt_opt['bos.site_assessment_plan_cost']         = bos['site_assessment_plan_cost']
+        wt_opt['bos.site_assessment_cost']              = bos['site_assessment_cost']
+        wt_opt['bos.construction_operations_plan_cost'] = bos['construction_operations_plan_cost']
+        wt_opt['bos.boem_review_cost']                  = bos['boem_review_cost']
+        wt_opt['bos.design_install_plan_cost']          = bos['design_install_plan_cost']
+
+    return wt_opt
+
 def assign_costs_values(wt_opt, costs):
 
     wt_opt['costs.turbine_number']      = costs['turbine_number']
     wt_opt['costs.opex_per_kW']         = costs['opex_per_kW']
+    wt_opt['costs.bos_per_kW']          = costs['bos_per_kW']
     wt_opt['costs.wake_loss_factor']    = costs['wake_loss_factor']
     wt_opt['costs.fixed_charge_rate']   = costs['fixed_charge_rate']
     if 'offset_tcc_per_kW' in costs:

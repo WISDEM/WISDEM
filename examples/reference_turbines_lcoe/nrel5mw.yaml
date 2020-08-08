@@ -498,6 +498,15 @@ environment:
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
     
+bos:
+    plant_turbine_spacing: 7
+    plant_row_spacing: 7
+    commissioning_pct: 0.01
+    decommissioning_pct: 0.15
+    distance_to_substation: 50.0
+    distance_to_interconnection: 8.
+    interconnect_voltage: 130
+    
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075

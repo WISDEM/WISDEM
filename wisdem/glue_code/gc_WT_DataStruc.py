@@ -151,12 +151,33 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output('Tsig_wave',    val=0.0,         units='s',          desc='Significant wave period')
             env_ivc.add_output('G_soil',       val=140e6,       units='N/m**2',     desc='Shear stress of soil')
             env_ivc.add_output('nu_soil',      val=0.4,                             desc='Poisson ratio of soil')
-        
+
+        if analysis_options['flags']['bos']: 
+            bos_ivc = self.add_subsystem('bos', om.IndepVarComp())
+            bos_ivc.add_output('plant_turbine_spacing', 7, desc='Distance between turbines in rotor diameters')
+            bos_ivc.add_output('plant_row_spacing', 7, desc='Distance between turbine rows in rotor diameters')
+            bos_ivc.add_output('commissioning_pct', 0.01)
+            bos_ivc.add_output('decommissioning_pct', 0.15)
+            bos_ivc.add_output('distance_to_substation', 50.0, units='km')
+            bos_ivc.add_output('distance_to_interconnection', 5.0, units='km')
+            bos_ivc.add_output('interconnect_voltage', 130.0, units='kV')
+            if analysis_options['offshore']:
+                bos_ivc.add_output('site_distance', 40.0, units='km')
+                bos_ivc.add_output('distance_to_landfall', 40.0, units='km')
+                bos_ivc.add_output('port_cost_per_month', 2e6, units='USD/mo')
+                bos_ivc.add_output('site_auction_price', 100e6, units='USD')
+                bos_ivc.add_output('site_assessment_plan_cost', 1e6, units='USD')
+                bos_ivc.add_output('site_assessment_cost', 25e6, units='USD')
+                bos_ivc.add_output('construction_operations_plan_cost', 2.5e6, units='USD')
+                bos_ivc.add_output('boem_review_cost', 0.0, units='USD')
+                bos_ivc.add_output('design_install_plan_cost', 2.5e6, units='USD')        
+            
         # Cost analysis inputs
         if analysis_options['flags']['costs']:
             costs_ivc = self.add_subsystem('costs', om.IndepVarComp())
             costs_ivc.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
             costs_ivc.add_output('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
+            costs_ivc.add_output('bos_per_kW' ,       val=0.0, units='USD/kW',    desc='Balance of station/plant capital cost')
             costs_ivc.add_output('opex_per_kW',       val=0.0, units='USD/kW/yr', desc='Average annual operational expenditures of the turbine')
             costs_ivc.add_output('wake_loss_factor',  val=0.0,                    desc='The losses in AEP due to waked conditions')
             costs_ivc.add_output('fixed_charge_rate', val=0.0,                    desc = 'Fixed charge rate for coe calculation')
@@ -1234,31 +1255,3 @@ class WT_Assembly(om.ExplicitComponent):
         outputs['rotor_radius']   = outputs['r_blade'][-1]
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
         outputs['hub_height']     = inputs['monopile_height'] + inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
-
-if __name__ == "__main__":
-
-    pass
-
-
-    #### TODO (emg) : update this and create an example
-    # ## File management
-    # fname_input        = "reference_turbines/nrel5mw/nrel5mw_mod_update.yaml"
-    # # fname_input        = "/mnt/c/Material/Projects/Hitachi_Design/Design/turbine_inputs/aerospan_formatted_v13.yaml"
-    # fname_output       = "reference_turbines/nrel5mw/nrel5mw_mod_update_output.yaml"
-    
-    # # Load yaml data into a pure python data structure
-    # wt_initial               = WindTurbineOntologyPython()
-    # wt_initial.validate      = False
-    # wt_initial.fname_schema  = "reference_turbines/IEAontology_schema.yaml"
-    # analysis_options, wt_init = wt_initial.initialize(fname_input)
-    
-    # # Initialize openmdao problem
-    # wt_opt          = om.Problem()
-    # wt_opt.model    = WindTurbineOntologyOpenMDAO(analysis_options = analysis_options)
-    # wt_opt.setup()
-    # # Load wind turbine data from wt_initial to the openmdao problem
-    # wt_opt = yaml2openmdao(wt_opt, analysis_options, wt_init)
-    # wt_opt.run_driver()
-    
-    # # Save data coming from openmdao to an output yaml file
-    # wt_initial.write_ontology(wt_opt, fname_output)
