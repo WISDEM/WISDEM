@@ -14,10 +14,10 @@ def landbosse_costs_by_module_type_operation():
     test.
     """
     prob = om.Problem()
-    prob.model = LandBOSSE(topLevelFlag = True)
+    prob.model = LandBOSSE()
+    prob.model.options['topLevelFlag'] = True
     prob.setup()
     prob.run_model()
-    prob.model.list_inputs(units=True)
     landbosse_costs_by_module_type_operation = prob['landbosse_costs_by_module_type_operation']
     return landbosse_costs_by_module_type_operation
 
@@ -31,7 +31,7 @@ def test_landbosse(landbosse_costs_by_module_type_operation):
         OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_expected_validation')
     costs_by_module_type_operation = expected_validation_data_sheets['costs_by_module_type_operation']
     result = compare_expected_to_actual(
-        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, 'temp.csv')
+        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, 'test.csv')
     assert result
 
 
@@ -94,7 +94,7 @@ def compare_expected_to_actual(expected_df, actual_module_type_operation_list, v
     # in a different order than the originals.
     #
     # Round the difference to a given number of decimal places.
-    failed_rows = comparison[~pd.isnull(comparison['% delta']) & comparison['% delta'].round(decimals=0) != 0]
+    failed_rows = comparison[~pd.isnull(comparison['% delta']) & comparison['% delta'].round(decimals=4) != 0]
 
     if len(failed_rows) > 0:
         print('=' * 80)
