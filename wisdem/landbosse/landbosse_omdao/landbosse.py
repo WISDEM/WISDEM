@@ -25,40 +25,40 @@ class LandBOSSE(om.Group):
 
     def setup(self):
         # Define all input variables from all models
-        myIndeps = om.IndepVarComp()
+        ivc = om.IndepVarComp()
 
-        myIndeps.add_output('plant_turbine_spacing', 4)
-        myIndeps.add_output('plant_row_spacing', 10)
-
-        myIndeps.add_output('site_distance_to_interconnenction', 8.04672, units='km')
-
-        myIndeps.add_output('commissioning_pct', 0.01)
-        myIndeps.add_output('decommissioning_pct', 0.15)
+        ivc.add_output('plant_turbine_spacing', 4)
+        ivc.add_output('plant_row_spacing', 10)
+        ivc.add_output('commissioning_pct', 0.01)
+        ivc.add_output('decommissioning_pct', 0.15)
+        ivc.add_output('trench_len_to_substation_km', 50.0, units='km')
+        ivc.add_output('distance_to_interconnection', 8.04672, units='km')
+        ivc.add_output('interconnect_voltage_kV', 130.0, units='kV')
 
         # Add a tower section height variable. The default value of 30 m is for
         # transportable tower sections.
-
-        myIndeps.add_output('tower_section_length_m', 30.0, units='m',
+        ivc.add_output('tower_section_length_m', 30.0, units='m',
                             desc='The transportable length of a tower section.')
 
-        myIndeps.add_output('blade_drag_coefficient', use_default_component_data)  # Unitless
-        myIndeps.add_output('blade_lever_arm', use_default_component_data, units='m')
-        myIndeps.add_output('blade_install_cycle_time', use_default_component_data, units='h')
-        myIndeps.add_output('blade_offload_hook_height', use_default_component_data, units='m')
-        myIndeps.add_output('blade_offload_cycle_time', use_default_component_data, units='h')
-        myIndeps.add_output('blade_drag_multiplier', use_default_component_data)  # Unitless
+        ivc.add_output('blade_drag_coefficient', use_default_component_data)  # Unitless
+        ivc.add_output('blade_lever_arm', use_default_component_data, units='m')
+        ivc.add_output('blade_install_cycle_time', use_default_component_data, units='h')
+        ivc.add_output('blade_offload_hook_height', use_default_component_data, units='m')
+        ivc.add_output('blade_offload_cycle_time', use_default_component_data, units='h')
+        ivc.add_output('blade_drag_multiplier', use_default_component_data)  # Unitless
 
-        self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
+        self.add_subsystem('ivc', ivc, promotes=['*'])
 
         if self.options['topLevelFlag']:
-            sharedIndeps = om.IndepVarComp()
-            sharedIndeps.add_output('hub_height', 80.0, units='m')
-            sharedIndeps.add_output('foundation_height', 0.0, units='m')
-            sharedIndeps.add_output('blade_mass', 8000.0, units='kg')
-            sharedIndeps.add_output('nacelle_mass', use_default_component_data, units='kg')
-            sharedIndeps.add_output('tower_mass', 240e3, units='kg')
-            sharedIndeps.add_output('machine_rating', 1500.0, units='kW')
-            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
+            sivc = om.IndepVarComp()
+            sivc.add_output('hub_height', 80.0, units='m')
+            sivc.add_output('foundation_height', 0.0, units='m')
+            sivc.add_output('blade_mass', 8000.0, units='kg')
+            sivc.add_output('hub_mass', use_default_component_data, units='kg')
+            sivc.add_output('nacelle_mass', use_default_component_data, units='kg')
+            sivc.add_output('tower_mass', 240e3, units='kg')
+            sivc.add_output('machine_rating', 1500.0, units='kW')
+            self.add_subsystem('sivc', sivc, promotes=['*'])
             
         self.add_subsystem('landbosse', LandBOSSE_API(topLevelFlag = self.options['topLevelFlag']), promotes=['*'])
 
@@ -71,7 +71,7 @@ class LandBOSSE(om.Group):
 
         self.connect('plant_turbine_spacing','turbine_spacing_rotor_diameters')
         self.connect('plant_row_spacing','row_spacing_rotor_diameters')
-        self.connect('site_distance_to_interconnenction','distance_to_interconnect_mi')
+        self.connect('distance_to_interconnection','distance_to_interconnect_mi')
 
 
 class LandBOSSE_API(om.ExplicitComponent):
