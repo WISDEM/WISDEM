@@ -13,7 +13,6 @@ from .WeatherWindowCSVReader import read_weather_window
 
 # Read in default sheets for project data
 default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_public')
-default_components_data = default_project_data['components']
 
 use_default_component_data = -1.0
 
@@ -661,6 +660,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Make the nacelle. This does not include the hub or blades.
         nacelle_mass_kg = inputs['nacelle_mass'][0]
         nacelle = input_components[input_components['Component'].str.startswith('Nacelle')].iloc[0].copy()
+        print(nacelle_mass_kg)
+        print(nacelle)
         if inputs['nacelle_mass'] != use_default_component_data:
             nacelle['Mass tonne'] = nacelle_mass_kg / kg_per_tonne
             nacelle['Component'] = 'Nacelle'

@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-import numpy as np
 import openmdao.api as om
 
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
@@ -18,7 +17,7 @@ def landbosse_costs_by_module_type_operation():
     prob.model.options['topLevelFlag'] = True
     prob.setup()
     prob.run_model()
-    prob.model.list_inputs(units=True)
+    #prob.model.list_inputs(units=True)
     landbosse_costs_by_module_type_operation = prob['landbosse_costs_by_module_type_operation']
     return landbosse_costs_by_module_type_operation
 
