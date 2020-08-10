@@ -9,7 +9,6 @@ with warnings.catch_warnings():
 # The library path is where to find the default input data for LandBOSSE.
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 library_path = os.path.join(ROOT, "library", "landbosse")
-print(library_path)
 
 class OpenMDAODataframeCache:
     """
@@ -80,7 +79,7 @@ class OpenMDAODataframeCache:
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-            xlsx = pd.ExcelFile(xlsx_filename, engine='openpyxl')
+            xlsx = pd.ExcelFile(xlsx_filename)
         sheets_dict = {sheet_name: xlsx.parse(sheet_name) for sheet_name in xlsx.sheet_names}
         cls._cache[xlsx_basename] = sheets_dict
         return cls.copy_dataframes(sheets_dict)

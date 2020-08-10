@@ -11,9 +11,6 @@ from wisdem.landbosse.model.DefaultMasterInputDict import DefaultMasterInputDict
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
 from wisdem.landbosse.landbosse_omdao.WeatherWindowCSVReader import read_weather_window
 
-# Read in default sheets for project data
-default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_public')
-
 use_default_component_data = -1.0
 
 class LandBOSSE(om.Group):
@@ -48,8 +45,8 @@ class LandBOSSE(om.Group):
             sivc.add_output('hub_height', 80.0, units='m')
             sivc.add_output('foundation_height', 0.0, units='m')
             sivc.add_output('blade_mass', 8000., units='kg')
-            sivc.add_output('hub_mass', use_default_component_data, units='kg')
-            sivc.add_output('nacelle_mass', use_default_component_data, units='kg')
+            sivc.add_output('hub_mass', 15.4e3, units='kg')
+            sivc.add_output('nacelle_mass', 50e3, units='kg')
             sivc.add_output('tower_mass', 240e3, units='kg')
             sivc.add_output('machine_rating', 1500.0, units='kW')
             self.add_subsystem('sivc', sivc, promotes=['*'])
@@ -67,12 +64,14 @@ class LandBOSSE(om.Group):
             self.connect('distance_to_interconnect_km', 'distance_to_interconnect_mi')
         
 
-
 class LandBOSSE_API(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('topLevelFlag', default=False)
         
     def setup(self):
+        # Clear the cache
+        OpenMDAODataframeCache._cache={}
+        
         self.setup_inputs()
         self.setup_outputs()
         self.setup_discrete_outputs()
@@ -234,6 +233,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         which can be overridden outside by setting the properties listed
         below.
         """
+        # Read in default sheets for project data
+        default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_public')
 
         self.add_discrete_input('site_facility_building_area_df',
                                 val=default_project_data['site_facility_building_area'],

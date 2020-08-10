@@ -4,7 +4,6 @@ import openmdao.api as om
 
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
-OpenMDAODataframeCache._cache = {} # Clear the cache
 
 @pytest.fixture
 def landbosse_costs_by_module_type_operation():
