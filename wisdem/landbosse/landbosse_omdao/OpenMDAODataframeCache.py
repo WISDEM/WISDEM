@@ -80,7 +80,7 @@ class OpenMDAODataframeCache:
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
-            xlsx = pd.ExcelFile(xlsx_filename)
+            xlsx = pd.ExcelFile(xlsx_filename, engine='openpyxl')
         sheets_dict = {sheet_name: xlsx.parse(sheet_name) for sheet_name in xlsx.sheet_names}
         cls._cache[xlsx_basename] = sheets_dict
         return cls.copy_dataframes(sheets_dict)

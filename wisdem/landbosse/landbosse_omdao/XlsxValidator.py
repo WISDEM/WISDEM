@@ -36,7 +36,7 @@ class XlsxValidator:
         # the raw_cost and raw_cost_total_or_per_turbine columns.
         actual_df = pd.DataFrame(actual_module_type_operation_list)
         actual_df.drop(['raw_cost', 'raw_cost_total_or_per_turbine'], axis=1, inplace=True)
-        expected_df = pd.read_excel(expected_xlsx, 'costs_by_module_type_operation')
+        expected_df = pd.read_excel(expected_xlsx, 'costs_by_module_type_operation', engine='openpyxl')
         expected_df.rename(columns={
             'Project ID with serial': 'project_id_with_serial',
             'Number of turbines': 'num_turbines',
