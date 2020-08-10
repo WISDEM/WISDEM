@@ -4,7 +4,7 @@ import openmdao.api as om
 
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
-
+OpenMDAODataframeCache._cache = {} # Clear the cache
 
 @pytest.fixture
 def landbosse_costs_by_module_type_operation():
@@ -27,6 +27,7 @@ def test_landbosse(landbosse_costs_by_module_type_operation):
     This runs the regression test by comparing against the expected validation
     data.
     """
+    OpenMDAODataframeCache._cache = {} # Clear the cache
     expected_validation_data_sheets = \
         OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_expected_validation')
     costs_by_module_type_operation = expected_validation_data_sheets['costs_by_module_type_operation']
