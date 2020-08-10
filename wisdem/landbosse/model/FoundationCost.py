@@ -9,8 +9,8 @@ import numpy as np
 import math
 from scipy.optimize import root_scalar
 
-from .WeatherDelay import WeatherDelay as WD
-from .CostModule import CostModule
+from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
+from wisdem.landbosse.model.CostModule import CostModule
 
 
 class FoundationCost(CostModule):

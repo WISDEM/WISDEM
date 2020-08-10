@@ -3,7 +3,7 @@ import pandas as pd
 import math
 
 
-from .CostModule import CostModule
+from wisdem.landbosse.model.CostModule import CostModule
 
 
 class GridConnectionCost(CostModule):

@@ -9,7 +9,7 @@ with warnings.catch_warnings():
 # The library path is where to find the default input data for LandBOSSE.
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 library_path = os.path.join(ROOT, "library", "landbosse")
-
+print(library_path)
 
 class OpenMDAODataframeCache:
     """

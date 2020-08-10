@@ -6,8 +6,8 @@ with warnings.catch_warnings():
 import numpy as np
 from math import ceil
 
-from .CostModule import CostModule
-from .WeatherDelay import WeatherDelay
+from wisdem.landbosse.model.CostModule import CostModule
+from wisdem.landbosse.model.WeatherDelay import WeatherDelay
 
 import traceback
 
