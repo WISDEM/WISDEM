@@ -249,11 +249,11 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rho          = inputs['rho'][0]
         WISDEM_turbine.rotor_radius = inputs['R'][0]
         WISDEM_turbine.Ng           = inputs['gear_ratio'][0]
-        WISDEM_turbine.GenEff       = inputs['generator_efficiency'][0]
-        WISDEM_turbine.GBoxEff      = inputs['gearbox_efficiency'][0]
+        WISDEM_turbine.GenEff       = inputs['generator_efficiency'][0] * 100.
+        WISDEM_turbine.GBoxEff      = inputs['gearbox_efficiency'][0] * 100.
         WISDEM_turbine.rated_rotor_speed   = inputs['rated_rotor_speed'][0]
         WISDEM_turbine.rated_power  = inputs['rated_power'][0]
-        WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * inputs['gearbox_efficiency'][0] * inputs['generator_efficiency'][0]
+        WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * inputs['gearbox_efficiency'][0]
         WISDEM_turbine.v_rated      = inputs['v_rated'][0]
         WISDEM_turbine.v_min        = inputs['v_min'][0]
         WISDEM_turbine.v_max        = inputs['v_max'][0]
@@ -358,7 +358,7 @@ class TuneROSCO(ExplicitComponent):
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['WE_FOPoles'] = controller.A
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['ps_wind_speeds'] = controller.v
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PS_BldPitchMin'] = controller.ps_min_bld_pitch
-        self.modeling_options['openfast']['fst_vt']['DISCON_in']['SD_MaxPit'] = controller.sd_maxpit
+        self.modeling_options['openfast']['fst_vt']['DISCON_in']['SD_MaxPit'] = controller.sd_maxpit + 0.1
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['SD_CornerFreq'] = controller.sd_cornerfreq
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['Fl_Kp'] = controller.Kp_float
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['Flp_Kp'] = controller.Kp_flap
