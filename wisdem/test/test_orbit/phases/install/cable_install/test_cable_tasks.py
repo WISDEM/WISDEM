@@ -30,10 +30,10 @@ from wisdem.orbit.phases.install.cable_install.common import (
 def test_load_cable_on_vessel(env, cable_vessel, feeder, simple_cable):
 
     env.register(cable_vessel)
-    cable_vessel.extract_vessel_specs()
+    cable_vessel.initialize(mobilize=False)
 
     env.register(feeder)
-    feeder.extract_vessel_specs()
+    feeder.initialize(mobilize=False)
 
     load_cable_on_vessel(cable_vessel, simple_cable)
     env.run()
@@ -61,7 +61,7 @@ def test_load_cable_on_vessel(env, cable_vessel, feeder, simple_cable):
 def test_task(env, cable_vessel, task, log, args):
 
     env.register(cable_vessel)
-    cable_vessel.extract_vessel_specs()
+    cable_vessel.initialize(mobilize=False)
 
     task(cable_vessel, *args)
     env.run()

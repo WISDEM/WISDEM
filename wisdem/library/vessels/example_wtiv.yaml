@@ -27,3 +27,5 @@ vessel_specs:
   max_draft: 6            # m
   min_draft: 5            # m
   overall_length: 150     # m
+  mobilization_days: 7    # days
+  mobilization_mult: 1  # Mobilization multiplier applied to 'day_rate'

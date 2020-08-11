@@ -8,7 +8,6 @@ Copyright (c) NREL. All rights reserved.
 from __future__ import print_function
 import numpy as np
 from scipy.linalg import solve_banded
-from scipy.optimize import curve_fit
 
 
 def mode_fit(x, c2, c3, c4, c5, c6):
@@ -287,7 +286,7 @@ def assembleI(I):
     return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
 
 def unassembleI(I):
-    return np.array([I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]])
+    return np.r_[I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]]
 
 def rotateI(I, th, axis='z'):
     # https://calcresource.com/moment-of-inertia-rotation.html

@@ -1,0 +1,10 @@
+plant:
+  num_turbines: 50
+mooring_install_vessel: test_support_vessel
+site:
+  depth: 40
+  distance: 30
+mooring_system:
+  num_lines: 3
+  line_mass: 500
+  anchor_mass: 100

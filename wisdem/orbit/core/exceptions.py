@@ -386,3 +386,24 @@ class FastenTimeNotFound(Exception):
 
     def __str__(self):
         return self.message
+
+
+class PhaseDependenciesInvalid(Exception):
+    """Error for phase dependencies that can't be resolved."""
+
+    def __init__(self, phases):
+        """
+        Creates an instance of PhaseDependenciesInvalid.
+
+        Parameters
+        ----------
+        phases : dict
+            Invalid phases.
+        """
+
+        self.phases = phases
+
+        self.message = f"Phase dependencies {phases} are not resolvable."
+
+    def __str__(self):
+        return self.message

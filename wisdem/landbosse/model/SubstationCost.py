@@ -7,7 +7,7 @@ with warnings.catch_warnings():
 
 import math
 
-from .CostModule import CostModule
+from wisdem.landbosse.model.CostModule import CostModule
 
 
 class SubstationCost(CostModule):
