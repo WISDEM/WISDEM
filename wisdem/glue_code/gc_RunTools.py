@@ -19,12 +19,12 @@ class Opt_Data(object):
         self.opt_options = {}
 
         # Save data
-        self.fname_opt_options    = ''
-        self.folder_output        = ''
+        self.fname_analysis_options    = ''
+        self.folder_output             = ''
 
     def initialize(self):
 
-        self.opt_options = self.load_yaml(self.fname_opt_options)
+        self.opt_options = self.load_yaml(self.fname_analysis_options)
 
         self.opt_options['folder_output']    = self.folder_output
         self.opt_options['optimization_log'] = self.folder_output + self.opt_options['recorder']['file_name']

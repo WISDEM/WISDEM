@@ -1,5 +1,6 @@
 
 import numpy as np
+import copy
 import openmdao.api as om
 import wisdem.commonse.utilities as util
 
@@ -612,13 +613,19 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
     Returns
     -------
     other_mass : float, [kg]
-        overall component mass
+        mass of high speed shaft, hvac, main frame, yaw, cover, and electronics
+    above_yaw_mass : float, [kg]
+       overall nacelle mass excluding yaw
     nacelle_mass : float, [kg]
-        overall component mass
+        overall nacelle mass including yaw
     nacelle_cm : numpy array[3], [m]
-        center of mass of the component in [x,y,z] for an arbitrary coordinate system
+        coordinates of the center of mass of the nacelle (including yaw) in tower top coordinate system [x,y,z]
+    above_yaw_cm : numpy array[3], [m]
+        coordinates of the center of mass of the nacelle (excluding yaw) in tower top coordinate system [x,y,z]
     nacelle_I : numpy array[6], [kg*m**2]
-        moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
+        moments of inertia for the nacelle (including yaw) [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass
+    above_yaw_I : numpy array[6], [kg*m**2]
+        moments of inertia for the nacelle (excluding yaw) [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass
     """
 
     def setup(self):
@@ -667,8 +674,11 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
 
         self.add_output('other_mass', 0.0, units='kg')
         self.add_output('nacelle_mass', 0.0, units='kg')
-        self.add_output('nacelle_cm', np.zeros(3), units='m')
-        self.add_output('nacelle_I', np.zeros(6), units='kg*m**2')
+        self.add_output('above_yaw_mass', 0.0, units='kg')
+        self.add_output('nacelle_cm',   np.zeros(3), units='m')
+        self.add_output('above_yaw_cm', np.zeros(3), units='m')
+        self.add_output('nacelle_I',    np.zeros(6), units='kg*m**2')
+        self.add_output('above_yaw_I',  np.zeros(6), units='kg*m**2')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -676,7 +686,9 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         tilt = float(np.deg2rad(inputs['tilt']))
         
         components = ['mb1','mb2','lss','hss','gearbox','generator','hvac',
-                      'nose','bedplate','mainframe','yaw','cover']
+                      'nose','bedplate','mainframe','cover']
+        # components = ['mb1','mb2','lss','hss','gearbox','generator','hvac',
+        #               'nose','bedplate','mainframe','yaw','cover']
         if discrete_inputs['uptower']: components.append('electronics')
 
         # Mass and CofM summaries first because will need them for I later
@@ -712,6 +724,16 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
                 
             r       = cm_i - cm_nac
             I_nac  += util.assembleI(I_i) + m_i*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
+
+        outputs['above_yaw_mass'] = copy.copy(m_nac)
+        outputs['above_yaw_cm']   = copy.copy(cm_nac)
+        outputs['above_yaw_I']    = copy.copy(util.unassembleI(I_nac))
+
+        components.append('yaw')
+        m_nac  += inputs['yaw_mass']
+        cm_nac  = (outputs['above_yaw_mass'] * outputs['above_yaw_cm'] + inputs['yaw_cm'] * inputs['yaw_mass']) / m_nac
+        r       = inputs['yaw_cm'] - outputs['above_yaw_cm']
+        I_nac  += util.assembleI(np.r_[inputs['yaw_I'], np.zeros(3)]) + inputs['yaw_mass']*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
 
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac

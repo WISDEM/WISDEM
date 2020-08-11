@@ -387,8 +387,8 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub']     = float(wt_opt['nacelle.distance_tt_hub'])
             self.wt_init['components']['nacelle']['elastic_properties_mb']['above_yaw_mass']= float(wt_opt['drivese.above_yaw_mass'])
             self.wt_init['components']['nacelle']['elastic_properties_mb']['yaw_mass']      = float(wt_opt['drivese.yaw_mass'])
-            self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']   = wt_opt['drivese.nacelle_cm'].tolist()
-            self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']       = wt_opt['drivese.nacelle_I'].tolist()
+            self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']   = wt_opt['drivese.above_yaw_cm'].tolist()
+            self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']       = wt_opt['drivese.above_yaw_I'].tolist()
 
         #if self.modeling_options['flags']['tower']:
         # Update tower

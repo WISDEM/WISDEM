@@ -25,14 +25,14 @@ if MPI:
     #from petsc4py import PETSc
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
-def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, fname_wt_output, folder_output):
+def run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output):
     # Main function to run a wind turbine wisdem assembly
     
     # Create an Opt_Data instance, which is a container for the optimization
     # parameters as described in by the yaml file. Also set the folder output.
     optimization_data       = Opt_Data()
-    optimization_data.fname_opt_options = fname_opt_options
-    optimization_data.folder_output     = folder_output    
+    optimization_data.fname_analysis_options = fname_analysis_options
+    optimization_data.folder_output          = folder_output    
 
     # Load yaml for turbine description into a pure python data structure.
     wt_initial                   = WindTurbineOntologyPython()
@@ -684,13 +684,13 @@ if __name__ == "__main__":
     run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
     fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_modeling_options = run_dir + "modeling_options.yaml"
-    fname_modeling_options = run_dir + "modeling_options.yaml"
+    fname_analysis_options = run_dir + "analysis_options.yaml"
     fname_wt_output        = run_dir + "output.yaml"
     folder_output          = run_dir + '/'
 
 
     tt = time.time()
-    wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_modeling_options, fname_wt_output, folder_output)
+    wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
     
     if MPI:
         rank = MPI.COMM_WORLD.Get_rank()

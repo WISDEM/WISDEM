@@ -432,7 +432,7 @@ class WT_RNTA(Group):
         # self.connect('materials.rho',           'rotorse.rc.rho')
 
         # Connections to DriveSE
-        if analysis_options['servose']['run_servose']:
+        if modeling_options['Analysis_Flags']['ServoSE']:
             self.connect('configuration.upwind',       'drivese.upwind')
             self.connect('configuration.direct_drive', 'drivese.direct_drive')
             self.connect('configuration.n_blades',     'drivese.n_blades') 
@@ -443,7 +443,7 @@ class WT_RNTA(Group):
             self.connect('control.rated_power',        'drivese.machine_rating')    
             self.connect('nacelle.uptilt',             'drivese.tilt')
             self.connect('tower.diameter',             'drivese.D_top', src_indices=[-1])
-            if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
+            if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
                 self.connect('aeroelastic.Fxyz', 'drivese.F_hub')
                 self.connect('aeroelastic.Mxyz', 'drivese.M_hub')
                 self.connect('aeroelastic.Mxyz', 'drivese.hub_shell.max_torque', src_indices=[0])

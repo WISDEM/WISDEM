@@ -6,6 +6,7 @@ Analysis_Flags:
     # (GOAL) If inputs are missing for a module, a warning will be written to the screen and the module disabled.
     OpenFAST: False   # Flag to run aeroelasticse, the wrapper of OpenFAST
     TowerSE:  True
+    RotorSE:  True
     ServoSE:  True
     BOS:      True
 
