@@ -465,9 +465,9 @@ class Hub_System(om.Group):
         self.add_subsystem('ivc', ivc, promotes=['*'])
         self.add_subsystem('hub_shell',      HubShell(),    promotes=['n_blades', 'hub_mass', 'hub_diameter', 'hub_cost', 'hub_cm', 'hub_I',
                                                                       'flange_t2shell_t','flange_OD2hub_D','flange_ID2flange_OD','in2out_circ',
-                                                                      'stress_concentration'])
+                                                                      'stress_concentration', 'blade_root_diameter'])
         self.add_subsystem('spinner',        Spinner(),     promotes=['n_blades', 'hub_diameter', 'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I',
-                                                                      'n_front_brackets','n_rear_brackets','clearance_hub_spinner','spin_hole_incr'])
+                                                                      'n_front_brackets','n_rear_brackets','clearance_hub_spinner','spin_hole_incr', 'blade_root_diameter'])
         self.add_subsystem('pitch_system',   PitchSystem(), promotes=['n_blades', 'hub_diameter', 'pitch_mass', 'pitch_cost', 'pitch_I'])
         self.add_subsystem('adder',          Hub_Adder(), promotes=['hub_mass', 'hub_cost', 'hub_cm', 'hub_I',
                                                                     'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I',
@@ -489,6 +489,7 @@ if __name__ == "__main__":
     hub_prob['n_rear_brackets']                 = 3
     hub_prob['clearance_hub_spinner']           = 0.5
     hub_prob['spin_hole_incr']                  = 1.2
+    hub_prob['blade_root_diameter']             = 4.5
 
     hub_prob['pitch_system.blade_mass']         = 17000.
     hub_prob['pitch_system.BRFM']               = 1.e+6
@@ -496,14 +497,12 @@ if __name__ == "__main__":
     hub_prob['pitch_system.rho']                = 7850.
     hub_prob['pitch_system.Xy']                 = 371.e+6
 
-    hub_prob['hub_shell.blade_root_diameter']   = 4.5
     hub_prob['hub_shell.rho']                   = 7200.
     hub_prob['hub_shell.max_torque']            = 199200777.51 # Value assumed during model development
     hub_prob['hub_shell.Xy']                    = 200.e+6
     hub_prob['hub_shell.gamma']                 = 2.0
     hub_prob['hub_shell.metal_cost']            = 3.00
     
-    hub_prob['spinner.blade_root_diameter']     = hub_prob['hub_shell.blade_root_diameter']
     hub_prob['spinner.gust_ws']                 = 70
     hub_prob['spinner.gamma']                   = 1.5
     hub_prob['spinner.composite_Xt']            = 60.e+6

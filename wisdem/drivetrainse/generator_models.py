@@ -416,8 +416,8 @@ class GeneratorBase(om.ExplicitComponent):
 
         # Constants and parameters
         self.add_input('B_r', val=1.2, units='T')
-        self.add_input('E', val=2e11, units='Pa')
-        self.add_input('G', val=79.3e9, units='Pa')
+        self.add_input('E', val=0.0, units='Pa')
+        self.add_input('G', val=0.0, units='Pa')
         self.add_input('P_Fe0e', val=1.0, units='W/kg')
         self.add_input('P_Fe0h', val=4.0, units='W/kg')
         self.add_input('S_N', val=-0.002 )

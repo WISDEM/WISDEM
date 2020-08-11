@@ -95,7 +95,7 @@ class Gearbox(om.ExplicitComponent):
         self.add_discrete_input('direct_drive', False)
         self.add_discrete_input('gear_configuration', val='eep')
         self.add_discrete_input('shaft_factor', val='normal')
-        self.add_discrete_input('planet_numbers', val=[3, 3, 0])
+        self.add_discrete_input('planet_numbers', val=np.array([3, 3, 0]))
         self.add_input('gear_ratio', val=1.0)
         self.add_input('rotor_diameter', val=0.0, units='m')
         self.add_input('rotor_torque', val=0.0, units='N*m')

@@ -51,13 +51,13 @@ class DirectDriveSE(om.Group):
         ivc.add_discrete_output('mb1Type', 'CARB')
         ivc.add_discrete_output('mb2Type', 'SRB')
         ivc.add_discrete_output('uptower', True)
-        ivc.add_discrete_output('upwind', True)
-        ivc.add_discrete_output('direct_drive', True)
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
         # Independent variables that may be duplicated at higher levels of aggregation
         if self.options['topLevelFlag']:
             sivc = om.IndepVarComp()
+            sivc.add_discrete_output('direct_drive', True)
+            sivc.add_discrete_output('upwind', True)
             sivc.add_discrete_output('n_blades', 3)
             sivc.add_output('tilt', 0.0, units='deg')
             sivc.add_output('E', 0.0, units='Pa')
@@ -124,8 +124,9 @@ class DirectDriveSE(om.Group):
             self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
             self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
             self.connect('generator.R_out','R_generator')
-            self.connect('rotor_torque','generator.T_rated')
-            self.connect('rotor_rpm','generator.n_nom')
+            if self.options['topLevelFlag']:
+                self.connect('rotor_torque','generator.T_rated')
+                self.connect('rotor_rpm','generator.n_nom')
             self.connect('rotor_deflection', 'generator.y_sh')
             self.connect('rotor_rotation', 'generator.theta_sh')
             self.connect('stator_deflection', 'generator.y_bd')
@@ -250,4 +251,20 @@ if __name__ == '__main__':
     prob['generator.rho_PM']       = 7450.0        # typical density Kg/m3 of neodymium magnets
 
     prob.run_model()
+
+    print('Pitch system mass: ' + str(prob['pitch_mass'][0]) + ' kg')
+    print('Hub shell mass: ' + str(prob['hub_mass'][0]) + ' kg')
+    print('Hub shell outer diameter: ' + str(prob['hub_diameter'][0]) + ' m')
+    print('Hub shell cost: ' + str(prob['hub_cost'][0]) + ' USD')
+    print('Distance btw flange and cm of hub shell: ' + str(prob['hub_cm'][0]) + ' m')
+    print('Mass moment of inertia of hub shell: ' + str(prob['hub_I']) + 'kg * m2')
+    print('Spinner mass: ' + str(prob['spinner_mass'][0]) + ' kg')
+    print('Spinner outer diameter: ' + str(prob['spinner.spinner_diameter'][0]) + ' m')
+    print('Spinner cost: ' + str(prob['spinner_cost'][0]) + ' USD')
+    print('Distance btw flange and cm of spinner: ' + str(prob['spinner_cm'][0]) + ' m')
+    print('Mass moment of inertia of spinner: ' + str(prob['spinner_I']) + 'kg * m2')
+    print('Overall hub system mass: ' + str(prob['hub_system_mass'][0]) + ' kg')
+    print('Overall hub system cost: ' + str(prob['hub_system_cost'][0]) + ' USD')
+    print('Distance btw shaft flange and cm of overall hub system: ' + str(prob['hub_system_cm'][0]) + ' m')
+    print('Mass moment of inertia of the overall hub system: ' + str(prob['hub_system_I']) + 'kg * m2')
     

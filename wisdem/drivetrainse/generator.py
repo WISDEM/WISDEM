@@ -411,9 +411,9 @@ class Generator(om.Group):
             sivc.add_output('n_nom', 0.0, units='rpm')
             sivc.add_output('T_rated', 0.0, units='N*m')
             sivc.add_output('D_shaft', val=0.0, units='m')
-            sivc.add_output('v', val=0.3)
-            sivc.add_output('E', val=2e11, units='Pa')
-            sivc.add_output('G', val=79.3e9, units='Pa')
+            sivc.add_output('v', val=0.)
+            sivc.add_output('E', val=0., units='Pa')
+            sivc.add_output('G', val=0., units='Pa')
             self.add_subsystem('sivc', sivc, promotes=['*'])
         
         # Add generator design component and cost

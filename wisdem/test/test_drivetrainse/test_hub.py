@@ -50,6 +50,7 @@ class TestRegression(unittest.TestCase):
         hub_prob['n_rear_brackets']                = 3
         hub_prob['clearance_hub_spinner']          = 0.5
         hub_prob['spin_hole_incr']                 = 1.2
+        hub_prob['blade_root_diameter']            = 4.5
 
         hub_prob['pitch_system.blade_mass']        = 17000.
         hub_prob['pitch_system.BRFM']              = 1.e+6
@@ -57,14 +58,12 @@ class TestRegression(unittest.TestCase):
         hub_prob['pitch_system.rho']               = 7850.
         hub_prob['pitch_system.Xy']                = 371.e+6
 
-        hub_prob['hub_shell.blade_root_diameter']  = 4.5
         hub_prob['hub_shell.rho']                  = 7200.
         hub_prob['hub_shell.max_torque']           = 199200777.51
         hub_prob['hub_shell.Xy']                   = 200.e+6
         hub_prob['hub_shell.gamma']                = 2.0
         hub_prob['hub_shell.metal_cost']           = 3.00
         
-        hub_prob['spinner.blade_root_diameter']    = hub_prob['hub_shell.blade_root_diameter']
         hub_prob['spinner.gust_ws']                = 70
         hub_prob['spinner.gamma']                  = 1.5
         hub_prob['spinner.composite_Xt']           = 60.e6
