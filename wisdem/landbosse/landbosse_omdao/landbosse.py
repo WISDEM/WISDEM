@@ -661,8 +661,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Make the nacelle. This does not include the hub or blades.
         nacelle_mass_kg = inputs['nacelle_mass'][0]
         nacelle = input_components[input_components['Component'].str.startswith('Nacelle')].iloc[0].copy()
-        print(nacelle_mass_kg)
-        print(nacelle)
         if inputs['nacelle_mass'] != use_default_component_data:
             nacelle['Mass tonne'] = nacelle_mass_kg / kg_per_tonne
             nacelle['Component'] = 'Nacelle'

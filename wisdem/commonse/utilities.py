@@ -287,7 +287,7 @@ def assembleI(I):
     return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
 
 def unassembleI(I):
-    return np.array([I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]])
+    return np.r_[I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]]
 
 
 def cubic_with_deriv(x, xp, yp):

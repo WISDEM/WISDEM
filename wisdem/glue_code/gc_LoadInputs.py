@@ -1,7 +1,7 @@
 import numpy as np
-import time, os
+import os
+from wisdem.schema import fdefaults_geom, fschema_geom, fdefaults_model, fschema_model
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from wisdem.aeroelasticse.CaseLibrary import RotorSE_rated, RotorSE_DLC_1_4_Rated, RotorSE_DLC_7_1_Steady, RotorSE_DLC_1_1_Turb, power_curve, RotorSE_DAC_rated
 
 try:
     import ruamel_yaml as ry
@@ -32,8 +32,33 @@ def load_yaml(fname_input):
         inputs = myfile.read()
     return ry.YAML().load(inputs)
 
-fdefaults = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'geometry_defaults.yaml')
-fschema   = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'geometry_schema.yaml')
+        
+def integrate_defaults(instance, defaults, yaml_schema):
+    # Prep iterative validator
+    #json.validate(self.wt_init, yaml_schema)
+    validator = json.Draft7Validator(yaml_schema)
+    errors = validator.iter_errors(instance)
+
+    # Loop over errors
+    for e in errors:
+        if e.validator == 'required':
+            for k in e.validator_value:
+                if not k in e.instance.keys():
+                    mypath = e.absolute_path.copy()
+                    mypath.append(k)
+                    v = nested_get(defaults, mypath)
+                    if isinstance(v, dict) or isinstance(v, list) or v in ['name','material']:
+                        # Too complicated to just copy over default, so give it back to the user
+                        raise(e)
+                    else:
+                        print('WARNING: Missing value,',list(mypath),', so setting to:',v)
+                        nested_set(instance, mypath, v)
+        else:
+            raise(e)
+
+    return instance
+
+
 
 class WindTurbineOntologyPython(object):
     # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
@@ -45,15 +70,12 @@ class WindTurbineOntologyPython(object):
     #   - airfoils: dictionary representing the entry airfoils in the yaml file
 
     def initialize(self, fname_input_wt, fname_input_modeling):
-        # Class instance to break the yaml into sub dictionaries
-        
-        self.modeling_options = load_yaml(fname_input_modeling)
+        # Load in defaults of modeling options file
+        self.modeling_options = integrate_defaults(load_yaml(fname_input_modeling), load_yaml(fdefaults_model), load_yaml(fschema_model))
 
         # Load wind turbine yaml input
-        self.fname_input = fname_input_wt
-        self.defaults    = load_yaml(fdefaults)
-        self.wt_init     = load_yaml(self.fname_input)
-        self.integrate_defaults()
+        self.defaults    = load_yaml(fdefaults_geom)
+        self.wt_init     = integrate_defaults(load_yaml(fname_input_wt), self.defaults, load_yaml(fschema_geom))
         self.set_flags()
         self.openmdao_vectors()
 

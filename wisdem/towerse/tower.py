@@ -596,8 +596,8 @@ class TurbineMass(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         outputs['turbine_mass'] = inputs['rna_mass'] + inputs['tower_mass'] + inputs['monopile_mass']
         
-        cg_rna   = inputs['rna_cg'] + np.array([0.0, 0.0, inputs['hub_height']])
-        cg_tower = np.array([0.0, 0.0, inputs['tower_center_of_mass']])
+        cg_rna   = inputs['rna_cg'] + np.r_[0.0, 0.0, inputs['hub_height']]
+        cg_tower = np.r_[0.0, 0.0, inputs['tower_center_of_mass']]
         outputs['turbine_center_of_mass'] = (inputs['rna_mass'] * cg_rna + inputs['tower_mass'] * cg_tower) / outputs['turbine_mass']
 
         R       = cg_rna

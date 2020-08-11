@@ -490,7 +490,7 @@ class RunPreComp(ExplicitComponent):
         Iyz = 0.0  # azimuthal average for 2 blades, exact for 3+
         # rotate to yaw c.s.
         I = DirectionVector(Ixx, Iyy, Izz).hubToYaw(tilt)  # because off-diagonal components are all zero
-        I_all_blades = np.array([I.x, I.y, I.z, Ixy, Ixz, Iyz])
+        I_all_blades = np.r_[I.x, I.y, I.z, Ixy, Ixz, Iyz]
 
         outputs['blade_mass']              = blade_mass
         outputs['blade_moment_of_inertia'] = blade_moment_of_inertia
