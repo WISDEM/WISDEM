@@ -174,14 +174,14 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
 class RunXFOIL(ExplicitComponent):
     # Openmdao component to run XFOIL and re-compute polars
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('opt_options')
         
     def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
+        blade_init_options = self.options['modeling_options']['blade']
         self.n_span        = n_span     = blade_init_options['n_span']
         self.n_te_flaps    = n_te_flaps = blade_init_options['n_te_flaps']
-        af_init_options    = self.options['analysis_options']['airfoils']
+        af_init_options    = self.options['modeling_options']['airfoils']
         self.n_tab         = af_init_options['n_tab']
         self.n_aoa         = n_aoa      = af_init_options['n_aoa'] # Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
@@ -191,8 +191,8 @@ class RunXFOIL(ExplicitComponent):
 
         # Use openfast cores for parallelization of xfoil 
         # nja - Probably want to change this so XFOIL parallelization is a flag?
-        FASTpref = self.options['analysis_options']['openfast']
-        xfoilpref = self.options['analysis_options']['xfoil']
+        FASTpref = self.options['modeling_options']['openfast']
+        xfoilpref = self.options['modeling_options']['xfoil']
 
         try:
             if xfoilpref['run_parallel']:
@@ -202,7 +202,7 @@ class RunXFOIL(ExplicitComponent):
         except KeyError:
             self.cores = 1
         
-        if MPI and self.options['analysis_options']['Analysis_Flags']['OpenFAST']:
+        if MPI and self.options['modeling_options']['Analysis_Flags']['OpenFAST']:
             self.mpi_comm_map_down = FASTpref['analysis_settings']['mpi_comm_map_down']
 
         # Inputs blade outer shape

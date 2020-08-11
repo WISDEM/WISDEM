@@ -6,18 +6,14 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
-from copy import deepcopy
-
-import numpy as np
 import pandas as pd
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.core._defaults import process_times as pt
 from wisdem.orbit.phases.install import OffshoreSubstationInstallation
 
-initialize_library(pytest.library)
 config_single = extract_library_specs("config", "oss_install")
 config_multi = extract_library_specs("config", "oss_install")
 config_multi["num_feeders"] = 2

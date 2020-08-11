@@ -27,7 +27,7 @@ process_times = {
     "cable_splice_time": 48,  # hr
     "cable_raise_time": 0.5,  # hr
     # Offshore Substation
-    "topside_fasten_time": 2,  # hr
+    "topside_fasten_time": 12,  # hr
     "topside_release_time": 2,  # hr
     "topside_attach_time": 6,  # hr
     # Monopiles
@@ -53,6 +53,11 @@ process_times = {
     "blade_fasten_time": 1.5,  # hr
     "blade_release_time": 1,  # hr
     "blade_attach_time": 3.5,  # hr
+    # Mooring System
+    "mooring_system_load_time": 5,  # hr
+    "mooring_site_survey_time": 4,  # hr
+    "suction_pile_install_time": 11,  # hr
+    "drag_embed_install_time": 5,  # hr
     # Misc.
     "site_position_time": 2,  # hr
     "rov_survey_time": 1,  # hr

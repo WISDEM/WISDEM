@@ -12,9 +12,9 @@ monopile:
   mass: 350
 plant:
   num_turbines: 10
+  turbine_spacing: 7
 port:
   monthly_rate: 10000
-  num_cranes: 1
 site:
   depth: 15
   distance: 50
@@ -33,4 +33,5 @@ turbine:
     deck_space: 100
     mass: 400
     length: 100
+  rotor_diameter: 120
 wtiv: test_wtiv

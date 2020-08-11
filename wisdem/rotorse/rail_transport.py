@@ -29,11 +29,11 @@ def enforce_length(x, y, z, L0):
 class RailTransport(ExplicitComponent):
     # Openmdao component to simulate a rail transport of a wind turbine blade
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
 
     def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
-        af_init_options    = self.options['analysis_options']['airfoils']
+        blade_init_options = self.options['modeling_options']['blade']
+        af_init_options    = self.options['modeling_options']['airfoils']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
 

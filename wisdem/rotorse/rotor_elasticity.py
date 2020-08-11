@@ -12,19 +12,19 @@ from wisdem.rotorse.rail_transport import RailTransport
 class RunPreComp(ExplicitComponent):
     # Openmdao component to run precomp and generate the elastic properties of a wind turbine blade
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
+        blade_init_options = self.options['modeling_options']['blade']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_webs        = n_webs    = blade_init_options['n_webs']
         self.n_layers      = n_layers  = blade_init_options['n_layers']
-        af_init_options    = self.options['analysis_options']['airfoils']
+        af_init_options    = self.options['modeling_options']['airfoils']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        mat_init_options = self.options['analysis_options']['materials']
+        mat_init_options = self.options['modeling_options']['materials']
         self.n_mat = n_mat = mat_init_options['n_mat']
-        self.verbosity     = self.options['analysis_options']['general']['verbosity']
+        self.verbosity     = self.options['modeling_options']['general']['verbosity']
 
         opt_options   = self.options['opt_options']
         self.te_ss_var   = opt_options['optimization_variables']['blade']['structure']['te_ss']['name']
@@ -223,8 +223,8 @@ class RunPreComp(ExplicitComponent):
             return sec
             ##############################
 
-        layer_name = self.options['analysis_options']['blade']['layer_name']
-        layer_mat  = self.options['analysis_options']['blade']['layer_mat']        
+        layer_name = self.options['modeling_options']['blade']['layer_name']
+        layer_mat  = self.options['modeling_options']['blade']['layer_mat']        
 
         upperCS = [None]*self.n_span
         lowerCS = [None]*self.n_span
@@ -490,7 +490,7 @@ class RunPreComp(ExplicitComponent):
         Iyz = 0.0  # azimuthal average for 2 blades, exact for 3+
         # rotate to yaw c.s.
         I = DirectionVector(Ixx, Iyy, Izz).hubToYaw(tilt)  # because off-diagonal components are all zero
-        I_all_blades = np.array([I.x, I.y, I.z, Ixy, Ixz, Iyz])
+        I_all_blades = np.r_[I.x, I.y, I.z, Ixy, Ixz, Iyz]
 
         outputs['blade_mass']              = blade_mass
         outputs['blade_moment_of_inertia'] = blade_moment_of_inertia
@@ -567,15 +567,15 @@ class RunPreComp(ExplicitComponent):
 class RotorElasticity(Group):
     # OpenMDAO group to compute the blade elastic properties and natural frequencies
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('opt_options')
     def setup(self):
-        analysis_options = self.options['analysis_options']
+        modeling_options = self.options['modeling_options']
         opt_options     = self.options['opt_options']
 
         # Get elastic properties by running precomp
         promote_list = ['chord','theta','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ', 'x_sc','y_sc']
-        self.add_subsystem('precomp',  RunPreComp(analysis_options = analysis_options, opt_options = opt_options),    promotes=promote_list+['r','Tw_iner','precurve','presweep', 'x_ec', 'y_ec', 'sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats'])
+        self.add_subsystem('precomp',  RunPreComp(modeling_options = modeling_options, opt_options = opt_options),    promotes=promote_list+['r','Tw_iner','precurve','presweep', 'x_ec', 'y_ec', 'sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats'])
         # Check rail transportabiliy
         if opt_options['constraints']['blade']['rail_transport']['flag']:
-            self.add_subsystem('rail',  RailTransport(analysis_options = analysis_options), promotes=promote_list)
+            self.add_subsystem('rail',  RailTransport(modeling_options = modeling_options), promotes=promote_list)

@@ -7,11 +7,10 @@ with warnings.catch_warnings():
 
 import numpy as np
 import math
-from sympy.solvers import solve
-from sympy import Symbol
+from scipy.optimize import root_scalar
 
-from .WeatherDelay import WeatherDelay as WD
-from .CostModule import CostModule
+from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
+from wisdem.landbosse.model.CostModule import CostModule
 
 
 class FoundationCost(CostModule):
@@ -343,44 +342,34 @@ class FoundationCost(CostModule):
         v_1 = (foundation_vol * (
                     vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
         e = m_tot / v_1
+
         if (r_test_gapping / 3) < e:
             r_gapping = 0
         else:
-            r_g = Symbol('r_g', real=True, positive=True)
-            foundation_vol = np.pi * r_g ** 2 * foundation_load_input_data['depth']
-            v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
-            e = m_tot / v_1
-            r_gapping = solve(e * 3 - r_g, r_g)
-            if len(r_gapping) > 0:
-                r_gapping = max(r_gapping)
-            else:
-                r_gapping = 0
+            def r_g(x):
+                foundation_vol = np.pi * x** 2 * foundation_load_input_data['depth']
+                v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
+                e = m_tot / v_1
+                return (e * 3 - x)
+            result = root_scalar(r_g, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-5, maxiter=50)
+            r_gapping = result.root
+            if not result.converged:
+                raise ValueError(f'Warning {self.project_name} calculate_foundation_load r_gapping solve failed, {result.flag}')
 
         r_test_bearing = max(r_test_gapping, r_gapping)
 
         # calculate foundation radius based on bearing pressure
+        def r_b(x):
+            foundation_vol = np.pi * r_test_bearing ** 2 * foundation_load_input_data['depth']
+            v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
+            e = m_tot / v_1
+            a_eff = v_1 / bearing_pressure
+            return (2 * (x ** 2 - e * (x ** 2 - e ** 2) ** 0.5) - a_eff)
+        result = root_scalar(r_b, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-5, maxiter=50)
+        r_bearing = result.root
 
-        # Restrict r_b to only real numbers. Positive solutions for r_b are
-        # selected below
-        r_b = Symbol('r_b', real=True)
-
-        foundation_vol = np.pi * r_test_bearing ** 2 * foundation_load_input_data['depth']
-        v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
-        e = m_tot / v_1
-        a_eff = v_1 / bearing_pressure
-        r_bearing = solve(2 * (r_b ** 2 - e * (r_b ** 2 - e ** 2) ** 0.5) - a_eff, r_b)
-
-        # Select only positive solutions to r_b. This is selected by max(). If there are
-        # not positive solutions to r_b, that means something is wrong with the foundation
-        # parameters. In that case, generate a warning below.
-
-        if len(r_bearing) > 0:
-            r_bearing = max(r_bearing)
-        else:
-            r_bearing = 0
-
-        if r_bearing < 0:
-            raise ValueError(f'Warning {self.project_name} calculate_foundation_load r_bearing is negative, r_bearing={r_bearing}')
+        if not result.converged:
+            raise ValueError(f'Warning {self.project_name} calculate_foundation_load r_bearing solve failed, {result.flag}')
 
         # pick the largest foundation radius based on all 4 foundation design criteria: moment, gapping, bearing, slipping
         r_choosen = max(r_bearing, r_overturn, r_slipping, r_gapping)

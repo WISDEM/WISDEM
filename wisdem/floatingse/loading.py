@@ -298,7 +298,7 @@ class FloatingFrame(om.ExplicitComponent):
         self.options.declare('n_height_main')
         self.options.declare('n_height_off')
         self.options.declare('n_height_tow')
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
         n_height_main = self.options['n_height_main']
@@ -541,7 +541,7 @@ class FloatingFrame(om.ExplicitComponent):
         F_mooring      = inputs['mooring_neutral_load']
         R_fairlead     = inputs['fairlead_radius']
 
-        opt = self.options['analysis_options']
+        opt = self.options['modeling_options']
         gamma_f      = opt['gamma_f']
         gamma_m      = opt['gamma_m']
         gamma_n      = opt['gamma_n']
@@ -1576,7 +1576,7 @@ class Loading(om.Group):
         self.options.declare('n_height_main')
         self.options.declare('n_height_off')
         self.options.declare('n_height_tow')
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
         n_height_main = self.options['n_height_main']
@@ -1610,7 +1610,7 @@ class Loading(om.Group):
         self.add_subsystem('frame', FloatingFrame(n_height_main=n_height_main,
                                                   n_height_off=n_height_off,
                                                   n_height_tow=n_height_tow,
-                                                  analysis_options=self.options['analysis_options']), promotes=['*'])
+                                                  modeling_options=self.options['modeling_options']), promotes=['*'])
         
         self.connect('loadingWind.U', 'windLoads.U')
         self.connect('windLoads.windLoads_Px', 'tower_Px')
