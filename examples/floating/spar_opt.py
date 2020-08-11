@@ -54,7 +54,7 @@ opt['materials']['n_mat'] = 1
 
 # Initialize OpenMDAO problem and FloatingSE Group
 prob = om.Problem()
-prob.model = FloatingSE(analysis_options=opt)
+prob.model = FloatingSE(modeling_options=opt)
 
 
 # Setup up optimization problem
@@ -183,7 +183,7 @@ prob['mooring_type']                  = 'chain'       # Options are chain, nylon
 prob['anchor_type']                   = 'DRAGEMBEDMENT' # Options are SUCTIONPILE or DRAGEMBEDMENT
 
 # Porperties of turbine tower
-nTower                          = prob.model.options['analysis_options']['tower']['n_height']-1
+nTower                          = prob.model.options['modeling_options']['tower']['n_height']-1
 prob['tower_height']            = prob['hub_height'] = 77.6
 prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
 prob['tower_outer_diameter_in'] = np.linspace(min_diam, 3.87, nTower+1)

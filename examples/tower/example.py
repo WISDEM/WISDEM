@@ -21,45 +21,45 @@ max_diam = 8.0
 # ---
 
 # Store analysis options in dictionary
-analysis_options = {}
-analysis_options['flags'] = {}
-analysis_options['materials'] = {}
-analysis_options['monopile'] = {}
-analysis_options['tower'] = {}
-analysis_options['tower']['buckling_length'] = 30.0
-analysis_options['flags']['monopile'] = False
+modeling_options = {}
+modeling_options['flags'] = {}
+modeling_options['materials'] = {}
+modeling_options['monopile'] = {}
+modeling_options['tower'] = {}
+modeling_options['tower']['buckling_length'] = 30.0
+modeling_options['flags']['monopile'] = False
 
 # safety factors
-analysis_options['tower']['gamma_f'] = 1.35
-analysis_options['tower']['gamma_m'] = 1.3
-analysis_options['tower']['gamma_n'] = 1.0
-analysis_options['tower']['gamma_b'] = 1.1
-analysis_options['tower']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
+modeling_options['tower']['gamma_f'] = 1.35
+modeling_options['tower']['gamma_m'] = 1.3
+modeling_options['tower']['gamma_n'] = 1.0
+modeling_options['tower']['gamma_b'] = 1.1
+modeling_options['tower']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
-analysis_options['tower']['frame3dd'] = {}
-analysis_options['tower']['frame3dd']['DC'] = 80.0
-analysis_options['tower']['frame3dd']['shear'] = True
-analysis_options['tower']['frame3dd']['geom'] = True
-analysis_options['tower']['frame3dd']['dx'] = 5.0
-analysis_options['tower']['frame3dd']['Mmethod'] = 1
-analysis_options['tower']['frame3dd']['lump'] = 0
-analysis_options['tower']['frame3dd']['tol'] = 1e-9
-analysis_options['tower']['frame3dd']['shift'] = 0.0
-analysis_options['tower']['frame3dd']['add_gravity'] = True
+modeling_options['tower']['frame3dd'] = {}
+modeling_options['tower']['frame3dd']['DC'] = 80.0
+modeling_options['tower']['frame3dd']['shear'] = True
+modeling_options['tower']['frame3dd']['geom'] = True
+modeling_options['tower']['frame3dd']['dx'] = 5.0
+modeling_options['tower']['frame3dd']['Mmethod'] = 1
+modeling_options['tower']['frame3dd']['lump'] = 0
+modeling_options['tower']['frame3dd']['tol'] = 1e-9
+modeling_options['tower']['frame3dd']['shift'] = 0.0
+modeling_options['tower']['frame3dd']['add_gravity'] = True
 
-analysis_options['tower']['n_height'] = n_control_points
-analysis_options['tower']['n_layers'] = 1
-analysis_options['monopile']['n_height'] = 0
-analysis_options['monopile']['n_layers'] = 0
-analysis_options['tower']['wind'] = 'PowerWind'
-analysis_options['tower']['nLC'] = n_load_cases
-analysis_options['materials']['n_mat'] = n_materials
+modeling_options['tower']['n_height'] = n_control_points
+modeling_options['tower']['n_layers'] = 1
+modeling_options['monopile']['n_height'] = 0
+modeling_options['monopile']['n_layers'] = 0
+modeling_options['tower']['wind'] = 'PowerWind'
+modeling_options['tower']['nLC'] = n_load_cases
+modeling_options['materials']['n_mat'] = n_materials
 # ---
 
 # Instantiate OpenMDAO problem and create a model using the TowerSE group
 prob = om.Problem()
-prob.model = TowerSE(analysis_options=analysis_options, topLevelFlag=True)
+prob.model = TowerSE(modeling_options=modeling_options, topLevelFlag=True)
 # ---
 
 # If performing optimization, set up the optimizer and problem formulation
@@ -142,7 +142,7 @@ prob['mu_water'] = 1.3351e-3
 prob['hsig_wave'] = 0.0
 prob['Tsig_wave'] = 1.0
 prob['beta_wind'] = prob['beta_wave'] = 0.0
-if analysis_options['tower']['wind'] == 'PowerWind':
+if modeling_options['tower']['wind'] == 'PowerWind':
     prob['shearExp'] = 0.2
 # ---
 
@@ -153,7 +153,7 @@ if analysis_options['tower']['wind'] == 'PowerWind':
 prob['wind1.Uref'] = 11.73732
 Fx1 = 1284744.19620519
 Fy1 = 0.0
-Fz1 = -2914124.84400512 + prob['rna_mass'] * 9.81
+Fz1 = -2914124.84400512 + float(prob['rna_mass']) * 9.81
 Mxx1 = 3963732.76208099
 Myy1 = -2275104.79420872
 Mzz1 = -346781.68192839
@@ -165,7 +165,7 @@ prob['pre1.rna_M'] = np.array([Mxx1, Myy1, Mzz1])
 prob['wind2.Uref'] = 70.0
 Fx2 = 930198.60063279
 Fy2 = 0.0
-Fz2 = -2883106.12368949 + prob['rna_mass'] * 9.81
+Fz2 = -2883106.12368949 + float(prob['rna_mass']) * 9.81
 Mxx2 = -1683669.22411597
 Myy2 = -2522475.34625363
 Mzz2 = 147301.97023764

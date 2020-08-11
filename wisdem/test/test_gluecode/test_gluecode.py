@@ -16,7 +16,7 @@ class TestRegression(unittest.TestCase):
         fname_wt_output        = test_dir + 'nrel5mw_update_output.yaml'
         folder_output          = 'temp'
 
-        wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
+        wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
 
         #print(wt_opt['elastic.precomp.blade_mass'])
 
@@ -28,7 +28,7 @@ class TestRegression(unittest.TestCase):
         fname_wt_input         = test_dir + 'IEA-15-240-RWT.yaml'
         fname_wt_output        = test_dir + 'IEA-15-240-RWT_update_output.yaml'
 
-        wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
+        wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
 
         # print(wt_opt['elastic.precomp.blade_mass'])
 
