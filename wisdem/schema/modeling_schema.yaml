@@ -1,9 +1,3 @@
-# Author: Pietro Bortolotti
-# Organization: National Renewable Energy Laboratory, Golden, CO
-# Date: 2020-04-28
-
-
-
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: WISDEM_model_options_schema_v00
 title: WISDEM wind turbine modeling options schema
