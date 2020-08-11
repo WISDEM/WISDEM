@@ -53,24 +53,24 @@ class TestServo(unittest.TestCase):
         n_Re = npzfile['Re'].size
         n_pc = 22
         
-        analysis_options = {}
-        analysis_options['blade'] = {}
-        analysis_options['blade']['n_span'] = n_span
-        analysis_options['blade']['n_aoa'] = n_aoa
-        analysis_options['blade']['n_Re'] = n_Re
-        analysis_options['blade']['n_tab'] = 1
-        analysis_options['servose'] = {}
-        analysis_options['servose']['regulation_reg_III'] = True
-        analysis_options['servose']['n_pc'] = n_pc
-        analysis_options['servose']['n_pc_spline'] = n_pc
+        modeling_options = {}
+        modeling_options['blade'] = {}
+        modeling_options['blade']['n_span'] = n_span
+        modeling_options['blade']['n_aoa'] = n_aoa
+        modeling_options['blade']['n_Re'] = n_Re
+        modeling_options['blade']['n_tab'] = 1
+        modeling_options['servose'] = {}
+        modeling_options['servose']['regulation_reg_III'] = True
+        modeling_options['servose']['n_pc'] = n_pc
+        modeling_options['servose']['n_pc_spline'] = n_pc
 
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
-        analysis_options['airfoils'] = {}
-        analysis_options['airfoils']['n_aoa'] = n_aoa
-        analysis_options['airfoils']['n_Re'] = n_Re
-        analysis_options['airfoils']['n_tab'] = n_tab
+        modeling_options['airfoils'] = {}
+        modeling_options['airfoils']['n_aoa'] = n_aoa
+        modeling_options['airfoils']['n_Re'] = n_Re
+        modeling_options['airfoils']['n_tab'] = n_tab
         
-        prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(analysis_options=analysis_options), promotes=['*'])
+        prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(modeling_options=modeling_options), promotes=['*'])
         
         prob.setup()
         
@@ -288,24 +288,24 @@ class TestServo(unittest.TestCase):
         n_Re = npzfile['Re'].size
         n_pc = 22
 
-        analysis_options = {}
-        analysis_options['blade'] = {}
-        analysis_options['blade']['n_span'] = n_span
-        analysis_options['blade']['n_aoa'] = n_aoa
-        analysis_options['blade']['n_Re'] = n_Re
-        analysis_options['blade']['n_tab'] = 1
-        analysis_options['servose'] = {}
-        analysis_options['servose']['regulation_reg_III'] = False
-        analysis_options['servose']['n_pc'] = n_pc
-        analysis_options['servose']['n_pc_spline'] = n_pc
+        modeling_options = {}
+        modeling_options['blade'] = {}
+        modeling_options['blade']['n_span'] = n_span
+        modeling_options['blade']['n_aoa'] = n_aoa
+        modeling_options['blade']['n_Re'] = n_Re
+        modeling_options['blade']['n_tab'] = 1
+        modeling_options['servose'] = {}
+        modeling_options['servose']['regulation_reg_III'] = False
+        modeling_options['servose']['n_pc'] = n_pc
+        modeling_options['servose']['n_pc_spline'] = n_pc
 
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
-        analysis_options['airfoils'] = {}
-        analysis_options['airfoils']['n_aoa'] = n_aoa
-        analysis_options['airfoils']['n_Re'] = n_Re
-        analysis_options['airfoils']['n_tab'] = n_tab
+        modeling_options['airfoils'] = {}
+        modeling_options['airfoils']['n_aoa'] = n_aoa
+        modeling_options['airfoils']['n_Re'] = n_Re
+        modeling_options['airfoils']['n_tab'] = n_tab
         
-        prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(analysis_options=analysis_options), promotes=['*'])
+        prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(modeling_options=modeling_options), promotes=['*'])
         
         prob.setup()
         

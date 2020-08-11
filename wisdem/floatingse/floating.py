@@ -12,14 +12,14 @@ from wisdem.commonse.vertical_cylinder import get_nfull
 class FloatingSE(om.Group):
 
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
 
     def setup(self):
-        opt = self.options['analysis_options']['platform']
-        n_mat = self.options['analysis_options']['materials']['n_mat']
+        opt = self.options['modeling_options']['platform']
+        n_mat = self.options['modeling_options']['materials']['n_mat']
         n_height_main = opt['columns']['main']['n_height']
         n_height_off  = opt['columns']['offset']['n_height']
-        n_height_tow  = self.options['analysis_options']['tower']['n_height']
+        n_height_tow  = self.options['modeling_options']['tower']['n_height']
 
         self.set_input_defaults('mooring_type', 'chain')
         self.set_input_defaults('anchor_type', 'SUCTIONPILE')
@@ -30,7 +30,7 @@ class FloatingSE(om.Group):
         self.set_input_defaults('number_of_offset_columns', 0)
         self.set_input_defaults('material_names', ['steel'])
         
-        self.add_subsystem('tow', TowerLeanSE(analysis_options=self.options['analysis_options']),
+        self.add_subsystem('tow', TowerLeanSE(modeling_options=self.options['modeling_options']),
                            promotes=['tower_s','tower_height','tower_outer_diameter_in','tower_layer_thickness','tower_outfitting_factor',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_mass','tower_I_base','hub_height','material_names',
@@ -48,13 +48,13 @@ class FloatingSE(om.Group):
         main_column_promotes = column_promotes.copy()
         main_column_promotes.append(('freeboard', 'main_freeboard'))
         
-        self.add_subsystem('main', Column(analysis_options=opt, column_options=opt['columns']['main'], n_mat=n_mat),
+        self.add_subsystem('main', Column(modeling_options=opt, column_options=opt['columns']['main'], n_mat=n_mat),
                            promotes=main_column_promotes)
                            
         off_column_promotes = column_promotes.copy()
         off_column_promotes.append(('freeboard', 'off_freeboard'))
 
-        self.add_subsystem('off', Column(analysis_options=opt, column_options=opt['columns']['offset'], n_mat=n_mat),
+        self.add_subsystem('off', Column(modeling_options=opt, column_options=opt['columns']['offset'], n_mat=n_mat),
                            promotes=off_column_promotes)
 
         # Run Semi Geometry for interfaces
@@ -62,13 +62,13 @@ class FloatingSE(om.Group):
                                                       n_height_off=n_height_off), promotes=['*'])
 
         # Next run MapMooring
-        self.add_subsystem('mm', MapMooring(analysis_options=opt), promotes=['*'])
+        self.add_subsystem('mm', MapMooring(modeling_options=opt), promotes=['*'])
         
         # Add in the connecting truss
         self.add_subsystem('load', Loading(n_height_main=n_height_main,
                                            n_height_off=n_height_off,
                                            n_height_tow=n_height_tow,
-                                           analysis_options=opt), promotes=['*'])
+                                           modeling_options=opt), promotes=['*'])
 
         # Run main Semi analysis
         self.add_subsystem('subs', Substructure(n_height_main=n_height_main,
@@ -185,7 +185,7 @@ def commonVars(prob, nsection):
     prob['anchor_type']                = 'DRAGEMBEDMENT' # Options are SUCTIONPILE or DRAGEMBEDMENT
     
     # Porperties of turbine tower
-    nTower = prob.model.options['analysis_options']['tower']['n_height']-1
+    nTower = prob.model.options['modeling_options']['tower']['n_height']-1
     prob['tower_height']            = prob['hub_height'] = 77.6       # Length from tower main to top (not including freeboard) [m]
     prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
     prob['tower_outer_diameter_in'] = np.linspace(6.5, 3.87, nTower+1) # Diameter at each tower section node (linear lofting between) [m]

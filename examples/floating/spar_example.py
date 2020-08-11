@@ -42,8 +42,10 @@ opt['platform']['gamma_b'] = 1.1   # Safety factor on buckling
 opt['platform']['gamma_fatigue'] = 1.755 # Not used
 opt['platform']['run_modal'] = True # Not used
 
+opt['flags'] = {}
+opt['flags']['monopile'] = False
+
 opt['tower'] = {}
-opt['tower']['monopile'] = False
 opt['tower']['n_height'] = npts
 opt['tower']['n_layers'] = 1
 opt['materials'] = {}
@@ -51,7 +53,7 @@ opt['materials']['n_mat'] = 1
 
 # Initialize OpenMDAO problem and FloatingSE Group
 prob = om.Problem()
-prob.model = FloatingSE(analysis_options=opt)
+prob.model = FloatingSE(modeling_options=opt)
 prob.setup()
 
 # Remove all offset columns
@@ -67,8 +69,8 @@ prob['outer_cross_pontoons_int']        = 0
 prob['water_depth']           = 320.0  # Distance to sea floor [m]
 prob['hsig_wave']             = 10.8   # Significant wave height [m]
 prob['Tsig_wave']             = 9.8    # Wave period [s]
-prob['wind_reference_speed']  = 11.0   # Wind reference speed [m/s]
-prob['wind_reference_height'] = 119.0  # Wind reference height [m]
+prob['main.wind_reference_speed']  = 11.0   # Wind reference speed [m/s]
+prob['main.wind_reference_height'] = 119.0  # Wind reference height [m]
 
 # Column geometry
 prob['main.permanent_ballast_height'] = 10.0 # Height above keel for permanent ballast [m]
@@ -118,7 +120,7 @@ prob['pontoon_wall_thickness']         = 0.1
 prob['shearExp']  = 0.11                    # Shear exponent in wind power law
 prob['cm']        = 2.0                     # Added mass coefficient
 prob['Uc']        = 0.0                     # Mean current speed
-prob['wind_z0']   = 0.0                     # Water line
+prob['main.wind_z0']   = 0.0                     # Water line
 prob['yaw']       = 0.0                     # Turbine yaw angle
 prob['beta_wind'] = prob['beta_wave'] = 0.0 # Wind/water beta angle
 prob['cd_usr']    = -1.0                    # Compute drag coefficient
@@ -150,7 +152,7 @@ prob['number_of_mooring_connections'] = 3             # Evenly spaced around str
 prob['mooring_lines_per_connection']  = 1             # Evenly spaced around structure
 
 # Porperties of turbine tower
-nTower                          = prob.model.options['analysis_options']['tower']['n_height']-1
+nTower                          = prob.model.options['modeling_options']['tower']['n_height']-1
 prob['tower_height']            = prob['hub_height'] = 77.6
 prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
 prob['tower_outer_diameter_in'] = np.linspace(8.0, 3.87, nTower+1)
@@ -174,8 +176,8 @@ prob['max_offset']       = 100.0 # Max surge/sway offset [m]
 prob['operational_heel'] = 10.0 # Max heel (pitching) angle [deg]
 
 # Design constraints
-prob['max_taper_ratio']              = 0.2  # For manufacturability of rolling steel
-prob['min_diameter_thickness_ratio'] = 80.0 # For weld-ability
+prob['max_taper']              = 0.2  # For manufacturability of rolling steel
+prob['min_d_to_t'] = 80.0 # For weld-ability
 prob['connection_ratio_max']         = 0.25 # For welding pontoons to columns
 
 # API 2U flag

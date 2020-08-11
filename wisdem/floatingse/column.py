@@ -1412,7 +1412,7 @@ class ColumnBuckling(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('n_height')
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
         n_height = self.options['n_height']
@@ -1489,8 +1489,8 @@ class ColumnBuckling(om.ExplicitComponent):
         w_flange     = inputs['w_flange']
         L_stiffener  = inputs['L_stiffener']
 
-        gamma_f      = self.options['analysis_options']['gamma_f']
-        gamma_b      = self.options['analysis_options']['gamma_b']
+        gamma_f      = self.options['modeling_options']['gamma_f']
+        gamma_b      = self.options['modeling_options']['gamma_b']
         
         E            = inputs['E_full'] # Young's modulus
         nu           = inputs['nu_full'] # Poisson ratio
@@ -1531,10 +1531,10 @@ class Column(om.Group):
     def initialize(self):
         self.options.declare('n_mat')
         self.options.declare('column_options')
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
-        opt = self.options['analysis_options']
+        opt = self.options['modeling_options']
         colopt = self.options['column_options']
         n_layers  = colopt['n_layers']
         n_height  = colopt['n_height']
@@ -1580,7 +1580,7 @@ class Column(om.Group):
         self.add_subsystem('waveLoads', CylinderWaveDrag(nPoints=n_full), promotes=['cm','cd_usr','beta_wave','rho_water','mu_water'])
         self.add_subsystem('distLoads', AeroHydroLoads(nPoints=n_full), promotes=['Px','Py','Pz','qdyn','yaw'])
 
-        self.add_subsystem('buck', ColumnBuckling(n_height=n_height, analysis_options=opt), promotes=['*'])
+        self.add_subsystem('buck', ColumnBuckling(n_height=n_height, modeling_options=opt), promotes=['*'])
 
         self.connect('outer_diameter', ['diameter', 'gc.d'])
         self.connect('wall_thickness', 'gc.t')

@@ -15,7 +15,7 @@ opt['gamma_f'] = 1.35
 
 # OpenMDAO initialization
 prob = om.Problem()
-prob.model.add_subsystem('moor', MapMooring(analysis_options=opt), promotes=['*'] )
+prob.model.add_subsystem('moor', MapMooring(modeling_options=opt), promotes=['*'] )
 
 # Setup up optimization problem
 if opt_flag:

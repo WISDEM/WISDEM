@@ -37,7 +37,7 @@ class OffshoreSubstationInstallation(InstallPhase):
         "feeder": "dict | str",
         "site": {"distance": "km", "depth": "m"},
         "port": {
-            "num_cranes": "int",
+            "num_cranes": "int (optional, default: 1)",
             "monthly_rate": "USD/mo (optional)",
             "name": "str (optional)",
         },
@@ -133,8 +133,7 @@ class OffshoreSubstationInstallation(InstallPhase):
         oss_vessel = Vessel(name, oss_vessel_specs)
         self.env.register(oss_vessel)
 
-        oss_vessel.extract_vessel_specs()
-        oss_vessel.mobilize()
+        oss_vessel.initialize()
         oss_vessel.at_port = True
         oss_vessel.at_site = False
         self.oss_vessel = oss_vessel
@@ -155,8 +154,7 @@ class OffshoreSubstationInstallation(InstallPhase):
             feeder = Vessel(name, feeder_specs)
             self.env.register(feeder)
 
-            feeder.extract_vessel_specs()
-            feeder.mobilize()
+            feeder.initialize()
             feeder.at_port = True
             feeder.at_site = False
             self.feeders.append(feeder)
@@ -179,7 +177,7 @@ class OffshoreSubstationInstallation(InstallPhase):
             transport_vessels = [*self.feeders]
 
         else:
-            transport_vessels = [self.wtiv]
+            transport_vessels = [self.oss_vessel]
 
         outputs = {
             self.phase: {
@@ -251,4 +249,7 @@ def install_oss_from_queue(vessel, queue, substations, distance, **kwargs):
     vessel.at_site = False
     yield vessel.transit(distance)
     vessel.at_port = True
-    vessel.submit_debug_log(message="Monopile installation complete!")
+    vessel.submit_debug_log(
+        message="Monopile installation complete!",
+        progress="Offshore Substation",
+    )

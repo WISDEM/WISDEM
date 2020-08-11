@@ -1,5 +1,5 @@
 id,substation_id,name,latitude,longitude,string,order,cable_length,bury_speed
-oss1,,oss1,53.249,1.39,,,,
+oss1,oss1,oss1,53.249,1.39,,,,
 t1,oss1,t1,52.96382866,0.628594383,0,0,0,0
 t2,oss1,t2,53.85243944,1.705997089,0,1,0,0
 t3,oss1,t3,55.79425943,1.436351882,0,2,0,0

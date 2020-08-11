@@ -21,8 +21,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
     import pandas as pd
 
-from .CostModule import CostModule
-from .WeatherDelay import WeatherDelay as WD
+from wisdem.landbosse.model.CostModule import CostModule
+from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
 
 
 class Cable:

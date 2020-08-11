@@ -5,7 +5,9 @@ Analysis_Flags:
     # Control which WISDEM modules are executed.
     # (GOAL) If inputs are missing for a module, a warning will be written to the screen and the module disabled.
     OpenFAST: False   # Flag to run aeroelasticse, the wrapper of OpenFAST
-    TowerSE:  False
+    TowerSE:  True
+    ServoSE:  True
+    BOS:      True
 
 yaml:
     validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
@@ -19,35 +21,32 @@ rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
     n_xy: 200         # Number of angles of coordinate points used to discretize each airfoil
     n_span: 30        # Number of spanwise stations used to define the blade properties
-    FatigueMode: 0
 
 openfast:
     analysis_settings:
-        Analysis_Level:     0           # Flag to set the call to OpenFAST. 0 - no call, 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
-        update_hub_nacelle: True
-        update_tower:       True
-        generate_af_coords: True
+        Analysis_Level:     1           # Flag to set the call to OpenFAST. 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
+        update_hub_nacelle: False
+        update_tower:       False
+        generate_af_coords: False
         debug_level:        2    # Flag to set the debug level, do not change
     file_management:
         FAST_ver:          OpenFAST          # Version of OpenFAST, do not change
         FAST_exe:          /bin/openfast    # Path to OpenFAST executable
-        FAST_directory:    "IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/"  # Path to folder with the OpenFAST input files
+        FAST_directory:    "/mnt/c/Users/egaertne/RefModels/IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/"  # Path to folder with the OpenFAST input files
         FAST_InputFile:    IEA-15-240-RWT-Monopile.fst             # Name of the main OpenFAST input file (.fst)
-        path2dll:          "IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/ServoData/libdiscon.so"     # Path to the the compiled ROSCO controller
+        path2dll:          "/mnt/c/Users/egaertne/RefModels/IEA-15-240-RWT/OpenFAST/IEA-15-240-RWT-Monopile/ServoData/libdiscon.so"     # Path to the the compiled ROSCO controller
         Turbsim_exe:       /bin/turbsim   # Path to TurbSim executable
-        FAST_namingOut:    Testing         # Name of the OpenFAST output files
-        FAST_runDirectory: temp/Testing             # Path to folder with the OpenFAST output files
+        FAST_namingOut:    Testing_v2         # Name of the OpenFAST output files
+        FAST_runDirectory: temp/Testing_v2             # Path to folder with the OpenFAST output files
         Simulation_Settings_File: "../../examples/reference_turbines_lcoe/openfast_settings.yaml"
     dlc_settings:
-        run_power_curve: True
-        run_IEC:         True
+        run_power_curve:   False
+        run_IEC:           False
+        run_blade_fatigue: False
         IEC: # Currently supported: 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3
             - DLC:   1.1
-              U:     [9.]
-              Seeds: [11, 12]
-            # - DLC:   1.1
-            #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-            #   Seeds: [11, 12, 13, 14, 15, 16]
+              U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+              Seeds: [11, 12, 13]
             # - DLC:   1.3
             #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
             #   Seeds: [11, 12, 13, 14, 15, 16]
@@ -62,14 +61,17 @@ openfast:
             # - DLC:   6.3
             #   Seeds: [11, 12, 13, 14, 15, 16]
         Power_Curve:
+            # Note: if running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
             turbulent_power_curve: True # False: Steady Wind, True: Turbulent Inflow
-            U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+            # U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
             # Seeds: [11, 12, 13, 14, 15, 16] # Used only when turbulent_power_curve=True
             # U:     [3., 9., 11., 15.]
-            Seeds: [11, 12] # Used only when turbulent_power_curve=True
+            # Seeds: [11, 12] # Used only when turbulent_power_curve=True
+            U:     []
+            Seeds: []
+
 
 tower:             # Options of TowerSE module
-  run_towerse: True
   nLC: 1           # Number of design load cases in TowerSE
   wind: PowerWind  # Wind used in TowerSE
   gamma_f: 1.35    # Safety factor for fatigue loads in TowerSE
@@ -91,7 +93,6 @@ tower:             # Options of TowerSE module
     add_gravity: True
 
 servose:
-    run_servose: True
     n_pc: 20                        # Number of wind speeds to compute the power curve
     n_pc_spline: 200                # Number of wind speeds to spline the power curve 
     n_pitch_perf_surfaces: 20       # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
@@ -110,7 +111,7 @@ servose:
     PC_ControlMode: 1               # Blade pitch control mode {0: No pitch, fix to fine pitch, 1: active PI blade pitch control}
     Y_ControlMode: 0                # Yaw control mode {0: no yaw control, 1: yaw rate control, 2: yaw-by-IPC}
     SS_Mode: 1                      # Setpoint Smoother mode {0: no setpoint smoothing, 1: introduce setpoint smoothing}
-    WE_Mode: 2                      # Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}
+    WE_Mode: 0                      # Wind speed estimator mode {0: One-second low pass filtered hub height wind speed, 1: Immersion and Invariance Estimator (Ortega et al.)}
     PS_Mode: 0                      # Pitch saturation mode {0: no pitch saturation, 1: peak shaving, 2: Cp-maximizing pitch saturation, 3: peak shaving and Cp-maximizing pitch saturation}
     SD_Mode: 0                      # Shutdown mode {0: no shutdown procedure, 1: pitch to max pitch at shutdown}
     Fl_Mode: 0                      # Floating specific feedback mode {0: no nacelle velocity feedback, 1: nacelle velocity feedback}

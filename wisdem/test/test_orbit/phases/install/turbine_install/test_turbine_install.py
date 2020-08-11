@@ -8,17 +8,18 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 from copy import deepcopy
 
-import numpy as np
 import pandas as pd
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.core._defaults import process_times as pt
 from wisdem.orbit.phases.install import TurbineInstallation
 
-initialize_library(pytest.library)
 config_wtiv = extract_library_specs("config", "turbine_install_wtiv")
+config_long_mobilize = extract_library_specs(
+    "config", "turbine_install_long_mobilize"
+)
 config_wtiv_feeder = extract_library_specs("config", "turbine_install_feeder")
 config_wtiv_multi_feeder = deepcopy(config_wtiv_feeder)
 config_wtiv_multi_feeder["num_feeders"] = 2
@@ -69,6 +70,18 @@ def test_vessel_creation(config):
 
 
 @pytest.mark.parametrize(
+    "config, expected", [(config_wtiv, 72), (config_long_mobilize, 14 * 24)]
+)
+def test_vessel_mobilize(config, expected):
+
+    sim = TurbineInstallation(config)
+    assert sim.wtiv
+
+    mobilize = [a for a in sim.env.actions if a["action"] == "Mobilize"][0]
+    assert mobilize["duration"] == expected
+
+
+@pytest.mark.parametrize(
     "config",
     (config_wtiv, config_wtiv_feeder, config_wtiv_multi_feeder),
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
@@ -78,7 +91,7 @@ def test_vessel_creation(config):
 )
 def test_for_complete_logging(weather, config):
 
-    sim = TurbineInstallation(config)
+    sim = TurbineInstallation(config, weather=weather)
     sim.run()
 
     df = pd.DataFrame(sim.env.actions)

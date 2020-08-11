@@ -43,14 +43,16 @@ class TestOC3Mass(unittest.TestCase):
         opt['platform']['run_modal'] = True # Not used
 
         opt['tower'] = {}
-        opt['tower']['monopile'] = False
         opt['tower']['n_height'] = npts
         opt['tower']['n_layers'] = 1
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
-    
+
+        opt['flags'] = {}
+        opt['flags']['monopile'] = False
+        
         prob = Problem()
-        prob.model=FloatingSE(analysis_options=opt)
+        prob.model=FloatingSE(modeling_options=opt)
         prob.setup()
 
         # Remove all offset columns
@@ -160,7 +162,7 @@ class TestOC3Mass(unittest.TestCase):
         prob['cd_usr']                = -1.0 # Compute drag coefficient
 
         # Porperties of turbine tower
-        nTower = prob.model.options['analysis_options']['tower']['n_height']-1
+        nTower = prob.model.options['modeling_options']['tower']['n_height']-1
         prob['tower_height']            = prob['hub_height'] = 77.6
         prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
         prob['tower_outer_diameter_in'] = np.linspace(6.5, 3.87, nTower+1)

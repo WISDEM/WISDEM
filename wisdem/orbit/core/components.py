@@ -51,26 +51,12 @@ class Crane:
         self.max_lift = crane_specs.get("max_lift", None)
         self.max_hook_height = crane_specs.get("max_hook_height", None)
         self.max_windspeed = crane_specs.get("max_windspeed", 99)
+        self._crane_rate = crane_specs.get("crane_rate", 100)
 
-    @staticmethod
-    def crane_rate(**kwargs):
-        """
-        Calculates minimum crane rate based on current wave height equation
-        from DNV standards for offshore lifts.
+    def crane_rate(self, **kwargs):
+        """Returns `self._crane_rate`."""
 
-        Parameters
-        ----------
-        wave_height : int | float
-            Significant wave height (m).
-
-        Returns
-        -------
-        crane_rate : float
-            Hoist speed of crane (m/hr).
-        """
-
-        wave_height = kwargs.get("wave_height", 2)
-        return 0.6 * wave_height * 3600
+        return self._crane_rate
 
     @staticmethod
     def reequip(**kwargs):

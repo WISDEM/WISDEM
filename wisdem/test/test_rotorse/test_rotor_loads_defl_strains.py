@@ -24,7 +24,7 @@ class TestRLDS(unittest.TestCase):
         options['blade'] = {}
         options['blade']['n_span'] = npts
 
-        myobj = rlds.BladeCurvature(analysis_options=options)
+        myobj = rlds.BladeCurvature(modeling_options=options)
 
         # Straight blade: Z is 'r'
         inputs['r'] = np.linspace(0, 100, npts)
@@ -90,7 +90,7 @@ class TestRLDS(unittest.TestCase):
         options['blade'] = {}
         options['blade']['n_span'] = npts
 
-        myobj = rlds.TotalLoads(analysis_options=options)
+        myobj = rlds.TotalLoads(modeling_options=options)
 
         # Pass through
         inputs['r'] = np.linspace(0, 100, npts)
@@ -170,12 +170,12 @@ class TestRLDS(unittest.TestCase):
         options['blade']['n_span'] = npts
         options['blade']['n_freq'] = nfreq
 
-        #myold = rlds.RunpBEAM(analysis_options=options)
+        #myold = rlds.RunpBEAM(modeling_options=options)
         #myold.n_span = npts
         #myold.n_freq = nfreq
         #myold.compute(inputs, outputs0)
         
-        myobj = rlds.RunFrame3DD(analysis_options=options, pbeam=True)
+        myobj = rlds.RunFrame3DD(modeling_options=options, pbeam=True)
         myobj.n_span = npts
         myobj.n_freq = nfreq
         myobj.compute(inputs, outputs)
@@ -221,7 +221,7 @@ class TestRLDS(unittest.TestCase):
         options['blade']['n_freq'] = nfreq
 
         # Tip deflection the old pBeam way
-        myobj0 = rlds.RunFrame3DD(analysis_options=options, pbeam=True)
+        myobj0 = rlds.RunFrame3DD(modeling_options=options, pbeam=True)
         myobj0.n_span = npts
         myobj0.n_freq = nfreq
         myobj0.compute(inputs, outputs0)
@@ -238,7 +238,7 @@ class TestRLDS(unittest.TestCase):
         mytip.compute(inputs, outputs0)
 
         # Tip deflection the new, enhanced way with geometric stiffening
-        myobj = rlds.RunFrame3DD(analysis_options=options, pbeam=False)
+        myobj = rlds.RunFrame3DD(modeling_options=options, pbeam=False)
         myobj.n_span = npts
         myobj.n_freq = nfreq
         myobj.compute(inputs, outputs)
@@ -272,7 +272,7 @@ class TestRLDS(unittest.TestCase):
         myopt['optimization_variables']['blade']['spar_cap_ss']['n_opt'] = 3
         myopt['optimization_variables']['blade']['spar_cap_ps']['n_opt'] = 3
 
-        myobj = rlds.DesignConstraints(analysis_options=options, opt_options=myopt)
+        myobj = rlds.DesignConstraints(modeling_options=options, opt_options=myopt)
 
         # Straight blade: Z is 'r'
         inputs['strainU_spar'] = np.linspace(0.4, 0.6, npts)

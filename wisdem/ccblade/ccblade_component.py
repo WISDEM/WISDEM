@@ -168,19 +168,19 @@ class CCBladeLoads(ExplicitComponent):
     """
     
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
+        blade_init_options = self.options['modeling_options']['blade']
         self.n_span        = n_span    = blade_init_options['n_span']
-        af_init_options = self.options['analysis_options']['airfoils']
+        af_init_options = self.options['modeling_options']['airfoils']
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']  # Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re']  # Number of Reynolds
         self.n_tab         = n_tab     = af_init_options['n_tab']  # Number of tabulated data. For distributed aerodynamic control this could be > 1
 
         # inputs
         self.add_input('V_load',        val=20.0, units='m/s')
-        self.add_input('Omega_load',    val=9.0, units='rpm')
+        self.add_input('Omega_load',    val=0.0, units='rpm')
         self.add_input('pitch_load',    val=0.0, units='deg')
         self.add_input('azimuth_load',  val=0.0, units='deg')
 
@@ -315,17 +315,17 @@ class CCBladeLoads(ExplicitComponent):
 class CCBladeTwist(ExplicitComponent):
 
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('opt_options')
 
     def setup(self):
-        analysis_options = self.options['analysis_options']
+        modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
-        self.n_span      = n_span    = analysis_options['blade']['n_span']
+        self.n_span      = n_span    = modeling_options['blade']['n_span']
         # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
-        self.n_aoa       = n_aoa     = analysis_options['airfoils']['n_aoa']# Number of angle of attacks
-        self.n_Re        = n_Re      = analysis_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab       = n_tab     = analysis_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_aoa       = n_aoa     = modeling_options['airfoils']['n_aoa']# Number of angle of attacks
+        self.n_Re        = n_Re      = modeling_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab       = n_tab     = modeling_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         n_opt_chord      = opt_options['optimization_variables']['blade']['aero_shape']['chord']['n_opt']
         n_opt_twist      = opt_options['optimization_variables']['blade']['aero_shape']['twist']['n_opt']
         
@@ -619,14 +619,14 @@ class AeroHubLoads(ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
 
     def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
-        n_blades           = self.options['analysis_options']['assembly']['number_of_blades']
+        blade_init_options = self.options['modeling_options']['blade']
+        n_blades           = self.options['modeling_options']['assembly']['number_of_blades']
 
         self.n_span        = n_span    = blade_init_options['n_span']
-        af_init_options = self.options['analysis_options']['airfoils']
+        af_init_options = self.options['modeling_options']['airfoils']
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']  # Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re']  # Number of Reynolds
         self.n_tab         = n_tab     = af_init_options['n_tab']  # Number of tabulated data. For distributed aerodynamic control this could be > 1
@@ -793,12 +793,12 @@ class CCBladeEvaluate(ExplicitComponent):
     """
     
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
-        blade_init_options = self.options['analysis_options']['blade']
+        blade_init_options = self.options['modeling_options']['blade']
         self.n_span        = n_span    = blade_init_options['n_span']
-        af_init_options = self.options['analysis_options']['airfoils']
+        af_init_options = self.options['modeling_options']['airfoils']
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']  # Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re']  # Number of Reynolds
         self.n_tab         = n_tab     = af_init_options['n_tab']  # Number of tabulated data. For distributed aerodynamic control this could be > 1

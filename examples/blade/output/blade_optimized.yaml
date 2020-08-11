@@ -438,14 +438,9 @@ components:
                   material: steel
                   thickness:
                       grid: [0.0, 0.09999999999999999, 0.19999999999999998, 0.3, 0.39999999999999997, 0.5, 0.6, 0.7000000000000001, 0.7999999999999999, 0.9, 1.0]
-                      values: [0.06515525, 0.05866464, 0.05197538, 0.04607753, 0.04094533, 0.03582223, 0.03074005, 0.02575014, 0.02129438, 0.01803766, 0.01803766]
+                      values: [0.0586149775, 0.0521732325, 0.0462689425, 0.040947605, 0.03583246, 0.0307631175, 0.0258836775, 0.02159414, 0.01885184, 0.01803766, 0.01803766]
     foundation:
         height: 0.
-    RNA:
-        elastic_properties_mb:
-            mass: 674297.0552634256
-            inertia: [253311943.37970757, 139706492.09802908, 112590210.39838813, 0.0, 3860492.6159106526, 0.0]
-            center_mass: [-2.274067036202, 0.0, 0.8069927449839258]
 airfoils:
    -  name: circular
       coordinates:
@@ -760,8 +755,28 @@ environment:
     shear_exp: 0.2
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
+    water_depth: 0.0
+    significant_wave_height: 0.0
+    significant_wave_period: 0.0
     soil_shear_modulus: 140e6
     soil_poisson: 0.4
+bos:
+    plant_turbine_spacing: 7
+    plant_row_spacing: 7
+    commissioning_pct: 0.01
+    decommissioning_pct: 0.15
+    distance_to_substation: 50.0
+    distance_to_interconnection: 8.
+    interconnect_voltage: 130
+    distance_to_site: 1.
+    distance_to_landfall: 1.
+    port_cost_per_month: 0.0
+    site_auction_price: 0.0
+    site_assessment_plan_cost: 0.0
+    site_assessment_cost: 0.0
+    construction_operations_plan_cost: 0.0
+    boem_review_cost: 0.0
+    design_install_plan_cost: 0.0
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075

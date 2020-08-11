@@ -45,7 +45,16 @@ ROOT = os.path.abspath(os.path.join(os.path.abspath(__file__), "../.."))
 default_library = os.path.join(ROOT, "library")
 
 # Need a custom loader to read in scientific notation correctly
-loader = yaml.SafeLoader
+class CustomSafeLoader(yaml.SafeLoader):
+    def construct_python_tuple(self, node):
+        return tuple(self.construct_sequence(node))
+
+
+CustomSafeLoader.add_constructor(
+    "tag:yaml.org,2002:python/tuple", CustomSafeLoader.construct_python_tuple
+)
+
+loader = CustomSafeLoader
 loader.add_implicit_resolver(
     "tag:yaml.org,2002:float",
     re.compile(
@@ -182,7 +191,10 @@ def _extract_file(filepath):
     """
 
     if filepath.endswith("yaml"):
-        return yaml.load(open(filepath, "r"), Loader=loader)
+        f = open(filepath, "r")
+        fyaml = yaml.load(f, Loader=loader)
+        f.close()
+        return fyaml
 
     elif filepath.endswith("csv"):
         df = pd.read_csv(filepath, index_col=False)
@@ -233,13 +245,13 @@ def export_library_specs(key, filename, data, file_ext="yaml"):
     filename = f"{filename}.{file_ext}"
     path = PATH_LIBRARY[key]
     data_path = os.path.join(os.environ["DATA_LIBRARY"], path, filename)
-    if not _get_yes_no_response(data_path):
+    if os.path.isfile(data_path) and not _get_yes_no_response(data_path):
         print("Cancelling save!")
         return
     if file_ext == "yaml":
-        yaml.dump(
-            data, open(data_path, "w"), Dumper=Dumper, default_flow_style=False
-        )
+        f = open(data_path, "w")
+        yaml.dump(data, f, Dumper=Dumper, default_flow_style=False)
+        f.close()
     elif file_ext == "csv":
         with open(data_path, "w") as f:
             writer = csv.writer(f)
@@ -253,13 +265,18 @@ PATH_LIBRARY = {
     # vessels
     "array_cable_install_vessel": "vessels",
     "array_cable_bury_vessel": "vessels",
+    "array_cable_trench_vessel": "vessels",
     "export_cable_install_vessel": "vessels",
     "export_cable_bury_vessel": "vessels",
+    "export_cable_trench_vessel": "vessels",
     "oss_install_vessel": "vessels",
     "spi_vessel": "vessels",
     "trench_dig_vessel": "vessels",
     "feeder": "vessels",
+    "mooring_install_vessel": "vessels",
     "wtiv": "vessels",
+    "towing_vessel": "vessels",
+    "support_vessel": "vessels",
     # cables
     "cables": "cables",
     "array_system": "cables",
