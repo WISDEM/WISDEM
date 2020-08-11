@@ -14,9 +14,6 @@ from wisdem.landbosse.landbosse_omdao.WeatherWindowCSVReader import read_weather
 use_default_component_data = -1.0
 
 class LandBOSSE(om.Group):
-    def initialize(self):
-        self.options.declare('topLevelFlag', default=False)
-
     def setup(self):
 
         # Add a tower section height variable. The default value of 30 m is for transportable tower sections.
@@ -28,28 +25,24 @@ class LandBOSSE(om.Group):
         self.set_input_defaults('blade_offload_cycle_time', use_default_component_data, units='h')
         self.set_input_defaults('blade_drag_multiplier', use_default_component_data)  # Unitless
 
-        if self.options['topLevelFlag']:
-            self.set_input_defaults('turbine_spacing_rotor_diameters', 4)
-            self.set_input_defaults('row_spacing_rotor_diameters', 10)
-            self.set_input_defaults('commissioning_pct', 0.01)
-            self.set_input_defaults('decommissioning_pct', 0.15)
-            self.set_input_defaults('trench_len_to_substation_km', 50.0, units='km')
-            self.set_input_defaults('interconnect_voltage_kV', 130.0, units='kV')
+        self.set_input_defaults('turbine_spacing_rotor_diameters', 4)
+        self.set_input_defaults('row_spacing_rotor_diameters', 10)
+        self.set_input_defaults('commissioning_pct', 0.01)
+        self.set_input_defaults('decommissioning_pct', 0.15)
+        self.set_input_defaults('trench_len_to_substation_km', 50.0, units='km')
+        self.set_input_defaults('interconnect_voltage_kV', 130.0, units='kV')
 
-            self.set_input_defaults('foundation_height', 0.0, units='m')
-            self.set_input_defaults('blade_mass', 8000., units='kg')
-            self.set_input_defaults('hub_mass', 15.4e3, units='kg')
-            self.set_input_defaults('nacelle_mass', 50e3, units='kg')
-            self.set_input_defaults('tower_mass', 240e3, units='kg')
-            self.set_input_defaults('turbine_rating_MW', 1500.0, units='kW')
+        self.set_input_defaults('foundation_height', 0.0, units='m')
+        self.set_input_defaults('blade_mass', 8000., units='kg')
+        self.set_input_defaults('hub_mass', 15.4e3, units='kg')
+        self.set_input_defaults('nacelle_mass', 50e3, units='kg')
+        self.set_input_defaults('tower_mass', 240e3, units='kg')
+        self.set_input_defaults('turbine_rating_MW', 1500.0, units='kW')
             
-        self.add_subsystem('landbosse', LandBOSSE_API(topLevelFlag = self.options['topLevelFlag']), promotes=['*'])
+        self.add_subsystem('landbosse', LandBOSSE_API(), promotes=['*'])
 
 
 class LandBOSSE_API(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare('topLevelFlag', default=False)
-        
     def setup(self):
         # Clear the cache
         OpenMDAODataframeCache._cache={}

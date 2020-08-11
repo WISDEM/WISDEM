@@ -13,7 +13,6 @@ def landbosse_costs_by_module_type_operation():
     """
     prob = om.Problem()
     prob.model = LandBOSSE()
-    prob.model.options['topLevelFlag'] = True
     prob.setup()
     prob.run_model()
     #prob.model.list_inputs(units=True)
