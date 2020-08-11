@@ -180,7 +180,7 @@ class CCBladeLoads(ExplicitComponent):
 
         # inputs
         self.add_input('V_load',        val=20.0, units='m/s')
-        self.add_input('Omega_load',    val=9.0, units='rpm')
+        self.add_input('Omega_load',    val=0.0, units='rpm')
         self.add_input('pitch_load',    val=0.0, units='deg')
         self.add_input('azimuth_load',  val=0.0, units='deg')
 

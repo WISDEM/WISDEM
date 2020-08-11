@@ -324,6 +324,7 @@ class TuneROSCO(ExplicitComponent):
 
         # DISCON Parameters
         #   - controller
+        
         if 'DISCON_in' not in self.modeling_options['openfast']['fst_vt'].keys():
             self.modeling_options['openfast']['fst_vt']['DISCON_in']  = {}
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['LoggingLevel'] = controller.LoggingLevel
@@ -365,6 +366,7 @@ class TuneROSCO(ExplicitComponent):
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['Flp_Ki'] = controller.Ki_flap
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['Flp_MaxPit'] = controller.flp_maxpit
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['Flp_Angle'] = 0.
+        
         # - turbine
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['v_rated'] = inputs['v_rated'][0]
