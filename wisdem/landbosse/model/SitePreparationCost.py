@@ -5,9 +5,9 @@ with warnings.catch_warnings():
 
 import numpy as np
 import math
-from .WeatherDelay import WeatherDelay as WD
+from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
 import traceback
-from .CostModule import CostModule
+from wisdem.landbosse.model.CostModule import CostModule
 
 
 class SitePreparationCost(CostModule):

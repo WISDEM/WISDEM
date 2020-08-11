@@ -15,7 +15,6 @@ plant:
   num_turbines: 10
 port:
   monthly_rate: 10000
-  num_cranes: 1
 site:
   depth: 15
   distance: 100

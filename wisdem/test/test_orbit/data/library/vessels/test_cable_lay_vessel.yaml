@@ -1,5 +1,4 @@
 transport_specs:
-  cable_lay_speed: 0.5  # km/hr
   max_waveheight: 1.5   # m
   max_windspeed: 25     # m/s
   transit_speed: 11.5   # km/hr

@@ -1,0 +1,9 @@
+ac_resistance: 0.03     #
+capacitance: 300        #
+conductor_size: 1000    #
+cost_per_km: 850000     #
+current_capacity: 900   # Guess
+inductance: 0.35        #
+linear_density: 90      # From BVG Guide to OSW
+name: XLPE_1000m_220kV
+rated_voltage: 220

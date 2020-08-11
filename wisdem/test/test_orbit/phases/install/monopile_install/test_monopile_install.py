@@ -12,11 +12,10 @@ import pandas as pd
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.core._defaults import process_times as pt
 from wisdem.orbit.phases.install import MonopileInstallation
 
-initialize_library(pytest.library)
 config_wtiv = extract_library_specs("config", "single_wtiv_mono_install")
 config_wtiv_feeder = extract_library_specs("config", "multi_wtiv_mono_install")
 config_wtiv_multi_feeder = deepcopy(config_wtiv_feeder)
