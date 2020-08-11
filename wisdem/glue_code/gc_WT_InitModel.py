@@ -3,7 +3,7 @@ from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 from wisdem.commonse.utilities import arc_length
 from wisdem.commonse.csystem import DirectionVector
 
-def yaml2openmdao(wt_opt, analysis_options, wt_init):
+def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
     
     # These are the required components
@@ -11,103 +11,103 @@ def yaml2openmdao(wt_opt, analysis_options, wt_init):
     wt_opt = assign_configuration_values(wt_opt, assembly)
 
     materials       = wt_init['materials']
-    wt_opt = assign_material_values(wt_opt, analysis_options, materials)
+    wt_opt = assign_material_values(wt_opt, modeling_options, materials)
 
     # Now all of the optional components
-    if analysis_options['flags']['environment']:
+    if modeling_options['flags']['environment']:
         environment     = wt_init['environment']
-        wt_opt = assign_environment_values(wt_opt, environment, analysis_options['offshore'])
+        wt_opt = assign_environment_values(wt_opt, environment, modeling_options['offshore'])
     else:
         environment = {}
 
-    if analysis_options['flags']['blade']:
+    if modeling_options['flags']['blade']:
         blade           = wt_init['components']['blade']
-        wt_opt = assign_blade_values(wt_opt, analysis_options, blade)
+        wt_opt = assign_blade_values(wt_opt, modeling_options, blade)
     else:
         blade = {}
 
-    if analysis_options['flags']['airfoils']:
+    if modeling_options['flags']['airfoils']:
         airfoils        = wt_init['airfoils']
-        wt_opt = assign_airfoil_values(wt_opt, analysis_options, airfoils)
+        wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils)
     else:
         airfoils = {}
         
-    if analysis_options['flags']['control']:
+    if modeling_options['flags']['control']:
         control         = wt_init['control']
-        wt_opt = assign_control_values(wt_opt, analysis_options, control)
+        wt_opt = assign_control_values(wt_opt, modeling_options, control)
     else:
         control = {}
         
-    if analysis_options['flags']['hub']:
+    if modeling_options['flags']['hub']:
         hub    = wt_init['components']['hub']
         wt_opt = assign_hub_values(wt_opt, hub)
     else:
         hub = {}
         
-    if analysis_options['flags']['nacelle']:
+    if modeling_options['flags']['nacelle']:
         nacelle         = wt_init['components']['nacelle']
         wt_opt = assign_nacelle_values(wt_opt, assembly, nacelle)
     else:
         nacelle = {}
         
-    if analysis_options['flags']['RNA']:
+    if modeling_options['flags']['RNA']:
         RNA = wt_init['components']['RNA']
     else:
         RNA = {}
         
-    if analysis_options['flags']['tower']:
+    if modeling_options['flags']['tower']:
         tower           = wt_init['components']['tower']
-        wt_opt = assign_tower_values(wt_opt, analysis_options, tower)
+        wt_opt = assign_tower_values(wt_opt, modeling_options, tower)
     else:
         tower = {}
 
-    if analysis_options['flags']['monopile']:
+    if modeling_options['flags']['monopile']:
         monopile = wt_init['components']['monopile']
-        wt_opt   = assign_monopile_values(wt_opt, analysis_options, monopile)
+        wt_opt   = assign_monopile_values(wt_opt, modeling_options, monopile)
     else:
         monopile = {}
         
-    if analysis_options['flags']['floating']:
+    if modeling_options['flags']['floating']:
         floating = wt_init['components']['floating']
-        wt_opt   = assign_floating_values(wt_opt, analysis_options, floating)
+        wt_opt   = assign_floating_values(wt_opt, modeling_options, floating)
     else:
         floating = {}
         
-    if analysis_options['flags']['foundation']:
+    if modeling_options['flags']['foundation']:
         foundation      = wt_init['components']['foundation']
         wt_opt = assign_foundation_values(wt_opt, foundation)
     else:
         foundation = {}
 
-    if analysis_options['flags']['bos']:
+    if modeling_options['flags']['bos']:
         bos           = wt_init['bos']
-        wt_opt = assign_bos_values(wt_opt, bos, analysis_options['offshore'])
+        wt_opt = assign_bos_values(wt_opt, bos, modeling_options['offshore'])
     else:
         costs = {}
 
-    if analysis_options['flags']['costs']:
+    if modeling_options['flags']['costs']:
         costs           = wt_init['costs']
         wt_opt = assign_costs_values(wt_opt, costs)
     else:
         costs = {}
         
     if 'elastic_properties_mb' in blade.keys():
-        wt_opt = assign_RNA_values(wt_opt, analysis_options, blade, RNA)
+        wt_opt = assign_RNA_values(wt_opt, modeling_options, blade, RNA)
 
     return wt_opt
     
-def assign_blade_values(wt_opt, analysis_options, blade):
+def assign_blade_values(wt_opt, modeling_options, blade):
     # Function to assign values to the openmdao group Blade
-    wt_opt = assign_outer_shape_bem_values(wt_opt, analysis_options, blade['outer_shape_bem'])
-    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, analysis_options, blade['internal_structure_2d_fem'])
-    wt_opt = assign_te_flaps_values(wt_opt, analysis_options, blade)
+    wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade['outer_shape_bem'])
+    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade['internal_structure_2d_fem'])
+    wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
     
     return wt_opt
     
-def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
+def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
     
-    nd_span     = analysis_options['blade']['nd_span']
+    nd_span     = modeling_options['blade']['nd_span']
     
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
     wt_opt['blade.opt_var.af_position']         = outer_shape_bem['airfoil_position']['grid']
@@ -179,11 +179,11 @@ def assign_outer_shape_bem_values(wt_opt, analysis_options, outer_shape_bem):
     
     return wt_opt
     
-def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_structure_2d_fem):
+def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_structure_2d_fem):
     # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
     
-    n_span          = analysis_options['blade']['n_span']
-    n_webs          = analysis_options['blade']['n_webs']
+    n_span          = modeling_options['blade']['n_span']
+    n_webs          = modeling_options['blade']['n_webs']
     
     web_rotation    = np.zeros((n_webs, n_span))
     web_offset_y_pa = np.zeros((n_webs, n_span))
@@ -199,7 +199,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
                 if internal_structure_2d_fem['webs'][i]['rotation']['fixed'] == 'twist':
                     definition_web[i] = 1
                 else:
-                    exit('Invalid rotation reference for web ' + self.analysis_options['blade']['web_name'][i] + '. Please check the yaml input file')
+                    exit('Invalid rotation reference for web ' + self.modeling_options['blade']['web_name'][i] + '. Please check the yaml input file')
             else:
                 web_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['rotation']['grid'], internal_structure_2d_fem['webs'][i]['rotation']['values'], left=0., right=0.)
                 definition_web[i] = 2
@@ -211,7 +211,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
         else:
             exit('Webs definition not supported. Please check the yaml input.')
     
-    n_layers        = analysis_options['blade']['n_layers']
+    n_layers        = modeling_options['blade']['n_layers']
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
     thickness       = np.zeros((n_layers, n_span))
@@ -231,8 +231,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     
     # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
     for i in range(n_layers):
-        layer_name[i]  = analysis_options['blade']['layer_name'][i]
-        layer_mat[i]   = analysis_options['blade']['layer_mat'][i]
+        layer_name[i]  = modeling_options['blade']['layer_name'][i]
+        layer_mat[i]   = modeling_options['blade']['layer_mat'][i]
         thickness[i]   = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['thickness']['grid'], internal_structure_2d_fem['layers'][i]['thickness']['values'], left=0., right=0.)
         if 'rotation' not in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' not in internal_structure_2d_fem['layers'][i] and 'width' not in internal_structure_2d_fem['layers'][i] and 'start_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'end_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'web' not in internal_structure_2d_fem['layers'][i]:
             definition_layer[i] = 1
@@ -325,8 +325,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
 
         if 'web' in internal_structure_2d_fem['layers'][i]:
             web_name_i = internal_structure_2d_fem['layers'][i]['web']
-            for j in range(analysis_options['blade']['n_webs']):
-                if web_name_i == analysis_options['blade']['web_name'][j]:
+            for j in range(modeling_options['blade']['n_webs']):
+                if web_name_i == modeling_options['blade']['web_name'][j]:
                     k = j+1
                     break
             layer_web[i] = k
@@ -355,10 +355,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, analysis_options, internal_s
     
     return wt_opt
 
-def assign_te_flaps_values(wt_opt, analysis_options, blade):
+def assign_te_flaps_values(wt_opt, modeling_options, blade):
     # Function to assign the trailing edge flaps data to the openmdao data structure
-    if analysis_options['blade']['n_te_flaps'] > 0:   
-        n_te_flaps = analysis_options['blade']['n_te_flaps']
+    if modeling_options['blade']['n_te_flaps'] > 0:   
+        n_te_flaps = modeling_options['blade']['n_te_flaps']
         for i in range(n_te_flaps):
             wt_opt['blade.dac_te_flaps.te_flap_start'][i]   = blade['aerodynamic_control']['te_flaps'][i]['span_start']
             wt_opt['blade.dac_te_flaps.te_flap_end'][i]     = blade['aerodynamic_control']['te_flaps'][i]['span_end']
@@ -450,10 +450,10 @@ def assign_nacelle_values(wt_opt, assembly, nacelle):
 
     return wt_opt
 
-def assign_tower_values(wt_opt, analysis_options, tower):
+def assign_tower_values(wt_opt, modeling_options, tower):
     # Function to assign values to the openmdao component Tower
-    n_height        = analysis_options['tower']['n_height'] # Number of points along tower height
-    n_layers        = analysis_options['tower']['n_layers']
+    n_height        = modeling_options['tower']['n_height'] # Number of points along tower height
+    n_layers        = modeling_options['tower']['n_layers']
     
     svec = np.unique( np.r_[tower['outer_shape_bem']['outer_diameter']['grid'],
                             tower['outer_shape_bem']['reference_axis']['x']['grid'],
@@ -483,10 +483,10 @@ def assign_tower_values(wt_opt, analysis_options, tower):
     
     return wt_opt
 
-def assign_monopile_values(wt_opt, analysis_options, monopile):
+def assign_monopile_values(wt_opt, modeling_options, monopile):
     # Function to assign values to the openmdao component Monopile
-    n_height        = analysis_options['monopile']['n_height'] # Number of points along monopile height
-    n_layers        = analysis_options['monopile']['n_layers']
+    n_height        = modeling_options['monopile']['n_height'] # Number of points along monopile height
+    n_layers        = modeling_options['monopile']['n_layers']
     
     svec = np.unique( np.r_[monopile['outer_shape_bem']['outer_diameter']['grid'],
                             monopile['outer_shape_bem']['reference_axis']['x']['grid'],
@@ -528,7 +528,7 @@ def assign_foundation_values(wt_opt, foundation):
 
     return wt_opt
 
-def assign_floating_values(wt_opt, analysis_options, floating):
+def assign_floating_values(wt_opt, modeling_options, floating):
 
     dx = (floating['column']['main']['reference_axis']['x']['values'].mean() -
           floating['column']['offset']['reference_axis']['x']['values'].mean() )
@@ -544,7 +544,7 @@ def assign_floating_values(wt_opt, analysis_options, floating):
             break
 
     wt_opt['floating.outfitting_cost_rate'] = 20.0 # Lookup material here?
-    wt_opt['floating.loading'] = 'hydrostatic' #if analysis_options['floating']['loading']['hydrostatic'] else 
+    wt_opt['floating.loading'] = 'hydrostatic' #if modeling_options['floating']['loading']['hydrostatic'] else 
 
     # Main column
     svec = np.unique( np.r_[floating['column']['main']['outer_shape_bem']['outer_diameter']['grid'],
@@ -677,7 +677,7 @@ def assign_floating_values(wt_opt, analysis_options, floating):
         
     return wt_opt
 
-def assign_control_values(wt_opt, analysis_options, control):
+def assign_control_values(wt_opt, modeling_options, control):
     # Controller parameters
     wt_opt['control.rated_power']   = control['rated_power']
     wt_opt['control.V_in']          = control['Vin']
@@ -694,7 +694,7 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.PC_zeta']       = control['PC_zeta']
     wt_opt['control.VS_omega']      = control['VS_omega']
     wt_opt['control.VS_zeta']       = control['VS_zeta']
-    if analysis_options['servose']['Flp_Mode'] > 0:
+    if modeling_options['servose']['Flp_Mode'] > 0:
         wt_opt['control.Flp_omega']      = control['Flp_omega']
         wt_opt['control.Flp_zeta']       = control['Flp_zeta']
     # # other optional parameters
@@ -705,9 +705,9 @@ def assign_control_values(wt_opt, analysis_options, control):
     wt_opt['control.ss_pcgain']     = control['ss_pcgain']
     wt_opt['control.ps_percent']    = control['ps_percent']
     # Check for proper Flp_Mode, print warning
-    if analysis_options['airfoils']['n_tab'] > 1 and analysis_options['servose']['Flp_Mode'] == 0:
+    if modeling_options['airfoils']['n_tab'] > 1 and modeling_options['servose']['Flp_Mode'] == 0:
             print('WARNING: servose.Flp_Mode should be >= 1 for aerodynamic control.')
-    if analysis_options['airfoils']['n_tab'] == 1 and analysis_options['servose']['Flp_Mode'] > 0:
+    if modeling_options['airfoils']['n_tab'] == 1 and modeling_options['servose']['Flp_Mode'] > 0:
             print('WARNING: servose.Flp_Mode should be = 0 for no aerodynamic control.')
             
     return wt_opt
@@ -779,15 +779,15 @@ def assign_costs_values(wt_opt, costs):
 
     return wt_opt 
 
-def assign_airfoil_values(wt_opt, analysis_options, airfoils):
+def assign_airfoil_values(wt_opt, modeling_options, airfoils):
     # Function to assign values to the openmdao component Airfoils
     
-    n_af  = analysis_options['airfoils']['n_af']
-    n_aoa = analysis_options['airfoils']['n_aoa']
-    aoa   = analysis_options['airfoils']['aoa']
-    n_Re  = analysis_options['airfoils']['n_Re']
-    n_tab = analysis_options['airfoils']['n_tab']
-    n_xy  = analysis_options['airfoils']['n_xy']
+    n_af  = modeling_options['airfoils']['n_af']
+    n_aoa = modeling_options['airfoils']['n_aoa']
+    aoa   = modeling_options['airfoils']['aoa']
+    n_Re  = modeling_options['airfoils']['n_Re']
+    n_tab = modeling_options['airfoils']['n_tab']
+    n_xy  = modeling_options['airfoils']['n_xy']
     
     name    = n_af * ['']
     ac      = np.zeros(n_af)
@@ -877,10 +877,10 @@ def assign_airfoil_values(wt_opt, analysis_options, airfoils):
      
     return wt_opt
     
-def assign_material_values(wt_opt, analysis_options, materials):
+def assign_material_values(wt_opt, modeling_options, materials):
     # Function to assign values to the openmdao component Materials
     
-    n_mat = analysis_options['materials']['n_mat']
+    n_mat = modeling_options['materials']['n_mat']
     
     name        = n_mat * ['']
     orth        = np.zeros(n_mat)
@@ -972,7 +972,7 @@ def assign_material_values(wt_opt, analysis_options, materials):
 
     return wt_opt
 
-def assign_RNA_values(wt_opt, analysis_options, blade, RNA):
+def assign_RNA_values(wt_opt, modeling_options, blade, RNA):
 
     def _assembleI(I):
         Ixx, Iyy, Izz, Ixy, Ixz, Iyz = I[0], I[1], I[2], I[3], I[4], I[5] 
@@ -981,7 +981,7 @@ def assign_RNA_values(wt_opt, analysis_options, blade, RNA):
     def _unassembleI(I):
         return np.array([I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]])
     
-    nd_span     = analysis_options['blade']['nd_span']
+    nd_span     = modeling_options['blade']['nd_span']
     n_span      = len(nd_span)
     ref_axis    = np.zeros((n_span,3))
     ref_axis[:,0]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['x']['grid'], blade['outer_shape_bem']['reference_axis']['x']['values'])

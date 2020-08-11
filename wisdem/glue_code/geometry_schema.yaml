@@ -5,8 +5,8 @@
 
 
 $schema: "http://json-schema.org/draft-07/schema#"
-$id: IEA_WTontology_v00
-title: IEA wind turbine ontology
+$id: WISDEM_ontology_v00
+title: WISDEM wind turbine ontology
 description: Ontology definition for wind turbines as defined in WP1 of IEA Wind Task 37 - Phase II
 type: object
 required: 

@@ -906,7 +906,7 @@ class TowerPostFrame(om.ExplicitComponent):
     """
     def initialize(self):
         self.options.declare('n_height')
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         #self.options.declare('nDEL')
 
     def setup(self):
@@ -1006,11 +1006,11 @@ class TowerPostFrame(om.ExplicitComponent):
         t            = inputs['t_full']
         d,_          = nodal2sectional(inputs['d_full'])
         z_section,_  = nodal2sectional(inputs['z_full'])
-        L_reinforced = self.options['analysis_options']['buckling_length'] * np.ones(axial_stress.shape)
-        gamma_f      = self.options['analysis_options']['gamma_f']
-        gamma_m      = self.options['analysis_options']['gamma_m']
-        gamma_n      = self.options['analysis_options']['gamma_n']
-        gamma_b      = self.options['analysis_options']['gamma_b']
+        L_reinforced = self.options['modeling_options']['buckling_length'] * np.ones(axial_stress.shape)
+        gamma_f      = self.options['modeling_options']['gamma_f']
+        gamma_m      = self.options['modeling_options']['gamma_m']
+        gamma_n      = self.options['modeling_options']['gamma_n']
+        gamma_b      = self.options['modeling_options']['gamma_b']
 
         # Frequencies and mode shapes (with x^2 term first)
         outputs['structural_frequencies'] = inputs['freqs']
@@ -1098,21 +1098,21 @@ class TowerLeanSE(om.Group):
     """
     
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('topLevelFlag')
         
     def setup(self):
-        toweropt = self.options['analysis_options']['tower']
-        monopile = self.options['analysis_options']['flags']['monopile']
+        toweropt = self.options['modeling_options']['tower']
+        monopile = self.options['modeling_options']['flags']['monopile']
 
         n_height_tow = toweropt['n_height']
         n_layers_tow = toweropt['n_layers']
-        n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
-        n_layers_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_layers']
+        n_height_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_height']
+        n_layers_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_layers']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
         nFull        = get_nfull(n_height)
 
-        n_mat        = self.options['analysis_options']['materials']['n_mat']
+        n_mat        = self.options['modeling_options']['materials']['n_mat']
         
         # Independent variables that are only used in the user is calling TowerSE via python directly
         if self.options['topLevelFlag']:
@@ -1151,7 +1151,7 @@ class TowerLeanSE(om.Group):
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_subsystem('yaml', DiscretizationYAML(n_height_tower=n_height_tow, n_height_monopile=n_height_mon,
                                                       n_layers_tower=n_layers_tow, n_layers_monopile=n_layers_mon,
-                                                      n_mat=self.options['analysis_options']['materials']['n_mat']),
+                                                      n_mat=self.options['modeling_options']['materials']['n_mat']),
                            promotes=['*'])
             
         # If doing fixed bottom monopile, we add an additional point for the pile (even for gravity foundations)
@@ -1197,21 +1197,21 @@ class TowerSE(om.Group):
     """
 
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('topLevelFlag')
         
     def setup(self):
-        toweropt = self.options['analysis_options']['tower']
-        monopile = self.options['analysis_options']['flags']['monopile']
+        toweropt = self.options['modeling_options']['tower']
+        monopile = self.options['modeling_options']['flags']['monopile']
         nLC      = toweropt['nLC'] # not yet supported
         wind     = toweropt['wind'] # not yet supported
         frame3dd_opt = toweropt['frame3dd']
         topLevelFlag = self.options['topLevelFlag']
-        n_height_tow = self.options['analysis_options']['tower']['n_height']
-        n_height_mon = 0 if not monopile else self.options['analysis_options']['monopile']['n_height']
+        n_height_tow = self.options['modeling_options']['tower']['n_height']
+        n_height_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_height']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
         nFull        = get_nfull(n_height)
-        n_mat        = self.options['analysis_options']['materials']['n_mat']
+        n_mat        = self.options['modeling_options']['materials']['n_mat']
 
         # Independent variables that are only used in the user is calling TowerSE via python directly
         if topLevelFlag:
@@ -1242,7 +1242,7 @@ class TowerSE(om.Group):
             self.add_subsystem('sivc', sivc, promotes=['*'])
 
         # Load baseline discretization
-        self.add_subsystem('geom', TowerLeanSE(analysis_options=self.options['analysis_options'], topLevelFlag=topLevelFlag), promotes=['*'])
+        self.add_subsystem('geom', TowerLeanSE(modeling_options=self.options['modeling_options'], topLevelFlag=topLevelFlag), promotes=['*'])
         self.add_subsystem('props', CylindricalShellProperties(nFull=nFull))
         self.add_subsystem('soil', TowerSoil())
 
@@ -1287,7 +1287,7 @@ class TowerSE(om.Group):
                                                                                                         'z_full','d_full'])
             self.add_subsystem('tower'+lc, CylinderFrame3DD(npts=nFull, nK=1, nMass=3, nPL=1,
                                                             frame3dd_opt=frame3dd_opt, buckling_length=toweropt['buckling_length']))
-            self.add_subsystem('post'+lc, TowerPostFrame(n_height=n_height, analysis_options=toweropt), promotes=['life','z_full','d_full','t_full',
+            self.add_subsystem('post'+lc, TowerPostFrame(n_height=n_height, modeling_options=toweropt), promotes=['life','z_full','d_full','t_full',
                                                                                                                   'rho_full','E_full','G_full','sigma_y_full'])
             
             self.connect('z_full', ['wind'+lc+'.z', 'windLoads'+lc+'.z', 'distLoads'+lc+'.z', 'tower'+lc+'.z'])

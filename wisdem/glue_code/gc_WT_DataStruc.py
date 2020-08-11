@@ -10,20 +10,20 @@ class WindTurbineOntologyOpenMDAO(om.Group):
     # Openmdao group with all wind turbine data
     
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('opt_options')
         
     def setup(self):
-        analysis_options = self.options['analysis_options']
+        modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
         
         # Material dictionary inputs
-        self.add_subsystem('materials', Materials(mat_init_options = analysis_options['materials']))
+        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials']))
         
         # Airfoil dictionary inputs
-        if analysis_options['flags']['airfoils']:
+        if modeling_options['flags']['airfoils']:
             airfoils    = om.IndepVarComp()
-            af_init_options = analysis_options['airfoils']
+            af_init_options = modeling_options['airfoils']
             n_af            = af_init_options['n_af'] # Number of airfoils
             n_aoa           = af_init_options['n_aoa']# Number of angle of attacks
             n_Re            = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
@@ -43,8 +43,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem('airfoils', airfoils)
         
         # Blade inputs and connections from airfoils
-        if analysis_options['flags']['blade']:
-            self.add_subsystem('blade',         Blade(blade_init_options   = analysis_options['blade'], af_init_options   = analysis_options['airfoils'], opt_options = opt_options))
+        if modeling_options['flags']['blade']:
+            self.add_subsystem('blade',         Blade(blade_init_options   = modeling_options['blade'], af_init_options   = modeling_options['airfoils'], opt_options = opt_options))
             self.connect('airfoils.name',    'blade.interp_airfoils.name')
             self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
             self.connect('airfoils.coord_xy','blade.interp_airfoils.coord_xy')
@@ -54,11 +54,11 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect('airfoils.cm',      'blade.interp_airfoils.cm')
         
         # Hub inputs
-        if analysis_options['flags']['hub']:
+        if modeling_options['flags']['hub']:
             self.add_subsystem('hub',           Hub())
         
         # Nacelle inputs
-        if analysis_options['flags']['nacelle']:
+        if modeling_options['flags']['nacelle']:
             nacelle = om.IndepVarComp()
             # Outer shape bem
             nacelle.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
@@ -85,19 +85,19 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem('nacelle', nacelle)
         
         # Tower inputs
-        if analysis_options['flags']['tower']:
-            self.add_subsystem('tower',         Tower(tower_init_options   = analysis_options['tower']))
+        if modeling_options['flags']['tower']:
+            self.add_subsystem('tower',         Tower(tower_init_options   = modeling_options['tower']))
 
-        if analysis_options['flags']['monopile']:
-            self.add_subsystem('monopile',  Monopile(monopile_init_options   = analysis_options['monopile']))
+        if modeling_options['flags']['monopile']:
+            self.add_subsystem('monopile',  Monopile(monopile_init_options   = modeling_options['monopile']))
         
         # Foundation inputs
-        if analysis_options['flags']['foundation']:
+        if modeling_options['flags']['foundation']:
             foundation_ivc = self.add_subsystem('foundation', om.IndepVarComp())
             foundation_ivc.add_output('height',     val=0.0, units='m',     desc='Foundation height in respect to the ground level.')
 
         # Control inputs
-        if analysis_options['flags']['control']:
+        if modeling_options['flags']['control']:
             ctrl_ivc = self.add_subsystem('control', om.IndepVarComp())
             ctrl_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
             ctrl_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
@@ -137,7 +137,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         conf_ivc.add_discrete_output('n_blades',            val=3,          desc='Number of blades of the rotor.')
 
         # Environment inputs
-        if analysis_options['flags']['environment']:
+        if modeling_options['flags']['environment']:
             env_ivc = self.add_subsystem('env', om.IndepVarComp())
             env_ivc.add_output('rho_air',      val=1.225,       units='kg/m**3',    desc='Density of air')
             env_ivc.add_output('mu_air',       val=1.81e-5,     units='kg/(m*s)',   desc='Dynamic viscosity of air')
@@ -152,7 +152,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output('G_soil',       val=140e6,       units='N/m**2',     desc='Shear stress of soil')
             env_ivc.add_output('nu_soil',      val=0.4,                             desc='Poisson ratio of soil')
 
-        if analysis_options['flags']['bos']: 
+        if modeling_options['flags']['bos']: 
             bos_ivc = self.add_subsystem('bos', om.IndepVarComp())
             bos_ivc.add_output('plant_turbine_spacing', 7, desc='Distance between turbines in rotor diameters')
             bos_ivc.add_output('plant_row_spacing', 7, desc='Distance between turbine rows in rotor diameters')
@@ -160,7 +160,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc.add_output('decommissioning_pct', 0.15)
             bos_ivc.add_output('distance_to_substation', 50.0, units='km')
             bos_ivc.add_output('distance_to_interconnection', 5.0, units='km')
-            if analysis_options['offshore']:
+            if modeling_options['offshore']:
                 bos_ivc.add_output('site_distance', 40.0, units='km')
                 bos_ivc.add_output('distance_to_landfall', 40.0, units='km')
                 bos_ivc.add_output('port_cost_per_month', 2e6, units='USD/mo')
@@ -174,7 +174,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 bos_ivc.add_output('interconnect_voltage', 130.0, units='kV')
                 
         # Cost analysis inputs
-        if analysis_options['flags']['costs']:
+        if modeling_options['flags']['costs']:
             costs_ivc = self.add_subsystem('costs', om.IndepVarComp())
             costs_ivc.add_discrete_output('turbine_number',    val=0,             desc='Number of turbines at plant')
             costs_ivc.add_output('offset_tcc_per_kW' ,val=0.0, units='USD/kW',    desc='Offset to turbine capital cost')
@@ -186,18 +186,18 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output('painting_rate', 0.0, units='USD/m**2')
         
         # Assembly setup
-        self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = analysis_options['blade']))
-        if analysis_options['flags']['blade']:
+        self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = modeling_options['blade']))
+        if modeling_options['flags']['blade']:
             self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
-        if analysis_options['flags']['hub']:
+        if modeling_options['flags']['hub']:
             self.connect('hub.radius',                      'assembly.hub_radius')
-        if analysis_options['flags']['tower']:
+        if modeling_options['flags']['tower']:
             self.connect('tower.height',                    'assembly.tower_height')
-        if analysis_options['flags']['foundation']:
+        if modeling_options['flags']['foundation']:
             self.connect('foundation.height',               'assembly.foundation_height')
-        if analysis_options['flags']['nacelle']:
+        if modeling_options['flags']['nacelle']:
             self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
-        if analysis_options['flags']['monopile']:
+        if modeling_options['flags']['monopile']:
             self.connect('monopile.height',                 'assembly.monopile_height')
 
         # Setup TSR optimization

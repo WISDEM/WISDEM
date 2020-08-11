@@ -138,12 +138,12 @@ class TipDeflectionConstraint(om.ExplicitComponent):
     
     """
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
     def setup(self):
-        analysis_options     = self.options['analysis_options']
-        blade_init_options   = analysis_options['blade']
+        modeling_options     = self.options['modeling_options']
+        blade_init_options   = modeling_options['blade']
         n_span               = blade_init_options['n_span']
-        tower_init_options   = analysis_options['tower']
+        tower_init_options   = modeling_options['tower']
         n_height_tow         = tower_init_options['n_height']
         
         self.add_discrete_input('rotor_orientation', val='upwind')
@@ -204,10 +204,10 @@ class TipDeflectionConstraint(om.ExplicitComponent):
 class TurbineConstraints(om.Group):
 
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
-        analysis_options = self.options['analysis_options']
+        modeling_options = self.options['modeling_options']
         
         # self.add_subsystem('modes', TowerModes(), promotes=['*'])
-        self.add_subsystem('tipd', TipDeflectionConstraint(analysis_options = analysis_options), promotes=['*'])
+        self.add_subsystem('tipd', TipDeflectionConstraint(modeling_options = modeling_options), promotes=['*'])
