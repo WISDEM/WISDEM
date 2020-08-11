@@ -244,6 +244,13 @@ class WindTurbineOntologyPython(object):
         if not self.analysis_options['offshore'] and (flags['monopile'] or flags['floating']):
             raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
 
+        # BOS flag
+        if 'BOS' in self.analysis_options['Analysis_Flags']:
+            if not self.analysis_options['Analysis_Flags']['BOS']:
+                flags['bos'] == False
+        else:
+            print('WARNING: BOS flag not specified among the modeling options.')
+
     def write_ontology(self, wt_opt, fname_output):
 
         if self.analysis_options['flags']['hub']:

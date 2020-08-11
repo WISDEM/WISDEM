@@ -645,10 +645,11 @@ class WindPark(Group):
         opt_options     = self.options['opt_options']
 
         self.add_subsystem('wt',        WT_RNTA(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
-        if analysis_options['offshore']:
-            self.add_subsystem('orbit',     Orbit())
-        else:
-            self.add_subsystem('landbosse', LandBOSSE())
+        if analysis_options['flags']['bos']:
+            if analysis_options['offshore']:
+                self.add_subsystem('orbit',     Orbit())
+            else:
+                self.add_subsystem('landbosse', LandBOSSE())
         self.add_subsystem('financese', PlantFinance(verbosity=analysis_options['general']['verbosity']))
             
         # Post-processing
@@ -657,72 +658,77 @@ class WindPark(Group):
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # BOS inputs
-        if analysis_options['offshore']:
-            # Inputs into ORBIT
-            self.connect('control.rated_power',                   'orbit.turbine_rating')
-            self.connect('env.water_depth',                       'orbit.site_depth')
-            self.connect('costs.turbine_number',                  'orbit.number_of_turbines')
-            self.connect('configuration.n_blades',                'orbit.number_of_blades')
-            self.connect('assembly.hub_height',                   'orbit.hub_height')
-            self.connect('assembly.rotor_diameter',               'orbit.turbine_rotor_diameter')     
-            self.connect('towerse.tower_mass',                    'orbit.tower_mass')
-            self.connect('towerse.monopile_mass',                 'orbit.monopile_mass')
-            self.connect('towerse.monopile_length',               'orbit.monopile_length')
-            self.connect('monopile.transition_piece_mass',        'orbit.transition_piece_mass')
-            self.connect('elastic.precomp.blade_mass',            'orbit.blade_mass')
-            self.connect('tcc.turbine_cost_kW',                   'orbit.turbine_capex')
-            self.connect('drivese.nacelle_mass',                  'orbit.nacelle_mass')
-            self.connect('monopile.diameter',                     'orbit.monopile_diameter', src_indices=[0])
-            self.connect('wt_class.V_mean',                       'orbit.site_mean_windspeed')
-            self.connect('sse.powercurve.rated_V',                'orbit.turbine_rated_windspeed')
-            self.connect('bos.plant_turbine_spacing',             'orbit.plant_turbine_spacing')
-            self.connect('bos.plant_row_spacing',                 'orbit.plant_row_spacing')
-            self.connect('bos.commissioning_pct',                 'orbit.commissioning_pct')
-            self.connect('bos.decommissioning_pct',               'orbit.decommissioning_pct')
-            self.connect('bos.distance_to_substation',            'orbit.plant_substation_distance')
-            self.connect('bos.distance_to_interconnection',       'orbit.interconnection_distance')
-            self.connect('bos.site_distance',                     'orbit.site_distance')
-            self.connect('bos.distance_to_landfall',              'orbit.site_distance_to_landfall')
-            self.connect('bos.port_cost_per_month',               'orbit.port_cost_per_month')
-            self.connect('bos.site_auction_price',                'orbit.site_auction_price')
-            self.connect('bos.site_assessment_plan_cost',         'orbit.site_assessment_plan_cost')
-            self.connect('bos.site_assessment_cost',              'orbit.site_assessment_cost')
-            self.connect('bos.construction_operations_plan_cost', 'orbit.construction_operations_plan_cost')
-            self.connect('bos.boem_review_cost',                  'orbit.boem_review_cost')
-            self.connect('bos.design_install_plan_cost',          'orbit.design_install_plan_cost')
-        else:
-            # Inputs into LandBOSSE
-            self.connect('assembly.hub_height',             'landbosse.hub_height_meters')
-            self.connect('costs.turbine_number',            'landbosse.num_turbines')
-            self.connect('control.rated_power',             'landbosse.turbine_rating_MW')
-            self.connect('env.shear_exp',                   'landbosse.wind_shear_exponent')
-            self.connect('assembly.rotor_diameter',         'landbosse.rotor_diameter_m')
-            self.connect('configuration.n_blades',          'landbosse.number_of_blades')
-            self.connect('sse.powercurve.rated_T',          'landbosse.rated_thrust_N')
-            self.connect('towerse.tower_mass',              'landbosse.tower_mass')
-            self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
-            self.connect('elastic.precomp.blade_mass',      'landbosse.blade_mass')
-            self.connect('hub.system_mass',                 'landbosse.hub_mass')
-            self.connect('foundation.height',               'landbosse.foundation_height')
-            self.connect('bos.plant_turbine_spacing',       'landbosse.turbine_spacing_rotor_diameters')
-            self.connect('bos.plant_row_spacing',           'landbosse.row_spacing_rotor_diameters')
-            self.connect('bos.commissioning_pct',           'landbosse.commissioning_pct')
-            self.connect('bos.decommissioning_pct',         'landbosse.decommissioning_pct')
-            self.connect('bos.distance_to_substation',      'landbosse.trench_len_to_substation_km')
-            self.connect('bos.distance_to_interconnection', 'landbosse.distance_to_interconnect_mi')
-            self.connect('bos.interconnect_voltage',        'landbosse.interconnect_voltage_kV')
+        if analysis_options['flags']['bos']:
+            if analysis_options['offshore']:
+                # Inputs into ORBIT
+                self.connect('control.rated_power',                   'orbit.turbine_rating')
+                self.connect('env.water_depth',                       'orbit.site_depth')
+                self.connect('costs.turbine_number',                  'orbit.number_of_turbines')
+                self.connect('configuration.n_blades',                'orbit.number_of_blades')
+                self.connect('assembly.hub_height',                   'orbit.hub_height')
+                self.connect('assembly.rotor_diameter',               'orbit.turbine_rotor_diameter')     
+                self.connect('towerse.tower_mass',                    'orbit.tower_mass')
+                self.connect('towerse.monopile_mass',                 'orbit.monopile_mass')
+                self.connect('towerse.monopile_length',               'orbit.monopile_length')
+                self.connect('monopile.transition_piece_mass',        'orbit.transition_piece_mass')
+                self.connect('elastic.precomp.blade_mass',            'orbit.blade_mass')
+                self.connect('tcc.turbine_cost_kW',                   'orbit.turbine_capex')
+                self.connect('drivese.nacelle_mass',                  'orbit.nacelle_mass')
+                self.connect('monopile.diameter',                     'orbit.monopile_diameter', src_indices=[0])
+                self.connect('wt_class.V_mean',                       'orbit.site_mean_windspeed')
+                self.connect('sse.powercurve.rated_V',                'orbit.turbine_rated_windspeed')
+                self.connect('bos.plant_turbine_spacing',             'orbit.plant_turbine_spacing')
+                self.connect('bos.plant_row_spacing',                 'orbit.plant_row_spacing')
+                self.connect('bos.commissioning_pct',                 'orbit.commissioning_pct')
+                self.connect('bos.decommissioning_pct',               'orbit.decommissioning_pct')
+                self.connect('bos.distance_to_substation',            'orbit.plant_substation_distance')
+                self.connect('bos.distance_to_interconnection',       'orbit.interconnection_distance')
+                self.connect('bos.site_distance',                     'orbit.site_distance')
+                self.connect('bos.distance_to_landfall',              'orbit.site_distance_to_landfall')
+                self.connect('bos.port_cost_per_month',               'orbit.port_cost_per_month')
+                self.connect('bos.site_auction_price',                'orbit.site_auction_price')
+                self.connect('bos.site_assessment_plan_cost',         'orbit.site_assessment_plan_cost')
+                self.connect('bos.site_assessment_cost',              'orbit.site_assessment_cost')
+                self.connect('bos.construction_operations_plan_cost', 'orbit.construction_operations_plan_cost')
+                self.connect('bos.boem_review_cost',                  'orbit.boem_review_cost')
+                self.connect('bos.design_install_plan_cost',          'orbit.design_install_plan_cost')
+            else:
+                # Inputs into LandBOSSE
+                self.connect('assembly.hub_height',             'landbosse.hub_height_meters')
+                self.connect('costs.turbine_number',            'landbosse.num_turbines')
+                self.connect('control.rated_power',             'landbosse.turbine_rating_MW')
+                self.connect('env.shear_exp',                   'landbosse.wind_shear_exponent')
+                self.connect('assembly.rotor_diameter',         'landbosse.rotor_diameter_m')
+                self.connect('configuration.n_blades',          'landbosse.number_of_blades')
+                if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
+                    self.connect('aeroelastic.rated_T',          'landbosse.rated_thrust_N')
+                elif analysis_options['Analysis_Flags']['ServoSE']:
+                    self.connect('sse.powercurve.rated_T',          'landbosse.rated_thrust_N')
+                self.connect('towerse.tower_mass',              'landbosse.tower_mass')
+                self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
+                self.connect('elastic.precomp.blade_mass',      'landbosse.blade_mass')
+                self.connect('hub.system_mass',                 'landbosse.hub_mass')
+                self.connect('foundation.height',               'landbosse.foundation_height')
+                self.connect('bos.plant_turbine_spacing',       'landbosse.turbine_spacing_rotor_diameters')
+                self.connect('bos.plant_row_spacing',           'landbosse.row_spacing_rotor_diameters')
+                self.connect('bos.commissioning_pct',           'landbosse.commissioning_pct')
+                self.connect('bos.decommissioning_pct',         'landbosse.decommissioning_pct')
+                self.connect('bos.distance_to_substation',      'landbosse.trench_len_to_substation_km')
+                self.connect('bos.distance_to_interconnection', 'landbosse.distance_to_interconnect_mi')
+                self.connect('bos.interconnect_voltage',        'landbosse.interconnect_voltage_kV')
             
         # Inputs to plantfinancese from wt group
         if analysis_options['Analysis_Flags']['OpenFAST'] and analysis_options['openfast']['dlc_settings']['run_power_curve'] and analysis_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
             self.connect('aeroelastic.AEP',     'financese.turbine_aep')
-        else:
+        elif analysis_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.AEP',             'financese.turbine_aep')
 
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
-        if 'offshore' in analysis_options and analysis_options['offshore']:
-            self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
-        else:
-            self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
+        if analysis_options['flags']['bos']:
+            if 'offshore' in analysis_options and analysis_options['offshore']:
+                self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
+            else:
+                self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
         # Inputs to plantfinancese from input yaml
         self.connect('control.rated_power',     'financese.machine_rating')
         self.connect('costs.turbine_number',    'financese.turbine_number')
