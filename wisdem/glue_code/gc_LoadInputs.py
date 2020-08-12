@@ -373,22 +373,22 @@ class WindTurbineOntologyPython(object):
                 I.append(Ii.tolist())
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'] = I
 
-        #if self.modeling_options['openfast']['analysis_settings']['update_hub_nacelle']:
-        if self.modeling_options['flags']['hub']:
-            # Update hub
-            self.wt_init['components']['hub']['outer_shape_bem']['diameter']   = float(wt_opt['hub.diameter'])
-            self.wt_init['components']['hub']['outer_shape_bem']['cone_angle'] = float(wt_opt['hub.cone'])
-            self.wt_init['components']['hub']['elastic_properties_mb']['system_mass']        = float(wt_opt['drivese.hub_system_mass'])
-            self.wt_init['components']['hub']['elastic_properties_mb']['system_inertia']     = wt_opt['drivese.hub_system_I'].tolist()
-            self.wt_init['components']['hub']['elastic_properties_mb']['system_center_mass'] = wt_opt['drivese.hub_system_cm'].tolist()
-        if self.modeling_options['flags']['nacelle']:
-            # Update nacelle
-            self.wt_init['components']['nacelle']['outer_shape_bem']['uptilt_angle']        = float(wt_opt['nacelle.uptilt'])
-            self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub']     = float(wt_opt['nacelle.distance_tt_hub'])
-            self.wt_init['components']['nacelle']['elastic_properties_mb']['above_yaw_mass']= float(wt_opt['drivese.above_yaw_mass'])
-            self.wt_init['components']['nacelle']['elastic_properties_mb']['yaw_mass']      = float(wt_opt['drivese.yaw_mass'])
-            self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']   = wt_opt['drivese.above_yaw_cm'].tolist()
-            self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']       = wt_opt['drivese.above_yaw_I'].tolist()
+        if self.modeling_options['Analysis_Flags']['DriveSE']:
+            if self.modeling_options['flags']['hub']:
+                # Update hub
+                self.wt_init['components']['hub']['outer_shape_bem']['diameter']   = float(wt_opt['hub.diameter'])
+                self.wt_init['components']['hub']['outer_shape_bem']['cone_angle'] = float(wt_opt['hub.cone'])
+                self.wt_init['components']['hub']['elastic_properties_mb']['system_mass']        = float(wt_opt['drivese.hub_system_mass'])
+                self.wt_init['components']['hub']['elastic_properties_mb']['system_inertia']     = wt_opt['drivese.hub_system_I'].tolist()
+                self.wt_init['components']['hub']['elastic_properties_mb']['system_center_mass'] = wt_opt['drivese.hub_system_cm'].tolist()
+            if self.modeling_options['flags']['nacelle']:
+                # Update nacelle
+                self.wt_init['components']['nacelle']['outer_shape_bem']['uptilt_angle']        = float(wt_opt['nacelle.uptilt'])
+                self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub']     = float(wt_opt['nacelle.distance_tt_hub'])
+                self.wt_init['components']['nacelle']['elastic_properties_mb']['above_yaw_mass']= float(wt_opt['drivese.above_yaw_mass'])
+                self.wt_init['components']['nacelle']['elastic_properties_mb']['yaw_mass']      = float(wt_opt['drivese.yaw_mass'])
+                self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']   = wt_opt['drivese.above_yaw_cm'].tolist()
+                self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']       = wt_opt['drivese.above_yaw_I'].tolist()
 
         #if self.modeling_options['flags']['tower']:
         # Update tower

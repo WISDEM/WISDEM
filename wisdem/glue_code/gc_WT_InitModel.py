@@ -91,7 +91,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     else:
         costs = {}
         
-    if 'elastic_properties_mb' in blade.keys():
+    if 'elastic_properties_mb' in blade.keys() and modeling_options['Analysis_Flags']['DriveSE']:
         wt_opt = assign_RNA_values(wt_opt, modeling_options, blade, RNA)
 
     return wt_opt

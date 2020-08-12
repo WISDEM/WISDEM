@@ -371,6 +371,7 @@ class CCBladeTwist(ExplicitComponent):
         self.add_output('CM',    val=0.0,                             desc='Blade flapwise moment coefficient')
         self.add_output('a',     val=np.zeros(n_span),                desc='Axial induction  along blade span')
         self.add_output('ap',    val=np.zeros(n_span),                desc='Tangential induction along blade span')
+        self.add_output('phi',   val=np.zeros(n_span), units='rad',   desc='Inflow angle along blade span')
         self.add_output('alpha', val=np.zeros(n_span), units='deg',   desc='Angles of attack along blade span')
         self.add_output('cl',    val=np.zeros(n_span),                desc='Lift coefficients along blade span')
         self.add_output('cd',    val=np.zeros(n_span),                desc='Drag coefficients along blade span')
@@ -510,6 +511,7 @@ class CCBladeTwist(ExplicitComponent):
         outputs['CM']      = CM[0]
         outputs['a']       = loads['a']
         outputs['ap']      = loads['ap']
+        outputs['phi']     = loads['phi']
         outputs['alpha']   = loads['alpha']
         outputs['cl']      = loads['Cl']
         outputs['cd']      = loads['Cd']
