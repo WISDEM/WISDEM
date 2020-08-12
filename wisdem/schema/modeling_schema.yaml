@@ -32,6 +32,7 @@ properties:
         required:
             - RotorSE
             - ServoSE
+            - DriveSE
             - TowerSE
             - BOS
             - OpenFAST
@@ -42,6 +43,9 @@ properties:
             ServoSE:
                 type: boolean
                 description: Whether or not to run ServoSE
+            DriveSE:
+                type: boolean
+                description: Whether or not to run DriveSE
             TowerSE:
                 type: boolean
                 description: Whether or not to run TowerSE
@@ -246,7 +250,7 @@ properties:
                 description: Setpoint Smoother mode {0, no setpoint smoothing, 1, introduce setpoint smoothing}
             WE_Mode: 
                 type: integer
-                enum: [0, 1]
+                enum: [0, 1, 2]
                 description: Wind speed estimator mode {0, One-second low pass filtered hub height wind speed, 1, Immersion and Invariance Estimator (Ortega et al.)}
             PS_Mode: 
                 type: integer
