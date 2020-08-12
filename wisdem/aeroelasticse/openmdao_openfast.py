@@ -279,7 +279,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
         
         # Turbine level inputs
-        self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
+        self.add_discrete_input('upwind',           val=True, desc='Rotor orientation, either upwind (True) or downwind (False).')
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
         self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
         self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
@@ -367,8 +367,8 @@ class FASTLoadCases(ExplicitComponent):
             if self.mpi_run:
                 self.mpi_comm_map_down   = FASTpref['analysis_settings']['mpi_comm_map_down']
         
-
-        self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
+        self.add_output('M_y',         val=0.0,            units='N*m',  desc='Blade root flap bending moment')
+        self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
@@ -392,8 +392,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('loads_pitch',  val=0.0, units='deg', desc='pitch angle')
         self.add_output('loads_azimuth', val=0.0, units='deg', desc='azimuthal angle')
         
-        self.add_output('Fxyz',        val=np.zeros(3),    units='N')
-        self.add_output('Mxyz',        val=np.zeros(3),    units='N*m')
+        self.add_output('Fxyz',        val=np.zeros(3),    units='N', desc='Forces at the hub in the non rotating hub coordinate system')
+        self.add_output('Mxyz',        val=np.zeros(3),    units='N*m', desc='Moments at the hub in the non rotating hub coordinate system')
 
         self.add_output('C_miners_SC_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, suction side")
         self.add_output('C_miners_SC_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, pressure side")
@@ -442,7 +442,7 @@ class FASTLoadCases(ExplicitComponent):
         # Update ElastoDyn
         fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip'][0]
         fst_vt['ElastoDyn']['HubRad'] = inputs['Rhub'][0]
-        if discrete_inputs['rotor_orientation'] == 'upwind':
+        if discrete_inputs['upwind']:
             k = -1.
         else:
             k = 1
@@ -1042,12 +1042,13 @@ class FASTLoadCases(ExplicitComponent):
 
         ## Is Nikhar actively using this?
         # DELs
-        # del_channels = [('RootMyb1',10), ('RootMyb2',10), ('RootMyb3',10)]
-        # dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
-        # outputs['DEL_RootMyb'] = np.mean([np.mean(dels['RootMyb1']), np.mean(dels['RootMyb2']), np.mean(dels['RootMyb3'])])
+        del_channels = [('RootMyb1',10), ('RootMyb2',10), ('RootMyb3',10)]
+        dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
+        outputs['DEL_RootMyb'] = np.mean([np.mean(dels['RootMyb1']), np.mean(dels['RootMyb2']), np.mean(dels['RootMyb3'])])
         
         # Output
-        # outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+        outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+        outputs['My'] = np.max([sum_stats['RootMyb1']['abs'],sum_stats['RootMyb2']['abs'], sum_stats['RootMyb3']['abs']])
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)

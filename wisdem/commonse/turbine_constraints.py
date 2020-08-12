@@ -99,8 +99,8 @@ class TipDeflectionConstraint(om.ExplicitComponent):
     
     Parameters
     ----------
-    rotor_orientation : string
-        Rotor orientation, either upwind or downwind.
+    upwind : boolean
+        Rotor orientation, either True (upwind) or False (downwind).
     tip_deflection : float, [m]
         Blade tip deflection in yaw x-direction
     Rtip : float, [m]
@@ -146,7 +146,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
         tower_init_options   = modeling_options['tower']
         n_height_tow         = tower_init_options['n_height']
         
-        self.add_discrete_input('rotor_orientation', val='upwind')
+        self.add_discrete_input('upwind', val=True)
         self.add_input('tip_deflection', val=0.0, units='m')
         self.add_input('Rtip', val=0.0, units='m')
         self.add_input('ref_axis_blade', val=np.zeros((n_span, 3)), units='m')
@@ -172,7 +172,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
         prebend_tip =  inputs['ref_axis_blade'][-1,0] # Defined negative for a standard upwind blade
         presweep_tip = inputs['ref_axis_blade'][-1,1] # Defined positive for a standard blade
         # Coordinates of blade tip in yaw c.s.
-        if discrete_inputs['rotor_orientation'] == 'upwind':
+        if discrete_inputs['upwind']:
             blade_yaw = DirectionVector(prebend_tip, presweep_tip, inputs['Rtip']).\
                         bladeToAzimuth(precone).azimuthToHub(180.0).hubToYaw(tilt)
         else:
@@ -193,7 +193,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
             drinterp_dtowerd  = 0.5 * ddinterp_dtowerd
 
         # Max deflection before strike
-        if discrete_inputs['rotor_orientation'] == 'upwind':
+        if discrete_inputs['upwind']:
             parked_margin = overhang - blade_yaw.x - r_interp
         else:
             parked_margin = overhang + blade_yaw.x - r_interp

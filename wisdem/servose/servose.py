@@ -493,6 +493,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_output('Omega',    val=np.zeros(self.n_pc), units='rpm',        desc='rotor rotational speed')
         self.add_output('pitch',    val=np.zeros(self.n_pc), units='deg',        desc='rotor pitch schedule')
         self.add_output('P',        val=np.zeros(self.n_pc), units='W',          desc='rotor electrical power')
+        self.add_output('P_aero',   val=np.zeros(self.n_pc), units='W',          desc='rotor mechanical power')
         self.add_output('T',        val=np.zeros(self.n_pc), units='N',          desc='rotor aerodynamic thrust')
         self.add_output('Q',        val=np.zeros(self.n_pc), units='N*m',        desc='rotor aerodynamic torque')
         self.add_output('M',        val=np.zeros(self.n_pc), units='N*m',        desc='blade root moment')
@@ -731,7 +732,8 @@ class ComputePowerCurve(ExplicitComponent):
         outputs['Q']       = Q
         outputs['Omega']   = Omega_rpm
 
-        outputs['P']       = P  
+        outputs['P']       = P
+        outputs['P_aero']  = P_aero
         outputs['Cp']      = Cp  
         outputs['Cp_aero'] = Cp_aero
         outputs['Ct_aero'] = Ct_aero
