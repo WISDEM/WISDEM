@@ -10,7 +10,6 @@ with warnings.catch_warnings():
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 library_path = os.path.join(ROOT, "library", "landbosse")
 
-
 class OpenMDAODataframeCache:
     """
     This class does not need to be instantiated. This means that the

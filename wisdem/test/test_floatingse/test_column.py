@@ -585,7 +585,7 @@ class TestBuckle(unittest.TestCase):
         opt['gamma_f'] = 1.0
         opt['gamma_b'] = 1.0
 
-        self.buckle = column.ColumnBuckling(n_height=NHEIGHT, analysis_options=opt)
+        self.buckle = column.ColumnBuckling(n_height=NHEIGHT, modeling_options=opt)
 
 
     def testAppliedAxial(self):
@@ -620,7 +620,7 @@ class TestGroup(unittest.TestCase):
 
         prob = om.Problem()
 
-        prob.model.add_subsystem('col', column.Column(column_options=colopt, analysis_options=opt, n_mat=1, topLevelFlag=True), promotes=['*'])
+        prob.model.add_subsystem('col', column.Column(column_options=colopt, modeling_options=opt, n_mat=1, topLevelFlag=True), promotes=['*'])
         
         prob.setup()
         prob['freeboard'] = 15.0

@@ -19,12 +19,12 @@ class Opt_Data(object):
         self.opt_options = {}
 
         # Save data
-        self.fname_opt_options    = ''
-        self.folder_output        = ''
+        self.fname_analysis_options    = ''
+        self.folder_output             = ''
 
     def initialize(self):
 
-        self.opt_options = self.load_yaml(self.fname_opt_options)
+        self.opt_options = self.load_yaml(self.fname_analysis_options)
 
         self.opt_options['folder_output']    = self.folder_output
         self.opt_options['optimization_log'] = self.folder_output + self.opt_options['recorder']['file_name']
@@ -85,7 +85,7 @@ class Convergence_Trends_Opt(ExplicitComponent):
 class Outputs_2_Screen(ExplicitComponent):
     # Class to print outputs on screen
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('opt_options')
 
     def setup(self):
@@ -109,14 +109,14 @@ class Outputs_2_Screen(ExplicitComponent):
         print('Blade Mass:  {:8.10f} kg'.format(inputs['blade_mass'][0]))
         print('LCOE:        {:8.10f} USD/MWh'.format(inputs['lcoe'][0]))
         print('Tip Defl.:   {:8.10f} m'.format(inputs['tip_deflection'][0]))
-        if self.options['analysis_options']['Analysis_Flags']['OpenFAST'] == True: 
+        if self.options['modeling_options']['Analysis_Flags']['OpenFAST'] == True: 
             if self.options['opt_options']['optimization_variables']['control']['servo']['pitch_control']['flag'] == True:
                 print('Pitch PI gain inputs: pc_omega = {:2.3f}, pc_zeta = {:2.3f}'.format(inputs['PC_omega'][0], inputs['PC_zeta'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['torque_control']['flag'] == True:
                 print('Torque PI gain inputs: vs_omega = {:2.3f}, vs_zeta = {:2.3f}'.format(inputs['VS_omega'][0], inputs['VS_zeta'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['flap_control']['flag'] == True:
                 print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.3f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))
-            if self.options['analysis_options']['airfoils']['n_tab'] > 1:
+            if self.options['modeling_options']['airfoils']['n_tab'] > 1:
                 print('Std(Myroot): {:8.10f} Nm'.format(inputs['My_std'][0]))
                 print('Std(FLAP1):  {:8.10f} deg'.format(inputs['flp1_std'][0]))
         

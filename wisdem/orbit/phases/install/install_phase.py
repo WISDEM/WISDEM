@@ -11,9 +11,8 @@ from itertools import groupby
 
 import numpy as np
 import simpy
-from marmot import Environment
 
-from wisdem.orbit.core import Port
+from wisdem.orbit.core import Port, Environment
 from wisdem.orbit.phases import BasePhase
 
 
@@ -44,7 +43,7 @@ class InstallPhase(BasePhase):
         """
 
         env_name = kwargs.get("env_name", "Environment")
-        self.env = Environment(name=env_name, state=weather)
+        self.env = Environment(name=env_name, state=weather, **kwargs)
 
     @abstractmethod
     def setup_simulation(self):
@@ -62,13 +61,14 @@ class InstallPhase(BasePhase):
         Initializes a Port object with N number of cranes.
         """
 
+        self.port = Port(self.env)
+
         try:
             cranes = self.config["port"]["num_cranes"]
-            self.port = Port(self.env)
             self.port.crane = simpy.Resource(self.env, cranes)
 
         except KeyError:
-            self.port = Port(self.env)
+            self.port.crane = simpy.Resource(self.env, 1)
 
     def run(self, until=None):
         """
@@ -102,7 +102,8 @@ class InstallPhase(BasePhase):
 
         else:
             key = "port_cost_per_month"
-            rate = self.config["port"].get("monthly_rate", self.defaults[key])
+            port_config = self.config.get("port", {})
+            rate = port_config.get("monthly_rate", self.defaults[key])
 
             months = self.total_phase_time / (8760 / 12)
             return months * rate

@@ -47,7 +47,7 @@ class MonopileInstallation(InstallPhase):
         "plant": {"num_turbines": "int"},
         "turbine": {"hub_height": "m"},
         "port": {
-            "num_cranes": "int",
+            "num_cranes": "int (optional, default: 1)",
             "monthly_rate": "USD/mo (optional)",
             "name": "str (optional)",
         },
@@ -157,8 +157,7 @@ class MonopileInstallation(InstallPhase):
         wtiv = Vessel(name, wtiv_specs)
         self.env.register(wtiv)
 
-        wtiv.extract_vessel_specs()
-        wtiv.mobilize()
+        wtiv.initialize()
         wtiv.at_port = True
         wtiv.at_site = False
         self.wtiv = wtiv
@@ -179,8 +178,7 @@ class MonopileInstallation(InstallPhase):
             feeder = Vessel(name, feeder_specs)
             self.env.register(feeder)
 
-            feeder.extract_vessel_specs()
-            feeder.mobilize()
+            feeder.initialize()
             feeder.at_port = True
             feeder.at_site = False
             self.feeders.append(feeder)
@@ -295,7 +293,7 @@ def solo_install_monopiles(vessel, port, distance, monopiles, **kwargs):
                 )
 
                 yield install_transition_piece(vessel, tp, **kwargs)
-
+                vessel.submit_debug_log(progress="Substructure")
                 n += 1
 
             else:
@@ -362,6 +360,7 @@ def install_monopiles_from_queue(wtiv, queue, monopiles, distance, **kwargs):
 
                 # Install transition piece
                 yield install_transition_piece(wtiv, tp, **kwargs)
+                wtiv.submit_debug_log(progress="Substructure")
                 n += 1
 
             else:

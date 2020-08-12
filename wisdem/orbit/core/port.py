@@ -63,3 +63,19 @@ class Port(simpy.FilterStore):
         else:
             res = self.get(lambda x: x == target)
             return res.value
+
+
+class WetStorage(simpy.Store):
+    """Storage infrastructure for floating substructures."""
+
+    def __init__(self, env, capacity):
+        """
+        Creates an instance of WetStorage.
+
+        Parameters
+        ----------
+        capacity : int
+            Number of substructures or assemblies that can be stored.
+        """
+
+        super().__init__(env, capacity)

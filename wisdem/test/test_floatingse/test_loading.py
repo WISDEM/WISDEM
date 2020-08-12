@@ -171,7 +171,7 @@ class TestFrame(unittest.TestCase):
         self.outputs['pontoon_stress'] = np.zeros(70)
         
         self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
-                                        analysis_options=opt)
+                                        modeling_options=opt)
 
     def tearDown(self):
         self.mytruss = None
@@ -378,7 +378,7 @@ class TestModal(unittest.TestCase):
         newopt = copy.copy(opt)
         newopt['run_modal'] = True
         mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
-                                        analysis_options=newopt)
+                                        modeling_options=newopt)
 
         mytruss.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertTrue(True)
@@ -392,7 +392,7 @@ class TestSandbox(unittest.TestCase):
         self.outputs['pontoon_stress'] = np.zeros(70)
         
         self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT,
-                                        analysis_options=opt)
+                                        modeling_options=opt)
 
     def tearDown(self):
         self.mytruss = None

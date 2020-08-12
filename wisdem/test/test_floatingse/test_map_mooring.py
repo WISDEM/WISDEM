@@ -78,7 +78,7 @@ class TestMapMooring(unittest.TestCase):
         opt = {}
         opt['gamma_f'] = 1.35
 
-        self.mymap = mapMooring.MapMooring(analysis_options=opt)
+        self.mymap = mapMooring.MapMooring(modeling_options=opt)
         self.mymap.set_properties(self.inputs, self.discrete_inputs)
         self.mymap.set_geometry(self.inputs, self.outputs)
          

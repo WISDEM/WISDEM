@@ -84,20 +84,20 @@ class Test(unittest.TestCase):
         ivc.add_discrete_output('wakerotation', True)
         ivc.add_discrete_output('usecd', True)
     
-        analysis_options = {}
-        analysis_options['blade'] = {}
-        analysis_options['blade']['n_span'] = n_span
-        analysis_options['blade']['n_aoa'] = n_aoa
-        analysis_options['blade']['n_Re'] = n_Re
-        analysis_options['blade']['n_tab'] = 1
+        modeling_options = {}
+        modeling_options['blade'] = {}
+        modeling_options['blade']['n_span'] = n_span
+        modeling_options['blade']['n_aoa'] = n_aoa
+        modeling_options['blade']['n_Re'] = n_Re
+        modeling_options['blade']['n_tab'] = 1
     
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
-        analysis_options['airfoils'] = {}
-        analysis_options['airfoils']['n_aoa'] = n_aoa
-        analysis_options['airfoils']['n_Re'] = n_Re
-        analysis_options['airfoils']['n_tab'] = n_tab
+        modeling_options['airfoils'] = {}
+        modeling_options['airfoils']['n_aoa'] = n_aoa
+        modeling_options['airfoils']['n_Re'] = n_Re
+        modeling_options['airfoils']['n_tab'] = n_tab
     
-        comp = CCBladeLoads(analysis_options=analysis_options)
+        comp = CCBladeLoads(modeling_options=modeling_options)
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
@@ -167,23 +167,23 @@ class Test(unittest.TestCase):
         ivc.add_discrete_output('wakerotation', True)
         ivc.add_discrete_output('usecd', True)
     
-        analysis_options = {}
-        analysis_options['blade'] = {}
-        analysis_options['blade']['n_span'] = n_span
-        analysis_options['blade']['n_aoa'] = n_aoa
-        analysis_options['blade']['n_Re'] = n_Re
-        analysis_options['blade']['n_tab'] = 1
+        modeling_options = {}
+        modeling_options['blade'] = {}
+        modeling_options['blade']['n_span'] = n_span
+        modeling_options['blade']['n_aoa'] = n_aoa
+        modeling_options['blade']['n_Re'] = n_Re
+        modeling_options['blade']['n_tab'] = 1
     
-        analysis_options['assembly'] = {}
-        analysis_options['assembly']['number_of_blades'] = 3
+        modeling_options['assembly'] = {}
+        modeling_options['assembly']['number_of_blades'] = 3
     
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
-        analysis_options['airfoils'] = {}
-        analysis_options['airfoils']['n_aoa'] = n_aoa
-        analysis_options['airfoils']['n_Re'] = n_Re
-        analysis_options['airfoils']['n_tab'] = n_tab
+        modeling_options['airfoils'] = {}
+        modeling_options['airfoils']['n_aoa'] = n_aoa
+        modeling_options['airfoils']['n_Re'] = n_Re
+        modeling_options['airfoils']['n_tab'] = n_tab
     
-        comp = AeroHubLoads(analysis_options=analysis_options)
+        comp = AeroHubLoads(modeling_options=modeling_options)
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
@@ -252,21 +252,21 @@ class Test(unittest.TestCase):
         ivc.add_discrete_output('wakerotation', True)
         ivc.add_discrete_output('usecd', True)
     
-        analysis_options = {}
-        analysis_options['blade'] = {}
-        analysis_options['blade']['n_span'] = n_span
-        analysis_options['blade']['n_aoa'] = n_aoa
-        analysis_options['blade']['n_Re'] = n_Re
-        analysis_options['blade']['n_tab'] = 1
+        modeling_options = {}
+        modeling_options['blade'] = {}
+        modeling_options['blade']['n_span'] = n_span
+        modeling_options['blade']['n_aoa'] = n_aoa
+        modeling_options['blade']['n_Re'] = n_Re
+        modeling_options['blade']['n_tab'] = 1
     
-        analysis_options['assembly'] = {}
-        analysis_options['assembly']['number_of_blades'] = 3
+        modeling_options['assembly'] = {}
+        modeling_options['assembly']['number_of_blades'] = 3
     
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
-        analysis_options['airfoils'] = {}
-        analysis_options['airfoils']['n_aoa'] = n_aoa
-        analysis_options['airfoils']['n_Re'] = n_Re
-        analysis_options['airfoils']['n_tab'] = n_tab
+        modeling_options['airfoils'] = {}
+        modeling_options['airfoils']['n_aoa'] = n_aoa
+        modeling_options['airfoils']['n_Re'] = n_Re
+        modeling_options['airfoils']['n_tab'] = n_tab
     
         opt_options = {}
         opt_options['optimization_variables'] = {}
@@ -282,7 +282,7 @@ class Test(unittest.TestCase):
         opt_options['constraints']['blade']['stall'] = {}
         opt_options['constraints']['blade']['stall']['margin'] =  0.05233        
     
-        comp = CCBladeTwist(analysis_options=analysis_options, opt_options=opt_options)
+        comp = CCBladeTwist(modeling_options=modeling_options, opt_options=opt_options)
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
@@ -349,23 +349,23 @@ class Test(unittest.TestCase):
         ivc.add_discrete_output('wakerotation', True)
         ivc.add_discrete_output('usecd', True)
     
-        analysis_options = {}
-        analysis_options['blade'] = {}
-        analysis_options['blade']['n_span'] = n_span
-        analysis_options['blade']['n_aoa'] = n_aoa
-        analysis_options['blade']['n_Re'] = n_Re
-        analysis_options['blade']['n_tab'] = 1
+        modeling_options = {}
+        modeling_options['blade'] = {}
+        modeling_options['blade']['n_span'] = n_span
+        modeling_options['blade']['n_aoa'] = n_aoa
+        modeling_options['blade']['n_Re'] = n_Re
+        modeling_options['blade']['n_tab'] = 1
     
-        analysis_options['assembly'] = {}
-        analysis_options['assembly']['number_of_blades'] = 3
+        modeling_options['assembly'] = {}
+        modeling_options['assembly']['number_of_blades'] = 3
     
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
-        analysis_options['airfoils'] = {}
-        analysis_options['airfoils']['n_aoa'] = n_aoa
-        analysis_options['airfoils']['n_Re'] = n_Re
-        analysis_options['airfoils']['n_tab'] = n_tab
+        modeling_options['airfoils'] = {}
+        modeling_options['airfoils']['n_aoa'] = n_aoa
+        modeling_options['airfoils']['n_Re'] = n_Re
+        modeling_options['airfoils']['n_tab'] = n_tab
     
-        comp = CCBladeEvaluate(analysis_options=analysis_options)
+        comp = CCBladeEvaluate(modeling_options=modeling_options)
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)

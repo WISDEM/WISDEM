@@ -1,5 +1,5 @@
 import traceback
-from .CostModule import CostModule
+from wisdem.landbosse.model.CostModule import CostModule
 import pandas as pd
 import math
 

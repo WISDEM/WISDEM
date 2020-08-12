@@ -38,11 +38,11 @@ class ExportSystemDesign(CableSystem):
     expected_config = {
         "site": {"distance_to_landfall": "km", "depth": "m"},
         "landfall": {"interconnection_distance": "km (optional)"},
-        "plant": {"num_turbines": "int"},
-        "turbine": {"turbine_rating": "MW"},
+        "plant": {"capacity": "MW"},
         "export_system_design": {
             "cables": "str",
             "num_redundant": "int (optional)",
+            "touchdown_distance": "m (optional, default: 0)",
             "percent_added_length": "float (optional)",
         },
     }
@@ -53,13 +53,14 @@ class ExportSystemDesign(CableSystem):
                 "linear_density": "t/km",
                 "number": "int",
                 "sections": "list",
+                "cable_power": "MW",
             }
         }
     }
 
     def __init__(self, config, **kwargs):
         """
-        Defines the cables and sections required to install an offwhore wind
+        Defines the cables and sections required to install an offshore wind
         farm.
 
         Parameters
@@ -76,11 +77,9 @@ class ExportSystemDesign(CableSystem):
         for name in self.expected_config["site"]:
             setattr(self, "".join(("_", name)), config["site"][name])
         self._depth = config["site"]["depth"]
-        self._plant_capacity = (
-            self.config["plant"]["num_turbines"]
-            * self.config["turbine"]["turbine_rating"]
-        )
+        self._plant_capacity = self.config["plant"]["capacity"]
         self._distance_to_landfall = config["site"]["distance_to_landfall"]
+        self._get_touchdown_distance()
         try:
             self._distance_to_interconnection = config["landfall"][
                 "interconnection_distance"
@@ -139,8 +138,8 @@ class ExportSystemDesign(CableSystem):
         added_length = 1.0 + self._design.get("percent_added_length", 0.0)
         self.length = round(
             (
-                (self._depth / 1000.0)  # convert to km
-                + self._distance_to_landfall
+                self.free_cable_length
+                + (self._distance_to_landfall - self.touchdown / 1000)
                 + self._distance_to_interconnection
             )
             * added_length,
@@ -218,6 +217,7 @@ class ExportSystemDesign(CableSystem):
                 "linear_density": cable.linear_density,
                 "sections": [self.length],
                 "number": self.num_cables,
+                "cable_power": cable.cable_power,
             }
 
         return output

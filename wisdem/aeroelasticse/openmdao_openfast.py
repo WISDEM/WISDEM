@@ -181,14 +181,14 @@ def eval_unsteady(alpha, cl, cd, cm):
 
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options   = self.options['analysis_options']['blade']
-        servose_init_options = self.options['analysis_options']['servose']
-        openfast_init_options = self.options['analysis_options']['openfast']
-        mat_init_options     = self.options['analysis_options']['materials']
+        blade_init_options   = self.options['modeling_options']['blade']
+        servose_init_options = self.options['modeling_options']['servose']
+        openfast_init_options = self.options['modeling_options']['openfast']
+        mat_init_options     = self.options['modeling_options']['materials']
 
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_pc          = n_pc      = servose_init_options['n_pc']
@@ -199,7 +199,7 @@ class FASTLoadCases(ExplicitComponent):
         self.n_mat         = n_mat    = mat_init_options['n_mat']
         self.n_layers      = n_layers = blade_init_options['n_layers']
 
-        af_init_options    = self.options['analysis_options']['airfoils']
+        af_init_options    = self.options['modeling_options']['airfoils']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
@@ -210,14 +210,14 @@ class FASTLoadCases(ExplicitComponent):
         self.spar_cap_ss_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
         self.spar_cap_ps_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
-        n_height_tow = self.options['analysis_options']['tower']['n_height']
-        nFull        = get_nfull(self.options['analysis_options']['tower']['n_height'])
+        n_height_tow = self.options['modeling_options']['tower']['n_height']
+        nFull        = get_nfull(self.options['modeling_options']['tower']['n_height'])
         N_beam       = (nFull-1)*2
         n_freq_tower = int(NFREQ/2)
-        n_freq_blade = int(self.options['analysis_options']['blade']['n_freq']/2)
+        n_freq_blade = int(self.options['modeling_options']['blade']['n_freq']/2)
 
-        FASTpref = self.options['analysis_options']['openfast']
-        # self.FatigueFile   = self.options['analysis_options']['rotorse']['FatigueFile']
+        FASTpref = self.options['modeling_options']['openfast']
+        # self.FatigueFile   = self.options['modeling_options']['rotorse']['FatigueFile']
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -435,7 +435,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Create instance of FAST reference model 
 
-        fst_vt = self.options['analysis_options']['openfast']['fst_vt']
+        fst_vt = self.options['modeling_options']['openfast']['fst_vt']
 
         fst_vt['Fst']['OutFileFmt'] = 2
 
@@ -458,7 +458,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['GenEff']      = inputs['generator_efficiency'][0] * 100.
 
         # Masses from DriveSE
-        if self.options['analysis_options']['openfast']['analysis_settings']['update_hub_nacelle']:
+        if self.options['modeling_options']['openfast']['analysis_settings']['update_hub_nacelle']:
             fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
             fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
             fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
@@ -471,7 +471,7 @@ class FASTLoadCases(ExplicitComponent):
 
         
 
-        if self.options['analysis_options']['openfast']['analysis_settings']['update_tower']:
+        if self.options['modeling_options']['openfast']['analysis_settings']['update_tower']:
             # TODO: there are issues here
             #   - running the 15MW caused 120 tower points, some where nonunique heights
             #   - hub height is wrong, not adding the tower top to hub correctly
@@ -560,7 +560,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
-                if self.options['analysis_options']['openfast']['analysis_settings']['generate_af_coords']:
+                if self.options['modeling_options']['openfast']['analysis_settings']['generate_af_coords']:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '@"AF{:02d}_Coords.txt"'.format(i)
                 else:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
@@ -788,13 +788,13 @@ class FASTLoadCases(ExplicitComponent):
 
         iec.transient_dir_change        = '-'
         iec.transient_shear_orientation = 'v'
-        if ("Fst", "TStart") not in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
-            self.options['analysis_options']['openfast']['fst_settings'][('Fst','TStart')] = 120.
-        T0                          = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TStart")]
+        if ("Fst", "TStart") not in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
+            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')] = 120.
+        T0                          = self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TStart")]
 
-        if ("Fst", "TMax") not in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
-            self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")] = 720.
-        iec.TMax                    = self.options['analysis_options']['openfast']['fst_settings'][("Fst", "TMax")]
+        if ("Fst", "TMax") not in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
+            self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TMax")] = 720.
+        iec.TMax                    = self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TMax")]
 
         iec.TStart                      = (iec.TMax-T0)/2. + T0
         self.simtime                    = iec.TMax - T0
@@ -823,8 +823,8 @@ class FASTLoadCases(ExplicitComponent):
         # OpenFAST Settings
         # load user overwrite settings
         case_inputs = {}
-        for var in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
-            case_inputs[var] = {'vals':[self.options['analysis_options']['openfast']['fst_settings'][var]], 'group':0}
+        for var in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
+            case_inputs[var] = {'vals':[self.options['modeling_options']['openfast']['fst_settings'][var]], 'group':0}
 
         # Run case setup, generate wind inputs
         case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
@@ -847,9 +847,10 @@ class FASTLoadCases(ExplicitComponent):
 
                 # User defined simulation settings
                 case_inputs = {}
-                for var in list(self.options['analysis_options']['openfast']['fst_settings'].keys()):
-                    case_inputs[var] = {'vals':[self.options['analysis_options']['openfast']['fst_settings'][var]], 'group':0}
+                for var in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
+                    case_inputs[var] = {'vals':[self.options['modeling_options']['openfast']['fst_settings'][var]], 'group':0}
                 # wind speeds
+                case_inputs[("InflowWind","WindType")]   = {'vals':[1], 'group':0}
                 case_inputs[("InflowWind","HWindSpeed")] = {'vals':U, 'group':1}
                 case_inputs[("ElastoDyn","RotSpeed")]    = {'vals':omega, 'group':1}
                 case_inputs[("ElastoDyn","BlPitch1")]    = {'vals':pitch, 'group':1}
@@ -869,10 +870,10 @@ class FASTLoadCases(ExplicitComponent):
 
         # Load pCrunch Analysis
         loads_analysis         = Analysis.Loads_Analysis()
-        loads_analysis.verbose = self.options['analysis_options']['general']['verbosity']
+        loads_analysis.verbose = self.options['modeling_options']['general']['verbosity']
 
         # Initial time
-        loads_analysis.t0 = self.options['analysis_options']['openfast']['fst_settings'][('Fst','TStart')]
+        loads_analysis.t0 = self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')]
         
         # Calc summary stats on the magnitude of a vector
         loads_analysis.channels_magnitude = {'LSShftF':["RotThrust", "LSShftFys", "LSShftFzs"], 
@@ -1062,7 +1063,7 @@ class FASTLoadCases(ExplicitComponent):
 
     def writeCpsurfaces(self, inputs):
         
-        FASTpref  = self.options['analysis_options']['openfast']['FASTpref']
+        FASTpref  = self.options['modeling_options']['openfast']['FASTpref']
         file_name = os.path.join(FASTpref['file_management']['FAST_runDirectory'], FASTpref['file_management']['FAST_namingOut'] + '_Cp_Ct_Cq.dat')
         
         # Write Cp-Ct-Cq-TSR tables file
@@ -1119,7 +1120,7 @@ class FASTLoadCases(ExplicitComponent):
     def BladeFatigue(self, FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Perform rainflow counting
-        if self.options['analysis_options']['general']['verbosity']:
+        if self.options['modeling_options']['general']['verbosity']:
             print('Running Rainflow Counting')
             sys.stdout.flush()
 
@@ -1275,7 +1276,7 @@ class FASTLoadCases(ExplicitComponent):
                          ['SC', 'SS', spar_cap_ss_var_ok],
                          ['SC', 'PS', spar_cap_ps_var_ok]]
 
-        if self.options['analysis_options']['general']['verbosity']:
+        if self.options['modeling_options']['general']['verbosity']:
             print("Running Miner's Rule calculations")
             sys.stdout.flush()
 
@@ -1379,11 +1380,11 @@ class ModesElastoDyn(ExplicitComponent):
     
     """    
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
 
     def setup(self):
-        n_span          = self.options['analysis_options']['blade']['n_span']
-        n_mat           = self.options['analysis_options']['materials']['n_mat']
+        n_span          = self.options['modeling_options']['blade']['n_span']
+        n_mat           = self.options['modeling_options']['materials']['n_mat']
 
         self.add_input('EA',    val=np.zeros(n_span), units='N',        desc='axial stiffness')
         self.add_input('EIxy',  val=np.zeros(n_span), units='N*m**2',   desc='coupled flap-edge stiffness')
