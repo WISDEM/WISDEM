@@ -1094,7 +1094,13 @@ class TowerPostFrame(om.ExplicitComponent):
 
 class TowerLeanSE(om.Group):
     """
-    This is a geometry preprocessing group.
+    This is a geometry preprocessing group for the tower.
+    
+    This group contains components that calculate the geometric properties of
+    the tower, such as mass and moments of inertia, as well as geometric
+    constraints like diameter-to-thickness and taper ratio. No static or dynamic
+    analysis of the tower occurs here.
+    
     """
     
     def initialize(self):
@@ -1172,7 +1178,10 @@ class TowerLeanSE(om.Group):
         
 class TowerSE(om.Group):
     """
-    This is the main TowerSE group.
+    This is the main TowerSE group that performs analysis of the tower.
+    
+    This group takes in geometric inputs from TowerLeanSE and environmental and
+    loading conditions.
     """
 
     def initialize(self):
