@@ -261,7 +261,7 @@ class LogWind(WindBase):
         super(LogWind, self).setup()
 
         # parameters
-        self.add_input('z_roughness', 0.0, units='mm')
+        self.add_input('z_roughness', 1e-3, units='mm')
 
         self.declare_partials('U', ['Uref','z','zref'])
 
@@ -272,12 +272,12 @@ class LogWind(WindBase):
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])
         zref = float(inputs['zref'])
         z0 = float(inputs['z0'])
-        z_roughness = inputs['z_roughness']/1e3  # convert to m
+        z_roughness = float(inputs['z_roughness'])/1e3  # convert to m
 
         # find velocity
-        idx = [z - z0 > z_roughness]
+        idx = np.where(z - z0 > z_roughness)[0]
         outputs['U'] = np.zeros_like(z)
-        outputs['U'][idx] = inputs['Uref']*np.log((z[idx] - z0)/z_roughness) / math.log((zref - z0)/z_roughness)
+        outputs['U'][idx] = inputs['Uref']*np.log((z[idx] - z0)/z_roughness) / np.log((zref - z0)/z_roughness)
 
 
     def compute_partials(self, inputs, J):
@@ -295,12 +295,12 @@ class LogWind(WindBase):
         dU_dz_diag = np.zeros(npts)
         dU_dzref = np.zeros(npts)
 
-        idx = [z - z0 > z_roughness]
+        idx = np.where(z - z0 > z_roughness)[0]
         lt = np.log((z[idx] - z0)/z_roughness)
-        lb = math.log((zref - z0)/z_roughness)
+        lb = np.log((zref - z0)/z_roughness)
         dU_dUref[idx] = lt/lb
         dU_dz_diag[idx] = Uref/lb / (z[idx] - z0)
-        dU_dzref[idx] = -Uref*lt / math.log((zref - z0)/z_roughness)**2 / (zref - z0)
+        dU_dzref[idx] = -Uref*lt / np.log((zref - z0)/z_roughness)**2 / (zref - z0)
 
         
         J['U', 'Uref'] = dU_dUref
