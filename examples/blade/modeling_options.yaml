@@ -4,13 +4,11 @@ general:
 Analysis_Flags:
     # Control which WISDEM modules are executed.
     # (GOAL) If inputs are missing for a module, a warning will be written to the screen and the module disabled.
-    RotorSE:  True
-    DriveSE:  True
+    OpenFAST: False   # Flag to run aeroelasticse, the wrapper of OpenFAST
     TowerSE:  True
     RotorSE:  True
     ServoSE:  True
     BOS:      True
-    OpenFAST: False   # Flag to run aeroelasticse, the wrapper of OpenFAST
 
 yaml:
     validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
