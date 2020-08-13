@@ -57,12 +57,13 @@ def curvature(points):
 
 def calculate_angle(v1,v2):
     """
-    Calculate the signed angle between the vector \e v1 and the vector \e v2
+    Calculate the signed angle between the vector, v1 and the vector, v2
 
     \param    v1      <c>array(3)</c>   :       vector 1
     \param    v2      <c>array(3)</c>   :       vector 2
     \retval   angle   <c>float radian</c> :     the angle in the two vector plane
     """
+    
     v1 = v1/norm(v1)
     v2 = v2/norm(v2)
     return np.arctan2(norm(np.cross(v1,v2)),np.dot(v1,v2))
@@ -147,7 +148,7 @@ RotZ = lambda a: np.array([[np.cos(a),  -np.sin(a),    0     ],
 
 def RotMat(u, theta):
     """ 
-    Calculate the rotation matrix from a unit vector \e u and an angle \e theta
+    Calculate the rotation matrix from a unit vector, u and an angle, theta
     
     http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
     \f[

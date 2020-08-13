@@ -348,7 +348,7 @@ class ColumnGeometry(om.ExplicitComponent):
         outputs['draft_margin'] = draft / inputs['max_draft']
 
         # Make sure freeboard is more than 20% of hsig_wave (DNV-OS-J101)
-        outputs['wave_height_freeboard_ratio'] = inputs['hsig_wave'] / np.abs(freeboard)
+        outputs['wave_height_freeboard_ratio'] = inputs['hsig_wave'] / (np.abs(freeboard) + eps)
 
         # Material properties
         z_section,_ = nodal2sectional( z_full )

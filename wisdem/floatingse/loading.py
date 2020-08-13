@@ -7,9 +7,9 @@ from wisdem.commonse import gravity, eps, Tube, NFREQ
 import wisdem.commonse.UtilizationSupplement as util
 from wisdem.commonse.utilities import get_modal_coefficients
 import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
-from wisdem.commonse.environment import WaveBase, PowerWind
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, get_nfull, RIGID
+from wisdem.commonse.WindWaveDrag import CylinderWindDrag
+from wisdem.commonse.environment import PowerWind
+from wisdem.commonse.vertical_cylinder import get_nfull, RIGID
 from .map_mooring import NLINES_MAX
 
 

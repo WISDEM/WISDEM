@@ -925,15 +925,15 @@ class TestTowerSE(unittest.TestCase):
         # # --- loading case 1: max Thrust ---
         prob['wind1.Uref'] = wind_Uref1
 
-        prob['pre1.rna_F'] = np.array([Fx1, Fy1, Fz1])
-        prob['pre1.rna_M'] = np.array([Mxx1, Myy1, Mzz1])
+        prob['pre1.rna_F'] = np.r_[Fx1, Fy1, Fz1]
+        prob['pre1.rna_M'] = np.r_[Mxx1, Myy1, Mzz1]
         # # ---------------
 
         # # --- loading case 2: max Wind Speed ---
         prob['wind2.Uref'] = wind_Uref2
 
-        prob['pre2.rna_F'] = np.array([Fx2, Fy2, Fz2])
-        prob['pre2.rna_M' ] = np.array([Mxx2, Myy2, Mzz2])
+        prob['pre2.rna_F'] = np.r_[Fx2, Fy2, Fz2]
+        prob['pre2.rna_M' ] = np.r_[Mxx2, Myy2, Mzz2]
 
         # # --- run ---
         prob.run_model()

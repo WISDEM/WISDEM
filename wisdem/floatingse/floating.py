@@ -27,6 +27,7 @@ class FloatingSE(om.Group):
         self.set_input_defaults('wave_period_range_low', 2.0, units='s')
         self.set_input_defaults('wave_period_range_high', 20.0, units='s')
         self.set_input_defaults('cd_usr', -1.0)
+        self.set_input_defaults('zref', 100.0)
         self.set_input_defaults('number_of_offset_columns', 0)
         self.set_input_defaults('material_names', ['steel'])
         

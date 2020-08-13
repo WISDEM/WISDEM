@@ -470,7 +470,7 @@ class Substructure(om.ExplicitComponent):
         r_int = np.interp(z_int, z_water_data, r_water_data)
         Izz   = 0.5 * rhoWater * np.pi * np.trapz(r_int**4, z_int)
         Ixx   = rhoWater * np.pi * np.trapz(0.25*r_int**4 + r_int**2*(z_int-z_cg)**2, z_int)
-        outputs['variable_ballast_moments_of_inertia'] = np.array([Ixx, Ixx, Izz, 0.0, 0.0, 0.0])
+        outputs['variable_ballast_moments_of_inertia'] = np.r_[Ixx, Ixx, Izz, 0.0, 0.0, 0.0]
 
         
     def compute_stability(self, inputs, outputs):
@@ -619,7 +619,7 @@ class Substructure(om.ExplicitComponent):
         # Save what we have so far as m_substructure & I_substructure and move to its own CM
         m_subs    =  m_main           + ncolumn*m_column             + m_water
         z_cg_subs = (m_main*z_cg_main + ncolumn*m_column*z_cg_column + m_water*z_cg_water) / m_subs
-        R              = r_cg - np.array([0.0, 0.0, z_cg_subs])
+        R              = r_cg - np.r_[0.0, 0.0, z_cg_subs]
         I_substructure = I_total + m_subs*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
         outputs['substructure_moments_of_inertia'] = unassembleI( I_total )
 
