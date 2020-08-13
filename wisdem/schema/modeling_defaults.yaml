@@ -2,11 +2,12 @@ general:
     verbosity: False
 
 Analysis_Flags:
-    OpenFAST: False
+    DriveSE: True
     ServoSE: True
     RotorSE: True
     TowerSE: True
     BOS: True
+    OpenFAST: False
 
 xfoil:
     path       : /home/user/Xfoil/bin/xfoil

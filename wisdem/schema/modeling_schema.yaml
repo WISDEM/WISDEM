@@ -26,6 +26,7 @@ properties:
         required:
             - RotorSE
             - ServoSE
+            - DriveSE
             - TowerSE
             - BOS
             - OpenFAST
@@ -36,6 +37,9 @@ properties:
             ServoSE:
                 type: boolean
                 description: Whether or not to run ServoSE
+            DriveSE:
+                type: boolean
+                description: Whether or not to run DriveSE
             TowerSE:
                 type: boolean
                 description: Whether or not to run TowerSE

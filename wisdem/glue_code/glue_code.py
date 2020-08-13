@@ -433,6 +433,7 @@ class WT_RNTA(Group):
 
         # Connections to DriveSE
         if modeling_options['Analysis_Flags']['ServoSE']:
+            self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')
             self.connect('configuration.upwind',       'drivese.upwind')
             self.connect('configuration.direct_drive', 'drivese.direct_drive')
             self.connect('configuration.n_blades',     'drivese.n_blades') 
@@ -458,8 +459,8 @@ class WT_RNTA(Group):
 
         # Connections to TowerSE
         if modeling_options['flags']['tower']:
-            #self.connect('drivese.top_F',                 'towerse.pre.rna_F')
-            #self.connect('drivese.top_M',                 'towerse.pre.rna_M')
+            self.connect('drivese.base_F',                'towerse.pre.rna_F')
+            self.connect('drivese.base_M',                'towerse.pre.rna_M')
             self.connect('drivese.rna_I_TT',             ['towerse.rna_I','towerse.pre.mI'])
             self.connect('drivese.rna_cm',               ['towerse.rna_cg','towerse.pre.mrho'])
             self.connect('drivese.rna_mass',             ['towerse.rna_mass','towerse.pre.mass'])

@@ -55,7 +55,7 @@ class TestGroup(unittest.TestCase):
         prob['pitch_system.rho']              = 7850.
         prob['pitch_system.Xy']               = 371.e+6
 
-        prob['hub_shell.blade_root_diameter'] = 4.
+        prob['blade_root_diameter']           = 4.
         prob['flange_t2shell_t']              = 4.
         prob['flange_OD2hub_D']               = 0.5
         prob['flange_ID2flange_OD']           = 0.8
@@ -69,7 +69,6 @@ class TestGroup(unittest.TestCase):
 
         prob['n_front_brackets']              = 3
         prob['n_rear_brackets']               = 3
-        prob['spinner.blade_root_diameter']   = 4.
         prob['clearance_hub_spinner']         = 0.5
         prob['spin_hole_incr']                = 1.2
         prob['spinner.gust_ws']               = 70

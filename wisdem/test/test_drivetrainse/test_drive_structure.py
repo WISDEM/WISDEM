@@ -40,6 +40,8 @@ class TestStructure(unittest.TestCase):
         self.inputs['mb1_I'] = 10e3*0.5*2**2*np.ones(3)
         self.inputs['mb2_mass'] = 10e3
         self.inputs['mb2_I'] = 10e3*0.5*1.5**2*np.ones(3)
+        self.inputs['mb1_max_defl_ang'] = 0.008
+        self.inputs['mb2_max_defl_ang'] = 0.008
 
         self.inputs['m_stator'] = 100e3
         self.inputs['cm_stator'] = -0.3

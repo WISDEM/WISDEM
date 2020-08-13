@@ -35,7 +35,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         Hub system mass
     hub_system_cm : float, [m]
         Hub system center of mass distance from hub flange
-    hub_system_I : numpy array[3], [kg*m**2]
+    hub_system_I : numpy array[6], [kg*m**2]
         Hub system moment of inertia
     F_hub : numpy array[3, n_dlcs], [N]
         Force vector applied to the hub (WITH WEIGHT???)
@@ -111,7 +111,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         self.add_input('t_shaft', val=np.zeros(6), units='m')
         self.add_input('hub_system_mass', 0.0, units='kg')
         self.add_input('hub_system_cm', 0.0, units='m')
-        self.add_input('hub_system_I', np.zeros(3), units='kg*m**2')
+        self.add_input('hub_system_I', np.zeros(6), units='kg*m**2')
         self.add_input('F_hub', val=np.zeros((3, n_dlcs)), units='N')
         self.add_input('M_hub', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('s_mb1', val=0.0, units='m')
@@ -404,9 +404,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
     stator_rotation : float, [rad]
         Maximum rotation angle at stator attachment
     base_F : numpy array[3, n_dlcs], [N]
-        Total reaction force at bedplate base
+        Total reaction force at bedplate base in tower top coordinate system
     base_M : numpy array[3, n_dlcs], [N*m]
-        Total reaction moment at bedplate base
+        Total reaction moment at bedplate base in tower top coordinate system
     bedplate_nose_axial_stress : numpy array[n_points+4, n_dlcs], [Pa]
         Axial stress in Curved_beam structure
     bedplate_nose_shear_stress : numpy array[n_points+4, n_dlcs], [Pa]

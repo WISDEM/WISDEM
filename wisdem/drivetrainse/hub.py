@@ -51,7 +51,7 @@ class HubShell(om.ExplicitComponent):
         Cost of the hub shell, including flanges
     hub_cm : float, [m]
         Distance between hub/shaft flange and hub center of mass
-    hub_I : numpy array[3], [kg*m**2]
+    hub_I : numpy array[6], [kg*m**2]
         Total mass moment of inertia of the hub about its cm
     
     """
@@ -79,7 +79,7 @@ class HubShell(om.ExplicitComponent):
         self.add_output('hub_diameter',             val = 0.0, units = 'm')
         self.add_output('hub_cost',                 val = 0.0, units = 'USD')
         self.add_output('hub_cm',                   val = 0.0, units = 'm')
-        self.add_output('hub_I',                    val = np.zeros(3), units = 'kg*m**2')
+        self.add_output('hub_I',                    val = np.zeros(6), units = 'kg*m**2')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -119,7 +119,7 @@ class HubShell(om.ExplicitComponent):
         outputs['hub_mass']     = hub_mass
         outputs['hub_cost']     = hub_cost
         outputs['hub_cm']       = hub_cm
-        outputs['hub_I']        = (2./3.) * hub_mass * (0.5*dsgn_hub_diam)**2 * np.ones(3) # Spherical shell
+        outputs['hub_I']        = np.r_[(2./3.) * hub_mass * (0.5*dsgn_hub_diam)**2 * np.ones(3), np.zeros(3)] # Spherical shell
 
         if self.options['verbosity']:
             sys.stderr.write('Spherical_Hub:\n')
@@ -181,7 +181,7 @@ class Spinner(om.ExplicitComponent):
         Cost of the spinner
     spinner_cm : float, [m]
         Distance between center of mass of the spinner and main flange
-    spinner_I : numpy array[3], [kg*m**2]
+    spinner_I : numpy array[6], [kg*m**2]
         Total mass moment of inertia of the spinner about its cm
     
     """
@@ -214,7 +214,7 @@ class Spinner(om.ExplicitComponent):
         self.add_output('spinner_mass',             val = 0.0, units = 'kg')
         self.add_output('spinner_cost',             val = 0.0, units = 'kg')
         self.add_output('spinner_cm',               val = 0.0, units = 'm')
-        self.add_output('spinner_I',                val = np.zeros(3), units = 'kg*m**2')
+        self.add_output('spinner_I',                val = np.zeros(6), units = 'kg*m**2')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         
@@ -280,7 +280,7 @@ class Spinner(om.ExplicitComponent):
          # Spinner and hub are assumed to be concentric (spinner wraps hub)
         outputs['spinner_cm']               = inputs['hub_diameter'] / 2.
         outputs['spinner_cost']             = spin_shell_mass * inputs['composite_cost'] + bracket_mass_total * inputs['metal_cost']
-        outputs['spinner_I']                = (2./3.) * mass * (0.5*sph_spin_diam)**2 * np.ones(3) # Spherical shell
+        outputs['spinner_I']                = np.r_[(2./3.) * mass * (0.5*sph_spin_diam)**2 * np.ones(3), np.zeros(3)] # Spherical shell
         
         # Print to screen if verbosity option is on
         if self.options['verbosity']:
@@ -315,7 +315,7 @@ class PitchSystem(om.ExplicitComponent):
         Total mass of the pitch system
     pitch_cost : float, [USD]
         Cost of the pitch system
-    pitch_I : float, [kg*m**2]
+    pitch_I : numpy array[6], [kg*m**2]
         Total mass moment of inertia of the pitch system about central point
     
     """
@@ -335,13 +335,13 @@ class PitchSystem(om.ExplicitComponent):
         # Outputs
         self.add_output('pitch_mass',           val = 0.0, units = 'kg')
         self.add_output('pitch_cost',           val = 0.0, units = 'USD')
-        self.add_output('pitch_I',              val = np.zeros(3), units = 'kg*m**2')
+        self.add_output('pitch_I',              val = np.zeros(6), units = 'kg*m**2')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         mass  = inputs['scaling_factor'] * (0.22 * inputs['blade_mass'] * discrete_inputs['n_blades'] + 12.6 * np.abs(inputs['BRFM']) * inputs['rho'] / inputs['Xy'])
         r_hub = 0.5*inputs['hub_diameter']
-        I     = mass * r_hub**2 * np.array([1.0, 0.5, 0.5])
+        I     = np.r_[mass * r_hub**2 * np.array([1.0, 0.5, 0.5]), np.zeros(3)]
 
         outputs['pitch_mass'] = mass
         outputs['pitch_cost'] = 0.0
@@ -361,7 +361,7 @@ class Hub_Adder(om.ExplicitComponent):
         Total mass of the pitch system
     pitch_cost : float, [kg]
         Cost of the pitch system
-    pitch_I : numpy array[3], [kg*m**2]
+    pitch_I : numpy array[6], [kg*m**2]
         Total mass moment of inertia of the pitch system about central point
     hub_mass : float, [kg]
         Total mass of the hub shell, including the flanges
@@ -369,7 +369,7 @@ class Hub_Adder(om.ExplicitComponent):
         Cost of the hub shell, including flanges
     hub_cm : float, [m]
         Distance between hub/shaft flange and hub center of mass
-    hub_I : numpy array[3], [kg*m**2]
+    hub_I : numpy array[6], [kg*m**2]
         Total mass moment of inertia of the hub about its cm
     spinner_mass : float, [kg]
         Total mass of the spinner
@@ -377,7 +377,7 @@ class Hub_Adder(om.ExplicitComponent):
         Cost of the spinner
     spinner_cm : float, [m]
         Radius / Distance between center of mass of the spinner and outer surface
-    spinner_I : numpy array[3], [kg*m**2]
+    spinner_I : numpy array[6], [kg*m**2]
         Total mass moment of inertia of the spinner about its cm
 
     Returns
@@ -388,29 +388,29 @@ class Hub_Adder(om.ExplicitComponent):
         Cost of the hub system
     hub_system_cm : float, [m]
         Distance between hub/main shaft flange and center of mass of the hub system
-    hub_system_I : numpy array[3], [kg*m**2]
+    hub_system_I : numpy array[6], [kg*m**2]
         Total mass moment of inertia of the hub system about its center of mass
 
     """
     def setup(self):
         self.add_input('pitch_mass',           val = 0.0, units = 'kg')
         self.add_input('pitch_cost',           val = 0.0, units = 'USD')
-        self.add_input('pitch_I',              val = np.zeros(3), units = 'kg*m**2')
+        self.add_input('pitch_I',              val = np.zeros(6), units = 'kg*m**2')
 
         self.add_input('hub_mass',             val = 0.0, units = 'kg')
         self.add_input('hub_cost',             val = 0.0, units = 'USD')
         self.add_input('hub_cm',               val = 0.0, units = 'm')
-        self.add_input('hub_I',                val = np.zeros(3), units = 'kg*m**2')
+        self.add_input('hub_I',                val = np.zeros(6), units = 'kg*m**2')
 
         self.add_input('spinner_mass',         val = 0.0, units = 'kg')
         self.add_input('spinner_cost',         val = 0.0, units = 'kg')
         self.add_input('spinner_cm',           val = 0.0, units = 'm')
-        self.add_input('spinner_I',            val = np.zeros(3), units = 'kg*m**2')
+        self.add_input('spinner_I',            val = np.zeros(6), units = 'kg*m**2')
 
         self.add_output('hub_system_mass',     val = 0.0, units = 'kg')
         self.add_output('hub_system_cost',     val = 0.0, units = 'USD')
         self.add_output('hub_system_cm',       val = 0.0, units = 'm')
-        self.add_output('hub_system_I',        val = np.zeros(3), units = 'kg*m**2')
+        self.add_output('hub_system_I',        val = np.zeros(6), units = 'kg*m**2')
 
     def compute(self, inputs, outputs):
         # Unpack inputs
@@ -430,16 +430,16 @@ class Hub_Adder(om.ExplicitComponent):
         # I total
         I_total  = util.assembleI( np.zeros(6) )
         r        = np.array([cm_hub-cm_total, 0.0, 0.0])
-        I_total += util.assembleI(np.r_[inputs['hub_I'], np.zeros(3)])     + m_hub   * (np.dot(r, r)*np.eye(3) - np.outer(r, r))
-        I_total += util.assembleI(np.r_[inputs['pitch_I'], np.zeros(3)])   + m_pitch * (np.dot(r, r)*np.eye(3) - np.outer(r, r))
+        I_total += util.assembleI(inputs['hub_I'])     + m_hub   * (np.dot(r, r)*np.eye(3) - np.outer(r, r))
+        I_total += util.assembleI(inputs['pitch_I'])   + m_pitch * (np.dot(r, r)*np.eye(3) - np.outer(r, r))
         r        = np.array([cm_spin-cm_total, 0.0, 0.0])
-        I_total += util.assembleI(np.r_[inputs['spinner_I'], np.zeros(3)]) + m_spin  * (np.dot(r, r)*np.eye(3) - np.outer(r, r))
+        I_total += util.assembleI(inputs['spinner_I']) + m_spin  * (np.dot(r, r)*np.eye(3) - np.outer(r, r))
 
         # Outputs
         outputs['hub_system_mass'] = m_total
         outputs['hub_system_cost'] = c_total
         outputs['hub_system_cm']   = cm_total
-        outputs['hub_system_I']    = util.unassembleI( I_total )[:3]
+        outputs['hub_system_I']    = util.unassembleI( I_total )
     
 class Hub_System(om.Group):
     """

@@ -768,7 +768,7 @@ class RNA_Adder(om.ExplicitComponent):
         Nacelle center of mass relative to tower top in yaw-aligned c.s.
     blades_I : numpy array[6], [kg*m**2]
         Mass moments of inertia of all blades about hub center
-    hub_system_I : numpy array[3], [kg*m**2]
+    hub_system_I : numpy array[6], [kg*m**2]
         Mass moments of inertia of hub system about its CofM
     nacelle_I : numpy array[6], [kg*m**2]
         Mass moments of inertia of nacelle about its CofM
@@ -796,7 +796,7 @@ class RNA_Adder(om.ExplicitComponent):
         self.add_input('hub_system_cm', 0.0, units='m')
         self.add_input('nacelle_cm', np.zeros(3), units='m')
         self.add_input('blades_I', np.zeros(6), units='kg*m**2')
-        self.add_input('hub_system_I', np.zeros(3), units='kg*m**2')
+        self.add_input('hub_system_I', np.zeros(6), units='kg*m**2')
         self.add_input('nacelle_I', np.zeros(6), units='kg*m**2')
 
         self.add_output('rotor_mass', 0.0, units='kg')
