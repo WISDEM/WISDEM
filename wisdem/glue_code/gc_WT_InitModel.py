@@ -8,7 +8,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     
     # These are the required components
     assembly        = wt_init['assembly']
-    wt_opt = assign_configuration_values(wt_opt, assembly)
+    wt_opt = assign_configuration_values(wt_opt, assembly, modeling_options)
 
     materials       = wt_init['materials']
     wt_opt = assign_material_values(wt_opt, modeling_options, materials)
@@ -712,14 +712,15 @@ def assign_control_values(wt_opt, modeling_options, control):
             
     return wt_opt
 
-def assign_configuration_values(wt_opt, assembly):
+def assign_configuration_values(wt_opt, assembly, modeling_options):
 
     wt_opt['configuration.ws_class']   = assembly['turbine_class']
     wt_opt['configuration.turb_class']          = assembly['turbulence_class']
-    if assembly['drivetrain'].lower() == 'direct_drive':
-        wt_opt['configuration.direct_drive'] = True
-    else:
-        raise ValueError('The drivetrain configuration is not correctly defined.')
+    if modeling_options['Analysis_Flags']['DriveSE']:
+        if assembly['drivetrain'].lower() == 'direct_drive':
+            wt_opt['configuration.direct_drive'] = True
+        else:
+            raise ValueError('The drivetrain configuration is not correctly defined.')
     if assembly['rotor_orientation'].lower() == 'upwind':
         wt_opt['configuration.upwind'] = True
     elif assembly['rotor_orientation'].lower() == 'downwind':

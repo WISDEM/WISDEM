@@ -286,7 +286,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, f
             elif opt_options['merit_figure'] == 'tower_cost':
                 wt_opt.model.add_objective('tcc.tower_cost')
             elif opt_options['merit_figure'] == 'Cp':
-                if modeling_options['servose']['run_servose']:
+                if modeling_options['Analysis_Flags']['ServoSE']:
                     wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
                 else:
                     wt_opt.model.add_objective('ccblade.CP', ref = -1.)
@@ -510,7 +510,8 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, f
         wt_opt.setup()
 
         # Temporary placeholder for drivese inputs
-        wt_opt = drivese_inputs(wt_opt)
+        if modeling_options['Analysis_Flags']['DriveSE']:
+            wt_opt = drivese_inputs(wt_opt)
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init)

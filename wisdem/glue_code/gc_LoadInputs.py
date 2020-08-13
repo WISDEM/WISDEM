@@ -270,6 +270,11 @@ class WindTurbineOntologyPython(object):
         # Offshore flag
         if not self.modeling_options['offshore'] and (flags['monopile'] or flags['floating']):
             raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
+        
+        # DriveSE needs ServoSE
+        if self.modeling_options['Analysis_Flags']['DriveSE'] and (not self.modeling_options['Analysis_Flags']['ServoSE'] 
+            or not self.modeling_options['Analysis_Flags']['TowerSE']):
+            raise ValueError('Both ServoSE and TowerSE must be on if DriveSE is on')
 
     def write_ontology(self, wt_opt, fname_output):
 
