@@ -132,7 +132,7 @@ prob['anchor_type']                   = 'DRAGEMBEDMENT' # Options are SUCTIONPIL
 prob['shearExp']  = 0.11                    # Shear exponent in wind power law
 prob['cm']        = 2.0                     # Added mass coefficient
 prob['Uc']        = 0.0                     # Mean current speed
-prob['wind_z0']   = 0.0                     # Water line
+prob['main.wind.z0']   = 0.0                     # Water line
 prob['yaw']       = 0.0                     # Turbine yaw angle
 prob['beta_wind'] = prob['beta_wave'] = 0.0 # Wind/water beta angle
 prob['cd_usr']    = -1.0                    # Compute drag coefficient
@@ -188,8 +188,8 @@ prob['max_offset']       = 100.0 # Max surge/sway offset [m]
 prob['operational_heel'] = 10.0 # Max heel (pitching) angle [deg]
 
 # Design constraints
-prob['max_taper_ratio']              = 0.2  # For manufacturability of rolling steel
-prob['min_diameter_thickness_ratio'] = 80.0 # For weld-ability
+prob['max_taper']              = 0.2  # For manufacturability of rolling steel
+prob['min_d_to_t'] = 80.0 # For weld-ability
 prob['connection_ratio_max']         = 0.25 # For welding pontoons to columns
 
 # API 2U flag

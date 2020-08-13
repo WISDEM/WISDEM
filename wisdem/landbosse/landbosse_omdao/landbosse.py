@@ -14,60 +14,35 @@ from wisdem.landbosse.landbosse_omdao.WeatherWindowCSVReader import read_weather
 use_default_component_data = -1.0
 
 class LandBOSSE(om.Group):
-    def initialize(self):
-        self.options.declare('topLevelFlag', default=False)
-
     def setup(self):
-        ivc = om.IndepVarComp()
 
         # Add a tower section height variable. The default value of 30 m is for transportable tower sections.
-        ivc.add_output('tower_section_length_m', 30.0, units='m',
-                            desc='The transportable length of a tower section.')
-        ivc.add_output('blade_drag_coefficient', use_default_component_data)  # Unitless
-        ivc.add_output('blade_lever_arm', use_default_component_data, units='m')
-        ivc.add_output('blade_install_cycle_time', use_default_component_data, units='h')
-        ivc.add_output('blade_offload_hook_height', use_default_component_data, units='m')
-        ivc.add_output('blade_offload_cycle_time', use_default_component_data, units='h')
-        ivc.add_output('blade_drag_multiplier', use_default_component_data)  # Unitless
+        self.set_input_defaults('tower_section_length_m', 30.0, units='m')
+        self.set_input_defaults('blade_drag_coefficient', use_default_component_data)  # Unitless
+        self.set_input_defaults('blade_lever_arm', use_default_component_data, units='m')
+        self.set_input_defaults('blade_install_cycle_time', use_default_component_data, units='h')
+        self.set_input_defaults('blade_offload_hook_height', use_default_component_data, units='m')
+        self.set_input_defaults('blade_offload_cycle_time', use_default_component_data, units='h')
+        self.set_input_defaults('blade_drag_multiplier', use_default_component_data)  # Unitless
 
-        self.add_subsystem('ivc', ivc, promotes=['*'])
+        self.set_input_defaults('turbine_spacing_rotor_diameters', 4)
+        self.set_input_defaults('row_spacing_rotor_diameters', 10)
+        self.set_input_defaults('commissioning_pct', 0.01)
+        self.set_input_defaults('decommissioning_pct', 0.15)
+        self.set_input_defaults('trench_len_to_substation_km', 50.0, units='km')
+        self.set_input_defaults('interconnect_voltage_kV', 130.0, units='kV')
 
-        if self.options['topLevelFlag']:
-            sivc = om.IndepVarComp()
-            sivc.add_output('plant_turbine_spacing', 4)
-            sivc.add_output('plant_row_spacing', 10)
-            sivc.add_output('commissioning_pct', 0.01)
-            sivc.add_output('decommissioning_pct', 0.15)
-            sivc.add_output('trench_len_to_substation_km', 50.0, units='km')
-            sivc.add_output('distance_to_interconnect_km', 8.04672, units='km')
-            sivc.add_output('interconnect_voltage_kV', 130.0, units='kV')
-
-            sivc.add_output('hub_height', 80.0, units='m')
-            sivc.add_output('foundation_height', 0.0, units='m')
-            sivc.add_output('blade_mass', 8000., units='kg')
-            sivc.add_output('hub_mass', 15.4e3, units='kg')
-            sivc.add_output('nacelle_mass', 50e3, units='kg')
-            sivc.add_output('tower_mass', 240e3, units='kg')
-            sivc.add_output('machine_rating', 1500.0, units='kW')
-            self.add_subsystem('sivc', sivc, promotes=['*'])
+        self.set_input_defaults('foundation_height', 0.0, units='m')
+        self.set_input_defaults('blade_mass', 8000., units='kg')
+        self.set_input_defaults('hub_mass', 15.4e3, units='kg')
+        self.set_input_defaults('nacelle_mass', 50e3, units='kg')
+        self.set_input_defaults('tower_mass', 240e3, units='kg')
+        self.set_input_defaults('turbine_rating_MW', 1500.0, units='kW')
             
-        self.add_subsystem('landbosse', LandBOSSE_API(topLevelFlag = self.options['topLevelFlag']), promotes=['*'])
+        self.add_subsystem('landbosse', LandBOSSE_API(), promotes=['*'])
 
-        if self.options['topLevelFlag']:
-            self.connect('hub_height', 'hub_height_meters')
-            self.connect('plant_turbine_spacing','turbine_spacing_rotor_diameters')
-            self.connect('plant_row_spacing','row_spacing_rotor_diameters')
-
-            # machine_rating is in kW by turbine_rating_MW is in MW. However,
-            # these units are specified to OpenMDAO so it can convert units.
-            self.connect('machine_rating', 'turbine_rating_MW')
-            self.connect('distance_to_interconnect_km', 'distance_to_interconnect_mi')
-        
 
 class LandBOSSE_API(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare('topLevelFlag', default=False)
-        
     def setup(self):
         # Clear the cache
         OpenMDAODataframeCache._cache={}

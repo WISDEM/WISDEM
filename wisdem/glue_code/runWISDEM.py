@@ -607,13 +607,13 @@ if __name__ == "__main__":
     run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
     fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_modeling_options = run_dir + "modeling_options.yaml"
-    fname_modeling_options = run_dir + "modeling_options.yaml"
+    fname_analysis_options = run_dir + "analysis_options.yaml"
     fname_wt_output        = run_dir + "output.yaml"
     folder_output          = run_dir + '/'
 
 
     tt = time.time()
-    wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_modeling_options, fname_wt_output, folder_output)
+    wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
     
     if MPI:
         rank = MPI.COMM_WORLD.Get_rank()

@@ -13,7 +13,6 @@ class FloatingSE(om.Group):
 
     def initialize(self):
         self.options.declare('modeling_options')
-        self.options.declare('topLevelFlag', default=True)
 
     def setup(self):
         opt = self.options['modeling_options']['platform']
@@ -21,108 +20,43 @@ class FloatingSE(om.Group):
         n_height_main = opt['columns']['main']['n_height']
         n_height_off  = opt['columns']['offset']['n_height']
         n_height_tow  = self.options['modeling_options']['tower']['n_height']
-        topLevelFlag  = self.options['topLevelFlag']
 
-        # Define all input variables from all models
-        ivc = om.IndepVarComp()
+        self.set_input_defaults('mooring_type', 'chain')
+        self.set_input_defaults('anchor_type', 'SUCTIONPILE')
+        self.set_input_defaults('loading', 'hydrostatic')
+        self.set_input_defaults('wave_period_range_low', 2.0, units='s')
+        self.set_input_defaults('wave_period_range_high', 20.0, units='s')
+        self.set_input_defaults('cd_usr', -1.0)
+        self.set_input_defaults('number_of_offset_columns', 0)
+        self.set_input_defaults('material_names', ['steel'])
         
-        # SemiGeometry
-        ivc.add_output('radius_to_offset_column', 0.0, units='m')
-        ivc.add_output('number_of_offset_columns', 0)
-        
-        ivc.add_output('fairlead_location', 0.0)
-        ivc.add_output('fairlead_offset_from_shell', 0.0, units='m')
-        ivc.add_output('max_draft', 0.0, units='m')
-        ivc.add_output('main_freeboard', 0.0, units='m') # Have to add here because cannot promote ivc from Column before needed by tower.  Grr
-        ivc.add_output('offset_freeboard', 0.0, units='m')
-
-        # Mooring
-        ivc.add_output('mooring_line_length', 0.0, units='m')
-        ivc.add_output('anchor_radius', 0.0, units='m')
-        ivc.add_output('mooring_diameter', 0.0, units='m')
-        ivc.add_output('number_of_mooring_connections', 0)
-        ivc.add_output('mooring_lines_per_connection', 0)
-        ivc.add_discrete_output('mooring_type', 'chain')
-        ivc.add_discrete_output('anchor_type', 'SUCTIONPILE')
-        ivc.add_output('max_offset', 0.0, units='m')
-        ivc.add_output('operational_heel', 0.0, units='deg')
-        ivc.add_output('mooring_cost_factor', 0.0)
-        ivc.add_output('max_survival_heel', 0.0, units='deg')
-
-        # Column
-        ivc.add_output('permanent_ballast_density', 0.0, units='kg/m**3')
-        ivc.add_output('outfitting_factor', 0.0)
-        ivc.add_output('ballast_cost_rate', 0.0, units='USD/kg')
-        ivc.add_output('unit_cost_mat', 0.0, units='USD/kg')
-        ivc.add_output('labor_cost_rate', 0.0, units='USD/min')
-        ivc.add_output('painting_cost_rate', 0.0, units='USD/m**2')
-        ivc.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
-        ivc.add_discrete_output('loading', 'hydrostatic')
-        
-        ivc.add_output('max_taper_ratio', 0.0)
-        ivc.add_output('min_diameter_thickness_ratio', 0.0)
-
-        # Other Constraints
-        ivc.add_output('wave_period_range_low', 2.0, units='s')
-        ivc.add_output('wave_period_range_high', 20.0, units='s')
-        self.add_subsystem('ivc', ivc, promotes=['*'])
-
-        # Independent variables that may be duplicated at higher levels of aggregation
-        if topLevelFlag:
-            sharedIndeps = om.IndepVarComp()
-            sharedIndeps.add_output('hub_height', 0.0, units='m')
-            sharedIndeps.add_output('rho_air', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('mu_air', 0.0, units='kg/m/s')
-            sharedIndeps.add_output('shearExp', 0.0)
-            sharedIndeps.add_output('wind_reference_height', 0.0, units='m')
-            sharedIndeps.add_output('wind_reference_speed', 0.0, units='m/s')
-            sharedIndeps.add_output('wind_z0', 0.0, units='m')
-            sharedIndeps.add_output('beta_wind', 0.0, units='deg')
-            sharedIndeps.add_output('cd_usr', -1.0)
-            sharedIndeps.add_output('cm', 0.0)
-            sharedIndeps.add_output('Uc', 0.0, units='m/s')
-            sharedIndeps.add_output('water_depth', 0.0, units='m')
-            sharedIndeps.add_output('rho_water', 0.0, units='kg/m**3')
-            sharedIndeps.add_output('mu_water', 0.0, units='kg/m/s')
-            sharedIndeps.add_output('hsig_wave', 0.0, units='m')
-            sharedIndeps.add_output('Tsig_wave', 0.0, units='s')
-            sharedIndeps.add_output('beta_wave', 0.0, units='deg')
-            sharedIndeps.add_output('wave_z0', 0.0, units='m')
-            sharedIndeps.add_output('yaw', 0.0, units='deg')
-            sharedIndeps.add_output('rho_mat', np.zeros(1), units='kg/m**3')
-            sharedIndeps.add_output('E_mat', np.zeros((1,3)), units='N/m**2')
-            sharedIndeps.add_output('G_mat', np.zeros((1,3)), units='N/m**2')
-            sharedIndeps.add_output('sigma_y_mat', np.zeros(1), units='N/m**2')
-            sharedIndeps.add_output('DC', 0.0)
-            sharedIndeps.add_output('life', 0.0)
-            sharedIndeps.add_output('m_SN', 0.0)
-            sharedIndeps.add_output('rna_mass', 0.0, units='kg')
-            sharedIndeps.add_output('rna_I', np.zeros(6), units='kg*m**2')
-            sharedIndeps.add_output('rna_cg', np.zeros(3), units='m')
-            sharedIndeps.add_discrete_output('material_names', ['steel'])
-            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
-
-        
-        self.add_subsystem('tow', TowerLeanSE(modeling_options=self.options['modeling_options'], topLevelFlag=False),
+        self.add_subsystem('tow', TowerLeanSE(modeling_options=self.options['modeling_options']),
                            promotes=['tower_s','tower_height','tower_outer_diameter_in','tower_layer_thickness','tower_outfitting_factor',
                                      'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
                                      'tower_mass','tower_I_base','hub_height','material_names',
-                                     'labor_cost_rate','painting_cost_rate','unit_cost_mat','rho_mat','E_mat','G_mat','sigma_y_mat'])
+                                     'labor_cost_rate','painting_cost_rate','unit_cost_mat','rho_mat','E_mat','G_mat','sigma_y_mat',
+                                     ('transition_piece_height', 'main_freeboard'), ('foundation_height', 'main_freeboard')])
         
         # Next do main and ballast columns
         # Ballast columns are replicated from same design in the components
-        column_promotes = ['E_mat','G_mat','sigma_y_mat','z0','rho_air','mu_air','rho_water','mu_water','rho_mat',
-                           'Uref','zref','shearExp','yaw','Uc','water_depth',
+        column_promotes = ['E_mat','G_mat','sigma_y_mat','rho_air','mu_air','rho_water','mu_water','rho_mat',
+                           'shearExp','yaw','Uc','water_depth',
                            'hsig_wave','Tsig_wave','cd_usr','cm','loading','beta_wind','beta_wave',
                            'max_draft','max_taper','min_d_to_t','material_names',
                            'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
-                           'unit_cost_mat','labor_cost_rate','painting_cost_rate','outfitting_cost_rate']
+                           'unit_cost_mat','labor_cost_rate','painting_cost_rate','outfitting_cost_rate',
+                           'wind_reference_speed', 'wind_reference_height', 'wind_z0']
+        main_column_promotes = column_promotes.copy()
+        main_column_promotes.append(('freeboard', 'main_freeboard'))
         
-        self.add_subsystem('main', Column(modeling_options=opt, column_options=opt['columns']['main'], n_mat=n_mat, topLevelFlag=False),
-                           promotes=column_promotes)
+        self.add_subsystem('main', Column(modeling_options=opt, column_options=opt['columns']['main'], n_mat=n_mat),
+                           promotes=main_column_promotes)
+                           
+        off_column_promotes = column_promotes.copy()
+        off_column_promotes.append(('freeboard', 'off_freeboard'))
 
-        self.add_subsystem('off', Column(modeling_options=opt, column_options=opt['columns']['offset'], n_mat=n_mat, topLevelFlag=False),
-                           promotes=column_promotes)
+        self.add_subsystem('off', Column(modeling_options=opt, column_options=opt['columns']['offset'], n_mat=n_mat),
+                           promotes=off_column_promotes)
 
         # Run Semi Geometry for interfaces
         self.add_subsystem('sg', SubstructureGeometry(n_height_main=n_height_main,
@@ -143,9 +77,6 @@ class FloatingSE(om.Group):
                                                 n_height_tow=n_height_tow), promotes=['*'])
         
         # Connect all input variables from all models
-        self.connect('main_freeboard', ['tow.foundation_height','main.freeboard','tow.transition_piece_height'])
-        self.connect('offset_freeboard', 'off.freeboard')
-
         self.connect('tow.d_full', ['windLoads.d','tower_d_full'])
         self.connect('tow.d_full', 'tower_d_base', src_indices=[0])
         self.connect('tow.t_full', 'tower_t_full')
@@ -158,18 +89,6 @@ class FloatingSE(om.Group):
         self.connect('tow.turbine_mass','main.stack_mass_in')
         self.connect('tow.tower_center_of_mass','tower_center_of_mass')
         self.connect('tow.tower_raw_cost','tower_shell_cost')
-        
-        self.connect('max_taper_ratio', 'max_taper')
-        self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
-        
-        # To do: connect these to independent variables
-        if topLevelFlag:
-            self.connect('water_depth',['main.wave.z_floor','off.wave.z_floor'])
-            self.connect('wave_z0',['main.wave.z_surface','off.wave.z_surface'])
-            self.connect('wind_z0','z0')
-            self.connect('wind_reference_height','zref')
-            self.connect('wind_reference_speed','Uref')
-            
         
         self.connect('main.z_full', ['main_z_nodes', 'main_z_full'])
         self.connect('main.d_full', 'main_d_full')
@@ -295,8 +214,8 @@ def commonVars(prob, nsection):
     prob['operational_heel']   = 10.0 # Max heel (pitching) angle [deg]
 
     # Design constraints
-    prob['max_taper_ratio'] = 0.2                # For manufacturability of rolling steel
-    prob['min_diameter_thickness_ratio'] = 120.0 # For weld-ability
+    prob['max_taper'] = 0.2                # For manufacturability of rolling steel
+    prob['min_d_to_t'] = 120.0 # For weld-ability
     prob['connection_ratio_max']      = 0.25 # For welding pontoons to columns
 
     # API 2U flag

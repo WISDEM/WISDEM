@@ -14,42 +14,26 @@ import openmdao.api as om
 from wisdem.orbit import ProjectManager
 
 class Orbit(om.Group):
-    def initialize(self):
-        self.options.declare('topLevelFlag', default=False)
 
     def setup(self):
         
         # Define all input variables from all models
-        ivc = om.IndepVarComp()
-        ivc.add_discrete_output('wtiv', 'example_wtiv')
-        ivc.add_discrete_output('feeder', 'example_feeder')
-        ivc.add_discrete_output('num_feeders', 0)
-        ivc.add_discrete_output('oss_install_vessel', 'example_heavy_lift_vessel')
-        ivc.add_output('tower_deck_space', 0., units='m**2')
-        ivc.add_output('nacelle_deck_space', 0., units='m**2')
-        ivc.add_output('blade_deck_space', 0., units='m**2')
-        ivc.add_output('monopile_deck_space', 0., units='m**2')
-        ivc.add_output('transition_piece_deck_space', 0., units='m**2')
-        self.add_subsystem('ivc', ivc, promotes=['*'])
-
-        if self.options['topLevelFlag']:
-            sivc = om.IndepVarComp()
-            sivc.add_output('site_distance', 0.0, units='km')
-            sivc.add_output('site_distance_to_landfall', 40.0, units='km')
-            sivc.add_output('interconnection_distance', 40.0, units='km')
-            sivc.add_output('plant_turbine_spacing', 7)
-            sivc.add_output('plant_row_spacing', 7)
-            sivc.add_output('plant_substation_distance', 1, units='km')
-            sivc.add_output('port_cost_per_month', 2e6, units='USD/mo')
-            sivc.add_output('commissioning_pct', 0.01)
-            sivc.add_output('decommissioning_pct', 0.15)
-            sivc.add_output('site_auction_price', 100e6, units='USD')
-            sivc.add_output('site_assessment_plan_cost', 1e6, units='USD')
-            sivc.add_output('site_assessment_cost', 25e6, units='USD')
-            sivc.add_output('construction_operations_plan_cost', 2.5e6, units='USD')
-            sivc.add_output('boem_review_cost', 0.0, units='USD')
-            sivc.add_output('design_install_plan_cost', 2.5e6, units='USD')        
-            self.add_subsystem('sivc', sivc, promotes=['*'])
+        self.set_input_defaults('wtiv', 'example_wtiv')
+        self.set_input_defaults('feeder', 'example_feeder')
+        self.set_input_defaults('oss_install_vessel', 'example_heavy_lift_vessel')
+        self.set_input_defaults('site_distance_to_landfall', 40.0, units='km')
+        self.set_input_defaults('interconnection_distance', 40.0, units='km')
+        self.set_input_defaults('plant_turbine_spacing', 7)
+        self.set_input_defaults('plant_row_spacing', 7)
+        self.set_input_defaults('plant_substation_distance', 1, units='km')
+        self.set_input_defaults('port_cost_per_month', 2e6, units='USD/mo')
+        self.set_input_defaults('commissioning_pct', 0.01)
+        self.set_input_defaults('decommissioning_pct', 0.15)
+        self.set_input_defaults('site_auction_price', 100e6, units='USD')
+        self.set_input_defaults('site_assessment_plan_cost', 1e6, units='USD')
+        self.set_input_defaults('site_assessment_cost', 25e6, units='USD')
+        self.set_input_defaults('construction_operations_plan_cost', 2.5e6, units='USD')
+        self.set_input_defaults('design_install_plan_cost', 2.5e6, units='USD')        
         
         self.add_subsystem('orbit', OrbitWisdemFixed(), promotes=['*'])
         

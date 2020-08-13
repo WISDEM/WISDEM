@@ -4,6 +4,7 @@ general:
 Analysis_Flags:
     OpenFAST: False
     ServoSE: True
+    DriveSE: True
     RotorSE: True
     TowerSE: True
     BOS: True

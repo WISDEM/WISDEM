@@ -59,7 +59,7 @@ modeling_options['materials']['n_mat'] = n_materials
 
 # Instantiate OpenMDAO problem and create a model using the TowerSE group
 prob = om.Problem()
-prob.model = TowerSE(modeling_options=modeling_options, topLevelFlag=True)
+prob.model = TowerSE(modeling_options=modeling_options)
 # ---
 
 # If performing optimization, set up the optimizer and problem formulation
@@ -137,11 +137,7 @@ prob['wind_z0'] = 0.0
 prob['cd_usr'] = -1.0
 prob['rho_air'] = 1.225
 prob['mu_air'] = 1.7934e-5
-prob['rho_water'] = 1025.0
-prob['mu_water'] = 1.3351e-3
-prob['hsig_wave'] = 0.0
-prob['Tsig_wave'] = 1.0
-prob['beta_wind'] = prob['beta_wave'] = 0.0
+prob['beta_wind'] = 0.0
 if modeling_options['tower']['wind'] == 'PowerWind':
     prob['shearExp'] = 0.2
 # ---

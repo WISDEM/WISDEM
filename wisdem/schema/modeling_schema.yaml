@@ -1,3 +1,9 @@
+# Author: Pietro Bortolotti
+# Organization: National Renewable Energy Laboratory, Golden, CO
+# Date: 2020-04-28
+
+
+
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: WISDEM_model_options_schema_v00
 title: WISDEM wind turbine modeling options schema
@@ -14,7 +20,17 @@ properties:
                 description: Prints additional outputs to screen (and to a file log in the future)            
     Analysis_Flags:
         type: object
+<<<<<<< HEAD
         default: {}
+=======
+        required:
+            - RotorSE
+            - ServoSE
+            - DriveSE
+            - TowerSE
+            - BOS
+            - OpenFAST
+>>>>>>> 208b321ccf4e3aec8db80cc8eb3e91e5546ba217
         properties: 
             RotorSE:
                 type: boolean
@@ -24,6 +40,9 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run ServoSE
+            DriveSE:
+                type: boolean
+                description: Whether or not to run DriveSE
             TowerSE:
                 type: boolean
                 default: False

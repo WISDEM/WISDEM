@@ -79,24 +79,22 @@ class TestDrag(unittest.TestCase):
         
         prob = om.Problem()
     
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-    
-        # Add some arbitrary inputs
-        ivc.add_output('U', np.arange(nPoints), units='m/s')
-        ivc.add_output('A', np.ones(nPoints), units='m/s**2')
-        ivc.add_output('p', np.ones(nPoints)*0.5, units='N/m**2')
-        ivc.add_output('z', np.linspace(0., 10., nPoints), units='m')
-        ivc.add_output('d', np.ones(nPoints), units='m')
-        ivc.add_output('beta_wave', 1.2, units='deg')
-        ivc.add_output('rho_water', 1.0, units='kg/m**3')
-        ivc.add_output('mu_water', 0.001, units='kg/(m*s)')
-        ivc.add_output('cm', 10.0)
-        ivc.add_output('cd_usr', 0.01)
-    
         comp = wwd.CylinderWaveDrag(nPoints=nPoints)
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
+        
+        # Add some arbitrary inputs
+        prob.set_val('U', np.arange(nPoints), units='m/s')
+        prob.set_val('A', np.ones(nPoints), units='m/s**2')
+        prob.set_val('p', np.ones(nPoints)*0.5, units='N/m**2')
+        prob.set_val('z', np.linspace(0., 10., nPoints), units='m')
+        prob.set_val('d', np.ones(nPoints), units='m')
+        prob.set_val('beta_wave', 1.2, units='deg')
+        prob.set_val('rho_water', 1.0, units='kg/m**3')
+        prob.set_val('mu_water', 0.001, units='kg/(m*s)')
+        prob.set_val('cm', 10.0)
+        prob.set_val('cd_usr', 0.01)
     
         prob.run_model()
         
@@ -109,21 +107,19 @@ class TestDrag(unittest.TestCase):
         
         prob = om.Problem()
     
-        ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-    
-        # Add some arbitrary inputs
-        ivc.add_output('U', np.arange(nPoints), units='m/s')
-        ivc.add_output('z', np.linspace(0., 10., nPoints), units='m')
-        ivc.add_output('d', np.ones(nPoints), units='m')
-        ivc.add_output('beta_wind', 1.2, units='deg')
-        ivc.add_output('rho_air', 1.0, units='kg/m**3')
-        ivc.add_output('mu_air', 0.001, units='kg/(m*s)')
-        ivc.add_output('cd_usr', 0.01)
-    
         comp = wwd.CylinderWindDrag(nPoints=nPoints)
         prob.model.add_subsystem('comp', comp, promotes=['*'])
     
         prob.setup(force_alloc_complex=True)
+        
+        # Add some arbitrary inputs
+        prob.set_val('U', np.arange(nPoints), units='m/s')
+        prob.set_val('z', np.linspace(0., 10., nPoints), units='m')
+        prob.set_val('d', np.ones(nPoints), units='m')
+        prob.set_val('beta_wind', 1.2, units='deg')
+        prob.set_val('rho_air', 1.0, units='kg/m**3')
+        prob.set_val('mu_air', 0.001, units='kg/(m*s)')
+        prob.set_val('cd_usr', 0.01)
     
         prob.run_model()
         

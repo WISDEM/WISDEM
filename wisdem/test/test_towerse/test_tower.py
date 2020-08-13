@@ -240,7 +240,7 @@ class TestTowerSE(unittest.TestCase):
         # Test Land
         self.inputs['suctionpile_depth'] = 0.0
         self.inputs['suctionpile_depth_diam_ratio'] = 0.0
-        self.inputs['base_diameter'] = 3.0
+        self.inputs['diameter'] = 3.0
         self.inputs['foundation_height'] = 0.0
         myobj = tow.MonopileFoundation(monopile=False)
         myobj.compute(self.inputs, self.outputs)
@@ -423,7 +423,7 @@ class TestTowerSE(unittest.TestCase):
     def testProblemLand(self):
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(modeling_options=self.modeling_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
         prob['hub_height'] = 80.0
@@ -459,11 +459,6 @@ class TestTowerSE(unittest.TestCase):
         prob['rho_air'] = 1.225
         prob['mu_air'] = 1.7934e-5
         prob['shearExp'] = 0.2
-        prob['rho_water'] = 1025.0
-        prob['mu_water'] = 1.3351e-3
-        prob['beta_wind'] = prob['beta_wave'] = 0.0
-        prob['hsig_wave'] = 0.0
-        prob['Tsig_wave'] = 1e3
         prob['min_d_to_t'] = 120.0
         prob['max_taper'] = 0.2
         prob['wind.Uref'] = 15.0
@@ -522,7 +517,7 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options['flags']['monopile'] = True
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(modeling_options=self.modeling_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
         prob['hub_height'] = 80.0
@@ -635,7 +630,7 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options['flags']['monopile'] = True
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(modeling_options=self.modeling_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
         prob['hub_height'] = 80.0
@@ -715,7 +710,7 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options['tower']['n_height'] = len(d_param)
         
         prob = om.Problem()
-        prob.model = tow.TowerSE(modeling_options=self.modeling_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
         
         # Set common and then customized parameters
@@ -745,11 +740,6 @@ class TestTowerSE(unittest.TestCase):
         prob['rho_air'] = 1.225
         prob['wind_z0'] = 0.0
         prob['mu_air'] = 1.7934e-5
-        prob['rho_water'] = 1025.0
-        prob['mu_water'] = 1.3351e-3
-        prob['beta_wind'] = prob['beta_wave'] = 0.0
-        prob['hsig_wave'] = 0.0 #4.52
-        prob['Tsig_wave'] = 0.0 #9.52
         prob['life'] = 20.0
 
         mIxx = 379640227.0
@@ -874,7 +864,7 @@ class TestTowerSE(unittest.TestCase):
 
 
         prob = om.Problem()
-        prob.model = tow.TowerSE(modeling_options=self.modeling_options, topLevelFlag=True)
+        prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
         if self.modeling_options['tower']['wind'] == 'PowerWind':
@@ -922,11 +912,6 @@ class TestTowerSE(unittest.TestCase):
         prob['cd_usr'] = cd_usr
         prob['rho_air'] = 1.225
         prob['mu_air'] = 1.7934e-5
-        prob['rho_water'] = 1025.0
-        prob['mu_water'] = 1.3351e-3
-        prob['beta_wind'] = prob['beta_wave'] = 0.0
-        prob['hsig_wave'] = hmax
-        prob['Tsig_wave'] = T
 
         # --- fatigue ---
         prob['life'] = life
