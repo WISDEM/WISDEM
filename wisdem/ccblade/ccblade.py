@@ -1019,7 +1019,6 @@ class CCBlade(object):
         n  = len(self.r)
         a  = np.zeros(n)
         ap = np.zeros(n)
-        phi_star = np.zeros(n)
         alpha = np.zeros(n)
         cl = np.zeros(n)
         cd = np.zeros(n)
@@ -1056,7 +1055,7 @@ class CCBlade(object):
 
             if not rotating:  # non-rotating
 
-                phi_star[i] = pi/2.0
+                phi_star = pi/2.0
 
             else:
 
@@ -1077,23 +1076,23 @@ class CCBlade(object):
                         phi_upper = pi - epsilon
 
                 try:
-                    phi_star[i] = brentq(errf, phi_lower, phi_upper, args=args)
+                    phi_star = brentq(errf, phi_lower, phi_upper, args=args)
 
                 except ValueError:
 
                     warnings.warn('error.  check input values.')
-                    phi_star[i] = 0.0
+                    phi_star = 0.0
 
                 # ----------------------------------------------------------------
 
             if self.inverse_analysis == True:
-                self.theta[i]   = phi_star[i] - self.alpha[i] - self.pitch # rad
+                self.theta[i]   = phi_star - self.alpha[i] - self.pitch # rad
                 args = (self.r[i], self.chord[i], self.theta[i], self.af[i], Vx[i], Vy[i])
 
             # derivatives of residual
 
             a[i], ap[i], Np[i], Tp[i], alpha[i], cl[i], cd[i], cn[i], ct[i], q[i], W[i], Re[i],\
-                dNp_dx, dTp_dx, dR_dx = self.__loads(phi_star[i], rotating, *args)
+                dNp_dx, dTp_dx, dR_dx = self.__loads(phi_star, rotating, *args)
 
             if isnan(Np[i]):
                 a[i]     = 0.
@@ -1206,7 +1205,7 @@ class CCBlade(object):
             derivs['dTp'] = dTp
 
         loads = {'Np': Np, 'Tp': Tp,
-                 'a': a, 'ap': ap, 'phi' : phi_star,
+                 'a': a, 'ap': ap,
                  'alpha': alpha,
                  'Cl': cl, 'Cd': cd, 'Cn': cn, 'Ct': ct,
                  'W': W, 'Re': Re}
