@@ -12,6 +12,10 @@ properties:
                 type: string
                 default: output
                 description: Name of folder to dump output files
+            fname_output:
+                type: string
+                default: output
+                description: File prefix for output files
     optimization_variables:
         type: object
         default: {}

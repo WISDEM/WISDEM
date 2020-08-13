@@ -27,7 +27,7 @@ class WindTurbineOntologyPython(object):
         self.set_opt_flags()
 
         
-    def get_inputs_data(self):
+    def get_input_data(self):
         return self.wt_init, self.modeling_options, self.analysis_options
 
     
@@ -223,9 +223,6 @@ class WindTurbineOntologyPython(object):
         if not blade_opt_options['structure']['spar_cap_ps']['flag']:
             blade_opt_options['structure']['spar_cap_ps']['n_opt'] = self.modeling_options['rotorse']['n_span']
 
-        # Recorder file in output folder
-        if self.analysis_options['opt_flag'] and self.analysis_options['recorder']['flag']:
-            self.analysis_options['optimization_log'] = os.path.join(self.analysis_options['general']['folder_output'], self.analysis_options['recorder']['file_name'])
         
         
     def write_ontology(self, wt_opt, fname_output):

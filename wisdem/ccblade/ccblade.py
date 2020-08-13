@@ -1331,8 +1331,8 @@ class CCBlade(object):
 
                 # s = [precone, tilt, hubHt, Rhub, Rtip, precurvetip, presweeptip, yaw, Uinf, Omega, pitch]
 
-                dR_ds = np.array([-self.Rtip*sin(self.precone)*pi/180.0 + self.precurveTip*cos(self.precone)*pi/180.0,
-                    0.0, 0.0, 0.0, cos(self.precone), sin(self.precone), 0.0, 0.0, 0.0, 0.0, 0.0])
+                dR_ds = np.r_[-self.Rtip*sin(self.precone)*pi/180.0 + self.precurveTip*cos(self.precone)*pi/180.0,
+                              0.0, 0.0, 0.0, cos(self.precone), sin(self.precone), 0.0, 0.0, 0.0, 0.0, 0.0]
                 dR_ds = np.dot(np.ones((npts, 1)), np.array([dR_ds]))  # same for each operating condition
 
                 dA_ds = 2*pi*self.rotorR*dR_ds

@@ -11,10 +11,8 @@ fname_wt_input         = mydir + os.sep + 'blade.yaml'
 fname_modeling_options = mydir + os.sep + 'modeling_options.yaml'
 fname_analysis_options = mydir + os.sep + 'analysis_options_blade.yaml'
 fname_analysis_no_opt  = mydir + os.sep + 'analysis_options_blade_no_opt.yaml'
-folder_output          = mydir + os.sep + 'output' + os.sep
-fname_wt_output        = folder_output + 'blade_optimized.yaml'
 
-wt_opt1, analysis_options1, opt_options1 = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
+wt_opt1, analysis_options1, opt_options1 = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
 # Printing and plotting results
 print('AEP in GWh = ' + str(wt_opt1['sse.AEP']*1.e-6))
@@ -29,7 +27,9 @@ print('6P in Hz = ' + str(wt_opt1['sse.powercurve.rated_Omega']/60.*6.))
 print('Tip tower clearance in m     = ' + str(wt_opt1['tcons.blade_tip_tower_clearance']))
 print('Tip deflection constraint    = ' + str(wt_opt1['tcons.tip_deflection_ratio']))
 
-wt_opt2, analysis_options2, opt_options2 = run_wisdem(fname_wt_output, fname_modeling_options, fname_analysis_no_opt, fname_wt_output, folder_output)
+folder_output = opt_options1['general']['folder_output']
+fname_wt_output = os.path.join(folder_output, opt_options1['general']['fname_output']+'.yaml')
+wt_opt2, analysis_options2, opt_options2 = run_wisdem(fname_wt_output, fname_modeling_options, fname_analysis_no_opt)
 
 label1 = 'Orig'
 label2 = 'Optimized'

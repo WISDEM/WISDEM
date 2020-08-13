@@ -164,8 +164,8 @@ class PowerWind(WindBase):
         # rename
         z = inputs['z']
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])
-        zref = inputs['zref']
-        z0 = inputs['z0']
+        zref = float(inputs['zref'])
+        z0 = float(inputs['z0'])
 
         # velocity
         idx = z > z0
@@ -270,8 +270,8 @@ class LogWind(WindBase):
         # rename
         z = inputs['z']
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])
-        zref = inputs['zref']
-        z0 = inputs['z0']
+        zref = float(inputs['zref'])
+        z0 = float(inputs['z0'])
         z_roughness = inputs['z_roughness']/1e3  # convert to m
 
         # find velocity
@@ -285,10 +285,10 @@ class LogWind(WindBase):
         # rename
         z = inputs['z']
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])
-        zref = inputs['zref']
-        z0 = inputs['z0']
-        z_roughness = inputs['z_roughness']/1e3
-        Uref = inputs['Uref']
+        zref = float(inputs['zref'])
+        z0 = float(inputs['z0'])
+        z_roughness = float(inputs['z_roughness'])/1e3
+        Uref = float(inputs['Uref'])
         npts = self.options['nPoints']
 
         dU_dUref = np.zeros(npts)

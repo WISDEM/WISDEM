@@ -320,13 +320,13 @@ properties:
                                 description: Mass of the nacelle system, which includes the main bearing, the shafts, the gearbox (if present), the generator system, the nacelle cover, the bedplate, and all the components of the nacelle except for the yaw bearing and yaw actuators.
                                 unit: kg
                                 minimum: 0
-                                maximum: 1000000
+                                maximum: 10000000
                             yaw_mass:
                                 type: number
                                 description: Mass of the yaw system (yaw bearing and yaw actuators).
                                 unit: kg
                                 minimum: 0
-                                maximum: 100000
+                                maximum: 1000000
                             inertia:
                                 type: array
                                 description: Inertia of the nacelle system, in the nacelle reference system, which has the x horizontal pointing downwind, y horizontal pointing on the side, and z pointing vertically upwards (aligned with the tower axis).
@@ -466,6 +466,7 @@ properties:
                 required:
                     - outer_shape_bem
                     - internal_structure_2d_fem
+                optional:
                     - transition_piece_height
                     - transition_piece_mass
                     - transition_piece_cost
@@ -479,33 +480,39 @@ properties:
                         unit: m
                         minimum: 0.0
                         maximum: 100.0
+                        default: 0.0
                     transition_piece_mass:
                         type: number
                         description: Total mass of transition piece
                         unit: kg
                         minimum: 0.0
+                        default: 0.0
                     transition_piece_cost:
                         type: number
                         description: Total cost of transition piece
                         unit: USD
                         minimum: 0.0
+                        default: 0.0
                     gravity_foundation_mass:
                         type: number
                         description: Total mass of gravity foundation addition onto monopile
                         unit: kg
                         minimum: 0.0
+                        default: 0.0
                     suctionpile_depth:
                         type: number
                         description: Depth below sea floor that monopile length extends
                         unit: m
                         minimum: 0.0
                         maximum: 100.0
+                        default: 0.0
                     suctionpile_depth_diam_ratio:
                         type: number
                         description: Let suction pile depth be determined by multiplying this value by the monopile diameter at the mudline
                         unit: m
                         minimum: 0.0
                         maximum: 50.0
+                        default: 0.0
                     outer_shape_bem:                    
                         type: object
                         required:

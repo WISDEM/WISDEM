@@ -411,10 +411,9 @@ class DirectionVector(object):
             vector = self X other
 
         """
-
-        v1 = np.array([self.x, self.y, self.z]).transpose()
-        v2 = np.array([other.x, other.y, other.z]).transpose()
-        v = np.cross(v1, v2)
+        v1 = np.c_[self.x, self.y, self.z]
+        v2 = np.c_[other.x, other.y, other.z]
+        v  = np.cross(v1, v2)
 
         if len(v.shape) > 1:
             return DirectionVector(v[:, 0], v[:, 1], v[:, 2])
@@ -430,16 +429,16 @@ class DirectionVector(object):
         b = other
 
         dx = {}
-        dx[namea] = np.array([0.0, b.z, -b.y])
-        dx[nameb] = np.array([0.0, -a.z, a.y])
+        dx[namea] = np.r_[0.0, b.z, -b.y]
+        dx[nameb] = np.r_[0.0, -a.z, a.y]
 
         dy = {}
-        dy[namea] = np.array([-b.z, 0.0, b.x])
-        dy[nameb] = np.array([a.z, 0.0, -a.x])
+        dy[namea] = np.r_[-b.z, 0.0, b.x]
+        dy[nameb] = np.r_[a.z, 0.0, -a.x]
 
         dz = {}
-        dz[namea] = np.array([b.y, -b.x, 0.0])
-        dz[nameb] = np.array([-a.y, a.x, 0.0])
+        dz[namea] = np.r_[b.y, -b.x, 0.0]
+        dz[nameb] = np.r_[-a.y, a.x, 0.0]
 
         return dx, dy, dz
 

@@ -102,31 +102,36 @@ def validate_with_defaults(finput, fschema):
 #---------------------
 def load_default_geometry_yaml():
     return load_yaml(fdefaults_geom)
+
 def load_geometry_yaml(finput):
     return validate_with_defaults(finput, fschema_geom)
-# Geometry is too complex to just fill in defaults
-#    yaml_defaults = load_yaml(fdefaults_geom)
-#    myobj = load_yaml(finput)
-#    yaml_schema = load_yaml(fschema_geom)
-#    return integrate_defaults(myobj, yaml_defaults, yaml_schema), yaml_defaults
 
 def write_geometry_yaml(instance, foutput):
     validate_without_defaults(instance, fschema_geom)
-    write_yaml(instance, foutput)
+    sfx_str = '.yaml'
+    if foutput[-5:] == sfx_str:
+        sfx_str = ''
+    write_yaml(instance, foutput+sfx_str)
     
 def load_modeling_yaml(finput):
     return validate_with_defaults(finput, fschema_model)
 
 def write_modeling_yaml(instance, foutput):
     validate_without_defaults(instance, fschema_model)
-    write_yaml(instance, foutput)
+    sfx_str = '.yaml'
+    if foutput[-5:] == sfx_str:
+        sfx_str = ''
+    write_yaml(instance, foutput+sfx_str)
     
 def load_analysis_yaml(finput):
     return validate_with_defaults(finput, fschema_opt)
 
 def write_analysis_yaml(instance, foutput):
     validate_without_defaults(instance, fschema_opt)
-    write_yaml(instance, foutput)
+    sfx_str = '.yaml'
+    if foutput[-5:] == sfx_str:
+        sfx_str = ''
+    write_yaml(instance, foutput+sfx_str)
 
 if __name__ == '__main__':
     yaml_schema = load_yaml(fschema_opt)

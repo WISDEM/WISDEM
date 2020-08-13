@@ -20,17 +20,7 @@ properties:
                 description: Prints additional outputs to screen (and to a file log in the future)            
     Analysis_Flags:
         type: object
-<<<<<<< HEAD
         default: {}
-=======
-        required:
-            - RotorSE
-            - ServoSE
-            - DriveSE
-            - TowerSE
-            - BOS
-            - OpenFAST
->>>>>>> 208b321ccf4e3aec8db80cc8eb3e91e5546ba217
         properties: 
             RotorSE:
                 type: boolean

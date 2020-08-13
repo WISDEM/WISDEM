@@ -14,7 +14,7 @@ if MPI:
     #from petsc4py import PETSc
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
-def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, fname_wt_output, folder_output):
+def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
@@ -126,6 +126,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, fname_
         color_i = 0
         rank = 0
 
+    folder_output = opt_options['general']['folder_output']
     if rank == 0 and not os.path.isdir(folder_output):
         os.mkdir(folder_output)
 
@@ -186,8 +187,8 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, fname_
                 wt_opt.driver.opt_settings['Major iterations limit']      = int(opt_options['driver']['max_major_iter'])
                 wt_opt.driver.opt_settings['Iterations limit']            = int(opt_options['driver']['max_minor_iter'])
                 wt_opt.driver.opt_settings['Major feasibility tolerance'] = float(opt_options['driver']['tol'])
-                wt_opt.driver.opt_settings['Summary file']                = folder_output + 'SNOPT_Summary_file.txt'
-                wt_opt.driver.opt_settings['Print file']                  = folder_output + 'SNOPT_Print_file.txt'
+                wt_opt.driver.opt_settings['Summary file']                = os.path.join(folder_output, 'SNOPT_Summary_file.txt')
+                wt_opt.driver.opt_settings['Print file']                  = os.path.join(folder_output, 'SNOPT_Print_file.txt')
                 if 'hist_file_name' in opt_options['driver']:
                     wt_opt.driver.hist_file = opt_options['driver']['hist_file_name']
                 if 'verify_level' in opt_options['driver']:
@@ -422,16 +423,15 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, fname_
             
             # Set recorder on the OpenMDAO driver level using the `optimization_log`
             # filename supplied in the optimization yaml
-            if 'recorder' in opt_options:
-                if opt_options['recorder']['flag']:
-                    recorder = om.SqliteRecorder(folder_output + opt_options['recorder']['file_name'])
-                    wt_opt.driver.add_recorder(recorder)
-                    wt_opt.add_recorder(recorder)
-                    
-                    wt_opt.driver.recording_options['excludes'] = ['*_df']
-                    wt_opt.driver.recording_options['record_constraints'] = True 
-                    wt_opt.driver.recording_options['record_desvars'] = True 
-                    wt_opt.driver.recording_options['record_objectives'] = True
+            if opt_options['recorder']['flag']:
+                recorder = om.SqliteRecorder(os.path.join(folder_output, opt_options['recorder']['file_name']))
+                wt_opt.driver.add_recorder(recorder)
+                wt_opt.add_recorder(recorder)
+                
+                wt_opt.driver.recording_options['excludes'] = ['*_df']
+                wt_opt.driver.recording_options['record_constraints'] = True 
+                wt_opt.driver.recording_options['record_desvars'] = True 
+                wt_opt.driver.recording_options['record_objectives'] = True
         
         # Setup openmdao problem
         wt_opt.setup()
@@ -524,10 +524,11 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, fname_
 
         if (not MPI) or (MPI and rank == 0):
             # Save data coming from openmdao to an output yaml file
-            wt_initial.write_ontology(wt_opt, fname_wt_output)
+            froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
+            wt_initial.write_ontology(wt_opt, froot_out)
             
             # Save data to numpy and matlab arrays
-            fileIO.save_data(fname_wt_output, wt_opt)
+            fileIO.save_data(froot_out, wt_opt)
 
     if MPI and modeling_options['Analysis_Flags']['OpenFAST']:
         # subprocessor ranks spin, waiting for FAST simulations to run
@@ -593,9 +594,7 @@ def wisdem_cmd():
     # Run WISDEM (also saves output)
     wt_opt, modeling_options, opt_options = run_wisdem(yaml_dict['geometry_file'],
                                                        yaml_dict['modeling_file'],
-                                                       yaml_dict['analysis_file'],
-                                                       yaml_dict['output_geometry_file'],
-                                                       yaml_dict['output_directory'])
+                                                       yaml_dict['analysis_file'])
 
     sys.exit( 0 )
 
@@ -608,12 +607,10 @@ if __name__ == "__main__":
     fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_modeling_options = run_dir + "modeling_options.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
-    fname_wt_output        = run_dir + "output.yaml"
-    folder_output          = run_dir + '/'
 
 
     tt = time.time()
-    wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
+    wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
     
     if MPI:
         rank = MPI.COMM_WORLD.Get_rank()

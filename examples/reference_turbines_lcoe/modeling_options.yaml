@@ -8,7 +8,6 @@ Analysis_Flags:
     DriveSE:  True
     TowerSE:  True
     ServoSE:  True
-    RotorSE:  True
     BOS:      True
     OpenFAST: False   # Flag to run aeroelasticse, the wrapper of OpenFAST
 

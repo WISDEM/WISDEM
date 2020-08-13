@@ -14,8 +14,8 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
         
     def compute(self, inputs, outputs):
         
-        folder_output       = self.options['opt_options']['folder_output']
-        optimization_log    = self.options['opt_options']['optimization_log']
+        folder_output       = self.options['opt_options']['general']['folder_output']
+        optimization_log    = os.path.join(folder_output, self.options['opt_options']['recorder']['file_name'])
         if MPI:
             rank = MPI.COMM_WORLD.Get_rank()
         else:

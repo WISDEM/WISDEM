@@ -10,7 +10,7 @@ def clear_files():
     flist = glob.glob('test.*')
     for f in flist: os.remove(f)
 
-class TestComp(om.ExplicitComponent):
+class MyComp(om.ExplicitComponent):
     def setup(self):
         self.add_input('float_in', 0.0, units='N')
         self.add_input('fraction_in', 0.0)
@@ -34,14 +34,14 @@ class TestComp(om.ExplicitComponent):
         discrete_outputs['string_out'] = 'full'
         discrete_outputs['list_out'] = ['full']*3
 
-class TestGroup(om.Group):
+class MyGroup(om.Group):
     def setup(self):
-        self.add_subsystem('comp', TestComp(), promotes=['*'])
+        self.add_subsystem('comp', MyComp(), promotes=['*'])
 
         
 class TestFileIO(unittest.TestCase):
     def setUp(self):
-        self.prob = om.Problem(model=TestGroup())
+        self.prob = om.Problem(model=MyGroup())
         self.prob.setup()
         self.prob['float_in'] = 5.0
         self.prob.run_model()

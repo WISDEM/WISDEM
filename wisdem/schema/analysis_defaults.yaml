@@ -1,3 +1,6 @@
+general:
+    folder_output: outputs
+    fname_output: myturb_out
 optimization_variables:
   blade:
     aero_shape:
