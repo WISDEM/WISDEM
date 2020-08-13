@@ -43,7 +43,7 @@ class WT_RNTA(Group):
             self.add_subsystem('modes_elastodyn',   ModesElastoDyn(modeling_options = modeling_options))
             self.add_subsystem('freq_rotor',        RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=True))
             #if modeling_options['tower']['run_towerse']:
-            self.add_subsystem('freq_tower',        TowerSE(modeling_options=modeling_options, topLevelFlag=False))
+            self.add_subsystem('freq_tower',        TowerSE(modeling_options=modeling_options))
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options)) # Aero analysis
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
 
@@ -53,9 +53,9 @@ class WT_RNTA(Group):
                                                 number_of_main_bearings=1,
                                                 topLevelFlag=False))
         if modeling_options['flags']['tower']:
-            self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options, topLevelFlag=False))
-            self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
-        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['general']['verbosity'], topLevelFlag=False))
+            self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
+        self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
+        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['general']['verbosity']))
 
         # Conncetions to ccblade
         self.connect('blade.pa.chord_param',            'ccblade.chord')
@@ -473,13 +473,13 @@ class WT_RNTA(Group):
         if modeling_options['Analysis_Flags']['DriveSE'] and modeling_options['flags']['tower']:
             self.connect('drivese.top_F',                 'towerse.pre.rna_F')
             self.connect('drivese.top_M',                 'towerse.pre.rna_M')
-            self.connect('drivese.rna_I_TT',             ['towerse.rna_I','towerse.pre.mI'])
-            self.connect('drivese.rna_cm',               ['towerse.rna_cg','towerse.pre.mrho'])
-            self.connect('drivese.rna_mass',             ['towerse.rna_mass','towerse.pre.mass'])
+            self.connect('drivese.rna_I_TT',             'towerse.rna_I')
+            self.connect('drivese.rna_cm',               'towerse.rna_cg')
+            self.connect('drivese.rna_mass',             'towerse.rna_mass')
             if modeling_options['Analysis_Flags']['ServoSE']:
                 self.connect('sse.gust.V_gust',               'towerse.wind.Uref')
-            self.connect('assembly.hub_height',           'towerse.wind.zref')  # TODO- environment
-            self.connect('foundation.height',             'towerse.wind.z0') # TODO- environment
+            self.connect('assembly.hub_height',           'towerse.wind_reference_height')  # TODO- environment
+            self.connect('foundation.height',             'towerse.wind_z0') # TODO- environment
             self.connect('env.rho_air',                   'towerse.rho_air')
             self.connect('env.mu_air',                    'towerse.mu_air')                    
             self.connect('env.shear_exp',                 'towerse.shearExp')                    
@@ -500,10 +500,8 @@ class WT_RNTA(Group):
             if modeling_options['flags']['monopile']:
                 self.connect('env.rho_water',                    'towerse.rho_water')
                 self.connect('env.mu_water',                     'towerse.mu_water')                    
-                self.connect('env.G_soil',                       'towerse.soil.G')                    
-                self.connect('env.nu_soil',                      'towerse.soil.nu')                    
-                self.connect('env.hsig_wave',                    'towerse.hsig_wave')                    
-                self.connect('env.Tsig_wave',                    'towerse.Tsig_wave')                    
+                self.connect('env.G_soil',                       'towerse.G_soil')                    
+                self.connect('env.nu_soil',                      'towerse.nu_soil')                    
                 self.connect('monopile.diameter',                'towerse.monopile_outer_diameter_in')
                 self.connect('monopile.height',                  'towerse.monopile_height')
                 self.connect('monopile.s',                       'towerse.monopile_s')
@@ -513,7 +511,7 @@ class WT_RNTA(Group):
                 self.connect('monopile.transition_piece_height', 'towerse.transition_piece_height')
                 self.connect('monopile.transition_piece_mass',   'towerse.transition_piece_mass')
                 self.connect('monopile.gravity_foundation_mass', 'towerse.gravity_foundation_mass')
-                self.connect('monopile.suctionpile_depth',       ['towerse.suctionpile_depth','towerse.soil.depth'])
+                self.connect('monopile.suctionpile_depth',       'towerse.suctionpile_depth')
                 self.connect('monopile.suctionpile_depth_diam_ratio', 'towerse.suctionpile_depth_diam_ratio')
 
         #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
