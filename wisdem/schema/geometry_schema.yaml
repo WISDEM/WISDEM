@@ -420,16 +420,18 @@ properties:
                     internal_structure_2d_fem:
                         type: object
                         required:
-                            - outfitting_factor
                             - reference_axis
                             - layers
+                        optional:
+                            - outfitting_factor
                         properties: 
                             outfitting_factor:
                                 type: number
                                 description: Scaling factor for the tower mass to account for auxiliary structures, such as elevator, ladders, cables, platforms, etc
                                 unit: none
-                                minimum: 1
-                                maximum: 2
+                                minimum: 1.
+                                maximum: 2.
+                                default: 1.0
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             layers:
@@ -504,7 +506,6 @@ properties:
                         unit: m
                         minimum: 0.0
                         maximum: 50.0
-
                     outer_shape_bem:                    
                         type: object
                         required:
@@ -979,7 +980,8 @@ properties:
                             maximum: 100
     assembly:
         type: object
-        required:
+        default: {}
+        optional:
             - turbine_class
             - turbulence_class
             - drivetrain
@@ -988,18 +990,23 @@ properties:
         properties:
             turbine_class:
                 type: string
+                default: I
                 description: IEC wind class of the wind turbine. The options are "I", "II", "III", and 'IV'
             turbulence_class:
                 type: string
+                default: B
                 description: IEC turbulence class of the wind turbine. The options are "A", "B", and "C"
             drivetrain:
                 type: string
+                default: geared
                 description: String characterizing the drivetrain configuration
             rotor_orientation:
                 type: string
+                default: Upwind
                 description: Orientation of the horizontal-axis rotor. The options are "Upwind" and "Downwind"
             number_of_blades:
-                type: number
+                type: integer
+                default: 3
                 description: Number of blades of the rotor
                 unit: none
                 minimum: 0
@@ -1140,9 +1147,10 @@ properties:
         required:
             - air_density
             - air_dyn_viscosity
-            - weib_shape_parameter
             - air_speed_sound
             - shear_exp
+        optional:
+            - weib_shape_parameter
             - water_density
             - water_dyn_viscosity
             - water_depth
@@ -1155,60 +1163,70 @@ properties:
                 unit: kg/m3
                 minimum: 0
                 maximum: 1.5
+                default: 1.225
             air_dyn_viscosity:
                 type: number
                 description: Dynamic viscosity of air.
                 unit: kg/(ms)
                 minimum: 0
                 maximum: 2.e-5
+                default: 1.81e-5
             weib_shape_parameter:
                 type: number
                 description: Shape factor of the Weibull wind distribution.
                 unit: none
                 minimum: 1
                 maximum: 3
+                default: 2.
             air_speed_sound:
                 type: number
                 description: Speed of sound in air.
                 unit: m/s
-                minimum: 330
-                maximum: 350
+                minimum: 330.
+                maximum: 350.
+                default: 340.
             shear_exp:
                 type: number
                 description: Shear exponent of the atmospheric boundary layer.
                 unit: none
                 minimum: 0
                 maximum: 1
+                default: 0.2
             water_density:
                 type: number
                 description: Density of water.
                 unit: kg/m3
                 minimum: 950
                 maximum: 1100
+                default: 1025.0
             water_dyn_viscosity:
                 type: number
                 description: Dynamic viscosity of water.
                 unit: kg/(ms)
                 minimum: 1.e-3
                 maximum: 2.e-3
+                default: 1.3351e-3
             water_depth:
                 type: number
                 description: Water depth for offshore environment.
                 unit: m
                 minimum: 0.0
                 maximum: 1e4
+                default: 0.0
             soil_shear_modulus:
                 type: number
                 description: Shear modulus of the soil.
                 unit: Pa
                 minimum: 100.e+6
                 maximum: 200.e+6
+                default: 140e6
             soil_poisson:
                 type: number
                 description: Poisson ratio of the soil.
                 unit: none
                 minimum: 0
                 maximum: 0.6
+                default: 0.4
     bos:
         type: object
         required:
@@ -1219,6 +1237,7 @@ properties:
             - distance_to_substation
             - distance_to_interconnection
             - interconnect_voltage
+        optional:
             - distance_to_site
             - distance_to_landfall
             - port_cost_per_month
@@ -1235,104 +1254,121 @@ properties:
                 unit: none
                 minimum: 1
                 maximum: 100
+                default: 7
             plant_row_spacing:
                 type: number
                 description: Distance between turbine rows in the cross-wind direction in rotor diameters
                 unit: none
                 minimum: 1
                 maximum: 100
+                default: 7
             commissioning_pct:
                 type: number
                 description: Fraction of total BOS cost that is due to commissioning
                 unit: none
                 minimum: 0
                 maximum: 1
+                default: 0.01
             decommissioning_pct:
                 type: number
                 description: Fraction of total BOS cost that is due to decommissioning
                 unit: none
                 minimum: 0
                 maximum: 1
+                default: 0.15
             distance_to_substation:
                 type: number
                 description: Distance from centroid of plant to substation in km
                 unit: km
                 minimum: 0
                 maximum: 1000
+                default: 2
             distance_to_interconnection:
                 type: number
                 description: Distance from substation to grid connection in km
                 unit: km
                 minimum: 0
                 maximum: 1000
+                default: 50
             distance_to_landfall:
                 type: number
                 description: Distance from plant centroid to export cable landfall for offshore plants
                 unit: km
                 minimum: 0
                 maximum: 1000
+                default: 100
             distance_to_site:
                 type: number
                 description: Distance from port to plant centroid for offshore plants
                 unit: km
                 minimum: 0
                 maximum: 1000
+                default: 100
             interconnect_voltage:
                 type: number
                 description: Voltage of cabling to grid interconnection
                 unit: kV
                 minimum: 0
                 maximum: 1000
+                default: 130
             port_cost_per_month:
                 type: number
                 description: Monthly port rental fees
                 unit: USD
                 minimum: 0
                 maximum: 1e9
+                default: 2e6
             site_auction_price:
                 type: number
                 description: Cost to secure site lease
                 unit: USD
                 minimum: 0
                 maximum: 1e9
+                default: 0.0
             site_assessment_plan_cost:
                 type: number
                 description: Cost to do engineering plan for site assessment
                 unit: USD
                 minimum: 0
                 maximum: 1e9
+                default: 0.0
             site_assessment_cost:
                 type: number
                 description: Cost to execute site assessment
                 unit: USD
                 minimum: 0
                 maximum: 1e9
+                default: 0.0
             construction_operations_plan_cost:
                 type: number
                 description: Cost to do construction planning
                 unit: USD
                 minimum: 0
                 maximum: 1e9
+                default: 0.0
             boem_review_cost:
                 type: number
                 description: Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
                 unit: USD
                 minimum: 0
                 maximum: 1e9
+                default: 0.0
             design_install_plan_cost:
                 type: number
                 description: Cost to do installation planning
                 unit: USD
                 minimum: 0
                 maximum: 1e9
+                default: 0.0
     costs:
         type: object
         required:
             - wake_loss_factor
             - fixed_charge_rate
-            - bos_per_kW
             - opex_per_kW
             - turbine_number
+        optional:
+            - bos_per_kW
         properties:
             wake_loss_factor:
                 type: number
@@ -1340,30 +1376,35 @@ properties:
                 unit: none
                 minimum: 0
                 maximum: 1
+                default: 0.15
             fixed_charge_rate:
                 type: number
                 description: Fixed charge rate to compute the levelized cost of energy. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf 
                 unit: none
                 minimum: 0
                 maximum: 1
+                default: 0.075
             bos_per_kW:
                 type: number
                 description: Balance of stations costs expressed in USD per kW. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf 
                 unit: USD/kW
                 minimum: 0
                 maximum: 10000
+                default: 0.0
             opex_per_kW:
                 type: number
                 description: Operational expenditures expressed in USD per kW. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf 
                 unit: USD/kW
                 minimum: 0
                 maximum: 1000
+                default: 0.0
             turbine_number:
                 type: number
                 description: Number of turbines in the park, used to compute levelized cost of energy. Often wind parks are assumed of 600 MW. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf 
                 unit: none
                 minimum: 0
                 maximum: 10000
+                default: 50
 definitions:
     distributed_data:
         grid_nd: 

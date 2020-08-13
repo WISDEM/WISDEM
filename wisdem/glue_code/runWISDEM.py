@@ -1,22 +1,12 @@
-try:
-    import ruamel_yaml as ry
-except:
-    try:
-        import ruamel.yaml as ry
-    except:
-        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
-
 import numpy as np
 import os, sys, time
-import matplotlib.pyplot as plt
 import openmdao.api as om
 from wisdem.glue_code.gc_LoadInputs   import WindTurbineOntologyPython
-from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
-from wisdem.glue_code.gc_RunTools     import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
 from wisdem.glue_code.glue_code       import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
+from wisdem.schema                    import load_yaml
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -25,77 +15,15 @@ if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, fname_wt_output, folder_output):
-    # Main function to run a wind turbine wisdem assembly
-    
-    # Create an Opt_Data instance, which is a container for the optimization
-    # parameters as described in by the yaml file. Also set the folder output.
-    optimization_data       = Opt_Data()
-    optimization_data.fname_opt_options = fname_opt_options
-    optimization_data.folder_output     = folder_output    
-
-    # Load yaml for turbine description into a pure python data structure.
-    wt_initial                   = WindTurbineOntologyPython()
-    modeling_options, wt_init    = wt_initial.initialize(fname_wt_input, fname_modeling_options)
-    opt_options = optimization_data.initialize()
-    
-    # Assume we're not doing optimization unless an opt_flag is true in the
-    # optimization yaml
-    opt_options['opt_flag']    = False
-    
-    # ----------------------------------------------------------------------
-    # Loop through all optimization variables, setting opt_flag to true
-    # if any of these variables are set to optimize. If it's not an optimization
-    # DV, set the number of optimization points to be the same as the number
-    # of discretization points. 
-    # ----------------------------------------------------------------------
-
-    # Blade optimization variables
-    blade_opt_options = opt_options['optimization_variables']['blade']
-    if blade_opt_options['aero_shape']['twist']['flag']:
-        opt_options['opt_flag'] = True
-    else:
-        blade_opt_options['aero_shape']['twist']['n_opt'] = modeling_options['rotorse']['n_span']
-    if blade_opt_options['aero_shape']['chord']['flag']:
-        opt_options['opt_flag'] = True
-    else:
-        blade_opt_options['aero_shape']['chord']['n_opt'] = modeling_options['rotorse']['n_span']
-    if blade_opt_options['aero_shape']['af_positions']['flag']:
-        opt_options['opt_flag'] = True
-    if blade_opt_options['structure']['spar_cap_ss']['flag']:
-        opt_options['opt_flag'] = True
-    else:
-        blade_opt_options['structure']['spar_cap_ss']['n_opt'] = modeling_options['rotorse']['n_span']
-    if blade_opt_options['structure']['spar_cap_ps']['flag']:
-        opt_options['opt_flag'] = True
-    else:
-        blade_opt_options['structure']['spar_cap_ps']['n_opt'] = modeling_options['rotorse']['n_span']
-
-    # 'dac' is an optional setting, so we check if it's in the yaml-produced dict
-    if 'dac' in blade_opt_options:
-        if blade_opt_options['dac']['te_flap_end']['flag'] or blade_opt_options['dac']['te_flap_ext']['flag']:
-            opt_options['opt_flag'] = True
-
-    # Tower optimization variables
-    tower_opt_options = opt_options['optimization_variables']['tower']
-    if tower_opt_options['outer_diameter']['flag']:
-        opt_options['opt_flag'] = True
-    if tower_opt_options['layer_thickness']['flag']:
-        opt_options['opt_flag'] = True
-        
-    # Servo optimization variables
-    control_opt_options = opt_options['optimization_variables']['control']
-    if control_opt_options['tsr']['flag']:
-        opt_options['opt_flag'] = True
-    if control_opt_options['servo']['pitch_control']['flag']:
-        opt_options['opt_flag'] = True
-    if control_opt_options['servo']['torque_control']['flag']:
-        opt_options['opt_flag'] = True
-    if 'flap_control' in control_opt_options['servo']:
-        if control_opt_options['servo']['flap_control']['flag']:
-            opt_options['opt_flag'] = True
+    # Load all yaml inputs and validate (also fills in defaults)
+    wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
+    wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
+    blade_opt_options = opt_options['optimization_variables']['blade']
+    tower_opt_options = opt_options['optimization_variables']['tower']
+    control_opt_options = opt_options['optimization_variables']['control']
     if MPI:
         # Determine the number of design variables
         n_DV = 0
@@ -627,9 +555,8 @@ def read_master_file( fyaml ):
         print('...Reading master input file,',fyaml)
     else:
         raise FileNotFoundError('The master input file, '+fyaml+', cannot be found.')
-    
-    with open(fyaml, 'r') as f:
-        input_yaml = ry.load(f, Loader=ry.Loader)
+
+    input_yaml = load_yaml(fyaml)
 
     check_list = ['geometry_file','modeling_file','analysis_file']
     for f in check_list:

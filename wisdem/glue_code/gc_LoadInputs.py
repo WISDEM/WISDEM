@@ -1,62 +1,7 @@
 import numpy as np
 import os
-from wisdem.schema import fdefaults_geom, fschema_geom, fdefaults_model, fschema_model
+import wisdem.schema as sch
 from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
-
-try:
-    import ruamel_yaml as ry
-except:
-    try:
-        import ruamel.yaml as ry
-    except:
-        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
-import jsonschema as json
-
-
-def nested_get(indict, keylist):
-    rv = indict
-    for k in keylist:
-        rv = rv[k]
-    return rv
-
-def nested_set(indict, keylist, val):
-    rv = indict
-    for k in keylist:
-        if k == keylist[-1]:
-            rv[k] = val
-        else:
-            rv = rv[k]
-                
-def load_yaml(fname_input):
-    with open(fname_input, 'r') as myfile:
-        inputs = myfile.read()
-    return ry.YAML().load(inputs)
-
-        
-def integrate_defaults(instance, defaults, yaml_schema):
-    # Prep iterative validator
-    #json.validate(self.wt_init, yaml_schema)
-    validator = json.Draft7Validator(yaml_schema)
-    errors = validator.iter_errors(instance)
-
-    # Loop over errors
-    for e in errors:
-        if e.validator == 'required':
-            for k in e.validator_value:
-                if not k in e.instance.keys():
-                    mypath = e.absolute_path.copy()
-                    mypath.append(k)
-                    v = nested_get(defaults, mypath)
-                    if isinstance(v, dict) or isinstance(v, list) or v in ['name','material']:
-                        # Too complicated to just copy over default, so give it back to the user
-                        raise(e)
-                    else:
-                        print('WARNING: Missing value,',list(mypath),', so setting to:',v)
-                        nested_set(instance, mypath, v)
-        else:
-            raise(e)
-
-    return instance
 
 
 
@@ -69,16 +14,24 @@ class WindTurbineOntologyPython(object):
     #   - materials: dictionary representing the entry materials in the yaml file
     #   - airfoils: dictionary representing the entry airfoils in the yaml file
 
-    def initialize(self, fname_input_wt, fname_input_modeling):
-        # Load in defaults of modeling options file
-        self.modeling_options = integrate_defaults(load_yaml(fname_input_modeling), load_yaml(fdefaults_model), load_yaml(fschema_model))
+    
+    def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
-        # Load wind turbine yaml input
-        self.defaults    = load_yaml(fdefaults_geom)
-        self.wt_init     = integrate_defaults(load_yaml(fname_input_wt), self.defaults, load_yaml(fschema_geom))
-        self.set_flags()
-        self.openmdao_vectors()
+        self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
+        self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
+        self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
+        self.defaults         = sch.load_default_geometry_yaml()
+        self.set_run_flags()
+        self.set_openmdao_vectors()
+        self.set_openfast_data()
+        self.set_opt_flags()
 
+        
+    def get_inputs_data(self):
+        return self.wt_init, self.modeling_options, self.analysis_options
+
+    
+    def set_openfast_data(self):
         # Openfast
         if self.modeling_options['Analysis_Flags']['OpenFAST'] == True:
             # Load Input OpenFAST model variable values
@@ -98,9 +51,8 @@ class WindTurbineOntologyPython(object):
         else:
             self.modeling_options['openfast']['fst_vt']   = {}
 
-        return self.modeling_options, self.wt_init
-
-    def openmdao_vectors(self):
+            
+    def set_openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
         # ==modeling_options = {}
         
@@ -179,36 +131,7 @@ class WindTurbineOntologyPython(object):
         self.modeling_options['assembly']['number_of_blades'] = int(self.wt_init['assembly']['number_of_blades'])
 
         
-    def integrate_defaults(self):
-        # Load in schema as yaml
-        with open(fschema, 'r') as myfile:
-            schema = myfile.read()
-        yaml_schema = ry.YAML().load(schema)
-
-        # Prep iterative validator
-        #json.validate(self.wt_init, yaml_schema)
-        validator = json.Draft7Validator(yaml_schema)
-        errors = validator.iter_errors(self.wt_init)
-
-        # Loop over errors
-        for e in errors:
-            if e.validator == 'required':
-                for k in e.validator_value:
-                    if not k in e.instance.keys():
-                        mypath = e.absolute_path.copy()
-                        mypath.append(k)
-                        v = nested_get(self.defaults, mypath)
-                        if isinstance(v, dict) or isinstance(v, list) or v in ['name','material']:
-                            # Too complicated to just copy over default, so give it back to the user
-                            raise(e)
-                        else:
-                            print('WARNING: Missing value,',list(mypath),', so setting to:',v)
-                            nested_set(self.wt_init, mypath, v)
-            else:
-                raise(e)
-
-                            
-    def set_flags(self):
+    def set_run_flags(self):
         # Create components flag struct
         self.modeling_options['flags'] = {}
         
@@ -228,18 +151,19 @@ class WindTurbineOntologyPython(object):
         if flags['bos']: flags['bos'] = self.modeling_options['Analysis_Flags']['BOS']
         if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE']
         if flags['tower']: flags['tower'] = self.modeling_options['Analysis_Flags']['TowerSE']
+        if flags['control']: flags['control'] = self.modeling_options['Analysis_Flags']['ServoSE']
 
         # Blades and airfoils
         if flags['blade'] and not flags['airfoils']:
             raise ValueError('Blades/rotor analysis is requested but no airfoils are found')
         if flags['airfoils'] and not flags['blade']:
-            print('WARNING: Airfoils provided but no blades/rotor found')
+            print('WARNING: Airfoils provided but no blades/rotor found or RotorSE deactivated')
 
         # Blades and controls
-        if flags['blade'] and not flags['control']:
-            raise ValueError('Blades/rotor analysis is requested but no controls are found')
+        #if flags['blade'] and not flags['control']:
+        #    raise ValueError('Blades/rotor analysis is requested but no controls are found')
         if flags['control'] and not flags['blade']:
-            print('WARNING: Controls provided but no blades/rotor found')
+            print('WARNING: Controls provided but no blades/rotor found or RotorSE deactivated')
 
         # Blades, tower, monopile and environment
         if flags['blade'] and not flags['environment']:
@@ -259,7 +183,7 @@ class WindTurbineOntologyPython(object):
         if flags['monopile'] and not flags['foundation']:
             raise ValueError('Monopile analysis is requested but no foundation is found')
         if flags['foundation'] and not (flags['tower'] or flags['monopile']):
-            print('WARNING: Foundation provided but no tower/monipile found')
+            print('WARNING: Foundation provided but no tower/monipile found or TowerSE deactivated')
 
         # Foundation and floating/monopile
         if flags['floating'] and flags['foundation']:
@@ -271,6 +195,39 @@ class WindTurbineOntologyPython(object):
         if not self.modeling_options['offshore'] and (flags['monopile'] or flags['floating']):
             raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
 
+        
+    def set_opt_flags(self):
+        # Recursively look for flags to set global optimization flag
+        def recursive_flag(d):
+            opt_flag = False
+            for k,v in d.items():        
+                if isinstance(v, dict):
+                    opt_flag = opt_flag or recursive_flag(v)
+                elif k == 'flag':
+                    opt_flag = opt_flag or v
+            return opt_flag
+        
+        self.analysis_options['opt_flag'] = recursive_flag( self.analysis_options['optimization_variables'] )
+        
+        # If not an optimization DV, then the number of points should be same as the discretization
+        blade_opt_options = self.analysis_options['optimization_variables']['blade']
+        if not blade_opt_options['aero_shape']['twist']['flag']:
+            blade_opt_options['aero_shape']['twist']['n_opt'] = self.modeling_options['rotorse']['n_span']
+            
+        if not blade_opt_options['aero_shape']['chord']['flag']:
+            blade_opt_options['aero_shape']['chord']['n_opt'] = self.modeling_options['rotorse']['n_span']
+            
+        if not blade_opt_options['structure']['spar_cap_ss']['flag']:
+            blade_opt_options['structure']['spar_cap_ss']['n_opt'] = self.modeling_options['rotorse']['n_span']
+
+        if not blade_opt_options['structure']['spar_cap_ps']['flag']:
+            blade_opt_options['structure']['spar_cap_ps']['n_opt'] = self.modeling_options['rotorse']['n_span']
+
+        # Recorder file in output folder
+        if self.analysis_options['opt_flag'] and self.analysis_options['recorder']['flag']:
+            self.analysis_options['optimization_log'] = os.path.join(self.analysis_options['general']['folder_output'], self.analysis_options['recorder']['file_name'])
+        
+        
     def write_ontology(self, wt_opt, fname_output):
 
         if self.modeling_options['flags']['hub']:
@@ -408,12 +365,7 @@ class WindTurbineOntologyPython(object):
 
         # Update monopile
         if self.modeling_options['flags']['monopile']:
-            self.wt_init['components']['monopile']['transition_piece_height']      = float( wt_opt['monopile.transition_piece_height'] )
-            self.wt_init['components']['monopile']['transition_piece_mass']        = float( wt_opt['monopile.transition_piece_mass'] )
-            self.wt_init['components']['monopile']['transition_piece_cost']        = float( wt_opt['monopile.transition_piece_cost'] )
-            self.wt_init['components']['monopile']['gravity_foundation_mass']      = float( wt_opt['monopile.gravity_foundation_mass'] )
             self.wt_init['components']['monopile']['suctionpile_depth']            = float( wt_opt['monopile.suctionpile_depth'] )
-            self.wt_init['components']['monopile']['suctionpile_depth_diam_ratio'] = float( wt_opt['monopile.suctionpile_depth_diam_ratio'] )
             self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['monopile.s'].tolist()
             self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['monopile.diameter'].tolist()
             self.wt_init['components']['monopile']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['monopile.s'].tolist()
@@ -445,13 +397,5 @@ class WindTurbineOntologyPython(object):
         self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
 
         # Write yaml with updated values
-        f = open(fname_output, "w")
-        yaml=ry.YAML()
-        yaml.default_flow_style = None
-        yaml.width = float("inf")
-        yaml.indent(mapping=4, sequence=6, offset=3)
-        yaml.dump(self.wt_init, f)
-        f.close()
-
-        return None
+        sch.write_geometry_yaml(self.wt_init, fname_output)
 

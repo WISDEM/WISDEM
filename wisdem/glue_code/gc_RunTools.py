@@ -1,45 +1,9 @@
-try:
-    import ruamel_yaml as ry
-except:
-    try:
-        import ruamel.yaml as ry
-    except:
-        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
-import numpy as np
 import os
 import matplotlib.pyplot as plt
-from openmdao.api import ExplicitComponent, Group, IndepVarComp, Problem, SqliteRecorder, ScipyOptimizeDriver, CaseReader
-from wisdem.commonse.mpi_tools        import MPI
+import openmdao.api as om
+from wisdem.commonse.mpi_tools import MPI
 
-class Opt_Data(object):
-    # Pure python class to set the optimization parameters:
-
-    def __init__(self):
-        
-        self.opt_options = {}
-
-        # Save data
-        self.fname_opt_options    = ''
-        self.folder_output        = ''
-
-    def initialize(self):
-
-        self.opt_options = self.load_yaml(self.fname_opt_options)
-
-        self.opt_options['folder_output']    = self.folder_output
-        self.opt_options['optimization_log'] = self.folder_output + self.opt_options['recorder']['file_name']
-
-        return self.opt_options
-
-    def load_yaml(self, fname_input):
-        """ Load optimization options """
-        with open(fname_input, 'r') as myfile:
-            inputs = myfile.read()
-        yaml = ry.YAML()
-        
-        return yaml.load(inputs)
-
-class Convergence_Trends_Opt(ExplicitComponent):
+class Convergence_Trends_Opt(om.ExplicitComponent):
     """
     Deprecating this for now and using OptView from PyOptSparse instead.
     """
@@ -58,7 +22,7 @@ class Convergence_Trends_Opt(ExplicitComponent):
             rank = 0
         if os.path.exists(optimization_log) and rank == 0:
         
-            cr = CaseReader(optimization_log)
+            cr = om.CaseReader(optimization_log)
             cases = cr.list_cases()
             rec_data = {}
             iterations = []
@@ -82,7 +46,7 @@ class Convergence_Trends_Opt(ExplicitComponent):
                     fig.savefig(folder_output + fig_name)
                     plt.close(fig)
 
-class Outputs_2_Screen(ExplicitComponent):
+class Outputs_2_Screen(om.ExplicitComponent):
     # Class to print outputs on screen
     def initialize(self):
         self.options.declare('modeling_options')
