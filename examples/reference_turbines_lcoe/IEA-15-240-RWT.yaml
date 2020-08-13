@@ -774,7 +774,7 @@ materials:
 assembly:
     turbine_class: I
     turbulence_class: B
-    drivetrain: Direct_Drive
+    drivetrain: PM_DIRECT_DRIVE
     rotor_orientation: Upwind
     number_of_blades: 3
 control:

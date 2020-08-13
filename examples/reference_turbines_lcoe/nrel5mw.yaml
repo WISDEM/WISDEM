@@ -457,7 +457,7 @@ materials:
 assembly:
     turbine_class: I
     turbulence_class: B
-    drivetrain: direct_drive
+    drivetrain: Geared
     rotor_orientation: Upwind
     number_of_blades: 3
 control:

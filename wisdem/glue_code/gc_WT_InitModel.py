@@ -714,19 +714,11 @@ def assign_control_values(wt_opt, modeling_options, control):
 
 def assign_configuration_values(wt_opt, assembly):
 
-    wt_opt['configuration.ws_class']   = assembly['turbine_class']
-    wt_opt['configuration.turb_class']          = assembly['turbulence_class']
-    if assembly['drivetrain'].lower() == 'direct_drive':
-        wt_opt['configuration.direct_drive'] = True
-    else:
-        raise ValueError('The drivetrain configuration is not correctly defined.')
-    if assembly['rotor_orientation'].lower() == 'upwind':
-        wt_opt['configuration.upwind'] = True
-    elif assembly['rotor_orientation'].lower() == 'downwind':
-        wt_opt['configuration.upwind'] = False
-    else:
-        raise ValueError('The rotor orientation is not correctly defined. Set it to either Upwind or Downwind.')
-    wt_opt['configuration.n_blades']     = int(assembly['number_of_blades'])
+    wt_opt['configuration.ws_class']          = assembly['turbine_class']
+    wt_opt['configuration.turb_class']        = assembly['turbulence_class']
+    wt_opt['configuration.gearbox_type']      = assembly['drivetrain']
+    wt_opt['configuration.rotor_orientation'] = assembly['rotor_orientation'].lower()
+    wt_opt['configuration.n_blades']          = int(assembly['number_of_blades'])
 
     # Checks for errors
     if int(assembly['number_of_blades']) - assembly['number_of_blades'] != 0:

@@ -5,6 +5,27 @@ import numpy as np
 from openmdao.api import IndepVarComp, Component, Problem, Group, SqliteRecorder, BaseRecorder
 
 
+
+##### Test Setup Utilities #####
+def init_IndepVar_add(prob, data):
+    """ Add component independent vars from a dictionary of inputs """
+    for var in data.keys():
+        if type(data[var]) is np.ndarray or type(data[var]) is np.array:
+            print var
+            prob.root.add(var, IndepVarComp(var, np.zeros_like(data[var])), promotes=['*'])
+        else:
+            prob.root.add(var, IndepVarComp(var, data[var]), promotes=['*'])
+    return prob
+
+def init_IndepVar_set(prob, data):
+    """ Set component independent vars from a dictionary of inputs """
+    for var in data.keys():
+        prob[var] = data[var]
+    return prob
+
+
+
+
 ##### Check Gradients ##### <- from test_rotor_aeropower_gradients.py
 def check_gradient_unit_test(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
         show_missing_warnings=True, show_scaling_warnings=False, min_grad=1e-6, max_grad=1e6, comp=None):

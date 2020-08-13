@@ -2,9 +2,9 @@ import os
 import pickle
 import numpy as np
 import scipy.io as sio
-import pandas as pd
 
-def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=False):
+
+def save_data(fname, prob, npz_file=True, mat_file=True):
     # Remove file extension
     froot = os.path.splitext(fname)[0]
     
@@ -52,21 +52,6 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=False):
     if mat_file:
         sio.savemat(froot+'.mat', array_dict, long_field_names=True)
 
-    if xls_file:
-        data = {}
-        data['variables'] = []
-        data['units'] = []
-        data['values'] = []
-        for k in range(len(var_dict)):
-            unit_str = var_dict[k][1]['units']
-            if unit_str is None:  unit_str = ''
-
-            data['variables'].append( var_dict[k][0] )
-            data['units'].append( unit_str )
-            data['values'].append( var_dict[k][1]['value'] )
-        df = pd.DataFrame(data)
-        df.to_excel(froot+'.xlsx')
-        
     
 
 def load_data(fname, prob):

@@ -650,7 +650,7 @@ materials:
 assembly:
     turbine_class: III
     turbulence_class: A
-    drivetrain: direct_drive
+    drivetrain: Constant_eff
     rotor_orientation: Upwind
     number_of_blades: 3
 control:
