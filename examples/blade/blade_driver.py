@@ -49,7 +49,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'twist_opt' + extension
-ftw.savefig(folder_output + fig_name)
+ftw.savefig(os.path.join(folder_output, fig_name))
 
 # Chord
 fc, axc = plt.subplots(1,1,figsize=(5.3, 4))
@@ -63,7 +63,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'chord' + extension
-fc.savefig(folder_output + fig_name)
+fc.savefig(os.path.join(folder_output, fig_name))
 
 # rthick
 fc, axc = plt.subplots(1,1,figsize=(5.3, 4))
@@ -77,7 +77,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'rthick' + extension
-fc.savefig(folder_output + fig_name)
+fc.savefig(os.path.join(folder_output, fig_name))
 
 # Edgewise stiffness
 f, ax = plt.subplots(1,1,figsize=(5.3, 4))
@@ -91,7 +91,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'edge' + extension
-f.savefig(folder_output + fig_name)
+f.savefig(os.path.join(folder_output, fig_name))
 
 # Stiffness
 f, ax = plt.subplots(1,1,figsize=(5.3, 4))
@@ -105,7 +105,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'flap' + extension
-f.savefig(folder_output + fig_name)
+f.savefig(os.path.join(folder_output, fig_name))
 
 # Torsional stiffness
 f, ax = plt.subplots(1,1,figsize=(5.3, 4))
@@ -119,7 +119,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'gj' + extension
-f.savefig(folder_output + fig_name)
+f.savefig(os.path.join(folder_output, fig_name))
 
 # Mass
 f, ax = plt.subplots(1,1,figsize=(5.3, 4))
@@ -133,7 +133,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'mass' + extension
-f.savefig(folder_output + fig_name)
+f.savefig(os.path.join(folder_output, fig_name))
 
 # Angle of attack and stall angle
 faoa, axaoa = plt.subplots(1,1,figsize=(5.3, 4))
@@ -149,7 +149,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'aoa' + extension
-faoa.savefig(folder_output + fig_name)
+faoa.savefig(os.path.join(folder_output, fig_name))
 
 # Induction
 fa, axa = plt.subplots(1,1,figsize=(5.3, 4))
@@ -164,7 +164,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'induction' + extension
-fa.savefig(folder_output + fig_name)
+fa.savefig(os.path.join(folder_output, fig_name))
 
 # Lift coefficient
 fcl, axcl = plt.subplots(1,1,figsize=(5.3, 4))
@@ -178,7 +178,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'lift_coeff' + extension
-fcl.savefig(folder_output + fig_name)
+fcl.savefig(os.path.join(folder_output, fig_name))
 
 # Airfoil efficiency
 feff, axeff = plt.subplots(1,1,figsize=(5.3, 4))
@@ -192,7 +192,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'af_efficiency' + extension
-feff.savefig(folder_output + fig_name)
+feff.savefig(os.path.join(folder_output, fig_name))
 
 # Spar caps
 fsc, axsc = plt.subplots(1,1,figsize=(5.3, 4))
@@ -212,7 +212,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'sc_opt' + extension
-fsc.savefig(folder_output + fig_name)
+fsc.savefig(os.path.join(folder_output, fig_name))
 
 # Strains spar caps
 feps, axeps = plt.subplots(1,1,figsize=(5.3, 4))
@@ -231,7 +231,7 @@ plt.yticks(fontsize=fs)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.2)
 fig_name = 'strains_opt' + extension
-feps.savefig(folder_output + fig_name)
+feps.savefig(os.path.join(folder_output, fig_name))
 
 if show_plots:
     plt.show()
