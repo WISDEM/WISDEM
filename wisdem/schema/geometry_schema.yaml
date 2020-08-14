@@ -1011,12 +1011,13 @@ properties:
                 type: string
                 default: Upwind
                 description: Orientation of the horizontal-axis rotor. The options are "Upwind" and "Downwind"
+                enum: [Upwind, Downwind]
             number_of_blades:
                 type: integer
                 default: 3
                 description: Number of blades of the rotor
                 unit: none
-                minimum: 0
+                minimum: 1
                 maximum: 10
     control:
         type: object
