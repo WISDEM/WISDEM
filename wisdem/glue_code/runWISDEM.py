@@ -7,6 +7,7 @@ from wisdem.glue_code.glue_code       import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from wisdem.schema                    import load_yaml
+from wisdem.drivetrainse.inputs       import drivese_inputs
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -435,6 +436,10 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
         
         # Setup openmdao problem
         wt_opt.setup()
+        
+        # Temporary placeholder for drivese inputs
+        if modeling_options['Analysis_Flags']['DriveSE']:
+            wt_opt = drivese_inputs(wt_opt)
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init)

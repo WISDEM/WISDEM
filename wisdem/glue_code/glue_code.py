@@ -616,7 +616,7 @@ class WT_RNTA(om.Group):
         self.connect('elastic.precomp.total_blade_cost',  'tcc.blade_cost_external')
         if modeling_options['Analysis_Flags']['DriveSE']:
             self.connect('drivese.hub_mass',            'tcc.hub_mass')
-            self.connect('drivese.pitch_system_mass',   'tcc.pitch_system_mass')
+            self.connect('drivese.pitch_mass',          'tcc.pitch_system_mass')
             self.connect('drivese.spinner_mass',        'tcc.spinner_mass')
             self.connect('drivese.lss_mass',            'tcc.lss_mass')
             self.connect('drivese.bear1.mb_mass',       'tcc.main_bearing_mass')
