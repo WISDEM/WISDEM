@@ -19,18 +19,18 @@ FREE  = 0
 
 class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
     """
-    Run structural analysis of hub system with the generator rotor and main shaft.
+    Run structural analysis of hub system with the generator rotor and main (LSS) shaft.
     
     Parameters
     ----------
     tilt : float, [deg]
         Shaft tilt
-    s_shaft : numpy array[6], [m]
-        Discretized s-coordinates along drivetrain, measured from bedplate
-    D_shaft : numpy array[6], [m]
-        Shaft discretized diameter values at coordinates
-    t_shaft : numpy array[6], [m]
-        Shaft discretized thickness values at coordinates
+    s_lss : numpy array[6], [m]
+        Discretized s-coordinates along drivetrain, measured from bedplate (direct) or tower center (geared)
+    D_lss : numpy array[6], [m]
+        Lss discretized diameter values at coordinates
+    t_lss : numpy array[6], [m]
+        Lss discretized thickness values at coordinates
     hub_system_mass : float, [kg]
         Hub system mass
     hub_system_cm : float, [m]
@@ -42,17 +42,25 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
     M_hub : numpy array[3, n_dlcs], [N*m]
         Moment vector applied to the hub
     s_mb1 : float, [m]
-        Bearing 1 s-coordinate along drivetrain, measured from bedplate
+        Bearing 1 s-coordinate along drivetrain, measured from bedplate (direct) or tower center (geared)
     s_mb2 : float, [m]
-        Bearing 2 s-coordinate along drivetrain, measured from bedplate
+        Bearing 2 s-coordinate along drivetrain, measured from bedplate (direct) or tower center (geared)
     s_rotor : float, [m]
-        Generator rotor attachment to shaft s-coordinate measured from bedplate
+        Generator rotor attachment to lss s-coordinate measured from bedplate (direct) or tower center (geared)
     m_rotor : float, [kg]
         Generator rotor mass
     cm_rotor : float, [kg]
         Generator rotor center of mass (measured along nose from bedplate)
     I_rotor : numpy array[3], [kg*m**2]
         Generator rotor moment of inertia (measured about its cm)
+    s_gearbox : float, [m]
+        Gearbox attachment to lss s-coordinate measured from tower
+    m_gearbox : float, [kg]
+        Gearbox rotor mass
+    cm_gearbox : float, [kg]
+        Gearbox center of mass (measured from tower center)
+    I_gearbox : numpy array[3], [kg*m**2]
+        Gearbox moment of inertia (measured about its cm)
     E : float, [Pa]
         modulus of elasticity
     G : float, [Pa]
@@ -70,45 +78,44 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
     
     Returns
     -------
-    rotor_deflection : float, [m]
-        Maximum deflection distance at rotor attachment
-    rotor_rotation : float, [rad]
-        Maximum rotation angle at rotor attachment
-    rotor_axial_stress : numpy array[5, n_dlcs], [Pa]
+    torq_deflection : float, [m]
+        Maximum deflection distance at rotor (direct) or gearbox (geared) attachment
+    torq_rotation : float, [rad]
+        Maximum rotation angle at rotor (direct) or gearbox (geared) attachment
+    torq_axial_stress : numpy array[5, n_dlcs], [Pa]
         Axial stress in Curved_beam structure
-    rotor_shear_stress : numpy array[5, n_dlcs], [Pa]
+    torq_shear_stress : numpy array[5, n_dlcs], [Pa]
         Shear stress in Curved_beam structure
-    rotor_bending_stress : numpy array[5, n_dlcs], [Pa]
+    torq_bending_stress : numpy array[5, n_dlcs], [Pa]
         Hoop stress in Curved_beam structure calculated with Roarks formulae
-    constr_rotor_vonmises : numpy array[5, n_dlcs]
+    constr_torq_vonmises : numpy array[5, n_dlcs]
         Sigma_y/Von_Mises
     F_mb1 : numpy array[3, n_dlcs], [N]
         Force vector applied to bearing 1 in hub c.s.
     F_mb2 : numpy array[3, n_dlcs], [N]
         Force vector applied to bearing 2 in hub c.s.
-    F_rotor : numpy array[3, n_dlcs], [N]
-        Force vector applied to generator rotor in hub c.s.
+    F_torq : numpy array[3, n_dlcs], [N]
+        Force vector applied to generator rotor (direct) or gearbox (geared) in hub c.s.
     M_mb1 : numpy array[3, n_dlcs], [N]
         Moment vector applied to bearing 1 in hub c.s.
     M_mb2 : numpy array[3, n_dlcs], [N]
         Moment vector applied to bearing 2 in hub c.s.
-    M_rotor : numpy array[3, n_dlcs], [N]
-        Moment vector applied to generator rotor in hub c.s.
+    M_torq : numpy array[3, n_dlcs], [N]
+        Moment vector applied to generator rotor (direct) or gearbox (geared) in hub c.s.
     
     """
     
     def initialize(self):
-        self.options.declare('n_points')
         self.options.declare('n_dlcs')
     
     def setup(self):
-        n_points = self.options['n_points']
         n_dlcs   = self.options['n_dlcs']
 
+        self.add_discrete_input('direct_drive', False)
         self.add_input('tilt', 0.0, units='deg')
-        self.add_input('s_shaft', val=np.zeros(6), units='m')
-        self.add_input('D_shaft', val=np.zeros(6), units='m')
-        self.add_input('t_shaft', val=np.zeros(6), units='m')
+        self.add_input('s_lss', val=np.zeros(6), units='m')
+        self.add_input('D_lss', val=np.zeros(6), units='m')
+        self.add_input('t_lss', val=np.zeros(6), units='m')
         self.add_input('hub_system_mass', 0.0, units='kg')
         self.add_input('hub_system_cm', 0.0, units='m')
         self.add_input('hub_system_I', np.zeros(6), units='kg*m**2')
@@ -118,8 +125,12 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         self.add_input('s_mb2', val=0.0, units='m')
         self.add_input('s_rotor', val=0.0, units='m')
         self.add_input('m_rotor', val=0.0, units='kg')
-        self.add_input('cm_rotor', val=0.0, units='kg')
+        self.add_input('cm_rotor', val=0.0, units='m')
         self.add_input('I_rotor', val=np.zeros(3), units='kg*m**2')
+        self.add_input('s_gearbox', val=0.0, units='m')
+        self.add_input('m_gearbox', val=0.0, units='kg')
+        self.add_input('cm_gearbox', val=0.0, units='m')
+        self.add_input('I_gearbox', val=np.zeros(3), units='kg*m**2')
         self.add_input('E', val=0.0, units='Pa')
         self.add_input('G', val=0.0, units='Pa')
         self.add_input('rho', val=0.0, units='kg/m**3')
@@ -128,35 +139,41 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         self.add_input('gamma_m', 0.0)
         self.add_input('gamma_n', 0.0)
 
-        self.add_output('rotor_deflection', val=0.0, units='m')
-        self.add_output('rotor_rotation', val=0.0, units='rad')
-        self.add_output('rotor_axial_stress', np.zeros((5, n_dlcs)), units='Pa')
-        self.add_output('rotor_shear_stress', np.zeros((5, n_dlcs)), units='Pa')
-        self.add_output('rotor_bending_stress', np.zeros((5, n_dlcs)), units='Pa')
-        self.add_output('constr_rotor_vonmises', np.zeros((5, n_dlcs)))
+        self.add_output('torq_deflection', val=0.0, units='m')
+        self.add_output('torq_rotation', val=0.0, units='rad')
+        self.add_output('torq_axial_stress', np.zeros((5, n_dlcs)), units='Pa')
+        self.add_output('torq_shear_stress', np.zeros((5, n_dlcs)), units='Pa')
+        self.add_output('torq_bending_stress', np.zeros((5, n_dlcs)), units='Pa')
+        self.add_output('constr_torq_vonmises', np.zeros((5, n_dlcs)))
         self.add_output('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_output('F_rotor', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_output('F_torq', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('M_mb1', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('M_mb2', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_output('M_rotor', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_output('M_torq', val=np.zeros((3, n_dlcs)), units='N')
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
+        direct     = discrete_inputs['direct_drive']
         tilt       = float(np.deg2rad(inputs['tilt']))
         
-        s_shaft    = inputs['s_shaft']
-        D_shaft    = inputs['D_shaft']
-        t_shaft    = inputs['t_shaft']
+        s_lss      = inputs['s_lss']
+        D_lss      = inputs['D_lss']
+        t_lss      = inputs['t_lss']
 
         s_mb1      = float(inputs['s_mb1'])
         s_mb2      = float(inputs['s_mb2'])
         
-        s_rotor   = float(inputs['s_rotor'])
-        m_rotor   = float(inputs['m_rotor'])
-        cm_rotor  = float(inputs['cm_rotor'])
-        I_rotor   = inputs['I_rotor']
+        s_rotor    = float(inputs['s_rotor'])
+        m_rotor    = float(inputs['m_rotor'])
+        cm_rotor   = float(inputs['cm_rotor'])
+        I_rotor    = inputs['I_rotor']
+        
+        s_gearbox  = float(inputs['s_gearbox'])
+        m_gearbox  = float(inputs['m_gearbox'])
+        cm_gearbox = float(inputs['cm_gearbox'])
+        I_gearbox  = inputs['I_gearbox']
         
         rho        = float(inputs['rho'])
         E          = float(inputs['E'])
@@ -173,20 +190,30 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         M_hub      = inputs['M_hub']
 
         # ------- node data ----------------
-        n     = len(s_shaft)
+        n     = len(s_lss)
         inode = np.arange(1, n+1)
         ynode = znode = rnode = np.zeros(n)
-        xnode = s_shaft.copy()
+        xnode = s_lss.copy()
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
-        irotor = inode[xnode==s_rotor]
         i1 = inode[xnode==s_mb1]
         i2 = inode[xnode==s_mb2]
+        # Differences between direct annd geared
+        if direct:
+            itorq   = inode[xnode==s_rotor]
+            m_torq  = m_rotor
+            cm_torq = cm_rotor
+            I_torq  = I_rotor
+        else:
+            itorq   = inode[0]
+            m_torq  = m_gearbox
+            cm_torq = cm_gearbox
+            I_torq  = I_gearbox
         # ------------------------------------
         
         # ------ reaction data ------------
         # Reactions at main bearings
-        rnode = np.r_[i1, i2, irotor]
+        rnode = np.r_[i1, i2, itorq]
         Rx  = np.array([RIGID, FREE, FREE]) # Upwind bearing restricts translational
         Ry  = np.array([RIGID, FREE, FREE]) # Upwind bearing restricts translational
         Rz  = np.array([RIGID, FREE, FREE]) # Upwind bearing restricts translational
@@ -194,7 +221,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         Ryy = np.array([FREE,  RIGID, FREE]) # downwind bearing carry moments
         Rzz = np.array([FREE,  RIGID, FREE]) # downwind bearing carry moments
         # George's way
-        #rnode = np.r_[irotor, i1, i2]
+        #rnode = np.r_[itorq, i1, i2]
         #Rx  = np.array([FREE,  RIGID, FREE]) # WHY?
         #Ry  = np.array([FREE,  RIGID, RIGID]) # WHY?
         #Rz  = np.array([FREE,  RIGID, RIGID]) # WHY?
@@ -205,18 +232,18 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         # -----------------------------------
 
         # ------ frame element data ------------
-        shaftcyl = tube.Tube(nodal2sectional(D_shaft)[0], nodal2sectional(t_shaft)[0])
+        lsscyl = tube.Tube(nodal2sectional(D_lss)[0], nodal2sectional(t_lss)[0])
         ielement = np.arange(1, n)
         N1       = np.arange(1, n)
         N2       = np.arange(2, n+1)
         roll     = np.zeros(n-1)
         myones   = np.ones(n-1)
-        Ax = shaftcyl.Area
-        As = shaftcyl.Asx
-        S  = shaftcyl.S
-        C  = shaftcyl.C
-        J0 = shaftcyl.J0
-        Jx = shaftcyl.Jxx
+        Ax = lsscyl.Area
+        As = lsscyl.Asx
+        S  = lsscyl.S
+        C  = lsscyl.C
+        J0 = lsscyl.J0
+        Jx = lsscyl.Jxx
         
         elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E*myones, G*myones, roll, rho*myones)
         # -----------------------------------
@@ -230,10 +257,13 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         # initialize frameDD3 object
         myframe = frame3dd.Frame(nodes, reactions, elements, options)
 
-        # ------ add hub and generator rotor extra mass ------------
-        myframe.changeExtraNodeMass(np.r_[1, irotor], [m_hub, m_rotor],
-                                    [I_hub[0], I_rotor[0]], [I_hub[1], I_rotor[1]], [I_hub[2], I_rotor[2]], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0],
-                                    [cm_hub, cm_rotor], [0.0, 0.0], [0.0, 0.0], True)
+        # ------ add hub and generator rotor (direct) or gearbox (geared) extra mass ------------
+        myframe.changeExtraNodeMass(np.r_[1, itorq], [m_hub, m_torq],
+                                    [I_hub[0], I_torq[0]],
+                                    [I_hub[1], I_torq[1]],
+                                    [I_hub[2], I_torq[2]],
+                                    [0.0, 0.0], [0.0, 0.0], [0.0, 0.0],
+                                    [cm_hub, cm_torq], [0.0, 0.0], [0.0, 0.0], True)
         # ------------------------------------
 
         # ------- NO dynamic analysis ----------
@@ -241,7 +271,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         # ----------------------------
 
         # ------ static load cases ------------
-        n_dlcs   = self.options['n_dlcs']
+        n_dlcs = self.options['n_dlcs']
         gy = 0.0
         gx = -gravity*np.sin(tilt)
         gz = -gravity*np.cos(tilt)
@@ -250,7 +280,7 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
             load = frame3dd.StaticLoadCase(gx, gy, gz)
             
             # point loads
-            # TODO: Are input loads aligned with the shaft? If so they need to be rotated.
+            # TODO: Are input loads aligned with the lss? If so they need to be rotated.
             load.changePointLoads([inode[-1]], [F_hub[0,k]], [F_hub[1,k]], [F_hub[2,k]], [M_hub[0,k]], [M_hub[1,k]], [M_hub[2,k]])
             # -----------------------------------
 
@@ -261,22 +291,22 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
-        rotor_deflection = np.zeros(n_dlcs)
-        rotor_rotation   = np.zeros(n_dlcs)
+        rotor_gearbox_deflection = np.zeros(n_dlcs)
+        rotor_gearbox_rotation   = np.zeros(n_dlcs)
         outputs['F_mb1'] = np.zeros((3, n_dlcs))
         outputs['F_mb2'] = np.zeros((3, n_dlcs))
-        outputs['F_rotor'] = np.zeros((3, n_dlcs))
+        outputs['F_torq'] = np.zeros((3, n_dlcs))
         outputs['M_mb1'] = np.zeros((3, n_dlcs))
         outputs['M_mb2'] = np.zeros((3, n_dlcs))
-        outputs['M_rotor'] = np.zeros((3, n_dlcs))
-        outputs['rotor_axial_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['rotor_shear_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['rotor_bending_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['constr_rotor_vonmises'] = np.zeros((n-1, n_dlcs))
+        outputs['M_torq'] = np.zeros((3, n_dlcs))
+        outputs['torq_axial_stress'] = np.zeros((n-1, n_dlcs))
+        outputs['torq_shear_stress'] = np.zeros((n-1, n_dlcs))
+        outputs['torq_bending_stress'] = np.zeros((n-1, n_dlcs))
+        outputs['constr_torq_vonmises'] = np.zeros((n-1, n_dlcs))
         for k in range(n_dlcs):
-            # Deflections and rotations at rotor attachment
-            rotor_deflection[k] = np.sqrt(displacements.dx[k,irotor-1]**2 + displacements.dy[k,irotor-1]**2 + displacements.dz[k,irotor-1]**2)
-            rotor_rotation[k]   = displacements.dxrot[k,irotor-1] + displacements.dyrot[k,irotor-1] + displacements.dzrot[k,irotor-1]
+            # Deflections and rotations at torq attachment
+            rotor_gearbox_deflection[k] = np.sqrt(displacements.dx[k,itorq-1]**2 + displacements.dy[k,itorq-1]**2 + displacements.dz[k,itorq-1]**2)
+            rotor_gearbox_rotation[k]   = displacements.dxrot[k,itorq-1] + displacements.dyrot[k,itorq-1] + displacements.dzrot[k,itorq-1]
             
             # shear and bending, one per element (convert from local to global c.s.)
             Fz =  forces.Nx[k, 1::2]
@@ -292,20 +322,20 @@ class Hub_Rotor_Shaft_Frame(om.ExplicitComponent):
             # Record total forces and moments
             outputs['F_mb1'][:,k]   = -1.0 * np.array([reactions.Fx[k,0], reactions.Fy[k,0], reactions.Fz[k,0]])
             outputs['F_mb2'][:,k]   = -1.0 * np.array([reactions.Fx[k,1], reactions.Fy[k,1], reactions.Fz[k,1]])
-            outputs['F_rotor'][:,k] = -1.0 * np.array([reactions.Fx[k,2], reactions.Fy[k,2], reactions.Fz[k,2]])
+            outputs['F_torq'][:,k]  = -1.0 * np.array([reactions.Fx[k,2], reactions.Fy[k,2], reactions.Fz[k,2]])
             outputs['M_mb1'][:,k]   = -1.0 * np.array([reactions.Mxx[k,0], reactions.Myy[k,0], reactions.Mzz[k,0]])
             outputs['M_mb2'][:,k]   = -1.0 * np.array([reactions.Mxx[k,1], reactions.Myy[k,1], reactions.Mzz[k,1]])
-            outputs['M_rotor'][:,k] = -1.0 * np.array([reactions.Mxx[k,2], reactions.Myy[k,2], reactions.Mzz[k,2]])
-            outputs['rotor_axial_stress'][:,k] = np.abs(Fz)/Ax + M/S
-            outputs['rotor_shear_stress'][:,k] = 2.0*F/As + np.abs(Mzz)/C
+            outputs['M_torq'][:,k]  = -1.0 * np.array([reactions.Mxx[k,2], reactions.Myy[k,2], reactions.Mzz[k,2]])
+            outputs['torq_axial_stress'][:,k] = np.abs(Fz)/Ax + M/S
+            outputs['torq_shear_stress'][:,k] = 2.0*F/As + np.abs(Mzz)/C
             hoop = np.zeros(F.shape)
         
-            outputs['constr_rotor_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['rotor_axial_stress'][:,k],
-                                                                                   hoop,
-                                                                                   outputs['rotor_shear_stress'][:,k],
-                                                                                   gamma_f*gamma_m*gamma_n, sigma_y)
-        outputs['rotor_deflection'] = rotor_deflection.max()
-        outputs['rotor_rotation']  = rotor_rotation.max()
+            outputs['constr_torq_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['torq_axial_stress'][:,k],
+                                                                                  hoop,
+                                                                                  outputs['torq_shear_stress'][:,k],
+                                                                                  gamma_f*gamma_m*gamma_n, sigma_y)
+        outputs['torq_deflection'] = rotor_gearbox_deflection.max()
+        outputs['torq_rotation']   = rotor_gearbox_rotation.max()
     
 
 class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
@@ -317,7 +347,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
     upwind : boolean
         Flag whether the design is upwind or downwind
     tilt : float, [deg]
-        Shaft tilt
+        Lss tilt
     s_nose : numpy array[6], [m]
         Discretized s-coordinates along drivetrain, measured from bedplate
     D_nose : numpy array[6], [m]
@@ -357,7 +387,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
     mb2_max_defl_ang : float, [rad]
         Maximum allowable deflection angle
     s_stator : float, [m]
-        Generator stator attachment to shaft s-coordinate measured from bedplate
+        Generator stator attachment to lss s-coordinate measured from bedplate
     m_stator : float, [kg]
         Generator stator mass
     cm_stator : float, [kg]

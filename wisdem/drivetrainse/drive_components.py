@@ -43,7 +43,6 @@ class MainBearing(om.ExplicitComponent):
         if type(discrete_inputs['bearing_type']) != type(''): raise ValueError('Bearing type input must be a string')
         btype = discrete_inputs['bearing_type'].upper()
         D_shaft = inputs['D_shaft']
-        D_bearing = inputs['D_bearing']
         
         # assume low load rating for bearing
         if btype == 'CARB':  # p = Fr, so X=1, Y=0
@@ -69,7 +68,7 @@ class MainBearing(om.ExplicitComponent):
         #elif btype == 'TRB1':
         #    face_width = 0.0740
         #    mass = 92.863 * D_shaft**.8399
-        #    max_ang = 3.0 / 60.0 / 180.0 * np.pi
+        #    max_ang = np.deg2rad(3.0 / 60.0)
 
         elif btype == 'TRB':
             face_width = 0.1499 * D_shaft
@@ -83,6 +82,7 @@ class MainBearing(om.ExplicitComponent):
         mass += mass*(8000.0/2700.0)  
 
         # Consider the bearings a torus for MoI (https://en.wikipedia.org/wiki/List_of_moments_of_inertia)
+        D_bearing = inputs['D_bearing'] if inputs['D_bearing'] > 0.0 else face_width
         I0 = 0.25*mass  * (4*(0.5*D_shaft)**2 + 3*(0.5*D_bearing)**2)
         I1 = 0.125*mass * (4*(0.5*D_shaft)**2 + 5*(0.5*D_bearing)**2)
         I = np.r_[I0, I1, I1]

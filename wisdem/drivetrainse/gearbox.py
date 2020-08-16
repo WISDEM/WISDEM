@@ -99,6 +99,7 @@ class Gearbox(om.ExplicitComponent):
         self.add_input('gear_ratio', val=1.0)
         self.add_input('rotor_diameter', val=0.0, units='m')
         self.add_input('rotor_torque', val=0.0, units='N*m')
+        self.add_input('machine_rating', val=0.0, units='kW')
 
         self.add_output('stage_ratios', val=np.zeros(3))
         self.add_output('gearbox_mass', 0.0, units='kg')
@@ -120,6 +121,7 @@ class Gearbox(om.ExplicitComponent):
         gear_ratio   = inputs['gear_ratio']
         D_rotor      = inputs['rotor_diameter']
         torque       = inputs['rotor_torque']
+        rating       = inputs['machine_rating']
 
         # Known configuration checks
         if not config.lower() in ['eep','eep_2','eep_3','epp']:
@@ -188,7 +190,12 @@ class Gearbox(om.ExplicitComponent):
         Kshaft = 1.0 if shaft_factor == 'normal' else 1.25
 
         # All factors into the mass
-        m_gearbox = K * vol.sum()
+        m_gearbox = K*Kshaft * vol.sum()
+
+        # Other gearbox elements that are just estimates: shrink disc and carrier
+        m_shrink_disc = rating / 3.
+        m_carrier = 8e3
+        m_gearbox += m_shrink_disc + m_carrier
         
         # calculate mass properties
         L_gearbox = (0.012 * D_rotor)
