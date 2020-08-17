@@ -43,7 +43,7 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
                     ax.plot(iterations, rec_data[param])
                     ax.set(xlabel='Number of Iterations' , ylabel=param)
                     fig_name = 'Convergence_trend_' + param + '.png'
-                    fig.savefig(folder_output + fig_name)
+                    fig.savefig(os.path.join(folder_output , fig_name))
                     plt.close(fig)
 
 class Outputs_2_Screen(om.ExplicitComponent):

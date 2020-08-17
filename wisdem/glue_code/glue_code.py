@@ -259,12 +259,12 @@ class WT_RNTA(Group):
 
             self.connect('drivese.top_F',                   'freq_tower.pre.rna_F')
             self.connect('drivese.top_M',                   'freq_tower.pre.rna_M')
-            self.connect('drivese.rna_I_TT',               ['freq_tower.rna_I','freq_tower.pre.mI'])
-            self.connect('drivese.rna_cm',                 ['freq_tower.rna_cg','freq_tower.pre.mrho'])
-            self.connect('drivese.rna_mass',               ['freq_tower.rna_mass','freq_tower.pre.mass'])
+            self.connect('drivese.rna_I_TT',                'freq_tower.rna_I')
+            self.connect('drivese.rna_cm',                  'freq_tower.rna_cg')
+            self.connect('drivese.rna_mass',                'freq_tower.rna_mass')
             self.connect('sse.gust.V_gust',                 'freq_tower.wind.Uref')
-            self.connect('assembly.hub_height',             'freq_tower.wind.zref')  # TODO- environment
-            self.connect('foundation.height',               'freq_tower.wind.z0') # TODO- environment
+            self.connect('assembly.hub_height',             'freq_tower.wind_reference_height')  # TODO- environment
+            self.connect('foundation.height',               'freq_tower.wind_z0') # TODO- environment
             self.connect('env.rho_air',                     'freq_tower.rho_air')
             self.connect('env.mu_air',                      'freq_tower.mu_air')                    
             self.connect('env.shear_exp',                   'freq_tower.shearExp')                    

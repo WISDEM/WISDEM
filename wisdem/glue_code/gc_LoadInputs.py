@@ -43,7 +43,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options['openfast']['fst_vt']   = fast.fst_vt
 
             if os.path.exists(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']):
-                self.modeling_options['openfast']['fst_settings'] = dict(load_yaml(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']))
+                self.modeling_options['openfast']['fst_settings'] = dict(sch.load_yaml(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']))
             else:
                 print('WARNING: OpenFAST is called, but no file with settings is found.')
                 self.modeling_options['openfast']['fst_settings'] = {}
@@ -213,15 +213,23 @@ class WindTurbineOntologyPython(object):
         blade_opt_options = self.analysis_options['optimization_variables']['blade']
         if not blade_opt_options['aero_shape']['twist']['flag']:
             blade_opt_options['aero_shape']['twist']['n_opt'] = self.modeling_options['rotorse']['n_span']
+        elif blade_opt_options['aero_shape']['twist']['n_opt'] < 4:
+                raise ValueError('Cannot optimize twist with less than 4 control points along blade span')
             
         if not blade_opt_options['aero_shape']['chord']['flag']:
             blade_opt_options['aero_shape']['chord']['n_opt'] = self.modeling_options['rotorse']['n_span']
+        elif blade_opt_options['aero_shape']['chord']['n_opt'] < 4:
+                raise ValueError('Cannot optimize chord with less than 4 control points along blade span')
             
         if not blade_opt_options['structure']['spar_cap_ss']['flag']:
             blade_opt_options['structure']['spar_cap_ss']['n_opt'] = self.modeling_options['rotorse']['n_span']
+        elif blade_opt_options['structure']['spar_cap_ss']['n_opt'] < 4:
+                raise ValueError('Cannot optimize spar cap suction side with less than 4 control points along blade span')
 
         if not blade_opt_options['structure']['spar_cap_ps']['flag']:
             blade_opt_options['structure']['spar_cap_ps']['n_opt'] = self.modeling_options['rotorse']['n_span']
+        elif blade_opt_options['structure']['spar_cap_ps']['n_opt'] < 4:
+                raise ValueError('Cannot optimize spar cap pressure side with less than 4 control points along blade span')
 
         
         
