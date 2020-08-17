@@ -54,7 +54,7 @@ class WT_RNTA(Group):
                                                 topLevelFlag=False))
         if modeling_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
-        self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
+            self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['general']['verbosity']))
 
         # Conncetions to ccblade
@@ -79,7 +79,8 @@ class WT_RNTA(Group):
         self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweep', src_indices=[(i, 1) for i in np.arange(n_span)])
         self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweepTip', src_indices=[(-1, 1)])
         self.connect('configuration.n_blades',          'ccblade.nBlades')
-        self.connect('control.rated_pitch' ,            'ccblade.pitch')
+        if modeling_options['flags']['control']:
+            self.connect('control.rated_pitch' ,            'ccblade.pitch')
         self.connect('pc.tsr_opt',                      'ccblade.tsr')
         self.connect('env.rho_air',                     'ccblade.rho')
         self.connect('env.mu_air',                      'ccblade.mu')
@@ -164,7 +165,8 @@ class WT_RNTA(Group):
         self.connect('env.rho_air',                           'xf.rho_air')
         self.connect('env.mu_air',                            'xf.mu_air')
         self.connect('pc.tsr_opt',                            'xf.rated_TSR')
-        self.connect('control.max_TS',                        'xf.max_TS')
+        if modeling_options['flags']['control']:
+            self.connect('control.max_TS',                        'xf.max_TS')
         self.connect('blade.interp_airfoils.cl_interp',       'xf.cl_interp')
         self.connect('blade.interp_airfoils.cd_interp',       'xf.cd_interp')
         self.connect('blade.interp_airfoils.cm_interp',       'xf.cm_interp')
@@ -612,7 +614,8 @@ class WT_RNTA(Group):
 
         # Connections to turbine capital cost
         self.connect('configuration.n_blades',      'tcc.blade_number')
-        self.connect('control.rated_power',         'tcc.machine_rating')
+        if modeling_options['flags']['control']:
+            self.connect('control.rated_power',         'tcc.machine_rating')
         self.connect('elastic.precomp.blade_mass',  'tcc.blade_mass')
         self.connect('elastic.precomp.total_blade_cost',  'tcc.blade_cost_external')
         if modeling_options['Analysis_Flags']['DriveSE']:
@@ -732,7 +735,8 @@ class WindPark(Group):
             else:
                 self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
         # Inputs to plantfinancese from input yaml
-        self.connect('control.rated_power',     'financese.machine_rating')
+        if modeling_options['flags']['control']:
+            self.connect('control.rated_power',     'financese.machine_rating')
         self.connect('costs.turbine_number',    'financese.turbine_number')
         self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
         self.connect('costs.offset_tcc_per_kW', 'financese.offset_tcc_per_kW')

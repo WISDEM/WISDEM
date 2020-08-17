@@ -151,7 +151,7 @@ class WindTurbineOntologyPython(object):
         if flags['bos']: flags['bos'] = self.modeling_options['Analysis_Flags']['BOS']
         if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE']
         if flags['tower']: flags['tower'] = self.modeling_options['Analysis_Flags']['TowerSE']
-        if flags['control']: flags['control'] = self.modeling_options['Analysis_Flags']['ServoSE']
+        # if flags['control']: flags['control'] = self.modeling_options['Analysis_Flags']['ServoSE']
 
         # Blades and airfoils
         if flags['blade'] and not flags['airfoils']:
@@ -393,13 +393,14 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['RNA']['elastic_properties_mb']['center_mass'] = wt_opt['drivese.rna_cm'].tolist()
 
         # Update controller
-        self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])
-        self.wt_init['control']['PC_omega'] = float(wt_opt['control.PC_omega'])
-        self.wt_init['control']['PC_zeta']  = float(wt_opt['control.PC_zeta'])
-        self.wt_init['control']['VS_omega'] = float(wt_opt['control.VS_omega'])
-        self.wt_init['control']['VS_zeta']  = float(wt_opt['control.VS_zeta'])
-        self.wt_init['control']['Flp_omega']= float(wt_opt['control.Flp_omega'])
-        self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
+        if self.modeling_options['flags']['control']:
+            self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])
+            self.wt_init['control']['PC_omega'] = float(wt_opt['control.PC_omega'])
+            self.wt_init['control']['PC_zeta']  = float(wt_opt['control.PC_zeta'])
+            self.wt_init['control']['VS_omega'] = float(wt_opt['control.VS_omega'])
+            self.wt_init['control']['VS_zeta']  = float(wt_opt['control.VS_zeta'])
+            self.wt_init['control']['Flp_omega']= float(wt_opt['control.Flp_omega'])
+            self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
 
         # Write yaml with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
