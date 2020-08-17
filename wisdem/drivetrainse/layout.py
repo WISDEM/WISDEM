@@ -312,7 +312,7 @@ class DirectLayout(om.ExplicitComponent):
         # Mass and MoI properties
         x_c_sec = util.nodal2sectional( x_c )[0]
         z_c_sec = util.nodal2sectional( z_c )[0]
-        R_c_sec = np.sqrt( x_c_sec**2 + z_c_sec**2 )
+        #R_c_sec = np.sqrt( x_c_sec**2 + z_c_sec**2 ) # unnecesary
         mass    = util.nodal2sectional(A_bed)[0] * arc * rho
         mass_tot = mass.sum()
         cm      = np.array([np.sum(mass*x_c_sec), 0.0, np.sum(mass*z_c_sec)]) / mass_tot
@@ -525,89 +525,67 @@ class GearedLayout(om.ExplicitComponent):
         self.add_discrete_input('upwind', True)
         self.add_input('L_12', 0.0, units='m')
         self.add_input('L_h1', 0.0, units='m')
-        self.add_input('L_2n', 0.0, units='m')
-        self.add_input('L_grs', 0.0, units='m')
-        self.add_input('L_gsn', 0.0, units='m')
-        self.add_input('L_bedplate', 0.0, units='m')
-        self.add_input('H_bedplate', 0.0, units='m')
         self.add_input('tilt', 0.0, units='deg')
-        self.add_input('access_diameter', 0.0, units='m')
         self.add_input('lss_diameter', np.zeros(5), units='m')
-        self.add_input('nose_diameter', np.zeros(5), units='m')
         self.add_input('D_top', 0.0, units='m')
         self.add_input('lss_wall_thickness', np.zeros(5), units='m')
-        self.add_input('nose_wall_thickness', np.zeros(5), units='m')
         self.add_input('bedplate_wall_thickness', np.zeros(n_points), units='m')
         self.add_input('rho', val=0.0, units='kg/m**3')
+        self.add_input('overhang', 0.0, units='m')
+        self.add_input('drive_height', 0.0, units='m')
 
-        self.add_output('overhang', 0.0, units='m')
-        self.add_output('drive_height', 0.0, units='m')
-        self.add_output('L_nose', 0.0, units='m')
+        self.add_output('L_bedplate', 0.0, units='m')
+        self.add_output('H_bedplate', 0.0, units='m')
         self.add_output('L_lss', 0.0, units='m')
         self.add_output('L_generator', 0.0, units='m')
         self.add_output('L_drive', 0.0, units='m')
-        self.add_output('D_bearing1', 0.0, units='m')
-        self.add_output('D_bearing2', 0.0, units='m')
         self.add_output('constr_access', np.zeros(5), units='m')
         self.add_output('constr_L_grs', 0.0, units='m')
         self.add_output('constr_L_gsn', 0.0, units='m')
-        self.add_output('s_nose', val=np.zeros(6), units='m')
-        self.add_output('D_nose', val=np.zeros(6), units='m')
-        self.add_output('t_nose', val=np.zeros(6), units='m')
-        self.add_output('nose_mass', val=0.0, units='kg')
-        self.add_output('nose_cm', val=0.0, units='m')
-        self.add_output('nose_I', val=np.zeros(3), units='kg*m**2')
+        self.add_output('s_hss', val=np.zeros(6), units='m')
+        self.add_output('hss_mass', val=0.0, units='kg')
+        self.add_output('hss_cm', val=0.0, units='m')
+        self.add_output('hss_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('s_lss', val=np.zeros(6), units='m')
-        self.add_output('D_lss', val=np.zeros(6), units='m')
-        self.add_output('t_lss', val=np.zeros(6), units='m')
         self.add_output('lss_mass', val=0.0, units='kg')
         self.add_output('lss_cm', val=0.0, units='m')
         self.add_output('lss_I', val=np.zeros(3), units='kg*m**2')
-        self.add_output('x_bedplate', val=np.zeros(n_points), units='m')
-        self.add_output('z_bedplate', val=np.zeros(n_points), units='m')
-        self.add_output('x_bedplate_inner', val=np.zeros(n_points), units='m')
-        self.add_output('z_bedplate_inner', val=np.zeros(n_points), units='m')
-        self.add_output('x_bedplate_outer', val=np.zeros(n_points), units='m')
-        self.add_output('z_bedplate_outer', val=np.zeros(n_points), units='m')
-        self.add_output('D_bedplate', val=np.zeros(n_points), units='m')
-        self.add_output('t_bedplate', val=np.zeros(n_points), units='m')
         self.add_output('bedplate_mass', val=0.0, units='kg')
         self.add_output('bedplate_cm', val=np.zeros(3), units='m')
         self.add_output('bedplate_I', val=np.zeros(6), units='kg*m**2')
         self.add_output('s_mb1', val=0.0, units='m')
         self.add_output('s_mb2', val=0.0, units='m')
-        self.add_output('s_stator', val=0.0, units='m')
-        self.add_output('s_rotor', val=0.0, units='m')
         self.add_output('generator_cm', val=0.0, units='m')
+        self.add_output('gearbox_cm', val=0.0, units='m')
+        
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        L_12       = float(inputs['L_12'])
-        L_h1       = float(inputs['L_h1'])
-        L_2n       = float(inputs['L_2n'])
-        L_grs      = float(inputs['L_grs'])
-        L_gsn      = float(inputs['L_gsn'])
-        L_bedplate = float(inputs['L_bedplate'])
-        H_bedplate = float(inputs['H_bedplate'])
-        tilt       = float(np.deg2rad(inputs['tilt']))
-        D_access   = float(inputs['access_diameter'])
-        D_nose     = inputs['nose_diameter']
-        D_lss    = inputs['lss_diameter']
-        D_top      = float(inputs['D_top'])
-        t_nose     = inputs['nose_wall_thickness']
-        t_lss    = inputs['lss_wall_thickness']
-        t_bed      = inputs['bedplate_wall_thickness']
         upwind     = discrete_inputs['upwind']
-        rho        = float(inputs['rho'])
+        Cup        = -1.0 if upwind else 1.0
+        L_12        = float(inputs['L_12'])
+        L_h1        = float(inputs['L_h1'])
+        L_hss       = float(inputs['L_hss'])
+        L_gearbox   = float(inputs['L_gearbox'])
+        L_generator = float(inputs['L_generator'])
+        L_overhang  = float(inputs['overhang'])
+        H_drive     = float(inputs['drive_height'])
+        tilt        = float(np.deg2rad(inputs['tilt']))
+        D_lss       = inputs['lss_diameter']
+        t_lss       = inputs['lss_wall_thickness']
+        D_hss       = inputs['hss_diameter']
+        t_hss       = inputs['hss_wall_thickness']
+        D_top       = float(inputs['D_top'])
+        rho         = float(inputs['rho'])
 
         # ------- Discretization ----------------
         # Length of lss and drivetrain length
         L_lss = L_12 + L_h1
         L_drive = L_lss + L_gearbox + L_hss + L_generator
         ds      = 0.5*np.ones(2)
-        s_drive = np.cumsum(np.r_[0.0, L_generator, L_hss*ds, L_gearbox, L_12*ds, L_h1*ds])
-        L_drive = s_drive[-1]
+        s_drive = np.cumsum(np.r_[0.0, L_generator*ds, L_hss*ds, L_gearbox*ds, L_12*ds, L_h1*ds])
+        L_drive = s_drive[-1] - s_drive[0]
         outputs['L_drive']  = L_drive
         outputs['L_lss'] = L_lss
 
@@ -615,19 +593,18 @@ class GearedLayout(om.ExplicitComponent):
         s_tower = s_drive[-1] - (L_overhang+0.5*D_top)/np.cos(tilt)
         s_drive -= s_tower
         
-        L_bedplate_hub = s_drive[-1]*np.cos(tilt)
-        L_bedplate_gen = -s_drive[0]*np.cos(tilt)
-        constr_length = L_bedplate_hub - (L_overhang+0.5*D_top) # Should be = 0
-        constr_length2 = L_bedplate_gen # Should be > 0
-        constr_height = drive_height - s_drive[-1]*np.tan(tilt) # Should be = 0
+        L_bedplate = L_drive*np.cos(tilt)
+        H_bedplate = H_drive - s_drive[-1]*np.sin(tilt) - 5e-2 # Subtract thickness of platform plate
+        outputs['L_bedplate'] = L_bedplate
+        outputs['H_bedplate'] = H_bedplate
         
         # Discretize the drivetrain from generator to hub
-        s_generator = s_drive[:2].mean()
-        s_mb1    = s_drive[-2]
-        s_mb2    = s_drive[-4]
-        s_gearbox = s_drive[4:6].mean()
-        s_lss  = s_drive[-4:]
-        s_hss  = s_drive[2:4]
+        s_generator = s_drive[:3].mean()
+        s_mb1       = s_drive[-2]
+        s_mb2       = s_drive[-4]
+        s_gearbox   = s_drive[5:7].mean()
+        s_lss       = s_drive[-4:]
+        s_hss       = s_drive[3:5]
 
         # Store outputs
         outputs['generator_cm'] = s_generator
@@ -638,18 +615,28 @@ class GearedLayout(om.ExplicitComponent):
         
         # ------- Constraints ----------------
         outputs['constr_length'] = L_drive*np.cos(tilt) - L_overhang - D_top # Should be > 0
-        outputs['constr_height'] = H_bedplate - 0.25*D_top # Should be > 0
+        outputs['constr_height'] = H_bedplate # Should be > 0
         # ------------------------------------
         
-        # ------- Nose, lss, and bearing properties ----------------
+        # ------- hss, lss, and bearing properties ----------------
         # Compute center of mass based on area
-        m_hss, cm_hss, I_hss = rod_prop(s_hss[:-1], D_hss, t_hss, rho)
-        outputs['nose_mass'] = m_nose
-        outputs['nose_cm']   = cm_nose
-        outputs['nose_I']    = I_nose
+        m_hss, cm_hss, I_hss = rod_prop(s_hss, D_hss, t_hss, rho)
+        outputs['hss_mass'] = m_hss
+        outputs['hss_cm']   = cm_hss
+        outputs['hss_I']    = I_hss
 
         m_lss, cm_lss, I_lss = rod_prop(s_lss, D_lss, t_lss, rho)
         outputs['lss_mass'] = m_lss
         outputs['lss_cm']   = cm_lss
         outputs['lss_I']    = I_lss
         
+        # ------- Bedplate I-beam properties ----------------
+        A_bed, zcg, Iyy, Izz = IBeamProperties(bed_h_web, bed_t_web, bed_w_flange, bed_t_flange, bed_w_flange, bed_t_flange)
+        m_bedplate = A_bed * L_bedplate * rho
+        cg_bedplate = np.r_[Cup*0.5*(L_bedplate-L_overhang), 0.0, zcg] # from tower top
+        I_bedplate = m_bedplate*np.r_[L_bedplate**2, Iyy, Izz]
+        outputs['bedplate_mass'] = m_bedplate
+        outputs['bedplate_cm']   = cg_bedplate
+        outputs['bedplate_I']    = I_bedplate
+        
+
