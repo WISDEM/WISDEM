@@ -1,14 +1,14 @@
 import traceback
 import math
 
-from .ManagementCost import ManagementCost
-from .FoundationCost import FoundationCost
-from .SubstationCost import SubstationCost
-from .GridConnectionCost import GridConnectionCost
-from .SitePreparationCost import SitePreparationCost
-from .CollectionCost import Cable, Array, ArraySystem
-from .ErectionCost import ErectionCost
-from .DevelopmentCost import DevelopmentCost
+from wisdem.landbosse.model.ManagementCost import ManagementCost
+from wisdem.landbosse.model.FoundationCost import FoundationCost
+from wisdem.landbosse.model.SubstationCost import SubstationCost
+from wisdem.landbosse.model.GridConnectionCost import GridConnectionCost
+from wisdem.landbosse.model.SitePreparationCost import SitePreparationCost
+from wisdem.landbosse.model.CollectionCost import Cable, Array, ArraySystem
+from wisdem.landbosse.model.ErectionCost import ErectionCost
+from wisdem.landbosse.model.DevelopmentCost import DevelopmentCost
 
 
 class Manager:
@@ -88,7 +88,7 @@ class Manager:
                 index = road_cost['Type of cost'] == 'Other'
                 other = road_cost[index]
                 amount_shorter_than_input_construction_time = (self.input_dict['construct_duration'] - self.output_dict['siteprep_construction_months'])
-                road_cost.at[index, 'Cost USD'] = other['Cost USD'] - amount_shorter_than_input_construction_time * 55500
+                road_cost.loc[index, 'Cost USD'] = other['Cost USD'] - amount_shorter_than_input_construction_time * 55500
                 self.output_dict['total_road_cost'] = road_cost
 
             total_costs = self.output_dict['total_collection_cost']

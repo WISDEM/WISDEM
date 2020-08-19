@@ -164,8 +164,8 @@ class PowerWind(WindBase):
         # rename
         z = inputs['z']
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])
-        zref = inputs['zref']
-        z0 = inputs['z0']
+        zref = float(inputs['zref'])
+        z0 = float(inputs['z0'])
 
         # velocity
         idx = z > z0
@@ -261,7 +261,7 @@ class LogWind(WindBase):
         super(LogWind, self).setup()
 
         # parameters
-        self.add_input('z_roughness', 0.0, units='mm')
+        self.add_input('z_roughness', 1e-3, units='mm')
 
         self.declare_partials('U', ['Uref','z','zref'])
 
@@ -270,14 +270,14 @@ class LogWind(WindBase):
         # rename
         z = inputs['z']
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])
-        zref = inputs['zref']
-        z0 = inputs['z0']
-        z_roughness = inputs['z_roughness']/1e3  # convert to m
+        zref = float(inputs['zref'])
+        z0 = float(inputs['z0'])
+        z_roughness = float(inputs['z_roughness'])/1e3  # convert to m
 
         # find velocity
-        idx = [z - z0 > z_roughness]
+        idx = np.where(z - z0 > z_roughness)[0]
         outputs['U'] = np.zeros_like(z)
-        outputs['U'][idx] = inputs['Uref']*np.log((z[idx] - z0)/z_roughness) / math.log((zref - z0)/z_roughness)
+        outputs['U'][idx] = inputs['Uref']*np.log((z[idx] - z0)/z_roughness) / np.log((zref - z0)/z_roughness)
 
 
     def compute_partials(self, inputs, J):
@@ -285,22 +285,22 @@ class LogWind(WindBase):
         # rename
         z = inputs['z']
         if isinstance(z, float) or isinstance(z,np.float_): z=np.array([z])
-        zref = inputs['zref']
-        z0 = inputs['z0']
-        z_roughness = inputs['z_roughness']/1e3
-        Uref = inputs['Uref']
+        zref = float(inputs['zref'])
+        z0 = float(inputs['z0'])
+        z_roughness = float(inputs['z_roughness'])/1e3
+        Uref = float(inputs['Uref'])
         npts = self.options['nPoints']
 
         dU_dUref = np.zeros(npts)
         dU_dz_diag = np.zeros(npts)
         dU_dzref = np.zeros(npts)
 
-        idx = [z - z0 > z_roughness]
+        idx = np.where(z - z0 > z_roughness)[0]
         lt = np.log((z[idx] - z0)/z_roughness)
-        lb = math.log((zref - z0)/z_roughness)
+        lb = np.log((zref - z0)/z_roughness)
         dU_dUref[idx] = lt/lb
         dU_dz_diag[idx] = Uref/lb / (z[idx] - z0)
-        dU_dzref[idx] = -Uref*lt / math.log((zref - z0)/z_roughness)**2 / (zref - z0)
+        dU_dzref[idx] = -Uref*lt / np.log((zref - z0)/z_roughness)**2 / (zref - z0)
 
         
         J['U', 'Uref'] = dU_dUref
@@ -418,6 +418,10 @@ class LinearWaves(WaveBase):
         outputs['p'][idx] = 0.0
 
     def compute_partials(self, inputs, J):
+        outputs = {}
+        self.compute(inputs, outputs)
+        
+        
         # rename
         z_floor = inputs['z_floor']
         if z_floor > 0.0: z_floor *= -1.0
@@ -428,6 +432,9 @@ class LinearWaves(WaveBase):
         k = self.k
         z_rel = z - inputs['z_surface']
 
+        # Amplitude
+        a = 0.5 * h
+        
         # derivatives
         dU_dz = h/2.0*omega*np.sinh(k*(z_rel + d))/np.sinh(k*d)*k
         dU_dUc = np.ones_like(z)
@@ -582,72 +589,3 @@ class TowerSoil(om.ExplicitComponent):
         J['k', 'd0'][ind] = 0.0
         J['k', 'depth'][ind] = 0.0
         
-
-
-
-
-
-
-if __name__ == '__main__':
-
-    z = np.linspace(1.0, 5, 100)
-    nPoints = len(z)
-
-    prob = om.Problem()
-
-    root = prob.model = om.Group()
-    root.add('p1', PowerWind(nPoints=nPoints))
-
-    prob.setup()
-
-    prob['p1.z'] = z
-    prob['p1.Uref'] = 10.0
-    prob['p1.zref'] = 100.0
-    prob['p1.z0'] = 1.0
-
-    prob['p1.shearExp'] = 0.2
-
-    prob.run_driver()
-
-    J = prob.check_total_derivatives(out_stream=None)
-    print(J)
-
-    #print(prob['p1.z'])
-
-    import matplotlib.pyplot as plt
-    plt.figure(1)
-    plt.plot(prob['p1.z'], prob['p1.U'], label='Power')
-
-
-
-
-    z = np.linspace(1.0, 5, 100)
-    nPoints = len(z)
-
-    prob = om.Problem()
-
-    root = prob.model = om.Group()
-    root.add('p1', LogWind(nPoints))
-    #root.add('p',om.IndepVarComp('zref',100.0))
-
-    #root.connect('p1.zref', 'p.zref')
-
-    prob.setup()
-
-    prob['p1.z'] = z
-    prob['p1.Uref'] = 10.0
-    prob['p1.zref'] = 100.0
-    prob['p1.z0'] = 1.0
-
-    #prob['p1.shearExp'] = 0.2
-
-    prob.run_driver()
-    #Jlog = prob.check_total_derivatives(out_stream=None)
-    #print(Jlog)
-
-    #print(prob['p1.z'])
-
-    import matplotlib.pyplot as plt
-    plt.plot(prob['p1.z'], prob['p1.U'], label='Log')
-    plt.legend()
-    plt.show()

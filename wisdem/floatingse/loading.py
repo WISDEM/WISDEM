@@ -7,9 +7,9 @@ from wisdem.commonse import gravity, eps, Tube, NFREQ
 import wisdem.commonse.UtilizationSupplement as util
 from wisdem.commonse.utilities import get_modal_coefficients
 import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
-from wisdem.commonse.environment import WaveBase, PowerWind
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, get_nfull, RIGID
+from wisdem.commonse.WindWaveDrag import CylinderWindDrag
+from wisdem.commonse.environment import PowerWind
+from wisdem.commonse.vertical_cylinder import get_nfull, RIGID
 from .map_mooring import NLINES_MAX
 
 
@@ -298,7 +298,7 @@ class FloatingFrame(om.ExplicitComponent):
         self.options.declare('n_height_main')
         self.options.declare('n_height_off')
         self.options.declare('n_height_tow')
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
         n_height_main = self.options['n_height_main']
@@ -541,7 +541,7 @@ class FloatingFrame(om.ExplicitComponent):
         F_mooring      = inputs['mooring_neutral_load']
         R_fairlead     = inputs['fairlead_radius']
 
-        opt = self.options['analysis_options']
+        opt = self.options['modeling_options']
         gamma_f      = opt['gamma_f']
         gamma_m      = opt['gamma_m']
         gamma_n      = opt['gamma_n']
@@ -1576,7 +1576,7 @@ class Loading(om.Group):
         self.options.declare('n_height_main')
         self.options.declare('n_height_off')
         self.options.declare('n_height_tow')
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
         n_height_main = self.options['n_height_main']
@@ -1586,22 +1586,12 @@ class Loading(om.Group):
         n_full_off    = get_nfull(n_height_off)
         n_full_tow    = get_nfull(n_height_tow)
         
-        # Independent variables that are unique to this Group
-        loadingIndeps = om.IndepVarComp()
-        loadingIndeps.add_output('main_pontoon_attach_lower', 0.0)
-        loadingIndeps.add_output('main_pontoon_attach_upper', 0.0)
-        loadingIndeps.add_output('pontoon_outer_diameter', 0.0, units='m')
-        loadingIndeps.add_output('pontoon_wall_thickness', 0.0, units='m')
-        loadingIndeps.add_output('outer_cross_pontoons_int', 1)
-        loadingIndeps.add_output('cross_attachment_pontoons_int', 1)
-        loadingIndeps.add_output('lower_attachment_pontoons_int', 1)
-        loadingIndeps.add_output('upper_attachment_pontoons_int', 1)
-        loadingIndeps.add_output('lower_ring_pontoons_int', 1)
-        loadingIndeps.add_output('upper_ring_pontoons_int', 1)
-        loadingIndeps.add_output('connection_ratio_max', 0.0)
-        loadingIndeps.add_output('fairlead_support_outer_diameter', 0.0, units='m')
-        loadingIndeps.add_output('fairlead_support_wall_thickness', 0.0, units='m')
-        self.add_subsystem('loadingIndeps', loadingIndeps, promotes=['*'])
+        self.set_input_defaults('outer_cross_pontoons_int', 1)
+        self.set_input_defaults('cross_attachment_pontoons_int', 1)
+        self.set_input_defaults('lower_attachment_pontoons_int', 1)
+        self.set_input_defaults('upper_attachment_pontoons_int', 1)
+        self.set_input_defaults('lower_ring_pontoons_int', 1)
+        self.set_input_defaults('upper_ring_pontoons_int', 1)
         
         # All the components
         self.add_subsystem('loadingWind', PowerWind(nPoints=n_full_tow), promotes=['z0','Uref','shearExp','zref'])
@@ -1610,7 +1600,7 @@ class Loading(om.Group):
         self.add_subsystem('frame', FloatingFrame(n_height_main=n_height_main,
                                                   n_height_off=n_height_off,
                                                   n_height_tow=n_height_tow,
-                                                  analysis_options=self.options['analysis_options']), promotes=['*'])
+                                                  modeling_options=self.options['modeling_options']), promotes=['*'])
         
         self.connect('loadingWind.U', 'windLoads.U')
         self.connect('windLoads.windLoads_Px', 'tower_Px')

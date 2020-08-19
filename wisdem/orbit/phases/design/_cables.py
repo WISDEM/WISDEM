@@ -10,6 +10,7 @@ import math
 from collections import Counter, OrderedDict
 
 import numpy as np
+from scipy.optimize import fsolve
 
 from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.phases.design import DesignPhase
@@ -303,11 +304,78 @@ class CableSystem(DesignPhase):
             )
         )
 
-        # Instantiate cables as Cable objects.
+        # Instantiate cables as Cable objects. Use "name" property from file
+        # instead of filename.
         self.cables = OrderedDict()
-        for name, specs in cables.items():
-            specs = {"name": name, **specs}
+        for specs in cables.values():
+            name = specs["name"]
             self.cables[name] = Cable(specs)
+
+    def _get_touchdown_distance(self):
+        """
+        Returns the cable touchdown distance measured from the centerpoint of
+        the substructure.
+
+        If depth <= 60, default is 0km (straight down assumed for fixed bottom).
+        If depth > 60, default is 0.3 * depth.
+        """
+
+        _design = f"{self.cable_type}_system_design"
+        depth = self.config["site"]["depth"]
+        touchdown = self.config[_design].get("touchdown_distance", None)
+
+        if touchdown is not None:
+            self.touchdown = touchdown
+
+        else:
+            if depth <= 60:
+                self.touchdown = 0
+
+            else:
+                self.touchdown = depth * 0.3
+
+    @staticmethod
+    def _catenary(a, *data):
+        """Simple catenary equation."""
+
+        d, h = data
+        res = a * np.cosh(h / a) - (d + a)
+        return res
+
+    def _get_catenary_length(self, d, h):
+        """
+        Returns the catenary length of a cable that touches down at depth `d`
+        and horizontal distance `h`.
+
+        Returns
+        -------
+        float
+            Catenary length.
+        """
+
+        a = fsolve(self._catenary, 8, (d, h))
+
+        x = np.linspace(0, h)
+        y = a * np.cosh(x / a) - a
+
+        if not np.isclose(y[-1], d):
+            print(
+                "Warning: Catenary calculation failed. Reverting to simple vertical profile."
+            )
+            return d
+
+        return np.trapz(np.sqrt(1 + np.gradient(y, x) ** 2), x)
+
+    @property
+    def free_cable_length(self):
+        """Returns the length of the vertical portion of a cable section in km."""
+
+        depth = self.config["site"]["depth"]
+
+        if not self.touchdown:
+            return depth / 1000
+
+        return self._get_catenary_length(depth, self.touchdown) / 1000
 
     @property
     def cable_lengths_by_type(self):
@@ -429,7 +497,17 @@ class CableSystem(DesignPhase):
             except AttributeError:
                 sections = self.cable_lengths_by_type[name]
 
-            sections = [(*el[:-1], el[-1]) for el in Counter(sections).items()]
+            try:
+                sections = [
+                    (data[0], count, *data[1:])
+                    for data, count in Counter(sections).items()
+                ]
+            except IndexError:
+                sections = [
+                    (*data[:-1], data[-1])
+                    for data in Counter(sections).items()
+                ]
+
             if sections:
                 _temp[name] = {
                     "cable_sections": sections,

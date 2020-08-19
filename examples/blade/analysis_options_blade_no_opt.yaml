@@ -1,3 +1,6 @@
+general:
+    folder_outputs: outputs
+    fname_outputs: blade_out
 optimization_variables:
   blade:
     aero_shape:

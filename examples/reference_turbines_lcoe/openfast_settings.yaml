@@ -12,6 +12,7 @@
 [AeroDyn15, TwrShadow] : False
 [AeroDyn15, TwrAero]   : False
 
+[Fst, CompElast]       : 1
 [Fst, CompSub]         : 0
 [ElastoDyn, PtfmSgDOF] : False
 [ElastoDyn, PtfmSwDOF] : False

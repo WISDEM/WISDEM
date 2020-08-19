@@ -1,9 +1,9 @@
-"""WISDEM Monopile API"""
+b'''WISDEM Monopile API'''
 
-__author__ = ["Jake Nunemaker"]
-__copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
-__maintainer__ = "Jake Nunemaker"
-__email__ = "jake.nunemaker@nrel.gov"
+__author__ = ['Jake Nunemaker']
+__copyright__ = 'Copyright 2020, National Renewable Energy Laboratory'
+__maintainer__ = 'Jake Nunemaker'
+__email__ = 'jake.nunemaker@nrel.gov'
 
 
 import os
@@ -14,38 +14,35 @@ import openmdao.api as om
 from wisdem.orbit import ProjectManager
 
 class Orbit(om.Group):
+
     def setup(self):
         
         # Define all input variables from all models
-        myIndeps = om.IndepVarComp()
-        myIndeps.add_discrete_output('wtiv', 'example_wtiv')
-        myIndeps.add_discrete_output('feeder', 'example_feeder')
-        myIndeps.add_discrete_output('num_feeders', 0)
-        myIndeps.add_discrete_output('oss_install_vessel', 'example_heavy_lift_vessel')
-        myIndeps.add_output('site_distance', 0.0, units='km')
-        myIndeps.add_output('site_distance_to_landfall', 40.0, units='km')
-        myIndeps.add_output('site_distance_to_interconnection', 40.0, units='km')
-        myIndeps.add_output('plant_turbine_spacing', 7)
-        myIndeps.add_output('plant_row_spacing', 7)
-        myIndeps.add_output('plant_substation_distance', 1, units='km')
-        myIndeps.add_output('tower_deck_space', 0., units='m**2')
-        myIndeps.add_output('nacelle_deck_space', 0., units='m**2')
-        myIndeps.add_output('blade_deck_space', 0., units='m**2')
-        myIndeps.add_output('port_cost_per_month', 2e6, units='USD/mo')
-        myIndeps.add_output('monopile_deck_space', 0., units='m**2')
-        myIndeps.add_output('transition_piece_deck_space', 0., units='m**2')
-        myIndeps.add_output('commissioning_pct', 0.01)
-        myIndeps.add_output('decommissioning_pct', 0.15)
-        self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
-
+        self.set_input_defaults('wtiv', 'example_wtiv')
+        self.set_input_defaults('feeder', 'example_feeder')
+        self.set_input_defaults('oss_install_vessel', 'example_heavy_lift_vessel')
+        self.set_input_defaults('site_distance_to_landfall', 40.0, units='km')
+        self.set_input_defaults('interconnection_distance', 40.0, units='km')
+        self.set_input_defaults('plant_turbine_spacing', 7)
+        self.set_input_defaults('plant_row_spacing', 7)
+        self.set_input_defaults('plant_substation_distance', 1, units='km')
+        self.set_input_defaults('port_cost_per_month', 2e6, units='USD/mo')
+        self.set_input_defaults('commissioning_pct', 0.01)
+        self.set_input_defaults('decommissioning_pct', 0.15)
+        self.set_input_defaults('site_auction_price', 100e6, units='USD')
+        self.set_input_defaults('site_assessment_plan_cost', 1e6, units='USD')
+        self.set_input_defaults('site_assessment_cost', 25e6, units='USD')
+        self.set_input_defaults('construction_operations_plan_cost', 2.5e6, units='USD')
+        self.set_input_defaults('design_install_plan_cost', 2.5e6, units='USD')        
+        
         self.add_subsystem('orbit', OrbitWisdemFixed(), promotes=['*'])
         
 
 class OrbitWisdemFixed(om.ExplicitComponent):
-    """ORBIT-WISDEM Fixed Substructure API"""
+    '''ORBIT-WISDEM Fixed Substructure API'''
 
     def setup(self):
-        """"""
+        ''''''
         # Inputs
         # self.add_discrete_input('weather_file', 'block_island', desc='Weather file to use for installation times.')
 
@@ -94,9 +91,17 @@ class OrbitWisdemFixed(om.ExplicitComponent):
         self.add_input('transition_piece_mass', 250., units='t', desc='mass of an individual transition piece.')
         self.add_input('transition_piece_deck_space', 0., units='m**2', desc='Deck space required to transport a transition piece. Defaults to 0 in order to not be a constraint on installation.')
 
+        # Project
+        self.add_input('site_auction_price', 100e6, units='USD', desc='Cost to secure site lease')
+        self.add_input('site_assessment_plan_cost', 1e6, units='USD', desc='Cost to do engineering plan for site assessment')
+        self.add_input('site_assessment_cost', 25e6, units='USD', desc='Cost to execute site assessment')
+        self.add_input('construction_operations_plan_cost', 2.5e6, units='USD', desc='Cost to do construction planning')
+        self.add_input('boem_review_cost', 0.0, units='USD', desc='Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)')
+        self.add_input('design_install_plan_cost', 2.5e6, units='USD', desc='Cost to do installation planning')
+
         # Other
-        self.add_input('commissioning_pct', 0.01, desc="Commissioning percent.")
-        self.add_input('decommissioning_pct', 0.15, desc="Decommissioning percent.")
+        self.add_input('commissioning_pct', 0.01, desc='Commissioning percent.')
+        self.add_input('decommissioning_pct', 0.15, desc='Decommissioning percent.')
 
         # Outputs
         # Totals
@@ -108,13 +113,12 @@ class OrbitWisdemFixed(om.ExplicitComponent):
 
 
     def compile_orbit_config_file(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        """"""
 
         config = {
             # Vessels
             'wtiv': discrete_inputs['wtiv'],
             'feeder': discrete_inputs['feeder'],
-            'num_feeders': discrete_inputs['num_feeders'],
+            'num_feeders': int(discrete_inputs['num_feeders']),
             'spi_vessel': 'example_scour_protection_vessel',
             'array_cable_install_vessel': 'example_cable_lay_vessel',
             'array_cable_bury_vessel': 'example_cable_lay_vessel',
@@ -135,7 +139,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
             
             'plant': {
                 'layout': 'grid',
-                'num_turbines': discrete_inputs['number_of_turbines'],
+                'num_turbines': int(discrete_inputs['number_of_turbines']),
                 'row_spacing': float(inputs['plant_row_spacing']),
                 'turbine_spacing': float(inputs['plant_turbine_spacing']),
                 'substation_distance': float(inputs['plant_substation_distance'])
@@ -167,7 +171,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 
                 'blade': {
                     'type': 'Blade',
-                    'number': float(discrete_inputs['number_of_blades']),
+                    'number': int(discrete_inputs['number_of_blades']),
                     'deck_space': float(inputs['blade_deck_space']),
                     'mass': float(inputs['blade_mass'])
                 }
@@ -194,33 +198,45 @@ class OrbitWisdemFixed(om.ExplicitComponent):
             
             # Electrical
             'array_system_design': {
-                'cables': ['XLPE_400mm_33kV', 'XLPE_630mm_33kV']
+                'cables': ['XLPE_630mm_66kV', 'XLPE_185mm_66kV'],
             },
 
             'export_system_design': {
-                'cables': 'XLPE_500mm_132kV',
+                'cables': 'XLPE_1000m_220kV',
+                'interconnection_distance': float(inputs['interconnection_distance']),
                 'percent_added_length': .1
             },
             
             # Phase Specific
-            "OffshoreSubstationInstallation": {
-                "oss_install_vessel": 'example_heavy_lift_vessel',
-                "feeder": "future_feeder",
-                "num_feeders": 1
+            'OffshoreSubstationInstallation': {
+                'oss_install_vessel': 'example_heavy_lift_vessel',
+                'feeder': 'future_feeder',
+                'num_feeders': 1
+            },
+
+            # Project development costs
+            'project_development': {
+                'site_auction_price': float(inputs['site_auction_price']), #100e6,
+                'site_assessment_plan_cost': float(inputs['site_assessment_plan_cost']), #1e6,
+                'site_assessment_cost': float(inputs['site_assessment_cost']), #25e6,
+                'construction_operations_plan_cost': float(inputs['construction_operations_plan_cost']), #2.5e6,
+                'boem_review_cost': float(inputs['boem_review_cost']), #0,
+                'design_install_plan_cost': float(inputs['design_install_plan_cost']), #2.5e6
             },
 
             # Other
-            "commissioning": float(inputs["commissioning_pct"]),
-            "decomissioning": float(inputs["decommissioning_pct"]),
-            "turbine_capex": float(inputs["turbine_capex"]),
+            'commissioning': float(inputs['commissioning_pct']),
+            'decomissioning': float(inputs['decommissioning_pct']),
+            'turbine_capex': float(inputs['turbine_capex']),
             
             # Phases
             'design_phases': [
-                "MonopileDesign",
-                "ScourProtectionDesign",
-                "ArraySystemDesign",
-                "ExportSystemDesign",
-                "OffshoreSubstationDesign"
+                'ProjectDevelopment',
+                #'MonopileDesign',
+                'ScourProtectionDesign',
+                'ArraySystemDesign',
+                'ExportSystemDesign',
+                'OffshoreSubstationDesign'
             ],
             
             'install_phases': [
@@ -229,7 +245,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
                 'TurbineInstallation',
                 'ArrayCableInstallation',
                 'ExportCableInstallation',
-                "OffshoreSubstationInstallation",
+                'OffshoreSubstationInstallation',
             ]
         }
 
@@ -251,7 +267,7 @@ class OrbitWisdemFixed(om.ExplicitComponent):
         outputs['installation_time'] = project.installation_time
         outputs['installation_capex'] = project.installation_capex
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     prob = om.Problem()
     prob.model = OrbitWisdemFixed()

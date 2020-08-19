@@ -1,22 +1,12 @@
-try:
-    import ruamel_yaml as ry
-except:
-    try:
-        import ruamel.yaml as ry
-    except:
-        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
-
 import numpy as np
 import os, sys, time
-import matplotlib.pyplot as plt
 import openmdao.api as om
 from wisdem.glue_code.gc_LoadInputs   import WindTurbineOntologyPython
-from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
-from wisdem.glue_code.gc_RunTools     import Opt_Data, Convergence_Trends_Opt, Outputs_2_Screen
 from wisdem.glue_code.glue_code       import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
+from wisdem.schema                    import load_yaml
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -24,78 +14,16 @@ if MPI:
     #from petsc4py import PETSc
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
-def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_wt_output, folder_output):
-    # Main function to run a wind turbine wisdem assembly
-    
-    # Create an Opt_Data instance, which is a container for the optimization
-    # parameters as described in by the yaml file. Also set the folder output.
-    optimization_data       = Opt_Data()
-    optimization_data.fname_opt_options = fname_opt_options
-    optimization_data.folder_output     = folder_output    
-
-    # Load yaml for turbine description into a pure python data structure.
-    wt_initial                   = WindTurbineOntologyPython()
-    analysis_options, wt_init    = wt_initial.initialize(fname_wt_input, fname_analysis_options)
-    opt_options = optimization_data.initialize()
-    
-    # Assume we're not doing optimization unless an opt_flag is true in the
-    # optimization yaml
-    opt_options['opt_flag']    = False
-    
-    # ----------------------------------------------------------------------
-    # Loop through all optimization variables, setting opt_flag to true
-    # if any of these variables are set to optimize. If it's not an optimization
-    # DV, set the number of optimization points to be the same as the number
-    # of discretization points. 
-    # ----------------------------------------------------------------------
-
-    # Blade optimization variables
-    blade_opt_options = opt_options['optimization_variables']['blade']
-    if blade_opt_options['aero_shape']['twist']['flag']:
-        opt_options['opt_flag'] = True
-    else:
-        blade_opt_options['aero_shape']['twist']['n_opt'] = analysis_options['rotorse']['n_span']
-    if blade_opt_options['aero_shape']['chord']['flag']:
-        opt_options['opt_flag'] = True
-    else:
-        blade_opt_options['aero_shape']['chord']['n_opt'] = analysis_options['rotorse']['n_span']
-    if blade_opt_options['aero_shape']['af_positions']['flag']:
-        opt_options['opt_flag'] = True
-    if blade_opt_options['structure']['spar_cap_ss']['flag']:
-        opt_options['opt_flag'] = True
-    else:
-        blade_opt_options['structure']['spar_cap_ss']['n_opt'] = analysis_options['rotorse']['n_span']
-    if blade_opt_options['structure']['spar_cap_ps']['flag']:
-        opt_options['opt_flag'] = True
-    else:
-        blade_opt_options['structure']['spar_cap_ps']['n_opt'] = analysis_options['rotorse']['n_span']
-
-    # 'dac' is an optional setting, so we check if it's in the yaml-produced dict
-    if 'dac' in blade_opt_options:
-        if blade_opt_options['dac']['te_flap_end']['flag'] or blade_opt_options['dac']['te_flap_ext']['flag']:
-            opt_options['opt_flag'] = True
-
-    # Tower optimization variables
-    tower_opt_options = opt_options['optimization_variables']['tower']
-    if tower_opt_options['outer_diameter']['flag']:
-        opt_options['opt_flag'] = True
-    if tower_opt_options['layer_thickness']['flag']:
-        opt_options['opt_flag'] = True
-        
-    # Servo optimization variables
-    control_opt_options = opt_options['optimization_variables']['control']
-    if control_opt_options['tsr']['flag']:
-        opt_options['opt_flag'] = True
-    if control_opt_options['servo']['pitch_control']['flag']:
-        opt_options['opt_flag'] = True
-    if control_opt_options['servo']['torque_control']['flag']:
-        opt_options['opt_flag'] = True
-    if 'flap_control' in control_opt_options['servo']:
-        if control_opt_options['servo']['flap_control']['flag']:
-            opt_options['opt_flag'] = True
+def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
+    # Load all yaml inputs and validate (also fills in defaults)
+    wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
+    wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
+    blade_opt_options = opt_options['optimization_variables']['blade']
+    tower_opt_options = opt_options['optimization_variables']['tower']
+    control_opt_options = opt_options['optimization_variables']['control']
     if MPI:
         # Determine the number of design variables
         n_DV = 0
@@ -104,7 +32,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         if blade_opt_options['aero_shape']['chord']['flag']:    
             n_DV += blade_opt_options['aero_shape']['chord']['n_opt'] - 3            
         if blade_opt_options['aero_shape']['af_positions']['flag']:
-            n_DV += analysis_options['blade']['n_af_span'] - blade_opt_options['aero_shape']['af_positions']['af_start'] - 1
+            n_DV += modeling_options['blade']['n_af_span'] - blade_opt_options['aero_shape']['af_positions']['af_start'] - 1
         if blade_opt_options['structure']['spar_cap_ss']['flag']:
             n_DV += blade_opt_options['structure']['spar_cap_ss']['n_opt'] - 2
         if blade_opt_options['structure']['spar_cap_ps']['flag'] and not blade_opt_options['structure']['spar_cap_ps']['equal_to_suction']:
@@ -119,13 +47,13 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             n_DV += 2
         if 'dac' in blade_opt_options:
             if blade_opt_options['dac']['te_flap_end']['flag']:
-                n_DV += analysis_options['blade']['n_te_flaps']
+                n_DV += modeling_options['blade']['n_te_flaps']
             if blade_opt_options['dac']['te_flap_ext']['flag']:
-                n_DV += analysis_options['blade']['n_te_flaps']
+                n_DV += modeling_options['blade']['n_te_flaps']
         if tower_opt_options['outer_diameter']['flag']:
-            n_DV += analysis_options['tower']['n_height']
+            n_DV += modeling_options['tower']['n_height']
         if tower_opt_options['layer_thickness']['flag']:
-            n_DV += (analysis_options['tower']['n_height'] - 1) * analysis_options['tower']['n_layers']
+            n_DV += (modeling_options['tower']['n_height'] - 1) * modeling_options['tower']['n_layers']
         
         if opt_options['driver']['form'] == 'central':
             n_DV *= 2
@@ -137,7 +65,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             exit('ERROR: the parallelization logic only works for an even number of cores available')
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
-        if analysis_options['Analysis_Flags']['OpenFAST']:
+        if modeling_options['Analysis_Flags']['OpenFAST']:
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, otherwise it is half of the number of DV (rounded to the lower integer). We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
             if max_cores > 2. * n_DV:
                 n_FD = n_DV
@@ -147,13 +75,13 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             
             # need to calculate the number of OpenFAST runs from the user input
             n_OF_runs = 0
-            if analysis_options['openfast']['dlc_settings']['run_power_curve']:
-                if analysis_options['openfast']['dlc_settings']['Power_Curve']['turbulent_power_curve']:
-                    n_OF_runs += len(analysis_options['openfast']['dlc_settings']['Power_Curve']['U'])*len(analysis_options['openfast']['dlc_settings']['Power_Curve']['Seeds'])
+            if modeling_options['openfast']['dlc_settings']['run_power_curve']:
+                if modeling_options['openfast']['dlc_settings']['Power_Curve']['turbulent_power_curve']:
+                    n_OF_runs += len(modeling_options['openfast']['dlc_settings']['Power_Curve']['U'])*len(modeling_options['openfast']['dlc_settings']['Power_Curve']['Seeds'])
                 else:
-                    n_OF_runs += len(analysis_options['openfast']['dlc_settings']['Power_Curve']['U'])
-            if analysis_options['openfast']['dlc_settings']['run_IEC'] or analysis_options['openfast']['dlc_settings']['run_blade_fatigue']:
-                for dlc in analysis_options['openfast']['dlc_settings']['IEC']:
+                    n_OF_runs += len(modeling_options['openfast']['dlc_settings']['Power_Curve']['U'])
+            if modeling_options['openfast']['dlc_settings']['run_IEC'] or modeling_options['openfast']['dlc_settings']['run_blade_fatigue']:
+                for dlc in modeling_options['openfast']['dlc_settings']['IEC']:
                     dlc_vars = list(dlc.keys())
                     # Number of wind speeds
                     if 'U' not in dlc_vars:
@@ -182,7 +110,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
 
-            analysis_options['openfast']['dlc_settings']['n_OF_runs'] = n_OF_runs
+            modeling_options['openfast']['dlc_settings']['n_OF_runs'] = n_OF_runs
         else:
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
             n_FD = min([max_cores, n_DV])
@@ -198,23 +126,24 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
         color_i = 0
         rank = 0
 
+    folder_output = opt_options['general']['folder_output']
     if rank == 0 and not os.path.isdir(folder_output):
         os.mkdir(folder_output)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
-            if analysis_options['Analysis_Flags']['OpenFAST']:
+            if modeling_options['Analysis_Flags']['OpenFAST']:
                 # Parallel settings for OpenFAST
-                analysis_options['openfast']['analysis_settings']['mpi_run']           = True
-                analysis_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
-                analysis_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
+                modeling_options['openfast']['analysis_settings']['mpi_run']           = True
+                modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
+                modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
             # Parallel settings for OpenMDAO
             wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
-            wt_opt.model.add_subsystem('comp', WindPark(analysis_options = analysis_options, opt_options = opt_options), promotes=['*'])
+            wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
-            analysis_options['openfast']['analysis_settings']['cores'] = 1
-            wt_opt = om.Problem(model=WindPark(analysis_options = analysis_options, opt_options = opt_options))
+            modeling_options['openfast']['analysis_settings']['cores'] = 1
+            wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
 
         # If at least one of the design variables is active, setup an optimization
         if opt_options['opt_flag']:
@@ -258,8 +187,8 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.driver.opt_settings['Major iterations limit']      = int(opt_options['driver']['max_major_iter'])
                 wt_opt.driver.opt_settings['Iterations limit']            = int(opt_options['driver']['max_minor_iter'])
                 wt_opt.driver.opt_settings['Major feasibility tolerance'] = float(opt_options['driver']['tol'])
-                wt_opt.driver.opt_settings['Summary file']                = folder_output + 'SNOPT_Summary_file.txt'
-                wt_opt.driver.opt_settings['Print file']                  = folder_output + 'SNOPT_Print_file.txt'
+                wt_opt.driver.opt_settings['Summary file']                = os.path.join(folder_output, 'SNOPT_Summary_file.txt')
+                wt_opt.driver.opt_settings['Print file']                  = os.path.join(folder_output, 'SNOPT_Print_file.txt')
                 if 'hist_file_name' in opt_options['driver']:
                     wt_opt.driver.hist_file = opt_options['driver']['hist_file_name']
                 if 'verify_level' in opt_options['driver']:
@@ -285,7 +214,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             elif opt_options['merit_figure'] == 'tower_cost':
                 wt_opt.model.add_objective('tcc.tower_cost')
             elif opt_options['merit_figure'] == 'Cp':
-                if analysis_options['servose']['run_servose']:
+                if modeling_options['Analysis_Flags']['ServoSE']:
                     wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
                 else:
                     wt_opt.model.add_objective('ccblade.CP', ref = -1.)
@@ -310,7 +239,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
                 wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=chord_options['min_gain'], upper=chord_options['max_gain'])
                 
             if blade_opt_options['aero_shape']['af_positions']['flag']:
-                n_af = analysis_options['blade']['n_af_span']
+                n_af = modeling_options['blade']['n_af_span']
                 indices  = range(blade_opt_options['aero_shape']['af_positions']['af_start'],n_af - 1)
                 af_pos_init = wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']
                 lb_af    = np.zeros(n_af)
@@ -485,7 +414,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             
             control_constraints = opt_options['constraints']['control']
             if control_constraints['flap_control']['flag']:
-                if analysis_options['Analysis_Flags']['OpenFAST'] != True:
+                if modeling_options['Analysis_Flags']['OpenFAST'] != True:
                     exit('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
                 wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Kp',
                     lower = control_constraints['flap_control']['min'],
@@ -496,22 +425,21 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
             
             # Set recorder on the OpenMDAO driver level using the `optimization_log`
             # filename supplied in the optimization yaml
-            if 'recorder' in opt_options:
-                if opt_options['recorder']['flag']:
-                    recorder = om.SqliteRecorder(folder_output + opt_options['recorder']['file_name'])
-                    wt_opt.driver.add_recorder(recorder)
-                    wt_opt.add_recorder(recorder)
-                    
-                    wt_opt.driver.recording_options['includes'] = ['*']
-                    wt_opt.driver.recording_options['record_constraints'] = True 
-                    wt_opt.driver.recording_options['record_desvars'] = True 
-                    wt_opt.driver.recording_options['record_objectives'] = True
+            if opt_options['recorder']['flag']:
+                recorder = om.SqliteRecorder(os.path.join(folder_output, opt_options['recorder']['file_name']))
+                wt_opt.driver.add_recorder(recorder)
+                wt_opt.add_recorder(recorder)
+                
+                wt_opt.driver.recording_options['excludes'] = ['*_df']
+                wt_opt.driver.recording_options['record_constraints'] = True 
+                wt_opt.driver.recording_options['record_desvars'] = True 
+                wt_opt.driver.recording_options['record_objectives'] = True
         
         # Setup openmdao problem
         wt_opt.setup()
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
-        wt_opt = yaml2openmdao(wt_opt, analysis_options, wt_init)
+        wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init)
         wt_opt['blade.opt_var.s_opt_twist']   = np.linspace(0., 1., blade_opt_options['aero_shape']['twist']['n_opt'])
         if blade_opt_options['aero_shape']['twist']['flag']:
             init_twist_opt = np.interp(wt_opt['blade.opt_var.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
@@ -598,12 +526,13 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
         if (not MPI) or (MPI and rank == 0):
             # Save data coming from openmdao to an output yaml file
-            wt_initial.write_ontology(wt_opt, fname_wt_output)
+            froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
+            wt_initial.write_ontology(wt_opt, froot_out)
             
             # Save data to numpy and matlab arrays
-            fileIO.save_data(fname_wt_output, wt_opt)
+            fileIO.save_data(froot_out, wt_opt)
 
-    if MPI and analysis_options['Analysis_Flags']['OpenFAST']:
+    if MPI and modeling_options['Analysis_Flags']['OpenFAST']:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
@@ -617,7 +546,7 @@ def run_wisdem(fname_wt_input, fname_analysis_options, fname_opt_options, fname_
 
         
     if rank == 0:
-        return wt_opt, analysis_options, opt_options
+        return wt_opt, modeling_options, opt_options
     else:
         return [], [], []
 
@@ -629,9 +558,8 @@ def read_master_file( fyaml ):
         print('...Reading master input file,',fyaml)
     else:
         raise FileNotFoundError('The master input file, '+fyaml+', cannot be found.')
-    
-    with open(fyaml, 'r') as f:
-        input_yaml = ry.load(f, Loader=ry.Loader)
+
+    input_yaml = load_yaml(fyaml)
 
     check_list = ['geometry_file','modeling_file','analysis_file']
     for f in check_list:
@@ -666,11 +594,9 @@ def wisdem_cmd():
     yaml_dict = read_master_file( sys.argv[1] )
     
     # Run WISDEM (also saves output)
-    wt_opt, analysis_options, opt_options = run_wisdem(yaml_dict['geometry_file'],
+    wt_opt, modeling_options, opt_options = run_wisdem(yaml_dict['geometry_file'],
                                                        yaml_dict['modeling_file'],
-                                                       yaml_dict['analysis_file'],
-                                                       yaml_dict['output_geometry_file'],
-                                                       yaml_dict['output_directory'])
+                                                       yaml_dict['analysis_file'])
 
     sys.exit( 0 )
 
@@ -683,12 +609,10 @@ if __name__ == "__main__":
     fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_modeling_options = run_dir + "modeling_options.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
-    fname_wt_output        = run_dir + "output.yaml"
-    folder_output          = run_dir + '/'
 
 
     tt = time.time()
-    wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options, fname_wt_output, folder_output)
+    wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
     
     if MPI:
         rank = MPI.COMM_WORLD.Get_rank()

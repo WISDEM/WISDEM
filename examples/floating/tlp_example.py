@@ -42,8 +42,10 @@ opt['platform']['gamma_b'] = 1.1   # Safety factor on buckling
 opt['platform']['gamma_fatigue'] = 1.755 # Not used
 opt['platform']['run_modal'] = True # Not used
 
+opt['flags'] = {}
+opt['flags']['monopile'] = False
+
 opt['tower'] = {}
-opt['tower']['monopile'] = False
 opt['tower']['n_height'] = npts
 opt['tower']['n_layers'] = 1
 opt['materials'] = {}
@@ -51,7 +53,7 @@ opt['materials']['n_mat'] = 1
 
 # Initialize OpenMDAO problem and FloatingSE Group
 prob = om.Problem()
-prob.model = FloatingSE(analysis_options=opt)
+prob.model = FloatingSE(modeling_options=opt)
 prob.setup()
 
 # Mooring parameters
@@ -156,7 +158,7 @@ prob['number_of_mooring_connections'] = 3             # Evenly spaced around str
 prob['mooring_lines_per_connection']  = 1             # Evenly spaced around structure
 
 # Porperties of turbine tower
-nTower                          = prob.model.options['analysis_options']['tower']['n_height']-1
+nTower                          = prob.model.options['modeling_options']['tower']['n_height']-1
 prob['tower_height']            = prob['hub_height'] = 77.6
 prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
 prob['tower_outer_diameter_in'] = np.linspace(8.0, 3.87, nTower+1)
@@ -180,8 +182,8 @@ prob['max_offset']       = 100.0 # Max surge/sway offset [m]
 prob['operational_heel'] = 10.0 # Max heel (pitching) angle [deg]
 
 # Design constraints
-prob['max_taper_ratio']              = 0.2  # For manufacturability of rolling steel
-prob['min_diameter_thickness_ratio'] = 80.0 # For weld-ability
+prob['max_taper']              = 0.2  # For manufacturability of rolling steel
+prob['min_d_to_t'] = 80.0 # For weld-ability
 prob['connection_ratio_max']         = 0.25 # For welding pontoons to columns
 
 # API 2U flag

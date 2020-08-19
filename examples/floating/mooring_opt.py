@@ -15,13 +15,7 @@ opt['gamma_f'] = 1.35
 
 # OpenMDAO initialization
 prob = om.Problem()
-prob.model.add_subsystem('moor', MapMooring(analysis_options=opt), promotes=['*'] )
-
-# Have to add in an Indepent Variable Component because MapMooring isn't already a Group
-ivc = prob.model.add_subsystem('ivc', om.IndepVarComp(), promotes=['*'])
-ivc.add_output('mooring_diameter', units='m')
-ivc.add_output('mooring_line_length', units='m')
-ivc.add_output('anchor_radius', units='m')
+prob.model.add_subsystem('moor', MapMooring(modeling_options=opt), promotes=['*'] )
 
 # Setup up optimization problem
 if opt_flag:

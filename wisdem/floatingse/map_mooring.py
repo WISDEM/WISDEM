@@ -82,7 +82,7 @@ class MapMooring(om.ExplicitComponent):
     
     """
     def initialize(self):
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
 
     def setup(self):
     
@@ -227,7 +227,7 @@ class MapMooring(om.ExplicitComponent):
         waterDepth    = inputs['water_depth']
         L_mooring     = inputs['mooring_line_length']
         max_heel      = inputs['max_survival_heel']
-        gamma         = self.options['analysis_options']['gamma_f']
+        gamma         = self.options['modeling_options']['gamma_f']
         
         if L_mooring > (waterDepth - fairleadDepth):
             self.tlpFlag = False
@@ -457,7 +457,7 @@ class MapMooring(om.ExplicitComponent):
         Dmooring      = float( inputs['mooring_diameter'] )
         offset        = float( inputs['max_offset'] )
         heel          = float( inputs['operational_heel'] )
-        gamma         = self.options['analysis_options']['gamma_f']
+        gamma         = self.options['modeling_options']['gamma_f']
         n_connect     = int(inputs['number_of_mooring_connections'])
         n_lines       = int(inputs['mooring_lines_per_connection'])
         ntotal        = n_connect * n_lines

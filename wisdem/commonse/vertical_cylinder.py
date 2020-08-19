@@ -511,7 +511,8 @@ class CylinderFrame3DD(om.ExplicitComponent):
 
 
         # ------ options ------------
-        options = pyframe3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], float(frame3dd_opt['dx']))
+        dx = -1.0
+        options = pyframe3dd.Options(frame3dd_opt['shear'], frame3dd_opt['geom'], dx)
         # -----------------------------------
 
         # initialize frame3dd object
@@ -523,13 +524,17 @@ class CylinderFrame3DD(om.ExplicitComponent):
         # extra node inertia data
         N = inputs['midx'] + np.ones(len(inputs['midx']))
 
+        add_gravity = True
         cylinder.changeExtraNodeMass(N, inputs['m'], inputs['mIxx'], inputs['mIyy'], inputs['mIzz'], inputs['mIxy'], inputs['mIxz'], inputs['mIyz'],
-            inputs['mrhox'], inputs['mrhoy'], inputs['mrhoz'], frame3dd_opt['add_gravity'])
+            inputs['mrhox'], inputs['mrhoy'], inputs['mrhoz'], add_gravity)
 
         # ------------------------------------
 
         # ------- enable dynamic analysis ----------
-        cylinder.enableDynamics(NFREQ, frame3dd_opt['Mmethod'], frame3dd_opt['lump'], float(frame3dd_opt['tol']), float(frame3dd_opt['shift']))
+        Mmethod = 1
+        lump = 0
+        shift = 0.0
+        cylinder.enableDynamics(NFREQ, Mmethod, lump, frame3dd_opt['tol'], shift)
         # ----------------------------
 
         # ------ static load case 1 ------------

@@ -348,7 +348,7 @@ class ColumnGeometry(om.ExplicitComponent):
         outputs['draft_margin'] = draft / inputs['max_draft']
 
         # Make sure freeboard is more than 20% of hsig_wave (DNV-OS-J101)
-        outputs['wave_height_freeboard_ratio'] = inputs['hsig_wave'] / np.abs(freeboard)
+        outputs['wave_height_freeboard_ratio'] = inputs['hsig_wave'] / (np.abs(freeboard) + eps)
 
         # Material properties
         z_section,_ = nodal2sectional( z_full )
@@ -1412,7 +1412,7 @@ class ColumnBuckling(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('n_height')
-        self.options.declare('analysis_options')
+        self.options.declare('modeling_options')
         
     def setup(self):
         n_height = self.options['n_height']
@@ -1489,8 +1489,8 @@ class ColumnBuckling(om.ExplicitComponent):
         w_flange     = inputs['w_flange']
         L_stiffener  = inputs['L_stiffener']
 
-        gamma_f      = self.options['analysis_options']['gamma_f']
-        gamma_b      = self.options['analysis_options']['gamma_b']
+        gamma_f      = self.options['modeling_options']['gamma_f']
+        gamma_b      = self.options['modeling_options']['gamma_b']
         
         E            = inputs['E_full'] # Young's modulus
         nu           = inputs['nu_full'] # Poisson ratio
@@ -1531,11 +1531,10 @@ class Column(om.Group):
     def initialize(self):
         self.options.declare('n_mat')
         self.options.declare('column_options')
-        self.options.declare('analysis_options')
-        self.options.declare('topLevelFlag', default=False)
+        self.options.declare('modeling_options')
         
     def setup(self):
-        opt = self.options['analysis_options']
+        opt = self.options['modeling_options']
         colopt = self.options['column_options']
         n_layers  = colopt['n_layers']
         n_height  = colopt['n_height']
@@ -1543,69 +1542,11 @@ class Column(om.Group):
         n_mat     = self.options['n_mat']
         n_sect    = n_height - 1
         n_full    = get_nfull(n_height)
-        topLevelFlag = self.options['topLevelFlag']
 
-        ivc = om.IndepVarComp()
-        ivc.add_output('stiffener_web_height', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_web_thickness', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_flange_width', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_flange_thickness', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_spacing', np.zeros(n_sect), units='m')
-        ivc.add_output('bulkhead_thickness', np.zeros(n_bulk), units='m')
-        ivc.add_output('bulkhead_locations', np.zeros(n_bulk))
-        ivc.add_output('permanent_ballast_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_diameter', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_location', 0.0)
-        ivc.add_output('foundation_height', 0.0, units='m')
-        ivc.add_output('outer_diameter_in', np.zeros(n_height), units='m')
-        ivc.add_output('s', np.zeros(n_height))
-        ivc.add_output('height', 0.0, units='m')
-        ivc.add_output('layer_thickness', np.zeros((n_layers, n_height-1)), units='m')
-        self.add_subsystem('ivc', ivc, promotes=['*'])
-
-        if topLevelFlag:
-            sivc = om.IndepVarComp()
-            sivc.add_discrete_output('layer_materials', ['steel'])
-            sivc.add_discrete_output('material_names', ['steel'])
-            
-            sivc.add_output('freeboard', 0.0, units='m')
-            sivc.add_output('permanent_ballast_density', 0.0, units='kg/m**3')
-            sivc.add_output('rho_air', 0.0, units='kg/m**3')
-            sivc.add_output('mu_air', 0.0, units='kg/m/s')
-            sivc.add_output('rho_water', 0.0, units='kg/m**3')
-            sivc.add_output('mu_water', 0.0, units='kg/m/s')
-            sivc.add_output('water_depth', 0.0, units='m')
-            sivc.add_output('beta_wave', 0.0, units='deg')
-            sivc.add_output('beta_wind', 0.0, units='deg')
-            sivc.add_output('wave_z0', 0.0, units='m')
-            sivc.add_output('wind_z0', 0.0, units='m')
-            sivc.add_output('hsig_wave', 0.0, units='m')
-            sivc.add_output('Tsig_wave', 10.0, units='s')
-            sivc.add_output('wind_reference_height', 0.0, units='m')
-            sivc.add_output('wind_reference_speed', 0.0, units='m/s')
-            sivc.add_output('outfitting_factor', 0.0)
-            sivc.add_output('ballast_cost_rate', 0.0, units='USD/kg')
-            sivc.add_output('labor_cost_rate', 0.0, units='USD/min')
-            sivc.add_output('painting_cost_rate', 0.0, units='USD/m**2')
-            sivc.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
-            sivc.add_discrete_output('loading', 'hydrostatic')
-            sivc.add_output('max_taper_ratio', 0.0)
-            sivc.add_output('min_diameter_thickness_ratio', 0.0)
-            sivc.add_output('shearExp', 0.0)
-            sivc.add_output('cd_usr', -1.0)
-            sivc.add_output('cm', 0.0)
-            sivc.add_output('Uc', 0.0, units='m/s')
-            sivc.add_output('yaw', 0.0, units='deg')
-            sivc.add_output('rho_mat', np.zeros(1), units='kg/m**3')
-            sivc.add_output('E_mat', np.zeros((1,3)), units='N/m**2')
-            sivc.add_output('G_mat', np.zeros((1,3)), units='N/m**2')
-            sivc.add_output('sigma_y_mat', np.zeros(1), units='N/m**2')
-            sivc.add_output('unit_cost_mat', np.zeros(1), units='USD/kg')
-            sivc.add_output('gamma_f', 0.0)
-            sivc.add_output('gamma_b', 0.0)
-            sivc.add_output('max_draft', 0.0, units='m')
-            self.add_subsystem('sivc', sivc, promotes=['*'])
+        self.set_input_defaults('cd_usr', -1.0)
+        self.set_input_defaults('Tsig_wave', 10.0)
+        self.set_input_defaults('layer_materials', ['steel'])
+        self.set_input_defaults('material_names', ['steel'])
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_subsystem('yaml', DiscretizationYAML(n_height=n_height, n_layers=n_layers, n_mat=n_mat), promotes=['*'])
@@ -1633,13 +1574,13 @@ class Column(om.Group):
 
         self.add_subsystem('col', ColumnProperties(n_height=n_height), promotes=['*'])
 
-        self.add_subsystem('wind', PowerWind(nPoints=n_full), promotes=['Uref','zref','shearExp','z0'])
-        self.add_subsystem('wave', LinearWaves(nPoints=n_full), promotes=['Uc','hsig_wave','Tsig_wave','rho_water'])
+        self.add_subsystem('wind', PowerWind(nPoints=n_full), promotes=[('Uref', 'wind_reference_speed'), ('zref', 'wind_reference_height'), 'shearExp', ('z0', 'wind_z0')])
+        self.add_subsystem('wave', LinearWaves(nPoints=n_full), promotes=['Uc','hsig_wave','Tsig_wave','rho_water', ('z_floor', 'water_depth'), ('z_surface', 'wave_z0')])
         self.add_subsystem('windLoads', CylinderWindDrag(nPoints=n_full), promotes=['cd_usr','beta_wind','rho_air','mu_air'])
         self.add_subsystem('waveLoads', CylinderWaveDrag(nPoints=n_full), promotes=['cm','cd_usr','beta_wave','rho_water','mu_water'])
         self.add_subsystem('distLoads', AeroHydroLoads(nPoints=n_full), promotes=['Px','Py','Pz','qdyn','yaw'])
 
-        self.add_subsystem('buck', ColumnBuckling(n_height=n_height, analysis_options=opt), promotes=['*'])
+        self.add_subsystem('buck', ColumnBuckling(n_height=n_height, modeling_options=opt), promotes=['*'])
 
         self.connect('outer_diameter', ['diameter', 'gc.d'])
         self.connect('wall_thickness', 'gc.t')
@@ -1655,12 +1596,6 @@ class Column(om.Group):
         
         self.connect('column_total_mass', 'section_mass')
 
-        if topLevelFlag:
-            self.connect('water_depth','wave.z_floor')
-            self.connect('wave_z0', 'wave.z_surface')
-            self.connect('wind_reference_height', 'zref')
-            self.connect('wind_reference_speed', 'Uref')
-            self.connect('wind_z0', 'z0')
         self.connect('z_full', ['wind.z', 'wave.z', 'windLoads.z','waveLoads.z','distLoads.z'])
         self.connect('d_full', ['windLoads.d','waveLoads.d'])
 

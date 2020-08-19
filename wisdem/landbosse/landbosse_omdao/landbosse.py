@@ -6,73 +6,47 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
     import pandas as pd
 
-from ..model.Manager import Manager
-from ..model.DefaultMasterInputDict import DefaultMasterInputDict
-from .OpenMDAODataframeCache import OpenMDAODataframeCache
-from .WeatherWindowCSVReader import read_weather_window
-
-# Read in default sheets for project data
-default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_public')
-default_components_data = default_project_data['components']
-
+from wisdem.landbosse.model.Manager import Manager
+from wisdem.landbosse.model.DefaultMasterInputDict import DefaultMasterInputDict
+from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
+from wisdem.landbosse.landbosse_omdao.WeatherWindowCSVReader import read_weather_window
 
 use_default_component_data = -1.0
 
-
 class LandBOSSE(om.Group):
-    def initialize(self):
-        self.options.declare('topLevelFlag', default=False)
-
     def setup(self):
-        # Define all input variables from all models
-        myIndeps = om.IndepVarComp()
 
-        myIndeps.add_output('plant_turbine_spacing', 7)
-        myIndeps.add_output('plant_row_spacing', 7)
+        # Add a tower section height variable. The default value of 30 m is for transportable tower sections.
+        self.set_input_defaults('tower_section_length_m', 30.0, units='m')
+        self.set_input_defaults('blade_drag_coefficient', use_default_component_data)  # Unitless
+        self.set_input_defaults('blade_lever_arm', use_default_component_data, units='m')
+        self.set_input_defaults('blade_install_cycle_time', use_default_component_data, units='h')
+        self.set_input_defaults('blade_offload_hook_height', use_default_component_data, units='m')
+        self.set_input_defaults('blade_offload_cycle_time', use_default_component_data, units='h')
+        self.set_input_defaults('blade_drag_multiplier', use_default_component_data)  # Unitless
 
-        myIndeps.add_output('commissioning_pct', 0.01)
-        myIndeps.add_output('decommissioning_pct', 0.15)
+        self.set_input_defaults('turbine_spacing_rotor_diameters', 4)
+        self.set_input_defaults('row_spacing_rotor_diameters', 10)
+        self.set_input_defaults('commissioning_pct', 0.01)
+        self.set_input_defaults('decommissioning_pct', 0.15)
+        self.set_input_defaults('trench_len_to_substation_km', 50.0, units='km')
+        self.set_input_defaults('interconnect_voltage_kV', 130.0, units='kV')
 
-        # Add a tower section height variable. The default value of 30 m is for
-        # transportable tower sections.
-
-        myIndeps.add_output('tower_section_length_m', 30.0, units='m',
-                            desc='The transportable length of a tower section.')
-
-        myIndeps.add_output('blade_drag_coefficient', use_default_component_data)  # Unitless
-        myIndeps.add_output('blade_lever_arm', use_default_component_data, units='m')
-        myIndeps.add_output('blade_install_cycle_time', use_default_component_data, units='h')
-        myIndeps.add_output('blade_offload_hook_height', use_default_component_data, units='m')
-        myIndeps.add_output('blade_offload_cycle_time', use_default_component_data, units='h')
-        myIndeps.add_output('blade_drag_multiplier', use_default_component_data)  # Unitless
-
-        self.add_subsystem('myIndeps', myIndeps, promotes=['*'])
-
-        if self.options['topLevelFlag']:
-            sharedIndeps = om.IndepVarComp()
-            sharedIndeps.add_output('hub_height', 80.0, units='m')
-            sharedIndeps.add_output('foundation_height', 0.0, units='m')
-            sharedIndeps.add_output('blade_mass', 8000.0, units='kg')
-            sharedIndeps.add_output('nacelle_mass', use_default_component_data, units='kg')
-            sharedIndeps.add_output('tower_mass', 240e3, units='kg')
-            sharedIndeps.add_output('machine_rating', 1500.0, units='kW')
-            self.add_subsystem('sharedIndeps', sharedIndeps, promotes=['*'])
+        self.set_input_defaults('foundation_height', 0.0, units='m')
+        self.set_input_defaults('blade_mass', 8000., units='kg')
+        self.set_input_defaults('hub_mass', 15.4e3, units='kg')
+        self.set_input_defaults('nacelle_mass', 50e3, units='kg')
+        self.set_input_defaults('tower_mass', 240e3, units='kg')
+        self.set_input_defaults('turbine_rating_MW', 1500.0, units='kW')
             
-        self.add_subsystem('landbosse', LandBOSSE_API(topLevelFlag = self.options['topLevelFlag']), promotes=['*'])
-
-        if self.options['topLevelFlag']:
-            self.connect('hub_height', 'hub_height_meters')
-
-            # machine_rating is in kW by turbine_rating_MW is in MW. However,
-            # these units are specified to OpenMDAO so it can convert units.
-            self.connect('machine_rating', 'turbine_rating_MW')
+        self.add_subsystem('landbosse', LandBOSSE_API(), promotes=['*'])
 
 
 class LandBOSSE_API(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare('topLevelFlag', default=False)
-        
     def setup(self):
+        # Clear the cache
+        OpenMDAODataframeCache._cache={}
+        
         self.setup_inputs()
         self.setup_outputs()
         self.setup_discrete_outputs()
@@ -83,8 +57,6 @@ class LandBOSSE_API(om.ExplicitComponent):
         """
         This method sets up the inputs.
         """
-        self.add_input('plant_turbine_spacing', 7)
-        self.add_input('plant_row_spacing', 7)
         self.add_input('blade_drag_coefficient', use_default_component_data)  # Unitless
         self.add_input('blade_lever_arm', use_default_component_data, units='m')
         self.add_input('blade_install_cycle_time', use_default_component_data, units='h')
@@ -236,6 +208,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         which can be overridden outside by setting the properties listed
         below.
         """
+        # Read in default sheets for project data
+        default_project_data = OpenMDAODataframeCache.read_all_sheets_from_xlsx('ge15_public')
 
         self.add_discrete_input('site_facility_building_area_df',
                                 val=default_project_data['site_facility_building_area'],
