@@ -1,5 +1,5 @@
 import numpy as np
-from openmdao.api import ExplicitComponent, Group, Problem
+import openmdao.api as om
 from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
 from wisdem.ccblade.ccblade_component import CCBladeTwist
 from wisdem.commonse.turbine_class import TurbineClass
@@ -18,7 +18,7 @@ from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains, RunFr
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 
 
-class WT_RNTA(Group):
+class WT_RNTA(om.Group):
     # Openmdao group to run the analysis of the wind turbine
     
     def initialize(self):
@@ -29,11 +29,6 @@ class WT_RNTA(Group):
         modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
         
-        print(modeling_options)
-        print(modeling_options['flags'].keys())
-        print(modeling_options['Analysis_Flags'].keys())
-        n_span           = modeling_options['blade']['n_span']
-
         # Analysis components
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('ccblade',   CCBladeTwist(modeling_options = modeling_options, opt_options = opt_options)) # Run standalone CCBlade and possibly determine optimal twist from user-defined margin to stall
@@ -84,9 +79,9 @@ class WT_RNTA(Group):
         self.connect('assembly.hub_height',             'ccblade.hub_height')
         self.connect('hub.cone',                        'ccblade.precone')
         self.connect('nacelle.uptilt',                  'ccblade.tilt')
-        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
+        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurve', src_indices=om.slicer[:, 0])
         self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurveTip', src_indices=[(-1, 0)])
-        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweep', src_indices=[(i, 1) for i in np.arange(n_span)])
+        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweep', src_indices=om.slicer[:, 1])
         self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweepTip', src_indices=[(-1, 1)])
         self.connect('configuration.n_blades',          'ccblade.nBlades')
         if modeling_options['flags']['control']:
@@ -202,9 +197,9 @@ class WT_RNTA(Group):
             self.connect('assembly.hub_height',            'sse.hub_height')
             self.connect('hub.cone',                       'sse.precone')
             self.connect('nacelle.uptilt',                 'sse.tilt')
-            self.connect('blade.outer_shape_bem.ref_axis', 'sse.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
+            self.connect('blade.outer_shape_bem.ref_axis', 'sse.precurve', src_indices=om.slicer[:, 0])
             self.connect('blade.outer_shape_bem.ref_axis', 'sse.precurveTip', src_indices=[(-1, 0)])
-            self.connect('blade.outer_shape_bem.ref_axis', 'sse.presweep', src_indices=[(i, 1) for i in np.arange(n_span)])
+            self.connect('blade.outer_shape_bem.ref_axis', 'sse.presweep', src_indices=om.slicer[:, 1])
             self.connect('blade.outer_shape_bem.ref_axis', 'sse.presweepTip', src_indices=[(-1, 1)])
             self.connect('airfoils.aoa',                   'sse.airfoils_aoa')
             self.connect('airfoils.Re',                    'sse.airfoils_Re')
@@ -334,9 +329,9 @@ class WT_RNTA(Group):
 
             self.connect('control.V_in' ,                   'sse_tune.v_min')
             self.connect('control.V_out' ,                  'sse_tune.v_max')
-            self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
+            self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.precurve', src_indices=om.slicer[:, 0])
             self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.precurveTip', src_indices=[(-1, 0)])
-            self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.presweep', src_indices=[(i, 1) for i in np.arange(n_span)])
+            self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.presweep', src_indices=om.slicer[:, 1])
             self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.presweepTip', src_indices=[(-1, 1)])
             self.connect('xf.flap_angles',                  'sse_tune.airfoils_Ctrl')
             self.connect('control.minOmega',                'sse_tune.omega_min')
@@ -652,7 +647,7 @@ class WT_RNTA(Group):
         if modeling_options['Analysis_Flags']['TowerSE']:
             self.connect('towerse.tower_mass',          'tcc.tower_mass')
 
-class WindPark(Group):
+class WindPark(om.Group):
     # Openmdao group to run the cost analysis of a wind park
     
     def initialize(self):
