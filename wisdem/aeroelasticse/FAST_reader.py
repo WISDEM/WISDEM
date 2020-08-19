@@ -1246,7 +1246,7 @@ class InputReader_OpenFAST(InputReader_Common):
 
         for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
             self.fst_vt['AeroDyn15']['af_coord'].append({})
-            if self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'] != 0:
+            if not (self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'] == 0 or self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'] == '0'):
                 coord_filename = af_filename[0:af_filename.rfind(os.sep)] + os.sep + self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'][2:-1]
                 f = open(coord_filename)
                 n_coords = int_read(readline_filterComments(f).split()[0])

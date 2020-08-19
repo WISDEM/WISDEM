@@ -1400,7 +1400,7 @@ class ModesElastoDyn(ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        k = 100.
+        k = 10.
 
         outputs['EA_stiff']   = inputs['EA']   * k
         outputs['EIxy_zero']  = inputs['EIxy'] * 0.
