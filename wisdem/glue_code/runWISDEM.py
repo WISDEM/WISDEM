@@ -220,6 +220,8 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
                     wt_opt.model.add_objective('ccblade.CP', ref = -1.)
             elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
                 wt_opt.model.add_objective('aeroelastic.My_std', ref = 1.e6)
+            elif opt_options['merit_figure'] == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
+                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e5)
             elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
                 wt_opt.model.add_objective('aeroelastic.flp1_std')  #1.e-8)
             else:

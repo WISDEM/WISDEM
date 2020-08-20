@@ -369,6 +369,7 @@ class FASTLoadCases(ExplicitComponent):
         
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
+        self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
@@ -654,7 +655,7 @@ class FASTLoadCases(ExplicitComponent):
             case_list      += case_list_pc
             case_name_list += case_name_list_pc
             dlc_list       += dlc_list_pc
-           
+
         # Mandatory output channels to include 
         # TODO: what else is needed here?
         channels_out  = ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxc3", "TipDyc3", "TipDzc3"]
@@ -673,7 +674,9 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RootMyb1", "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
         channels_out += ["RtAeroFxh", "RtAeroFyh", "RtAeroFzh"]
         channels_out += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
-
+        # Add additional options
+        if ('channels_out',) in self.options['modeling_options']['openfast']['fst_settings']:
+            channels_out += self.options['modeling_options']['openfast']['fst_settings'][('channels_out',)]
 
 
 
@@ -845,17 +848,24 @@ class FASTLoadCases(ExplicitComponent):
                 omega = np.interp(U, inputs['U_init'], inputs['Omega_init'])
                 pitch = np.interp(U, inputs['U_init'], inputs['pitch_init'])
 
-                # User defined simulation settings
-                case_inputs = {}
-                for var in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
-                    case_inputs[var] = {'vals':[self.options['modeling_options']['openfast']['fst_settings'][var]], 'group':0}
                 # wind speeds
+                case_inputs = {}
                 case_inputs[("InflowWind","WindType")]   = {'vals':[1], 'group':0}
                 case_inputs[("InflowWind","HWindSpeed")] = {'vals':U, 'group':1}
                 case_inputs[("ElastoDyn","RotSpeed")]    = {'vals':omega, 'group':1}
                 case_inputs[("ElastoDyn","BlPitch1")]    = {'vals':pitch, 'group':1}
                 case_inputs[("ElastoDyn","BlPitch2")]    = case_inputs[("ElastoDyn","BlPitch1")]
                 case_inputs[("ElastoDyn","BlPitch3")]    = case_inputs[("ElastoDyn","BlPitch1")]
+
+                # User defined simulation settings
+                if ("InflowWind","WindType") in case_inputs:
+                    print('WARNING: You have defined ("InflowWind","WindType"} in the openfast settings.'
+                            'This will overwrite the default powercurve settings')
+                if ("InflowWind","HWindSpeed") in case_inputs:
+                    print('WARNING: You have defined ("InflowWind","HWindSpeed"} in the openfast settings.'
+                            'This will overwrite the default powercurve settings')
+                for var in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
+                    case_inputs[var] = {'vals':[self.options['modeling_options']['openfast']['fst_settings'][var]], 'group':0}
 
                 case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
 
@@ -892,6 +902,9 @@ class FASTLoadCases(ExplicitComponent):
         loads_analysis.channels_extreme_table += ['RotSpeed', 'BldPitch1', 'BldPitch2', 'BldPitch3', 'Azimuth']
         loads_analysis.channels_extreme_table += ["RootMxc1", "RootMyc1", "RootMzc1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxc3", "RootMyc3", "RootMzc3"]
         loads_analysis.channels_extreme_table += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
+
+        # DEL info 
+        loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
 
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
@@ -1044,10 +1057,10 @@ class FASTLoadCases(ExplicitComponent):
         # DELs
         # del_channels = [('RootMyb1',10), ('RootMyb2',10), ('RootMyb3',10)]
         # dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
-        # outputs['DEL_RootMyb'] = np.mean([np.mean(dels['RootMyb1']), np.mean(dels['RootMyb2']), np.mean(dels['RootMyb3'])])
         
         # Output
-        # outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+        outputs['DEL_RootMyb'] = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL']), np.max(sum_stats['RootMyb3']['DEL'])])
+        outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
