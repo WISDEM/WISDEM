@@ -1,6 +1,7 @@
 import os
 import subprocess
 import platform
+import time
 
 class FastWrapper(object):
 
@@ -45,11 +46,14 @@ class FastWrapper(object):
             print ("Input file: \t", self.FAST_InputFile)
             print ("Exec string: \t", exec_str)
 
+        start = time.time()
         if self.debug_level > 1:
             subprocess.call(exec_str)
         else:
             FNULL = open(os.devnull, 'w')
             subprocess.call(exec_str, stdout=FNULL, stderr=subprocess.STDOUT)
+        runtime = time.time() - start
+        print('Runtime: \t{} = {:<6.2f}s'.format(self.FAST_InputFile, runtime))
 
         os.chdir(olddir)
 
