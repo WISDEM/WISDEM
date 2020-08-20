@@ -76,12 +76,6 @@ class DirectLayout(om.ExplicitComponent):
         Diameter of bearing #1 (closer to hub)
     D_bearing2 : float, [m]
         Diameter of bearing #2 (closer to tower)
-    constr_access : numpy array[5], [m]
-        Margin for allowing maintenance access (should be > 0)
-    constr_L_grs : float, [m]
-        Margin for generator rotor attachment distance (should be > 0)
-    constr_L_gsn : float, [m]
-        Margin for generator stator attachment distance (should be > 0)
     s_nose : numpy array[6], [m]
         Nose discretized hub-aligned s-coordinates
     D_nose : numpy array[6], [m]
@@ -142,6 +136,16 @@ class DirectLayout(om.ExplicitComponent):
         Generator rotor attachment to lss s-coordinate
     generator_cm : float, [m]
         Overall generator cm
+    constr_access : numpy array[5], [m]
+        Margin for allowing maintenance access (should be > 0)
+    constr_L_grs : float, [m]
+        Margin for generator rotor attachment distance (should be > 0)
+    constr_L_gsn : float, [m]
+        Margin for generator stator attachment distance (should be > 0)
+    constr_length : float, [m]
+        Margin for drivetrain length and desired overhang distance (should be > 0)
+    constr_height : float, [m]
+        Margin for drivetrain height and desired hub height (should be > 0)
     
     """
     
@@ -175,9 +179,6 @@ class DirectLayout(om.ExplicitComponent):
         self.add_output('L_drive', 0.0, units='m')
         self.add_output('D_bearing1', 0.0, units='m')
         self.add_output('D_bearing2', 0.0, units='m')
-        self.add_output('constr_access', np.zeros(5), units='m')
-        self.add_output('constr_L_grs', 0.0, units='m')
-        self.add_output('constr_L_gsn', 0.0, units='m')
         self.add_output('s_nose', val=np.zeros(6), units='m')
         self.add_output('D_nose', val=np.zeros(6), units='m')
         self.add_output('t_nose', val=np.zeros(6), units='m')
@@ -208,6 +209,11 @@ class DirectLayout(om.ExplicitComponent):
         self.add_output('s_stator', val=0.0, units='m')
         self.add_output('s_rotor', val=0.0, units='m')
         self.add_output('generator_cm', val=0.0, units='m')
+        self.add_output('constr_access', np.zeros(5), units='m')
+        self.add_output('constr_L_grs', 0.0, units='m')
+        self.add_output('constr_L_gsn', 0.0, units='m')
+        self.add_output('constr_length', 0.0, units='m')
+        self.add_output('constr_height', 0.0, units='m')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -249,7 +255,7 @@ class DirectLayout(om.ExplicitComponent):
         constr_Ldrive =  L_bedplate - 0.5*D_top # Should be > 0
         if constr_Ldrive < 0:
             L_bedplate = 0.5*D_top
-        H_bedplate = H_drive - L_drive*np.sin(tilt)
+        H_bedplate = H_drive - L_drive*np.sin(tilt) # Keep eccentricity under control
         outputs['L_bedplate'] = L_bedplate
         outputs['H_bedplate'] = H_bedplate
 
@@ -286,9 +292,6 @@ class DirectLayout(om.ExplicitComponent):
         x_c = L_bedplate*np.cos(rad)
         z_c = H_bedplate*np.sin(rad)
 
-        # Eccentricity of the centroidal ellipse
-        ecc = np.sqrt(1 - (H_bedplate/L_bedplate)**2)
-        
         # Points on the outermost ellipse
         x_outer = (L_bedplate + 0.5*D_top )*np.cos(rad)
         z_outer = (H_bedplate + 0.5*D_nose[0])*np.sin(rad)
@@ -306,9 +309,14 @@ class DirectLayout(om.ExplicitComponent):
         # This finds the central angle (rad2) given the parametric angle (rad)
         rad2 = np.arctan( (L_bedplate + 0.5*D_top) / (H_bedplate + 0.5*D_nose[0]) * np.tan(np.diff(rad)) )
             
-        # arc length
-        arc = L_bedplate*np.abs(ellipeinc(rad2,ecc))    # Arc length via incomplete elliptic integral of the second kind
-
+        # arc length from eccentricity of the centroidal ellipse using incomplete elliptic integral of the second kind
+        if L_bedplate >= H_bedplate:
+            ecc = np.sqrt(1 - (H_bedplate/L_bedplate)**2)
+            arc = L_bedplate*np.abs(ellipeinc(rad2,ecc))
+        else:
+            ecc = np.sqrt(1 - (L_bedplate/H_bedplate)**2)
+            arc = H_bedplate*np.abs(ellipeinc(rad2,ecc))
+            
         # Mass and MoI properties
         x_c_sec = util.nodal2sectional( x_c )[0]
         z_c_sec = util.nodal2sectional( z_c )[0]
@@ -351,9 +359,12 @@ class DirectLayout(om.ExplicitComponent):
         # ------------------------------------
         
         # ------- Constraints ----------------
-        outputs['constr_L_gsn'] = L_2n - L_gsn # Must be > 0
-        outputs['constr_L_grs'] = L_lss - L_grs # Must be > 0
+        outputs['constr_L_gsn']  = L_2n - L_gsn # Must be > 0
+        outputs['constr_L_grs']  = L_lss - L_grs # Must be > 0
         outputs['constr_access'] = D_nose - t_nose - D_access
+        outputs['constr_length'] = constr_Ldrive # Should be > 0
+        outputs['constr_height'] = H_bedplate # Should be > 0
+        outputs['constr_ecc']    = L_bedplate - H_bedplate # Should be > 0
         # ------------------------------------
         
         # ------- Nose, lss, and bearing properties ----------------
@@ -420,6 +431,10 @@ class GearedLayout(om.ExplicitComponent):
         LSS outer diameter from hub to bearing 2
     lss_wall_thickness : numpy array[5], [m]
         LSS wall thickness
+    hss_diameter : numpy array[3], [m]
+        HSS outer diameter from hub to bearing 2
+    hss_wall_thickness : numpy array[3], [m]
+        HSS wall thickness
     D_top : float, [m]
         Tower top outer diameter
     bedplate_flange_width : float, [m]
@@ -494,16 +509,20 @@ class GearedLayout(om.ExplicitComponent):
         self.add_discrete_input('upwind', True)
         self.add_input('L_12', 0.0, units='m')
         self.add_input('L_h1', 0.0, units='m')
+        self.add_input('L_hss', 0.0, units='m')
+        self.add_input('L_gearbox', 0.0, units='m')
+        self.add_input('L_generator', 0.0, units='m')
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('lss_diameter', np.zeros(5), units='m')
         self.add_input('lss_wall_thickness', np.zeros(5), units='m')
+        self.add_input('hss_diameter', np.zeros(3), units='m')
+        self.add_input('hss_wall_thickness', np.zeros(3), units='m')
         self.add_input('D_top', 0.0, units='m')
         self.add_input('rho', val=0.0, units='kg/m**3')
         self.add_input('overhang', 0.0, units='m')
         self.add_input('drive_height', 0.0, units='m')
         self.add_input('bedplate_flange_width', val=0.0, units='m')
         self.add_input('bedplate_flange_thickness', val=0.0, units='m')
-        self.add_input('bedplate_web_height', val=0.0, units='m')
         self.add_input('bedplate_web_thickness', val=0.0, units='m')
 
         self.add_output('L_lss', 0.0, units='m')
@@ -520,6 +539,7 @@ class GearedLayout(om.ExplicitComponent):
         self.add_output('lss_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('L_bedplate', 0.0, units='m')
         self.add_output('H_bedplate', 0.0, units='m')
+        self.add_output('bedplate_web_height', val=0.0, units='m')
         self.add_output('bedplate_mass', val=0.0, units='kg')
         self.add_output('bedplate_cm', val=np.zeros(3), units='m')
         self.add_output('bedplate_I', val=np.zeros(6), units='kg*m**2')
@@ -556,14 +576,14 @@ class GearedLayout(om.ExplicitComponent):
 
         bed_w_flange = float(inputs['bedplate_flange_width'])
         bed_t_flange = float(inputs['bedplate_flange_thickness'])
-        bed_h_web    = float(inputs['bedplate_web_height'])
+        #bed_h_web    = float(inputs['bedplate_web_height'])
         bed_t_web    = float(inputs['bedplate_web_thickness'])
 
         rho          = float(inputs['rho'])
 
         # ------- Discretization ----------------
         # Length of lss and drivetrain length
-        L_lss = L_12 + L_h1
+        L_lss   = L_12 + L_h1
         L_drive = L_lss + L_gearbox + L_hss + L_generator
         ds      = 0.5*np.ones(2)
         s_drive = np.cumsum(np.r_[0.0, L_generator*ds, L_hss*ds, L_gearbox*ds, L_12*ds, L_h1*ds])
@@ -607,14 +627,16 @@ class GearedLayout(om.ExplicitComponent):
         
         # ------- Bedplate I-beam properties ----------------
         L_bedplate = L_drive*np.cos(tilt)
-        H_bedplate = H_drive - s_drive[-1]*np.sin(tilt) - 5e-2 # Subtract thickness of platform plate
+        H_bedplate = H_drive - L_drive*np.sin(tilt) # Subtract thickness of platform plate
         outputs['L_bedplate'] = L_bedplate
         outputs['H_bedplate'] = H_bedplate
+        bed_h_web = H_bedplate - 2*bed_t_flange - 0.05 # Leave some extra room for plate?
         
         myI         = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
         m_bedplate  = myI.Area * L_bedplate * rho
-        cg_bedplate = np.r_[Cup*(L_overhang - 0.5*L_bedplate), 0.0, myI.CG] # from tower top
+        cg_bedplate = np.r_[Cup*(L_overhang + 0.5*D_top - 0.5*L_bedplate), 0.0, myI.CG] # from tower top
         I_bedplate  = rho*L_bedplate*np.r_[myI.Jxx, myI.Iyy, myI.Izz] + m_bedplate*L_bedplate**2/12.*np.r_[0., 1., 1.]
+        outputs['bedplate_web_height'] = bed_h_web
         outputs['bedplate_mass'] = m_bedplate
         outputs['bedplate_cm']   = cg_bedplate
         outputs['bedplate_I']    = I_bedplate

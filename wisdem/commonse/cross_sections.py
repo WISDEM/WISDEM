@@ -140,11 +140,8 @@ class IBeam:
         self.tf = t_flange
         self.Hw = H_web
         self.tw = t_web
+        self.H  = H_web + 2*t_flange
 
-    @property
-    def H(self): #Cross sectional area of tube
-        H = self.Hw + 2*self.tf
-        
     @property
     def AreaFlange(self): #Cross sectional area of tube
         return (self.Lf * self.tf)
@@ -167,7 +164,7 @@ class IBeam:
 
     @property
     def Jxx(self):  #polar moment of inertia w.r.t. z-z axis (torsional)
-        return ( (2*self.Lf*self.tf**3 + self.H*self.tw**3)
+        return (2*self.Lf*self.tf**3 + self.H*self.tw**3)
 
     @property
     def Asy(self): #Shear Area for tubular cross-section
@@ -187,7 +184,7 @@ class IBeam:
 
     @property
     def TorsConst(self):  #Torsion shear constant for tubular cross-section
-        return (self.Jxx / (1.28*self.tf)
+        return (self.Jxx / (1.28*self.tf))
 
     @property
     def Syy(self):  #Bending modulus for tubular cross-section
