@@ -361,6 +361,7 @@ class WT_RNTA(om.Group):
             if modeling_options['servose']['Flp_Mode'] > 0:
                 self.connect('control.Flp_omega',           'sse_tune.tune_rosco.Flp_omega')
                 self.connect('control.Flp_zeta',            'sse_tune.tune_rosco.Flp_zeta')
+                
         elif modeling_options['Analysis_Flags']['OpenFAST']==True and modeling_options['Analysis_Flags']['ServoSE']==False:
             exit("ERROR: WISDEM does not support openfast without the tuning of ROSCO")
         else:
