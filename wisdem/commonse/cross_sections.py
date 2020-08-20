@@ -1,14 +1,3 @@
-#-------------------------------------------------------------------------------
-# Name:        Tube.py
-# Purpose: This module contains the tube class, which calculates structural
-#          properties of a hollow, uniform, cylindrical beam
-#
-# Author:      rdamiani
-#
-# Created:     04/11/2013
-# Copyright:   (c) rdamiani 2013
-# Licence:     <your licence>
-#-------------------------------------------------------------------------------
 from __future__ import print_function
 import numpy as np
 from wisdem.commonse.utilities import nodal2sectional
@@ -142,3 +131,82 @@ class Tube:
     @property
     def Klr(self): #Klr buckling parameter
         return self.Kbuck*self.L/self.Rgyr
+
+
+
+class IBeam:
+    def __init__(self, L_flange, t_flange, H_web, t_web):
+        self.Lf = L_flange
+        self.tf = t_flange
+        self.Hw = H_web
+        self.tw = t_web
+
+    @property
+    def H(self): #Cross sectional area of tube
+        H = self.Hw + 2*self.tf
+        
+    @property
+    def AreaFlange(self): #Cross sectional area of tube
+        return (self.Lf * self.tf)
+
+    @property
+    def AreaWeb(self): #Cross sectional area of tube
+        return (self.Hw * self.tw)
+
+    @property
+    def Area(self): #Cross sectional area of tube
+        return (self.AreaWeb + 2*self.AreaFlange)
+
+    @property
+    def Iyy(self): #2nd area moment of inertia w.r.t. y-y axis running parallel to flange through CG
+        return ( (self.Lf*self.H**3 - (self.Lf-self.tw)*self.Hw**3) / 12.)
+
+    @property
+    def Izz(self): #2nd area moment of inertia w.r.t. z-z running through center of web
+        return ( (2*self.tw*self.Lf**3 + self.Hw*self.tw**3) / 12.)
+
+    @property
+    def Jxx(self):  #polar moment of inertia w.r.t. z-z axis (torsional)
+        return ( (2*self.Lf*self.tf**3 + self.H*self.tw**3)
+
+    @property
+    def Asy(self): #Shear Area for tubular cross-section
+        return (1.64 * self.Lf * self.tf)
+
+    @property
+    def Asz(self): #Shear Area for tubular cross-section
+        return (self.tw*self.H)
+
+    @property
+    def BdgMyy(self):  #Bending modulus for tubular cross-section
+        return (2*self.Iyy / self.H)
+
+    @property
+    def BdgMzz(self):  #Bending modulus for tubular cross-section =BdgMxx
+        return (2*self.Izz / self.Lf)
+
+    @property
+    def TorsConst(self):  #Torsion shear constant for tubular cross-section
+        return (self.Jxx / (1.28*self.tf)
+
+    @property
+    def Syy(self):  #Bending modulus for tubular cross-section
+        return self.BdgMyy
+
+    @property
+    def Szz(self):  #Bending modulus for tubular cross-section
+        return self.BdgMzz
+
+    @property
+    def C(self):  #Torsion shear constant for tubular cross-section
+        return self.TorsConst
+
+    @property
+    def Rgyr(self): #Radius of Gyration for circular tube
+        return np.sqrt(self.Jxx/self.Area)
+
+    @property
+    def CG(self): #Radius of Gyration for circular tube
+        return (0.5*self.Hw + self.tf)
+
+    

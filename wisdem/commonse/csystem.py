@@ -81,7 +81,7 @@ class DirectionVector(object):
 
         """
 
-        return np.array([self.x, self.y, self.z])
+        return np.c_[self.x, self.y, self.z]
 
 
 

@@ -4,8 +4,8 @@
 import numpy as np
 import openmdao.api as om
 from scipy.special import ellipeinc
-import wisdem.commonse.tube as tube
 import wisdem.commonse.utilities as util
+from wisdem.commonse.cross_sections import IBeam
 
 def rod_prop(s, D, t, rho):
     y  = 0.25 * rho * np.pi * (D**2  - (D - 2*t)**2)
@@ -39,10 +39,10 @@ class DirectLayout(om.ExplicitComponent):
         Length from lss-hub flange to generator rotor attachment point on lss
     L_gsn : float, [m]
         Length from nose-bedplate flange to generator stator attachment point on nose
-    L_bedplate : float, [m]
-        Length of bedplate
-    H_bedplate : float, [m]
-        height of bedplate
+    overhang : float, [m]
+        Overhang of rotor from tower along x-axis in yaw-aligned c.s.
+    drive_height : float, [m]
+        Hub height above tower top
     tilt : float, [deg]
         Angle of drivetrain lss tilt
     access_diameter : float, [m]
@@ -51,23 +51,19 @@ class DirectLayout(om.ExplicitComponent):
         LSS outer diameter from hub to bearing 2
     nose_diameter : numpy array[5], [m]
         Nose outer diameter from bearing 1 to bedplate
-    D_top : float, [m]
-        Tower top outer diameter
     lss_wall_thickness : numpy array[5], [m]
         LSS wall thickness
     nose_wall_thickness : numpy array[5], [m]
         Nose wall thickness
     bedplate_wall_thickness : numpy array[n_points], [m]
         Bedplate wall thickness
+    D_top : float, [m]
+        Tower top outer diameter
     rho : float, [kg/m**3]
         material density
     
     Returns
     -------
-    overhang : float, [m]
-        Overhang of rotor from tower along x-axis in yaw-aligned c.s.
-    drive_height : float, [m]
-        Hub height above tower top
     L_nose : float, [m]
         Length of nose
     L_lss : float, [m]
@@ -110,6 +106,10 @@ class DirectLayout(om.ExplicitComponent):
         LSS center of mass along lss axis from bedplate
     lss_I : numpy array[3], [kg*m**2]
         LSS moment of inertia around cm in axial (hub-aligned) c.s.
+    L_bedplate : float, [m]
+        Length of bedplate
+    H_bedplate : float, [m]
+        height of bedplate
     x_bedplate : numpy array[n_points], [m]
         Bedplate centerline x-coordinates
     z_bedplate : numpy array[n_points], [m]
@@ -157,17 +157,17 @@ class DirectLayout(om.ExplicitComponent):
         self.add_input('L_2n', 0.0, units='m')
         self.add_input('L_grs', 0.0, units='m')
         self.add_input('L_gsn', 0.0, units='m')
+        self.add_input('overhang', 0.0, units='m')
+        self.add_input('drive_height', 0.0, units='m')
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('access_diameter', 0.0, units='m')
         self.add_input('lss_diameter', np.zeros(5), units='m')
         self.add_input('nose_diameter', np.zeros(5), units='m')
-        self.add_input('D_top', 0.0, units='m')
         self.add_input('lss_wall_thickness', np.zeros(5), units='m')
         self.add_input('nose_wall_thickness', np.zeros(5), units='m')
         self.add_input('bedplate_wall_thickness', np.zeros(n_points), units='m')
+        self.add_input('D_top', 0.0, units='m')
         self.add_input('rho', val=0.0, units='kg/m**3')
-        self.add_input('overhang', 0.0, units='m')
-        self.add_input('drive_height', 0.0, units='m')
 
         self.add_output('L_nose', 0.0, units='m')
         self.add_output('L_lss', 0.0, units='m')
@@ -395,108 +395,75 @@ class GearedLayout(om.ExplicitComponent):
     """
     Calculate lengths, heights, and diameters of key drivetrain components in a
     geared drive system (valid for upwind or downwind).
-    
+
+    |_Lgen|_Lhss|Lgear|_L12_|_Lh1_|
+                      |___Llss____|
+    |--|--|--|--|--|--|--|--|--|--|
+    0  1  2  3  4  5  6  7  8  9  10 (indices)
+                     mb2   mb1
+
     Parameters
     ----------
     upwind : boolean
         Flag whether the design is upwind or downwind
+    overhang : float, [m]
+        Overhang of rotor from tower along x-axis in yaw-aligned c.s.
+    drive_height : float, [m]
+        Hub height above tower top
     L_12 : float, [m]
         Length from bearing #1 to bearing #2
     L_h1 : float, [m]
         Length from hub / start of lss to bearing #1
-    L_2n : float, [m]
-        Length from bedplate / end of nose to bearing #2
-    L_grs : float, [m]
-        Length from lss-hub flange to generator rotor attachment point on lss
-    L_gsn : float, [m]
-        Length from nose-bedplate flange to generator stator attachment point on nose
-    L_bedplate : float, [m]
-        Length of bedplate
-    H_bedplate : float, [m]
-        height of bedplate
     tilt : float, [deg]
         Angle of drivetrain lss tilt
-    access_diameter : float, [m]
-        Minimum diameter required for maintenance access
     lss_diameter : numpy array[5], [m]
         LSS outer diameter from hub to bearing 2
-    nose_diameter : numpy array[5], [m]
-        Nose outer diameter from bearing 1 to bedplate
-    D_top : float, [m]
-        Tower top outer diameter
     lss_wall_thickness : numpy array[5], [m]
         LSS wall thickness
-    nose_wall_thickness : numpy array[5], [m]
-        Nose wall thickness
-    bedplate_wall_thickness : numpy array[n_points], [m]
-        Bedplate wall thickness
+    D_top : float, [m]
+        Tower top outer diameter
+    bedplate_flange_width : float, [m]
+        Bedplate is two parallel I beams, this is the flange width
+    bedplate_flange_thickness : float, [m]
+        Bedplate is two parallel I beams, this is the flange thickness
+    bedplate_web_thickness : float, [m]
+        Bedplate is two parallel I beams, this is the web thickness
+    bedplate_web_height : float, [m]
+        Bedplate is two parallel I beams, this is the web height
     rho : float, [kg/m**3]
         material density
     
     Returns
     -------
-    overhang : float, [m]
-        Overhang of rotor from tower along x-axis in yaw-aligned c.s.
-    drive_height : float, [m]
-        Hub height above tower top
-    L_nose : float, [m]
-        Length of nose
     L_lss : float, [m]
         Length of nose
     L_generator : float, [m]
         Generator stack width
     L_drive : float, [m]
         Length of drivetrain from bedplate to hub flang
-    D_bearing1 : float, [m]
-        Diameter of bearing #1 (closer to hub)
-    D_bearing2 : float, [m]
-        Diameter of bearing #2 (closer to tower)
-    constr_access : numpy array[5], [m]
-        Margin for allowing maintenance access (should be > 0)
-    constr_L_grs : float, [m]
-        Margin for generator rotor attachment distance (should be > 0)
-    constr_L_gsn : float, [m]
-        Margin for generator stator attachment distance (should be > 0)
-    s_nose : numpy array[6], [m]
-        Nose discretized hub-aligned s-coordinates
-    D_nose : numpy array[6], [m]
-        Nose discretized diameter values at coordinates
-    t_nose : numpy array[6], [m]
-        Nose discretized thickness values at coordinates
-    nose_mass : float, [kg]
-        Nose mass
-    nose_cm : float, [m]
-        Nose center of mass along nose axis from bedplate
-    nose_I : numpy array[3], [kg*m**2]
-        Nose moment of inertia around cm in axial (hub-aligned) c.s.
-    s_lss : numpy array[6], [m]
+    s_drive : numpy array[11], [m]
+        Discretized, hub-aligned s-coordinates of the drivetrain starting at 
+        generator and ending at hub flange
+    s_hss : numpy array[5], [m]
+        HSS discretized s-coordinates
+    hss_mass : float, [kg]
+        HSS mass
+    hss_cm : float, [m]
+        HSS center of mass along hss axis from bedplate
+    hss_I : numpy array[3], [kg*m**2]
+        HSS moment of inertia around cm in axial (hub-aligned) c.s.
+    s_lss : numpy array[5], [m]
         LSS discretized s-coordinates
-    D_lss : numpy array[6], [m]
-        LSS discretized diameter values at coordinates
-    t_lss : numpy array[6], [m]
-        LSS discretized thickness values at coordinates
     lss_mass : float, [kg]
         LSS mass
     lss_cm : float, [m]
         LSS center of mass along lss axis from bedplate
     lss_I : numpy array[3], [kg*m**2]
         LSS moment of inertia around cm in axial (hub-aligned) c.s.
-    x_bedplate : numpy array[n_points], [m]
-        Bedplate centerline x-coordinates
-    z_bedplate : numpy array[n_points], [m]
-        Bedplate centerline z-coordinates
-    x_bedplate_inner : numpy array[n_points], [m]
-        Bedplate lower curve x-coordinates
-    z_bedplate_inner : numpy array[n_points], [m]
-        Bedplate lower curve z-coordinates
-    x_bedplate_outer : numpy array[n_points], [m]
-        Bedplate outer curve x-coordinates
-    z_bedplate_outer : numpy array[n_points], [m]
-        Bedplate outer curve z-coordinates
-    D_bedplate : numpy array[n_points], [m]
-        Bedplate diameters
-    t_bedplate : numpy array[n_points], [m]
-        Bedplate wall thickness (mirrors input)
+    L_bedplate : float, [m]
+        Length of bedplate
+    H_bedplate : float, [m]
+        height of bedplate
     bedplate_mass : float, [kg]
         Bedplate mass
     bedplate_cm : numpy array[3], [m]
@@ -507,12 +474,14 @@ class GearedLayout(om.ExplicitComponent):
         Bearing 1 s-coordinate along drivetrain, measured from bedplate
     s_mb2 : float, [m]
         Bearing 2 s-coordinate along drivetrain, measured from bedplate
-    s_stator : float, [m]
-        Generator stator attachment to nose s-coordinate
-    s_rotor : float, [m]
-        Generator rotor attachment to lss s-coordinate
+    gearbox_cm : float, [m]
+        Overall gearbox cm
     generator_cm : float, [m]
         Overall generator cm
+    constr_length : float, [m]
+        Margin for drivetrain length and desired overhang distance (should be > 0)
+    constr_height : float, [m]
+        Margin for drivetrain height and desired hub height (should be > 0)
     
     """
     
@@ -527,29 +496,30 @@ class GearedLayout(om.ExplicitComponent):
         self.add_input('L_h1', 0.0, units='m')
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('lss_diameter', np.zeros(5), units='m')
-        self.add_input('D_top', 0.0, units='m')
         self.add_input('lss_wall_thickness', np.zeros(5), units='m')
-        self.add_input('bedplate_wall_thickness', np.zeros(n_points), units='m')
+        self.add_input('D_top', 0.0, units='m')
         self.add_input('rho', val=0.0, units='kg/m**3')
         self.add_input('overhang', 0.0, units='m')
         self.add_input('drive_height', 0.0, units='m')
+        self.add_input('bedplate_flange_width', val=0.0, units='m')
+        self.add_input('bedplate_flange_thickness', val=0.0, units='m')
+        self.add_input('bedplate_web_height', val=0.0, units='m')
+        self.add_input('bedplate_web_thickness', val=0.0, units='m')
 
-        self.add_output('L_bedplate', 0.0, units='m')
-        self.add_output('H_bedplate', 0.0, units='m')
         self.add_output('L_lss', 0.0, units='m')
         self.add_output('L_generator', 0.0, units='m')
         self.add_output('L_drive', 0.0, units='m')
-        self.add_output('constr_access', np.zeros(5), units='m')
-        self.add_output('constr_L_grs', 0.0, units='m')
-        self.add_output('constr_L_gsn', 0.0, units='m')
-        self.add_output('s_hss', val=np.zeros(6), units='m')
+        self.add_output('s_drive', val=np.zeros(11), units='m')
+        self.add_output('s_hss', val=np.zeros(3), units='m')
         self.add_output('hss_mass', val=0.0, units='kg')
         self.add_output('hss_cm', val=0.0, units='m')
         self.add_output('hss_I', val=np.zeros(3), units='kg*m**2')
-        self.add_output('s_lss', val=np.zeros(6), units='m')
+        self.add_output('s_lss', val=np.zeros(5), units='m')
         self.add_output('lss_mass', val=0.0, units='kg')
         self.add_output('lss_cm', val=0.0, units='m')
         self.add_output('lss_I', val=np.zeros(3), units='kg*m**2')
+        self.add_output('L_bedplate', 0.0, units='m')
+        self.add_output('H_bedplate', 0.0, units='m')
         self.add_output('bedplate_mass', val=0.0, units='kg')
         self.add_output('bedplate_cm', val=np.zeros(3), units='m')
         self.add_output('bedplate_I', val=np.zeros(6), units='kg*m**2')
@@ -557,27 +527,39 @@ class GearedLayout(om.ExplicitComponent):
         self.add_output('s_mb2', val=0.0, units='m')
         self.add_output('generator_cm', val=0.0, units='m')
         self.add_output('gearbox_cm', val=0.0, units='m')
+        self.add_output('constr_length', 0.0, units='m')
+        self.add_output('constr_height', 0.0, units='m')
         
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        upwind     = discrete_inputs['upwind']
-        Cup        = -1.0 if upwind else 1.0
-        L_12        = float(inputs['L_12'])
-        L_h1        = float(inputs['L_h1'])
-        L_hss       = float(inputs['L_hss'])
-        L_gearbox   = float(inputs['L_gearbox'])
-        L_generator = float(inputs['L_generator'])
-        L_overhang  = float(inputs['overhang'])
-        H_drive     = float(inputs['drive_height'])
-        tilt        = float(np.deg2rad(inputs['tilt']))
-        D_lss       = inputs['lss_diameter']
-        t_lss       = inputs['lss_wall_thickness']
-        D_hss       = inputs['hss_diameter']
-        t_hss       = inputs['hss_wall_thickness']
-        D_top       = float(inputs['D_top'])
-        rho         = float(inputs['rho'])
+        upwind       = discrete_inputs['upwind']
+        Cup          = -1.0 if upwind else 1.0
+
+        L_12         = float(inputs['L_12'])
+        L_h1         = float(inputs['L_h1'])
+        L_hss        = float(inputs['L_hss'])
+        L_gearbox    = float(inputs['L_gearbox'])
+        L_generator  = float(inputs['L_generator'])
+        L_overhang   = float(inputs['overhang'])
+        H_drive      = float(inputs['drive_height'])
+
+        tilt         = float(np.deg2rad(inputs['tilt']))
+
+        D_lss        = inputs['lss_diameter']
+        t_lss        = inputs['lss_wall_thickness']
+        D_hss        = inputs['hss_diameter']
+        t_hss        = inputs['hss_wall_thickness']
+
+        D_top        = float(inputs['D_top'])
+
+        bed_w_flange = float(inputs['bedplate_flange_width'])
+        bed_t_flange = float(inputs['bedplate_flange_thickness'])
+        bed_h_web    = float(inputs['bedplate_web_height'])
+        bed_t_web    = float(inputs['bedplate_web_thickness'])
+
+        rho          = float(inputs['rho'])
 
         # ------- Discretization ----------------
         # Length of lss and drivetrain length
@@ -592,19 +574,15 @@ class GearedLayout(om.ExplicitComponent):
         # Put tower at 0 position
         s_tower = s_drive[-1] - (L_overhang+0.5*D_top)/np.cos(tilt)
         s_drive -= s_tower
-        
-        L_bedplate = L_drive*np.cos(tilt)
-        H_bedplate = H_drive - s_drive[-1]*np.sin(tilt) - 5e-2 # Subtract thickness of platform plate
-        outputs['L_bedplate'] = L_bedplate
-        outputs['H_bedplate'] = H_bedplate
+        outputs['s_drive'] = s_drive
         
         # Discretize the drivetrain from generator to hub
         s_generator = s_drive[:3].mean()
-        s_mb1       = s_drive[-2]
-        s_mb2       = s_drive[-4]
-        s_gearbox   = s_drive[5:7].mean()
-        s_lss       = s_drive[-4:]
-        s_hss       = s_drive[3:5]
+        s_mb1       = s_drive[8]
+        s_mb2       = s_drive[6]
+        s_gearbox   = s_drive[4:7].mean()
+        s_lss       = s_drive[6:]
+        s_hss       = s_drive[2:5]
 
         # Store outputs
         outputs['generator_cm'] = s_generator
@@ -613,30 +591,35 @@ class GearedLayout(om.ExplicitComponent):
         outputs['s_mb2']    = s_mb2
         # ------------------------------------
         
-        # ------- Constraints ----------------
-        outputs['constr_length'] = L_drive*np.cos(tilt) - L_overhang - D_top # Should be > 0
-        outputs['constr_height'] = H_bedplate # Should be > 0
-        # ------------------------------------
-        
         # ------- hss, lss, and bearing properties ----------------
         # Compute center of mass based on area
         m_hss, cm_hss, I_hss = rod_prop(s_hss, D_hss, t_hss, rho)
         outputs['hss_mass'] = m_hss
         outputs['hss_cm']   = cm_hss
         outputs['hss_I']    = I_hss
+        outputs['s_hss']    = s_hss
 
         m_lss, cm_lss, I_lss = rod_prop(s_lss, D_lss, t_lss, rho)
         outputs['lss_mass'] = m_lss
         outputs['lss_cm']   = cm_lss
         outputs['lss_I']    = I_lss
+        outputs['s_lss']    = s_lss
         
         # ------- Bedplate I-beam properties ----------------
-        A_bed, zcg, Iyy, Izz = IBeamProperties(bed_h_web, bed_t_web, bed_w_flange, bed_t_flange, bed_w_flange, bed_t_flange)
-        m_bedplate = A_bed * L_bedplate * rho
-        cg_bedplate = np.r_[Cup*0.5*(L_bedplate-L_overhang), 0.0, zcg] # from tower top
-        I_bedplate = m_bedplate*np.r_[L_bedplate**2, Iyy, Izz]
+        L_bedplate = L_drive*np.cos(tilt)
+        H_bedplate = H_drive - s_drive[-1]*np.sin(tilt) - 5e-2 # Subtract thickness of platform plate
+        outputs['L_bedplate'] = L_bedplate
+        outputs['H_bedplate'] = H_bedplate
+        
+        myI         = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
+        m_bedplate  = myI.Area * L_bedplate * rho
+        cg_bedplate = np.r_[Cup*(L_overhang - 0.5*L_bedplate), 0.0, myI.CG] # from tower top
+        I_bedplate  = rho*L_bedplate*np.r_[myI.Jxx, myI.Iyy, myI.Izz] + m_bedplate*L_bedplate**2/12.*np.r_[0., 1., 1.]
         outputs['bedplate_mass'] = m_bedplate
         outputs['bedplate_cm']   = cg_bedplate
         outputs['bedplate_I']    = I_bedplate
         
-
+        # ------- Constraints ----------------
+        outputs['constr_length'] = L_drive*np.cos(tilt) - L_overhang - D_top # Should be > 0
+        outputs['constr_height'] = H_bedplate # Should be > 0
+        # ------------------------------------

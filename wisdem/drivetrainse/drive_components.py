@@ -180,21 +180,24 @@ class HighSpeedSide(om.ExplicitComponent):
     
         # Assume brake disc diameter and simple MoI
         D_disc = 0.01*D_rotor
-        I      = np.zeros(3)
-        I[0]   = 0.5*m_brake*(0.5*D_disc)**2
-        I[1:]  = 0.25*m_brake*(0.5*D_disc)**2
+        Ib      = np.zeros(3)
+        Ib[0]   = 0.5*m_brake*(0.5*D_disc)**2
+        Ib[1:]  = 0.5*I[0]
 
+        Is      = np.zeros(3)
         if direct:
             cm = s_rotor
         else:
             cm = 0.5*(s_rotor + s_gearbox)
   
-            I[0]  += m_hss_shaft *     (0.5*D_hss_shaft)**2                   / 2.
-            I[1:] += m_hss_shaft * (3.*(0.5*D_hss_shaft)**2 + L_hss_shaft**2) / 12.
+            Is[0]  = m_hss_shaft *     (0.5*D_hss_shaft)**2                   / 2.
+            Is[1:] = m_hss_shaft * (3.*(0.5*D_hss_shaft)**2 + L_hss_shaft**2) / 12.
 
+        outputs['brake_mass'] = m_brake
+        outputs['brake_I'] = Ib
         outputs['hss_mass'] = mass
         outputs['hss_cm'] = cm
-        outputs['hss_I'] = I
+        outputs['hss_I'] = Ib+Is
         outputs['hss_length'] = L_hss_shaft
         outputs['hss_diameter'] = D_hss_shaft
         

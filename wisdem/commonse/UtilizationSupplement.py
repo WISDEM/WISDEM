@@ -634,7 +634,7 @@ def _buckling_reduction_factor(alpha, beta, eta, lambda_0, lambda_bar):
 
 
 
-def TBeamProperties(h_web, t_web, w_flange, t_flange):
+def _TBeamProperties(h_web, t_web, w_flange, t_flange):
     """Computes T-cross section area, CG, and moments of inertia
     See: http://www.amesweb.info/SectionalPropertiesTabs/SectionalPropertiesTbeam.aspx
 
@@ -667,7 +667,7 @@ def TBeamProperties(h_web, t_web, w_flange, t_flange):
     return area, y_cg, Ixx, Iyy
 
 
-def IBeamProperties(h_web, t_web, w_flange, t_flange, w_base, t_base):
+def _IBeamProperties(h_web, t_web, w_flange, t_flange, w_base, t_base):
     """Computes uneven I-cross section area, CG
     See: http://www.amesweb.info/SectionalPropertiesTabs/SectionalPropertiesTbeam.aspx
 
@@ -692,13 +692,7 @@ def IBeamProperties(h_web, t_web, w_flange, t_flange, w_base, t_base):
     area        = area_web + area_flange + area_base
     # Y-position of the center of mass (Yna) measured from the base
     y_cg = ( (t_base + h_web + 0.5*t_flange)*area_flange + (t_base + 0.5*h_web)*area_web + 0.5*t_base*area_base ) / area
-    # Moments of inertia: y-axis runs through base (spinning top),
-    # x-axis runs parallel to flange through cg
-    Iyy =  (area_web*t_web**2 + area_flange*w_flange**2    ) / 12.0
-    Ixx = ((area_web*h_web**2 + area_flange*t_flange**2) / 12.0 +
-           area_web*(y_cg - 0.5*h_web)**2 +
-           area_flange*(h_web + 0.5*t_flange - y_cg)**2 )
-    return area, y_cg, Ixx, Iyy
+    return area, y_cg
 
 
 def _compute_applied_axial(R_od, t_wall, m_stack, section_mass):
@@ -754,7 +748,7 @@ def _compute_stiffener_factors(pressure, axial_stress, R_od, t_wall, h_web, t_we
 
     # Geometry computations
     R_flange = R_od - h_web # Should have "- t_wall", but not in appendix B
-    area_stiff, y_cg, Ixx, Iyy = TBeamProperties(h_web, t_web, w_flange, t_flange)
+    area_stiff, y_cg, Ixx, Iyy = _TBeamProperties(h_web, t_web, w_flange, t_flange)
     t_stiff  = area_stiff / h_web # effective thickness(width) of stiffener section
 
     # Compute hoop stress modifiers accounting for stiffener rings
@@ -801,7 +795,7 @@ def _compute_elastic_stress_limits(R_od, t_wall, h_section, h_web, t_web, w_flan
 
     # Geometry computations
     nsections = R_od.size
-    area_stiff, y_cg, Ixx, Iyy = TBeamProperties(h_web, t_web, w_flange, t_flange)
+    area_stiff, y_cg, Ixx, Iyy = _TBeamProperties(h_web, t_web, w_flange, t_flange)
     area_stiff_bar = area_stiff / L_stiffener / t_wall
     R  = R_od - 0.5*t_wall
 
@@ -857,7 +851,7 @@ def _compute_elastic_stress_limits(R_od, t_wall, h_section, h_web, t_web, w_flan
     L_shell_effective = 1.1*np.sqrt(2.0*R*t_wall) + t_web
     L_shell_effective[m_x <= 1.56] = L_stiffener[m_x <= 1.56]
     # Get properties of this effective uneven I-beam
-    _, yna_eff = IBeamProperties(h_web, t_web, w_flange, t_flange, L_shell_effective, t_wall)
+    _, yna_eff = _IBeamProperties(h_web, t_web, w_flange, t_flange, L_shell_effective, t_wall)
     Rc = R_od - yna_eff
     # Compute effective shell moment of inertia based on Ir - I of stiffener
     Ier = Ixx + area_stiff*z_r**2*L_shell_effective*t_wall/(area_stiff+L_shell_effective*t_wall) + L_shell_effective*t_wall**3/12.0
