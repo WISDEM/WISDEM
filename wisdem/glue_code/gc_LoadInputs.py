@@ -43,7 +43,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options['openfast']['fst_vt']   = fast.fst_vt
 
             if os.path.exists(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']):
-                self.modeling_options['openfast']['fst_settings'] = dict(load_yaml(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']))
+                self.modeling_options['openfast']['fst_settings'] = dict(sch.load_yaml(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']))
             else:
                 print('WARNING: OpenFAST is called, but no file with settings is found.')
                 self.modeling_options['openfast']['fst_settings'] = {}
@@ -151,7 +151,7 @@ class WindTurbineOntologyPython(object):
         if flags['bos']: flags['bos'] = self.modeling_options['Analysis_Flags']['BOS']
         if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE']
         if flags['tower']: flags['tower'] = self.modeling_options['Analysis_Flags']['TowerSE']
-        if flags['control']: flags['control'] = self.modeling_options['Analysis_Flags']['ServoSE']
+        # if flags['control']: flags['control'] = self.modeling_options['Analysis_Flags']['ServoSE']
 
         # Blades and airfoils
         if flags['blade'] and not flags['airfoils']:
@@ -213,15 +213,23 @@ class WindTurbineOntologyPython(object):
         blade_opt_options = self.analysis_options['optimization_variables']['blade']
         if not blade_opt_options['aero_shape']['twist']['flag']:
             blade_opt_options['aero_shape']['twist']['n_opt'] = self.modeling_options['rotorse']['n_span']
+        elif blade_opt_options['aero_shape']['twist']['n_opt'] < 4:
+                raise ValueError('Cannot optimize twist with less than 4 control points along blade span')
             
         if not blade_opt_options['aero_shape']['chord']['flag']:
             blade_opt_options['aero_shape']['chord']['n_opt'] = self.modeling_options['rotorse']['n_span']
+        elif blade_opt_options['aero_shape']['chord']['n_opt'] < 4:
+                raise ValueError('Cannot optimize chord with less than 4 control points along blade span')
             
         if not blade_opt_options['structure']['spar_cap_ss']['flag']:
             blade_opt_options['structure']['spar_cap_ss']['n_opt'] = self.modeling_options['rotorse']['n_span']
+        elif blade_opt_options['structure']['spar_cap_ss']['n_opt'] < 4:
+                raise ValueError('Cannot optimize spar cap suction side with less than 4 control points along blade span')
 
         if not blade_opt_options['structure']['spar_cap_ps']['flag']:
             blade_opt_options['structure']['spar_cap_ps']['n_opt'] = self.modeling_options['rotorse']['n_span']
+        elif blade_opt_options['structure']['spar_cap_ps']['n_opt'] < 4:
+                raise ValueError('Cannot optimize spar cap pressure side with less than 4 control points along blade span')
 
         
         
@@ -385,13 +393,14 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['RNA']['elastic_properties_mb']['center_mass'] = wt_opt['drivese.rna_cm'].tolist()
 
         # Update controller
-        self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])
-        self.wt_init['control']['PC_omega'] = float(wt_opt['control.PC_omega'])
-        self.wt_init['control']['PC_zeta']  = float(wt_opt['control.PC_zeta'])
-        self.wt_init['control']['VS_omega'] = float(wt_opt['control.VS_omega'])
-        self.wt_init['control']['VS_zeta']  = float(wt_opt['control.VS_zeta'])
-        self.wt_init['control']['Flp_omega']= float(wt_opt['control.Flp_omega'])
-        self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
+        if self.modeling_options['flags']['control']:
+            self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])
+            self.wt_init['control']['PC_omega'] = float(wt_opt['control.PC_omega'])
+            self.wt_init['control']['PC_zeta']  = float(wt_opt['control.PC_zeta'])
+            self.wt_init['control']['VS_omega'] = float(wt_opt['control.VS_omega'])
+            self.wt_init['control']['VS_zeta']  = float(wt_opt['control.VS_zeta'])
+            self.wt_init['control']['Flp_omega']= float(wt_opt['control.Flp_omega'])
+            self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
 
         # Write yaml with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)

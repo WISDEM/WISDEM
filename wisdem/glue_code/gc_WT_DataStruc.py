@@ -207,7 +207,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         exec_comp = om.ExecComp('tsr_opt = tsr_original * tsr_gain')
         self.add_subsystem('pc', exec_comp)
         self.connect('opt_var.tsr_opt_gain', 'pc.tsr_gain')
-        self.connect('control.rated_TSR',    'pc.tsr_original')
+        if modeling_options['flags']['control']:
+            self.connect('control.rated_TSR',    'pc.tsr_original')
 
 class Blade(om.Group):
     # Openmdao group with components with the blade data coming from the input yaml file.

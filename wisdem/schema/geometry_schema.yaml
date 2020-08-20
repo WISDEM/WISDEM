@@ -269,7 +269,6 @@ properties:
                                     minItems: 6
                                     maxItems: 6
                                     uniqueItems: false
-                                    minimum: 0
                             system_center_mass:
                                 type: array
                                 description: Center of mass of the hub system. Work in progress.
@@ -629,7 +628,6 @@ properties:
                                     minItems: 6
                                     maxItems: 6
                                     uniqueItems: false
-                                    minimum: 0
                             center_mass:
                                 type: array
                                 description: Center of mass of the rotor nacelle assembly, expressed in the yaw coordinate system.
