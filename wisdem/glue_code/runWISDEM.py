@@ -604,7 +604,8 @@ if __name__ == "__main__":
 
     ## File management
     run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
-    fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    # fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml" #"reference_turbines/bar/BAR2010n.yaml"
+    fname_wt_input         = "/mnt/c/Users/egaertne/RefModels/BAR/yaml/BAR02.yaml" #"reference_turbines/bar/BAR2010n.yaml"
     fname_modeling_options = run_dir + "modeling_options.yaml"
     fname_analysis_options = run_dir + "analysis_options.yaml"
 

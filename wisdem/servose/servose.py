@@ -210,10 +210,10 @@ class TuneROSCO(ExplicitComponent):
         self.add_output('Flp_Kp',           val=0.0,            units='rad',        desc='Flap control proportional gain')
         self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
 
-        # self.add_output('PC_GS_angles', val=np.zeros(n_pitch+1), units='rad', desc='Gain-schedule table: pitch angles')
-        # self.add_output('PC_GS_KP',     val=np.zeros(n_pitch+1),              desc='Gain-schedule table: pitch controller kp gains')
-        # self.add_output('PC_GS_KI',     val=np.zeros(n_pitch+1),              desc='Gain-schedule table: pitch controller ki gains')
-        # self.add_output('VS_Rgn2K',     val=0.0, units='N*m/(rad/s)**2',      desc='Generator torque constant in Region 2 (HSS side), [N-m/(rad/s)^2]')
+        self.add_output('PC_GS_angles', val=np.zeros(n_pitch+1), units='rad', desc='Gain-schedule table: pitch angles')
+        self.add_output('PC_GS_KP',     val=np.zeros(n_pitch+1),              desc='Gain-schedule table: pitch controller kp gains')
+        self.add_output('PC_GS_KI',     val=np.zeros(n_pitch+1),              desc='Gain-schedule table: pitch controller ki gains')
+        self.add_output('VS_Rgn2K',     val=0.0, units='N*m/(rad/s)**2',      desc='Generator torque constant in Region 2 (HSS side), [N-m/(rad/s)^2]')
 
     def compute(self,inputs,outputs, discrete_inputs, discrete_outputs):
         '''
@@ -404,10 +404,10 @@ class TuneROSCO(ExplicitComponent):
         outputs['Flp_Ki']   = controller.Ki_flap[-1]
 
 
-        # outputs['PC_GS_angles'] = controller.pitch_op_pc
-        # outputs['PC_GS_KP']     = controller.pc_gain_schedule.Kp
-        # outputs['PC_GS_KI']     = controller.pc_gain_schedule.Ki
-        # outputs['VS_Rgn2K']     = controller.vs_rgn2K
+        outputs['PC_GS_angles'] = controller.pitch_op_pc
+        outputs['PC_GS_KP']     = controller.pc_gain_schedule.Kp
+        outputs['PC_GS_KI']     = controller.pc_gain_schedule.Ki
+        outputs['VS_Rgn2K']     = controller.vs_rgn2K
 
 class RegulatedPowerCurve(Group):
     

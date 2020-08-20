@@ -39,12 +39,13 @@ class WT_RNTA(Group):
             self.add_subsystem('sse',       ServoSE(modeling_options = modeling_options)) # Aero analysis
         self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
     
-        if modeling_options['Analysis_Flags']['OpenFAST'] == True:
+        if modeling_options['Analysis_Flags']['OpenFAST'] or modeling_options['rotorse']['time_domain_extreme'] and modeling_options['Analysis_Flags']['ServoSE']:
             self.add_subsystem('modes_elastodyn',   ModesElastoDyn(modeling_options = modeling_options))
             self.add_subsystem('freq_rotor',        RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=True))
             #if modeling_options['tower']['run_towerse']:
             self.add_subsystem('freq_tower',        TowerSE(modeling_options=modeling_options))
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options)) # Aero analysis
+        if modeling_options['Analysis_Flags']['OpenFAST']:
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
 
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
@@ -93,7 +94,7 @@ class WT_RNTA(Group):
         self.connect('blade.pa.twist_param',           ['elastic.theta','rlds.theta'])
         #self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
         self.connect('blade.pa.chord_param',           ['xf.chord', 'elastic.chord'])
-        if not modeling_options['Analysis_Flags']['OpenFAST'] or modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 1:
+        if not modeling_options['Analysis_Flags']['OpenFAST'] or (modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 1):
             self.connect('blade.pa.chord_param',           ['rlds.chord'])
         if modeling_options['Analysis_Flags']['ServoSE']:
             self.connect('blade.pa.twist_param',           'sse.theta')
@@ -146,7 +147,7 @@ class WT_RNTA(Group):
         # self.connect('sse.powercurve.rated_V',        'rlds.aero_rated.V_load')
         if modeling_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_V',        'sse.gust.V_hub')
-            if not modeling_options['Analysis_Flags']['OpenFAST']:
+            if (not modeling_options['Analysis_Flags']['OpenFAST'] or (modeling_options['Analysis_Flags']['OpenFAST']and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 1)) and (not modeling_options['rotorse']['time_domain_extreme']):
                 self.connect('sse.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
                 self.connect('sse.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.tot_loads_gust.aeroloads_Omega', 'rlds.constr.rated_Omega'])
                 self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.tot_loads_gust.aeroloads_pitch'])
@@ -221,7 +222,7 @@ class WT_RNTA(Group):
         else:
             self.connect('ccblade.alpha',  'stall_check.aoa_along_span')
 
-        if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['Analysis_Flags']['ServoSE']:
+        if modeling_options['Analysis_Flags']['OpenFAST'] or modeling_options['rotorse']['time_domain_extreme'] and modeling_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_V',         ['sse_tune.tune_rosco.v_rated'])
             self.connect('sse.gust.V_gust',                ['freq_rotor.aero_gust.V_load', 'freq_rotor.aero_hub_loads.V_load'])
             self.connect('sse.powercurve.rated_Omega',     ['freq_rotor.Omega_load', 'freq_rotor.tot_loads_gust.aeroloads_Omega', 'freq_rotor.constr.rated_Omega', 'sse_tune.tune_rosco.rated_rotor_speed'])
@@ -381,6 +382,30 @@ class WT_RNTA(Group):
             self.connect('env.shear_exp',             'rlds.aero_hub_loads.shearExp')
             self.connect('assembly.hub_height',       'rlds.hub_height')
             self.connect('configuration.n_blades',    'rlds.nBlades')
+        if modeling_options['rotorse']['time_domain_extreme']:
+            self.connect('blade.outer_shape_bem.ref_axis',  'rlds.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
+            self.connect('blade.outer_shape_bem.ref_axis',  'rlds.precurveTip', src_indices=[(-1, 0)])
+            self.connect('blade.outer_shape_bem.ref_axis',  'rlds.presweep', src_indices=[(i, 1) for i in np.arange(n_span)])
+            self.connect('blade.outer_shape_bem.ref_axis',  'rlds.presweepTip', src_indices=[(-1, 1)])
+            self.connect('sse.powercurve.V',                'rlds.V')
+            self.connect('sse.powercurve.Omega',            'rlds.Omega')
+            self.connect('sse.powercurve.pitch',            'rlds.pitch')
+            self.connect('sse.powercurve.rated_V',          'rlds.rated_V')
+            self.connect('sse.powercurve.rated_Omega',      'rlds.rated_Omega')
+            self.connect('sse.powercurve.rated_pitch',      'rlds.rated_pitch')
+            self.connect('sse.powercurve.rated_Q',          'rlds.rated_Q')
+            self.connect('control.max_pitch_rate',          'rlds.max_pitch_rate')
+            self.connect('control.max_pitch',               'rlds.max_pitch')
+            self.connect('control.min_pitch',               'rlds.min_pitch')
+            self.connect('nacelle.gearbox_efficiency',      'rlds.gearbox_efficiency')
+            self.connect('nacelle.generator_efficiency',    'rlds.generator_efficiency')
+            self.connect('nacelle.gear_ratio',              'rlds.gear_ratio')
+            self.connect('elastic.precomp.I_all_blades',    'rlds.I_all_blades')
+            self.connect('sse_tune.tune_rosco.PC_GS_angles','rlds.PC_GS_angles')
+            self.connect('sse_tune.tune_rosco.PC_GS_KP',    'rlds.PC_GS_KP')
+            self.connect('sse_tune.tune_rosco.PC_GS_KI',    'rlds.PC_GS_KI')
+            self.connect('sse_tune.tune_rosco.VS_Rgn2K',    'rlds.VS_Rgn2K')
+
         self.connect('assembly.r_blade',          'rlds.r')
         self.connect('hub.cone',                  'rlds.precone')
         self.connect('nacelle.uptilt',            'rlds.tilt')
@@ -449,6 +474,9 @@ class WT_RNTA(Group):
             if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
                 self.connect('aeroelastic.Fxyz', 'drivese.Fxyz')
                 self.connect('aeroelastic.Mxyz', 'drivese.Mxyz')
+            elif modeling_options['rotorse']['time_domain_extreme']:
+                self.connect('rlds.ode.Fxyz_hub_aero', 'drivese.Fxyz')
+                self.connect('rlds.ode.Mxyz_hub_aero', 'drivese.Mxyz')
             else:
                 self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.Fxyz')
                 self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.Mxyz')
