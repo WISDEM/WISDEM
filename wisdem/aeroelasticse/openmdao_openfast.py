@@ -846,17 +846,24 @@ class FASTLoadCases(ExplicitComponent):
                 omega = np.interp(U, inputs['U_init'], inputs['Omega_init'])
                 pitch = np.interp(U, inputs['U_init'], inputs['pitch_init'])
 
-                # User defined simulation settings
-                case_inputs = {}
-                for var in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
-                    case_inputs[var] = {'vals':[self.options['modeling_options']['openfast']['fst_settings'][var]], 'group':0}
                 # wind speeds
+                case_inputs = {}
                 case_inputs[("InflowWind","WindType")]   = {'vals':[1], 'group':0}
                 case_inputs[("InflowWind","HWindSpeed")] = {'vals':U, 'group':1}
                 case_inputs[("ElastoDyn","RotSpeed")]    = {'vals':omega, 'group':1}
                 case_inputs[("ElastoDyn","BlPitch1")]    = {'vals':pitch, 'group':1}
                 case_inputs[("ElastoDyn","BlPitch2")]    = case_inputs[("ElastoDyn","BlPitch1")]
                 case_inputs[("ElastoDyn","BlPitch3")]    = case_inputs[("ElastoDyn","BlPitch1")]
+
+                # User defined simulation settings
+                if ("InflowWind","WindType") in case_inputs:
+                    print('WARNING: You have defined ("InflowWind","WindType"} in the openfast settings.'
+                            'This will overwrite the default powercurve settings')
+                if ("InflowWind","HWindSpeed") in case_inputs:
+                    print('WARNING: You have defined ("InflowWind","HWindSpeed"} in the openfast settings.'
+                            'This will overwrite the default powercurve settings')
+                for var in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
+                    case_inputs[var] = {'vals':[self.options['modeling_options']['openfast']['fst_settings'][var]], 'group':0}
 
                 case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
 
