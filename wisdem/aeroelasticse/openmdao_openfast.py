@@ -655,7 +655,7 @@ class FASTLoadCases(ExplicitComponent):
             case_list      += case_list_pc
             case_name_list += case_name_list_pc
             dlc_list       += dlc_list_pc
-           
+
         # Mandatory output channels to include 
         # TODO: what else is needed here?
         channels_out  = ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxc3", "TipDyc3", "TipDzc3"]
@@ -674,7 +674,9 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RootMyb1", "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
         channels_out += ["RtAeroFxh", "RtAeroFyh", "RtAeroFzh"]
         channels_out += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
-
+        # Add additional options
+        if ('channels_out',) in self.options['modeling_options']['openfast']['fst_settings']:
+            channels_out += self.options['modeling_options']['openfast']['fst_settings'][('channels_out',)]
 
 
 
