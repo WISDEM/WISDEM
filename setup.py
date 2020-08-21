@@ -42,6 +42,13 @@ class CMakeBuildExt(build_ext):
 
             cmake_args = ['-DBUILD_SHARED_LIBS=ON',
                           '-DCMAKE_INSTALL_PREFIX=' + localdir]
+            
+            if platform.system() == 'Windows':
+                # Assuming that Visual Studio and MinGW are supported compilers
+                if self.compiler.compiler_type == 'msvc':
+                    cmake_args += ['-DCMAKE_GENERATOR_PLATFORM=x64']
+                else:
+                    cmake_args += ['-G', 'MinGW Makefiles']
 
             self.build_temp += '_'+ext.name
             os.makedirs(localdir, exist_ok=True)
