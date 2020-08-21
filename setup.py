@@ -1,4 +1,5 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+from distutils import util
 
 from os import path
 from io import open
@@ -21,13 +22,16 @@ Operating System :: MacOS
 """
 
 metadata = dict(
-    name="weis",
+    name="WEIS",
     version="0.0.1",
     description="Wind Energy with Integrated Servo-control",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="NREL",
     classifiers=[_f for _f in CLASSIFIERS.split("\n") if _f],
+    package_dir = {
+        "weis" : "weis",
+        },
     packages=["weis"],
     python_requires=">=3.6",
     zip_safe=True,
