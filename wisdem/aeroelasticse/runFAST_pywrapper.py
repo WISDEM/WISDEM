@@ -88,7 +88,7 @@ class runFAST_pywrapper(object):
         wrapper.FAST_InputFile = os.path.split(writer.FAST_InputFileOut)[1]
         wrapper.FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
 
-        FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
+        FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
         FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
 
         #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
