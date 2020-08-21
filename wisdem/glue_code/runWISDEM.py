@@ -115,7 +115,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
                 try:
                     from openmdao.api import pyOptSparseDriver
                 except:
-                    exit('You requested the optimization solver SNOPT, but you have not installed the pyOptSparseDriver. Please do so and rerun.')
+                    exit('You requested the optimization solver SNOPT which requires pyOptSparse to be installed, but it cannot be found. Please install pyOptSparse and rerun.')
                 wt_opt.driver = pyOptSparseDriver()
                 try:    
                     wt_opt.driver.options['optimizer']                       = opt_options['driver']['solver']
@@ -335,7 +335,12 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
                 wt_opt.driver.recording_options['record_objectives'] = True
         
         # Setup openmdao problem
-        wt_opt.setup()
+        if opt_options['opt_flag']:
+            wt_opt.setup()
+        else:
+            # If we're not performing optimization, we don't need to allocate
+            # memory for the derivative arrays.
+            wt_opt.setup(derivatives=False)
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init)
