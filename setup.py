@@ -113,7 +113,8 @@ metadata = dict(
     url                           = 'https://github.com/WISDEM/WEIS',
     install_requires              = ['openmdao>=3.0','numpy','scipy','pandas','simpy','marmot-agents'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
-    package_dir                   = {'wisdem':'WISDEM/wisdem','rosco_toolbox':'ROSCO_toolbox/ROSCO_toolbox'},
+    package_dir                   = {'wisdem':'WISDEM/wisdem',
+                                     'rosco_toolbox':'ROSCO_toolbox/ROSCO_toolbox'}, # weis doesn't need special directions
     packages                      = weis_pkgs + wisdem_pkgs + roscotools_pkgs,
     python_requires               = '>=3.6',
     license                       = 'Apache License, Version 2.0',
