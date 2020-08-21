@@ -3,7 +3,6 @@ from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 from wisdem.commonse.utilities import arc_length
 from wisdem.commonse.csystem import DirectionVector
 
-
 def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
     
@@ -18,6 +17,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     if modeling_options['flags']['environment']:
         environment     = wt_init['environment']
         wt_opt = assign_environment_values(wt_opt, environment, modeling_options['offshore'])
+    else:
+        environment = {}
 
     if modeling_options['flags']['blade']:
         blade           = wt_init['components']['blade']
@@ -28,47 +29,67 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     if modeling_options['flags']['airfoils']:
         airfoils        = wt_init['airfoils']
         wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils)
+    else:
+        airfoils = {}
         
     if modeling_options['flags']['control']:
         control         = wt_init['control']
         wt_opt = assign_control_values(wt_opt, modeling_options, control)
+    else:
+        control = {}
         
     if modeling_options['flags']['hub']:
         hub    = wt_init['components']['hub']
         wt_opt = assign_hub_values(wt_opt, hub)
+    else:
+        hub = {}
         
     if modeling_options['flags']['nacelle']:
         nacelle         = wt_init['components']['nacelle']
         wt_opt = assign_nacelle_values(wt_opt, assembly, nacelle)
+    else:
+        nacelle = {}
         
     if modeling_options['flags']['RNA']:
         RNA = wt_init['components']['RNA']
     else:
         RNA = {}
         
-    if modeling_options['Analysis_Flags']['TowerSE']:
+    if modeling_options['flags']['tower']:
         tower           = wt_init['components']['tower']
         wt_opt = assign_tower_values(wt_opt, modeling_options, tower)
+    else:
+        tower = {}
 
     if modeling_options['flags']['monopile']:
         monopile = wt_init['components']['monopile']
         wt_opt   = assign_monopile_values(wt_opt, modeling_options, monopile)
+    else:
+        monopile = {}
         
     if modeling_options['flags']['floating']:
         floating = wt_init['components']['floating']
         wt_opt   = assign_floating_values(wt_opt, modeling_options, floating)
+    else:
+        floating = {}
         
     if modeling_options['flags']['foundation']:
         foundation      = wt_init['components']['foundation']
         wt_opt = assign_foundation_values(wt_opt, foundation)
+    else:
+        foundation = {}
 
-    if modeling_options['Analysis_Flags']['BOS']:
+    if modeling_options['flags']['bos']:
         bos           = wt_init['bos']
         wt_opt = assign_bos_values(wt_opt, bos, modeling_options['offshore'])
+    else:
+        costs = {}
 
     if modeling_options['flags']['costs']:
         costs           = wt_init['costs']
         wt_opt = assign_costs_values(wt_opt, costs)
+    else:
+        costs = {}
         
     if 'elastic_properties_mb' in blade.keys() and modeling_options['Analysis_Flags']['DriveSE']:
         wt_opt = assign_RNA_values(wt_opt, modeling_options, blade, RNA)
