@@ -1,0 +1,3 @@
+[submodule "ROSCO"]
+	path = ROSCO
+	url = https://github.com/NREL/ROSCO.git
