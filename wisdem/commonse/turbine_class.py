@@ -17,9 +17,9 @@ class TurbineClass(om.ExplicitComponent):
     V_mean : float, [m/s]
         IEC mean wind speed for Rayleigh distribution
     V_extreme1 : float, [m/s]
-        IEC extreme wind speed at hub height for a 1-year return period
+        IEC extreme wind speed at hub height for a 1-year retunr period
     V_extreme50 : float, [m/s]
-        IEC extreme wind speed at hub height for a 50-year return period
+        IEC extreme wind speed at hub height for a 50-year retunr period
     
     """
     def setup(self):
