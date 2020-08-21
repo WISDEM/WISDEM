@@ -1,0 +1,10 @@
+plant:
+  layout: custom
+  num_turbines: 67
+site:
+  depth: 20
+  distance: 50
+port:
+  monthly_rate: 10000
+array_cable_install_vessel: example_cable_lay_vessel
+array_cable_bury_vessel: example_cable_lay_vessel

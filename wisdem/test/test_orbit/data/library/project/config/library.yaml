@@ -1,0 +1,35 @@
+MonopileInstallation:
+  wtiv: example_wtiv
+TurbineInstallation:
+  wtiv: example_wtiv
+install_phases:
+- MonopileInstallation
+- TurbineInstallation
+monopile:
+  deck_space: 500
+  diameter: 10
+  length: 50
+  type: Monopile
+  mass: 350
+plant:
+  num_turbines: 10
+port:
+  monthly_rate: 10000
+site:
+  depth: 15
+  distance: 100
+transition_piece:
+  deck_space: 250
+  mass: 350
+turbine:
+  blade:
+    deck_space: 100
+    mass: 100
+  hub_height: 100
+  nacelle:
+    deck_space: 200
+    mass: 400
+  tower:
+    deck_space: 100
+    mass: 400
+    length: 100

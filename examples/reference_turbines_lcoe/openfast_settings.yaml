@@ -1,0 +1,26 @@
+# Variables are case sensitive.
+[Fst, TStart]          : 120.
+[Fst, TMax]            : 720.
+# [Fst, TStart]          : 0.
+# [Fst, TMax]            : 40.
+[Fst, OutFileFmt]      : 2
+[Fst, DT]              : 0.025
+
+[ServoDyn, DLL_DT]     : 0.025
+
+[AeroDyn15, TwrPotent] : 0
+[AeroDyn15, TwrShadow] : False
+[AeroDyn15, TwrAero]   : False
+
+[Fst, CompElast]       : 1
+[Fst, CompSub]         : 0
+[ElastoDyn, PtfmSgDOF] : False
+[ElastoDyn, PtfmSwDOF] : False
+[ElastoDyn, PtfmHvDOF] : False
+[ElastoDyn, PtfmRDOF]  : False
+[ElastoDyn, PtfmPDOF]  : False
+[ElastoDyn, PtfmYDOF]  : False
+
+[ElastoDyn, FlapDOF1]  : True
+[ElastoDyn, FlapDOF2]  : True
+[ElastoDyn, EdgeDOF]   : True

@@ -1,0 +1,32 @@
+---------------------- LINE DICTIONARY ---------------------------------------
+LineType     Diam     MassDenInAir    EA        CB   CIntDamp  Ca   Cdn    Cdt
+(-)          (m)      (kg/m)          (N)       (-)  (Pa-s)    (-)  (-)    (-)
+Material     0.09      77.7066      384.243E6   1.0   1.0E8    0.6 -1.0    0.05
+Material2    0.09      100.7066     394.243E6   1.0   1.0E8    0.6 -1.0    0.05
+Material3    0.09      120.7066     424.243E6   1.0   1.0E8    0.6 -1.0    0.05
+---------------------- NODE PROPERTIES ---------------------------------------
+Node Type       X     Y     Z     M     B     FX    FY    FZ
+(-)  (-)       (m)   (m)   (m)   (kg)  (mˆ3)  (N)   (N)   (N)
+1    fix        100    0   -80     0     0     #     #     #
+2    connect    50     0   -75     0     6     0     0     0
+3    vessel      0     0     0     0     0     #     #     #
+---------------------- LINE PROPERTIES ---------------------------------------
+Line    LineType  UnstrLen    NodeAnch  NodeFair  Flags
+(-)      (-)       (m)         (-)       (-)       (-)
+1       Material   100.0        1         2      omit_contact
+2       Material   100.0        2         3      omit_contact
+---------------------- SOLVER OPTIONS-----------------------------------------
+Option
+(-)   
+ help
+inner_ftol 1e-12
+inner_gtol 1e-12 
+inner_xtol 1e-12
+ pg_cooked 500 1
+repeat    120 240
+outer_tol 1e-9
+inner_max_its  400 
+ wave_kinematics
+ integration_dt 0.2
+ outer_epsilon 7
+outer_max_its   1500

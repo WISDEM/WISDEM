@@ -1,0 +1,21 @@
+plant:
+  num_turbines: 50
+port:
+  monthly_rate: 100000
+  num_cranes: 1
+site:
+  depth: 40
+  distance: 50
+turbine:
+  blade:
+    deck_space: 100
+    mass: 100
+  hub_height: 80
+  nacelle:
+    deck_space: 200
+    mass: 400
+  tower:
+    deck_space: 100
+    mass: 400
+    length: 100
+wtiv: test_wtiv

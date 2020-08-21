@@ -1,0 +1,9 @@
+ac_resistance: 0.06
+capacitance: 225
+conductor_size: 400
+cost_per_km: 300000
+current_capacity: 600
+inductance: 0.375
+linear_density: 35
+name: XLPE_400mm_33kV
+rated_voltage: 33
