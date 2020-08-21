@@ -34,7 +34,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             airfoils.add_output('r_thick',   val=np.zeros(n_af),                         desc='1D array of the relative thicknesses of each airfoil.')
             airfoils.add_output('aoa',       val=np.zeros(n_aoa),        units='rad',    desc='1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
             airfoils.add_output('Re',        val=np.zeros(n_Re),                         desc='1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.')
-            airfoils.add_output('tab',       val=np.zeros(n_tab),                        desc='1D array of the values of the "tab" entity used to define the polars of the airfoils. All airfoils defined in openmdao share this grid. The tab could for example represent a flap deflection angle.')
             airfoils.add_output('cl',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
             airfoils.add_output('cd',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
             airfoils.add_output('cm',        val=np.zeros((n_af, n_aoa, n_Re, n_tab)),   desc='4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.')
@@ -109,24 +108,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ctrl_ivc.add_output('max_torque_rate',  val=0.0, units='N*m/s',     desc='Maximum allowed generator torque rate')
             ctrl_ivc.add_output('rated_TSR',        val=0.0,                    desc='Constant tip speed ratio in region II.')
             ctrl_ivc.add_output('rated_pitch',      val=0.0, units='rad',       desc='Constant pitch angle in region II.')
-            ctrl_ivc.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
-            ctrl_ivc.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
-            ctrl_ivc.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
-            ctrl_ivc.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
-            ctrl_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
-            ctrl_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
-            # optional inputs - not connected right now!!
-            ctrl_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
-            ctrl_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
-            ctrl_ivc.add_output('vs_minspd',        val=0.0, units='rad/s',     desc='Minimum rotor speed [rad/s], {default = 0 rad/s}')
-            ctrl_ivc.add_output('ss_cornerfreq',    val=0.0, units='rad/s',     desc='First order low-pass filter cornering frequency for setpoint smoother [rad/s]')
-            ctrl_ivc.add_output('ss_vsgain',        val=0.0,                    desc='Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}')
-            ctrl_ivc.add_output('ss_pcgain',        val=0.0,                    desc='Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}')
-            ctrl_ivc.add_output('ps_percent',       val=0.0,                    desc='Percent peak shaving  [%, <= 1 ], {default = 80%}')
-            ctrl_ivc.add_output('sd_maxpit',        val=0.0, units='rad',       desc='Maximum blade pitch angle to initiate shutdown [rad], {default = bld pitch at v_max}')
-            ctrl_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
-            ctrl_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
-            ctrl_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
 
         # Wind turbine configuration inputs
         conf_ivc = self.add_subsystem('configuration', om.IndepVarComp())
@@ -232,8 +213,6 @@ class Blade(om.Group):
         opt_var.add_output('af_position',      val = np.ones(blade_init_options['n_af_span']))
         opt_var.add_output('spar_cap_ss_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ss']['n_opt']))
         opt_var.add_output('spar_cap_ps_opt_gain', val = np.ones(opt_options['optimization_variables']['blade']['structure']['spar_cap_ps']['n_opt']))
-        opt_var.add_output('te_flap_end', val = np.ones(blade_init_options['n_te_flaps']))
-        opt_var.add_output('te_flap_ext', val = np.ones(blade_init_options['n_te_flaps']))
         self.add_subsystem('opt_var',opt_var)
 
         # Import outer shape BEM
@@ -245,10 +224,6 @@ class Blade(om.Group):
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem('interp_airfoils', Blade_Interp_Airfoils(blade_init_options = blade_init_options, af_init_options = af_init_options))
         
-        # Connections to outer_shape_bem
-        self.connect('opt_var.te_flap_end', 'outer_shape_bem.te_flap_span_end')
-        self.connect('opt_var.te_flap_ext', 'outer_shape_bem.te_flap_span_ext')
-
         # Connections to blade aero parametrization
         self.connect('opt_var.s_opt_twist',       'pa.s_opt_twist')
         self.connect('opt_var.s_opt_chord',       'pa.s_opt_chord')
@@ -290,15 +265,6 @@ class Blade(om.Group):
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect('internal_structure_2d_fem.layer_thickness', 'ps.layer_thickness_original')
 
-        # Import trailing-edge flaps data
-        n_te_flaps = blade_init_options['n_te_flaps']
-        ivc = self.add_subsystem('dac_te_flaps', om.IndepVarComp())
-        ivc.add_output('te_flap_start', val=np.zeros(n_te_flaps),               desc='1D array of the start positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-        ivc.add_output('te_flap_end',   val=np.zeros(n_te_flaps),               desc='1D array of the end positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
-        ivc.add_output('chord_start',   val=np.zeros(n_te_flaps),               desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
-        ivc.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
-        ivc.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
-
 class Blade_Outer_Shape_BEM(om.Group):
     # Openmdao group with the blade outer shape data coming from the input yaml file.
     def initialize(self):
@@ -328,11 +294,6 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         blade_init_options = self.options['blade_init_options']
         n_af_span          = blade_init_options['n_af_span']
         self.n_span        = n_span = blade_init_options['n_span']
-        self.n_te_flaps    = n_te_flaps = blade_init_options['n_te_flaps']
-
-        # Inputs flaps
-        self.add_input('te_flap_span_end', val=np.zeros(n_te_flaps),desc='1D array of the positions along blade span where the trailing edge flap(s) end. Only values between 0 and 1 are meaningful.')
-        self.add_input('te_flap_span_ext', val=np.zeros(n_te_flaps),desc='1D array of the extensions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
 
         self.add_input('s_default',        val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_input('chord_yaml',       val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
@@ -351,52 +312,11 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         
     def compute(self, inputs, outputs):
         
-        # If DAC devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
-        if self.n_te_flaps > 0:
-            nd_span_orig = np.linspace(0., 1.,self.n_span)
-
-            chord_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['chord_yaml'])
-            twist_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['twist_yaml'])
-            pitch_axis_orig = np.interp(nd_span_orig, inputs['s_default'], inputs['pitch_axis_yaml'])
-            ref_axis_orig   = np.zeros((self.n_span, 3))
-            ref_axis_orig[:, 0] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 0])
-            ref_axis_orig[:, 1] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 1])
-            ref_axis_orig[:, 2] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 2])
-
-            outputs['s'] = copy.copy(nd_span_orig)
-            
-            # Account for blade flap start and end positions
-            if len(inputs['te_flap_span_end']) > 0 :
-                if inputs['te_flap_span_end'] >= 0.98:
-                    flap_start = 0.98 - inputs['span_ext']
-                    flap_end = 0.98
-                    print('WARNING: te_flap_span_end optimization variable reached limits and was set to r/R = 0.98 when running XFoil')
-                else:
-                    flap_start = inputs['te_flap_span_end'] - inputs['te_flap_span_ext']
-                    flap_end = inputs['te_flap_span_end']
-            else:
-                flap_start = 0.0
-                flap_end = 0.0
-
-            idx_flap_start = np.where(np.abs(nd_span_orig - flap_start) == (np.abs(nd_span_orig - flap_start)).min())[0][0]
-            idx_flap_end = np.where(np.abs(nd_span_orig - flap_end) == (np.abs(nd_span_orig - flap_end)).min())[0][0]
-            if idx_flap_start == idx_flap_end:
-                idx_flap_end += 1
-            outputs['s'][idx_flap_start] = flap_start
-            outputs['s'][idx_flap_end] = flap_end
-            outputs['chord'] = np.interp(outputs['s'], nd_span_orig, chord_orig)
-            outputs['twist'] = np.interp(outputs['s'], nd_span_orig, twist_orig)
-            outputs['pitch_axis'] = np.interp(outputs['s'], nd_span_orig, pitch_axis_orig)
-
-            outputs['ref_axis'][:, 0] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 0])
-            outputs['ref_axis'][:, 1] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 1])
-            outputs['ref_axis'][:, 2] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 2])
-        else:
-            outputs['s']            = inputs['s_default']
-            outputs['chord']        = inputs['chord_yaml']
-            outputs['twist']        = inputs['twist_yaml']
-            outputs['pitch_axis']   = inputs['pitch_axis_yaml']
-            outputs['ref_axis']     = inputs['ref_axis_yaml']
+        outputs['s']            = inputs['s_default']
+        outputs['chord']        = inputs['chord_yaml']
+        outputs['twist']        = inputs['twist_yaml']
+        outputs['pitch_axis']   = inputs['pitch_axis_yaml']
+        outputs['ref_axis']     = inputs['ref_axis_yaml']
 
         outputs['length']   = arc_length(outputs['ref_axis'])[-1]
         outputs['length_z'] = outputs['ref_axis'][:,2][-1]
