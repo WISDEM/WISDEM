@@ -1,0 +1,4 @@
+[run]
+omit =
+    wisdem/test/*
+    wisdem/floatingse/visualize.py

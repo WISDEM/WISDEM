@@ -1,0 +1,9 @@
+ac_resistance: 0.06
+capacitance: 200
+conductor_size: 500
+cost_per_km: 200000
+current_capacity: 625
+inductance: 0.4
+linear_density: 50
+name: XLPE_500mm_132kV
+rated_voltage: 132
