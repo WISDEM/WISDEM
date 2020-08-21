@@ -85,7 +85,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem('nacelle', nacelle)
         
         # Tower inputs
-        if modeling_options['flags']['tower']:
+        if modeling_options['Analysis_Flags']['TowerSE']:
             self.add_subsystem('tower',         Tower(tower_init_options   = modeling_options['tower']))
 
         if modeling_options['flags']['monopile']:
@@ -152,7 +152,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output('G_soil',       val=140e6,       units='N/m**2',     desc='Shear stress of soil')
             env_ivc.add_output('nu_soil',      val=0.4,                             desc='Poisson ratio of soil')
 
-        if modeling_options['flags']['bos']: 
+        if modeling_options['Analysis_Flags']['BOS']: 
             bos_ivc = self.add_subsystem('bos', om.IndepVarComp())
             bos_ivc.add_output('plant_turbine_spacing', 7, desc='Distance between turbines in rotor diameters')
             bos_ivc.add_output('plant_row_spacing', 7, desc='Distance between turbine rows in rotor diameters')
@@ -191,7 +191,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
         if modeling_options['flags']['hub']:
             self.connect('hub.radius',                      'assembly.hub_radius')
-        if modeling_options['flags']['tower']:
+        if modeling_options['Analysis_Flags']['TowerSE']:
             self.connect('tower.height',                    'assembly.tower_height')
         if modeling_options['flags']['foundation']:
             self.connect('foundation.height',               'assembly.foundation_height')

@@ -113,7 +113,7 @@ class WindTurbineOntologyPython(object):
                     exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
         # Tower 
-        if self.modeling_options['flags']['tower']:
+        if self.modeling_options['Analysis_Flags']['TowerSE']:
             self.modeling_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
             self.modeling_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
 
@@ -352,9 +352,9 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']   = wt_opt['drivese.nacelle_cm'].tolist()
                 self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']       = wt_opt['drivese.nacelle_I'].tolist()
 
-        #if self.modeling_options['flags']['tower']:
+        #if self.modeling_options['Analysis_Flags']['TowerSE']:
         # Update tower
-        if self.modeling_options['flags']['tower']:
+        if self.modeling_options['Analysis_Flags']['TowerSE']:
             self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['tower.s'].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['tower.diameter'].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['tower.s'].tolist()

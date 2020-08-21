@@ -257,7 +257,7 @@ class RunXFOIL(ExplicitComponent):
             try:
                 from scipy.ndimage import gaussian_filter
             except:
-                print('Cannot import the library gaussian_filter from scipy. Please check the c onda environment and potential conflicts between numpy and scipy')
+                print('Cannot import the library gaussian_filter from scipy. Please check the conda environment and potential conflicts between numpy and scipy')
             for i in range(self.n_span):
                 # Loop through the flaps specified in yaml file
                 for k in range(self.n_te_flaps):
@@ -644,7 +644,7 @@ class RunXFOIL(ExplicitComponent):
                     rR = inputs['r'][afi] / inputs['r'][-1]  # non-dimensional blade radial station at cross section
                     Re_loc[afi, :, ind] = c * self.maxTS * rR / self.KinVisc
                     Ma_loc[afi, :, ind] = self.maxTS * rR / self.SpdSound
-
+                    
         outputs['cl_interp_flaps']  = cl_interp_flaps
         outputs['cd_interp_flaps']  = cd_interp_flaps
         outputs['cm_interp_flaps']  = cm_interp_flaps
