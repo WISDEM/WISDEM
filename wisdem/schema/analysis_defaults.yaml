@@ -49,6 +49,25 @@ optimization_variables:
       flag: False
       min_gain: 0.9 # non-dimensional
       max_gain: 1.1 # non-dimensional
+    servo:
+      pitch_control:
+        flag: False
+        omega_min: 0.1
+        omega_max: 0.7
+        zeta_min: 0.4
+        zeta_max: 1.5
+      torque_control:
+        flag: False
+        omega_min: 0.1
+        omega_max: 0.7
+        zeta_min: 0.4
+        zeta_max: 1.5
+      flap_control:
+        flag: False
+        omega_min: 2.7
+        omega_max: 3.5
+        zeta_min: 0.7
+        zeta_max: 1.3
   tower:
     outer_diameter:
       flag: False
@@ -119,6 +138,11 @@ constraints:
       flag: False
       lower_bound: 0.13
       upper_bound: 0.40
+  control:
+    flap_control:
+      flag: True
+      min: 0.0
+      max: 0.1
 
 driver:
     tol: 1.e-4

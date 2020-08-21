@@ -41,6 +41,22 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
+            OpenFAST:
+                type: boolean
+                default: False
+                description: Whether or not to run OpenFAST
+    xfoil:            
+        type: object
+        default: {}
+        properties:
+            path:
+                type: string
+                default: ''
+                description: File path to xfoil executable (e.g. /home/user/Xfoil/bin/xfoil)
+            run_parallel:
+                type: boolean
+                default: False
+                description: Whether or not to run xfoil in parallel (requires mpi setup)
     rotorse:            
         type: object
         default: {}
@@ -132,3 +148,265 @@ properties:
                         minimum: 1e-12
                         maximum: 1e-1
                         default: 1e-9
+    servose:
+        type: object
+        default: {}
+        properties:
+            n_pc:
+                type: number
+                default: 20
+                description: Number of wind speeds to compute the power curve
+            n_pc_spline:
+                type: number
+                default: 200
+                description: Number of wind speeds to spline the power curve
+            n_pitch_perf_surfaces: 
+                type: integer
+                default: 50
+                description: Number of pitch angles to determine the Cp-Ct-Cq-surfaces
+            min_pitch_perf_surfaces:
+                type: number
+                default: -5.
+                description: Min pitch angle of the Cp-Ct-Cq-surfaces
+            max_pitch_perf_surfaces: 
+                type: number
+                default: 40.
+                description: Max pitch angle of the Cp-Ct-Cq-surfaces
+            n_tsr_perf_surfaces: 
+                type: integer
+                default: 50
+                description: Number of tsr values to determine the Cp-Ct-Cq-surfaces
+            min_tsr_perf_surfaces: 
+                type: number
+                default: 1.
+                description: Min TSR of the Cp-Ct-Cq-surfaces
+            max_tsr_perf_surfaces: 
+                type: number
+                default: 13.
+                description: Max TSR of the Cp-Ct-Cq-surfaces
+            n_U_perf_surfaces: 
+                type: integer
+                default: 1
+                description: Number of wind speeds to determine the Cp-Ct-Cq-surfaces
+            regulation_reg_III: 
+                type: boolean
+                default: True
+                description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
+            LoggingLevel:
+                type: integer
+                enum: [0, 1, 2]
+                default: 1
+                description: {0, write no debug files, 1, write standard output .dbg-file, 2, write standard output .dbg-file and complete avrSWAP-array .dbg2-file}
+            F_LPFType: 
+                type: integer
+                enum: [1, 2]
+                default: 1
+                description: Low pass filter type, {1, first-order low-pass filter, 2, second-order low-pass filter}
+            F_NotchType:
+                type: integer
+                enum: [0, 1, 2, 3]
+                default: 0
+                description:  Notch filter on generator speed and/or tower fore-aft motion (for floating) {0, disable, 1, generator speed, 2, tower-top fore-aft motion, 3, generator speed and tower-top fore-aft motion}
+            IPC_ControlMode: 
+                type: integer
+                enum: [0, 1, 2]
+                default: 0
+                description: Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0, off, 1, 1P reductions, 2, 1P+2P reductions}
+            VS_ControlMode: 
+                type: integer
+                enum: [0, 1, 2]
+                default: 2
+                description: Generator torque control mode in above rated conditions {0, constant torque, 1, constant power, 2, TSR tracking PI control}
+            PC_ControlMode: 
+                type: integer
+                enum: [0, 1]
+                default: 1
+                description: Blade pitch control mode {0, No pitch, fix to fine pitch, 1, active PI blade pitch control}
+            Y_ControlMode: 
+               type: integer
+               enum: [0, 1, 2]
+               default: 0
+               description: Yaw control mode {0, no yaw control, 1, yaw rate control, 2, yaw-by-IPC}
+            SS_Mode:
+                type: integer
+                enum: [0, 1]
+                default: 1
+                description: Setpoint Smoother mode {0, no setpoint smoothing, 1, introduce setpoint smoothing}
+            WE_Mode: 
+                type: integer
+                enum: [0, 1, 2]
+                default: 2
+                description: Wind speed estimator mode {0, One-second low pass filtered hub height wind speed, 1, Immersion and Invariance Estimator (Ortega et al.)}
+            PS_Mode: 
+                type: integer
+                enum: [0, 1, 2, 3]
+                default: 1
+                description:  Pitch saturation mode {0, no pitch saturation, 1, peak shaving, 2, Cp-maximizing pitch saturation, 3, peak shaving and Cp-maximizing pitch}
+            SD_Mode: 
+                type: integer
+                enum: [0, 1]
+                default: 1
+                description: Shutdown mode {0, no shutdown procedure, 1, pitch to max pitch at shutdown}
+            Fl_Mode: 
+                type: integer
+                enum: [0, 1]
+                default: 0
+                description: Floating specific feedback mode {0, no nacelle velocity feedback, 1, nacelle velocity feedback}
+            Flp_Mode: 
+                type: integer
+                enum: [0, 1, 2]
+                default: 0
+                description: Flap control mode {0, no flap control, 1, steady state flap angle, 2, Proportional flap control}
+    openfast:
+        type: object
+        default: {}
+        properties:
+            analysis_settings:
+                type: object
+                default: {}
+                properties:
+                    Analysis_Level:
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 1
+                        description: Words # GB TODO
+                    update_hub_nacelle:
+                        type: boolean
+                        default: True
+                        description: Words # GB TODO
+                    update_tower:
+                        type: boolean
+                        default: True
+                        description: Words # GB TODO
+                    generate_af_coords:
+                        type: boolean
+                        default: True
+                        description: Words # GB TODO
+                    debug_level:
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 2
+                        description: Words # GB TODO
+            file_management:
+                type: object
+                default: {}
+                properties:
+                    FAST_ver:
+                        type: string
+                        const: OpenFAST
+                        default: OpenFAST
+                        description: Which version of FAST is being used
+                    FAST_exe:
+                        type: string
+                        default: none
+                        description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
+                    FAST_directory:
+                        type: string
+                        default: none
+                        description: Path to FAST input files (e.g. /home/user/myturbines)
+                    FAST_InputFile:
+                        type: string
+                        default: none
+                        description: Path to top level FAST fst-file (e.g. /home/user/myturbines/turb5mw.fst)
+                    path2dll:
+                        type: string
+                        default: none
+                        description: Path to controller shared library (e.g. /home/user/myturbines/libdiscon.so)
+                    Turbsim_exe:
+                        type: string
+                        default: none
+                        description: Path to TurbSim executable (e.g. /home/user/OpenFAST/bin/turbsim)
+                    FAST_namingOut:
+                        type: string
+                        default: none
+                        description: Filename prefix for output files
+                    FAST_runDirectory:
+                        type: string
+                        default: none
+                        description: Path to place FAST output files (e.g. /home/user/myturbines/output)
+                    Simulation_Settings_File:
+                        type: string
+                        default: none
+                        description: Path to yaml-based OpenFAST settings file
+            dlc_settings:
+                type: object
+                default: {}
+                properties:
+                    run_power_curve:
+                        type: boolean
+                        default: False
+                        description: Whether or not to compute the power curve with FAST
+                    run_IEC:
+                        type: boolean
+                        default: True
+                        description: Whether or not to run IEC design load cases with FAST
+                    run_blade_fatigue:
+                        type: boolean
+                        default: False
+                        description: Whether or not to compute blade fatigue with FAST
+                    IEC:
+                        type: array
+                        default: [{}]
+                        items:
+                            type: object
+                            properties:
+                                DLC:
+                                    type: number
+                                    default: 1.4
+                                    enum: [1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3]
+                                    description: IEC DLC to run. Currently supported are 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3
+                                U:
+                                    type: array
+                                    description: Wind speeds for this DLC
+                                    default: [10.]
+                                    items:
+                                        type: number
+                                        unit: m/s
+                                        minItems: 1
+                                        minimum: 0.0
+                                        maximum: 50.0
+                                        uniqueItems: true
+                                Seeds:
+                                    type: array
+                                    default: [0]
+                                    description: Turbulent wind random number generator seeds
+                                    items:
+                                        type: integer
+                                        unit: none
+                                        minItems: 1
+                                        uniqueItems: true
+                    Power_Curve:
+                        type: object
+                        default: {}
+                        if:
+                            properties:
+                                turbulent_power_curve:
+                                    const: True
+                        then:
+                            required:
+                                - Seeds
+                        properties:
+                            turbulent_power_curve:
+                                type: boolean
+                                default: False
+                                description: Whether or not to use turbulent inflow to compute power curve
+                            U:
+                                type: array
+                                default: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+                                description: Wind speeds for power curve simulation
+                                items:
+                                    type: number
+                                    unit: m/s
+                                    minItems: 2
+                                    minimum: 0.0
+                                    maximum: 50.0
+                                    uniqueItems: true
+                            Seeds:
+                                type: array
+                                default: [0]
+                                description: Turbulent wind random number generator seeds
+                                items:
+                                    type: integer
+                                    unit: none
+                                    minItems: 2
+                                    uniqueItems: true
