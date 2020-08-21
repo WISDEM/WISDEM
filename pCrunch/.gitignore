@@ -1,0 +1,10 @@
+# Generated files
+*.vscode
+*.DS_Store
+
+# Python
+*.egg-info
+*__pycache__
+
+# Jupyter
+.ipynb*
