@@ -44,7 +44,8 @@ class CMakeBuildExt(build_ext):
                           '-DCMAKE_INSTALL_PREFIX=' + localdir]
             
             if platform.system() == 'Windows':
-                # Assuming that Visual Studio and MinGW are supported compilers
+                cmake_args += ['-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE']
+                
                 if self.compiler.compiler_type == 'msvc':
                     cmake_args += ['-DCMAKE_GENERATOR_PLATFORM=x64']
                 else:
