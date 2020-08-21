@@ -102,6 +102,7 @@ Operating System :: MacOS
 weis_pkgs       = find_packages()
 wisdem_pkgs     = find_packages(where='WISDEM',exclude=['docs', 'tests', 'ext'])
 roscotools_pkgs = find_packages(where='ROSCO_Toolbox')
+pcrunch_pkgs    = find_packages(where='pCrunch')
 
 metadata = dict(
     name                          = 'WEIS',
@@ -114,8 +115,9 @@ metadata = dict(
     install_requires              = ['openmdao>=3.0','numpy','scipy','pandas','simpy','marmot-agents'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
     package_dir                   = {'wisdem':'WISDEM/wisdem',
-                                     'rosco_toolbox':'ROSCO_toolbox/ROSCO_toolbox'}, # weis doesn't need special directions
-    packages                      = weis_pkgs + wisdem_pkgs + roscotools_pkgs,
+                                     'ROSCO_toolbox':'ROSCO_toolbox/ROSCO_toolbox',
+                                     'pCrunch':'pCrunch/pCrunch'}, # weis doesn't need special directions
+    packages                      = weis_pkgs + wisdem_pkgs + roscotools_pkgs + pcrunch_pkgs,
     python_requires               = '>=3.6',
     license                       = 'Apache License, Version 2.0',
     ext_modules                   = [bemExt, pyframeExt, precompExt, pymapExt, roscoExt, fastExt],
