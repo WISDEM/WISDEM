@@ -162,16 +162,17 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
 
         s_mb1      = float(inputs['s_mb1'])
         s_mb2      = float(inputs['s_mb2'])
-        
-        s_rotor    = float(inputs['s_rotor'])
-        m_rotor    = float(inputs['m_rotor'])
-        cm_rotor   = float(inputs['cm_rotor'])
-        I_rotor    = inputs['I_rotor']
-        
-        s_gearbox  = float(inputs['s_gearbox'])
-        m_gearbox  = float(inputs['m_gearbox'])
-        cm_gearbox = float(inputs['cm_gearbox'])
-        I_gearbox  = inputs['I_gearbox']
+
+        if direct:
+            s_rotor    = float(inputs['s_rotor'])
+            m_rotor    = float(inputs['m_rotor'])
+            cm_rotor   = float(inputs['cm_rotor'])
+            I_rotor    = inputs['I_rotor']
+        else:
+            s_gearbox  = float(inputs['s_gearbox'])
+            m_gearbox  = float(inputs['m_gearbox'])
+            cm_gearbox = float(inputs['cm_gearbox'])
+            I_gearbox  = inputs['I_gearbox']
         
         rho        = float(inputs['rho'])
         E          = float(inputs['E'])

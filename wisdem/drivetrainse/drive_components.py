@@ -1,4 +1,3 @@
-
 import numpy as np
 import copy
 import openmdao.api as om
@@ -182,7 +181,7 @@ class HighSpeedSide(om.ExplicitComponent):
         D_disc = 0.01*D_rotor
         Ib      = np.zeros(3)
         Ib[0]   = 0.5*m_brake*(0.5*D_disc)**2
-        Ib[1:]  = 0.5*I[0]
+        Ib[1:]  = 0.5*Ib[0]
 
         Is      = np.zeros(3)
         if direct:

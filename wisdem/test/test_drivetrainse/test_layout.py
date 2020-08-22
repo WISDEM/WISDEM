@@ -16,9 +16,10 @@ class TestDirectLayout(unittest.TestCase):
 
         self.inputs['L_12'] = 2.0
         self.inputs['L_h1'] = 1.0
-        self.inputs['L_2n'] = 1.5
-        self.inputs['L_grs'] = 1.1
-        self.inputs['L_gsn'] = 1.1
+        self.inputs['L_generator'] = 3.25
+        #self.inputs['L_2n'] = 1.5
+        #self.inputs['L_grs'] = 1.1
+        #self.inputs['L_gsn'] = 1.1
         self.inputs['overhang'] = 6.25
         self.inputs['drive_height'] = 4.875
         self.inputs['tilt'] = 5.0
@@ -74,22 +75,11 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
         
         npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
-        self.assertAlmostEqual(self.outputs['constr_L_gsn'], 1.5-1.1)
-        self.assertAlmostEqual(self.outputs['constr_L_grs'], 3.0-1.1)
         self.assertAlmostEqual(self.outputs['constr_length'], 5-0.5*6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
-        
-        myones = np.ones(6)
-        npt.assert_equal(self.outputs['D_nose'], 1.33*myones)
-        npt.assert_equal(self.outputs['t_nose'], 0.04*myones)
-        npt.assert_equal(self.outputs['D_lss'], 2.3*myones)
-        npt.assert_equal(self.outputs['t_lss'], 0.05*myones)
 
-        npt.assert_array_less(self.outputs['s_nose'][:-1], self.outputs['s_nose'][1:])
-        npt.assert_array_less(self.outputs['s_lss'][:-1], self.outputs['s_lss'][1:])
-
-        self.assertAlmostEqual(self.outputs['s_rotor'], 2+1+1.5-1.1)
-        self.assertAlmostEqual(self.outputs['s_stator'], 1.1)
+        self.assertAlmostEqual(self.outputs['s_rotor'], 2+1.5+0.5)
+        self.assertAlmostEqual(self.outputs['s_stator'], 0.75)
         self.assertAlmostEqual(self.outputs['s_mb1'], 1.5+2.0)
         self.assertAlmostEqual(self.outputs['s_mb2'], 1.5)
 
@@ -128,22 +118,11 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
         
         npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
-        self.assertAlmostEqual(self.outputs['constr_L_gsn'], 1.5-1.1)
-        self.assertAlmostEqual(self.outputs['constr_L_grs'], 3.0-1.1)
         self.assertAlmostEqual(self.outputs['constr_length'], self.inputs['overhang']- self.outputs['L_drive']*ct)
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
 
-        myones = np.ones(6)
-        npt.assert_equal(self.outputs['D_nose'], 1.33*myones)
-        npt.assert_equal(self.outputs['t_nose'], 0.04*myones)
-        npt.assert_equal(self.outputs['D_lss'], 2.3*myones)
-        npt.assert_equal(self.outputs['t_lss'], 0.05*myones)
-
-        npt.assert_array_less(self.outputs['s_nose'][:-1], self.outputs['s_nose'][1:])
-        npt.assert_array_less(self.outputs['s_lss'][:-1], self.outputs['s_lss'][1:])
-
-        self.assertAlmostEqual(self.outputs['s_rotor'], 2+1+1.5-1.1)
-        self.assertAlmostEqual(self.outputs['s_stator'], 1.1)
+        self.assertAlmostEqual(self.outputs['s_rotor'], 2+1.5+0.5)
+        self.assertAlmostEqual(self.outputs['s_stator'], 0.75)
         self.assertAlmostEqual(self.outputs['s_mb1'], 1.5+2.0)
         self.assertAlmostEqual(self.outputs['s_mb2'], 1.5)
 
@@ -181,22 +160,11 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
         
         npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
-        self.assertAlmostEqual(self.outputs['constr_L_gsn'], 1.5-1.1)
-        self.assertAlmostEqual(self.outputs['constr_L_grs'], 3.0-1.1)
         self.assertAlmostEqual(self.outputs['constr_length'], 5-0.5*6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
-        
-        myones = np.ones(6)
-        npt.assert_equal(self.outputs['D_nose'], 1.33*myones)
-        npt.assert_equal(self.outputs['t_nose'], 0.04*myones)
-        npt.assert_equal(self.outputs['D_lss'], 2.3*myones)
-        npt.assert_equal(self.outputs['t_lss'], 0.05*myones)
 
-        npt.assert_array_less(self.outputs['s_nose'][:-1], self.outputs['s_nose'][1:])
-        npt.assert_array_less(self.outputs['s_lss'][:-1], self.outputs['s_lss'][1:])
-
-        self.assertAlmostEqual(self.outputs['s_rotor'], 2+1+1.5-1.1)
-        self.assertAlmostEqual(self.outputs['s_stator'], 1.1)
+        self.assertAlmostEqual(self.outputs['s_rotor'], 2+1.5+0.5)
+        self.assertAlmostEqual(self.outputs['s_stator'], 0.75)
         self.assertAlmostEqual(self.outputs['s_mb1'], 1.5+2.0)
         self.assertAlmostEqual(self.outputs['s_mb2'], 1.5)
 
@@ -236,22 +204,11 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
         
         npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
-        self.assertAlmostEqual(self.outputs['constr_L_gsn'], 1.5-1.1)
-        self.assertAlmostEqual(self.outputs['constr_L_grs'], 3.0-1.1)
         self.assertAlmostEqual(self.outputs['constr_length'], self.inputs['overhang']- self.outputs['L_drive']*ct)
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
-        
-        myones = np.ones(6)
-        npt.assert_equal(self.outputs['D_nose'], 1.33*myones)
-        npt.assert_equal(self.outputs['t_nose'], 0.04*myones)
-        npt.assert_equal(self.outputs['D_lss'], 2.3*myones)
-        npt.assert_equal(self.outputs['t_lss'], 0.05*myones)
 
-        npt.assert_array_less(self.outputs['s_nose'][:-1], self.outputs['s_nose'][1:])
-        npt.assert_array_less(self.outputs['s_lss'][:-1], self.outputs['s_lss'][1:])
-
-        self.assertAlmostEqual(self.outputs['s_rotor'], 2+1+1.5-1.1)
-        self.assertAlmostEqual(self.outputs['s_stator'], 1.1)
+        self.assertAlmostEqual(self.outputs['s_rotor'], 2+1.5+0.5)
+        self.assertAlmostEqual(self.outputs['s_stator'], 0.75)
         self.assertAlmostEqual(self.outputs['s_mb1'], 1.5+2.0)
         self.assertAlmostEqual(self.outputs['s_mb2'], 1.5)
 
@@ -348,7 +305,7 @@ class TestGearedLayout(unittest.TestCase):
         
     def testNoTilt(self):
         self.inputs['tilt'] = 0.0
-        myobj = lay.GearedLayout(n_points=npts)
+        myobj = lay.GearedLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         ds = 6.85 - 2 - 0.5*6.5
@@ -368,7 +325,7 @@ class TestGearedLayout(unittest.TestCase):
 
         
     def testTilt(self):
-        myobj = lay.GearedLayout(n_points=npts)
+        myobj = lay.GearedLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         ds = 6.85 - (2 + 0.5*6.5)/ct
@@ -396,7 +353,7 @@ class TestGearedLayout(unittest.TestCase):
         myones = np.ones(3)
         self.inputs['hss_diameter'] = 1.5*myones
         self.inputs['hss_wall_thickness'] = 0.04*myones
-        myobj = lay.GearedLayout(n_points=npts)
+        myobj = lay.GearedLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         rho = self.inputs['rho']
