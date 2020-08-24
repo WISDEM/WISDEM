@@ -112,6 +112,8 @@ wisdem_pkgs     = find_packages(where='WISDEM',exclude=['docs', 'tests', 'ext'])
 roscotools_pkgs = find_packages(where='ROSCO_Toolbox')
 pcrunch_pkgs    = find_packages(where='pCrunch')
 
+print(pcrunch_pkgs)
+
 metadata = dict(
     name                          = 'WEIS',
     version                       = '0.0.1',
@@ -120,7 +122,7 @@ metadata = dict(
     long_description_content_type = 'text/markdown',
     author                        = 'NREL',
     url                           = 'https://github.com/WISDEM/WEIS',
-    install_requires              = ['openmdao>=3.0','numpy','scipy','pandas','simpy','marmot-agents'],
+    install_requires              = ['openmdao>=3.0','numpy','scipy','pandas','simpy','marmot-agents','nlopt','dill','smt'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
     package_dir                   = {'wisdem':'WISDEM/wisdem',
                                      'ROSCO_toolbox':'ROSCO_toolbox/ROSCO_toolbox',
