@@ -24,7 +24,7 @@ install:
   - pip install simpy marmot-agents
   
   # Install WEIS
-  - pip install -e .;
+  - pip install --verbose -e .;
   
 script:
   - testflo weis
