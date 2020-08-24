@@ -108,11 +108,9 @@ Operating System :: MacOS
 '''
 
 weis_pkgs       = find_packages()
-wisdem_pkgs     = find_packages(where='WISDEM',exclude=['docs', 'tests', 'ext'])
+wisdem_pkgs     = find_packages(where='WISDEM',exclude=['docs', 'tests', '*.test.*', 'ext'])
 roscotools_pkgs = find_packages(where='ROSCO_Toolbox')
 pcrunch_pkgs    = find_packages(where='pCrunch')
-
-print(pcrunch_pkgs)
 
 metadata = dict(
     name                          = 'WEIS',
@@ -122,11 +120,12 @@ metadata = dict(
     long_description_content_type = 'text/markdown',
     author                        = 'NREL',
     url                           = 'https://github.com/WISDEM/WEIS',
-    install_requires              = ['openmdao>=3.0','numpy','scipy','pandas','simpy','marmot-agents','nlopt','dill','smt'],
+    install_requires              = ['openmdao>=3.2','numpy','scipy','pandas','simpy','marmot-agents','nlopt','dill','smt'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
     package_dir                   = {'wisdem':'WISDEM/wisdem',
                                      'ROSCO_toolbox':'ROSCO_toolbox/ROSCO_toolbox',
-                                     'pCrunch':'pCrunch/pCrunch'}, # weis doesn't need special directions
+                                     'pCrunch':'pCrunch/pCrunch',
+                                     }, # weis doesn't need special directions
     packages                      = weis_pkgs + wisdem_pkgs + roscotools_pkgs + pcrunch_pkgs,
     python_requires               = '>=3.6',
     license                       = 'Apache License, Version 2.0',
