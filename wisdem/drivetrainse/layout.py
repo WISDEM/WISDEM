@@ -414,8 +414,10 @@ class GearedLayout(Layout):
         HSS center of mass along hss axis from bedplate
     hss_I : numpy array[3], [kg*m**2]
         HSS moment of inertia around cm in axial (hub-aligned) c.s.
-    gearbox_cm : float, [m]
-        Overall gearbox cm
+    s_gearbox : float, [m]
+        Gearbox (centroid) position in s-coordinates
+    s_generator : float, [m]
+        Generator (centroid) position in s-coordinates
 
     """
     
@@ -438,7 +440,8 @@ class GearedLayout(Layout):
         self.add_output('hss_cm', val=0.0, units='m')
         self.add_output('hss_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('bedplate_web_height', val=0.0, units='m')
-        self.add_output('gearbox_cm', val=0.0, units='m')
+        self.add_output('s_gearbox', val=0.0, units='m')
+        self.add_output('s_generator', val=0.0, units='m')
         
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -495,8 +498,8 @@ class GearedLayout(Layout):
         s_hss       = s_drive[2:5]
 
         # Store outputs
-        outputs['generator_cm'] = s_generator
-        outputs['gearbox_cm'] = s_gearbox
+        outputs['s_generator'] = s_generator
+        outputs['s_gearbox'] = s_gearbox
         outputs['s_mb1']    = s_mb1
         outputs['s_mb2']    = s_mb2
         # ------------------------------------

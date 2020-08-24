@@ -19,9 +19,10 @@ class TestDirectStructure(unittest.TestCase):
 
         self.inputs['L_12'] = 2.0
         self.inputs['L_h1'] = 1.0
-        self.inputs['L_2n'] = 1.5
-        self.inputs['L_grs'] = 1.1
-        self.inputs['L_gsn'] = 1.1
+        self.inputs['L_generator'] = 3.25
+        #self.inputs['L_2n'] = 1.5
+        #self.inputs['L_grs'] = 1.1
+        #self.inputs['L_gsn'] = 1.1
         self.inputs['L_hss'] = 0.75
         self.inputs['L_gearbox'] = 1.2
         self.inputs['overhang'] = 6.25
@@ -31,10 +32,18 @@ class TestDirectStructure(unittest.TestCase):
 
         myones = np.ones(5)
         self.inputs['lss_diameter'] = 3.3*myones
-        self.inputs['nose_diameter'] = 2.2*myones
         self.inputs['lss_wall_thickness'] = 0.45*myones
+        self.inputs['hss_diameter'] = 1.6*np.ones(3)
+        self.inputs['hss_wall_thickness'] = 0.25*np.ones(3)
+        self.inputs['nose_diameter'] = 2.2*myones
         self.inputs['nose_wall_thickness'] = 0.1*myones
         self.inputs['bedplate_wall_thickness'] = 0.06*np.ones(npts)
+
+        self.inputs['bedplate_flange_width'] = 1.5
+        self.inputs['bedplate_flange_thickness'] = 0.05
+        #self.inputs['bedplate_web_height'] = 1.0
+        self.inputs['bedplate_web_thickness'] = 0.05
+
         self.inputs['D_top'] = 6.5
 
         self.inputs['other_mass'] = 200e3
@@ -53,9 +62,18 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['cm_rotor'] = -0.3
         self.inputs['I_rotor'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
 
+        self.inputs['m_generator'] = 200e3
+        #self.inputs['cm_generator'] = -0.3
+        self.inputs['I_generator'] = np.array([2e6, 1e6, 1e6, 0.0, 0.0, 0.0])
+
         self.inputs['m_gearbox'] = 100e3
         self.inputs['cm_gearbox'] = -0.3
         self.inputs['I_gearbox'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
+
+        self.inputs['m_brake'] = 10e3
+        self.inputs['I_brake'] = np.array([1e4, 5e3, 5e3])
+
+        self.inputs['gear_ratio'] = 1.0
         
         self.inputs['F_mb1'] = np.array([2409.750e3, -1716.429e3, 74.3529e3]).reshape((3,1))
         self.inputs['F_mb2'] = np.array([2409.750e3, -1716.429e3, 74.3529e3]).reshape((3,1))
@@ -301,6 +319,7 @@ class TestDirectStructure(unittest.TestCase):
         self.assertGreater(0.0, F0[0])
         self.assertGreater(0.0, F0[-1])
         self.assertGreater(0.0, M0[1])
+        print(np.c_[self.outputs['M_mb1'],self.outputs['M_mb2'],self.outputs['M_torq']])
         npt.assert_almost_equal(self.outputs['F_mb1'][1], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['F_torq'], 0.0, decimal=2)
@@ -324,7 +343,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['M_torq'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
         
     def testRunRotatingGeared_noTilt(self):
+        self.discrete_inputs['direct_drive'] = False
         self.inputs['tilt'] = 0.0
+        self.inputs['gear_ratio'] = 50.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
@@ -332,6 +353,7 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         F0 = self.outputs['F_mb1'].flatten()
         M0 = self.outputs['M_mb2'].flatten()
+        print(np.c_[self.outputs['M_mb1'],self.outputs['M_mb2'],self.outputs['M_torq']])
         self.assertGreater(0.0, F0[-1])
         self.assertGreater(0.0, M0[1])
         npt.assert_almost_equal(self.outputs['F_mb1'][:2], 0.0, decimal=2)
@@ -359,7 +381,9 @@ class TestDirectStructure(unittest.TestCase):
 
         
     def testRunRotatingGeared_withTilt(self):
+        self.discrete_inputs['direct_drive'] = False
         self.inputs['tilt'] = 5.0
+        self.inputs['gear_ratio'] = 50.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
@@ -396,7 +420,9 @@ class TestDirectStructure(unittest.TestCase):
         
         
     def testHSS_noTilt(self):
+        self.discrete_inputs['direct_drive'] = False
         self.inputs['tilt'] = 0.0
+        self.inputs['gear_ratio'] = 50.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
@@ -431,7 +457,9 @@ class TestDirectStructure(unittest.TestCase):
 
         
     def testHSS_withTilt(self):
+        self.discrete_inputs['direct_drive'] = False
         self.inputs['tilt'] = 5.0
+        self.inputs['gear_ratio'] = 50.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
@@ -465,10 +493,10 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['M_torq'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
 
         
-    def testShaftTheory(self):
+    def testShaftTheoryLSS(self):
         # https://www.engineersedge.com/calculators/torsional-stress-calculator.htm
         self.inputs['tilt'] = 0.0
-        self.inputs['L_grs'] = 1.5
+        self.inputs['L_h1'] = 3.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.array([1e5, 0.0, 0.0]).reshape((3,1))
         self.inputs['m_rotor'] = 0.0
@@ -487,7 +515,34 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         J = 0.5*np.pi*(2.5**4 - 2**4)
         sigma = 1e5/J*2.5
-        npt.assert_almost_equal(self.outputs['lss_axial_stress'], 0.0, decimal=5)
+        npt.assert_almost_equal(self.outputs['lss_axial_stress'], 0.0, decimal=4)
+        npt.assert_almost_equal(self.outputs['lss_shear_stress'].flatten(), np.r_[np.zeros(2), sigma*np.ones(3)], decimal=4)
+
+        
+    def testShaftTheoryHSS(self):
+        # https://www.engineersedge.com/calculators/torsional-stress-calculator.htm
+        self.inputs['tilt'] = 0.0
+        self.inputs['gear_ratio'] = 50.0
+        self.inputs['L_h1'] = 3.0
+        self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_hub'] = np.array([1e5, 0.0, 0.0]).reshape((3,1))
+        self.inputs['m_rotor'] = 0.0
+        self.inputs['cm_rotor'] = 0.0
+        self.inputs['I_rotor'] = np.zeros(6)
+        self.inputs['hub_system_mass'] = 0.0
+        self.inputs['hub_system_cm'] = 0.0
+        self.inputs['hub_system_I'] = np.zeros(6)
+        myones = np.ones(5)
+        self.inputs['lss_diameter'] = 5*myones
+        self.inputs['lss_wall_thickness'] = 0.5*myones
+        self.inputs['G'] = 100e9
+        self.inputs['rho'] = 1e-6
+        self.compute_layout()
+        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        J = 0.5*np.pi*(2.5**4 - 2**4)
+        sigma = 1e5/J*2.5
+        npt.assert_almost_equal(self.outputs['lss_axial_stress'], 0.0, decimal=4)
         npt.assert_almost_equal(self.outputs['lss_shear_stress'].flatten(), np.r_[np.zeros(2), sigma*np.ones(3)], decimal=4)
 
         

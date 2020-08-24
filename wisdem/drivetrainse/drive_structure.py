@@ -24,12 +24,12 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
     ----------
     tilt : float, [deg]
         Shaft tilt
-    s_lss : numpy array[6], [m]
+    s_lss : numpy array[5], [m]
         Discretized s-coordinates along drivetrain, measured from bedplate (direct) or tower center (geared)
-    D_lss : numpy array[6], [m]
-        Lss discretized diameter values at coordinates
-    t_lss : numpy array[6], [m]
-        Lss discretized thickness values at coordinates
+    lss_diameter : numpy array[5], [m]
+        LSS outer diameter from hub to bearing 2
+    lss_wall_thickness : numpy array[5], [m]
+        LSS wall thickness
     hub_system_mass : float, [kg]
         Hub system mass
     hub_system_cm : float, [m]
@@ -52,7 +52,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Generator rotor center of mass (measured along nose from bedplate)
     I_rotor : numpy array[3], [kg*m**2]
         Generator rotor moment of inertia (measured about its cm)
-    s_gearbox : float, [m]
+    gearbox_cm : float, [m]
         Gearbox attachment to lss s-coordinate measured from tower
     m_gearbox : float, [kg]
         Gearbox rotor mass
@@ -112,9 +112,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
 
         self.add_discrete_input('direct_drive', False)
         self.add_input('tilt', 0.0, units='deg')
-        self.add_input('s_lss', val=np.zeros(6), units='m')
-        self.add_input('D_lss', val=np.zeros(6), units='m')
-        self.add_input('t_lss', val=np.zeros(6), units='m')
+        self.add_input('s_lss', val=np.zeros(5), units='m')
+        self.add_input('lss_diameter', val=np.zeros(5), units='m')
+        self.add_input('lss_wall_thickness', val=np.zeros(5), units='m')
         self.add_input('hub_system_mass', 0.0, units='kg')
         self.add_input('hub_system_cm', 0.0, units='m')
         self.add_input('hub_system_I', np.zeros(6), units='kg*m**2')
@@ -126,7 +126,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input('m_rotor', val=0.0, units='kg')
         self.add_input('cm_rotor', val=0.0, units='m')
         self.add_input('I_rotor', val=np.zeros(3), units='kg*m**2')
-        self.add_input('s_gearbox', val=0.0, units='m')
+        #self.add_input('s_gearbox', val=0.0, units='m')
         self.add_input('m_gearbox', val=0.0, units='kg')
         self.add_input('cm_gearbox', val=0.0, units='m')
         self.add_input('I_gearbox', val=np.zeros(3), units='kg*m**2')
@@ -157,8 +157,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         tilt       = float(np.deg2rad(inputs['tilt']))
         
         s_lss      = inputs['s_lss']
-        D_lss      = inputs['D_lss']
-        t_lss      = inputs['t_lss']
+        D_lss      = inputs['lss_diameter']
+        t_lss      = inputs['lss_wall_thickness']
 
         s_mb1      = float(inputs['s_mb1'])
         s_mb2      = float(inputs['s_mb2'])
@@ -169,7 +169,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             cm_rotor   = float(inputs['cm_rotor'])
             I_rotor    = inputs['I_rotor']
         else:
-            s_gearbox  = float(inputs['s_gearbox'])
+            #s_gearbox  = float(inputs['s_gearbox'])
             m_gearbox  = float(inputs['m_gearbox'])
             cm_gearbox = float(inputs['cm_gearbox'])
             I_gearbox  = inputs['I_gearbox']
@@ -219,14 +219,6 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Rxx = np.array([FREE,  FREE, RIGID]) # Torque is absorbed by stator, so this is the best way to capture that
         Ryy = np.array([FREE,  RIGID, FREE]) # downwind bearing carry moments
         Rzz = np.array([FREE,  RIGID, FREE]) # downwind bearing carry moments
-        # George's way
-        #rnode = np.r_[itorq, i1, i2]
-        #Rx  = np.array([FREE,  RIGID, FREE]) # WHY?
-        #Ry  = np.array([FREE,  RIGID, RIGID]) # WHY?
-        #Rz  = np.array([FREE,  RIGID, RIGID]) # WHY?
-        #Rxx = np.array([RIGID, FREE,  FREE]) # pass the torque to the generator
-        #Ryy = np.array([FREE,  RIGID,  FREE]) # upwind tapered bearing carry Ryy
-        #Rzz = np.array([FREE,  RIGID,  FREE]) # upwind tapered bearing carry Rzz
         reactions = frame3dd.ReactionData(rnode, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
         # -----------------------------------
 
@@ -344,16 +336,14 @@ class HSS_Frame(om.ExplicitComponent):
     ----------
     tilt : float, [deg]
         Shaft tilt
-    s_hss : numpy array[6], [m]
+    s_hss : numpy array[3], [m]
         Discretized s-coordinates along drivetrain, measured from bedplate (direct) or tower center (geared)
-    D_hss : numpy array[6], [m]
+    hss_diameter : numpy array[3], [m]
         Lss discretized diameter values at coordinates
-    t_hss : numpy array[6], [m]
+    hss_wall_thickness : numpy array[3], [m]
         Lss discretized thickness values at coordinates
     M_hub : numpy array[3, n_dlcs], [N*m]
         Moment vector applied to the hub
-    s_generator : float, [m]
-        Gearbox attachment to lss s-coordinate measured from tower
     m_generator : float, [kg]
         Gearbox rotor mass
     cm_generator : float, [kg]
@@ -400,9 +390,9 @@ class HSS_Frame(om.ExplicitComponent):
 
         self.add_discrete_input('direct_drive', False)
         self.add_input('tilt', 0.0, units='deg')
-        self.add_input('s_hss', val=np.zeros(6), units='m')
-        self.add_input('D_hss', val=np.zeros(6), units='m')
-        self.add_input('t_hss', val=np.zeros(6), units='m')
+        self.add_input('s_hss', val=np.zeros(3), units='m')
+        self.add_input('hss_diameter', val=np.zeros(3), units='m')
+        self.add_input('hss_wall_thickness', val=np.zeros(3), units='m')
         self.add_input('M_hub', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('gear_ratio', val=1.0)
         self.add_input('s_generator', val=0.0, units='m')
@@ -431,8 +421,8 @@ class HSS_Frame(om.ExplicitComponent):
         tilt       = float(np.deg2rad(inputs['tilt']))
         
         s_hss      = inputs['s_hss']
-        D_hss      = inputs['D_hss']
-        t_hss      = inputs['t_hss']
+        D_hss      = inputs['hss_diameter']
+        t_hss      = inputs['hss_wall_thickness']
 
         s_generator  = float(inputs['s_generator'])
         m_generator  = float(inputs['m_generator'])
@@ -499,7 +489,7 @@ class HSS_Frame(om.ExplicitComponent):
                                     [I_brake[1], I_generator[1]],
                                     [I_brake[2], I_generator[2]],
                                     [0.0, 0.0], [0.0, 0.0], [0.0, 0.0],
-                                    [0.0, s_generator.mean()-s_hss[-1]], [0.0, 0.0], [0.0, 0.0], True)
+                                    [0.0, s_generator-s_hss[-1]], [0.0, 0.0], [0.0, 0.0], True)
         # ------------------------------------
 
         # ------ static load cases ------------
@@ -566,12 +556,12 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         Flag whether the design is upwind or downwind
     tilt : float, [deg]
         Lss tilt
-    s_nose : numpy array[6], [m]
+    s_nose : numpy array[5], [m]
         Discretized s-coordinates along drivetrain, measured from bedplate
-    D_nose : numpy array[6], [m]
-        Nose discretized diameter values at coordinates
-    t_nose : numpy array[6], [m]
-        Nose discretized thickness values at coordinates
+    nose_diameter : numpy array[5], [m]
+        Nose outer diameter from bearing 1 to bedplate
+    nose_wall_thickness : numpy array[5], [m]
+        Nose wall thickness
     x_bedplate : numpy array[n_points], [m]
         Bedplate centerline x-coordinates
     z_bedplate : numpy array[n_points], [m]
@@ -680,9 +670,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
 
         self.add_discrete_input('upwind', True)
         self.add_input('tilt', 0.0, units='deg')
-        self.add_input('s_nose', val=np.zeros(6), units='m')
-        self.add_input('D_nose', val=np.zeros(6), units='m')
-        self.add_input('t_nose', val=np.zeros(6), units='m')
+        self.add_input('s_nose', val=np.zeros(5), units='m')
+        self.add_input('nose_diameter', np.zeros(5), units='m')
+        self.add_input('nose_wall_thickness', np.zeros(5), units='m')
         self.add_input('x_bedplate', val=np.zeros(n_points), units='m')
         self.add_input('z_bedplate', val=np.zeros(n_points), units='m')
         self.add_input('x_bedplate_inner', val=np.zeros(n_points), units='m')
@@ -749,8 +739,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         t_bed      = inputs['t_bedplate']
 
         s_nose     = inputs['s_nose'][1:] # First point duplicated with bedplate
-        D_nose     = inputs['D_nose']
-        t_nose     = inputs['t_nose']
+        D_nose     = inputs['nose_diameter']
+        t_nose     = inputs['nose_wall_thickness']
         x_nose     = s_nose.copy()
         x_nose    *= Cup
         x_nose    += x_c[-1]
