@@ -1,0 +1,11 @@
+language: python
+python:
+  - "3.8"
+
+install: 
+  - pip install openmdao testflo
+  - pip install -e .
+  - pip list
+
+script:
+  - testflo weis
