@@ -1,0 +1,7 @@
+# Packages
+*.egg
+*.egg-info
+dist
+build
+local
+.DS_Store
