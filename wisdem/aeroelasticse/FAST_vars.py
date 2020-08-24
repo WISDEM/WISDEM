@@ -1317,6 +1317,7 @@ FstModel['AeroDynPolar']      = AeroDynPolar
 FstModel['ServoDyn']          = ServoDyn
 FstModel['DISCON_in']         = DISCON_in
 FstModel['HydroDyn']          = HydroDyn
+FstModel['MoorDyn']           = MoorDyn
 FstModel['SubDyn']            = SubDyn
 FstModel['MAP']               = MAP
 FstModel['BeamDyn']           = BeamDyn
