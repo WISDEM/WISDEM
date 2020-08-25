@@ -15,10 +15,6 @@ except:
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from ROSCO_toolbox.utilities import FAST_IO
-
-from pCrunch import Analysis, pdTools
-
 
 class FAST_Processing(object):
     '''
@@ -185,6 +181,7 @@ class FAST_Processing(object):
         
         else:
             # Initialize Analysis
+            from pCrunch import Analysis, pdTools
             loads_analysis = Analysis.Loads_Analysis()
             loads_analysis.verbose = self.verbose
             loads_analysis.t0 = self.t0
@@ -279,6 +276,7 @@ class FAST_Processing(object):
 
         fnames = np.array(filenames).T.tolist()
         # Setup FAST_Analysis preferences
+        from pCrunch import Analysis, pdTools
         loads_analysis = Analysis.Loads_Analysis()
         loads_analysis.verbose=self.verbose
         loads_analysis.t0 = self.t0

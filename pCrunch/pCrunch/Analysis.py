@@ -10,9 +10,7 @@ import seaborn as sns
 import fatpack # 3rd party module used for rainflow counting
 
 from scipy.interpolate import PchipInterpolator
-from ROSCO_toolbox.utilities import FAST_IO
 
-from pCrunch import pdTools
 
 class Loads_Analysis(object):
     '''
@@ -88,6 +86,7 @@ class Loads_Analysis(object):
             list or dictionary containing OpenFAST output data
         '''
         # Load openfast data
+        from ROSCO_toolbox.utilities import FAST_IO
         fast_io = FAST_IO()
         fast_data = fast_io.load_FAST_out(filenames, tmin=self.t0, tmax=self.tf, verbose=self.verbose)
 
@@ -244,6 +243,7 @@ class Loads_Analysis(object):
             pandas DataFrame containing load rankings
         '''
         
+        from pCrunch import pdTools
         # Make sure stats is in pandas df
         if isinstance(stats, dict):
             stats_df = pdTools.dict2df([stats], names=names)
@@ -468,6 +468,7 @@ class Power_Production(object):
             Annual energy production corresponding to 
         '''
   
+        from pCrunch import pdTools
         # Make sure stats is in pandas df
         if isinstance(stats, dict):
             stats_df = pdTools.dict2df(stats)
@@ -574,6 +575,7 @@ class wsPlotting(object):
         ax: axes handle
         '''
 
+        from pCrunch import pdTools
         # Check for valid inputs
         if isinstance(stats, dict):
             stats_df = pdTools.dict2df(stats)
@@ -729,7 +731,8 @@ class wsPlotting(object):
         # classifiers = list(set(cmw[classifier_type]))
         # classifier_names = ['ROSCO', 'legacy']
        
-       # Check for valid inputs
+        from pCrunch import pdTools
+        # Check for valid inputs
         if isinstance(load_rankings, dict):
             load_ranking_df = pdTools.dict2df(load_rankings)
         elif isinstance(load_rankings, list):
