@@ -10,7 +10,6 @@
 # speROSCO_cific language governing permissions and limitations under the License.
 
 import numpy as np
-from ROSCO_toolbox import turbine as ROSCO_turbine
 import matplotlib.pyplot as plt
 import sys
 

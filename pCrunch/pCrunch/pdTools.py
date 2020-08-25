@@ -2,7 +2,6 @@
 Some tools to ease management of batch analysis data in pandas
 '''
 import pandas as pd
-from pCrunch import Processing
 
 def dict2df(sumstats, names=None):
     '''
@@ -77,6 +76,7 @@ def yaml2df(filename, names=[]):
 
     '''
 
+    from pCrunch import Processing
     data_dict = Processing.load_yaml('test.yaml', package=0)
 
     level = data_dict

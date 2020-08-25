@@ -19,8 +19,6 @@ import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from ROSCO_toolbox import utilities as ROSCO_utilities
-
 # Some useful constants
 now = datetime.datetime.now()
 pi = np.pi
@@ -205,6 +203,7 @@ class Turbine():
         if rot_source == 'cc-blade': # Use cc-blade
             self.load_from_ccblade()
         elif rot_source == 'txt':    # Use specified text file
+            from ROSCO_toolbox import utilities as ROSCO_utilities
             file_processing = ROSCO_utilities.FileProcessing()
             self.pitch_initial_rad, self.TSR_initial, self.Cp_table, self.Ct_table, self.Cq_table = file_processing.load_from_txt(
                 txt_filename)
