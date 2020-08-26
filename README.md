@@ -1,7 +1,7 @@
 # WISDEM&reg;
 
-[![Build Status](https://travis-ci.com/WISDEM/WISDEM.svg?branch=IEAontology4all)](https://travis-ci.com/WISDEM/WISDEM)
-[![Coverage Status](https://coveralls.io/repos/github/WISDEM/WISDEM/badge.svg?branch=IEAontology4all)](https://coveralls.io/github/WISDEM/WISDEM?branch=IEAontology4all)
+[![Build Status](https://travis-ci.com/WISDEM/WISDEM.svg?branch=develop)](https://travis-ci.com/WISDEM/WISDEM)
+[![Coverage Status](https://coveralls.io/repos/github/WISDEM/WISDEM/badge.svg?branch=develop)](https://coveralls.io/github/WISDEM/WISDEM?branch=develop)
 [![Documentation Status](https://readthedocs.org/projects/wisdem/badge/?version=latest)](https://wisdem.readthedocs.io/en/latest/?badge=latest)
 
 
@@ -63,18 +63,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
     
     Note that older versions of anaconda on MacOS and Linux may require `source activate wisdem-env`
 
-2.  FOR USERS (NOT DEVELOPERS): Install WISDEM and its dependencies
-
-        conda install -y wisdem
-
-3.  To open up the WISDEM tutorials, navigate to a directory where you want to place WISDEM and all of its files.
-
-        conda install -y git jupyter
-        git clone https://github.com/WISDEM/WISDEM.git
-        cd WISDEM/tutorial-notebooks
-        jupyter notebook
-
-2.  FOR DEVELOPERS (NOT USERS): Use conda to install the build dependencies, but then install WISDEM from source.  Not the differences between Windows and Mac/Linux build systems
+2.  Use conda to install the build dependencies, but then install WISDEM from source.  Not the differences between Windows and Mac/Linux build systems
 
         conda install -y wisdem git jupyter
         conda remove --force wisdem
@@ -82,11 +71,11 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda install m2w64-toolchain libpython       # (Windows only)
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
-        git checkout IEAontology4all
+        git checkout develop
         python setup.py develop
 
 
-4. OPTIONAL: Install pyOptSparse, a package that provides a handful of additional optimization solvers and has OpenMDAO support:
+3. OPTIONAL: Install pyOptSparse, a package that provides a handful of additional optimization solvers and has OpenMDAO support:
 
         git clone https://github.com/evan-gaertner/pyoptsparse.git
         cd pyoptsparse
