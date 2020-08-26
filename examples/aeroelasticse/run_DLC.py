@@ -1,15 +1,18 @@
 from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper, runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
-import sys
+import sys, os, platform
 import numpy as np
-import os
 
+# Turbine inputs
 iec = CaseGen_IEC()
 iec.Turbine_Class       = 'I'   # Wind class I, II, III, IV
 iec.Turbulence_Class    = 'B'   # Turbulence class 'A', 'B', or 'C'
 iec.D                   = 240.  # Rotor diameter to size the wind grid
 iec.z_hub               = 150.  # Hub height to size the wind grid
+cut_in                  = 3.    # Cut in wind speed
+cut_out                 = 25.   # Cut out wind speed
+n_ws                    = 3    # Number of wind speed bins
 TMax                    = 1.    # Length of wind grids and OpenFAST simulations, suggested 720 s
 Vrated                  = 10.59 # Rated wind speed
 Ttrans                  = max([0., TMax - 60.])  # Start of the transient for DLC with a transient, e.g. DLC 1.4
@@ -38,9 +41,10 @@ iec.init_cond[("HydroDyn","PtfmHeave")]        = {'U':[3., 25.]}
 iec.init_cond[("HydroDyn","PtfmHeave")]['val'] = [0.5,0.5]
 
 # DLC inputs
+wind_speeds = range(int(cut_in), int(cut_out), int(n_ws))
 iec.dlc_inputs = {}
 iec.dlc_inputs['DLC']   = [1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3]
-iec.dlc_inputs['U']     = [[3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.], [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.],[Vrated - 2., Vrated, Vrated + 2.],[3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.], [Vrated - 2., Vrated, Vrated + 2., 25.], [], []]
+iec.dlc_inputs['U']     = [wind_speeds, wind_speeds,[Vrated - 2., Vrated, Vrated + 2.],wind_speeds, [Vrated - 2., Vrated, Vrated + 2., cut_out], [], []]
 iec.dlc_inputs['Seeds'] = [[1],[1],[],[],[1],[1],[1]]
 # iec.dlc_inputs['Seeds'] = [range(1,7), range(1,7),[],[], range(1,7), range(1,7), range(1,7)]
 iec.dlc_inputs['Yaw']   = [[], [], [], [], [], [], []]
@@ -133,6 +137,14 @@ case_inputs[("ElastoDyn","PtfmPDOF")]    = {'vals':["False"], 'group':0}
 case_inputs[("ElastoDyn","PtfmYDOF")]    = {'vals':["False"], 'group':0}
 case_inputs[("ServoDyn","PCMode")]       = {'vals':[5], 'group':0}
 case_inputs[("ServoDyn","VSContrl")]     = {'vals':[5], 'group':0}
+if platform.system() == 'Windows':
+    path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.dll')
+elif platform.system() == 'Darwin':
+    path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.dylib')
+else:
+    path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.so')
+
+case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
 case_inputs[("AeroDyn15","TwrAero")]     = {'vals':["True"], 'group':0}
 case_inputs[("AeroDyn15","TwrPotent")]   = {'vals':[1], 'group':0}
 case_inputs[("AeroDyn15","TwrShadow")]   = {'vals':["True"], 'group':0}
