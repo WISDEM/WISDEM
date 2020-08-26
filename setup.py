@@ -1,18 +1,15 @@
 import os
 import sys
 import platform
-import glob
 import multiprocessing
 from distutils.core import run_setup
 from setuptools import find_packages
 from numpy.distutils.command.build_ext import build_ext
 from numpy.distutils.core import setup, Extension
 from io import open
-import subprocess
 
 # Global constants
 ncpus = multiprocessing.cpu_count()
-os.environ['NPY_DISTUTILS_APPEND_FLAGS'] = '1'
 this_directory = os.path.abspath(os.path.dirname(__file__))
 
 # For the CMake Extensions

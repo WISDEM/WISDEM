@@ -20,11 +20,12 @@ install:
   # Create environment and install dependences dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - conda activate test-environment
-  - conda install -q --yes compilers matplotlib pytest pytest-cov coveralls pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy testflo cmake dill smt
-  - pip install simpy marmot-agents nlopt
+  - conda install -q --yes compilers matplotlib pytest pytest-cov coveralls pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy testflo cmake dill smt seaborn
+  - pip install simpy marmot-agents nlopt fatpack
   
   # Install WEIS
-  - travis_wait 60 pip install --verbose -e .;
+  #- travis_wait 60 pip install --verbose -e .;
+  - travis_wait 60 python setup.py develop
   
 script:
   - testflo weis
