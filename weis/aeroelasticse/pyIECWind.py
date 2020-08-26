@@ -2,9 +2,9 @@ import numpy as np
 import os, sys
 # import matplotlib.pyplot as plt 
 
-from wisdem.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
-from wisdem.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
-from wisdem.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
+from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
+from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
+from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
 
 # from AeroelasticSE.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
 

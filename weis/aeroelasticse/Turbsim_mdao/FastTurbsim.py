@@ -13,8 +13,8 @@ sys.path.insert(0, os.path.abspath(".."))
 import matplotlib.pyplot as plt
 from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup
 from openmdao.api import SqliteRecorder
-from wisdem.aeroelasticse.FAST_mdao.FST8_aeroelasticsolver import FST8Workflow
-from wisdem.aeroelasticse.Turbsim_mdao.turbsim_openmdao import turbsimGroup
+from weis.aeroelasticse.FAST_mdao.FST8_aeroelasticsolver import FST8Workflow
+from weis.aeroelasticse.Turbsim_mdao.turbsim_openmdao import turbsimGroup
 
 # Initial OpenMDAO problem setup
 top = Problem()

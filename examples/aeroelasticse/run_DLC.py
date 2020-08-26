@@ -1,5 +1,5 @@
-from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
-from wisdem.aeroelasticse.CaseGen_IEC       import CaseGen_IEC
+from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper, runFAST_pywrapper_batch
+from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
 import sys
 import numpy as np

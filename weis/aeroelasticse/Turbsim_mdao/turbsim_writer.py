@@ -1,6 +1,6 @@
-from wisdem.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
-from wisdem.aeroelasticse.Turbsim_mdao.turbulence_spectrum import turb_specs
-from wisdem.aeroelasticse.Turbsim_mdao.wind_profile_writer import write_wind
+from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
+from weis.aeroelasticse.Turbsim_mdao.turbulence_spectrum import turb_specs
+from weis.aeroelasticse.Turbsim_mdao.wind_profile_writer import write_wind
 import os
 import numpy as np
 import random

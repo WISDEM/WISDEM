@@ -2,7 +2,7 @@ import numpy as np
 import os
 # import pandas
 from collections import OrderedDict
-import wisdem.aeroelasticse
+import weis.aeroelasticse
 def turb_specs(V_ref, L_u, L_v, L_w, sigma_u, sigma_v, sigma_w, template_file, filename):
     
     f=(np.array([np.arange(0.0015873015873015873015873015873, 20.00001, 0.0015873015873015873015873015873)])).T

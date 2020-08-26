@@ -2,8 +2,8 @@ import numpy as np
 import os, sys, copy, itertools
 import multiprocessing as mp
 
-from wisdem.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix, save_case_matrix_yaml
-from wisdem.aeroelasticse.pyIECWind import pyIECWind_extreme, pyIECWind_turb
+from weis.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix, save_case_matrix_yaml
+from weis.aeroelasticse.pyIECWind import pyIECWind_extreme, pyIECWind_turb
 
 try:
     from mpi4py import MPI

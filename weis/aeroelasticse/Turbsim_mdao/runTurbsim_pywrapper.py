@@ -1,9 +1,9 @@
 import os, sys
 import numpy as np
 import multiprocessing as mp
-from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
-from wisdem.aeroelasticse.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
-from wisdem.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix_direct
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
+from weis.aeroelasticse.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
+from weis.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix_direct
 
 from openmdao.core.mpi_wrap import MPI
 if MPI:

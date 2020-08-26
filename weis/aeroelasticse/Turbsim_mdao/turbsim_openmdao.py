@@ -1,7 +1,7 @@
 from openmdao.api import Group, Problem, Component, IndepVarComp, ParallelGroup
-from wisdem.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
-from wisdem.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
-from wisdem.aeroelasticse.Turbsim_mdao.turbsim_reader import turbsimReader
+from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
+from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
+from weis.aeroelasticse.Turbsim_mdao.turbsim_reader import turbsimReader
 import numpy as np
 import os
 

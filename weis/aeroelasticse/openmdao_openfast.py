@@ -7,10 +7,10 @@ from wisdem.commonse.vertical_cylinder      import NFREQ
 from wisdem.towerse.tower                   import get_nfull
 
 from wisdem.rotorse.geometry_tools.geometry import remap2grid
-from wisdem.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
-from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
-from wisdem.aeroelasticse.FAST_post         import FAST_IO_timeseries
-from wisdem.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
+from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
+from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
+from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
 from pCrunch import Analysis, pdTools
 import fatpack

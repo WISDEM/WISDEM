@@ -8,7 +8,7 @@ from pyts.base import tsGrid
 from pyts.phaseModels.main import Rinker, Uniform
 
 
-from wisdem.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix
+from weis.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix
 
 # class pyTurbsim_wrapper():
 #     """ wrapper for py turbsim so we can mostly just plug it in """

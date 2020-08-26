@@ -1,8 +1,8 @@
 import os
 import numpy as np
 
-from wisdem.aeroelasticse.CaseGen_General import CaseGen_General
-from wisdem.aeroelasticse.CaseGen_IEC import CaseGen_IEC
+from weis.aeroelasticse.CaseGen_General import CaseGen_General
+from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
 
 # def power_curve_fit(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class, Vrated, U_init=[], Omega_init=[], pitch_init=[], Turbsim_exe='', ptfm_U_init=[], ptfm_pitch_init=[], ptfm_surge_init=[], ptfm_heave_init=[], metocean_U_init=[], metocean_Hs_init=[], metocean_Tp_init=[]):
 
@@ -214,7 +214,7 @@ def power_curve(fst_vt, runDir, namebase, TMax, turbine_class, turbulence_class,
         case_inputs[("HydroDyn","RdtnDT")] = {'vals':dt, 'group':1}
         case_inputs[("HydroDyn","WaveMod")] = {'vals':[1], 'group':0}
 
-    from wisdem.aeroelasticse.CaseGen_General import CaseGen_General
+    from weis.aeroelasticse.CaseGen_General import CaseGen_General
     case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=runDir, namebase=namebase)
 
     channels = ['Wind1VelX','GenPwr',"RtAeroCp", "RotTorq", "RotThrust", "RotSpeed", "BldPitch1"]
