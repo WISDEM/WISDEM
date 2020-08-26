@@ -1,0 +1,11 @@
+export_system_design:
+  cables: XLPE_300mm_33kV
+  percent_added_length: 0.01
+  percent_redundant: 0.0
+plant:
+  capacity: 350
+site:
+  depth: 20
+  distance_to_landfall: 30
+landfall:
+  interconnection_distance: 3

@@ -1,0 +1,25 @@
+--------------- LINE DICTIONARY -------------------------
+LineType  Diam      MassDenInAir   EA        CB   CIntDamp  Ca    Cdn    Cdt
+(-)       (m)       (kg/m)        (N)        (-)   (Pa-s)   (-)   (-)    (-)
+steel     0.25       320.0     9800000000   1.0    -999.9 -999.9 -999.9 -999.9
+nylon     0.30       100.0     980000000    1.0    -999.9 -999.9 -999.9 -999.9
+--------------- NODE PROPERTIES -------------------------
+Node Type       X       Y       Z      M     B     FX    FY    FZ
+(-)  (-)       (m)     (m)     (m)    (kg)  (mˆ3)  (N)   (N)   (N)
+1    Fix     400        0     depth    0     0      #     #     #
+2    Connect #90       #0    #-80      0     0      0     0     0   
+3    Vessel   20        20    -10      0     0      #     #     #
+4    Vessel   20       -20    -10      0     0      #     #     #
+--------------- LINE PROPERTIES -------------------------
+Line    LineType  UnstrLen  NodeAnch  NodeFair  Flags
+(-)      (-)       (m)       (-)       (-)       (-)
+1       steel      450        1         2    
+2       nylon      90         2         3    
+3       nylon      90         2         4    
+--------------- SOLVER OPTIONS---------------------------
+Option
+(-)
+ help
+outer_tol 1e-5
+repeat 120 
+repeat 240

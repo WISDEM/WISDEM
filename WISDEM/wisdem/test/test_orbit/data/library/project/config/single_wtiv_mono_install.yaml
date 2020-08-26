@@ -1,0 +1,19 @@
+monopile:
+  deck_space: 500
+  diameter: 10
+  length: 50
+  mass: 350
+plant:
+  num_turbines: 20
+port:
+  monthly_rate: 100000
+  num_cranes: 1
+site:
+  depth: 40
+  distance: 50
+transition_piece:
+  deck_space: 250
+  mass: 350
+turbine:
+  hub_height: 100
+wtiv: test_wtiv

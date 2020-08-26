@@ -1,0 +1,39 @@
+# Development costs
+site_auction_cost: 100e6                      # USD
+site_auction_duration: 0                      # hrs
+site_assessment_plan_cost: 0.5e6              # USD
+site_assessment_plan_duration: 8760           # hrs
+site_assessment_cost: 50e6                    # USD
+site_assessment_duration: 43800               # hrs
+construction_operations_plan_cost: 1e6        # USD
+construction_operations_plan_duration: 43800  # hrs
+boem_review_cost: 0                           # No cost to developer
+boem_review_duration: 8760                    # hrs
+design_install_plan_cost: 0.25e6              # USD
+design_install_plan_duration: 8760            # hrs
+
+# Phase designs
+substructure_design_time: 1000                # hrs
+array_system_design_time: 1000                # hrs
+export_system_design_time: 1000               # hrs
+oss_design_time: 1000                         # hrs
+onshore_trans_design_time: 1000               # hrs
+
+# Substructure costs
+monopile_steel_cost: 3000                     # USD/t
+tp_steel_cost: 3000                           # USD/t
+
+# Port properties
+port_cost_per_month: 2e6                      # USD/month
+
+# Export System Installation
+onshore_construction_rate: 50000              # USD/day
+
+# Vessel parameters
+wtiv_day_rate: 180000                         # USD/day
+feeder_day_rate: 75000                        # USD/day
+scour_day_rate: 120000                        # USD/day
+trench_day_rate: 50000                        # USD/day
+heavy_lift_vessel_day_rate: 500000            # USD/day
+array_cable_install_day_rate: 125000          # USD/day
+export_cable_install_day_rate: 165000         # USD/day

@@ -1,0 +1,17 @@
+blade:
+  deck_space: 100     # m^2
+  length: 75          # m
+  mass: 100           # t
+hub_height: 110       # m
+nacelle:
+  deck_space: 200     # m^2
+  mass: 360           # t
+name: SWT-6MW-154
+rotor_diameter: 154   # m
+tower:
+  deck_space: 36      # m^2
+  sections: 2         # n
+  length: 110         # m
+  mass: 150           # t
+turbine_rating: 6     # MW
+rated_windspeed: 13   # m/s
