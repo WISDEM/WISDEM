@@ -1,0 +1,54 @@
+OffshoreSubstationInstallation:
+  feeder: example_heavy_feeder
+  num_feeders: 1
+array_cable_install_vessel: example_cable_lay_vessel
+array_system_design:
+  cables:
+  - XLPE_630mm_33kV
+  - XLPE_400mm_33kV
+commissioning: 0.01
+decommissioning: 0.15
+design_phases:
+- MonopileDesign
+- ScourProtectionDesign
+- ArraySystemDesign
+- ExportSystemDesign
+- OffshoreSubstationDesign
+export_cable_bury_vessel: example_cable_lay_vessel
+export_cable_install_vessel: example_cable_lay_vessel
+export_system_design:
+  cables: XLPE_500mm_132kV
+  percent_added_length: 0.0
+install_phases:
+  ArrayCableInstallation: 0
+  ExportCableInstallation: 2000
+  MonopileInstallation: !!python/tuple
+  - ScourProtectionInstallation
+  - 0.5
+  OffshoreSubstationInstallation: 0
+  ScourProtectionInstallation: 0
+  TurbineInstallation: !!python/tuple
+  - MonopileInstallation
+  - 0.1
+landfall:
+  interconnection_distance: 3
+  trench_length: 2
+oss_install_vessel: example_heavy_lift_vessel
+plant:
+  layout: grid
+  num_turbines: 50
+  row_spacing: 7
+  substation_distance: 1
+  turbine_spacing: 7
+scour_protection_design:
+  cost_per_tonne: 40
+  scour_protection_depth: 1
+site:
+  depth: 22.5
+  distance: 124
+  distance_to_landfall: 35
+  mean_windspeed: 9
+spi_vessel: example_scour_protection_vessel
+turbine: SWT_6MW_154m_110m
+turbine_capex: 1200
+wtiv: example_wtiv

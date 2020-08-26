@@ -1,0 +1,9 @@
+ac_resistance: 0.128    #
+capacitance: 163        #
+conductor_size: 185     #
+cost_per_km: 200000     #
+current_capacity: 445   # At 2m burial depth
+inductance: 0.443       #
+linear_density: 26.1    #
+name: XLPE_185mm_66kV
+rated_voltage: 66
