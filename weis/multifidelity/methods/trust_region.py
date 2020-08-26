@@ -26,7 +26,7 @@ class SimpleTrustRegion(BaseMethod):
     eta : float
         Value to compare the ratio of actual reduction to predicted reduction
         of the objective value. A ratio higher than eta expands the trust region
-        whereas a value lower than eta contracts the trust region.        
+        whereas a value lower than eta contracts the trust region.
     gtol : float
         Tolerance of the gradient for convergence criteria. If the norm
         of the gradient at the current design point is less than gtol,
@@ -34,6 +34,7 @@ class SimpleTrustRegion(BaseMethod):
     trust_radius : float
         The current value of the trust region radius in dimensioned units.
     """
+
     def __init__(
         self,
         model_low,
@@ -48,7 +49,7 @@ class SimpleTrustRegion(BaseMethod):
     ):
         """
         Initialize the trust region method and store the user-defined options.
-        
+
         Parameters
         ----------
         max_trust_radius : float
@@ -57,15 +58,15 @@ class SimpleTrustRegion(BaseMethod):
         eta : float
             Value to compare the ratio of actual reduction to predicted reduction
             of the objective value. A ratio higher than eta expands the trust region
-            whereas a value lower than eta contracts the trust region.        
+            whereas a value lower than eta contracts the trust region.
         gtol : float
             Tolerance of the gradient for convergence criteria. If the norm
             of the gradient at the current design point is less than gtol,
             terminate the trust region method. Currently not implemented.
         trust_radius : float
             The current value of the trust region radius in dimensioned units.
-        
-        
+
+
         """
         super().__init__(model_low, model_high, bounds, disp, num_initial_points)
 
@@ -78,10 +79,10 @@ class SimpleTrustRegion(BaseMethod):
         """
         Find the design point corresponding to the minimum value of the
         corrected low-fidelity model within the trust region.
-        
+
         This method uses the most recent design point in design_vectors as the initial
         point for the local optimization.
-        
+
         Returns
         -------
         x_new : array
@@ -89,7 +90,7 @@ class SimpleTrustRegion(BaseMethod):
             low-fidelity model within the trust region.
         hits_boundary : boolean
             True is the new design point hits one of the boundaries of the
-            trust region.        
+            trust region.
         """
         x0 = self.design_vectors[-1, :]
 
@@ -100,10 +101,8 @@ class SimpleTrustRegion(BaseMethod):
         upper_bounds = np.minimum(trust_region_upper_bounds, self.bounds[:, 1])
 
         bounds = list(zip(lower_bounds, upper_bounds))
-        scaled_function = lambda x: self.objective_scaler * self.approximation_functions[
-            self.objective
-        ](
-            x
+        scaled_function = lambda x: self.objective_scaler * np.squeeze(
+            self.approximation_functions[self.objective](x)
         )
         res = minimize(
             scaled_function,
@@ -130,9 +129,9 @@ class SimpleTrustRegion(BaseMethod):
         """
         Either expand or contract the trust region radius based on the
         value of the high-fidelity function at the proposed design point.
-        
+
         Modifies `design_vectors` and `trust_radius` in-place.
-        
+
         Parameters
         ----------
         x_new : array
@@ -140,12 +139,13 @@ class SimpleTrustRegion(BaseMethod):
             low-fidelity model within the trust region.
         hits_boundary : boolean
             True is the new design point hits one of the boundaries of the
-            trust region.    
-        
+            trust region.
+
         """
         # 3. Compute the ratio of actual improvement to predicted improvement
         prev_point_high = (
-            self.objective_scaler * self.model_high.run(self.design_vectors[-1])[self.objective]
+            self.objective_scaler
+            * self.model_high.run(self.design_vectors[-1])[self.objective]
         )
         new_point_high = (
             self.objective_scaler * self.model_high.run(x_new)[self.objective]
@@ -185,12 +185,12 @@ class SimpleTrustRegion(BaseMethod):
     def optimize(self, plot=False):
         """
         Actually perform the trust-region optimization.
-        
+
         Parameters
         ----------
         plot : boolean
             If True, plot a 2d representation of the optimization process.
-        
+
         """
         self.construct_approximations()
         self.process_constraints()
@@ -213,26 +213,28 @@ class SimpleTrustRegion(BaseMethod):
 
             if self.trust_radius <= 1e-6:
                 break
-                
+
         results = {}
-        results['optimal_design'] = self.design_vectors[-1, :]
-        results['high_fidelity_func_value'] = self.model_high.run(self.design_vectors[-1, :])[self.objective]
-        results['number_high_fidelity_calls'] = len(self.design_vectors[:, 0])
+        results["optimal_design"] = self.design_vectors[-1, :]
+        results["high_fidelity_func_value"] = self.model_high.run(
+            self.design_vectors[-1, :]
+        )[self.objective]
+        results["number_high_fidelity_calls"] = len(self.design_vectors[:, 0])
 
         if self.disp:
             print()
             print(results)
-            
+
         return results
 
     def plot_functions(self):
         """
         Plot a 2D contour plot of the design space and optimizer progress.
-        
+
         Saves figures to .png files.
-        
+
         """
-        
+
         if self.n_dims == 2:
             n_plot = 9
             x_plot = np.linspace(self.bounds[0, 0], self.bounds[0, 1], n_plot)
@@ -252,12 +254,14 @@ class SimpleTrustRegion(BaseMethod):
 
             fig = plt.figure(figsize=(7.05, 5))
             contour = plt.contourf(X, Y, y_plot_high, levels=201)
-            plt.scatter(self.design_vectors[:, 0], self.design_vectors[:, 1], color="white")
+            plt.scatter(
+                self.design_vectors[:, 0], self.design_vectors[:, 1], color="white"
+            )
             ax = plt.gca()
-            ax.set_aspect('equal', 'box')
-            
+            ax.set_aspect("equal", "box")
+
             cbar = fig.colorbar(contour)
-            cbar.ax.set_ylabel('CP')
+            cbar.ax.set_ylabel("CP")
             ticks = np.round(np.linspace(0.305, 0.48286, 6), 3)
             cbar.set_ticks(ticks)
             cbar.set_ticklabels(ticks)
@@ -288,37 +292,43 @@ class SimpleTrustRegion(BaseMethod):
 
             if num_iter <= 5:
                 for i in range(num_offset):
-                    plt.savefig(f"image_{self.counter_plot}.png", dpi=300, bbox_inches='tight')
+                    plt.savefig(
+                        f"image_{self.counter_plot}.png", dpi=300, bbox_inches="tight"
+                    )
                     self.counter_plot += 1
             else:
-                plt.savefig(f"image_{self.counter_plot}.png", dpi=300, bbox_inches='tight')
+                plt.savefig(
+                    f"image_{self.counter_plot}.png", dpi=300, bbox_inches="tight"
+                )
                 self.counter_plot += 1
-                
+
         else:
             import niceplots
-            
+
             x_full = np.atleast_2d(np.linspace(0.0, 1.0, 101)).T
             squeezed_x = np.squeeze(x_full)
             y_full = squeezed_x.copy()
             for i, x_val in enumerate(squeezed_x):
-                y_full[i] = self.approximation_functions[self.objective](np.atleast_2d(x_val.T))
-                
+                y_full[i] = self.approximation_functions[self.objective](
+                    np.atleast_2d(x_val.T)
+                )
+
             y_full_high = self.model_high.run_vec(x_full)[self.objective]
             y_full_low = self.model_low.run_vec(x_full)[self.objective]
-            
+
             y_low = self.model_low.run_vec(self.design_vectors)[self.objective]
             y_high = self.model_high.run_vec(self.design_vectors)[self.objective]
-            
+
             plt.figure()
-            
+
             plt.plot(squeezed_x, y_full_low, label="low-fidelity", c="tab:green")
             plt.scatter(self.design_vectors, y_low, c="tab:green")
-            
+
             plt.plot(squeezed_x, y_full_high, label="high-fidelity", c="tab:orange")
             plt.scatter(self.design_vectors, y_high, c="tab:orange")
-            
+
             plt.plot(squeezed_x, np.squeeze(y_full), label="surrogate", c="tab:blue")
-            
+
             x = self.design_vectors[-1, 0]
             y_plot = y_high[-1]
             y_diff = 0.5
@@ -330,38 +340,40 @@ class SimpleTrustRegion(BaseMethod):
                     [x_ub, y_plot],
                 ]
             )
-            plt.plot(points[:, 0], points[:, 1], "-", color='gray', clip_on=False)
-            
+            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
+
             points = np.array(
                 [
                     [x_lb, y_plot - y_diff],
                     [x_lb, y_plot + y_diff],
                 ]
             )
-            plt.plot(points[:, 0], points[:, 1], "-", color='gray', clip_on=False)
-            
+            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
+
             points = np.array(
                 [
                     [x_ub, y_plot - y_diff],
                     [x_ub, y_plot + y_diff],
                 ]
             )
-            plt.plot(points[:, 0], points[:, 1], "-", color='gray', clip_on=False)
-    
+            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
+
             plt.xlim(self.bounds[0])
             plt.ylim([-10, 10])
 
             plt.xlabel("x")
             plt.ylabel("y")
-            
+
             ax = plt.gca()
             ax.text(s="Low-fidelity", x=0.1, y=0.5, c="tab:green", fontsize=12)
             ax.text(s="High-fidelity", x=0.26, y=-8.5, c="tab:orange", fontsize=12)
-            ax.text(s="Augmented low-fidelity", x=0.6, y=-10., c="tab:blue", fontsize=12)
-            
+            ax.text(
+                s="Augmented low-fidelity", x=0.6, y=-10.0, c="tab:blue", fontsize=12
+            )
+
             niceplots.adjust_spines(outward=True)
-            
+
             plt.tight_layout()
-            
+
             plt.savefig(f"1d_{self.counter_plot}.png", dpi=300)
             self.counter_plot += 1
