@@ -770,8 +770,8 @@ class WindPark(om.Group):
         self.connect('rlds.tip_pos.tip_deflection', 'outputs_2_screen.tip_deflection')
         
         if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
-            self.connect('aeroelastic.My_std',      'outputs_2_screen.My_std')
-            self.connect('aeroelastic.flp1_std',    'outputs_2_screen.flp1_std')
+            self.connect('aeroelastic.DEL_RootMyb',    'outputs_2_screen.DEL_RootMyb')
+            self.connect('aeroelastic.DEL_TwrBsMyt',    'outputs_2_screen.DEL_TwrBsMyt')
             self.connect('control.PC_omega',        'outputs_2_screen.PC_omega')
             self.connect('control.PC_zeta',         'outputs_2_screen.PC_zeta')
             self.connect('control.VS_omega',        'outputs_2_screen.VS_omega')
