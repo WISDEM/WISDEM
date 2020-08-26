@@ -61,8 +61,6 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda create -y --name wisdem-env python=3.7
         conda activate wisdem-env
     
-    Note that to use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`
-
 2.  Use conda to install the build dependencies, but then install WISDEM from source.  Not the differences between Windows and Mac/Linux build systems
 
         conda install -y wisdem git jupyter
@@ -81,6 +79,9 @@ The installation instructions below use the environment name, "wisdem-env," but 
         cd pyoptsparse
         python setup.py install
         cd ..
+
+
+*NOTE:* To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`
 
 
 ## Run Unit Tests
