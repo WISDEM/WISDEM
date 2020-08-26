@@ -383,7 +383,7 @@ properties:
         type: string
         description: Objective function / merit figure for optimization
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, blade_tip_deflection, My_std, flp1_std]
+        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, blade_tip_deflection, DEL_RootMyb, DEL_TwrBsMyt]
 
     driver:
         type: object

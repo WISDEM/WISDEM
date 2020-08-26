@@ -370,6 +370,7 @@ class FASTLoadCases(ExplicitComponent):
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
+        self.add_output('DEL_TwrBsMyt', val=0.0,           units='N*m',  desc='damage equivalent load of tower base bending moment in fore-aft direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
@@ -904,7 +905,8 @@ class FASTLoadCases(ExplicitComponent):
         loads_analysis.channels_extreme_table += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
 
         # DEL info 
-        loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+        loads_analysis.DEL_info  = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+        loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
 
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
@@ -1060,6 +1062,9 @@ class FASTLoadCases(ExplicitComponent):
         
         # Output
         outputs['DEL_RootMyb'] = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL']), np.max(sum_stats['RootMyb3']['DEL'])])
+        outputs['DEL_TwrBsMyt'] = np.max(sum_stats['TwrBsMyt']['DEL'])
+
+        # Additional Outputs
         outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
 
     def write_FAST(self, fst_vt, discrete_outputs):
