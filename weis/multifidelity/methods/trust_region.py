@@ -100,11 +100,10 @@ class SimpleTrustRegion(BaseMethod):
         upper_bounds = np.minimum(trust_region_upper_bounds, self.bounds[:, 1])
 
         bounds = list(zip(lower_bounds, upper_bounds))
-        scaled_function = lambda x: np.squeeze(self.objective_scaler * self.approximation_functions[
+        scaled_function = lambda x: self.objective_scaler * self.approximation_functions[
             self.objective
         ](
             x
-        )
         )
         res = minimize(
             scaled_function,
