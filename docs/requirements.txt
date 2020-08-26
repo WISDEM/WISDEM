@@ -1,0 +1,17 @@
+# Requirements list for WEIS
+
+# simulation
+matplotlib
+numpy
+scipy
+openmdao>=3.2
+simpy
+marmot-agents
+
+# docs
+sphinx>2.0
+numpydoc
+numpydoc
+sphinxcontrib.bibtex
+sphinx-rtd-theme
+# sphinx-autoapi
