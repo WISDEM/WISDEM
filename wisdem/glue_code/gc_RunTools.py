@@ -74,3 +74,26 @@ class Outputs_2_Screen(om.ExplicitComponent):
         print('LCOE:        {:8.10f} USD/MWh'.format(inputs['lcoe'][0]))
         print('Tip Defl.:   {:8.10f} m'.format(inputs['tip_deflection'][0]))        
         print('########################################')
+
+
+class PlotRecorder(om.Group):
+
+    def initialize(self):
+        self.options.declare('opt_options')
+
+    def setup(self):
+        self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = self.options['opt_options']))
+
+
+if __name__ == "__main__":
+
+    opt_options = {}
+    opt_options['general'] = {}
+    opt_options['general']['folder_output'] = 'path2outputfolder'
+    opt_options['recorder'] =  {}
+    opt_options['recorder']['file_name'] = 'log_opt.sql'
+
+
+    wt_opt = om.Problem(model=PlotRecorder(opt_options = opt_options))
+    wt_opt.setup(derivatives=False)
+    wt_opt.run_model()
