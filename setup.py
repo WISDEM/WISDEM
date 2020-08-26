@@ -62,18 +62,9 @@ class CMakeBuildExt(build_ext):
         else:
             super().build_extension(ext)
 
-
 # All of the extensions
 fastExt    = CMakeExtension('openfast','OpenFAST')
 roscoExt   = CMakeExtension('rosco','ROSCO')
-bemExt     = Extension('wisdem.ccblade._bem',
-                       sources=[os.path.join('WISDEM','wisdem','ccblade','src','bem.f90')],
-                       extra_compile_args=['-O2','-fPIC'])
-pyframeExt = Extension('wisdem.pyframe3dd._pyframe3dd',
-                       sources=glob.glob(os.path.join('WISDEM','wisdem','pyframe3dd','src','*.c')) )
-precompExt = Extension('wisdem.rotorse._precomp',
-                       sources=[os.path.join('WISDEM','wisdem','rotorse','PreCompPy.f90')],
-                       extra_compile_args=['-O2','-fPIC'])
 
 if platform.system() == 'Windows': # For Anaconda
     pymapArgs = ['-O1', '-m64', '-fPIC', '-std=c99','-DCMINPACK_NO_DLL']
@@ -84,12 +75,6 @@ elif platform.system() == 'Darwin':
 else:
     pymapArgs = ['-O1', '-m64', '-fPIC', '-std=c99']
     
-pymapExt   = Extension('wisdem.pymap._libmap',
-                       sources = (glob.glob(os.path.join('WISDEM','wisdem','pymap','**','*.c'), recursive=True) +
-                                  glob.glob(os.path.join('WISDEM','wisdem','pymap','**','*.cc'), recursive=True)),
-                       extra_compile_args=pymapArgs,
-                       include_dirs=[os.path.join('WISDEM','wisdem','include','lapack')])
-            
 # Setup content
 with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
@@ -107,11 +92,6 @@ Operating System :: Unix
 Operating System :: MacOS
 '''
 
-weis_pkgs       = find_packages()
-wisdem_pkgs     = find_packages(where='WISDEM',exclude=['docs', 'tests', '*.test.*', 'ext'])
-roscotools_pkgs = find_packages(where='ROSCO_Toolbox')
-pcrunch_pkgs    = find_packages(where='pCrunch')
-
 metadata = dict(
     name                          = 'WEIS',
     version                       = '0.0.1',
@@ -120,16 +100,25 @@ metadata = dict(
     long_description_content_type = 'text/markdown',
     author                        = 'NREL',
     url                           = 'https://github.com/WISDEM/WEIS',
-    install_requires              = ['openmdao>=3.2','numpy','scipy','pandas','simpy','marmot-agents','nlopt','dill','smt'],
+    install_requires              = [
+                                     'openmdao>=3.2',
+                                     'numpy',
+                                     'scipy',
+                                     'pandas',
+                                     'simpy',
+                                     'marmot-agents',
+                                     'nlopt',
+                                     'dill',
+                                     'smt',
+                                     'ROSCO_toolbox @ git+https://github.com/NREL/ROSCO_toolbox@develop',
+                                     'pCrunch @ git+https://github.com/NREL/pCrunch@develop',
+                                     'wisdem @ git+https://github.com/WISDEM/WISDEM@develop',
+                                    ],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
-    package_dir                   = {'wisdem':'WISDEM/wisdem',
-                                     'ROSCO_toolbox.ROSCO_toolbox':'ROSCO_toolbox',
-                                     'pCrunch.pCrunch':'pCrunch',
-                                     }, # weis doesn't need special directions
-    packages                      = weis_pkgs + wisdem_pkgs + roscotools_pkgs + pcrunch_pkgs,
+    packages                      = find_packages(),
     python_requires               = '>=3.6',
     license                       = 'Apache License, Version 2.0',
-    ext_modules                   = [bemExt, pyframeExt, precompExt, pymapExt, roscoExt, fastExt],
+    ext_modules                   = [roscoExt, fastExt],
     cmdclass                      = {'build_ext': CMakeBuildExt},
     zip_safe                      = False,
 )
