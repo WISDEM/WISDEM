@@ -1053,15 +1053,19 @@ class FASTLoadCases(ExplicitComponent):
             # outputs['rated_T']     = 
             # outputs['rated_Q']     = 
 
-
-
-        ## Is Nikhar actively using this?
-        # DELs
-        # del_channels = [('RootMyb1',10), ('RootMyb2',10), ('RootMyb3',10)]
-        # dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
-        
-        # Output
-        outputs['DEL_RootMyb'] = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL']), np.max(sum_stats['RootMyb3']['DEL'])])
+        # Get DELS from OpenFAST data
+        if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
+            if not pp:
+                pp               = Analysis.Power_Production()
+                pp.windspeeds    = U
+                pp.turbine_class = discrete_inputs['turbine_class']
+            else:
+                # get pdf of windspeeds
+                ws_prob = pp.prob_WindDist(U, disttype='pdf')
+                # maximum sum of weighted DELS
+                outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
+                                                    np.sum(ws_prob*sum_stats['RootMyb2']['DEL']),
+                                                    np.sum(ws_prob*sum_stats['RootMyb3']['DEL'])])
         outputs['DEL_TwrBsMyt'] = np.max(sum_stats['TwrBsMyt']['DEL'])
 
         # Additional Outputs
