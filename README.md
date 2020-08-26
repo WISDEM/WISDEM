@@ -81,7 +81,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         cd ..
 
 
-*NOTE:* To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`
+**NOTE:** To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`
 
 
 ## Run Unit Tests
