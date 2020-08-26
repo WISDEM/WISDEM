@@ -1,6 +1,8 @@
 language: python
 
 python:
+  # We don't actually use the Travis Python, but this keeps it organized.
+  - 3.7
   - 3.8
 
 install:
@@ -20,11 +22,37 @@ install:
   # Create environment and install dependences dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - conda activate test-environment
-  - conda install -q --yes compilers matplotlib pytest pytest-cov coveralls pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy testflo cmake dill smt
-  - pip install simpy marmot-agents nlopt
+  - conda install -q --yes compilers matplotlib pytest pytest-cov coveralls pip openmdao jsonschema ruamel_yaml pyyaml make xlrd cython pandas numpydoc six setuptools git numpy scipy geopy
+  - pip install rosco-toolbox
+  - git clone https://github.com/nrel/pcrunch
+  - cd pcrunch
+  - python setup.py install
+  - cd ..
+  - pip install simpy marmot-agents
   
-  # Install WEIS
-  - travis_wait 60 pip install --verbose -e .;
+  # Install ROSCO_toolbox
+  #- git clone https://github.com/NREL/ROSCO_toolbox.git
+  #- cd ROSCO_toolbox
+  #- git submodule init
+  #- git submodule update
+  #- git checkout develop
+  #- python setup.py install
+  #- cd ..
+
+  # install pyoptsparse
+  #- git clone https://github.com/OpenMDAO/pyoptsparse.git;
+  #- cd pyoptsparse;
+  #- python setup.py install;
+  #- cd ..;
+
+  # Install WISDEM
+  #- python setup.py install
+  - pip install -e .;
+
   
 script:
-  - testflo weis
+  #- python test/test_all.py
+  - pytest --cov-config=.coverageac --cov=wisdem
+
+after_success:
+  - coveralls
