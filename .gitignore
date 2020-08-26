@@ -5,3 +5,4 @@ dist
 build
 local
 .DS_Store
+__pycache__
