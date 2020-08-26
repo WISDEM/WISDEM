@@ -1,14 +1,19 @@
 .. how_to_write_docs:
 
-How to write docs for WEIS code
-===============================
+How to write docs for WISDEM code
+=================================
 
 .. TODO: expand this
 
 Introduction
 ------------
-This page describes how to add, improve, and update any of the WEIS documentation.
-The WEIS documentation can be divided into two categories, a documentation for WEIS submodules, and then WEIS usage documentation, tutorials and guides.
+This page describes how to add, improve, and update any of the WISDEM documentation.
+The WISDEM documentation can be divided into two categories, a documentation for WISDEM submodules, and then WISDEM usage documentation, tutorials and guides.
+
+For the former, **the code documentation**, is a documentation related to the code itself such as API and code usage.
+It is located within the each submodule's ``docs/wisdem`` folder.
+
+For the latter, **general documentation** (like this one here) the source files are contained in the docs repository outside of the ``docs/wisdem`` folder.
 
 
 Getting started with the docs
@@ -136,7 +141,7 @@ text files near seamlessly.
 How to request doc creation
 ---------------------------
 If you think the docs should be modified or expanded, create an issue on the GitHub documentation repository.
-Do this by going to the `WEIS repo <https://github.com/WISDEM/WEIS/>`__ then click on Issues on the lefthand side of the page.
+Do this by going to the `WISDEM repo <https://github.com/WISDEM/WISDEM/>`__ then click on Issues on the lefthand side of the page.
 There you can see current requests for doc additions as well as adding your own.
-Feel free to add any issue for any type of doc and members of the WEIS development team can determine how to approach it.
+Feel free to add any issue for any type of doc and members of the WISDEM development team can determine how to approach it.
 Assign someone or a few people to the issue who you think would be a good fit for that doc.

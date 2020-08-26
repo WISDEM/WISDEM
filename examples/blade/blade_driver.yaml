@@ -1,0 +1,4 @@
+# Inputs
+geometry_file: blade.yaml
+modeling_file: modeling_options.yaml
+analysis_file: analysis_options_blade.yaml

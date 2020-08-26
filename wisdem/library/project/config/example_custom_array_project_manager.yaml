@@ -1,0 +1,21 @@
+design_phases:
+- CustomArraySystemDesign
+install_phases:
+- ArrayCableInstallation
+plant:
+  layout: custom
+  num_turbines: 67
+port:
+  monthly_rate: 10000
+site:
+  depth: 20
+  distance: 50
+turbine: SWT_6MW_154m_110m
+array_system_design:
+  cables:
+  - XLPE_400mm_33kV
+  - XLPE_630mm_33kV
+  location_data: dudgeon_custom
+  distance: False
+array_cable_install_vessel: example_cable_lay_vessel
+array_cable_bury_vessel: example_cable_lay_vessel

@@ -1,0 +1,6 @@
+include README.md
+include CHANGELOG.md
+include LICENSE.txt
+graft src/test
+global-exclude openmdao_log.txt
+

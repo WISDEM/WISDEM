@@ -1,0 +1,12 @@
+array_system_design:
+  cables:
+  - XLPE_400mm_33kV
+  - XLPE_630mm_33kV
+  location_data: dudgeon_array
+  average_exclusion_percent: 0.05
+plant:
+  layout: custom
+  num_turbines: 67
+site:
+  depth: 20
+turbine: SWT_6MW_154m_110m

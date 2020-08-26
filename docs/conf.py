@@ -14,16 +14,16 @@ import os
 import sys
 
 cwd = os.getcwd()
-weispath = os.path.dirname(cwd)
-sys.path.insert(0, weispath)
+wisdempath = os.path.dirname(cwd)
+sys.path.insert(0, wisdempath)
 sys.path.insert(0, os.path.abspath('./_exts'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'WEIS'
-copyright = '2020, NREL WEIS Team'
-author = 'NREL WEIS Team'
+project = 'WISDEM'
+copyright = '2019, NREL WISDEM Team'
+author = 'NREL WISDEM Team'
 
 # The full version, including alpha/beta/rc tags
 release = '2.0'
@@ -82,8 +82,8 @@ html_theme_options = {
     # "badge_branch": "IEAontology4all",
     # "codecov_button": True,
     # "fixed_sidebar": True,
-    # "github_user": "WEIS",
-    # "github_repo": "WEIS",
+    # "github_user": "WISDEM",
+    # "github_repo": "WISDEM",
     # "sidebar_width": '220px',
     # "page_width": '75%',
     # "show_relbars": True
