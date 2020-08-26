@@ -6,13 +6,13 @@ import numpy as np
 import os
 
 iec = CaseGen_IEC()
-iec.Turbine_Class       = 'I' # Wind class I, II, III, IV
-iec.Turbulence_Class    = 'B' # Turbulence class 'A', 'B', or 'C'
-iec.D                   = 240. # Rotor diameter to size the wind grid
-iec.z_hub               = 150. # Hub height to size the wind grid
-TMax                    = 20. # Length of wind grids and OpenFAST simulations, suggested 720 s
+iec.Turbine_Class       = 'I'   # Wind class I, II, III, IV
+iec.Turbulence_Class    = 'B'   # Turbulence class 'A', 'B', or 'C'
+iec.D                   = 240.  # Rotor diameter to size the wind grid
+iec.z_hub               = 150.  # Hub height to size the wind grid
+TMax                    = 1.    # Length of wind grids and OpenFAST simulations, suggested 720 s
 Vrated                  = 10.59 # Rated wind speed
-Ttrans                  = max([0., TMax - 60.]) # Start of the transient for DLC with a transient, e.g. DLC 1.4
+Ttrans                  = max([0., TMax - 60.])  # Start of the transient for DLC with a transient, e.g. DLC 1.4
 TStart                  = max([0., TMax - 600.]) # Start of the recording of the channels of OpenFAST
 
 # Initial conditions to start the OpenFAST runs
@@ -39,14 +39,11 @@ iec.init_cond[("HydroDyn","PtfmHeave")]['val'] = [0.5,0.5]
 
 # DLC inputs
 iec.dlc_inputs = {}
-iec.dlc_inputs['DLC']   = [1.1, 1.4]
-iec.dlc_inputs['U']     = [[7. ,9.],[7,9,11]]
-iec.dlc_inputs['Seeds'] = [[1, 2],[]]
-iec.dlc_inputs['Yaw']   = [[],[]]
-# iec.dlc_inputs['DLC']   = [1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3]
-# iec.dlc_inputs['U']     = [[3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.], [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.],[Vrated - 2., Vrated, Vrated + 2.],[3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.], [Vrated - 2., Vrated, Vrated + 2., 25.], [], []]
+iec.dlc_inputs['DLC']   = [1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3]
+iec.dlc_inputs['U']     = [[3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.], [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.],[Vrated - 2., Vrated, Vrated + 2.],[3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.], [Vrated - 2., Vrated, Vrated + 2., 25.], [], []]
+iec.dlc_inputs['Seeds'] = [[1],[1],[],[],[1],[1],[1]]
 # iec.dlc_inputs['Seeds'] = [range(1,7), range(1,7),[],[], range(1,7), range(1,7), range(1,7)]
-# iec.dlc_inputs['Yaw']   = [[], [], [], [], [], [], []]
+iec.dlc_inputs['Yaw']   = [[], [], [], [], [], [], []]
 iec.PC_MaxRat           = 2.
 
 iec.TStart              = Ttrans
@@ -91,7 +88,8 @@ if MPI:
 # Naming, file management, etc
 iec.wind_dir        = 'outputs/wind'
 iec.case_name_base  = 'iea15mw'
-iec.Turbsim_exe     = '/Users/pbortolo/work/2_openfast/TurbSim/bin/TurbSim_glin64'
+run_dir1            = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+iec.Turbsim_exe     = os.path.join(run_dir1, 'local/bin/turbsim')
 if MPI:
     iec.cores = available_cores
 else:
@@ -159,7 +157,6 @@ if rank == 0:
 
     # Run FAST cases
     fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
-    run_dir1                    = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
     fastBatch.FAST_exe          = os.path.join(run_dir1, 'local/bin/openfast')   # Path to executable
     
     # Monopile
