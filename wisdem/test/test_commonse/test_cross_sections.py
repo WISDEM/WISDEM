@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-from wisdem.commonse.tube import Tube, CylindricalShellProperties
+from wisdem.commonse.cross_sections import Tube, CylindricalShellProperties
 
 npts = 100
 
