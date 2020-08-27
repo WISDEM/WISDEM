@@ -17,9 +17,10 @@ class TestGearbox(unittest.TestCase):
         self.discrete_inputs['gear_configuration'] = 'eep'
         self.discrete_inputs['shaft_factor'] = 'normal'
         self.discrete_inputs['planet_numbers'] = [3,3,0]
-        self.inputs['gear_ratio'] = 97
+        self.inputs['gear_ratio'] = 97.
         self.inputs['rotor_diameter'] = 126.0
         self.inputs['rotor_torque'] = 3946e3
+        self.inputs['machine_rating'] = 5e3
         
         self.myobj = gb.Gearbox()
 

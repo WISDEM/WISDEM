@@ -491,10 +491,10 @@ class GearedLayout(Layout):
         outputs['s_drive'] = s_drive
         
         # Discretize the drivetrain from generator to hub
-        s_generator = s_drive[:3].mean()
+        s_generator = s_drive[1]
         s_mb1       = s_drive[9]
         s_mb2       = s_drive[7]
-        s_gearbox   = s_drive[4:7].mean()
+        s_gearbox   = s_drive[5]
         s_lss       = s_drive[6:]
         s_lss       = np.r_[s_lss[:-2], s_lss[-1]] # Need to stick to 5 points
         s_hss       = s_drive[2:5]

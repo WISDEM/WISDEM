@@ -115,8 +115,6 @@ class TestDirectStructure(unittest.TestCase):
         F0 = self.outputs['base_F']
         M0 = self.outputs['base_M']
 
-        m = self.inputs['mb1_mass']+self.inputs['mb2_mass']+self.inputs['m_stator']+self.outputs['nose_mass']+self.outputs['bedplate_mass']+self.inputs['other_mass']
-        
         self.inputs['other_mass'] += 500e3
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
@@ -200,8 +198,6 @@ class TestDirectStructure(unittest.TestCase):
         F0 = self.outputs['base_F']
         M0 = self.outputs['base_M']
 
-        m = self.inputs['mb1_mass']+self.inputs['mb2_mass']+self.inputs['m_stator']+self.outputs['nose_mass']+self.outputs['bedplate_mass']+self.inputs['other_mass']
-        
         self.inputs['other_mass'] += 500e3
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
@@ -269,8 +265,84 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_mb2'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][1], 2*self.inputs['F_mb2'][1])
-
         
+        
+    def testBaseF_BaseM_Geared(self):
+        self.inputs['tilt'] = 0.0
+        self.inputs['F_mb1']       = np.zeros(3).reshape((3,1))
+        self.inputs['F_mb2']       = np.zeros(3).reshape((3,1))
+        self.inputs['F_torq']      = np.zeros(3).reshape((3,1))
+        self.inputs['F_generator'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb1']       = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb2']       = np.zeros(3).reshape((3,1))
+        self.inputs['M_torq']      = np.zeros(3).reshape((3,1))
+        self.inputs['M_generator'] = np.zeros(3).reshape((3,1))
+        self.compute_layout(False)
+        myobj = ds.Bedplate_IBeam_Frame(n_points=npts, n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2,0], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_M'][[0,2],0], 0.0, decimal=2)
+        F0 = self.outputs['base_F'][:,0]
+        M0 = self.outputs['base_M'][:,0]
+
+        self.inputs['other_mass'] += 500e3
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2,0], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_F'][2,0], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][[0,2],0], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1])
+
+        self.inputs['M_mb1'] = 10e3*np.arange(1,4).reshape((3,1))
+        self.inputs['M_mb2'] = 20e3*np.arange(1,4).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2,0], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_F'][2,0], F0[2]-500e3*gravity, decimal=0)
+        #npt.assert_almost_equal(self.outputs['base_M'], M0+self.inputs['M_mb1']+self.inputs['M_mb2'], decimal=-1)
+
+        self.inputs['F_mb1'] = self.inputs['F_mb2'] = self.inputs['F_generator'] = self.inputs['F_torq'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2,0], 4*self.inputs['F_mb1'][:2,0], decimal=1)
+        npt.assert_almost_equal(self.outputs['base_F'][2,0], F0[2]-500e3*gravity+4*50e2, decimal=0)
+        
+        
+    def testBaseF_BaseM_withTilt_Geared(self):
+        self.inputs['tilt'] = 5.0
+        self.inputs['F_mb1']       = np.zeros(3).reshape((3,1))
+        self.inputs['F_mb2']       = np.zeros(3).reshape((3,1))
+        self.inputs['F_torq']      = np.zeros(3).reshape((3,1))
+        self.inputs['F_generator'] = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb1']       = np.zeros(3).reshape((3,1))
+        self.inputs['M_mb2']       = np.zeros(3).reshape((3,1))
+        self.inputs['M_torq']      = np.zeros(3).reshape((3,1))
+        self.inputs['M_generator'] = np.zeros(3).reshape((3,1))
+        self.compute_layout(False)
+        myobj = ds.Bedplate_IBeam_Frame(n_points=npts, n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2,0], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_M'][[0,2],0], 0.0, decimal=2)
+        F0 = self.outputs['base_F'][:,0]
+        M0 = self.outputs['base_M'][:,0]
+
+        self.inputs['other_mass'] += 500e3
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2,0], 0.0, decimal=1)
+        npt.assert_almost_equal(self.outputs['base_F'][2,0], F0[2]-500e3*gravity)
+        npt.assert_almost_equal(self.outputs['base_M'][[0,2],0], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['base_M'][1], M0[1])
+
+        self.inputs['M_mb1'] = 10e3*np.arange(1,4).reshape((3,1))
+        self.inputs['M_mb2'] = 20e3*np.arange(1,4).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][:2,0], 0.0, decimal=1)
+        npt.assert_almost_equal(self.outputs['base_F'][2,0], F0[2]-500e3*gravity, decimal=0)
+        #npt.assert_almost_equal(self.outputs['base_M'], M0+self.inputs['M_mb1']+self.inputs['M_mb2'], decimal=-1)
+
+        self.inputs['F_mb1'] = self.inputs['F_mb2'] = self.inputs['F_generator'] = self.inputs['F_torq'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        npt.assert_almost_equal(self.outputs['base_F'][1,0], 4*self.inputs['F_mb1'][1,0], decimal=1)
+        
+        
+
         
     def testRunRotatingDirect_noTilt(self):
         self.inputs['tilt'] = 0.0

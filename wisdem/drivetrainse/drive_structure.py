@@ -15,6 +15,9 @@ from wisdem.commonse.csystem import DirectionVector
 RIGID = 1
 FREE  = 0
 
+def find_nearest(array, value):
+    return (np.abs(array-value)).argmin() 
+
 
 class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
     """
@@ -195,11 +198,11 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         xnode = s_lss.copy()
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
-        i1 = inode[xnode==s_mb1]
-        i2 = inode[xnode==s_mb2]
+        i1 = inode[find_nearest(xnode, s_mb1)]
+        i2 = inode[find_nearest(xnode, s_mb2)]
         # Differences between direct annd geared
         if direct:
-            itorq   = inode[xnode==s_rotor]
+            itorq   = inode[find_nearest(xnode, s_rotor)]
             m_torq  = m_rotor
             cm_torq = cm_rotor
             I_torq  = I_rotor
@@ -780,9 +783,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
         inose   = len(x_c)
-        istator = inode[xnode==Cup*s_stator+x_c[-1]]
-        i1      = inode[xnode==Cup*s_mb1+x_c[-1]]
-        i2      = inode[xnode==Cup*s_mb2+x_c[-1]]
+        istator = inode[find_nearest(xnode, Cup*s_stator+x_c[-1])]
+        i1      = inode[find_nearest(xnode, Cup*s_mb1+x_c[-1])]
+        i2      = inode[find_nearest(xnode, Cup*s_mb2+x_c[-1])]
         # ------------------------------------
         
         # ------ reaction data ------------
@@ -1040,7 +1043,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         self.add_discrete_input('upwind', True)
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('D_top', 0.0, units='m')
-        self.add_input('s_drive', val=np.zeros(6), units='m')
+        self.add_input('s_drive', val=np.zeros(12), units='m')
         self.add_input('bedplate_flange_width', val=0.0, units='m')
         self.add_input('bedplate_flange_thickness', val=0.0, units='m')
         self.add_input('bedplate_web_height', val=0.0, units='m')
@@ -1057,11 +1060,11 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         self.add_input('s_generator', val=0.0, units='m')
         self.add_input('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
         self.add_input('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_input('F_gearbox', val=np.zeros((3, n_dlcs)), units='N')
+        self.add_input('F_torq', val=np.zeros((3, n_dlcs)), units='N')
         self.add_input('F_generator', val=np.zeros((3, n_dlcs)), units='N')
         self.add_input('M_mb1', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('M_mb2', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('M_gearbox', val=np.zeros((3, n_dlcs)), units='N*m')
+        self.add_input('M_torq', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('M_generator', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('other_mass', val=0.0, units='kg')
         self.add_input('E', val=0.0, units='Pa')
@@ -1122,11 +1125,11 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
 
         F_mb1        = inputs['F_mb1']
         F_mb2        = inputs['F_mb2']
-        F_gear       = inputs['F_torque']
+        F_gear       = inputs['F_torq']
         F_gen        = inputs['F_generator']
         M_mb1        = inputs['M_mb1']
         M_mb2        = inputs['M_mb2']
-        M_gear       = inputs['M_torque']
+        M_gear       = inputs['M_torq']
         M_gen        = inputs['M_generator']
 
         m_other      = float(inputs['other_mass'])
@@ -1134,60 +1137,60 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         # ------- node data ----------------
         n     = len(s_drive)
         inode = np.arange(1, 3*n+1)
-        ynode = 0.25*D_top*np.c_[np.zeros(n), np.ones(n), -np.ones(n)]
+        ynode = 0.25*D_top*np.r_[np.zeros(n), np.ones(n), -np.ones(n)]
         xnode = s_drive*np.cos(tiltR)
-        xnode = Cup*np.c_[xnode, xnode, xnode]
+        xnode = Cup*np.r_[xnode, xnode, xnode]
         znode = rnode = np.zeros(3*n)
-        nodes = frame3dd.NodeData(inode, xnode.flatten(), ynode.flatten(), znode, rnode)
+        nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
-        igenerator = inode[s_drive==s_gen]
-        igearbox   = inode[s_drive==s_gear]
-        itower     = inode[s_drive==0.0]
-        i1         = inode[s_drive==s_mb1]
-        i2         = inode[s_drive==s_mb2]
+        igenerator = inode[find_nearest(s_drive, s_gen)]
+        igearbox   = inode[find_nearest(s_drive, s_gear)]
+        itower     = inode[find_nearest(s_drive, 0.0)]
+        i1         = inode[find_nearest(s_drive, s_mb1)]
+        i2         = inode[find_nearest(s_drive, s_mb2)]
         # ------------------------------------
         
         # ------ reaction data ------------
         # Rigid base
-        rnode = np.int_(np.r_[itower, itower+n, itower+2*n])
-        rk    = np.array([RIGID, RIGID, RIGID])
+        rnode = np.int_(np.r_[itower+n, itower+2*n])
+        rk    = np.array([RIGID, RIGID])
         reactions = frame3dd.ReactionData(rnode, rk, rk, rk, rk, rk, rk, rigid=RIGID)
         # -----------------------------------
         
         # ------ frame element data ------------
-        # 2 parallel I-beams, with inner line of points to receive loads, distribute to inner one is infinitely rigid plate
+        # 2 parallel I-beams, with inner line of points to receive loads & distribute
+        # inner one is infinitely rigid plate
         # Elements connect the lines, then connect the I-beams to the center nodes
         myI = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
         
-        N1       = np.arange(1, n)
-        N2       = np.arange(2, n+1)
-        N1       = np.c_[N1+n, N1+2*n, N1+n, N1+2*n]
-        N2       = np.c_[N2+n, N2+2*n, N1, N1]
+        N1i      = np.arange(1, n)
+        N2i      = np.arange(2, n+1)
+        Ni       = np.arange(1, n+1)
+        N1       = np.r_[N1i+n, N1i+2*n, Ni+n, Ni+2*n]
+        N2       = np.r_[N2i+n, N2i+2*n, Ni, Ni]
         ielement = np.arange(1, N1.size+1)
         roll     = np.zeros(N1.size)
-        myones   = np.ones(N1.size)
+        myones   = np.ones(N1i.size)
+        plate1s  = np.ones(Ni.size)
 
-        A_plate = As_plate = S_plate = C_plate = I_plate = 1e3*myones
-        rho_plate = 1e-6*myones
-        E_plate = G_plate = 1e16*myones
+        A_plate = As_plate = S_plate = C_plate = I_plate = 1e3*plate1s
+        rho_plate = 1e-6*plate1s
+        E_plate = G_plate = 1e16*plate1s
 
-        Ax    = np.c_[myI.Area*myones, myI.Area*myones, A_plate, A_plate]
-        Asy   = np.c_[myI.Asy*myones, myI.Asy*myones, As_plate, As_plate]
-        Asz   = np.c_[myI.Asz*myones, myI.Asz*myones, As_plate, As_plate]
-        Sy    = np.c_[myI.Syy*myones, myI.Syy*myones, S_plate, S_plate]
-        Sz    = np.c_[myI.Szz*myones, myI.Szz*myones, S_plate, S_plate]
-        C     = np.c_[myI.C*myones, myI.C*myones, C_plate, C_plate]
-        J0    = np.c_[myI.Jxx*myones, myI.Jxx*myones, I_plate, I_plate]
-        Jy    = np.c_[myI.Iyy*myones, myI.Iyy*myones, I_plate, I_plate]
-        Jz    = np.c_[myI.Izz*myones, myI.Izz*myones, I_plate, I_plate]
-        myE   = np.c_[E*myones, E*myones, E_plate, E_plate]
-        myG   = np.c_[G*myones, G*myones, G_plate, G_plate]
-        myrho = np.c_[rho*myones, rho*myones, rho_plate, rho_plate]
+        Ax    = np.r_[myI.Area*myones, myI.Area*myones, A_plate, A_plate]
+        Asy   = np.r_[myI.Asy*myones, myI.Asy*myones, As_plate, As_plate]
+        Asz   = np.r_[myI.Asz*myones, myI.Asz*myones, As_plate, As_plate]
+        Sy    = np.r_[myI.Syy*myones, myI.Syy*myones, S_plate, S_plate]
+        Sz    = np.r_[myI.Szz*myones, myI.Szz*myones, S_plate, S_plate]
+        C     = np.r_[myI.C*myones, myI.C*myones, C_plate, C_plate]
+        J0    = np.r_[myI.Jxx*myones, myI.Jxx*myones, I_plate, I_plate]
+        Jy    = np.r_[myI.Iyy*myones, myI.Iyy*myones, I_plate, I_plate]
+        Jz    = np.r_[myI.Izz*myones, myI.Izz*myones, I_plate, I_plate]
+        myE   = np.r_[E*myones, E*myones, E_plate, E_plate]
+        myG   = np.r_[G*myones, G*myones, G_plate, G_plate]
+        myrho = np.r_[rho*myones, rho*myones, rho_plate, rho_plate]
         
-        elements = frame3dd.ElementData(ielement, N1.flatten(), N2.flatten(),
-                                        Ax.flatten(), Asy.flatten(), Asz.flatten(),
-                                        J0.flatten(), Jy.flatten(), Jz.flatten(),
-                                        myE.flatten(), myG.flatten(), roll, myrho.flatten())
+        elements = frame3dd.ElementData(ielement, N1, N2, Ax, Asy, Asz, J0, Jy, Jz, myE, myG, roll, myrho)
         # -----------------------------------
 
         # ------ options ------------
@@ -1226,8 +1229,8 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             F_rot = DirectionVector(F_ext[0,:], F_ext[1,:], F_ext[2,:]).hubToYaw(-tiltD).toArray()
             M_rot = DirectionVector(M_ext[0,:], M_ext[1,:], M_ext[2,:]).hubToYaw(-tiltD).toArray()
             load.changePointLoads(np.r_[i2, i1, igearbox, igenerator],
-                                  F_rot[0,:], F_rot[1,:], F_rot[2,:],
-                                  M_rot[0,:], M_rot[1,:], M_rot[2,:])
+                                  F_rot[:,0], F_rot[:,1], F_rot[:,2],
+                                  M_rot[:,0], M_rot[:,1], M_rot[:,2])
             # -----------------------------------
 
             # Put all together and run
@@ -1275,7 +1278,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
 
             outputs['bedplate_axial_stress'][:,k] = (np.abs(Fx)/Ax + np.abs(Myy)/Sy + np.abs(Mzz)/Sz)[:(2*n-2)]
             outputs['bedplate_shear_stress'][:,k] = (2.0*(np.abs(Vy)/Asy+np.abs(Vz)/Asz) + np.abs(Mxx)/C)[:(2*n-2)]
-            hoop = np.zeros(Fx.shape)
+            hoop = np.zeros(2*n-2)
             
             outputs['constr_bedplate_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['bedplate_axial_stress'][:,k],
                                                                                       hoop,
