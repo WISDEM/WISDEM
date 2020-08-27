@@ -1066,8 +1066,18 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
                                                     np.sum(ws_prob*sum_stats['RootMyb2']['DEL']),
                                                     np.sum(ws_prob*sum_stats['RootMyb3']['DEL'])])
-        outputs['DEL_TwrBsMyt'] = np.max(sum_stats['TwrBsMyt']['DEL'])
-
+        if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
+            if not pp:
+                pp               = Analysis.Power_Production()
+                pp.windspeeds    = U
+                pp.turbine_class = discrete_inputs['turbine_class']
+            else:
+                # get pdf of windspeeds
+                ws_prob = pp.prob_WindDist(U, disttype='pdf')
+                # maximum sum of weighted DELS
+                outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['DEL_TwrBsMyt']['DEL'])
+        
+        
         # Additional Outputs
         outputs['My_std'] = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
 

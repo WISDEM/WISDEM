@@ -78,7 +78,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         if self.options['modeling_options']['Analysis_Flags']['OpenFAST'] == True: 
             if self.options['opt_options']['optimization_variables']['control']['servo']['pitch_control']['flag'] == True:
                 print('Pitch PI gain inputs: pc_omega = {:2.3f}, pc_zeta = {:2.3f}'.format(inputs['PC_omega'][0], inputs['PC_zeta'][0]))
-                print('Max DEL(TwrBsMyt): {:<8.10f} Nm'.format(inputs['DEL_TwrBsMyt'][0]))
+                print('DEL(TwrBsMyt): {:<8.10f} Nm'.format(inputs['DEL_TwrBsMyt'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['torque_control']['flag'] == True:
                 print('Torque PI gain inputs: vs_omega = {:2.3f}, vs_zeta = {:2.3f}'.format(inputs['VS_omega'][0], inputs['VS_zeta'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['flap_control']['flag'] == True:
@@ -86,7 +86,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
                 print('Max DEL(RootMyb):  {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['ipc_control']['flag'] == True:
                 print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Ki1p'][0]))
-                print('Max DEL(RootMyb):  {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
+                print('DEL(RootMyb):  {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
         
         print('########################################')
 
