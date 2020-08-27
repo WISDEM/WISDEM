@@ -51,17 +51,11 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Generator rotor attachment to lss s-coordinate measured from bedplate (direct) or tower center (geared)
     m_rotor : float, [kg]
         Generator rotor mass
-    cm_rotor : float, [kg]
-        Generator rotor center of mass (measured along nose from bedplate)
     I_rotor : numpy array[3], [kg*m**2]
         Generator rotor moment of inertia (measured about its cm)
-    gearbox_cm : float, [m]
-        Gearbox attachment to lss s-coordinate measured from tower
-    m_gearbox : float, [kg]
+    gearbox_mass : float, [kg]
         Gearbox rotor mass
-    cm_gearbox : float, [kg]
-        Gearbox center of mass (measured from tower center)
-    I_gearbox : numpy array[3], [kg*m**2]
+    gearbox_I : numpy array[3], [kg*m**2]
         Gearbox moment of inertia (measured about its cm)
     E : float, [Pa]
         modulus of elasticity
@@ -109,11 +103,12 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
     
     def initialize(self):
         self.options.declare('n_dlcs')
+        self.options.declare('direct_drive', default=True)
     
     def setup(self):
         n_dlcs   = self.options['n_dlcs']
 
-        self.add_discrete_input('direct_drive', False)
+        self.add_discrete_input('upwind', True)
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('s_lss', val=np.zeros(5), units='m')
         self.add_input('lss_diameter', val=np.zeros(5), units='m')
@@ -127,12 +122,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input('s_mb2', val=0.0, units='m')
         self.add_input('s_rotor', val=0.0, units='m')
         self.add_input('m_rotor', val=0.0, units='kg')
-        self.add_input('cm_rotor', val=0.0, units='m')
         self.add_input('I_rotor', val=np.zeros(3), units='kg*m**2')
-        #self.add_input('s_gearbox', val=0.0, units='m')
-        self.add_input('m_gearbox', val=0.0, units='kg')
-        self.add_input('cm_gearbox', val=0.0, units='m')
-        self.add_input('I_gearbox', val=np.zeros(3), units='kg*m**2')
+        self.add_input('gearbox_mass', val=0.0, units='kg')
+        self.add_input('gearbox_I', val=np.zeros(3), units='kg*m**2')
         self.add_input('E', val=0.0, units='Pa')
         self.add_input('G', val=0.0, units='Pa')
         self.add_input('rho', val=0.0, units='kg/m**3')
@@ -143,9 +135,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
 
         self.add_output('torq_deflection', val=0.0, units='m')
         self.add_output('torq_rotation', val=0.0, units='rad')
-        self.add_output('lss_axial_stress', np.zeros((5, n_dlcs)), units='Pa')
-        self.add_output('lss_shear_stress', np.zeros((5, n_dlcs)), units='Pa')
-        self.add_output('constr_lss_vonmises', np.zeros((5, n_dlcs)))
+        self.add_output('lss_axial_stress', np.zeros((4, n_dlcs)), units='Pa')
+        self.add_output('lss_shear_stress', np.zeros((4, n_dlcs)), units='Pa')
+        self.add_output('constr_lss_vonmises', np.zeros((4, n_dlcs)))
         self.add_output('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('F_torq', val=np.zeros((3, n_dlcs)), units='N')
@@ -156,7 +148,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        direct     = discrete_inputs['direct_drive']
+        upwind     = discrete_inputs['upwind']
+        Cup        = -1.0 if upwind else 1.0
         tilt       = float(np.deg2rad(inputs['tilt']))
         
         s_lss      = inputs['s_lss']
@@ -166,16 +159,13 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         s_mb1      = float(inputs['s_mb1'])
         s_mb2      = float(inputs['s_mb2'])
 
-        if direct:
+        if self.options['direct_drive']:
             s_rotor    = float(inputs['s_rotor'])
             m_rotor    = float(inputs['m_rotor'])
-            cm_rotor   = float(inputs['cm_rotor'])
             I_rotor    = inputs['I_rotor']
         else:
-            #s_gearbox  = float(inputs['s_gearbox'])
-            m_gearbox  = float(inputs['m_gearbox'])
-            cm_gearbox = float(inputs['cm_gearbox'])
-            I_gearbox  = inputs['I_gearbox']
+            m_gearbox  = float(inputs['gearbox_mass'])
+            I_gearbox  = inputs['gearbox_I']
         
         rho        = float(inputs['rho'])
         E          = float(inputs['E'])
@@ -195,21 +185,19 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         n     = len(s_lss)
         inode = np.arange(1, n+1)
         ynode = znode = rnode = np.zeros(n)
-        xnode = s_lss.copy()
+        xnode = Cup * s_lss.copy()
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
-        i1 = inode[find_nearest(xnode, s_mb1)]
-        i2 = inode[find_nearest(xnode, s_mb2)]
+        i1 = inode[find_nearest(xnode, Cup * s_mb1)]
+        i2 = inode[find_nearest(xnode, Cup * s_mb2)]
         # Differences between direct annd geared
-        if direct:
-            itorq   = inode[find_nearest(xnode, s_rotor)]
+        if self.options['direct_drive']:
+            itorq   = inode[find_nearest(xnode, Cup * s_rotor)]
             m_torq  = m_rotor
-            cm_torq = cm_rotor
             I_torq  = I_rotor
         else:
             itorq   = inode[0]
             m_torq  = m_gearbox
-            cm_torq = cm_gearbox
             I_torq  = I_gearbox
         # ------------------------------------
         
@@ -252,12 +240,12 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         myframe = frame3dd.Frame(nodes, reactions, elements, options)
 
         # ------ add hub and generator rotor (direct) or gearbox (geared) extra mass ------------
-        myframe.changeExtraNodeMass(np.r_[1, itorq], [m_hub, m_torq],
+        myframe.changeExtraNodeMass(np.r_[inode[-1], itorq], [m_hub, m_torq],
                                     [I_hub[0], I_torq[0]],
                                     [I_hub[1], I_torq[1]],
                                     [I_hub[2], I_torq[2]],
                                     [0.0, 0.0], [0.0, 0.0], [0.0, 0.0],
-                                    [cm_hub, cm_torq], [0.0, 0.0], [0.0, 0.0], True)
+                                    [cm_hub, 0.0], [0.0, 0.0], [0.0, 0.0], True)
         # ------------------------------------
 
         # ------- NO dynamic analysis ----------
@@ -281,7 +269,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        #myframe.write('myframe.3dd') # Debugging
+        if self.options['direct_drive']: myframe.write('myframe.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
@@ -600,8 +588,6 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         Generator stator attachment to lss s-coordinate measured from bedplate
     m_stator : float, [kg]
         Generator stator mass
-    cm_stator : float, [kg]
-        Generator stator center of mass (measured along drivetrain from bedplate)
     I_stator : numpy array[3], [kg*m**2]
         Generator stator moment of inertia (measured about cm)
     F_mb1 : numpy array[3, n_dlcs], [N]
@@ -647,13 +633,13 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         Total reaction force at bedplate base in tower top coordinate system
     base_M : numpy array[3, n_dlcs], [N*m]
         Total reaction moment at bedplate base in tower top coordinate system
-    bedplate_nose_axial_stress : numpy array[n_points+4, n_dlcs], [Pa]
+    bedplate_nose_axial_stress : numpy array[n_points+3, n_dlcs], [Pa]
         Axial stress in Curved_beam structure
-    bedplate_nose_shear_stress : numpy array[n_points+4, n_dlcs], [Pa]
+    bedplate_nose_shear_stress : numpy array[n_points+3, n_dlcs], [Pa]
         Shear stress in Curved_beam structure
-    bedplate_nose_bending_stress : numpy array[n_points+4, n_dlcs], [Pa]
+    bedplate_nose_bending_stress : numpy array[n_points+3, n_dlcs], [Pa]
         Hoop stress in Curved_beam structure calculated with Roarks formulae
-    constr_bedplate_nose_vonmises : numpy array[n_points+4, n_dlcs]
+    constr_bedplate_nose_vonmises : numpy array[n_points+3, n_dlcs]
         Sigma_y/Von_Mises
     constr_mb1_defl : numpy array[n_dlcs]
         Angular deflection relative to limit of bearing 1 (should be <1)
@@ -693,7 +679,6 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_input('mb2_max_defl_ang', 0.0, units='rad')
         self.add_input('s_stator', val=0.0, units='m')
         self.add_input('m_stator', val=0.0, units='kg')
-        self.add_input('cm_stator', val=0.0, units='kg')
         self.add_input('I_stator', val=np.zeros(3), units='kg*m**2')
         self.add_input('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
         self.add_input('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
@@ -716,10 +701,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_output('stator_rotation', val=0.0, units='rad')
         self.add_output('base_F', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('base_M', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_output('bedplate_nose_axial_stress', np.zeros((n_points+4, n_dlcs)), units='Pa')
-        self.add_output('bedplate_nose_shear_stress', np.zeros((n_points+4, n_dlcs)), units='Pa')
-        self.add_output('bedplate_nose_bending_stress', np.zeros((n_points+4, n_dlcs)), units='Pa')
-        self.add_output('constr_bedplate_nose_vonmises', np.zeros((n_points+4, n_dlcs)))
+        self.add_output('bedplate_nose_axial_stress', np.zeros((n_points+3, n_dlcs)), units='Pa')
+        self.add_output('bedplate_nose_shear_stress', np.zeros((n_points+3, n_dlcs)), units='Pa')
+        self.add_output('bedplate_nose_bending_stress', np.zeros((n_points+3, n_dlcs)), units='Pa')
+        self.add_output('constr_bedplate_nose_vonmises', np.zeros((n_points+3, n_dlcs)))
         self.add_output('constr_mb1_defl', val=np.zeros(n_dlcs))
         self.add_output('constr_mb2_defl', val=np.zeros(n_dlcs))
 
@@ -756,7 +741,6 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         
         s_stator   = float(inputs['s_stator'])
         m_stator   = float(inputs['m_stator'])
-        cm_stator  = float(inputs['cm_stator'])
         I_stator   = inputs['I_stator']
         
         rho        = float(inputs['rho'])
@@ -828,7 +812,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
                                     [0.0, I_stator[1], I_mb1[1], I_mb2[1]],
                                     [0.0, I_stator[2], I_mb1[2], I_mb2[2]],
                                     np.zeros(4), np.zeros(4), np.zeros(4), 
-                                    [0.0, cm_stator, 0.0, 0.0], np.zeros(4), np.zeros(4), True)
+                                    [0.0, 0.0, 0.0, 0.0], np.zeros(4), np.zeros(4), True)
         # ------------------------------------
 
         # ------- NO dynamic analysis ----------
@@ -970,8 +954,6 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         Generator stator attachment to lss s-coordinate measured from bedplate
     m_stator : float, [kg]
         Generator stator mass
-    cm_stator : float, [kg]
-        Generator stator center of mass (measured along drivetrain from bedplate)
     I_stator : numpy array[3], [kg*m**2]
         Generator stator moment of inertia (measured about cm)
     F_mb1 : numpy array[3, n_dlcs], [N]

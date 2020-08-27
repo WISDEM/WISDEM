@@ -92,15 +92,13 @@ class MainBearing(om.ExplicitComponent):
 
 #-------------------------------------------------------------------
 
-class HighSpeedSide(om.ExplicitComponent):
+class Brake(om.ExplicitComponent):
     """
     The HighSpeedShaft class is used to represent the high speed shaft and
     mechanical brake components of a wind turbine drivetrain.
     
     Parameters
     ----------
-    direct_drive : boolean
-        True if direct drive
     rotor_diameter : float, [m]
         rotor diameter
     rotor_torque : float, [N*m]
@@ -132,73 +130,41 @@ class HighSpeedSide(om.ExplicitComponent):
         diameter of high speed shaft
     """
 
+    def initialize(self):
+        self.options.declare('direct_drive', default=True)
+       
     def setup(self):
-        self.add_discrete_input('direct_drive', False)
         self.add_input('rotor_diameter', 0.0, units='m')
         self.add_input('rotor_torque', 0.0, units='N*m')
-        self.add_input('gear_ratio', 1.0)
-        self.add_input('D_shaft_end', 0.0, units='m')
         self.add_input('s_rotor', 0.0, units='m')
         self.add_input('s_gearbox', 0.0, units='m')
-        self.add_input('hss_input_length', 0.0, units='m')
-        self.add_input('rho', 0.0, units='kg/m**3')
 
-        self.add_output('hss_mass', 0.0, units='kg')
-        self.add_output('hss_cm', 0.0, units='m')
-        self.add_output('hss_I', np.zeros(3), units='kg*m**2')
-        self.add_output('hss_length', 0.0, units='m')
-        self.add_output('hss_diameter', 0.0, units='m')
+        self.add_output('brake_mass', 0.0, units='kg')
+        self.add_output('brake_cm', 0.0, units='m')
+        self.add_output('brake_I', np.zeros(3), units='kg*m**2')
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
 
         # Unpack inputs
-        direct      = discrete_inputs['direct_drive']
         D_rotor     = float(inputs['rotor_diameter'])
         Q_rotor     = float(inputs['rotor_torque'])
-        gear_ratio  = float(inputs['gear_ratio'])
-        D_shaft     = float(inputs['D_shaft_end'])
         s_rotor     = float(inputs['s_rotor'])
         s_gearbox   = float(inputs['s_gearbox'])
-        L_hss_input = float(inputs['hss_input_length'])
-        rho         = float(inputs['rho'])
 
-        # Regression based sizing
-        # relationship derived from HSS multiplier for University of Sunderland model compared to NREL CSM for 750 kW and 1.5 MW turbines
-        # DD Brake scaling derived by J.Keller under FOA 1981 support project
-        if direct:
-            m_hss_shaft = 0.0
-            m_brake     = 1220. * 1e-6 * Q_rotor
-            D_hss_shaft = L_hss_shaft = 0.0
-        else:
-            m_hss_shaft = 0.025 * Q_rotor / gear_ratio
-            m_brake     = 0.5 * m_hss_shaft 
-            D_hss_shaft = 1.5 * D_shaft # based on WindPACT relationships for full HSS / mechanical brake assembly
-            L_hss_shaft = L_hss_input if L_hss_input > 0.0 else m_hss_shaft / (np.pi * (0.5*D_hss_shaft)**2 * rho)
-        mass = m_brake + m_hss_shaft
-
+        # Regression based sizing derived by J.Keller under FOA 1981 support project
+        m_brake     = 1220. * 1e-6 * Q_rotor
     
         # Assume brake disc diameter and simple MoI
-        D_disc = 0.01*D_rotor
+        D_disc  = 0.01*D_rotor
         Ib      = np.zeros(3)
         Ib[0]   = 0.5*m_brake*(0.5*D_disc)**2
         Ib[1:]  = 0.5*Ib[0]
-
-        Is      = np.zeros(3)
-        if direct:
-            cm = s_rotor
-        else:
-            cm = 0.5*(s_rotor + s_gearbox)
+        
+        cm = s_rotor if self.options['direct_drive'] else 0.5*(s_rotor + s_gearbox)
   
-            Is[0]  = m_hss_shaft *     (0.5*D_hss_shaft)**2                   / 2.
-            Is[1:] = m_hss_shaft * (3.*(0.5*D_hss_shaft)**2 + L_hss_shaft**2) / 12.
-
         outputs['brake_mass'] = m_brake
-        outputs['brake_I'] = Ib
-        outputs['hss_mass'] = mass
-        outputs['hss_cm'] = cm
-        outputs['hss_I'] = Ib+Is
-        outputs['hss_length'] = L_hss_shaft
-        outputs['hss_diameter'] = D_hss_shaft
+        outputs['brake_I']    = Ib
+        outputs['brake_cm']   = cm
         
 #----------------------------------------------------------------------------------------------
         
@@ -211,8 +177,6 @@ class GeneratorSimple(om.ExplicitComponent):
     
     Parameters
     ----------
-    direct_drive : boolean
-        True if direct drive
     rotor_diameter : float, [m]
         rotor diameter
     machine_rating : float, [kW]
@@ -230,9 +194,11 @@ class GeneratorSimple(om.ExplicitComponent):
         moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
     """
         
+    def initialize(self):
+        self.options.declare('direct_drive', default=True)
+        
     def setup(self):
         # variables
-        self.add_discrete_input('direct_drive', False)
         self.add_input('rotor_diameter', val=0.0, units='m')
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rotor_torque', 0.0, units='N*m')
@@ -241,15 +207,14 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_output('generator_mass', val=0.0, units='kg')
         self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
 
         # Unpack inputs
-        direct  = discrete_inputs['direct_drive']
         rating  = float(inputs['machine_rating'])
         D_rotor = float(inputs['rotor_diameter'])
         Q_rotor = float(inputs['rotor_torque'])
   
-        if direct:
+        if self.options['direct_drive']:
             massCoeff = 1e-3 * 37.68
             mass = massCoeff * Q_rotor
         else:
@@ -557,6 +522,12 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         component CM
     hss_I : numpy array[3], [kg*m**2]
         component I
+    brake_mass : float, [kg]
+        component mass
+    brake_cm : float, [m]
+        component CM
+    brake_I : numpy array[3], [kg*m**2]
+        component I
     generator_mass : float, [kg]
         component mass
     generator_cm : float, [m]
@@ -641,11 +612,14 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('mb2_cm', 0.0, units='m')
         self.add_input('mb2_I', np.zeros(3), units='kg*m**2')
         self.add_input('gearbox_mass', 0.0, units='kg')
-        self.add_input('gearbox_cm', np.zeros(3), units='m')
+        self.add_input('gearbox_cm', 0.0, units='m')
         self.add_input('gearbox_I', np.zeros(3), units='kg*m**2')
         self.add_input('hss_mass', 0.0, units='kg')
         self.add_input('hss_cm', 0.0, units='m')
         self.add_input('hss_I', np.zeros(3), units='kg*m**2')
+        self.add_input('brake_mass', 0.0, units='kg')
+        self.add_input('brake_cm', 0.0, units='m')
+        self.add_input('brake_I', np.zeros(3), units='kg*m**2')
         self.add_input('generator_mass', 0.0, units='kg')
         self.add_input('generator_cm', 0.0, units='m')
         self.add_input('generator_I', np.zeros(3), units='kg*m**2')
@@ -687,10 +661,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         Cup  = -1.0 if discrete_inputs['upwind'] else 1.0
         tilt = float(np.deg2rad(inputs['tilt']))
         
-        components = ['mb1','mb2','lss','hss','gearbox','generator','hvac',
+        components = ['mb1','mb2','lss','hss','brake','gearbox','generator','hvac',
                       'nose','bedplate','mainframe','cover']
-        # components = ['mb1','mb2','lss','hss','gearbox','generator','hvac',
-        #               'nose','bedplate','mainframe','yaw','cover']
         if discrete_inputs['uptower']: components.append('electronics')
 
         # Mass and CofM summaries first because will need them for I later
@@ -700,7 +672,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
             m_i  = inputs[k+'_mass']
             cm_i = inputs[k+'_cm']
 
-            # If cm is (x,y,z) then it is already in tower-top c.s.  If it is a scalar, it is in distance from bedplate and we have to convert
+            # If cm is (x,y,z) then it is already in tower-top c.s.  If it is a scalar, it is in distance from tower and we have to convert
             if len(cm_i) == 1:
                 cm_i = cm_i * np.array([Cup*np.cos(tilt), 0.0, np.sin(tilt)])
             
@@ -734,7 +706,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         components.append('yaw')
         m_nac  += inputs['yaw_mass']
         cm_nac  = (outputs['above_yaw_mass'] * outputs['above_yaw_cm'] + inputs['yaw_cm'] * inputs['yaw_mass']) / m_nac
-        r       = inputs['yaw_cm'] - outputs['above_yaw_cm']
+        r       = inputs['yaw_cm'] - cm_nac
         I_nac  += util.assembleI(np.r_[inputs['yaw_I'], np.zeros(3)]) + inputs['yaw_mass']*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
 
         outputs['nacelle_mass'] = m_nac

@@ -41,48 +41,29 @@ class TestComponents(unittest.TestCase):
             self.assertTrue(True)
 
 
-    def testHSS(self):
+    def testBrake(self):
         inputs = {}
         outputs = {}
         discrete_inputs = {}
         discrete_outputs = {}
-        myobj = dc.HighSpeedSide()
+        myobj = dc.Brake(direct_drive=True)
 
         discrete_inputs['direct_drive'] = True
         inputs['rotor_diameter']   = 200.0
         inputs['rotor_torque']     = 10e6
-        inputs['gear_ratio']       = 1.0
-        inputs['D_shaft_end']      = 1.0
         inputs['s_rotor']          = 3.0
         inputs['s_gearbox']        = 0.0
-        inputs['hss_input_length'] = 0.0
-        inputs['rho']              = 5e3
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['hss_mass'], 12200)
-        self.assertEqual(outputs['hss_cm'], 3)
-        npt.assert_equal(outputs['hss_I'], 12200*np.r_[0.5, 0.25, 0.25])
-        self.assertEqual(outputs['hss_length'], 0)
-        self.assertEqual(outputs['hss_diameter'], 0)
+        myobj.compute(inputs, outputs)
+        self.assertEqual(outputs['brake_mass'], 12200)
+        self.assertEqual(outputs['brake_cm'], 3)
+        npt.assert_equal(outputs['brake_I'], 12200*np.r_[0.5, 0.25, 0.25])
 
         discrete_inputs['direct_drive'] = False
-        inputs['gear_ratio']       = 100.0
         inputs['s_gearbox']        = 5.0
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['hss_mass'], 1.5*2500)
-        self.assertEqual(outputs['hss_cm'], 4)
-        L = 2500/0.75**2/np.pi/5e3
-        self.assertEqual(outputs['hss_length'], L)
-        self.assertEqual(outputs['hss_diameter'], 1.5)
-        npt.assert_equal(outputs['hss_I'], 1250*np.r_[0.5, 0.25, 0.25] + 2500*np.r_[0.5*0.75**2, (3*0.75**2+L**2)/12*np.ones(2)])
-
-        inputs['hss_input_length'] = 1.5
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['hss_mass'], 1.5*2500)
-        self.assertEqual(outputs['hss_cm'], 4)
-        L = 1.5
-        self.assertEqual(outputs['hss_length'], L)
-        self.assertEqual(outputs['hss_diameter'], 1.5)
-        npt.assert_equal(outputs['hss_I'], 1250*np.r_[0.5, 0.25, 0.25] + 2500*np.r_[0.5*0.75**2, (3*0.75**2+L**2)/12*np.ones(2)])
+        myobj.compute(inputs, outputs)
+        self.assertEqual(outputs['brake_mass'], 12200)
+        self.assertEqual(outputs['brake_cm'], 3)
+        npt.assert_equal(outputs['brake_I'], 12200*np.r_[0.5, 0.25, 0.25])
 
 
     def testGeneratorSimple(self):
@@ -90,20 +71,19 @@ class TestComponents(unittest.TestCase):
         outputs = {}
         discrete_inputs = {}
         discrete_outputs = {}
-        myobj = dc.GeneratorSimple()
+        myobj = dc.GeneratorSimple(direct_drive=True)
 
-        discrete_inputs['direct_drive'] = True
         inputs['rotor_diameter']   = 200.0
         inputs['machine_rating']   = 10e3
         inputs['rotor_torque']     = 10e6
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        myobj.compute(inputs, outputs)
         self.assertEqual(outputs['R_generator'], 1.5)
         m = 37.68*10e3
         self.assertEqual(outputs['generator_mass'], m)
         npt.assert_equal(outputs['generator_I'], m*np.r_[0.5*1.5**2, (3*1.5**2+(3.6*1.5)**2)/12*np.ones(2)])
 
-        discrete_inputs['direct_drive'] = False
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        myobj = dc.GeneratorSimple(direct_drive=False)
+        myobj.compute(inputs, outputs)
         self.assertEqual(outputs['R_generator'], 1.5)
         m = np.mean([6.4737, 10.51, 5.34]) * 10e3**0.9223
         self.assertEqual(outputs['generator_mass'], m)
@@ -253,7 +233,7 @@ class TestComponents(unittest.TestCase):
         discrete_inputs['upwind'] = True
         discrete_inputs['uptower'] = True
         inputs['tilt'] = 0.0
-        components = ['mb1','mb2','lss','hss','gearbox','generator','hvac',
+        components = ['mb1','mb2','lss','hss','gearbox','generator','hvac','brake',
                       'nose','bedplate','mainframe','yaw','cover','electronics']
         cm3 = ['gearbox','electronics','yaw','bedplate','mainframe','cover']
         for k in components:
@@ -299,7 +279,7 @@ class TestComponents(unittest.TestCase):
         discrete_inputs['uptower'] = True
         inputs['tilt'] = 5.0
         tr = 5*np.pi/180.
-        components = ['mb1','mb2','lss','hss','gearbox','generator','hvac',
+        components = ['mb1','mb2','lss','hss','gearbox','generator','hvac','brake',
                       'nose','bedplate','mainframe','yaw','cover','electronics']
         cm3 = ['gearbox','electronics','yaw','bedplate','mainframe','cover']
         for k in components:

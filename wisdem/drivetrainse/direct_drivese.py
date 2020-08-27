@@ -2,9 +2,9 @@
 import numpy as np
 import openmdao.api as om
 from wisdem.drivetrainse.hub import Hub_System
-from wisdem.drivetrainse.layout import Layout
 from wisdem.drivetrainse.generator import Generator
 from wisdem.drivetrainse.gearbox import Gearbox
+import wisdem.drivetrainse.layout as lay
 import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
 
@@ -18,45 +18,52 @@ class DirectDriveSE(om.Group):
         self.options.declare('n_points')
         self.options.declare('n_dlcs')
         self.options.declare('model_generator')
+        self.options.declare('direct_drive', default=True)
         self.options.declare('topLevelFlag', default=True)
     
     def setup(self):
         n_points = self.options['n_points']
         n_dlcs   = self.options['n_dlcs']
+        direct   = self.options['direct_drive']
 
-        # Independent variables that are unique to DriveSE
+        # Independent variables that are unique to the drivetrain (except for the generator ones)
         ivc = om.IndepVarComp()
-        ivc.add_output('gear_ratio', 1.0)
-        ivc.add_output('L_bedplate', 0.0, units='m')
-        ivc.add_output('H_bedplate', 0.0, units='m')
+        # Common direct and geared
         ivc.add_output('L_12', 0.0, units='m')
         ivc.add_output('L_h1', 0.0, units='m')
-        ivc.add_output('L_2n', 0.0, units='m')
-        ivc.add_output('L_grs', 0.0, units='m')
-        ivc.add_output('L_gsn', 0.0, units='m')
+        ivc.add_output('L_generator', 0.0, units='m')
+        ivc.add_output('gear_ratio', 1.0)
+        ivc.add_output('overhang', 0.0, units='m')
+        ivc.add_output('drive_height', 0.0, units='m')
         ivc.add_output('access_diameter',0.0, units='m')
-
         ivc.add_output('lss_diameter', np.zeros(5), units='m')
-        ivc.add_output('nose_diameter', np.zeros(5), units='m')
         ivc.add_output('lss_wall_thickness', np.zeros(5), units='m')
-        ivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
-        ivc.add_output('bedplate_wall_thickness', np.zeros(n_points), units='m')
-        # ivc.add_output('shaft_ratio', 0.0)
-        # ivc.add_output('shrink_disc_mass', 0.0, units='kg')
-        # ivc.add_output('carrier_mass', 0.0, units='kg')
-        # ivc.add_output('flange_length', 0.0, units='m')
-        # ivc.add_discrete_output('gear_configuration', 'eep')
-        ivc.add_output('hss_input_length', 0.0, units='m')
-        ivc.add_discrete_output('planet_numbers', np.array([0, 0, 0]))
         ivc.add_discrete_output('mb1Type', 'CARB')
         ivc.add_discrete_output('mb2Type', 'SRB')
         ivc.add_discrete_output('uptower', True)
+
+        # Direct only
+        ivc.add_output('nose_diameter', np.zeros(5), units='m')
+        ivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
+        ivc.add_output('bedplate_wall_thickness', np.zeros(n_points), units='m')
+        
+        # Geared only
+        ivc.add_output('L_hss', 0.0, units='m')
+        ivc.add_output('hss_diameter', np.zeros(3), units='m')
+        ivc.add_output('hss_wall_thickness', np.zeros(3), units='m')
+        ivc.add_output('bedplate_flange_width', 0.0, units='m')
+        ivc.add_output('bedplate_flange_thickness', 0.0, units='m')
+        ivc.add_output('bedplate_web_thickness', 0.0, units='m')
+        ivc.add_discrete_output('planet_numbers', np.array([3, 3, 0]))
+        ivc.add_discrete_output('gear_configuration', val='eep')
+        ivc.add_discrete_output('shaft_factor', val='normal')
+        
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
         # Independent variables that may be duplicated at higher levels of aggregation
         if self.options['topLevelFlag']:
             sivc = om.IndepVarComp()
-            sivc.add_discrete_output('direct_drive', True)
+            sivc.add_discrete_output('direct_drive', direct)
             sivc.add_discrete_output('upwind', True)
             sivc.add_discrete_output('n_blades', 3)
             sivc.add_output('tilt', 0.0, units='deg')
@@ -73,8 +80,10 @@ class DirectDriveSE(om.Group):
             sivc.add_output('rotor_diameter',         0.0, units='m')
             sivc.add_output('rotor_rpm',              0.0, units='rpm')
             sivc.add_output('rotor_torque',           0.0, units='N*m')
-            #sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
-            #sivc.add_output('blade_mass',             0.0, units='kg')
+            sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
+            sivc.add_output('blade_mass',             0.0, units='kg')
+            sivc.add_output('F_hub',             np.zeros(3), units='N')
+            sivc.add_output('M_hub',             np.zeros(3), units='N*m')
             #sivc.add_output('blade_root_diameter',    0.0, units='m')
             #sivc.add_output('blade_length',           0.0, units='m')
             #sivc.add_output('gearbox_efficiency',     0.0)
@@ -82,32 +91,29 @@ class DirectDriveSE(om.Group):
             sivc.add_output('machine_rating',         0.0, units='kW')
             self.add_subsystem('sivc', sivc, promotes=['*'])
 
+        
         # select components
         self.add_subsystem('hub', Hub_System(), promotes=['*'])
-        self.add_subsystem('layout', Layout(n_points=n_points), promotes=['*'])
+        self.add_subsystem('gear', Gearbox(direct_drive=direct), promotes=['*'])
+        self.add_subsystem('layout', lay.DirectLayout(n_points=n_points), promotes=['*'])
         self.add_subsystem('bear1', dc.MainBearing())
         self.add_subsystem('bear2', dc.MainBearing())
-        self.add_subsystem('gear', Gearbox(), promotes=['*']) 
-        self.add_subsystem('hss', dc.HighSpeedSide(), promotes=['*']) # TODO- Include in generatorSE?
+        self.add_subsystem('hss', dc.Brake(direct_drive=direct), promotes=['*'])
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
         if self.options['model_generator']:
-            self.add_subsystem('generator', Generator(topLevelFlag=False, design='pmsg_outer'), promotes=['generator_mass','generator_I','E','G','v','machine_rating'])
+            gentype = 'pmsg_outer' if direct else 'dfig'
+            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','E','G','v','machine_rating'])
         else:
-            self.add_subsystem('gensimp', dc.GeneratorSimple(), promotes=['*'])
+            self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct), promotes=['*'])
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
-        self.add_subsystem('lss', ds.Hub_Rotor_Shaft_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
+        self.add_subsystem('lss', ds.Hub_Rotor_LSS_Frame(n_dlcs=n_dlcs, direct_drive=direct), promotes=['*'])
         self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
 
-        self.linear_solver = lbgs = om.LinearBlockGS()
-        self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-        nlbgs.options['maxiter'] = 3
-        
-        self.connect('D_shaft','D_shaft_end', src_indices=[-1])
-        self.connect('D_shaft','bear1.D_shaft', src_indices=[0])
-        self.connect('D_shaft','bear2.D_shaft', src_indices=[-1])
+        self.connect('lss_diameter','bear1.D_shaft', src_indices=[0])
+        self.connect('lss_diameter','bear2.D_shaft', src_indices=[-1])
         self.connect('D_bearing1','bear1.D_bearing')
         self.connect('D_bearing2','bear2.D_bearing')
         self.connect('mb1Type', 'bear1.bearing_type')
@@ -120,25 +126,39 @@ class DirectDriveSE(om.Group):
         self.connect('bear2.mb_I','mb2_I')
         self.connect('bear2.mb_max_defl_ang','mb2_max_defl_ang')
         self.connect('s_mb2','mb2_cm')
+        self.connect('s_gearbox','gearbox_cm')
+        self.connect('s_generator','generator_cm')
+        
         if self.options['model_generator']:
             self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
-            self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
             self.connect('generator.R_out','R_generator')
+            
             if self.options['topLevelFlag']:
                 self.connect('rotor_torque','generator.T_rated')
                 self.connect('rotor_rpm','generator.n_nom')
-            self.connect('rotor_deflection', 'generator.y_sh')
-            self.connect('rotor_rotation', 'generator.theta_sh')
-            self.connect('stator_deflection', 'generator.y_bd')
-            self.connect('stator_rotation', 'generator.theta_bd')
+                
+            if direct:
+                self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
+                self.connect('torq_deflection', 'generator.y_sh')
+                self.connect('torq_rotation', 'generator.theta_sh')
+                self.connect('stator_deflection', 'generator.y_bd')
+                self.connect('stator_rotation', 'generator.theta_bd')
+                
             self.connect('generator.rotor_mass','m_rotor')
             self.connect('generator.rotor_I','I_rotor')
             self.connect('generator.stator_mass','m_stator')
             self.connect('generator.stator_I','I_stator')
+
+            if direct:
+                self.linear_solver = lbgs = om.LinearBlockGS()
+                self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+                nlbgs.options['maxiter'] = 3
         
+            
 if __name__ == '__main__':
+    npts = 10
     prob = om.Problem()
-    prob.model = DirectDriveSE(topLevelFlag=True, n_points=10, n_dlcs=1, model_generator=True)
+    prob.model = DirectDriveSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True)
     prob.setup()
 
     prob['rotor_diameter'] = 206.
@@ -150,15 +170,12 @@ if __name__ == '__main__':
 
     prob['L_12'] = 2.0
     prob['L_h1'] = 1.0
-    prob['L_2n'] = 1.5
-    prob['L_grs'] = 1.1
-    prob['L_gsn'] = 1.1
-    prob['L_bedplate'] = 5.0
-    prob['H_bedplate'] = 4.875
+    prob['L_generator'] = 3.25
+    prob['overhang'] = 6.25
+    prob['drive_height'] = 4.875
     prob['tilt'] = 4.0
     prob['access_diameter'] = 0.9
 
-    npts = 10
     myones = np.ones(5)
     prob['lss_diameter'] = 3.3*myones
     prob['nose_diameter'] = 2.2*myones

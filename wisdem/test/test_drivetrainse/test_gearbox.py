@@ -2,7 +2,6 @@ import numpy as np
 import numpy.testing as npt
 import unittest
 import wisdem.drivetrainse.gearbox as gb
-import openmdao.api as om
 
 
 class TestGearbox(unittest.TestCase):
@@ -13,7 +12,6 @@ class TestGearbox(unittest.TestCase):
         self.discrete_outputs = {}
 
         # 5MW inputs
-        self.discrete_inputs['direct_drive'] = False
         self.discrete_inputs['gear_configuration'] = 'eep'
         self.discrete_inputs['shaft_factor'] = 'normal'
         self.discrete_inputs['planet_numbers'] = [3,3,0]
@@ -22,10 +20,10 @@ class TestGearbox(unittest.TestCase):
         self.inputs['rotor_torque'] = 3946e3
         self.inputs['machine_rating'] = 5e3
         
-        self.myobj = gb.Gearbox()
+        self.myobj = gb.Gearbox(direct_drive=False)
 
     def testDirectDrive(self):
-        self.discrete_inputs['direct_drive'] = True
+        self.myobj = gb.Gearbox(direct_drive=True)
         self.myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(self.outputs['stage_ratios'], 0.0)

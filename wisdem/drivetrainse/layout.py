@@ -78,7 +78,9 @@ class Layout(om.ExplicitComponent):
         Bearing 1 s-coordinate along drivetrain, measured from bedplate
     s_mb2 : float, [m]
         Bearing 2 s-coordinate along drivetrain, measured from bedplate
-    generator_cm : float, [m]
+    s_gearbox : float, [m]
+        Overall gearbox cm
+    s_generator : float, [m]
         Overall generator cm
     constr_length : float, [m]
         Margin for drivetrain length and desired overhang distance (should be > 0)
@@ -113,7 +115,11 @@ class Layout(om.ExplicitComponent):
         self.add_output('bedplate_I', val=np.zeros(6), units='kg*m**2')
         self.add_output('s_mb1', val=0.0, units='m')
         self.add_output('s_mb2', val=0.0, units='m')
-        self.add_output('generator_cm', val=0.0, units='m')
+        self.add_output('s_gearbox', val=0.0, units='m')
+        self.add_output('s_generator', val=0.0, units='m')
+        self.add_output('hss_mass', val=0.0, units='kg')
+        self.add_output('hss_cm', val=0.0, units='m')
+        self.add_output('hss_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('constr_length', 0.0, units='m')
         self.add_output('constr_height', 0.0, units='m')
         
@@ -172,13 +178,15 @@ class DirectLayout(Layout):
         Generator rotor attachment to lss s-coordinate
     constr_access : numpy array[5], [m]
         Margin for allowing maintenance access (should be > 0)
+    constr_ecc : float, [m]
+        Margin for bedplate ellipse eccentricity (should be > 0)
     """
     
     def initialize(self):
         self.options.declare('n_points')
     
     def setup(self):
-        super().setup(self)
+        super().setup()
         n_points = self.options['n_points']
 
         self.add_input('access_diameter', 0.0, units='m')
@@ -204,6 +212,7 @@ class DirectLayout(Layout):
         self.add_output('s_stator', val=0.0, units='m')
         self.add_output('s_rotor', val=0.0, units='m')
         self.add_output('constr_access', np.zeros(5), units='m')
+        self.add_output('constr_ecc', 0.0, units='m')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -265,7 +274,7 @@ class DirectLayout(Layout):
         outputs['s_stator']     = s_stator
         outputs['s_nose']       = s_nose
         outputs['s_lss']        = s_lss
-        outputs['generator_cm'] = 0.5*(s_rotor + s_stator)
+        outputs['s_generator']  = 0.5*(s_rotor + s_stator)
         outputs['s_mb1']        = s_mb1
         outputs['s_mb2']        = s_mb2
         # ------------------------------------
@@ -436,11 +445,7 @@ class GearedLayout(Layout):
 
         self.add_output('s_drive', val=np.zeros(12), units='m')
         self.add_output('s_hss', val=np.zeros(3), units='m')
-        self.add_output('hss_mass', val=0.0, units='kg')
-        self.add_output('hss_cm', val=0.0, units='m')
-        self.add_output('hss_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('bedplate_web_height', val=0.0, units='m')
-        self.add_output('s_gearbox', val=0.0, units='m')
         self.add_output('s_generator', val=0.0, units='m')
         
         

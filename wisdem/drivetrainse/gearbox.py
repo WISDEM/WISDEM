@@ -52,8 +52,6 @@ class Gearbox(om.ExplicitComponent):
     
     Parameters
     ----------
-    direct_drive : boolean
-        True if system is direct drive        
     gear_configuration : string
         string that represents the configuration of the gearbox (stage number and types)
     shaft_factor : string
@@ -90,9 +88,10 @@ class Gearbox(om.ExplicitComponent):
     
     """
 
+    def initialize(self):
+        self.options.declare('direct_drive', default=True)
+        
     def setup(self):
-
-        self.add_discrete_input('direct_drive', False)
         self.add_discrete_input('gear_configuration', val='eep')
         self.add_discrete_input('shaft_factor', val='normal')
         self.add_discrete_input('planet_numbers', val=np.array([3, 3, 0]))
@@ -108,7 +107,7 @@ class Gearbox(om.ExplicitComponent):
         self.add_output('D_gearbox', 0.0, units='m')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        if discrete_inputs['direct_drive']:
+        if self.options['direct_drive']:
             outputs['stage_ratios'] = np.zeros(3)
             outputs['gearbox_mass'] = outputs['D_gearbox'] = outputs['L_gearbox'] = 0.0
             outputs['gearbox_I'] = np.zeros(3)            
