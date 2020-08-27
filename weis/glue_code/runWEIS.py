@@ -8,6 +8,7 @@ from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from wisdem.schema                    import load_yaml
 from wisdem.glue_code.runWISDEM       import read_master_file, wisdem_cmd
+from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
@@ -443,6 +444,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options):
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init)
+        wt_opt = assign_ROSCO_values(wt_opt, modeling_options, wt_init['control'])
         wt_opt['blade.opt_var.s_opt_twist']   = np.linspace(0., 1., blade_opt_options['aero_shape']['twist']['n_opt'])
         if blade_opt_options['aero_shape']['twist']['flag']:
             init_twist_opt = np.interp(wt_opt['blade.opt_var.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
