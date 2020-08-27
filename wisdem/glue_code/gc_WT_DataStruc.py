@@ -294,6 +294,10 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         blade_init_options = self.options['blade_init_options']
         n_af_span          = blade_init_options['n_af_span']
         self.n_span        = n_span = blade_init_options['n_span']
+        if 'n_te_flaps' in blade_init_options.keys():
+            n_te_flaps = blade_init_options['n_te_flaps']
+        else:
+            n_te_flaps = 0
 
         self.add_input('s_default',        val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_input('chord_yaml',       val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
@@ -301,8 +305,8 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         self.add_input('pitch_axis_yaml',  val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_input('ref_axis_yaml',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
 
-        self.add_input('span_end',       val=0.0,                              desc='1D array of the positions along blade span where something (a DAC device?) starts and we want a grid point. Only values between 0 and 1 are meaningful.')
-        self.add_input('span_ext',       val=0.0,                              desc='1D array of the extensions along blade span where something (a DAC device?) lives and we want a grid point. Only values between 0 and 1 are meaningful.')
+        self.add_input('span_end',       val=np.zeros(n_te_flaps),             desc='1D array of the positions along blade span where something (a DAC device?) starts and we want a grid point. Only values between 0 and 1 are meaningful.')
+        self.add_input('span_ext',       val=np.zeros(n_te_flaps),             desc='1D array of the extensions along blade span where something (a DAC device?) lives and we want a grid point. Only values between 0 and 1 are meaningful.')
 
         self.add_output('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_output('chord',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
