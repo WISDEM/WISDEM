@@ -308,19 +308,18 @@ class TestGearedLayout(unittest.TestCase):
         myobj = lay.GearedLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
-        ds = 6.85 - 2 - 0.5*6.5
-        self.assertAlmostEqual(self.outputs['L_lss'], 3.0)
-        self.assertAlmostEqual(self.outputs['L_drive'], 6.85)
-        npt.assert_almost_equal(self.outputs['s_drive'], np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 4.85, 5.85, 6.35, 6.85])-ds )
-        self.assertAlmostEqual(self.outputs['L_drive'], 6.85)
-        self.assertAlmostEqual(self.outputs['generator_cm'], 0.625-ds)
-        self.assertAlmostEqual(self.outputs['gearbox_cm'], 3.3-ds)
-        self.assertAlmostEqual(self.outputs['s_mb1'], 5.85-ds)
-        self.assertAlmostEqual(self.outputs['s_mb2'], 3.85-ds)
-        self.assertAlmostEqual(self.outputs['L_bedplate'], 6.85)
+        ds = 6.95 - 2 - 0.5*6.5
+        self.assertAlmostEqual(self.outputs['L_lss'], 3.1)
+        self.assertAlmostEqual(self.outputs['L_drive'], 6.95)
+        npt.assert_almost_equal(self.outputs['s_drive'], np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 3.95, 4.95, 5.95, 6.45, 6.95])-ds )
+        self.assertAlmostEqual(self.outputs['s_generator'], 0.625-ds)
+        self.assertAlmostEqual(self.outputs['s_gearbox'], 3.3-ds)
+        self.assertAlmostEqual(self.outputs['s_mb1'], 5.95-ds)
+        self.assertAlmostEqual(self.outputs['s_mb2'], 3.95-ds)
+        self.assertAlmostEqual(self.outputs['L_bedplate'], 6.95)
         self.assertAlmostEqual(self.outputs['H_bedplate'], 4.875)
         self.assertAlmostEqual(self.outputs['bedplate_web_height'], 4.725)
-        self.assertAlmostEqual(self.outputs['constr_length'], 6.85-2-6.5)
+        self.assertAlmostEqual(self.outputs['constr_length'], 6.95-2-6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], 4.875)
 
         
@@ -328,20 +327,19 @@ class TestGearedLayout(unittest.TestCase):
         myobj = lay.GearedLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
-        ds = 6.85 - (2 + 0.5*6.5)/ct
-        self.assertAlmostEqual(self.outputs['L_lss'], 3.0)
-        self.assertAlmostEqual(self.outputs['L_drive'], 6.85)
-        npt.assert_almost_equal(self.outputs['s_drive'], np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 4.85, 5.85, 6.35, 6.85])-ds )
-        self.assertAlmostEqual(self.outputs['L_drive'], 6.85)
-        self.assertAlmostEqual(self.outputs['generator_cm'], 0.625-ds)
-        self.assertAlmostEqual(self.outputs['gearbox_cm'], 3.3-ds)
-        self.assertAlmostEqual(self.outputs['s_mb1'], 5.85-ds)
-        self.assertAlmostEqual(self.outputs['s_mb2'], 3.85-ds)
-        self.assertAlmostEqual(self.outputs['L_bedplate'], 6.85*ct)
-        self.assertAlmostEqual(self.outputs['H_bedplate'], 4.875-6.85*st)
-        self.assertAlmostEqual(self.outputs['bedplate_web_height'], 4.725-6.85*st)
-        self.assertAlmostEqual(self.outputs['constr_length'], 6.85*ct-2-6.5)
-        self.assertAlmostEqual(self.outputs['constr_height'], 4.875-6.85*st)
+        ds = 6.95 - (2 + 0.5*6.5)/ct
+        self.assertAlmostEqual(self.outputs['L_lss'], 3.1)
+        self.assertAlmostEqual(self.outputs['L_drive'], 6.95)
+        npt.assert_almost_equal(self.outputs['s_drive'], np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 3.95, 4.95, 5.95, 6.45, 6.95])-ds )
+        self.assertAlmostEqual(self.outputs['s_generator'], 0.625-ds)
+        self.assertAlmostEqual(self.outputs['s_gearbox'], 3.3-ds)
+        self.assertAlmostEqual(self.outputs['s_mb1'], 5.95-ds)
+        self.assertAlmostEqual(self.outputs['s_mb2'], 3.95-ds)
+        self.assertAlmostEqual(self.outputs['L_bedplate'], 6.95*ct)
+        self.assertAlmostEqual(self.outputs['H_bedplate'], 4.875-6.95*st)
+        self.assertAlmostEqual(self.outputs['bedplate_web_height'], 4.725-6.95*st)
+        self.assertAlmostEqual(self.outputs['constr_length'], 6.95*ct-2-6.5)
+        self.assertAlmostEqual(self.outputs['constr_height'], 4.875-6.95*st)
         
 
     def testMassValues(self):
@@ -357,9 +355,9 @@ class TestGearedLayout(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         rho = self.inputs['rho']
-        m_bedplate = rho*(2*1.5*.05+4.725*.05)*6.85
+        m_bedplate = rho*(2*1.5*.05+4.725*.05)*6.95
         self.assertAlmostEqual(self.outputs['bedplate_mass'], m_bedplate)
-        npt.assert_almost_equal(self.outputs['bedplate_cm'], np.r_[-(2+0.5*6.5-0.5*6.85), 0.0, 0.5*4.725+.05])
+        npt.assert_almost_equal(self.outputs['bedplate_cm'], np.r_[-(2+0.5*6.5-0.5*6.95), 0.0, 0.5*4.725+.05])
 
         m_lss = rho*np.pi*(1**2 - 0.95**2)*self.outputs['L_lss']
         self.assertAlmostEqual(self.outputs['lss_mass'], m_lss)
@@ -375,7 +373,7 @@ class TestGearedLayout(unittest.TestCase):
 
         self.discrete_inputs['upwind'] = False
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        npt.assert_almost_equal(self.outputs['bedplate_cm'], np.r_[(2+0.5*6.5-0.5*6.85), 0.0, 0.5*4.725+.05])
+        npt.assert_almost_equal(self.outputs['bedplate_cm'], np.r_[(2+0.5*6.5-0.5*6.95), 0.0, 0.5*4.725+.05])
         self.assertAlmostEqual(self.outputs['lss_cm'], 0.5*(self.outputs['s_lss'][0] + self.outputs['s_lss'][-1]))
         self.assertAlmostEqual(self.outputs['hss_cm'], 0.5*(self.outputs['s_hss'][0] + self.outputs['s_hss'][-1]))
         

@@ -319,7 +319,6 @@ class TestDirectStructure(unittest.TestCase):
         self.assertGreater(0.0, F0[0])
         self.assertGreater(0.0, F0[-1])
         self.assertGreater(0.0, M0[1])
-        print(np.c_[self.outputs['M_mb1'],self.outputs['M_mb2'],self.outputs['M_torq']])
         npt.assert_almost_equal(self.outputs['F_mb1'][1], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['F_torq'], 0.0, decimal=2)
@@ -353,7 +352,6 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         F0 = self.outputs['F_mb1'].flatten()
         M0 = self.outputs['M_mb2'].flatten()
-        print(np.c_[self.outputs['M_mb1'],self.outputs['M_mb2'],self.outputs['M_torq']])
         self.assertGreater(0.0, F0[-1])
         self.assertGreater(0.0, M0[1])
         npt.assert_almost_equal(self.outputs['F_mb1'][:2], 0.0, decimal=2)
@@ -427,32 +425,22 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
         myobj = ds.HSS_Frame(n_dlcs=1)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        F0 = self.outputs['F_mb1'].flatten()
-        M0 = self.outputs['M_mb2'].flatten()
+        myobj.compute(self.inputs, self.outputs)
+        F0 = self.outputs['F_generator'].flatten()
+        M0 = self.outputs['M_generator'].flatten()
         self.assertGreater(0.0, F0[-1])
         self.assertGreater(0.0, M0[1])
-        npt.assert_almost_equal(self.outputs['F_mb1'][:2], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['F_torq'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb1'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb2'][[0,2]], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_torq'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_generator'].flatten()[:2], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_generator'].flatten()[[0,2]], 0.0, decimal=2)
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs['F_hub'] = g.reshape((3,1))
         self.inputs['M_hub'] = 2*g.reshape((3,1))
         self.compute_layout(False)
         myobj = ds.HSS_Frame(n_dlcs=1)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        npt.assert_almost_equal(self.outputs['F_mb1'].flatten(), g+F0, decimal=2)
-        npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['F_torq'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb1'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[0], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[1], -g[-1]*1+2*g[1]+M0[1], decimal=2) #*1=*L_h1
-        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[2], g[1]*1+2*g[2], decimal=2) #*1=*L_h1
-        npt.assert_almost_equal(self.outputs['M_torq'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
+        myobj.compute(self.inputs, self.outputs)
+        npt.assert_almost_equal(self.outputs['F_generator'].flatten(), F0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_generator'].flatten(), np.r_[2*g[0]/50.0, M0[1], 0.0], decimal=2)
 
 
         
@@ -464,33 +452,23 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
         myobj = ds.HSS_Frame(n_dlcs=1)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        F0 = self.outputs['F_mb1'].flatten()
-        M0 = self.outputs['M_mb2'].flatten()
+        myobj.compute(self.inputs, self.outputs)
+        F0 = self.outputs['F_generator'].flatten()
+        M0 = self.outputs['M_generator'].flatten()
         self.assertGreater(0.0, F0[0])
         self.assertGreater(0.0, F0[-1])
         self.assertGreater(0.0, M0[1])
-        npt.assert_almost_equal(self.outputs['F_mb1'][1], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['F_torq'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb1'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb2'][[0,2]], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_torq'], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['F_generator'].flatten()[1], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_generator'].flatten()[[0,2]], 0.0, decimal=2)
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs['F_hub'] = g.reshape((3,1))
         self.inputs['M_hub'] = 2*g.reshape((3,1))
         self.compute_layout(False)
         myobj = ds.HSS_Frame(n_dlcs=1)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        npt.assert_almost_equal(self.outputs['F_mb1'].flatten(), g+F0, decimal=2)
-        npt.assert_almost_equal(self.outputs['F_mb2'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['F_torq'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb1'], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[0], 0.0, decimal=2)
-        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[1], -g[-1]*1+2*g[1]+M0[1], decimal=2) #*1=*L_h1
-        npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[2], g[1]*1+2*g[2], decimal=2) #*1=*L_h1
-        npt.assert_almost_equal(self.outputs['M_torq'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
+        myobj.compute(self.inputs, self.outputs)
+        npt.assert_almost_equal(self.outputs['F_generator'].flatten(), F0, decimal=2)
+        npt.assert_almost_equal(self.outputs['M_generator'].flatten(), np.r_[2*g[0]/50.0, M0[1], 0.0], decimal=2)
 
         
     def testShaftTheoryLSS(self):
@@ -516,34 +494,36 @@ class TestDirectStructure(unittest.TestCase):
         J = 0.5*np.pi*(2.5**4 - 2**4)
         sigma = 1e5/J*2.5
         npt.assert_almost_equal(self.outputs['lss_axial_stress'], 0.0, decimal=4)
-        npt.assert_almost_equal(self.outputs['lss_shear_stress'].flatten(), np.r_[np.zeros(2), sigma*np.ones(3)], decimal=4)
+        npt.assert_almost_equal(self.outputs['lss_shear_stress'].flatten(), np.r_[np.zeros(3), sigma], decimal=4)
 
         
     def testShaftTheoryHSS(self):
         # https://www.engineersedge.com/calculators/torsional-stress-calculator.htm
         self.inputs['tilt'] = 0.0
         self.inputs['gear_ratio'] = 50.0
-        self.inputs['L_h1'] = 3.0
-        self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
+        self.inputs['s_hss'] = np.array([0.0, 0.5, 1.0])
         self.inputs['M_hub'] = np.array([1e5, 0.0, 0.0]).reshape((3,1))
-        self.inputs['m_rotor'] = 0.0
-        self.inputs['cm_rotor'] = 0.0
-        self.inputs['I_rotor'] = np.zeros(6)
+        self.inputs['s_generator'] = 0.0
+        self.inputs['m_generator'] = 0.0
+        self.inputs['I_generator'] = np.zeros(3)
+        self.inputs['m_brake'] = 0.0
+        self.inputs['I_brake'] = np.zeros(3)
         self.inputs['hub_system_mass'] = 0.0
         self.inputs['hub_system_cm'] = 0.0
         self.inputs['hub_system_I'] = np.zeros(6)
-        myones = np.ones(5)
-        self.inputs['lss_diameter'] = 5*myones
-        self.inputs['lss_wall_thickness'] = 0.5*myones
+        myones = np.ones(3)
+        self.inputs['hss_diameter'] = 5*myones
+        self.inputs['hss_wall_thickness'] = 0.5*myones
         self.inputs['G'] = 100e9
         self.inputs['rho'] = 1e-6
         self.compute_layout()
-        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        myobj = ds.HSS_Frame(n_dlcs=1)
+        myobj.compute(self.inputs, self.outputs)
         J = 0.5*np.pi*(2.5**4 - 2**4)
-        sigma = 1e5/J*2.5
-        npt.assert_almost_equal(self.outputs['lss_axial_stress'], 0.0, decimal=4)
-        npt.assert_almost_equal(self.outputs['lss_shear_stress'].flatten(), np.r_[np.zeros(2), sigma*np.ones(3)], decimal=4)
+        sigma = 1e5/50./J*2.5
+        npt.assert_almost_equal(self.outputs['hss_axial_stress'], 0.0, decimal=4)
+        npt.assert_almost_equal(self.outputs['hss_bending_stress'], 0.0, decimal=4)
+        npt.assert_almost_equal(self.outputs['hss_shear_stress'].flatten(), sigma*np.ones(2), decimal=4)
 
         
 def suite():

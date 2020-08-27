@@ -380,11 +380,11 @@ class GearedLayout(Layout):
     Calculate lengths, heights, and diameters of key drivetrain components in a
     geared drive system (valid for upwind or downwind).
 
-    |_Lgen|_Lhss|Lgear|_L12_|_Lh1_|
-                      |___Llss____|
-    |--|--|--|--|--|--|--|--|--|--|
-    0  1  2  3  4  5  6  7  8  9  10 (indices)
-                     mb2   mb1
+    |_Lgen|_Lhss|Lgear|dl|_L12_|_Lh1_|
+                      |_____Llss_____|
+    |--|--|--|--|--|--|--|--|--|--|--|
+    0  1  2  3  4  5  6  7  8  9  10 11 (indices)
+                        mb2   mb1
 
     Parameters
     ----------
@@ -403,7 +403,7 @@ class GearedLayout(Layout):
     
     Returns
     -------
-    s_drive : numpy array[11], [m]
+    s_drive : numpy array[12], [m]
         Discretized, hub-aligned s-coordinates of the drivetrain starting at 
         generator and ending at hub flange
     s_hss : numpy array[5], [m]
@@ -434,7 +434,7 @@ class GearedLayout(Layout):
         self.add_input('bedplate_flange_thickness', val=0.0, units='m')
         self.add_input('bedplate_web_thickness', val=0.0, units='m')
 
-        self.add_output('s_drive', val=np.zeros(11), units='m')
+        self.add_output('s_drive', val=np.zeros(12), units='m')
         self.add_output('s_hss', val=np.zeros(3), units='m')
         self.add_output('hss_mass', val=0.0, units='kg')
         self.add_output('hss_cm', val=0.0, units='m')
@@ -476,10 +476,11 @@ class GearedLayout(Layout):
 
         # ------- Discretization ----------------
         # Length of lss and drivetrain length
-        L_lss   = L_12 + L_h1
-        L_drive = L_lss + L_gearbox + L_hss + L_generator
+        delta   = 0.1 # separation between MB2 and gearbox attachment
+        L_lss   = L_12 + L_h1 + delta
+        L_drive = L_lss + L_gearbox + delta + L_hss + L_generator
         ds      = 0.5*np.ones(2)
-        s_drive = np.cumsum(np.r_[0.0, L_generator*ds, L_hss*ds, L_gearbox*ds, L_12*ds, L_h1*ds])
+        s_drive = np.cumsum(np.r_[0.0, L_generator*ds, L_hss*ds, L_gearbox*ds, delta, L_12*ds, L_h1*ds])
         L_drive = s_drive[-1] - s_drive[0]
         outputs['L_drive']  = L_drive
         outputs['L_lss'] = L_lss
@@ -491,10 +492,11 @@ class GearedLayout(Layout):
         
         # Discretize the drivetrain from generator to hub
         s_generator = s_drive[:3].mean()
-        s_mb1       = s_drive[8]
-        s_mb2       = s_drive[6]
+        s_mb1       = s_drive[9]
+        s_mb2       = s_drive[7]
         s_gearbox   = s_drive[4:7].mean()
         s_lss       = s_drive[6:]
+        s_lss       = np.r_[s_lss[:-2], s_lss[-1]] # Need to stick to 5 points
         s_hss       = s_drive[2:5]
 
         # Store outputs

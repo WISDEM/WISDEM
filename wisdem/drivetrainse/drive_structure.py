@@ -388,7 +388,6 @@ class HSS_Frame(om.ExplicitComponent):
     def setup(self):
         n_dlcs   = self.options['n_dlcs']
 
-        self.add_discrete_input('direct_drive', False)
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('s_hss', val=np.zeros(3), units='m')
         self.add_input('hss_diameter', val=np.zeros(3), units='m')
@@ -415,7 +414,7 @@ class HSS_Frame(om.ExplicitComponent):
         self.add_output('F_generator', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('M_generator', val=np.zeros((3, n_dlcs)), units='N*m')
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
 
         # Unpack inputs
         tilt       = float(np.deg2rad(inputs['tilt']))
@@ -533,8 +532,8 @@ class HSS_Frame(om.ExplicitComponent):
             M   =  np.sqrt(Myy**2 + Mzz**2)
 
             # Record total forces and moments
-            outputs['F_generator'][:,k]  = -1.0 * np.array([reactions.Fx[k,2], reactions.Fy[k,2], reactions.Fz[k,2]])
-            outputs['M_generator'][:,k]  = -1.0 * np.array([reactions.Mxx[k,2], reactions.Myy[k,2], reactions.Mzz[k,2]])
+            outputs['F_generator'][:,k]  = -1.0 * np.array([reactions.Fx[k,0], reactions.Fy[k,0], reactions.Fz[k,0]])
+            outputs['M_generator'][:,k]  = -1.0 * np.array([reactions.Mxx[k,0], reactions.Myy[k,0], reactions.Mzz[k,0]])
             outputs['hss_axial_stress'][:,k] = np.abs(Fx)/Ax + M/S
             outputs['hss_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
             hoop = np.zeros(F.shape)
