@@ -42,9 +42,9 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
     # Set filenames 
     if multi_run or MPI_run:
         pid = mp.current_process().pid
-        LoadFlnmAF = 'airfoil_r{}.txt'.format(pid)
-        saveFlnmPolar = 'Polar_r{}.txt'.format(pid)
-        xfoilFlnm  = 'xfoil_input_r{}.txt'.format(pid)
+        LoadFlnmAF = 'airfoil_p{}.txt'.format(pid)
+        saveFlnmPolar = 'Polar_p{}.txt'.format(pid)
+        xfoilFlnm  = 'xfoil_input_p{}.txt'.format(pid)
     # if MPI_run:
     #     rank = MPI.COMM_WORLD.Get_rank()
     #     LoadFlnmAF = 'airfoil_r{}.txt'.format(rank) # This is a temporary file that will be deleted after it is no longer needed
@@ -258,6 +258,13 @@ class RunXFOIL(ExplicitComponent):
                 from scipy.ndimage import gaussian_filter
             except:
                 print('Cannot import the library gaussian_filter from scipy. Please check the conda environment and potential conflicts between numpy and scipy')
+
+            xfoil_kw = {}
+            if MPI:
+                xfoil_kw['MPI_run'] = True
+            elif self.cores > 1:
+                xfoil_kw['multi_run'] = True
+            
             for i in range(self.n_span):
                 # Loop through the flaps specified in yaml file
                 for k in range(self.n_te_flaps):
@@ -272,7 +279,7 @@ class RunXFOIL(ExplicitComponent):
                         for ind, fa in enumerate(flap_angles):
                             # NOTE: negative flap angles are deflected to the suction side, i.e. positively along the positive z- (radial) axis
                             af_flap = CCAirfoil(np.array([1,2,3]), np.array([100]), np.zeros(3), np.zeros(3), np.zeros(3), inputs['coord_xy_interp'][i,:,0], inputs['coord_xy_interp'][i,:,1], "Profile"+str(i)) # bem:I am creating an airfoil name based on index...this structure/naming convention is being assumed in CCAirfoil.runXfoil() via the naming convention used in CCAirfoil.af_flap_coords(). Note that all of the inputs besides profile coordinates and name are just dummy varaiables at this point.
-                            af_flap.af_flap_coords(self.xfoil_path, fa,  inputs['chord_start'][k],0.5,200) #bem: the last number is the number of points in the profile.  It is currently being hard coded at 200 but should be changed to make sure it is the same number of points as the other profiles
+                            af_flap.af_flap_coords(self.xfoil_path, fa,  inputs['chord_start'][k],0.5,200, **xfoil_kw) #bem: the last number is the number of points in the profile.  It is currently being hard coded at 200 but should be changed to make sure it is the same number of points as the other profiles
                             # self.flap_profiles[i]['coords'][:,0,ind] = af_flap.af_flap_xcoords # x-coords from xfoil file with flaps
                             # self.flap_profiles[i]['coords'][:,1,ind] = af_flap.af_flap_ycoords # y-coords from xfoil file with flaps
                             # self.flap_profiles[i]['coords'][:,0,ind] = af_flap.af_flap_xcoords  # x-coords from xfoil file with flaps and NO gaussian filter for smoothing

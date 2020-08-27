@@ -29,6 +29,9 @@ import warnings
 import os
 #from wisdem.ccblade.Polar import Polar
 
+import multiprocessing as mp
+from wisdem.commonse.mpi_tools import MPI
+
 from wisdem.airfoilprep import Airfoil
 import wisdem.ccblade._bem as _bem
 
@@ -366,19 +369,35 @@ class CCAirfoil(object):
 
         self.unsteady = unsteady
 
-
-    def af_flap_coords(self, xfoil_path, delta_flap=12.0, xc_hinge=0.8, yt_hinge=0.5,numNodes=250):
+    def af_flap_coords(self, xfoil_path, delta_flap=12.0, xc_hinge=0.8, yt_hinge=0.5, numNodes=250, multi_run=False, MPI_run=False):
         #This function is used to create and run xfoil to get airfoil coordinates for a given flap deflection
         # Set Needed parameter values
         AFName=self.AFName  
         df=str(delta_flap) # Flap deflection angle in deg
         numNodes   = str(numNodes) #number of panels to use (will be number of points in profile)
         dist_param = "0.5" #TE/LE panel density ratio
-        
-        # Set names/paths of files
-        CoordsFlnmAF = 'profilecoords.dat' # Temporary file name for coordinates...will be deleted at the end
-        saveFlnmAF = AFName + "_" + df + "_Airfoil.txt"
-        xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
+
+        # Set filenames
+        if multi_run or MPI_run:
+            pid = mp.current_process().pid
+            CoordsFlnmAF = 'profilecoords_p{}.dat'.format(pid) # Temporary file name for coordinates...will be deleted at the end
+            saveFlnmAF = '{}_{}_Airfoil_p{}.txt'.format(AFName, df, pid)
+            saveFlnmPolar = 'Polar_p{}.txt'.format(pid)
+            xfoilFlnm = 'xfoil_input_p{}.txt'.format(pid)
+        # if MPI_run:
+        #     rank = MPI.COMM_WORLD.Get_rank()
+        #     LoadFlnmAF = 'airfoil_r{}.txt'.format(rank) # This is a temporary file that will be deleted after it is no longer needed
+        #     saveFlnmPolar = 'Polar_r{}.txt'.format(rank) # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
+        #     xfoilFlnm  = 'xfoil_input_r{}.txt'.format(rank) # Xfoil run script that will be deleted after it is no longer needed
+        else:
+            CoordsFlnmAF = 'profilecoords.dat' # Temporary file name for coordinates...will be deleted at the end
+            saveFlnmPolar = 'Polar.txt'
+            saveFlnmAF = '{}_{}_Airfoil.txt'.format(AFName, df)
+            xfoilFlnm = 'xfoil_input.txt'  # Xfoil run script that will be deleted after it is no longer needed
+
+        # # Set names/paths of files
+        # saveFlnmAF = AFName + "_" + df + "_Airfoil.txt"
+        # xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
         
         # Cleaning up old files to prevent replacement issues
         if os.path.exists(saveFlnmAF):
@@ -426,7 +445,7 @@ class CCAirfoil(object):
         fid.close()
         
         # Run the XFoil calling command
-        os.system(xfoil_path + " < xfoil_input.txt > NUL")
+        os.system(xfoil_path + " < " + xfoilFlnm + " > NUL") # <<< runs XFoil !
         
         # Load in saved airfoil coordinates (with flap) from xfoil and save to instance variables
         flap_coords = np.loadtxt(saveFlnmAF)
