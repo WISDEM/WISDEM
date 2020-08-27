@@ -6,6 +6,7 @@ import numpy as np
 def set_common(prob):
     prob['n_blades'] = 3
     prob['rotor_rpm'] = 10.0
+    prob['rotor_diameter'] = 120.0
     prob['machine_rating'] = 5e3
     prob['D_top'] = 6.5
 
@@ -123,9 +124,13 @@ class TestGroup(unittest.TestCase):
         prob['generator.rho_Copper']   = 8900.0        # copper density Kg/m3
         prob['generator.rho_PM']       = 7450.0        # typical density Kg/m3 of neodymium magnets
 
-        prob.run_model()
-        self.assertTrue(True)
-    
+        try:
+            prob.run_model()
+            self.assertTrue(True)
+        except Exception as e:
+            print(e)
+            self.assertTrue(False)
+        
     def testDirectDrive_withSimpleGen(self):
         
         npts = 10
@@ -151,8 +156,151 @@ class TestGroup(unittest.TestCase):
         prob['nose_wall_thickness'] = 0.1*myones
         prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
 
-        prob.run_model()
-        self.assertTrue(True)
+        try:
+            prob.run_model()
+            self.assertTrue(True)
+        except Exception as e:
+            print(e)
+            self.assertTrue(False)
+
+        
+    def testGeared_withGen(self):
+        
+        npts = 10
+        prob = om.Problem()
+        prob.model = dd.DirectDriveSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True, direct_drive=False)
+        prob.setup()
+        prob = set_common(prob)
+
+        prob['upwind'] = True
+
+        prob['L_12'] = 2.0
+        prob['L_h1'] = 1.0        
+        prob['overhang'] = 2.0
+        prob['drive_height'] = 4.875
+        prob['L_hss'] = 1.5
+        prob['L_generator'] = 1.25
+        prob['L_gearbox'] = 1.1
+        prob['tilt'] = 5.0
+
+        myones = np.ones(5)
+        prob['lss_diameter'] = 2.3*myones
+        prob['lss_wall_thickness'] = 0.05*myones
+        myones = np.ones(3)
+        prob['hss_diameter'] = 2.0*myones
+        prob['hss_wall_thickness'] = 0.05*myones
+
+        prob['bedplate_flange_width'] = 1.5
+        prob['bedplate_flange_thickness'] = 0.05
+        #prob['bedplate_web_height'] = 1.0
+        prob['bedplate_web_thickness'] = 0.05
+
+        prob['planet_numbers'] = np.array([3, 3, 0])
+        prob['gear_configuration'] = 'eep'
+        prob['shaft_factor'] = 'normal'
+        prob['gear_ratio'] = 90.0
+
+        prob['generator.Overall_eff']    = 93
+        prob['generator.rho_Fe']         = 7700.0
+        prob['generator.rho_Fes']        = 7850.0
+        prob['generator.rho_Copper']     = 8900.0
+        prob['generator.rho_PM']         = 7450.0
+        prob['generator.B_r']            = 1.2
+        prob['generator.E']              = 2e11
+        prob['generator.G']              = 79.3e9
+        prob['generator.P_Fe0e']         = 1.0
+        prob['generator.P_Fe0h']         = 4.0
+        prob['generator.S_N']            = -0.002
+        prob['generator.alpha_p']        = 0.5*np.pi*0.7
+        prob['generator.b_r_tau_r']      = 0.45
+        prob['generator.b_ro']           = 0.004
+        prob['generator.b_s_tau_s']      = 0.45
+        prob['generator.b_so']           = 0.004
+        prob['generator.cofi']           = 0.85
+        prob['generator.freq']           = 60
+        prob['generator.h_i']            = 0.001
+        prob['generator.h_sy0']          = 0.0
+        prob['generator.h_w']            = 0.005
+        prob['generator.k_fes']          = 0.9
+        prob['generator.k_s']            = 0.2
+        prob['generator.m']     = 3
+        prob['generator.mu_0']           = np.pi*4e-7
+        prob['generator.mu_r']           = 1.06
+        prob['generator.p']              = 3.0
+        prob['generator.phi']            = np.deg2rad(90)
+        prob['generator.ratio_mw2pp']    = 0.7
+        prob['generator.resist_Cu']      = 1.8e-8*1.4
+        prob['generator.sigma']          = 40e3
+        prob['generator.v']              = 0.3
+        prob['generator.y_tau_p']        = 1.0
+        prob['generator.y_tau_pr']       = 10. / 12
+        prob['generator.Gearbox_efficiency'] = 0.955
+        prob['generator.cofi']               = 0.9
+        prob['generator.y_tau_p']            = 12./15.
+        prob['generator.sigma']              = 21.5e3
+        prob['generator.rad_ag']             = 0.61
+        prob['generator.len_s']              = 0.49
+        prob['generator.h_s']                = 0.08
+        prob['generator.I_0']                = 40.0
+        prob['generator.B_symax']            = 1.3
+        prob['generator.S_Nmax']             = -0.2
+        prob['generator.h_0']                = 0.01
+        prob['generator.k_fillr']        = 0.55
+        prob['generator.k_fills']        = 0.65
+        prob['generator.q1']    = 5
+        prob['generator.q2']    = 4
+        
+        try:
+            prob.run_model()
+            self.assertTrue(True)
+        except Exception as e:
+            print(e)
+            self.assertTrue(False)
+
+        
+    def testGeared_withSimpleGen(self):
+        
+        npts = 10
+        prob = om.Problem()
+        prob.model = dd.DirectDriveSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=False, direct_drive=False)
+        prob.setup()
+        prob = set_common(prob)
+
+        prob['upwind'] = True
+
+        prob['L_12'] = 2.0
+        prob['L_h1'] = 1.0        
+        prob['overhang'] = 2.0
+        prob['drive_height'] = 4.875
+        prob['L_hss'] = 1.5
+        prob['L_generator'] = 1.25
+        prob['L_gearbox'] = 1.1
+        prob['tilt'] = 5.0
+
+        myones = np.ones(5)
+        prob['lss_diameter'] = 2.3*myones
+        prob['lss_wall_thickness'] = 0.05*myones
+        myones = np.ones(3)
+        prob['hss_diameter'] = 2.0*myones
+        prob['hss_wall_thickness'] = 0.05*myones
+
+        prob['bedplate_flange_width'] = 1.5
+        prob['bedplate_flange_thickness'] = 0.05
+        #prob['bedplate_web_height'] = 1.0
+        prob['bedplate_web_thickness'] = 0.05
+
+        prob['planet_numbers'] = np.array([3, 3, 0])
+        prob['gear_configuration'] = 'eep'
+        prob['shaft_factor'] = 'normal'
+        prob['gear_ratio'] = 90.0
+
+        try:
+            prob.run_model()
+            self.assertTrue(True)
+        except Exception as e:
+            print(e)
+            self.assertTrue(False)
+
 
 
 def suite():

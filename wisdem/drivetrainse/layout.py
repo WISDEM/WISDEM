@@ -432,9 +432,8 @@ class GearedLayout(Layout):
     
     
     def setup(self):
-        super().setup(self)
+        super().setup()
 
-        self.add_discrete_input('upwind', True)
         self.add_input('L_hss', 0.0, units='m')
         self.add_input('L_gearbox', 0.0, units='m')
         self.add_input('hss_diameter', np.zeros(3), units='m')
@@ -446,7 +445,6 @@ class GearedLayout(Layout):
         self.add_output('s_drive', val=np.zeros(12), units='m')
         self.add_output('s_hss', val=np.zeros(3), units='m')
         self.add_output('bedplate_web_height', val=0.0, units='m')
-        self.add_output('s_generator', val=0.0, units='m')
         
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -539,7 +537,7 @@ class GearedLayout(Layout):
         outputs['bedplate_web_height'] = bed_h_web
         outputs['bedplate_mass'] = m_bedplate
         outputs['bedplate_cm']   = cg_bedplate
-        outputs['bedplate_I']    = I_bedplate
+        outputs['bedplate_I']    = np.r_[I_bedplate, np.zeros(3)]
         
         # ------- Constraints ----------------
         outputs['constr_length'] = L_drive*np.cos(tilt) - L_overhang - D_top # Should be > 0

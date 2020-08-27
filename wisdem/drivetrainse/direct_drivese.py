@@ -95,10 +95,15 @@ class DirectDriveSE(om.Group):
         # select components
         self.add_subsystem('hub', Hub_System(), promotes=['*'])
         self.add_subsystem('gear', Gearbox(direct_drive=direct), promotes=['*'])
-        self.add_subsystem('layout', lay.DirectLayout(n_points=n_points), promotes=['*'])
+        
+        if direct:
+            self.add_subsystem('layout', lay.DirectLayout(n_points=n_points), promotes=['*'])
+        else:
+            self.add_subsystem('layout', lay.GearedLayout(), promotes=['*'])
+            
         self.add_subsystem('bear1', dc.MainBearing())
         self.add_subsystem('bear2', dc.MainBearing())
-        self.add_subsystem('hss', dc.Brake(direct_drive=direct), promotes=['*'])
+        self.add_subsystem('brake', dc.Brake(direct_drive=direct), promotes=['*'])
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
         if self.options['model_generator']:
@@ -110,12 +115,19 @@ class DirectDriveSE(om.Group):
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
         self.add_subsystem('lss', ds.Hub_Rotor_LSS_Frame(n_dlcs=n_dlcs, direct_drive=direct), promotes=['*'])
-        self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
+        if direct:
+            self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, n_dlcs=n_dlcs), promotes=['*'])
+        else:
+            self.add_subsystem('hss', ds.HSS_Frame(n_dlcs=n_dlcs), promotes=['*'])
+            self.add_subsystem('bed', ds.Bedplate_IBeam_Frame(n_dlcs=n_dlcs), promotes=['*'])
 
         self.connect('lss_diameter','bear1.D_shaft', src_indices=[0])
         self.connect('lss_diameter','bear2.D_shaft', src_indices=[-1])
-        self.connect('D_bearing1','bear1.D_bearing')
-        self.connect('D_bearing2','bear2.D_bearing')
+        
+        if direct:
+            self.connect('D_bearing1','bear1.D_bearing')
+            self.connect('D_bearing2','bear2.D_bearing')
+            
         self.connect('mb1Type', 'bear1.bearing_type')
         self.connect('mb2Type', 'bear2.bearing_type')
         self.connect('bear1.mb_mass','mb1_mass')
@@ -143,13 +155,11 @@ class DirectDriveSE(om.Group):
                 self.connect('torq_rotation', 'generator.theta_sh')
                 self.connect('stator_deflection', 'generator.y_bd')
                 self.connect('stator_rotation', 'generator.theta_bd')
-                
-            self.connect('generator.rotor_mass','m_rotor')
-            self.connect('generator.rotor_I','I_rotor')
-            self.connect('generator.stator_mass','m_stator')
-            self.connect('generator.stator_I','I_stator')
+                self.connect('generator.rotor_mass','m_rotor')
+                self.connect('generator.rotor_I','I_rotor')
+                self.connect('generator.stator_mass','m_stator')
+                self.connect('generator.stator_I','I_stator')
 
-            if direct:
                 self.linear_solver = lbgs = om.LinearBlockGS()
                 self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
                 nlbgs.options['maxiter'] = 3

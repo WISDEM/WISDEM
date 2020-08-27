@@ -269,7 +269,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        if self.options['direct_drive']: myframe.write('myframe.3dd') # Debugging
+        myframe.write('myframe1.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
@@ -398,10 +398,10 @@ class HSS_Frame(om.ExplicitComponent):
         self.add_input('gamma_m', 0.0)
         self.add_input('gamma_n', 0.0)
 
-        self.add_output('hss_axial_stress', np.zeros((5, n_dlcs)), units='Pa')
-        self.add_output('hss_shear_stress', np.zeros((5, n_dlcs)), units='Pa')
-        self.add_output('hss_bending_stress', np.zeros((5, n_dlcs)), units='Pa')
-        self.add_output('constr_hss_vonmises', np.zeros((5, n_dlcs)))
+        self.add_output('hss_axial_stress', np.zeros((2, n_dlcs)), units='Pa')
+        self.add_output('hss_shear_stress', np.zeros((2, n_dlcs)), units='Pa')
+        self.add_output('hss_bending_stress', np.zeros((2, n_dlcs)), units='Pa')
+        self.add_output('constr_hss_vonmises', np.zeros((2, n_dlcs)))
         self.add_output('F_generator', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('M_generator', val=np.zeros((3, n_dlcs)), units='N*m')
 
@@ -500,7 +500,7 @@ class HSS_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        #myframe.write('myframe.3dd') # Debugging
+        myframe.write('myframe2.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
@@ -837,7 +837,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        #myframe.write('myframe.3dd') # Debugging
+        myframe.write('myframe3.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # ------------ Bedplate "curved beam" geometry for post-processing -------------
@@ -1015,11 +1015,9 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
     """
     
     def initialize(self):
-        self.options.declare('n_points')
         self.options.declare('n_dlcs')
     
     def setup(self):
-        n_points = self.options['n_points']
         n_dlcs   = self.options['n_dlcs']
 
         self.add_discrete_input('upwind', True)
@@ -1065,10 +1063,10 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         self.add_output('bedplate_rotation', val=0.0, units='rad')
         self.add_output('base_F', val=np.zeros((3, n_dlcs)), units='N')
         self.add_output('base_M', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_output('bedplate_axial_stress', np.zeros((n_points+4, n_dlcs)), units='Pa')
-        self.add_output('bedplate_shear_stress', np.zeros((n_points+4, n_dlcs)), units='Pa')
-        self.add_output('bedplate_bending_stress', np.zeros((n_points+4, n_dlcs)), units='Pa')
-        self.add_output('constr_bedplate_vonmises', np.zeros((n_points+4, n_dlcs)))
+        self.add_output('bedplate_axial_stress', np.zeros((22, n_dlcs)), units='Pa')
+        self.add_output('bedplate_shear_stress', np.zeros((22, n_dlcs)), units='Pa')
+        self.add_output('bedplate_bending_stress', np.zeros((22, n_dlcs)), units='Pa')
+        self.add_output('constr_bedplate_vonmises', np.zeros((22, n_dlcs)))
         self.add_output('constr_mb1_defl', val=np.zeros(n_dlcs))
         self.add_output('constr_mb2_defl', val=np.zeros(n_dlcs))
 
@@ -1218,7 +1216,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        #myframe.write('myframe.3dd') # Debugging
+        myframe.write('myframe4.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
         
         # Loop over DLCs and append to outputs
