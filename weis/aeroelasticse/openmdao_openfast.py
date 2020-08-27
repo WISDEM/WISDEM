@@ -210,8 +210,11 @@ class FASTLoadCases(ExplicitComponent):
         self.spar_cap_ss_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
         self.spar_cap_ps_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
+        monopile     = self.options['modeling_options']['flags']['monopile']
         n_height_tow = self.options['modeling_options']['tower']['n_height']
-        nFull        = get_nfull(self.options['modeling_options']['tower']['n_height'])
+        n_height_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_height']
+        n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
+        nFull        = get_nfull(n_height)
         N_beam       = (nFull-1)*2
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(self.options['modeling_options']['blade']['n_freq']/2)
@@ -246,8 +249,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('mass_den',         val=np.zeros(N_beam),         units='kg/m',   desc='sectional mass per unit length')
         self.add_input('foreaft_stff',     val=np.zeros(N_beam),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
         self.add_input('sideside_stff',    val=np.zeros(N_beam),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
-        self.add_input('tower_section_height', val=np.zeros(n_height_tow-1), units='m',      desc='parameterized section heights along cylinder')
-        self.add_input('tower_outer_diameter', val=np.zeros(n_height_tow),   units='m',      desc='cylinder diameter at corresponding locations')
+        self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
+        self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
 
         # DriveSE quantities
         self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
@@ -342,9 +345,18 @@ class FASTLoadCases(ExplicitComponent):
         self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
         self.debug_level         = FASTpref['analysis_settings']['debug_level']
         self.FAST_ver            = FASTpref['file_management']['FAST_ver']
-        self.FAST_exe            = os.path.abspath(FASTpref['file_management']['FAST_exe'])
-        self.FAST_directory      = os.path.abspath(FASTpref['file_management']['FAST_directory'])
-        self.Turbsim_exe         = os.path.abspath(FASTpref['file_management']['Turbsim_exe'])
+        if os.path.isabs(FASTpref['file_management']['FAST_exe']):
+            self.FAST_exe = FASTpref['file_management']['FAST_exe']
+        else:
+            self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_exe'])
+        if os.path.isabs(FASTpref['file_management']['FAST_directory']):
+            self.FAST_directory = FASTpref['file_management']['FAST_directory']
+        else:
+            self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_directory'])
+        if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
+            self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
+        else:
+            self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['Turbsim_exe'])
         self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()

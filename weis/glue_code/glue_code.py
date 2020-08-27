@@ -15,7 +15,7 @@ from weis.control.dac import RunXFOIL
 from wisdem.servose.servose import ServoSE, NoStallConstraint
 from weis.control.tune_rosco import ServoSE_ROSCO
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
-from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains, RunFrame3DD
+from weis.aeroelasticse.rotor_loads_defl_strainsWEIS import RotorLoadsDeflStrainsWEIS
 from wisdem.glue_code.gc_RunTools import Convergence_Trends_Opt
 from weis.glue_code.gc_RunTools import Outputs_2_Screen
 
@@ -76,13 +76,13 @@ class WT_RNTA(om.Group):
     
         if modeling_options['Analysis_Flags']['OpenFAST']:
             self.add_subsystem('modes_elastodyn',   ModesElastoDyn(modeling_options = modeling_options))
-            self.add_subsystem('freq_rotor',        RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=True))
+            self.add_subsystem('freq_rotor',        RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options, freq_run=True))
             #if modeling_options['tower']['run_towerse']:
             self.add_subsystem('freq_tower',        TowerSE(modeling_options=modeling_options))
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options)) # Aero analysis
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
 
-        self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
+        self.add_subsystem('rlds',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         
         if modeling_options['Analysis_Flags']['DriveSE']:
             self.add_subsystem('drivese',   DriveSE(debug=False,
@@ -328,8 +328,8 @@ class WT_RNTA(om.Group):
                 self.connect('env.mu_water',                     'freq_tower.mu_water')                    
                 self.connect('env.hsig_wave',                    'freq_tower.hsig_wave')                    
                 self.connect('env.Tsig_wave',                    'freq_tower.Tsig_wave')                    
-                self.connect('env.G_soil',                       'freq_tower.soil.G')                   
-                self.connect('env.nu_soil',                      'freq_tower.soil.nu')                    
+                self.connect('env.G_soil',                       'freq_tower.G_soil')                   
+                self.connect('env.nu_soil',                      'freq_tower.nu_soil')                    
                 self.connect('monopile.diameter',                'freq_tower.monopile_outer_diameter_in')
                 self.connect('monopile.height',                  'freq_tower.monopile_height')
                 self.connect('monopile.s',                       'freq_tower.monopile_s')
@@ -339,7 +339,7 @@ class WT_RNTA(om.Group):
                 self.connect('monopile.transition_piece_height', 'freq_tower.transition_piece_height')
                 self.connect('monopile.transition_piece_mass',   'freq_tower.transition_piece_mass')
                 self.connect('monopile.gravity_foundation_mass', 'freq_tower.gravity_foundation_mass')
-                self.connect('monopile.suctionpile_depth',       ['freq_tower.suctionpile_depth','freq_tower.soil.depth'])
+                self.connect('monopile.suctionpile_depth',       'freq_tower.suctionpile_depth')
                 self.connect('monopile.suctionpile_depth_diam_ratio', 'freq_tower.suctionpile_depth_diam_ratio')
 
             self.connect('assembly.r_blade',               ['freq_rotor.r',            'sse_tune.r'])
@@ -378,22 +378,22 @@ class WT_RNTA(om.Group):
             self.connect('freq_rotor.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
             self.connect('nacelle.generator_efficiency',    'sse_tune.tune_rosco.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
-            self.connect('control.max_pitch',               'sse_tune.tune_rosco.max_pitch') 
-            self.connect('control.min_pitch',               'sse_tune.tune_rosco.min_pitch')
+            self.connect('tune_rosco_ivc.max_pitch',        'sse_tune.tune_rosco.max_pitch') 
+            self.connect('tune_rosco_ivc.min_pitch',        'sse_tune.tune_rosco.min_pitch')
             self.connect('control.max_pitch_rate' ,         'sse_tune.tune_rosco.max_pitch_rate')
             self.connect('control.max_torque_rate' ,        'sse_tune.tune_rosco.max_torque_rate')
-            self.connect('control.vs_minspd',               'sse_tune.tune_rosco.vs_minspd') 
-            self.connect('control.ss_vsgain',               'sse_tune.tune_rosco.ss_vsgain') 
-            self.connect('control.ss_pcgain',               'sse_tune.tune_rosco.ss_pcgain') 
-            self.connect('control.ps_percent',              'sse_tune.tune_rosco.ps_percent') 
-            self.connect('control.PC_omega',                'sse_tune.tune_rosco.PC_omega')
-            self.connect('control.PC_zeta',                 'sse_tune.tune_rosco.PC_zeta')
-            self.connect('control.VS_omega',                'sse_tune.tune_rosco.VS_omega')
-            self.connect('control.VS_zeta',                 'sse_tune.tune_rosco.VS_zeta')
-            self.connect('blade.dac_te_flaps.delta_max_pos','sse_tune.tune_rosco.delta_max_pos')
+            self.connect('tune_rosco_ivc.vs_minspd',        'sse_tune.tune_rosco.vs_minspd') 
+            self.connect('tune_rosco_ivc.ss_vsgain',        'sse_tune.tune_rosco.ss_vsgain') 
+            self.connect('tune_rosco_ivc.ss_pcgain',        'sse_tune.tune_rosco.ss_pcgain') 
+            self.connect('tune_rosco_ivc.ps_percent',       'sse_tune.tune_rosco.ps_percent') 
+            self.connect('tune_rosco_ivc.PC_omega',         'sse_tune.tune_rosco.PC_omega')
+            self.connect('tune_rosco_ivc.PC_zeta',          'sse_tune.tune_rosco.PC_zeta')
+            self.connect('tune_rosco_ivc.VS_omega',         'sse_tune.tune_rosco.VS_omega')
+            self.connect('tune_rosco_ivc.VS_zeta',          'sse_tune.tune_rosco.VS_zeta')
+            self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['servose']['Flp_Mode'] > 0:
-                self.connect('control.Flp_omega',           'sse_tune.tune_rosco.Flp_omega')
-                self.connect('control.Flp_zeta',            'sse_tune.tune_rosco.Flp_zeta')
+                self.connect('tune_rosco_ivc.Flp_omega',    'sse_tune.tune_rosco.Flp_omega')
+                self.connect('tune_rosco_ivc.Flp_zeta',     'sse_tune.tune_rosco.Flp_zeta')
                 
         elif modeling_options['Analysis_Flags']['OpenFAST']==True and modeling_options['Analysis_Flags']['ServoSE']==False:
             exit("ERROR: WISDEM does not support openfast without the tuning of ROSCO")
@@ -805,9 +805,9 @@ class WindPark(om.Group):
         if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
             self.connect('aeroelastic.My_std',      'outputs_2_screen.My_std')
             self.connect('aeroelastic.flp1_std',    'outputs_2_screen.flp1_std')
-            self.connect('control.PC_omega',        'outputs_2_screen.PC_omega')
-            self.connect('control.PC_zeta',         'outputs_2_screen.PC_zeta')
-            self.connect('control.VS_omega',        'outputs_2_screen.VS_omega')
-            self.connect('control.VS_zeta',         'outputs_2_screen.VS_zeta')
-            self.connect('control.Flp_omega',       'outputs_2_screen.Flp_omega')
-            self.connect('control.Flp_zeta',        'outputs_2_screen.Flp_zeta')
+            self.connect('tune_rosco_ivc.PC_omega',        'outputs_2_screen.PC_omega')
+            self.connect('tune_rosco_ivc.PC_zeta',         'outputs_2_screen.PC_zeta')
+            self.connect('tune_rosco_ivc.VS_omega',        'outputs_2_screen.VS_omega')
+            self.connect('tune_rosco_ivc.VS_zeta',         'outputs_2_screen.VS_zeta')
+            self.connect('tune_rosco_ivc.Flp_omega',       'outputs_2_screen.Flp_omega')
+            self.connect('tune_rosco_ivc.Flp_zeta',        'outputs_2_screen.Flp_zeta')

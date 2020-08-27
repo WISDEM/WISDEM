@@ -1,7 +1,7 @@
 import numpy as np
 import os, sys, time
 import openmdao.api as om
-from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPython
+from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from weis.glue_code.glue_code         import WindPark
 from wisdem.commonse.mpi_tools        import MPI
@@ -14,7 +14,7 @@ if MPI:
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options):
     # Load all yaml inputs and validate (also fills in defaults)
-    wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
+    wt_initial = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
@@ -530,6 +530,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options):
         if (not MPI) or (MPI and rank == 0):
             # Save data coming from openmdao to an output yaml file
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
+            wt_initial.update_ontology_control(wt_opt)
             wt_initial.write_ontology(wt_opt, froot_out)
             
             # Save data to numpy and matlab arrays
