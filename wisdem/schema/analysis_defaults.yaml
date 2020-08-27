@@ -71,7 +71,6 @@ constraints:
       max:  4000.e-6
     tip_deflection:
       flag: False
-      ratio: 0.8
     rail_transport:
       flag: True
       8_axle: True

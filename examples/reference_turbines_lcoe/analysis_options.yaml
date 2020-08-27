@@ -72,7 +72,6 @@ constraints:
       max:  3500.e-6  # Value of maximum strains [-]
     tip_deflection:
       flag: False     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
-      ratio: 0.8
     rail_transport:
       flag: True
       8_axle: False

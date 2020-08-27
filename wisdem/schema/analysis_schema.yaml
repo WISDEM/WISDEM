@@ -257,11 +257,6 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            ratio:
-                                type: number
-                                default: 0.8
-                                minimum: 0.0
-                                maximum: 2.0
                     rail_transport:
                         type: object
                         default: {}
