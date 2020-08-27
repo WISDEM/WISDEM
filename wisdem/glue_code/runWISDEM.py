@@ -239,7 +239,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
 
             if blade_constraints['tip_deflection']['flag']:
                 if blade_opt_options['structure']['spar_cap_ss']['flag'] or blade_opt_options['structure']['spar_cap_ps']['flag']:
-                    wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= 1.0)
+                    wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= blade_constraints['tip_deflection']['ratio'])
                 else:
                     print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
                 
