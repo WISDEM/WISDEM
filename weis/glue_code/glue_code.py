@@ -33,7 +33,7 @@ class WT_RNTA(om.Group):
         
         dac_ivc = om.IndepVarComp()
         n_te_flaps = modeling_options['blade']['n_te_flaps']
-        dac_ivc.add_output('te_flap_ext', val = np.ones(n_te_flaps))
+        dac_ivc.add_output('te_flap_ext',   val = np.ones(n_te_flaps))
         dac_ivc.add_output('te_flap_start', val=np.zeros(n_te_flaps),               desc='1D array of the start positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
         dac_ivc.add_output('te_flap_end',   val=np.zeros(n_te_flaps),               desc='1D array of the end positions along blade span of the trailing edge flap(s). Only values between 0 and 1 are meaningful.')
         dac_ivc.add_output('chord_start',   val=np.zeros(n_te_flaps),               desc='1D array of the positions along chord where the trailing edge flap(s) start. Only values between 0 and 1 are meaningful.')
@@ -94,6 +94,10 @@ class WT_RNTA(om.Group):
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
             
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['general']['verbosity']))
+
+        # Connections to blade 
+        self.connect('dac_ivc.te_flap_end',             'blade.outer_shape_bem.span_end')
+        self.connect('dac_ivc.te_flap_ext',             'blade.outer_shape_bem.span_ext')
 
         # Conncetions to ccblade
         self.connect('blade.pa.chord_param',            'ccblade.chord')
