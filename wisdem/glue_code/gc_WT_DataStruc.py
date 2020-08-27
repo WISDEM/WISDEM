@@ -301,6 +301,9 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         self.add_input('pitch_axis_yaml',  val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_input('ref_axis_yaml',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
 
+        self.add_input('span_end',       val=0.0,                              desc='1D array of the positions along blade span where something (a DAC device?) starts and we want a grid point. Only values between 0 and 1 are meaningful.')
+        self.add_input('span_ext',       val=0.0,                              desc='1D array of the extensions along blade span where something (a DAC device?) lives and we want a grid point. Only values between 0 and 1 are meaningful.')
+
         self.add_output('s',             val=np.zeros(n_span),                 desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
         self.add_output('chord',         val=np.zeros(n_span),    units='m',   desc='1D array of the chord values defined along blade span.')
         self.add_output('twist',         val=np.zeros(n_span),    units='rad', desc='1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).')
@@ -312,11 +315,48 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         
     def compute(self, inputs, outputs):
         
-        outputs['s']            = inputs['s_default']
-        outputs['chord']        = inputs['chord_yaml']
-        outputs['twist']        = inputs['twist_yaml']
-        outputs['pitch_axis']   = inputs['pitch_axis_yaml']
-        outputs['ref_axis']     = inputs['ref_axis_yaml']
+        # If devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
+        if inputs['span_end'] > 0:
+            nd_span_orig = np.linspace(0., 1.,self.n_span)
+
+            chord_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['chord_yaml'])
+            twist_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['twist_yaml'])
+            pitch_axis_orig = np.interp(nd_span_orig, inputs['s_default'], inputs['pitch_axis_yaml'])
+            ref_axis_orig   = np.zeros((self.n_span, 3))
+            ref_axis_orig[:, 0] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 0])
+            ref_axis_orig[:, 1] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 1])
+            ref_axis_orig[:, 2] = np.interp(nd_span_orig,inputs['s_default'],inputs['ref_axis_yaml'][:, 2])
+
+            outputs['s'] = copy.copy(nd_span_orig)
+
+            # Account for start and end positions
+            if inputs['span_end'] >= 0.98:
+                flap_start = 0.98 - inputs['span_ext']
+                flap_end = 0.98
+                print('WARNING: span_end point reached limits and was set to r/R = 0.98')
+            else:
+                flap_start = inputs['span_end'] - inputs['span_ext']
+                flap_end = inputs['span_end']
+
+            idx_flap_start = np.where(np.abs(nd_span_orig - flap_start) == (np.abs(nd_span_orig - flap_start)).min())[0][0]
+            idx_flap_end = np.where(np.abs(nd_span_orig - flap_end) == (np.abs(nd_span_orig - flap_end)).min())[0][0]
+            if idx_flap_start == idx_flap_end:
+                idx_flap_end += 1
+            outputs['s'][idx_flap_start] = flap_start
+            outputs['s'][idx_flap_end] = flap_end
+            outputs['chord'] = np.interp(outputs['s'], nd_span_orig, chord_orig)
+            outputs['twist'] = np.interp(outputs['s'], nd_span_orig, twist_orig)
+            outputs['pitch_axis'] = np.interp(outputs['s'], nd_span_orig, pitch_axis_orig)
+
+            outputs['ref_axis'][:, 0] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 0])
+            outputs['ref_axis'][:, 1] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 1])
+            outputs['ref_axis'][:, 2] = np.interp(outputs['s'],nd_span_orig, ref_axis_orig[:, 2])
+        else:
+            outputs['s']            = inputs['s_default']
+            outputs['chord']        = inputs['chord_yaml']
+            outputs['twist']        = inputs['twist_yaml']
+            outputs['pitch_axis']   = inputs['pitch_axis_yaml']
+            outputs['ref_axis']     = inputs['ref_axis_yaml']
 
         outputs['length']   = arc_length(outputs['ref_axis'])[-1]
         outputs['length_z'] = outputs['ref_axis'][:,2][-1]
