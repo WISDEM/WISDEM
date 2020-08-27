@@ -401,6 +401,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['control']['VS_zeta']  = float(wt_opt['control.VS_zeta'])
             self.wt_init['control']['Flp_omega']= float(wt_opt['control.Flp_omega'])
             self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
+            self.wt_init['control']['IPC_Ki1p'] = float(wt_opt['control.IPC_Ki1p'])
 
         # Write yaml with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)

@@ -205,7 +205,7 @@ class TuneROSCO(ExplicitComponent):
         if self.modeling_options['servose']['Flp_Mode'] > 0:
             self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
-
+        self.add_input('IPC_Ki1p',            val=0.0,            units='rad/(N*m)',           desc='Individual pitch controller 1p gain')
         # Outputs for constraints and optimizations
         self.add_output('Flp_Kp',           val=0.0,            units='rad',        desc='Flap control proportional gain')
         self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
@@ -352,6 +352,7 @@ class TuneROSCO(ExplicitComponent):
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PC_GS_KI'] = controller.pc_gain_schedule.Ki
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PC_MaxPit'] = controller.max_pitch
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PC_MinPit'] = controller.min_pitch
+        self.modeling_options['openfast']['fst_vt']['DISCON_in']['IPC_Ki'] = inputs['IPC_Ki1p'][0]
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['VS_MinOMSpd'] = controller.vs_minspd
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['VS_Rgn2K'] = controller.vs_rgn2K
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['VS_RefSpd'] = controller.vs_refspd

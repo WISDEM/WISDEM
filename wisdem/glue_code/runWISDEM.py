@@ -292,6 +292,11 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
                                                                 upper=control_opt_options['servo']['torque_control']['omega_max'])
                 wt_opt.model.add_design_var('control.VS_zeta', lower=control_opt_options['servo']['torque_control']['zeta_min'], 
                                                                upper=control_opt_options['servo']['torque_control']['zeta_max'])
+            if control_opt_options['servo']['ipc_control']['flag']:
+                wt_opt.model.add_design_var('control.IPC_Ki1p', lower=control_opt_options['servo']['ipc_control']['Ki_min'],
+                                                                upper=control_opt_options['servo']['ipc_control']['Ki_max'],
+                                                                ref=1e-7)
+
             if 'flap_control' in control_opt_options['servo']:
                 if control_opt_options['servo']['flap_control']['flag']:
                     wt_opt.model.add_design_var('control.Flp_omega', lower=control_opt_options['servo']['flap_control']['omega_min'], 

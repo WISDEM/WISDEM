@@ -357,6 +357,7 @@ class WT_RNTA(om.Group):
             self.connect('control.PC_zeta',                 'sse_tune.tune_rosco.PC_zeta')
             self.connect('control.VS_omega',                'sse_tune.tune_rosco.VS_omega')
             self.connect('control.VS_zeta',                 'sse_tune.tune_rosco.VS_zeta')
+            self.connect('control.IPC_Ki1p',                'sse_tune.tune_rosco.IPC_Ki1p')
             self.connect('blade.dac_te_flaps.delta_max_pos','sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['servose']['Flp_Mode'] > 0:
                 self.connect('control.Flp_omega',           'sse_tune.tune_rosco.Flp_omega')
@@ -778,3 +779,4 @@ class WindPark(om.Group):
             self.connect('control.VS_zeta',         'outputs_2_screen.VS_zeta')
             self.connect('control.Flp_omega',       'outputs_2_screen.Flp_omega')
             self.connect('control.Flp_zeta',        'outputs_2_screen.Flp_zeta')
+            self.connect('control.IPC_Ki1p',        'outputs_2_screen.IPC_Ki1p')

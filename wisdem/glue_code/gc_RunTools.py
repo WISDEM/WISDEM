@@ -53,18 +53,19 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.options.declare('opt_options')
 
     def setup(self):
-        self.add_input('aep', val=0.0, units = 'GW * h')
-        self.add_input('blade_mass', val=0.0, units = 'kg')
-        self.add_input('lcoe', val=0.0, units = 'USD/MW/h')
-        self.add_input('DEL_RootMyb', val=0.0, units = 'N*m')
-        self.add_input('DEL_TwrBsMyt', val=0.0, units = 'N*m')
-        self.add_input('PC_omega', val=0.0, units = 'rad/s')
-        self.add_input('PC_zeta', val=0.0)
-        self.add_input('VS_omega', val=0.0, units='rad/s')
-        self.add_input('VS_zeta', val=0.0)
-        self.add_input('Flp_omega', val=0.0, units='rad/s')
-        self.add_input('Flp_zeta', val=0.0)
-        self.add_input('tip_deflection', val=0.0, units='m')
+        self.add_input('aep',           val=0.0, units = 'GW * h')
+        self.add_input('blade_mass',    val=0.0, units = 'kg')
+        self.add_input('lcoe',          val=0.0, units = 'USD/MW/h')
+        self.add_input('DEL_RootMyb',   val=0.0, units = 'N*m')
+        self.add_input('DEL_TwrBsMyt',  val=0.0, units = 'N*m')
+        self.add_input('PC_omega',      val=0.0, units = 'rad/s')
+        self.add_input('PC_zeta',       val=0.0)
+        self.add_input('VS_omega',      val=0.0, units='rad/s')
+        self.add_input('VS_zeta',       val=0.0)
+        self.add_input('Flp_omega',     val=0.0, units='rad/s')
+        self.add_input('Flp_zeta',      val=0.0)
+        self.add_input('IPC_Ki1p',      val=0.0, units='rad/(N*m)')
+        self.add_input('tip_deflection',val=0.0, units='m')
 
     def compute(self, inputs, outputs):
         print('########################################')
@@ -82,6 +83,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
                 print('Torque PI gain inputs: vs_omega = {:2.3f}, vs_zeta = {:2.3f}'.format(inputs['VS_omega'][0], inputs['VS_zeta'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['flap_control']['flag'] == True:
                 print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.3f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))
+                print('Max DEL(RootMyb):  {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
+            if self.options['opt_options']['optimization_variables']['control']['servo']['ipc_control']['flag'] == True:
+                print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Ki1p'][0]))
                 print('Max DEL(RootMyb):  {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
         
         print('########################################')
