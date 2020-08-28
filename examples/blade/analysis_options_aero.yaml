@@ -1,5 +1,5 @@
 general:
-    folder_output: /Users/pbortolo/work/1_wisdem/wisdem/examples/blade/outputs_aero2
+    folder_output: outputs_aero
     fname_output: blade_out
 optimization_variables:
   blade:
