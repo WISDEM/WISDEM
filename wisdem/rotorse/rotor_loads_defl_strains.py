@@ -775,8 +775,7 @@ class RotorLoadsDeflStrains(Group):
         promoteListAeroLoads =  ['r', 'theta', 'chord', 'Rtip', 'Rhub', 'hub_height', 'precone', 'tilt', 'airfoils_aoa', 'airfoils_Re', 'airfoils_cl', 'airfoils_cd', 'airfoils_cm', 'nBlades', 'rho', 'mu', 'Omega_load','pitch_load']
         # self.add_subsystem('aero_rated',        CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
 
-        if not modeling_options['Analysis_Flags']['OpenFAST'] or modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 1 or freq_run:
-            self.add_subsystem('aero_gust',         CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
+        self.add_subsystem('aero_gust',         CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # self.add_subsystem('aero_storm_1yr',    CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # self.add_subsystem('aero_storm_50yr',   CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # Add centrifugal and gravity loading to aero loading
@@ -790,8 +789,7 @@ class RotorLoadsDeflStrains(Group):
         promoteListFrame3DD = ['x_az','y_az','z_az','theta','r','A','EA','EIxx','EIyy','EIxy','GJ','rhoA','rhoJ','x_ec','y_ec','xu_strain_spar','xl_strain_spar','yu_strain_spar','yl_strain_spar','xu_strain_te','xl_strain_te','yu_strain_te','yl_strain_te']
         self.add_subsystem('frame',     RunFrame3DD(modeling_options = modeling_options),      promotes=promoteListFrame3DD)
         self.add_subsystem('tip_pos',   TipDeflection(),                                  promotes=['tilt','pitch_load'])
-        if not modeling_options['Analysis_Flags']['OpenFAST'] or modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 1 or freq_run:
-            self.add_subsystem('aero_hub_loads', AeroHubLoads(modeling_options = modeling_options), promotes = promoteListAeroLoads)
+        self.add_subsystem('aero_hub_loads', AeroHubLoads(modeling_options = modeling_options), promotes = promoteListAeroLoads)
         self.add_subsystem('constr',    DesignConstraints(modeling_options = modeling_options, opt_options = opt_options))
 
         # if modeling_options['rotorse']['FatigueMode'] > 0:
@@ -799,10 +797,9 @@ class RotorLoadsDeflStrains(Group):
         #     self.add_subsystem('fatigue', BladeFatigue(modeling_options = modeling_options, opt_options = opt_options), promotes=promoteListFatigue)
 
         # Aero loads to total loads
-        if not modeling_options['Analysis_Flags']['OpenFAST'] or modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 1 or freq_run:
-            self.connect('aero_gust.loads_Px',      'tot_loads_gust.aeroloads_Px')
-            self.connect('aero_gust.loads_Py',      'tot_loads_gust.aeroloads_Py')
-            self.connect('aero_gust.loads_Pz',      'tot_loads_gust.aeroloads_Pz')
+        self.connect('aero_gust.loads_Px',      'tot_loads_gust.aeroloads_Px')
+        self.connect('aero_gust.loads_Py',      'tot_loads_gust.aeroloads_Py')
+        self.connect('aero_gust.loads_Pz',      'tot_loads_gust.aeroloads_Pz')
         # self.connect('aero_rated.loads_Px',     'tot_loads_rated.aeroloads_Px')
         # self.connect('aero_rated.loads_Py',     'tot_loads_rated.aeroloads_Py')
         # self.connect('aero_rated.loads_Pz',     'tot_loads_rated.aeroloads_Pz')

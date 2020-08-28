@@ -22,7 +22,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=False):
         array_dict = {}
         for k in range(len(var_dict)):
             unit_str = var_dict[k][1]['units']
-            if unit_str is None:
+            if unit_str is None or unit_str=='Unavailable':
                 unit_str = ''
             elif len(unit_str) > 0:
                 unit_str = '_' + unit_str

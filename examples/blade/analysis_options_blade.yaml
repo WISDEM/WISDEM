@@ -44,39 +44,11 @@ optimization_variables:
         n_opt: 8        # Number of control points along blade span
         min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
         max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
-    dac:
-      te_flap_ext:
-        flag: False
-        min_ext: 0.0
-        max_ext: 0.3
-      te_flap_end:
-        flag: False
-        min_end: 0.3
-        max_end: 1.0
   control:
     tsr:
       flag: False     # Flag to optimize the rotor tip speed ratio
       min_gain: 0.9   # Nondimensional lower bound
       max_gain: 1.1   # Nondimensional upper bound
-    servo:
-      pitch_control:
-        flag: False
-        omega_min: 0.1
-        omega_max: 0.7
-        zeta_min: 0.4
-        zeta_max: 1.5
-      torque_control:
-        flag: False
-        omega_min: 0.1
-        omega_max: 0.7
-        zeta_min: 0.4
-        zeta_max: 1.5
-      flap_control:
-        flag: False
-        omega_min: 2.7
-        omega_max: 3.5
-        zeta_min: 0.7
-        zeta_max: 1.3
 
   tower:
     outer_diameter:
@@ -100,6 +72,7 @@ constraints:
       max:  3500.e-6  # Value of maximum strains [-]
     tip_deflection:
       flag: True     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
+      ratio: 0.8
     rail_transport:
       flag: False
       8_axle: False
@@ -148,14 +121,9 @@ constraints:
       flag: False
       lower_bound: 0.13
       upper_bound: 0.40
-  control:
-    flap_control:
-      flag: False
-      min: 0.0
-      max: 0.1
 
 driver:
-    tol: 1.e-2            # Optimality tolerance
+    tol: 1.e-3            # Optimality tolerance
     #max_major_iter: 10    # Maximum number of major design iterations
     #max_minor_iter: 100   # Maximum number of minor design iterations
     max_iter: 2   # Maximum number of minor design iterations
