@@ -15,19 +15,20 @@ class TestExamples(unittest.TestCase):
     def testAllExamplesRun(self):
         for f in all_examples:
             try:
-                # Go to location due to relative path use for airfoil files
-                print(f)
-                basepath = os.path.dirname(os.path.realpath(f))
-                os.chdir(basepath)
+                if 'design_compare.py' not in str(f):
+                    # Go to location due to relative path use for airfoil files
+                    print(f)
+                    basepath = os.path.dirname(os.path.realpath(f))
+                    os.chdir(basepath)
 
-                # Get script/module name
-                froot = os.path.splitext(os.path.basename(f))[0]
+                    # Get script/module name
+                    froot = os.path.splitext(os.path.basename(f))[0]
 
-                # Use dynamic import capabilities
-                # https://www.blog.pythonlibrary.org/2016/05/27/python-201-an-intro-to-importlib/
-                spec = importlib.util.spec_from_file_location(froot, os.path.realpath(f))
-                mod  = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
+                    # Use dynamic import capabilities
+                    # https://www.blog.pythonlibrary.org/2016/05/27/python-201-an-intro-to-importlib/
+                    spec = importlib.util.spec_from_file_location(froot, os.path.realpath(f))
+                    mod  = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)
             except:
                 self.assertTrue(False)
  
