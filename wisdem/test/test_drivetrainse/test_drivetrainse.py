@@ -1,5 +1,5 @@
 import unittest
-import wisdem.drivetrainse.direct_drivese as dd
+from wisdem.drivetrainse.drivetrain import DrivetrainSE
 import openmdao.api as om
 import numpy as np
 
@@ -65,7 +65,7 @@ class TestGroup(unittest.TestCase):
         
         npts = 10
         prob = om.Problem()
-        prob.model = dd.DirectDriveSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True, direct_drive=True)
+        prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True, direct_drive=True)
         prob.setup()
         prob = set_common(prob)
 
@@ -135,7 +135,7 @@ class TestGroup(unittest.TestCase):
         
         npts = 10
         prob = om.Problem()
-        prob.model = dd.DirectDriveSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=False, direct_drive=True)
+        prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=False, direct_drive=True)
         prob.setup()
         prob = set_common(prob)
 
@@ -168,7 +168,7 @@ class TestGroup(unittest.TestCase):
         
         npts = 10
         prob = om.Problem()
-        prob.model = dd.DirectDriveSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True, direct_drive=False)
+        prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True, direct_drive=False)
         prob.setup()
         prob = set_common(prob)
 
@@ -262,7 +262,7 @@ class TestGroup(unittest.TestCase):
         
         npts = 10
         prob = om.Problem()
-        prob.model = dd.DirectDriveSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=False, direct_drive=False)
+        prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=False, direct_drive=False)
         prob.setup()
         prob = set_common(prob)
 

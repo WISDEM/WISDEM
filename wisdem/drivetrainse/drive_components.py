@@ -365,26 +365,20 @@ class MiscNacelleComponents(om.ExplicitComponent):
         Flag whether the design is upwind or downwind
     machine_rating : float, [kW]
         machine rating of the turbine
-    L_bedplate : float, [m]
-        Length of bedplate
     H_bedplate : float, [m]
         height of bedplate
     D_top : float, [m]
         Tower top outer diameter
     bedplate_mass : float, [kg]
         Bedplate mass
-    bedplate_cm : numpy array[3], [m]
-        Bedplate center of mass
     bedplate_I : numpy array[6], [kg*m**2]
         Bedplate mass moment of inertia about base
     R_generator : float, [m]
         Generatour outer diameter
     overhang : float, [m]
         Overhang of rotor from tower along x-axis in yaw-aligned c.s.
-    s_rotor : float, [m]
-        Generator rotor attachment to shaft s-coordinate
-    s_stator : float, [m]
-        Generator stator attachment to nose s-coordinate
+    cm_generator : float, [m]
+        Generator center of mass s-coordinate
     rho_fiberglass : float, [kg/m**3]
         material density of fiberglass
     
@@ -414,16 +408,13 @@ class MiscNacelleComponents(om.ExplicitComponent):
     def setup(self):
         self.add_discrete_input('upwind', True)
         self.add_input('machine_rating', 0.0, units='kW')
-        self.add_input('L_bedplate', 0.0, units='m')
         self.add_input('H_bedplate', 0.0, units='m')
         self.add_input('D_top', 0.0, units='m')
         self.add_input('bedplate_mass', 0.0, units='kg')
-        self.add_input('bedplate_cm', np.zeros(3), units='m')
         self.add_input('bedplate_I', np.zeros(6), units='kg*m**2')
         self.add_input('R_generator', 0.0, units='m')
         self.add_input('overhang', 0.0, units='m')
-        self.add_input('s_rotor', 0.0, units='m')
-        self.add_input('s_stator', 0.0, units='m')
+        self.add_input('generator_cm', 0.0, units='m')
         self.add_input('rho_fiberglass', 0.0, units='kg/m**3')
 
         self.add_output('hvac_mass', 0.0, units='kg')
@@ -441,16 +432,13 @@ class MiscNacelleComponents(om.ExplicitComponent):
         # Unpack inputs
         upwind      = discrete_inputs['upwind']
         rating      = float(inputs['machine_rating'])
-        L_bedplate  = float(inputs['L_bedplate'])
         H_bedplate  = float(inputs['H_bedplate'])
         D_bedplate  = float(inputs['D_top'])
         R_generator = float(inputs['R_generator'])
         m_bedplate  = float(inputs['bedplate_mass'])
-        cm_bedplate = inputs['bedplate_cm']
         I_bedplate  = inputs['bedplate_I']
         overhang    = float(inputs['overhang'])
-        s_rotor     = float(inputs['s_rotor'])
-        s_stator    = float(inputs['s_stator'])
+        s_generator = float(inputs['generator_cm'])
         rho_fiberglass = float(inputs['rho_fiberglass'])
 
         # For the nacelle cover, imagine a box from the bedplate to the hub in length and around the generator in width, height, with 10% margin in each dim
@@ -471,7 +459,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         
         # Regression based estimate on HVAC mass
         m_hvac       = 0.08 * rating
-        cm_hvac      = 0.5*(s_rotor + s_stator)
+        cm_hvac      = s_generator
         I_hvac       = m_hvac * (0.75*R_generator)**2
         outputs['hvac_mass'] = m_hvac
         outputs['hvac_cm']   = cm_hvac

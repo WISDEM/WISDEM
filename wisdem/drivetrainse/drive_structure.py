@@ -269,7 +269,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        myframe.write('myframe1.3dd') # Debugging
+        #myframe.write('myframe1.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
@@ -386,10 +386,10 @@ class HSS_Frame(om.ExplicitComponent):
         self.add_input('M_hub', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('gear_ratio', val=1.0)
         self.add_input('s_generator', val=0.0, units='m')
-        self.add_input('m_generator', val=0.0, units='kg')
-        self.add_input('I_generator', val=np.zeros(3), units='kg*m**2')
-        self.add_input('m_brake', val=0.0, units='kg')
-        self.add_input('I_brake', val=np.zeros(3), units='kg*m**2')
+        self.add_input('generator_mass', val=0.0, units='kg')
+        self.add_input('generator_I', val=np.zeros(3), units='kg*m**2')
+        self.add_input('brake_mass', val=0.0, units='kg')
+        self.add_input('brake_I', val=np.zeros(3), units='kg*m**2')
         self.add_input('E', val=0.0, units='Pa')
         self.add_input('G', val=0.0, units='Pa')
         self.add_input('rho', val=0.0, units='kg/m**3')
@@ -415,11 +415,11 @@ class HSS_Frame(om.ExplicitComponent):
         t_hss      = inputs['hss_wall_thickness']
 
         s_generator  = float(inputs['s_generator'])
-        m_generator  = float(inputs['m_generator'])
-        I_generator  = inputs['I_generator']
+        m_generator  = float(inputs['generator_mass'])
+        I_generator  = inputs['generator_I']
 
-        m_brake  = float(inputs['m_brake'])
-        I_brake  = inputs['I_brake']
+        m_brake  = float(inputs['brake_mass'])
+        I_brake  = inputs['brake_I']
         
         rho        = float(inputs['rho'])
         E          = float(inputs['E'])
@@ -500,7 +500,7 @@ class HSS_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        myframe.write('myframe2.3dd') # Debugging
+        #myframe.write('myframe2.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
@@ -837,7 +837,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        myframe.write('myframe3.3dd') # Debugging
+        #myframe.write('myframe3.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # ------------ Bedplate "curved beam" geometry for post-processing -------------
@@ -1216,7 +1216,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
             
-        myframe.write('myframe4.3dd') # Debugging
+        #myframe.write('myframe4.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
         
         # Loop over DLCs and append to outputs

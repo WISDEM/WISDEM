@@ -9,7 +9,7 @@ import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
 
         
-class DirectDriveSE(om.Group):
+class DrivetrainSE(om.Group):
     ''' 
     DirectDriveSE defines an OpenMDAO group that represents a wind turbine drivetrain without a gearbox and two main bearings.
     '''
@@ -81,11 +81,9 @@ class DirectDriveSE(om.Group):
             sivc.add_output('rotor_rpm',              0.0, units='rpm')
             sivc.add_output('rotor_torque',           0.0, units='N*m')
             sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
-            sivc.add_output('blade_mass',             0.0, units='kg')
+            sivc.add_output('blades_mass',             0.0, units='kg')
             sivc.add_output('F_hub',             np.zeros(3), units='N')
             sivc.add_output('M_hub',             np.zeros(3), units='N*m')
-            #sivc.add_output('blade_root_diameter',    0.0, units='m')
-            #sivc.add_output('blade_length',           0.0, units='m')
             #sivc.add_output('gearbox_efficiency',     0.0)
             #sivc.add_output('generator_efficiency',   0.0)
             sivc.add_output('machine_rating',         0.0, units='kW')
@@ -164,11 +162,11 @@ class DirectDriveSE(om.Group):
                 self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
                 nlbgs.options['maxiter'] = 3
         
-            
-if __name__ == '__main__':
+
+def direct_example():
     npts = 10
     prob = om.Problem()
-    prob.model = DirectDriveSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True)
+    prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True)
     prob.setup()
 
     prob['rotor_diameter'] = 206.
@@ -277,6 +275,150 @@ if __name__ == '__main__':
     prob['generator.rho_Copper']   = 8900.0        # copper density Kg/m3
     prob['generator.rho_PM']       = 7450.0        # typical density Kg/m3 of neodymium magnets
 
+    return prob
+
+
+def geared_example():
+        
+    npts = 10
+    prob = om.Problem()
+    prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True, direct_drive=False)
+    prob.setup()
+
+    prob['upwind'] = True
+
+    prob['L_12'] = 2.0
+    prob['L_h1'] = 1.0        
+    prob['overhang'] = 2.0
+    prob['drive_height'] = 4.875
+    prob['L_hss'] = 1.5
+    prob['L_generator'] = 1.25
+    prob['L_gearbox'] = 1.1
+    prob['tilt'] = 5.0
+        
+    prob['n_blades'] = 3
+    prob['rotor_rpm'] = 10.0
+    prob['rotor_diameter'] = 120.0
+    prob['machine_rating'] = 5e3
+    prob['D_top'] = 6.5
+
+    prob['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
+    prob['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))
+
+    prob['E'] = 210e9
+    prob['G'] = 80.8e9
+    prob['v'] = 0.3
+    prob['rho'] = 7850.
+    prob['sigma_y'] = 250e6
+    prob['gamma_f'] = 1.35
+    prob['gamma_m'] = 1.3
+    prob['gamma_n'] = 1.0
+    
+    myones = np.ones(5)
+    prob['lss_diameter'] = 2.3*myones
+    prob['lss_wall_thickness'] = 0.05*myones
+    myones = np.ones(3)
+    prob['hss_diameter'] = 2.0*myones
+    prob['hss_wall_thickness'] = 0.05*myones
+
+    prob['bedplate_flange_width'] = 1.5
+    prob['bedplate_flange_thickness'] = 0.05
+    #prob['bedplate_web_height'] = 1.0
+    prob['bedplate_web_thickness'] = 0.05
+
+    prob['planet_numbers'] = np.array([3, 3, 0])
+    prob['gear_configuration'] = 'eep'
+    prob['shaft_factor'] = 'normal'
+    prob['gear_ratio'] = 90.0
+
+    prob['pitch_system.blade_mass']       = 17000.
+    prob['pitch_system.BRFM']             = 1.e+6
+    prob['pitch_system.scaling_factor']   = 0.54
+    prob['pitch_system.rho']              = 7850.
+    prob['pitch_system.Xy']               = 371.e+6
+
+    prob['blade_root_diameter']           = 4.
+    prob['flange_t2shell_t']              = 4.
+    prob['flange_OD2hub_D']               = 0.5
+    prob['flange_ID2flange_OD']           = 0.8
+    prob['hub_shell.rho']                 = 7200.
+    prob['in2out_circ']                   = 1.2 
+    prob['hub_shell.max_torque']          = 30.e+6
+    prob['hub_shell.Xy']                  = 200.e+6
+    prob['stress_concentration']          = 2.5
+    prob['hub_shell.gamma']               = 2.0
+    prob['hub_shell.metal_cost']          = 3.00
+
+    prob['n_front_brackets']              = 3
+    prob['n_rear_brackets']               = 3
+    prob['clearance_hub_spinner']         = 0.5
+    prob['spin_hole_incr']                = 1.2
+    prob['spinner.gust_ws']               = 70
+    prob['spinner.gamma']                 = 1.5
+    prob['spinner.composite_Xt']          = 60.e6
+    prob['spinner.composite_SF']          = 1.5
+    prob['spinner.composite_rho']         = 1600.
+    prob['spinner.Xy']                    = 225.e+6
+    prob['spinner.metal_SF']              = 1.5
+    prob['spinner.metal_rho']             = 7850.
+    prob['spinner.composite_cost']        = 7.00
+    prob['spinner.metal_cost']            = 3.00
+    
+    prob['generator.Overall_eff']    = 93
+    prob['generator.rho_Fe']         = 7700.0
+    prob['generator.rho_Fes']        = 7850.0
+    prob['generator.rho_Copper']     = 8900.0
+    prob['generator.rho_PM']         = 7450.0
+    prob['generator.B_r']            = 1.2
+    prob['generator.E']              = 2e11
+    prob['generator.G']              = 79.3e9
+    prob['generator.P_Fe0e']         = 1.0
+    prob['generator.P_Fe0h']         = 4.0
+    prob['generator.S_N']            = -0.002
+    prob['generator.alpha_p']        = 0.5*np.pi*0.7
+    prob['generator.b_r_tau_r']      = 0.45
+    prob['generator.b_ro']           = 0.004
+    prob['generator.b_s_tau_s']      = 0.45
+    prob['generator.b_so']           = 0.004
+    prob['generator.cofi']           = 0.85
+    prob['generator.freq']           = 60
+    prob['generator.h_i']            = 0.001
+    prob['generator.h_sy0']          = 0.0
+    prob['generator.h_w']            = 0.005
+    prob['generator.k_fes']          = 0.9
+    prob['generator.k_s']            = 0.2
+    prob['generator.m']     = 3
+    prob['generator.mu_0']           = np.pi*4e-7
+    prob['generator.mu_r']           = 1.06
+    prob['generator.p']              = 3.0
+    prob['generator.phi']            = np.deg2rad(90)
+    prob['generator.ratio_mw2pp']    = 0.7
+    prob['generator.resist_Cu']      = 1.8e-8*1.4
+    prob['generator.sigma']          = 40e3
+    prob['generator.v']              = 0.3
+    prob['generator.y_tau_p']        = 1.0
+    prob['generator.y_tau_pr']       = 10. / 12
+    prob['generator.Gearbox_efficiency'] = 0.955
+    prob['generator.cofi']               = 0.9
+    prob['generator.y_tau_p']            = 12./15.
+    prob['generator.sigma']              = 21.5e3
+    prob['generator.rad_ag']             = 0.61
+    prob['generator.len_s']              = 0.49
+    prob['generator.h_s']                = 0.08
+    prob['generator.I_0']                = 40.0
+    prob['generator.B_symax']            = 1.3
+    prob['generator.S_Nmax']             = -0.2
+    prob['generator.h_0']                = 0.01
+    prob['generator.k_fillr']        = 0.55
+    prob['generator.k_fills']        = 0.65
+    prob['generator.q1']    = 5
+    prob['generator.q2']    = 4
+    
+    return prob
+
+if __name__ == '__main__':
+    #prob = direct_example()
+    prob = geared_example()
     prob.run_model()
 
     print('Pitch system mass: ' + str(prob['pitch_mass'][0]) + ' kg')
