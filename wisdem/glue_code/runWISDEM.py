@@ -14,7 +14,7 @@ if MPI:
     #from petsc4py import PETSc
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
-def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
+def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None):
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
@@ -355,6 +355,14 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options):
         wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
         wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
         wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
+        
+        # If the user provides values in this dict, they overwrite
+        # whatever values have been set by the yaml files.
+        # This is useful for performing black-box wrapped optimization without
+        # needing to modify the yaml files.
+        if overridden_values is not None:
+            for key in overridden_values:
+                wt_opt[key][:] = overridden_values[key]
 
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
