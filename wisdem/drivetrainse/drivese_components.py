@@ -753,7 +753,7 @@ class LowSpeedShaft4pt(object):
         self.diameter2 = self.D_med_a
 
         # calculate mass properties
-        downwind_location = np.array([self.gearbox_cm[0] - self.gearbox_length / 2., self.gearbox_cm[1], self.gearbox_cm[2]])
+        downwind_location = np.array([self.gearbox_cm[0] - self.gearbox_length[0] / 2., self.gearbox_cm[1], self.gearbox_cm[2]])
 
         mb1_cm = np.zeros(3)  # upwind
         mb1_cm[0] = downwind_location[0] - (self.L_mb_new + facewidth_med / 2) * cos(self.shaft_angle)
@@ -1368,11 +1368,11 @@ class Gearbox(object):
         self.gearbox_height = (0.015 * self.rotor_diameter)
         self.gearbox_diameter = (0.75 * self.gearbox_height)
 
-        cm0 = self.gearbox_input_cm
+        cm0 = self.gearbox_input_cm[0]
         cm1 = 0.0
         # TODO validate or adjust factor. origin is modified to be above
         # bedplate top
-        cm2 = 0.4 * self.gearbox_height
+        cm2 = 0.4 * self.gearbox_height[0]
         self.gearbox_cm = np.array([cm0, cm1, cm2])
 
         I0 = self.gearbox_mass * (self.gearbox_diameter ** 2) / 8 \
@@ -2418,7 +2418,7 @@ class RNASystemAdder(object):
             [rotor_mass] = get_rotor_mass(self.machine_rating,False)
 
         masses = np.array([rotor_mass, self.lss_mass, self.mb1_mass,self.mb2_mass,self.gearbox_mass,self.hss_mass,self.generator_mass])
-        cms = np.array([(-self.overhang), self.lss_cm[0], self.mb1_cm[0], self.mb2_cm[0], self.gearbox_cm[0], self.hss_cm[0], self.generator_cm[0]])
+        cms = np.array([(-self.overhang[0]), self.lss_cm[0], self.mb1_cm[0], self.mb2_cm[0], self.gearbox_cm[0], self.hss_cm[0], self.generator_cm[0]])
         
         self.RNA_mass = np.sum(masses)
         self.RNA_cm = np.sum(masses*cms)/np.sum(masses)
