@@ -54,8 +54,6 @@ class Gearbox(om.ExplicitComponent):
     ----------
     gear_configuration : string
         string that represents the configuration of the gearbox (stage number and types)
-    shaft_factor : string
-        normal or short shaft length
     n_planets : numpy array[3]
         number of planets in each stage
     gear_ratio : float
@@ -93,7 +91,7 @@ class Gearbox(om.ExplicitComponent):
         
     def setup(self):
         self.add_discrete_input('gear_configuration', val='eep')
-        self.add_discrete_input('shaft_factor', val='normal')
+        #self.add_discrete_input('shaft_factor', val='normal')
         self.add_discrete_input('planet_numbers', val=np.array([3, 3, 0]))
         self.add_input('gear_ratio', val=1.0)
         self.add_input('rotor_diameter', val=0.0, units='m')
@@ -115,7 +113,7 @@ class Gearbox(om.ExplicitComponent):
 
         # Unpack inputs
         config       = discrete_inputs['gear_configuration']
-        shaft_factor = discrete_inputs['shaft_factor']
+        #shaft_factor = discrete_inputs['shaft_factor']
         n_planets    = np.maximum(1.0, np.array(discrete_inputs['planet_numbers']))
         gear_ratio   = inputs['gear_ratio']
         D_rotor      = inputs['rotor_diameter']
@@ -186,7 +184,7 @@ class Gearbox(om.ExplicitComponent):
         K = np.mean([48.82/15216.504, 53.69/17401.453])
 
         # Shaft length factor
-        Kshaft = 1.0 if shaft_factor == 'normal' else 1.25
+        Kshaft = 1.0 #if shaft_factor == 'normal' else 1.25
 
         # All factors into the mass
         m_gearbox = K*Kshaft * vol.sum()

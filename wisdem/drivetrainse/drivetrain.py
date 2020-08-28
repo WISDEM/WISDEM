@@ -56,14 +56,13 @@ class DrivetrainSE(om.Group):
         ivc.add_output('bedplate_web_thickness', 0.0, units='m')
         ivc.add_discrete_output('planet_numbers', np.array([3, 3, 0]))
         ivc.add_discrete_output('gear_configuration', val='eep')
-        ivc.add_discrete_output('shaft_factor', val='normal')
+        #ivc.add_discrete_output('shaft_factor', val='normal')
         
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
         # Independent variables that may be duplicated at higher levels of aggregation
         if self.options['topLevelFlag']:
             sivc = om.IndepVarComp()
-            sivc.add_discrete_output('direct_drive', direct)
             sivc.add_discrete_output('upwind', True)
             sivc.add_discrete_output('n_blades', 3)
             sivc.add_output('tilt', 0.0, units='deg')
@@ -73,9 +72,6 @@ class DrivetrainSE(om.Group):
             sivc.add_output('sigma_y', 0.0, units='Pa')
             sivc.add_output('Xy', 0.0, units='Pa')
             sivc.add_output('rho', 0.0, units='kg/m**3')
-            sivc.add_output('gamma_f', 0.0)
-            sivc.add_output('gamma_m', 0.0)
-            sivc.add_output('gamma_n', 0.0)
             sivc.add_output('D_top',     0.0, units='m')
             sivc.add_output('rotor_diameter',         0.0, units='m')
             sivc.add_output('rotor_rpm',              0.0, units='rpm')
@@ -84,13 +80,13 @@ class DrivetrainSE(om.Group):
             sivc.add_output('blades_mass',             0.0, units='kg')
             sivc.add_output('F_hub',             np.zeros(3), units='N')
             sivc.add_output('M_hub',             np.zeros(3), units='N*m')
-            #sivc.add_output('gearbox_efficiency',     0.0)
+            sivc.add_output('gearbox_efficiency',     0.0)
             #sivc.add_output('generator_efficiency',   0.0)
             sivc.add_output('machine_rating',         0.0, units='kW')
             self.add_subsystem('sivc', sivc, promotes=['*'])
+        else:
+            self.add_subsystem('mat', DriveMaterials(), promotes=['*'])
 
-        
-        # select components
         self.add_subsystem('hub', Hub_System(), promotes=['*'])
         self.add_subsystem('gear', Gearbox(direct_drive=direct), promotes=['*'])
         
@@ -200,9 +196,6 @@ def direct_example():
     prob['v'] = 0.3
     prob['rho'] = 7850.
     prob['sigma_y'] = 250e6
-    prob['gamma_f'] = 1.35
-    prob['gamma_m'] = 1.3
-    prob['gamma_n'] = 1.0
     
     prob['pitch_system.blade_mass']       = 17000.
     prob['pitch_system.BRFM']             = 1.e+6
@@ -310,9 +303,6 @@ def geared_example():
     prob['v'] = 0.3
     prob['rho'] = 7850.
     prob['sigma_y'] = 250e6
-    prob['gamma_f'] = 1.35
-    prob['gamma_m'] = 1.3
-    prob['gamma_n'] = 1.0
     
     myones = np.ones(5)
     prob['lss_diameter'] = 2.3*myones
@@ -328,7 +318,7 @@ def geared_example():
 
     prob['planet_numbers'] = np.array([3, 3, 0])
     prob['gear_configuration'] = 'eep'
-    prob['shaft_factor'] = 'normal'
+    #prob['shaft_factor'] = 'normal'
     prob['gear_ratio'] = 90.0
 
     prob['pitch_system.blade_mass']       = 17000.
