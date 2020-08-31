@@ -147,7 +147,7 @@ class WindTurbineOntologyPython(object):
         # Drivetrain
         if self.modeling_options['flags']['nacelle']:
             if not 'nacelle' in self.modeling_options: self.modeling_options['nacelle'] = {}
-            self.modeling_options['nacelle']['direct'] = self.wt_init['assembly']['direct_drive']
+            self.modeling_options['nacelle']['direct'] = self.wt_init['assembly']['drivetrain'].lower() in ['direct','direct_drive','direct drive']
             if self.modeling_options['nacelle']['direct']:
                 self.modeling_options['nacelle']['n_height'] = len(self.wt_init['compoenent']['nacelle']['drivetrain']['bedplate_wall_thickness'])
         
@@ -331,9 +331,9 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['drivetrain']['uptilt']                    = float(wt_opt['nacelle.uptilt'])
                 self.wt_init['components']['nacelle']['drivetrain']['distance_tt_hub']           = float(wt_opt['nacelle.distance_tt_hub'])
                 self.wt_init['components']['nacelle']['drivetrain']['overhang']                  = float(wt_opt['nacelle.overhang'])
-                self.wt_init['components']['nacelle']['drivetrain']['distance_hub2mb']           = float(wt_opt['nacelle.distance_hub2mb'])
-                self.wt_init['components']['nacelle']['drivetrain']['distance_mb2mb']            = float(wt_opt['nacelle.distance_mb2mb'])
-                self.wt_init['components']['nacelle']['drivetrain']['L_generator']               = float(wt_opt['nacelle.L_generator'])
+                self.wt_init['components']['nacelle']['drivetrain']['distance_hub_mb']           = float(wt_opt['nacelle.distance_hub2mb'])
+                self.wt_init['components']['nacelle']['drivetrain']['distance_mb_mb']            = float(wt_opt['nacelle.distance_mb2mb'])
+                self.wt_init['components']['nacelle']['drivetrain']['generator_length']          = float(wt_opt['nacelle.L_generator'])
                 self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']              = wt_opt['nacelle.lss_diameter'].tolist()
                 self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']        = wt_opt['nacelle.lss_wall_thickness'].tolist()
                 self.wt_init['components']['nacelle']['drivetrain']['gear_ratio']                = float(wt_opt['nacelle.gear_ratio'])
@@ -341,6 +341,8 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['drivetrain']['mb1Type']                   = wt_opt['nacelle.mb1Type']
                 self.wt_init['components']['nacelle']['drivetrain']['mb2Type']                   = wt_opt['nacelle.mb2Type']
                 self.wt_init['components']['nacelle']['drivetrain']['uptower']                   = wt_opt['nacelle.uptower']
+                self.wt_init['components']['nacelle']['drivetrain']['lss_material']              = wt_opt['nacelle.lss_material']
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_material']         = wt_opt['nacelle.bedplate_material']
 
                 # Direct only
                 self.wt_init['components']['nacelle']['drivetrain']['access_diameter']           = float(wt_opt['nacelle.access_diameter'])
@@ -357,6 +359,7 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['drivetrain']['bedplate_web_thickness']    = float(wt_opt['nacelle.bedplate_web_thickness'])
                 self.wt_init['components']['nacelle']['drivetrain']['gear_configuration']        = wt_opt['nacelle.gear_configuration']
                 self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['hss_material']              = wt_opt['nacelle.hss_material']
 
         #if self.modeling_options['flags']['tower']:
         # Update tower

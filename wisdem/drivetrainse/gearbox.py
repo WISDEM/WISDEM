@@ -53,7 +53,7 @@ class Gearbox(om.ExplicitComponent):
     Parameters
     ----------
     gear_configuration : string
-        string that represents the configuration of the gearbox (stage number and types)
+        3-letter string of Es or Ps to denote epicyclic or parallel gear configuration
     n_planets : numpy array[3]
         number of planets in each stage
     gear_ratio : float

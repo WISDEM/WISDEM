@@ -348,29 +348,225 @@ properties:
                                     maximum: 30
                     drivetrain:
                         type: object
-                        description: Inputs to WISDEM specific drivetrain sizing tool DriveSE https://www.nrel.gov/docs/fy15osti/63008.pdf
-                        required:
-                            - gear_ratio
-                            - generator_efficiency
+                        description: Inputs to WISDEM specific drivetrain sizing tool, DrivetrainSE
                         properties:                              
+                            uptilt:
+                                type: number
+                                description: Tilt angle of the nacelle, always defined positive.
+                                unit: rad
+                                minimum: 0.
+                                maximum: 0.2
+                                default: 0.08726 # 5 deg
+                            distance_tt_hub:
+                                type: number
+                                description: Vertical distance between the tower top and the hub center.
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 2.0
+                            distance_hub_mb:
+                                type: number
+                                description: Distance from hub flange to first main bearing along shaft.
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 2.0
+                            distance_mb_mb:
+                                type: number
+                                description: Distance from first to second main bearing along shaft.
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 1.0
+                            overhang:
+                                type: number
+                                description: Horizontal distance between the tower axis and the rotor apex.
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 5.0
+                            generator_length:
+                                type: number
+                                description: Length of generator along the shaft
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 2.0
+                            access_diameter:
+                                type: number
+                                description: Minimum diameter for hollow shafts for maintenance access
+                                unit: meter
+                                minimum: 0.
+                                maximum: 5.
+                                default: 2.0
                             gear_ratio:
                                 type: number
                                 description: Gear ratio of the drivetrain. Set it to 1 for direct drive machines.
                                 unit: none
                                 minimum: 1
                                 maximum: 1000
+                                default: 1.0
                             gearbox_efficiency:
                                 type: number
                                 description: Efficiency of the gearbox system.
                                 unit: none
                                 minimum: 0.8
                                 maximum: 1.
-                            generator_efficiency:
+                                default: 1.0
+                            lss_diameter:
+                                type: array
+                                default: [0.3, 0.3, 0.3, 0.3, 0.3]
+                                description: Diameter of the low speed shaft
+                                items:
+                                    type: number
+                                    unit: meter
+                                    minItems: 5
+                                    maxItems: 5
+                                    uniqueItems: false
+                                    minimum: 0.0
+                                    maximum: 5.
+                            lss_wall_thickness:
+                                type: array
+                                default: [0.1, 0.1, 0.1, 0.1, 0.1]
+                                description: Thickness of the low speed shaft wall in radial direction
+                                items:
+                                    type: number
+                                    unit: meter
+                                    minItems: 5
+                                    maxItems: 5
+                                    uniqueItems: false
+                                    minimum: 0.0
+                                    maximum: 5.
+                            lss_material:
+                                type: string
+                                description: Material name identifier
+                                default: steel
+                            hss_length:
                                 type: number
-                                description: Efficiency of the generator system.
-                                unit: none
-                                minimum: 0.8
+                                description: Length of the high speed shaft
+                                unit: meter
+                                minimum: 0.
+                                maximum: 10.
+                                default: 1.5
+                            hss_diameter:
+                                type: array
+                                default: [0.1, 0.1, 0.1, 0.1, 0.1]
+                                description: Diameter of the high speed shaft
+                                items:
+                                    type: number
+                                    unit: meter
+                                    minItems: 5
+                                    maxItems: 5
+                                    uniqueItems: false
+                                    minimum: 0.0
+                                    maximum: 5.
+                            hss_wall_thickness:
+                                type: array
+                                default: [0.05, 0.05, 0.05, 0.05, 0.05]
+                                description: Thickness of the high speed shaft wall in radial direction
+                                items:
+                                    type: number
+                                    unit: meter
+                                    minItems: 5
+                                    maxItems: 5
+                                    uniqueItems: false
+                                    minimum: 0.0
+                                    maximum: 5.
+                            hss_material:
+                                type: string
+                                description: Material name identifier
+                                default: steel
+                            nose_diameter:
+                                type: array
+                                default: [0.1, 0.1, 0.1, 0.1, 0.1]
+                                description: Diameter of the nose (also called turret or spindle)
+                                items:
+                                    type: number
+                                    unit: meter
+                                    minItems: 5
+                                    maxItems: 5
+                                    uniqueItems: false
+                                    minimum: 0.0
+                                    maximum: 5.
+                            nose_wall_thickness:
+                                type: array
+                                default: [0.05, 0.05, 0.05, 0.05, 0.05]
+                                description: Thickness of the nose (also called turret or spindle)
+                                items:
+                                    type: number
+                                    unit: meter
+                                    minItems: 5
+                                    maxItems: 5
+                                    uniqueItems: false
+                                    minimum: 0.0
+                                    maximum: 5.
+                            bedplate_wall_thickness:
+                                type: array
+                                default: [0.05, 0.05, 0.05, 0.05, 0.05]
+                                description: Thickness of the hollow elliptical bedplate used in direct drive configurations
+                                items:
+                                    type: number
+                                    unit: meter
+                                    minItems: 2
+                                    maxItems: 20
+                                    uniqueItems: false
+                                    minimum: 0.0
+                                    maximum: 1.
+                            bedplate_flange_width:
+                                type: number
+                                description: Bedplate I-beam flange width used in geared configurations
+                                unit: meter
+                                minimum: 0.
+                                maximum: 3.
+                                default: 1.0
+                            bedplate_flange_thickness:
+                                type: number
+                                description: Bedplate I-beam flange thickness used in geared configurations
+                                unit: meter
+                                minimum: 0.
                                 maximum: 1.
+                                default: 0.05
+                            bedplate_web_thickness:
+                                type: number
+                                description: Bedplate I-beam web thickness used in geared configurations
+                                unit: meter
+                                minimum: 0.
+                                maximum: 1.
+                                default: 0.05
+                            bedplate_material:
+                                type: string
+                                description: Material name identifier
+                                default: steel
+                            mb1Type:
+                                type: string
+                                description: Type of bearing for first main bearing
+                                default: CARB
+                                enum: [CARB, CRB, SRB, TRB]
+                            mb2Type:
+                                type: string
+                                description: Type of bearing for second main bearing
+                                default: SRB
+                                enum: [CARB, CRB, SRB, TRB]
+                            uptower:
+                                type: boolean
+                                description: If power electronics are located uptower (True) or at tower base (False)
+                                default: True
+                            gear_configuration:
+                                type: string
+                                description: 3-letter string of Es or Ps to denote epicyclic or parallel gear configuration
+                                default: EEP
+                            planet_numbers:
+                                type: array
+                                default: [3, 3, 0]
+                                description: Number of planets for epicyclic stages (use 0 for parallel)
+                                items:
+                                    type: integer
+                                    unit: none
+                                    minItems: 3
+                                    maxItems: 3
+                                    uniqueItems: false
+                                    minimum: 0
+                                    maximum: 6
             tower:
                 type: object
                 required:
@@ -1004,6 +1200,7 @@ properties:
                 type: string
                 default: geared
                 description: String characterizing the drivetrain configuration
+                enum: [geared, Geared, Direct, Direct_Drive, Direct drive, direct, direct_drive, direct drive]
             rotor_orientation:
                 type: string
                 default: Upwind

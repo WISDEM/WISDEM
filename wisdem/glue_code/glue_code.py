@@ -245,16 +245,10 @@ class WT_RNTA(om.Group):
             self.connect('control.rated_power',        'drivese.machine_rating')    
             self.connect('tower.diameter',             'drivese.D_top', src_indices=[-1])
             
-            if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
-                self.connect('aeroelastic.Fxyz', 'drivese.F_hub')
-                self.connect('aeroelastic.Mxyz', 'drivese.M_hub')
-                self.connect('aeroelastic.Mxyz', 'drivese.hub_shell.max_torque', src_indices=[0])
-                self.connect('aeroelastic.My',   'drivese.pitch_system.BRFM')
-            else:
-                self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.F_hub')
-                self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.M_hub')
-                self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.hub_shell.max_torque', src_indices=[0])
-                self.connect('rlds.frame.root_M',                 'drivese.pitch_system.BRFM', src_indices=[1])
+            self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.F_hub')
+            self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.M_hub')
+            self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.hub_shell.max_torque', src_indices=[0])
+            self.connect('rlds.frame.root_M',                 'drivese.pitch_system.BRFM', src_indices=[1])
                 
             self.connect('elastic.precomp.blade_mass',        'drivese.pitch_system.blade_mass')
             self.connect('blade.pa.chord_param',              'drivese.blade_root_diameter', src_indices=[0])
@@ -288,6 +282,9 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.bedplate_flange_thickness', 'drivese.bedplate_flange_thickness') # only used in geared
             self.connect('nacelle.bedplate_web_thickness',    'drivese.bedplate_web_thickness') # only used in geared
 
+            self.connect('nacelle.lss_material',              'drivese.lss_material')
+            self.connect('nacelle.hss_material',              'drivese.hss_material')
+            self.connect('nacelle.bedplate_material',         'drivese.bedplate_material')
             self.connect('materials.name',                    'drivese.material_names')
             self.connect('materials.E',                       'drivese.E_mat')
             self.connect('materials.G',                       'drivese.G_mat')

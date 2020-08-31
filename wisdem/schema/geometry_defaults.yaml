@@ -162,32 +162,43 @@ components:
     # Nacelle
     nacelle:
         outer_shape_bem:
-          uptilt_angle: 0.08726 # 5 deg
-          distance_tt_hub: 2.
+          uptilt_angle: 0.08726
+          distance_tt_hub: 2.3
           overhang: 5.
           length: 12.
           width: 6.
           height: 5.
           drag_coefficient: 0.5
         elastic_properties_mb:
-            above_yaw_mass: 118260.1
-            yaw_mass: 3130.5
-            inertia: [50326.1, 691063.5, 640737.4, 0.0, 6093.0, 0.0]
-            center_mass: [1.791, 0.0, 0.339]
-        # end nacelle
+          above_yaw_mass: 153039.3158216733
+          yaw_mass: 4932.772956565737
+          inertia: [65068.95854639532, 954681.9098782416, 889612.9513318462, 0.0, 3706.9558680524924, 0.0]
+          center_mass: [1.6458850626394252, 0.0, 0.37742536538194316]
         drivetrain:
-          gear_ratio: 97
-          shaft_ratio: 0.1
-          planet_numbers: [3, 3, 1]
-          shrink_disc_mass: 1600
-          carrier_mass: 8000
-          flange_length: 0.5
-          gearbox_input_xcm: 0.1
-          hss_input_length: 1.5
+          uptilt: 0.08726
+          distance_tt_hub: 2.3
           distance_hub2mb: 1.912
-          yaw_motors_number: 1
-          gearbox_efficiency: 0.95
-          generator_efficiency: 0.98
+          distance_mb2mb: 0.368
+          overhang: 5.
+          lss_diameter: [0.577, 0.577, 0.577, 0.577, 0.577]
+          lss_wall_thickness: [0.288, 0.288, 0.288, 0.288, 0.288]
+          lss_material: steel
+          generator_length: 2.0
+          hss_length: 1.5
+          hss_diameter: [0.288, 0.288, 0.288, 0.288, 0.288]
+          hss_wall_thickness: [0.144, 0.144, 0.144, 0.144, 0.144]
+          hss_material: steel
+          bedplate_flange_width: 1.0
+          bedplate_flange_thickness: 0.05
+          bedplate_web_thickness: 0.05
+          bedplate_material: steel
+          gear_ratio: 96
+          planet_numbers: [3, 3, 0]
+          gear_configuration: eep
+          gearbox_efficiency: 0.975
+          mb1Type: CARB
+          mb2Type: SRB
+          uptower: True
     # Tower
     tower:
         outer_shape_bem:

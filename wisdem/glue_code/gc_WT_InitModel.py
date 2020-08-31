@@ -416,9 +416,9 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt['nacelle.uptilt']                    = nacelle['drivetrain']['uptilt']
     wt_opt['nacelle.distance_tt_hub']           = nacelle['drivetrain']['distance_tt_hub']
     wt_opt['nacelle.overhang']                  = nacelle['drivetrain']['overhang']
-    wt_opt['nacelle.distance_hub2mb']           = nacelle['drivetrain']['distance_hub2mb']
-    wt_opt['nacelle.distance_mb2mb']            = nacelle['drivetrain']['distance_mb2mb']
-    wt_opt['nacelle.L_generator']               = nacelle['drivetrain']['L_generator']
+    wt_opt['nacelle.distance_hub2mb']           = nacelle['drivetrain']['distance_hub_mb']
+    wt_opt['nacelle.distance_mb2mb']            = nacelle['drivetrain']['distance_mb_mb']
+    wt_opt['nacelle.L_generator']               = nacelle['drivetrain']['generator_length']
     wt_opt['nacelle.lss_diameter']              = nacelle['drivetrain']['lss_diameter']
     wt_opt['nacelle.lss_wall_thickness']        = nacelle['drivetrain']['lss_wall_thickness']
     wt_opt['nacelle.gear_ratio']                = nacelle['drivetrain']['gear_ratio']
@@ -426,6 +426,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt['nacelle.mb1Type']                   = nacelle['drivetrain']['mb1Type']
     wt_opt['nacelle.mb2Type']                   = nacelle['drivetrain']['mb2Type']
     wt_opt['nacelle.uptower']                   = nacelle['drivetrain']['uptower']
+    wt_opt['nacelle.lss_material']              = nacelle['drivetrain']['lss_material']
+    wt_opt['nacelle.bedplate_material']         = nacelle['drivetrain']['bedplate_material']
 
     if modeling_options['nacelle']['direct']:
         # Direct only
@@ -441,8 +443,9 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt['nacelle.bedplate_flange_width']     = nacelle['drivetrain']['bedplate_flange_width']
         wt_opt['nacelle.bedplate_flange_thickness'] = nacelle['drivetrain']['bedplate_flange_thickness']
         wt_opt['nacelle.bedplate_web_thickness']    = nacelle['drivetrain']['bedplate_web_thickness']
-        wt_opt['nacelle.gear_configuration']        = nacelle['drivetrain']['gear_configuration']
+        wt_opt['nacelle.gear_configuration']        = nacelle['drivetrain']['gear_configuration'].lower()
         wt_opt['nacelle.planet_numbers']            = nacelle['drivetrain']['planet_numbers']
+        wt_opt['nacelle.hss_material']              = nacelle['drivetrain']['hss_material']
 
     #wt_opt['nacelle.above_yaw_mass']    = nacelle['elastic_properties_mb']['above_yaw_mass']
     #wt_opt['nacelle.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']

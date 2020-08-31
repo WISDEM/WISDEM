@@ -73,6 +73,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle.add_discrete_output('mb1Type',   val='CARB',                   desc='Type of main bearing: CARB / CRB / SRB / TRB')
             nacelle.add_discrete_output('mb2Type',   val='SRB',                    desc='Type of main bearing: CARB / CRB / SRB / TRB')
             nacelle.add_discrete_output('uptower',   val=True,                     desc='If power electronics are located uptower (True) or at tower base (False)')
+            nacelle.add_discrete_output('lss_material', val='steel',             desc='Material name identifier for the low speed shaft')
+            nacelle.add_discrete_output('hss_material', val='steel',             desc='Material name identifier for the high speed shaft')
+            nacelle.add_discrete_output('bedplate_material', val='steel',        desc='Material name identifier for the bedplate')
 
             if modeling_options['nacelle']['direct']:
                 # Direct only
