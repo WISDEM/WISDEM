@@ -249,8 +249,6 @@ class GeneratorBase(om.ExplicitComponent):
         Stator coil span to pole pitch
     y_tau_pr : float
         Rotor coil span to pole pitch
-    Gearbox_efficiency : float
-        Gearbox efficiency
     I_0 : float, [A]
         no-load excitation current
     T_rated : float, [N*m]
@@ -346,7 +344,7 @@ class GeneratorBase(om.ExplicitComponent):
         Stack length ratio
     Losses : float, [W]
         Total loss
-    gen_eff : float
+    generator_efficiency : float
         Generator efficiency
     u_ar : float, [m]
         Rotor radial deflection
@@ -398,8 +396,6 @@ class GeneratorBase(om.ExplicitComponent):
         Rotor winding Current density
     L_sm : float
         mutual inductance
-    Overall_eff : float
-        Overall drivetrain efficiency
     Q_r : float
         Rotor slots
     R_R : float
@@ -451,7 +447,6 @@ class GeneratorBase(om.ExplicitComponent):
         
         # General inputs
         #self.add_input('r_s', val=0.0, units='m', desc='airgap radius r_s')
-        self.add_input('Gearbox_efficiency', val=0.0)
         self.add_input('I_0', val=0.0, units='A')
         self.add_input('T_rated', val=0.0, units ='N*m')
         self.add_input('d_r', val=0.0, units='m')
@@ -514,7 +509,7 @@ class GeneratorBase(om.ExplicitComponent):
         # Objective functions
         self.add_output('K_rad', val=0.0)
         self.add_output('Losses', val=0.0, units='W')
-        self.add_output('gen_eff', val=0.0)
+        self.add_output('generator_efficiency', val=0.0)
         
         # Structural performance
         self.add_output('u_ar', val=0.0, units='m')
@@ -545,7 +540,6 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_output('D_ratio', val=0.0)
         self.add_output('J_r', val=0.0)
         self.add_output('L_sm', val=0.0)
-        self.add_output('Overall_eff', val=0.0)
         self.add_output('Q_r', val=0.0)
         self.add_output('R_R', val=0.0)
         self.add_output('b_r', val=0.0)
@@ -917,7 +911,7 @@ class PMSG_Outer(GeneratorBase):
             outputs['Mass_yoke_stator']  = M_Fesy
             outputs['R_out']             = (dia+2*h_m+2*h_yr+2*inputs['h_sr'])*0.5
             outputs['Losses']            = Losses
-            outputs['gen_eff']           = gen_eff
+            outputs['generator_efficiency']           = gen_eff
         else:
             pass
 
@@ -1478,7 +1472,7 @@ class PMSG_Disc(GeneratorBase):
         outputs['Losses']            =  Losses
 
         outputs['K_rad']             =  K_rad
-        outputs['gen_eff']           =  gen_eff
+        outputs['generator_efficiency']           =  gen_eff
         outputs['S']                 =  S
         outputs['Slot_aspect_ratio'] =  Slot_aspect_ratio
         outputs['Copper']            =  Copper
@@ -1908,7 +1902,7 @@ class PMSG_Arms(GeneratorBase):
         outputs['J_s']               =  J_s
         outputs['Losses']            =  Losses
         outputs['K_rad']             =  K_rad
-        outputs['gen_eff']           =  gen_eff
+        outputs['generator_efficiency']           =  gen_eff
         outputs['S']                 =  S
         outputs['Slot_aspect_ratio'] =  Slot_aspect_ratio
         outputs['Copper']            =  Copper
@@ -1989,7 +1983,6 @@ class DFIG(GeneratorBase):
         
         machine_rating       = inputs['machine_rating']
         n_nom                = inputs['n_nom']
-        Gearbox_efficiency   = inputs['Gearbox_efficiency']
         
         rho_Fe               = inputs['rho_Fe']
         rho_Copper           = inputs['rho_Copper']
@@ -2257,7 +2250,6 @@ class DFIG(GeneratorBase):
         
         Losses = P_Cusnom + P_Fesnom + p_b + P_add
         gen_eff = (P_e - Losses) * 100 / P_e
-        Overall_eff = gen_eff * Gearbox_efficiency
         
         # Calculating stator winding current density
         J_s = I_s / A_Cuscalc
@@ -2313,7 +2305,7 @@ class DFIG(GeneratorBase):
         outputs['K_rad']              = K_rad
         outputs['Losses']             = Losses
 
-        outputs['gen_eff']            = gen_eff
+        outputs['generator_efficiency']            = gen_eff
         outputs['Copper']             = Copper
         outputs['Iron']               = Iron
         outputs['Structural_mass']    = Structural_mass
@@ -2321,7 +2313,6 @@ class DFIG(GeneratorBase):
         outputs['TC2r']                = TC2r
 
         outputs['Current_ratio']      = Current_ratio
-        outputs['Overall_eff']        = Overall_eff
 
 
 
@@ -2383,7 +2374,6 @@ class SCIG(GeneratorBase):
         h_0                  = inputs['h_0']
         machine_rating       = inputs['machine_rating']
         n_nom                = inputs['n_nom']
-        Gearbox_efficiency   = inputs['Gearbox_efficiency']
         I_0                  = inputs['I_0']
         rho_Fe               = inputs['rho_Fe']
         rho_Copper           = inputs['rho_Copper']
@@ -2684,7 +2674,6 @@ class SCIG(GeneratorBase):
         P_Fesnom = P_Hyys + P_Ftys + P_Hyd + P_Ftd + P_Hyyr + P_Ftyr + P_Hydr + P_Ftdr
         Losses = P_Cusnom + P_Fesnom + P_add
         gen_eff = (P_e - Losses) * 100 / P_e
-        Overall_eff = gen_eff * Gearbox_efficiency
         
         # Calculating current densities in the stator and rotor
         J_s = I_s / A_Cuscalc
@@ -2736,13 +2725,12 @@ class SCIG(GeneratorBase):
         outputs['K_rad_UL']           = K_rad_UL
         outputs['K_rad_LL']           = K_rad_LL
         outputs['Losses']             = Losses
-        outputs['gen_eff']            = gen_eff
+        outputs['generator_efficiency']            = gen_eff
         outputs['Copper']             = Copper
         outputs['Iron']               = Iron
         outputs['Structural_mass']    = Structural_mass
         outputs['TC1']                = TC1
         outputs['TC2r']                = TC2r
-        outputs['Overall_eff']        = Overall_eff
         
 
 #----------------------------------------------------------------------------------------
@@ -3286,7 +3274,7 @@ class EESG(GeneratorBase):
         outputs['n_brushes']         = n_brushes
         outputs['J_f']               = J_f
         outputs['K_rad']             = K_rad
-        outputs['gen_eff']           = gen_eff
+        outputs['generator_efficiency']           = gen_eff
         outputs['S']                 = S
 
         outputs['Slot_aspect_ratio'] = Slot_aspect_ratio

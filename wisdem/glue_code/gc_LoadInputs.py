@@ -26,7 +26,65 @@ class WindTurbineOntologyPython(object):
         
     def get_input_data(self):
         return self.wt_init, self.modeling_options, self.analysis_options
+
+        
+    def set_run_flags(self):
+        # Create components flag struct
+        self.modeling_options['flags'] = {}
+        
+        for k in self.defaults['components']:
+            self.modeling_options['flags'][k] = k in self.wt_init['components']
+
+        for k in self.defaults.keys():
+            self.modeling_options['flags'][k] = k in self.wt_init
             
+        # Offshore flag
+        self.modeling_options['offshore'] = 'water_depth' in self.wt_init['environment'] and self.wt_init['environment']['water_depth'] > 0.0
+
+        # Put in some logic about what needs to be in there
+        flags = self.modeling_options['flags']
+
+        # Even if the block is in the inputs, the user can turn off via modeling options
+        if flags['bos']: flags['bos'] = self.modeling_options['Analysis_Flags']['BOS']
+        if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE']
+        if flags['tower']: flags['tower'] = self.modeling_options['Analysis_Flags']['TowerSE']
+        # Blades and airfoils
+        if flags['blade'] and not flags['airfoils']:
+            raise ValueError('Blades/rotor analysis is requested but no airfoils are found')
+        if flags['airfoils'] and not flags['blade']:
+            print('WARNING: Airfoils provided but no blades/rotor found or RotorSE deactivated')
+            
+        # Blades, tower, monopile and environment
+        if flags['blade'] and not flags['environment']:
+            raise ValueError('Blades/rotor analysis is requested but no environment input found')
+        if flags['tower'] and not flags['environment']:
+            raise ValueError('Tower analysis is requested but no environment input found')
+        if flags['monopile'] and not flags['environment']:
+            raise ValueError('Monopile analysis is requested but no environment input found')
+        if flags['floating'] and not flags['environment']:
+            raise ValueError('Floating analysis is requested but no environment input found')
+        if flags['environment'] and not (flags['blade'] or flags['tower'] or flags['monopile'] or flags['floating']):
+            print('WARNING: Environment provided but no related component found found')
+
+        # Tower, monopile and foundation
+        if flags['tower'] and not flags['foundation']:
+            raise ValueError('Tower analysis is requested but no foundation is found')
+        if flags['monopile'] and not flags['foundation']:
+            raise ValueError('Monopile analysis is requested but no foundation is found')
+        if flags['foundation'] and not (flags['tower'] or flags['monopile']):
+            print('WARNING: Foundation provided but no tower/monipile found or TowerSE deactivated')
+
+        # Foundation and floating/monopile
+        if flags['floating'] and flags['foundation']:
+            raise ValueError('Cannot have both floating and foundation components')
+        if flags['floating'] and flags['monopile']:
+            raise ValueError('Cannot have both floating and monopile components')
+
+        # Offshore flag
+        if not self.modeling_options['offshore'] and (flags['monopile'] or flags['floating']):
+            raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
+
+    
     def set_openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
         # ==modeling_options = {}
@@ -86,80 +144,30 @@ class WindTurbineOntologyPython(object):
                 else:
                     exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
+        # Drivetrain
+        if self.modeling_options['flags']['nacelle']:
+            if not 'nacelle' in self.modeling_options: self.modeling_options['nacelle'] = {}
+            self.modeling_options['nacelle']['direct'] = self.wt_init['assembly']['direct_drive']
+            if self.modeling_options['nacelle']['direct']:
+                self.modeling_options['nacelle']['n_height'] = len(self.wt_init['compoenent']['nacelle']['drivetrain']['bedplate_wall_thickness'])
+        
         # Tower 
         if self.modeling_options['flags']['tower']:
             self.modeling_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
             self.modeling_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
 
         # Monopile
-        self.modeling_options['monopile']              = {}
+        self.modeling_options['monopile'] = {}
         if self.modeling_options['flags']['monopile']:
             self.modeling_options['monopile']['n_height']  = len(self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid'])
             self.modeling_options['monopile']['n_layers']  = len(self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'])
 
         # FloatingSE
-        self.modeling_options['floating']          = {}
+        self.modeling_options['floating'] = {}
         
         # Assembly
         self.modeling_options['assembly'] = {}
         self.modeling_options['assembly']['number_of_blades'] = int(self.wt_init['assembly']['number_of_blades'])
-
-        
-    def set_run_flags(self):
-        # Create components flag struct
-        self.modeling_options['flags'] = {}
-        
-        for k in self.defaults['components']:
-            self.modeling_options['flags'][k] = k in self.wt_init['components']
-
-        for k in self.defaults.keys():
-            self.modeling_options['flags'][k] = k in self.wt_init
-            
-        # Offshore flag
-        self.modeling_options['offshore'] = 'water_depth' in self.wt_init['environment'] and self.wt_init['environment']['water_depth'] > 0.0
-
-        # Put in some logic about what needs to be in there
-        flags = self.modeling_options['flags']
-
-        # Even if the block is in the inputs, the user can turn off via modeling options
-        if flags['bos']: flags['bos'] = self.modeling_options['Analysis_Flags']['BOS']
-        if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE']
-        if flags['tower']: flags['tower'] = self.modeling_options['Analysis_Flags']['TowerSE']
-        # Blades and airfoils
-        if flags['blade'] and not flags['airfoils']:
-            raise ValueError('Blades/rotor analysis is requested but no airfoils are found')
-        if flags['airfoils'] and not flags['blade']:
-            print('WARNING: Airfoils provided but no blades/rotor found or RotorSE deactivated')
-            
-        # Blades, tower, monopile and environment
-        if flags['blade'] and not flags['environment']:
-            raise ValueError('Blades/rotor analysis is requested but no environment input found')
-        if flags['tower'] and not flags['environment']:
-            raise ValueError('Tower analysis is requested but no environment input found')
-        if flags['monopile'] and not flags['environment']:
-            raise ValueError('Monopile analysis is requested but no environment input found')
-        if flags['floating'] and not flags['environment']:
-            raise ValueError('Floating analysis is requested but no environment input found')
-        if flags['environment'] and not (flags['blade'] or flags['tower'] or flags['monopile'] or flags['floating']):
-            print('WARNING: Environment provided but no related component found found')
-
-        # Tower, monopile and foundation
-        if flags['tower'] and not flags['foundation']:
-            raise ValueError('Tower analysis is requested but no foundation is found')
-        if flags['monopile'] and not flags['foundation']:
-            raise ValueError('Monopile analysis is requested but no foundation is found')
-        if flags['foundation'] and not (flags['tower'] or flags['monopile']):
-            print('WARNING: Foundation provided but no tower/monipile found or TowerSE deactivated')
-
-        # Foundation and floating/monopile
-        if flags['floating'] and flags['foundation']:
-            raise ValueError('Cannot have both floating and foundation components')
-        if flags['floating'] and flags['monopile']:
-            raise ValueError('Cannot have both floating and monopile components')
-
-        # Offshore flag
-        if not self.modeling_options['offshore'] and (flags['monopile'] or flags['floating']):
-            raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
 
         
     def set_opt_flags(self):
@@ -309,14 +317,46 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['hub']['elastic_properties_mb']['system_mass']        = float(wt_opt['drivese.hub_system_mass'])
                 self.wt_init['components']['hub']['elastic_properties_mb']['system_inertia']     = wt_opt['drivese.hub_system_I'].tolist()
                 self.wt_init['components']['hub']['elastic_properties_mb']['system_center_mass'] = wt_opt['drivese.hub_system_cm'].tolist()
+                
             if self.modeling_options['flags']['nacelle']:
                 # Update nacelle
-                self.wt_init['components']['nacelle']['outer_shape_bem']['uptilt_angle']        = float(wt_opt['nacelle.uptilt'])
-                self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub']     = float(wt_opt['nacelle.distance_tt_hub'])
-                self.wt_init['components']['nacelle']['elastic_properties_mb']['above_yaw_mass']= float(wt_opt['drivese.above_yaw_mass'])
-                self.wt_init['components']['nacelle']['elastic_properties_mb']['yaw_mass']      = float(wt_opt['drivese.yaw_mass'])
-                self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']   = wt_opt['drivese.nacelle_cm'].tolist()
-                self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']       = wt_opt['drivese.nacelle_I'].tolist()
+                self.wt_init['components']['nacelle']['outer_shape_bem']['uptilt_angle']         = float(wt_opt['nacelle.uptilt'])
+                self.wt_init['components']['nacelle']['outer_shape_bem']['distance_tt_hub']      = float(wt_opt['nacelle.distance_tt_hub'])
+                self.wt_init['components']['nacelle']['elastic_properties_mb']['above_yaw_mass'] = float(wt_opt['drivese.above_yaw_mass'])
+                self.wt_init['components']['nacelle']['elastic_properties_mb']['yaw_mass']       = float(wt_opt['drivese.yaw_mass'])
+                self.wt_init['components']['nacelle']['elastic_properties_mb']['center_mass']    = wt_opt['drivese.nacelle_cm'].tolist()
+                self.wt_init['components']['nacelle']['elastic_properties_mb']['inertia']        = wt_opt['drivese.nacelle_I'].tolist()
+                
+                # Common direct and geared
+                self.wt_init['components']['nacelle']['drivetrain']['uptilt']                    = float(wt_opt['nacelle.uptilt'])
+                self.wt_init['components']['nacelle']['drivetrain']['distance_tt_hub']           = float(wt_opt['nacelle.distance_tt_hub'])
+                self.wt_init['components']['nacelle']['drivetrain']['overhang']                  = float(wt_opt['nacelle.overhang'])
+                self.wt_init['components']['nacelle']['drivetrain']['distance_hub2mb']           = float(wt_opt['nacelle.distance_hub2mb'])
+                self.wt_init['components']['nacelle']['drivetrain']['distance_mb2mb']            = float(wt_opt['nacelle.distance_mb2mb'])
+                self.wt_init['components']['nacelle']['drivetrain']['L_generator']               = float(wt_opt['nacelle.L_generator'])
+                self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']              = wt_opt['nacelle.lss_diameter'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']        = wt_opt['nacelle.lss_wall_thickness'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['gear_ratio']                = float(wt_opt['nacelle.gear_ratio'])
+                self.wt_init['components']['nacelle']['drivetrain']['gearbox_efficiency']        = float(wt_opt['nacelle.gearbox_efficiency'])
+                self.wt_init['components']['nacelle']['drivetrain']['mb1Type']                   = wt_opt['nacelle.mb1Type']
+                self.wt_init['components']['nacelle']['drivetrain']['mb2Type']                   = wt_opt['nacelle.mb2Type']
+                self.wt_init['components']['nacelle']['drivetrain']['uptower']                   = wt_opt['nacelle.uptower']
+
+                # Direct only
+                self.wt_init['components']['nacelle']['drivetrain']['access_diameter']           = float(wt_opt['nacelle.access_diameter'])
+                self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']             = wt_opt['nacelle.nose_diameter'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']       = wt_opt['nacelle.nose_wall_thickness'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']   = wt_opt['nacelle.bedplate_wall_thickness'].tolist()
+
+                # Geared only
+                self.wt_init['components']['nacelle']['drivetrain']['hss_length']                = float(wt_opt['nacelle.hss_length'])
+                self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']              = wt_opt['nacelle.hss_diameter'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']        = wt_opt['nacelle.hss_wall_thickness'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_width']     = float(wt_opt['nacelle.bedplate_flange_width'])
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_thickness'] = float(wt_opt['nacelle.bedplate_flange_thickness'])
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_web_thickness']    = float(wt_opt['nacelle.bedplate_web_thickness'])
+                self.wt_init['components']['nacelle']['drivetrain']['gear_configuration']        = wt_opt['nacelle.gear_configuration']
+                self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers'].tolist()
 
         #if self.modeling_options['flags']['tower']:
         # Update tower

@@ -2,7 +2,7 @@ import numpy as np
 import copy
 from scipy.interpolate import PchipInterpolator, interp1d
 import openmdao.api as om
-from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_smoothing, remap2grid
+from wisdem.rotorse.geometry_tools.geometry import trailing_edge_smoothing, remap2grid
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 
@@ -59,28 +59,45 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Nacelle inputs
         if modeling_options['flags']['nacelle']:
             nacelle = om.IndepVarComp()
-            # Outer shape bem
-            nacelle.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
-            nacelle.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
-            nacelle.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
+            # Common direct and geared
+            nacelle.add_output('uptilt',             val=0.0,         units='rad', desc='Nacelle uptilt angle. A standard machine has positive values.')
+            nacelle.add_output('distance_tt_hub',    val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
+            nacelle.add_output('overhang',           val=0.0,         units='m',   desc='Horizontal distance from tower top edge to hub flange')
+            nacelle.add_output('distance_hub2mb',    val=0.0,         units='m',   desc='Distance from hub flange to first main bearing along shaft')
+            nacelle.add_output('distance_mb2mb',     val=0.0,         units='m',   desc='Distance from first to second main bearing along shaft')
+            nacelle.add_output('L_generator',        val=0.0,         units='m',   desc='Generator length along shaft')
+            nacelle.add_output('lss_diameter',       val=np.zeros(5), units='m',   desc='Diameter of low speed shaft')
+            nacelle.add_output('lss_wall_thickness', val=np.zeros(5), units='m',   desc='Thickness of low speed shaft')
+            nacelle.add_output('gear_ratio',         val=1.0,                      desc='Total gear ratio of drivetrain (use 1.0 for direct)')
+            nacelle.add_output('gearbox_efficiency', val=0.0,                      desc='Efficiency of the gearbox. Set to 1.0 for direct-drive')
+            nacelle.add_discrete_output('mb1Type',   val='CARB',                   desc='Type of main bearing: CARB / CRB / SRB / TRB')
+            nacelle.add_discrete_output('mb2Type',   val='SRB',                    desc='Type of main bearing: CARB / CRB / SRB / TRB')
+            nacelle.add_discrete_output('uptower',   val=True,                     desc='If power electronics are located uptower (True) or at tower base (False)')
+
+            if modeling_options['nacelle']['direct']:
+                # Direct only
+                npts = modeling_options['nacelle']['n_height']
+                nacelle.add_output('access_diameter',         val=0.0,         units='m',  desc='Minimum diameter for hollow shafts for maintenance access')
+                nacelle.add_output('nose_diameter',           val=np.zeros(5), units='m',  desc='Diameter of nose (also called turret or spindle)')
+                nacelle.add_output('nose_wall_thickness',     val=np.zeros(5), units='m',  desc='Thickness of nose (also called turret or spindle)')
+                nacelle.add_output('bedplate_wall_thickness', val=np.zeros(npts), units='m',  desc='Thickness of hollow elliptical bedplate')
+            else:
+                # Geared only
+                nacelle.add_output('hss_length',                  val=0.0,         units='m', desc='Length of high speed shaft')
+                nacelle.add_output('hss_diameter',                val=np.zeros(3), units='m', desc='Diameter of high speed shaft')
+                nacelle.add_output('hss_wall_thickness',          val=np.zeros(3), units='m', desc='Wall thickness of high speed shaft')
+                nacelle.add_output('bedplate_flange_width',       val=0.0,         units='m', desc='Bedplate I-beam flange width')
+                nacelle.add_output('bedplate_flange_thickness',   val=0.0,         units='m', desc='Bedplate I-beam flange thickness')
+                nacelle.add_output('bedplate_web_thickness',      val=0.0,         units='m', desc='Bedplate I-beam web thickness')
+                nacelle.add_discrete_output('gear_configuration', val='eep',                  desc='3-letter string of Es or Ps to denote epicyclic or parallel gear configuration')
+                nacelle.add_discrete_output('planet_numbers',     val=[3,3,0],            desc='Number of planets for epicyclic stages (use 0 for parallel)')
+            
             # Mulit-body properties
-            nacelle.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-            nacelle.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
-            nacelle.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-            nacelle.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
-            # Drivetrain parameters
-            nacelle.add_output('gear_ratio',       val=0.0)
-            nacelle.add_output('shaft_ratio',      val=0.0)
-            nacelle.add_discrete_output('planet_numbers',   val=np.zeros(3))
-            nacelle.add_output('shrink_disc_mass', val=0.0, units='kg')
-            nacelle.add_output('carrier_mass',     val=0.0, units='kg')
-            nacelle.add_output('flange_length',    val=0.0, units='m')
-            nacelle.add_output('gearbox_input_xcm',val=0.0, units='m')
-            nacelle.add_output('hss_input_length', val=0.0, units='m')
-            nacelle.add_output('distance_hub2mb',  val=0.0, units='m')
-            nacelle.add_discrete_output('yaw_motors_number', val = 0)
-            nacelle.add_output('gearbox_efficiency',   val=0.0, desc='Efficiency of the gearbox. Set it equal to 1 for direct-drive machines')
-            nacelle.add_output('generator_efficiency', val=0.0, desc='Efficiency of the generator.')
+            # GB: I understand these will need to be in there for OpenFAST, but if running DrivetrainSE & OpenFAST this might cause problems?
+            #nacelle.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+            #nacelle.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
+            #nacelle.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+            #nacelle.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
             self.add_subsystem('nacelle', nacelle)
         
         # Tower inputs

@@ -344,7 +344,6 @@ class Generator(om.Group):
         ivc.add_output('y_tau_p', val=1.0)
         ivc.add_output('y_tau_pr', val=10. / 12)
 
-        ivc.add_output('Gearbox_efficiency', val=0.0)
         ivc.add_output('I_0', val=0.0, units='A')
         ivc.add_output('d_r', val=0.0, units='m')
         ivc.add_output('h_m', val=0.0, units='m')

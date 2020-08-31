@@ -37,7 +37,7 @@ class WT_RNTA(om.Group):
         self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         if modeling_options['Analysis_Flags']['DriveSE']:
-            self.add_subsystem('drivese',   DrivetrainSE(n_points=15, n_dlcs=1, direct_drive=modeling_options['drivetrain']['direct_drive'], model_generator=True, topLevelFlag=False))
+            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1, model_generator=True, topLevelFlag=False))
         if modeling_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
@@ -262,11 +262,11 @@ class WT_RNTA(om.Group):
             self.connect('elastic.precomp.mass_all_blades',   'drivese.blades_mass')
             self.connect('elastic.precomp.I_all_blades',      'drivese.blades_I')
 
-            self.connect('nacelle.hub2bearing',               'drivese.L_h1')
-            self.connect('nacelle.bearing2bearing',           'drivese.L_12')
+            self.connect('nacelle.distance_hub2mb',           'drivese.L_h1')
+            self.connect('nacelle.distance_mb2mb',            'drivese.L_12')
             self.connect('nacelle.generator_length',          'drivese.L_generator')
             self.connect('nacelle.overhang',                  'drivese.overhang')
-            self.connect('nacelle.hub2tower',                 'drivese.drive_height')
+            self.connect('nacelle.distance_tt_hub',           'drivese.drive_height')
             self.connect('nacelle.uptilt',                    'drivese.tilt')
             self.connect('nacelle.gear_ratio',                'drivese.gear_ratio')
             self.connect('nacelle.main_bearing1_type',        'drivese.mb1Type')

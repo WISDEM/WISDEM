@@ -15,16 +15,16 @@ class DrivetrainSE(om.Group):
     '''
     
     def initialize(self):
-        self.options.declare('n_points')
+        self.options.declare('modeling_options')
         self.options.declare('n_dlcs')
-        self.options.declare('model_generator')
+        self.options.declare('model_generator', default=True)
         self.options.declare('direct_drive', default=True)
         self.options.declare('topLevelFlag', default=True)
     
     def setup(self):
-        n_points = self.options['n_points']
+        opt = self.options['modeling_options']['nacelle']
         n_dlcs   = self.options['n_dlcs']
-        direct   = self.options['direct_drive']
+        direct   = opt['direct']
 
         # Independent variables that are unique to the drivetrain (except for the generator ones)
         ivc = om.IndepVarComp()
@@ -32,31 +32,34 @@ class DrivetrainSE(om.Group):
         ivc.add_output('L_12', 0.0, units='m')
         ivc.add_output('L_h1', 0.0, units='m')
         ivc.add_output('L_generator', 0.0, units='m')
-        ivc.add_output('gear_ratio', 1.0)
         ivc.add_output('overhang', 0.0, units='m')
         ivc.add_output('drive_height', 0.0, units='m')
-        ivc.add_output('access_diameter',0.0, units='m')
         ivc.add_output('lss_diameter', np.zeros(5), units='m')
         ivc.add_output('lss_wall_thickness', np.zeros(5), units='m')
+        ivc.add_output('gear_ratio', 1.0)
+        ivc.add_output('gearbox_efficiency', 1.0)
         ivc.add_discrete_output('mb1Type', 'CARB')
         ivc.add_discrete_output('mb2Type', 'SRB')
         ivc.add_discrete_output('uptower', True)
 
-        # Direct only
-        ivc.add_output('nose_diameter', np.zeros(5), units='m')
-        ivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
-        ivc.add_output('bedplate_wall_thickness', np.zeros(n_points), units='m')
-        
-        # Geared only
-        ivc.add_output('L_hss', 0.0, units='m')
-        ivc.add_output('hss_diameter', np.zeros(3), units='m')
-        ivc.add_output('hss_wall_thickness', np.zeros(3), units='m')
-        ivc.add_output('bedplate_flange_width', 0.0, units='m')
-        ivc.add_output('bedplate_flange_thickness', 0.0, units='m')
-        ivc.add_output('bedplate_web_thickness', 0.0, units='m')
-        ivc.add_discrete_output('planet_numbers', np.array([3, 3, 0]))
-        ivc.add_discrete_output('gear_configuration', val='eep')
-        #ivc.add_discrete_output('shaft_factor', val='normal')
+        if direct:
+            n_points = opt['n_height']
+            # Direct only
+            ivc.add_output('nose_diameter', np.zeros(5), units='m')
+            ivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
+            ivc.add_output('bedplate_wall_thickness', np.zeros(n_points), units='m')
+            ivc.add_output('access_diameter',0.0, units='m')
+        else:
+            # Geared only
+            ivc.add_output('L_hss', 0.0, units='m')
+            ivc.add_output('hss_diameter', np.zeros(3), units='m')
+            ivc.add_output('hss_wall_thickness', np.zeros(3), units='m')
+            ivc.add_output('bedplate_flange_width', 0.0, units='m')
+            ivc.add_output('bedplate_flange_thickness', 0.0, units='m')
+            ivc.add_output('bedplate_web_thickness', 0.0, units='m')
+            ivc.add_discrete_output('planet_numbers', np.array([3, 3, 0]))
+            ivc.add_discrete_output('gear_configuration', val='eep')
+            #ivc.add_discrete_output('shaft_factor', val='normal')
         
         self.add_subsystem('ivc', ivc, promotes=['*'])
 
@@ -80,13 +83,13 @@ class DrivetrainSE(om.Group):
             sivc.add_output('blades_mass',             0.0, units='kg')
             sivc.add_output('F_hub',             np.zeros(3), units='N')
             sivc.add_output('M_hub',             np.zeros(3), units='N*m')
-            sivc.add_output('gearbox_efficiency',     0.0)
             #sivc.add_output('generator_efficiency',   0.0)
             sivc.add_output('machine_rating',         0.0, units='kW')
             self.add_subsystem('sivc', sivc, promotes=['*'])
         else:
             self.add_subsystem('mat', DriveMaterials(), promotes=['*'])
 
+        # Core drivetrain modules
         self.add_subsystem('hub', Hub_System(), promotes=['*'])
         self.add_subsystem('gear', Gearbox(direct_drive=direct), promotes=['*'])
         
@@ -102,8 +105,9 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['*'])
         if self.options['model_generator']:
             gentype = 'pmsg_outer' if direct else 'dfig'
-            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','E','G','v','machine_rating'])
+            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','E','G','v','machine_rating','generator_efficiency'])
         else:
+            # TODO: Generator efficiency from what servose uses
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct), promotes=['*'])
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
@@ -115,6 +119,9 @@ class DrivetrainSE(om.Group):
             self.add_subsystem('hss', ds.HSS_Frame(n_dlcs=n_dlcs), promotes=['*'])
             self.add_subsystem('bed', ds.Bedplate_IBeam_Frame(n_dlcs=n_dlcs), promotes=['*'])
 
+        self.add_subsystem('eff', om.ExecComp('drivetrain_efficiency = gearbox_efficiency * generator_efficiency'), promotes=['*'])
+
+        # Output-to-input connections
         self.connect('lss_diameter','bear1.D_shaft', src_indices=[0])
         self.connect('lss_diameter','bear2.D_shaft', src_indices=[-1])
         

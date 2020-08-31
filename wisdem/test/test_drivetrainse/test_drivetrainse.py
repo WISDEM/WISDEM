@@ -62,10 +62,14 @@ def set_common(prob):
 class TestGroup(unittest.TestCase):
     
     def testDirectDrive_withGen(self):
-        
-        npts = 10
+
+        opt = {}
+        opt['nacelle'] = {}
+        opt['nacelle']['n_height'] = npts = 10
+        opt['nacelle']['direct'] = True
+
         prob = om.Problem()
-        prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True, direct_drive=True)
+        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=True)
         prob.setup()
         prob = set_common(prob)
 
@@ -132,10 +136,14 @@ class TestGroup(unittest.TestCase):
             self.assertTrue(False)
         
     def testDirectDrive_withSimpleGen(self):
-        
-        npts = 10
+
+        opt = {}
+        opt['nacelle'] = {}
+        opt['nacelle']['n_height'] = npts = 10
+        opt['nacelle']['direct'] = True
+
         prob = om.Problem()
-        prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=False, direct_drive=True)
+        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=False)
         prob.setup()
         prob = set_common(prob)
 
@@ -165,10 +173,14 @@ class TestGroup(unittest.TestCase):
 
         
     def testGeared_withGen(self):
-        
-        npts = 10
+
+        opt = {}
+        opt['nacelle'] = {}
+        opt['nacelle']['n_height'] = 10
+        opt['nacelle']['direct'] = False
+
         prob = om.Problem()
-        prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=True, direct_drive=False)
+        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=True)
         prob.setup()
         prob = set_common(prob)
 
@@ -197,10 +209,10 @@ class TestGroup(unittest.TestCase):
 
         prob['planet_numbers'] = np.array([3, 3, 0])
         prob['gear_configuration'] = 'eep'
-        prob['shaft_factor'] = 'normal'
+        #prob['shaft_factor'] = 'normal'
         prob['gear_ratio'] = 90.0
+        prob['gearbox_efficiency'] = 0.955
 
-        prob['generator.Overall_eff']    = 93
         prob['generator.rho_Fe']         = 7700.0
         prob['generator.rho_Fes']        = 7850.0
         prob['generator.rho_Copper']     = 8900.0
@@ -234,7 +246,6 @@ class TestGroup(unittest.TestCase):
         prob['generator.v']              = 0.3
         prob['generator.y_tau_p']        = 1.0
         prob['generator.y_tau_pr']       = 10. / 12
-        prob['generator.Gearbox_efficiency'] = 0.955
         prob['generator.cofi']               = 0.9
         prob['generator.y_tau_p']            = 12./15.
         prob['generator.sigma']              = 21.5e3
@@ -259,10 +270,14 @@ class TestGroup(unittest.TestCase):
 
         
     def testGeared_withSimpleGen(self):
-        
-        npts = 10
+
+        opt = {}
+        opt['nacelle'] = {}
+        opt['nacelle']['n_height'] = 10
+        opt['nacelle']['direct'] = False
+
         prob = om.Problem()
-        prob.model = DrivetrainSE(topLevelFlag=True, n_points=npts, n_dlcs=1, model_generator=False, direct_drive=False)
+        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=False)
         prob.setup()
         prob = set_common(prob)
 
@@ -291,7 +306,7 @@ class TestGroup(unittest.TestCase):
 
         prob['planet_numbers'] = np.array([3, 3, 0])
         prob['gear_configuration'] = 'eep'
-        prob['shaft_factor'] = 'normal'
+        #prob['shaft_factor'] = 'normal'
         prob['gear_ratio'] = 90.0
 
         try:

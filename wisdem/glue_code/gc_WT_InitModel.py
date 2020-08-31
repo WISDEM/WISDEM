@@ -46,7 +46,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
         
     if modeling_options['flags']['nacelle']:
         nacelle         = wt_init['components']['nacelle']
-        wt_opt = assign_nacelle_values(wt_opt, assembly, nacelle)
+        wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle)
     else:
         nacelle = {}
         
@@ -410,45 +410,47 @@ def assign_hub_values(wt_opt, hub):
 
     return wt_opt
 
-def assign_nacelle_values(wt_opt, assembly, nacelle):
 
-    wt_opt['nacelle.uptilt']            = nacelle['outer_shape_bem']['uptilt_angle']
-    wt_opt['nacelle.distance_tt_hub']   = nacelle['outer_shape_bem']['distance_tt_hub']
-    wt_opt['nacelle.overhang']          = nacelle['outer_shape_bem']['overhang']
+def assign_nacelle_values(wt_opt, modeling_options, nacelle):
+    # Common direct and geared
+    wt_opt['nacelle.uptilt']                    = nacelle['drivetrain']['uptilt']
+    wt_opt['nacelle.distance_tt_hub']           = nacelle['drivetrain']['distance_tt_hub']
+    wt_opt['nacelle.overhang']                  = nacelle['drivetrain']['overhang']
+    wt_opt['nacelle.distance_hub2mb']           = nacelle['drivetrain']['distance_hub2mb']
+    wt_opt['nacelle.distance_mb2mb']            = nacelle['drivetrain']['distance_mb2mb']
+    wt_opt['nacelle.L_generator']               = nacelle['drivetrain']['L_generator']
+    wt_opt['nacelle.lss_diameter']              = nacelle['drivetrain']['lss_diameter']
+    wt_opt['nacelle.lss_wall_thickness']        = nacelle['drivetrain']['lss_wall_thickness']
+    wt_opt['nacelle.gear_ratio']                = nacelle['drivetrain']['gear_ratio']
+    wt_opt['nacelle.gearbox_efficiency']        = nacelle['drivetrain']['gearbox_efficiency']
+    wt_opt['nacelle.mb1Type']                   = nacelle['drivetrain']['mb1Type']
+    wt_opt['nacelle.mb2Type']                   = nacelle['drivetrain']['mb2Type']
+    wt_opt['nacelle.uptower']                   = nacelle['drivetrain']['uptower']
 
-
-    wt_opt['nacelle.above_yaw_mass']    = nacelle['elastic_properties_mb']['above_yaw_mass']
-    wt_opt['nacelle.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
-    wt_opt['nacelle.nacelle_cm']        = nacelle['elastic_properties_mb']['center_mass']
-    wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['inertia']
-    
-    wt_opt['nacelle.gear_ratio']        = nacelle['drivetrain']['gear_ratio']
-    wt_opt['nacelle.gearbox_efficiency']    = nacelle['drivetrain']['gearbox_efficiency']
-    wt_opt['nacelle.generator_efficiency']  = nacelle['drivetrain']['generator_efficiency']
-    if assembly['drivetrain'].upper() != 'DIRECT DRIVE':
-        wt_opt['nacelle.shaft_ratio']       = nacelle['drivetrain']['shaft_ratio']
-        wt_opt['nacelle.planet_numbers']    = nacelle['drivetrain']['planet_numbers']
-        wt_opt['nacelle.shrink_disc_mass']  = nacelle['drivetrain']['shrink_disc_mass']
-        wt_opt['nacelle.carrier_mass']      = nacelle['drivetrain']['carrier_mass']
-        wt_opt['nacelle.flange_length']     = nacelle['drivetrain']['flange_length']
-        wt_opt['nacelle.gearbox_input_xcm'] = nacelle['drivetrain']['gearbox_input_xcm']
-        wt_opt['nacelle.hss_input_length']  = nacelle['drivetrain']['hss_input_length']
-        wt_opt['nacelle.distance_hub2mb']   = nacelle['drivetrain']['distance_hub2mb']
-        wt_opt['nacelle.yaw_motors_number'] = nacelle['drivetrain']['yaw_motors_number']
+    if modeling_options['nacelle']['direct']:
+        # Direct only
+        wt_opt['nacelle.access_diameter']           = nacelle['drivetrain']['access_diameter']
+        wt_opt['nacelle.nose_diameter']             = nacelle['drivetrain']['nose_diameter']
+        wt_opt['nacelle.nose_wall_thickness']       = nacelle['drivetrain']['nose_wall_thickness']
+        wt_opt['nacelle.bedplate_wall_thickness']   = nacelle['drivetrain']['bedplate_wall_thickness']
     else:
-        print('DriveSE not yet supports direct drive configurations!!! Please do not trust the nacelle design and the lcoe analysis!')
-        wt_opt['nacelle.shaft_ratio']       = 0.1
-        wt_opt['nacelle.planet_numbers']    = [3, 3, 1]
-        wt_opt['nacelle.shrink_disc_mass']  = 1600
-        wt_opt['nacelle.carrier_mass']      = 8000
-        wt_opt['nacelle.flange_length']     = 0.5
-        wt_opt['nacelle.gearbox_input_xcm'] = 0.1
-        wt_opt['nacelle.hss_input_length']  = 1.5
-        wt_opt['nacelle.distance_hub2mb']   = 1.912
-        wt_opt['nacelle.yaw_motors_number'] = 1.
+        # Geared only
+        wt_opt['nacelle.hss_length']                = nacelle['drivetrain']['hss_length']
+        wt_opt['nacelle.hss_diameter']              = nacelle['drivetrain']['hss_diameter']
+        wt_opt['nacelle.hss_wall_thickness']        = nacelle['drivetrain']['hss_wall_thickness']
+        wt_opt['nacelle.bedplate_flange_width']     = nacelle['drivetrain']['bedplate_flange_width']
+        wt_opt['nacelle.bedplate_flange_thickness'] = nacelle['drivetrain']['bedplate_flange_thickness']
+        wt_opt['nacelle.bedplate_web_thickness']    = nacelle['drivetrain']['bedplate_web_thickness']
+        wt_opt['nacelle.gear_configuration']        = nacelle['drivetrain']['gear_configuration']
+        wt_opt['nacelle.planet_numbers']            = nacelle['drivetrain']['planet_numbers']
 
+    #wt_opt['nacelle.above_yaw_mass']    = nacelle['elastic_properties_mb']['above_yaw_mass']
+    #wt_opt['nacelle.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
+    #wt_opt['nacelle.nacelle_cm']        = nacelle['elastic_properties_mb']['center_mass']
+    #wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['inertia']
 
     return wt_opt
+
 
 def assign_tower_values(wt_opt, modeling_options, tower):
     # Function to assign values to the openmdao component Tower
