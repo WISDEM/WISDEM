@@ -47,7 +47,9 @@ class Layout(om.ExplicitComponent):
         LSS wall thickness
     D_top : float, [m]
         Tower top outer diameter
-    rho : float, [kg/m**3]
+    lss_rho : float, [kg/m**3]
+        material density
+    bedplate_rho : float, [kg/m**3]
         material density
     
     Returns
@@ -100,7 +102,8 @@ class Layout(om.ExplicitComponent):
         self.add_input('lss_diameter', np.zeros(5), units='m')
         self.add_input('lss_wall_thickness', np.zeros(5), units='m')
         self.add_input('D_top', 0.0, units='m')
-        self.add_input('rho', val=0.0, units='kg/m**3')
+        self.add_input('lss_rho', val=0.0, units='kg/m**3')
+        self.add_input('bedplate_rho', val=0.0, units='kg/m**3')
 
         self.add_output('L_lss', 0.0, units='m')
         self.add_output('L_drive', 0.0, units='m')
@@ -217,21 +220,22 @@ class DirectLayout(Layout):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        L_12        = float(inputs['L_12'])
-        L_h1        = float(inputs['L_h1'])
-        L_generator = float(inputs['L_generator'])
-        L_overhang  = float(inputs['overhang'])
-        H_drive     = float(inputs['drive_height'])
-        tilt        = float(np.deg2rad(inputs['tilt']))
-        D_access    = float(inputs['access_diameter'])
-        D_nose      = inputs['nose_diameter']
-        D_lss       = inputs['lss_diameter']
-        D_top       = float(inputs['D_top'])
-        t_nose      = inputs['nose_wall_thickness']
-        t_lss       = inputs['lss_wall_thickness']
-        t_bed       = inputs['bedplate_wall_thickness']
-        upwind      = discrete_inputs['upwind']
-        rho         = float(inputs['rho'])
+        L_12         = float(inputs['L_12'])
+        L_h1         = float(inputs['L_h1'])
+        L_generator  = float(inputs['L_generator'])
+        L_overhang   = float(inputs['overhang'])
+        H_drive      = float(inputs['drive_height'])
+        tilt         = float(np.deg2rad(inputs['tilt']))
+        D_access     = float(inputs['access_diameter'])
+        D_nose       = inputs['nose_diameter']
+        D_lss        = inputs['lss_diameter']
+        D_top        = float(inputs['D_top'])
+        t_nose       = inputs['nose_wall_thickness']
+        t_lss        = inputs['lss_wall_thickness']
+        t_bed        = inputs['bedplate_wall_thickness']
+        upwind       = discrete_inputs['upwind']
+        lss_rho      = float(inputs['lss_rho'])
+        bedplate_rho = float(inputs['bedplate_rho'])
         
         # ------- Discretization ----------------
         L_grs      = 0.5 * L_h1
@@ -322,7 +326,7 @@ class DirectLayout(Layout):
         x_c_sec = util.nodal2sectional( x_c )[0]
         z_c_sec = util.nodal2sectional( z_c )[0]
         #R_c_sec = np.sqrt( x_c_sec**2 + z_c_sec**2 ) # unnecesary
-        mass    = util.nodal2sectional(A_bed)[0] * arc * rho
+        mass    = util.nodal2sectional(A_bed)[0] * arc * bedplate_rho
         mass_tot = mass.sum()
         cm      = np.array([np.sum(mass*x_c_sec), 0.0, np.sum(mass*z_c_sec)]) / mass_tot
         # For I, could do integral over sectional I, rotate axes by rad2, and then parallel axis theorem
@@ -372,12 +376,12 @@ class DirectLayout(Layout):
         outputs['D_bearing2'] = D_lss[-1] - t_lss[-1] - D_nose[-1]
 
         # Compute center of mass based on area
-        m_nose, cm_nose, I_nose = rod_prop(s_nose, D_nose, t_nose, rho)
+        m_nose, cm_nose, I_nose = rod_prop(s_nose, D_nose, t_nose, bedplate_rho)
         outputs['nose_mass'] = m_nose
         outputs['nose_cm']   = cm_nose
         outputs['nose_I']    = I_nose
 
-        m_lss, cm_lss, I_lss = rod_prop(s_lss, D_lss, t_lss, rho)
+        m_lss, cm_lss, I_lss = rod_prop(s_lss, D_lss, t_lss, lss_rho)
         outputs['lss_mass'] = m_lss
         outputs['lss_cm']   = cm_lss
         outputs['lss_I']    = I_lss
@@ -409,6 +413,8 @@ class GearedLayout(Layout):
         Bedplate is two parallel I beams, this is the web thickness
     bedplate_web_height : float, [m]
         Bedplate is two parallel I beams, this is the web height
+    hss_rho : float, [kg/m**3]
+        material density
     
     Returns
     -------
@@ -438,6 +444,7 @@ class GearedLayout(Layout):
         self.add_input('L_gearbox', 0.0, units='m')
         self.add_input('hss_diameter', np.zeros(3), units='m')
         self.add_input('hss_wall_thickness', np.zeros(3), units='m')
+        self.add_input('hss_rho', val=0.0, units='kg/m**3')
         self.add_input('bedplate_flange_width', val=0.0, units='m')
         self.add_input('bedplate_flange_thickness', val=0.0, units='m')
         self.add_input('bedplate_web_thickness', val=0.0, units='m')
@@ -475,7 +482,9 @@ class GearedLayout(Layout):
         #bed_h_web    = float(inputs['bedplate_web_height'])
         bed_t_web    = float(inputs['bedplate_web_thickness'])
 
-        rho          = float(inputs['rho'])
+        lss_rho      = float(inputs['lss_rho'])
+        hss_rho      = float(inputs['hss_rho'])
+        bedplate_rho = float(inputs['bedplate_rho'])
 
         # ------- Discretization ----------------
         # Length of lss and drivetrain length
@@ -511,13 +520,13 @@ class GearedLayout(Layout):
         
         # ------- hss, lss, and bearing properties ----------------
         # Compute center of mass based on area
-        m_hss, cm_hss, I_hss = rod_prop(s_hss, D_hss, t_hss, rho)
+        m_hss, cm_hss, I_hss = rod_prop(s_hss, D_hss, t_hss, hss_rho)
         outputs['hss_mass'] = m_hss
         outputs['hss_cm']   = cm_hss
         outputs['hss_I']    = I_hss
         outputs['s_hss']    = s_hss
 
-        m_lss, cm_lss, I_lss = rod_prop(s_lss, D_lss, t_lss, rho)
+        m_lss, cm_lss, I_lss = rod_prop(s_lss, D_lss, t_lss, lss_rho)
         outputs['lss_mass'] = m_lss
         outputs['lss_cm']   = cm_lss
         outputs['lss_I']    = I_lss
@@ -531,9 +540,9 @@ class GearedLayout(Layout):
         bed_h_web = H_bedplate - 2*bed_t_flange - 0.05 # Leave some extra room for plate?
         
         myI         = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
-        m_bedplate  = myI.Area * L_bedplate * rho
+        m_bedplate  = myI.Area * L_bedplate * bedplate_rho
         cg_bedplate = np.r_[Cup*(L_overhang + 0.5*D_top - 0.5*L_bedplate), 0.0, myI.CG] # from tower top
-        I_bedplate  = rho*L_bedplate*np.r_[myI.Jxx, myI.Iyy, myI.Izz] + m_bedplate*L_bedplate**2/12.*np.r_[0., 1., 1.]
+        I_bedplate  = bedplate_rho*L_bedplate*np.r_[myI.Jxx, myI.Iyy, myI.Izz] + m_bedplate*L_bedplate**2/12.*np.r_[0., 1., 1.]
         outputs['bedplate_web_height'] = bed_h_web
         outputs['bedplate_mass'] = m_bedplate
         outputs['bedplate_cm']   = cg_bedplate

@@ -57,13 +57,13 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Gearbox rotor mass
     gearbox_I : numpy array[3], [kg*m**2]
         Gearbox moment of inertia (measured about its cm)
-    E : float, [Pa]
+    lss_E : float, [Pa]
         modulus of elasticity
-    G : float, [Pa]
+    lss_G : float, [Pa]
         shear modulus
-    rho : float, [kg/m**3]
+    lss_rho : float, [kg/m**3]
         material density
-    sigma_y : float, [Pa]
+    lss_Xy : float, [Pa]
         yield stress
     gamma_f : float
         safety factor
@@ -125,13 +125,13 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input('I_rotor', val=np.zeros(3), units='kg*m**2')
         self.add_input('gearbox_mass', val=0.0, units='kg')
         self.add_input('gearbox_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('E', val=0.0, units='Pa')
-        self.add_input('G', val=0.0, units='Pa')
-        self.add_input('rho', val=0.0, units='kg/m**3')
-        self.add_input('sigma_y', val=0.0, units='Pa')
-        self.add_input('gamma_f', val=0.0)
-        self.add_input('gamma_m', 0.0)
-        self.add_input('gamma_n', 0.0)
+        self.add_input('lss_E', val=0.0, units='Pa')
+        self.add_input('lss_G', val=0.0, units='Pa')
+        self.add_input('lss_rho', val=0.0, units='kg/m**3')
+        self.add_input('lss_Xy', val=0.0, units='Pa')
+        self.add_input('gamma_f', val=1.0)
+        self.add_input('gamma_m', val=1.0)
+        self.add_input('gamma_n', val=1.0)
 
         self.add_output('torq_deflection', val=0.0, units='m')
         self.add_output('torq_rotation', val=0.0, units='rad')
@@ -167,10 +167,10 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             m_gearbox  = float(inputs['gearbox_mass'])
             I_gearbox  = inputs['gearbox_I']
         
-        rho        = float(inputs['rho'])
-        E          = float(inputs['E'])
-        G          = float(inputs['G'])
-        sigma_y    = float(inputs['sigma_y'])
+        rho        = float(inputs['lss_rho'])
+        E          = float(inputs['lss_E'])
+        G          = float(inputs['lss_G'])
+        sigma_y    = float(inputs['lss_Xy'])
         gamma_f    = float(inputs['gamma_f'])
         gamma_m    = float(inputs['gamma_m'])
         gamma_n    = float(inputs['gamma_n'])
@@ -341,13 +341,13 @@ class HSS_Frame(om.ExplicitComponent):
         Gearbox center of mass (measured from tower center)
     I_generator : numpy array[3], [kg*m**2]
         Gearbox moment of inertia (measured about its cm)
-    E : float, [Pa]
+    hss_E : float, [Pa]
         modulus of elasticity
-    G : float, [Pa]
+    hss_G : float, [Pa]
         shear modulus
-    rho : float, [kg/m**3]
+    hss_rho : float, [kg/m**3]
         material density
-    sigma_y : float, [Pa]
+    hss_Xy : float, [Pa]
         yield stress
     gamma_f : float
         safety factor
@@ -390,13 +390,13 @@ class HSS_Frame(om.ExplicitComponent):
         self.add_input('generator_I', val=np.zeros(3), units='kg*m**2')
         self.add_input('brake_mass', val=0.0, units='kg')
         self.add_input('brake_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('E', val=0.0, units='Pa')
-        self.add_input('G', val=0.0, units='Pa')
-        self.add_input('rho', val=0.0, units='kg/m**3')
-        self.add_input('sigma_y', val=0.0, units='Pa')
-        self.add_input('gamma_f', val=0.0)
-        self.add_input('gamma_m', 0.0)
-        self.add_input('gamma_n', 0.0)
+        self.add_input('hss_E', val=0.0, units='Pa')
+        self.add_input('hss_G', val=0.0, units='Pa')
+        self.add_input('hss_rho', val=0.0, units='kg/m**3')
+        self.add_input('hss_Xy', val=0.0, units='Pa')
+        self.add_input('gamma_f', val=1.0)
+        self.add_input('gamma_m', val=1.0)
+        self.add_input('gamma_n', val=1.0)
 
         self.add_output('hss_axial_stress', np.zeros((2, n_dlcs)), units='Pa')
         self.add_output('hss_shear_stress', np.zeros((2, n_dlcs)), units='Pa')
@@ -421,10 +421,10 @@ class HSS_Frame(om.ExplicitComponent):
         m_brake  = float(inputs['brake_mass'])
         I_brake  = inputs['brake_I']
         
-        rho        = float(inputs['rho'])
-        E          = float(inputs['E'])
-        G          = float(inputs['G'])
-        sigma_y    = float(inputs['sigma_y'])
+        rho        = float(inputs['hss_rho'])
+        E          = float(inputs['hss_E'])
+        G          = float(inputs['hss_G'])
+        sigma_y    = float(inputs['hss_Xy'])
         gamma_f    = float(inputs['gamma_f'])
         gamma_m    = float(inputs['gamma_m'])
         gamma_n    = float(inputs['gamma_n'])
@@ -600,13 +600,13 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         Moment vector applied to bearing 2 in hub c.s.
     other_mass : float, [kg]
         Mass of other nacelle components that rest on mainplate
-    E : float, [Pa]
+    bedplate_E : float, [Pa]
         modulus of elasticity
-    G : float, [Pa]
+    bedplate_G : float, [Pa]
         shear modulus
-    rho : float, [kg/m**3]
+    bedplate_rho : float, [kg/m**3]
         material density
-    sigma_y : float, [Pa]
+    bedplate_Xy : float, [Pa]
         yield stress
     gamma_f : float
         safety factor
@@ -685,13 +685,13 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_input('M_mb1', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('M_mb2', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('other_mass', val=0.0, units='kg')
-        self.add_input('E', val=0.0, units='Pa')
-        self.add_input('G', val=0.0, units='Pa')
-        self.add_input('rho', val=0.0, units='kg/m**3')
-        self.add_input('sigma_y', val=0.0, units='Pa')
-        self.add_input('gamma_f', val=0.0)
-        self.add_input('gamma_m', 0.0)
-        self.add_input('gamma_n', 0.0)
+        self.add_input('bedplate_E', val=0.0, units='Pa')
+        self.add_input('bedplate_G', val=0.0, units='Pa')
+        self.add_input('bedplate_rho', val=0.0, units='kg/m**3')
+        self.add_input('bedplate_Xy', val=0.0, units='Pa')
+        self.add_input('gamma_f', val=1.0)
+        self.add_input('gamma_m', val=1.0)
+        self.add_input('gamma_n', val=1.0)
 
         self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m')
         self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m')
@@ -743,10 +743,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         m_stator   = float(inputs['m_stator'])
         I_stator   = inputs['I_stator']
         
-        rho        = float(inputs['rho'])
-        E          = float(inputs['E'])
-        G          = float(inputs['G'])
-        sigma_y    = float(inputs['sigma_y'])
+        rho        = float(inputs['bedplate_rho'])
+        E          = float(inputs['bedplate_E'])
+        G          = float(inputs['bedplate_G'])
+        sigma_y    = float(inputs['bedplate_Xy'])
         gamma_f    = float(inputs['gamma_f'])
         gamma_m    = float(inputs['gamma_m'])
         gamma_n    = float(inputs['gamma_n'])
@@ -1047,13 +1047,13 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         self.add_input('M_torq', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('M_generator', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('other_mass', val=0.0, units='kg')
-        self.add_input('E', val=0.0, units='Pa')
-        self.add_input('G', val=0.0, units='Pa')
-        self.add_input('rho', val=0.0, units='kg/m**3')
-        self.add_input('sigma_y', val=0.0, units='Pa')
-        self.add_input('gamma_f', val=0.0)
-        self.add_input('gamma_m', 0.0)
-        self.add_input('gamma_n', 0.0)
+        self.add_input('bedplate_E', val=0.0, units='Pa')
+        self.add_input('bedplate_G', val=0.0, units='Pa')
+        self.add_input('bedplate_rho', val=0.0, units='kg/m**3')
+        self.add_input('bedplate_Xy', val=0.0, units='Pa')
+        self.add_input('gamma_f', val=1.0)
+        self.add_input('gamma_m', val=1.0)
+        self.add_input('gamma_n', val=1.0)
 
         self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m')
         self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m')
@@ -1095,10 +1095,10 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         bed_h_web    = float(inputs['bedplate_web_height'])
         bed_t_web    = float(inputs['bedplate_web_thickness'])
         
-        rho          = float(inputs['rho'])
-        E            = float(inputs['E'])
-        G            = float(inputs['G'])
-        sigma_y      = float(inputs['sigma_y'])
+        rho          = float(inputs['bedplate_rho'])
+        E            = float(inputs['bedplate_E'])
+        G            = float(inputs['bedplate_G'])
+        sigma_y      = float(inputs['bedplate_Xy'])
         gamma_f      = float(inputs['gamma_f'])
         gamma_m      = float(inputs['gamma_m'])
         gamma_n      = float(inputs['gamma_n'])

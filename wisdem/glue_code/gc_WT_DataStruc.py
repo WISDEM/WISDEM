@@ -135,6 +135,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         conf_ivc.add_discrete_output('turb_class',          val='',         desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
         conf_ivc.add_discrete_output('gearbox_type',        val='geared',   desc='Gearbox configuration (geared, direct-drive, etc.).')
         conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',   desc='Rotor orientation, either upwind or downwind.')
+        conf_ivc.add_discrete_output('upwind',              val=True,       desc='Convenient boolean for upwind (True) or downwind (False).')
         conf_ivc.add_discrete_output('n_blades',            val=3,          desc='Number of blades of the rotor.')
 
         # Environment inputs

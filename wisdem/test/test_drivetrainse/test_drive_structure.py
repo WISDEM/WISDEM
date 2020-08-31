@@ -83,10 +83,11 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
         self.inputs['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))
         
-        self.inputs['E'] = 210e9
-        self.inputs['G'] = 80.8e9
-        self.inputs['rho'] = 7850.
-        self.inputs['sigma_y'] = 250e6
+        self.inputs['lss_E'] = self.inputs['hss_E'] = self.inputs['bedplate_E'] = 210e9
+        self.inputs['lss_G'] = self.inputs['hss_G'] = self.inputs['bedplate_G'] = 80.8e9
+        self.inputs['lss_rho'] = self.inputs['hss_rho'] = self.inputs['bedplate_rho'] = 7850.
+        self.inputs['lss_Xy'] = self.inputs['hss_Xy'] = self.inputs['bedplate_Xy'] = 250e6
+
         self.inputs['gamma_f'] = 1.35
         self.inputs['gamma_m'] = 1.3
         self.inputs['gamma_n'] = 1.0

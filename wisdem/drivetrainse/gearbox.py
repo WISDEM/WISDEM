@@ -58,8 +58,6 @@ class Gearbox(om.ExplicitComponent):
         number of planets in each stage
     gear_ratio : float
         overall gearbox speedup ratio
-    rotor_rpm : float, [rpm]
-        rotor rpm at rated power
     D_rotor : float, [m]
         rotor diameter
     Q_rotor : float, [N*m]
@@ -92,7 +90,7 @@ class Gearbox(om.ExplicitComponent):
     def setup(self):
         self.add_discrete_input('gear_configuration', val='eep')
         #self.add_discrete_input('shaft_factor', val='normal')
-        self.add_discrete_input('planet_numbers', val=np.array([3, 3, 0]))
+        self.add_discrete_input('planet_numbers', val=[3, 3, 0])
         self.add_input('gear_ratio', val=1.0)
         self.add_input('rotor_diameter', val=0.0, units='m')
         self.add_input('rotor_torque', val=0.0, units='N*m')

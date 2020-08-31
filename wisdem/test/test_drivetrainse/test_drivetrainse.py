@@ -13,11 +13,11 @@ def set_common(prob):
     prob['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
     prob['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))
 
-    prob['E'] = 210e9
-    prob['G'] = 80.8e9
-    prob['v'] = 0.3
-    prob['rho'] = 7850.
-    prob['sigma_y'] = 250e6
+    prob['lss_E'] = prob['hss_E'] = prob['bedplate_E'] = 210e9
+    prob['lss_G'] = prob['hss_G'] = prob['bedplate_G'] = 80.8e9
+    prob['lss_rho'] = prob['hss_rho'] = prob['bedplate_rho'] = 7850.
+    prob['lss_Xy'] = prob['hss_Xy'] = prob['bedplate_Xy'] = 250e6
+    
     prob['gamma_f'] = 1.35
     prob['gamma_m'] = 1.3
     prob['gamma_n'] = 1.0

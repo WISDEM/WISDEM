@@ -450,25 +450,25 @@ properties:
                                 default: 1.5
                             hss_diameter:
                                 type: array
-                                default: [0.1, 0.1, 0.1, 0.1, 0.1]
+                                default: [0.1, 0.1, 0.1]
                                 description: Diameter of the high speed shaft
                                 items:
                                     type: number
                                     unit: meter
-                                    minItems: 5
-                                    maxItems: 5
+                                    minItems: 3
+                                    maxItems: 3
                                     uniqueItems: false
                                     minimum: 0.0
                                     maximum: 5.
                             hss_wall_thickness:
                                 type: array
-                                default: [0.05, 0.05, 0.05, 0.05, 0.05]
+                                default: [0.05, 0.05, 0.05]
                                 description: Thickness of the high speed shaft wall in radial direction
                                 items:
                                     type: number
                                     unit: meter
-                                    minItems: 5
-                                    maxItems: 5
+                                    minItems: 3
+                                    maxItems: 3
                                     uniqueItems: false
                                     minimum: 0.0
                                     maximum: 5.

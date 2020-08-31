@@ -185,8 +185,8 @@ components:
           lss_material: steel
           generator_length: 2.0
           hss_length: 1.5
-          hss_diameter: [0.288, 0.288, 0.288, 0.288, 0.288]
-          hss_wall_thickness: [0.144, 0.144, 0.144, 0.144, 0.144]
+          hss_diameter: [0.288, 0.288, 0.288]
+          hss_wall_thickness: [0.144, 0.144, 0.144]
           hss_material: steel
           bedplate_flange_width: 1.0
           bedplate_flange_thickness: 0.05

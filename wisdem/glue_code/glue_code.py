@@ -147,7 +147,8 @@ class WT_RNTA(om.Group):
             self.connect('control.rated_pitch' ,           'sse.control_pitch')
             self.connect('configuration.gearbox_type' ,    'sse.drivetrainType')
             self.connect('nacelle.gearbox_efficiency',     'sse.powercurve.gearbox_efficiency')
-            self.connect('nacelle.generator_efficiency',   'sse.powercurve.generator_efficiency')
+            if modeling_options['Analysis_Flags']['DriveSE']:
+                self.connect('drivese.generator_efficiency',   'sse.powercurve.generator_efficiency')
             self.connect('assembly.r_blade',               'sse.r')
             # self.connect('blade.pa.chord_param',           'sse.chord')
             # self.connect('blade.pa.twist_param',           'sse.theta')
@@ -239,7 +240,7 @@ class WT_RNTA(om.Group):
             self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')
             self.connect('configuration.upwind',       'drivese.upwind')
             self.connect('configuration.n_blades',     'drivese.n_blades') 
-            self.connect('sse.powercurve.rated_Omega', ['drivese.generator.n_nom','drivese.rotor_rpm'])
+            self.connect('sse.powercurve.rated_Omega', 'drivese.generator.n_nom')
             self.connect('sse.powercurve.rated_Q',     ['drivese.generator.T_rated','drivese.rotor_torque'])
             self.connect('sse.gust.V_gust',            'drivese.spinner.gust_ws')
             self.connect('control.rated_power',        'drivese.machine_rating')    
@@ -258,32 +259,38 @@ class WT_RNTA(om.Group):
 
             self.connect('nacelle.distance_hub2mb',           'drivese.L_h1')
             self.connect('nacelle.distance_mb2mb',            'drivese.L_12')
-            self.connect('nacelle.generator_length',          'drivese.L_generator')
+            self.connect('nacelle.L_generator',               'drivese.L_generator')
             self.connect('nacelle.overhang',                  'drivese.overhang')
             self.connect('nacelle.distance_tt_hub',           'drivese.drive_height')
             self.connect('nacelle.uptilt',                    'drivese.tilt')
             self.connect('nacelle.gear_ratio',                'drivese.gear_ratio')
-            self.connect('nacelle.main_bearing1_type',        'drivese.mb1Type')
-            self.connect('nacelle.main_bearing2_type',        'drivese.mb2Type')
-            self.connect('nacelle.planet_numbers',            'drivese.planet_numbers') # only used in geared
-            self.connect('nacelle.gear_configuration',        'drivese.gear_configuration') # only used in geared
-            self.connect('nacelle.uptower_electronics',       'drivese.uptower')
-            self.connect('nacelle.gearbox_efficiency',        'drivese.gearbox_efficiency')
-            self.connect('nacelle.access_diameter',           'drivese.access_diameter') # only used in direct
-            self.connect('nacelle.hss_length',                'drivese.L_hss') # only used in geared
-            self.connect('nacelle.hss_diameter',              'drivese.hss_diameter') # only used in geared
-            self.connect('nacelle.hss_wall_thickness',        'drivese.hss_wall_thickness') # only used in geared
+            self.connect('nacelle.mb1Type',                   'drivese.bear1.bearing_type')
+            self.connect('nacelle.mb2Type',                   'drivese.bear2.bearing_type')
             self.connect('nacelle.lss_diameter',              'drivese.lss_diameter')
             self.connect('nacelle.lss_wall_thickness',        'drivese.lss_wall_thickness')
-            self.connect('nacelle.nose_diameter',             'drivese.nose_diameter') # only used in direct
-            self.connect('nacelle.nose_wall_thickness',       'drivese.nose_wall_thickness') # only used in direct
-            self.connect('nacelle.bedplate_wall_thickness',   'drivese.bedplate_wall_thickness') # only used in direct
-            self.connect('nacelle.bedplate_flange_width',     'drivese.bedplate_flange_width') # only used in geared
-            self.connect('nacelle.bedplate_flange_thickness', 'drivese.bedplate_flange_thickness') # only used in geared
-            self.connect('nacelle.bedplate_web_thickness',    'drivese.bedplate_web_thickness') # only used in geared
-
+            self.connect('nacelle.lss_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
+            self.connect('nacelle.lss_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
+            self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
+            self.connect('nacelle.uptower',                   'drivese.uptower')
+            self.connect('nacelle.gearbox_efficiency',        'drivese.gearbox_efficiency')
+            
+            if modeling_options['nacelle']['direct']:
+                self.connect('nacelle.access_diameter',           'drivese.access_diameter') # only used in direct
+                self.connect('nacelle.nose_diameter',             'drivese.nose_diameter') # only used in direct
+                self.connect('nacelle.nose_wall_thickness',       'drivese.nose_wall_thickness') # only used in direct
+                self.connect('nacelle.bedplate_wall_thickness',   'drivese.bedplate_wall_thickness') # only used in direct
+            else:
+                self.connect('nacelle.hss_length',                'drivese.L_hss') # only used in geared
+                self.connect('nacelle.hss_diameter',              'drivese.hss_diameter') # only used in geared
+                self.connect('nacelle.hss_wall_thickness',        'drivese.hss_wall_thickness') # only used in geared
+                self.connect('nacelle.hss_material',              'drivese.hss_material')
+                self.connect('nacelle.planet_numbers',            'drivese.planet_numbers') # only used in geared
+                self.connect('nacelle.gear_configuration',        'drivese.gear_configuration') # only used in geared
+                self.connect('nacelle.bedplate_flange_width',     'drivese.bedplate_flange_width') # only used in geared
+                self.connect('nacelle.bedplate_flange_thickness', 'drivese.bedplate_flange_thickness') # only used in geared
+                self.connect('nacelle.bedplate_web_thickness',    'drivese.bedplate_web_thickness') # only used in geared
+                
             self.connect('nacelle.lss_material',              'drivese.lss_material')
-            self.connect('nacelle.hss_material',              'drivese.hss_material')
             self.connect('nacelle.bedplate_material',         'drivese.bedplate_material')
             self.connect('materials.name',                    'drivese.material_names')
             self.connect('materials.E',                       'drivese.E_mat')

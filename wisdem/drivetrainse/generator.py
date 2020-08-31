@@ -410,10 +410,12 @@ class Generator(om.Group):
             sivc.add_output('n_nom', 0.0, units='rpm')
             sivc.add_output('T_rated', 0.0, units='N*m')
             sivc.add_output('D_shaft', val=0.0, units='m')
-            sivc.add_output('v', val=0.)
             sivc.add_output('E', val=0., units='Pa')
             sivc.add_output('G', val=0., units='Pa')
             self.add_subsystem('sivc', sivc, promotes=['*'])
+
+        # Easy Poisson ratio assuming isotropic
+        self.add_subsystem('poisson', om.ExecComp('v = 0.5*E/G - 1.0'), promotes=['*'])
         
         # Add generator design component and cost
         if genType.lower() == 'scig':
