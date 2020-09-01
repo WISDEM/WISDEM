@@ -193,6 +193,13 @@ class FASTLoadCases(ExplicitComponent):
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_pc          = n_pc      = servose_init_options['n_pc']
         n_OF     = len(openfast_init_options['dlc_settings']['Power_Curve']['U'])
+        if n_OF == 0 and openfast_init_options['dlc_settings']['run_power_curve']:
+            for i in range(len(openfast_init_options['dlc_settings']['IEC'])):
+                if openfast_init_options['dlc_settings']['IEC'][i]['DLC'] == 1.1:
+                    n_OF = len(openfast_init_options['dlc_settings']['IEC'][i]['U'])
+            if n_OF == 0:
+                raise ValueError('There is a problem with the initialization of the DLCs to compute the powercurve. Please check modeling_options.yaml')
+
         self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
         self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
         self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
