@@ -113,3 +113,7 @@ Thumbs.db
 # Needed for documentation, not sure why there were added
 #*.png
 #*.pdf
+
+# IntelliJ Things #
+####################
+.idea/
