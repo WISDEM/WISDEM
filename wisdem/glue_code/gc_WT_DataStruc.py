@@ -79,7 +79,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             if modeling_options['drivetrainse']['direct']:
                 # Direct only
-                npts = modeling_options['nacelle']['n_height']
+                npts = modeling_options['drivetrainse']['n_height']
                 nacelle.add_output('access_diameter',         val=0.0,         units='m',  desc='Minimum diameter for hollow shafts for maintenance access')
                 nacelle.add_output('nose_diameter',           val=np.zeros(5), units='m',  desc='Diameter of nose (also called turret or spindle)')
                 nacelle.add_output('nose_wall_thickness',     val=np.zeros(5), units='m',  desc='Thickness of nose (also called turret or spindle)')

@@ -391,7 +391,7 @@ properties:
                                     maxItems: 5
                                     uniqueItems: false
                                     minimum: 0.0
-                                    maximum: 5.
+                                    maximum: 10.
                             lss_wall_thickness:
                                 type: array
                                 default: [0.1, 0.1, 0.1, 0.1, 0.1]
@@ -1167,7 +1167,7 @@ properties:
                 type: string
                 default: geared
                 description: String characterizing the drivetrain configuration
-                enum: [geared, Geared, Direct, Direct_Drive, Direct drive, direct, direct_drive, direct drive]
+                enum: [geared, Geared, GEARED, PM_Direct_Drive, Direct, Direct_Drive, direct, direct_drive, pm_direct_drive, DIRECT, DIRECT_DRIVE, PM_DIRECT_DRIVE]
             rotor_orientation:
                 type: string
                 default: Upwind

@@ -382,7 +382,7 @@ class Generator(om.Group):
             ivc.add_output('t_r',0.0, units ='m')
             ivc.add_output('t_s',0.0, units ='m')
 
-            # Only if topLevelFlag
+            # These are part of sivc and only get added if topLevelFlag
             sivc.add_output('P_mech', 0.0, units='W')
             sivc.add_output('y_sh', units ='m')
             sivc.add_output('theta_sh', 0.0, units='rad')

@@ -11,7 +11,7 @@ class TestGenerators(unittest.TestCase):
         self.discrete_outputs = {}
 
         self.inputs['machine_rating'] = 5e6
-        self.inputs['T_rated']        = 4.143289e6
+        self.inputs['rated_torque']        = 4.143289e6
 
         self.inputs['rho_Fe']         = 7700.0
         self.inputs['rho_Fes']        = 7850.0
@@ -57,7 +57,7 @@ class TestGenerators(unittest.TestCase):
         myobj = gm.PMSG_Outer()
 
         self.inputs['machine_rating'] = 10.321e6
-        self.inputs['T_rated']        = 10.25e6       #rev 1 9.94718e6
+        self.inputs['rated_torque']        = 10.25e6       #rev 1 9.94718e6
         self.inputs['P_mech']         = 10.71947704e6 #rev 1 9.94718e6
         self.inputs['rated_rpm']          = 10            #8.68                # rpm 9.6
         self.inputs['r_g']            = 4.0           # rev 1  4.92

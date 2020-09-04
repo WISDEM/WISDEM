@@ -15,6 +15,7 @@ class DriveMaterials(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('n_mat')
+        self.options.declare('direct', default=False)
     
     def setup(self):
         n_mat    = self.options['n_mat']
@@ -68,7 +69,6 @@ class DriveMaterials(om.ExplicitComponent):
         hub_name  = discrete_inputs['hub_material']
         spin_name = discrete_inputs['spinner_material']
         lss_name  = discrete_inputs['lss_material']
-        hss_name  = discrete_inputs['hss_material']
         bed_name  = discrete_inputs['bedplate_material']
         mat_names = discrete_inputs['material_names']
 
@@ -76,7 +76,6 @@ class DriveMaterials(om.ExplicitComponent):
         spin_imat = mat_names.index( spin_name )
         hub_imat  = mat_names.index( hub_name )
         lss_imat  = mat_names.index( lss_name )
-        hss_imat  = mat_names.index( hss_name )
         bed_imat  = mat_names.index( bed_name )
 
         outputs['hub_E']        = E[hub_imat]
@@ -95,17 +94,20 @@ class DriveMaterials(om.ExplicitComponent):
         outputs['lss_Xy']       = sigy[lss_imat]
         outputs['lss_cost']     = cost[lss_imat]
 
-        outputs['hss_E']        = E[hss_imat]
-        outputs['hss_G']        = G[hss_imat]
-        outputs['hss_rho']      = rho[hss_imat]
-        outputs['hss_Xy']       = sigy[hss_imat]
-        outputs['hss_cost']     = cost[hss_imat]
-
         outputs['bedplate_E']    = E[bed_imat]
         outputs['bedplate_G']    = G[bed_imat]
         outputs['bedplate_rho']  = rho[bed_imat]
         outputs['bedplate_Xy']   = sigy[bed_imat]
         outputs['bedplate_mat_cost'] = cost[bed_imat]
+
+        if not self.options['direct']:
+            hss_name  = discrete_inputs['hss_material']
+            hss_imat  = mat_names.index( hss_name )
+            outputs['hss_E']        = E[hss_imat]
+            outputs['hss_G']        = G[hss_imat]
+            outputs['hss_rho']      = rho[hss_imat]
+            outputs['hss_Xy']       = sigy[hss_imat]
+            outputs['hss_cost']     = cost[hss_imat]
         
         
 class DrivetrainSE(om.Group):
@@ -123,7 +125,7 @@ class DrivetrainSE(om.Group):
         n_dlcs   = self.options['n_dlcs']
         direct   = opt['direct']
         dogen    = opt['model_generator']
-
+        n_points = opt['n_height']
         
         '''
         # Independent variables that are unique to the drivetrain (except for the generator ones)
@@ -217,7 +219,6 @@ class DrivetrainSE(om.Group):
             sivc.add_output('machine_rating',         0.0, units='kW')
             
             if direct:
-                n_points = opt['n_height']
                 # Direct only
                 sivc.add_output('nose_diameter', np.zeros(5), units='m')
                 sivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
@@ -242,7 +243,7 @@ class DrivetrainSE(om.Group):
 
             self.add_subsystem('sivc', sivc, promotes=['*'])
         else:
-            self.add_subsystem('mat', DriveMaterials(n_mat=self.options['modeling_options']['materials']['n_mat']), promotes=['*'])
+            self.add_subsystem('mat', DriveMaterials(direct=direct, n_mat=self.options['modeling_options']['materials']['n_mat']), promotes=['*'])
 
             
         # Core drivetrain modules

@@ -20,7 +20,7 @@ def set_common(prob, opt):
     prob['hub_mat_cost'] = prob['bedplate_mat_cost'] = prob['spinner_mat_cost'] = 3.
     prob['spinner_Xt'] = 60.e6
     #prob['lss_cost'] = prob['hss_cost'] =
-    if not opt['nacelle']['direct']:
+    if not opt['drivetrainse']['direct']:
         prob['hss_E']    = prob['bedplate_E']
         prob['hss_G']    = prob['bedplate_G']
         prob['hss_rho']  = prob['bedplate_rho']
@@ -62,15 +62,16 @@ class TestGroup(unittest.TestCase):
     def testDirectDrive_withGen(self):
 
         opt = {}
-        opt['nacelle'] = {}
-        opt['nacelle']['n_height'] = npts = 10
-        opt['nacelle']['direct'] = True
-        opt['hub'] = {}
-        opt['hub']['hub_gamma'] = 2.0
-        opt['hub']['spinner_gamma'] = 1.5
+        opt['drivetrainse'] = {}
+        opt['drivetrainse']['n_height'] = npts = 10
+        opt['drivetrainse']['direct'] = True
+        opt['drivetrainse']['model_generator'] = True
+        opt['drivetrainse']['hub'] = {}
+        opt['drivetrainse']['hub']['hub_gamma'] = 2.0
+        opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
         
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=True)
+        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -91,7 +92,7 @@ class TestGroup(unittest.TestCase):
         prob['nose_wall_thickness'] = 0.1*myones
         prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
 
-        prob['generator.T_rated']        = 10.25e6       #rev 1 9.94718e6
+        prob['rated_torque']        = 10.25e6       #rev 1 9.94718e6
         prob['generator.P_mech']         = 10.71947704e6 #rev 1 9.94718e6
         prob['generator.r_g']            = 4.0           # rev 1  4.92
         prob['generator.len_s']          = 1.7           # rev 2.3
@@ -138,15 +139,16 @@ class TestGroup(unittest.TestCase):
     def testDirectDrive_withSimpleGen(self):
 
         opt = {}
-        opt['nacelle'] = {}
-        opt['nacelle']['n_height'] = npts = 10
-        opt['nacelle']['direct'] = True
-        opt['hub'] = {}
-        opt['hub']['hub_gamma'] = 2.0
-        opt['hub']['spinner_gamma'] = 1.5
+        opt['drivetrainse'] = {}
+        opt['drivetrainse']['n_height'] = npts = 10
+        opt['drivetrainse']['direct'] = True
+        opt['drivetrainse']['model_generator'] = False
+        opt['drivetrainse']['hub'] = {}
+        opt['drivetrainse']['hub']['hub_gamma'] = 2.0
+        opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
         
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=False)
+        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -178,15 +180,16 @@ class TestGroup(unittest.TestCase):
     def testGeared_withGen(self):
 
         opt = {}
-        opt['nacelle'] = {}
-        opt['nacelle']['n_height'] = npts = 10
-        opt['nacelle']['direct'] = False
-        opt['hub'] = {}
-        opt['hub']['hub_gamma'] = 2.0
-        opt['hub']['spinner_gamma'] = 1.5
+        opt['drivetrainse'] = {}
+        opt['drivetrainse']['n_height'] = npts = 10
+        opt['drivetrainse']['direct'] = False
+        opt['drivetrainse']['model_generator'] = True
+        opt['drivetrainse']['hub'] = {}
+        opt['drivetrainse']['hub']['hub_gamma'] = 2.0
+        opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=True)
+        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -278,15 +281,16 @@ class TestGroup(unittest.TestCase):
     def testGeared_withSimpleGen(self):
 
         opt = {}
-        opt['nacelle'] = {}
-        opt['nacelle']['n_height'] = npts = 10
-        opt['nacelle']['direct'] = False
-        opt['hub'] = {}
-        opt['hub']['hub_gamma'] = 2.0
-        opt['hub']['spinner_gamma'] = 1.5
+        opt['drivetrainse'] = {}
+        opt['drivetrainse']['n_height'] = npts = 10
+        opt['drivetrainse']['direct'] = False
+        opt['drivetrainse']['model_generator'] = False
+        opt['drivetrainse']['hub'] = {}
+        opt['drivetrainse']['hub']['hub_gamma'] = 2.0
+        opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=False)
+        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
         prob.setup()
         prob = set_common(prob, opt)
 

@@ -50,7 +50,7 @@ class TestComponents(unittest.TestCase):
 
         discrete_inputs['direct_drive'] = True
         inputs['rotor_diameter']   = 200.0
-        inputs['rotor_torque']     = 10e6
+        inputs['rated_torque']     = 10e6
         inputs['s_rotor']          = 3.0
         inputs['s_gearbox']        = 0.0
         myobj.compute(inputs, outputs)
@@ -75,7 +75,7 @@ class TestComponents(unittest.TestCase):
 
         inputs['rotor_diameter']   = 200.0
         inputs['machine_rating']   = 10e3
-        inputs['rotor_torque']     = 10e6
+        inputs['rated_torque']     = 10e6
         myobj.compute(inputs, outputs)
         self.assertEqual(outputs['R_generator'], 1.5)
         m = 37.68*10e3
