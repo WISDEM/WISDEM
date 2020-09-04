@@ -107,27 +107,33 @@ class HubShell(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         # Compute diameter and radius of the hub including safety factor
         dsgn_hub_diam           = inputs['hub_diameter']
-        dsgn_hub_rad            = inputs['hub_radius']
+        dsgn_hub_rad            = 0.5*dsgn_hub_diam
 
         # Determine max stress
         stress_allow_pa = inputs['Xy'] / (inputs['hub_stress_concentration'] * self.options['gamma']) 
+
         # Size shell thickness, assuming max torsional stress from torque can not exceed design allowable stress, and solving, torsional stress (t=Tr/J), and polar moment of inertia (J=PI/32(Do^4-Di^4), for thickness.
         sph_hub_shell_thick = (((dsgn_hub_diam**4. - 32. / np.pi*inputs['max_torque']*dsgn_hub_rad/stress_allow_pa)**(1./4.)) - dsgn_hub_diam) / (-2.)
 
         # Compute volume and mass of the shell  
         sph_hub_vol = 4./3. * np.pi * (dsgn_hub_rad**3. - (dsgn_hub_rad - sph_hub_shell_thick)**3.)
         sph_hub_mass = sph_hub_vol * inputs['rho']
+
         # Assume outer (OD) and inner diameter (ID) of the flanges based on hub diameter
         main_flange_OD    = dsgn_hub_diam  * inputs['flange_OD2hub_D']
         main_flange_ID    = main_flange_OD * inputs['flange_ID2flange_OD']
+
         # Compute thickness, volume, and mass of main flange
         main_flange_thick = inputs['flange_t2shell_t'] * sph_hub_shell_thick
         main_flange_vol   = np.pi * main_flange_thick * ((main_flange_OD/2.)**2. - (main_flange_ID/2.)**2.)
         main_flange_mass  = main_flange_vol * inputs['rho']
+
         # Sum masses flange and hub
         hub_mass = main_flange_mass + sph_hub_mass
+
         # Compute cost
         hub_cost = hub_mass * inputs['metal_cost']
+        
         # Compute distance between hub/shaft flange and hub center of mass
         hub_cm  = (main_flange_mass*main_flange_thick*0.5 + sph_hub_mass*dsgn_hub_rad) / (main_flange_mass + sph_hub_mass) 
 
@@ -226,25 +232,33 @@ class Spinner(om.ExplicitComponent):
         sph_spin_rad            = 0.5 * sph_spin_diam
         sph_spin_circ           = np.pi * sph_spin_diam
         dsgn_hub_circ           = np.pi * inputs['hub_diameter']
+
         # Compute the width of the panel between blade cutouts
         spin_panel_width        = (sph_spin_circ - dsgn_hub_circ) / 3.
+
         # Compute the access hole diameter given blade root diameter
         spin_acc_hole_diam      = inputs['blade_root_diameter'] * inputs['spin_hole_incr']
+
         # Estimate thrust pressure on spinner given a wind speed and a multiplicative factor
         extr_gust_dsgn_pressure = 0.5 * 1.225 * (inputs['spinner_gust_ws'] ** 2.)* self.options['gamma'] 
+
         # Compute max allowable tensile strength of composite and max allowable yield strength metal given material properties and safety factors
         allow_tensile_strength  = inputs['composite_Xt'] #/ inputs['composite_SF']
         allow_yield_strength    = inputs['Xy'] #/ inputs['metal_SF']
+
         # Estimate thickness of the shell of the spinner. Stress equation for a flat plate with simply supported edges, with a load equal to the extreme gust pressure load.  
         # The equation is [Stress=(.75*P*b^2)/(t^2*(1.61*(b/a)^3 +1)).  See Roarks for reference.  Shell is curved and not flat but simplifying for calculation purposes.
         spin_shell_thickness    = np.sqrt((0.75 * extr_gust_dsgn_pressure * spin_panel_width ** 2.) / (allow_tensile_strength*(1.61*(spin_panel_width/sph_spin_diam) ** 3. + 1.)))
+
         # Compute volume and mass of the spinner shell
         spin_shell_volume       = (4./3.) * np.pi * (sph_spin_rad ** 3. - ((sph_spin_diam - 2.*spin_shell_thickness)/2.) ** 3.)
         spin_shell_mass         = spin_shell_volume * inputs['composite_rho']
+
         # Estimate area, volume, and mass of the spherical caps that are removed because of blade access
         sph_cap_area            = 2.  * np.pi * sph_spin_rad * (sph_spin_rad - np.sqrt(sph_spin_rad ** 2. - (spin_acc_hole_diam/2.) ** 2.))
         sph_caps_volume         = discrete_inputs['n_blades'] * sph_cap_area * spin_shell_thickness
         sph_caps_mass           = sph_caps_volume * inputs['composite_rho']
+
         # Estimate main flange diameter, area, volume, and mass
         main_flange_diam        = 0.6 * inputs['hub_diameter']
         main_flange_area        = 2. * np.pi * sph_spin_rad * (sph_spin_rad - np.sqrt(sph_spin_rad ** 2. - (main_flange_diam/2.) ** 2.))
@@ -254,22 +268,30 @@ class Spinner(om.ExplicitComponent):
 
         # Compute frontal area of spherical spinner
         spin_frontal_area = np.pi * (sph_spin_diam ** 2.)/4.
+
         # Compute load given frontal area
         frontal_gust_load = spin_frontal_area * extr_gust_dsgn_pressure
+
         # Compute load on single bracket
         bracket_load = frontal_gust_load / (discrete_inputs['n_front_brackets'] + discrete_inputs['n_rear_brackets'])
+
         # Compute bending moment on bracket
         bracket_bending_moment = bracket_load * inputs['clearance_hub_spinner']
+
         # Assume bracket width is half of the spinner panel width
         bracket_width = spin_panel_width / 2.
+
         # Compute bracket thickness given loads and metal properties
         bracket_thickness = np.sqrt((6. * bracket_bending_moment) / (bracket_width * allow_yield_strength))
+
         # Sent warning if bracket thickness is small than 16mm. This is a switch between material properties, not implemented here to prevent discontinuities
         if bracket_thickness < 0.016:
             print('The thickness of the bracket of the hub spinner is smaller than 16 mm. You may increase the Yield strength of the metal.')
             print('The standard approach adopted 235 MPa below 16 mm and 225 above 16 mm.') 
+
         # Assume flang is 25% of bracket length
         bracket_flange_length = inputs['clearance_hub_spinner'] * 0.25
+
         # Compute bracket volume and mass and total mass of all brackets
         bracket_volume = (inputs['clearance_hub_spinner'] + bracket_flange_length + bracket_flange_length) * bracket_width * bracket_thickness
         bracket_mass = bracket_volume * inputs['metal_rho']
@@ -280,7 +302,8 @@ class Spinner(om.ExplicitComponent):
         # Compute outputs and assign them to openmdao outputs
         outputs['spinner_diameter']         = sph_spin_diam
         outputs['spinner_mass']             = mass
-         # Spinner and hub are assumed to be concentric (spinner wraps hub)
+
+        # Spinner and hub are assumed to be concentric (spinner wraps hub)
         outputs['spinner_cm']               = inputs['hub_diameter'] / 2.
         outputs['spinner_cost']             = spin_shell_mass * inputs['composite_cost'] + bracket_mass_total * inputs['metal_cost']
         outputs['spinner_I']                = np.r_[(2./3.) * mass * (0.5*sph_spin_diam)**2 * np.ones(3), np.zeros(3)] # Spherical shell

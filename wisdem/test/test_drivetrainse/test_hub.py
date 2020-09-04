@@ -69,7 +69,6 @@ class TestHub(unittest.TestCase):
         hub_prob['spin_hole_incr']                 = 1.2
         hub_prob['blade_root_diameter']            = 4.5
         hub_prob['hub_diameter']                   = 6.235382907247958
-        hub_prob['hub_radius']                     = 0.5*6.235382907247958
 
         hub_prob['pitch_system.blade_mass']        = 17000.
         hub_prob['pitch_system.BRFM']              = 1.e+6

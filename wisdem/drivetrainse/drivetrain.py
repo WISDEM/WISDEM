@@ -206,6 +206,7 @@ class DrivetrainSE(om.Group):
             sivc.add_output('D_top',     0.0, units='m')
             sivc.add_output('rotor_diameter',         0.0, units='m')
             sivc.add_output('rotor_torque',           0.0, units='N*m')
+            sivc.add_output('hub_diameter',         0.0, units='m')
             sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
             sivc.add_output('blade_mass',             0.0, units='kg', desc='One blade')
             sivc.add_output('blades_mass',             0.0, units='kg', desc='All blades')
@@ -244,7 +245,7 @@ class DrivetrainSE(om.Group):
 
             
         # Core drivetrain modules
-        self.add_subsystem('hub', Hub_System(topLevelFlag=False, modeling_options=opt['hub']), promotes=['*'])
+        self.add_subsystem('hub', Hub_System(topLevelFlag=True, modeling_options=opt['hub']), promotes=['*'])
         self.add_subsystem('gear', Gearbox(direct_drive=direct), promotes=['*'])
         
         if direct:
