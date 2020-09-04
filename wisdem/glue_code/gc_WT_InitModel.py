@@ -413,13 +413,15 @@ def assign_hub_values(wt_opt, hub):
     wt_opt['hub.spin_hole_incr']              = hub['spin_hole_incr']
     wt_opt['hub.pitch_system_scaling_factor'] = hub['pitch_system_scaling_factor']
     wt_opt['hub.spinner_gust_ws']             = hub['spinner_gust_ws']
+    wt_opt['hub.hub_material']                = hub['hub_material']
+    wt_opt['hub.spinner_material']            = hub['spinner_material']
 
     return wt_opt
 
 
 def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     # Common direct and geared
-    wt_opt['nacelle.uptilt']                    = nacelle['drivetrain']['uptilt']
+    wt_opt['nacelle.uptilt']                    = nacelle['drivetrain']['uptilt_angle']
     wt_opt['nacelle.distance_tt_hub']           = nacelle['drivetrain']['distance_tt_hub']
     wt_opt['nacelle.overhang']                  = nacelle['drivetrain']['overhang']
     wt_opt['nacelle.distance_hub2mb']           = nacelle['drivetrain']['distance_hub_mb']
@@ -435,7 +437,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt['nacelle.lss_material']              = nacelle['drivetrain']['lss_material']
     wt_opt['nacelle.bedplate_material']         = nacelle['drivetrain']['bedplate_material']
 
-    if modeling_options['nacelle']['direct']:
+    if modeling_options['drivetrainse']['direct']:
         # Direct only
         wt_opt['nacelle.access_diameter']           = nacelle['drivetrain']['access_diameter']
         wt_opt['nacelle.nose_diameter']             = nacelle['drivetrain']['nose_diameter']

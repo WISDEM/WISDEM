@@ -408,7 +408,7 @@ class Generator(om.Group):
         if topLevelFlag:
             sivc.add_output('machine_rating', 0.0, units='W')
             sivc.add_output('rated_rpm', 0.0, units='rpm')
-            sivc.add_output('T_rated', 0.0, units='N*m')
+            sivc.add_output('rated_torque', 0.0, units='N*m')
             sivc.add_output('D_shaft', val=0.0, units='m')
             sivc.add_output('E', val=0., units='Pa')
             sivc.add_output('G', val=0., units='Pa')

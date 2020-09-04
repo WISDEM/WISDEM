@@ -21,6 +21,7 @@ class DriveMaterials(om.ExplicitComponent):
         
         self.add_input('E_mat', val=np.zeros([n_mat, 3]), units='Pa')
         self.add_input('G_mat', val=np.zeros([n_mat, 3]), units='Pa')
+        self.add_input('Xt_mat', val=np.zeros([n_mat, 3]), units='Pa')
         self.add_input('sigma_y_mat', val=np.zeros(n_mat), units='Pa')
         self.add_input('rho_mat', val=np.zeros(n_mat), units='kg/m**3')
         self.add_input('unit_cost_mat', val=np.zeros(n_mat), units='USD/kg')
@@ -59,6 +60,7 @@ class DriveMaterials(om.ExplicitComponent):
         # Convert to isotropic material
         E    = np.mean(inputs['E_mat'], axis=1)
         G    = np.mean(inputs['G_mat'], axis=1)
+        Xt   = np.mean(inputs['Xt_mat'], axis=1)
         sigy = inputs['sigma_y_mat']
         rho  = inputs['rho_mat']
         cost = inputs['unit_cost_mat']
@@ -84,7 +86,7 @@ class DriveMaterials(om.ExplicitComponent):
         outputs['hub_mat_cost']     = cost[hub_imat]
 
         outputs['spinner_rho']  = rho[spin_imat]
-        outputs['spinner_Xt']   = sigy[spin_imat]
+        outputs['spinner_Xt']   = Xt[spin_imat]
         outputs['spinner_mat_cost'] = cost[spin_imat]
 
         outputs['lss_E']        = E[lss_imat]
@@ -114,14 +116,13 @@ class DrivetrainSE(om.Group):
     def initialize(self):
         self.options.declare('modeling_options')
         self.options.declare('n_dlcs')
-        self.options.declare('model_generator', default=True)
-        self.options.declare('direct_drive', default=True)
         self.options.declare('topLevelFlag', default=True)
     
     def setup(self):
-        opt = self.options['modeling_options']
+        opt = self.options['modeling_options']['drivetrainse']
         n_dlcs   = self.options['n_dlcs']
-        direct   = opt['nacelle']['direct']
+        direct   = opt['direct']
+        dogen    = opt['model_generator']
 
         
         '''
@@ -142,7 +143,7 @@ class DrivetrainSE(om.Group):
         ivc.add_discrete_output('uptower', True)
 
         if direct:
-            n_points = opt['nacelle']['n_height']
+            n_points = opt['n_height']
             # Direct only
             ivc.add_output('nose_diameter', np.zeros(5), units='m')
             ivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
@@ -205,7 +206,7 @@ class DrivetrainSE(om.Group):
             sivc.add_output('Xy', 0.0, units='Pa')
             sivc.add_output('D_top',     0.0, units='m')
             sivc.add_output('rotor_diameter',         0.0, units='m')
-            sivc.add_output('rotor_torque',           0.0, units='N*m')
+            sivc.add_output('rated_torque',           0.0, units='N*m')
             sivc.add_output('hub_diameter',         0.0, units='m')
             sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
             sivc.add_output('blade_mass',             0.0, units='kg', desc='One blade')
@@ -216,7 +217,7 @@ class DrivetrainSE(om.Group):
             sivc.add_output('machine_rating',         0.0, units='kW')
             
             if direct:
-                n_points = opt['nacelle']['n_height']
+                n_points = opt['n_height']
                 # Direct only
                 sivc.add_output('nose_diameter', np.zeros(5), units='m')
                 sivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
@@ -241,11 +242,11 @@ class DrivetrainSE(om.Group):
 
             self.add_subsystem('sivc', sivc, promotes=['*'])
         else:
-            self.add_subsystem('mat', DriveMaterials(n_mat=opt['materials']['n_mat']), promotes=['*'])
+            self.add_subsystem('mat', DriveMaterials(n_mat=self.options['modeling_options']['materials']['n_mat']), promotes=['*'])
 
             
         # Core drivetrain modules
-        self.add_subsystem('hub', Hub_System(topLevelFlag=True, modeling_options=opt['hub']), promotes=['*'])
+        self.add_subsystem('hub', Hub_System(topLevelFlag=False, modeling_options=opt['hub']), promotes=['*'])
         self.add_subsystem('gear', Gearbox(direct_drive=direct), promotes=['*'])
         
         if direct:
@@ -258,9 +259,9 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('brake', dc.Brake(direct_drive=direct), promotes=['*'])
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['yaw_mass','yaw_I','yaw_cm','rotor_diameter','D_top'])
-        if self.options['model_generator']:
+        if dogen:
             gentype = 'pmsg_outer' if direct else 'dfig'
-            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','machine_rating','generator_efficiency','rated_rpm'])
+            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','machine_rating','generator_efficiency','rated_rpm','rated_torque'])
         else:
             # TODO: Generator efficiency from what servose uses
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct), promotes=['*'])
@@ -309,16 +310,13 @@ class DrivetrainSE(om.Group):
         self.connect('s_gearbox','gearbox_cm')
         self.connect('s_generator','generator_cm')
         
-        if self.options['model_generator']:
+        if dogen:
             if self.options['topLevelFlag']:
                 self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
             self.connect('generator.R_out','R_generator')
             self.connect('bedplate_E','generator.E')
             self.connect('bedplate_G','generator.G')
             
-            if self.options['topLevelFlag']:
-                self.connect('rotor_torque','generator.T_rated')
-                
             if direct:
                 self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
                 self.connect('torq_deflection', 'generator.y_sh')

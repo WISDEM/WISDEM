@@ -57,6 +57,33 @@ properties:
                 type: number
                 default: 30
                 description: Number of spanwise stations in a common grid used to define blade properties
+    drivetrainse:
+        type: object
+        default: {}
+        properties:
+            model_generator:
+                type: boolean
+                default: False
+                description: Whether or not to do detailed generator modeling using tools formerly in GeneratorSE
+            hub:
+                type: object
+                default: {}
+                properties:
+                    hub_gamma:
+                        type: number
+                        description: Partial safety factor for hub sizing
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 2.0
+                        unit: none
+                    spinner_gamma:
+                        type: number
+                        description: Partial safety factor for spinner sizing
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 1.5
+                        unit: none
+                        
     towerse:            
         type: object
         default: {}

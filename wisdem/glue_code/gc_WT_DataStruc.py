@@ -77,7 +77,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle.add_discrete_output('hss_material', val='steel',             desc='Material name identifier for the high speed shaft')
             nacelle.add_discrete_output('bedplate_material', val='steel',        desc='Material name identifier for the bedplate')
 
-            if modeling_options['nacelle']['direct']:
+            if modeling_options['drivetrainse']['direct']:
                 # Direct only
                 npts = modeling_options['nacelle']['n_height']
                 nacelle.add_output('access_diameter',         val=0.0,         units='m',  desc='Minimum diameter for hollow shafts for maintenance access')
@@ -942,6 +942,8 @@ class Hub(om.Group):
         ivc.add_output('spin_hole_incr',            val = 0.0)
         ivc.add_output('pitch_system_scaling_factor', val = 0.54)
         ivc.add_output('spinner_gust_ws',                   val = 70., units='m/s')
+        ivc.add_discrete_output('hub_material',     val = 'steel')
+        ivc.add_discrete_output('spinner_material',     val = 'carbon')
         
         self.add_subsystem('compute_diameter', Hub_Diameter(), promotes=['*'])
 

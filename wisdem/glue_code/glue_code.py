@@ -37,7 +37,7 @@ class WT_RNTA(om.Group):
         self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         if modeling_options['Analysis_Flags']['DriveSE']:
-            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1, model_generator=True, topLevelFlag=False))
+            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1, topLevelFlag=False))
         if modeling_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
@@ -146,9 +146,8 @@ class WT_RNTA(om.Group):
             self.connect('pc.tsr_opt' ,                    'sse.tsr_operational')
             self.connect('control.rated_pitch' ,           'sse.control_pitch')
             self.connect('configuration.gearbox_type' ,    'sse.drivetrainType')
-            self.connect('nacelle.gearbox_efficiency',     'sse.powercurve.gearbox_efficiency')
             if modeling_options['Analysis_Flags']['DriveSE']:
-                self.connect('drivese.generator_efficiency',   'sse.powercurve.generator_efficiency')
+                self.connect('drivese.drivetrain_efficiency',   'sse.powercurve.drivetrain_efficiency')
             self.connect('assembly.r_blade',               'sse.r')
             # self.connect('blade.pa.chord_param',           'sse.chord')
             # self.connect('blade.pa.twist_param',           'sse.theta')
@@ -252,21 +251,18 @@ class WT_RNTA(om.Group):
             
             self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')
             self.connect('configuration.upwind',       'drivese.upwind')
-            self.connect('configuration.n_blades',     'drivese.n_blades') 
-            self.connect('sse.powercurve.rated_Omega', 'drivese.generator.n_nom')
-            self.connect('sse.powercurve.rated_Q',     ['drivese.generator.T_rated','drivese.rotor_torque'])
-            self.connect('sse.gust.V_gust',            'drivese.spinner.gust_ws')
+            self.connect('configuration.n_blades',     'drivese.n_blades')
+            self.connect('sse.powercurve.rated_Omega', 'drivese.rated_rpm')
+            self.connect('sse.powercurve.rated_Q',     'drivese.rated_torque')
             self.connect('control.rated_power',        'drivese.machine_rating')    
             self.connect('tower.diameter',             'drivese.D_top', src_indices=[-1])
             
             self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.F_hub')
             self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.M_hub')
-            self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.hub_shell.max_torque', src_indices=[0])
             self.connect('rlds.frame.root_M',                 'drivese.pitch_system.BRFM', src_indices=[1])
                 
-            self.connect('elastic.precomp.blade_mass',        'drivese.pitch_system.blade_mass')
             self.connect('blade.pa.chord_param',              'drivese.blade_root_diameter', src_indices=[0])
-
+            self.connect('elastic.precomp.blade_mass',        'drivese.blade_mass')
             self.connect('elastic.precomp.mass_all_blades',   'drivese.blades_mass')
             self.connect('elastic.precomp.I_all_blades',      'drivese.blades_I')
 
@@ -283,11 +279,12 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.lss_wall_thickness',        'drivese.lss_wall_thickness')
             self.connect('nacelle.lss_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
             self.connect('nacelle.lss_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
-            self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
+            if modeling_options['drivetrainse']['model_generator']:
+                self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
             self.connect('nacelle.uptower',                   'drivese.uptower')
             self.connect('nacelle.gearbox_efficiency',        'drivese.gearbox_efficiency')
 
-            if modeling_options['nacelle']['direct']:
+            if modeling_options['drivetrainse']['direct']:
                 self.connect('nacelle.access_diameter',           'drivese.access_diameter') # only used in direct
                 self.connect('nacelle.nose_diameter',             'drivese.nose_diameter') # only used in direct
                 self.connect('nacelle.nose_wall_thickness',       'drivese.nose_wall_thickness') # only used in direct
@@ -303,6 +300,8 @@ class WT_RNTA(om.Group):
                 self.connect('nacelle.bedplate_flange_thickness', 'drivese.bedplate_flange_thickness') # only used in geared
                 self.connect('nacelle.bedplate_web_thickness',    'drivese.bedplate_web_thickness') # only used in geared
                 
+            self.connect('hub.hub_material',                  'drivese.hub_material')
+            self.connect('hub.spinner_material',              'drivese.spinner_material')
             self.connect('nacelle.lss_material',              'drivese.lss_material')
             self.connect('nacelle.bedplate_material',         'drivese.bedplate_material')
             self.connect('materials.name',                    'drivese.material_names')
@@ -310,6 +309,7 @@ class WT_RNTA(om.Group):
             self.connect('materials.G',                       'drivese.G_mat')
             self.connect('materials.rho',                     'drivese.rho_mat')
             self.connect('materials.sigma_y',                 'drivese.sigma_y_mat')
+            self.connect('materials.Xt',                      'drivese.Xt_mat')
             self.connect('materials.unit_cost',               'drivese.unit_cost_mat')
 
         # Connections to TowerSE
@@ -470,7 +470,7 @@ class WindPark(om.Group):
                 self.connect('towerse.tower_mass',              'landbosse.tower_mass')
                 self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
                 self.connect('elastic.precomp.blade_mass',      'landbosse.blade_mass')
-                self.connect('hub.system_mass',                 'landbosse.hub_mass')
+                self.connect('drivese.hub_system_mass',         'landbosse.hub_mass')
                 self.connect('foundation.height',               'landbosse.foundation_height')
                 self.connect('bos.plant_turbine_spacing',       'landbosse.turbine_spacing_rotor_diameters')
                 self.connect('bos.plant_row_spacing',           'landbosse.row_spacing_rotor_diameters')

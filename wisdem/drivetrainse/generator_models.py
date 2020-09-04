@@ -448,7 +448,7 @@ class GeneratorBase(om.ExplicitComponent):
         # General inputs
         #self.add_input('r_s', val=0.0, units='m', desc='airgap radius r_s')
         self.add_input('I_0', val=0.0, units='A')
-        self.add_input('T_rated', val=0.0, units ='N*m')
+        self.add_input('rated_torque', val=0.0, units ='N*m')
         self.add_input('d_r', val=0.0, units='m')
         self.add_input('h_m', val=0.0, units='m')
         self.add_input('h_0', val=0.0, units ='m')
@@ -955,10 +955,10 @@ class PMSG_Outer(GeneratorBase):
         # Torsional deformation of rotor
         J_dr            = 0.5*np.pi*((R+h_yr+h_sr)**4-R_sh**4)
         J_cylr          = 0.5*np.pi*((R+h_yr+h_sr)**4-R**4)
-        outputs['twist_r'] = 180/np.pi*inputs['T_rated']/G*(t_r/J_dr+(L_r-t_r)/J_cylr)
+        outputs['twist_r'] = 180/np.pi*inputs['rated_torque']/G*(t_r/J_dr+(L_r-t_r)/J_cylr)
         outputs['Structural_mass_rotor'] = rho_Fes*np.pi*(((R+h_yr+h_sr)**2-(R_sh)**2)*t_r+\
                                            ((R+h_yr+h_sr)**2-(R+h_yr)**2)*len_s)
-        outputs['TC1']  = inputs['T_rated']/(2*np.pi*sigma)
+        outputs['TC1']  = inputs['rated_torque']/(2*np.pi*sigma)
         outputs['TC2r']  = (R+(h_yr+h_sr))**2*L_r
             
         ######################## Stator inactive (structural) design ###################################
@@ -1001,7 +1001,7 @@ class PMSG_Outer(GeneratorBase):
         # Torsional deformation of stator
         J_ds            = 0.5*np.pi*((R_s+h_ys+h_ss+h_t)**4-R_no**4)
         J_cyls          = 0.5*np.pi*((R_s+h_ys+h_ss+h_t)**4-R_s**4)
-        outputs['twist_s']= 180.0/np.pi*inputs['T_rated']/G*(t_s/J_ds+(L_s-t_s)/J_cyls)
+        outputs['twist_s']= 180.0/np.pi*inputs['rated_torque']/G*(t_s/J_ds+(L_s-t_s)/J_cyls)
         
         outputs['Structural_mass_stator'] = rho_Fes*(np.pi*((R_s+h_ys+h_ss+h_t)**2-(R_no)**2)*t_s+\
                                             np.pi*((R_s+h_ss)**2-R_s**2)*len_s)
@@ -1065,7 +1065,7 @@ class PMSG_Disc(GeneratorBase):
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
         n_nom             = inputs['rated_rpm']
-        Torque            = inputs['T_rated']
+        Torque            = inputs['rated_torque']
         
         b_st              = inputs['b_st']
         d_s               = inputs['d_s']
@@ -1553,7 +1553,7 @@ class PMSG_Arms(GeneratorBase):
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
         n_nom             = inputs['rated_rpm']
-        Torque            = inputs['T_rated']
+        Torque            = inputs['rated_torque']
         
         b_st              = inputs['b_st']
         d_s               = inputs['d_s']
@@ -2819,7 +2819,7 @@ class EESG(GeneratorBase):
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
         n_nom             = inputs['rated_rpm']
-        Torque            = inputs['T_rated']
+        Torque            = inputs['rated_torque']
         
         b_st              = inputs['b_st']
         d_s               = inputs['d_s']

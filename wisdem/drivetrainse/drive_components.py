@@ -101,7 +101,7 @@ class Brake(om.ExplicitComponent):
     ----------
     rotor_diameter : float, [m]
         rotor diameter
-    rotor_torque : float, [N*m]
+    rated_torque : float, [N*m]
         rotor torque at rated power
     gear_ratio : float
         overall gearbox ratio
@@ -135,7 +135,7 @@ class Brake(om.ExplicitComponent):
        
     def setup(self):
         self.add_input('rotor_diameter', 0.0, units='m')
-        self.add_input('rotor_torque', 0.0, units='N*m')
+        self.add_input('rated_torque', 0.0, units='N*m')
         self.add_input('s_rotor', 0.0, units='m')
         self.add_input('s_gearbox', 0.0, units='m')
 
@@ -147,7 +147,7 @@ class Brake(om.ExplicitComponent):
 
         # Unpack inputs
         D_rotor     = float(inputs['rotor_diameter'])
-        Q_rotor     = float(inputs['rotor_torque'])
+        Q_rotor     = float(inputs['rated_torque'])
         s_rotor     = float(inputs['s_rotor'])
         s_gearbox   = float(inputs['s_gearbox'])
 
@@ -181,7 +181,7 @@ class GeneratorSimple(om.ExplicitComponent):
         rotor diameter
     machine_rating : float, [kW]
         machine rating of generator
-    rotor_torque : float, [N*m]
+    rated_torque : float, [N*m]
         rotor torque at rated power
     
     Returns
@@ -201,7 +201,7 @@ class GeneratorSimple(om.ExplicitComponent):
         # variables
         self.add_input('rotor_diameter', val=0.0, units='m')
         self.add_input('machine_rating', val=0.0, units='kW')
-        self.add_input('rotor_torque', 0.0, units='N*m')
+        self.add_input('rated_torque', 0.0, units='N*m')
 
         self.add_output('R_generator', val=0.0, units='m')
         self.add_output('generator_mass', val=0.0, units='kg')
@@ -212,7 +212,7 @@ class GeneratorSimple(om.ExplicitComponent):
         # Unpack inputs
         rating  = float(inputs['machine_rating'])
         D_rotor = float(inputs['rotor_diameter'])
-        Q_rotor = float(inputs['rotor_torque'])
+        Q_rotor = float(inputs['rated_torque'])
   
         if self.options['direct_drive']:
             massCoeff = 1e-3 * 37.68

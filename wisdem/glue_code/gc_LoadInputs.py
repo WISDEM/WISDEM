@@ -146,10 +146,9 @@ class WindTurbineOntologyPython(object):
 
         # Drivetrain
         if self.modeling_options['flags']['nacelle']:
-            if not 'nacelle' in self.modeling_options: self.modeling_options['nacelle'] = {}
-            self.modeling_options['nacelle']['direct'] = self.wt_init['assembly']['drivetrain'].lower() in ['direct','direct_drive','direct drive']
-            if self.modeling_options['nacelle']['direct']:
-                self.modeling_options['nacelle']['n_height'] = len(self.wt_init['compoenent']['nacelle']['drivetrain']['bedplate_wall_thickness'])
+            self.modeling_options['drivetrainse']['direct'] = self.wt_init['assembly']['drivetrain'].lower() in ['direct','direct_drive','direct drive']
+            if self.modeling_options['drivetrainse']['direct']:
+                self.modeling_options['drivetrainse']['n_height'] = len(self.wt_init['compoenent']['nacelle']['drivetrain']['bedplate_wall_thickness'])
         
         # Tower 
         if self.modeling_options['flags']['tower']:
@@ -351,22 +350,23 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['drivetrain']['lss_material']              = wt_opt['nacelle.lss_material']
                 self.wt_init['components']['nacelle']['drivetrain']['bedplate_material']         = wt_opt['nacelle.bedplate_material']
 
-                # Direct only
-                self.wt_init['components']['nacelle']['drivetrain']['access_diameter']           = float(wt_opt['nacelle.access_diameter'])
-                self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']             = wt_opt['nacelle.nose_diameter'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']       = wt_opt['nacelle.nose_wall_thickness'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']   = wt_opt['nacelle.bedplate_wall_thickness'].tolist()
-
-                # Geared only
-                self.wt_init['components']['nacelle']['drivetrain']['hss_length']                = float(wt_opt['nacelle.hss_length'])
-                self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']              = wt_opt['nacelle.hss_diameter'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']        = wt_opt['nacelle.hss_wall_thickness'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_width']     = float(wt_opt['nacelle.bedplate_flange_width'])
-                self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_thickness'] = float(wt_opt['nacelle.bedplate_flange_thickness'])
-                self.wt_init['components']['nacelle']['drivetrain']['bedplate_web_thickness']    = float(wt_opt['nacelle.bedplate_web_thickness'])
-                self.wt_init['components']['nacelle']['drivetrain']['gear_configuration']        = wt_opt['nacelle.gear_configuration']
-                self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['hss_material']              = wt_opt['nacelle.hss_material']
+                if self.modeling_options['drivetrainse']['direct']:
+                    # Direct only
+                    self.wt_init['components']['nacelle']['drivetrain']['access_diameter']           = float(wt_opt['nacelle.access_diameter'])
+                    self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']             = wt_opt['nacelle.nose_diameter'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']       = wt_opt['nacelle.nose_wall_thickness'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']   = wt_opt['nacelle.bedplate_wall_thickness'].tolist()
+                else:
+                    # Geared only
+                    self.wt_init['components']['nacelle']['drivetrain']['hss_length']                = float(wt_opt['nacelle.hss_length'])
+                    self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']              = wt_opt['nacelle.hss_diameter'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']        = wt_opt['nacelle.hss_wall_thickness'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_width']     = float(wt_opt['nacelle.bedplate_flange_width'])
+                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_thickness'] = float(wt_opt['nacelle.bedplate_flange_thickness'])
+                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_web_thickness']    = float(wt_opt['nacelle.bedplate_web_thickness'])
+                    self.wt_init['components']['nacelle']['drivetrain']['gear_configuration']        = wt_opt['nacelle.gear_configuration']
+                    self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers']
+                    self.wt_init['components']['nacelle']['drivetrain']['hss_material']              = wt_opt['nacelle.hss_material']
 
         #if self.modeling_options['flags']['tower']:
         # Update tower

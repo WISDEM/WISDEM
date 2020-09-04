@@ -276,8 +276,8 @@ properties:
                         type: number
                         description: Ratio between access hole diameter in the spinner and blade root diameter, typically 1.2
                         unit: meter
-                        minimum: 0.0
-                        maximum: 1.0
+                        minimum: 1.0
+                        maximum: 10.0
                     pitch_system_scaling_factor:
                         type: number
                         description: Scaling factor to tune the total mass (0.54 is recommended for modern designs)
@@ -288,8 +288,8 @@ properties:
                         type: number
                         description: Extreme gust wind speed
                         unit: meter
-                        minimum: 0.0
-                        maximum: 1.0
+                        minimum: 10.0
+                        maximum: 150.0
                     cone_angle:
                         type: number
                         description: Rotor precone angle, defined positive for both upwind and downwind rotors.
@@ -302,74 +302,17 @@ properties:
                         unit: none
                         minimum: 0
                         maximum: 2.
+                    hub_material:
+                        type: string
+                        description: Material name identifier
+                        default: cast_iron
+                    spinner_material:
+                        type: string
+                        description: Material name identifier
+                        default: carbon
             nacelle:
                 type: object
                 properties: 
-                    outer_shape_bem:                    
-                        type: object
-                        required:
-                            - uptilt_angle
-                            - distance_tt_hub
-                            - overhang
-                        properties:                              
-                            uptilt_angle:
-                                type: number
-                                description: Tilt angle of the nacelle, always defined positive.
-                                unit: rad
-                                minimum: 0.
-                                maximum: 0.2
-                            distance_tt_hub:
-                                type: number
-                                description: Vertical distance between the tower top and the hub center.
-                                unit: meter
-                                minimum: 0.
-                                maximum: 20.
-                            overhang:
-                                type: number
-                                description: Horizontal distance between the tower axis and the rotor apex.
-                                unit: meter
-                                minimum: 0.
-                                maximum: 20.
-                    elastic_properties_mb:                    
-                        type: object
-                        required:
-                            - above_yaw_mass
-                            - yaw_mass
-                            - inertia
-                            - center_mass
-                        properties:                              
-                            above_yaw_mass:
-                                type: number
-                                description: Mass of the nacelle system, which includes the main bearing, the shafts, the gearbox (if present), the generator system, the nacelle cover, the bedplate, and all the components of the nacelle except for the yaw bearing and yaw actuators.
-                                unit: kg
-                                minimum: 0
-                                maximum: 10000000
-                            yaw_mass:
-                                type: number
-                                description: Mass of the yaw system (yaw bearing and yaw actuators).
-                                unit: kg
-                                minimum: 0
-                                maximum: 1000000
-                            inertia:
-                                type: array
-                                description: Inertia of the nacelle system, in the nacelle reference system, which has the x horizontal pointing downwind, y horizontal pointing on the side, and z pointing vertically upwards (aligned with the tower axis).
-                                items: 
-                                    type: number
-                                    unit: kgm2
-                                    minItems: 6
-                                    maxItems: 6
-                                    uniqueItems: false
-                            center_mass:
-                                type: array
-                                description: Center of mass of the nacelle system, in the nacelle reference system, which has the x horizontal pointing downwind, y horizontal pointing on the side, and z pointing vertically upwards (aligned with the tower axis).
-                                items: 
-                                    type: number
-                                    unit: m
-                                    minItems: 3
-                                    maxItems: 3
-                                    uniqueItems: false
-                                    minimum: -30
-                                    maximum: 30
                     drivetrain:
                         type: object
                         description: Inputs to WISDEM specific drivetrain sizing tool, DrivetrainSE
