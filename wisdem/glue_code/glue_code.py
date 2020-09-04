@@ -237,6 +237,19 @@ class WT_RNTA(om.Group):
 
         # Connections to DriveSE
         if modeling_options['Analysis_Flags']['DriveSE']:
+            self.connect('hub.diameter'                    , 'drivese.hub_diameter')
+            self.connect('hub.radius'                      , 'drivese.hub_radius')
+            self.connect('hub.flange_t2shell_t'            , 'drivese.flange_t2shell_t')
+            self.connect('hub.flange_OD2hub_D'             , 'drivese.flange_OD2hub_D')
+            self.connect('hub.flange_ID2flange_OD'         , 'drivese.flange_ID2flange_OD')
+            self.connect('hub.hub_stress_concentration'    , 'drivese.hub_stress_concentration')
+            self.connect('hub.n_front_brackets'            , 'drivese.n_front_brackets')
+            self.connect('hub.n_rear_brackets'             , 'drivese.n_rear_brackets')
+            self.connect('hub.clearance_hub_spinner'       , 'drivese.clearance_hub_spinner')
+            self.connect('hub.spin_hole_incr'              , 'drivese.spin_hole_incr')
+            self.connect('hub.pitch_system_scaling_factor' , 'drivese.pitch_system_scaling_factor')
+            self.connect('hub.spinner_gust_ws'             , 'drivese.spinner_gust_ws')
+            
             self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')
             self.connect('configuration.upwind',       'drivese.upwind')
             self.connect('configuration.n_blades',     'drivese.n_blades') 
@@ -273,7 +286,7 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
             self.connect('nacelle.uptower',                   'drivese.uptower')
             self.connect('nacelle.gearbox_efficiency',        'drivese.gearbox_efficiency')
-            
+
             if modeling_options['nacelle']['direct']:
                 self.connect('nacelle.access_diameter',           'drivese.access_diameter') # only used in direct
                 self.connect('nacelle.nose_diameter',             'drivese.nose_diameter') # only used in direct

@@ -400,13 +400,19 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
 
 def assign_hub_values(wt_opt, hub):
 
-    wt_opt['hub.diameter']    = hub['outer_shape_bem']['diameter']
-    wt_opt['hub.cone']        = hub['outer_shape_bem']['cone_angle']
-    wt_opt['hub.drag_coeff']  = hub['outer_shape_bem']['drag_coefficient']
-
-    wt_opt['hub.system_mass'] = hub['elastic_properties_mb']['system_mass']
-    wt_opt['hub.system_I']    = hub['elastic_properties_mb']['system_inertia']
-    wt_opt['hub.system_cm']   = hub['elastic_properties_mb']['system_center_mass']
+    wt_opt['hub.cone']                        = hub['cone_angle']
+    wt_opt['hub.drag_coeff']                  = hub['drag_coefficient']
+    wt_opt['hub.flange_t2shell_t']            = hub['flange_t2shell_t']
+    wt_opt['hub.flange_OD2hub_D']             = hub['flange_OD2hub_D']
+    wt_opt['hub.flange_ID2flange_OD']         = hub['flange_ID2OD']
+    wt_opt['hub.hub_in2out_circ']             = hub['hub_blade_spacing_margin']
+    wt_opt['hub.hub_stress_concentration']    = hub['hub_stress_concentration']
+    wt_opt['hub.n_front_brackets']            = hub['n_front_brackets']
+    wt_opt['hub.n_rear_brackets']             = hub['n_rear_brackets']
+    wt_opt['hub.clearance_hub_spinner']       = hub['clearance_hub_spinner']
+    wt_opt['hub.spin_hole_incr']              = hub['spin_hole_incr']
+    wt_opt['hub.pitch_system_scaling_factor'] = hub['pitch_system_scaling_factor']
+    wt_opt['hub.spinner_gust_ws']             = hub['spinner_gust_ws']
 
     return wt_opt
 

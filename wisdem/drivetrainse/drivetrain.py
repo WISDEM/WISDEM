@@ -27,20 +27,33 @@ class DriveMaterials(om.ExplicitComponent):
         self.add_discrete_input('material_names', val=n_mat * [''])
         self.add_discrete_input('lss_material', 'steel')
         self.add_discrete_input('hss_material', 'steel')
+        self.add_discrete_input('hub_material', 'iron')
+        self.add_discrete_input('spinner_material', 'carbon')
         self.add_discrete_input('bedplate_material', 'steel')
 
+        self.add_output('hub_E', val=0.0, units='Pa')
+        self.add_output('hub_G', val=0.0, units='Pa')
+        self.add_output('hub_rho', val=0.0, units='kg/m**3')
+        self.add_output('hub_Xy', val=0.0, units='Pa')
+        self.add_output('hub_mat_cost', val=0.0, units='USD/kg')
+        self.add_output('spinner_rho', val=0.0, units='kg/m**3')
+        self.add_output('spinner_Xt', val=0.0, units='Pa')
+        self.add_output('spinner_mat_cost', val=0.0, units='USD/kg')
         self.add_output('lss_E', val=0.0, units='Pa')
         self.add_output('lss_G', val=0.0, units='Pa')
         self.add_output('lss_rho', val=0.0, units='kg/m**3')
         self.add_output('lss_Xy', val=0.0, units='Pa')
+        self.add_output('lss_cost', val=0.0, units='USD/kg')
         self.add_output('hss_E', val=0.0, units='Pa')
         self.add_output('hss_G', val=0.0, units='Pa')
         self.add_output('hss_rho', val=0.0, units='kg/m**3')
         self.add_output('hss_Xy', val=0.0, units='Pa')
+        self.add_output('hss_cost', val=0.0, units='USD/kg')
         self.add_output('bedplate_E', val=0.0, units='Pa')
         self.add_output('bedplate_G', val=0.0, units='Pa')
         self.add_output('bedplate_rho', val=0.0, units='kg/m**3')
         self.add_output('bedplate_Xy', val=0.0, units='Pa')
+        self.add_output('bedplate_mat_cost', val=0.0, units='USD/kg')
     
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Convert to isotropic material
@@ -48,32 +61,49 @@ class DriveMaterials(om.ExplicitComponent):
         G    = np.mean(inputs['G_mat'], axis=1)
         sigy = inputs['sigma_y_mat']
         rho  = inputs['rho_mat']
-        #cost = inputs['unit_cost_mat']
+        cost = inputs['unit_cost_mat']
         
+        hub_name  = discrete_inputs['hub_material']
+        spin_name = discrete_inputs['spinner_material']
         lss_name  = discrete_inputs['lss_material']
         hss_name  = discrete_inputs['hss_material']
         bed_name  = discrete_inputs['bedplate_material']
         mat_names = discrete_inputs['material_names']
 
         # Get the index into the material list
+        spin_imat = mat_names.index( spin_name )
+        hub_imat  = mat_names.index( hub_name )
         lss_imat  = mat_names.index( lss_name )
         hss_imat  = mat_names.index( hss_name )
         bed_imat  = mat_names.index( bed_name )
+
+        outputs['hub_E']        = E[hub_imat]
+        outputs['hub_G']        = G[hub_imat]
+        outputs['hub_rho']      = rho[hub_imat]
+        outputs['hub_Xy']       = sigy[hub_imat]
+        outputs['hub_mat_cost']     = cost[hub_imat]
+
+        outputs['spinner_rho']  = rho[spin_imat]
+        outputs['spinner_Xt']   = sigy[spin_imat]
+        outputs['spinner_mat_cost'] = cost[spin_imat]
 
         outputs['lss_E']        = E[lss_imat]
         outputs['lss_G']        = G[lss_imat]
         outputs['lss_rho']      = rho[lss_imat]
         outputs['lss_Xy']       = sigy[lss_imat]
+        outputs['lss_cost']     = cost[lss_imat]
 
         outputs['hss_E']        = E[hss_imat]
         outputs['hss_G']        = G[hss_imat]
         outputs['hss_rho']      = rho[hss_imat]
         outputs['hss_Xy']       = sigy[hss_imat]
+        outputs['hss_cost']     = cost[hss_imat]
 
-        outputs['bedplate_E']   = E[bed_imat]
-        outputs['bedplate_G']   = G[bed_imat]
-        outputs['bedplate_rho'] = rho[bed_imat]
-        outputs['bedplate_Xy']  = sigy[bed_imat]
+        outputs['bedplate_E']    = E[bed_imat]
+        outputs['bedplate_G']    = G[bed_imat]
+        outputs['bedplate_rho']  = rho[bed_imat]
+        outputs['bedplate_Xy']   = sigy[bed_imat]
+        outputs['bedplate_mat_cost'] = cost[bed_imat]
         
         
 class DrivetrainSE(om.Group):
@@ -89,9 +119,9 @@ class DrivetrainSE(om.Group):
         self.options.declare('topLevelFlag', default=True)
     
     def setup(self):
-        opt = self.options['modeling_options']['nacelle']
+        opt = self.options['modeling_options']
         n_dlcs   = self.options['n_dlcs']
-        direct   = opt['direct']
+        direct   = opt['nacelle']['direct']
 
         
         '''
@@ -112,7 +142,7 @@ class DrivetrainSE(om.Group):
         ivc.add_discrete_output('uptower', True)
 
         if direct:
-            n_points = opt['n_height']
+            n_points = opt['nacelle']['n_height']
             # Direct only
             ivc.add_output('nose_diameter', np.zeros(5), units='m')
             ivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
@@ -126,7 +156,7 @@ class DrivetrainSE(om.Group):
             ivc.add_output('bedplate_flange_width', 0.0, units='m')
             ivc.add_output('bedplate_flange_thickness', 0.0, units='m')
             ivc.add_output('bedplate_web_thickness', 0.0, units='m')
-            ivc.add_discrete_output('planet_numbers', np.array([3, 3, 0]))
+            ivc.add_discrete_output('planet_numbers', [3, 3, 0])
             ivc.add_discrete_output('gear_configuration', val='eep')
             #ivc.add_discrete_output('shaft_factor', val='normal')
         
@@ -154,6 +184,14 @@ class DrivetrainSE(om.Group):
             sivc.add_discrete_output('upwind', True)
             sivc.add_discrete_output('n_blades', 3)
             sivc.add_output('tilt', 0.0, units='deg')
+            sivc.add_output('hub_E', 0.0, units='Pa')
+            sivc.add_output('hub_G', 0.0, units='Pa')
+            sivc.add_output('hub_Xy', 0.0, units='Pa')
+            sivc.add_output('hub_rho', 0.0, units='kg/m**3')
+            sivc.add_output('hub_mat_cost', 0.0, units='USD/kg')
+            sivc.add_output('spinner_Xt', 0.0, units='Pa')
+            sivc.add_output('spinner_rho', 0.0, units='kg/m**3')
+            sivc.add_output('spinner_mat_cost', 0.0, units='USD/kg')
             sivc.add_output('lss_E', 0.0, units='Pa')
             sivc.add_output('lss_G', 0.0, units='Pa')
             sivc.add_output('lss_Xy', 0.0, units='Pa')
@@ -162,20 +200,22 @@ class DrivetrainSE(om.Group):
             sivc.add_output('bedplate_G', 0.0, units='Pa')
             sivc.add_output('bedplate_Xy', 0.0, units='Pa')
             sivc.add_output('bedplate_rho', 0.0, units='kg/m**3')
+            sivc.add_output('bedplate_mat_cost', 0.0, units='USD/kg')
 
             sivc.add_output('Xy', 0.0, units='Pa')
             sivc.add_output('D_top',     0.0, units='m')
             sivc.add_output('rotor_diameter',         0.0, units='m')
             sivc.add_output('rotor_torque',           0.0, units='N*m')
             sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
-            sivc.add_output('blades_mass',             0.0, units='kg')
+            sivc.add_output('blade_mass',             0.0, units='kg', desc='One blade')
+            sivc.add_output('blades_mass',             0.0, units='kg', desc='All blades')
             sivc.add_output('F_hub',             np.zeros(3), units='N')
             sivc.add_output('M_hub',             np.zeros(3), units='N*m')
             #sivc.add_output('generator_efficiency',   0.0)
             sivc.add_output('machine_rating',         0.0, units='kW')
             
             if direct:
-                n_points = opt['n_height']
+                n_points = opt['nacelle']['n_height']
                 # Direct only
                 sivc.add_output('nose_diameter', np.zeros(5), units='m')
                 sivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
@@ -189,7 +229,7 @@ class DrivetrainSE(om.Group):
                 sivc.add_output('bedplate_flange_width', 0.0, units='m')
                 sivc.add_output('bedplate_flange_thickness', 0.0, units='m')
                 sivc.add_output('bedplate_web_thickness', 0.0, units='m')
-                sivc.add_discrete_output('planet_numbers', np.array([3, 3, 0]))
+                sivc.add_discrete_output('planet_numbers', [3, 3, 0])
                 sivc.add_discrete_output('gear_configuration', val='eep')
                 #sivc.add_discrete_output('shaft_factor', val='normal')
 
@@ -200,11 +240,11 @@ class DrivetrainSE(om.Group):
 
             self.add_subsystem('sivc', sivc, promotes=['*'])
         else:
-            self.add_subsystem('mat', DriveMaterials(n_mat=self.options['modeling_options']['materials']['n_mat']), promotes=['*'])
+            self.add_subsystem('mat', DriveMaterials(n_mat=opt['materials']['n_mat']), promotes=['*'])
 
             
         # Core drivetrain modules
-        self.add_subsystem('hub', Hub_System(), promotes=['*'])
+        self.add_subsystem('hub', Hub_System(topLevelFlag=False, modeling_options=opt['hub']), promotes=['*'])
         self.add_subsystem('gear', Gearbox(direct_drive=direct), promotes=['*'])
         
         if direct:
@@ -219,7 +259,7 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['yaw_mass','yaw_I','yaw_cm','rotor_diameter','D_top'])
         if self.options['model_generator']:
             gentype = 'pmsg_outer' if direct else 'dfig'
-            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','machine_rating','generator_efficiency'])
+            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','machine_rating','generator_efficiency','rated_rpm'])
         else:
             # TODO: Generator efficiency from what servose uses
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct), promotes=['*'])
@@ -236,6 +276,16 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('eff', om.ExecComp('drivetrain_efficiency = gearbox_efficiency * generator_efficiency'), promotes=['*'])
 
         # Output-to-input connections
+        self.connect('bedplate_rho', ['pitch_system.rho', 'spinner.metal_rho'])
+        self.connect('bedplate_Xy', ['pitch_system.Xy', 'spinner.Xy'])
+        self.connect('bedplate_mat_cost', 'spinner.metal_cost')
+        self.connect('hub_rho', 'hub_shell.rho')
+        self.connect('hub_Xy', 'hub_shell.Xy')
+        self.connect('hub_mat_cost', 'hub_shell.metal_cost')
+        self.connect('spinner_rho', 'spinner.composite_rho')
+        self.connect('spinner_Xt', 'spinner.composite_Xt')
+        self.connect('spinner_mat_cost', 'spinner.composite_cost')
+        
         if direct:
             self.connect('D_bearing1','bear1.D_bearing')
             self.connect('D_bearing2','bear2.D_bearing')
@@ -320,10 +370,9 @@ def direct_example():
     prob['lss_rho'] = prob['hss_rho'] = prob['bedplate_rho'] = 7850.
     prob['lss_Xy'] = prob['hss_Xy'] = prob['bedplate_Xy'] = 250e6
     
-    prob['pitch_system.blade_mass']       = 17000.
+    prob['blade_mass']       = 17000.
     prob['pitch_system.BRFM']             = 1.e+6
-    prob['pitch_system.scaling_factor']   = 0.54
-    prob['pitch_system.rho']              = 7850.
+    prob['pitch_system_scaling_factor']   = 0.54
     prob['pitch_system.Xy']               = 371.e+6
     prob['blade_root_diameter']           = 4.
 
@@ -349,7 +398,6 @@ def direct_example():
     prob['spinner.composite_rho']         = 1600.
     prob['spinner.Xy']                    = 225.e+6
     prob['spinner.metal_SF']              = 1.5
-    prob['spinner.metal_rho']             = 7850.
     prob['spinner.composite_cost']        = 7.00
     prob['spinner.metal_cost']            = 3.00
 
@@ -443,9 +491,9 @@ def geared_example():
     #prob['shaft_factor'] = 'normal'
     prob['gear_ratio'] = 90.0
 
-    prob['pitch_system.blade_mass']       = 17000.
+    prob['blade_mass']       = 17000.
     prob['pitch_system.BRFM']             = 1.e+6
-    prob['pitch_system.scaling_factor']   = 0.54
+    prob['pitch_system_scaling_factor']   = 0.54
     prob['pitch_system.rho']              = 7850.
     prob['pitch_system.Xy']               = 371.e+6
 

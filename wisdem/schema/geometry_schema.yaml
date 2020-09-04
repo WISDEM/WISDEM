@@ -223,61 +223,85 @@ properties:
                         # TODO
             hub:
                 type: object
-                properties: 
-                    outer_shape_bem:                    
-                        type: object
-                        required:
-                            - diameter
-                            - cone_angle
-                            - drag_coefficient
-                        properties:                              
-                            diameter:
-                                type: number
-                                description: Diameter of the hub measured at the blade root positions.
-                                unit: meter
-                                minimum: 0.
-                                maximum: 10.
-                            cone_angle:
-                                type: number
-                                description: Rotor precone angle, defined positive for both upwind and downwind rotors.
-                                unit: rad
-                                minimum: 0
-                                maximum: 0.2
-                            drag_coefficient:
-                                type: number
-                                description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
-                                unit: none
-                                minimum: 0
-                                maximum: 2.
-                    elastic_properties_mb:                    
-                        type: object
-                        required:
-                            - system_mass
-                            - system_inertia
-                        properties:                              
-                            system_mass:
-                                type: number
-                                description: Mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, ....
-                                unit: kg
-                                minimum: 0
-                            system_inertia:
-                                type: array
-                                description: Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.
-                                items: 
-                                    type: number
-                                    unit: kgm2
-                                    minItems: 6
-                                    maxItems: 6
-                                    uniqueItems: false
-                            system_center_mass:
-                                type: array
-                                description: Center of mass of the hub system. Work in progress.
-                                items: 
-                                    type: number
-                                    unit: m
-                                    minItems: 3
-                                    maxItems: 3
-                                    uniqueItems: false
+                properties:
+                    flange_t2shell_t:
+                        type: number
+                        description: Ratio of flange thickness to shell thickness
+                        unit: meter
+                        minimum: 1.0
+                        maximum: 10.0
+                    flange_OD2hub_D:
+                        type: number
+                        description: Ratio of flange outer diameter to hub diameter
+                        unit: meter
+                        minimum: 0.0
+                        maximum: 1.0
+                    flange_ID2OD:
+                        type: number
+                        description: Ratio of flange inner diameter to flange outer diameter
+                        unit: meter
+                        minimum: 0.0
+                        maximum: 1.0
+                    hub_blade_spacing_margin:
+                        type: number
+                        description: Safety factor applied on hub circumference. This factor determines the extra material needed between blade cutouts/holes in the hub to provide enough load carrying material. Good values are usually 1.15/1.2
+                        unit: meter
+                        minimum: 1.0
+                        maximum: 2.0
+                    hub_stress_concentration:
+                        type: number
+                        description: Stress concentration factor. Stress concentration occurs at all fillets, notches, lifting lugs, hatches and are accounted for by assigning a stress concentration factor
+                        unit: meter
+                        minimum: 1.0
+                        maximum: 10.0
+                    n_front_brackets:
+                        type: integer
+                        description: Number of front spinner brackets
+                        unit: none
+                        minimum: 1
+                        maximum: 100
+                    n_rear_brackets:
+                        type: integer
+                        description: Number of rear spinner brackets
+                        unit: none
+                        minimum: 1
+                        maximum: 100
+                    clearance_hub_spinner:
+                        type: number
+                        description: Clearance between spinner and hub
+                        unit: meter
+                        minimum: 0.0
+                        maximum: 1.0
+                    spin_hole_incr:
+                        type: number
+                        description: Ratio between access hole diameter in the spinner and blade root diameter, typically 1.2
+                        unit: meter
+                        minimum: 0.0
+                        maximum: 1.0
+                    pitch_system_scaling_factor:
+                        type: number
+                        description: Scaling factor to tune the total mass (0.54 is recommended for modern designs)
+                        unit: meter
+                        minimum: 0.0
+                        maximum: 1.0
+                    spinner_gust_ws:
+                        type: number
+                        description: Extreme gust wind speed
+                        unit: meter
+                        minimum: 0.0
+                        maximum: 1.0
+                    cone_angle:
+                        type: number
+                        description: Rotor precone angle, defined positive for both upwind and downwind rotors.
+                        unit: rad
+                        minimum: 0
+                        maximum: 0.2
+                    drag_coefficient:
+                        type: number
+                        description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
+                        unit: none
+                        minimum: 0
+                        maximum: 2.
             nacelle:
                 type: object
                 properties: 

@@ -312,11 +312,18 @@ class WindTurbineOntologyPython(object):
         if self.modeling_options['Analysis_Flags']['DriveSE']:
             if self.modeling_options['flags']['hub']:
                 # Update hub
-                self.wt_init['components']['hub']['outer_shape_bem']['diameter']   = float(wt_opt['hub.diameter'])
-                self.wt_init['components']['hub']['outer_shape_bem']['cone_angle'] = float(wt_opt['hub.cone'])
-                self.wt_init['components']['hub']['elastic_properties_mb']['system_mass']        = float(wt_opt['drivese.hub_system_mass'])
-                self.wt_init['components']['hub']['elastic_properties_mb']['system_inertia']     = wt_opt['drivese.hub_system_I'].tolist()
-                self.wt_init['components']['hub']['elastic_properties_mb']['system_center_mass'] = wt_opt['drivese.hub_system_cm'].tolist()
+                self.wt_init['components']['hub']['cone_angle']                  = float(wt_opt['hub.cone'])
+                self.wt_init['components']['hub']['flange_t2shell_t']            = float(wt_opt['hub.flange_t2shell_t'])
+                self.wt_init['components']['hub']['flange_OD2hub_D']             = float(wt_opt['hub.flange_OD2hub_D'])
+                self.wt_init['components']['hub']['flange_ID2OD']                = float(wt_opt['hub.flange_ID2flange_OD'])
+                self.wt_init['components']['hub']['hub_blade_spacing_margin']    = float(wt_opt['hub.hub_in2out_circ'])
+                self.wt_init['components']['hub']['hub_stress_concentration']    = float(wt_opt['hub.hub_stress_concentration'])
+                self.wt_init['components']['hub']['n_front_brackets']            = int(wt_opt['hub.n_front_brackets'])
+                self.wt_init['components']['hub']['n_rear_brackets']             = int(wt_opt['hub.n_rear_brackets'])
+                self.wt_init['components']['hub']['clearance_hub_spinner']       = float(wt_opt['hub.clearance_hub_spinner'])
+                self.wt_init['components']['hub']['spin_hole_incr']              = float(wt_opt['hub.spin_hole_incr'])
+                self.wt_init['components']['hub']['pitch_system_scaling_factor'] = float(wt_opt['hub.pitch_system_scaling_factor'])
+                self.wt_init['components']['hub']['spinner_gust_ws']             = float(wt_opt['hub.spinner_gust_ws'])
                 
             if self.modeling_options['flags']['nacelle']:
                 # Update nacelle

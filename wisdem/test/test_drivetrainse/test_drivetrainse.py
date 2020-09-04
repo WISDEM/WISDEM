@@ -3,9 +3,16 @@ from wisdem.drivetrainse.drivetrain import DrivetrainSE
 import openmdao.api as om
 import numpy as np
 
+opt = {}
+opt['nacelle'] = {}
+opt['nacelle']['n_height'] = npts = 10
+opt['nacelle']['direct'] = True
+opt['hub'] = {}
+opt['hub']['hub_gamma'] = 2.0
+opt['hub']['spinner_gamma'] = 1.5
+
 def set_common(prob):
     prob['n_blades'] = 3
-    prob['rotor_rpm'] = 10.0
     prob['rotor_diameter'] = 120.0
     prob['machine_rating'] = 5e3
     prob['D_top'] = 6.5
@@ -13,47 +20,33 @@ def set_common(prob):
     prob['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
     prob['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))
 
-    prob['lss_E'] = prob['hss_E'] = prob['bedplate_E'] = 210e9
-    prob['lss_G'] = prob['hss_G'] = prob['bedplate_G'] = 80.8e9
-    prob['lss_rho'] = prob['hss_rho'] = prob['bedplate_rho'] = 7850.
-    prob['lss_Xy'] = prob['hss_Xy'] = prob['bedplate_Xy'] = 250e6
-    
+    prob['lss_E']    = prob['hss_E']    = prob['hub_E']   = prob['bedplate_E'] = 210e9
+    prob['lss_G']    = prob['hss_G']    = prob['hub_G']   = prob['bedplate_G'] = 80.8e9
+    prob['lss_rho']  = prob['hss_rho']  = prob['hub_rho'] = prob['bedplate_rho'] = 7850.
+    prob['lss_Xy']   = prob['hss_Xy']   = prob['hub_Xy']   = prob['bedplate_Xy'] = 250e6
+    prob['hub_mat_cost'] = prob['bedplate_mat_cost'] = prob['spinner_mat_cost'] = 3.
+    #prob['lss_cost'] = prob['hss_cost'] = 
     prob['gamma_f'] = 1.35
     prob['gamma_m'] = 1.3
     prob['gamma_n'] = 1.0
 
-    prob['pitch_system.blade_mass']       = 17000.
-    prob['pitch_system.BRFM']             = 1.e+6
-    prob['pitch_system.scaling_factor']   = 0.54
-    prob['pitch_system.rho']              = 7850.
-    prob['pitch_system.Xy']               = 371.e+6
+    prob['blade_mass']                  = 17000.
+    prob['pitch_system.BRFM']           = 1.e+6
+    prob['pitch_system_scaling_factor'] = 0.54
 
-    prob['blade_root_diameter']           = 4.
-    prob['flange_t2shell_t']              = 4.
-    prob['flange_OD2hub_D']               = 0.5
-    prob['flange_ID2flange_OD']           = 0.8
-    prob['hub_shell.rho']                 = 7200.
-    prob['in2out_circ']                   = 1.2 
-    prob['hub_shell.max_torque']          = 30.e+6
-    prob['hub_shell.Xy']                  = 200.e+6
-    prob['stress_concentration']          = 2.5
-    prob['hub_shell.gamma']               = 2.0
-    prob['hub_shell.metal_cost']          = 3.00
+    prob['blade_root_diameter']         = 4.
+    prob['flange_t2shell_t']            = 4.
+    prob['flange_OD2hub_D']             = 0.5
+    prob['flange_ID2flange_OD']         = 0.8
+    prob['hub_rho']                     = 7200.
+    prob['hub_Xy']                      = 200.e+6
+    prob['hub_stress_concentration']    = 2.5
 
-    prob['n_front_brackets']              = 3
-    prob['n_rear_brackets']               = 3
-    prob['clearance_hub_spinner']         = 0.5
-    prob['spin_hole_incr']                = 1.2
-    prob['spinner.gust_ws']               = 70
-    prob['spinner.gamma']                 = 1.5
-    prob['spinner.composite_Xt']          = 60.e6
-    prob['spinner.composite_SF']          = 1.5
-    prob['spinner.composite_rho']         = 1600.
-    prob['spinner.Xy']                    = 225.e+6
-    prob['spinner.metal_SF']              = 1.5
-    prob['spinner.metal_rho']             = 7850.
-    prob['spinner.composite_cost']        = 7.00
-    prob['spinner.metal_cost']            = 3.00
+    prob['n_front_brackets']            = 3
+    prob['n_rear_brackets']             = 3
+    prob['clearance_hub_spinner']       = 0.5
+    prob['spin_hole_incr']              = 1.2
+    prob['spinner_gust_ws']             = 70.
 
     return prob
 
@@ -63,11 +56,8 @@ class TestGroup(unittest.TestCase):
     
     def testDirectDrive_withGen(self):
 
-        opt = {}
-        opt['nacelle'] = {}
-        opt['nacelle']['n_height'] = npts = 10
         opt['nacelle']['direct'] = True
-
+        
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=True)
         prob.setup()
@@ -137,11 +127,8 @@ class TestGroup(unittest.TestCase):
         
     def testDirectDrive_withSimpleGen(self):
 
-        opt = {}
-        opt['nacelle'] = {}
-        opt['nacelle']['n_height'] = npts = 10
         opt['nacelle']['direct'] = True
-
+        
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1, model_generator=False)
         prob.setup()
@@ -174,9 +161,6 @@ class TestGroup(unittest.TestCase):
         
     def testGeared_withGen(self):
 
-        opt = {}
-        opt['nacelle'] = {}
-        opt['nacelle']['n_height'] = 10
         opt['nacelle']['direct'] = False
 
         prob = om.Problem()
@@ -271,9 +255,6 @@ class TestGroup(unittest.TestCase):
         
     def testGeared_withSimpleGen(self):
 
-        opt = {}
-        opt['nacelle'] = {}
-        opt['nacelle']['n_height'] = 10
         opt['nacelle']['direct'] = False
 
         prob = om.Problem()

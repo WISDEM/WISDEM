@@ -544,7 +544,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['lss_diameter'] = 5*myones
         self.inputs['lss_wall_thickness'] = 0.5*myones
         self.inputs['G'] = 100e9
-        self.inputs['rho'] = 1e-6
+        self.inputs['lss_rho'] = 1e-6
         self.compute_layout()
         myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, direct_drive=True)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
@@ -572,7 +572,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['hss_diameter'] = 5*myones
         self.inputs['hss_wall_thickness'] = 0.5*myones
         self.inputs['G'] = 100e9
-        self.inputs['rho'] = 1e-6
+        self.inputs['hss_rho'] = 1e-6
         self.compute_layout()
         myobj = ds.HSS_Frame(n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)

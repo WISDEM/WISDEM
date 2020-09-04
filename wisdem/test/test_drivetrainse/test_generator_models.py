@@ -59,7 +59,7 @@ class TestGenerators(unittest.TestCase):
         self.inputs['machine_rating'] = 10.321e6
         self.inputs['T_rated']        = 10.25e6       #rev 1 9.94718e6
         self.inputs['P_mech']         = 10.71947704e6 #rev 1 9.94718e6
-        self.inputs['n_nom']          = 10            #8.68                # rpm 9.6
+        self.inputs['rated_rpm']          = 10            #8.68                # rpm 9.6
         self.inputs['r_g']            = 4.0           # rev 1  4.92
         self.inputs['len_s']          = 1.7           # rev 2.3
         self.inputs['h_s']            = 0.7            # rev 1 0.3
@@ -128,7 +128,7 @@ class TestGenerators(unittest.TestCase):
 
         myobj = gm.PMSG_Arms()
 
-        self.inputs['n_nom']   = 12.1
+        self.inputs['rated_rpm']   = 12.1
         self.inputs['sigma']   = 40e3
         self.inputs['rad_ag']  = 3.26
         self.inputs['len_s']   = 1.60
@@ -186,7 +186,7 @@ class TestGenerators(unittest.TestCase):
 		
         myobj = gm.PMSG_Disc()
 
-        self.inputs['n_nom']   = 12.1
+        self.inputs['rated_rpm']   = 12.1
         self.inputs['sigma']   = 40e3
         self.inputs['rad_ag']  = 3.49
         self.inputs['len_s']   = 1.5
@@ -240,7 +240,7 @@ class TestGenerators(unittest.TestCase):
 
         myobj = gm.EESG()
 
-        self.inputs['n_nom']   = 12.1
+        self.inputs['rated_rpm']   = 12.1
         self.inputs['sigma']   = 48.373e3
         self.inputs['rad_ag']  = 3.2
         self.inputs['len_s']   = 1.4
@@ -292,7 +292,7 @@ class TestGenerators(unittest.TestCase):
 
         myobj = gm.SCIG()
         
-        self.inputs['n_nom']              = 1200.0
+        self.inputs['rated_rpm']              = 1200.0
         self.inputs['cofi']               = 0.9
         self.inputs['y_tau_p']            = 12./15.
         self.inputs['sigma']              = 21.5e3
@@ -349,7 +349,7 @@ class TestGenerators(unittest.TestCase):
 
         myobj = gm.DFIG()
 
-        self.inputs['n_nom']              = 1200.0
+        self.inputs['rated_rpm']              = 1200.0
         self.inputs['cofi']               = 0.9
         self.inputs['y_tau_p']            = 12./15.
         self.inputs['sigma']              = 21.5e3

@@ -265,7 +265,7 @@ class GeneratorBase(om.ExplicitComponent):
         Stator core length
     machine_rating : float, [W]
         Machine rating
-    n_nom : float, [rpm]
+    rated_rpm : float, [rpm]
         rated speed
     n_r : float
         number of arms n
@@ -455,7 +455,7 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_input('h_s', val=0.0, units='m')
         self.add_input('len_s', val=0.0, units='m')
         self.add_input('machine_rating', val=0.0, units ='W')
-        self.add_input('n_nom', val=0.0, units ='rpm')
+        self.add_input('rated_rpm', val=0.0, units ='rpm')
         self.add_input('n_r', val=0.0)
         self.add_input('rad_ag', val=0.0, units='m')
         self.add_input('t_wr', val=0.0, units='m')
@@ -797,7 +797,7 @@ class PMSG_Outer(GeneratorBase):
             g_eff	 = k_C*(len_ag+ h_m/mu_r)
             
             # angular frequency in radians
-            om_m	 = 2*np.pi*inputs['n_nom']/60
+            om_m	 = 2*np.pi*inputs['rated_rpm']/60
             om_e	 = p*om_m
             outputs['f'] = om_e/2/np.pi # outout frequency
             
@@ -1064,7 +1064,7 @@ class PMSG_Disc(GeneratorBase):
         h_ys              = inputs['h_ys']
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
-        n_nom             = inputs['n_nom']
+        n_nom             = inputs['rated_rpm']
         Torque            = inputs['T_rated']
         
         b_st              = inputs['b_st']
@@ -1552,7 +1552,7 @@ class PMSG_Arms(GeneratorBase):
         h_ys              = inputs['h_ys']
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
-        n_nom             = inputs['n_nom']
+        n_nom             = inputs['rated_rpm']
         Torque            = inputs['T_rated']
         
         b_st              = inputs['b_st']
@@ -1982,7 +1982,7 @@ class DFIG(GeneratorBase):
         I_0                  = inputs['I_0']
         
         machine_rating       = inputs['machine_rating']
-        n_nom                = inputs['n_nom']
+        n_nom                = inputs['rated_rpm']
         
         rho_Fe               = inputs['rho_Fe']
         rho_Copper           = inputs['rho_Copper']
@@ -2373,7 +2373,7 @@ class SCIG(GeneratorBase):
         h_s                  = inputs['h_s']
         h_0                  = inputs['h_0']
         machine_rating       = inputs['machine_rating']
-        n_nom                = inputs['n_nom']
+        n_nom                = inputs['rated_rpm']
         I_0                  = inputs['I_0']
         rho_Fe               = inputs['rho_Fe']
         rho_Copper           = inputs['rho_Copper']
@@ -2818,7 +2818,7 @@ class EESG(GeneratorBase):
         h_ys              = inputs['h_ys']
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
-        n_nom             = inputs['n_nom']
+        n_nom             = inputs['rated_rpm']
         Torque            = inputs['T_rated']
         
         b_st              = inputs['b_st']

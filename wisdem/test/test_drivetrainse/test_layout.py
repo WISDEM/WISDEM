@@ -34,7 +34,7 @@ class TestDirectLayout(unittest.TestCase):
         self.inputs['bedplate_wall_thickness'] = 0.06*np.ones(npts)
         self.inputs['D_top'] = 6.5
 
-        self.inputs['rho'] = 7850.
+        self.inputs['lss_rho'] = self.inputs['bedplate_rho'] = 7850.
         
         self.discrete_inputs['upwind'] = True
 
@@ -246,7 +246,7 @@ class TestDirectLayout(unittest.TestCase):
         myobj = lay.DirectLayout(n_points=npts)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
-        rho = self.inputs['rho']
+        rho = self.inputs['lss_rho']
         m_bedplate = 5*0.5*np.pi * np.pi*(1.5**2 - (1.5-.05)**2) * rho
         self.assertAlmostEqual(self.outputs['bedplate_mass'], m_bedplate)
         self.assertAlmostEqual(self.outputs['bedplate_cm'][0], np.mean(self.outputs['x_bedplate']), 1)
@@ -298,7 +298,7 @@ class TestGearedLayout(unittest.TestCase):
         
         self.inputs['D_top'] = 6.5
 
-        self.inputs['rho'] = 7850.
+        self.inputs['lss_rho'] = self.inputs['hss_rho'] = self.inputs['bedplate_rho'] = 7850.
         
         self.discrete_inputs['upwind'] = True
 
@@ -354,7 +354,7 @@ class TestGearedLayout(unittest.TestCase):
         myobj = lay.GearedLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
-        rho = self.inputs['rho']
+        rho = self.inputs['lss_rho']
         m_bedplate = rho*(2*1.5*.05+4.725*.05)*6.95
         self.assertAlmostEqual(self.outputs['bedplate_mass'], m_bedplate)
         npt.assert_almost_equal(self.outputs['bedplate_cm'], np.r_[-(2+0.5*6.5-0.5*6.95), 0.0, 0.5*4.725+.05])
