@@ -69,6 +69,9 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
         opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
+        opt['drivetrainse']['gamma_f'] = 1.35
+        opt['drivetrainse']['gamma_m'] = 1.3
+        opt['drivetrainse']['gamma_n'] = 1.0
         
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
@@ -146,6 +149,9 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
         opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
+        opt['drivetrainse']['gamma_f'] = 1.35
+        opt['drivetrainse']['gamma_m'] = 1.3
+        opt['drivetrainse']['gamma_n'] = 1.0
         
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
@@ -187,6 +193,9 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
         opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
+        opt['drivetrainse']['gamma_f'] = 1.35
+        opt['drivetrainse']['gamma_m'] = 1.3
+        opt['drivetrainse']['gamma_n'] = 1.0
 
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
@@ -288,6 +297,9 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
         opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
+        opt['drivetrainse']['gamma_f'] = 1.35
+        opt['drivetrainse']['gamma_m'] = 1.3
+        opt['drivetrainse']['gamma_n'] = 1.0
 
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)

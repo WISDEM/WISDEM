@@ -65,12 +65,6 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         material density
     lss_Xy : float, [Pa]
         yield stress
-    gamma_f : float
-        safety factor
-    gamma_m : float
-        safety factor on materials
-    gamma_n : float
-        safety factor on consequence of failure
     
     Returns
     -------
@@ -104,7 +98,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('n_dlcs')
         self.options.declare('direct_drive', default=True)
-    
+        self.options.declare('modeling_options')
+
     def setup(self):
         n_dlcs   = self.options['n_dlcs']
 
@@ -129,9 +124,6 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input('lss_G', val=0.0, units='Pa')
         self.add_input('lss_rho', val=0.0, units='kg/m**3')
         self.add_input('lss_Xy', val=0.0, units='Pa')
-        self.add_input('gamma_f', val=1.0)
-        self.add_input('gamma_m', val=1.0)
-        self.add_input('gamma_n', val=1.0)
 
         self.add_output('torq_deflection', val=0.0, units='m')
         self.add_output('torq_rotation', val=0.0, units='rad')
@@ -171,9 +163,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         E          = float(inputs['lss_E'])
         G          = float(inputs['lss_G'])
         sigma_y    = float(inputs['lss_Xy'])
-        gamma_f    = float(inputs['gamma_f'])
-        gamma_m    = float(inputs['gamma_m'])
-        gamma_n    = float(inputs['gamma_n'])
+        gamma_f    = float(self.options['modeling_options']['gamma_f'])
+        gamma_m    = float(self.options['modeling_options']['gamma_m'])
+        gamma_n    = float(self.options['modeling_options']['gamma_n'])
 
         m_hub      = float(inputs['hub_system_mass'])
         cm_hub     = float(inputs['hub_system_cm'])
@@ -349,12 +341,6 @@ class HSS_Frame(om.ExplicitComponent):
         material density
     hss_Xy : float, [Pa]
         yield stress
-    gamma_f : float
-        safety factor
-    gamma_m : float
-        safety factor on materials
-    gamma_n : float
-        safety factor on consequence of failure
     
     Returns
     -------
@@ -375,6 +361,7 @@ class HSS_Frame(om.ExplicitComponent):
     
     def initialize(self):
         self.options.declare('n_dlcs')
+        self.options.declare('modeling_options')
     
     def setup(self):
         n_dlcs   = self.options['n_dlcs']
@@ -394,9 +381,6 @@ class HSS_Frame(om.ExplicitComponent):
         self.add_input('hss_G', val=0.0, units='Pa')
         self.add_input('hss_rho', val=0.0, units='kg/m**3')
         self.add_input('hss_Xy', val=0.0, units='Pa')
-        self.add_input('gamma_f', val=1.0)
-        self.add_input('gamma_m', val=1.0)
-        self.add_input('gamma_n', val=1.0)
 
         self.add_output('hss_axial_stress', np.zeros((2, n_dlcs)), units='Pa')
         self.add_output('hss_shear_stress', np.zeros((2, n_dlcs)), units='Pa')
@@ -425,9 +409,9 @@ class HSS_Frame(om.ExplicitComponent):
         E          = float(inputs['hss_E'])
         G          = float(inputs['hss_G'])
         sigma_y    = float(inputs['hss_Xy'])
-        gamma_f    = float(inputs['gamma_f'])
-        gamma_m    = float(inputs['gamma_m'])
-        gamma_n    = float(inputs['gamma_n'])
+        gamma_f    = float(self.options['modeling_options']['gamma_f'])
+        gamma_m    = float(self.options['modeling_options']['gamma_m'])
+        gamma_n    = float(self.options['modeling_options']['gamma_n'])
 
         M_hub      = inputs['M_hub']
         gear_ratio = float(inputs['gear_ratio'])
@@ -608,12 +592,6 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         material density
     bedplate_Xy : float, [Pa]
         yield stress
-    gamma_f : float
-        safety factor
-    gamma_m : float
-        safety factor on materials
-    gamma_n : float
-        safety factor on consequence of failure
     
     Returns
     -------
@@ -651,6 +629,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('n_points')
         self.options.declare('n_dlcs')
+        self.options.declare('modeling_options')
     
     def setup(self):
         n_points = self.options['n_points']
@@ -689,9 +668,6 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_input('bedplate_G', val=0.0, units='Pa')
         self.add_input('bedplate_rho', val=0.0, units='kg/m**3')
         self.add_input('bedplate_Xy', val=0.0, units='Pa')
-        self.add_input('gamma_f', val=1.0)
-        self.add_input('gamma_m', val=1.0)
-        self.add_input('gamma_n', val=1.0)
 
         self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m')
         self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m')
@@ -747,9 +723,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         E          = float(inputs['bedplate_E'])
         G          = float(inputs['bedplate_G'])
         sigma_y    = float(inputs['bedplate_Xy'])
-        gamma_f    = float(inputs['gamma_f'])
-        gamma_m    = float(inputs['gamma_m'])
-        gamma_n    = float(inputs['gamma_n'])
+        gamma_f    = float(self.options['modeling_options']['gamma_f'])
+        gamma_m    = float(self.options['modeling_options']['gamma_m'])
+        gamma_n    = float(self.options['modeling_options']['gamma_n'])
 
         F_mb1      = inputs['F_mb1']
         F_mb2      = inputs['F_mb2']
@@ -974,12 +950,6 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         material density
     sigma_y : float, [Pa]
         yield stress
-    gamma_f : float
-        safety factor
-    gamma_m : float
-        safety factor on materials
-    gamma_n : float
-        safety factor on consequence of failure
     
     Returns
     -------
@@ -1016,6 +986,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
     
     def initialize(self):
         self.options.declare('n_dlcs')
+        self.options.declare('modeling_options')
     
     def setup(self):
         n_dlcs   = self.options['n_dlcs']
@@ -1051,9 +1022,6 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         self.add_input('bedplate_G', val=0.0, units='Pa')
         self.add_input('bedplate_rho', val=0.0, units='kg/m**3')
         self.add_input('bedplate_Xy', val=0.0, units='Pa')
-        self.add_input('gamma_f', val=1.0)
-        self.add_input('gamma_m', val=1.0)
-        self.add_input('gamma_n', val=1.0)
 
         self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m')
         self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m')
@@ -1099,9 +1067,9 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         E            = float(inputs['bedplate_E'])
         G            = float(inputs['bedplate_G'])
         sigma_y      = float(inputs['bedplate_Xy'])
-        gamma_f      = float(inputs['gamma_f'])
-        gamma_m      = float(inputs['gamma_m'])
-        gamma_n      = float(inputs['gamma_n'])
+        gamma_f      = float(self.options['modeling_options']['gamma_f'])
+        gamma_m      = float(self.options['modeling_options']['gamma_m'])
+        gamma_n      = float(self.options['modeling_options']['gamma_n'])
 
         F_mb1        = inputs['F_mb1']
         F_mb2        = inputs['F_mb2']

@@ -256,7 +256,7 @@ class DirectLayout(Layout):
 
         # From Overhang input (dist from center of tower measured in yaw-aligned
         # c.s.-parallel to ground), compute bedplate length and height
-        L_bedplate = L_overhang + 0.5*D_top - L_drive*np.cos(tilt)
+        L_bedplate = L_overhang - L_drive*np.cos(tilt)
         constr_Ldrive =  L_bedplate - 0.5*D_top # Should be > 0
         if constr_Ldrive < 0:
             L_bedplate = 0.5*D_top
@@ -498,7 +498,7 @@ class GearedLayout(Layout):
         outputs['L_lss'] = L_lss
 
         # Put tower at 0 position
-        s_tower = s_drive[-1] - (L_overhang+0.5*D_top)/np.cos(tilt)
+        s_tower = s_drive[-1] - L_overhang/np.cos(tilt)
         s_drive -= s_tower
         outputs['s_drive'] = s_drive
         
@@ -541,7 +541,7 @@ class GearedLayout(Layout):
         
         myI         = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
         m_bedplate  = myI.Area * L_bedplate * bedplate_rho
-        cg_bedplate = np.r_[Cup*(L_overhang + 0.5*D_top - 0.5*L_bedplate), 0.0, myI.CG] # from tower top
+        cg_bedplate = np.r_[Cup*(L_overhang - 0.5*L_bedplate), 0.0, myI.CG] # from tower top
         I_bedplate  = bedplate_rho*L_bedplate*np.r_[myI.Jxx, myI.Iyy, myI.Izz] + m_bedplate*L_bedplate**2/12.*np.r_[0., 1., 1.]
         outputs['bedplate_web_height'] = bed_h_web
         outputs['bedplate_mass'] = m_bedplate
@@ -549,6 +549,6 @@ class GearedLayout(Layout):
         outputs['bedplate_I']    = np.r_[I_bedplate, np.zeros(3)]
         
         # ------- Constraints ----------------
-        outputs['constr_length'] = L_drive*np.cos(tilt) - L_overhang - D_top # Should be > 0
+        outputs['constr_length'] = L_drive*np.cos(tilt) - L_overhang - 0.5*D_top # Should be > 0
         outputs['constr_height'] = H_bedplate # Should be > 0
         # ------------------------------------

@@ -322,10 +322,6 @@ components:
         diameter: 7.94
         cone_angle: 0.06981317007977318 # 4 deg
         drag_coefficient: 0.5
-        elastic_properties_mb:
-          system_mass: 190000.
-          system_inertia: [1382171., 2169261., 2160637, 0.0, 0.0, 0.0]
-          system_center_mass: [11.014, 0.0, 0.0]
         flange_t2shell_t: 4.0
         flange_OD2hub_D: 0.5
         flange_ID2OD: 0.8
@@ -340,17 +336,6 @@ components:
         hub_material: Steel #cast_iron
         spinner_material: CarbonUD
     nacelle:
-        elastic_properties_mb:
-          above_yaw_mass: 531000
-          yaw_mass: 100000
-          inertia: [10680747., 122447810., 10046187., 0.0, 0.0, 0.0]
-          center_mass: [3.945, 0.0, 3.352]
-        outer_shape_bem:
-          uptilt_angle: 0.10471975511965977 # 6 deg
-          distance_tt_hub: 4.348
-          tower_top_to_nacelle: 0.380
-          overhang: 11.014
-          drag_coefficient: 0.5
         drivetrain:
           uptilt_angle: 0.10471975511965977 # 6 deg
           distance_tt_hub: 4.348

@@ -13,6 +13,7 @@ class TestDirectStructure(unittest.TestCase):
         self.outputs = {}
         self.discrete_inputs = {}
         self.discrete_outputs = {}
+        self.opt = {}
 
         self.discrete_inputs['upwind'] = True
 
@@ -88,9 +89,9 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['lss_rho'] = self.inputs['hss_rho'] = self.inputs['bedplate_rho'] = 7850.
         self.inputs['lss_Xy'] = self.inputs['hss_Xy'] = self.inputs['bedplate_Xy'] = 250e6
 
-        self.inputs['gamma_f'] = 1.35
-        self.inputs['gamma_m'] = 1.3
-        self.inputs['gamma_n'] = 1.0
+        self.opt['gamma_f'] = 1.35
+        self.opt['gamma_m'] = 1.3
+        self.opt['gamma_n'] = 1.0
 
     def compute_layout(self, direct=True):
         myobj = lay.DirectLayout(n_points=npts) if direct else lay.GearedLayout()
@@ -105,7 +106,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
         self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
+        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
         npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
@@ -146,7 +147,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
         self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
+        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
@@ -188,7 +189,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
         self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
+        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
         npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
@@ -231,7 +232,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
         self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, n_dlcs=1)
+        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
@@ -276,7 +277,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_torq']      = np.zeros(3).reshape((3,1))
         self.inputs['M_generator'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
-        myobj = ds.Bedplate_IBeam_Frame(n_dlcs=1)
+        myobj = ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2,0], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['base_M'][[0,2],0], 0.0, decimal=2)
@@ -314,7 +315,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_torq']      = np.zeros(3).reshape((3,1))
         self.inputs['M_generator'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
-        myobj = ds.Bedplate_IBeam_Frame(n_dlcs=1)
+        myobj = ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2,0], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['base_M'][[0,2],0], 0.0, decimal=2)
@@ -347,7 +348,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, direct_drive=True)
+        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=opt, direct_drive=True)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         F0 = self.outputs['F_mb1'].flatten()
         M0 = self.outputs['M_mb2'].flatten()
@@ -380,7 +381,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, direct_drive=True)
+        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=opt, direct_drive=True)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         F0 = self.outputs['F_mb1'].flatten()
         M0 = self.outputs['M_mb2'].flatten()
@@ -413,7 +414,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
-        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, direct_drive=False)
+        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=opt, direct_drive=False)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         F0 = self.outputs['F_mb1'].flatten()
         M0 = self.outputs['M_mb2'].flatten()
@@ -447,7 +448,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
-        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, direct_drive=False)
+        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=opt, direct_drive=False)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         F0 = self.outputs['F_mb1'].flatten()
         M0 = self.outputs['M_mb2'].flatten()
@@ -483,7 +484,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
-        myobj = ds.HSS_Frame(n_dlcs=1)
+        myobj = ds.HSS_Frame(modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
         F0 = self.outputs['F_generator'].flatten()
         M0 = self.outputs['M_generator'].flatten()
@@ -496,7 +497,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = g.reshape((3,1))
         self.inputs['M_hub'] = 2*g.reshape((3,1))
         self.compute_layout(False)
-        myobj = ds.HSS_Frame(n_dlcs=1)
+        myobj = ds.HSS_Frame(modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
         npt.assert_almost_equal(self.outputs['F_generator'].flatten(), F0, decimal=2)
         npt.assert_almost_equal(self.outputs['M_generator'].flatten(), np.r_[2*g[0]/50.0, M0[1], 0.0], decimal=2)
@@ -509,7 +510,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.zeros(3).reshape((3,1))
         self.compute_layout(False)
-        myobj = ds.HSS_Frame(n_dlcs=1)
+        myobj = ds.HSS_Frame(modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
         F0 = self.outputs['F_generator'].flatten()
         M0 = self.outputs['M_generator'].flatten()
@@ -523,7 +524,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_hub'] = g.reshape((3,1))
         self.inputs['M_hub'] = 2*g.reshape((3,1))
         self.compute_layout(False)
-        myobj = ds.HSS_Frame(n_dlcs=1)
+        myobj = ds.HSS_Frame(modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
         npt.assert_almost_equal(self.outputs['F_generator'].flatten(), F0, decimal=2)
         npt.assert_almost_equal(self.outputs['M_generator'].flatten(), np.r_[2*g[0]/50.0, M0[1], 0.0], decimal=2)
@@ -546,7 +547,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['G'] = 100e9
         self.inputs['lss_rho'] = 1e-6
         self.compute_layout()
-        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, direct_drive=True)
+        myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=opt, direct_drive=True)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         J = 0.5*np.pi*(2.5**4 - 2**4)
         sigma = 1e5/J*2.5
@@ -574,7 +575,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['G'] = 100e9
         self.inputs['hss_rho'] = 1e-6
         self.compute_layout()
-        myobj = ds.HSS_Frame(n_dlcs=1)
+        myobj = ds.HSS_Frame(modeling_options=opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
         J = 0.5*np.pi*(2.5**4 - 2**4)
         sigma = 1e5/50./J*2.5

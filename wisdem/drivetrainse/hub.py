@@ -65,8 +65,6 @@ class HubShell(om.ExplicitComponent):
         Unit cost metal
     hub_diameter : float, [m]
         Outer diameter of the hub
-    hub_radius : float, [m]
-        Outer radius of the hub
 
     Returns
     -------
@@ -87,27 +85,36 @@ class HubShell(om.ExplicitComponent):
     def setup(self):
 
         # Inputs
-        self.add_input('flange_t2shell_t',          val = 0.0)
-        self.add_input('flange_OD2hub_D',           val = 0.0)
-        self.add_input('flange_ID2flange_OD',       val = 0.0)
-        self.add_input('rho',                       val = 0.0, units = 'kg/m**3')
-        self.add_input('max_torque',                val = 0.0, units = 'N*m')
-        self.add_input('Xy',                        val = 0.0, units = 'Pa')
-        self.add_input('hub_stress_concentration',      val = 0.0)
-        self.add_input('metal_cost',                val = 0.0, units = 'USD/kg')
+        self.add_input('flange_t2shell_t',         val = 0.0)
+        self.add_input('flange_OD2hub_D',          val = 0.0)
+        self.add_input('flange_ID2flange_OD',      val = 0.0)
+        self.add_input('rho',                      val = 0.0, units = 'kg/m**3')
+        self.add_input('max_torque',               val = 0.0, units = 'N*m')
+        self.add_input('Xy',                       val = 0.0, units = 'Pa')
+        self.add_input('hub_stress_concentration', val = 0.0)
+        self.add_input('metal_cost',               val = 0.0, units = 'USD/kg')
         self.add_input('hub_diameter',             val = 0.0, units = 'm')
-        self.add_input('hub_radius',             val = 0.0, units = 'm')
-
+        self.add_input('blade_root_diameter',      val = 0.0, units = 'm')
+        self.add_input('hub_in2out_circ',          val = 1.2)
+        self.add_discrete_input('n_blades',        val = 3)
+        
         # Outputs
-        self.add_output('hub_mass',                 val = 0.0, units = 'kg')
-        self.add_output('hub_cost',                 val = 0.0, units = 'USD')
-        self.add_output('hub_cm',                   val = 0.0, units = 'm')
-        self.add_output('hub_I',                    val = np.zeros(6), units = 'kg*m**2')
+        self.add_output('hub_mass',                val = 0.0, units = 'kg')
+        self.add_output('hub_cost',                val = 0.0, units = 'USD')
+        self.add_output('hub_cm',                  val = 0.0, units = 'm')
+        self.add_output('hub_I',                   val = np.zeros(6), units = 'kg*m**2')
+        self.add_output('constr_hub_diameter',     val = 0.0, units = 'm')
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+
+        # User diameter
+        dsgn_hub_diam = inputs['hub_diameter']
+        
+        # Estimate diameter of sphere based on blade root diameter
+        min_hub_diam = inputs['hub_in2out_circ'] * inputs['blade_root_diameter'] / np.sin(np.pi / discrete_inputs['n_blades'])
+
         # Compute diameter and radius of the hub including safety factor
-        dsgn_hub_diam           = inputs['hub_diameter']
-        dsgn_hub_rad            = 0.5*dsgn_hub_diam
+        dsgn_hub_rad    = 0.5*dsgn_hub_diam
 
         # Determine max stress
         stress_allow_pa = inputs['Xy'] / (inputs['hub_stress_concentration'] * self.options['gamma']) 
@@ -138,10 +145,11 @@ class HubShell(om.ExplicitComponent):
         hub_cm  = (main_flange_mass*main_flange_thick*0.5 + sph_hub_mass*dsgn_hub_rad) / (main_flange_mass + sph_hub_mass) 
 
         # Assign values to openmdao outputs 
-        outputs['hub_mass']     = hub_mass
-        outputs['hub_cost']     = hub_cost
-        outputs['hub_cm']       = hub_cm
-        outputs['hub_I']        = np.r_[(2./3.) * hub_mass * (0.5*dsgn_hub_diam)**2 * np.ones(3), np.zeros(3)] # Spherical shell
+        outputs['hub_mass'] = hub_mass
+        outputs['hub_cost'] = hub_cost
+        outputs['hub_cm']   = hub_cm
+        outputs['hub_I']    = np.r_[(2./3.) * hub_mass * (0.5*dsgn_hub_diam)**2 * np.ones(3), np.zeros(3)] # Spherical shell
+        outputs['constr_hub_diameter'] = dsgn_hub_diam - min_hub_diam # Should be > 0
 
 
 class Spinner(om.ExplicitComponent):
@@ -491,9 +499,9 @@ class Hub_System(om.Group):
             self.add_subsystem('ivc', ivc, promotes=['*'])
             
         self.add_subsystem('maxtorq',     FindMaxTorque(),    promotes=['*'])
-        self.add_subsystem('hub_shell',   HubShell(gamma=opt['hub_gamma']), promotes=['hub_mass', 'hub_diameter', 'hub_radius','hub_cost', 'hub_cm', 'hub_I',
+        self.add_subsystem('hub_shell',   HubShell(gamma=opt['hub_gamma']), promotes=['hub_mass', 'hub_diameter', 'hub_cost', 'hub_cm', 'hub_I',
                                                                       'flange_t2shell_t','flange_OD2hub_D','flange_ID2flange_OD',
-                                                                      'hub_stress_concentration', 'max_torque'])
+                                                                      'blade_root_diameter','hub_stress_concentration', 'max_torque'])
         self.add_subsystem('spinner',     Spinner(gamma=opt['spinner_gamma']), promotes=['n_blades', 'hub_diameter', 'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I',
                                                                       'n_front_brackets','n_rear_brackets','clearance_hub_spinner',
                                                                       'spin_hole_incr', 'blade_root_diameter','spinner_gust_ws'])

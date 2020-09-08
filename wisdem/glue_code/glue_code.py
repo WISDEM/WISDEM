@@ -237,7 +237,6 @@ class WT_RNTA(om.Group):
         # Connections to DriveSE
         if modeling_options['Analysis_Flags']['DriveSE']:
             self.connect('hub.diameter'                    , 'drivese.hub_diameter')
-            self.connect('hub.radius'                      , 'drivese.hub_radius')
             self.connect('hub.flange_t2shell_t'            , 'drivese.flange_t2shell_t')
             self.connect('hub.flange_OD2hub_D'             , 'drivese.flange_OD2hub_D')
             self.connect('hub.flange_ID2flange_OD'         , 'drivese.flange_ID2flange_OD')
@@ -248,10 +247,11 @@ class WT_RNTA(om.Group):
             self.connect('hub.spin_hole_incr'              , 'drivese.spin_hole_incr')
             self.connect('hub.pitch_system_scaling_factor' , 'drivese.pitch_system_scaling_factor')
             self.connect('hub.spinner_gust_ws'             , 'drivese.spinner_gust_ws')
+
+            self.connect('configuration.n_blades',          'drivese.n_blades')
             
             self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')
             self.connect('configuration.upwind',       'drivese.upwind')
-            self.connect('configuration.n_blades',     'drivese.n_blades')
             self.connect('sse.powercurve.rated_Omega', 'drivese.rated_rpm')
             self.connect('sse.powercurve.rated_Q',     'drivese.rated_torque')
             self.connect('control.rated_power',        'drivese.machine_rating')    
@@ -311,6 +311,92 @@ class WT_RNTA(om.Group):
             self.connect('materials.sigma_y',                 'drivese.sigma_y_mat')
             self.connect('materials.Xt',                      'drivese.Xt_mat')
             self.connect('materials.unit_cost',               'drivese.unit_cost_mat')
+
+            if modeling_options['flags']['generator']:
+
+                self.connect('generator.B_r'          , 'drivese.generator.B_r')
+                self.connect('generator.P_Fe0e'       , 'drivese.generator.P_Fe0e')
+                self.connect('generator.P_Fe0h'       , 'drivese.generator.P_Fe0h')
+                self.connect('generator.S_N'          , 'drivese.generator.S_N')
+                self.connect('generator.alpha_p'      , 'drivese.generator.alpha_p')
+                self.connect('generator.b_r_tau_r'    , 'drivese.generator.b_r_tau_r')
+                self.connect('generator.b_ro'         , 'drivese.generator.b_ro')
+                self.connect('generator.b_s_tau_s'    , 'drivese.generator.b_s_tau_s')
+                self.connect('generator.b_so'         , 'drivese.generator.b_so')
+                self.connect('generator.cofi'         , 'drivese.generator.cofi')
+                self.connect('generator.freq'         , 'drivese.generator.freq')
+                self.connect('generator.h_i'          , 'drivese.generator.h_i')
+                self.connect('generator.h_sy0'        , 'drivese.generator.h_sy0')
+                self.connect('generator.h_w'          , 'drivese.generator.h_w')
+                self.connect('generator.k_fes'        , 'drivese.generator.k_fes')
+                self.connect('generator.k_fillr'      , 'drivese.generator.k_fillr')
+                self.connect('generator.k_fills'      , 'drivese.generator.k_fills')
+                self.connect('generator.k_s'          , 'drivese.generator.k_s')
+                self.connect('generator.m'            , 'drivese.generator.m')
+                self.connect('generator.mu_0'         , 'drivese.generator.mu_0')
+                self.connect('generator.mu_r'         , 'drivese.generator.mu_r')
+                self.connect('generator.p'            , 'drivese.generator.p')
+                self.connect('generator.phi'          , 'drivese.generator.phi')
+                self.connect('generator.q1'           , 'drivese.generator.q1')
+                self.connect('generator.q2'           , 'drivese.generator.q2')
+                self.connect('generator.ratio_mw2pp'  , 'drivese.generator.ratio_mw2pp')
+                self.connect('generator.resist_Cu'    , 'drivese.generator.resist_Cu')
+                self.connect('generator.sigma'        , 'drivese.generator.sigma')
+                self.connect('generator.y_tau_p'      , 'drivese.generator.y_tau_p')
+                self.connect('generator.y_tau_pr'     , 'drivese.generator.y_tau_pr')
+
+                self.connect('generator.I_0'          , 'drivese.generator.I_0')
+                self.connect('generator.d_r'          , 'drivese.generator.d_r')
+                self.connect('generator.h_m'          , 'drivese.generator.h_m')
+                self.connect('generator.h_0'          , 'drivese.generator.h_0')
+                self.connect('generator.h_s'          , 'drivese.generator.h_s')
+                self.connect('generator.len_s'        , 'drivese.generator.len_s')
+                self.connect('generator.n_r'          , 'drivese.generator.n_r')
+                self.connect('generator.rad_ag'       , 'drivese.generator.rad_ag')
+                self.connect('generator.t_wr'         , 'drivese.generator.t_wr')
+
+                self.connect('generator.n_s'          , 'drivese.generator.n_s')
+                self.connect('generator.b_st'         , 'drivese.generator.b_st')
+                self.connect('generator.d_s'          , 'drivese.generator.d_s')
+                self.connect('generator.t_ws'         , 'drivese.generator.t_ws')
+
+                self.connect('generator.rho_Copper'   , 'drivese.generator.rho_Copper')
+                self.connect('generator.rho_Fe'       , 'drivese.generator.rho_Fe')
+                self.connect('generator.rho_Fes'      , 'drivese.generator.rho_Fes')
+                self.connect('generator.rho_PM'       , 'drivese.generator.rho_PM')
+
+                self.connect('generator.C_Cu'         , 'drivese.generator.C_Cu')
+                self.connect('generator.C_Fe'         , 'drivese.generator.C_Fe')
+                self.connect('generator.C_Fes'        , 'drivese.generator.C_Fes')
+                self.connect('generator.C_PM'         , 'drivese.generator.C_PM')
+
+                if modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
+                    self.connect('generator.r_g'          , 'drivese.generator.r_g')
+                    self.connect('generator.N_c'          , 'drivese.generator.N_c')
+                    self.connect('generator.b'            , 'drivese.generator.b')
+                    self.connect('generator.c'            , 'drivese.generator.c')
+                    self.connect('generator.E_p'          , 'drivese.generator.E_p')
+                    self.connect('generator.h_yr'         , 'drivese.generator.h_yr')
+                    self.connect('generator.h_ys'         , 'drivese.generator.h_ys')
+                    self.connect('generator.h_sr'         , 'drivese.generator.h_sr')
+                    self.connect('generator.h_ss'         , 'drivese.generator.h_ss')
+                    self.connect('generator.t_r'          , 'drivese.generator.t_r')
+                    self.connect('generator.t_s'          , 'drivese.generator.t_s')
+
+                    self.connect('generator.u_allow_pcent', 'drivese.generator.u_allow_pcent')
+                    self.connect('generator.y_allow_pcent', 'drivese.generator.y_allow_pcent')
+                    self.connect('generator.z_allow_deg'  , 'drivese.generator.z_allow_deg')
+                    self.connect('generator.B_tmax'       , 'drivese.generator.B_tmax')
+
+                if modeling_options['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
+                    self.connect('generator.tau_p'        , 'drivese.generator.tau_p')
+                    self.connect('generator.h_ys'         , 'drivese.generator.h_ys')
+                    self.connect('generator.h_yr'         , 'drivese.generator.h_yr')
+                    self.connect('generator.b_arm'        , 'drivese.generator.b_arm')
+
+                elif modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
+                    self.connect('generator.B_symax'      , 'drivese.generator.B_symax')
+
 
         # Connections to TowerSE
         if modeling_options['Analysis_Flags']['DriveSE'] and modeling_options['flags']['tower']:

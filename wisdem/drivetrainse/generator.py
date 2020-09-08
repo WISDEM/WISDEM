@@ -381,6 +381,11 @@ class Generator(om.Group):
             ivc.add_output('h_ss',0.0, units ='m')
             ivc.add_output('t_r',0.0, units ='m')
             ivc.add_output('t_s',0.0, units ='m')
+            
+            ivc.add_output('u_allow_pcent',0.0)
+            ivc.add_output('y_allow_pcent',0.0)
+            ivc.add_output('z_allow_deg',0.0,units='deg')
+            ivc.add_output('B_tmax',0.0, units='T')
 
             # These are part of sivc and only get added if topLevelFlag
             sivc.add_output('P_mech', 0.0, units='W')
@@ -390,11 +395,6 @@ class Generator(om.Group):
             sivc.add_output('y_bd', units ='m')
             sivc.add_output('theta_bd', 0.0, units='rad')
             
-            ivc.add_output('u_allow_pcent',0.0)
-            ivc.add_output('y_allow_pcent',0.0)
-            ivc.add_output('z_allow_deg',0.0,units='deg')
-            ivc.add_output('B_tmax',0.0, units='T')
-            
         if genType.lower() in ['eesg','pmsg_arms','pmsg_disc']:
             ivc.add_output('tau_p', val=0.0, units='m')
             ivc.add_output('h_ys',  val=0.0, units='m')
@@ -403,9 +403,9 @@ class Generator(om.Group):
         elif genType.lower() in ['scig','dfig']:
             ivc.add_output('B_symax', val=0.0, units='T')
         
-        self.add_subsystem('ivc', ivc, promotes=['*'])
-
         if topLevelFlag:
+            self.add_subsystem('ivc', ivc, promotes=['*'])
+        
             sivc.add_output('machine_rating', 0.0, units='W')
             sivc.add_output('rated_rpm', 0.0, units='rpm')
             sivc.add_output('rated_torque', 0.0, units='N*m')
