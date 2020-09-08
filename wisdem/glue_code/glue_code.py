@@ -396,6 +396,7 @@ class WT_RNTA(om.Group):
 
                 elif modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
                     self.connect('generator.B_symax'      , 'drivese.generator.B_symax')
+                    self.connect('generator.S_Nmax'      , 'drivese.generator.S_Nmax')
 
 
         # Connections to TowerSE

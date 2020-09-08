@@ -2023,7 +2023,6 @@ class DFIG(GeneratorBase):
         y_tau_p     = inputs['y_tau_p']
         y_tau_pr    = inputs['y_tau_pr']
 
-        
         '''
         #Assign values to universal constants
         sigma       = 21.5e3           # shear stress in psi (what material? Al, brass, Cu?) ~148e6 Pa

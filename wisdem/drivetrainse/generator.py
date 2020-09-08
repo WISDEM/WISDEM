@@ -316,7 +316,7 @@ class Generator(om.Group):
         ivc.add_output('B_r', val=1.2, units='T')
         ivc.add_output('P_Fe0e', val=1.0, units='W/kg')
         ivc.add_output('P_Fe0h', val=4.0, units='W/kg')
-        ivc.add_output('S_N', val=-0.002 ,desc='Slip')
+        ivc.add_output('S_N', val=-0.002)
         ivc.add_output('alpha_p', val=0.5*np.pi*0.7)
         ivc.add_output('b_r_tau_r', val=0.45)
         ivc.add_output('b_ro', val=0.004, units='m')
@@ -400,8 +400,10 @@ class Generator(om.Group):
             ivc.add_output('h_ys',  val=0.0, units='m')
             ivc.add_output('h_yr',  val=0.0, units='m')
             ivc.add_output('b_arm',   val=0.0, units='m')
+            
         elif genType.lower() in ['scig','dfig']:
             ivc.add_output('B_symax', val=0.0, units='T')
+            ivc.add_output('S_Nmax', val=-0.2)
         
         if topLevelFlag:
             self.add_subsystem('ivc', ivc, promotes=['*'])

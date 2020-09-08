@@ -80,7 +80,7 @@ class HubShell(om.ExplicitComponent):
     """
     
     def initialize(self):
-        self.options.declare('gamma', default=False)
+        self.options.declare('gamma', default=1.0)
         
     def setup(self):
 
@@ -291,11 +291,6 @@ class Spinner(om.ExplicitComponent):
 
         # Compute bracket thickness given loads and metal properties
         bracket_thickness = np.sqrt((6. * bracket_bending_moment) / (bracket_width * allow_yield_strength))
-
-        # Sent warning if bracket thickness is small than 16mm. This is a switch between material properties, not implemented here to prevent discontinuities
-        if bracket_thickness < 0.016:
-            print('The thickness of the bracket of the hub spinner is smaller than 16 mm. You may increase the Yield strength of the metal.')
-            print('The standard approach adopted 235 MPa below 16 mm and 225 above 16 mm.') 
 
         # Assume flang is 25% of bracket length
         bracket_flange_length = inputs['clearance_hub_spinner'] * 0.25

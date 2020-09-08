@@ -542,6 +542,10 @@ properties:
                                     maximum: 6
                     generator:
                       properties:
+                        generator_type:
+                          type: string
+                          default: DFIG
+                          enum: [DFIG, dfig, EESG, eesg, SCIG, scig, PMSG_Arms, PMSG_ARMS, pmsg_arms, PMSG_Disc, PMSG_Disk, PMSG_DISC, PMSG_DISK, pmsg_disk, pmsg_disc, PMSG_Outer, PMSG_OUTER, pmsg_outer]
                         B_r:
                           type: number
                           default: 1.2
@@ -565,6 +569,13 @@ properties:
                         S_N:
                           type: number
                           default: -0.002
+                          units: none
+                          minimum: -100.0
+                          maximum: 0.0
+                          description: Words
+                        S_Nmax:
+                          type: number
+                          default: -0.2
                           units: none
                           minimum: -100.0
                           maximum: 0.0

@@ -170,9 +170,10 @@ components:
                     values: *id005
     hub:
         cone_angle: 0.04363
+        diameter: 3.0
         drag_coefficient: 0.5
         hub_material: steel #cast_iron
-        spinner_material: glassUD
+        spinner_material: CarbonUD
         flange_t2shell_t: 4.0
         flange_OD2hub_D: 0.5
         flange_ID2OD: 0.8
@@ -180,7 +181,7 @@ components:
         hub_stress_concentration: 2.5
         n_front_brackets: 3
         n_rear_brackets: 3
-        clearance_hub_spinner: 0.5
+        clearance_hub_spinner: 0.75 #0.5
         spin_hole_incr: 1.2
         pitch_system_scaling_factor: 0.54
         spinner_gust_ws: 70.0

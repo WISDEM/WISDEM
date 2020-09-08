@@ -185,9 +185,11 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 generator_ivc.add_output('tau_p', val=0.0, units='m')
                 generator_ivc.add_output('h_ys',  val=0.0, units='m')
                 generator_ivc.add_output('h_yr',  val=0.0, units='m')
-                generator_ivc.add_output('b_arm',   val=0.0, units='m')
+                generator_ivc.add_output('b_arm', val=0.0, units='m')
+                
             elif modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
                 generator_ivc.add_output('B_symax', val=0.0, units='T')
+                generator_ivc.add_output('S_Nmax', val=-0.2)
                 
             self.add_subsystem('generator', generator_ivc)
         
