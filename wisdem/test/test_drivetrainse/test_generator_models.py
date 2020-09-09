@@ -60,7 +60,7 @@ class TestGenerators(unittest.TestCase):
         self.inputs['rated_torque']        = 10.25e6       #rev 1 9.94718e6
         self.inputs['P_mech']         = 10.71947704e6 #rev 1 9.94718e6
         self.inputs['rated_rpm']          = 10            #8.68                # rpm 9.6
-        self.inputs['r_g']            = 4.0           # rev 1  4.92
+        self.inputs['rad_ag']            = 4.0           # rev 1  4.92
         self.inputs['len_s']          = 1.7           # rev 2.3
         self.inputs['h_s']            = 0.7            # rev 1 0.3
         self.inputs['p']              = 70            #100.0    # rev 1 160

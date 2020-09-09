@@ -273,14 +273,14 @@ class DrivetrainSE(om.Group):
         self.connect('s_generator','generator_cm')
         
         if dogen:
-            if self.options['topLevelFlag']:
-                self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
             self.connect('generator.R_out','R_generator')
             self.connect('bedplate_E','generator.E')
             self.connect('bedplate_G','generator.G')
             
             if direct:
-                self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
+                if self.options['topLevelFlag']:
+                    self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
+                    self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
                 self.connect('torq_deflection', 'generator.y_sh')
                 self.connect('torq_rotation', 'generator.theta_sh')
                 self.connect('stator_deflection', 'generator.y_bd')
@@ -293,5 +293,8 @@ class DrivetrainSE(om.Group):
                 self.linear_solver = lbgs = om.LinearBlockGS()
                 self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
                 nlbgs.options['maxiter'] = 3
+            else:
+                if self.options['topLevelFlag']:
+                    self.connect('hss_diameter','generator.D_shaft', src_indices=[-1])
         
     

@@ -429,7 +429,6 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['generator']['C_PM']        = float(wt_opt['generator.C_PM'])
 
                 if self.modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
-                    self.wt_init['components']['nacelle']['generator']['r_g']           = float(wt_opt['generator.r_g'])
                     self.wt_init['components']['nacelle']['generator']['N_c']           = float(wt_opt['generator.N_c'])
                     self.wt_init['components']['nacelle']['generator']['b']             = float(wt_opt['generator.b'] )
                     self.wt_init['components']['nacelle']['generator']['c']             = float(wt_opt['generator.c'] )

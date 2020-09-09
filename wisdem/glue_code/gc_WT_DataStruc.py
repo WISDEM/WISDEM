@@ -110,7 +110,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             generator_ivc.add_output('B_r', val=1.2, units='T')
             generator_ivc.add_output('P_Fe0e', val=1.0, units='W/kg')
             generator_ivc.add_output('P_Fe0h', val=4.0, units='W/kg')
-            generator_ivc.add_output('S_N', val=-0.002 ,desc='Slip')
+            generator_ivc.add_output('S_N', val=-0.002)
             generator_ivc.add_output('alpha_p', val=0.5*np.pi*0.7)
             generator_ivc.add_output('b_r_tau_r', val=0.45)
             generator_ivc.add_output('b_ro', val=0.004, units='m')
@@ -164,7 +164,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             generator_ivc.add_output('C_PM',  val=0.0, units='USD/kg')
 
             if modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
-                generator_ivc.add_output('r_g',0.0, units ='m')
                 generator_ivc.add_output('N_c',0.0)
                 generator_ivc.add_output('b',0.0)
                 generator_ivc.add_output('c',0.0)

@@ -554,8 +554,6 @@ class PMSG_Outer(GeneratorBase):
     
     Parameters
     ----------
-    r_g : float, [m]
-        airgap radius
     P_mech : float, [W]
         Shaft mechanical power
     N_c : float
@@ -642,7 +640,6 @@ class PMSG_Outer(GeneratorBase):
         super(PMSG_Outer, self).setup()
     
         # PMSG_structrual inputs
-        self.add_input('r_g', 0.0, units ='m')
         self.add_input('P_mech', units ='W')
         self.add_input('N_c', 0.0)
         self.add_input('b', 0.0)
@@ -694,8 +691,8 @@ class PMSG_Outer(GeneratorBase):
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
-        r_g     = float(inputs['r_g'])
-        len_s     = float(inputs['len_s'])
+        rad_ag  = float(inputs['rad_ag'])
+        len_s   = float(inputs['len_s'])
         p       = float(inputs['p'])
         b       = float(inputs['b'])
         c       = float(inputs['c'])
@@ -721,24 +718,24 @@ class PMSG_Outer(GeneratorBase):
         sigma   = float(inputs['sigma'])
 
         # Grab constant values
-        B_r         = inputs['B_r']
-        E           = inputs['E']
-        G           = inputs['G']
-        P_Fe0e      = inputs['P_Fe0e']
-        P_Fe0h      = inputs['P_Fe0h']
-        cofi        = inputs['cofi']
-        h_w         = inputs['h_w']
-        k_fes       = inputs['k_fes']
-        k_fills     = inputs['k_fills']
-        m           = discrete_inputs['m']
-        mu_0        = inputs['mu_0']
-        mu_r        = inputs['mu_r']
-        p           = inputs['p']
-        phi         = inputs['phi']
-        ratio_mw2pp = inputs['ratio_mw2pp']
-        resist_Cu   = inputs['resist_Cu']
-        v           = inputs['v']
-        
+        B_r         = float(inputs['B_r'])
+        E           = float(inputs['E'])
+        G           = float(inputs['G'])
+        P_Fe0e      = float(inputs['P_Fe0e'])
+        P_Fe0h      = float(inputs['P_Fe0h'])
+        cofi        = float(inputs['cofi'])
+        h_w         = float(inputs['h_w'])
+        k_fes       = float(inputs['k_fes'])
+        k_fills     = float(inputs['k_fills'])
+        m           = int(discrete_inputs['m'])
+        mu_0        = float(inputs['mu_0'])
+        mu_r        = float(inputs['mu_r'])
+        p           = float(inputs['p'])
+        phi         = float(inputs['phi'])
+        ratio_mw2pp = float(inputs['ratio_mw2pp'])
+        resist_Cu   = float(inputs['resist_Cu'])
+        v           = float(inputs['v'])
+
         '''
         #Assign values to universal constants
         B_r        = 1.279      # Tesla remnant flux density
@@ -765,13 +762,13 @@ class PMSG_Outer(GeneratorBase):
         '''
 
         ######################## Electromagnetic design ###################################
-        K_rad = len_s/(2* r_g) # Aspect ratio
+        K_rad = len_s/(2* rad_ag) # Aspect ratio
         outputs['K_rad'] = K_rad
         
         # Calculating air gap length
-        dia		 = 2* r_g            # air gap diameter
+        dia		 = 2* rad_ag            # air gap diameter
         len_ag           = 0.001*dia         # air gap length
-        r_s		 = r_g-len_ag             #Stator outer radius
+        r_s		 = rad_ag-len_ag             #Stator outer radius
         b_so		 = 2*len_ag               # Slot opening
         tau_p            = (np.pi*dia/(2*p)) # pole pitch
         outputs['len_ag'] = len_ag
@@ -797,7 +794,7 @@ class PMSG_Outer(GeneratorBase):
             g_eff	 = k_C*(len_ag+ h_m/mu_r)
             
             # angular frequency in radians
-            om_m	 = 2*np.pi*inputs['rated_rpm']/60
+            om_m	 = 2*np.pi*float(inputs['rated_rpm'])/60
             om_e	 = p*om_m
             outputs['f'] = om_e/2/np.pi # outout frequency
             
@@ -825,6 +822,7 @@ class PMSG_Outer(GeneratorBase):
             outputs['N_s'] = N_s
             
             # Calculating leakage inductance in  stator
+            Z              = P_av_v / (m*E_p)
             V_1            = E_p/1.1
             I_n		   = P_av_v/3/cofi/V_1
             J_s            = 6.0
@@ -843,7 +841,7 @@ class PMSG_Outer(GeneratorBase):
             L_m            = L_aa
             L_ssigma       = (L_ssigmas+L_ssigmaew)
             L_s            = L_m+L_ssigma
-            G_leak         = E_p**4-1/9*(P_av_v*om_e*L_s)**2
+            G_leak         = 0 #E_p**2 - (om_e*L_s*Z)**2 # TODO: This is negative, creative NaNs later
             outputs['A_Cuscalc']         = A_Cuscalc
             outputs['b_s']               = b_s
             outputs['L_s']               = L_s
@@ -851,7 +849,7 @@ class PMSG_Outer(GeneratorBase):
             outputs['Slot_aspect_ratio'] = h_s/b_s
 
             # Calculating stator current and electrical loading
-            I_s                 = np.sqrt(2*((E_p)**2-G_leak**0.5)/(om_e*L_s)**2)
+            I_s                 = np.sqrt(Z**2 + ((E_p - G_leak**0.5)/(om_e*L_s)**2)**2 )
             outputs['I_s']      = I_s
             outputs['A_1']      = 6*I_s*N_s/np.pi/dia
             outputs['J_actual'] = I_s/(A_Cuscalc*2**0.5)
@@ -865,14 +863,14 @@ class PMSG_Outer(GeneratorBase):
             h_t                = (h_s+h_w+h_0)
             outputs['h_t']     = h_t
             V_Fest	       = len_s*S*(b_t*(h_s+h_w+h_0)+wedge_area)# volume of iron in stator tooth
-            V_Fesy	       = len_s*np.pi*((r_g-len_ag-h_s-h_w-h_0)**2-(r_g-len_ag-h_s-h_w-h_0-h_ys)**2) # volume of iron in stator yoke
-            V_Fery	       = len_s*np.pi*((r_g+h_m+h_yr)**2-(r_g+h_m)**2)
+            V_Fesy	       = len_s*np.pi*((rad_ag-len_ag-h_s-h_w-h_0)**2-(rad_ag-len_ag-h_s-h_w-h_0-h_ys)**2) # volume of iron in stator yoke
+            V_Fery	       = len_s*np.pi*((rad_ag+h_m+h_yr)**2-(rad_ag+h_m)**2)
             outputs['Copper']  = V_Cus*inputs['rho_Copper']
             M_Fest	       = V_Fest*rho_Fe    # Mass of stator tooth
             M_Fesy	       = V_Fesy*rho_Fe    # Mass of stator yoke
             M_Fery	       = V_Fery*rho_Fe    # Mass of rotor yoke
             outputs['Iron']    = M_Fest+M_Fesy+M_Fery
-            mass_PM            = 2*np.pi*(r_g+ h_m)*len_s*h_m*ratio_mw2pp*inputs['rho_PM']
+            mass_PM            = 2*np.pi*(rad_ag+ h_m)*len_s*h_m*ratio_mw2pp*inputs['rho_PM']
             outputs['mass_PM'] = mass_PM
             
             # Calculating Losses
@@ -902,7 +900,7 @@ class PMSG_Outer(GeneratorBase):
             I_snom	   = gen_eff*(P_mech/m/E_p/cofi) #rated current
             I_qnom	   = gen_eff*P_mech/(m* E_p)
             X_snom	   = om_e*(L_m+L_ssigma)
-            outputs['T_e'] = np.pi*r_g**2*len_s*2*sigma
+            outputs['T_e'] = np.pi*rad_ag**2*len_s*2*sigma
             Stator         = M_Fesy+M_Fest+outputs['Copper'] #modified mass_stru_steel
             Rotor          = M_Fery + mass_PM  #modified (N_r*(R_1-self.R_sh)*a_r*self.rho_Fes))
 
@@ -917,7 +915,7 @@ class PMSG_Outer(GeneratorBase):
 
         ######################## Rotor inactive (structural) design ###################################
         # Radial deformation of rotor
-        R               = r_g+h_m
+        R               = rad_ag+h_m
         L_r             = len_s+t_r+0.125
         constants_x_0   = shell_constant(R,t_r,L_r,0,E,v)
         constants_x_L   = shell_constant(R,t_r,L_r,L_r,E,v)
@@ -928,7 +926,7 @@ class PMSG_Outer(GeneratorBase):
  
         outputs['u_ar'] = (q*(R)**2)/(E*(h_yr+h_sr))-u_d
         outputs['u_ar'] = np.abs(outputs['u_ar'] + y_sh)
-        outputs['u_allow_r'] =2*r_g/1000*inputs['u_allow_pcent']/100
+        outputs['u_allow_r'] =2*rad_ag/1000*inputs['u_allow_pcent']/100
         
         # axial deformation of rotor
         W_back_iron =  plate_constant(R+h_sr+h_yr,R_sh,E,v,0.5*h_yr+R,t_r)
@@ -947,7 +945,7 @@ class PMSG_Outer(GeneratorBase):
         Q_b         =  w_disc_r*0.5/R_sh*(a_ii**2-r_oii**2)
         y_aiir      =  M_rb*a_ii**2/W_ssteel[0]*W_ssteel[1]+Q_b*a_ii**3/W_ssteel[0]*W_ssteel[2]-w_disc_r*a_ii**4/W_ssteel[0]*W_ssteel[7]
         I           = np.pi*0.25*(R**4-(R_sh)**4)
-        F_ecc       = q*2*np.pi*K_rad*r_g**3
+        F_ecc       = q*2*np.pi*K_rad*rad_ag**3
         M_ar        = F_ecc*L_r*0.5
         outputs['y_ar'] = np.abs(y_ai1r+y_ai2r+y_ai3r)+y_aiir+(R+h_yr+h_sr)*inputs['theta_sh']+M_ar*L_r**2*0/(2*E*I)
         outputs['y_allow_r'] = L_r/100*inputs['y_allow_pcent']
@@ -964,7 +962,7 @@ class PMSG_Outer(GeneratorBase):
         ######################## Stator inactive (structural) design ###################################
         # Radial deformation of Stator
         L_s             = len_s+t_s+0.1
-        R_s             = r_g-len_ag-h_t-h_ys-h_ss
+        R_s             = rad_ag-len_ag-h_t-h_ys-h_ss
         constants_x_0   = shell_constant(R_s,t_s,L_s,0,E,v)
         constants_x_L   = shell_constant(R_s,t_s,L_s,L_s,E,v)
         f_d_denom1      = R_s/(E*((R_s)**2-(R_no)**2))*((1-v)*R_s**2+(1+v)*(R_no)**2)
@@ -973,7 +971,7 @@ class PMSG_Outer(GeneratorBase):
         # TODO: Adds y_bd twice?
         outputs['u_as'] = (q*(R_s)**2)/(E*(h_ys+h_ss))-f*0/(constants_x_L[0]*(constants_x_L[1])**3)*((constants_x_L[2]/(2*constants_x_L[3])*constants_x_L[4] -constants_x_L[5]/constants_x_L[3]*constants_x_L[6]-1/2*constants_x_L[7]))+y_bd
         outputs['u_as'] = np.abs(outputs['u_as'] + y_bd)
-        outputs['u_allow_s'] =2*r_g/1000*inputs['u_allow_pcent']/100
+        outputs['u_allow_s'] =2*rad_ag/1000*inputs['u_allow_pcent']/100
         
         # axial deformation of stator
         W_back_iron =  plate_constant(R_s+h_ss+h_ys+h_t,R_no,E,v,0.5*h_ys+h_ss+R_s,t_s)
@@ -992,7 +990,7 @@ class PMSG_Outer(GeneratorBase):
         Q_b         =  w_disc_s*0.5/R_no*(a_ii**2-r_oii**2)
         y_aiis      =  M_rb*a_ii**2/W_ssteel[0]*W_ssteel[1]+Q_b*a_ii**3/W_ssteel[0]*W_ssteel[2]-w_disc_s*a_ii**4/W_ssteel[0]*W_ssteel[7]
         I           = np.pi*0.25*(R_s**4-(R_no)**4)
-        F_ecc       = q*2*np.pi*K_rad*r_g**2
+        F_ecc       = q*2*np.pi*K_rad*rad_ag**2
         M_as        = F_ecc*L_s*0.5
         
         outputs['y_as'] = np.abs(y_ai1s+y_ai2s+y_ai3s+y_aiis+(R_s+h_ys+h_ss+h_t)*inputs['theta_bd'])+M_as*L_s**2*0/(2*E*I)
@@ -1936,7 +1934,7 @@ class DFIG(GeneratorBase):
     
     Parameters
     ----------
-    S_Nmax : float, [T]
+    S_Nmax : float
         Max rated Slip
     B_symax : float, [T]
         Peak Stator Yoke flux density B_ymax
@@ -1962,7 +1960,7 @@ class DFIG(GeneratorBase):
     
     def setup(self):
         super(DFIG, self).setup()
-        self.add_input('S_Nmax', val=0.0, units='T')
+        self.add_input('S_Nmax', val=0.0)
         self.add_input('B_symax', val=0.0, units='T')
 
         self.add_output('N_r', val=0.0)

@@ -279,8 +279,6 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.lss_wall_thickness',        'drivese.lss_wall_thickness')
             self.connect('nacelle.lss_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
             self.connect('nacelle.lss_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
-            if modeling_options['drivetrainse']['model_generator']:
-                self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
             self.connect('nacelle.uptower',                   'drivese.uptower')
             self.connect('nacelle.gearbox_efficiency',        'drivese.gearbox_efficiency')
 
@@ -371,7 +369,6 @@ class WT_RNTA(om.Group):
                 self.connect('generator.C_PM'         , 'drivese.generator.C_PM')
 
                 if modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
-                    self.connect('generator.r_g'          , 'drivese.generator.r_g')
                     self.connect('generator.N_c'          , 'drivese.generator.N_c')
                     self.connect('generator.b'            , 'drivese.generator.b')
                     self.connect('generator.c'            , 'drivese.generator.c')
@@ -397,6 +394,12 @@ class WT_RNTA(om.Group):
                 elif modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
                     self.connect('generator.B_symax'      , 'drivese.generator.B_symax')
                     self.connect('generator.S_Nmax'      , 'drivese.generator.S_Nmax')
+
+                if modeling_options['drivetrainse']['direct']:
+                    self.connect('nacelle.nose_diameter',             'drivese.generator.D_nose', src_indices=[-1])
+                    self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
+                else:
+                    self.connect('nacelle.hss_diameter',              'drivese.generator.D_shaft', src_indices=[-1])
 
 
         # Connections to TowerSE

@@ -525,7 +525,6 @@ def assign_generator_values(wt_opt, modeling_options, nacelle):
     wt_opt['generator.C_PM']          = nacelle['generator']['C_PM']
 
     if modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
-        wt_opt['generator.r_g']           = nacelle['generator']['r_g']
         wt_opt['generator.N_c']           = nacelle['generator']['N_c']
         wt_opt['generator.b']             = nacelle['generator']['b']
         wt_opt['generator.c']             = nacelle['generator']['c']
