@@ -57,10 +57,10 @@ class TestGenerators(unittest.TestCase):
         myobj = gm.PMSG_Outer()
 
         self.inputs['machine_rating'] = 10.321e6
-        self.inputs['rated_torque']        = 10.25e6       #rev 1 9.94718e6
+        self.inputs['rated_torque']   = 10.25e6       #rev 1 9.94718e6
         self.inputs['P_mech']         = 10.71947704e6 #rev 1 9.94718e6
-        self.inputs['rated_rpm']          = 10            #8.68                # rpm 9.6
-        self.inputs['rad_ag']            = 4.0           # rev 1  4.92
+        self.inputs['rated_rpm']      = 10            #8.68                # rpm 9.6
+        self.inputs['rad_ag']         = 4.0           # rev 1  4.92
         self.inputs['len_s']          = 1.7           # rev 2.3
         self.inputs['h_s']            = 0.7            # rev 1 0.3
         self.inputs['p']              = 70            #100.0    # rev 1 160
@@ -105,17 +105,17 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['B_symax'], 0.66753916)
         self.assertAlmostEqual(self.outputs['B_rymax'], 0.44502611)
         self.assertAlmostEqual(self.outputs['B_pm1'], 0.46480944)
-        self.assertAlmostEqual(self.outputs['B_smax'], 0.26668356)
+        self.assertAlmostEqual(self.outputs['B_smax'], 0.23570673147616897)
         self.assertAlmostEqual(self.outputs['f'], 11.66666667)
-        self.assertAlmostEqual(self.outputs['I_s'], 1947.74064708)
+        self.assertAlmostEqual(self.outputs['I_s'], 1721.4993685170261)
         self.assertAlmostEqual(self.outputs['R_s'], 0.0862357)
         self.assertAlmostEqual(self.outputs['L_s'], 0.01000474)
         self.assertAlmostEqual(self.outputs['S'], 168.)
         self.assertAlmostEqual(self.outputs['N_s'], 361.)
         self.assertAlmostEqual(self.outputs['A_Cuscalc'], 389.46615218)
-        self.assertAlmostEqual(self.outputs['J_actual'], 3.53627809)
-        self.assertAlmostEqual(self.outputs['A_1'], 167860.96682314)
-        self.assertAlmostEqual(self.outputs['generator_efficiency'], 94.43514428)
+        self.assertAlmostEqual(self.outputs['J_actual'], 3.125519048273891)
+        self.assertAlmostEqual(self.outputs['A_1'], 148362.95007673657)
+        self.assertAlmostEqual(self.outputs['generator_efficiency'], 95.43687904168252)
         self.assertAlmostEqual(self.outputs['Iron'], 89073.14254723)
         self.assertAlmostEqual(self.outputs['mass_PM'], 1274.81620149)
         self.assertAlmostEqual(self.outputs['Copper'], 13859.17179278)

@@ -876,7 +876,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             outputs['bedplate_nose_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
 
             Bending_stress_outer = M[:(inose-1)] * nodal2sectional( (Ro-R_n) / (A_bed*e_cn*Ro) )[0]
-            Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
+            #Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
             outputs['bedplate_nose_bending_stress'][:(inose-1),k] = Bending_stress_outer
         
             outputs['constr_bedplate_nose_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],

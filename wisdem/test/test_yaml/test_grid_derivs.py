@@ -14,7 +14,7 @@ class Test(unittest.TestCase):
         tower_init_options = {}
         tower_init_options['n_height'] = n_height = 6
         
-        comp = ComputeGrid(init_options=tower_init_options)
+        comp = Compute_Grid(init_options=tower_init_options)
 
         prob = om.Problem()
         prob.model.add_subsystem('comp', comp)

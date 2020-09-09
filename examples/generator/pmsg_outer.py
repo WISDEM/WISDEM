@@ -60,11 +60,42 @@ prob.setup()
 
 # Specify Target machine parameters
 
+prob['B_r']            = 1.2
+prob['E']              = 2e11
+prob['G']              = 79.3e9
+prob['P_Fe0e']         = 1.0
+prob['P_Fe0h']         = 4.0
+prob['S_N']            = -0.002
+prob['alpha_p']        = 0.5*np.pi*0.7
+prob['b_r_tau_r']      = 0.45
+prob['b_ro']           = 0.004
+prob['b_s_tau_s']      = 0.45
+prob['b_so']           = 0.004
+prob['cofi']           = 0.85
+prob['freq']           = 60
+prob['h_i']            = 0.001
+prob['h_sy0']          = 0.0
+prob['h_w']            = 0.005
+prob['k_fes']          = 0.9
+prob['k_fillr']        = 0.7
+prob['k_fills']        = 0.65
+prob['k_s']            = 0.2
+prob['m']     = 3
+prob['mu_0']           = np.pi*4e-7
+prob['mu_r']           = 1.06
+prob['phi']            = np.deg2rad(90)
+prob['q1']    = 6
+prob['q2']    = 4
+prob['ratio_mw2pp']    = 0.7
+prob['resist_Cu']      = 1.8e-8*1.4
+prob['y_tau_p']        = 1.0
+prob['y_tau_pr']       = 10. / 12
+
 prob['machine_rating'] = 10.321e6
-prob['T_rated']        = 10.25e6       #rev 1 9.94718e6
+prob['rated_torque']   = 10.25e6       #rev 1 9.94718e6
 prob['P_mech']         = 10.71947704e6 #rev 1 9.94718e6
-prob['n_nom']          = 10            #8.68                # rpm 9.6
-prob['r_g']            = 4.0           # rev 1  4.92
+prob['rated_rpm']      = 10            #8.68                # rpm 9.6
+prob['rad_ag']         = 4.0           # rev 1  4.92
 prob['len_s']          = 1.7           # rev 2.3
 prob['h_s']            = 0.7            # rev 1 0.3
 prob['p']              = 70            #100.0    # rev 1 160

@@ -26,10 +26,6 @@ def set_common(prob, opt):
         prob['hss_rho']  = prob['bedplate_rho']
         prob['hss_Xy']   = prob['bedplate_Xy']
         
-    prob['gamma_f']                     = 1.35
-    prob['gamma_m']                     = 1.3
-    prob['gamma_n']                     = 1.0
-
     prob['blade_mass']                  = 17000.
     prob['pitch_system.BRFM']           = 1.e+6
     prob['pitch_system_scaling_factor'] = 0.54
@@ -65,13 +61,16 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse'] = {}
         opt['drivetrainse']['n_height'] = npts = 10
         opt['drivetrainse']['direct'] = True
-        opt['drivetrainse']['model_generator'] = True
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
         opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
         opt['drivetrainse']['gamma_f'] = 1.35
         opt['drivetrainse']['gamma_m'] = 1.3
         opt['drivetrainse']['gamma_n'] = 1.0
+        opt['GeneratorSE'] = {}
+        opt['GeneratorSE']['type'] = 'pmsg_outer'
+        opt['flags'] = {}
+        opt['flags']['generator'] = True
         
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
@@ -97,7 +96,7 @@ class TestGroup(unittest.TestCase):
 
         prob['rated_torque']        = 10.25e6       #rev 1 9.94718e6
         prob['generator.P_mech']         = 10.71947704e6 #rev 1 9.94718e6
-        prob['generator.r_g']            = 4.0           # rev 1  4.92
+        prob['generator.rad_ag']            = 4.0           # rev 1  4.92
         prob['generator.len_s']          = 1.7           # rev 2.3
         prob['generator.h_s']            = 0.7            # rev 1 0.3
         prob['generator.p']              = 70            #100.0    # rev 1 160
@@ -145,14 +144,15 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse'] = {}
         opt['drivetrainse']['n_height'] = npts = 10
         opt['drivetrainse']['direct'] = True
-        opt['drivetrainse']['model_generator'] = False
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
         opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
         opt['drivetrainse']['gamma_f'] = 1.35
         opt['drivetrainse']['gamma_m'] = 1.3
         opt['drivetrainse']['gamma_n'] = 1.0
-        
+        opt['flags'] = {}
+        opt['flags']['generator'] = False
+
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
         prob.setup()
@@ -189,13 +189,16 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse'] = {}
         opt['drivetrainse']['n_height'] = npts = 10
         opt['drivetrainse']['direct'] = False
-        opt['drivetrainse']['model_generator'] = True
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
         opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
         opt['drivetrainse']['gamma_f'] = 1.35
         opt['drivetrainse']['gamma_m'] = 1.3
         opt['drivetrainse']['gamma_n'] = 1.0
+        opt['GeneratorSE'] = {}
+        opt['GeneratorSE']['type'] = 'dfig'
+        opt['flags'] = {}
+        opt['flags']['generator'] = True
 
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
@@ -293,13 +296,14 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse'] = {}
         opt['drivetrainse']['n_height'] = npts = 10
         opt['drivetrainse']['direct'] = False
-        opt['drivetrainse']['model_generator'] = False
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
         opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
         opt['drivetrainse']['gamma_f'] = 1.35
         opt['drivetrainse']['gamma_m'] = 1.3
         opt['drivetrainse']['gamma_n'] = 1.0
+        opt['flags'] = {}
+        opt['flags']['generator'] = False
 
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)

@@ -779,7 +779,7 @@ class PMSG_Outer(GeneratorBase):
         S            = Slot_pole*2*p*m
         testval      = S/(m*np.gcd(int(S),int(p)))
         outputs['S'] = S
-    
+
         if float(testval).is_integer():
             k_w		     = winding_factor(int(S),b,c,int(p),m)
             b_m              = ratio_mw2pp*tau_p  # magnet width
@@ -818,11 +818,10 @@ class PMSG_Outer(GeneratorBase):
             
             # Calculating no-load voltage induced in the stator
             N_s            = np.rint(E_p/(np.sqrt(2)*len_s*r_s*k_w*om_m*B_g))
-            Z              = (P_av_v/(m*E_p))
+            #Z              = P_av_v / (m*E_p)
             outputs['N_s'] = N_s
             
             # Calculating leakage inductance in  stator
-            Z              = P_av_v / (m*E_p)
             V_1            = E_p/1.1
             I_n		   = P_av_v/3/cofi/V_1
             J_s            = 6.0
@@ -837,11 +836,10 @@ class PMSG_Outer(GeneratorBase):
             L_ssigmas      = S/3*4*N_c**2*len_s*P_s  #slot leakage inductance
             L_ssigmaew     = N_coil*N_c**2*mu_0*tau_s*np.log((0.25*np.pi*tau_s**2)/(0.5*h_s*b_s))     #end winding leakage inductance
             L_aa           = 2*np.pi/3*(N_c**2*mu_0*len_s*r_s/g_eff)
-            L_ab           = 0.0
             L_m            = L_aa
             L_ssigma       = (L_ssigmas+L_ssigmaew)
             L_s            = L_m+L_ssigma
-            G_leak         = 0 #E_p**2 - (om_e*L_s*Z)**2 # TODO: This is negative, creative NaNs later
+            G_leak         = np.abs((1.1*E_p)**4 -(1/9)*(P_av_v*om_e*L_s)**2)
             outputs['A_Cuscalc']         = A_Cuscalc
             outputs['b_s']               = b_s
             outputs['L_s']               = L_s
@@ -849,7 +847,7 @@ class PMSG_Outer(GeneratorBase):
             outputs['Slot_aspect_ratio'] = h_s/b_s
 
             # Calculating stator current and electrical loading
-            I_s                 = np.sqrt(Z**2 + ((E_p - G_leak**0.5)/(om_e*L_s)**2)**2 )
+            I_s                 = np.sqrt(2*(np.abs((E_p*1.1)**2 - G_leak**0.5))/(om_e*L_s)**2)
             outputs['I_s']      = I_s
             outputs['A_1']      = 6*I_s*N_s/np.pi/dia
             outputs['J_actual'] = I_s/(A_Cuscalc*2**0.5)

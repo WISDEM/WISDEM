@@ -54,8 +54,7 @@ prob.setup()
 # Specify Target machine parameters
 
 prob['machine_rating'] = 5000000.0
-prob['n_nom']              = 1200.0
-prob['Gearbox_efficiency'] = 0.955
+prob['rated_rpm']              = 1200.0
 prob['cofi'] = 0.9
 prob['y_tau_p'] = 12./15.
 prob['sigma'] = 21.5e3

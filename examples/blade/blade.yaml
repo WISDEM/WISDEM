@@ -311,37 +311,49 @@ components:
                       grid: [0.0, 0.034482758620689655, 0.06896551724137931, 0.10344827586206896, 0.13793103448275862, 0.1724137931034483, 0.20689655172413793, 0.24137931034482757, 0.27586206896551724, 0.3103448275862069, 0.3448275862068966, 0.3793103448275862, 0.41379310344827586, 0.4482758620689655, 0.48275862068965514, 0.5172413793103449, 0.5517241379310345, 0.5862068965517241, 0.6206896551724138, 0.6551724137931034, 0.6896551724137931, 0.7241379310344828, 0.7586206896551724, 0.7931034482758621, 0.8275862068965517, 0.8620689655172413, 0.896551724137931, 0.9310344827586207, 0.9655172413793103, 1.0]
                       values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     hub:
-        outer_shape_bem:
-            diameter: 6.0
-            cone_angle: 0.06981317007977318 # 4 deg
-            drag_coefficient: 0.5
-        elastic_properties_mb:
-            system_mass: 124613.72589731665
-            system_inertia: [928666.5134633644, 928666.5134633644, 928666.5134633644, 0.0, 0.0, 0.0]
-            system_center_mass: [7.0, 0.0, 0.0]
+        cone_angle: 0.06981317007977318 # 4 deg
+        diameter: 6.0
+        drag_coefficient: 0.5
+        hub_material: steel #cast_iron
+        spinner_material: glass_biax
+        flange_t2shell_t: 4.0
+        flange_OD2hub_D: 0.5
+        flange_ID2OD: 0.8
+        hub_blade_spacing_margin: 1.2
+        hub_stress_concentration: 2.5
+        n_front_brackets: 3
+        n_rear_brackets: 3
+        clearance_hub_spinner: 0.75 #0.5
+        spin_hole_incr: 1.2
+        pitch_system_scaling_factor: 0.54
+        spinner_gust_ws: 70.0
     nacelle:
-        outer_shape_bem:
+        drivetrain:
+            diameter: 3.0
             uptilt_angle: 0.10471975511965977 # 6 deg
             distance_tt_hub: 3.0
-            overhang: 7.0
-        elastic_properties_mb:
-            above_yaw_mass: 403353.0336662695
-            yaw_mass: 16974.078585601856
-            inertia: [461684.19934706495, 3628127.40684554, 3166443.207498475, 0.0, 241831.6801724643, 0.0]
-            center_mass: [0.8376039472938958, 0.0, 0.05115729144082753]
-        drivetrain:
-            gear_ratio: 96.76
-            shaft_ratio: 0.1
-            planet_numbers: [3, 3, 1]
-            shrink_disc_mass: 1600
-            carrier_mass: 8000
-            flange_length: 0.5
-            gearbox_input_xcm: 0.1
-            hss_input_length: 1.5
             distance_hub2mb: 1.912
-            yaw_motors_number: 6
+            distance_mb2mb: 0.368
+            overhang: 7.
+            lss_diameter: [0.577, 0.577, 0.577, 0.577, 0.577]
+            lss_wall_thickness: [0.288, 0.288, 0.288, 0.288, 0.288]
+            generator_length: 2.0
+            hss_length: 1.5
+            hss_diameter: [0.288, 0.288, 0.288]
+            hss_wall_thickness: [0.144, 0.144, 0.144]
+            bedplate_flange_width: 1.0
+            bedplate_flange_thickness: 0.05
+            bedplate_web_thickness: 0.05
+            gear_ratio: 96.76
+            planet_numbers: [3, 3, 1]
+            gear_configuration: eep
             gearbox_efficiency: 0.95
-            generator_efficiency: 0.98
+            mb1Type: CARB
+            mb2Type: SRB
+            uptower: True
+            lss_material: steel
+            hss_material: steel
+            bedplate_material: steel
     tower:
         outer_shape_bem:
             reference_axis: &ref_axis_tower
@@ -650,7 +662,7 @@ materials:
 assembly:
     turbine_class: III
     turbulence_class: A
-    drivetrain: Constant_eff
+    drivetrain: Geared
     rotor_orientation: Upwind
     number_of_blades: 3
 control:

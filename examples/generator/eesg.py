@@ -74,8 +74,8 @@ prob.setup()
 
 # Specify Target machine parameters
 prob['machine_rating'] = 5000000.0
-prob['T_rated']             = 4.143289e6
-prob['n_nom']              = 12.1
+prob['rated_torque']             = 4.143289e6
+prob['rated_rpm']              = 12.1
 prob['sigma'] = 48.373e3
 # Initial design variables 
 #prob['r_s']     = 3.2
