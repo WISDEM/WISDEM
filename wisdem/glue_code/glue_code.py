@@ -132,6 +132,7 @@ class WT_RNTA(om.Group):
         if modeling_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_V',        'sse.gust.V_hub')
             self.connect('sse.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
+            self.connect('env.shear_exp',                ['sse.powercurve.shearExp', 'rlds.aero_gust.shearExp']) 
             self.connect('sse.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.tot_loads_gust.aeroloads_Omega', 'rlds.constr.rated_Omega'])
             self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.tot_loads_gust.aeroloads_pitch'])
 
@@ -206,6 +207,7 @@ class WT_RNTA(om.Group):
         self.connect('elastic.EA',   'rlds.EA')
         self.connect('elastic.EIxx', 'rlds.EIxx')
         self.connect('elastic.EIyy', 'rlds.EIyy')
+        self.connect('elastic.EIxy', 'rlds.EIxy')
         self.connect('elastic.GJ',   'rlds.GJ')
         self.connect('elastic.rhoA', 'rlds.rhoA')
         self.connect('elastic.rhoJ', 'rlds.rhoJ')
@@ -237,6 +239,7 @@ class WT_RNTA(om.Group):
         # Connections to DriveSE
         if modeling_options['Analysis_Flags']['DriveSE']:
             self.connect('hub.diameter'                    , 'drivese.hub_diameter')
+            self.connect('hub.hub_in2out_circ'             , 'drivese.hub_in2out_circ')
             self.connect('hub.flange_t2shell_t'            , 'drivese.flange_t2shell_t')
             self.connect('hub.flange_OD2hub_D'             , 'drivese.flange_OD2hub_D')
             self.connect('hub.flange_ID2flange_OD'         , 'drivese.flange_ID2flange_OD')
@@ -434,7 +437,9 @@ class WT_RNTA(om.Group):
                 self.connect('env.rho_water',                    'towerse.rho_water')
                 self.connect('env.mu_water',                     'towerse.mu_water')                    
                 self.connect('env.G_soil',                       'towerse.G_soil')                    
-                self.connect('env.nu_soil',                      'towerse.nu_soil')                    
+                self.connect('env.nu_soil',                      'towerse.nu_soil')
+                self.connect('env.hsig_wave',                    'towerse.hsig_wave')
+                self.connect('env.Tsig_wave',                    'towerse.Tsig_wave')
                 self.connect('monopile.diameter',                'towerse.monopile_outer_diameter_in')
                 self.connect('monopile.height',                  'towerse.monopile_height')
                 self.connect('monopile.s',                       'towerse.monopile_s')
@@ -479,11 +484,11 @@ class WT_RNTA(om.Group):
             self.connect('drivese.generator_mass',      'tcc.generator_mass')
             self.connect('drivese.bedplate_mass',       'tcc.bedplate_mass')
             self.connect('drivese.yaw_mass',            'tcc.yaw_mass')
-            #self.connect('drivese.converter_mass',      'tcc.converter_mass')
-            #self.connect('drivese.hvac_mass',           'tcc.hvac_mass')
-            #self.connect('drivese.cover_mass',          'tcc.cover_mass')
-            #self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
-            #self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
+            self.connect('drivese.converter_mass',      'tcc.converter_mass')
+            self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
+            self.connect('drivese.hvac_mass',           'tcc.hvac_mass')
+            self.connect('drivese.cover_mass',          'tcc.cover_mass')
+            self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
 
         if modeling_options['flags']['tower']:
             self.connect('towerse.tower_mass',          'tcc.tower_mass')

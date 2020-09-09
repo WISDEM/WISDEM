@@ -252,11 +252,17 @@ class Electronics(om.ExplicitComponent):
     
     Returns
     -------
-    electronics_mass : float, [kg]
+    converter_mass : float, [kg]
         overall component mass
-    electronics_cm : numpy array[3], [m]
+    converter_cm : numpy array[3], [m]
         center of mass of the component in [x,y,z] for an arbitrary coordinate system
-    electronics_I : numpy array[3], [kg*m**2]
+    converter_I : numpy array[3], [kg*m**2]
+        moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
+    transformer_mass : float, [kg]
+        overall component mass
+    transformer_cm : numpy array[3], [m]
+        center of mass of the component in [x,y,z] for an arbitrary coordinate system
+    transformer_I : numpy array[3], [kg*m**2]
         moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
     
     """
@@ -266,9 +272,12 @@ class Electronics(om.ExplicitComponent):
         self.add_input('rotor_diameter', 0.0, units='m')
         self.add_input('D_top', 0.0, units='m')
 
-        self.add_output('electronics_mass', 0.0, units='kg')
-        self.add_output('electronics_cm', np.zeros(3), units='m')
-        self.add_output('electronics_I', np.zeros(3), units='kg*m**2')
+        self.add_output('converter_mass', 0.0, units='kg')
+        self.add_output('converter_cm', np.zeros(3), units='m')
+        self.add_output('converter_I', np.zeros(3), units='kg*m**2')
+        self.add_output('transformer_mass', 0.0, units='kg')
+        self.add_output('transformer_cm', np.zeros(3), units='m')
+        self.add_output('transformer_I', np.zeros(3), units='kg*m**2')
         
     def compute(self, inputs, outputs):
 
@@ -276,23 +285,25 @@ class Electronics(om.ExplicitComponent):
         rating  = float(inputs['machine_rating'])
         D_rotor = float(inputs['rotor_diameter'])
         D_top   = float(inputs['D_top'])
-    
+
         # Correlation based trends, assume box
-        mass   = 2.4445*rating + 1599.0
+        m_converter   = 1e-3*np.mean([740., 817.5])*rating + np.mean([101.37, 503.83])
+        m_transformer = 1e-3*1915*rating + 1910.0
         sides  = 0.015*D_rotor
 
         # CM location, just assume off to the side of the bedplate
         cm = np.zeros(3)
         cm[1] = 0.5*D_top + 0.5*sides
         cm[2] = 0.5*sides
-
-        # MoI
-        I = (1./6.)*mass*sides**2*np.ones(3)
         
         # Outputs
-        outputs['electronics_mass'] = mass
-        outputs['electronics_cm'] = cm
-        outputs['electronics_I'] = I
+        outputs['converter_mass'] = m_converter
+        outputs['converter_cm'] = cm
+        outputs['converter_I'] = (1./6.)*m_converter*sides**2*np.ones(3)
+
+        outputs['transformer_mass'] = m_transformer
+        outputs['transformer_cm'] = cm
+        outputs['transformer_I'] = (1./6.)*m_transformer*sides**2*np.ones(3)
 
 #---------------------------------------------------------------------------------------------------------------
 
@@ -390,11 +401,11 @@ class MiscNacelleComponents(om.ExplicitComponent):
         component center of mass
     hvac_I : numpy array[3], [m]
         component mass moments of inertia
-    mainframe_mass : float, [kg]
+    platforms_mass : float, [kg]
         component mass
-    mainframe_cm : numpy array[3], [m]
+    platforms_cm : numpy array[3], [m]
         component center of mass
-    mainframe_I : numpy array[6], [m]
+    platforms_I : numpy array[6], [m]
         component mass moments of inertia
     cover_mass : float, [kg]
         component mass
@@ -420,9 +431,9 @@ class MiscNacelleComponents(om.ExplicitComponent):
         self.add_output('hvac_mass', 0.0, units='kg')
         self.add_output('hvac_cm', 0.0, units='m')
         self.add_output('hvac_I', np.zeros(3), units='m')
-        self.add_output('mainframe_mass', 0.0, units='kg')
-        self.add_output('mainframe_cm', np.zeros(3), units='m')
-        self.add_output('mainframe_I', np.zeros(6), units='m')
+        self.add_output('platforms_mass', 0.0, units='kg')
+        self.add_output('platforms_cm', np.zeros(3), units='m')
+        self.add_output('platforms_I', np.zeros(6), units='m')
         self.add_output('cover_mass', 0.0, units='kg')
         self.add_output('cover_cm', np.zeros(3), units='m')
         self.add_output('cover_I', np.zeros(3), units='m')
@@ -465,13 +476,13 @@ class MiscNacelleComponents(om.ExplicitComponent):
         outputs['hvac_cm']   = cm_hvac
         outputs['hvac_I' ]   = I_hvac*np.array([1.0, 0.5, 0.5])
 
-        # Platforms as a fraction of bedplate mass and bundling it to call it 'mainframe'
+        # Platforms as a fraction of bedplate mass and bundling it to call it 'platforms'
         platforms_coeff = 0.125
-        m_mainframe  = platforms_coeff * m_bedplate
-        I_mainframe  = platforms_coeff * I_bedplate
-        outputs['mainframe_mass'] = m_mainframe
-        outputs['mainframe_cm']   = np.zeros(3)
-        outputs['mainframe_I' ]   = I_mainframe
+        m_platforms  = platforms_coeff * m_bedplate
+        I_platforms  = platforms_coeff * I_bedplate
+        outputs['platforms_mass'] = m_platforms
+        outputs['platforms_cm']   = np.zeros(3)
+        outputs['platforms_I' ]   = I_platforms
 
 #--------------------------------------------
 class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include electronics
@@ -534,12 +545,18 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         LSS center of mass along shaft axis from bedplate
     lss_I : numpy array[3], [kg*m**2]
         LSS moment of inertia around cm in axial (hub-aligned) c.s.
-    electronics_mass : float, [kg]
-        component mass
-    electronics_cm : numpy array[3], [m]
-        component CM
-    electronics_I : numpy array[3], [kg*m**2]
-        component I
+    converter_mass : float, [kg]
+        overall component mass
+    converter_cm : numpy array[3], [m]
+        center of mass of the component in [x,y,z] for an arbitrary coordinate system
+    converter_I : numpy array[3], [kg*m**2]
+        moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
+    transformer_mass : float, [kg]
+        overall component mass
+    transformer_cm : numpy array[3], [m]
+        center of mass of the component in [x,y,z] for an arbitrary coordinate system
+    transformer_I : numpy array[3], [kg*m**2]
+        moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
     yaw_mass : float, [kg]
         overall component mass
     yaw_cm : numpy array[3], [m]
@@ -558,11 +575,11 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         component center of mass
     hvac_I : numpy array[3], [m]
         component mass moments of inertia
-    mainframe_mass : float, [kg]
+    platforms_mass : float, [kg]
         component mass
-    mainframe_cm : numpy array[3], [m]
+    platforms_cm : numpy array[3], [m]
         component center of mass
-    mainframe_I : numpy array[6], [m]
+    platforms_I : numpy array[6], [m]
         component mass moments of inertia
     cover_mass : float, [kg]
         component mass
@@ -617,9 +634,12 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('lss_mass', val=0.0, units='kg')
         self.add_input('lss_cm', val=0.0, units='m')
         self.add_input('lss_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('electronics_mass', 0.0, units='kg')
-        self.add_input('electronics_cm', np.zeros(3), units='m')
-        self.add_input('electronics_I', np.zeros(3), units='kg*m**2')
+        self.add_input('converter_mass', 0.0, units='kg')
+        self.add_input('converter_cm', np.zeros(3), units='m')
+        self.add_input('converter_I', np.zeros(3), units='kg*m**2')
+        self.add_input('transformer_mass', 0.0, units='kg')
+        self.add_input('transformer_cm', np.zeros(3), units='m')
+        self.add_input('transformer_I', np.zeros(3), units='kg*m**2')
         self.add_input('yaw_mass', 0.0, units='kg')
         self.add_input('yaw_cm', np.zeros(3), units='m')
         self.add_input('yaw_I', np.zeros(3), units='kg*m**2')
@@ -629,9 +649,9 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('hvac_mass', 0.0, units='kg')
         self.add_input('hvac_cm', 0.0, units='m')
         self.add_input('hvac_I', np.zeros(3), units='m')
-        self.add_input('mainframe_mass', 0.0, units='kg')
-        self.add_input('mainframe_cm', np.zeros(3), units='m')
-        self.add_input('mainframe_I', np.zeros(6), units='m')
+        self.add_input('platforms_mass', 0.0, units='kg')
+        self.add_input('platforms_cm', np.zeros(3), units='m')
+        self.add_input('platforms_I', np.zeros(6), units='m')
         self.add_input('cover_mass', 0.0, units='kg')
         self.add_input('cover_cm', np.zeros(3), units='m')
         self.add_input('cover_I', np.zeros(3), units='m')
@@ -650,8 +670,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         tilt = float(np.deg2rad(inputs['tilt']))
         
         components = ['mb1','mb2','lss','hss','brake','gearbox','generator','hvac',
-                      'nose','bedplate','mainframe','cover']
-        if discrete_inputs['uptower']: components.append('electronics')
+                      'nose','bedplate','platforms','cover']
+        if discrete_inputs['uptower']: components.extend(['transformer','converter'])
 
         # Mass and CofM summaries first because will need them for I later
         m_nac = 0.0
@@ -700,8 +720,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac
         outputs['nacelle_I']    = util.unassembleI(I_nac)
-        outputs['other_mass']   = (inputs['hss_mass'] + inputs['hvac_mass'] + inputs['mainframe_mass'] +
-                                   inputs['yaw_mass'] + inputs['cover_mass'] + inputs['electronics_mass'])
+        outputs['other_mass']   = (inputs['hss_mass'] + inputs['hvac_mass'] + inputs['platforms_mass'] +
+                                   inputs['yaw_mass'] + inputs['cover_mass'] + inputs['converter_mass'] + inputs['transformer_mass'])
 
 #--------------------------------------------
 

@@ -246,7 +246,7 @@ class DrivetrainSE(om.Group):
         self.connect('hub_rho', 'hub_shell.rho')
         self.connect('hub_Xy', 'hub_shell.Xy')
         self.connect('hub_mat_cost', 'hub_shell.metal_cost')
-        self.connect('spinner_rho', 'spinner.composite_rho')
+        self.connect('spinner_rho', ['spinner.composite_rho','rho_fiberglass'])
         self.connect('spinner_Xt', 'spinner.composite_Xt')
         self.connect('spinner_mat_cost', 'spinner.composite_cost')
         

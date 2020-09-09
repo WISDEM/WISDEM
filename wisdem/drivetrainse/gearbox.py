@@ -93,7 +93,7 @@ class Gearbox(om.ExplicitComponent):
         self.add_discrete_input('planet_numbers', val=[3, 3, 0])
         self.add_input('gear_ratio', val=1.0)
         self.add_input('rotor_diameter', val=0.0, units='m')
-        self.add_input('rotor_torque', val=0.0, units='N*m')
+        self.add_input('rated_torque', val=0.0, units='N*m')
         self.add_input('machine_rating', val=0.0, units='kW')
 
         self.add_output('stage_ratios', val=np.zeros(3))
@@ -115,7 +115,7 @@ class Gearbox(om.ExplicitComponent):
         n_planets    = np.maximum(1.0, np.array(discrete_inputs['planet_numbers']))
         gear_ratio   = inputs['gear_ratio']
         D_rotor      = inputs['rotor_diameter']
-        torque       = inputs['rotor_torque']
+        torque       = inputs['rated_torque']
         rating       = inputs['machine_rating']
 
         # Known configuration checks
