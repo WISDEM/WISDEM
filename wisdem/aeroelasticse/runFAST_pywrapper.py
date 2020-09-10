@@ -12,7 +12,7 @@ import multiprocessing as mp
 from wisdem.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from wisdem.aeroelasticse.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
 from wisdem.aeroelasticse.FAST_wrapper import FastWrapper
-from wisdem.aeroelasticse.FAST_post import return_timeseries
+from wisdem.aeroelasticse.FAST_post   import FAST_IO_timeseries
 
 import numpy as np
 
@@ -380,7 +380,7 @@ def example_runFAST_pywrapper_batch():
     fastBatch.FAST_directory    = "/projects/windse/importance_sampling/WISDEM/xloads_tc/templates/openfast/5MW_Land_DLL_WTurb-Shutdown"   # Path to fst directory files
     fastBatch.FAST_runDirectory = 'temp/OpenFAST'
     fastBatch.debug_level       = 2
-    fastBatch.post              = return_timeseries
+    fastBatch.post              = FAST_IO_timeseries
 
 
     ## Define case list explicitly
