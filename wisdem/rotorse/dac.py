@@ -533,7 +533,7 @@ class RunXFOIL(ExplicitComponent):
                     sub_ranks = self.mpi_comm_map_down[rank]
                     size = len(sub_ranks)
                                         
-                    print('Parallelizing Xfoil on {} subranks'.format(sub_ranks))
+                    print('Parallelizing Xfoil on {} subranks.'.format(len(sub_ranks)))
                     N_cases = self.n_span # total number of airfoil sections
                     N_loops = int(np.ceil(float(N_cases)/float(size)))  # number of times function calls need to "loop"
 
