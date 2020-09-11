@@ -1574,7 +1574,7 @@ class Column(om.Group):
 
         self.add_subsystem('col', ColumnProperties(n_height=n_height), promotes=['*'])
 
-        self.add_subsystem('wind', PowerWind(nPoints=n_full), promotes=[('Uref', 'wind_reference_speed'), ('zref', 'wind_reference_height'), 'shearExp', ('z0', 'wind_z0')])
+        self.add_subsystem('wind', PowerWind(nPoints=n_full), promotes=['Uref', 'zref', 'shearExp', ('z0', 'wind_z0')])
         self.add_subsystem('wave', LinearWaves(nPoints=n_full), promotes=['Uc','hsig_wave','Tsig_wave','rho_water', ('z_floor', 'water_depth'), ('z_surface', 'wave_z0')])
         self.add_subsystem('windLoads', CylinderWindDrag(nPoints=n_full), promotes=['cd_usr','beta_wind','rho_air','mu_air'])
         self.add_subsystem('waveLoads', CylinderWaveDrag(nPoints=n_full), promotes=['cm','cd_usr','beta_wave','rho_water','mu_water'])

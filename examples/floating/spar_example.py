@@ -69,8 +69,8 @@ prob['outer_cross_pontoons_int']        = 0
 prob['water_depth']           = 320.0  # Distance to sea floor [m]
 prob['hsig_wave']             = 10.8   # Significant wave height [m]
 prob['Tsig_wave']             = 9.8    # Wave period [s]
-prob['wind_reference_speed']  = 11.0   # Wind reference speed [m/s]
-prob['wind_reference_height'] = 119.0  # Wind reference height [m]
+prob['Uref']  = 11.0   # Wind reference speed [m/s]
+prob['zref'] = 119.0  # Wind reference height [m]
 
 # Column geometry
 prob['main.permanent_ballast_height'] = 10.0 # Height above keel for permanent ballast [m]

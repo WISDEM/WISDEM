@@ -320,7 +320,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         
         # If devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
-        if inputs['span_end'] > 0:
+        if len(inputs['span_end']) > 0:
             nd_span_orig = np.linspace(0., 1.,self.n_span)
 
             chord_orig      = np.interp(nd_span_orig, inputs['s_default'], inputs['chord_yaml'])

@@ -46,7 +46,7 @@ class FloatingSE(om.Group):
                            'max_draft','max_taper','min_d_to_t','material_names',
                            'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
                            'unit_cost_mat','labor_cost_rate','painting_cost_rate','outfitting_cost_rate',
-                           'wind_reference_speed', 'wind_reference_height', 'wind_z0']
+                           'Uref', 'zref', 'wind_z0']
         main_column_promotes = column_promotes.copy()
         main_column_promotes.append(('freeboard', 'main_freeboard'))
         
