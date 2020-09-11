@@ -6,7 +6,7 @@ from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from wisdem.glue_code.glue_code       import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
-from wisdem.schema                    import load_yaml
+from wisdem.yaml                      import load_yaml, gui
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -465,34 +465,56 @@ def read_master_file( fyaml ):
 
 
 def wisdem_cmd():
-    usg_msg = 'WISDEM command line launcher\n  Arguments: wisdem input.yaml'
+    usg_msg = 'WISDEM command line launcher\n    Arguments: \n    wisdem : Starts GUI\n    wisdem input.yaml : Runs master yaml file that specifies geometry, modeling, and analysis files\n    wisdem geom.yaml modeling.yaml analysis.yaml : Runs specific geometry, modeling, and analysis files\n'
 
     # Look for help message
-    help_flag = len(sys.argv) == 1
+    help_flag = False
     for k in range(len(sys.argv)):
         if sys.argv[k] in ['-h','--help']:
             help_flag = True
 
     if help_flag:
         print(usg_msg)
-        sys.exit( 0 )
 
-    # Warn for unparsed arguments
-    if len(sys.argv) > 2:
-        ignored = ''
-        for k in range(2,len(sys.argv)): ignored += ' '+sys.argv[k]
-        print('WARNING: The following arguments will be ignored,',ignored)
-        print(usg_msg)
-
-    # Grab master input file
-    yaml_dict = read_master_file( sys.argv[1] )
+    elif len(sys.argv) == 1:
+        # Launch GUI
+        gui.run()
+        
+    elif len(sys.argv) == 2:
+        # Grab master input file
+        fyaml = sys.argv[1]
+        if os.path.exists(fyaml):
+            print('...Reading master input file,',fyaml)
+        else:
+            raise FileNotFoundError('The master input file, '+fyaml+', cannot be found.')
+        yaml_dict = load_yaml( fyaml )
+        
+        check_list = ['geometry_file','modeling_file','analysis_file']
+        for f in check_list:
+            if not os.path.exists(yaml_dict[f]):
+                raise FileNotFoundError('The '+f+' entry, '+yaml_dict[f]+', cannot be found.')
     
-    # Run WISDEM (also saves output)
-    wt_opt, modeling_options, opt_options = run_wisdem(yaml_dict['geometry_file'],
-                                                       yaml_dict['modeling_file'],
-                                                       yaml_dict['analysis_file'])
+        # Run WISDEM (also saves output)
+        wt_opt, modeling_options, opt_options = run_wisdem(yaml_dict['geometry_file'],
+                                                           yaml_dict['modeling_file'],
+                                                           yaml_dict['analysis_file'])
+        
+    elif len(sys.argv) == 4:
+        check_list = ['geometry','modeling','analysis']
+        for k, f in enumerate(sys.argv[1:]):
+            if not os.path.exists(f):
+                raise FileNotFoundError('The '+check_list[k]+' file, '+f+', cannot be found.')
+    
+        # Run WISDEM (also saves output)
+        wt_opt, modeling_options, opt_options = run_wisdem(sys.argv[1], sys.argv[2], sys.argv[3])
 
+    else:
+        # As if asked for help
+        print('Unrecognized set of inputs.  Usage:')
+        print(usg_msg)
+        
     sys.exit( 0 )
+
 
     
 

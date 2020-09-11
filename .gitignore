@@ -67,6 +67,7 @@ nosetests.xml
 *.exe
 *.o
 *.so
+*.dylib
 
 # Packages #
 ############
@@ -110,6 +111,7 @@ Thumbs.db
 ####################
 *.bak
 *.docx
+
 # Needed for documentation, not sure why there were added
 #*.png
 #*.pdf
