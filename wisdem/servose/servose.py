@@ -8,11 +8,6 @@ January 2020
 from __future__ import print_function
 import numpy as np
 import datetime
-
-from ROSCO_toolbox import controller as ROSCO_controller
-from ROSCO_toolbox import turbine as ROSCO_turbine
-from ROSCO_toolbox import utilities as ROSCO_utilities
-
 import numpy as np
 import os
 from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem
@@ -23,7 +18,6 @@ from wisdem.ccblade import CCAirfoil, CCBlade
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 from wisdem.commonse.utilities import vstack, trapz_deriv, linspace_with_deriv, smooth_min, smooth_abs
 from wisdem.commonse.environment import PowerWind
-from wisdem.aeroelasticse.openmdao_openfast import eval_unsteady
 
 class ServoSE(Group):
     def initialize(self):
@@ -38,32 +32,12 @@ class ServoSE(Group):
         self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=modeling_options['servose']['n_pc_spline']))
         self.add_subsystem('aep',               AEP(nspline=modeling_options['servose']['n_pc_spline']), promotes=['AEP'])
 
-
         # Connections to the Weibull CDF
         self.connect('powercurve.V_spline', 'cdf.x')
         
         # Connections to the aep computation component
         self.connect('cdf.F',               'aep.CDF_V')
         self.connect('powercurve.P_spline', 'aep.P')   
-
-class ServoSE_ROSCO(Group):
-    def initialize(self):
-        self.options.declare('modeling_options')
-        self.options.declare('opt_options')
-
-    def setup(self):
-        modeling_options = self.options['modeling_options']
-
-        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(modeling_options   = modeling_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-        self.add_subsystem('tune_rosco',        TuneROSCO(modeling_options = modeling_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
-
-        # Connect ROSCO for Rotor Performance tables
-        self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
-        self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
-        self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
-        self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
-        self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
-        self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
 
 class GustETM(ExplicitComponent):
     # OpenMDAO component that generates an "equivalent gust" wind speed by summing an user-defined wind speed at hub height with 3 times sigma. sigma is the turbulent wind speed standard deviation for the extreme turbulence model, see IEC-61400-1 Eq. 19 paragraph 6.3.2.3
@@ -754,7 +728,6 @@ class ComputePowerCurve(ExplicitComponent):
         outputs['cd_regII']          = loads['Cd']
         outputs['Cp_regII']          = Cp_aero[id_regII]
         
-        
 class ComputeSplines(ExplicitComponent):
     """
     Compute splined quantities for V, P, and Omega.
@@ -810,126 +783,6 @@ class ComputeSplines(ExplicitComponent):
         partials['V_spline', 'v_min'] = dy_dstart
         partials['V_spline', 'v_max'] = dy_dstop
         
-class Cp_Ct_Cq_Tables(ExplicitComponent):
-    def initialize(self):
-        self.options.declare('modeling_options')
-        # self.options.declare('n_span')
-        # self.options.declare('n_pitch', default=20)
-        # self.options.declare('n_tsr', default=20)
-        # self.options.declare('n_U', default=1)
-        # self.options.declare('n_aoa')
-        # self.options.declare('n_re')
-
-    def setup(self):
-        modeling_options = self.options['modeling_options']
-        blade_init_options = modeling_options['blade']
-        servose_init_options = modeling_options['servose']
-        airfoils = modeling_options['airfoils']
-        self.n_span        = n_span    = blade_init_options['n_span']
-        self.n_aoa         = n_aoa     = airfoils['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = airfoils['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = airfoils['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
-        self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
-        self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
-        self.min_TSR       = servose_init_options['min_tsr_perf_surfaces']
-        self.max_TSR       = servose_init_options['max_tsr_perf_surfaces']
-        self.min_pitch     = servose_init_options['min_pitch_perf_surfaces']
-        self.max_pitch     = servose_init_options['max_pitch_perf_surfaces']
-        
-        # parameters        
-        self.add_input('v_min',   val=0.0,             units='m/s',       desc='cut-in wind speed')
-        self.add_input('v_max',  val=0.0,             units='m/s',       desc='cut-out wind speed')
-        self.add_input('r',             val=np.zeros(n_span), units='m',         desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
-        self.add_input('chord',         val=np.zeros(n_span), units='m',         desc='chord length at each section')
-        self.add_input('theta',         val=np.zeros(n_span), units='deg',       desc='twist angle at each section (positive decreases angle of attack)')
-        self.add_input('Rhub',          val=0.0,             units='m',         desc='hub radius')
-        self.add_input('Rtip',          val=0.0,             units='m',         desc='tip radius')
-        self.add_input('hub_height',    val=0.0,             units='m',         desc='hub height')
-        self.add_input('precone',       val=0.0,             units='deg',       desc='precone angle')
-        self.add_input('tilt',          val=0.0,             units='deg',       desc='shaft tilt')
-        self.add_input('yaw',           val=0.0,                units='deg',       desc='yaw error')
-        self.add_input('precurve',      val=np.zeros(n_span),   units='m',         desc='precurve at each section')
-        self.add_input('precurveTip',   val=0.0,                units='m',         desc='precurve at tip')
-        self.add_input('presweep',      val=np.zeros(n_span),   units='m',         desc='presweep at each section')
-        self.add_input('presweepTip',   val=0.0,                units='m',         desc='presweep at tip')
-        self.add_input('rho',           val=1.225,              units='kg/m**3',    desc='density of air')
-        self.add_input('mu',            val=1.81e-5,            units='kg/(m*s)',   desc='dynamic viscosity of air')
-        self.add_input('shearExp',      val=0.0,                                desc='shear exponent')
-        # self.add_discrete_input('airfoils',      val=[0]*n_span,                 desc='CCAirfoil instances')
-        self.add_input('airfoils_cl', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm', val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
-        self.add_input('airfoils_aoa', val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
-        self.add_input('airfoils_Re', val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
-        self.add_discrete_input('nBlades',       val=0,                         desc='number of blades')
-        self.add_discrete_input('nSector',       val=4,                         desc='number of sectors to divide rotor face into in computing thrust and power')
-        self.add_discrete_input('tiploss',       val=True,                      desc='include Prandtl tip loss model')
-        self.add_discrete_input('hubloss',       val=True,                      desc='include Prandtl hub loss model')
-        self.add_discrete_input('wakerotation',  val=True,                      desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
-        self.add_discrete_input('usecd',         val=True,                      desc='use drag coefficient in computing induction factors')
-        self.add_input('pitch_vector_in',  val=np.zeros(n_pitch), units='deg',  desc='pitch vector specified by the user')
-        self.add_input('tsr_vector_in',    val=np.zeros(n_tsr),                 desc='tsr vector specified by the user')
-        self.add_input('U_vector_in',      val=np.zeros(n_U),     units='m/s',  desc='wind vector specified by the user')
-
-        # outputs
-        self.add_output('Cp',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero power coefficient')
-        self.add_output('Ct',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero thrust coefficient')
-        self.add_output('Cq',   val=np.zeros((n_tsr, n_pitch, n_U)), desc='table of aero torque coefficient')
-        self.add_output('pitch_vector',    val=np.zeros(n_pitch), units='deg',  desc='pitch vector used')
-        self.add_output('tsr_vector',      val=np.zeros(n_tsr),                 desc='tsr vector used')
-        self.add_output('U_vector',        val=np.zeros(n_U),     units='m/s',  desc='wind vector used')
-        
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
-        # Create Airfoil class instances
-        af = [None]*self.n_span
-        for i in range(self.n_span):
-            if self.n_tab > 1:
-                ref_tab = int(np.floor(self.n_tab/2))
-                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,ref_tab], inputs['airfoils_cd'][i,:,:,ref_tab], inputs['airfoils_cm'][i,:,:,ref_tab])
-            else:
-                af[i] = CCAirfoil(inputs['airfoils_aoa'], inputs['airfoils_Re'], inputs['airfoils_cl'][i,:,:,0], inputs['airfoils_cd'][i,:,:,0], inputs['airfoils_cm'][i,:,:,0])
-
-        n_pitch    = self.n_pitch
-        n_tsr      = self.n_tsr
-        n_U        = self.n_U
-        min_TSR    = self.min_TSR
-        max_TSR    = self.max_TSR
-        min_pitch  = self.min_pitch
-        max_pitch  = self.max_pitch
-        U_vector   = inputs['U_vector_in']
-        V_in       = inputs['v_min']
-        V_out      = inputs['v_max']
-        
-        tsr_vector = inputs['tsr_vector_in']
-        pitch_vector = inputs['pitch_vector_in']
-
-        self.ccblade = CCBlade(inputs['r'], inputs['chord'], inputs['theta'], af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])
-        
-        if max(U_vector) == 0.:
-            U_vector    = np.linspace(V_in[0],V_out[0], n_U)
-        if max(tsr_vector) == 0.:
-            tsr_vector = np.linspace(min_TSR, max_TSR, n_tsr)
-        if max(pitch_vector) == 0.:
-            pitch_vector = np.linspace(min_pitch, max_pitch, n_pitch)
-
-        outputs['pitch_vector'] = pitch_vector
-        outputs['tsr_vector']   = tsr_vector        
-        outputs['U_vector']     = U_vector
-                
-        R = inputs['Rtip']
-        k=0
-        for i in range(n_U):
-            for j in range(n_tsr):
-                k +=1
-                # if k/2. == int(k/2.) :
-                print('Cp-Ct-Cq surfaces completed at ' + str(int(k/(n_U*n_tsr)*100.)) + ' %')
-                U     =  U_vector[i] * np.ones(n_pitch)
-                Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
-                myout, _  = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
-                outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i] = [myout[key] for key in ['CP','CT','CQ']]
-
 # Class to define a constraint so that the blade cannot operate in stall conditions
 class NoStallConstraint(ExplicitComponent):
     def initialize(self):
@@ -974,7 +827,6 @@ class NoStallConstraint(ExplicitComponent):
             if verbosity == True:
                 if outputs['no_stall_constraint'][i] > 1:
                     print('Blade is stalling at span location %.2f %%' % (inputs['s'][i]*100.))
-
 
 class AEP(ExplicitComponent):
     def initialize(self):
@@ -1067,7 +919,131 @@ def compute_P_and_eff(aeroPower, ratedPower, drivetrainType, drivetrainEff):
         
     return aeroPower * eff, eff
 
+def eval_unsteady(alpha, cl, cd, cm):
+    # calculate unsteady coefficients from polars for OpenFAST's Aerodyn
+
+    unsteady = {}
+
+    alpha_rad = np.radians(alpha)
+    cn = cl*np.cos(alpha_rad) + cd*np.sin(alpha_rad)
+
+    # alpha0, Cd0, Cm0
+    aoa_l = [-30.]
+    aoa_h = [30.]
+    idx_low  = np.argmin(abs(alpha-aoa_l))
+    idx_high = np.argmin(abs(alpha-aoa_h))
+
+    if max(np.abs(np.gradient(cl)))>0.:
+        unsteady['alpha0'] = np.interp(0., cl[idx_low:idx_high], alpha[idx_low:idx_high])
+        unsteady['Cd0'] = np.interp(0., cl[idx_low:idx_high], cd[idx_low:idx_high])
+        unsteady['Cm0'] = np.interp(0., cl[idx_low:idx_high], cm[idx_low:idx_high])
+    else:
+        unsteady['alpha0'] = 0.
+        unsteady['Cd0'] = cd[np.argmin(abs(alpha-0.))]
+        unsteady['Cm0'] = 0.
 
 
-# if __name__ = '__main__':
+    unsteady['eta_e']= 1
+    unsteady['T_f0'] = "Default"
+    unsteady['T_V0'] = "Default"
+    unsteady['T_p']  = "Default"
+    unsteady['T_VL'] = "Default"
+    unsteady['b1']   = "Default"
+    unsteady['b2']   = "Default"
+    unsteady['b5']   = "Default"
+    unsteady['A1']   = "Default"
+    unsteady['A2']   = "Default"
+    unsteady['A5']   = "Default"
+    unsteady['S1']   = 0
+    unsteady['S2']   = 0
+    unsteady['S3']   = 0
+    unsteady['S4']   = 0
+
+    def find_breakpoint(x, y, idx_low, idx_high, multi=1.):
+        lin_fit = np.interp(x[idx_low:idx_high], [x[idx_low],x[idx_high]], [y[idx_low],y[idx_high]])
+        idx_break = 0
+        lin_diff = 0
+        for i, (fit, yi) in enumerate(zip(lin_fit, y[idx_low:idx_high])):
+            if multi==0:
+                diff_i = np.abs(yi-fit)
+            else:
+                diff_i = multi*(yi-fit)
+            if diff_i>lin_diff:
+                lin_diff = diff_i
+                idx_break = i
+        idx_break += idx_low
+        return idx_break
+
+    # Cn1
+    idx_alpha0  = np.argmin(abs(alpha-unsteady['alpha0']))
     
+    if max(np.abs(np.gradient(cm)))>1.e-10:
+        aoa_h = alpha[idx_alpha0]+35.
+        idx_high = np.argmin(abs(alpha-aoa_h))
+
+        cm_temp = cm[idx_low:idx_high]
+        idx_cm_min = [i for i,local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]) if local_min] + idx_low
+        idx_high = idx_cm_min[-1]
+        
+        
+        idx_Cn1 = find_breakpoint(alpha, cm, idx_alpha0, idx_high)
+        unsteady['Cn1'] = cn[idx_Cn1]
+    else:
+        idx_Cn1 = np.argmin(abs(alpha-0.))
+        unsteady['Cn1'] = 0.
+    
+
+    
+    # Cn2
+    if max(np.abs(np.gradient(cm)))>1.e-10:
+        aoa_l = np.mean([alpha[idx_alpha0], alpha[idx_Cn1]])-30.
+        idx_low  = np.argmin(abs(alpha-aoa_l))
+
+        cm_temp = cm[idx_low:idx_high]
+        idx_cm_min = [i for i,local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]) if local_min] + idx_low
+        idx_high = idx_cm_min[-1]
+        
+        idx_Cn2 = find_breakpoint(alpha, cm, idx_low, idx_alpha0, multi=0.)
+        unsteady['Cn2'] = cn[idx_Cn2]
+    else:
+        idx_Cn2 = np.argmin(abs(alpha-0.))
+        unsteady['Cn2'] = 0.
+
+    # C_nalpha
+    if max(np.abs(np.gradient(cm)))>1.e-10:
+        # unsteady['C_nalpha'] = np.gradient(cn, alpha_rad)[idx_alpha0]
+        unsteady['C_nalpha'] = max(np.gradient(cn[idx_alpha0:idx_Cn1], alpha_rad[idx_alpha0:idx_Cn1]))
+
+    else:
+        unsteady['C_nalpha'] = 0.
+
+    # alpha1, alpha2
+    # finding the break point in drag as a proxy for Trailing Edge separation, f=0.7
+    # 3d stall corrections cause erroneous f calculations 
+    if max(np.abs(np.gradient(cm)))>1.0e-10:
+        aoa_l = [0.]
+        idx_low  = np.argmin(abs(alpha-aoa_l))
+        idx_alpha1 = find_breakpoint(alpha, cd, idx_low, idx_Cn1, multi=-1.)
+        unsteady['alpha1'] = alpha[idx_alpha1]
+    else:
+        idx_alpha1 = np.argmin(abs(alpha-0.))
+        unsteady['alpha1'] = 0.
+    unsteady['alpha2'] = -1.*unsteady['alpha1']
+
+
+    unsteady['St_sh']   = "Default"
+    unsteady['k0']      = 0
+    unsteady['k1']      = 0
+    unsteady['k2']      = 0
+    unsteady['k3']      = 0
+    unsteady['k1_hat']  = 0
+    unsteady['x_cp_bar']   = "Default"
+    unsteady['UACutout']   = "Default"
+    unsteady['filtCutOff'] = "Default"
+
+    unsteady['Alpha']    = alpha
+    unsteady['Cl']    = cl
+    unsteady['Cd']    = cd
+    unsteady['Cm']    = cm
+
+    return unsteady

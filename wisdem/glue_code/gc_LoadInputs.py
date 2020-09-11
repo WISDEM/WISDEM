@@ -1,8 +1,5 @@
 import numpy as np
-import os
-import wisdem.schema as sch
-from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
-
+import wisdem.yaml as sch
 
 
 class WindTurbineOntologyPython(object):
@@ -23,34 +20,11 @@ class WindTurbineOntologyPython(object):
         self.defaults         = sch.load_default_geometry_yaml()
         self.set_run_flags()
         self.set_openmdao_vectors()
-        self.set_openfast_data()
         self.set_opt_flags()
 
         
     def get_input_data(self):
         return self.wt_init, self.modeling_options, self.analysis_options
-
-    
-    def set_openfast_data(self):
-        # Openfast
-        if self.modeling_options['Analysis_Flags']['OpenFAST'] == True:
-            # Load Input OpenFAST model variable values
-            fast                = InputReader_OpenFAST(FAST_ver=self.modeling_options['openfast']['file_management']['FAST_ver'])
-            fast.FAST_InputFile = self.modeling_options['openfast']['file_management']['FAST_InputFile']
-            fast.FAST_directory = self.modeling_options['openfast']['file_management']['FAST_directory']
-            fast.path2dll       = self.modeling_options['openfast']['file_management']['path2dll']
-            fast.execute()
-            self.modeling_options['openfast']['fst_vt']   = fast.fst_vt
-
-            if os.path.exists(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']):
-                self.modeling_options['openfast']['fst_settings'] = dict(sch.load_yaml(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']))
-            else:
-                print('WARNING: OpenFAST is called, but no file with settings is found.')
-                self.modeling_options['openfast']['fst_settings'] = {}
-
-        else:
-            self.modeling_options['openfast']['fst_vt']   = {}
-
             
     def set_openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
@@ -79,7 +53,6 @@ class WindTurbineOntologyPython(object):
             self.modeling_options['airfoils']['n_tab']  = 1
             self.modeling_options['airfoils']['n_xy']   = self.modeling_options['rotorse']['n_xy']
             self.modeling_options['airfoils']['af_used']      = self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']
-            self.modeling_options['airfoils']['xfoil_path']   = self.modeling_options['xfoil']['path']
         
         # Blade
         self.modeling_options['blade']              = {}
@@ -151,20 +124,12 @@ class WindTurbineOntologyPython(object):
         if flags['bos']: flags['bos'] = self.modeling_options['Analysis_Flags']['BOS']
         if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE']
         if flags['tower']: flags['tower'] = self.modeling_options['Analysis_Flags']['TowerSE']
-        # if flags['control']: flags['control'] = self.modeling_options['Analysis_Flags']['ServoSE']
-
         # Blades and airfoils
         if flags['blade'] and not flags['airfoils']:
             raise ValueError('Blades/rotor analysis is requested but no airfoils are found')
         if flags['airfoils'] and not flags['blade']:
             print('WARNING: Airfoils provided but no blades/rotor found or RotorSE deactivated')
-
-        # Blades and controls
-        #if flags['blade'] and not flags['control']:
-        #    raise ValueError('Blades/rotor analysis is requested but no controls are found')
-        if flags['control'] and not flags['blade']:
-            print('WARNING: Controls provided but no blades/rotor found or RotorSE deactivated')
-
+            
         # Blades, tower, monopile and environment
         if flags['blade'] and not flags['environment']:
             raise ValueError('Blades/rotor analysis is requested but no environment input found')
@@ -391,16 +356,6 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['RNA']['elastic_properties_mb']['mass']        = float(wt_opt['drivese.rna_mass'])
             self.wt_init['components']['RNA']['elastic_properties_mb']['inertia']     = wt_opt['drivese.rna_I_TT'].tolist()
             self.wt_init['components']['RNA']['elastic_properties_mb']['center_mass'] = wt_opt['drivese.rna_cm'].tolist()
-
-        # Update controller
-        if self.modeling_options['flags']['control']:
-            self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])
-            self.wt_init['control']['PC_omega'] = float(wt_opt['control.PC_omega'])
-            self.wt_init['control']['PC_zeta']  = float(wt_opt['control.PC_zeta'])
-            self.wt_init['control']['VS_omega'] = float(wt_opt['control.VS_omega'])
-            self.wt_init['control']['VS_zeta']  = float(wt_opt['control.VS_zeta'])
-            self.wt_init['control']['Flp_omega']= float(wt_opt['control.Flp_omega'])
-            self.wt_init['control']['Flp_zeta'] = float(wt_opt['control.Flp_zeta'])
 
         # Write yaml with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)

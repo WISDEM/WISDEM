@@ -1,6 +1,6 @@
 general:
-    folder_output: outputs
-    fname_output: refturb_output
+    folder_output: outputs_struct
+    fname_output: blade_out
 optimization_variables:
   blade:
     aero_shape:
@@ -13,25 +13,25 @@ optimization_variables:
       chord:
         flag: False     # Flag to optimize the chord
         n_opt: 8        # Number of control points along blade span
-        min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
-        max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
+        min_gain: 0.7   # Nondimensional lower bound at the n_opt locations
+        max_gain: 1.3   # Nondimensional upper bound at the n_opt locations
       af_positions:
         flag: False     # Flag to optimize the airfoil positions
         af_start: 4     # Index of the first airfoil from blade root that can have the location optimized. First airfoil is number 0. Last airfoil is always locked at blade tip.
     structure:
       spar_cap_ss:
-        flag: False     # Flag to optimize the spar cap thickness on the suction side
-        name: Spar_Cap_SS # Name in the yaml of the spar cap laminate on the suction side 
+        flag: True     # Flag to optimize the spar cap thickness on the suction side
+        name: Spar_cap_ss # Name in the yaml of the spar cap laminate on the suction side 
         n_opt: 8        # Number of control points along blade span
-        min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
-        max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
+        min_gain: 0.7   # Nondimensional lower bound at the n_opt locations
+        max_gain: 1.3   # Nondimensional upper bound at the n_opt locations
       spar_cap_ps:
-        flag: False     # Flag to optimize the spar cap thickness on the pressure side
-        name: Spar_Cap_PS # Name in the yaml of the spar cap laminate on the pressure side 
+        flag: True     # Flag to optimize the spar cap thickness on the pressure side
+        name: Spar_cap_ps # Name in the yaml of the spar cap laminate on the pressure side 
         equal_to_suction: True # Flag to impose the spar cap thickness on pressure and suction sides equal
         n_opt: 8        # Number of control points along blade span
-        min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
-        max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
+        min_gain: 0.7   # Nondimensional lower bound at the n_opt locations
+        max_gain: 1.3   # Nondimensional upper bound at the n_opt locations
       te_ss:
         flag: False     # Flag to optimize the trailing edge reinforcement thickness on the suction side
         name: TE_reinforcement # Name in the yaml of the trailing edge reinforcement laminate on the suction side 
@@ -60,23 +60,23 @@ optimization_variables:
       lower_bound: 4e-3
       upper_bound: 2e-1
 
-merit_figure: LCOE  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+merit_figure: blade_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
 constraints:
   blade:
     strains_spar_cap_ss:
-      flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
+      flag: True     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
       max:  3500.e-6  # Value of maximum strains [-]
     strains_spar_cap_ps:
-      flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
+      flag: True     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
       max:  3500.e-6  # Value of maximum strains [-]
     tip_deflection:
-      flag: False     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
-      ratio: 0.8
+      flag: True     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
+      ratio: 1.0
     rail_transport:
-      flag: True
+      flag: False
       8_axle: False
-      4_axle: True
+      4_axle: False
     stall:
       flag: False     # Constraint on minimum stall margin
       margin: 0.05233 # Value of minimum stall margin in [rad]
@@ -123,13 +123,14 @@ constraints:
       upper_bound: 0.40
 
 driver:
-    tol: 1.e-2            # Optimality tolerance
-    max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
-    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
-    max_iter: 100         # Maximum number of iterations (SLSQP)
+    tol: 1.e-3            # Optimality tolerance
+    #max_major_iter: 10    # Maximum number of major design iterations
+    #max_minor_iter: 100   # Maximum number of minor design iterations
+    max_iter: 10   # Maximum number of minor design iterations
     solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     step_size: 1.e-3      # Step size for finite differencing
-    form: central         # Finite differencing mode, either forward or central
+    form: forward         # Finite differencing mode, either forward or central
+
 
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder

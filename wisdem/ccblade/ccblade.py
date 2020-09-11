@@ -28,7 +28,8 @@ from scipy.interpolate import RectBivariateSpline, bisplev
 import warnings
 import os
 #from wisdem.ccblade.Polar import Polar
-
+import multiprocessing as mp
+from wisdem.commonse.mpi_tools import MPI
 from wisdem.airfoilprep import Airfoil
 import wisdem.ccblade._bem as _bem
 
@@ -367,7 +368,7 @@ class CCAirfoil(object):
         self.unsteady = unsteady
 
 
-    def af_flap_coords(self, xfoil_path, delta_flap=12.0, xc_hinge=0.8, yt_hinge=0.5,numNodes=250):
+    def af_flap_coords(self, xfoil_path, delta_flap=12.0, xc_hinge=0.8, yt_hinge=0.5,numNodes=250, multi_run=False, MPI_run=False):
         #This function is used to create and run xfoil to get airfoil coordinates for a given flap deflection
         # Set Needed parameter values
         AFName=self.AFName  
@@ -375,10 +376,24 @@ class CCAirfoil(object):
         numNodes   = str(numNodes) #number of panels to use (will be number of points in profile)
         dist_param = "0.5" #TE/LE panel density ratio
         
-        # Set names/paths of files
-        CoordsFlnmAF = 'profilecoords.dat' # Temporary file name for coordinates...will be deleted at the end
-        saveFlnmAF = AFName + "_" + df + "_Airfoil.txt"
-        xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
+        # Set filenames
+        if multi_run or MPI_run:
+            pid = mp.current_process().pid
+            CoordsFlnmAF = 'profilecoords_p{}.dat'.format(pid) # Temporary file name for coordinates...will be deleted at the end
+            saveFlnmAF = '{}_{}_Airfoil_p{}.txt'.format(AFName, df, pid)
+            saveFlnmPolar = 'Polar_p{}.txt'.format(pid)
+            xfoilFlnm = 'xfoil_input_p{}.txt'.format(pid)
+        # if MPI_run:
+        #     rank = MPI.COMM_WORLD.Get_rank()
+        #     LoadFlnmAF = 'airfoil_r{}.txt'.format(rank) # This is a temporary file that will be deleted after it is no longer needed
+        #     saveFlnmPolar = 'Polar_r{}.txt'.format(rank) # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
+        #     xfoilFlnm  = 'xfoil_input_r{}.txt'.format(rank) # Xfoil run script that will be deleted after it is no longer needed
+        else:
+            CoordsFlnmAF = 'profilecoords.dat' # Temporary file name for coordinates...will be deleted at the end
+            saveFlnmPolar = 'Polar.txt'
+            saveFlnmAF = '{}_{}_Airfoil.txt'.format(AFName, df)
+            xfoilFlnm = 'xfoil_input.txt'  # Xfoil run script that will be deleted after it is no longer needed
+
         
         # Cleaning up old files to prevent replacement issues
         if os.path.exists(saveFlnmAF):
@@ -426,7 +441,7 @@ class CCAirfoil(object):
         fid.close()
         
         # Run the XFoil calling command
-        os.system(xfoil_path + " < xfoil_input.txt > NUL")
+        os.system(xfoil_path + " < " + xfoilFlnm + " > NUL") # <<< runs XFoil !
         
         # Load in saved airfoil coordinates (with flap) from xfoil and save to instance variables
         flap_coords = np.loadtxt(saveFlnmAF)
@@ -442,179 +457,6 @@ class CCAirfoil(object):
             os.remove(xfoilFlnm)        
         if os.path.exists(saveFlnmAF):
              os.remove(saveFlnmAF)
-
-
-    # def runXfoil(self, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5):
-        # #This function is used to create and run xfoil simulations for a given set of airfoil coordinates
-        
-        # # Set initial parameters needed in xfoil      
-        # LoadFlnmAF = self.AFName + ".txt" # This is a temporary file that will be deleted after it is no longer needed
-        # self.ctrl=float(self.AFName.rsplit('_',1)[-1]) # Used to get flap deflection angle...somewhat of a hack but the control value is needed for this instance so that it can be put into AeroDyn polar file
-        # numNodes   = 260 # number of panels to use (260...but increases if needed)
-        # dist_param = 0.15 # TE/LE panel density ratio (0.15)
-        # IterLimit = 100 # Maximum number of iterations to try and get to convergence
-        # panelBunch = 1.5 # Panel bunching parameter to bunch near larger changes in profile gradients (1.5)
-        # rBunch = 0.15 # Region to LE bunching parameter (used to put additional panels near flap hinge) (0.15)
-        # XT1 = 0.55 # Defining left boundary of bunching region on top surface (should be before flap)
-        # XT2 = 0.85 # Defining right boundary of bunching region on top surface (should be after flap)
-        # XB1 = 0.55 # Defining left boundary of bunching region on bottom surface (should be before flap)
-        # XB2 = 0.85 # Defining right boundary of bunching region on bottom surface (should be after flap)
-        # saveFlnmPolar = self.AFName + "_Polar.txt" # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
-        # xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
-        # runFlag = 1 # Flag used in error handling
-        # dfdn = -0.5 # Change in angle of attack during initialization runs down to AoA_min
-
-        # while numNodes < 450 and runFlag > 0:
-            # # Cleaning up old files to prevent replacement issues         
-            # if os.path.exists(saveFlnmPolar):
-                # os.remove(saveFlnmPolar)
-            # if os.path.exists(xfoilFlnm):
-                # os.remove(xfoilFlnm)
-            # if os.path.exists(LoadFlnmAF):
-                # os.remove(LoadFlnmAF)
-
-            # # Writing temporary airfoil coordinate file for use in xfoil
-            # dat=np.array([self.x,self.y])
-            # np.savetxt(LoadFlnmAF, dat.T, fmt=['%f','%f'])
-
-            # # %% Writes the Xfoil run script to read in coordinates, create flap, re-pannel, and create polar
-            # # Create the airfoil with flap 
-            # fid = open(xfoilFlnm,"w")
-            # fid.write("PLOP \n G \n\n") # turn off graphics
-            # fid.write("LOAD \n") 
-            # fid.write( LoadFlnmAF + "\n") # name of .txt file with airfoil coordinates
-            # fid.write( self.AFName + "\n") # set name of airfoil (internal to xfoil)
-            # fid.write("GDES \n") # enter into geometry editing tools in xfoil
-            # fid.write("UNIT \n") # normalize profile to unit chord
-            # fid.write("EXEC \n \n") # move buffer airfoil to current airfoil
-        
-            # # Re-panel with specified number of panes and LE/TE panel density ratio
-            # fid.write("PPAR\n")
-            # fid.write("N \n" )
-            # fid.write(str(numNodes) + "\n")
-            # fid.write("P \n") # set panel bunching parameter
-            # fid.write(str(panelBunch) + " \n")
-            # fid.write("T \n") # set TE/LE panel density ratio
-            # fid.write( str(dist_param) + "\n")
-            # fid.write("R \n") # set region panel bunching ratio
-            # fid.write(str(rBunch) + " \n")
-            # fid.write("XT \n") # set region panel bunching bounds on top surface
-            # fid.write(str(XT1) +" \n" + str(XT2) + " \n")
-            # fid.write("XB \n") # set region panel bunching bounds on bottom surface
-            # fid.write(str(XB1) +" \n" + str(XB2) + " \n")
-            # fid.write("\n\n")
-        
-            # # Set Simulation parameters (Re and max number of iterations)
-            # fid.write("OPER\n")
-            # fid.write("VISC \n")
-            # #fid.write( str(Re[0]) + "\n") # this sets Re to value specified in yaml file as an input
-            # fid.write( "5000000 \n") # bem: I was having trouble geting convergence for some of the thinner airfoils at the tip for the large Re specified in the yaml, so I am hard coding in Re (5e6 is the highest I was able to get to using these paneling parameters)
-            # fid.write("ITER \n")
-            # fid.write( str(IterLimit) + "\n")
-        
-            # # Run simulations for range of AoA
-            # fid.write("ASEQ 0 " + str(AoA_min) + " " + str(dfdn) + "\n") # The preliminary runs are just to get an initialize airfoil solution at min AoA so that the actual runs will not become unstable
-            # fid.write("PACC\n") #Toggle saving polar on 
-            # fid.write( saveFlnmPolar + " \n \n")
-            # fid.write("ASEQ " + str(AoA_min) + " " + "16" + " " + str(AoA_inc) + "\n") #run simulations for desired range of AoA using a coarse step size in AoA up to 16 deg
-            # fid.write("ASEQ " + "16.5" + " " + str(AoA_max) + " " + "0.1" + "\n") #run simulations for desired range of AoA using a fine AoA increment up to final AoA to help with convergence issues at high Re
-            # fid.write("PACC\n\n") #Toggle saving polar off
-        
-            # fid.write("QUIT \n")
-            # fid.close()
-        
-            # # Run the XFoil calling command
-            # os.system("xfoil.exe < xfoil_input.txt")
-            # flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
-            
-            # # Error handling (re-run simulations with more panels if there is not enough data in polars)
-            # if flap_polar.size < 3: # This case is if there are convergence issues at the lowest angles of attack
-                # plen = 0
-                # a0 = 0
-                # dfdn = -0.25 # decrease AoA step size during initialization to try and get convergence in the next run
-            # else:
-                # plen=len(flap_polar[:,0]) # Number of AoA's in polar
-                # a0=flap_polar[-1,0] # Maximum AoA in Polar
-
-            # if a0 > 19. and plen >= 40: # The a0 > 19 is to check to make sure polar entered into stall regiem plen >= 40 makes sure there are enough AoA's in polar for interpolation.
-                # runFlag = -10 # No need ro re-run polar
-            # else: 
-                # numNodes += 20 # Re-run with additional panels
-
-        # # Load back in polar data to be saved in instance variables
-        # #flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12) # (note, we are assuming raw Xfoil polars when skipping the first 12 lines)
-        # self.af_flap_polar = flap_polar
-        # # self.flap_polar_flnm = saveFlnmPolar # Not really needed unless you keep the files and want to load them later
-        
-        # # Delete Xfoil run script file
-        # if os.path.exists(xfoilFlnm):
-            # os.remove(xfoilFlnm)
-        # #if os.path.exists(saveFlnmPolar): # bem: For now leave the files, but eventually we can get rid of them (remove # in front of commands) so that we don't have to store them
-            # #os.remove(saveFlnmPolar)
-        # #if os.path.exists(LoadFlnmAF):
-           # # os.remove(LoadFlnmAF)
-
-
-    # def AFCorrections(self, Re, rR, cR, tsr, cdmax ):
-        # # This code calls Polar.py which is a modified version of AirfoilPrep.py
-
-        # # Load in airfoil polars that were generated in runXfoil
-        # p = self.af_flap_polar
-        
-        # # Apply corrections to airfoil polars
-        # oldpolar= Polar(Re, p[:,0],p[:,1],p[:,2],p[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
-        # polar3d = oldpolar.correction3D(rR,cR,tsr) # Apply 3D corrections (made sure to change the r/R, c/R, and tsr values appropriately when calling AFcorrections())
-        # polar = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg
-        # (alpha0,alpha1,alpha2,cnSlope,cn1,cn2,cd0,cm0)=polar.unsteadyParams() # Calculate usteady parameters needs for AD polar files
-        
-        # # Set instance outputs for unsteady polars (will be used to write AD polar files later)
-        # unsteady = {}
-        
-        # unsteady['InclUAdata'] = "True"
-        # unsteady['eta_e']= 1
-        # unsteady['T_f0'] = "Default"
-        # unsteady['T_V0'] = "Default"
-        # unsteady['T_p']  = "Default"
-        # unsteady['T_VL'] = "Default"
-        # unsteady['b1']   = "Default"
-        # unsteady['b2']   = "Default"
-        # unsteady['b5']   = "Default"
-        # unsteady['A1']   = "Default"
-        # unsteady['A2']   = "Default"
-        # unsteady['A5']   = "Default"
-        # unsteady['S1']   = 0
-        # unsteady['S2']   = 0
-        # unsteady['S3']   = 0
-        # unsteady['S4']   = 0
-        
-        # unsteady['alpha0'] = alpha0
-        # unsteady['alpha1'] = alpha1
-        # unsteady['alpha2'] = alpha2
-        # unsteady['C_nalpha'] = cnSlope
-        # unsteady['Cn1'] = cn1
-        # unsteady['Cn2'] = cn2
-        # unsteady['Cd0'] = cd0
-        # unsteady['Cm0'] = cm0
-
-        # unsteady['St_sh']   = "Default"
-        # unsteady['k0']      = 0
-        # unsteady['k1']      = 0
-        # unsteady['k2']      = 0
-        # unsteady['k3']      = 0
-        # unsteady['k1_hat']  = 0
-        # unsteady['x_cp_bar']   = "Default"
-        # unsteady['UACutout']   = "Default"
-        # unsteady['filtCutOff'] = "Default"
-
-        # unsteady['Alpha']    = polar.alpha
-        # unsteady['Cl']    = polar.cl
-        # unsteady['Cd']    = polar.cd
-        # unsteady['Cm']    = polar.cm
-
-        # unsteady['Re'] = Re[0]/(1e6)
-        # unsteady['Ctrl'] = self.ctrl
-
-        # self.unsteady = unsteady
         
 # ------------------
 #  Main Class: CCBlade

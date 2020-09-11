@@ -360,14 +360,14 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
     if modeling_options['blade']['n_te_flaps'] > 0:   
         n_te_flaps = modeling_options['blade']['n_te_flaps']
         for i in range(n_te_flaps):
-            wt_opt['blade.dac_te_flaps.te_flap_start'][i]   = blade['aerodynamic_control']['te_flaps'][i]['span_start']
-            wt_opt['blade.dac_te_flaps.te_flap_end'][i]     = blade['aerodynamic_control']['te_flaps'][i]['span_end']
-            wt_opt['blade.dac_te_flaps.chord_start'][i]     = blade['aerodynamic_control']['te_flaps'][i]['chord_start']
-            wt_opt['blade.dac_te_flaps.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
-            wt_opt['blade.dac_te_flaps.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
+            wt_opt['dac_ivc.te_flap_start'][i]   = blade['aerodynamic_control']['te_flaps'][i]['span_start']
+            wt_opt['dac_ivc.te_flap_end'][i]     = blade['aerodynamic_control']['te_flaps'][i]['span_end']
+            wt_opt['dac_ivc.chord_start'][i]     = blade['aerodynamic_control']['te_flaps'][i]['chord_start']
+            wt_opt['dac_ivc.delta_max_pos'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos']
+            wt_opt['dac_ivc.delta_max_neg'][i]   = blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']
 
-            wt_opt['blade.opt_var.te_flap_ext'] = blade['aerodynamic_control']['te_flaps'][i]['span_end'] - blade['aerodynamic_control']['te_flaps'][i]['span_start']
-            wt_opt['blade.opt_var.te_flap_end'] = blade['aerodynamic_control']['te_flaps'][i]['span_end']
+            wt_opt['dac_ivc.te_flap_ext'] = blade['aerodynamic_control']['te_flaps'][i]['span_end'] - blade['aerodynamic_control']['te_flaps'][i]['span_start']
+            # wt_opt['dac_ivc.te_flap_end'] = blade['aerodynamic_control']['te_flaps'][i]['span_end']
 
             # Checks for consistency
             if blade['aerodynamic_control']['te_flaps'][i]['span_start'] < 0.:
@@ -689,26 +689,6 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt['control.max_TS']        = control['maxTS']
     wt_opt['control.max_pitch_rate']= control['max_pitch_rate']
     wt_opt['control.max_torque_rate']= control['max_torque_rate']
-    # ROSCO tuning parameters
-    wt_opt['control.PC_omega']      = control['PC_omega']
-    wt_opt['control.PC_zeta']       = control['PC_zeta']
-    wt_opt['control.VS_omega']      = control['VS_omega']
-    wt_opt['control.VS_zeta']       = control['VS_zeta']
-    if modeling_options['servose']['Flp_Mode'] > 0:
-        wt_opt['control.Flp_omega']      = control['Flp_omega']
-        wt_opt['control.Flp_zeta']       = control['Flp_zeta']
-    # # other optional parameters
-    wt_opt['control.max_pitch']     = control['max_pitch']
-    wt_opt['control.min_pitch']     = control['min_pitch']
-    wt_opt['control.vs_minspd']     = control['vs_minspd']
-    wt_opt['control.ss_vsgain']     = control['ss_vsgain']
-    wt_opt['control.ss_pcgain']     = control['ss_pcgain']
-    wt_opt['control.ps_percent']    = control['ps_percent']
-    # Check for proper Flp_Mode, print warning
-    if modeling_options['airfoils']['n_tab'] > 1 and modeling_options['servose']['Flp_Mode'] == 0:
-            print('WARNING: servose.Flp_Mode should be >= 1 for aerodynamic control.')
-    if modeling_options['airfoils']['n_tab'] == 1 and modeling_options['servose']['Flp_Mode'] > 0:
-            print('WARNING: servose.Flp_Mode should be = 0 for no aerodynamic control.')
             
     return wt_opt
 
@@ -868,7 +848,6 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
     wt_opt['airfoils.ac']        = ac
     wt_opt['airfoils.r_thick']   = r_thick
     wt_opt['airfoils.Re']        = Re  # Not yet implemented!
-    wt_opt['airfoils.tab']       = 0.  # Not yet implemented!
     wt_opt['airfoils.cl']        = cl
     wt_opt['airfoils.cd']        = cd
     wt_opt['airfoils.cm']        = cm
