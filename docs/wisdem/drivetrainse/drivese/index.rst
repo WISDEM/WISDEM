@@ -1,3 +1,5 @@
+.. _drivese:
+
 DriveSE and HubSE
 =======================
 
