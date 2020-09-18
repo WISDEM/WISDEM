@@ -14,7 +14,7 @@ glue_code.py
     openmdao n2 runWISDEM.py
     
     
-The result will look like this image
+The result will look like this image, which you can dynamically navigate folding and unfolding each block with the commands on the left of the screen.
 
 .. figure:: /images/wisdem/N2.*
     :align: center
