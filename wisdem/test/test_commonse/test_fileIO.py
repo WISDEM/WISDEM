@@ -52,22 +52,25 @@ class TestFileIO(unittest.TestCase):
 
     def testSaveFile(self):
         clear_files()
-        fileIO.save_data('test.junk', self.prob, mat_file=False, npz_file=False)
+        fileIO.save_data('test.junk', self.prob, mat_file=False, npz_file=False, xls_file=False)
         self.assertTrue( os.path.exists('test.pkl') )
         self.assertFalse( os.path.exists('test.npz') )
         self.assertFalse( os.path.exists('test.mat') )
+        self.assertFalse( os.path.exists('test.xlsx') )
 
         clear_files()
         fileIO.save_data('test.junk', self.prob, mat_file=False)
         self.assertTrue( os.path.exists('test.pkl') )
         self.assertTrue( os.path.exists('test.npz') )
         self.assertFalse( os.path.exists('test.mat') )
+        self.assertTrue( os.path.exists('test.xlsx') )
 
         clear_files()
         fileIO.save_data('test.junk', self.prob)
         self.assertTrue( os.path.exists('test.pkl') )
         self.assertTrue( os.path.exists('test.npz') )
         self.assertTrue( os.path.exists('test.mat') )
+        self.assertTrue( os.path.exists('test.xlsx') )
 
         
     def testLoadFile(self):
