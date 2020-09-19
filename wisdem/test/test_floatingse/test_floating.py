@@ -160,8 +160,8 @@ class TestOC3Mass(unittest.TestCase):
         prob['yaw']                   = 0.0    # Turbine yaw angle
         prob['beta_wind']             = prob['beta_wave'] = 0.0
         prob['cd_usr']                = -1.0 # Compute drag coefficient
-        prob['wind_reference_speed']  = 0.0   # Wind reference speed [m/s]
-        prob['wind_reference_height'] = 100.0  # Wind reference height [m]
+        prob['Uref'] = 10.0
+        prob['zref'] = 100.0
 
         # Porperties of turbine tower
         nTower = prob.model.options['modeling_options']['tower']['n_height']-1

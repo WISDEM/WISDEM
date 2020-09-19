@@ -46,7 +46,7 @@ The core modules draw upon some utility packages, which are typically compiled c
 * _pBEAM_ provides a basic beam model
 * _pyFrame3DD_ brings libraries to handle various coordinate transformations
 * _pyMAP_ provides a python interface to MAP++, a quasi-static mooring line model
-* _pyoptsparse_ provides some additional optimization algorithms to OpenMDAO
+* [_pyOptSparse_](https://github.com/mdolab/pyoptsparse) provides some additional optimization algorithms to OpenMDAO
 
 
 ## Installation

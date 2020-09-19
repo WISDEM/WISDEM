@@ -647,8 +647,8 @@ class TestGroup(unittest.TestCase):
         prob['wave_z0'] = -100.0
         prob['hsig_wave'] = 5.0
         prob['wind_z0'] = 0.0
-        prob['wind_reference_height'] = 100.0
-        prob['wind_reference_speed'] = 10.0
+        prob['zref'] = 100.0
+        prob['Uref'] = 10.0
         prob['rho_air'] = 1.0
         prob['mu_air'] = 1e-5
 
