@@ -152,7 +152,7 @@ class WindTurbineOntologyPython(object):
 
         # Drivetrain
         if self.modeling_options['flags']['nacelle']:
-            self.modeling_options['drivetrainse']['direct'] = self.wt_init['assembly']['drivetrain'].lower() in ['direct','direct_drive','direct drive']
+            self.modeling_options['drivetrainse']['direct'] = self.wt_init['assembly']['drivetrain'].lower() in ['direct','direct_drive','pm_direct_drive']
             if self.modeling_options['drivetrainse']['direct']:
                 self.modeling_options['drivetrainse']['n_height'] = len(self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness'])
             else:
