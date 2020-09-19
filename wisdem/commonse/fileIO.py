@@ -4,19 +4,19 @@ import numpy as np
 import scipy.io as sio
 import pandas as pd
 
-def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=False):
+def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
     # Remove file extension
     froot = os.path.splitext(fname)[0]
-    
+
     # Get all OpenMDAO inputs and outputs into a dictionary
     var_dict = prob.model.list_inputs(values=True, prom_name=False, units=True, out_stream=None)
     out_dict = prob.model.list_outputs(values=True, prom_name=False, units=True, out_stream=None)
     var_dict.extend( out_dict )
-    
+
     # Pickle the full archive so that we can load it back in if we need
     with open(froot+'.pkl','wb') as f:
         pickle.dump(var_dict, f)
-    
+
     # Reduce to variables we can save for matlab or python
     if npz_file or mat_file:
         array_dict = {}
@@ -47,7 +47,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=False):
     if npz_file:
         kwargs = {key: array_dict[key] for key in array_dict.keys()}
         np.savez_compressed(froot+'.npz', **kwargs)
-    
+
     # Save to matlab compatible
     if mat_file:
         sio.savemat(froot+'.mat', array_dict, long_field_names=True)
@@ -66,13 +66,13 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=False):
             data['values'].append( var_dict[k][1]['value'] )
         df = pd.DataFrame(data)
         df.to_excel(froot+'.xlsx')
-        
-    
+
+
 
 def load_data(fname, prob):
     # Remove file extension
     froot = os.path.splitext(fname)[0]
-    
+
     # Load in the pickled data
     with open(froot+'.pkl','rb') as f:
         var_dict = pickle.load(f)
@@ -82,6 +82,5 @@ def load_data(fname, prob):
         iname = var_dict[k][0]
         value = var_dict[k][1]['value']
         prob[iname] = value
-    
-    return prob
 
+    return prob
