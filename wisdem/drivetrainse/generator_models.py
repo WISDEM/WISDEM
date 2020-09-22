@@ -893,8 +893,8 @@ class PMSG_Outer(GeneratorBase):
             P_ad           = 0.2*(P_Hyys + P_Ftys + P_Hyd + P_Ftd +P_Hyyr+P_Ftyr )
             pFtm           = 300 # specific magnet loss
             P_Ftm          = pFtm*2*p*b_m*len_s
-            Losses         = P_Cu+P_Festnom+P_Fesynom+P_ad+P_Ftm+P_Ferynom 
-            gen_eff        = (P_mech-Losses)/(P_mech)*100
+            Losses         = P_Cu+P_Festnom+P_Fesynom+P_ad+P_Ftm+P_Ferynom
+            gen_eff        = (P_mech-Losses)/(P_mech)
             I_snom	   = gen_eff*(P_mech/m/E_p/cofi) #rated current
             I_qnom	   = gen_eff*P_mech/(m* E_p)
             X_snom	   = om_e*(L_m+L_ssigma)

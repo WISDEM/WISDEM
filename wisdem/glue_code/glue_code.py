@@ -387,6 +387,7 @@ class WT_RNTA(om.Group):
                     self.connect('generator.y_allow_pcent', 'drivese.generator.y_allow_pcent')
                     self.connect('generator.z_allow_deg'  , 'drivese.generator.z_allow_deg')
                     self.connect('generator.B_tmax'       , 'drivese.generator.B_tmax')
+                    self.connect('sse.powercurve.rated_mech', 'drivese.generator.P_mech')
 
                 if modeling_options['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
                     self.connect('generator.tau_p'        , 'drivese.generator.tau_p')

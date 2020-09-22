@@ -171,6 +171,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_output('rated_pitch', val=0.0,                units='deg', desc='pitch setting at rated')
         self.add_output('rated_T',     val=0.0,                units='N',   desc='rotor aerodynamic thrust at rated')
         self.add_output('rated_Q',     val=0.0,                units='N*m', desc='rotor aerodynamic torque at rated')
+        self.add_output('rated_mech',  val=0.0,                units='W',   desc='Mechanical shaft power at rated')
         self.add_output('ax_induct_regII',   val=np.zeros(n_span),           desc='rotor axial induction at cut-in wind speed along blade span')
         self.add_output('tang_induct_regII', val=np.zeros(n_span),           desc='rotor tangential induction at cut-in wind speed along blade span')
         self.add_output('aoa_regII',val=np.zeros(n_span),       units='deg', desc='angle of attack distribution along blade span at cut-in wind speed')
@@ -349,6 +350,7 @@ class ComputePowerCurve(ExplicitComponent):
         outputs['rated_pitch'] = pitch[i]
         outputs['rated_T']     = T[i]
         outputs['rated_Q']     = Q[i]
+        outputs['rated_mech']  = P_aero[i]
 
         # JPJ: this part can be converted into a BalanceComp with a solver.
         # This will be less expensive and allow us to get derivatives through the process.
