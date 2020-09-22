@@ -1,3 +1,5 @@
+:ref:`nrelcsm`
+
 NREL_CSM
 =========
 

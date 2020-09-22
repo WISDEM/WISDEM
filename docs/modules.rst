@@ -11,13 +11,13 @@ Module documentation
    :maxdepth: 2
    :caption: Contents:
 
-   wisdem/aeroelasticse/index
    wisdem/airfoilprep/index
    wisdem/ccblade/index
    wisdem/commonse/index
    wisdem/drivetrainse/drivese/index
    wisdem/drivetrainse/generator/index
    wisdem/floatingse/index
+   wisdem/glue_code/index
    wisdem/landbosse/index
    wisdem/nrelcsm/index
    wisdem/orbit/index
