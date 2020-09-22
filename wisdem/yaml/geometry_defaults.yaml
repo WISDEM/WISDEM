@@ -151,43 +151,97 @@ components:
                       values: [0.001, 0.001]
     # Hub
     hub:
-        outer_shape_bem:
-          diameter: 4.
-          cone_angle: 0.0523 # 3 deg
-          drag_coefficient: 0.5
-        elastic_properties_mb:
-            system_mass: 21834.7
-            system_inertia: [57184.5, 57184.5, 57184.5, 0.0, 0.0, 0.0]
-            system_center_mass: [5.0, 0.0, 0.0]
+        cone_angle: 0.04363
+        drag_coefficient: 0.5
+        hub_material: steel #cast_iron
+        spinner_material: glassUD
+        flange_t2shell_t: 4.0
+        flange_OD2hub_D: 0.5
+        flange_ID2OD: 0.8
+        hub_blade_spacing_margin: 1.2
+        hub_stress_concentration: 2.5
+        n_front_brackets: 3
+        n_rear_brackets: 3
+        clearance_hub_spinner: 0.5
+        spin_hole_incr: 1.2
+        pitch_system_scaling_factor: 0.54
+        spinner_gust_ws: 70.0
     # Nacelle
     nacelle:
-        outer_shape_bem:
-          uptilt_angle: 0.08726 # 5 deg
-          distance_tt_hub: 2.
-          overhang: 5.
-          length: 12.
-          width: 6.
-          height: 5.
-          drag_coefficient: 0.5
-        elastic_properties_mb:
-            above_yaw_mass: 118260.1
-            yaw_mass: 3130.5
-            inertia: [50326.1, 691063.5, 640737.4, 0.0, 6093.0, 0.0]
-            center_mass: [1.791, 0.0, 0.339]
-        # end nacelle
         drivetrain:
-          gear_ratio: 97
-          shaft_ratio: 0.1
-          planet_numbers: [3, 3, 1]
-          shrink_disc_mass: 1600
-          carrier_mass: 8000
-          flange_length: 0.5
-          gearbox_input_xcm: 0.1
-          hss_input_length: 1.5
-          distance_hub2mb: 1.912
-          yaw_motors_number: 1
-          gearbox_efficiency: 0.95
-          generator_efficiency: 0.98
+            diameter: 3.0
+            uptilt_angle: 0.08726
+            distance_tt_hub: 2.3
+            distance_hub2mb: 1.912
+            distance_mb2mb: 0.368
+            overhang: 5.
+            lss_diameter: [0.577, 0.577, 0.577, 0.577, 0.577]
+            lss_wall_thickness: [0.288, 0.288, 0.288, 0.288, 0.288]
+            generator_length: 2.0
+            hss_length: 1.5
+            hss_diameter: [0.288, 0.288, 0.288]
+            hss_wall_thickness: [0.144, 0.144, 0.144]
+            bedplate_flange_width: 1.0
+            bedplate_flange_thickness: 0.05
+            bedplate_web_thickness: 0.05
+            gear_ratio: 96
+            planet_numbers: [3, 3, 0]
+            gear_configuration: eep
+            gearbox_efficiency: 0.975
+            mb1Type: CARB
+            mb2Type: SRB
+            uptower: True
+            lss_material: steel
+            hss_material: steel
+            bedplate_material: steel
+        generator:
+            generator_type: DFIG
+            rho_Fe: 7700.0
+            rho_Fes: 7850.0
+            rho_Copper: 8900.0
+            rho_PM: 7450.0
+            B_r: 1.2
+            P_Fe0e: 1.0
+            P_Fe0h: 4.0
+            S_N: -0.002
+            alpha_p: 1.0995574287564276 #0.5*np.pi*0.7
+            b_r_tau_r: 0.45
+            b_ro: 0.004
+            b_s_tau_s: 0.45
+            b_so: 0.004
+            freq: 60
+            h_i: 0.001
+            h_sy0: 0.0
+            h_w: 0.005
+            k_fes: 0.9
+            k_s: 0.2
+            m: 3
+            mu_0: 1.2566370614359173e-06 #np.pi*4e-7
+            mu_r: 1.06
+            p: 3.0
+            phi: 1.5707963267948966 # 90 deg
+            ratio_mw2pp: 0.7
+            resist_Cu: 2.52e-8 #1.8e-8*1.4
+            y_tau_pr: 0.8333333 #10. / 12
+            rated_rpm: 1200.0
+            cofi: 0.9
+            y_tau_p: 0.8 #12./15.
+            sigma: 21.5e3
+            rad_ag: 0.61
+            len_s: 0.49
+            h_s: 0.08
+            I_0: 40.0
+            B_symax: 1.3
+            S_Nmax: -0.2
+            h_0: 0.01
+            k_fillr: 0.55
+            k_fills: 0.65
+            q1: 5
+            q2: 4
+            C_Cu: 4.786
+            C_Fe: 0.556
+            C_Fes: 0.50139
+            C_PM: 50.0
     # Tower
     tower:
         outer_shape_bem:

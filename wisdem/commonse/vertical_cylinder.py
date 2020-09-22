@@ -1,6 +1,5 @@
 import numpy as np
 import openmdao.api as om
-from wisdem.commonse.tube import CylindricalShellProperties
 
 from wisdem.commonse import gravity, eps, NFREQ
 import wisdem.commonse.frustum as frustum

@@ -16,10 +16,8 @@ import copy
 from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
 
 from wisdem.commonse.environment import LinearWaves, TowerSoil, PowerWind, LogWind
-from wisdem.commonse.tube import CylindricalShellProperties
+from wisdem.commonse.cross_sections import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
-from wisdem.commonse import gravity, eps
-
 from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ, get_nfull, RIGID
 
 import wisdem.commonse.UtilizationSupplement as Util

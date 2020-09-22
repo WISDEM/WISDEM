@@ -123,18 +123,15 @@ class DiscretizationYAML(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack dimensions
         n_height = self.options['n_height']
-        n_layers = self.options['n_layers']
 
         # Unpack values
         h_col  = inputs['height']
-        lthick = inputs['layer_thickness']
-        lmat   = copy.copy( discrete_inputs['layer_materials'] )
         
         outputs['section_height'] = np.diff( h_col * inputs['s'] )
         outputs['wall_thickness'] = np.sum(inputs['layer_thickness'], axis=0)
         outputs['outer_diameter'] = inputs['outer_diameter_in']
         twall     = inputs['layer_thickness']
-        layer_mat = discrete_inputs['layer_materials']
+        layer_mat = copy.copy( discrete_inputs['layer_materials'] )
 
         # Check to make sure we have good values
         if np.any(outputs['section_height'] <= 0.0):

@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
 
-from wisdem.glue_code.gc_WT_DataStruc import ComputeGrid
+from wisdem.glue_code.gc_WT_DataStruc import Compute_Grid
 
 
 class Test(unittest.TestCase):
@@ -14,7 +14,7 @@ class Test(unittest.TestCase):
         tower_init_options = {}
         tower_init_options['n_height'] = n_height = 6
         
-        comp = ComputeGrid(init_options=tower_init_options)
+        comp = Compute_Grid(init_options=tower_init_options)
 
         prob = om.Problem()
         prob.model.add_subsystem('comp', comp)

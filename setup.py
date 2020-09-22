@@ -46,7 +46,7 @@ setup(
     author_email     = 'systems.engineering@nrel.gov',
     install_requires = ['openmdao>=3.2','numpy','scipy','pandas','simpy','marmot-agents','pyside2'],
     python_requires  = '>=3.6',
-    package_data     =  {'': ['*.yaml','*.xlsx']},
+    package_data     =  {'':['*.yaml','*.xlsx'], 'wisdem':['*.txt']},
     #package_dir      = {'': 'wisdem'},
     packages         = find_packages(exclude=['docs', 'tests', 'ext']),
     license          = 'Apache License, Version 2.0',

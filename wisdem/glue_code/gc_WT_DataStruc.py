@@ -2,7 +2,7 @@ import numpy as np
 import copy
 from scipy.interpolate import PchipInterpolator, interp1d
 import openmdao.api as om
-from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, trailing_edge_smoothing, remap2grid
+from wisdem.rotorse.geometry_tools.geometry import trailing_edge_smoothing, remap2grid
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 
@@ -58,30 +58,139 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         
         # Nacelle inputs
         if modeling_options['flags']['nacelle']:
-            nacelle = om.IndepVarComp()
-            # Outer shape bem
-            nacelle.add_output('uptilt',           val=0.0, units='rad',   desc='Nacelle uptilt angle. A standard machine has positive values.')
-            nacelle.add_output('distance_tt_hub',  val=0.0, units='m',     desc='Vertical distance from tower top to hub center.')
-            nacelle.add_output('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
+            nacelle_ivc = om.IndepVarComp()
+            # Common direct and geared
+            nacelle_ivc.add_output('uptilt',             val=0.0,         units='rad', desc='Nacelle uptilt angle. A standard machine has positive values.')
+            nacelle_ivc.add_output('distance_tt_hub',    val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
+            nacelle_ivc.add_output('overhang',           val=0.0,         units='m',   desc='Horizontal distance from tower top edge to hub flange')
+            nacelle_ivc.add_output('distance_hub2mb',    val=0.0,         units='m',   desc='Distance from hub flange to first main bearing along shaft')
+            nacelle_ivc.add_output('distance_mb2mb',     val=0.0,         units='m',   desc='Distance from first to second main bearing along shaft')
+            nacelle_ivc.add_output('L_generator',        val=0.0,         units='m',   desc='Generator length along shaft')
+            nacelle_ivc.add_output('lss_diameter',       val=np.zeros(5), units='m',   desc='Diameter of low speed shaft')
+            nacelle_ivc.add_output('lss_wall_thickness', val=np.zeros(5), units='m',   desc='Thickness of low speed shaft')
+            nacelle_ivc.add_output('gear_ratio',         val=1.0,                      desc='Total gear ratio of drivetrain (use 1.0 for direct)')
+            nacelle_ivc.add_output('gearbox_efficiency', val=0.0,                      desc='Efficiency of the gearbox. Set to 1.0 for direct-drive')
+            nacelle_ivc.add_discrete_output('mb1Type',   val='CARB',                   desc='Type of main bearing: CARB / CRB / SRB / TRB')
+            nacelle_ivc.add_discrete_output('mb2Type',   val='SRB',                    desc='Type of main bearing: CARB / CRB / SRB / TRB')
+            nacelle_ivc.add_discrete_output('uptower',   val=True,                     desc='If power electronics are located uptower (True) or at tower base (False)')
+            nacelle_ivc.add_discrete_output('lss_material', val='steel',             desc='Material name identifier for the low speed shaft')
+            nacelle_ivc.add_discrete_output('hss_material', val='steel',             desc='Material name identifier for the high speed shaft')
+            nacelle_ivc.add_discrete_output('bedplate_material', val='steel',        desc='Material name identifier for the bedplate')
+
+            if modeling_options['drivetrainse']['direct']:
+                # Direct only
+                npts = modeling_options['drivetrainse']['n_height']
+                nacelle_ivc.add_output('access_diameter',         val=0.0,         units='m',  desc='Minimum diameter for hollow shafts for maintenance access')
+                nacelle_ivc.add_output('nose_diameter',           val=np.zeros(5), units='m',  desc='Diameter of nose (also called turret or spindle)')
+                nacelle_ivc.add_output('nose_wall_thickness',     val=np.zeros(5), units='m',  desc='Thickness of nose (also called turret or spindle)')
+                nacelle_ivc.add_output('bedplate_wall_thickness', val=np.zeros(npts), units='m',  desc='Thickness of hollow elliptical bedplate')
+            else:
+                # Geared only
+                nacelle_ivc.add_output('hss_length',                  val=0.0,         units='m', desc='Length of high speed shaft')
+                nacelle_ivc.add_output('hss_diameter',                val=np.zeros(3), units='m', desc='Diameter of high speed shaft')
+                nacelle_ivc.add_output('hss_wall_thickness',          val=np.zeros(3), units='m', desc='Wall thickness of high speed shaft')
+                nacelle_ivc.add_output('bedplate_flange_width',       val=0.0,         units='m', desc='Bedplate I-beam flange width')
+                nacelle_ivc.add_output('bedplate_flange_thickness',   val=0.0,         units='m', desc='Bedplate I-beam flange thickness')
+                nacelle_ivc.add_output('bedplate_web_thickness',      val=0.0,         units='m', desc='Bedplate I-beam web thickness')
+                nacelle_ivc.add_discrete_output('gear_configuration', val='eep',                  desc='3-letter string of Es or Ps to denote epicyclic or parallel gear configuration')
+                nacelle_ivc.add_discrete_output('planet_numbers',     val=[3,3,0],            desc='Number of planets for epicyclic stages (use 0 for parallel)')
+            
             # Mulit-body properties
-            nacelle.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-            nacelle.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
-            nacelle.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-            nacelle.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
-            # Drivetrain parameters
-            nacelle.add_output('gear_ratio',       val=0.0)
-            nacelle.add_output('shaft_ratio',      val=0.0)
-            nacelle.add_discrete_output('planet_numbers',   val=np.zeros(3))
-            nacelle.add_output('shrink_disc_mass', val=0.0, units='kg')
-            nacelle.add_output('carrier_mass',     val=0.0, units='kg')
-            nacelle.add_output('flange_length',    val=0.0, units='m')
-            nacelle.add_output('gearbox_input_xcm',val=0.0, units='m')
-            nacelle.add_output('hss_input_length', val=0.0, units='m')
-            nacelle.add_output('distance_hub2mb',  val=0.0, units='m')
-            nacelle.add_discrete_output('yaw_motors_number', val = 0)
-            nacelle.add_output('gearbox_efficiency',   val=0.0, desc='Efficiency of the gearbox. Set it equal to 1 for direct-drive machines')
-            nacelle.add_output('generator_efficiency', val=0.0, desc='Efficiency of the generator.')
-            self.add_subsystem('nacelle', nacelle)
+            # GB: I understand these will need to be in there for OpenFAST, but if running DrivetrainSE & OpenFAST this might cause problems?
+            #nacelle_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+            #nacelle_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
+            #nacelle_ivc.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+            #nacelle_ivc.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+            self.add_subsystem('nacelle', nacelle_ivc)
+            
+        # Nacelle inputs
+        if modeling_options['flags']['generator']:
+            generator_ivc = om.IndepVarComp()
+
+            generator_ivc.add_output('B_r', val=1.2, units='T')
+            generator_ivc.add_output('P_Fe0e', val=1.0, units='W/kg')
+            generator_ivc.add_output('P_Fe0h', val=4.0, units='W/kg')
+            generator_ivc.add_output('S_N', val=-0.002)
+            generator_ivc.add_output('alpha_p', val=0.5*np.pi*0.7)
+            generator_ivc.add_output('b_r_tau_r', val=0.45)
+            generator_ivc.add_output('b_ro', val=0.004, units='m')
+            generator_ivc.add_output('b_s_tau_s', val=0.45)
+            generator_ivc.add_output('b_so', val=0.004, units='m')
+            generator_ivc.add_output('cofi', val=0.85)
+            generator_ivc.add_output('freq', val=60, units='Hz')
+            generator_ivc.add_output('h_i', val=0.001, units='m')
+            generator_ivc.add_output('h_sy0', val=0.0)
+            generator_ivc.add_output('h_w', val=0.005, units='m')
+            generator_ivc.add_output('k_fes', val=0.9)
+            generator_ivc.add_output('k_fillr', val=0.7)
+            generator_ivc.add_output('k_fills', val=0.65)
+            generator_ivc.add_output('k_s', val=0.2)
+            generator_ivc.add_discrete_output('m', val=3)
+            generator_ivc.add_output('mu_0', val=np.pi*4e-7, units='m*kg/s**2/A**2')
+            generator_ivc.add_output('mu_r', val=1.06, units='m*kg/s**2/A**2')
+            generator_ivc.add_output('p', val=3.0)
+            generator_ivc.add_output('phi', val=np.deg2rad(90), units='rad')
+            generator_ivc.add_discrete_output('q1', val=6)
+            generator_ivc.add_discrete_output('q2', val=4)
+            generator_ivc.add_output('ratio_mw2pp', val=0.7)
+            generator_ivc.add_output('resist_Cu', val=1.8e-8*1.4, units='ohm/m')
+            generator_ivc.add_output('sigma', val=40e3, units='Pa')
+            generator_ivc.add_output('y_tau_p', val=1.0)
+            generator_ivc.add_output('y_tau_pr', val=10. / 12)
+
+            generator_ivc.add_output('I_0', val=0.0, units='A')
+            generator_ivc.add_output('d_r', val=0.0, units='m')
+            generator_ivc.add_output('h_m', val=0.0, units='m')
+            generator_ivc.add_output('h_0', val=0.0, units ='m')
+            generator_ivc.add_output('h_s', val=0.0, units='m')
+            generator_ivc.add_output('len_s', val=0.0, units='m')
+            generator_ivc.add_output('n_r', val=0.0)
+            generator_ivc.add_output('rad_ag', val=0.0, units='m')
+            generator_ivc.add_output('t_wr', val=0.0, units='m')
+
+            generator_ivc.add_output('n_s', val=0.0)
+            generator_ivc.add_output('b_st', val=0.0, units='m')
+            generator_ivc.add_output('d_s', val=0.0, units='m')
+            generator_ivc.add_output('t_ws', val=0.0, units='m')
+
+            generator_ivc.add_output('rho_Copper', val=0.0, units='kg*m**-3')
+            generator_ivc.add_output('rho_Fe', val=0.0, units='kg*m**-3')
+            generator_ivc.add_output('rho_Fes', val=0.0, units='kg*m**-3')
+            generator_ivc.add_output('rho_PM', val=0.0, units='kg*m**-3')
+
+            generator_ivc.add_output('C_Cu',  val=0.0, units='USD/kg')
+            generator_ivc.add_output('C_Fe',  val=0.0, units='USD/kg')
+            generator_ivc.add_output('C_Fes', val=0.0, units='USD/kg')
+            generator_ivc.add_output('C_PM',  val=0.0, units='USD/kg')
+
+            if modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
+                generator_ivc.add_output('N_c',0.0)
+                generator_ivc.add_output('b',0.0)
+                generator_ivc.add_output('c',0.0)
+                generator_ivc.add_output('E_p',0.0, units ='V')
+                generator_ivc.add_output('h_yr', val=0.0, units ='m')
+                generator_ivc.add_output('h_ys', val=0.0, units ='m')
+                generator_ivc.add_output('h_sr',0.0,units='m',desc='Structural Mass')
+                generator_ivc.add_output('h_ss',0.0, units ='m')
+                generator_ivc.add_output('t_r',0.0, units ='m')
+                generator_ivc.add_output('t_s',0.0, units ='m')
+
+                generator_ivc.add_output('u_allow_pcent',0.0)
+                generator_ivc.add_output('y_allow_pcent',0.0)
+                generator_ivc.add_output('z_allow_deg',0.0,units='deg')
+                generator_ivc.add_output('B_tmax',0.0, units='T')
+
+            if modeling_options['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
+                generator_ivc.add_output('tau_p', val=0.0, units='m')
+                generator_ivc.add_output('h_ys',  val=0.0, units='m')
+                generator_ivc.add_output('h_yr',  val=0.0, units='m')
+                generator_ivc.add_output('b_arm', val=0.0, units='m')
+                
+            elif modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
+                generator_ivc.add_output('B_symax', val=0.0, units='T')
+                generator_ivc.add_output('S_Nmax', val=-0.2)
+                
+            self.add_subsystem('generator', generator_ivc)
         
         # Tower inputs
         if modeling_options['flags']['tower']:
@@ -115,6 +224,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         conf_ivc.add_discrete_output('turb_class',          val='',         desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
         conf_ivc.add_discrete_output('gearbox_type',        val='geared',   desc='Gearbox configuration (geared, direct-drive, etc.).')
         conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',   desc='Rotor orientation, either upwind or downwind.')
+        conf_ivc.add_discrete_output('upwind',              val=True,       desc='Convenient boolean for upwind (True) or downwind (False).')
         conf_ivc.add_discrete_output('n_blades',            val=3,          desc='Number of blades of the rotor.')
 
         # Environment inputs
@@ -906,18 +1016,28 @@ class Hub(om.Group):
     def setup(self):
         ivc = self.add_subsystem('hub_indep_vars', om.IndepVarComp(), promotes=['*'])
         
-        ivc.add_output('diameter',     val=0.0, units='m',     desc='Diameter of the hub. It is equal to two times the distance of the blade root from the rotor center along the coned line.')
         ivc.add_output('cone',         val=0.0, units='rad',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
         ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.')
-
-        ivc.add_output('system_mass',  val=0.0,         units='kg',        desc='Mass of hub system')
-        ivc.add_output('system_I',     val=np.zeros(6), units='kg*m**2',   desc='Mass moments of Inertia of hub [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass in yaw-aligned c.s.')
-        ivc.add_output('system_cm',    val=np.zeros(3), units='m',         desc='Center of mass in yaw-aligned c.s.')
+        ivc.add_output('diameter',          val = 0.0, units='m')
+        ivc.add_output('flange_t2shell_t',          val = 0.0)
+        ivc.add_output('flange_OD2hub_D',           val = 0.0)
+        ivc.add_output('flange_ID2flange_OD',       val = 0.0)
+        ivc.add_output('hub_stress_concentration',      val = 0.0)
+        ivc.add_discrete_output('n_front_brackets', val = 0)
+        ivc.add_discrete_output('n_rear_brackets',  val = 0)
+        ivc.add_output('clearance_hub_spinner',     val = 0.0, units = 'm')
+        ivc.add_output('spin_hole_incr',            val = 0.0)
+        ivc.add_output('pitch_system_scaling_factor', val = 0.54)
+        ivc.add_output('spinner_gust_ws',                   val = 70., units='m/s')
+        ivc.add_output('hub_in2out_circ',           val = 1.2)
+        ivc.add_discrete_output('hub_material',     val = 'steel')
+        ivc.add_discrete_output('spinner_material',     val = 'carbon')
         
         exec_comp = om.ExecComp('radius = 0.5 * diameter', units='m', radius={'desc' : 'Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.'})
         self.add_subsystem('compute_radius', exec_comp, promotes=['*'])
-
-class ComputeGrid(om.ExplicitComponent):
+        
+    
+class Compute_Grid(om.ExplicitComponent):
     """
     Compute the non-dimensional grid or a tower or monopile.
     
@@ -988,7 +1108,7 @@ class Tower(om.Group):
         ivc.add_discrete_output('layer_mat',  val=[],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
         
         self.add_subsystem('compute_tower_grid',
-            ComputeGrid(init_options=tower_init_options),
+            Compute_Grid(init_options=tower_init_options),
             promotes=['*'])
             
 class Monopile(om.Group):
@@ -1015,7 +1135,7 @@ class Monopile(om.Group):
         ivc.add_output('suctionpile_depth_diam_ratio', 0.0, desc='ratio of sunction pile depth to mudline monopile diameter')
         
         self.add_subsystem('compute_monopile_grid',
-            ComputeGrid(init_options=monopile_init_options),
+            Compute_Grid(init_options=monopile_init_options),
             promotes=['*'])
         
 class Floating(om.Group):
@@ -1068,7 +1188,7 @@ class Column(om.Group):
         ivc.add_output('buoyancy_tank_location', 0.0, units='m')
         
         self.add_subsystem('compute_monopile_grid',
-            ComputeGrid(init_options=column_init_options),
+            Compute_Grid(init_options=column_init_options),
             promotes=['*'])
         
 class Mooring(om.Group):

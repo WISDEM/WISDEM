@@ -8,7 +8,6 @@ Copyright (c) NREL. All rights reserved.
 from __future__ import print_function
 import numpy as np
 from scipy.linalg import solve_banded
-from scipy.optimize import curve_fit
 
 
 def mode_fit(x, c2, c3, c4, c5, c6):
@@ -289,6 +288,30 @@ def assembleI(I):
 def unassembleI(I):
     return np.r_[I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]]
 
+def rotateI(I, th, axis='z'):
+    # https://calcresource.com/moment-of-inertia-rotation.html
+
+    if I.ndim == 2 and I.shape[0] == 3 and I.shape[1] == 3:
+        Iin = unassemble(I)
+    elif I.ndim == 1 and I.size==3:
+        Iin = np.r_[I, np.zeros(3)]
+    elif I.ndim == 1 and I.size==6:
+        Iin = I.copy()
+    else:
+        raise ValueError('Unknown size for input, I:',I)
+    
+    if axis in ['z','Z',2]:
+        i1,i2,i12 = 0,1,3
+    elif axis in ['y','Y',1]:
+        i1,i2,i12 = 0,2,4
+    elif axis in ['x','X',0]:
+        i1,i2,i12 = 1,2,5
+
+    Iout = Iin.copy()
+    Iout[i1]  = 0.5*(Iin[i1]+Iin[i2]) + 0.5*(Iin[i1]-Iin[i2])*np.cos(2*th) - Iin[i12]*np.sin(2*th)
+    Iout[i2]  = 0.5*(Iin[i1]+Iin[i2]) - 0.5*(Iin[i1]-Iin[i2])*np.cos(2*th) + Iin[i12]*np.sin(2*th)
+    Iout[i12] = 0.5*(Iin[i1]-Iin[i2])*np.sin(2*th) + Iin[i12]*np.cos(2*th)
+    return Iout
 
 def cubic_with_deriv(x, xp, yp):
     """deprecated"""

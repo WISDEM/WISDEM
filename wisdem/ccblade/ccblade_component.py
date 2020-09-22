@@ -774,8 +774,8 @@ class AeroHubLoads(ExplicitComponent):
             myF = DirectionVector.fromArray(outputs['Fxyz_blade_aero'][i_blade,:]).azimuthToHub(azimuth_blades[i_blade])
             myM = DirectionVector.fromArray(outputs['Mxyz_blade_aero'][i_blade,:]).azimuthToHub(azimuth_blades[i_blade])
             
-            F_hub_tot += myF.toArray()
-            M_hub_tot += myM.toArray()
+            F_hub_tot += myF.toArray().flatten()
+            M_hub_tot += myM.toArray().flatten()
 
         # Now sum over all blades
         outputs['Fxyz_hub_aero'] = F_hub_tot

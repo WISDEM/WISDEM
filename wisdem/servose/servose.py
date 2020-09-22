@@ -117,8 +117,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input('tsr_operational',        val=0.0,               desc='tip-speed ratio in Region 2 (should be optimized externally)')
         self.add_input('control_pitch',      val=0.0, units='deg',  desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
         self.add_discrete_input('drivetrainType',     val='GEARED')
-        self.add_input('gearbox_efficiency',     val=0.0,               desc='Gearbox efficiency')
-        self.add_input('generator_efficiency',   val=0.0,               desc='Generator efficiency')
+        self.add_input('drivetrain_efficiency',     val=0.0,               desc='Total drivetrain efficiency (including generator and gearbox)')
         
         self.add_input('r',         val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
         self.add_input('chord',     val=np.zeros(n_span), units='m',   desc='chord length at each section')
@@ -156,6 +155,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_output('Omega',    val=np.zeros(self.n_pc), units='rpm',        desc='rotor rotational speed')
         self.add_output('pitch',    val=np.zeros(self.n_pc), units='deg',        desc='rotor pitch schedule')
         self.add_output('P',        val=np.zeros(self.n_pc), units='W',          desc='rotor electrical power')
+        self.add_output('P_aero',   val=np.zeros(self.n_pc), units='W',          desc='rotor mechanical power')
         self.add_output('T',        val=np.zeros(self.n_pc), units='N',          desc='rotor aerodynamic thrust')
         self.add_output('Q',        val=np.zeros(self.n_pc), units='N*m',        desc='rotor aerodynamic torque')
         self.add_output('M',        val=np.zeros(self.n_pc), units='N*m',        desc='blade root moment')
@@ -216,7 +216,7 @@ class ComputePowerCurve(ExplicitComponent):
         R_tip     = inputs['Rtip']
         tsr       = inputs['tsr_operational']
         driveType = discrete_inputs['drivetrainType']
-        driveEta  = inputs['gearbox_efficiency'] * inputs['generator_efficiency']
+        driveEta  = inputs['drivetrain_efficiency']
         
         # Set rotor speed based on TSR
         Omega_tsr = Uhub * tsr / R_tip
@@ -396,6 +396,7 @@ class ComputePowerCurve(ExplicitComponent):
 
         outputs['P']       = P  
         outputs['Cp']      = Cp  
+        outputs['P_aero']  = P_aero
         outputs['Cp_aero'] = Cp_aero
         outputs['Ct_aero'] = Ct_aero
         outputs['Cq_aero'] = Cq_aero

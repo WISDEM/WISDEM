@@ -1,9 +1,9 @@
 import numpy as np
-from openmdao.api import ExplicitComponent, Group, Problem
+import openmdao.api as om
 from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
 from wisdem.ccblade.ccblade_component import CCBladeTwist
 from wisdem.commonse.turbine_class import TurbineClass
-from wisdem.drivetrainse.drivese_omdao import DriveSE
+from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
 from wisdem.orbit.api.wisdem.fixed import Orbit
@@ -12,10 +12,10 @@ from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
 from wisdem.servose.servose import ServoSE, NoStallConstraint
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
-from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains, RunFrame3DD
+from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 
-class WT_RNTA(Group):
+class WT_RNTA(om.Group):
     # Openmdao group to run the analysis of the wind turbine
     
     def initialize(self):
@@ -37,9 +37,7 @@ class WT_RNTA(Group):
         self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         if modeling_options['Analysis_Flags']['DriveSE']:
-            self.add_subsystem('drivese',   DriveSE(debug=False,
-                                                number_of_main_bearings=1,
-                                                topLevelFlag=False))
+            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1, topLevelFlag=False))
         if modeling_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
@@ -134,6 +132,7 @@ class WT_RNTA(Group):
         if modeling_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_V',        'sse.gust.V_hub')
             self.connect('sse.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
+            self.connect('env.shear_exp',                ['sse.powercurve.shearExp', 'rlds.aero_gust.shearExp']) 
             self.connect('sse.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.tot_loads_gust.aeroloads_Omega', 'rlds.constr.rated_Omega'])
             self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.tot_loads_gust.aeroloads_pitch'])
 
@@ -148,8 +147,8 @@ class WT_RNTA(Group):
             self.connect('pc.tsr_opt' ,                    'sse.tsr_operational')
             self.connect('control.rated_pitch' ,           'sse.control_pitch')
             self.connect('configuration.gearbox_type' ,    'sse.drivetrainType')
-            self.connect('nacelle.gearbox_efficiency',     'sse.powercurve.gearbox_efficiency')
-            self.connect('nacelle.generator_efficiency',   'sse.powercurve.generator_efficiency')
+            if modeling_options['Analysis_Flags']['DriveSE']:
+                self.connect('drivese.drivetrain_efficiency',   'sse.powercurve.drivetrain_efficiency')
             self.connect('assembly.r_blade',               'sse.r')
             # self.connect('blade.pa.chord_param',           'sse.chord')
             # self.connect('blade.pa.twist_param',           'sse.theta')
@@ -208,6 +207,7 @@ class WT_RNTA(Group):
         self.connect('elastic.EA',   'rlds.EA')
         self.connect('elastic.EIxx', 'rlds.EIxx')
         self.connect('elastic.EIyy', 'rlds.EIyy')
+        self.connect('elastic.EIxy', 'rlds.EIxy')
         self.connect('elastic.GJ',   'rlds.GJ')
         self.connect('elastic.rhoA', 'rlds.rhoA')
         self.connect('elastic.rhoJ', 'rlds.rhoJ')
@@ -238,39 +238,177 @@ class WT_RNTA(Group):
 
         # Connections to DriveSE
         if modeling_options['Analysis_Flags']['DriveSE']:
-            self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')     
+            self.connect('hub.diameter'                    , 'drivese.hub_diameter')
+            self.connect('hub.hub_in2out_circ'             , 'drivese.hub_in2out_circ')
+            self.connect('hub.flange_t2shell_t'            , 'drivese.flange_t2shell_t')
+            self.connect('hub.flange_OD2hub_D'             , 'drivese.flange_OD2hub_D')
+            self.connect('hub.flange_ID2flange_OD'         , 'drivese.flange_ID2flange_OD')
+            self.connect('hub.hub_stress_concentration'    , 'drivese.hub_stress_concentration')
+            self.connect('hub.n_front_brackets'            , 'drivese.n_front_brackets')
+            self.connect('hub.n_rear_brackets'             , 'drivese.n_rear_brackets')
+            self.connect('hub.clearance_hub_spinner'       , 'drivese.clearance_hub_spinner')
+            self.connect('hub.spin_hole_incr'              , 'drivese.spin_hole_incr')
+            self.connect('hub.pitch_system_scaling_factor' , 'drivese.pitch_system_scaling_factor')
+            self.connect('hub.spinner_gust_ws'             , 'drivese.spinner_gust_ws')
+
+            self.connect('configuration.n_blades',          'drivese.n_blades')
+            
+            self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')
+            self.connect('configuration.upwind',       'drivese.upwind')
+            self.connect('sse.powercurve.rated_Omega', 'drivese.rated_rpm')
+            self.connect('sse.powercurve.rated_Q',     'drivese.rated_torque')
             self.connect('control.rated_power',        'drivese.machine_rating')    
-            self.connect('nacelle.overhang',           'drivese.overhang') 
-            self.connect('nacelle.uptilt',             'drivese.shaft_angle')
-            self.connect('configuration.n_blades',     'drivese.number_of_blades') 
-            if modeling_options['Analysis_Flags']['ServoSE']:
-                self.connect('sse.powercurve.rated_Q',         'drivese.rotor_torque')
-                self.connect('sse.powercurve.rated_Omega',     'drivese.rotor_rpm')
-            self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.Fxyz')
-            self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.Mxyz')
-            self.connect('elastic.precomp.I_all_blades',   'drivese.blades_I')
-            self.connect('elastic.precomp.blade_mass', 'drivese.blade_mass')
-            self.connect('blade.pa.chord_param',       'drivese.blade_root_diameter', src_indices=[0])
-            self.connect('blade.length',               'drivese.blade_length')
-            self.connect('nacelle.gear_ratio',         'drivese.gear_ratio')
-            self.connect('nacelle.shaft_ratio',        'drivese.shaft_ratio')
-            self.connect('nacelle.planet_numbers',     'drivese.planet_numbers')
-            self.connect('nacelle.shrink_disc_mass',   'drivese.shrink_disc_mass')
-            self.connect('nacelle.carrier_mass',       'drivese.carrier_mass')
-            self.connect('nacelle.flange_length',      'drivese.flange_length')
-            self.connect('nacelle.gearbox_input_xcm',  'drivese.gearbox_input_xcm')
-            self.connect('nacelle.hss_input_length',   'drivese.hss_input_length')
-            self.connect('nacelle.distance_hub2mb',    'drivese.distance_hub2mb')
-            self.connect('nacelle.yaw_motors_number',  'drivese.yaw_motors_number')
-            self.connect('nacelle.gearbox_efficiency', 'drivese.gearbox_efficiency')
-            self.connect('nacelle.generator_efficiency','drivese.generator_efficiency')
-            if modeling_options['flags']['tower']:
-                self.connect('tower.diameter',             'drivese.tower_top_diameter', src_indices=[-1])
+            self.connect('tower.diameter',             'drivese.D_top', src_indices=[-1])
+            
+            self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.F_hub')
+            self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.M_hub')
+            self.connect('rlds.frame.root_M',                 'drivese.pitch_system.BRFM', src_indices=[1])
+                
+            self.connect('blade.pa.chord_param',              'drivese.blade_root_diameter', src_indices=[0])
+            self.connect('elastic.precomp.blade_mass',        'drivese.blade_mass')
+            self.connect('elastic.precomp.mass_all_blades',   'drivese.blades_mass')
+            self.connect('elastic.precomp.I_all_blades',      'drivese.blades_I')
+
+            self.connect('nacelle.distance_hub2mb',           'drivese.L_h1')
+            self.connect('nacelle.distance_mb2mb',            'drivese.L_12')
+            self.connect('nacelle.L_generator',               'drivese.L_generator')
+            self.connect('nacelle.overhang',                  'drivese.overhang')
+            self.connect('nacelle.distance_tt_hub',           'drivese.drive_height')
+            self.connect('nacelle.uptilt',                    'drivese.tilt')
+            self.connect('nacelle.gear_ratio',                'drivese.gear_ratio')
+            self.connect('nacelle.mb1Type',                   'drivese.bear1.bearing_type')
+            self.connect('nacelle.mb2Type',                   'drivese.bear2.bearing_type')
+            self.connect('nacelle.lss_diameter',              'drivese.lss_diameter')
+            self.connect('nacelle.lss_wall_thickness',        'drivese.lss_wall_thickness')
+            self.connect('nacelle.lss_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
+            self.connect('nacelle.lss_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
+            self.connect('nacelle.uptower',                   'drivese.uptower')
+            self.connect('nacelle.gearbox_efficiency',        'drivese.gearbox_efficiency')
+
+            if modeling_options['drivetrainse']['direct']:
+                self.connect('nacelle.access_diameter',           'drivese.access_diameter') # only used in direct
+                self.connect('nacelle.nose_diameter',             'drivese.nose_diameter') # only used in direct
+                self.connect('nacelle.nose_wall_thickness',       'drivese.nose_wall_thickness') # only used in direct
+                self.connect('nacelle.bedplate_wall_thickness',   'drivese.bedplate_wall_thickness') # only used in direct
+            else:
+                self.connect('nacelle.hss_length',                'drivese.L_hss') # only used in geared
+                self.connect('nacelle.hss_diameter',              'drivese.hss_diameter') # only used in geared
+                self.connect('nacelle.hss_wall_thickness',        'drivese.hss_wall_thickness') # only used in geared
+                self.connect('nacelle.hss_material',              'drivese.hss_material')
+                self.connect('nacelle.planet_numbers',            'drivese.planet_numbers') # only used in geared
+                self.connect('nacelle.gear_configuration',        'drivese.gear_configuration') # only used in geared
+                self.connect('nacelle.bedplate_flange_width',     'drivese.bedplate_flange_width') # only used in geared
+                self.connect('nacelle.bedplate_flange_thickness', 'drivese.bedplate_flange_thickness') # only used in geared
+                self.connect('nacelle.bedplate_web_thickness',    'drivese.bedplate_web_thickness') # only used in geared
+                
+            self.connect('hub.hub_material',                  'drivese.hub_material')
+            self.connect('hub.spinner_material',              'drivese.spinner_material')
+            self.connect('nacelle.lss_material',              'drivese.lss_material')
+            self.connect('nacelle.bedplate_material',         'drivese.bedplate_material')
+            self.connect('materials.name',                    'drivese.material_names')
+            self.connect('materials.E',                       'drivese.E_mat')
+            self.connect('materials.G',                       'drivese.G_mat')
+            self.connect('materials.rho',                     'drivese.rho_mat')
+            self.connect('materials.sigma_y',                 'drivese.sigma_y_mat')
+            self.connect('materials.Xt',                      'drivese.Xt_mat')
+            self.connect('materials.unit_cost',               'drivese.unit_cost_mat')
+
+            if modeling_options['flags']['generator']:
+
+                self.connect('generator.B_r'          , 'drivese.generator.B_r')
+                self.connect('generator.P_Fe0e'       , 'drivese.generator.P_Fe0e')
+                self.connect('generator.P_Fe0h'       , 'drivese.generator.P_Fe0h')
+                self.connect('generator.S_N'          , 'drivese.generator.S_N')
+                self.connect('generator.alpha_p'      , 'drivese.generator.alpha_p')
+                self.connect('generator.b_r_tau_r'    , 'drivese.generator.b_r_tau_r')
+                self.connect('generator.b_ro'         , 'drivese.generator.b_ro')
+                self.connect('generator.b_s_tau_s'    , 'drivese.generator.b_s_tau_s')
+                self.connect('generator.b_so'         , 'drivese.generator.b_so')
+                self.connect('generator.cofi'         , 'drivese.generator.cofi')
+                self.connect('generator.freq'         , 'drivese.generator.freq')
+                self.connect('generator.h_i'          , 'drivese.generator.h_i')
+                self.connect('generator.h_sy0'        , 'drivese.generator.h_sy0')
+                self.connect('generator.h_w'          , 'drivese.generator.h_w')
+                self.connect('generator.k_fes'        , 'drivese.generator.k_fes')
+                self.connect('generator.k_fillr'      , 'drivese.generator.k_fillr')
+                self.connect('generator.k_fills'      , 'drivese.generator.k_fills')
+                self.connect('generator.k_s'          , 'drivese.generator.k_s')
+                self.connect('generator.m'            , 'drivese.generator.m')
+                self.connect('generator.mu_0'         , 'drivese.generator.mu_0')
+                self.connect('generator.mu_r'         , 'drivese.generator.mu_r')
+                self.connect('generator.p'            , 'drivese.generator.p')
+                self.connect('generator.phi'          , 'drivese.generator.phi')
+                self.connect('generator.q1'           , 'drivese.generator.q1')
+                self.connect('generator.q2'           , 'drivese.generator.q2')
+                self.connect('generator.ratio_mw2pp'  , 'drivese.generator.ratio_mw2pp')
+                self.connect('generator.resist_Cu'    , 'drivese.generator.resist_Cu')
+                self.connect('generator.sigma'        , 'drivese.generator.sigma')
+                self.connect('generator.y_tau_p'      , 'drivese.generator.y_tau_p')
+                self.connect('generator.y_tau_pr'     , 'drivese.generator.y_tau_pr')
+
+                self.connect('generator.I_0'          , 'drivese.generator.I_0')
+                self.connect('generator.d_r'          , 'drivese.generator.d_r')
+                self.connect('generator.h_m'          , 'drivese.generator.h_m')
+                self.connect('generator.h_0'          , 'drivese.generator.h_0')
+                self.connect('generator.h_s'          , 'drivese.generator.h_s')
+                self.connect('generator.len_s'        , 'drivese.generator.len_s')
+                self.connect('generator.n_r'          , 'drivese.generator.n_r')
+                self.connect('generator.rad_ag'       , 'drivese.generator.rad_ag')
+                self.connect('generator.t_wr'         , 'drivese.generator.t_wr')
+
+                self.connect('generator.n_s'          , 'drivese.generator.n_s')
+                self.connect('generator.b_st'         , 'drivese.generator.b_st')
+                self.connect('generator.d_s'          , 'drivese.generator.d_s')
+                self.connect('generator.t_ws'         , 'drivese.generator.t_ws')
+
+                self.connect('generator.rho_Copper'   , 'drivese.generator.rho_Copper')
+                self.connect('generator.rho_Fe'       , 'drivese.generator.rho_Fe')
+                self.connect('generator.rho_Fes'      , 'drivese.generator.rho_Fes')
+                self.connect('generator.rho_PM'       , 'drivese.generator.rho_PM')
+
+                self.connect('generator.C_Cu'         , 'drivese.generator.C_Cu')
+                self.connect('generator.C_Fe'         , 'drivese.generator.C_Fe')
+                self.connect('generator.C_Fes'        , 'drivese.generator.C_Fes')
+                self.connect('generator.C_PM'         , 'drivese.generator.C_PM')
+
+                if modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
+                    self.connect('generator.N_c'          , 'drivese.generator.N_c')
+                    self.connect('generator.b'            , 'drivese.generator.b')
+                    self.connect('generator.c'            , 'drivese.generator.c')
+                    self.connect('generator.E_p'          , 'drivese.generator.E_p')
+                    self.connect('generator.h_yr'         , 'drivese.generator.h_yr')
+                    self.connect('generator.h_ys'         , 'drivese.generator.h_ys')
+                    self.connect('generator.h_sr'         , 'drivese.generator.h_sr')
+                    self.connect('generator.h_ss'         , 'drivese.generator.h_ss')
+                    self.connect('generator.t_r'          , 'drivese.generator.t_r')
+                    self.connect('generator.t_s'          , 'drivese.generator.t_s')
+
+                    self.connect('generator.u_allow_pcent', 'drivese.generator.u_allow_pcent')
+                    self.connect('generator.y_allow_pcent', 'drivese.generator.y_allow_pcent')
+                    self.connect('generator.z_allow_deg'  , 'drivese.generator.z_allow_deg')
+                    self.connect('generator.B_tmax'       , 'drivese.generator.B_tmax')
+
+                if modeling_options['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
+                    self.connect('generator.tau_p'        , 'drivese.generator.tau_p')
+                    self.connect('generator.h_ys'         , 'drivese.generator.h_ys')
+                    self.connect('generator.h_yr'         , 'drivese.generator.h_yr')
+                    self.connect('generator.b_arm'        , 'drivese.generator.b_arm')
+
+                elif modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
+                    self.connect('generator.B_symax'      , 'drivese.generator.B_symax')
+                    self.connect('generator.S_Nmax'      , 'drivese.generator.S_Nmax')
+
+                if modeling_options['drivetrainse']['direct']:
+                    self.connect('nacelle.nose_diameter',             'drivese.generator.D_nose', src_indices=[-1])
+                    self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
+                else:
+                    self.connect('nacelle.hss_diameter',              'drivese.generator.D_shaft', src_indices=[-1])
+
 
         # Connections to TowerSE
         if modeling_options['Analysis_Flags']['DriveSE'] and modeling_options['flags']['tower']:
-            self.connect('drivese.top_F',                 'towerse.pre.rna_F')
-            self.connect('drivese.top_M',                 'towerse.pre.rna_M')
+            self.connect('drivese.base_F',                'towerse.pre.rna_F')
+            self.connect('drivese.base_M',                'towerse.pre.rna_M')
             self.connect('drivese.rna_I_TT',             'towerse.rna_I')
             self.connect('drivese.rna_cm',               'towerse.rna_cg')
             self.connect('drivese.rna_mass',             'towerse.rna_mass')
@@ -299,7 +437,9 @@ class WT_RNTA(Group):
                 self.connect('env.rho_water',                    'towerse.rho_water')
                 self.connect('env.mu_water',                     'towerse.mu_water')                    
                 self.connect('env.G_soil',                       'towerse.G_soil')                    
-                self.connect('env.nu_soil',                      'towerse.nu_soil')                    
+                self.connect('env.nu_soil',                      'towerse.nu_soil')
+                self.connect('env.hsig_wave',                    'towerse.hsig_wave')
+                self.connect('env.Tsig_wave',                    'towerse.Tsig_wave')
                 self.connect('monopile.diameter',                'towerse.monopile_outer_diameter_in')
                 self.connect('monopile.height',                  'towerse.monopile_height')
                 self.connect('monopile.s',                       'towerse.monopile_s')
@@ -335,25 +475,25 @@ class WT_RNTA(Group):
         self.connect('elastic.precomp.total_blade_cost',  'tcc.blade_cost_external')
         if modeling_options['Analysis_Flags']['DriveSE']:
             self.connect('drivese.hub_mass',            'tcc.hub_mass')
-            self.connect('drivese.pitch_system_mass',   'tcc.pitch_system_mass')
+            self.connect('drivese.pitch_mass',          'tcc.pitch_system_mass')
             self.connect('drivese.spinner_mass',        'tcc.spinner_mass')
             self.connect('drivese.lss_mass',            'tcc.lss_mass')
-            self.connect('drivese.mainBearing.mb_mass', 'tcc.main_bearing_mass')
+            self.connect('drivese.bear1.mb_mass',       'tcc.main_bearing_mass')
             self.connect('drivese.gearbox_mass',        'tcc.gearbox_mass')
             self.connect('drivese.hss_mass',            'tcc.hss_mass')
             self.connect('drivese.generator_mass',      'tcc.generator_mass')
             self.connect('drivese.bedplate_mass',       'tcc.bedplate_mass')
             self.connect('drivese.yaw_mass',            'tcc.yaw_mass')
             self.connect('drivese.converter_mass',      'tcc.converter_mass')
+            self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
             self.connect('drivese.hvac_mass',           'tcc.hvac_mass')
             self.connect('drivese.cover_mass',          'tcc.cover_mass')
             self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
-            self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
 
         if modeling_options['flags']['tower']:
             self.connect('towerse.tower_mass',          'tcc.tower_mass')
 
-class WindPark(Group):
+class WindPark(om.Group):
     # Openmdao group to run the cost analysis of a wind park
     
     def initialize(self):
@@ -425,7 +565,7 @@ class WindPark(Group):
                 self.connect('towerse.tower_mass',              'landbosse.tower_mass')
                 self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
                 self.connect('elastic.precomp.blade_mass',      'landbosse.blade_mass')
-                self.connect('hub.system_mass',                 'landbosse.hub_mass')
+                self.connect('drivese.hub_system_mass',         'landbosse.hub_mass')
                 self.connect('foundation.height',               'landbosse.foundation_height')
                 self.connect('bos.plant_turbine_spacing',       'landbosse.turbine_spacing_rotor_diameters')
                 self.connect('bos.plant_row_spacing',           'landbosse.row_spacing_rotor_diameters')
