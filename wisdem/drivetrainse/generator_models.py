@@ -1257,7 +1257,7 @@ class PMSG_Disc(GeneratorBase):
         P_Ftm     = pFtm * 2*p * b_m * len_s                                           # magnet losses
         
         Losses = P_Cu + P_Festnom + P_Fesynom + P_ad + P_Ftm
-        gen_eff = machine_rating * 100 / (machine_rating + Losses)
+        gen_eff = machine_rating / (machine_rating + Losses)
         
         ################################################## Structural  Design ############################################################
         
@@ -1760,7 +1760,7 @@ class PMSG_Arms(GeneratorBase):
         P_Ftm = pFtm * 2 * p * b_m * len_s
         
         Losses = P_Cu + P_Festnom + P_Fesynom + P_ad + P_Ftm
-        gen_eff = machine_rating * 100 / (machine_rating + Losses)
+        gen_eff = machine_rating / (machine_rating + Losses)
         
         #################################################### Structural  Design ############################################################
         
@@ -2244,7 +2244,7 @@ class DFIG(GeneratorBase):
         p_b = 3 * delta_v * I_r                                                                   # Brush loss
         
         Losses = P_Cusnom + P_Fesnom + p_b + P_add
-        gen_eff = (P_e - Losses) * 100 / P_e
+        gen_eff = (P_e - Losses) / P_e
         
         # Calculating stator winding current density
         J_s = I_s / A_Cuscalc
@@ -2668,7 +2668,7 @@ class SCIG(GeneratorBase):
         P_add = 0.5 * machine_rating / 100
         P_Fesnom = P_Hyys + P_Ftys + P_Hyd + P_Ftd + P_Hyyr + P_Ftyr + P_Hydr + P_Ftdr
         Losses = P_Cusnom + P_Fesnom + P_add
-        gen_eff = (P_e - Losses) * 100 / P_e
+        gen_eff = (P_e - Losses) / P_e
         
         # Calculating current densities in the stator and rotor
         J_s = I_s / A_Cuscalc
@@ -3125,7 +3125,7 @@ class EESG(GeneratorBase):
         
         p_b = 2 * delta_v * I_f
         Losses = P_Cusnom_total + P_Festnom + P_Fesynom + p_b
-        gen_eff = machine_rating * 100 / (Losses + machine_rating)
+        gen_eff = machine_rating / (Losses + machine_rating)
         
         ################################################## Structural  Design ########################################################
         
