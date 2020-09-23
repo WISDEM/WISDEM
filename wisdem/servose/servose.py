@@ -117,7 +117,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input('tsr_operational',        val=0.0,               desc='tip-speed ratio in Region 2 (should be optimized externally)')
         self.add_input('control_pitch',      val=0.0, units='deg',  desc='pitch angle in region 2 (and region 3 for fixed pitch machines)')
         self.add_discrete_input('drivetrainType',     val='GEARED')
-        self.add_input('drivetrain_efficiency',     val=0.0,               desc='Total drivetrain efficiency (including generator and gearbox)')
+        self.add_input('drivetrain_efficiency',     val=np.zeros((self.n_pc, 2)),  desc='Total drivetrain efficiency (including generator and gearbox) from table lookup where rpm is the 1st column and efficiency is the 2nd column')
         
         self.add_input('r',         val=np.zeros(n_span), units='m',   desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
         self.add_input('chord',     val=np.zeros(n_span), units='m',   desc='chord length at each section')
@@ -232,7 +232,7 @@ class ComputePowerCurve(ExplicitComponent):
         # Set baseline power production
         myout, derivs = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
         P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
-        P, eff  = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
+        P, eff  = compute_P_and_eff(P_aero, P_rated, Omega_rpm, driveType, driveEta)
         Cp      = Cp_aero*eff
 
         
@@ -280,7 +280,7 @@ class ComputePowerCurve(ExplicitComponent):
             # Find associated power
             myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
-            P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
+            P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
             Cp[i]      = Cp_aero[i]*eff
 
             # Note if we find Region 2.5
@@ -302,9 +302,10 @@ class ComputePowerCurve(ExplicitComponent):
                 pitch    = x[0]           
                 Uhub_i   = x[1]
                 Omega_i  = min([Uhub_i * tsr / R_tip, Omega_max])
-                myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i*30./np.pi], [pitch], coefficients=False)
+                Omega_i_rpm = Omega_i*30./np.pi
+                myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch], coefficients=False)
                 P_aero_i = myout['P']
-                P_i,eff  = compute_P_and_eff(P_aero_i.flatten(), P_rated, driveType, driveEta)
+                P_i,eff  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
                 return (P_i - P_rated)
 
             if region2p5:
@@ -337,7 +338,7 @@ class ComputePowerCurve(ExplicitComponent):
             Omega_rpm    = Omega * 30. / np.pi
             myout, _     = self.ccblade.evaluate([U_rated], [Omega_rpm[i]], [pitch[i]], coefficients=True)
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
-            P[i], eff    = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
+            P[i], eff    = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
             Cp[i]        = Cp_aero[i]*eff
             P[i]         = P_rated
             
@@ -359,7 +360,7 @@ class ComputePowerCurve(ExplicitComponent):
             def rated_power_dist(pitch, Uhub, Omega_rpm):
                 myout, _ = self.ccblade.evaluate([Uhub], [Omega_rpm], [pitch], coefficients=False)
                 P_aero = myout['P']
-                P, eff          = compute_P_and_eff(P_aero, P_rated, driveType, driveEta)
+                P, eff          = compute_P_and_eff(P_aero, P_rated, Omega_rpm, driveType, driveEta)
                 return (P - P_rated)
 
             # Solve for Region 3 pitch
@@ -376,7 +377,7 @@ class ComputePowerCurve(ExplicitComponent):
 
                     myout, _   = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
                     P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
-                    P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, driveType, driveEta)
+                    P[i], eff  = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
                     Cp[i]      = Cp_aero[i]*eff
                     #P[i]       = P_rated
 
@@ -562,9 +563,9 @@ class AEP(ExplicitComponent):
         J = self.J
         '''
 
-def compute_P_and_eff(aeroPower, ratedPower, drivetrainType, drivetrainEff):
+def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetrainEff):
 
-    if drivetrainEff == 0.0:
+    if not np.any(drivetrainEff):
         drivetrainType = drivetrainType.upper()
         if drivetrainType == 'GEARED':
             constant = 0.01289
@@ -607,7 +608,8 @@ def compute_P_and_eff(aeroPower, ratedPower, drivetrainType, drivetrainEff):
         # compute efficiency
         eff = 1.0 - (constant/Pbar + linear + quadratic*Pbar)
     else:
-        eff = drivetrainEff
+        # Use table lookup from rpm to calculate total efficiency
+        eff = np.interp(Omega_rpm, drivetrainEff[:,0], drivetrainEff[:,1])
         
     return aeroPower * eff, eff
 
