@@ -204,6 +204,9 @@ class CylinderMass(om.ExplicitComponent):
         k_m    = inputs['material_cost_rate'] #1.1 # USD / kg carbon steel plate
         k_f    = inputs['labor_cost_rate'] #1.0 # USD / min labor
         k_p    = inputs['painting_cost_rate'] #USD / m^2 painting
+        k_e    = 0.064 # Industrial electricity rate $/kWh https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a
+        e_f    = 15.9  # Electricity usage kWh/kg for steel
+        e_fo   = 26.9  # Electricity usage kWh/kg for stainless steel
         
         # Cost Step 1) Cutting flat plates for taper using plasma cutter
         cutLengths = 2.0 * np.sqrt( (Rt-Rb)**2.0 + H**2.0 ) # Factor of 2 for both sides
@@ -223,14 +226,22 @@ class CylinderMass(om.ExplicitComponent):
         theta_p = 2
         K_p  = k_p * theta_p * 2 * (2 * np.pi * R_ave * H).sum()
 
-        # Cost step 6) Outfitting
-        K_o = 1.5 * np.sum( k_m * (coeff - 1.0) * rho * V_shell )
+        # Cost step 6) Outfitting with electricity usage
+        K_o = 1.5*k_m * (coeff - 1.0) * mshell
         
         # Material cost, without outfitting
-        K_m = np.sum( k_m * rho * V_shell )
+        K_m = k_m * mshell
 
-        # Assemble all costs
-        outputs['cost'] = K_m + K_o + K_p + K_f
+        # Electricity usage
+        K_e = k_e * (e_f*mshell + e_fo*(coeff - 1.0)*mshell)
+
+        # Assemble all costs for now
+        tempSum = K_m + K_e + K_o + K_p + K_f
+
+        # Capital cost share from BLS MFP by NAICS
+        K_c = 0.118 * tempSum / (1.0-0.118)
+
+        outputs['cost'] = tempSum + K_c
 
         
 
