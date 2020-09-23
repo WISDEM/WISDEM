@@ -183,6 +183,10 @@ class GeneratorSimple(om.ExplicitComponent):
         machine rating of generator
     rated_torque : float, [N*m]
         rotor torque at rated power
+    rated_rpm : float, [rpm]
+        rotor rated rotations-per-minute (rpm)
+    generator_mass_coefficient : float
+        Coefficient that scales rated torque (direct drive) or rating^0.9223 (geared) for generator mass
     
     Returns
     -------
@@ -196,15 +200,21 @@ class GeneratorSimple(om.ExplicitComponent):
         
     def initialize(self):
         self.options.declare('direct_drive', default=True)
+        self.options.declare('n_pc', default=20)
         
     def setup(self):
+        n_pc = self.options['n_pc']
+        
         # variables
         self.add_input('rotor_diameter', val=0.0, units='m')
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rated_torque', 0.0, units='N*m')
+        self.add_input('rated_rpm', 0.0, units='rpm')
+        self.add_input('generator_mass_coeff', 0.0)
 
         self.add_output('R_generator', val=0.0, units='m')
         self.add_output('generator_mass', val=0.0, units='kg')
+        self.add_output('generator_efficiency', val=np.zeros((n_pc, 2)) )
         self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
 
     def compute(self, inputs, outputs):
@@ -213,12 +223,14 @@ class GeneratorSimple(om.ExplicitComponent):
         rating  = float(inputs['machine_rating'])
         D_rotor = float(inputs['rotor_diameter'])
         Q_rotor = float(inputs['rated_torque'])
+        rpm     = float(inputs['rated_rpm'])
+        coeff   = float(inputs['generator_mass_coeff'])
   
         if self.options['direct_drive']:
-            massCoeff = 1e-3 * 37.68
+            massCoeff = coeff if coeff > 0.0 else 1e-3 * 37.68
             mass = massCoeff * Q_rotor
         else:
-            massCoeff = np.mean([6.4737, 10.51, 5.34])
+            massCoeff = coeff if coeff > 0.0 else np.mean([6.4737, 10.51, 5.34])
             massExp   = 0.9223
             mass = (massCoeff * rating ** massExp)
         outputs['generator_mass'] = mass
@@ -232,6 +244,22 @@ class GeneratorSimple(om.ExplicitComponent):
         I[0] = 0.5*R_generator**2
         I[1:] = (1./12.)*(3*R_generator**2 + length**2)
         outputs['generator_I'] = mass*I
+
+        # Efficiency performance- borrowed and adapted from servose
+        if self.options['direct_drive']:
+            constant = 0.01007
+            linear = 0.02000
+            quadratic = 0.06899
+        else:
+            constant = 0.01289
+            linear = 0.08510
+            quadratic = 0.0
+
+        rpm_in = np.linspace(1e-1, rpm, self.options['n_pc'])
+        Pbar   = rpm_in / rpm
+        eff    = 1.0 - (constant/Pbar + linear + quadratic*Pbar)
+        outputs['generator_efficiency'] = np.c_[rpm_in, eff]
+        
 
         
 #-------------------------------------------------------------------------------

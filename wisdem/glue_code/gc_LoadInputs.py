@@ -453,6 +453,9 @@ class WindTurbineOntologyPython(object):
                 elif self.modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
                     self.wt_init['components']['nacelle']['generator']['B_symax']       = float(wt_opt['generator.B_symax'])
                     self.wt_init['components']['nacelle']['generator']['S_Nmax']        = float(wt_opt['generator.S_Nmax'])
+                    
+            else:
+                self.wt_init['components']['nacelle']['generator']['mass_coefficient']   = float(wt_opt['generator.generator_mass_coeff'])
 
         # Update tower
         if self.modeling_options['flags']['tower']:

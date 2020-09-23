@@ -459,10 +459,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt['nacelle.planet_numbers']            = nacelle['drivetrain']['planet_numbers']
         wt_opt['nacelle.hss_material']              = nacelle['drivetrain']['hss_material']
 
-    #wt_opt['nacelle.above_yaw_mass']    = nacelle['elastic_properties_mb']['above_yaw_mass']
-    #wt_opt['nacelle.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
-    #wt_opt['nacelle.nacelle_cm']        = nacelle['elastic_properties_mb']['center_mass']
-    #wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['inertia']
+    if not modeling_options['flags']['generator']:
+        wt_opt['generator.generator_mass_coeff']    = nacelle['generator']['mass_coefficient']
 
     return wt_opt
 

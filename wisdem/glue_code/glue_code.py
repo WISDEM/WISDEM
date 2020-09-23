@@ -405,6 +405,9 @@ class WT_RNTA(om.Group):
                 else:
                     self.connect('nacelle.hss_diameter',              'drivese.generator.D_shaft', src_indices=[-1])
 
+            else:
+                self.connect('generator.generator_mass_coeff', 'drivese.generator_mass_coeff')
+
 
         # Connections to TowerSE
         if modeling_options['Analysis_Flags']['DriveSE'] and modeling_options['flags']['tower']:

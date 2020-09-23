@@ -141,6 +141,7 @@ class DrivetrainSE(om.Group):
             sivc.add_output('lss_wall_thickness', np.zeros(5), units='m')
             sivc.add_output('gear_ratio', 1.0)
             sivc.add_output('gearbox_efficiency', 1.0)
+            sivc.add_output('generator_mass_coeff', 0.0)
             sivc.add_discrete_output('mb1Type', 'CARB')
             sivc.add_discrete_output('mb2Type', 'SRB')
             sivc.add_discrete_output('uptower', True)
@@ -226,7 +227,7 @@ class DrivetrainSE(om.Group):
             self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','machine_rating','generator_efficiency','rated_rpm','rated_torque'])
         else:
             # TODO: Generator efficiency from what servose uses
-            self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct), promotes=['*'])
+            self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=self.options['modeling_options']['servose']['n_pc']), promotes=['*'])
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
