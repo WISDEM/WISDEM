@@ -103,6 +103,8 @@ class Brake(om.ExplicitComponent):
         rotor diameter
     rated_torque : float, [N*m]
         rotor torque at rated power
+    brake_mass_coeff : float, [kg/N/m]
+        Regression-based scaling coefficient on rated torque to obtain brake mass
     gear_ratio : float
         overall gearbox ratio
     D_shaft_end : float, [m]
@@ -136,6 +138,7 @@ class Brake(om.ExplicitComponent):
     def setup(self):
         self.add_input('rotor_diameter', 0.0, units='m')
         self.add_input('rated_torque', 0.0, units='N*m')
+        self.add_input('brake_mass_coeff', 0.00122, units='kg/N/m')
         self.add_input('s_rotor', 0.0, units='m')
         self.add_input('s_gearbox', 0.0, units='m')
 
@@ -148,11 +151,12 @@ class Brake(om.ExplicitComponent):
         # Unpack inputs
         D_rotor     = float(inputs['rotor_diameter'])
         Q_rotor     = float(inputs['rated_torque'])
+        coeff       = float(inputs['brake_mass_coeff'])
         s_rotor     = float(inputs['s_rotor'])
         s_gearbox   = float(inputs['s_gearbox'])
 
         # Regression based sizing derived by J.Keller under FOA 1981 support project
-        m_brake     = 1220. * 1e-6 * Q_rotor
+        m_brake     = coeff * Q_rotor
     
         # Assume brake disc diameter and simple MoI
         D_disc  = 0.01*D_rotor
@@ -277,6 +281,10 @@ class Electronics(om.ExplicitComponent):
         rotor diameter of turbine
     D_top : float, [m]
         Tower top outer diameter
+    converter_mass_user : float, [kg]
+        Override regular regression-based calculation of converter mass with this value
+    transformer_mass_user : float, [kg]
+        Override regular regression-based calculation of transformer mass with this value
     
     Returns
     -------
@@ -299,6 +307,8 @@ class Electronics(om.ExplicitComponent):
         self.add_input('machine_rating', 0.0, units='kW')
         self.add_input('rotor_diameter', 0.0, units='m')
         self.add_input('D_top', 0.0, units='m')
+        self.add_input('converter_mass_user', 0.0, units='kg')
+        self.add_input('transformer_mass_user', 0.0, units='kg')
 
         self.add_output('converter_mass', 0.0, units='kg')
         self.add_output('converter_cm', np.zeros(3), units='m')
@@ -310,13 +320,15 @@ class Electronics(om.ExplicitComponent):
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        rating  = float(inputs['machine_rating'])
-        D_rotor = float(inputs['rotor_diameter'])
-        D_top   = float(inputs['D_top'])
+        rating     = float(inputs['machine_rating'])
+        D_rotor    = float(inputs['rotor_diameter'])
+        D_top      = float(inputs['D_top'])
+        m_conv_usr  = float(inputs['converter_mass_user'])
+        m_trans_usr = float(inputs['transformer_mass_user'])
 
         # Correlation based trends, assume box
-        m_converter   = 1e-3*np.mean([740., 817.5])*rating + np.mean([101.37, 503.83])
-        m_transformer = 1e-3*1915*rating + 1910.0
+        m_converter   = m_conv_usr  if m_conv_usr  > 0.0 else 0.77875*rating + 302.6 #coeffs=1e-3*np.mean([740., 817.5]), np.mean([101.37, 503.83])
+        m_transformer = m_trans_usr if m_trans_usr > 0.0 else 1.915*rating + 1910.0
         sides  = 0.015*D_rotor
 
         # CM location, just assume off to the side of the bedplate
@@ -404,6 +416,8 @@ class MiscNacelleComponents(om.ExplicitComponent):
         Flag whether the design is upwind or downwind
     machine_rating : float, [kW]
         machine rating of the turbine
+    hvac_mass_coeff : float, [kg/kW]
+        Regression-based scaling coefficient on machine rating to get HVAC system mass
     H_bedplate : float, [m]
         height of bedplate
     D_top : float, [m]
@@ -447,6 +461,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
     def setup(self):
         self.add_discrete_input('upwind', True)
         self.add_input('machine_rating', 0.0, units='kW')
+        self.add_input('hvac_mass_coeff', 0.08, units='kg/kW')
         self.add_input('H_bedplate', 0.0, units='m')
         self.add_input('D_top', 0.0, units='m')
         self.add_input('bedplate_mass', 0.0, units='kg')
@@ -471,6 +486,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         # Unpack inputs
         upwind      = discrete_inputs['upwind']
         rating      = float(inputs['machine_rating'])
+        coeff       = float(inputs['hvac_mass_coeff'])
         H_bedplate  = float(inputs['H_bedplate'])
         D_bedplate  = float(inputs['D_top'])
         R_generator = float(inputs['R_generator'])
@@ -497,7 +513,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         outputs['cover_I' ]   = I_cover
         
         # Regression based estimate on HVAC mass
-        m_hvac       = 0.08 * rating
+        m_hvac       = coeff * rating
         cm_hvac      = s_generator
         I_hvac       = m_hvac * (0.75*R_generator)**2
         outputs['hvac_mass'] = m_hvac

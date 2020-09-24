@@ -506,6 +506,30 @@ properties:
                                 minimum: 0.
                                 maximum: 1.
                                 default: 0.05
+                            brake_mass_coefficient:
+                                type: number
+                                default: 0.00122
+                                units: kg/N/m
+                                description: Regression-based scaling coefficient on rated torque to obtain brake mass
+                                minimum: 0.0
+                            hvac_mass_coefficient:
+                                type: number
+                                default: 0.08
+                                units: kg/kW
+                                description: Regression-based scaling coefficient on machine rating to get HVAC system mass
+                                minimum: 0.0
+                            converter_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of converter mass with this value
+                                minimum: 0.0
+                            transformer_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of transformer mass with this value
+                                minimum: 0.0
                             bedplate_material:
                                 type: string
                                 description: Material name identifier

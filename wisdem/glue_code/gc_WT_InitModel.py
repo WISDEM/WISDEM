@@ -440,6 +440,10 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt['nacelle.uptower']                   = nacelle['drivetrain']['uptower']
     wt_opt['nacelle.lss_material']              = nacelle['drivetrain']['lss_material']
     wt_opt['nacelle.bedplate_material']         = nacelle['drivetrain']['bedplate_material']
+    wt_opt['nacelle.brake_mass_coeff']          = nacelle['drivetrain']['brake_mass_coefficient']
+    wt_opt['nacelle.hvac_mass_coeff']           = nacelle['drivetrain']['hvac_mass_coefficient']
+    wt_opt['nacelle.converter_mass_user']       = nacelle['drivetrain']['converter_mass_user']
+    wt_opt['nacelle.transformer_mass_user']     = nacelle['drivetrain']['transformer_mass_user']
 
     if modeling_options['drivetrainse']['direct']:
         # Direct only
