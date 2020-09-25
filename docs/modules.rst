@@ -26,5 +26,4 @@ Module documentation
    wisdem/pymap/index
    wisdem/rotorse/index
    wisdem/towerse/index
-   wisdem/turbine_costsse/index
-   wisdem/jacketse/index
+

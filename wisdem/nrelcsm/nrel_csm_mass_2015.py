@@ -7,7 +7,7 @@ import numpy as np
 
 import openmdao.api as om
 
-from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 
 
 # --------------------------------------------------------------------

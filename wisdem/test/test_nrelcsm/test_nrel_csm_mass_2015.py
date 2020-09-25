@@ -1,7 +1,6 @@
 import openmdao.api as om
-import wisdem.turbine_costsse.nrel_csm_tcc_2015 as nct2015
+import wisdem.nrelcsm.nrel_csm_mass_2015 as nct2015
 import unittest
-import numpy as np
 
 class TestAll(unittest.TestCase):
 

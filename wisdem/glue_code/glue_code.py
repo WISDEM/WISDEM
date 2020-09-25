@@ -5,7 +5,7 @@ from wisdem.ccblade.ccblade_component import CCBladeTwist
 from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.towerse.tower import TowerSE
-from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 from wisdem.orbit.api.wisdem.fixed import Orbit
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.plant_financese.plant_finance import PlantFinance

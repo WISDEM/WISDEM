@@ -8,7 +8,19 @@ Copyright (c) NREL. All rights reserved.
 import numpy as np
 from math import pi, gamma, exp
 from wisdem.commonse.utilities import smooth_abs, smooth_min, hstack
-from wisdem.nrelcsm.config import *
+from wisdem.nrelcsm.csmPPI import PPI
+
+# Initialize ref and current YYYYMM
+# Calling program can override these
+#   e.g., ppi.ref_yr = 2003, etc.
+
+ref_yr  = 2002
+ref_mon =    9
+curr_yr = 2009
+curr_mon =  12
+
+ppi = PPI(ref_yr,ref_mon,curr_yr,curr_mon)
+
 
 # NREL Cost and Scaling Model plant energy modules
 ##################################################
