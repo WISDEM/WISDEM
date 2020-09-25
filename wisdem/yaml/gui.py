@@ -85,9 +85,9 @@ class FocusQLineEdit(QLineEdit):
             else:
                 value = self.text()  # type: ignore
             self._dictionary[self._key_on_dictionary] = value
-            print("New level dictionary", self._dictionary)
-        else:
-            print("Focus lost, but dictionary and key are not set.")
+            # print("New level dictionary", self._dictionary)
+        # else:
+        #     print("Focus lost, but dictionary and key are not set.")
 
     def parse_list(self) -> List[Union[str, float]]:
         """
@@ -189,7 +189,7 @@ class FormAndMenuWindow(QMainWindow):
         weis_selection_central_widget = self.create_weis_selection_central_widget()
         self.setCentralWidget(weis_selection_central_widget)
 
-    def recursion_ui_setup(self, _dict: Dict[str, Any]) -> QFormLayout:
+    def recursion_ui_setup(self, dict_or_list: Union[List[Any], Dict[str, Any]]) -> QFormLayout:
         """
         This recursive method is where the automatic layout magic happens.
         This method calls itself recursively as it descends down the dictionary
@@ -202,13 +202,14 @@ class FormAndMenuWindow(QMainWindow):
 
         Parameters
         ----------
-        _dict: Dict[str, Any]
+        dict_or_list: Dict[str, Any]
             The dictionary to automatically lay out in to the interface.
         """
         form_level_layout = QFormLayout()
         dict_tabs = QTabWidget()
         display_tabs = False
-        for k, v in _dict.items():
+        subscripts_values = dict_or_list.items() if type(dict_or_list) is dict else enumerate(dict_or_list)
+        for k, v in subscripts_values:
 
             # Recursive call for nested dictionaries.
             if type(v) is dict:
@@ -216,13 +217,20 @@ class FormAndMenuWindow(QMainWindow):
                 child_widget = QWidget()
                 child_layout = self.recursion_ui_setup(v)
                 child_widget.setLayout(child_layout)
-                dict_tabs.addTab(child_widget, k)
+                dict_tabs.addTab(child_widget, str(k))
+
+            elif type(v) is list and type(v[0]) is dict:
+                display_tabs = True
+                child_widget = QWidget()
+                child_layout = self.recursion_ui_setup(v)
+                child_widget.setLayout(child_layout)
+                dict_tabs.addTab(child_widget, str(k))
 
             # Otherwise just lay out a label and text field.
             else:
                 line_edit = FocusQLineEdit(str(v))
                 line_edit.setMinimumWidth(150)
-                line_edit.set_dictionary_and_key(_dict, k)
+                line_edit.set_dictionary_and_key(dict_or_list, k)
                 form_level_layout.addRow(QLabel(k), line_edit)
 
         # If there is a nested dictionary, display it.
