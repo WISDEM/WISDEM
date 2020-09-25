@@ -14,7 +14,7 @@ from PySide2.QtWidgets import (  # type: ignore
     QWidget,
     QMainWindow,
     QFileDialog,
-    QApplication
+    QApplication,
 )
 
 
@@ -51,7 +51,9 @@ class FocusQLineEdit(QLineEdit):
         self._list_re = re.compile(r"^\[.*\]$")
         super(FocusQLineEdit, self).__init__(*args, *kwargs)
 
-    def set_dictionary_and_key(self, dictionary: Dict[str, Any], key: str) -> None:
+    def set_dictionary_and_key(
+        self, dictionary: Union[List[Any], Dict[str, Any]], key: str
+    ) -> None:
         """
         This method sets the dictionary and key to be modified when the focus
         changes out of this widget
@@ -195,7 +197,9 @@ class FormAndMenuWindow(QMainWindow):
         weis_selection_central_widget = self.create_weis_selection_central_widget()
         self.setCentralWidget(weis_selection_central_widget)
 
-    def recursion_ui_setup(self, dict_or_list: Union[List[Any], Dict[str, Any]]) -> QFormLayout:
+    def recursion_ui_setup(
+        self, dict_or_list: Union[List[Any], Dict[str, Any]]
+    ) -> QFormLayout:
         """
         This recursive method is where the automatic layout magic happens.
         This method calls itself recursively as it descends down the dictionary
@@ -214,7 +218,7 @@ class FormAndMenuWindow(QMainWindow):
         form_level_layout = QFormLayout()
         dict_tabs = QTabWidget()
         display_tabs = False
-        subscripts_values = dict_or_list.items() if type(dict_or_list) is dict else enumerate(dict_or_list)
+        subscripts_values = dict_or_list.items() if type(dict_or_list) is dict else enumerate(dict_or_list)  # type: ignore
         for k, v in subscripts_values:
 
             # Recursive call for nested dictionaries.
