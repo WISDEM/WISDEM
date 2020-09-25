@@ -351,18 +351,26 @@ class FormAndMenuWindow(QMainWindow):
         """
         if self.geometry_filename is not None:
             print(f"Writing geometry: {self.geometry_filename}")
+            with open(self.geometry_filename, "w") as file:
+                yaml.dump(self.geometry_dict, file)
         else:
             print("No geometry file to write")
 
         if self.analysis_filename is not None:
             print(f"Writing analysis: {self.analysis_filename}")
+            with open(self.analysis_filename, "w") as file:
+                yaml.dump(self.analysis_dict, file)
         else:
             print("No analysis file to write")
 
         if self.modeling_filename is not None:
             print(f"Writing modeling: {self.modeling_filename}")
+            with open(self.modeling_filename, "w") as file:
+                yaml.dump(self.modeling_dict, file)
         else:
             print("No modeling file to write")
+
+        # There should be a status pop up here.
 
     def file_picker_geometry(self):
         """
