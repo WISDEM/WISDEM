@@ -1977,6 +1977,146 @@ properties:
                 minimum: 0
                 maximum: 10000
                 default: 50
+            blade_mass_cost_coeff:
+                type: number
+                description: Regression-based blade cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 14.6
+            hub_mass_cost_coeff:
+                type: number
+                description: Regression-based hub cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 3.9
+            pitch_system_mass_cost_coeff:
+                type: number
+                description: Regression-based pitch system cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 22.1
+            spinner_mass_cost_coeff:
+                type: number
+                description: Regression-based spinner cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 11.1
+            lss_mass_cost_coeff:
+                type: number
+                description: Regression-based low speed shaft cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 11.9
+            bearing_mass_cost_coeff:
+                type: number
+                description: Regression-based bearing cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 4.5
+            gearbox_mass_cost_coeff:
+                type: number
+                description: Regression-based gearbox cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 12.9
+            hss_mass_cost_coeff:
+                type: number
+                description: Regression-based high speed side cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 6.8
+            generator_mass_cost_coeff:
+                type: number
+                description: Regression-based generator cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 12.4
+            bedplate_mass_cost_coeff:
+                type: number
+                description: Regression-based bedplate cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 2.9
+            yaw_mass_cost_coeff:
+                type: number
+                description: Regression-based yaw system cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 8.3
+            converter_mass_cost_coeff:
+                type: number
+                description: Regression-based converter cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 18.8
+            transformer_mass_cost_coeff:
+                type: number
+                description: Regression-based transformer cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 18.8
+            hvac_mass_cost_coeff:
+                type: number
+                description: Regression-based HVAC system cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 124.0
+            cover_mass_cost_coeff:
+                type: number
+                description: Regression-based nacelle cover cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 5.7
+            elec_connec_machine_rating_cost_coeff:
+                type: number
+                description: Regression-based electrical plant connection cost/rating ratio
+                unit: USD/kW
+                minimum: 0.0
+                maximum: 1e6
+                default: 41.85
+            platforms_mass_cost_coeff:
+                type: number
+                description: Regression-based nacelle platform cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 17.1
+            tower_mass_cost_coeff:
+                type: number
+                description: Regression-based tower cost/mass ratio
+                unit: USD/kg
+                minimum: 0.0
+                maximum: 1e6
+                default: 2.9
+            controls_machine_rating_cost_coeff:
+                type: number
+                description: Regression-based controller and sensor system cost/rating ratio
+                unit: USD/kW
+                minimum: 0.0
+                maximum: 1e6
+                default: 21.15
+            crane_cost:
+                type: number
+                description: crane cost if present
+                unit: USD
+                minimum: 0.0
+                maximum: 1e6
+                default: 12e3
 definitions:
     distributed_data:
         grid_nd:

@@ -501,6 +501,27 @@ class WT_RNTA(om.Group):
         if modeling_options['flags']['tower']:
             self.connect('towerse.tower_mass',          'tcc.tower_mass')
 
+        self.connect('costs.blade_mass_cost_coeff'                 , 'tcc.blade_mass_cost_coeff')
+        self.connect('costs.hub_mass_cost_coeff'                   , 'tcc.hub_mass_cost_coeff')
+        self.connect('costs.pitch_system_mass_cost_coeff'          , 'tcc.pitch_system_mass_cost_coeff')
+        self.connect('costs.spinner_mass_cost_coeff'               , 'tcc.spinner_mass_cost_coeff')
+        self.connect('costs.lss_mass_cost_coeff'                   , 'tcc.lss_mass_cost_coeff')
+        self.connect('costs.bearing_mass_cost_coeff'               , 'tcc.bearing_mass_cost_coeff')
+        self.connect('costs.gearbox_mass_cost_coeff'               , 'tcc.gearbox_mass_cost_coeff')
+        self.connect('costs.hss_mass_cost_coeff'                   , 'tcc.hss_mass_cost_coeff')
+        self.connect('costs.generator_mass_cost_coeff'             , 'tcc.generator_mass_cost_coeff')
+        self.connect('costs.bedplate_mass_cost_coeff'              , 'tcc.bedplate_mass_cost_coeff')
+        self.connect('costs.yaw_mass_cost_coeff'                   , 'tcc.yaw_mass_cost_coeff')
+        self.connect('costs.converter_mass_cost_coeff'             , 'tcc.converter_mass_cost_coeff')
+        self.connect('costs.transformer_mass_cost_coeff'           , 'tcc.transformer_mass_cost_coeff')
+        self.connect('costs.hvac_mass_cost_coeff'                  , 'tcc.hvac_mass_cost_coeff')
+        self.connect('costs.cover_mass_cost_coeff'                 , 'tcc.cover_mass_cost_coeff')
+        self.connect('costs.elec_connec_machine_rating_cost_coeff' , 'tcc.elec_connec_machine_rating_cost_coeff')
+        self.connect('costs.platforms_mass_cost_coeff'             , 'tcc.platforms_mass_cost_coeff')
+        self.connect('costs.tower_mass_cost_coeff'                 , 'tcc.tower_mass_cost_coeff')
+        self.connect('costs.controls_machine_rating_cost_coeff'    , 'tcc.controls_machine_rating_cost_coeff')
+        self.connect('costs.crane_cost'                            , 'tcc.crane_cost')
+
 class WindPark(om.Group):
     # Openmdao group to run the cost analysis of a wind park
     
@@ -593,6 +614,9 @@ class WindPark(om.Group):
                 self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
             else:
                 self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
+        else:
+            self.connect('costs.bos_per_kW',  'financese.bos_per_kW')
+            
         # Inputs to plantfinancese from input yaml
         if modeling_options['flags']['control']:
             self.connect('control.rated_power',     'financese.machine_rating')

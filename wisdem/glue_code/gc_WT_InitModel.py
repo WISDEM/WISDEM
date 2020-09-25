@@ -861,6 +861,28 @@ def assign_costs_values(wt_opt, costs):
     wt_opt['costs.bos_per_kW']          = costs['bos_per_kW']
     wt_opt['costs.wake_loss_factor']    = costs['wake_loss_factor']
     wt_opt['costs.fixed_charge_rate']   = costs['fixed_charge_rate']
+
+    wt_opt['blade_mass_cost_coeff']                 = costs['blade_mass_cost_coeff']
+    wt_opt['hub_mass_cost_coeff']                   = costs['hub_mass_cost_coeff']
+    wt_opt['pitch_system_mass_cost_coeff']          = costs['pitch_system_mass_cost_coeff']
+    wt_opt['spinner_mass_cost_coeff']               = costs['spinner_mass_cost_coeff']
+    wt_opt['lss_mass_cost_coeff']                   = costs['lss_mass_cost_coeff']
+    wt_opt['bearing_mass_cost_coeff']               = costs['bearing_mass_cost_coeff']
+    wt_opt['gearbox_mass_cost_coeff']               = costs['gearbox_mass_cost_coeff']
+    wt_opt['hss_mass_cost_coeff']                   = costs['hss_mass_cost_coeff']
+    wt_opt['generator_mass_cost_coeff']             = costs['generator_mass_cost_coeff']
+    wt_opt['bedplate_mass_cost_coeff']              = costs['bedplate_mass_cost_coeff']
+    wt_opt['yaw_mass_cost_coeff']                   = costs['yaw_mass_cost_coeff']
+    wt_opt['converter_mass_cost_coeff']             = costs['converter_mass_cost_coeff']
+    wt_opt['transformer_mass_cost_coeff']           = costs['transformer_mass_cost_coeff']
+    wt_opt['hvac_mass_cost_coeff']                  = costs['hvac_mass_cost_coeff']
+    wt_opt['cover_mass_cost_coeff']                 = costs['cover_mass_cost_coeff']
+    wt_opt['elec_connec_machine_rating_cost_coeff'] = costs['elec_connec_machine_rating_cost_coeff']
+    wt_opt['platforms_mass_cost_coeff']             = costs['platforms_mass_cost_coeff']
+    wt_opt['tower_mass_cost_coeff']                 = costs['tower_mass_cost_coeff']
+    wt_opt['controls_machine_rating_cost_coeff']    = costs['controls_machine_rating_cost_coeff']
+    wt_opt['crane_cost']                            = costs['crane_cost']
+    
     if 'offset_tcc_per_kW' in costs:
         wt_opt['costs.offset_tcc_per_kW']   = costs['offset_tcc_per_kW']
 
