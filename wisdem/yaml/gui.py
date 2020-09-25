@@ -177,6 +177,12 @@ class FormAndMenuWindow(QMainWindow):
         self.geometry_filename_line_edit = None
         self.modeling_filename_line_edit = None
         self.analysis_filename_line_edit = None
+        self.geometry_dict = None
+        self.analysis_dict = None
+        self.modeling_dict = None
+        self.geometry_filename = None
+        self.analysis_filename = None
+        self.modeling_filename = None
 
     def setup(self) -> None:
         """
@@ -293,6 +299,7 @@ class FormAndMenuWindow(QMainWindow):
         analysis_filename_button.clicked.connect(self.file_picker_analysis)
 
         run_weis_button = QPushButton("Run WEIS")
+        run_weis_button.clicked.connect(self.run_weis_clicked)
 
         self.modeling_yaml_widget = QWidget()
         self.analysis_yaml_editor_widget = QWidget()
@@ -338,6 +345,25 @@ class FormAndMenuWindow(QMainWindow):
         main_widget.setLayout(main_layout)
         return main_widget
 
+    def run_weis_clicked(self):
+        """
+        Called when the "Run WEIS" button is clicked
+        """
+        if self.geometry_filename is not None:
+            print(f"Writing geometry: {self.geometry_filename}")
+        else:
+            print("No geometry file to write")
+
+        if self.analysis_filename is not None:
+            print(f"Writing analysis: {self.analysis_filename}")
+        else:
+            print("No analysis file to write")
+
+        if self.modeling_filename is not None:
+            print(f"Writing modeling: {self.modeling_filename}")
+        else:
+            print("No modeling file to write")
+
     def file_picker_geometry(self):
         """
         Shows the open dialog
@@ -350,12 +376,12 @@ class FormAndMenuWindow(QMainWindow):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
         dialog.setViewMode(QFileDialog.Detail)
-        filename, _ = dialog.getOpenFileName(
+        self.geometry_filename, _ = dialog.getOpenFileName(
             None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)"
         )
-        self.geometry_filename_line_edit.setText(filename)
-        _dict = self.read_yaml_to_dictionary(filename)
-        layout = self.recursion_ui_setup(_dict)
+        self.geometry_filename_line_edit.setText(self.geometry_filename)
+        self.geometry_dict = self.read_yaml_to_dictionary(self.geometry_filename)
+        layout = self.recursion_ui_setup(self.geometry_dict)
         self.geometry_yaml_widget.setLayout(layout)
 
     def file_picker_modeling(self):
@@ -370,12 +396,12 @@ class FormAndMenuWindow(QMainWindow):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
         dialog.setViewMode(QFileDialog.Detail)
-        filename, _ = dialog.getOpenFileName(
+        self.modeling_filename, _ = dialog.getOpenFileName(
             None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)"
         )
-        self.modeling_filename_line_edit.setText(filename)
-        _dict = self.read_yaml_to_dictionary(filename)
-        layout = self.recursion_ui_setup(_dict)
+        self.modeling_filename_line_edit.setText(self.modeling_filename)
+        self.modeling_dict = self.read_yaml_to_dictionary(self.modeling_filename)
+        layout = self.recursion_ui_setup(self.modeling_dict)
         self.modeling_yaml_widget.setLayout(layout)
 
     def file_picker_analysis(self) -> None:
@@ -389,12 +415,12 @@ class FormAndMenuWindow(QMainWindow):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
         dialog.setViewMode(QFileDialog.Detail)
-        filename, _ = dialog.getOpenFileName(
+        self.analysis_filename, _ = dialog.getOpenFileName(
             None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)"
         )
-        self.analysis_filename_line_edit.setText(filename)
-        _dict = self.read_yaml_to_dictionary(filename)
-        layout = self.recursion_ui_setup(_dict)
+        self.analysis_filename_line_edit.setText(self.analysis_filename)
+        self.analysis_dict = self.read_yaml_to_dictionary(self.analysis_filename)
+        layout = self.recursion_ui_setup(self.analysis_dict)
         self.analysis_yaml_editor_widget.setLayout(layout)
 
     @staticmethod
