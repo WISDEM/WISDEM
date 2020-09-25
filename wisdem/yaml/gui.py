@@ -263,6 +263,8 @@ class FormAndMenuWindow(QMainWindow):
             The form with buttons on it.
         """
         main_widget = QWidget()
+        subsection_width = 500
+        subsection_height = 900
 
         geometry_section_label = QLabel("Geometry")
         geometry_section_label.setStyleSheet("font-weight: bold;")
@@ -313,7 +315,8 @@ class FormAndMenuWindow(QMainWindow):
         geometry_layout.addRow(geometry_visualize_button)
         geometry_layout.addRow(self.geometry_yaml_widget)
         geometry_widget = QWidget()
-        geometry_widget.setFixedWidth(500)
+        geometry_widget.setFixedWidth(subsection_width)
+        geometry_widget.setFixedHeight(subsection_height)
         geometry_widget.setLayout(geometry_layout)
 
         modeling_layout = QFormLayout()
@@ -323,7 +326,8 @@ class FormAndMenuWindow(QMainWindow):
         )
         modeling_layout.addRow(self.modeling_yaml_widget)
         modeling_widget = QWidget()
-        modeling_widget.setFixedWidth(500)
+        modeling_widget.setFixedWidth(subsection_width)
+        modeling_widget.setFixedHeight(subsection_height)
         modeling_widget.setLayout(modeling_layout)
 
         analysis_layout = QFormLayout()
@@ -333,7 +337,8 @@ class FormAndMenuWindow(QMainWindow):
         )
         analysis_layout.addRow(self.analysis_yaml_editor_widget)
         analysis_widget = QWidget()
-        analysis_widget.setFixedWidth(500)
+        analysis_widget.setFixedWidth(subsection_width)
+        analysis_widget.setFixedHeight(subsection_height)
         analysis_widget.setLayout(analysis_layout)
 
         main_layout = QHBoxLayout()
