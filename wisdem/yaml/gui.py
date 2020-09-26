@@ -390,7 +390,9 @@ class FormAndMenuWindow(QMainWindow):
             msg.setInformativeText("Click cancel to back out and continue editing. Click OK to run WISDEM.")
             msg.addButton(QMessageBox.Cancel)
             msg.addButton(QMessageBox.Ok)
-            msg.exec()
+            choice = msg.exec()
+            if choice == QMessageBox.Ok:
+                print("This is where we would run WISDEM")
 
     def write_configuration_files(self):
         """
