@@ -15,6 +15,7 @@ from PySide2.QtWidgets import (  # type: ignore
     QMainWindow,
     QFileDialog,
     QApplication,
+    QMessageBox,
 )
 
 
@@ -221,7 +222,7 @@ class FormAndMenuWindow(QMainWindow):
         subscripts_values = dict_or_list.items() if type(dict_or_list) is dict else enumerate(dict_or_list)  # type: ignore
         for k, v in subscripts_values:
 
-            # Recursive call for nested dictionaries.
+            # Recursive call for nested dictionaries within dictionaries.
             if type(v) is dict:
                 display_tabs = True
                 child_widget = QWidget()
@@ -229,6 +230,7 @@ class FormAndMenuWindow(QMainWindow):
                 child_widget.setLayout(child_layout)
                 dict_tabs.addTab(child_widget, str(k))
 
+            # Recursive call for nested dictionaries within lists.
             elif type(v) is list and type(v[0]) is dict:
                 display_tabs = True
                 child_widget = QWidget()
@@ -356,7 +358,23 @@ class FormAndMenuWindow(QMainWindow):
 
     def run_weis_clicked(self):
         """
-        Called when the "Run WEIS" button is clicked
+        When the "Run WEIS" button is clicked, a popup dialog
+        will pop up asking what the user wants to do. If the user
+        has skipped any configuration files, then it will tell them
+        to go back and create those configuration files. If the user
+        has specified all the configuration files, then it will prompt
+        the user for confirmation before saving the WEIS configuration
+        files.
+        """
+        msg = QMessageBox()
+        msg.setText("You clicked something")
+        msg.exec()
+
+    def write_configuration_files(self):
+        """
+        The "Run WEIS" click event handler calls this method when it is ready
+        to make an attempt to run WEIS. It checks to see if all file shave been
+        edited
         """
         if self.geometry_filename is not None:
             print(f"Writing geometry: {self.geometry_filename}")
@@ -378,8 +396,6 @@ class FormAndMenuWindow(QMainWindow):
                 yaml.dump(self.modeling_dict, file)
         else:
             print("No modeling file to write")
-
-        # There should be a status pop up here.
 
     def file_picker_geometry(self):
         """
