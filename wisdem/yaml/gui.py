@@ -366,9 +366,31 @@ class FormAndMenuWindow(QMainWindow):
         the user for confirmation before saving the WEIS configuration
         files.
         """
-        msg = QMessageBox()
-        msg.setText("You clicked something")
-        msg.exec()
+        if self.geometry_filename is None:
+            msg = QMessageBox()
+            msg.setText("Run WISDEM: Missing file")
+            msg.setInformativeText("You did not specify a geometry file.")
+            msg.addButton(QMessageBox.Cancel)
+            msg.exec()
+        elif self.modeling_filename is None:
+            msg = QMessageBox()
+            msg.setText("Run WISDEM: Missing file")
+            msg.setInformativeText("You did not specify a modeling file.")
+            msg.addButton(QMessageBox.Cancel)
+            msg.exec()
+        elif self.analysis_filename is None:
+            msg = QMessageBox()
+            msg.setText("Run WISDEM: Missing file")
+            msg.setInformativeText("You did not specify an analysis file.")
+            msg.addButton(QMessageBox.Cancel)
+            msg.exec()
+        else:
+            msg = QMessageBox()
+            msg.setText("Run WISDEM: Configuration files complete!")
+            msg.setInformativeText("Click cancel to back out and continue editing. Click OK to run WISDEM.")
+            msg.addButton(QMessageBox.Cancel)
+            msg.addButton(QMessageBox.Ok)
+            msg.exec()
 
     def write_configuration_files(self):
         """
