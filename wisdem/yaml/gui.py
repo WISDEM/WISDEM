@@ -6,6 +6,7 @@ from pathlib import Path
 
 from PySide2.QtWidgets import (  # type: ignore
     QHBoxLayout,
+    QVBoxLayout,
     QLineEdit,
     QPushButton,
     QLabel,
@@ -187,6 +188,8 @@ class FormAndMenuWindow(QMainWindow):
         self.analysis_filename = None
         self.modeling_filename = None
         self.main_widget = None
+        self.status_widget = None
+        self.status_label = None
 
     def setup(self) -> None:
         """
@@ -196,8 +199,8 @@ class FormAndMenuWindow(QMainWindow):
         self.setWindowTitle("YAML GUI")
         # self.setup_menu_bar()
 
-        weis_selection_central_widget = self.create_weis_selection_central_widget()
-        self.setCentralWidget(weis_selection_central_widget)
+        central_widget = self.create_central_widget()
+        self.setCentralWidget(central_widget)
 
     def recursion_ui_setup(
         self, dict_or_list: Union[List[Any], Dict[str, Any]]
@@ -262,13 +265,24 @@ class FormAndMenuWindow(QMainWindow):
         with open(self.output_filename, "w") as file:
             yaml.dump(self.dict_to_edit, file)
 
-    def create_weis_selection_central_widget(self) -> QWidget:
+    def create_central_widget(self) -> QWidget:
         """
         Returns
         -------
         QWidget
             The form with buttons on it.
         """
+        status_and_main_widget = QWidget()
+        status_and_main_widget_layout = QVBoxLayout()
+
+        self.status_widget = QWidget()
+        status_form_layout = QFormLayout()
+        status_label = QLabel("Status:")
+        self.status_label = QLabel()
+        self.status_label.setText("Please create simulation configurations.")
+        status_form_layout.addRow(status_label, self.status_label)
+        self.status_widget.setLayout(status_form_layout)
+
         self.main_widget = QWidget()
         subsection_width = 500
         subsection_height = 900
@@ -276,7 +290,7 @@ class FormAndMenuWindow(QMainWindow):
         geometry_section_label = QLabel("Geometry")
         geometry_section_label.setStyleSheet("font-weight: bold;")
         geometry_filename_button = QPushButton("Select geometry YAML...")
-        geometry_visualize_button = QPushButton("Visualize geometry")
+        # geometry_visualize_button = QPushButton("Visualize geometry")
         self.geometry_filename_line_edit = QLineEdit()
         self.geometry_filename_line_edit.setPlaceholderText(
             "Please select a geometry file."
@@ -319,7 +333,7 @@ class FormAndMenuWindow(QMainWindow):
         geometry_layout.addRow(
             self.geometry_filename_line_edit, geometry_filename_button
         )
-        geometry_layout.addRow(geometry_visualize_button)
+        # geometry_layout.addRow(geometry_visualize_button)
         geometry_layout.addRow(self.geometry_yaml_widget)
         geometry_widget = QWidget()
         geometry_widget.setFixedWidth(subsection_width)
@@ -355,7 +369,13 @@ class FormAndMenuWindow(QMainWindow):
         main_layout.addWidget(run_weis_button)
 
         self.main_widget.setLayout(main_layout)
-        return self.main_widget
+        # return self.main_widget
+
+        status_and_main_widget_layout.addWidget(self.status_widget)
+        status_and_main_widget_layout.addWidget(self.main_widget)
+        status_and_main_widget.setLayout(status_and_main_widget_layout)
+
+        return status_and_main_widget
 
     def run_weis_clicked(self):
         """
@@ -395,6 +415,7 @@ class FormAndMenuWindow(QMainWindow):
             if choice == QMessageBox.Ok:
                 print("This is where we would run WISDEM")
                 self.main_widget.setEnabled(False)
+                self.status_label.setText("Running WISDEM")
 
     def write_configuration_files(self):
         """
