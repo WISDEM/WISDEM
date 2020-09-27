@@ -186,6 +186,7 @@ class FormAndMenuWindow(QMainWindow):
         self.geometry_filename = None
         self.analysis_filename = None
         self.modeling_filename = None
+        self.main_widget = None
 
     def setup(self) -> None:
         """
@@ -268,7 +269,7 @@ class FormAndMenuWindow(QMainWindow):
         QWidget
             The form with buttons on it.
         """
-        main_widget = QWidget()
+        self.main_widget = QWidget()
         subsection_width = 500
         subsection_height = 900
 
@@ -353,8 +354,8 @@ class FormAndMenuWindow(QMainWindow):
         main_layout.addWidget(analysis_widget)
         main_layout.addWidget(run_weis_button)
 
-        main_widget.setLayout(main_layout)
-        return main_widget
+        self.main_widget.setLayout(main_layout)
+        return self.main_widget
 
     def run_weis_clicked(self):
         """
@@ -393,6 +394,7 @@ class FormAndMenuWindow(QMainWindow):
             choice = msg.exec()
             if choice == QMessageBox.Ok:
                 print("This is where we would run WISDEM")
+                self.main_widget.setEnabled(False)
 
     def write_configuration_files(self):
         """
