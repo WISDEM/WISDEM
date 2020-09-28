@@ -408,6 +408,9 @@ class FormAndMenuWindow(QMainWindow):
             msg.addButton(QMessageBox.Cancel)
             msg.exec()
         else:
+            self.status_label.setText("Writing files...")
+            self.write_configuration_files()
+            self.status_label.setText("Configuration files written.")
             msg = QMessageBox()
             msg.setText("Run WISDEM: Configuration files complete!")
             msg.setInformativeText("Click cancel to back out and continue editing. Click OK to run WISDEM.")
