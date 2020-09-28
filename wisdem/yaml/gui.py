@@ -466,7 +466,12 @@ class FormAndMenuWindow(QMainWindow):
             msg.exec()
             self.main_widget.setEnabled(True)
         else:
-            print("Victory!")
+            self.status_label.setText("Execution success")
+            msg = QMessageBox()
+            msg.setText("WISDEM executed successfully")
+            msg.addButton(QMessageBox.Ok)
+            msg.exec()
+            self.main_widget.setEnabled(True)
 
     def file_picker_geometry(self):
         """
