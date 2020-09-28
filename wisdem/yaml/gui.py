@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Union
 import yaml
-import sys
+import sys, traceback
 import re
 from pathlib import Path
 
@@ -418,10 +418,7 @@ class FormAndMenuWindow(QMainWindow):
             msg.addButton(QMessageBox.Ok)
             choice = msg.exec()
             if choice == QMessageBox.Ok:
-                self.main_widget.setEnabled(False)
-                self.status_label.setText("Running WISDEM")
-                wt_opt, modeling_options, analysis_options = runWISDEM.run_wisdem(self.geometry_filename, self.modeling_filename,
-                                                                        self.analysis_filename)
+                self.disable_ui_and_execute_wisdem()
 
     def write_configuration_files(self):
         """
@@ -449,6 +446,27 @@ class FormAndMenuWindow(QMainWindow):
                 yaml.dump(self.modeling_dict, file)
         else:
             print("No modeling file to write")
+
+    def disable_ui_and_execute_wisdem(self):
+        self.main_widget.setEnabled(False)
+        self.status_label.setText("Running WISDEM")
+
+        try:
+            wt_opt, modeling_options, analysis_options = runWISDEM.run_wisdem(self.geometry_filename,
+                                                                              self.modeling_filename,
+                                                                              self.analysis_filename)
+        except Exception as err:
+            short_error_message = f"{type(err)}: {err}. More details on command line."
+            traceback.print_exc(file=sys.stdout)
+            self.status_label.setText("Execution error")
+            msg = QMessageBox()
+            msg.setText("WISDEM execution error")
+            msg.setInformativeText(short_error_message)
+            msg.addButton(QMessageBox.Ok)
+            msg.exec()
+            self.main_widget.setEnabled(True)
+        else:
+            print("Victory!")
 
     def file_picker_geometry(self):
         """
