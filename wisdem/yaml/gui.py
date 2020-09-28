@@ -88,6 +88,8 @@ class FocusQLineEdit(QLineEdit):
                 value = self.parse_list()
             elif self.is_float(self.text()):
                 value = float(self.text())  # type: ignore
+            elif self.is_boolean(self.text()):
+                value = self.parse_boolean(self.text())  # type: ignore
             else:
                 value = self.text()  # type: ignore
             self._dictionary[self._key_on_dictionary] = value
@@ -114,6 +116,27 @@ class FocusQLineEdit(QLineEdit):
             else:
                 result.append(x)
         return result
+
+    @staticmethod
+    def parse_boolean(value: str) -> bool:
+        """
+        This method parses a string as a boolean. See the is_boolean()
+        method below.
+
+        Parameters
+        ----------
+        value: str
+            The value that is being parsed as a boolean.
+
+        Returns
+        -------
+        bool
+            The value, parsed as a boolean.
+        """
+        if value == "True" or value == "true":
+            return True
+        else:
+            return False
 
     @staticmethod
     def is_float(value: Any) -> bool:
@@ -153,6 +176,32 @@ class FocusQLineEdit(QLineEdit):
             True if the value appears to be a list, false otherwise
         """
         return self._list_re.match(value) is not None
+
+    def is_boolean(self, value: str) -> bool:
+        """
+        Determines whether a string encodes a "True" or a "False" value. It
+        does not parse the boolean value. If this method returns True, then
+        the value can be parsed as a True or False boolean.
+
+        Both Pythonic True and False and JSON-style true and false are
+        accepted as booleans.
+
+        Note: This should probably be checkbox, not a text box, but this
+        is a temporary workaround.
+
+        Parameters
+        ----------
+        value: str
+            The string to be tested.
+
+        Returns
+        -------
+        bool
+            True if the string represents a boolean, false otherwise.
+        """
+        return (
+            value == "True" or value == "False" or value == "true" or value == "false"
+        )
 
 
 class FormAndMenuWindow(QMainWindow):
@@ -413,7 +462,9 @@ class FormAndMenuWindow(QMainWindow):
             self.status_label.setText("Configuration files written.")
             msg = QMessageBox()
             msg.setText("Run WISDEM: Configuration files complete!")
-            msg.setInformativeText("Click cancel to back out and continue editing. Click OK to run WISDEM.")
+            msg.setInformativeText(
+                "Click cancel to back out and continue editing. Click OK to run WISDEM."
+            )
             msg.addButton(QMessageBox.Cancel)
             msg.addButton(QMessageBox.Ok)
             choice = msg.exec()
@@ -448,13 +499,18 @@ class FormAndMenuWindow(QMainWindow):
             print("No modeling file to write")
 
     def disable_ui_and_execute_wisdem(self):
+        """
+        This method disables all widgets on the UI and executes WISDEM. It
+        displays message boxes depending on whether WISDEM executed
+        successfully.
+        """
         self.main_widget.setEnabled(False)
         self.status_label.setText("Running WISDEM")
 
         try:
-            wt_opt, modeling_options, analysis_options = runWISDEM.run_wisdem(self.geometry_filename,
-                                                                              self.modeling_filename,
-                                                                              self.analysis_filename)
+            wt_opt, modeling_options, analysis_options = runWISDEM.run_wisdem(
+                self.geometry_filename, self.modeling_filename, self.analysis_filename
+            )
         except Exception as err:
             short_error_message = f"{type(err)}: {err}. More details on command line."
             traceback.print_exc(file=sys.stdout)
@@ -475,7 +531,7 @@ class FormAndMenuWindow(QMainWindow):
 
     def file_picker_geometry(self):
         """
-        Shows the open dialog
+        Shows the open file dialog for the geometry file.
 
         Returns
         -------
