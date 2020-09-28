@@ -19,6 +19,8 @@ from PySide2.QtWidgets import (  # type: ignore
     QMessageBox,
 )
 
+from wisdem.glue_code import runWISDEM
+
 
 class FocusQLineEdit(QLineEdit):
     """
@@ -413,9 +415,10 @@ class FormAndMenuWindow(QMainWindow):
             msg.addButton(QMessageBox.Ok)
             choice = msg.exec()
             if choice == QMessageBox.Ok:
-                print("This is where we would run WISDEM")
                 self.main_widget.setEnabled(False)
                 self.status_label.setText("Running WISDEM")
+                wt_opt, modeling_options, analysis_options = runWISDEM.run_wisdem(self.geometry_filename, self.modeling_filename,
+                                                                        self.analysis_filename)
 
     def write_configuration_files(self):
         """
