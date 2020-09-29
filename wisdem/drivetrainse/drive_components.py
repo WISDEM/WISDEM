@@ -103,8 +103,8 @@ class Brake(om.ExplicitComponent):
         rotor diameter
     rated_torque : float, [N*m]
         rotor torque at rated power
-    brake_mass_coeff : float, [kg/N/m]
-        Regression-based scaling coefficient on rated torque to obtain brake mass
+    brake_mass_user : float, [kg]
+        User override of brake mass
     gear_ratio : float
         overall gearbox ratio
     D_shaft_end : float, [m]
@@ -138,7 +138,7 @@ class Brake(om.ExplicitComponent):
     def setup(self):
         self.add_input('rotor_diameter', 0.0, units='m')
         self.add_input('rated_torque', 0.0, units='N*m')
-        self.add_input('brake_mass_coeff', 0.00122, units='kg/N/m')
+        self.add_input('brake_mass_user', 0.0, units='kg')
         self.add_input('s_rotor', 0.0, units='m')
         self.add_input('s_gearbox', 0.0, units='m')
 
@@ -151,12 +151,14 @@ class Brake(om.ExplicitComponent):
         # Unpack inputs
         D_rotor     = float(inputs['rotor_diameter'])
         Q_rotor     = float(inputs['rated_torque'])
-        coeff       = float(inputs['brake_mass_coeff'])
+        m_brake     = float(inputs['brake_mass_user'])
         s_rotor     = float(inputs['s_rotor'])
         s_gearbox   = float(inputs['s_gearbox'])
 
         # Regression based sizing derived by J.Keller under FOA 1981 support project
-        m_brake     = coeff * Q_rotor
+        if m_brake == 0.0:
+            coeff       = 0.00122
+            m_brake     = coeff * Q_rotor
     
         # Assume brake disc diameter and simple MoI
         D_disc  = 0.01*D_rotor
@@ -189,8 +191,8 @@ class GeneratorSimple(om.ExplicitComponent):
         rotor torque at rated power
     rated_rpm : float, [rpm]
         rotor rated rotations-per-minute (rpm)
-    generator_mass_coefficient : float
-        Coefficient that scales rated torque (direct drive) or rating^0.9223 (geared) for generator mass
+    generator_mass_user : float [kg]
+        User input override of generator mass
     
     Returns
     -------
@@ -214,7 +216,7 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rated_torque', 0.0, units='N*m')
         self.add_input('rated_rpm', 0.0, units='rpm')
-        self.add_input('generator_mass_coeff', 0.0)
+        self.add_input('generator_mass_user', 0.0)
 
         self.add_output('R_generator', val=0.0, units='m')
         self.add_output('generator_mass', val=0.0, units='kg')
@@ -228,15 +230,16 @@ class GeneratorSimple(om.ExplicitComponent):
         D_rotor = float(inputs['rotor_diameter'])
         Q_rotor = float(inputs['rated_torque'])
         rpm     = float(inputs['rated_rpm'])
-        coeff   = float(inputs['generator_mass_coeff'])
-  
-        if self.options['direct_drive']:
-            massCoeff = coeff if coeff > 0.0 else 1e-3 * 37.68
-            mass = massCoeff * Q_rotor
-        else:
-            massCoeff = coeff if coeff > 0.0 else np.mean([6.4737, 10.51, 5.34])
-            massExp   = 0.9223
-            mass = (massCoeff * rating ** massExp)
+        mass    = float(inputs['generator_mass_user'])
+
+        if mass == 0.0:
+            if self.options['direct_drive']:
+                massCoeff = 1e-3 * 37.68
+                mass = massCoeff * Q_rotor
+            else:
+                massCoeff = np.mean([6.4737, 10.51, 5.34])
+                massExp   = 0.9223
+                mass = (massCoeff * rating ** massExp)
         outputs['generator_mass'] = mass
         
         # calculate mass properties

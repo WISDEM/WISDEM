@@ -284,7 +284,7 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.lss_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
             self.connect('nacelle.uptower',                   'drivese.uptower')
             self.connect('nacelle.gearbox_efficiency',        'drivese.gearbox_efficiency')
-            self.connect('nacelle.brake_mass_coeff',          'drivese.brake_mass_coeff')
+            self.connect('nacelle.brake_mass_user',           'drivese.brake_mass_user')
             self.connect('nacelle.hvac_mass_coeff',           'drivese.hvac_mass_coeff')
             self.connect('nacelle.converter_mass_user',       'drivese.converter_mass_user')
             self.connect('nacelle.transformer_mass_user',     'drivese.transformer_mass_user')
@@ -410,7 +410,7 @@ class WT_RNTA(om.Group):
                     self.connect('nacelle.hss_diameter',              'drivese.generator.D_shaft', src_indices=[-1])
 
             else:
-                self.connect('generator.generator_mass_coeff', 'drivese.generator_mass_coeff')
+                self.connect('generator.generator_mass_user', 'drivese.generator_mass_user')
 
 
         # Connections to TowerSE
