@@ -68,6 +68,8 @@ prob['q1']      = 6
 prob['h_0']     = 0.05
 
 #---------------------------------------------------
+prob['E']              = 2e11
+prob['G']              = 79.3e9
 
 # Specific costs
 prob['C_Cu']         = 4.786         # Unit cost of Copper $/kg

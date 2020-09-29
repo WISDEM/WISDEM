@@ -84,6 +84,8 @@ prob['t_ws']    = 0.150 #=0.14720 #
 prob['D_shaft'] = 2*0.43 #0.43
 prob['q1']      = 1
 #---------------------------------------------------
+prob['E']              = 2e11
+prob['G']              = 79.3e9
 
 # Specific costs
 prob['C_Cu']         = 4.786         # Unit cost of Copper $/kg
