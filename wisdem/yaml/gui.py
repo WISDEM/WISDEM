@@ -396,7 +396,7 @@ class FormAndMenuWindow(QMainWindow):
         self.analysis_filename_line_edit.setReadOnly(True)
         analysis_filename_button.clicked.connect(self.file_picker_analysis)
 
-        run_weis_button = QPushButton("Run WEIS")
+        run_weis_button = QPushButton("Run WISDEM")
         run_weis_button.clicked.connect(self.run_weis_clicked)
 
         self.modeling_yaml_widget = QWidget()
