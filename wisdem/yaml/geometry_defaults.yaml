@@ -21,7 +21,7 @@ components:
             reference_axis:
                 x: &id001
                     grid: [0.0, 0.2, 0.7, 1.0]
-                    values: [0.0, 0.0, -1.0, -2.5]     
+                    values: [0.0, 0.0, -1.0, -2.5]
                 y: &id002
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
@@ -253,7 +253,7 @@ components:
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
                 z:
-                    grid: &grid_tower [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.] 
+                    grid: &grid_tower [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
                     values: [0.0, 10.80, 21.61, 32.41, 43.22, 54.02, 64.82, 75.63, 86.43, 97.23, 108.00]
             outer_diameter:
                 grid: *grid_tower
@@ -287,7 +287,7 @@ components:
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
                 z:
-                    grid: &grid_mono [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.] 
+                    grid: &grid_mono [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
                     values: [0.0, 10.80, 21.61, 32.41, 43.22, 54.02, 64.82, 75.63, 86.43, 97.23, 108.00]
             outer_diameter:
                 grid: *grid_mono
@@ -377,16 +377,16 @@ control:
     maxTS: 80.
     max_pitch_rate: 0.1221
     max_torque_rate: 1.5e+6
-    PC_zeta: 1.0    
-    PC_omega: 0.2   
-    VS_zeta: 1.0    
-    VS_omega: 0.2   
-    max_pitch: 1.57 
-    min_pitch: 0    
-    vs_minspd: 0    
-    ss_vsgain: 1    
-    ss_pcgain: .001 
-    ps_percent: 0.8 
+    PC_zeta: 1.0
+    PC_omega: 0.2
+    VS_zeta: 1.0
+    VS_omega: 0.2
+    max_pitch: 1.57
+    min_pitch: 0
+    vs_minspd: 0
+    ss_vsgain: 1
+    ss_pcgain: .001
+    ps_percent: 0.8
 # Environment
 environment:
     air_density: 1.225
@@ -424,4 +424,25 @@ costs:
     bos_per_kW: 0.0
     opex_per_kW: 0.0
     turbine_number: 100
+    blade_mass_cost_coeff: 14.6
+    hub_mass_cost_coeff: 3.9
+    pitch_system_mass_cost_coeff: 22.1
+    spinner_mass_cost_coeff: 11.1
+    lss_mass_cost_coeff: 11.9
+    bearing_mass_cost_coeff: 4.5
+    gearbox_mass_cost_coeff: 12.9
+    hss_mass_cost_coeff: 6.8
+    generator_mass_cost_coeff: 12.4
+    bedplate_mass_cost_coeff: 2.9
+    yaw_mass_cost_coeff: 8.3
+    converter_mass_cost_coeff: 18.8
+    transformer_mass_cost_coeff: 18.8
+    hvac_mass_cost_coeff: 124.0
+    cover_mass_cost_coeff: 5.7
+    elec_connec_machine_rating_cost_coeff: 41.85
+    platforms_mass_cost_coeff: 17.1
+    tower_mass_cost_coeff: 2.9
+    controls_machine_rating_cost_coeff: 21.15
+    crane_cost: 12e3
+
 # EOF

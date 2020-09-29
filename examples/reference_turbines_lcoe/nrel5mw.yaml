@@ -270,7 +270,7 @@ components:
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
                 z:
-                    grid: &grid_tower [0., 0.167, 0.333, 0.5 , 0.6667, 0.833, 1.] 
+                    grid: &grid_tower [0., 0.167, 0.333, 0.5 , 0.6667, 0.833, 1.]
                     values: [0. , 14.6, 29.2, 43.8, 58.4, 73. , 87.6]
             outer_diameter:
                 grid: *grid_tower
@@ -509,7 +509,7 @@ materials:
       description: epoxy
       E: 1.e+6
       rho: 1150.
-      nu: 0.30  
+      nu: 0.30
       Xt: 61.51e+006
       Xc: 65.36e+006
       orth: 0
@@ -529,14 +529,14 @@ control:
     tsr: 7.01754386
     pitch: 0.
     maxTS: 80.
-    max_pitch_rate: 0.1745 
+    max_pitch_rate: 0.1745
     max_torque_rate: 1500000.
-    # Controller parameters 
+    # Controller parameters
     PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
     PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
     VS_zeta: 0.7                      # Torque controller desired damping ratio [-]
     VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
-    # 
+    #
     max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
     min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
     vs_minspd: 0                      # Minimum rotor speed [rad/s], {default = 0 rad/s}
@@ -557,7 +557,7 @@ environment:
     significant_wave_period: 0.0
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
-    
+
 bos:
     plant_turbine_spacing: 7
     plant_row_spacing: 7
@@ -566,13 +566,31 @@ bos:
     distance_to_substation: 50.0
     distance_to_interconnection: 8.
     interconnect_voltage: 130
-    
+
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075
     bos_per_kW: 2979.
     opex_per_kW: 144.
     turbine_number: 120
-    
-
+    blade_mass_cost_coeff: 14.6
+    hub_mass_cost_coeff: 3.9
+    pitch_system_mass_cost_coeff: 22.1
+    spinner_mass_cost_coeff: 11.1
+    lss_mass_cost_coeff: 11.9
+    bearing_mass_cost_coeff: 4.5
+    gearbox_mass_cost_coeff: 12.9
+    hss_mass_cost_coeff: 6.8
+    generator_mass_cost_coeff: 12.4
+    bedplate_mass_cost_coeff: 2.9
+    yaw_mass_cost_coeff: 8.3
+    converter_mass_cost_coeff: 18.8
+    transformer_mass_cost_coeff: 18.8
+    hvac_mass_cost_coeff: 124.0
+    cover_mass_cost_coeff: 5.7
+    elec_connec_machine_rating_cost_coeff: 41.85
+    platforms_mass_cost_coeff: 17.1
+    tower_mass_cost_coeff: 2.9
+    controls_machine_rating_cost_coeff: 21.15
+    crane_cost: 12e3
     
