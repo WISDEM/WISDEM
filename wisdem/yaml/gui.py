@@ -111,7 +111,9 @@ class FocusQLineEdit(QLineEdit):
         trimmed_str_values = [x.strip() for x in trimmed_text.split(",")]
         result: List[Union[str, float]] = []
         for x in trimmed_str_values:
-            if self.is_float(x):
+            if self.is_integer(x):
+                result.append(int(x))
+            elif self.is_float(x):
                 result.append(float(x))
             else:
                 result.append(x)
@@ -156,6 +158,28 @@ class FocusQLineEdit(QLineEdit):
         """
         try:
             float(value)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def is_integer(value: Any) -> bool:
+        """
+        This tests if a value is an integer and returns True or False depending
+        on the outcome of the test
+
+        Parameters
+        ----------
+        value: Any
+            The value to test.
+
+        Returns
+        -------
+        bool
+            True if the value is an integer, False otherwise.
+        """
+        try:
+            int(value)
             return True
         except ValueError:
             return False
