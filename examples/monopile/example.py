@@ -1,4 +1,4 @@
-# Tower analysis
+# Tower-Monopile analysis
 # Optimization by flag
 # Two load cases
 import numpy as np
@@ -6,18 +6,28 @@ import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
 from wisdem.commonse.fileIO import save_data
 
-
 # Set analysis and optimization options and define geometry
 plot_flag = False
-opt_flag = True
+opt_flag = False
 
-n_control_points = 3
+n_control_points = 4
 n_materials = 1
 n_load_cases = 2
 
-h_param = np.diff(np.linspace(0.0, 87.6, n_control_points))
-d_param = np.linspace(6.0, 3.87, n_control_points)
-t_param = 1.3 * np.linspace(0.025, 0.021, n_control_points - 1)
+# Tower initial condition
+hubH = 87.6
+htrans = 10.0
+h_paramT = np.diff(np.linspace(htrans, hubH, n_control_points))
+d_paramT = np.linspace(7.0, 3.87, n_control_points)
+t_paramT = 1.3 * np.linspace(0.025, 0.021, n_control_points - 1)
+
+# Monopile initial condition
+pile_depth = 25.0
+water_depth = 30.0
+h_paramM = np.r_[pile_depth, water_depth, htrans]
+d_paramM = np.linspace(8.0, 7.0, n_control_points)
+t_paramM = 0.025 * np.ones(n_control_points - 1)
+
 max_diam = 8.0
 # ---
 
@@ -28,7 +38,7 @@ modeling_options['materials'] = {}
 modeling_options['monopile'] = {}
 modeling_options['tower'] = {}
 modeling_options['tower']['buckling_length'] = 30.0
-modeling_options['flags']['monopile'] = False
+modeling_options['flags']['monopile'] = True
 
 # safety factors
 modeling_options['tower']['gamma_f'] = 1.35
@@ -51,8 +61,8 @@ modeling_options['tower']['frame3dd']['add_gravity'] = True
 
 modeling_options['tower']['n_height'] = n_control_points
 modeling_options['tower']['n_layers'] = 1
-modeling_options['monopile']['n_height'] = 0
-modeling_options['monopile']['n_layers'] = 0
+modeling_options['monopile']['n_height'] = n_control_points
+modeling_options['monopile']['n_layers'] = 1
 modeling_options['tower']['wind'] = 'PowerWind'
 modeling_options['tower']['nLC'] = n_load_cases
 modeling_options['materials']['n_mat'] = n_materials
@@ -73,6 +83,9 @@ if opt_flag:
     prob.model.add_objective('tower_mass', scaler=1e-6)
 
     # Add design variables, in this case the tower diameter and wall thicknesses
+    prob.model.add_design_var('monopile_outer_diameter_in', lower=3.87, upper=max_diam)
+    prob.model.add_design_var('monopile_layer_thickness', lower=4e-3, upper=2e-1)
+
     prob.model.add_design_var('tower_outer_diameter_in', lower=3.87, upper=max_diam)
     prob.model.add_design_var('tower_layer_thickness', lower=4e-3, upper=2e-1)
 
@@ -95,17 +108,29 @@ prob.setup()
 # ---
 
 # Set geometry and turbine values
-prob['hub_height'] = prob['tower_height'] = h_param.sum()
-prob['foundation_height'] = 0.0
-prob['tower_s'] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
-prob['tower_outer_diameter_in'] = d_param
-prob['tower_layer_thickness'] = t_param.reshape((1, -1))
+prob['hub_height'] = hubH
+prob['foundation_height'] = -water_depth
+
+prob['tower_height'] = h_paramT.sum()
+prob['tower_s'] = np.cumsum(np.r_[0.0, h_paramT]) / h_paramT.sum()
+prob['tower_outer_diameter_in'] = d_paramT
+prob['tower_layer_thickness'] = t_paramT.reshape((1, -1))
 prob['tower_outfitting_factor'] = 1.07
+
+prob['transition_piece_mass'] = 100e3
+prob['transition_piece_height'] = htrans
+
+prob['monopile_height'] = h_paramM.sum()
+prob['monopile_s'] = np.cumsum(np.r_[0.0, h_paramM]) / h_paramM.sum()
+prob['monopile_outer_diameter_in'] = d_paramM
+prob['monopile_layer_thickness'] = t_paramM.reshape((1, -1))
+prob['monopile_outfitting_factor'] = 1.07
+
 prob['yaw'] = 0.0
 
 # offshore specific
-prob['suctionpile_depth'] = 0.0
-prob['suctionpile_depth_diam_ratio'] = 3.25
+prob['suctionpile_depth'] = pile_depth
+prob['suctionpile_depth_diam_ratio'] = 0.0 #3.25
 prob['G_soil'] = 140e6
 prob['nu_soil'] = 0.4
 
@@ -137,8 +162,12 @@ prob['wind_reference_height'] = 90.0
 prob['wind_z0'] = 0.0
 prob['cd_usr'] = -1.0
 prob['rho_air'] = 1.225
+prob['rho_water'] = 1025.0
 prob['mu_air'] = 1.7934e-5
+prob['mu_water'] = 1.3351e-3
 prob['beta_wind'] = 0.0
+prob['hsig_wave'] = 4.52
+prob['Tsig_wave'] = 9.52
 if modeling_options['tower']['wind'] == 'PowerWind':
     prob['shearExp'] = 0.2
 # ---
@@ -181,8 +210,9 @@ if opt_flag:
     prob.run_driver()
 else:
     prob.run_model()
-save_data('tower_example',prob)
+save_data('monopile_example',prob)
 # ---
+
 
 # print results from the analysis or optimization
 z = 0.5 * (prob['z_full'][:-1] + prob['z_full'][1:])
@@ -217,81 +247,6 @@ print('Shell buckling =', prob['post2.shell_buckling'])
 
 if plot_flag:
     import matplotlib.pyplot as plt
-
-    '''
-    from matplotlib import rcParams
-    import matplotlib.colorbar as cbar
-    from matplotlib import cm
-    
-    # Pretty geometry plot
-    scaling_factor = 10.
-    
-    global_buckling = np.hstack((prob['post1.global_buckling'], prob['post1.global_buckling'][-1]))
-    shell_buckling = np.hstack((prob['post1.shell_buckling'], prob['post1.shell_buckling'][-1]))
-    buc_tower = np.maximum(global_buckling, shell_buckling)
-    
-    D_tower = prob['tower_outer_diameter']
-    wt_tower = np.hstack((prob['tower_wall_thickness'], prob['tower_wall_thickness'][-1]))
-    stress = np.hstack((prob['post1.stress'], prob['post1.stress'][-1]))
-    L_tower = prob['tower_section_height']
-
-    X = np.zeros((n_control_points, 2))
-    Z = np.zeros((n_control_points, 2))
-    Cl = np.zeros((n_control_points, 2))
-    Cr = np.zeros((n_control_points, 2))
-
-    X[:, 0] = -D_tower / 2.
-    X[:, 1] = -D_tower / 2. + scaling_factor * wt_tower
-    Z[:, 0] = Z[:, 1] = L_tower.sum()
-    Cl[:, 0] = Cl[:, 1] = stress.max()
-    Cr[:, 0] = Cr[:, 1] = buc_tower.max()
-
-    X0 = []
-    Z0 = []
-
-    X0 = np.hstack((-D_tower / 2., D_tower[::-1] / 2.))
-    Z0 = np.hstack((L_tower, L_tower[::-1]))
-
-    cmap = cm.viridis
-
-    rcParams.update({'font.size': 18})
-
-    fig, ax = plt.subplots(1, figsize=(8,12))
-
-    ax.fill(X0, Z0, color='grey', zorder=0)
-    ax.plot([-20., 20.], [0., 0.], color='k', linewidth=1.0, zorder=20)
-    
-    ax.plot([-max_diam/2., -max_diam/2.], [0., L_tower[-1]], color='r', alpha=0.5, lw=3., solid_capstyle='butt')
-    ax.plot([max_diam/2., max_diam/2.], [0., L_tower[-1]], color='r', alpha=0.5, lw=3., solid_capstyle='butt')
-    
-    vmin = 0.5
-    vmax = 1.1
-    im = ax.pcolormesh(X, Z, Cl, cmap=cmap, vmin=vmin, vmax=vmax, shading='gouraud', zorder=10)
-    im2 = ax.pcolormesh(-X, Z, Cr, cmap=cmap, vmin=vmin, vmax=vmax, shading='gouraud', zorder=10)
-    
-    print()
-    print(X.shape, Z.shape, Cr.shape)
-    if np.any(Cr > 1.01):
-        im3 = ax.contour(-X, Z, Cr, levels=[0., 1.01, 2.], colors='black', zorder=15, linewidths=3)
-    
-    cbar = fig.colorbar(im, cmap=cmap, fraction=0.05, aspect=40, pad=0.1)
-    cbar.set_label('Utilization', rotation=90)
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    
-    ax.set_xlim(-5., 5.)
-    ax.set_ylim(-10., 150.)
-    
-    ax.annotate('Stress', xy=(X[-1, 0], 130), va='center', color='k', xycoords='data', xytext=(-4.25, 145), textcoords='data', arrowprops=dict(arrowstyle='-', lw=2))
-    
-    ax.annotate('Buckling', xy=(-X[-1, 0], 130), va='center', color='k', xycoords='data', xytext=(2.25, 145), textcoords='data', arrowprops=dict(arrowstyle='-', lw=2))
-    
-    plt.xlabel('Distance from center [m]')
-    plt.ylabel('Elevation relative to ground [m]')
-    
-    plt.show()
-    '''
 
     # Old line plot
     stress1 = np.copy(prob['post1.stress'])
