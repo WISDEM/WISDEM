@@ -7,17 +7,12 @@ January 2020
 
 from __future__ import print_function
 import numpy as np
-import datetime
-import numpy as np
-import os
-from openmdao.api import IndepVarComp, ExplicitComponent, Group, Problem
-from scipy import interpolate, gradient
+from openmdao.api import ExplicitComponent, Group
 from scipy.optimize import minimize_scalar, minimize, brentq
 from scipy.interpolate import PchipInterpolator
 from wisdem.ccblade import CCAirfoil, CCBlade
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
-from wisdem.commonse.utilities import vstack, trapz_deriv, linspace_with_deriv, smooth_min, smooth_abs
-from wisdem.commonse.environment import PowerWind
+from wisdem.commonse.utilities import linspace_with_deriv, smooth_min, smooth_abs
 
 class ServoSE(Group):
     def initialize(self):
