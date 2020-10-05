@@ -217,6 +217,7 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('rated_torque', 0.0, units='N*m')
         self.add_input('rated_rpm', 0.0, units='rpm')
         self.add_input('generator_mass_user', 0.0)
+        self.add_input('generator_efficiency_user', val=np.zeros((n_pc, 2)) )
 
         self.add_output('R_generator', val=0.0, units='m')
         self.add_output('generator_mass', val=0.0, units='kg')
@@ -226,11 +227,12 @@ class GeneratorSimple(om.ExplicitComponent):
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        rating  = float(inputs['machine_rating'])
-        D_rotor = float(inputs['rotor_diameter'])
-        Q_rotor = float(inputs['rated_torque'])
-        rpm     = float(inputs['rated_rpm'])
-        mass    = float(inputs['generator_mass_user'])
+        rating   = float(inputs['machine_rating'])
+        D_rotor  = float(inputs['rotor_diameter'])
+        Q_rotor  = float(inputs['rated_torque'])
+        rpm      = float(inputs['rated_rpm'])
+        mass     = float(inputs['generator_mass_user'])
+        eff_user = float(inputs['generator_efficiency_user'])
 
         if mass == 0.0:
             if self.options['direct_drive']:
@@ -253,18 +255,23 @@ class GeneratorSimple(om.ExplicitComponent):
         outputs['generator_I'] = mass*I
 
         # Efficiency performance- borrowed and adapted from servose
-        if self.options['direct_drive']:
-            constant = 0.01007
-            linear = 0.02000
-            quadratic = 0.06899
-        else:
-            constant = 0.01289
-            linear = 0.08510
-            quadratic = 0.0
-
         rpm_in = np.linspace(1e-1, rpm, self.options['n_pc'])
-        Pbar   = rpm_in / rpm
-        eff    = 1.0 - (constant/Pbar + linear + quadratic*Pbar)
+        if np.any(eff_user):
+            eff = np.interp(rpm_in, eff_user[:,0], eff_user[:,1])
+            
+        else:
+            if self.options['direct_drive']:
+                constant  = 0.01007
+                linear    = 0.02000
+                quadratic = 0.06899
+            else:
+                constant  = 0.01289
+                linear    = 0.08510
+                quadratic = 0.0
+
+            ratio  = rpm_in / rpm
+            eff    = 1.0 - (constant/ratio + linear + quadratic*ratio)
+            
         outputs['generator_efficiency'] = np.c_[rpm_in, eff]
         
 

@@ -195,7 +195,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     
             else:
                 # If using simple (regression) generator scaling, this is an optional input to override default values
+                n_pc = modeling_options['servose']['n_pc']
                 generator_ivc.add_output('generator_mass_user', val=0.0, units='kg')
+                generator_ivc.add_output('generator_efficiency_user', val=np.zeros((n_pc, 2)))
                 
             self.add_subsystem('generator', generator_ivc)
         

@@ -372,6 +372,29 @@ properties:
                                 minimum: 0.
                                 maximum: 1e9
                                 default: 0.0
+                            generator_rpm_efficiency_user:
+                                type: object
+                                description: User input override of generator rpm-efficiency values, with rpm as grid input and eff as values input
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        type: array
+                                        default: [0.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1e2
+                                            uniqueItems: True
+                                            unit: rpm
+                                    values:
+                                        type: array
+                                        default: [0.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1.0
+                                            uniqueItems: False
+                                            unit: none
                             access_diameter:
                                 type: number
                                 description: Minimum diameter for hollow shafts for maintenance access

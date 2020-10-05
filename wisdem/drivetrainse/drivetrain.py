@@ -126,6 +126,7 @@ class DrivetrainSE(om.Group):
         direct   = opt['direct']
         dogen    =  self.options['modeling_options']['flags']['generator']
         n_points = opt['n_height']
+        n_pc     = self.options['modeling_options']['servose']['n_pc']
         
         # Independent variables that may be duplicated at higher levels of aggregation
         if self.options['topLevelFlag']:
@@ -145,6 +146,7 @@ class DrivetrainSE(om.Group):
             sivc.add_output('transformer_mass_user', 0.0, units='kg')
             sivc.add_output('brake_mass_user', 0.0, units='kg')
             sivc.add_output('hvac_mass_coeff', 0.08, units='kg/kW')
+            sivc.add_output('generator_efficiency_user', np.zeros((n_pc,2)) )
             sivc.add_output('generator_mass_user', 0.0, units='kg')
             sivc.add_discrete_output('mb1Type', 'CARB')
             sivc.add_discrete_output('mb2Type', 'SRB')
@@ -181,7 +183,6 @@ class DrivetrainSE(om.Group):
             sivc.add_output('blades_mass',             0.0, units='kg', desc='All blades')
             sivc.add_output('F_hub',             np.zeros(3), units='N')
             sivc.add_output('M_hub',             np.zeros(3), units='N*m')
-            #sivc.add_output('generator_efficiency',   0.0)
             sivc.add_output('machine_rating',         0.0, units='kW')
             
             if direct:
@@ -231,7 +232,7 @@ class DrivetrainSE(om.Group):
             self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','machine_rating','generator_efficiency','rated_rpm','rated_torque'])
         else:
             # TODO: Generator efficiency from what servose uses
-            self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=self.options['modeling_options']['servose']['n_pc']), promotes=['*'])
+            self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=['*'])
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])

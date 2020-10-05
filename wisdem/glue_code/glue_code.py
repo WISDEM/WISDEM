@@ -411,6 +411,7 @@ class WT_RNTA(om.Group):
 
             else:
                 self.connect('generator.generator_mass_user', 'drivese.generator_mass_user')
+                self.connect('generator.generator_efficiency_user', 'drivese.generator_efficiency_user')
 
 
         # Connections to TowerSE

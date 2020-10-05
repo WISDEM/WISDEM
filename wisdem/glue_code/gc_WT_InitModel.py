@@ -464,7 +464,18 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt['nacelle.hss_material']              = nacelle['drivetrain']['hss_material']
 
     if not modeling_options['flags']['generator']:
-        wt_opt['generator.generator_mass_user']    = nacelle['drivetrain']['generator_mass_user']
+        wt_opt['generator.generator_mass_user']     = nacelle['drivetrain']['generator_mass_user']
+        
+        eff_user = np.c_[nacelle['drivetrain']['generator_rpm_efficiency_user']['grid'],
+                         nacelle['drivetrain']['generator_rpm_efficiency_user']['values']]
+        n_pc     = modeling_options['servose']['n_pc']
+        if np.any(eff_user):
+            newrpm   = np.linspace(eff_user[:,0].min(), eff_user[:,0].max(), n_pc)
+            neweff   = np.interp(newrpm, eff_user[:,0], eff_user[:,1])
+            myeff    = np.c_[newrpm, neweff]
+        else:
+            myeff = np.zeros( (n_pc,2) )
+        wt_opt['generator.generator_efficiency_user'] = myeff
 
     return wt_opt
 
