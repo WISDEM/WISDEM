@@ -8,7 +8,7 @@ The Wind-plant Integrated System Design and Engineering Model (WISDEM) includes 
 
 Important Links:
 
-- `Source Code Repository <https://github.com/WISDEM/WISDEM/tree/IEAontology4all>`_ 
+- `Source Code Repository <https://github.com/WISDEM/WISDEM/tree/develop>`_ 
 - `OpenMDAO <https://openmdao.org/>`_
 
 Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_

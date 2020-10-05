@@ -6,7 +6,8 @@ from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from wisdem.glue_code.glue_code       import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
-from wisdem.yaml                      import load_yaml, gui
+from wisdem.yaml                      import load_yaml
+from wisdem.yaml.gui                  import run as guirun
 
 if MPI:
     #from openmdao.api import PetscImpl as impl
@@ -478,7 +479,7 @@ def wisdem_cmd():
 
     elif len(sys.argv) == 1:
         # Launch GUI
-        gui.run()
+        guirun()
         
     elif len(sys.argv) == 2:
         # Grab master input file
