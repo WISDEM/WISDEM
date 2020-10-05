@@ -227,13 +227,13 @@ class CylinderMass(om.ExplicitComponent):
         K_p  = k_p * theta_p * 2 * (2 * np.pi * R_ave * H).sum()
 
         # Cost step 6) Outfitting with electricity usage
-        K_o = 1.5*k_m * (coeff - 1.0) * mshell
+        K_o = np.sum(1.5*k_m * (coeff - 1.0) * mshell)
         
         # Material cost, without outfitting
-        K_m = k_m * mshell
+        K_m = np.sum(k_m * mshell)
 
         # Electricity usage
-        K_e = k_e * (e_f*mshell + e_fo*(coeff - 1.0)*mshell)
+        K_e = np.sum(k_e * (e_f*mshell + e_fo*(coeff - 1.0)*mshell) )
 
         # Assemble all costs for now
         tempSum = K_m + K_e + K_o + K_p + K_f

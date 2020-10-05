@@ -330,19 +330,19 @@ class Electronics(om.ExplicitComponent):
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        rating     = float(inputs['machine_rating'])
-        D_rotor    = float(inputs['rotor_diameter'])
-        D_top      = float(inputs['D_top'])
+        rating      = float(inputs['machine_rating'])
+        D_rotor     = float(inputs['rotor_diameter'])
+        D_top       = float(inputs['D_top'])
         m_conv_usr  = float(inputs['converter_mass_user'])
         m_trans_usr = float(inputs['transformer_mass_user'])
 
         # Correlation based trends, assume box
         m_converter   = m_conv_usr  if m_conv_usr  > 0.0 else 0.77875*rating + 302.6 #coeffs=1e-3*np.mean([740., 817.5]), np.mean([101.37, 503.83])
         m_transformer = m_trans_usr if m_trans_usr > 0.0 else 1.915*rating + 1910.0
-        sides  = 0.015*D_rotor
 
         # CM location, just assume off to the side of the bedplate
-        cm = np.zeros(3)
+        cm    = np.zeros(3)
+        sides = 0.015*D_rotor
         cm[1] = 0.5*D_top + 0.5*sides
         cm[2] = 0.5*sides
         
