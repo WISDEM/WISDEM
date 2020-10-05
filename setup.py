@@ -44,7 +44,7 @@ setup(
     url              = 'https://github.com/WISDEM/WISDEM',
     author           = 'NREL WISDEM Team',
     author_email     = 'systems.engineering@nrel.gov',
-    install_requires = ['openmdao>=3.2','numpy','scipy','pandas','simpy','marmot-agents','pyside2'],
+    install_requires = ['openmdao>=3.2','numpy','scipy','pandas','marmot-agents','pyside2','openpyxl','xlrd','jsonschema','pyyaml'],
     python_requires  = '>=3.6',
     package_data     =  {'':['*.yaml','*.xlsx'], 'wisdem':['*.txt']},
     #package_dir      = {'': 'wisdem'},
