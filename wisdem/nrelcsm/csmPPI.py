@@ -226,7 +226,7 @@ class PPI:
         self.escData['IPPI_OOM'] = Escalator( ['O&M Offshore                        ',   ['GDP    '                                   ], [ 100.00                       ]  ] )
         self.escData['IPPI_LSE'] = Escalator( ['Land Based & Offshore Lease Cost    ',   ['GDP    '                                   ], [ 100.00                       ]  ] )
         self.escData['IPPI_FND'] = Escalator( ['Foundations                         ',   ['BHVY   '                                   ], [ 100.00                       ]  ] )
-        self.escData['IPPI_RDC'] = Escalator( ['Road & Civil Work                   ',   ['BHWY   '                                   ]n, [ 100.00                       ]  ] )
+        self.escData['IPPI_RDC'] = Escalator( ['Road & Civil Work                   ',   ['BHWY   '                                   ], [ 100.00                       ]  ] )
         self.escData['IPPI_PAE'] = Escalator( ['Personnel Access Equipment          ',   ['GDP    '                                   ], [ 100.00                       ]  ] )
 
     def compute(self,escCode,debug=0):

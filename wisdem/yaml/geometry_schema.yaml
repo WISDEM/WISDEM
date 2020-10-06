@@ -375,6 +375,7 @@ properties:
                             generator_rpm_efficiency_user:
                                 type: object
                                 description: User input override of generator rpm-efficiency values, with rpm as grid input and eff as values input
+                                default: {'grid':[0.0], 'values':[0.0]}
                                 required:
                                     - grid
                                     - values

@@ -408,6 +408,9 @@ class GeneratorBase(om.ExplicitComponent):
         minimum tooth width
     
     """
+    def initialize(self):
+        self.options.declare('n_pc', default=20)
+        
     def setup(self):
 
         # Constants and parameters
@@ -509,7 +512,7 @@ class GeneratorBase(om.ExplicitComponent):
         # Objective functions
         self.add_output('K_rad', val=0.0)
         self.add_output('Losses', val=0.0, units='W')
-        self.add_output('generator_efficiency', val=0.0)
+        self.add_output('generator_efficiency', val=np.zeros((self.options['n_pc'],2)))
         
         # Structural performance
         self.add_output('u_ar', val=0.0, units='m')
@@ -907,7 +910,7 @@ class PMSG_Outer(GeneratorBase):
             outputs['Mass_yoke_stator']  = M_Fesy
             outputs['R_out']             = (dia+2*h_m+2*h_yr+2*inputs['h_sr'])*0.5
             outputs['Losses']            = Losses
-            outputs['generator_efficiency']           = gen_eff
+            outputs['generator_efficiency'] = gen_eff*np.ones((self.options['n_pc'],2))
         else:
             pass
 
@@ -1468,7 +1471,7 @@ class PMSG_Disc(GeneratorBase):
         outputs['Losses']            =  Losses
 
         outputs['K_rad']             =  K_rad
-        outputs['generator_efficiency']           =  gen_eff
+        outputs['generator_efficiency']           =  gen_eff*np.ones((self.options['n_pc'],2))
         outputs['S']                 =  S
         outputs['Slot_aspect_ratio'] =  Slot_aspect_ratio
         outputs['Copper']            =  Copper
@@ -1898,7 +1901,7 @@ class PMSG_Arms(GeneratorBase):
         outputs['J_s']               =  J_s
         outputs['Losses']            =  Losses
         outputs['K_rad']             =  K_rad
-        outputs['generator_efficiency']           =  gen_eff
+        outputs['generator_efficiency']           =  gen_eff*np.ones((self.options['n_pc'],2))
         outputs['S']                 =  S
         outputs['Slot_aspect_ratio'] =  Slot_aspect_ratio
         outputs['Copper']            =  Copper
@@ -2300,7 +2303,7 @@ class DFIG(GeneratorBase):
         outputs['K_rad']              = K_rad
         outputs['Losses']             = Losses
 
-        outputs['generator_efficiency']            = gen_eff
+        outputs['generator_efficiency']            = gen_eff*np.ones((self.options['n_pc'],2))
         outputs['Copper']             = Copper
         outputs['Iron']               = Iron
         outputs['Structural_mass']    = Structural_mass
@@ -2720,7 +2723,7 @@ class SCIG(GeneratorBase):
         outputs['K_rad_UL']           = K_rad_UL
         outputs['K_rad_LL']           = K_rad_LL
         outputs['Losses']             = Losses
-        outputs['generator_efficiency']            = gen_eff
+        outputs['generator_efficiency']            = gen_eff*np.ones((self.options['n_pc'],2))
         outputs['Copper']             = Copper
         outputs['Iron']               = Iron
         outputs['Structural_mass']    = Structural_mass
@@ -3269,7 +3272,7 @@ class EESG(GeneratorBase):
         outputs['n_brushes']         = n_brushes
         outputs['J_f']               = J_f
         outputs['K_rad']             = K_rad
-        outputs['generator_efficiency']           = gen_eff
+        outputs['generator_efficiency']           = gen_eff*np.ones((self.options['n_pc'],2))
         outputs['S']                 = S
 
         outputs['Slot_aspect_ratio'] = Slot_aspect_ratio

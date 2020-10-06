@@ -8,25 +8,21 @@ import wisdem.drivetrainse.layout as lay
 import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
 
+#----------------------------------------------------------------------------------------------
 class DriveEfficiency(om.ExplicitComponent):
     def initialize(self):
         self.options.declare('n_pc', default=20)
-        self.options.declare('genflag', default=False)
     
     def setup(self):
-        self.add_input('gearbox_efficiency', val=0.0)
-        
         n_pc  = self.options['n_pc']
-        if self.options['genflag']:        
-            self.add_input('generator_efficiency', val=0.0)
-            self.add_output('drivetrain_efficiency', val=0.0)
-        else:
-            self.add_input('generator_efficiency', val=np.zeros((n_pc,2)))
-            self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
+        self.add_input('gearbox_efficiency', val=0.0)
+        self.add_input('generator_efficiency', val=np.zeros((n_pc,2)))
+        self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
             
     def compute(self, inputs, outputs):
         outputs['drivetrain_efficiency'] = inputs['gearbox_efficiency']*inputs['generator_efficiency']
 
+#----------------------------------------------------------------------------------------------
         
 class DriveMaterials(om.ExplicitComponent):
     '''
@@ -130,6 +126,7 @@ class DriveMaterials(om.ExplicitComponent):
             outputs['hss_cost']     = cost[hss_imat]
         
         
+#----------------------------------------------------------------------------------------------
 class DrivetrainSE(om.Group):
     ''' 
     DirectDriveSE defines an OpenMDAO group that represents a wind turbine drivetrain without a gearbox and two main bearings.
@@ -265,7 +262,7 @@ class DrivetrainSE(om.Group):
             self.add_subsystem('hss', ds.HSS_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=['*'])
             self.add_subsystem('bed', ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=['*'])
 
-        self.add_subsystem('eff', DriveEfficiency(n_pc=n_pc, genflag=dogen), promotes=['*'])
+        self.add_subsystem('eff', DriveEfficiency(n_pc=n_pc), promotes=['*'])
 
         # Output-to-input connections
         self.connect('bedplate_rho', ['pitch_system.rho', 'spinner.metal_rho'])

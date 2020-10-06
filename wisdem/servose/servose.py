@@ -577,15 +577,12 @@ def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetra
             linear = 0.04463
             quadratic = 0.05790
 
-        elif drivetrainType == 'PM_DIRECT_DRIVE':
+        elif drivetrainType in ['PM_DIRECT_DRIVE','DIRECT_DRIVE','DIRECT DRIVE']:
             constant = 0.01007
             linear = 0.02000
             quadratic = 0.06899
+            
         elif drivetrainType == 'CONSTANT_EFF':
-            constant = 0.00
-            linear = 0.07
-            quadratic = 0.0
-        elif drivetrainType == 'DIRECT DRIVE':
             constant = 0.00
             linear = 0.07
             quadratic = 0.0

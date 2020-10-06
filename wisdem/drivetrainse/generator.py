@@ -442,3 +442,4 @@ class Generator(om.Group):
         self.add_subsystem('mofi', MofI(), promotes=['*'])
         self.add_subsystem('gen_cost', Cost(), promotes=['*'])
         self.add_subsystem('constr', Constraints(), promotes=['*'])
+

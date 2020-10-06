@@ -1,8 +1,8 @@
 # 0 ---------- (marker for docs)
 import numpy as np
 import openmdao.api as om
-from wisdem.nrelcsm.nrel_csm import aep_csm
-from wisdem.turbine_costsse.nrel_csm_tcc_2015 import nrel_csm_2015
+from wisdem.nrelcsm.nrel_csm_mass_2015 import nrel_csm_2015
+from wisdem.nrelcsm.nrel_csm_orig import aep_csm
 # 0 ---------- (marker for docs)
 
 # 1 ---------- (marker for docs)
