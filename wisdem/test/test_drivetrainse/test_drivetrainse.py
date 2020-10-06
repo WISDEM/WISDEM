@@ -2,7 +2,7 @@ import unittest
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 import openmdao.api as om
 import numpy as np
-
+import traceback, sys
 
 def set_common(prob, opt):
     prob['n_blades'] = 3
@@ -67,6 +67,8 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['gamma_f'] = 1.35
         opt['drivetrainse']['gamma_m'] = 1.3
         opt['drivetrainse']['gamma_n'] = 1.0
+        opt['servose'] = {}
+        opt['servose']['n_pc'] = 20
         opt['GeneratorSE'] = {}
         opt['GeneratorSE']['type'] = 'pmsg_outer'
         opt['flags'] = {}
@@ -134,8 +136,8 @@ class TestGroup(unittest.TestCase):
         try:
             prob.run_model()
             self.assertTrue(True)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
         
     def testDirectDrive_withSimpleGen(self):
@@ -150,6 +152,8 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['gamma_f'] = 1.35
         opt['drivetrainse']['gamma_m'] = 1.3
         opt['drivetrainse']['gamma_n'] = 1.0
+        opt['servose'] = {}
+        opt['servose']['n_pc'] = 20
         opt['flags'] = {}
         opt['flags']['generator'] = False
 
@@ -175,11 +179,13 @@ class TestGroup(unittest.TestCase):
         prob['nose_wall_thickness'] = 0.1*myones
         prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
 
+        prob['generator_efficiency_user'] = np.zeros((20,2))
+        
         try:
             prob.run_model()
             self.assertTrue(True)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
 
         
@@ -197,6 +203,8 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['gamma_n'] = 1.0
         opt['GeneratorSE'] = {}
         opt['GeneratorSE']['type'] = 'dfig'
+        opt['servose'] = {}
+        opt['servose']['n_pc'] = 20
         opt['flags'] = {}
         opt['flags']['generator'] = True
 
@@ -285,8 +293,8 @@ class TestGroup(unittest.TestCase):
         try:
             prob.run_model()
             self.assertTrue(True)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
 
         
@@ -304,6 +312,8 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['gamma_n'] = 1.0
         opt['flags'] = {}
         opt['flags']['generator'] = False
+        opt['servose'] = {}
+        opt['servose']['n_pc'] = 20
 
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
@@ -338,11 +348,13 @@ class TestGroup(unittest.TestCase):
         #prob['shaft_factor'] = 'normal'
         prob['gear_ratio'] = 90.0
 
+        prob['generator_efficiency_user'] = np.zeros((20,2))
+
         try:
             prob.run_model()
             self.assertTrue(True)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
 
 

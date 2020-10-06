@@ -8,6 +8,26 @@ import wisdem.drivetrainse.layout as lay
 import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
 
+class DriveEfficiency(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare('n_pc', default=20)
+        self.options.declare('genflag', default=False)
+    
+    def setup(self):
+        self.add_input('gearbox_efficiency', val=0.0)
+        
+        n_pc  = self.options['n_pc']
+        if self.options['genflag']:        
+            self.add_input('generator_efficiency', val=0.0)
+            self.add_output('drivetrain_efficiency', val=0.0)
+        else:
+            self.add_input('generator_efficiency', val=np.zeros((n_pc,2)))
+            self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
+            
+    def compute(self, inputs, outputs):
+        outputs['drivetrain_efficiency'] = inputs['gearbox_efficiency']*inputs['generator_efficiency']
+
+        
 class DriveMaterials(om.ExplicitComponent):
     '''
     This component sifts through the material database and sets the material property data structures needed in this module
@@ -227,23 +247,25 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('brake', dc.Brake(direct_drive=direct), promotes=['*'])
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['yaw_mass','yaw_I','yaw_cm','rotor_diameter','D_top'])
+        
         if dogen:
             gentype = self.options['modeling_options']['GeneratorSE']['type']
             self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_I','machine_rating','generator_efficiency','rated_rpm','rated_torque'])
         else:
-            # TODO: Generator efficiency from what servose uses
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=['*'])
+            
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
         self.add_subsystem('lss', ds.Hub_Rotor_LSS_Frame(n_dlcs=n_dlcs, modeling_options=opt, direct_drive=direct), promotes=['*'])
+        
         if direct:
             self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(n_points=n_points, modeling_options=opt, n_dlcs=n_dlcs), promotes=['*'])
         else:
             self.add_subsystem('hss', ds.HSS_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=['*'])
             self.add_subsystem('bed', ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=['*'])
 
-        self.add_subsystem('eff', om.ExecComp('drivetrain_efficiency = gearbox_efficiency * generator_efficiency'), promotes=['*'])
+        self.add_subsystem('eff', DriveEfficiency(n_pc=n_pc, genflag=dogen), promotes=['*'])
 
         # Output-to-input connections
         self.connect('bedplate_rho', ['pitch_system.rho', 'spinner.metal_rho'])

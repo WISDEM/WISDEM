@@ -216,7 +216,7 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rated_torque', 0.0, units='N*m')
         self.add_input('rated_rpm', 0.0, units='rpm')
-        self.add_input('generator_mass_user', 0.0)
+        self.add_input('generator_mass_user', 0.0, units='kg')
         self.add_input('generator_efficiency_user', val=np.zeros((n_pc, 2)) )
 
         self.add_output('R_generator', val=0.0, units='m')
@@ -232,7 +232,7 @@ class GeneratorSimple(om.ExplicitComponent):
         Q_rotor  = float(inputs['rated_torque'])
         rpm      = float(inputs['rated_rpm'])
         mass     = float(inputs['generator_mass_user'])
-        eff_user = float(inputs['generator_efficiency_user'])
+        eff_user = inputs['generator_efficiency_user']
 
         if mass == 0.0:
             if self.options['direct_drive']:
