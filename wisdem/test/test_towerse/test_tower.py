@@ -321,7 +321,7 @@ class TestTowerSE(unittest.TestCase):
         self.assertEqual(self.outputs['monopile_cost'], self.inputs['cylinder_cost']*2.5/4.0+1e3)
         self.assertEqual(self.outputs['monopile_length'], 70.0)
         self.assertEqual(self.outputs['tower_mass'], 1e3*(4-2.5))
-        self.assertEqual(self.outputs['tower_raw_cost'], self.inputs['cylinder_cost']*1.5/4.0)
+        self.assertEqual(self.outputs['tower_cost'], self.inputs['cylinder_cost']*1.5/4.0)
 
 
     def testPreFrame(self):
@@ -472,7 +472,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob['z_param'], np.array([0., 40., 80.]))
         
         self.assertEqual(prob['height_constraint'], 0.0)
-        self.assertEqual(prob['tower_raw_cost'], prob['cm.cost'])
+        self.assertEqual(prob['tower_cost'], prob['cm.cost'])
         npt.assert_equal(prob['tower_I_base'], prob['cm.I_base'])
         npt.assert_almost_equal(prob['tower_center_of_mass'], 40.0)
         npt.assert_equal(prob['tower_section_center_of_mass'], prob['cm.section_center_of_mass'])
@@ -578,7 +578,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob['z_param'], np.array([-45., -30., 0., 30., 60.]))
         
         self.assertEqual(prob['height_constraint'], 20.0)
-        npt.assert_almost_equal(prob['tower_raw_cost'], (45./105.)*prob['cm.cost'])
+        npt.assert_almost_equal(prob['tower_cost'], (45./105.)*prob['cm.cost'])
         npt.assert_equal(prob['tower_I_base'][:2], prob['cm.I_base'][:2]+1e2*45**2)
         npt.assert_equal(prob['tower_I_base'][2:], prob['cm.I_base'][2:])
         npt.assert_almost_equal(prob['tower_center_of_mass'], (7.5*mass_dens*105.+15.*1e2+1e4*-30.)/(mass_dens*105+1e2+1e4))

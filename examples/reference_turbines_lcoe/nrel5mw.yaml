@@ -479,7 +479,7 @@ materials:
       nu: 0.265
       Xt: 1.12e+9
       Xc: 2.16e+9
-      unit_cost: 5.0
+      unit_cost: 0.7
    -  E: 98460000.0
       name: FOAM
       G: 98460000.0
@@ -573,6 +573,8 @@ costs:
     bos_per_kW: 2979.
     opex_per_kW: 144.
     turbine_number: 120
+    labor_rate: 58.8
+    painting_rate: 30.0
     blade_mass_cost_coeff: 14.6
     hub_mass_cost_coeff: 3.9
     pitch_system_mass_cost_coeff: 22.1
@@ -593,4 +595,3 @@ costs:
     tower_mass_cost_coeff: 2.9
     controls_machine_rating_cost_coeff: 21.15
     crane_cost: 12e3
-    

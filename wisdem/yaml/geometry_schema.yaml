@@ -2002,12 +2002,26 @@ properties:
                 maximum: 1000
                 default: 0.0
             turbine_number:
-                type: number
+                type: integer
                 description: Number of turbines in the park, used to compute levelized cost of energy. Often wind parks are assumed of 600 MW. See this for inspiration https://www.nrel.gov/docs/fy20osti/74598.pdf
                 unit: none
                 minimum: 0
                 maximum: 10000
                 default: 50
+            labor_rate:
+                type: number
+                description: Hourly loaded wage per worker including all benefits and overhead.  This is currently only applied to steel, column structures.
+                unit: USD/min
+                minimum: 0.0
+                maximum: 1000.0
+                default: 58.8
+            painting_rate:
+                type: number
+                description: Cost per unit area for finishing and surface treatments.  This is currently only applied to steel, column structures.
+                unit: USD/m^2
+                minimum: 0.0
+                maximum: 1000.0
+                default: 30.0
             blade_mass_cost_coeff:
                 type: number
                 description: Regression-based blade cost/mass ratio

@@ -89,7 +89,7 @@ class FloatingSE(om.Group):
         self.connect('tow.cm.mass','tower_mass_section')
         self.connect('tow.turbine_mass','main.stack_mass_in')
         self.connect('tow.tower_center_of_mass','tower_center_of_mass')
-        self.connect('tow.tower_raw_cost','tower_shell_cost')
+        self.connect('tow.tower_cost','tower_shell_cost')
         
         self.connect('main.z_full', ['main_z_nodes', 'main_z_full'])
         self.connect('main.d_full', 'main_d_full')
