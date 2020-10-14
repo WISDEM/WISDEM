@@ -1,17 +1,13 @@
-import copy
 import numpy as np
-from scipy.optimize import curve_fit
-from scipy.interpolate import PchipInterpolator
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade_component import CCBladeLoads, AeroHubLoads
 import wisdem.ccblade._bem as _bem
 import wisdem.commonse.utilities as util
-from wisdem.commonse.akima import Akima
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
-from wisdem.rotorse import RPM2RS, RS2RPM
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
-
+from wisdem.rotorse import RPM2RS, RS2RPM
+ 
 class BladeCurvature(ExplicitComponent):
     # OpenMDAO component that computes the 3D curvature of the blade
     def initialize(self):

@@ -7,8 +7,6 @@ Originally created by Andrew Ning on 2012-01-20.
 Copyright (c) NREL. All rights reserved.
 """
 
-from __future__ import print_function
-
 import numpy as np
 import openmdao.api as om
 import copy
@@ -258,12 +256,14 @@ class DiscretizationYAML(om.ExplicitComponent):
 
             # Get the index into the material list
             imat  = mat_names.index( iname )
+
+            imass = rho[imat] * twall[k,:]
             
             # For density, take mass weighted layer
-            rho_param += rho[imat] * twall[k,:]
+            rho_param += imass
             
             # For cost, take mass weighted layer
-            cost_param += rho[imat] * twall[k,:] * cost[imat]
+            cost_param += imass * cost[imat]
 
             # Store the value associated with this thickness
             E_param[k,:] = E[imat]
@@ -508,7 +508,7 @@ class TowerMass(om.ExplicitComponent):
 
         self.add_output('structural_cost', val=0.0, units='USD')
         self.add_output('structural_mass', val=0.0, units='kg')
-        self.add_output('tower_raw_cost', val=0.0, units='USD')
+        self.add_output('tower_cost', val=0.0, units='USD')
         self.add_output('tower_mass', val=0.0, units='kg')
         self.add_output('tower_center_of_mass', val=0.0, units='m')
         self.add_output('tower_section_center_of_mass', val=np.zeros(nFull-1), units='m')
@@ -533,7 +533,7 @@ class TowerMass(om.ExplicitComponent):
         outputs['monopile_mass']  += inputs['transition_piece_mass'] + inputs['gravity_foundation_mass']
         outputs['monopile_length'] = inputs['transition_piece_height'] - inputs['z_full'][0]
 
-        outputs['tower_raw_cost']  = outputs['structural_cost'] - outputs['monopile_cost']
+        outputs['tower_cost']      = outputs['structural_cost'] - outputs['monopile_cost']
         outputs['tower_mass']      = outputs['structural_mass'] - outputs['monopile_mass']
         outputs['tower_I_base']         = inputs['cylinder_I_base']
         outputs['tower_I_base'][:2]    += inputs['transition_piece_mass']*(inputs['transition_piece_height']-inputs['foundation_height'])**2
@@ -870,6 +870,10 @@ class TowerPostFrame(om.ExplicitComponent):
         fatigue life of tower
     freqs : numpy array[NFREQ], [Hz]
         Natural frequencies of the structure
+    x_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the x-direction
+    y_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the y-direction
     x_mode_shapes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the x-direction
     y_mode_shapes : numpy array[NFREQ2, 5]
@@ -879,6 +883,10 @@ class TowerPostFrame(om.ExplicitComponent):
     -------
     structural_frequencies : numpy array[NFREQ], [Hz]
         First and second natural frequency
+    fore_aft_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the tower fore-aft direction
+    side_side_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the tower side-side direction
     fore_aft_modes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the tower fore-aft direction
         (without constant term)
@@ -988,6 +996,8 @@ class TowerPostFrame(om.ExplicitComponent):
         self.declare_partials('shell_buckling', ['axial_stress', 'd_full', 'hoop_stress', 'shear_stress', 'sigma_y_full', 't_full'], method='fd')
         self.declare_partials('stress', ['axial_stress', 'hoop_stress', 'shear_stress', 'sigma_y_full'], method='fd')
         self.declare_partials('structural_frequencies', ['freqs'], method='fd')
+        self.declare_partials('fore_aft_freqs', ['x_mode_freqs'], method='fd')
+        self.declare_partials('side_side_freqs', ['y_mode_freqs'], method='fd')
         self.declare_partials('fore_aft_modes', ['x_mode_shapes'], method='fd')
         self.declare_partials('side_side_modes', ['y_mode_shapes'], method='fd')
         self.declare_partials('top_deflection', ['top_deflection_in'], method='fd')
@@ -1012,6 +1022,8 @@ class TowerPostFrame(om.ExplicitComponent):
 
         # Frequencies and mode shapes (with x^2 term first)
         outputs['structural_frequencies'] = inputs['freqs']
+        outputs['fore_aft_freqs']         = inputs['x_mode_freqs']
+        outputs['side_side_freqs']        = inputs['y_mode_freqs']
         outputs['fore_aft_modes']         = inputs['x_mode_shapes']
         outputs['side_side_modes']        = inputs['y_mode_shapes']
 
@@ -1152,7 +1164,7 @@ class TowerLeanSE(om.Group):
                                                                         'labor_cost_rate','painting_cost_rate'])
         self.add_subsystem('tm', TowerMass(n_height=n_height), promotes=['z_full',
                                                                    'tower_mass','tower_center_of_mass','tower_section_center_of_mass','tower_I_base',
-                                                                   'tower_raw_cost','gravity_foundation_mass','foundation_height',
+                                                                   'tower_cost','gravity_foundation_mass','foundation_height',
                                                                    'transition_piece_mass','transition_piece_cost','transition_piece_height',
                                                                    'monopile_mass','monopile_cost','monopile_length'])
         self.add_subsystem('gc', Util.GeometricConstraints(nPoints=n_height), promotes=['min_d_to_t','max_taper','constr_taper','constr_d_to_t','slope',('d', 'tower_outer_diameter'),('t', 'tower_wall_thickness')])
@@ -1299,6 +1311,8 @@ class TowerSE(om.Group):
             self.connect('soil.k', 'pre'+lc+'.k_monopile')
 
             self.connect('tower'+lc+'.freqs', 'post'+lc+'.freqs')
+            self.connect('tower'+lc+'.x_mode_freqs', 'post'+lc+'.x_mode_freqs')
+            self.connect('tower'+lc+'.y_mode_freqs', 'post'+lc+'.y_mode_freqs')
             self.connect('tower'+lc+'.x_mode_shapes', 'post'+lc+'.x_mode_shapes')
             self.connect('tower'+lc+'.y_mode_shapes', 'post'+lc+'.y_mode_shapes')
             self.connect('tower'+lc+'.Fz_out', 'post'+lc+'.Fz')

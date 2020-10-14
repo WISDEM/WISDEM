@@ -113,23 +113,17 @@ class Brake(om.ExplicitComponent):
         Generator rotor attachment to shaft s-coordinate
     s_gearbox : float, [m]
         Gearbox s-coordinate measured from bedplate
-    hss_input_length : float, [m]
-        high speed shaft length determined by user. Default 0.5m
     rho : float, [kg/m**3]
         material density
     
     Returns
     -------
-    hss_mass : float, [kg]
+    brake_mass : float, [kg]
         overall component mass
-    hss_cm : float, [m]
+    brake_cm : float, [m]
         center of mass of the component in [x,y,z] for an arbitrary coordinate system
-    hss_I : numpy array[3], [kg*m**2]
+    brake_I : numpy array[3], [kg*m**2]
         moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
-    hss_length : float, [m]
-        length of high speed shaft
-    hss_diameter : float, [m]
-        diameter of high speed shaft
     """
 
     def initialize(self):
@@ -646,6 +640,10 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
     -------
     other_mass : float, [kg]
         mass of high speed shaft, hvac, main frame, yaw, cover, and electronics
+    mean_bearing_mass : float, [kg]
+        average mass of all bearings (currently 2) for summary mass and cost calculations
+    total_bedplate_mass : float, [kg]
+        bedplate and nose mass for summary mass and cost calculations
     above_yaw_mass : float, [kg]
        overall nacelle mass excluding yaw
     nacelle_mass : float, [kg]
@@ -711,6 +709,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('cover_I', np.zeros(3), units='m')
 
         self.add_output('other_mass', 0.0, units='kg')
+        self.add_output('mean_bearing_mass', 0.0, units='kg')
+        self.add_output('total_bedplate_mass', 0.0, units='kg')
         self.add_output('nacelle_mass', 0.0, units='kg')
         self.add_output('above_yaw_mass', 0.0, units='kg')
         self.add_output('nacelle_cm',   np.zeros(3), units='m')
@@ -776,6 +776,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         outputs['nacelle_I']    = util.unassembleI(I_nac)
         outputs['other_mass']   = (inputs['hss_mass'] + inputs['hvac_mass'] + inputs['platforms_mass'] +
                                    inputs['yaw_mass'] + inputs['cover_mass'] + inputs['converter_mass'] + inputs['transformer_mass'])
+        outputs['mean_bearing_mass'] = 0.5*(inputs['mb1_mass'] + inputs['mb2_mass'])
+        outputs['total_bedplate_mass'] = inputs['nose_mass'] + inputs['bedplate_mass']
 
 #--------------------------------------------
 

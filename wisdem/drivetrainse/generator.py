@@ -260,7 +260,7 @@ class Cost(om.ExplicitComponent):
     
     Returns
     -------
-    Costs : float, [USD]
+    generator_cost : float, [USD]
         Total cost
     
     """
@@ -279,7 +279,7 @@ class Cost(om.ExplicitComponent):
         self.add_input('Structural_mass', val=0.0, units='kg')
 
         # Outputs
-        self.add_output('Costs', val=0.0, units='USD')
+        self.add_output('generator_cost', val=0.0, units='USD')
 
         #self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
         
@@ -296,7 +296,7 @@ class Cost(om.ExplicitComponent):
         # Material cost as a function of material mass and specific cost of material
         K_gen            = Copper*C_Cu + Iron*C_Fe + C_PM*mass_PM #%M_pm*K_pm; # 
         Cost_str         = C_Fes*Structural_mass
-        outputs['Costs'] = K_gen + Cost_str
+        outputs['generator_cost'] = K_gen + Cost_str
         
 #----------------------------------------------------------------------------------------------
 class Generator(om.Group):

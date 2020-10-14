@@ -867,11 +867,13 @@ def assign_bos_values(wt_opt, bos, offshore):
 
 def assign_costs_values(wt_opt, costs):
 
-    wt_opt['costs.turbine_number']      = costs['turbine_number']
-    wt_opt['costs.opex_per_kW']         = costs['opex_per_kW']
-    wt_opt['costs.bos_per_kW']          = costs['bos_per_kW']
-    wt_opt['costs.wake_loss_factor']    = costs['wake_loss_factor']
-    wt_opt['costs.fixed_charge_rate']   = costs['fixed_charge_rate']
+    wt_opt['costs.turbine_number']    = costs['turbine_number']
+    wt_opt['costs.opex_per_kW']       = costs['opex_per_kW']
+    wt_opt['costs.bos_per_kW']        = costs['bos_per_kW']
+    wt_opt['costs.wake_loss_factor']  = costs['wake_loss_factor']
+    wt_opt['costs.fixed_charge_rate'] = costs['fixed_charge_rate']
+    wt_opt['costs.labor_rate']        = costs['labor_rate']
+    wt_opt['costs.painting_rate']     = costs['painting_rate']
 
     wt_opt['costs.blade_mass_cost_coeff']                 = costs['blade_mass_cost_coeff']
     wt_opt['costs.hub_mass_cost_coeff']                   = costs['hub_mass_cost_coeff']

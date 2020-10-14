@@ -11,9 +11,9 @@ jacksys_specs:
   speed_above_depth: 0.5    # m/min
   speed_below_depth: 0.5    # m/min
 storage_specs:
-  max_cargo: 8000           # t
-  max_deck_load: 8          # t/m^2
-  max_deck_space: 1000      # m^2
+  max_cargo: 80000           # t
+  max_deck_load: 80          # t/m^2
+  max_deck_space: 10000      # m^2
 transport_specs:
   max_waveheight: 2.5       # m
   max_windspeed: 20         # m/s

@@ -376,9 +376,46 @@ class GearboxMass(om.ExplicitComponent):
         outputs['gearbox_mass'] = gearbox_mass_coeff * (rotor_torque/1000.0)**gearbox_mass_exp
 
 # --------------------------------------------------------------------
-class HighSpeedSideMass(om.ExplicitComponent):
+class BrakeMass(om.ExplicitComponent):
     """
-    Compute high speed side (shaft, brake) mass in the form of :math:`mass = k*power`.
+    Compute brake mass in the form of :math:`mass = k*torque`.
+    Value of :math:`k` was updated in 2020 to be 0.00122.
+    
+    Parameters
+    ----------
+    rotor_torque : float, [N*m]
+        rotor torque at rated power
+    brake_mass_coeff : float
+        Mass scaling coefficient
+    
+    Returns
+    -------
+    brake_mass : float, [kg]
+        overall component mass
+    """
+
+    def initialize(self):
+        self.options.declare('direct_drive', default=True)
+       
+    def setup(self):
+        self.add_input('rotor_torque', 0.0, units='N*m')
+        self.add_input('brake_mass_coeff', 0.00122)
+
+        self.add_output('brake_mass', 0.0, units='kg')
+
+    def compute(self, inputs, outputs):
+
+        # Unpack inputs
+        rotor_torque = float(inputs['rotor_torque'])
+        coeff        = float(inputs['brake_mass_coeff'])
+
+        # Regression based sizing derived by J.Keller under FOA 1981 support project
+        outputs['brake_mass'] = coeff * rotor_torque
+        
+# --------------------------------------------------------------------
+class HighSpeedShaftMass(om.ExplicitComponent):
+    """
+    Compute high speed shaft mass in the form of :math:`mass = k*power`.
     Value of :math:`k` was updated in 2015 to be 0.19894.
     
     Parameters
@@ -405,7 +442,6 @@ class HighSpeedSideMass(om.ExplicitComponent):
         machine_rating = inputs['machine_rating']
         hss_mass_coeff = inputs['hss_mass_coeff']
         
-        # TODO: this is in DriveSE; replace this with code in DriveSE and have DriveSE use this code??
         outputs['hss_mass'] = hss_mass_coeff * machine_rating
 
 # --------------------------------------------------------------------
@@ -747,6 +783,8 @@ class TurbineMassAdder(om.ExplicitComponent):
         component mass
     hss_mass : float, [kg]
         component mass
+    brake_mass : float, [kg]
+        component mass
     generator_mass : float, [kg]
         component mass
     bedplate_mass : float, [kg]
@@ -793,6 +831,7 @@ class TurbineMassAdder(om.ExplicitComponent):
         self.add_input('main_bearing_mass', 0.0, units='kg')
         self.add_input('gearbox_mass', 0.0, units='kg')
         self.add_input('hss_mass', 0.0, units='kg')
+        self.add_input('brake_mass', 0.0, units='kg')
         self.add_input('generator_mass', 0.0, units='kg')
         self.add_input('bedplate_mass', 0.0, units='kg')
         self.add_input('yaw_mass', 0.0, units='kg')
@@ -820,6 +859,7 @@ class TurbineMassAdder(om.ExplicitComponent):
         main_bearing_mass = inputs['main_bearing_mass']
         gearbox_mass = inputs['gearbox_mass']
         hss_mass = inputs['hss_mass']
+        brake_mass = inputs['brake_mass']
         generator_mass = inputs['generator_mass']
         bedplate_mass = inputs['bedplate_mass']
         yaw_mass = inputs['yaw_mass']
@@ -834,7 +874,7 @@ class TurbineMassAdder(om.ExplicitComponent):
         outputs['hub_system_mass'] = hub_mass + pitch_system_mass + spinner_mass
         outputs['rotor_mass'] = blade_mass * blade_number + outputs['hub_system_mass']
         outputs['nacelle_mass'] = lss_mass + bearing_number * main_bearing_mass + \
-                            gearbox_mass + hss_mass + generator_mass + \
+                            gearbox_mass + hss_mass + brake_mass + generator_mass + \
                             bedplate_mass + yaw_mass + hvac_mass + \
                             cover_mass + platforms_mass + transformer_mass
         outputs['turbine_mass'] = outputs['rotor_mass'] + outputs['nacelle_mass'] + tower_mass
@@ -852,7 +892,8 @@ class nrel_csm_mass_2015(om.Group):
         self.add_subsystem('bearing', BearingMass(), promotes=['*'])
         self.add_subsystem('torque', RotorTorque(), promotes=['*'])
         self.add_subsystem('gearbox', GearboxMass(), promotes=['*'])
-        self.add_subsystem('hss', HighSpeedSideMass(), promotes=['*'])
+        self.add_subsystem('hss', HighSpeedShaftMass(), promotes=['*'])
+        self.add_subsystem('brake', BrakeMass(), promotes=['*'])
         self.add_subsystem('generator', GeneratorMass(), promotes=['*'])
         self.add_subsystem('bedplate', BedplateMass(), promotes=['*'])
         self.add_subsystem('yaw', YawSystemMass(), promotes=['*'])

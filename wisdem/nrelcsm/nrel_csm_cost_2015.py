@@ -387,7 +387,40 @@ class GearboxCost2015(om.ExplicitComponent):
         outputs['gearbox_cost'] = gearbox_mass_cost_coeff * gearbox_mass
 
 #-------------------------------------------------------------------------------
-class HighSpeedSideCost2015(om.ExplicitComponent):
+class BrakeCost2020(om.ExplicitComponent):
+    """
+    Compute brake cost in the form of :math:`cost = k*mass`.  
+    Value of :math:`k` was updated in 2020 to be $3.6254 USD/kg.
+    Cost includes materials and manufacturing costs.
+    
+    Parameters
+    ----------
+    brake_mass : float, [kg]
+        component mass
+    brake_mass_cost_coeff : float, [USD/kg]
+        brake mass-cost coeff
+    
+    Returns
+    -------
+    brake_cost : float, [USD]
+        Brake cost
+    
+    """
+
+    def setup(self):
+        self.add_input('brake_mass', 0.0, units='kg')
+        self.add_input('brake_mass_cost_coeff', 3.6254, units='USD/kg')
+
+        self.add_output('brake_cost', 0.0, units='USD')
+
+    def compute(self, inputs, outputs):
+        brake_mass = inputs['brake_mass']
+        brake_mass_cost_coeff = inputs['brake_mass_cost_coeff']
+        
+        outputs['brake_cost'] = brake_mass_cost_coeff * brake_mass
+
+#-------------------------------------------------------------------------------
+class HighSpeedShaftCost2015(om.ExplicitComponent):
     """
     Compute high speed shaft cost in the form of :math:`cost = k*mass`.  
     Value of :math:`k` was updated in 2015 to be $6.8 USD/kg.
@@ -398,12 +431,12 @@ class HighSpeedSideCost2015(om.ExplicitComponent):
     hss_mass : float, [kg]
         component mass
     hss_mass_cost_coeff : float, [USD/kg]
-        high speed side mass-cost coeff
+        high speed shaft mass-cost coeff
     
     Returns
     -------
     hss_cost : float, [USD]
-        High speed side cost
+        High speed shaft cost
     
     """
 
@@ -425,6 +458,7 @@ class GeneratorCost2015(om.ExplicitComponent):
     Compute generator cost in the form of :math:`cost = k*mass`.  
     Value of :math:`k` was updated in 2015 to be $12.4 USD/kg.
     Cost includes materials and manufacturing costs.
+    Cost can be overridden with use of `generator_cost_external`
     
     Parameters
     ----------
@@ -432,6 +466,8 @@ class GeneratorCost2015(om.ExplicitComponent):
         component mass
     generator_mass_cost_coeff : float, [USD/kg]
         generator mass cost coeff
+    generator_cost_external : float, [USD]
+        Generator cost computed by GeneratorSE
     
     Returns
     -------
@@ -443,14 +479,18 @@ class GeneratorCost2015(om.ExplicitComponent):
     def setup(self):
         self.add_input('generator_mass', 0.0, units='kg')
         self.add_input('generator_mass_cost_coeff', 12.4, units='USD/kg')
+        self.add_input('generator_cost_external', 0.0, units='USD')
 
         self.add_output('generator_cost', 0.0, units='USD')
 
     def compute(self, inputs, outputs):
         generator_mass = inputs['generator_mass']
         generator_mass_cost_coeff = inputs['generator_mass_cost_coeff']
-        
-        outputs['generator_cost'] = generator_mass_cost_coeff * generator_mass
+
+        if inputs['generator_cost_external'] < 1.:
+            outputs['generator_cost'] = generator_mass_cost_coeff * generator_mass
+        else:
+            outputs['generator_cost'] = inputs['generator_cost_external']
 
 #-------------------------------------------------------------------------------
 class BedplateCost2015(om.ExplicitComponent):
@@ -805,6 +845,10 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
         Component cost
     gearbox_mass : float, [kg]
         Component mass
+    brake_cost : float, [USD]
+        Component cost
+    brake_mass : float, [kg]
+        Component mass
     hss_cost : float, [USD]
         Component cost
     hss_mass : float, [kg]
@@ -836,6 +880,8 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
     elec_cost : float, [USD]
         Component cost
     controls_cost : float, [USD]
+        Component cost
+    platforms_mass : float, [kg]
         Component cost
     platforms_cost : float, [USD]
         Component cost
@@ -872,6 +918,8 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
         self.add_input('gearbox_mass', 0.0, units='kg')
         self.add_input('hss_cost', 0.0, units='USD')
         self.add_input('hss_mass', 0.0, units='kg')
+        self.add_input('brake_cost', 0.0, units='USD')
+        self.add_input('brake_mass', 0.0, units='kg')
         self.add_input('generator_cost', 0.0, units='USD')
         self.add_input('generator_mass', 0.0, units='kg')
         self.add_input('bedplate_cost', 0.0, units='USD')
@@ -886,6 +934,7 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
         self.add_input('cover_mass', 0.0, units='kg')
         self.add_input('elec_cost', 0.0, units='USD')
         self.add_input('controls_cost', 0.0, units='USD')
+        self.add_input('platforms_mass', 0.0, units='kg')
         self.add_input('platforms_cost', 0.0, units='USD')
         self.add_input('transformer_cost', 0.0, units='USD')
         self.add_input('transformer_mass', 0.0, units='kg')
@@ -904,6 +953,7 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
         main_bearing_cost   = inputs['main_bearing_cost']
         gearbox_cost        = inputs['gearbox_cost']
         hss_cost            = inputs['hss_cost']
+        brake_cost          = inputs['brake_cost']
         generator_cost      = inputs['generator_cost']
         bedplate_cost       = inputs['bedplate_cost']
         yaw_system_cost     = inputs['yaw_system_cost']
@@ -919,12 +969,14 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
         main_bearing_mass   = inputs['main_bearing_mass']
         gearbox_mass        = inputs['gearbox_mass']
         hss_mass            = inputs['hss_mass']
+        brake_mass          = inputs['brake_mass']
         generator_mass      = inputs['generator_mass']
         bedplate_mass       = inputs['bedplate_mass']
         yaw_mass            = inputs['yaw_mass']
         converter_mass      = inputs['converter_mass']
         hvac_mass           = inputs['hvac_mass']
         cover_mass          = inputs['cover_mass']
+        platforms_mass      = inputs['platforms_mass']
         transformer_mass    = inputs['transformer_mass']
         
         main_bearing_number = discrete_inputs['main_bearing_number']
@@ -935,8 +987,8 @@ class NacelleSystemCostAdder2015(om.ExplicitComponent):
         nacelle_transportMultiplier     = inputs['nacelle_transportMultiplier']        
 
         #apply multipliers for assembly, transport, overhead, and profits
-        outputs['nacelle_mass_tcc'] = lss_mass + main_bearing_number * main_bearing_mass + gearbox_mass + hss_mass + generator_mass + bedplate_mass + yaw_mass + converter_mass + hvac_mass + cover_mass + transformer_mass
-        partsCost = lss_cost + main_bearing_number * main_bearing_cost + gearbox_cost + hss_cost + generator_cost + bedplate_cost + yaw_system_cost + converter_cost + hvac_cost + cover_cost + elec_cost + controls_cost + platforms_cost + transformer_cost
+        outputs['nacelle_mass_tcc'] = lss_mass + main_bearing_number * main_bearing_mass + gearbox_mass + hss_mass + brake_mass + generator_mass + bedplate_mass + yaw_mass + converter_mass + hvac_mass + cover_mass + platforms_mass + transformer_mass
+        partsCost = lss_cost + main_bearing_number * main_bearing_cost + gearbox_cost + hss_cost + brake_cost + generator_cost + bedplate_cost + yaw_system_cost + converter_cost + hvac_cost + cover_cost + elec_cost + controls_cost + platforms_cost + transformer_cost
         outputs['nacelle_cost'] = (1 + nacelle_transportMultiplier + nacelle_profitMultiplier) * ((1 + nacelle_overheadCostMultiplier + nacelle_assemblyCostMultiplier) * partsCost)
 
 ###### Tower
@@ -1166,6 +1218,10 @@ class Outputs2Screen(om.ExplicitComponent):
         hss cost
     hss_mass : float, [kg]
         HSS mass
+    brake_cost : float, [USD]
+        brake cost
+    brake_mass : float, [kg]
+        brake mass
     generator_cost : float, [USD]
         generator cost
     generator_mass : float, [kg]
@@ -1241,6 +1297,8 @@ class Outputs2Screen(om.ExplicitComponent):
         self.add_input('gearbox_mass', 0.0, units='kg')
         self.add_input('hss_cost', 0.0, units='USD')
         self.add_input('hss_mass', 0.0, units='kg')
+        self.add_input('brake_cost', 0.0, units='USD')
+        self.add_input('brake_mass', 0.0, units='kg')
         self.add_input('generator_cost', 0.0, units='USD')
         self.add_input('generator_mass', 0.0, units='kg')
         self.add_input('bedplate_cost', 0.0, units='USD')
@@ -1284,6 +1342,7 @@ class Outputs2Screen(om.ExplicitComponent):
             print('Main bearing cost       %.3f k USD       mass %.3f kg' % (inputs['main_bearing_cost'] * 1.e-003, inputs['main_bearing_mass']))
             print('Gearbox cost            %.3f k USD       mass %.3f kg' % (inputs['gearbox_cost'] * 1.e-003,      inputs['gearbox_mass']))
             print('HSS cost                %.3f k USD       mass %.3f kg' % (inputs['hss_cost'] * 1.e-003,          inputs['hss_mass']))
+            print('Brake cost              %.3f k USD       mass %.3f kg' % (inputs['brake_cost'] * 1.e-003,        inputs['brake_mass']))
             print('Generator cost          %.3f k USD       mass %.3f kg' % (inputs['generator_cost'] * 1.e-003,    inputs['generator_mass']))
             print('Bedplate cost           %.3f k USD       mass %.3f kg' % (inputs['bedplate_cost'] * 1.e-003,     inputs['bedplate_mass']))
             print('Yaw system cost         %.3f k USD       mass %.3f kg' % (inputs['yaw_system_cost'] * 1.e-003,   inputs['yaw_mass']))
@@ -1324,9 +1383,10 @@ class Turbine_CostsSE_2015(om.Group):
         self.set_input_defaults('pitch_system_mass_cost_coeff',  units='USD/kg', val=22.1)
         self.set_input_defaults('spinner_mass_cost_coeff',       units='USD/kg', val=11.1)
         self.set_input_defaults('lss_mass_cost_coeff',           units='USD/kg', val=11.9)
-        self.set_input_defaults('bearing_mass_cost_coeff',      units='USD/kg', val=4.5)
+        self.set_input_defaults('bearing_mass_cost_coeff',       units='USD/kg', val=4.5)
         self.set_input_defaults('gearbox_mass_cost_coeff',       units='USD/kg', val=12.9)
         self.set_input_defaults('hss_mass_cost_coeff',           units='USD/kg', val=6.8)
+        self.set_input_defaults('brake_mass_cost_coeff',         units='USD/kg', val=3.6254)
         self.set_input_defaults('generator_mass_cost_coeff',     units='USD/kg', val=12.4)
         self.set_input_defaults('bedplate_mass_cost_coeff',      units='USD/kg', val=2.9)
         self.set_input_defaults('yaw_mass_cost_coeff',           units='USD/kg', val=8.3)
@@ -1364,9 +1424,10 @@ class Turbine_CostsSE_2015(om.Group):
         self.add_subsystem('hub_adder'     , HubSystemCostAdder2015(),promotes=['*'])
         self.add_subsystem('rotor_adder'   , RotorCostAdder2015(),    promotes=['*'])
         self.add_subsystem('lss_c'         , LowSpeedShaftCost2015(), promotes=['*'])
-        self.add_subsystem('bearing_c'     , BearingCost2015(),      promotes=['*'])
+        self.add_subsystem('bearing_c'     , BearingCost2015(),       promotes=['*'])
         self.add_subsystem('gearbox_c'     , GearboxCost2015(),       promotes=['*'])
-        self.add_subsystem('hss_c'         , HighSpeedSideCost2015(), promotes=['*'])
+        self.add_subsystem('hss_c'         , HighSpeedShaftCost2015(),promotes=['*'])
+        self.add_subsystem('brake_c'       , BrakeCost2020(),         promotes=['*'])
         self.add_subsystem('generator_c'   , GeneratorCost2015(),     promotes=['*'])
         self.add_subsystem('bedplate_c'    , BedplateCost2015(),      promotes=['*'])
         self.add_subsystem('yaw_c'         , YawSystemCost2015(),     promotes=['*'])

@@ -229,8 +229,8 @@ class CylinderMass(om.ExplicitComponent):
         # Cost step 6) Outfitting with electricity usage
         K_o = np.sum(1.5*k_m * (coeff - 1.0) * mshell)
         
-        # Material cost, without outfitting
-        K_m = np.sum(k_m * mshell)
+        # Material cost with waste fraction, but without outfitting, 
+        K_m = 1.21 * np.sum(k_m * mshell)
 
         # Electricity usage
         K_e = np.sum(k_e * (e_f*mshell + e_fo*(coeff - 1.0)*mshell) )
