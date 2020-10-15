@@ -363,7 +363,8 @@ class PitchSystem(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        mass  = inputs['pitch_system_scaling_factor'] * (0.22 * inputs['blade_mass'] * discrete_inputs['n_blades'] + 12.6 * np.abs(inputs['BRFM']) * inputs['rho'] / inputs['Xy'])
+        mass  = inputs['pitch_system_scaling_factor'] * (0.22*inputs['blade_mass']*discrete_inputs['n_blades'] +
+                                                         12.6*np.abs(inputs['BRFM'])*inputs['rho']/inputs['Xy'])
         r_hub = 0.5*inputs['hub_diameter']
         I     = np.r_[mass * r_hub**2 * np.array([1.0, 0.5, 0.5]), np.zeros(3)]
 

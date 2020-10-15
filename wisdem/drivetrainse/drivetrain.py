@@ -280,8 +280,12 @@ class DrivetrainSE(om.Group):
             self.connect('D_bearing2','bear2.D_bearing')
             
         if self.options['topLevelFlag']:
-            self.connect('lss_diameter','bear1.D_shaft', src_indices=[0])
-            self.connect('lss_diameter','bear2.D_shaft', src_indices=[-1])
+            if direct:
+                self.connect('nose_diameter','bear1.D_shaft', src_indices=[0])
+                self.connect('nose_diameter','bear2.D_shaft', src_indices=[-1])
+            else:
+                self.connect('lss_diameter','bear1.D_shaft', src_indices=[0])
+                self.connect('lss_diameter','bear2.D_shaft', src_indices=[-1])
             self.connect('mb1Type', 'bear1.bearing_type')
             self.connect('mb2Type', 'bear2.bearing_type')
             

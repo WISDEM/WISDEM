@@ -2011,7 +2011,7 @@ properties:
             labor_rate:
                 type: number
                 description: Hourly loaded wage per worker including all benefits and overhead.  This is currently only applied to steel, column structures.
-                unit: USD/min
+                unit: USD/h
                 minimum: 0.0
                 maximum: 1000.0
                 default: 58.8

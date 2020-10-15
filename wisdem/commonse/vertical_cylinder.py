@@ -200,7 +200,8 @@ class CylinderMass(om.ExplicitComponent):
         R_ave  = 0.5*(Rb + Rt)
         taper  = np.minimum(Rb/Rt, Rt/Rb)
         nsec   = twall.size
-        mshell = np.sum( rho*V_shell )
+        mshell = rho*V_shell
+        mshell_tot = np.sum( rho*V_shell )
         k_m    = inputs['material_cost_rate'] #1.1 # USD / kg carbon steel plate
         k_f    = inputs['labor_cost_rate'] #1.0 # USD / min labor
         k_p    = inputs['painting_cost_rate'] #USD / m^2 painting
@@ -219,8 +220,8 @@ class CylinderMass(om.ExplicitComponent):
         # Labor-based expenses
         K_f = k_f * ( manufacture.steel_cutting_plasma_time(cutLengths, twall) +
                       manufacture.steel_rolling_time(theta_F, R_ave, twall) +
-                      manufacture.steel_butt_welding_time(theta_A, nsec, mshell, cutLengths, twall) +
-                      manufacture.steel_butt_welding_time(theta_A, nsec, mshell, 2*np.pi*Rb[1:], twall[1:]) )
+                      manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, cutLengths, twall) +
+                      manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, 2*np.pi*Rb[1:], twall[1:]) )
         
         # Cost step 5) Painting- outside and inside
         theta_p = 2

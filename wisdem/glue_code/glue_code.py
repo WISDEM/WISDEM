@@ -280,8 +280,12 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.mb2Type',                   'drivese.bear2.bearing_type')
             self.connect('nacelle.lss_diameter',              'drivese.lss_diameter')
             self.connect('nacelle.lss_wall_thickness',        'drivese.lss_wall_thickness')
-            self.connect('nacelle.lss_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
-            self.connect('nacelle.lss_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
+            if modeling_options['drivetrainse']['direct']:
+                self.connect('nacelle.nose_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
+                self.connect('nacelle.nose_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
+            else:
+                self.connect('nacelle.lss_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
+                self.connect('nacelle.lss_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
             self.connect('nacelle.uptower',                   'drivese.uptower')
             self.connect('nacelle.gearbox_efficiency',        'drivese.gearbox_efficiency')
             self.connect('nacelle.brake_mass_user',           'drivese.brake_mass_user')
@@ -507,8 +511,8 @@ class WT_RNTA(om.Group):
                 self.connect('drivese.generator_cost',  'tcc.generator_cost_external')
 
         if modeling_options['flags']['tower']:
-            self.connect('towerse.tower_mass',          'tcc.tower_mass')
-            self.connect('towerse.tower_cost',          'tcc.tower_cost_external')
+            self.connect('towerse.structural_mass',          'tcc.tower_mass')
+            self.connect('towerse.structural_cost',          'tcc.tower_cost_external')
             
         self.connect('costs.blade_mass_cost_coeff'                 , 'tcc.blade_mass_cost_coeff')
         self.connect('costs.hub_mass_cost_coeff'                   , 'tcc.hub_mass_cost_coeff')

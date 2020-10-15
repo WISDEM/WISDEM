@@ -1163,10 +1163,10 @@ class TowerLeanSE(om.Group):
         self.add_subsystem('cm', CylinderMass(nPoints=nFull), promotes=['z_full','d_full','t_full',
                                                                         'labor_cost_rate','painting_cost_rate'])
         self.add_subsystem('tm', TowerMass(n_height=n_height), promotes=['z_full',
-                                                                   'tower_mass','tower_center_of_mass','tower_section_center_of_mass','tower_I_base',
-                                                                   'tower_cost','gravity_foundation_mass','foundation_height',
-                                                                   'transition_piece_mass','transition_piece_cost','transition_piece_height',
-                                                                   'monopile_mass','monopile_cost','monopile_length'])
+                                                                         'tower_mass','tower_center_of_mass','tower_section_center_of_mass','tower_I_base',
+                                                                         'tower_cost','gravity_foundation_mass','foundation_height',
+                                                                         'transition_piece_mass','transition_piece_cost','transition_piece_height',
+                                                                         'monopile_mass','monopile_cost','monopile_length','structural_mass','structural_cost'])
         self.add_subsystem('gc', Util.GeometricConstraints(nPoints=n_height), promotes=['min_d_to_t','max_taper','constr_taper','constr_d_to_t','slope',('d', 'tower_outer_diameter'),('t', 'tower_wall_thickness')])
         
         self.add_subsystem('turb', TurbineMass(), promotes=['turbine_mass','monopile_mass',

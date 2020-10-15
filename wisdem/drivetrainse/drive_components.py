@@ -64,7 +64,7 @@ class MainBearing(om.ExplicitComponent):
         #    mass = 229.47 * D_shaft**1.8036
         #    max_ang = 0.002
 
-        #elif btype == 'TRB1':
+        #elif btype == 'TRB':
         #    face_width = 0.0740
         #    mass = 92.863 * D_shaft**.8399
         #    max_ang = np.deg2rad(3.0 / 60.0)
