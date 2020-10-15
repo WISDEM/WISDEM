@@ -188,7 +188,13 @@ class WindTurbineOntologyPython(object):
                     opt_flag = opt_flag or v
             return opt_flag
         
-        self.analysis_options['opt_flag'] = recursive_flag( self.analysis_options['optimization_variables'] )
+        # The user can provide `opt_flag` in analysis_options.yaml,
+        # but if it's not provided, we check the individual opt flags
+        # from analysis_options.yaml and set a global `opt_flag`
+        if 'opt_flag' in self.analysis_options['driver']:
+            self.analysis_options['opt_flag'] = self.analysis_options['driver']['opt_flag']
+        else:
+            self.analysis_options['opt_flag'] = recursive_flag( self.analysis_options['optimization_variables'] )
         
         # If not an optimization DV, then the number of points should be same as the discretization
         blade_opt_options = self.analysis_options['optimization_variables']['blade']
