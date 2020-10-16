@@ -21,8 +21,33 @@ Before you start editing your WISDEM input files, please make copies of the orig
 
 Option 1: Text editor and command line
 --------------------------------------
-The first option to use WISDEM is to edit
+First, edit the files in the text editor. You can use the ontology guide as a reference when you create the geometry file. Edit the geometry, modeling options, and analysis options as you need them:
 
+.. figure:: /images/yaml/text_editor_01.png
+
+Second, after you are done editing, run WISDEM from the command line with a command of the following form:
+
+::
+
+    wisdem [geometry file].yaml [modeling file].yaml [analysis file].yaml
+
+Substitute ``[geometry file].yaml`` with the filename for your geometry, ``[modeling file].yaml`` with your modeling filename and ``[analysis file].yaml`` with your analysis filename. If you were to run WISDEM with the example files provided above, the command would be ``wisdem nrel5mw.yaml modeling_options.yaml analysis_options.yaml``
+
+WISDEM will produce output messages as it runs. At the end, if everything executes correctly, you will see output similar to the following:
+
+::
+
+    Objectives
+    Turbine AEP: 24.7350498151 GWh
+    Blade Mass:  16403.6823269407 kg
+    LCOE:        48.8313243406 USD/MWh
+    Tip Defl.:   4.1150829328 m
+
+A command line session to execute WISDEM in this way will look similar to the following figure. This will vary depending on your installation, but the basic elements should be there. Note the final lines that WISDEM outputs, as shown above:
+
+.. figure:: /images/yaml/wisdem_cli_step_01.png
+
+Outputs from the run are stored in the ``outputs`` folder that is created within the folder in which you executed the WISDEM command. These are described in detail in the outputs section of this document.
 
 Using the WISDEM GUI
 --------------------
