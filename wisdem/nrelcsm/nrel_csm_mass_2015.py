@@ -393,9 +393,6 @@ class BrakeMass(om.ExplicitComponent):
     brake_mass : float, [kg]
         overall component mass
     """
-
-    def initialize(self):
-        self.options.declare('direct_drive', default=True)
        
     def setup(self):
         self.add_input('rotor_torque', 0.0, units='N*m')

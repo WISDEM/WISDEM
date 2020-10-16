@@ -1,4 +1,4 @@
-.. _theory:
+.. _csmtheory:
 
 Theory
 ------
@@ -97,7 +97,7 @@ For variable names access to override the default values see the :ref:`source`.
 
 
 Spinner (Nose Cone)
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 To obtain the spinner (nose cone) mass in kilograms and cost in USD from the rotor diameter in meters,
 
 .. math::
@@ -185,9 +185,23 @@ The mass scaling relationships are based on the following data,
    :width: 4in
    :align: center
 
-High Speed Shaft and Brake
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-To obtain the high speed shaft and brake mass in kilograms and cost in USD from the machine rating in megawatts,
+Brake
+~~~~~
+To obtain the brake mass in kilograms and cost in USD from the rotor torque in kilo-Newton meters (updated in 2020 by J. Keller)),
+
+.. math::
+   m_{brake} &= k_m Q_{rotor}\\
+   c_{brake} &= k_c m_{brake}\\
+   k_m &= 1.22\\
+   k_c &= 3.6254
+
+Where :math:`Q_{rotor}` is the rotor torque and is approximated above.
+
+For variable names access to override the default values see the :ref:`source`.
+
+High Speed Shaft
+~~~~~~~~~~~~~~~~
+To obtain the high speed shaft mass in kilograms and cost in USD from the machine rating in megawatts,
 
 .. math::
    m_{hss} &= k_m P_{turbine}\\
