@@ -34,7 +34,8 @@ release = '2.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc',
+extensions = [
+              'sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               'sphinx.ext.napoleon',
               'sphinx.ext.mathjax',
@@ -67,7 +68,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # Right now we list out all OpenMDAO methods we don't want to document.
 autodoc_default_options = {
     'member-order': 'bysource',
-    'undoc-members': True,
+    'undoc-members': False,
     'exclude-members': '__weakref__, add_constraint, add_design_var, add_discrete_input, add_discrete_output, add_input, add_objective, add_output, add_recorder, add_response, check_config, cleanup, compute, compute_jacvec_product, compute_partials, convert2units, declare_coloring, declare_partials, get_approx_coloring_fname, get_constraints, get_design_vars, get_linear_vectors, get_nonlinear_vectors, get_objectives, get_responses, initialize, is_active, list_inputs, list_outputs, reconfigure, record_iteration, resetup, run_apply_linear, run_apply_nonlinear, run_linearize, run_solve_linear, run_solve_nonlinear, set_check_partial_options, set_initial_values, set_solver_print, setup, system_iter, use_fixed_coloring, add_subsystem, approx_totals, compute_sys_graph, configure, connect, guess_nonlinear, promotes, set_order',
 }
 

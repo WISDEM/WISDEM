@@ -34,9 +34,9 @@ Using WISDEM
    installation
    how_wisdem_works
    first_steps
+   what_wisdem_can_do
    examples
    modules
-   theory
    publications
    
    
@@ -47,8 +47,8 @@ Other Useful Docs
    :maxdepth: 2
 
    known_issues
-   how_to_write_docs
    how_to_contribute_code
+   how_to_write_docs
    
 Indices and Tables
 ==================
