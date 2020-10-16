@@ -5,7 +5,7 @@ Module documentation
 
 .. only:: html
 
-    Individual documentation for each of the modules contained within WISDEM.
+    This page contains the documentation for each of the modules contained within WISDEM. The models composing WISDEM are all integrated (glued) into a single workflow. The order of the models in the workflow follows the load path, therefore going from the rotor, to the nacelle, to the tower. Lastly, the cost models are called.
 
 .. toctree::
    :maxdepth: 2

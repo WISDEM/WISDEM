@@ -21,7 +21,7 @@ While the NREL Cost and Scaling Model improved the overall cost estimation for l
    :width: 5.5in
    :align: center
 
-    NREL Cost and Scaling Model Key Input-Output Relationships.  TODO: REFRESH GRAPHIC
+   NREL Cost and Scaling Model Key Input-Output Relationships.  TODO: REFRESH GRAPHIC
 
 The resulting NREL Cost and Scaling Model (as provided in NREL_CSM_TCC) allows for a variety of interesting analyses including scaling of conventional technology from under a MW to 5 MW+, assessing impact of trends in input factors for materials and labor on wind plant cost of energy, etc.  However, it does not preserve the underlying engineering relationships of the original Sunderland model and thus loses some fidelity of assessing how design changes may impact system costs.  
   
@@ -50,7 +50,7 @@ Where :math:`D_{rotor}` is the rotor diameter and :math:`k_c` is determined by:
 * If turbine class II+ and blade DOES NOT have carbon fiber spar caps, :math:`k_c=2.50`
 * User override of exponent value
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -69,7 +69,7 @@ To obtain the hub shell mass in kilograms and cost in USD from the blade mass in
    b   &= 1320\\
    k_c &= 3.9
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -93,7 +93,7 @@ To obtain the pitch bearing and system mass in kilograms and cost in USD from th
 
 Where :math:`n_{blade}` is the number of blades, :math:`h` is fractional mass of the pitch bearing housing.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 
 Spinner (Nose Cone)
@@ -107,7 +107,7 @@ To obtain the spinner (nose cone) mass in kilograms and cost in USD from the rot
    b   &= -980\\
    k_c &= 11.1
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -129,7 +129,7 @@ To obtain the low speed shaft mass in kilograms and cost in USD from the blade m
 
 Where :math:`P_{turbine}` is the machine rating.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -150,7 +150,7 @@ To obtain the main bearings mass in kilograms and cost in USD from the rotor dia
 
 Where :math:`D_{rotor}` is the rotor diameter and :math:`n_{bearing}` is the number of bearings.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -177,7 +177,7 @@ Where :math:`Q_{rotor}` is the rotor torque and is approximated by,
 
 Where :math:`P_{turbine}` is the machine rating, :math:`D_{rotor}` is the rotor diameter, :math:`V_{tip}` is the max tip speed, and :math:`\eta` is the drivetrain efficiency.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -197,7 +197,7 @@ To obtain the brake mass in kilograms and cost in USD from the rotor torque in k
 
 Where :math:`Q_{rotor}` is the rotor torque and is approximated above.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 High Speed Shaft
 ~~~~~~~~~~~~~~~~
@@ -211,7 +211,7 @@ To obtain the high speed shaft mass in kilograms and cost in USD from the machin
 
 Where :math:`P_{turbine}` is the machine rating.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 Generator
 ~~~~~~~~~
@@ -226,7 +226,7 @@ To obtain the generator mass in kilograms and cost in USD from the machine ratin
 
 Where :math:`P_{turbine}` is the machine rating.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -247,7 +247,7 @@ To obtain the yaw system mass in kilograms and cost in USD from the rotor diamet
 
 Where :math:`D_{rotor}` is the rotor diameter.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 Hydraulic Cooling
 ~~~~~~~~~~~~~~~~~
@@ -261,7 +261,7 @@ To obtain the hydraulic cooling mass in kilograms and cost in USD from the machi
 
 Where :math:`P_{turbine}` is the machine rating.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 Transformer
 ~~~~~~~~~~~
@@ -274,7 +274,7 @@ To obtain the transformer mass in kilograms and cost in USD from the machine rat
    b   &= 1910\\
    k_c &= 18.8
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -292,7 +292,7 @@ To obtain the cabling and electrical connections cost in USD (there is no mass c
 
 Where :math:`P_{turbine}` is the machine rating.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 Control System
 ~~~~~~~~~~~~~~
@@ -304,7 +304,7 @@ To obtain the control system cost in USD (there is no mass calculated) from the 
 
 Where :math:`P_{turbine}` is the machine rating.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 Other Nacelle Equipment
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -320,7 +320,7 @@ To obtain the nacelle platform and service crane mass in kilograms and cost in U
 
 Note that the service crane is optional with a flag set by the user.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 Bedplate
 ~~~~~~~~
@@ -338,7 +338,7 @@ Where :math:`D_{rotor}` is the rotor diameter.  The mass scaling relationships a
    :width: 4in
    :align: center
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 
 
@@ -355,7 +355,7 @@ To obtain the nacelle cover mass in kilograms and cost in USD from the machine r
 
 Where :math:`P_{turbine}` is the machine rating.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 
 Tower
@@ -371,7 +371,7 @@ To obtain the tower mass in kilograms and cost in USD from the hub height in met
 
 Where :math:`L_{hub}` is the hub height.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 The mass scaling relationships are based on the following data,
 
@@ -395,7 +395,7 @@ It is assumed that the hub system is assembled and transported as a one unit, th
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 
 Rotor System
@@ -407,7 +407,7 @@ The rotor mass and cost is aggregated for conceptual convenience, but it is assu
    m_{rotor} &= n_{blade} m_{blade} + m_{hubsys}\\
    c_{rotor} &= n_{blade} c_{blade} + c_{hubsys}
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 
 
@@ -425,7 +425,7 @@ It is assumed that the nacelle and all of its sub-components are assembled and t
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 
 
@@ -439,7 +439,7 @@ The tower is not aggregated with any other component, but for consistency there 
 
 Where conceptually, :math:`kt` is a transportation multiplier, :math:`kp` is a profit multiplier, :math:`ko` is an overhead cost multiplier, and :math:`ka` is an assembly cost multiplier.  By default, :math:`kt=kp=ko=ka=0`.
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 
 Turbine
@@ -451,7 +451,7 @@ The final turbine assembly also allows for user specification of other cost mult
    m_{turbine} &= m_{rotor} + m_{nacelle} + m_{tower}\\
    c_{turbine} &= (1+kt_{turbine}+kp_{turbine}) (1+ko_{turbine}+ka_{turbine}) (c_{rotor} + c_{nacelle} + c_{towersys})
 
-For variable names access to override the default values see the :ref:`source`.
+For variable names access to override the default values see the :ref:`csmsource`.
 
 
 
