@@ -29,6 +29,7 @@ Second, after you are done editing, run WISDEM from the command line with a comm
 
 ::
 
+    conda activate wisdem-env
     wisdem [geometry file].yaml [modeling file].yaml [analysis file].yaml
 
 Substitute ``[geometry file].yaml`` with the filename for your geometry, ``[modeling file].yaml`` with your modeling filename and ``[analysis file].yaml`` with your analysis filename. If you were to run WISDEM with the example files provided above, the command would be ``wisdem nrel5mw.yaml modeling_options.yaml analysis_options.yaml``
@@ -51,6 +52,13 @@ Outputs from the run are stored in the ``outputs`` folder that is created within
 
 Using the WISDEM GUI
 --------------------
+Launching the GUI is simpler than launching the command line. Activate you environment and execute the WISDEM GUI with the following commands:
+
+::
+
+    conda activate wisdem-env
+    wisdem
+
 
 Loading the files
 ~~~~~~~~~~~~~~~~~
