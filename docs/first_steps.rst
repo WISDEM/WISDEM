@@ -1,5 +1,5 @@
-WISDEM First Steps
-------------------
+First Steps in WISDEM
+---------------------
 
 WISDEM just needs three input files for many optimization and analysis operations. These files specify the geometry of the turbine, modeling options, and analysis options. The files and details about them are outlined in the following table:
 
@@ -16,11 +16,11 @@ WISDEM just needs three input files for many optimization and analysis operation
 There are two options to run WISDEM with these files. The first option is to use a text editor to modify files and to run WISDEM from the command line. The second option is to edit the files with a GUI and run WISDEM with the click of a button. This document will describe both of these options in turn.
 
 The first step for either option is to make copies of example files
--------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Before you start editing your WISDEM input files, please make copies of the original files in a separate folder. This ensures that, if you edit copies of the original files, you can always revert back to a version of the files that is known to execute successfully.
 
 Option 1: Text editor and command line
---------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 First, edit the files in the text editor. You can use the ontology guide as a reference when you create the geometry file. Edit the geometry, modeling options, and analysis options as you need them:
 
 .. figure:: /images/yaml/text_editor_01.png
@@ -50,8 +50,8 @@ A command line session to execute WISDEM in this way will look similar to the fo
 
 Outputs from the run are stored in the ``outputs`` folder that is created within the folder in which you executed the WISDEM command. These are described in detail in the outputs section of this document.
 
-Using the WISDEM GUI
---------------------
+Option 2: WISDEM GUI
+^^^^^^^^^^^^^^^^^^^^
 Launching the GUI is simpler than launching the command line. Activate you environment and execute the WISDEM GUI with the following commands:
 
 ::
@@ -89,8 +89,8 @@ When you see this dialog box, the GUI has written the YAML files. WISDEM may tak
 
 .. figure:: /images/yaml/wisdem_gui_step_06.png
 
-Outputs
--------
+Working with Outputs
+^^^^^^^^^^^^^^^^^^^^
 In the outputs folder there are several files. Each of them hold all the output variables from a run but are in different formats for various environments:
 
 +-----------+-------------------------+

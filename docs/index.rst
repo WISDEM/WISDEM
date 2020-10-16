@@ -24,6 +24,7 @@ Using WISDEM
 
    installation
    how_wisdem_works
+   first_steps
    examples
    modules
    theory
