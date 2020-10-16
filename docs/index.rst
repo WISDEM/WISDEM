@@ -33,6 +33,7 @@ Using WISDEM
 
    installation
    how_wisdem_works
+   first_steps
    what_wisdem_can_do
    examples
    modules
