@@ -18,31 +18,8 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 Note that older versions of anaconda on MacOS and Linux may instead require `source activate wisdem-env`
 
-.. _install_as_user:
-Install WISDEM as a User
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-From an active Anaconda environment, install WISDEM and its dependencies with:
-
-.. code-block:: bash
-
-    conda install -y wisdem
-
-Running WISDEM Tutorials
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-To open up the WISDEM tutorials, you will have to clone the WISDEM source code.  First navigate to a directory where you want to place WISDEM and all of its files and then run with:
-
-.. code-block:: bash
-
-    conda install -y git jupyter
-    git clone https://github.com/WISDEM/WISDEM.git
-    cd WISDEM/tutorial-notebooks
-    jupyter notebook
-
-.. _install_as_developer:
-Install WISDEM as a Developer
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install WISDEM
+^^^^^^^^^^^^^^
 
 If you wish to edit source files and/or contribute to WISDEM, you will need to install as a developer.  WISDEM is first installed with Anaconda to install all dependencies, but then reinstall WISDEM from source.  Note the differences between Windows and Mac/Linux build systems.
 
