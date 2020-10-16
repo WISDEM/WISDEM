@@ -12,11 +12,9 @@ Two types of generator systems : synchronous and induction machines are currentl
 
 Each module is structured to perform electromagnetic, structural, and basic thermal design that are integrated to provide the optimal generator design dimensions. 
 The analytical models of each generator module were created in Python within the OpenMDAO computing platform to facilitate systems design and multidisciplinary optimization. 
-<<<<<<< HEAD
-=======
+
 All analytical methods were based on the magnetic circuit and equivalent circuit models as described in some previous work: citep{Upwind_study} and generator design handbooks: citep{Boldea},citep{Boldea_induction}.
 Thesee methods used to evaluate the main design parameters, including the elctromagnetically active material. For the estimation of structural design, reference is made to : citep{McDonald}. 
->>>>>>> develop
 
 GeneratorSE:
 1. Provides basic design attributes in addition to key electrical performance parameters including, but not limited to, output voltage, current, resistances, inductances, and losses and also the weights and costs of materials involved in the basic design.

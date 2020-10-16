@@ -15,7 +15,7 @@ Module documentation
    wisdem/ccblade/index
    wisdem/commonse/index
    wisdem/drivetrainse/drivese/index
-   wisdem/drivetrainse/generator/index
+   wisdem/drivetrainse/generatorse/index
    wisdem/floatingse/index
    wisdem/glue_code/index
    wisdem/landbosse/index
