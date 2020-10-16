@@ -17,7 +17,7 @@ There are two options to run WISDEM with these files. The first option is to use
 
 The first step for either option is to make copies of example files
 -------------------------------------------------------------------
-Before you start editing your WISDEM input files, please make copies of the original files in a separate folder. If you edit copies of the original files, you can always revert back to a version of the files that is known to execute successfully.
+Before you start editing your WISDEM input files, please make copies of the original files in a separate folder. This ensures that, if you edit copies of the original files, you can always revert back to a version of the files that is known to execute successfully.
 
 Option 1: Text editor and command line
 --------------------------------------
