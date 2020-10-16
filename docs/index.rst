@@ -26,7 +26,6 @@ Using WISDEM
    how_wisdem_works
    examples
    modules
-   theory
    publications
    
    
