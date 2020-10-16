@@ -8,46 +8,6 @@ one-off or comparison analyses between a few runs. OpenMDAO provides
 extensive optimization capability, which can give yield richer and more
 insightful analyses.
 
-Methodology
------------
-
-For a full substructure optimization, we begin with the formulation of a
-constrained, nonlinear single-objective optimization problem with
-mixed-integer design variables,
-
-.. math::
-
-   \begin{array}{ll}
-     \min & f\left({\mathbf{x}}\right)\\
-     \text{subject to} & {\mathbf{g}}\left({\mathbf{x}}\right) \leq 0,\\
-     \text{and}& {\mathbf{x}} \in {\mathbf{X}} \\
-     \end{array}
-
-where,
-
--  :math:`{\mathbf{x}}` is a vector of :math:`n` *design variables*, the
-   variables that are adjusted in order to find the optimal solution
-   (see Table [tbl:designvar]);
-
--  :math:`f({\mathbf{x}})` is the nonlinear *objective function*, the
-   metric to be minimized by the optimization algorithm;
-
--  :math:`{\mathbf{g}} ({\mathbf{x}})` is the vector of *inequality
-   constraints*, the set of conditions that the solution must satisfy
-   (see Table [tbl:constraints]). There are no equality constraints;
-
--  :math:`{\mathbf{X}}` is the design variable *bounds*, the bracket of
-   allowable design variable values.
-
-Note that this problem statement imposes no requirements on the types of
-variables in :math:`{\mathbf{x}}`. A mixed-integer solution is desired,
-where some design variables are continuous (:math:`x \in {\mathbb{R}}`)
-and others are discrete variables that can only take integer values
-(:math:`x \in
-{\mathbb{Z}}`). An example of an integer design variable in this
-application is the number of offset columns or the number of mooring
-line connections.
-
 Design Variables
 ----------------
 
