@@ -59,10 +59,6 @@ Launching the GUI is simpler than launching the command line. Activate you envir
     conda activate wisdem-env
     wisdem
 
-
-Loading the files
-~~~~~~~~~~~~~~~~~
-
 The WISDEM GUI is laid out from left to right to edit the geometry, modeling, and analysis files. The upper part of the interface shows a status bar and at the right side there is a `Run WISDEM` button.
 
 When you start the WISDEM GUI, a window similar to the following will appear, depending on whether you are running macOS or Windows:
@@ -85,9 +81,6 @@ Finally, open the `analysis_options.yaml` as seen in this figure:
 .. figure:: /images/yaml/wisdem_gui_step_04.png
 .. figure:: /images/yaml/windows_wisdem_gui_step_04.png
 
-Running WISDEM
-~~~~~~~~~~~~~~
-
 In the GUI, click on the `Run WISDEM` button. The following dialog box will appear
 
 .. figure:: /images/yaml/wisdem_gui_step_05.png
@@ -95,3 +88,41 @@ In the GUI, click on the `Run WISDEM` button. The following dialog box will appe
 When you see this dialog box, the GUI has written the YAML files. WISDEM may take a while to run, so you are asked to confirm that you want to execute the run of WISDEM. Click `OK` to continue. Once you click `OK`, the GUI will stop responding while WISDEM executes. Watch the command line window for messages as WISDEM executes. When WISDEM has finished, you will see the following message:
 
 .. figure:: /images/yaml/wisdem_gui_step_06.png
+
+Outputs
+-------
+In the outputs folder there are several files. Each of them hold all the output variables from a run but are in different formats for various environments:
+
++-----------+-------------------------+
+| Extension | Description             |
++===========+=========================+
+| ``.mat``  | MatLab output format    |
++-----------+-------------------------+
+| ``.npz``  | Archive of NumPy arrays |
++-----------+-------------------------+
+| ``.pkl``  | Python Pickle format    |
++-----------+-------------------------+
+| ``.xlsx`` | Microsoft Excel format  |
++-----------+-------------------------+
+| ``.yaml`` | YAML format             |
++-----------+-------------------------+
+
+As an example, here is a script to plot Axial Induction versus Blade Nondimensional Span by extracting the values from the Python pickle file. Copy it into a text editor and save it to the same folder that you executed WISDEM from:
+
+::
+
+    import pickle
+    import matplotlib.pyplot as plt
+    refturb_pickle = pickle.load(open("outputs/refturb_output.pkl", "rb"))
+    refturb = {r[0]: r[1] for r in refturb_pickle}
+    xs = refturb["wt.wt_init.blade.outer_shape_bem.compute_blade_outer_shape_bem.s_default"]["value"]
+    ys = refturb["wt.sse.powercurve.compute_power_curve.ax_induct_regII"]["value"]
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
+    ax.plot(xs, ys)
+    ax.set_xlabel("Blade Nondimensional Span [-]")
+    ax.set_ylabel("Axial Induction [-]")
+    plt.show()
+
+This script generates the following plot:
+
+.. figure:: /images/yaml/first_steps_first_plot.png
