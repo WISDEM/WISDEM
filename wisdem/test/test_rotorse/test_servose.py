@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import wisdem.servose.servose as serv
+import wisdem.rotorse.servose as serv
 import openmdao.api as om
 import copy
 import time

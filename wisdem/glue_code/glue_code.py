@@ -10,7 +10,7 @@ from wisdem.orbit.api.wisdem.fixed import Orbit
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
-from wisdem.servose.servose import ServoSE, NoStallConstraint
+from wisdem.rotorse.servose import ServoSE, NoStallConstraint
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
 from wisdem.rotorse.rotor_loads_defl_strains import RotorLoadsDeflStrains
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
