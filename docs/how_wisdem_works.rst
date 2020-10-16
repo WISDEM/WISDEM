@@ -1,4 +1,4 @@
-.. how_wisdem_works:
+.. _how_wisdem_works:
 
 How WISDEM works
 ================
