@@ -3,7 +3,11 @@ RotorSE
 
 .. only:: html
 
-    RotorSE is an aero/structural systems engineering model of a horizontal axis wind turbine rotor.  It has been designed for use in optimization applications, and is written within the `OpenMDAO 3.x <http://openmdao.org/>`_ framework.  Aerodynamic performance is calculated by `CCBlade <http://wind.nrel.gov/designcodes/simulators/ccblade/>`_, a blade element momentum method.  Structural analysis is provided by `PreComp <http://wind.nrel.gov/designcodes/preprocessors/precomp/>`_, a classical laminate cross-section method, and the beam finite element method .  Methods exist for creating power curves, transferring loads and mass properties, estimating tip deflection, etc.  Although analytic gradients are provided for aerodynamic analyses, and some of the helper components, finite differencing is used for optimization.
+    WISDEM simulates horizontal axis wind turbine rotors with steady-state models. The combination of these models is named RotorSE. The models are all written as `OpenMDAO 3.x <http://openmdao.org/>`_ explicit components and are combined into groups. The rotor aerodynamics is solved with the blade element momentum model , the elastic properties of the composite blades are obtained running the cross sectional solver :ref:`precomp`, and the deformations are obtained running the Timoshenko beam solver `Frame3DD <http://frame3dd.sourceforge.net/>`_. A regulation trajectory is implemented and the annual energy production of the turbine is computed here. RotorSE also estimates ultimate loads, rotor blade deflections, and blade strains. Finally, RotorSE includes a detailed blade cost model :ref:`bcm`.
+    
+    Although analytic gradients are provided for aerodynamic analyses, and some of the helper components, finite differencing is used for optimization. 
+
+    The pages below contain the documentation of the modules composing RotorSE, except for CCBlade that is described here :ref:`ccblade`. 
 
     .. rubric:: Table of Contents
 
@@ -12,8 +16,6 @@ RotorSE
 
     precomp
     bcm
-    powercurve
-    tutorial
-    documentation
-    theory
+    aep
+    loads_deflections_strains
 

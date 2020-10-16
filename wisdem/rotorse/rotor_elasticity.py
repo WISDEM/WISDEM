@@ -550,6 +550,7 @@ class RunPreComp(ExplicitComponent):
                 bcm.mat_options['le_reinf_mat_id'] = bcm.materials[name]['id']   # Assigning the material to the le reinf
                 bcm.mat_options['te_reinf_mat_id'] = bcm.materials[name]['id']   # Assigning the material to the te reinf
 
+        # Rotor cost
         bcm.upperCS     = upperCS
         bcm.lowerCS     = lowerCS
         bcm.websCS      = websCS

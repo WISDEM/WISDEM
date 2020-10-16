@@ -1,7 +1,7 @@
 '''
-Controller tuning script.
+Script that computes the regulation trajectory of the rotor and the annual energy production
 
-Nikhar J. Abbas
+Nikhar J. Abbas, Pietro Bortolotti
 January 2020
 '''
 
