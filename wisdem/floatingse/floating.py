@@ -1,12 +1,10 @@
 import openmdao.api as om
-from wisdem.floatingse.column import Column, ColumnGeometry
+from wisdem.floatingse.column import Column
 from wisdem.floatingse.substructure import Substructure, SubstructureGeometry
 from wisdem.floatingse.loading import Loading
 from wisdem.floatingse.map_mooring import MapMooring
 from wisdem.towerse.tower import TowerLeanSE
 import numpy as np
-
-from wisdem.commonse.vertical_cylinder import get_nfull
 
 
 class FloatingSE(om.Group):
@@ -142,85 +140,4 @@ class FloatingSE(om.Group):
         self.connect('off.Pz', 'offset_Pz')
         self.connect('off.qdyn', 'offset_qdyn')
         self.connect('off.draft', 'offset_draft')
-
-
-
-
-def commonVars(prob, nsection):
-    # Variables common to both examples
-
-    # Set environment to that used in OC4 testing campaign
-    prob['shearExp']    = 0.11   # Shear exponent in wind power law
-    prob['cm']          = 2.0    # Added mass coefficient
-    prob['Uc']          = 0.0    # Mean current speed
-    prob['wind_z0']     = 0.0    # Water line
-    prob['yaw']         = 0.0    # Turbine yaw angle
-    prob['beta_wind'] = prob['beta_wave'] = 0.0    # Wind/water beta angle
-    prob['cd_usr']      = -1.0 # Compute drag coefficient
-
-    # Wind and water properties
-    prob['rho_air'] = 1.226   # Density of air [kg/m^3]
-    prob['mu_air']  = 1.78e-5 # Viscosity of air [kg/m/s]
-    prob['rho_water']      = 1025.0  # Density of water [kg/m^3]
-    prob['mu_water']  = 1.08e-3 # Viscosity of water [kg/m/s]
-    
-    # Material properties
-    prob['rho_mat']     = np.array([7850.0])          # Steel [kg/m^3]
-    prob['E_mat']       = 200e9*np.ones((1,3))           # Young's modulus [N/m^2]
-    prob['G_mat']       = 79.3e9*np.ones((1,3))          # Shear modulus [N/m^2]
-    prob['sigma_y_mat'] = np.array([3.45e8])          # Elastic yield stress [N/m^2]
-    prob['permanent_ballast_density'] = 4492.0 # [kg/m^3]
-
-    # Mass and cost scaling factors
-    prob['outfitting_factor'] = 0.06    # Fraction of additional outfitting mass for each column
-    prob['ballast_cost_rate']        = 0.1   # Cost factor for ballast mass [$/kg]
-    prob['unit_cost_mat']       = np.array([1.1])  # Cost factor for column mass [$/kg]
-    prob['labor_cost_rate']          = 1.0  # Cost factor for labor time [$/min]
-    prob['painting_cost_rate']       = 14.4  # Cost factor for column surface finishing [$/m^2]
-    prob['outfitting_cost_rate']     = 1.5*1.1  # Cost factor for outfitting mass [$/kg]
-    prob['mooring_cost_factor']      = 1.1     # Cost factor for mooring mass [$/kg]
-    
-    # Mooring parameters
-    prob['number_of_mooring_connections'] = 3             # Evenly spaced around structure
-    prob['mooring_lines_per_connection'] = 1             # Evenly spaced around structure
-    prob['mooring_type']               = 'chain'       # Options are chain, nylon, polyester, fiber, or iwrc
-    prob['anchor_type']                = 'DRAGEMBEDMENT' # Options are SUCTIONPILE or DRAGEMBEDMENT
-    
-    # Porperties of turbine tower
-    nTower = prob.model.options['modeling_options']['tower']['n_height']-1
-    prob['tower_height']            = prob['hub_height'] = 77.6       # Length from tower main to top (not including freeboard) [m]
-    prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
-    prob['tower_outer_diameter_in'] = np.linspace(6.5, 3.87, nTower+1) # Diameter at each tower section node (linear lofting between) [m]
-    prob['tower_layer_thickness']   = np.linspace(0.027, 0.019, nTower).reshape((1,nTower)) # Diameter at each tower section node (linear lofting between) [m]
-    prob['tower_outfitting_factor'] = 1.07                              # Scaling for unaccounted tower mass in outfitting
-
-    # Materials
-    prob['material_names'] = ['steel']
-    prob['main.layer_materials'] = prob['off.layer_materials'] = prob['tow.tower_layer_materials'] = ['steel']
-    
-    # Properties of rotor-nacelle-assembly (RNA)
-    prob['rna_mass']   = 350e3 # Mass [kg]
-    prob['rna_I']      = 1e5*np.array([1149.307, 220.354, 187.597, 0, 5.037, 0]) # Moment of intertia (xx,yy,zz,xy,xz,yz) [kg/m^2]
-    prob['rna_cg']     = np.array([-1.132, 0, 0.509])                       # Offset of RNA center of mass from tower top (x,y,z) [m]
-    # Max thrust
-    prob['rna_force']  = np.array([1284744.196, 0, -112400.5527])           # Net force acting on RNA (x,y,z) [N]
-    prob['rna_moment'] = np.array([3963732.762, 896380.8464, -346781.682]) # Net moment acting on RNA (x,y,z) [N*m]
-    # Max wind speed
-    #prob['rna_force']  = np.array([188038.8045, 0,  -16451.2637]) # Net force acting on RNA (x,y,z) [N]
-    #prob['rna_moment'] = np.array([0.0, 131196.8431,  0.0]) # Net moment acting on RNA (x,y,z) [N*m]
-    
-    # Mooring constraints
-    prob['max_draft'] = 150.0 # Max surge/sway offset [m]      
-    prob['max_offset'] = 100.0 # Max surge/sway offset [m]      
-    prob['operational_heel']   = 10.0 # Max heel (pitching) angle [deg]
-
-    # Design constraints
-    prob['max_taper'] = 0.2                # For manufacturability of rolling steel
-    prob['min_d_to_t'] = 120.0 # For weld-ability
-    prob['connection_ratio_max']      = 0.25 # For welding pontoons to columns
-
-    # API 2U flag
-    prob['loading'] = 'hydrostatic'
-    
-    return prob
 
