@@ -18,4 +18,5 @@ RotorSE
     bcm
     aep
     loads_deflections_strains
+    rail
 

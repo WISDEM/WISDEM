@@ -72,10 +72,8 @@ The critical strain can then be computed as
 where the negative sign accounts for the fact that the strain is compressive in buckling.
 
 
-
-.. only:: html
-
-    :bib:`Bibliography`
+Bibliography
+============
 
 .. bibliography:: references.bib
     :style: unsrt
