@@ -7,9 +7,9 @@ fname_modeling_options = test_dir + 'modeling_options.yaml'
 fname_analysis_options = test_dir + 'analysis_options.yaml'
 
 class TestRegression(unittest.TestCase):
-    
+
     def test5MW(self):
-        
+
         ## NREL 5MW
         fname_wt_input         = test_dir + 'nrel5mw.yaml'
 
@@ -26,7 +26,7 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt['elastic.precomp.blade_mass'][0], 73310.0985877902)
         self.assertAlmostEqual(wt_opt['sse.AEP'][0]*1.e-6, 76.3239774840259) #78.4607793182)
-        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 68.2204414904146)
+        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 68.23469534955402)
 
 def suite():
     suite = unittest.TestSuite()
@@ -35,5 +35,3 @@ def suite():
 
 if __name__ == '__main__':
     unittest.TextTestRunner().run(suite())
-    
-    

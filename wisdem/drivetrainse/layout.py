@@ -24,7 +24,7 @@ class Layout(om.ExplicitComponent):
     """
     Calculate lengths, heights, and diameters of key drivetrain components in a
     direct drive system (valid for upwind or downwind).
-    
+
     Parameters
     ----------
     upwind : boolean
@@ -51,7 +51,7 @@ class Layout(om.ExplicitComponent):
         material density
     bedplate_rho : float, [kg/m**3]
         material density
-    
+
     Returns
     -------
     L_lss : float, [m]
@@ -88,9 +88,9 @@ class Layout(om.ExplicitComponent):
         Margin for drivetrain length and desired overhang distance (should be > 0)
     constr_height : float, [m]
         Margin for drivetrain height and desired hub height (should be > 0)
-    
+
     """
-    
+
     def setup(self):
         self.add_discrete_input('upwind', True)
         self.add_input('L_12', 0.0, units='m')
@@ -125,13 +125,13 @@ class Layout(om.ExplicitComponent):
         self.add_output('hss_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('constr_length', 0.0, units='m')
         self.add_output('constr_height', 0.0, units='m')
-        
+
 
 class DirectLayout(Layout):
     """
     Calculate lengths, heights, and diameters of key drivetrain components in a
     direct drive system (valid for upwind or downwind).
-    
+
     Parameters
     ----------
     access_diameter : float, [m]
@@ -140,9 +140,9 @@ class DirectLayout(Layout):
         Nose outer diameter from bearing 1 to bedplate
     nose_wall_thickness : numpy array[5], [m]
         Nose wall thickness
-    bedplate_wall_thickness : numpy array[n_points], [m]
+    bedplate_wall_thickness : numpy array[12], [m]
         Bedplate wall thickness
-    
+
     Returns
     -------
     L_nose : float, [m]
@@ -159,21 +159,21 @@ class DirectLayout(Layout):
         Nose center of mass along nose axis from bedplate
     nose_I : numpy array[3], [kg*m**2]
         Nose moment of inertia around cm in axial (hub-aligned) c.s.
-    x_bedplate : numpy array[n_points], [m]
+    x_bedplate : numpy array[12], [m]
         Bedplate centerline x-coordinates
-    z_bedplate : numpy array[n_points], [m]
+    z_bedplate : numpy array[12], [m]
         Bedplate centerline z-coordinates
-    x_bedplate_inner : numpy array[n_points], [m]
+    x_bedplate_inner : numpy array[12], [m]
         Bedplate lower curve x-coordinates
-    z_bedplate_inner : numpy array[n_points], [m]
+    z_bedplate_inner : numpy array[12], [m]
         Bedplate lower curve z-coordinates
-    x_bedplate_outer : numpy array[n_points], [m]
+    x_bedplate_outer : numpy array[12], [m]
         Bedplate outer curve x-coordinates
-    z_bedplate_outer : numpy array[n_points], [m]
+    z_bedplate_outer : numpy array[12], [m]
         Bedplate outer curve z-coordinates
-    D_bedplate : numpy array[n_points], [m]
+    D_bedplate : numpy array[12], [m]
         Bedplate diameters
-    t_bedplate : numpy array[n_points], [m]
+    t_bedplate : numpy array[12], [m]
         Bedplate wall thickness (mirrors input)
     s_stator : float, [m]
         Generator stator attachment to nose s-coordinate
@@ -184,18 +184,15 @@ class DirectLayout(Layout):
     constr_ecc : float, [m]
         Margin for bedplate ellipse eccentricity (should be > 0)
     """
-    
-    def initialize(self):
-        self.options.declare('n_points')
-    
+
+
     def setup(self):
         super().setup()
-        n_points = self.options['n_points']
 
         self.add_input('access_diameter', 0.0, units='m')
         self.add_input('nose_diameter', np.zeros(5), units='m')
         self.add_input('nose_wall_thickness', np.zeros(5), units='m')
-        self.add_input('bedplate_wall_thickness', np.zeros(n_points), units='m')
+        self.add_input('bedplate_wall_thickness', np.zeros(12), units='m')
 
         self.add_output('L_nose', 0.0, units='m')
         self.add_output('D_bearing1', 0.0, units='m')
@@ -204,19 +201,19 @@ class DirectLayout(Layout):
         self.add_output('nose_mass', val=0.0, units='kg')
         self.add_output('nose_cm', val=0.0, units='m')
         self.add_output('nose_I', val=np.zeros(3), units='kg*m**2')
-        self.add_output('x_bedplate', val=np.zeros(n_points), units='m')
-        self.add_output('z_bedplate', val=np.zeros(n_points), units='m')
-        self.add_output('x_bedplate_inner', val=np.zeros(n_points), units='m')
-        self.add_output('z_bedplate_inner', val=np.zeros(n_points), units='m')
-        self.add_output('x_bedplate_outer', val=np.zeros(n_points), units='m')
-        self.add_output('z_bedplate_outer', val=np.zeros(n_points), units='m')
-        self.add_output('D_bedplate', val=np.zeros(n_points), units='m')
-        self.add_output('t_bedplate', val=np.zeros(n_points), units='m')
+        self.add_output('x_bedplate', val=np.zeros(12), units='m')
+        self.add_output('z_bedplate', val=np.zeros(12), units='m')
+        self.add_output('x_bedplate_inner', val=np.zeros(12), units='m')
+        self.add_output('z_bedplate_inner', val=np.zeros(12), units='m')
+        self.add_output('x_bedplate_outer', val=np.zeros(12), units='m')
+        self.add_output('z_bedplate_outer', val=np.zeros(12), units='m')
+        self.add_output('D_bedplate', val=np.zeros(12), units='m')
+        self.add_output('t_bedplate', val=np.zeros(12), units='m')
         self.add_output('s_stator', val=0.0, units='m')
         self.add_output('s_rotor', val=0.0, units='m')
         self.add_output('constr_access', np.zeros(5), units='m')
         self.add_output('constr_ecc', 0.0, units='m')
-        
+
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
@@ -236,7 +233,7 @@ class DirectLayout(Layout):
         upwind       = discrete_inputs['upwind']
         lss_rho      = float(inputs['lss_rho'])
         bedplate_rho = float(inputs['bedplate_rho'])
-        
+
         # ------- Discretization ----------------
         L_grs      = 0.5 * L_h1
         L_gsn      = L_generator - L_grs - L_12
@@ -282,12 +279,12 @@ class DirectLayout(Layout):
         outputs['s_mb1']        = s_mb1
         outputs['s_mb2']        = s_mb2
         # ------------------------------------
-        
+
         # ------------ Bedplate geometry and coordinates -------------
         # Define reference/centroidal axis
         # Origin currently set like standard ellipse eqns, but will shift below to being at tower top
         # The end point of 90 deg isn't exactly right for non-zero tilt, but leaving that for later
-        n_points = self.options['n_points']
+        n_points = 12
         if upwind:
             rad = np.linspace(0.0, 0.5*np.pi, n_points)
         else:
@@ -313,7 +310,7 @@ class DirectLayout(Layout):
 
         # This finds the central angle (rad2) given the parametric angle (rad)
         rad2 = np.arctan( (L_bedplate + 0.5*D_top) / (H_bedplate + 0.5*D_nose[0]) * np.tan(np.diff(rad)) )
-            
+
         # arc length from eccentricity of the centroidal ellipse using incomplete elliptic integral of the second kind
         if L_bedplate >= H_bedplate:
             ecc = np.sqrt(1 - (H_bedplate/L_bedplate)**2)
@@ -321,7 +318,7 @@ class DirectLayout(Layout):
         else:
             ecc = np.sqrt(1 - (L_bedplate/H_bedplate)**2)
             arc = H_bedplate*np.abs(ellipeinc(rad2,ecc))
-            
+
         # Mass and MoI properties
         x_c_sec = util.nodal2sectional( x_c )[0]
         z_c_sec = util.nodal2sectional( z_c )[0]
@@ -347,11 +344,11 @@ class DirectLayout(Layout):
         x_inner -= x_c[0]
         x_outer -= x_c[0]
         x_c     -= x_c[0]
-        
+
         outputs['bedplate_mass'] = mass_tot
         outputs['bedplate_cm']   = cm
         outputs['bedplate_I']    = util.unassembleI(I_bed)
-        
+
         # Geometry outputs
         outputs['x_bedplate'] = x_c
         outputs['z_bedplate'] = z_c
@@ -362,14 +359,14 @@ class DirectLayout(Layout):
         outputs['D_bedplate'] = D_bed
         outputs['t_bedplate'] = t_bed
         # ------------------------------------
-        
+
         # ------- Constraints ----------------
         outputs['constr_access'] = D_nose - t_nose - D_access
         outputs['constr_length'] = constr_Ldrive # Should be > 0
         outputs['constr_height'] = H_bedplate # Should be > 0
         outputs['constr_ecc']    = L_bedplate - H_bedplate # Should be > 0
         # ------------------------------------
-        
+
         # ------- Nose, lss, and bearing properties ----------------
         # Now is a good time to set bearing diameters
         outputs['D_bearing1'] = D_lss[-1] - t_lss[-1] - D_nose[0]
@@ -415,11 +412,11 @@ class GearedLayout(Layout):
         Bedplate is two parallel I beams, this is the web height
     hss_rho : float, [kg/m**3]
         material density
-    
+
     Returns
     -------
     s_drive : numpy array[12], [m]
-        Discretized, hub-aligned s-coordinates of the drivetrain starting at 
+        Discretized, hub-aligned s-coordinates of the drivetrain starting at
         generator and ending at hub flange
     s_hss : numpy array[5], [m]
         HSS discretized s-coordinates
@@ -435,8 +432,8 @@ class GearedLayout(Layout):
         Generator (centroid) position in s-coordinates
 
     """
-    
-    
+
+
     def setup(self):
         super().setup()
 
@@ -452,8 +449,8 @@ class GearedLayout(Layout):
         self.add_output('s_drive', val=np.zeros(12), units='m')
         self.add_output('s_hss', val=np.zeros(3), units='m')
         self.add_output('bedplate_web_height', val=0.0, units='m')
-        
-        
+
+
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
@@ -501,7 +498,7 @@ class GearedLayout(Layout):
         s_tower = s_drive[-1] - L_overhang/np.cos(tilt)
         s_drive -= s_tower
         outputs['s_drive'] = s_drive
-        
+
         # Discretize the drivetrain from generator to hub
         s_generator = s_drive[1]
         s_mb1       = s_drive[9]
@@ -517,7 +514,7 @@ class GearedLayout(Layout):
         outputs['s_mb1']    = s_mb1
         outputs['s_mb2']    = s_mb2
         # ------------------------------------
-        
+
         # ------- hss, lss, and bearing properties ----------------
         # Compute center of mass based on area
         m_hss, cm_hss, I_hss = rod_prop(s_hss, D_hss, t_hss, hss_rho)
@@ -531,14 +528,14 @@ class GearedLayout(Layout):
         outputs['lss_cm']   = cm_lss
         outputs['lss_I']    = I_lss
         outputs['s_lss']    = s_lss
-        
+
         # ------- Bedplate I-beam properties ----------------
         L_bedplate = L_drive*np.cos(tilt)
         H_bedplate = H_drive - L_drive*np.sin(tilt) # Subtract thickness of platform plate
         outputs['L_bedplate'] = L_bedplate
         outputs['H_bedplate'] = H_bedplate
         bed_h_web = H_bedplate - 2*bed_t_flange - 0.05 # Leave some extra room for plate?
-        
+
         myI         = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
         m_bedplate  = myI.Area * L_bedplate * bedplate_rho
         cg_bedplate = np.r_[Cup*(L_overhang - 0.5*L_bedplate), 0.0, myI.CG] # from tower top
@@ -547,7 +544,7 @@ class GearedLayout(Layout):
         outputs['bedplate_mass'] = m_bedplate
         outputs['bedplate_cm']   = cg_bedplate
         outputs['bedplate_I']    = np.r_[I_bedplate, np.zeros(3)]
-        
+
         # ------- Constraints ----------------
         outputs['constr_length'] = L_drive*np.cos(tilt) - L_overhang - 0.5*D_top # Should be > 0
         outputs['constr_height'] = H_bedplate # Should be > 0

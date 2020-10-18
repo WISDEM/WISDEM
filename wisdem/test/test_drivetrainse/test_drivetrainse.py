@@ -4,6 +4,8 @@ import openmdao.api as om
 import numpy as np
 import traceback, sys
 
+npts = 12
+
 def set_common(prob, opt):
     prob['n_blades'] = 3
     prob['rotor_diameter'] = 120.0
@@ -25,7 +27,7 @@ def set_common(prob, opt):
         prob['hss_G']    = prob['bedplate_G']
         prob['hss_rho']  = prob['bedplate_rho']
         prob['hss_Xy']   = prob['bedplate_Xy']
-        
+
     prob['blade_mass']                  = 17000.
     prob['pitch_system.BRFM']           = 1.e+6
     prob['pitch_system_scaling_factor'] = 0.54
@@ -48,18 +50,17 @@ def set_common(prob, opt):
     prob['rated_rpm']                   = 10            #8.68                # rpm 9.6
     prob['blades_I']                    = 1e3*np.ones(6)
     prob['blades_I'][0]                 = 199200777.51 * 30. * 5 / 10. / np.pi
-    
+
     return prob
 
 
 
 class TestGroup(unittest.TestCase):
-    
+
     def testDirectDrive_withGen(self):
 
         opt = {}
         opt['drivetrainse'] = {}
-        opt['drivetrainse']['n_height'] = npts = 10
         opt['drivetrainse']['direct'] = True
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
@@ -73,7 +74,7 @@ class TestGroup(unittest.TestCase):
         opt['GeneratorSE']['type'] = 'pmsg_outer'
         opt['flags'] = {}
         opt['flags']['generator'] = True
-        
+
         prob = om.Problem()
         prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
         prob.setup()
@@ -139,12 +140,11 @@ class TestGroup(unittest.TestCase):
         except Exception:
             traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
-        
+
     def testDirectDrive_withSimpleGen(self):
 
         opt = {}
         opt['drivetrainse'] = {}
-        opt['drivetrainse']['n_height'] = npts = 10
         opt['drivetrainse']['direct'] = True
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
@@ -180,7 +180,7 @@ class TestGroup(unittest.TestCase):
         prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
 
         prob['generator_efficiency_user'] = np.zeros((20,2))
-        
+
         try:
             prob.run_model()
             self.assertTrue(True)
@@ -188,12 +188,11 @@ class TestGroup(unittest.TestCase):
             traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
 
-        
+
     def testGeared_withGen(self):
 
         opt = {}
         opt['drivetrainse'] = {}
-        opt['drivetrainse']['n_height'] = npts = 10
         opt['drivetrainse']['direct'] = False
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
@@ -216,7 +215,7 @@ class TestGroup(unittest.TestCase):
         prob['upwind'] = True
 
         prob['L_12'] = 2.0
-        prob['L_h1'] = 1.0        
+        prob['L_h1'] = 1.0
         prob['overhang'] = 2.0
         prob['drive_height'] = 4.875
         prob['L_hss'] = 1.5
@@ -289,7 +288,7 @@ class TestGroup(unittest.TestCase):
         prob['generator.k_fills']        = 0.65
         prob['generator.q1']    = 5
         prob['generator.q2']    = 4
-        
+
         try:
             prob.run_model()
             self.assertTrue(True)
@@ -297,12 +296,11 @@ class TestGroup(unittest.TestCase):
             traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
 
-        
+
     def testGeared_withSimpleGen(self):
 
         opt = {}
         opt['drivetrainse'] = {}
-        opt['drivetrainse']['n_height'] = npts = 10
         opt['drivetrainse']['direct'] = False
         opt['drivetrainse']['hub'] = {}
         opt['drivetrainse']['hub']['hub_gamma'] = 2.0
@@ -323,7 +321,7 @@ class TestGroup(unittest.TestCase):
         prob['upwind'] = True
 
         prob['L_12'] = 2.0
-        prob['L_h1'] = 1.0        
+        prob['L_h1'] = 1.0
         prob['overhang'] = 2.0
         prob['drive_height'] = 4.875
         prob['L_hss'] = 1.5

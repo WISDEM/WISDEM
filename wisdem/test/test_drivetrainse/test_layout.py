@@ -3,7 +3,7 @@ import numpy.testing as npt
 import unittest
 import wisdem.drivetrainse.layout as lay
 
-npts = 20
+npts = 12
 ct = np.cos(np.deg2rad(5))
 st = np.sin(np.deg2rad(5))
 
@@ -30,17 +30,17 @@ class TestDirectLayout(unittest.TestCase):
         self.inputs['nose_diameter'] = 1.33*myones
         self.inputs['lss_wall_thickness'] = 0.05*myones
         self.inputs['nose_wall_thickness'] = 0.04*myones
-        
+
         self.inputs['bedplate_wall_thickness'] = 0.06*np.ones(npts)
         self.inputs['D_top'] = 6.5
 
         self.inputs['lss_rho'] = self.inputs['bedplate_rho'] = 7850.
-        
+
         self.discrete_inputs['upwind'] = True
 
     def testBedplateLengthHeight(self):
         self.inputs['tilt'] = 0.0
-        myobj = lay.DirectLayout(n_points=npts)
+        myobj = lay.DirectLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         self.assertAlmostEqual(self.outputs['L_nose'], 3.5)
         self.assertAlmostEqual(self.outputs['L_lss'], 3.0)
@@ -59,11 +59,11 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['H_bedplate'], 4.875)
         self.assertAlmostEqual(self.outputs['constr_length'], -2.5)
         self.assertAlmostEqual(self.outputs['constr_height'], 4.875)
-        
-        
+
+
     def testNoTiltUpwind(self):
         self.inputs['tilt'] = 0.0
-        myobj = lay.DirectLayout(n_points=npts)
+        myobj = lay.DirectLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         self.assertAlmostEqual(self.outputs['L_nose'], 3.5)
@@ -73,7 +73,7 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['H_bedplate'], self.inputs['drive_height'])
         self.assertAlmostEqual(self.outputs['D_bearing1'], 2.3-0.05-1.33)
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
-        
+
         npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
         self.assertAlmostEqual(self.outputs['constr_length'], 5-0.5*6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
@@ -95,7 +95,7 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['z_bedplate'][0], 0.0)
         self.assertAlmostEqual(self.outputs['z_bedplate_inner'][0], 0.0)
         self.assertAlmostEqual(self.outputs['z_bedplate_outer'][0], 0.0)
-        
+
         self.assertAlmostEqual(self.outputs['z_bedplate'][-1], 4.875)
         self.assertAlmostEqual(self.outputs['z_bedplate_inner'][-1], 4.875-0.5*1.33)
         self.assertAlmostEqual(self.outputs['z_bedplate_outer'][-1], 4.875+0.5*1.33)
@@ -106,7 +106,7 @@ class TestDirectLayout(unittest.TestCase):
         self.inputs['tilt'] = 5.0
         self.inputs['overhang'] = 5 + 4.5*ct
         self.inputs['drive_height'] = 4.875 + 4.5*st
-        myobj = lay.DirectLayout(n_points=npts)
+        myobj = lay.DirectLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         self.assertAlmostEqual(self.outputs['L_nose'], 3.5)
@@ -116,7 +116,7 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['H_bedplate'], self.inputs['drive_height']-self.outputs['L_drive']*st)
         self.assertAlmostEqual(self.outputs['D_bearing1'], 2.3-0.05-1.33)
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
-        
+
         npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
         self.assertAlmostEqual(self.outputs['constr_length'], self.inputs['overhang']- self.outputs['L_drive']*ct - 0.5*self.inputs['D_top'])
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
@@ -138,17 +138,17 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['z_bedplate'][0], 0.0)
         self.assertAlmostEqual(self.outputs['z_bedplate_inner'][0], 0.0)
         self.assertAlmostEqual(self.outputs['z_bedplate_outer'][0], 0.0)
-        
+
         self.assertAlmostEqual(self.outputs['z_bedplate'][-1], 4.875)
         self.assertAlmostEqual(self.outputs['z_bedplate_inner'][-1], 4.875-0.5*1.33)
         self.assertAlmostEqual(self.outputs['z_bedplate_outer'][-1], 4.875+0.5*1.33)
         self.assertAlmostEqual(self.outputs['D_bedplate'][-1], 1.33)
 
-        
+
     def testNoTiltDownwind(self):
         self.discrete_inputs['upwind'] = False
         self.inputs['tilt'] = 0.0
-        myobj = lay.DirectLayout(n_points=npts)
+        myobj = lay.DirectLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         self.assertAlmostEqual(self.outputs['L_nose'], 3.5)
@@ -158,7 +158,7 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['H_bedplate'], self.inputs['drive_height'])
         self.assertAlmostEqual(self.outputs['D_bearing1'], 2.3-0.05-1.33)
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
-        
+
         npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
         self.assertAlmostEqual(self.outputs['constr_length'], 5-0.5*6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
@@ -180,19 +180,19 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['z_bedplate'][0], 0.0)
         self.assertAlmostEqual(self.outputs['z_bedplate_inner'][0], 0.0)
         self.assertAlmostEqual(self.outputs['z_bedplate_outer'][0], 0.0)
-        
+
         self.assertAlmostEqual(self.outputs['z_bedplate'][-1], 4.875)
         self.assertAlmostEqual(self.outputs['z_bedplate_inner'][-1], 4.875-0.5*1.33)
         self.assertAlmostEqual(self.outputs['z_bedplate_outer'][-1], 4.875+0.5*1.33)
         self.assertAlmostEqual(self.outputs['D_bedplate'][-1], 1.33)
 
-        
+
     def testTiltDownwind(self):
         self.discrete_inputs['upwind'] = False
         self.inputs['tilt'] = 5.0
         self.inputs['overhang'] = 5 + 4.5*ct
         self.inputs['drive_height'] = 4.875 + 4.5*st
-        myobj = lay.DirectLayout(n_points=npts)
+        myobj = lay.DirectLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         self.assertAlmostEqual(self.outputs['L_nose'], 3.5)
@@ -202,7 +202,7 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['H_bedplate'], self.inputs['drive_height']-self.outputs['L_drive']*st)
         self.assertAlmostEqual(self.outputs['D_bearing1'], 2.3-0.05-1.33)
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
-        
+
         npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
         self.assertAlmostEqual(self.outputs['constr_length'], self.inputs['overhang']- self.outputs['L_drive']*ct - 0.5*self.inputs['D_top'])
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
@@ -224,7 +224,7 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['z_bedplate'][0], 0.0)
         self.assertAlmostEqual(self.outputs['z_bedplate_inner'][0], 0.0)
         self.assertAlmostEqual(self.outputs['z_bedplate_outer'][0], 0.0)
-        
+
         self.assertAlmostEqual(self.outputs['z_bedplate'][-1], 4.875)
         self.assertAlmostEqual(self.outputs['z_bedplate_inner'][-1], 4.875-0.5*1.33)
         self.assertAlmostEqual(self.outputs['z_bedplate_outer'][-1], 4.875+0.5*1.33)
@@ -243,15 +243,15 @@ class TestDirectLayout(unittest.TestCase):
         self.inputs['lss_wall_thickness'] = 0.05*myones
         self.inputs['nose_wall_thickness'] = 0.05*myones
         self.inputs['bedplate_wall_thickness'] = 0.05*np.ones(npts)
-        myobj = lay.DirectLayout(n_points=npts)
+        myobj = lay.DirectLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         rho = self.inputs['lss_rho']
         m_bedplate = 5*0.5*np.pi * np.pi*(1.5**2 - (1.5-.05)**2) * rho
         self.assertAlmostEqual(self.outputs['bedplate_mass'], m_bedplate)
-        self.assertAlmostEqual(self.outputs['bedplate_cm'][0], np.mean(self.outputs['x_bedplate']), 1)
+        self.assertAlmostEqual(self.outputs['bedplate_cm'][0], np.mean(self.outputs['x_bedplate']), 0)
         self.assertAlmostEqual(self.outputs['bedplate_cm'][1], 0.0)
-        self.assertAlmostEqual(self.outputs['bedplate_cm'][2], np.mean(self.outputs['z_bedplate']), 1)
+        self.assertAlmostEqual(self.outputs['bedplate_cm'][2], np.mean(self.outputs['z_bedplate']), 0)
 
         m_lss = rho*np.pi*(1**2 - 0.95**2)*self.outputs['L_lss']
         self.assertAlmostEqual(self.outputs['lss_mass'], m_lss)
@@ -264,7 +264,7 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['nose_cm'], 0.5*(self.outputs['s_nose'][0] + self.outputs['s_nose'][-1]))
         self.assertAlmostEqual(self.outputs['nose_I'][0], 0.5*m_nose*(1.5**2 + 1.45**2))
         self.assertAlmostEqual(self.outputs['nose_I'][1], (1/12)*m_nose*(3*(1.5**2 + 1.45**2) + self.outputs['L_nose']**2))
-        
+
 
 
 
@@ -276,7 +276,7 @@ class TestGearedLayout(unittest.TestCase):
         self.discrete_outputs = {}
 
         self.inputs['L_12'] = 2.0
-        self.inputs['L_h1'] = 1.0        
+        self.inputs['L_h1'] = 1.0
         self.inputs['overhang'] = 2.0
         self.inputs['drive_height'] = 4.875
         self.inputs['L_hss'] = 1.5
@@ -295,14 +295,14 @@ class TestGearedLayout(unittest.TestCase):
         self.inputs['bedplate_flange_thickness'] = 0.05
         #self.inputs['bedplate_web_height'] = 1.0
         self.inputs['bedplate_web_thickness'] = 0.05
-        
+
         self.inputs['D_top'] = 6.5
 
         self.inputs['lss_rho'] = self.inputs['hss_rho'] = self.inputs['bedplate_rho'] = 7850.
-        
+
         self.discrete_inputs['upwind'] = True
 
-        
+
     def testNoTilt(self):
         self.inputs['tilt'] = 0.0
         myobj = lay.GearedLayout()
@@ -322,7 +322,7 @@ class TestGearedLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['constr_length'], 6.95-2-0.5*6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], 4.875)
 
-        
+
     def testTilt(self):
         myobj = lay.GearedLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
@@ -340,7 +340,7 @@ class TestGearedLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['bedplate_web_height'], 4.725-6.95*st)
         self.assertAlmostEqual(self.outputs['constr_length'], 6.95*ct-2-0.5*6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], 4.875-6.95*st)
-        
+
 
     def testMassValues(self):
         self.inputs['tilt'] = 0.0
@@ -376,7 +376,7 @@ class TestGearedLayout(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['bedplate_cm'], np.r_[(2-0.5*6.95), 0.0, 0.5*4.725+.05])
         self.assertAlmostEqual(self.outputs['lss_cm'], 0.5*(self.outputs['s_lss'][0] + self.outputs['s_lss'][-1]))
         self.assertAlmostEqual(self.outputs['hss_cm'], 0.5*(self.outputs['s_hss'][0] + self.outputs['s_hss'][-1]))
-        
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestDirectLayout))
