@@ -5,6 +5,7 @@ A list of relevant publications related to WISDEM is provided here. The publicat
 
 - 2020
   
+   #. Carron, WS and Bortolotti, P. "Innovative rail transport of a supersized land-based wind turbine blade." *Journal of Physics: Conference Series*, 1618. 2020. DOI: `10.1088/1742-6596/1618/4/042041 <https://doi.org/10.1088/1742-6596/1618/4/042041>`_
    #. Shields, Matt, and Jake Nunemaker. Process-based balance of system cost modeling for offshore wind power plants in the United States. *Journal of Physics: Conference Series*, 1452. 2020. DOI: `10.1088/1742-6596/1452/1/012039 <https://doi.org/10.1088/1742-6596/1452/1/012039>`_
    #. Satkauskas I Gaertner E Bortolotti P Barter G and Graf PA. Wind Turbine Rotor Design Optimization Using Importance Sampling. AIAA 2020-1953, 2020. DOI: `10.2514/6.202-1953 <https://arc.aiaa.org/doi/10.2514/6.2020-1953>`_
    #. Gaertner, Evan, Jennifer Rinker, Latha Sethuraman, Frederik Zahle, Benjamin Anderson, Garrett Barter, Nikhar Abbas, Fanzhong Meng, Pietro Bortolotti, Witold Skrzypinski, George Scott, Roland Feil, Henrik Bredmose, Katherine Dykes, Matt Shields, Christopher Allen, and Anthony Viselli. 2020. Definition of the IEA 15-Megawatt Offshore Reference Wind. NREL Technical Report NREL/TP-5000-75698. `https://www.nrel.gov/docs/fy20osti/75698.pdf <https://www.nrel.gov/docs/fy20osti/75698.pdf>`_

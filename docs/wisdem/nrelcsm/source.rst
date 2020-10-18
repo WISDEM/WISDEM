@@ -1,13 +1,13 @@
-.. _source:
+.. _csmsource:
 
 ********************
 Source Documentation
 ********************
 
-:mod:`nrel_csm_tcc_2015`
-------------------------
+:mod:`nrel_csm_mass_2015`
+--------------------------
 
-.. module:: wisdem.turbine_costsse.nrel_csm_tcc_2015
+.. module:: wisdem.nrelcsm.nrel_csm_mass_2015
 .. autoclass:: BladeMass
 .. autoclass:: HubMass
 .. autoclass:: PitchSystemMass
@@ -16,7 +16,8 @@ Source Documentation
 .. autoclass:: BearingMass
 .. autoclass:: RotorTorque
 .. autoclass:: GearboxMass
-.. autoclass:: HighSpeedSideMass
+.. autoclass:: BrakeMass
+.. autoclass:: HighSpeedShaftMass
 .. autoclass:: GeneratorMass
 .. autoclass:: BedplateMass
 .. autoclass:: YawSystemMass
@@ -28,10 +29,10 @@ Source Documentation
 .. autoclass:: TurbineMassAdder
 
 
-:mod:`turbine_costsse_2015`
-------------------------
+:mod:`nrel_csm_cost_2015`
+--------------------------
 	       
-.. module:: wisdem.turbine_costsse.turbine_costsse_2015
+.. module:: wisdem.nrelcsm.nrel_csm_cost_2015
 .. autoclass:: BladeCost2015
 .. autoclass:: HubCost2015
 .. autoclass:: PitchSystemCost2015
@@ -41,7 +42,8 @@ Source Documentation
 .. autoclass:: LowSpeedShaftCost2015
 .. autoclass:: BearingCost2015
 .. autoclass:: GearboxCost2015
-.. autoclass:: HighSpeedSideCost2015
+.. autoclass:: BrakeCost2020
+.. autoclass:: HighSpeedShaftCost2015
 .. autoclass:: GeneratorCost2015
 .. autoclass:: BedplateCost2015
 .. autoclass:: YawSystemCost2015
