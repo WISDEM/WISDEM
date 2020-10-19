@@ -42,7 +42,7 @@ class WT_RNTA(om.Group):
         self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         if modeling_options['Analysis_Flags']['DriveSE']:
-            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1, topLevelFlag=False))
+            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1))
         if modeling_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))

@@ -8,7 +8,7 @@ n_pc = 20
 
 #Example optimization of a generator for costs on a 5 MW reference turbine
 prob=om.Problem()
-prob.model = Generator(design='pmsg_outer', topLevelFlag=True, n_pc=n_pc)
+prob.model = Generator(design='pmsg_outer', n_pc=n_pc)
 
 if opt_flag:
     # add optimizer and set-up problem (using user defined input on objective function)

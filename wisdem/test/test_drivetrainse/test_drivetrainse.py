@@ -15,18 +15,14 @@ def set_common(prob, opt):
     prob['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
     prob['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))
 
-    prob['lss_E']    = prob['hub_E']   = prob['bedplate_E'] = 210e9
-    prob['lss_G']    = prob['hub_G']   = prob['bedplate_G'] = 80.8e9
-    prob['lss_rho']  = prob['hub_rho'] = prob['bedplate_rho'] = 7850.
-    prob['lss_Xy']   = prob['hub_Xy']   = prob['bedplate_Xy'] = 250e6
-    prob['hub_mat_cost'] = prob['bedplate_mat_cost'] = prob['spinner_mat_cost'] = 3.
-    prob['spinner_Xt'] = 60.e6
-    #prob['lss_cost'] = prob['hss_cost'] =
-    if not opt['drivetrainse']['direct']:
-        prob['hss_E']    = prob['bedplate_E']
-        prob['hss_G']    = prob['bedplate_G']
-        prob['hss_rho']  = prob['bedplate_rho']
-        prob['hss_Xy']   = prob['bedplate_Xy']
+    prob['E_mat'] = 210e9*np.ones((1,3))
+    prob['G_mat'] = 80.8e9*np.ones((1,3))
+    prob['Xt_mat'] = 1e7*np.ones((1,3))
+    prob['rho_mat'] = 7850.0*np.ones(1)
+    prob['sigma_y_mat'] = 250e6*np.ones(1)
+    prob['unit_cost_mat'] = 3.0*np.ones(1)
+    prob['lss_material'] = prob['hss_material'] = prob['hub_material'] = prob['spinner_material'] = prob['bedplate_material'] = 'steel'
+    prob['material_names'] = ['steel']
 
     prob['blade_mass']                  = 17000.
     prob['pitch_system.BRFM']           = 1.e+6
@@ -52,6 +48,9 @@ def set_common(prob, opt):
     prob['blades_I']                    = 1e3*np.ones(6)
     prob['blades_I'][0]                 = 199200777.51 * 30. * 5 / 10. / np.pi
 
+    prob['bear1.bearing_type'] = 'CARB'
+    prob['bear2.bearing_type'] = 'SRB'
+    
     return prob
 
 
@@ -71,13 +70,15 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['gamma_n'] = 1.0
         opt['servose'] = {}
         opt['servose']['n_pc'] = 20
+        opt['materials'] = {}
+        opt['materials']['n_mat'] = 1
         opt['GeneratorSE'] = {}
         opt['GeneratorSE']['type'] = 'pmsg_outer'
         opt['flags'] = {}
         opt['flags']['generator'] = True
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
+        prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -97,7 +98,11 @@ class TestGroup(unittest.TestCase):
         prob['lss_wall_thickness'] = 0.45*myones
         prob['nose_wall_thickness'] = 0.1*myones
         prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
-
+        prob['bear1.D_shaft'] = 2.2
+        prob['bear2.D_shaft'] = 2.2
+        prob['generator.D_shaft'] = 3.3
+        prob['generator.D_nose'] = 2.2
+        
         prob['rated_torque']        = 10.25e6       #rev 1 9.94718e6
         prob['generator.P_mech']         = 10.71947704e6 #rev 1 9.94718e6
         prob['generator.rad_ag']            = 4.0           # rev 1  4.92
@@ -111,8 +116,6 @@ class TestGroup(unittest.TestCase):
         prob['generator.c']              = 5.0
         prob['generator.B_tmax']         = 1.9
         prob['generator.E_p']            = 3300/np.sqrt(3)
-        prob['generator.D_nose']         = 2*1.1             # Nose outer radius
-        prob['generator.D_shaft']        = 2*1.34            # Shaft outer radius =(2+0.25*2+0.3*2)*0.5
         prob['generator.t_r']            = 0.05          # Rotor disc thickness
         prob['generator.h_sr']           = 0.04          # Rotor cylinder thickness
         prob['generator.t_s']            = 0.053         # Stator disc thickness
@@ -155,11 +158,13 @@ class TestGroup(unittest.TestCase):
         opt['drivetrainse']['gamma_n'] = 1.0
         opt['servose'] = {}
         opt['servose']['n_pc'] = 20
+        opt['materials'] = {}
+        opt['materials']['n_mat'] = 1
         opt['flags'] = {}
         opt['flags']['generator'] = False
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
+        prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -179,6 +184,8 @@ class TestGroup(unittest.TestCase):
         prob['lss_wall_thickness'] = 0.45*myones
         prob['nose_wall_thickness'] = 0.1*myones
         prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
+        prob['bear1.D_shaft'] = 2.2
+        prob['bear2.D_shaft'] = 2.2
 
         prob['generator_efficiency_user'] = np.zeros((20,2))
 
@@ -205,11 +212,13 @@ class TestGroup(unittest.TestCase):
         opt['GeneratorSE']['type'] = 'dfig'
         opt['servose'] = {}
         opt['servose']['n_pc'] = 20
+        opt['materials'] = {}
+        opt['materials']['n_mat'] = 1
         opt['flags'] = {}
         opt['flags']['generator'] = True
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
+        prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -235,6 +244,8 @@ class TestGroup(unittest.TestCase):
         prob['bedplate_flange_thickness'] = 0.05
         #prob['bedplate_web_height'] = 1.0
         prob['bedplate_web_thickness'] = 0.05
+        prob['bear1.D_shaft'] = 2.3
+        prob['bear2.D_shaft'] = 2.3
 
         prob['planet_numbers'] = np.array([3, 3, 0])
         prob['gear_configuration'] = 'eep'
@@ -290,6 +301,8 @@ class TestGroup(unittest.TestCase):
         prob['generator.q1']    = 5
         prob['generator.q2']    = 4
 
+        #prob['generator.D_shaft'] = 2.3
+        
         try:
             prob.run_model()
             self.assertTrue(True)
@@ -313,9 +326,11 @@ class TestGroup(unittest.TestCase):
         opt['flags']['generator'] = False
         opt['servose'] = {}
         opt['servose']['n_pc'] = 20
+        opt['materials'] = {}
+        opt['materials']['n_mat'] = 1
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, topLevelFlag=True, n_dlcs=1)
+        prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -341,6 +356,9 @@ class TestGroup(unittest.TestCase):
         prob['bedplate_flange_thickness'] = 0.05
         #prob['bedplate_web_height'] = 1.0
         prob['bedplate_web_thickness'] = 0.05
+        prob['bear1.D_shaft'] = 2.3
+        prob['bear2.D_shaft'] = 2.3
+        #prob['generator.D_shaft'] = 2.3
 
         prob['planet_numbers'] = np.array([3, 3, 0])
         prob['gear_configuration'] = 'eep'

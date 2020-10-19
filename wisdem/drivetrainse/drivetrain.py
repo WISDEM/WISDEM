@@ -137,7 +137,6 @@ class DrivetrainSE(om.Group):
     def initialize(self):
         self.options.declare('modeling_options')
         self.options.declare('n_dlcs')
-        self.options.declare('topLevelFlag', default=True)
 
     def setup(self):
         opt = self.options['modeling_options']['drivetrainse']
@@ -146,122 +145,53 @@ class DrivetrainSE(om.Group):
         dogen    = self.options['modeling_options']['flags']['generator']
         n_pc     = self.options['modeling_options']['servose']['n_pc']
 
-        # Independent variables that may be duplicated at higher levels of aggregation
-        if self.options['topLevelFlag']:
-            sivc = om.IndepVarComp()
+        self.set_input_defaults('machine_rating', units='kW')
+        self.set_input_defaults('planet_numbers', [3, 3, 0])
+        self.set_input_defaults('gear_configuration', 'eep')
+        self.set_input_defaults('hvac_mass_coeff', 0.08, units='kg/kW')
+        #self.set_input_defaults('mb1Type', 'CARB')
+        #self.set_input_defaults('mb2Type', 'SRB')
+        self.set_input_defaults('uptower', True)
+        self.set_input_defaults('upwind', True)
+        self.set_input_defaults('n_blades', 3)
 
-            # Common direct and geared
-            sivc.add_output('L_12', 0.0, units='m')
-            sivc.add_output('L_h1', 0.0, units='m')
-            sivc.add_output('L_generator', 0.0, units='m')
-            sivc.add_output('overhang', 0.0, units='m')
-            sivc.add_output('drive_height', 0.0, units='m')
-            sivc.add_output('lss_diameter', np.zeros(5), units='m')
-            sivc.add_output('lss_wall_thickness', np.zeros(5), units='m')
-            sivc.add_output('gear_ratio', 1.0)
-            sivc.add_output('gearbox_efficiency', 1.0)
-            sivc.add_output('converter_mass_user', 0.0, units='kg')
-            sivc.add_output('transformer_mass_user', 0.0, units='kg')
-            sivc.add_output('brake_mass_user', 0.0, units='kg')
-            sivc.add_output('hvac_mass_coeff', 0.08, units='kg/kW')
-            sivc.add_output('generator_efficiency_user', np.zeros((n_pc,2)) )
-            sivc.add_output('generator_mass_user', 0.0, units='kg')
-            sivc.add_discrete_output('mb1Type', 'CARB')
-            sivc.add_discrete_output('mb2Type', 'SRB')
-            sivc.add_discrete_output('uptower', True)
+        # Materials prep
+        self.add_subsystem('mat', DriveMaterials(direct=direct, n_mat=self.options['modeling_options']['materials']['n_mat']), promotes=['*'])
 
-            sivc.add_discrete_output('upwind', True)
-            sivc.add_discrete_output('n_blades', 3)
-            sivc.add_output('tilt', 0.0, units='deg')
-            sivc.add_output('hub_E', 0.0, units='Pa')
-            sivc.add_output('hub_G', 0.0, units='Pa')
-            sivc.add_output('hub_Xy', 0.0, units='Pa')
-            sivc.add_output('hub_rho', 0.0, units='kg/m**3')
-            sivc.add_output('hub_mat_cost', 0.0, units='USD/kg')
-            sivc.add_output('spinner_Xt', 0.0, units='Pa')
-            sivc.add_output('spinner_rho', 0.0, units='kg/m**3')
-            sivc.add_output('spinner_mat_cost', 0.0, units='USD/kg')
-            sivc.add_output('lss_E', 0.0, units='Pa')
-            sivc.add_output('lss_G', 0.0, units='Pa')
-            sivc.add_output('lss_Xy', 0.0, units='Pa')
-            sivc.add_output('lss_rho', 0.0, units='kg/m**3')
-            sivc.add_output('bedplate_E', 0.0, units='Pa')
-            sivc.add_output('bedplate_G', 0.0, units='Pa')
-            sivc.add_output('bedplate_Xy', 0.0, units='Pa')
-            sivc.add_output('bedplate_rho', 0.0, units='kg/m**3')
-            sivc.add_output('bedplate_mat_cost', 0.0, units='USD/kg')
-
-            sivc.add_output('Xy', 0.0, units='Pa')
-            sivc.add_output('D_top',     0.0, units='m')
-            sivc.add_output('rotor_diameter',         0.0, units='m')
-            sivc.add_output('rated_torque',           0.0, units='N*m')
-            sivc.add_output('hub_diameter',         0.0, units='m')
-            sivc.add_output('blades_I',               np.zeros(6), units='kg*m**2')
-            sivc.add_output('blade_mass',             0.0, units='kg', desc='One blade')
-            sivc.add_output('blades_mass',             0.0, units='kg', desc='All blades')
-            sivc.add_output('F_hub',             np.zeros(3), units='N')
-            sivc.add_output('M_hub',             np.zeros(3), units='N*m')
-            sivc.add_output('machine_rating',         0.0, units='kW')
-            sivc.add_output('minimum_rpm',         0.2, units='rpm')
-            sivc.add_output('rated_rpm',         0.0, units='rpm')
-
-            if direct:
-                # Direct only
-                sivc.add_output('nose_diameter', np.zeros(5), units='m')
-                sivc.add_output('nose_wall_thickness', np.zeros(5), units='m')
-                sivc.add_output('bedplate_wall_thickness', np.zeros(12), units='m')
-                sivc.add_output('access_diameter',0.0, units='m')
-            else:
-                # Geared only
-                sivc.add_output('L_hss', 0.0, units='m')
-                sivc.add_output('hss_diameter', np.zeros(3), units='m')
-                sivc.add_output('hss_wall_thickness', np.zeros(3), units='m')
-                sivc.add_output('bedplate_flange_width', 0.0, units='m')
-                sivc.add_output('bedplate_flange_thickness', 0.0, units='m')
-                sivc.add_output('bedplate_web_thickness', 0.0, units='m')
-                sivc.add_discrete_output('planet_numbers', [3, 3, 0])
-                sivc.add_discrete_output('gear_configuration', val='eep')
-                #sivc.add_discrete_output('shaft_factor', val='normal')
-
-                sivc.add_output('hss_E', 0.0, units='Pa')
-                sivc.add_output('hss_G', 0.0, units='Pa')
-                sivc.add_output('hss_Xy', 0.0, units='Pa')
-                sivc.add_output('hss_rho', 0.0, units='kg/m**3')
-
-            self.add_subsystem('sivc', sivc, promotes=['*'])
-        else:
-            self.add_subsystem('mat', DriveMaterials(direct=direct, n_mat=self.options['modeling_options']['materials']['n_mat']), promotes=['*'])
-
-
-        # Core drivetrain modules
-        self.add_subsystem('hub', Hub_System(topLevelFlag=False, modeling_options=opt['hub']), promotes=['*'])
+        # Need to do these first, before the layout
+        self.add_subsystem('hub', Hub_System(modeling_options=opt['hub']), promotes=['*'])
         self.add_subsystem('gear', Gearbox(direct_drive=direct), promotes=['*'])
 
+        # Layout and mass for the big items
         if direct:
             self.add_subsystem('layout', lay.DirectLayout(), promotes=['*'])
         else:
             self.add_subsystem('layout', lay.GearedLayout(), promotes=['*'])
 
+        # All the smaller items
         self.add_subsystem('bear1', dc.MainBearing())
         self.add_subsystem('bear2', dc.MainBearing())
         self.add_subsystem('brake', dc.Brake(direct_drive=direct), promotes=['*'])
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['yaw_mass','yaw_I','yaw_cm','rotor_diameter','D_top'])
 
+        # Generator
         self.add_subsystem('rpm', dc.RPM_Input(n_pc=n_pc), promotes=['*'])
         if dogen:
             gentype = self.options['modeling_options']['GeneratorSE']['type']
-            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque'])
+            self.add_subsystem('generator', Generator(design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque'])
             
             self.add_subsystem('eff', DriveEfficiency(n_pc=n_pc), promotes=['*'])
         else:
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=['*'])
 
+        # Final tallying
         self.add_subsystem('misc', dc.MiscNacelleComponents(), promotes=['*'])
         self.add_subsystem('nac', dc.NacelleSystemAdder(), promotes=['*'])
         self.add_subsystem('rna', dc.RNA_Adder(), promotes=['*'])
-        self.add_subsystem('lss', ds.Hub_Rotor_LSS_Frame(n_dlcs=n_dlcs, modeling_options=opt, direct_drive=direct), promotes=['*'])
 
+        # Structural analysis
+        self.add_subsystem('lss', ds.Hub_Rotor_LSS_Frame(n_dlcs=n_dlcs, modeling_options=opt, direct_drive=direct), promotes=['*'])
         if direct:
             self.add_subsystem('nose', ds.Nose_Stator_Bedplate_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=['*'])
         else:
@@ -284,16 +214,6 @@ class DrivetrainSE(om.Group):
             self.connect('D_bearing1','bear1.D_bearing')
             self.connect('D_bearing2','bear2.D_bearing')
 
-        if self.options['topLevelFlag']:
-            if direct:
-                self.connect('nose_diameter','bear1.D_shaft', src_indices=[0])
-                self.connect('nose_diameter','bear2.D_shaft', src_indices=[-1])
-            else:
-                self.connect('lss_diameter','bear1.D_shaft', src_indices=[0])
-                self.connect('lss_diameter','bear2.D_shaft', src_indices=[-1])
-            self.connect('mb1Type', 'bear1.bearing_type')
-            self.connect('mb2Type', 'bear2.bearing_type')
-
         self.connect('bear1.mb_mass','mb1_mass')
         self.connect('bear1.mb_I','mb1_I')
         self.connect('bear1.mb_max_defl_ang','mb1_max_defl_ang')
@@ -313,9 +233,6 @@ class DrivetrainSE(om.Group):
 
             if direct:
                 self.connect('lss_rpm','generator.shaft_rpm')
-                if self.options['topLevelFlag']:
-                    self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
-                    self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
                 self.connect('torq_deflection', 'generator.y_sh')
                 self.connect('torq_rotation', 'generator.theta_sh')
                 self.connect('stator_deflection', 'generator.y_bd')
@@ -331,5 +248,3 @@ class DrivetrainSE(om.Group):
                 nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
             else:
                 self.connect('hss_rpm','generator.shaft_rpm')
-                if self.options['topLevelFlag']:
-                    self.connect('hss_diameter','generator.D_shaft', src_indices=[-1])
