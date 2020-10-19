@@ -54,12 +54,12 @@ class TestGenerators(unittest.TestCase):
         
     def testPMSG_Outer(self):
 
-        myobj = gm.PMSG_Outer()
+        myobj = gm.PMSG_Outer(n_pc=20)
 
         self.inputs['machine_rating'] = 10.321e6
         self.inputs['rated_torque']   = 10.25e6       #rev 1 9.94718e6
         self.inputs['P_mech']         = 10.71947704e6 #rev 1 9.94718e6
-        self.inputs['rated_rpm']      = 10            #8.68                # rpm 9.6
+        self.inputs['shaft_rpm']      = np.linspace(2,10,20)
         self.inputs['rad_ag']         = 4.0           # rev 1  4.92
         self.inputs['len_s']          = 1.7           # rev 2.3
         self.inputs['h_s']            = 0.7            # rev 1 0.3
@@ -106,16 +106,17 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['B_rymax'], 0.44502611)
         self.assertAlmostEqual(self.outputs['B_pm1'], 0.46480944)
         self.assertAlmostEqual(self.outputs['B_smax'], 0.23570673147616897)
-        self.assertAlmostEqual(self.outputs['f'], 11.66666667)
-        self.assertAlmostEqual(self.outputs['I_s'], 1721.4993685170261)
-        self.assertAlmostEqual(self.outputs['R_s'], 0.0862357)
+        self.assertAlmostEqual(self.outputs['f'][-1], 11.66666667)
+        self.assertAlmostEqual(self.outputs['I_s'][-1], 1721.4993685170261)
+        self.assertAlmostEqual(self.outputs['R_s'][-1], 0.0862357)
         self.assertAlmostEqual(self.outputs['L_s'], 0.01000474)
         self.assertAlmostEqual(self.outputs['S'], 168.)
         self.assertAlmostEqual(self.outputs['N_s'], 361.)
         self.assertAlmostEqual(self.outputs['A_Cuscalc'], 389.46615218)
-        self.assertAlmostEqual(self.outputs['J_actual'], 3.125519048273891)
-        self.assertAlmostEqual(self.outputs['A_1'], 148362.95007673657)
-        npt.assert_almost_equal(self.outputs['generator_efficiency'], 0.9543687904168252)
+        self.assertAlmostEqual(self.outputs['J_actual'][-1], 3.125519048273891)
+        self.assertAlmostEqual(self.outputs['A_1'][-1], 148362.95007673657)
+        self.assertAlmostEqual(len(self.outputs['generator_efficiency']), 20)
+        self.assertAlmostEqual(self.outputs['generator_efficiency'][-1], 0.9543687904168252)
         self.assertAlmostEqual(self.outputs['Iron'], 89073.14254723)
         self.assertAlmostEqual(self.outputs['mass_PM'], 1274.81620149)
         self.assertAlmostEqual(self.outputs['Copper'], 13859.17179278)
@@ -126,9 +127,9 @@ class TestGenerators(unittest.TestCase):
 
     def testPMSG_Arms(self):
 
-        myobj = gm.PMSG_Arms()
+        myobj = gm.PMSG_Arms(n_pc=20)
 
-        self.inputs['rated_rpm']   = 12.1
+        self.inputs['shaft_rpm'] = np.linspace(5,12.1,20)
         self.inputs['sigma']   = 40e3
         self.inputs['rad_ag']  = 3.26
         self.inputs['len_s']   = 1.60
@@ -161,16 +162,17 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['b_t'], 0.01466894694762109)
         self.assertAlmostEqual(self.outputs['A_Cuscalc'], 253.53941258331452)
         self.assertAlmostEqual(self.outputs['b_m'], 0.055999999999999994)
-        self.assertAlmostEqual(self.outputs['E_p'], 2013.9466358469522)
-        self.assertAlmostEqual(self.outputs['f'], 25.813333333333333)
-        self.assertAlmostEqual(self.outputs['I_s'], 846.2065921065657)
+        self.assertAlmostEqual(self.outputs['E_p'][-1], 2013.9466358469522)
+        self.assertAlmostEqual(self.outputs['f'][-1], 25.813333333333333)
+        self.assertAlmostEqual(self.outputs['I_s'][-1], 846.2065921065657)
         self.assertAlmostEqual(self.outputs['R_s'], 0.09770712863768102)
         self.assertAlmostEqual(self.outputs['L_s'], 0.011401106062847888)
-        self.assertAlmostEqual(self.outputs['A_1'], 63455.62872651724)
-        self.assertAlmostEqual(self.outputs['J_s'], 3.337574160500578)
-        self.assertAlmostEqual(self.outputs['Losses'], 351360.55854497873)
+        self.assertAlmostEqual(self.outputs['A_1'][-1], 63455.62872651724)
+        self.assertAlmostEqual(self.outputs['J_s'][-1], 3.337574160500578)
+        self.assertAlmostEqual(self.outputs['Losses'][-1], 351360.55854497873)
         self.assertAlmostEqual(self.outputs['K_rad'], 0.245398773006135)
-        npt.assert_almost_equal(self.outputs['generator_efficiency'], 0.9343418267745142)
+        self.assertAlmostEqual(len(self.outputs['generator_efficiency']), 20)
+        self.assertAlmostEqual(self.outputs['generator_efficiency'][-1], 0.9343418267745142)
         self.assertAlmostEqual(self.outputs['S'], 768.0)
         self.assertAlmostEqual(self.outputs['Slot_aspect_ratio'], 5.832426544390113)
         self.assertAlmostEqual(self.outputs['Copper'], 6654.6915566955695)
@@ -184,9 +186,9 @@ class TestGenerators(unittest.TestCase):
 	
     def testPMSG_disc(self):
 		
-        myobj = gm.PMSG_Disc()
+        myobj = gm.PMSG_Disc(n_pc=20)
 
-        self.inputs['rated_rpm']   = 12.1
+        self.inputs['shaft_rpm'] = np.linspace(5,12.1,20)
         self.inputs['sigma']   = 40e3
         self.inputs['rad_ag']  = 3.49
         self.inputs['len_s']   = 1.5
@@ -215,16 +217,17 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['b_t'], 0.0128032)
         self.assertAlmostEqual(self.outputs['A_Cuscalc'], 187.2461758)
         self.assertAlmostEqual(self.outputs['b_m'], 0.0490000)
-        self.assertAlmostEqual(self.outputs['E_p'], 2555.3443951)
-        self.assertAlmostEqual(self.outputs['f'], 31.6616667)
-        self.assertAlmostEqual(self.outputs['I_s'], 657.7809841)
+        self.assertAlmostEqual(self.outputs['E_p'][-1], 2555.3443951)
+        self.assertAlmostEqual(self.outputs['f'][-1], 31.6616667)
+        self.assertAlmostEqual(self.outputs['I_s'][-1], 657.7809841)
         self.assertAlmostEqual(self.outputs['R_s'], 0.1504414)
         self.assertAlmostEqual(self.outputs['L_s'], 0.0120779)
-        self.assertAlmostEqual(self.outputs['A_1'], 56514.1132206)
-        self.assertAlmostEqual(self.outputs['J_s'], 3.5129208)
-        self.assertAlmostEqual(self.outputs['Losses'], 338164.5549178)
+        self.assertAlmostEqual(self.outputs['A_1'][-1], 56514.1132206)
+        self.assertAlmostEqual(self.outputs['J_s'][-1], 3.5129208)
+        self.assertAlmostEqual(self.outputs['Losses'][-1], 338164.5549178)
         self.assertAlmostEqual(self.outputs['K_rad'], 0.2148997)
-        npt.assert_almost_equal(self.outputs['generator_efficiency'], 0.936651530)
+        self.assertAlmostEqual(len(self.outputs['generator_efficiency']), 20)
+        self.assertAlmostEqual(self.outputs['generator_efficiency'][-1], 0.936651530)
         self.assertAlmostEqual(self.outputs['S'], 942.0000000)
         self.assertAlmostEqual(self.outputs['Slot_aspect_ratio'], 5.7277538)
         self.assertAlmostEqual(self.outputs['Copper'], 5588.6107806)
@@ -238,9 +241,9 @@ class TestGenerators(unittest.TestCase):
 
     def testEESG(self):
 
-        myobj = gm.EESG()
+        myobj = gm.EESG(n_pc=20)
 
-        self.inputs['rated_rpm']   = 12.1
+        self.inputs['shaft_rpm'] = np.linspace(5,12.1,20)
         self.inputs['sigma']   = 48.373e3
         self.inputs['rad_ag']  = 3.2
         self.inputs['len_s']   = 1.4
@@ -270,14 +273,15 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['b_s'], 0.012779359946805938)
         self.assertAlmostEqual(self.outputs['b_t'], 0.015619217712762814)
         self.assertAlmostEqual(self.outputs['A_Cuscalc'], 228.43105904915618)
-        self.assertAlmostEqual(self.outputs['f'], 11.898333333333333)
-        self.assertAlmostEqual(self.outputs['I_s'], 858.2107484477335)
+        self.assertAlmostEqual(self.outputs['f'][-1], 11.898333333333333)
+        self.assertAlmostEqual(self.outputs['I_s'][-1], 858.2107484477335)
         self.assertAlmostEqual(self.outputs['R_s'], 0.0906017600502669)
-        self.assertAlmostEqual(self.outputs['A_1'], 60440.40365229799)
-        self.assertAlmostEqual(self.outputs['J_s'], 3.75697924800609)
-        self.assertAlmostEqual(self.outputs['Losses'], 444556.7203870894)
+        self.assertAlmostEqual(self.outputs['A_1'][-1], 60440.40365229799)
+        self.assertAlmostEqual(self.outputs['J_s'][-1], 3.75697924800609)
+        self.assertAlmostEqual(self.outputs['Losses'][-1], 444556.7203870894)
         self.assertAlmostEqual(self.outputs['K_rad'], 0.21874999999999997)
-        npt.assert_almost_equal(self.outputs['generator_efficiency'], 0.918348408655116)
+        self.assertAlmostEqual(len(self.outputs['generator_efficiency']), 20)
+        self.assertAlmostEqual(self.outputs['generator_efficiency'][-1], 0.918348408655116)
         self.assertAlmostEqual(self.outputs['S'], 708.0)
         self.assertAlmostEqual(self.outputs['Slot_aspect_ratio'], 4.695070821210912)
         self.assertAlmostEqual(self.outputs['Copper'], 16059.414075335235)
@@ -290,19 +294,19 @@ class TestGenerators(unittest.TestCase):
 
     def testSCIG(self):
 
-        myobj = gm.SCIG()
+        myobj = gm.SCIG(n_pc=20)
         
-        self.inputs['rated_rpm']              = 1200.0
-        self.inputs['cofi']               = 0.9
-        self.inputs['y_tau_p']            = 12./15.
-        self.inputs['sigma']              = 21.5e3
-        self.inputs['rad_ag']             = 0.55
-        self.inputs['len_s']              = 1.30
-        self.inputs['h_s']                = 0.090
-        self.inputs['I_0']                = 140 
-        self.inputs['B_symax']            = 1.4
-        self.discrete_inputs['q1']                 = 6
-        self.inputs['h_0']                = 0.05
+        self.inputs['shaft_rpm']   = 100*np.linspace(2,12,20)
+        self.inputs['cofi']        = 0.9
+        self.inputs['y_tau_p']     = 12./15.
+        self.inputs['sigma']       = 21.5e3
+        self.inputs['rad_ag']      = 0.55
+        self.inputs['len_s']       = 1.30
+        self.inputs['h_s']         = 0.090
+        self.inputs['I_0']         = 140 
+        self.inputs['B_symax']     = 1.4
+        self.discrete_inputs['q1'] = 6
+        self.inputs['h_0']         = 0.05
         
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         self.assertAlmostEqual(self.outputs['B_tsmax'], 1.684969767820678)
@@ -326,19 +330,20 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['rad_r'], 0.547848028863988)
         self.assertAlmostEqual(self.outputs['A_bar'], 0.000968127380304049)
         self.assertAlmostEqual(self.outputs['Slot_aspect_ratio2'], 2.3240743375043973)
-        self.assertAlmostEqual(self.outputs['E_p'], 3584.6363848734995)
-        self.assertAlmostEqual(self.outputs['I_s'], 383.73299436233305)
-        self.assertAlmostEqual(self.outputs['A_1'], 23985.033858413553)
-        self.assertAlmostEqual(self.outputs['J_s'], 1.5676492717917363)
-        self.assertAlmostEqual(self.outputs['J_r'], 0.3690452555761286)
+        self.assertAlmostEqual(self.outputs['E_p'][-1], 3584.6363848734995)
+        self.assertAlmostEqual(self.outputs['I_s'][-1], 383.73299436233305)
+        self.assertAlmostEqual(self.outputs['A_1'][-1], 23985.033858413553)
+        self.assertAlmostEqual(self.outputs['J_s'][-1], 1.5676492717917363)
+        self.assertAlmostEqual(self.outputs['J_r'][-1], 0.3690452555761286)
         self.assertAlmostEqual(self.outputs['R_s'], 0.00820627176284264)
         self.assertAlmostEqual(self.outputs['R_R'], 0.026060741300117953)
         self.assertAlmostEqual(self.outputs['L_s'], 0.001078616172170861)
         self.assertAlmostEqual(self.outputs['L_sm'], 0.06791816664758084)
         self.assertAlmostEqual(self.outputs['generator_mass'], 40729.31598698678)
         self.assertAlmostEqual(self.outputs['K_rad'], 1.1818181818181817)
-        self.assertAlmostEqual(self.outputs['Losses'], 75068.46569051298)
-        npt.assert_almost_equal(self.outputs['generator_efficiency'], 0.9849562794756211)
+        self.assertAlmostEqual(self.outputs['Losses'][-1], 75068.46569051298)
+        self.assertAlmostEqual(len(self.outputs['generator_efficiency']), 20)
+        self.assertAlmostEqual(self.outputs['generator_efficiency'][-1], 0.9849562794756211)
         self.assertAlmostEqual(self.outputs['Copper'], 1360.253987369221)
         self.assertAlmostEqual(self.outputs['Iron'], 11520.904698026085)
         self.assertAlmostEqual(self.outputs['Structural_mass'], 27848.15730159148)
@@ -347,24 +352,24 @@ class TestGenerators(unittest.TestCase):
 
     def testDFIG(self):
 
-        myobj = gm.DFIG()
+        myobj = gm.DFIG(n_pc=20)
 
-        self.inputs['rated_rpm']              = 1200.0
-        self.inputs['cofi']               = 0.9
-        self.inputs['y_tau_p']            = 12./15.
-        self.inputs['sigma']              = 21.5e3
-        self.inputs['rad_ag']             = 0.61
-        self.inputs['len_s']              = 0.49
-        self.inputs['h_s']                = 0.08
-        self.inputs['I_0']                = 40.0
-        self.inputs['B_symax']            = 1.3
-        self.inputs['S_Nmax']             = -0.2
-        self.inputs['k_fillr']            = 0.55
-        self.inputs['h_0']                = 0.01
-        self.inputs['k_fillr']        = 0.55
-        self.inputs['k_fills']        = 0.65
-        self.discrete_inputs['q1']    = 5
-        self.discrete_inputs['q2']    = 4
+        self.inputs['shaft_rpm']   = 100*np.linspace(2,12,20)
+        self.inputs['cofi']        = 0.9
+        self.inputs['y_tau_p']     = 12./15.
+        self.inputs['sigma']       = 21.5e3
+        self.inputs['rad_ag']      = 0.61
+        self.inputs['len_s']       = 0.49
+        self.inputs['h_s']         = 0.08
+        self.inputs['I_0']         = 40.0
+        self.inputs['B_symax']     = 1.3
+        self.inputs['S_Nmax']      = -0.2
+        self.inputs['k_fillr']     = 0.55
+        self.inputs['h_0']         = 0.01
+        self.inputs['k_fillr']     = 0.55
+        self.inputs['k_fills']     = 0.65
+        self.discrete_inputs['q1'] = 5
+        self.discrete_inputs['q2'] = 4
         
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         self.assertAlmostEqual(self.outputs['B_g'], 1.1073196940043413)
@@ -386,11 +391,11 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['b_tr'], 0.02917461100244382)
         self.assertAlmostEqual(self.outputs['A_Curcalc'], 5.322395250445834)
         self.assertAlmostEqual(self.outputs['Slot_aspect_ratio2'], 0.41893351109971694)
-        self.assertAlmostEqual(self.outputs['E_p'], 1480.0153123457287)
-        self.assertAlmostEqual(self.outputs['I_s'], 959.242520719389)
-        self.assertAlmostEqual(self.outputs['A_1'], 45049.62948091099)
-        self.assertAlmostEqual(self.outputs['J_s'], 3.3370095911785915)
-        self.assertAlmostEqual(self.outputs['J_r'], 176.31699359563828)
+        self.assertAlmostEqual(self.outputs['E_p'][-1], 1480.0153123457287)
+        self.assertAlmostEqual(self.outputs['I_s'][-1], 959.242520719389)
+        self.assertAlmostEqual(self.outputs['A_1'][-1], 45049.62948091099)
+        self.assertAlmostEqual(self.outputs['J_s'][-1], 3.3370095911785915)
+        self.assertAlmostEqual(self.outputs['J_r'][-1], 176.31699359563828)
         self.assertAlmostEqual(self.outputs['R_s'], 0.0037830355111420555)
         self.assertAlmostEqual(self.outputs['R_R'], 0.03168834286109277)
         self.assertAlmostEqual(self.outputs['L_r'], 0.00016404053494963115)
@@ -398,13 +403,14 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['L_sm'], 0.019568172828126774)
         self.assertAlmostEqual(self.outputs['generator_mass'], 19508.405570203206)
         self.assertAlmostEqual(self.outputs['K_rad'], 0.4016393442622951)
-        self.assertAlmostEqual(self.outputs['Losses'], 143901.77088462992)
-        npt.assert_almost_equal(self.outputs['generator_efficiency'], 0.9654635749876888)
+        self.assertAlmostEqual(self.outputs['Losses'][-1], 143901.77088462992)
+        self.assertAlmostEqual(len(self.outputs['generator_efficiency']), 20)
+        self.assertAlmostEqual(self.outputs['generator_efficiency'][-1], 0.9654635749876888)
         self.assertAlmostEqual(self.outputs['Copper'], 354.97950026786026)
         self.assertAlmostEqual(self.outputs['Iron'], 6077.944572132577)
         self.assertAlmostEqual(self.outputs['Structural_mass'], 13075.48149780277)
         self.assertAlmostEqual(self.outputs['TC1'], 0.24790308982258036)
-        self.assertAlmostEqual(self.outputs['Current_ratio'], 0.17760183748148742)
+        self.assertAlmostEqual(self.outputs['Current_ratio'][-1], 0.17760183748148742)
         
         
 def suite():

@@ -105,8 +105,6 @@ class Brake(om.ExplicitComponent):
         rotor torque at rated power
     brake_mass_user : float, [kg]
         User override of brake mass
-    gear_ratio : float
-        overall gearbox ratio
     D_shaft_end : float, [m]
         low speed shaft outer diameter
     s_rotor : float, [m]
@@ -167,6 +165,45 @@ class Brake(om.ExplicitComponent):
         outputs['brake_cm']   = cm
         
 #----------------------------------------------------------------------------------------------
+
+class RPM_Input(om.ExplicitComponent):
+    """
+    Generates vector of possible rpm values from min to max. 
+    The max value is assumed to be the rated rpm value.
+    
+    Parameters
+    ----------
+    minimum_rpm : float, [rpm]
+        Minimum shaft rotations-per-minute (rpm), usually set by controller
+    rated_rpm : float, [rpm]
+        Rated shaft rotations-per-minute (rpm)
+    gear_ratio : float
+        overall gearbox ratio
+    
+    Returns
+    -------
+    shaft_rpm : float, [rpm]
+        Vector of possible rpm values
+    """
+    
+    def initialize(self):
+        self.options.declare('n_pc', default=20)
+        
+    def setup(self):
+        n_pc = self.options['n_pc']
+        self.add_input('minimum_rpm', val=0.2, units ='rpm')
+        self.add_input('rated_rpm', val=0.0, units ='rpm')
+        self.add_input('gear_ratio', val=1.0)
+        
+        self.add_output('shaft_rpm', val=np.zeros(n_pc), units ='rpm')
+
+    def compute(self, inputs, outputs):
+        min_rpm  = float(inputs['minimum_rpm'])
+        max_rpm  = float(inputs['rated_rpm'])
+        ratio    = float(inputs['gear_ratio'])
+        rpm_full = np.linspace(min_rpm, max_rpm, self.options['n_pc'])
+        outputs['shaft_rpm'] = ratio * rpm_full
+#----------------------------------------------------------------------------------------------
         
 
 class GeneratorSimple(om.ExplicitComponent):
@@ -183,9 +220,9 @@ class GeneratorSimple(om.ExplicitComponent):
         machine rating of generator
     rated_torque : float, [N*m]
         rotor torque at rated power
-    rated_rpm : float, [rpm]
-        rotor rated rotations-per-minute (rpm)
-    generator_mass_user : float [kg]
+    shaft_rpm : numpy array[n_pc], [rpm]
+        Input shaft rotations-per-minute (rpm)
+    generator_mass_user : float, [kg]
         User input override of generator mass
     
     Returns
@@ -196,6 +233,8 @@ class GeneratorSimple(om.ExplicitComponent):
         overall component mass
     generator_I : numpy array[3], [kg*m**2]
         moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
+    generator_efficiency : numpy array[n_pc]
+        Generator efficiency with rpm values in first column and efficiency values (<1) in second column
     """
         
     def initialize(self):
@@ -209,13 +248,13 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('rotor_diameter', val=0.0, units='m')
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rated_torque', 0.0, units='N*m')
-        self.add_input('rated_rpm', 0.0, units='rpm')
+        self.add_input('shaft_rpm', np.zeros(n_pc), units='rpm')
         self.add_input('generator_mass_user', 0.0, units='kg')
         self.add_input('generator_efficiency_user', val=np.zeros((n_pc, 2)) )
 
         self.add_output('R_generator', val=0.0, units='m')
         self.add_output('generator_mass', val=0.0, units='kg')
-        self.add_output('generator_efficiency', val=np.zeros((n_pc, 2)) )
+        self.add_output('generator_efficiency', val=np.zeros(n_pc) )
         self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
 
     def compute(self, inputs, outputs):
@@ -224,7 +263,7 @@ class GeneratorSimple(om.ExplicitComponent):
         rating   = float(inputs['machine_rating'])
         D_rotor  = float(inputs['rotor_diameter'])
         Q_rotor  = float(inputs['rated_torque'])
-        rpm      = float(inputs['rated_rpm'])
+        rpm_full = inputs['shaft_rpm']
         mass     = float(inputs['generator_mass_user'])
         eff_user = inputs['generator_efficiency_user']
 
@@ -249,9 +288,8 @@ class GeneratorSimple(om.ExplicitComponent):
         outputs['generator_I'] = mass*I
 
         # Efficiency performance- borrowed and adapted from servose
-        rpm_in = np.linspace(1e-1, rpm, self.options['n_pc'])
         if np.any(eff_user):
-            eff = np.interp(rpm_in, eff_user[:,0], eff_user[:,1])
+            eff = np.interp(rpm_full, eff_user[:,0], eff_user[:,1])
             
         else:
             if self.options['direct_drive']:
@@ -263,10 +301,11 @@ class GeneratorSimple(om.ExplicitComponent):
                 linear    = 0.08510
                 quadratic = 0.0
 
-            ratio  = rpm_in / rpm
+            # Normalize by rated
+            ratio  = rpm_full / rpm_full[-1]
             eff    = 1.0 - (constant/ratio + linear + quadratic*ratio)
             
-        outputs['generator_efficiency'] = np.c_[rpm_in, eff]
+        outputs['generator_efficiency'] = eff
         
 
         

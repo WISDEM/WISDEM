@@ -16,11 +16,13 @@ class DriveEfficiency(om.ExplicitComponent):
     def setup(self):
         n_pc  = self.options['n_pc']
         self.add_input('gearbox_efficiency', val=0.0)
-        self.add_input('generator_efficiency', val=np.zeros((n_pc,2)))
+        self.add_input('generator_efficiency', val=np.zeros(n_pc))
+        self.add_input('shaft_rpm', val=np.zeros(n_pc), units ='rpm')
         self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
 
     def compute(self, inputs, outputs):
-        outputs['drivetrain_efficiency'] = inputs['gearbox_efficiency']*inputs['generator_efficiency']
+        outputs['drivetrain_efficiency'] = np.c_[inputs['shaft_rpm'],
+                                                 inputs['gearbox_efficiency']*inputs['generator_efficiency']]
 
 #----------------------------------------------------------------------------------------------
 
@@ -200,6 +202,8 @@ class DrivetrainSE(om.Group):
             sivc.add_output('F_hub',             np.zeros(3), units='N')
             sivc.add_output('M_hub',             np.zeros(3), units='N*m')
             sivc.add_output('machine_rating',         0.0, units='kW')
+            sivc.add_output('minimum_rpm',         0.2, units='rpm')
+            sivc.add_output('rated_rpm',         0.0, units='rpm')
 
             if direct:
                 # Direct only
@@ -244,9 +248,11 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('elec', dc.Electronics(), promotes=['*'])
         self.add_subsystem('yaw', dc.YawSystem(), promotes=['yaw_mass','yaw_I','yaw_cm','rotor_diameter','D_top'])
 
+        self.add_subsystem('rpm', dc.RPM_Input(n_pc=n_pc), promotes=['*'])
         if dogen:
             gentype = self.options['modeling_options']['GeneratorSE']['type']
-            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_rpm','rated_torque'])
+            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','shaft_rpm','rated_torque'])
+            
         else:
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=['*'])
 

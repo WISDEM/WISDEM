@@ -47,6 +47,7 @@ def set_common(prob, opt):
     prob['spinner_gust_ws']             = 70.
 
     prob['hub_diameter']                = 6.235382907247958
+    prob['minimum_rpm']                 = 2            #8.68                # rpm 9.6
     prob['rated_rpm']                   = 10            #8.68                # rpm 9.6
     prob['blades_I']                    = 1e3*np.ones(6)
     prob['blades_I'][0]                 = 199200777.51 * 30. * 5 / 10. / np.pi

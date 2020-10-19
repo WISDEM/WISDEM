@@ -8,7 +8,6 @@ Structural design based on McDonald's thesis """
 import openmdao.api as om
 import numpy as np
 import wisdem.drivetrainse.generator_models as gm
-import wisdem.commonse.fileIO as fio
 
 #----------------------------------------------------------------------------------------------
 
@@ -305,10 +304,12 @@ class Generator(om.Group):
         genTypes = ['scig','dfig','eesg','pmsg_arms','pmsg_disc','pmsg_outer']
         self.options.declare('topLevelFlag', default=True)
         self.options.declare('design', values=genTypes + [m.upper() for m in genTypes])
+        self.options.declare('n_pc', default=20)
     
     def setup(self):
         topLevelFlag = self.options['topLevelFlag']
         genType      = self.options['design']
+        n_pc         = self.options['n_pc']
         
         ivc = om.IndepVarComp()
         sivc = om.IndepVarComp()
@@ -409,7 +410,7 @@ class Generator(om.Group):
             self.add_subsystem('ivc', ivc, promotes=['*'])
         
             sivc.add_output('machine_rating', 0.0, units='W')
-            sivc.add_output('rated_rpm', 0.0, units='rpm')
+            sivc.add_output('shaft_rpm', np.linspace(1.0, 10.0, n_pc), units='rpm')
             sivc.add_output('rated_torque', 0.0, units='N*m')
             sivc.add_output('D_shaft', val=0.0, units='m')
             sivc.add_output('E', val=0., units='Pa')
@@ -438,7 +439,7 @@ class Generator(om.Group):
         elif genType.lower() == 'pmsg_outer':
             mygen = gm.PMSG_Outer
             
-        self.add_subsystem('generator', mygen(), promotes=['*'])
+        self.add_subsystem('generator', mygen(n_pc=n_pc), promotes=['*'])
         self.add_subsystem('mofi', MofI(), promotes=['*'])
         self.add_subsystem('gen_cost', Cost(), promotes=['*'])
         self.add_subsystem('constr', Constraints(), promotes=['*'])
