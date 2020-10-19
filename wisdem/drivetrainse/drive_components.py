@@ -191,18 +191,20 @@ class RPM_Input(om.ExplicitComponent):
         
     def setup(self):
         n_pc = self.options['n_pc']
-        self.add_input('minimum_rpm', val=0.2, units ='rpm')
+        self.add_input('minimum_rpm', val=1.0, units ='rpm')
         self.add_input('rated_rpm', val=0.0, units ='rpm')
         self.add_input('gear_ratio', val=1.0)
         
-        self.add_output('shaft_rpm', val=np.zeros(n_pc), units ='rpm')
+        self.add_output('lss_rpm', val=np.zeros(n_pc), units ='rpm')
+        self.add_output('hss_rpm', val=np.zeros(n_pc), units ='rpm')
 
     def compute(self, inputs, outputs):
-        min_rpm  = float(inputs['minimum_rpm'])
+        min_rpm  = np.maximum(0.1, float(inputs['minimum_rpm']))
         max_rpm  = float(inputs['rated_rpm'])
         ratio    = float(inputs['gear_ratio'])
         rpm_full = np.linspace(min_rpm, max_rpm, self.options['n_pc'])
-        outputs['shaft_rpm'] = ratio * rpm_full
+        outputs['lss_rpm'] = rpm_full
+        outputs['hss_rpm'] = ratio * rpm_full
 #----------------------------------------------------------------------------------------------
         
 
@@ -248,7 +250,8 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('rotor_diameter', val=0.0, units='m')
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rated_torque', 0.0, units='N*m')
-        self.add_input('shaft_rpm', np.zeros(n_pc), units='rpm')
+        self.add_input('lss_rpm', np.zeros(n_pc), units='rpm')
+        self.add_input('gearbox_efficiency', val=0.0)
         self.add_input('generator_mass_user', 0.0, units='kg')
         self.add_input('generator_efficiency_user', val=np.zeros((n_pc, 2)) )
 
@@ -256,6 +259,7 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_output('generator_mass', val=0.0, units='kg')
         self.add_output('generator_efficiency', val=np.zeros(n_pc) )
         self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
+        self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
 
     def compute(self, inputs, outputs):
 
@@ -263,7 +267,6 @@ class GeneratorSimple(om.ExplicitComponent):
         rating   = float(inputs['machine_rating'])
         D_rotor  = float(inputs['rotor_diameter'])
         Q_rotor  = float(inputs['rated_torque'])
-        rpm_full = inputs['shaft_rpm']
         mass     = float(inputs['generator_mass_user'])
         eff_user = inputs['generator_efficiency_user']
 
@@ -288,8 +291,12 @@ class GeneratorSimple(om.ExplicitComponent):
         outputs['generator_I'] = mass*I
 
         # Efficiency performance- borrowed and adapted from servose
+        # Note: Have to use lss_rpm no matter what here because servose interpolation based on lss shaft rpm
+        # If there is a gearbox and hss, no difference in efficiency because everything is ratio-ed
+        rpm_full = inputs['lss_rpm']
         if np.any(eff_user):
             eff = np.interp(rpm_full, eff_user[:,0], eff_user[:,1])
+            eff_gear = 1.0
             
         else:
             if self.options['direct_drive']:
@@ -304,9 +311,12 @@ class GeneratorSimple(om.ExplicitComponent):
             # Normalize by rated
             ratio  = rpm_full / rpm_full[-1]
             eff    = 1.0 - (constant/ratio + linear + quadratic*ratio)
-            
+            eff_gear = float(inputs['gearbox_efficiency'])
+
+        eff = np.maximum(1e-3, eff)
         outputs['generator_efficiency'] = eff
-        
+        outputs['drivetrain_efficiency'] = np.c_[rpm_full, eff_gear*eff]
+
 
         
 #-------------------------------------------------------------------------------

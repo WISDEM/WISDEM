@@ -266,7 +266,7 @@ class GeneratorBase(om.ExplicitComponent):
     machine_rating : float, [W]
         Machine rating
     shaft_rpm : numpy array[n_pc], [rpm]
-        rated speed
+        rated speed of input shaft (lss for direct, hss for geared)
     n_r : float
         number of arms n
     rad_ag : float, [m]
@@ -1105,7 +1105,7 @@ class PMSG_Disc(GeneratorBase):
         h_ys              = inputs['h_ys']
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
-        shaft_rpm             = inputs['shaft_rpm']
+        shaft_rpm         = inputs['shaft_rpm']
         Torque            = inputs['rated_torque']
         
         b_st              = inputs['b_st']
@@ -1580,7 +1580,7 @@ class PMSG_Arms(GeneratorBase):
         h_ys              = inputs['h_ys']
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
-        shaft_rpm             = inputs['shaft_rpm']
+        shaft_rpm         = inputs['shaft_rpm']
         Torque            = inputs['rated_torque']
         
         b_st              = inputs['b_st']
@@ -2007,7 +2007,7 @@ class DFIG(GeneratorBase):
         I_0                  = inputs['I_0']
         
         machine_rating       = inputs['machine_rating']
-        shaft_rpm                = inputs['shaft_rpm']
+        shaft_rpm            = inputs['shaft_rpm']
         
         rho_Fe               = inputs['rho_Fe']
         rho_Copper           = inputs['rho_Copper']
@@ -2400,7 +2400,7 @@ class SCIG(GeneratorBase):
         h_s                  = inputs['h_s']
         h_0                  = inputs['h_0']
         machine_rating       = inputs['machine_rating']
-        shaft_rpm                = inputs['shaft_rpm']
+        shaft_rpm            = inputs['shaft_rpm']
         I_0                  = inputs['I_0']
         rho_Fe               = inputs['rho_Fe']
         rho_Copper           = inputs['rho_Copper']
@@ -2849,7 +2849,7 @@ class EESG(GeneratorBase):
         h_ys              = inputs['h_ys']
         h_yr              = inputs['h_yr']
         machine_rating    = inputs['machine_rating']
-        shaft_rpm             = inputs['shaft_rpm']
+        shaft_rpm         = inputs['shaft_rpm']
         Torque            = inputs['rated_torque']
         
         b_st              = inputs['b_st']

@@ -29,7 +29,8 @@ class WT_RNTA(om.Group):
 
         self.linear_solver = lbgs = om.LinearBlockGS()
         self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-        nlbgs.options['maxiter'] = 3
+        nlbgs.options['maxiter'] = 2
+        nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
         
         # Analysis components
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])

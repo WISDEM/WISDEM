@@ -17,13 +17,13 @@ class DriveEfficiency(om.ExplicitComponent):
         n_pc  = self.options['n_pc']
         self.add_input('gearbox_efficiency', val=0.0)
         self.add_input('generator_efficiency', val=np.zeros(n_pc))
-        self.add_input('shaft_rpm', val=np.zeros(n_pc), units ='rpm')
+        self.add_input('lss_rpm', val=np.zeros(n_pc), units ='rpm')
         self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
 
     def compute(self, inputs, outputs):
-        outputs['drivetrain_efficiency'] = np.c_[inputs['shaft_rpm'],
+        # Note: Have to use lss_rpm no matter what here because servose interpolation based on lss shaft rpm
+        outputs['drivetrain_efficiency'] = np.c_[inputs['lss_rpm'],
                                                  inputs['gearbox_efficiency']*inputs['generator_efficiency']]
-
 #----------------------------------------------------------------------------------------------
 
 class DriveMaterials(om.ExplicitComponent):
@@ -251,8 +251,9 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('rpm', dc.RPM_Input(n_pc=n_pc), promotes=['*'])
         if dogen:
             gentype = self.options['modeling_options']['GeneratorSE']['type']
-            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','shaft_rpm','rated_torque'])
+            self.add_subsystem('generator', Generator(topLevelFlag=False, design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque'])
             
+            self.add_subsystem('eff', DriveEfficiency(n_pc=n_pc), promotes=['*'])
         else:
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=['*'])
 
@@ -267,7 +268,6 @@ class DrivetrainSE(om.Group):
             self.add_subsystem('hss', ds.HSS_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=['*'])
             self.add_subsystem('bed', ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=['*'])
 
-        self.add_subsystem('eff', DriveEfficiency(n_pc=n_pc), promotes=['*'])
 
         # Output-to-input connections
         self.connect('bedplate_rho', ['pitch_system.rho', 'spinner.metal_rho'])
@@ -312,6 +312,7 @@ class DrivetrainSE(om.Group):
             self.connect('bedplate_G','generator.G')
 
             if direct:
+                self.connect('lss_rpm','generator.shaft_rpm')
                 if self.options['topLevelFlag']:
                     self.connect('nose_diameter','generator.D_nose', src_indices=[-1])
                     self.connect('lss_diameter','generator.D_shaft', src_indices=[0])
@@ -327,6 +328,8 @@ class DrivetrainSE(om.Group):
                 self.linear_solver = lbgs = om.LinearBlockGS()
                 self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
                 nlbgs.options['maxiter'] = 3
+                nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
             else:
+                self.connect('hss_rpm','generator.shaft_rpm')
                 if self.options['topLevelFlag']:
                     self.connect('hss_diameter','generator.D_shaft', src_indices=[-1])
