@@ -88,7 +88,7 @@ class Manager:
                 index = road_cost['Type of cost'] == 'Other'
                 other = road_cost[index]
                 amount_shorter_than_input_construction_time = (self.input_dict['construct_duration'] - self.output_dict['siteprep_construction_months'])
-                road_cost.at[index, 'Cost USD'] = other['Cost USD'] - amount_shorter_than_input_construction_time * 55500
+                road_cost.loc[index, 'Cost USD'] = other['Cost USD'] - amount_shorter_than_input_construction_time * 55500
                 self.output_dict['total_road_cost'] = road_cost
 
             total_costs = self.output_dict['total_collection_cost']
