@@ -94,6 +94,7 @@ class ManagementCost:
         output_dict : dict
             Dictionary with output key / value pairs.
         """
+        self.in_distributed_mode = 'override_total_management_cost' in input_dict
         self.validate_inputs(input_dict)
         self.input_dict = input_dict
         self.output_dict = output_dict
@@ -116,26 +117,27 @@ class ManagementCost:
         ValueError
             If one of the keys is missing, this method raises a ValueError
         """
-        required_keys = {
-            'project_value_usd',
-            'foundation_cost_usd',
-            'construct_duration',
-            'num_hwy_permits',
-            'num_turbines',
-            'project_size_megawatts',
-            'hub_height_meters',
-            'num_access_roads',
-            'markup_contingency',
-            'markup_warranty_management',
-            'markup_sales_and_use_tax',
-            'markup_overhead',
-            'markup_profit_margin',
-            'site_facility_building_area_df'
-        }
-        found_keys = set(input_dict.keys())
-        if len(required_keys - found_keys) > 0:
-            err_msg = '{}: did not find all required keys in inputs dictionary. Missing keys are {}'
-            raise ValueError(err_msg.format(type(self).__name__, required_keys - found_keys))
+        if not self.in_distributed_mode:
+            required_keys = {
+                'project_value_usd',
+                'foundation_cost_usd',
+                'construct_duration',
+                'num_hwy_permits',
+                'num_turbines',
+                'project_size_megawatts',
+                'hub_height_meters',
+                'num_access_roads',
+                'markup_contingency',
+                'markup_warranty_management',
+                'markup_sales_and_use_tax',
+                'markup_overhead',
+                'markup_profit_margin',
+                'site_facility_building_area_df'
+            }
+            found_keys = set(input_dict.keys())
+            if len(required_keys - found_keys) > 0:
+                err_msg = '{}: did not find all required keys in inputs dictionary. Missing keys are {}'
+                raise ValueError(err_msg.format(type(self).__name__, required_keys - found_keys))
 
     def insurance(self):
         """
@@ -425,29 +427,40 @@ class ManagementCost:
         list(dict)
             A list of dicts, with each dict representing a row of the data.
         """
-        management_cost_keys = [
-            'insurance_usd',
-            'construction_permitting_usd',
-            'bonding_usd',
-            'project_management_usd',
-            'markup_contingency_usd',
-            'engineering_usd',
-            'site_facility_usd'
-        ]
-
         result = []
-
-        for key in management_cost_keys:
-            value = self.output_dict[key]
+        if self.in_distributed_mode:
             row = {
                 'project_id_with_serial': self.project_name,
                 'module': type(self).__name__,
                 'type': 'variable',
-                'variable_df_key_col_name': key,
+                'variable_df_key_col_name': 'total_management_cost',
                 'unit': 'usd',
-                'value': value
+                'value': self.output_dict['total_management_cost']
             }
             result.append(row)
+        else:
+            management_cost_keys = [
+                'insurance_usd',
+                'construction_permitting_usd',
+                'bonding_usd',
+                'project_management_usd',
+                'markup_contingency_usd',
+                'engineering_usd',
+                'site_facility_usd'
+            ]
+
+            for key in management_cost_keys:
+                value = self.output_dict[key]
+                row = {
+                    'project_id_with_serial': self.project_name,
+                    'module': type(self).__name__,
+                    'type': 'variable',
+                    'variable_df_key_col_name': key,
+                    'unit': 'usd',
+                    'value': value
+                }
+                result.append(row)
+
         return result
 
     def outputs_for_module_type_operation(self):
@@ -467,34 +480,41 @@ class ManagementCost:
         num_turbines = self.input_dict['num_turbines']
         project_size_kw = num_turbines * turbine_rating_MW * 1000
 
-        result.append({
-            'type_of_cost': 'insurance',
-            'raw_cost': self.output_dict['insurance_usd']
-        })
-        result.append({
-            'type_of_cost': 'Construction Permitting',
-            'raw_cost': self.output_dict['construction_permitting_usd']
-        })
-        result.append({
-            'type_of_cost': 'Project Management',
-            'raw_cost': self.output_dict['project_management_usd']
-        })
-        result.append({
-            'type_of_cost': 'Bonding',
-            'raw_cost': self.output_dict['bonding_usd']
-        })
-        result.append({
-            'type_of_cost': 'Markup Contingency',
-            'raw_cost': self.output_dict['markup_contingency_usd']
-        })
-        result.append({
-            'type_of_cost': 'Engineering Foundation and Collections System (includes met mast)',
-            'raw_cost': self.output_dict['engineering_usd']
-        })
-        result.append({
-            'type_of_cost': 'Site Facility',
-            'raw_cost': self.output_dict['site_facility_usd']
-        })
+        if self.in_distributed_mode:
+            result.append({
+                'type_of_cost': 'total_management_cost',
+                'raw_cost': self.output_dict['total_management_cost']
+            })
+
+        else:
+            result.append({
+                'type_of_cost': 'insurance',
+                'raw_cost': self.output_dict['insurance_usd']
+            })
+            result.append({
+                'type_of_cost': 'Construction Permitting',
+                'raw_cost': self.output_dict['construction_permitting_usd']
+            })
+            result.append({
+                'type_of_cost': 'Project Management',
+                'raw_cost': self.output_dict['project_management_usd']
+            })
+            result.append({
+                'type_of_cost': 'Bonding',
+                'raw_cost': self.output_dict['bonding_usd']
+            })
+            result.append({
+                'type_of_cost': 'Markup Contingency',
+                'raw_cost': self.output_dict['markup_contingency_usd']
+            })
+            result.append({
+                'type_of_cost': 'Engineering Foundation and Collections System (includes met mast)',
+                'raw_cost': self.output_dict['engineering_usd']
+            })
+            result.append({
+                'type_of_cost': 'Site Facility',
+                'raw_cost': self.output_dict['site_facility_usd']
+            })
 
         for _dict in result:
             _dict['turbine_rating_MW'] = self.input_dict['turbine_rating_MW']
@@ -529,14 +549,25 @@ class ManagementCost:
             0 then the second element is 0 as well.
         """
         try:
-            self.output_dict['insurance_usd'] = self.insurance()
-            self.output_dict['construction_permitting_usd'] = self.construction_permitting()
-            self.output_dict['project_management_usd'] = self.project_management()
-            self.output_dict['bonding_usd'] = self.bonding()
-            self.output_dict['markup_contingency_usd'] = self.markup_contingency()
-            self.output_dict['engineering_usd'] = self.engineering_foundations_collection_sys()
-            self.output_dict['site_facility_usd'] = self.site_facility()
-            self.output_dict['total_management_cost'] = self.total_management_cost()
+            if self.in_distributed_mode:
+                self.output_dict['insurance_usd'] = 0
+                self.output_dict['construction_permitting_usd'] = 0
+                self.output_dict['project_management_usd'] = 0
+                self.output_dict['bonding_usd'] = 0
+                self.output_dict['markup_contingency_usd'] = 0
+                self.output_dict['engineering_usd'] = 0
+                self.output_dict['site_facility_usd'] = 0
+                self.output_dict['total_management_cost'] = self.input_dict['override_total_management_cost']
+
+            else:
+                self.output_dict['insurance_usd'] = self.insurance()
+                self.output_dict['construction_permitting_usd'] = self.construction_permitting()
+                self.output_dict['project_management_usd'] = self.project_management()
+                self.output_dict['bonding_usd'] = self.bonding()
+                self.output_dict['markup_contingency_usd'] = self.markup_contingency()
+                self.output_dict['engineering_usd'] = self.engineering_foundations_collection_sys()
+                self.output_dict['site_facility_usd'] = self.site_facility()
+                self.output_dict['total_management_cost'] = self.total_management_cost()
             self.output_dict['management_cost_csv'] = self.outputs_for_detailed_tab()
             self.output_dict['mangement_module_type_operation'] = self.outputs_for_module_type_operation()
             return 0, 0    # module ran successfully
