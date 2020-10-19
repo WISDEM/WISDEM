@@ -37,7 +37,7 @@ pymapExt   = Extension('wisdem.pymap._libmap', sources=glob.glob(os.path.join('w
 # Top-level setup
 setup(
     name             = 'WISDEM',
-    version          = '2.2.0',
+    version          = '3.0.0',
     description      = 'Wind-Plant Integrated System Design & Engineering Model',
     long_description =  '''WISDEM is a Python package for conducting multidisciplinary analysis and 
     optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.''',
