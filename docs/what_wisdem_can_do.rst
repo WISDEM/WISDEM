@@ -83,3 +83,24 @@ It would be nice to have a tool where you press a button and receive an optimal 
 However, design optimization requires expert knowledge to perform correctly and interpret the results.
 WISDEM exists to minimize time needed to evaluate possible turbine designs by providing a framework and set of models.
 This enables turbine designers to more quickly assess performance trade-offs and make decisions based on the results from WISDEM.
+
+
+When to use tools other than WISDEM
+-----------------------------------
+
+WISDEM is useful for a subset of wind turbine design problems.
+If you need time-varying effects, controllers in the loop, or more complex floating offshore capabilities, WISDEM is not the correct tool.
+WEIS and OpenFAST are two other software packages that meet different needs.
+
+When to use WEIS
+~~~~~~~~~~~~~~~~
+As part of the `ARPA-E Atlantis program <https://arpa-e.energy.gov/?q=arpa-e-programs/atlantis>`_, NREL is developing `WEIS, the Wind Energy with Integrated Servo-control toolset <https://www.nrel.gov/news/program/2019/best-of-both-worlds.html>`_.
+WEIS enables studies of floating offshore wind turbines using multifidelity design processes.
+This tool is especially useful for doing optimization of the full floating turbine system and includes integrations for WISDEM, OpenFAST, and other existing NREL codes.
+
+When to use OpenFAST
+~~~~~~~~~~~~~~~~~~~~
+`OpenFAST <https://openfast.readthedocs.io/en/master/>`_ is a well-established higher-fidelity tool for turbine simulation.
+Whereas WISDEM and WEIS are design for design optimization, OpenFAST focuses on turbine analysis.
+OpenFAST gives more physically accurate results but has a much larger computational cost than WISDEM.
+OpenFAST has been used across multiple decades by hundreds of researchers for a huge number of research projects. 
