@@ -27,6 +27,10 @@ class WT_RNTA(om.Group):
         opt_options      = self.options['opt_options']
         n_span           = modeling_options['blade']['n_span']
 
+        self.linear_solver = lbgs = om.LinearBlockGS()
+        self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+        nlbgs.options['maxiter'] = 3
+        
         # Analysis components
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('ccblade',   CCBladeTwist(modeling_options = modeling_options, opt_options = opt_options)) # Run standalong CCBlade and possibly determine optimal twist from user-defined margin to stall
@@ -255,6 +259,7 @@ class WT_RNTA(om.Group):
             
             self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')
             self.connect('configuration.upwind',       'drivese.upwind')
+            self.connect('control.minOmega' ,          'drivese.minimum_rpm')
             self.connect('sse.powercurve.rated_Omega', 'drivese.rated_rpm')
             self.connect('sse.powercurve.rated_Q',     'drivese.rated_torque')
             self.connect('control.rated_power',        'drivese.machine_rating')    
