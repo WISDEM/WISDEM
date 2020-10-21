@@ -35,17 +35,18 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options['tower']['gamma_b'] = 1.0
         self.modeling_options['tower']['gamma_fatigue'] = 1.0
 
+        # Simplified the options available to the user
         self.modeling_options['tower']['frame3dd']            = {}
-        self.modeling_options['tower']['frame3dd']['DC']      = 80.0
+        #self.modeling_options['tower']['frame3dd']['DC']      = 80.0
         self.modeling_options['tower']['frame3dd']['shear']   = True
         self.modeling_options['tower']['frame3dd']['geom']    = True
-        self.modeling_options['tower']['frame3dd']['dx']      = -1
-        self.modeling_options['tower']['frame3dd']['nM']      = 6
-        self.modeling_options['tower']['frame3dd']['Mmethod'] = 1
-        self.modeling_options['tower']['frame3dd']['lump']    = 0
+        #self.modeling_options['tower']['frame3dd']['dx']      = -1
+        #self.modeling_options['tower']['frame3dd']['nM']      = 6
+        #self.modeling_options['tower']['frame3dd']['Mmethod'] = 1
+        #self.modeling_options['tower']['frame3dd']['lump']    = 0
         self.modeling_options['tower']['frame3dd']['tol']     = 1e-9
-        self.modeling_options['tower']['frame3dd']['shift']   = 0.0
-        self.modeling_options['tower']['frame3dd']['add_gravity'] = True
+        #self.modeling_options['tower']['frame3dd']['shift']   = 0.0
+        #self.modeling_options['tower']['frame3dd']['add_gravity'] = True
 
         self.modeling_options['monopile'] = {}
         self.modeling_options['monopile']['n_height'] = 0

@@ -49,15 +49,9 @@ modeling_options['tower']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
 modeling_options['tower']['frame3dd'] = {}
-modeling_options['tower']['frame3dd']['DC'] = 80.0
 modeling_options['tower']['frame3dd']['shear'] = True
 modeling_options['tower']['frame3dd']['geom'] = True
-modeling_options['tower']['frame3dd']['dx'] = 5.0
-modeling_options['tower']['frame3dd']['Mmethod'] = 1
-modeling_options['tower']['frame3dd']['lump'] = 0
 modeling_options['tower']['frame3dd']['tol'] = 1e-9
-modeling_options['tower']['frame3dd']['shift'] = 0.0
-modeling_options['tower']['frame3dd']['add_gravity'] = True
 
 modeling_options['tower']['n_height'] = n_control_points
 modeling_options['tower']['n_layers'] = 1
