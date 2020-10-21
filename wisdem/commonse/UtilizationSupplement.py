@@ -218,8 +218,8 @@ def hoopStressEurocode(z, d, t, L_reinforced, q_dyn):
 
     C_theta = 1.5  # clamped-clamped
     k_w = 0.46*(1.0 + 0.1*np.sqrt(C_theta/omega*r/t))
-    kw = smooth_max(k_w, 0.65)
-    kw = smooth_min(k_w, 1.0)
+    k_w = smooth_max(k_w, 0.65)
+    k_w = smooth_min(k_w, 1.0)
     Peq = k_w*q_dyn
     return hoopStress(d, t, Peq)
 
