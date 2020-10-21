@@ -15,11 +15,7 @@ This module consists of two classes:
 import math
 import numpy as np
 import traceback
-
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
-    import pandas as pd
+import pandas as pd
 
 from wisdem.landbosse.model.CostModule import CostModule
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
@@ -196,7 +192,7 @@ class Array(Cable):
         upstream_turb = addl_inputs['upstream_turb']
         self.turb_sequence = addl_inputs['turb_sequence']
 
-        self.num_turb_per_cable = self.max_turb_per_cable - upstream_turb  # todo: add to ouptut csv
+        self.num_turb_per_cable = self.max_turb_per_cable - upstream_turb
 
         if upstream_turb == 0:
             self.downstream_connection = -1
@@ -220,7 +216,7 @@ class Array(Cable):
 
         self.calc_turb_section_len(turbine_spacing_rotor_diameters, rotor_diameter_m)
 
-        self.array_cable_len = ((self.num_turb_per_cable + self.downstream_connection) * self.turb_section_length)  # todo: add to output csv
+        self.array_cable_len = ((self.num_turb_per_cable + self.downstream_connection) * self.turb_section_length)
 
     #    @staticmethod
     def calc_turb_section_len(self, turbine_spacing_rotor_diameters, rotor_diameter_m):
@@ -284,8 +280,10 @@ class ArraySystem(CostModule):
         self.output_dict['total_cable_len_km'] = 0
         self._km_to_LF = 0.0003048    #Units: [km/LF] Conversion factor for converting from km to linear foot.
         self._total_cable_cost = 0
-
+        self._total_turbine_counter = 0
+        self.turbines_on_cable = []
         self._cable_length_km = dict()
+        self.check_terminal = 0
 
 
     def calc_num_strings(self):
@@ -330,7 +328,7 @@ class ArraySystem(CostModule):
 
         # Calculate number of full strings and any remainder required to
         # support the total number of turbines
-        self.output_dict['num_full_strings'] = np.floor(self.output_dict['total_turb'] / self.output_dict['total_turb_per_string'])  # todo: add to output csv
+        self.output_dict['num_full_strings'] = np.floor(self.output_dict['total_turb'] / self.output_dict['total_turb_per_string'])
         self.output_dict['num_leftover_turb'] = self.output_dict['total_turb'] % self.output_dict['total_turb_per_string']
 
         # Calculate number of turbines on a remaining partial string
@@ -349,7 +347,7 @@ class ArraySystem(CostModule):
             self.output_dict['num_partial_strings'] = 0
             self.output_dict['perc_partial_string'] = np.zeros(len(self.output_dict['num_turb_per_cable']))
 
-        # todo: output number of partial strings
+
 
         return (self.output_dict['total_turb_per_string'], self.output_dict['num_full_strings'], self.output_dict['num_partial_strings'],
                 self.output_dict['perc_partial_string'], self.output_dict['num_turb_per_cable'])
@@ -404,7 +402,7 @@ class ArraySystem(CostModule):
 
     #TODO: change length_to_substation calculation as a user defined input?
     @staticmethod
-    def calc_cable_len_to_substation(turbine_spacing_rotor_diameters, row_spacing_rotor_diameters,
+    def calc_cable_len_to_substation(distance_to_grid, turbine_spacing_rotor_diameters, row_spacing_rotor_diameters,
                                      num_strings):
         """
         Calculate the distance for the largest cable run to substation
@@ -427,36 +425,45 @@ class ArraySystem(CostModule):
             to substation, km
         """
 
-        # Define spacing terms for even or odd number of strings
-        #   Even number: substation centered between middle two strings
-        #   Odd number : substation centered on middle string
-        if (num_strings % 2) == 0:
-            n_max = int(num_strings / 2)
-            turb_space_scaling = 0.5
-            range_strings = range(1, n_max + 1)
-        else:
-            n_max = int((num_strings - 1) / 2)
-            turb_space_scaling = 1
-            range_strings = range(n_max + 1)
-
-        # Calculate hypotenuse length of each string to substation
         string_to_substation_length = []
-        for idx in range_strings:
-            if idx == 0:
-                c = 1
+
+        if num_strings > 1:
+            # Define spacing terms for even or odd number of strings
+            #   Even number: substation centered between middle two strings
+            #   Odd number : substation centered on middle string
+            if (num_strings % 2) == 0:
+                n_max = int(num_strings / 2)
+                turb_space_scaling = 0.5
+                range_strings = range(1, n_max + 1)
+
             else:
-                c = 2
-            string_to_substation_length.append(c * np.sqrt(row_spacing_rotor_diameters ** 2 +
-                                               (turb_space_scaling * idx *
-                                                turbine_spacing_rotor_diameters) ** 2))
+                n_max = int((num_strings - 1) / 2)
+                turb_space_scaling = 1
+                range_strings = range(n_max + 1)
+
+            # Calculate hypotenuse length of each string to substation
+            for idx in range_strings:
+                if idx == 0:
+                    c = 1
+                else:
+                    c = 2
+                string_to_substation_length.append(c * np.sqrt(row_spacing_rotor_diameters ** 2 +
+                                                               (turb_space_scaling * idx *
+                                                                turbine_spacing_rotor_diameters) ** 2))
+
+        else:
+            string_to_substation_length.append(distance_to_grid)
 
         # Sum up total length to substation
         len_to_substation = np.sum(string_to_substation_length)
 
-        return len_to_substation  # todo: add to output csv
+        return len_to_substation
 
+
+    #TODO: Add parameter info in docstrings
     @staticmethod
-    def calc_total_cable_length(cable, cable_specs, num_full_strings, num_partial_strings, len_to_substation, perc_partial_string):
+    def calc_total_cable_length(total_turbines, count, check_terminal,  turbines_per_cable, cable, cable_specs,
+                                num_full_strings, num_partial_strings, len_to_substation, perc_partial_string):
         """
         Calculate total length of each cable type, km
 
@@ -483,18 +490,69 @@ class ArraySystem(CostModule):
             Total length of individual cable type
         """
 
-        if cable.turb_sequence == len(cable_specs):
-            # Only add len_to_substation to the final cable in the string
-            total_cable_len = (num_full_strings * cable.array_cable_len + num_partial_strings * (cable.array_cable_len * perc_partial_string) + len_to_substation)
-        else:
-            total_cable_len = (num_full_strings * cable.array_cable_len + num_partial_strings * (cable.array_cable_len * perc_partial_string))
+        # If terminal cable has already been accounted for, skip any
+        # calculations for other cables.
+        if (cable.turb_sequence - 1) > check_terminal:
+            cable.array_cable_len = 0
+            cable.total_length = 0
+            cable.num_turb_per_cable = 0
+            return 0, 0
 
-        return total_cable_len  # todo: add to output csv
+        # If num full strings < = 1, find which cable the final turbine
+        # is on, and calculate total cable length (including the len to
+        # substation) using that cable.
+
+        # This 'elif' is essentially a switch for distributed wind:
+        elif num_full_strings < 1 and num_partial_strings >= 0:
+
+            # if number of turbines is less than total string capacity,
+            # find the terminal cable and find total cable len
+            # up till that cable.
+
+            # If total turbines in project are less than cumulative turbines
+            # up till and including that cable.
+
+            terminal_string = cable.turb_sequence - 1  # Flag this cable as it is
+            # also the actual terminal cable
+
+            if (cable.turb_sequence - 1) == 0:  # That is, if cable # 1 can hold
+                # more turbines than specified by user, it is the terminal cable
+
+                cable.num_turb_per_cable = total_turbines
+                cable.array_cable_len = ((cable.num_turb_per_cable + cable.downstream_connection)
+                                         * cable.turb_section_length)
+
+                total_cable_len = ((num_full_strings * cable.array_cable_len) +
+                                   (num_partial_strings * cable.array_cable_len)) + len_to_substation
+
+            else:
+
+                cable.num_turb_per_cable = total_turbines - turbines_per_cable[(count - 1)]
+                cable.array_cable_len = ((cable.num_turb_per_cable + cable.downstream_connection) *
+                                         cable.turb_section_length)
+
+                total_cable_len = ((num_full_strings * cable.array_cable_len) +
+                                   (num_partial_strings * cable.array_cable_len)) + len_to_substation
+
+            return total_cable_len, terminal_string
+
+        else:  # Switch for utility scale landbosse
+            if cable.turb_sequence == len(cable_specs):
+
+                # Only add len_to_substation to the final cable in the string
+                total_cable_len = (num_full_strings * cable.array_cable_len +
+                                   num_partial_strings * (cable.array_cable_len * perc_partial_string) +
+                                   len_to_substation)
+            else:
+                total_cable_len = (num_full_strings * cable.array_cable_len +
+                                   num_partial_strings * (cable.array_cable_len * perc_partial_string))
+
+        # here 9999 == flag to announce that the terminal cable has NOT been reached
+        # and to continue calculations for each cable
+        return total_cable_len, 9999
 
     def create_ArraySystem(self):
-
-
-        #data used in parent classes:
+        # data used in parent classes:
         self.addl_specs = dict()
         self.addl_specs['turbine_rating_MW'] = self.input_dict['turbine_rating_MW']
         self.addl_specs['upstream_turb'] = 0
@@ -516,7 +574,7 @@ class ArraySystem(CostModule):
 
         # Loops through all user defined array cable types, composing them
         # in ArraySystem
-        # TODO: Sort input cable types by ascending current capacity
+
 
         self.cables = {}
         self.input_dict['cable_specs'] = self.input_dict['cable_specs_pd'].T.to_dict()
@@ -536,39 +594,70 @@ class ArraySystem(CostModule):
             self.addl_specs['upstream_turb'] += cable.num_turb_per_cable
             self.addl_specs['turb_sequence'] += 1
 
-
-            # Calculate number of required strings to support plant capacity
-        self.output_dict['turb_per_string'], self.output_dict['num_full_strings'], self.output_dict['num_partial_strings'], self.output_dict['perc_partial_string'], self.output_dict['num_turb_per_cable'] = self.calc_num_strings()
+        # Calculate number of required strings to support plant capacity
+        self.output_dict['turb_per_string'], \
+            self.output_dict['num_full_strings'], \
+            self.output_dict['num_partial_strings'], \
+            self.output_dict['perc_partial_string'], \
+            self.output_dict['num_turb_per_cable'] = self.calc_num_strings()
 
         # Calculate total length of cable run to substation
-        self.output_dict['num_strings'] = self.output_dict['num_full_strings'] + self.output_dict['num_partial_strings']
+        self.output_dict['num_strings'] = self.output_dict[
+                                'num_full_strings'] + self.output_dict['num_partial_strings']
 
+        if self.input_dict['user_defined_distance_to_grid_connection'] == 0:    # where (0 = No) and (1 = Yes)
 
-        if self.input_dict['user_defined_home_run_trench'] == 0:
-            self.output_dict['trench_len_to_substation_km'] = self.calc_cable_len_to_substation(self.input_dict['turbine_spacing_rotor_diameters'], self.input_dict['row_spacing_rotor_diameters'], self.output_dict['num_strings'])
+            # This only gets used if number of strings is <= 1 :
+            distributed_wind_distance_to_grid = (self.input_dict[
+                'turbine_spacing_rotor_diameters'] * self.input_dict['rotor_diameter_m']) / 1000
+            self.output_dict['distance_to_grid_connection_km'] = self.\
+                calc_cable_len_to_substation(distributed_wind_distance_to_grid,
+                                             self.input_dict['turbine_spacing_rotor_diameters'],
+                                             self.input_dict['row_spacing_rotor_diameters'],
+                                             self.output_dict['num_strings'])
         else:
-            self.output_dict['trench_len_to_substation_km'] = self.input_dict['trench_len_to_substation_km']
+            self.output_dict['distance_to_grid_connection_km'] = self.input_dict['distance_to_grid_connection_km']
 
-        self.output_dict['cable_len_to_substation_km'] = self.output_dict['trench_len_to_substation_km'] # assumes 3 conductors and fiber and neutral
+        self.output_dict['cable_len_to_grid_connection_km'] = self.output_dict[
+            'distance_to_grid_connection_km']  # assumes 3 conductors and fiber and neutral
+
+        cable_sequence = 0
+        # Make a list of how many turbines per cable
+        for _, (name, cable) in enumerate(self.cables.items()):
+            if cable_sequence == 0:
+                self.turbines_on_cable.append(cable.num_turb_per_cable)
+            else:
+                self.turbines_on_cable.append(cable.num_turb_per_cable + self.turbines_on_cable[(cable_sequence - 1)])
+            # turbines_on_cable[cable_sequence] += cable.num_turb_per_cable
+            cable_sequence += 1
+        self.__turbines_on_cable = self.turbines_on_cable
 
         # Calculate total length of each cable type, and total cost that calculated length of cable:
+        count = 0
         for idx, (name, cable) in enumerate(self.cables.items()):
-            cable_specs = self.input_dict['cable_specs']
-            num_full_strings = self.output_dict['num_full_strings']
-            num_partial_strings = self.output_dict['num_partial_strings']
-            trench_len_to_substation_km = self.output_dict['trench_len_to_substation_km']
-            perc_partial_string = self.output_dict['perc_partial_string'][idx]
-            total_cable_len = self.calc_total_cable_length(cable, cable_specs, num_full_strings, num_partial_strings,
-                                                           trench_len_to_substation_km, perc_partial_string)
-
-            self._cable_length_km[name] =  total_cable_len
-            #self.__cable_cost_usd[name] = cable.__dict__['cost']
-
+            total_cable_len, self.check_terminal = self.calc_total_cable_length(self.output_dict['total_turb'], count,
+                                                                                self.check_terminal,
+                                                                                self.__turbines_on_cable,
+                                                                                cable, self.input_dict['cable_specs'],
+                                                                                self.output_dict['num_full_strings'],
+                                                                                self.output_dict['num_partial_strings'],
+                                                                                self.output_dict[
+                                                                                    'distance_to_grid_connection_km'],
+                                                                                self.output_dict['perc_partial_string'][
+                                                                                    idx],
+                                                                                )
+            count += 1
+            # self._total_turbine_counter = turbine_tally
+            self._cable_length_km[name] = total_cable_len
             cable.total_length = total_cable_len
             self.output_dict['total_cable_len_km'] += total_cable_len
-            # cable.total_mass = total_cable_len * cable.mass
-            cable.total_cost = (total_cable_len / self._km_to_LF)* cable.cost
-            self._total_cable_cost+=cable.total_cost   #Keep running tally of total cable cost used in wind farm.
+            cable.total_cost = (total_cable_len / self._km_to_LF) * cable.cost
+            self._total_cable_cost += cable.total_cost  # Keep running tally of total cable cost used in wind farm.
+
+        # Repopulate the turbines per cable sequence to make sure it reflects any changes that happened since
+        # the first time this sequence was populated.
+        self.output_dict['num_turb_per_cable'] = [cable.num_turb_per_cable for cable in self.cables.values()]
+        self.output_dict['total_turb_per_string'] = sum(self.output_dict['num_turb_per_cable'])
 
     def calculate_trench_properties(self, trench_properties_input, trench_properties_output):
         """
@@ -576,7 +665,7 @@ class ArraySystem(CostModule):
         """
 
         # units of cubic meters
-        trench_properties_output['trench_length_km'] = trench_properties_output['total_cable_len_km']  # todo: add to output csv
+        trench_properties_output['trench_length_km'] = trench_properties_output['total_cable_len_km']
 
     def calculate_weather_delay(self, weather_delay_input_data, weather_delay_output_data):
         """Calculates wind delays for roads"""
@@ -594,7 +683,7 @@ class ArraySystem(CostModule):
 
     def estimate_construction_time(self, construction_time_input_data, construction_time_output_data):
         """
-        Function to estimate construction time on per turbine basis. TODO: What's a better definition of this function. It's task is to return a pd.DataFrame (operation_data).
+        Function to estimate construction time on per turbine basis.
 
         Parameters
         -------
@@ -619,7 +708,16 @@ class ArraySystem(CostModule):
 
         throughput_operations = construction_time_input_data['rsmeans']
         trench_length_km = construction_time_output_data['trench_length_km']
-        operation_data = throughput_operations.where(throughput_operations['Module'] == 'Collection').dropna(thresh=4)
+        if construction_time_input_data['turbine_rating_MW'] >= 0.1:
+            operation_data = throughput_operations.where(throughput_operations['Module'] == 'Collection').dropna(
+                thresh=4)
+            # from rsmeans data, only read in Collection related data and filter out the rest:
+            cable_trenching = throughput_operations[throughput_operations.Module == 'Collection']
+        else:   #switch for small DW
+            operation_data = throughput_operations.where(
+                throughput_operations['Module'] == 'Small DW Collection').dropna(thresh=4)
+            # from rsmeans data, only read in Collection related data and filter out the rest:
+            cable_trenching = throughput_operations[throughput_operations.Module == 'Small DW Collection']
         # operation_data = pd.merge()
 
         # from rsmeans data, only read in Collection related data and filter out the rest:
@@ -659,21 +757,25 @@ class ArraySystem(CostModule):
         operation_data['Time construct days'] = operation_data[['time_construct_bool', 'Number of days taken by single crew']].min(axis=1)
         num_days = operation_data['Time construct days'].max()
 
-        # pull out management data
-        crew_cost = self.input_dict['crew_cost']
-        crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
-        management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
-        management_crew = management_crew.assign(per_diem_total=management_crew['Per diem USD per day'] * management_crew['Number of workers'] * num_days)
-        management_crew = management_crew.assign(hourly_costs_total=management_crew['Hourly rate USD per hour'] * self.input_dict['hour_day'][self.input_dict['time_construct']] * num_days)
-        management_crew = management_crew.assign(total_crew_cost_before_wind_delay=management_crew['per_diem_total'] + management_crew['hourly_costs_total'])
-        self.output_dict['management_crew'] = management_crew
-        self.output_dict['managament_crew_cost_before_wind_delay']= management_crew['total_crew_cost_before_wind_delay'].sum()
+
+        # No 'management crew' in small DW
+        if construction_time_input_data['turbine_rating_MW'] >= 0.1:
+            # pull out management data
+            crew_cost = self.input_dict['crew_cost']
+            crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
+            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
+            management_crew = management_crew.assign(per_diem_total=management_crew['Per diem USD per day'] * management_crew['Number of workers'] * num_days)
+            management_crew = management_crew.assign(hourly_costs_total=management_crew['Hourly rate USD per hour'] * self.input_dict['hour_day'][self.input_dict['time_construct']] * num_days)
+            management_crew = management_crew.assign(total_crew_cost_before_wind_delay=management_crew['per_diem_total'] + management_crew['hourly_costs_total'])
+            self.output_dict['management_crew'] = management_crew
+            self.output_dict['managament_crew_cost_before_wind_delay'] = management_crew['total_crew_cost_before_wind_delay'].sum()
+        else:
+            self.output_dict['managament_crew_cost_before_wind_delay'] = 0.0
 
         construction_time_output_data['operation_data_id_days_crews_workers'] = operation_data_id_days_crews_workers
         construction_time_output_data['operation_data_entire_farm'] = operation_data
 
         return construction_time_output_data['operation_data_entire_farm']
-
 
 
     def calculate_costs(self, calculate_costs_input_dict, calculate_costs_output_dict):
@@ -698,8 +800,25 @@ class ArraySystem(CostModule):
         calculate_costs_output_dict['Equipment Cost USD without weather delays'] = (calculate_costs_output_dict['Days taken for trenching (equipment)'] * calculate_costs_output_dict['Equipment cost of trenching per day {usd/day)'])
         calculate_costs_output_dict['Equipment Cost USD with weather delays'] = calculate_costs_output_dict['Equipment Cost USD without weather delays'] *  calculate_costs_output_dict['wind_multiplier']
 
-        trenching_equipment_rental_cost_df = pd.DataFrame([['Equipment rental',calculate_costs_output_dict['Equipment Cost USD with weather delays'], 'Collection']],
-                                               columns = ['Type of cost', 'Cost USD', 'Phase of construction'])
+        if calculate_costs_input_dict['turbine_rating_MW'] >= 0.1:
+            trenching_equipment_rental_cost_df = pd.DataFrame([['Equipment rental', calculate_costs_output_dict[
+                'Equipment Cost USD with weather delays'], 'Collection']],
+                                                              columns=['Type of cost', 'Cost USD',
+                                                                       'Phase of construction'])
+
+        # switch for small DW
+        else:
+            if calculate_costs_output_dict['Equipment Cost USD with weather delays'] < 137:
+                calculate_costs_output_dict['Equipment Cost USD with weather delays'] = 137   #cost of renting for a day
+                trenching_equipment_rental_cost_df = pd.DataFrame([['Equipment rental', calculate_costs_output_dict[
+                    'Equipment Cost USD with weather delays'], 'Collection']],
+                                                                  columns=['Type of cost', 'Cost USD',
+                                                                           'Phase of construction'])
+            else:
+                trenching_equipment_rental_cost_df = pd.DataFrame([['Equipment rental', calculate_costs_output_dict[
+                    'Equipment Cost USD with weather delays'], 'Small DW Collection']],
+                                                                  columns=['Type of cost', 'Cost USD',
+                                                                           'Phase of construction'])
 
         #Calculating labor cost:
         calculate_costs_output_dict['Days taken for trenching (labor)'] = ((calculate_costs_output_dict['trench_length_km'] / self._km_to_LF) / calculate_costs_output_dict['trenching_labor_daily_output'])
@@ -708,21 +827,42 @@ class ArraySystem(CostModule):
         calculate_costs_output_dict['Labor Cost USD without weather delays'] =((calculate_costs_output_dict['Days taken for trenching (labor)'] * calculate_costs_output_dict['Labor cost of trenching per day (usd/day)']) + (calculate_costs_output_dict['Total per diem costs (USD)'] + calculate_costs_output_dict['managament_crew_cost_before_wind_delay']))
         calculate_costs_output_dict['Labor Cost USD with weather delays'] = calculate_costs_output_dict['Labor Cost USD without weather delays'] * calculate_costs_output_dict['wind_multiplier']
 
-        trenching_labor_cost_df = pd.DataFrame([['Labor',calculate_costs_output_dict['Labor Cost USD with weather delays'], 'Collection']],
-                                               columns = ['Type of cost', 'Cost USD', 'Phase of construction'])
+        if calculate_costs_input_dict['turbine_rating_MW'] >= 0.1:
+            trenching_labor_cost_df = pd.DataFrame(
+                [['Labor', calculate_costs_output_dict['Labor Cost USD with weather delays'], 'Collection']],
+                columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+
+        # switch for small DW
+        else:
+            trenching_labor_cost_df = pd.DataFrame(
+                [['Labor', calculate_costs_output_dict['Labor Cost USD with weather delays'], 'Small DW Collection']],
+                columns=['Type of cost', 'Cost USD', 'Phase of construction'])
 
         #Calculate cable cost:
         cable_cost_usd_per_LF_df = pd.DataFrame([['Materials',self._total_cable_cost, 'Collection']],
                                                columns = ['Type of cost', 'Cost USD', 'Phase of construction'])
 
         # Combine all calculated cost items into the 'collection_cost' dataframe:
-        collection_cost = pd.DataFrame([],columns = ['Type of cost', 'Cost USD', 'Phase of construction'])  # todo: I believe Phase of construction here is the same as Operation ID in other modules? we should change to be consistent
+        collection_cost = pd.DataFrame([],columns = ['Type of cost', 'Cost USD', 'Phase of construction'])
         collection_cost = collection_cost.append(trenching_equipment_rental_cost_df)
         collection_cost = collection_cost.append(trenching_labor_cost_df)
         collection_cost = collection_cost.append(cable_cost_usd_per_LF_df)
 
-        # Calculate Mobilization Cost and add to collection_cost dataframe:
-        mobilization_cost = pd.DataFrame([['Mobilization', collection_cost['Cost USD'].sum() * 0.05 , 'Collection']],
+        # Calculate Mobilization Cost and add to collection_cost dataframe.
+        # For utility scale plants, mobilization is assumed to be 5% of the sum of labor, equipment, and material costs.
+        # For distributed mode, mobilization is a calculated % that is a function of turbine size.
+        if calculate_costs_input_dict['num_turbines'] > 10:
+            calculate_costs_output_dict['mob_cost'] = collection_cost['Cost USD'].sum() * 0.05
+        else:
+            if calculate_costs_input_dict['turbine_rating_MW'] >= 0.1:
+                calculate_costs_output_dict['mob_cost'] = collection_cost[
+                    'Cost USD'].sum() * self.mobilization_cost_multiplier(calculate_costs_input_dict['turbine_rating_MW'])
+
+            # switch for small DW
+            else:  # mobilization cost included in equipment rental cost
+                calculate_costs_output_dict['mob_cost'] = 0.0
+
+        mobilization_cost = pd.DataFrame([['Mobilization', calculate_costs_output_dict['mob_cost'], 'Collection']],
                                          columns=['Type of cost', 'Cost USD', 'Phase of construction'])
         collection_cost = collection_cost.append(mobilization_cost)
 
@@ -797,13 +937,13 @@ class ArraySystem(CostModule):
             'unit': '',
             'type': 'variable',
             'variable_df_key_col_name': 'Trench Length to Substation (km)',
-            'value': float(self.output_dict['trench_len_to_substation_km'])
+            'value': float(self.output_dict['distance_to_grid_connection_km'])
         })
         result.append({
             'unit': '',
             'type': 'variable',
             'variable_df_key_col_name': 'Cable Length to Substation (km)',
-            'value': float(self.output_dict['cable_len_to_substation_km'])
+            'value': float(self.output_dict['cable_len_to_grid_connection_km'])
         })
 
         cables = ''
@@ -847,17 +987,15 @@ class ArraySystem(CostModule):
             'value': str(self.output_dict['num_turb_per_cable'])
         })
 
-        # self.output_dict['turb_per_partial_string'] is only available if
-        # self.output_dict['num_leftover_turb'] > 0 which is not always the
-        # case. Commenting this output out
-
-        # result.append({
-        #     'unit': '',
-        #     'type': 'list',
-        #     'variable_df_key_col_name': 'Number of turbines per cable type in partial string [' + cables + ']',
-        #
-        #     'value': str(self.output_dict['turb_per_partial_string'])
-        # })
+        if self.input_dict['turbine_rating_MW'] > 0.1:
+            for row in self.output_dict['management_crew'].itertuples():
+                dashed_row = ' <--> '.join(str(x) for x in list(row))
+                result.append({
+                    'unit': '',
+                    'type': 'dataframe',
+                    'variable_df_key_col_name': 'Labor type ID <--> Hourly rate USD per hour <--> Per diem USD per day <--> Operation <--> Crew type <--> Crew name <--> Number of workers <--> Per Diem Total <--> Hourly costs total <--> Crew total cost ',
+                    'value': dashed_row
+                })
 
         result.append({
             'unit': '',
@@ -867,14 +1005,7 @@ class ArraySystem(CostModule):
             'value': str(self.output_dict['perc_partial_string'])
         })
 
-        for row in self.output_dict['management_crew'].itertuples():
-            dashed_row = ' <--> '.join(str(x) for x in list(row))
-            result.append({
-                'unit': '',
-                'type': 'dataframe',
-                'variable_df_key_col_name': 'Labor type ID <--> Hourly rate USD per hour <--> Per diem USD per day <--> Operation <--> Crew type <--> Crew name <--> Number of workers <--> Per Diem Total <--> Hourly costs total <--> Crew total cost ',
-                'value': dashed_row
-            })
+
 
         for row in self.output_dict['total_collection_cost'].itertuples():
             dashed_row = '{} <--> {} <--> {}'.format(row[1], row[3], math.ceil(row[2]))

@@ -1,4 +1,4 @@
-.. _theory:
+.. _theory-gen:
 
 Theory
 ------

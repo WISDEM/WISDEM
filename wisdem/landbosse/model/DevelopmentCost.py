@@ -3,7 +3,6 @@ from wisdem.landbosse.model.CostModule import CostModule
 import pandas as pd
 import math
 
-
 class DevelopmentCost(CostModule):
     """
     **DevelopmentCost.py

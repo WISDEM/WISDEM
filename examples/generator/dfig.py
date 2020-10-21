@@ -4,10 +4,11 @@ from wisdem.drivetrainse.generator import Generator
 import wisdem.commonse.fileIO as fio
 
 opt_flag = False
+n_pc = 20
 
 #Example optimization of a generator for costs on a 5 MW reference turbine
 prob=om.Problem()
-prob.model = Generator(design='dfig', topLevelFlag=True)
+prob.model = Generator(design='dfig', n_pc=n_pc)
 
 if opt_flag:
     # add optimizer and set-up problem (using user defined input on objective function)
@@ -52,7 +53,7 @@ prob.setup()
 # Specify Target machine parameters
 
 prob['machine_rating'] = 5000000.0
-prob['rated_rpm']              = 1200.0
+prob['shaft_rpm']      = np.linspace(200, 1200.0, n_pc)
 prob['cofi'] = 0.9
 prob['y_tau_p'] = 12./15.
 prob['sigma'] = 21.5e3

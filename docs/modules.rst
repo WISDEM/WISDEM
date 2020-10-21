@@ -14,8 +14,7 @@ Module documentation
    wisdem/airfoilprep/index
    wisdem/ccblade/index
    wisdem/commonse/index
-   wisdem/drivetrainse/drivese/index
-   wisdem/drivetrainse/generator/index
+   wisdem/drivetrainse/index
    wisdem/floatingse/index
    wisdem/glue_code/index
    wisdem/landbosse/index
@@ -26,4 +25,3 @@ Module documentation
    wisdem/pymap/index
    wisdem/rotorse/index
    wisdem/towerse/index
-

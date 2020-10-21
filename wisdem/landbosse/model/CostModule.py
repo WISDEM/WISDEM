@@ -7,6 +7,25 @@ class CostModule:
     mobilization cost calculations.
     """
 
+    def mobilization_cost_multiplier(self, turbine_rating):
+        """
+        Calculates a mobilization cost term as a function of
+        turbine rating.
+
+        Parameters
+        ----------
+        turbine_rating : float
+            Turbine rating in megawatts
+
+        Returns
+        -------
+        float
+            The mobilization cost multiplier as a function of turbine rating.
+        """
+
+        mobilization_cost_multiplier = (36.892 * math.exp(-5e-04 * (turbine_rating * 1000))) / 100
+        return mobilization_cost_multiplier
+
     def outputs_for_costs_by_module_type_operation(self,
                                                    *,
                                                    input_df,

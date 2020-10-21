@@ -11,7 +11,7 @@ class WindTurbineOntologyPython(object):
     #   - materials: dictionary representing the entry materials in the yaml file
     #   - airfoils: dictionary representing the entry airfoils in the yaml file
 
-    
+
     def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
@@ -22,28 +22,28 @@ class WindTurbineOntologyPython(object):
         self.set_openmdao_vectors()
         self.set_opt_flags()
 
-        
+
     def get_input_data(self):
         return self.wt_init, self.modeling_options, self.analysis_options
 
-        
+
     def set_run_flags(self):
         # Create components flag struct
         self.modeling_options['flags'] = {}
-        
+
         for k in self.defaults['components']:
             self.modeling_options['flags'][k] = k in self.wt_init['components']
 
         for k in self.defaults.keys():
             self.modeling_options['flags'][k] = k in self.wt_init
-            
+
         # Generator flag
         self.modeling_options['flags']['generator'] = False
         if self.modeling_options['flags']['nacelle'] and 'generator' in self.wt_init['components']['nacelle']:
             self.modeling_options['flags']['generator'] = True
             if not 'GeneratorSE' in self.modeling_options: self.modeling_options['GeneratorSE'] = {}
             self.modeling_options['GeneratorSE']['type'] = self.wt_init['components']['nacelle']['generator']['generator_type'].lower()
-            
+
         # Offshore flag
         self.modeling_options['offshore'] = 'water_depth' in self.wt_init['environment'] and self.wt_init['environment']['water_depth'] > 0.0
 
@@ -59,7 +59,7 @@ class WindTurbineOntologyPython(object):
             raise ValueError('Blades/rotor analysis is requested but no airfoils are found')
         if flags['airfoils'] and not flags['blade']:
             print('WARNING: Airfoils provided but no blades/rotor found or RotorSE deactivated')
-            
+
         # Blades, tower, monopile and environment
         if flags['blade'] and not flags['environment']:
             raise ValueError('Blades/rotor analysis is requested but no environment input found')
@@ -90,22 +90,22 @@ class WindTurbineOntologyPython(object):
         if not self.modeling_options['offshore'] and (flags['monopile'] or flags['floating']):
             raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
 
-    
+
     def set_openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
         # ==modeling_options = {}
-        
+
         # Materials
         self.modeling_options['materials']          = {}
         self.modeling_options['materials']['n_mat'] = len(self.wt_init['materials'])
-        
+
         # Airfoils
         self.modeling_options['airfoils']           = {}
         if self.modeling_options['flags']['airfoils']:
             self.modeling_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
             self.modeling_options['airfoils']['n_aoa']  = self.modeling_options['rotorse']['n_aoa']
             if self.modeling_options['airfoils']['n_aoa'] / 4. == int(self.modeling_options['airfoils']['n_aoa'] / 4.):
-                # One fourth of the angles of attack from -pi to -pi/6, half between -pi/6 to pi/6, and one fourth from pi/6 to pi 
+                # One fourth of the angles of attack from -pi to -pi/6, half between -pi/6 to pi/6, and one fourth from pi/6 to pi
                 self.modeling_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(self.modeling_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(self.modeling_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(self.modeling_options['airfoils']['n_aoa'] / 4. + 1))]))
             else:
                 self.modeling_options['airfoils']['aoa']    = np.linspace(-np.pi, np.pi, self.modeling_options['airfoils']['n_aoa'])
@@ -118,7 +118,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options['airfoils']['n_tab']  = 1
             self.modeling_options['airfoils']['n_xy']   = self.modeling_options['rotorse']['n_xy']
             self.modeling_options['airfoils']['af_used']      = self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']
-        
+
         # Blade
         self.modeling_options['blade']              = {}
         if self.modeling_options['flags']['blade']:
@@ -153,12 +153,8 @@ class WindTurbineOntologyPython(object):
         # Drivetrain
         if self.modeling_options['flags']['nacelle']:
             self.modeling_options['drivetrainse']['direct'] = self.wt_init['assembly']['drivetrain'].lower() in ['direct','direct_drive','pm_direct_drive']
-            if self.modeling_options['drivetrainse']['direct']:
-                self.modeling_options['drivetrainse']['n_height'] = len(self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness'])
-            else:
-                self.modeling_options['drivetrainse']['n_height'] = 0.0
-        
-        # Tower 
+
+        # Tower
         if self.modeling_options['flags']['tower']:
             self.modeling_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
             self.modeling_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
@@ -171,23 +167,23 @@ class WindTurbineOntologyPython(object):
 
         # FloatingSE
         self.modeling_options['floating'] = {}
-        
+
         # Assembly
         self.modeling_options['assembly'] = {}
         self.modeling_options['assembly']['number_of_blades'] = int(self.wt_init['assembly']['number_of_blades'])
 
-        
+
     def set_opt_flags(self):
         # Recursively look for flags to set global optimization flag
         def recursive_flag(d):
             opt_flag = False
-            for k,v in d.items():        
+            for k,v in d.items():
                 if isinstance(v, dict):
                     opt_flag = opt_flag or recursive_flag(v)
                 elif k == 'flag':
                     opt_flag = opt_flag or v
             return opt_flag
-        
+
         # The user can provide `opt_flag` in analysis_options.yaml,
         # but if it's not provided, we check the individual opt flags
         # from analysis_options.yaml and set a global `opt_flag`
@@ -195,19 +191,19 @@ class WindTurbineOntologyPython(object):
             self.analysis_options['opt_flag'] = self.analysis_options['driver']['opt_flag']
         else:
             self.analysis_options['opt_flag'] = recursive_flag( self.analysis_options['optimization_variables'] )
-        
+
         # If not an optimization DV, then the number of points should be same as the discretization
         blade_opt_options = self.analysis_options['optimization_variables']['blade']
         if not blade_opt_options['aero_shape']['twist']['flag']:
             blade_opt_options['aero_shape']['twist']['n_opt'] = self.modeling_options['rotorse']['n_span']
         elif blade_opt_options['aero_shape']['twist']['n_opt'] < 4:
                 raise ValueError('Cannot optimize twist with less than 4 control points along blade span')
-            
+
         if not blade_opt_options['aero_shape']['chord']['flag']:
             blade_opt_options['aero_shape']['chord']['n_opt'] = self.modeling_options['rotorse']['n_span']
         elif blade_opt_options['aero_shape']['chord']['n_opt'] < 4:
                 raise ValueError('Cannot optimize chord with less than 4 control points along blade span')
-            
+
         if not blade_opt_options['structure']['spar_cap_ss']['flag']:
             blade_opt_options['structure']['spar_cap_ss']['n_opt'] = self.modeling_options['rotorse']['n_span']
         elif blade_opt_options['structure']['spar_cap_ss']['n_opt'] < 4:
@@ -218,8 +214,8 @@ class WindTurbineOntologyPython(object):
         elif blade_opt_options['structure']['spar_cap_ps']['n_opt'] < 4:
                 raise ValueError('Cannot optimize spar cap pressure side with less than 4 control points along blade span')
 
-        
-        
+
+
     def write_ontology(self, wt_opt, fname_output):
 
         if self.modeling_options['flags']['hub']:
@@ -337,7 +333,7 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['hub']['spin_hole_incr']              = float(wt_opt['hub.spin_hole_incr'])
                 self.wt_init['components']['hub']['pitch_system_scaling_factor'] = float(wt_opt['hub.pitch_system_scaling_factor'])
                 self.wt_init['components']['hub']['spinner_gust_ws']             = float(wt_opt['hub.spinner_gust_ws'])
-                
+
             if self.modeling_options['flags']['nacelle']:
                 # Common direct and geared
                 self.wt_init['components']['nacelle']['drivetrain']['uptilt']                    = float(wt_opt['nacelle.uptilt'])
@@ -346,8 +342,11 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['drivetrain']['distance_hub_mb']           = float(wt_opt['nacelle.distance_hub2mb'])
                 self.wt_init['components']['nacelle']['drivetrain']['distance_mb_mb']            = float(wt_opt['nacelle.distance_mb2mb'])
                 self.wt_init['components']['nacelle']['drivetrain']['generator_length']          = float(wt_opt['nacelle.L_generator'])
-                self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']              = wt_opt['nacelle.lss_diameter'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']        = wt_opt['nacelle.lss_wall_thickness'].tolist()
+                s_lss  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.lss_diameter'])).tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']['grid']      = s_lss
+                self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']['values']    = wt_opt['nacelle.lss_diameter'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']['grid']= s_lss
+                self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']['values']= wt_opt['nacelle.lss_wall_thickness'].tolist()
                 self.wt_init['components']['nacelle']['drivetrain']['gear_ratio']                = float(wt_opt['nacelle.gear_ratio'])
                 self.wt_init['components']['nacelle']['drivetrain']['gearbox_efficiency']        = float(wt_opt['nacelle.gearbox_efficiency'])
                 self.wt_init['components']['nacelle']['drivetrain']['mb1Type']                   = wt_opt['nacelle.mb1Type']
@@ -358,15 +357,23 @@ class WindTurbineOntologyPython(object):
 
                 if self.modeling_options['drivetrainse']['direct']:
                     # Direct only
+                    s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_diameter'])).tolist()
+                    s_bed  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness'])).tolist()
                     self.wt_init['components']['nacelle']['drivetrain']['access_diameter']           = float(wt_opt['nacelle.access_diameter'])
-                    self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']             = wt_opt['nacelle.nose_diameter'].tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']       = wt_opt['nacelle.nose_wall_thickness'].tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']   = wt_opt['nacelle.bedplate_wall_thickness'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']['grid']     = s_nose
+                    self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']['values']   = wt_opt['nacelle.nose_diameter'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']['grid'] = s_nose
+                    self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']['values'] = wt_opt['nacelle.nose_wall_thickness'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']['grid'] = s_bed
+                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']['values']   = wt_opt['nacelle.bedplate_wall_thickness'].tolist()
                 else:
                     # Geared only
+                    s_hss  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.hss_diameter'])).tolist()
                     self.wt_init['components']['nacelle']['drivetrain']['hss_length']                = float(wt_opt['nacelle.hss_length'])
-                    self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']              = wt_opt['nacelle.hss_diameter'].tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']        = wt_opt['nacelle.hss_wall_thickness'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']['grid']      = s_hss
+                    self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']['values']    = wt_opt['nacelle.hss_diameter'].tolist()
+                    self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']['grid'] = s_hss
+                    self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']['values']= wt_opt['nacelle.hss_wall_thickness'].tolist()
                     self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_width']     = float(wt_opt['nacelle.bedplate_flange_width'])
                     self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_thickness'] = float(wt_opt['nacelle.bedplate_flange_thickness'])
                     self.wt_init['components']['nacelle']['drivetrain']['bedplate_web_thickness']    = float(wt_opt['nacelle.bedplate_web_thickness'])
@@ -374,7 +381,7 @@ class WindTurbineOntologyPython(object):
                     self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers']
                     self.wt_init['components']['nacelle']['drivetrain']['hss_material']              = wt_opt['nacelle.hss_material']
 
-                    
+
             if self.modeling_options['flags']['generator']:
 
                 self.wt_init['components']['nacelle']['generator']['B_r']         = float(wt_opt['generator.B_r'])
@@ -501,4 +508,3 @@ class WindTurbineOntologyPython(object):
 
         # Write yaml with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
-

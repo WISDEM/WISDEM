@@ -335,12 +335,20 @@ components:
             distance_hub2mb: 1.912
             distance_mb2mb: 0.368
             overhang: 7.
-            lss_diameter: [0.577, 0.577, 0.577, 0.577, 0.577]
-            lss_wall_thickness: [0.288, 0.288, 0.288, 0.288, 0.288]
+            lss_diameter:
+              grid: [0.0, 1.0]
+              values: [0.577, 0.577]
+            lss_wall_thickness:
+              grid: [0.0, 1.0]
+              values: [0.288, 0.288]
             generator_length: 2.0
             hss_length: 1.5
-            hss_diameter: [0.288, 0.288, 0.288]
-            hss_wall_thickness: [0.144, 0.144, 0.144]
+            hss_diameter:
+              grid: [0.0, 1.0]
+              values: [0.288, 0.288]
+            hss_wall_thickness:
+              grid: [0.0, 1.0]
+              values: [0.144, 0.144]
             bedplate_flange_width: 1.0
             bedplate_flange_thickness: 0.05
             bedplate_web_thickness: 0.05

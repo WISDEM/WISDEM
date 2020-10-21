@@ -1,8 +1,4 @@
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
-    import pandas as pd
-
+import pandas as pd
 import numpy as np
 from math import ceil
 
@@ -16,9 +12,10 @@ km_per_m = 0.001
 hr_per_min = 1/60
 m_per_ft = 0.3048
 
+
 class Point(object):
     def __init__(self, x, y):
-        if type(x) == type(pd.Series(dtype='float64')):
+        if type(x) == type(pd.Series(dtype=np.float64)):
             self.x = float(x.values[0])
             self.y = float(y.values[0])
         elif type(x) == type(np.array([])):
@@ -868,9 +865,10 @@ class ErectionCost(CostModule):
 
         Returns
         -------
-        (pd.DataFrame, pd.DataFrame)
-            Two dataframes: First, utilizing the same crane for base and topping.
-            Second, utilizing separate cranes for base and topping
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
+            Two dataframes: First, utilizing the separate cranes for base and topping.
+            Second, utilizing same crane for base and topping,
+            Third is crew cost.
         """
         join_wind_operation = self.output_dict['join_wind_operation']
         overtime_multiplier = self.input_dict['overtime_multiplier']
@@ -928,6 +926,7 @@ class ErectionCost(CostModule):
         crew_cost_grouped = crew_cost.groupby(['Crew type ID', 'Operation']).sum().reset_index()
 
         # merge crane data with grouped crew costs
+
         possible_crane_cost = pd.merge(possible_crane_cost, crew_cost_grouped, on=['Crew type ID', 'Operation'])
 
         # calculate labor costs
@@ -955,8 +954,8 @@ class ErectionCost(CostModule):
                                                                                      'Subtotal for hourly labor (non-management) USD',
                                                                                      'Subtotal for per diem labor (non-management) USD',
                                                                                      'Equipment rental cost USD',
-                                                                                     'Fuel cost USD'
-        ]].sum().reset_index()
+                                                                                     'Fuel cost USD']
+        ].sum().reset_index()
 
         # Store the possible cranes for the top and base for future diagnostics.
         self._possible_crane_cost = possible_crane_cost.copy()
@@ -987,8 +986,8 @@ class ErectionCost(CostModule):
                                                                                                    'Subtotal for hourly labor (non-management) USD',
                                                                                                    'Subtotal for per diem labor (non-management) USD',
                                                                                                    'Equipment rental cost USD',
-                                                                                                   'Fuel cost USD'
-        ]].sum().reset_index()
+                                                                                                   'Fuel cost USD']
+        ].sum().reset_index()
 
         # join mobilization data to separate top base crane costs
         separate_topbase_crane_cost = pd.merge(separate_topbase, mobilization_costs, on=['Crane name', 'Boom system'])

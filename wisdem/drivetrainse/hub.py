@@ -472,27 +472,11 @@ class Hub_System(om.Group):
     """
     
     def initialize(self):
-        self.options.declare('topLevelFlag', default=True)
+        #self.options.declare('topLevelFlag', default=True)
         self.options.declare('modeling_options')
         
     def setup(self):
         opt = self.options['modeling_options']
-        
-        if self.options['topLevelFlag']:
-            ivc = om.IndepVarComp()
-            ivc.add_output('flange_t2shell_t',          val = 0.0)
-            ivc.add_output('flange_OD2hub_D',           val = 0.0)
-            ivc.add_output('flange_ID2flange_OD',       val = 0.0)
-            ivc.add_output('hub_in2out_circ',               val = 0.0)
-            ivc.add_output('hub_stress_concentration',      val = 0.0)
-            ivc.add_discrete_output('n_front_brackets', val = 0)
-            ivc.add_discrete_output('n_rear_brackets',  val = 0)
-            #ivc.add_discrete_output('n_blades',         val = 0)
-            ivc.add_output('clearance_hub_spinner',     val = 0.0, units = 'm')
-            ivc.add_output('spin_hole_incr',            val = 0.0)
-            ivc.add_output('pitch_system_scaling_factor', val = 0.54)
-            ivc.add_output('spinner_gust_ws',                   val = 70., units='m/s')
-            self.add_subsystem('ivc', ivc, promotes=['*'])
             
         self.add_subsystem('maxtorq',     FindMaxTorque(),    promotes=['*'])
         self.add_subsystem('hub_shell',   HubShell(gamma=opt['hub_gamma']), promotes=['hub_mass', 'hub_diameter', 'hub_cost', 'hub_cm', 'hub_I',

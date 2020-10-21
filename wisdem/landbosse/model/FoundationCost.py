@@ -1,10 +1,7 @@
 import traceback
-import warnings
+import math
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
-    import pandas as pd
-
+import pandas as pd
 import numpy as np
 import math
 from scipy.optimize import root_scalar
@@ -342,7 +339,6 @@ class FoundationCost(CostModule):
         v_1 = (foundation_vol * (
                     vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
         e = m_tot / v_1
-
         if (r_test_gapping / 3) < e:
             r_gapping = 0
         else:
@@ -351,7 +347,7 @@ class FoundationCost(CostModule):
                 v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
                 e = m_tot / v_1
                 return (e * 3 - x)
-            result = root_scalar(r_g, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-5, maxiter=50)
+            result = root_scalar(r_g, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-4, maxiter=50)
             r_gapping = result.root
             if not result.converged:
                 raise ValueError(f'Warning {self.project_name} calculate_foundation_load r_gapping solve failed, {result.flag}')
@@ -365,7 +361,7 @@ class FoundationCost(CostModule):
             e = m_tot / v_1
             a_eff = v_1 / bearing_pressure
             return (2 * (x ** 2 - e * (x ** 2 - e ** 2) ** 0.5) - a_eff)
-        result = root_scalar(r_b, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-5, maxiter=50)
+        result = root_scalar(r_b, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-10, maxiter=50)
         r_bearing = result.root
 
         if not result.converged:
@@ -402,9 +398,19 @@ class FoundationCost(CostModule):
         Foundation volume [in m^3] -> foundation_volume_concrete_m3_per_turbine
 
         """
+        #TODO: still updating/fine-tuning foundation size equations for small DW (Parangat - Feb 27, 2020)
         r = float(foundation_size_output_data['Radius_m'])
-        foundation_size_output_data['excavated_volume_m3'] = np.pi * (r + 0.5) ** 2 * foundation_size_input_data['depth']
-        foundation_size_output_data['foundation_volume_concrete_m3_per_turbine'] = np.pi * r ** 2 * foundation_size_input_data['depth'] * 0.45  # only compute the portion of the foundation that is composed of concrete (45% concrete; other portion is backfill); TODO: Add to sphinx -> (volume excavated = pi*(r_pick + .5m)^2 this assumes vertical sides which does not reflect reality as OSHA requires benched sides over 3’)
+        if foundation_size_input_data['turbine_rating_MW'] < 0.1:
+            foundation_size_output_data['excavated_volume_m3'] = r * r * foundation_size_input_data['depth']
+            foundation_size_output_data['foundation_volume_concrete_m3_per_turbine'] = foundation_size_output_data['excavated_volume_m3'] * 0.45
+        else:
+            foundation_size_output_data['excavated_volume_m3'] = np.pi * (r + 0.5) ** 2 * foundation_size_input_data['depth']
+
+            # only compute the portion of the foundation that is composed of concrete (45% concrete; other portion is
+            # backfill); TODO: Add to sphinx -> (volume excavated = pi*(r_pick + .5m)^2 this assumes vertical sides which
+            #  does not reflect reality as OSHA requires benched sides over 3’)
+            foundation_size_output_data['foundation_volume_concrete_m3_per_turbine'] = np.pi * r ** 2 * \
+                                                                                       foundation_size_input_data['depth'] * 0.45
 
         return foundation_size_output_data
 
@@ -475,8 +481,13 @@ class FoundationCost(CostModule):
         construction_time_output_data['material_needs_entire_farm'] = material_needs_per_turbine.copy()
         material_needs_entire_farm = construction_time_output_data['material_needs_entire_farm']
         material_needs_entire_farm['Quantity of material'] = quantity_materials_entire_farm
-        operation_data = throughput_operations.where(throughput_operations['Module'] == 'Foundations').dropna(thresh=4)
-
+        if construction_time_input_data['turbine_rating_MW'] <= 0.1:
+            operation_data = throughput_operations.where(
+                throughput_operations['Module'] == 'Small DW Foundations').dropna(
+                thresh=4)
+        else:
+            operation_data = throughput_operations.where(throughput_operations['Module'] == 'Foundations').dropna(
+                thresh=4)
 
         #operation data for entire wind farm:
         operation_data = pd.merge(material_needs_entire_farm, operation_data, on=['Material type ID'], how='outer')
@@ -498,14 +509,17 @@ class FoundationCost(CostModule):
         construction_time_output_data['operation_data_entire_farm'] = operation_data
 
         # pull out management data #TODO: Add this cost to Labor cost next
-        crew_cost = self.input_dict['crew_cost']
-        crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
-        management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
-        management_crew = management_crew.assign(per_diem_total=management_crew['Per diem USD per day'] * management_crew['Number of workers'] * num_days)
-        management_crew = management_crew.assign(hourly_costs_total=management_crew['Hourly rate USD per hour'] * self.input_dict['hour_day'][self.input_dict['time_construct']] * num_days)
-        management_crew = management_crew.assign(total_crew_cost_before_wind_delay=management_crew['per_diem_total'] + management_crew['hourly_costs_total'])
-        self.output_dict['management_crew'] = management_crew
-        self.output_dict['managament_crew_cost_before_wind_delay'] = management_crew['total_crew_cost_before_wind_delay'].sum()
+        if construction_time_input_data['turbine_rating_MW'] > 0.1:
+            crew_cost = self.input_dict['crew_cost']
+            crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
+            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
+            management_crew = management_crew.assign(per_diem_total=management_crew['Per diem USD per day'] * management_crew['Number of workers'] * num_days)
+            management_crew = management_crew.assign(hourly_costs_total=management_crew['Hourly rate USD per hour'] * self.input_dict['hour_day'][self.input_dict['time_construct']] * num_days)
+            management_crew = management_crew.assign(total_crew_cost_before_wind_delay=management_crew['per_diem_total'] + management_crew['hourly_costs_total'])
+            self.output_dict['management_crew'] = management_crew
+            self.output_dict['managament_crew_cost_before_wind_delay'] = management_crew['total_crew_cost_before_wind_delay'].sum()
+        else:
+            self.output_dict['managament_crew_cost_before_wind_delay'] = 0
 
         return construction_time_output_data['operation_data_entire_farm']
 
@@ -587,6 +601,7 @@ class FoundationCost(CostModule):
 
 
         operation_data = calculate_costs_output_dict['operation_data_entire_farm']
+
         wind_delay = calculate_costs_output_dict['wind_delay_time']
 
         wind_delay_fraction = (wind_delay / calculate_costs_input_dict['operational_hrs_per_day']) / operation_data['Time construct days'].max(skipna=True)
@@ -597,10 +612,17 @@ class FoundationCost(CostModule):
         calculate_costs_output_dict['wind_multiplier'] = wind_multiplier
 
         rsmeans = calculate_costs_input_dict['rsmeans']
+        if calculate_costs_input_dict['turbine_rating_MW'] > 0.1:
+            rsmeans = rsmeans.where(rsmeans['Module'] == 'Foundations').dropna(thresh=4)
+        else:
+            rsmeans = rsmeans.where(rsmeans['Module'] == 'Small DW Foundations').dropna(thresh=4)
 
         labor_equip_data = pd.merge(material_vol_entire_farm, rsmeans, on=['Material type ID'])
 
+        # Create foundation cost dataframe
+        foundation_cost = pd.DataFrame(columns=['Type of cost', 'Cost USD', 'Phase of construction'])
 
+        # Calculate per diem
         per_diem = operation_data['Number of workers'] * operation_data['Number of crews'] * (operation_data['Time construct days'] +
                                                                                               np.ceil(operation_data['Time construct days'] / 7)) * calculate_costs_input_dict['rsmeans_per_diem']
         where_are_na_ns = np.isnan(per_diem)
@@ -608,43 +630,58 @@ class FoundationCost(CostModule):
         labor_equip_data['Cost USD'] = (labor_equip_data['Quantity of material'] * labor_equip_data['Rate USD per unit'] * calculate_costs_input_dict['overtime_multiplier'] + per_diem + calculate_costs_output_dict['managament_crew_cost_before_wind_delay']) * wind_multiplier
         self.output_dict['labor_equip_data'] = labor_equip_data
 
-        #Create foundation cost dataframe
-        foundation_cost = pd.DataFrame(columns=['Type of cost', 'Cost USD', 'Phase of construction'])
-
-        #Create equipment costs row to be appended to foundation_cost
+        # EQUIPMENT COST
+        # Create equipment costs row to be appended to foundation_cost
         equipment_dataframe = labor_equip_data[labor_equip_data['Type of cost'].str.match('Equipment rental')]
-        equipment_cost_usd_without_delay = (equipment_dataframe['Quantity of material'] * equipment_dataframe['Rate USD per unit'] * calculate_costs_input_dict['overtime_multiplier'] + per_diem)
+
+        equipment_cost_usd_without_delay = (
+                equipment_dataframe['Quantity of material'] * equipment_dataframe['Rate USD per unit'] *
+                calculate_costs_input_dict['overtime_multiplier'] + per_diem)
         equipment_cost_usd_with_weather_delays = equipment_cost_usd_without_delay.sum() * wind_multiplier
         equipment_costs = pd.DataFrame([['Equipment rental', equipment_cost_usd_with_weather_delays, 'Foundation']],
                                        columns=['Type of cost', 'Cost USD', 'Phase of construction'])
 
+        # LABOR COST
         # Create labor costs row to be appended to foundation_cost
         labor_dataframe = labor_equip_data[labor_equip_data['Type of cost'].str.match('Labor')]
         labor_cost_usd_without_management= (labor_dataframe['Quantity of material'] * labor_dataframe['Rate USD per unit'] * calculate_costs_input_dict['overtime_multiplier'] + per_diem )
         labor_cost_usd_with_management = labor_cost_usd_without_management.sum() + calculate_costs_output_dict['managament_crew_cost_before_wind_delay']
         labor_cost_usd_with_management_plus_weather_delays = labor_cost_usd_with_management * wind_multiplier
         labor_costs = pd.DataFrame([['Labor', labor_cost_usd_with_management_plus_weather_delays, 'Foundation']],
-                                       columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+                                   columns=['Type of cost', 'Cost USD', 'Phase of construction'])
 
-
-
+        # MATERIAL COST
         material_cost_dataframe = pd.DataFrame(columns=['Operation ID', 'Type of cost', 'Cost USD'])
         material_cost_dataframe['Operation ID'] = material_data_entire_farm['Material type ID']
         material_cost_dataframe['Type of cost'] = 'Materials'
         material_cost_dataframe['Cost USD'] = material_data_entire_farm['Cost USD']
         material_costs_sum = material_cost_dataframe['Cost USD'].sum()
         material_costs = pd.DataFrame([['Materials', material_costs_sum, 'Foundation']],
-                                               columns=['Type of cost', 'Cost USD', 'Phase of construction'])
-
+                                      columns=['Type of cost', 'Cost USD', 'Phase of construction'])
 
         # Append all cost items to foundation_cost
         foundation_cost = foundation_cost.append(equipment_costs)
         foundation_cost = foundation_cost.append(labor_costs)
         foundation_cost = foundation_cost.append(material_costs)
 
-        # calculate mobilization cost as percentage of total foundation cost and add to foundation_cost
-        mob_cost = pd.DataFrame([['Mobilization', foundation_cost['Cost USD'].sum() * 0.05, 'Foundation']],
-                                columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+        # Calculate mobilization cost as percentage of total foundation cost and add to foundation_cost
+        # Assumed 5% of total foundation cost and add to foundation_cost for utility scale plant
+        # A function of turbine size for distributed wind (< 10 turbines)
+        if calculate_costs_input_dict['num_turbines'] > 10:
+            mobilization_cost = foundation_cost['Cost USD'].sum() * 0.05
+        else:
+            if calculate_costs_input_dict['turbine_rating_MW'] < 0.1:
+                # Zero since mobilization cost of equipment is included in the equipment rental cost
+                mobilization_cost = 0
+            else:
+                # There is mobilization cost for 0-10 turbines 100+ kW in rating.
+                num_turbines = calculate_costs_input_dict['num_turbines']
+                rating = calculate_costs_input_dict['turbine_rating_MW']
+                mobilization_multipler = self.mobilization_cost_multiplier(rating)
+                mobilization_cost = foundation_cost['Cost USD'].sum() / num_turbines * mobilization_multipler
+
+        mob_cost = pd.DataFrame([['Mobilization', mobilization_cost, 'Foundation']], columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+
         foundation_cost = foundation_cost.append(mob_cost)
 
         # todo: we add a separate tab in the output file for costs (all costs will be the same format but it's a different format than other data)
@@ -728,12 +765,6 @@ class FoundationCost(CostModule):
             'type': 'variable',
             'variable_df_key_col_name': 'Radius',
             'value': float(self.output_dict['Radius_m'])
-        })
-        result.append({
-            'unit': 'm^3',
-            'type': 'variable',
-            'variable_df_key_col_name': 'foundation_volume_concrete_m3_per_turbine',
-            'value': float(self.output_dict['foundation_volume_concrete_m3_per_turbine'])
         })
         result.append({
             'unit': 'short_ton',

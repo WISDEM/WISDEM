@@ -27,6 +27,11 @@ class WT_RNTA(om.Group):
         opt_options      = self.options['opt_options']
         n_span           = modeling_options['blade']['n_span']
 
+        self.linear_solver = lbgs = om.LinearBlockGS()
+        self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+        nlbgs.options['maxiter'] = 2
+        nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
+        
         # Analysis components
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('ccblade',   CCBladeTwist(modeling_options = modeling_options, opt_options = opt_options)) # Run standalong CCBlade and possibly determine optimal twist from user-defined margin to stall
@@ -37,7 +42,7 @@ class WT_RNTA(om.Group):
         self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         if modeling_options['Analysis_Flags']['DriveSE']:
-            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1, topLevelFlag=False))
+            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1))
         if modeling_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
@@ -255,6 +260,7 @@ class WT_RNTA(om.Group):
             
             self.connect('assembly.rotor_diameter',    'drivese.rotor_diameter')
             self.connect('configuration.upwind',       'drivese.upwind')
+            self.connect('control.minOmega' ,          'drivese.minimum_rpm')
             self.connect('sse.powercurve.rated_Omega', 'drivese.rated_rpm')
             self.connect('sse.powercurve.rated_Q',     'drivese.rated_torque')
             self.connect('control.rated_power',        'drivese.machine_rating')    

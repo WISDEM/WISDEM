@@ -1,4 +1,4 @@
-.. _documentation-label:
+.. _documentation-label-gen:
 
 .. currentmodule:: GeneratorSE
 
@@ -15,15 +15,14 @@ Sizing models for the different generator modules are described along with mass,
 Documentation for GeneratorSE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-<<<<<<< HEAD
 The following inputs and outputs are defined for GeneratorSE :
 
 .. literalinclude:: ../src/generatorse/drive.py
-=======
+
 The following inputs and outputs are defined for GeneratorSE.PMSG_arms :
 
 .. literalinclude:: ../src/generatorse/PMSG_arms.py
->>>>>>> develop
+
     :language: python
     :start-after: PMSG(Component)
     :end-before: def configure(self)
@@ -32,46 +31,18 @@ The following inputs and outputs are defined for GeneratorSE.PMSG_arms :
 .. module:: generatorse.PMSG_arms
 .. class:: generatorse.PMSG_arms.Drive_PMSG_arms
 
-<<<<<<< HEAD
 The following inputs and outputs are defined for GeneratorSE using the four-point suspension configuration:
 
 .. literalinclude:: ../src/generatorse/drive.py
-=======
+
 The following inputs and outputs are defined for PMSG_disc :
 
 .. literalinclude:: ../src/generatorse/PMSG_disc.py
->>>>>>> develop
+
     :language: python
     :start-after: PMSG(Component)
     :end-before: def configure(self)
-<<<<<<< HEAD
-    :prepend: class Drive4pt(Assembly):
 
-.. module:: drivese.drive
-.. class:: Drive4pt
-
-Implemented Base Model
-=========================
-.. module:: drivewpact.drive
-.. class:: NacelleBase
-
-Referenced Sub-System Modules 
-==============================
-.. module:: drivese.drivese_components
-.. class:: LowSpeedShaft_drive
-.. class:: LowSpeedShaft_drive4pt
-.. class:: LowSpeedShaft_drive3pt
-.. class:: MainBearing_drive
-.. class:: SecondBearing_drive
-.. class:: Gearbox_drive
-.. class:: HighSpeedSide_drive
-.. class:: Generator_drive
-.. class:: Bedplate_drive
-.. class:: AboveYawMassAdder_drive
-.. class:: YawSystem_drive
-.. class:: NacelleSystemAdder_drive
-
-=======
     :prepend: class Drive_PMSG_disc(Assembly):
 
 .. module:: generatorse.PMSG_disc
@@ -110,7 +81,7 @@ The following inputs and outputs are defined for DFIG :
 
 .. module:: generatorse.DFIG
 .. class:: generatorse.DFIG.Drive_DFIG
->>>>>>> develop
+
 
 
 

@@ -385,17 +385,17 @@ properties:
                                         default: [0.0]
                                         items:
                                             minimum: 0.0
-                                            maximum: 1e2
+                                            maximum: 1.0
                                             uniqueItems: True
-                                            unit: rpm
+                                            unit: none
                                     values:
                                         type: array
                                         default: [0.0]
                                         items:
                                             minimum: 0.0
-                                            maximum: 1.0
+                                            maximum: 100.0
                                             uniqueItems: False
-                                            unit: none
+                                            unit: rpm
                             access_diameter:
                                 type: number
                                 description: Minimum diameter for hollow shafts for maintenance access
@@ -418,29 +418,53 @@ properties:
                                 maximum: 1.
                                 default: 1.0
                             lss_diameter:
-                                type: array
-                                default: [0.3, 0.3, 0.3, 0.3, 0.3]
+                                type: object
                                 description: Diameter of the low speed shaft
-                                items:
-                                    type: number
-                                    unit: meter
-                                    minItems: 5
-                                    maxItems: 5
-                                    uniqueItems: false
-                                    minimum: 0.0
-                                    maximum: 10.
+                                default: {'grid':[0.0, 1.0], 'values':[0.3, 0.3]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        type: array
+                                        default: [0.0, 1.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1
+                                            uniqueItems: True
+                                            unit: none
+                                    values:
+                                        type: array
+                                        default: [0.3, 0.3]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 10.0
+                                            uniqueItems: False
+                                            unit: meter
                             lss_wall_thickness:
-                                type: array
-                                default: [0.1, 0.1, 0.1, 0.1, 0.1]
+                                type: object
                                 description: Thickness of the low speed shaft wall in radial direction
-                                items:
-                                    type: number
-                                    unit: meter
-                                    minItems: 5
-                                    maxItems: 5
-                                    uniqueItems: false
-                                    minimum: 0.0
-                                    maximum: 5.
+                                default: {'grid':[0.0, 1.0], 'values':[0.1, 0.1]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        type: array
+                                        default: [0.0, 1.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1
+                                            uniqueItems: True
+                                            unit: none
+                                    values:
+                                        type: array
+                                        default: [0.1, 0.1]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 5.0
+                                            uniqueItems: False
+                                            unit: meter
                             lss_material:
                                 type: string
                                 description: Material name identifier
@@ -453,69 +477,129 @@ properties:
                                 maximum: 10.
                                 default: 1.5
                             hss_diameter:
-                                type: array
-                                default: [0.1, 0.1, 0.1]
+                                type: object
                                 description: Diameter of the high speed shaft
-                                items:
-                                    type: number
-                                    unit: meter
-                                    minItems: 3
-                                    maxItems: 3
-                                    uniqueItems: false
-                                    minimum: 0.0
-                                    maximum: 5.
+                                default: {'grid':[0.0, 1.0], 'values':[0.3, 0.3]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        type: array
+                                        default: [0.0, 1.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1
+                                            uniqueItems: True
+                                            unit: none
+                                    values:
+                                        type: array
+                                        default: [0.3, 0.3]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 5.0
+                                            uniqueItems: False
+                                            unit: meter
                             hss_wall_thickness:
-                                type: array
-                                default: [0.05, 0.05, 0.05]
+                                type: object
                                 description: Thickness of the high speed shaft wall in radial direction
-                                items:
-                                    type: number
-                                    unit: meter
-                                    minItems: 3
-                                    maxItems: 3
-                                    uniqueItems: false
-                                    minimum: 0.0
-                                    maximum: 5.
+                                default: {'grid':[0.0, 1.0], 'values':[0.1, 0.1]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        type: array
+                                        default: [0.0, 1.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1
+                                            uniqueItems: True
+                                            unit: none
+                                    values:
+                                        type: array
+                                        default: [0.1, 0.1]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 5.0
+                                            uniqueItems: False
+                                            unit: meter
                             hss_material:
                                 type: string
                                 description: Material name identifier
                                 default: steel
                             nose_diameter:
-                                type: array
-                                default: [0.1, 0.1, 0.1, 0.1, 0.1]
+                                type: object
                                 description: Diameter of the nose (also called turret or spindle)
-                                items:
-                                    type: number
-                                    unit: meter
-                                    minItems: 5
-                                    maxItems: 5
-                                    uniqueItems: false
-                                    minimum: 0.0
-                                    maximum: 5.
+                                default: {'grid':[0.0, 1.0], 'values':[0.3, 0.3]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        type: array
+                                        default: [0.0, 1.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1
+                                            uniqueItems: True
+                                            unit: none
+                                    values:
+                                        type: array
+                                        default: [0.3, 0.3]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 5.0
+                                            uniqueItems: False
+                                            unit: meter
                             nose_wall_thickness:
-                                type: array
-                                default: [0.05, 0.05, 0.05, 0.05, 0.05]
+                                type: object
                                 description: Thickness of the nose (also called turret or spindle)
-                                items:
-                                    type: number
-                                    unit: meter
-                                    minItems: 5
-                                    maxItems: 5
-                                    uniqueItems: false
-                                    minimum: 0.0
-                                    maximum: 5.
+                                default: {'grid':[0.0, 1.0], 'values':[0.05, 0.05]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        type: array
+                                        default: [0.0, 1.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1
+                                            uniqueItems: True
+                                            unit: none
+                                    values:
+                                        type: array
+                                        default: [0.05, 0.05]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 5.0
+                                            uniqueItems: False
+                                            unit: meter
                             bedplate_wall_thickness:
-                                type: array
-                                default: [0.05, 0.05, 0.05, 0.05, 0.05]
+                                type: object
                                 description: Thickness of the hollow elliptical bedplate used in direct drive configurations
-                                items:
-                                    type: number
-                                    unit: meter
-                                    minItems: 2
-                                    maxItems: 20
-                                    uniqueItems: false
-                                    minimum: 0.0
-                                    maximum: 1.
+                                default: {'grid':[0.0, 1.0], 'values':[0.05, 0.05]}
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        type: array
+                                        default: [0.0, 1.0]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1
+                                            uniqueItems: True
+                                            unit: none
+                                    values:
+                                        type: array
+                                        default: [0.05, 0.05]
+                                        items:
+                                            minimum: 0.0
+                                            maximum: 1.0
+                                            uniqueItems: False
+                                            unit: meter
                             bedplate_flange_width:
                                 type: number
                                 description: Bedplate I-beam flange width used in geared configurations

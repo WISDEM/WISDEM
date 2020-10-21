@@ -136,6 +136,7 @@ class LandBOSSE_API(om.ExplicitComponent):
                        desc='Non-Erection Wind Delay Critical Speed (m/s)', val=15)
         self.add_input('critical_height_non_erection_wind_delays_m', units='m',
                        desc='Non-Erection Wind Delay Critical Height (m)', val=10)
+        self.add_discrete_input('road_distributed_winnd', val=False)
         self.add_input('road_width_ft', units='ft', desc='Road width (ft)', val=20)
         self.add_input('road_thickness', desc='Road thickness (in)', val=8)
         self.add_input('crane_width', units='m', desc='Crane width (m)', val=12.2)

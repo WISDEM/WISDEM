@@ -1,4 +1,4 @@
-.. _tutorial-label:
+.. _tutorial-label-gen:
 
 .. currentmodule:: masstocost.docs.source.examples.example
 
@@ -6,11 +6,7 @@
 Tutorial
 --------
 
-<<<<<<< HEAD
 As an example, let us size a direct drive Permanent Magnet synchronous Generator (PMSG) for the NREL 5MW Reference Model :cite:`FAST2009`.  
-=======
-As a frst example, we will size a direct-drive Permanent Magnet synchronous Generator (PMSG) for the NREL 5MW Reference Model :cite:`FAST2009`.  
->>>>>>> develop
 
 The first step is to import the relevant files.
 

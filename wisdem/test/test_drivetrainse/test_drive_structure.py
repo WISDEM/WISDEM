@@ -5,7 +5,7 @@ import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.layout as lay
 from wisdem.commonse import gravity
 
-npts = 10
+npts = 12
 
 class TestDirectStructure(unittest.TestCase):
     def setUp(self):
@@ -57,7 +57,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['m_stator'] = 100e3
         self.inputs['cm_stator'] = -0.3
         self.inputs['I_stator'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
-        
+
         self.inputs['m_rotor'] = 100e3
         self.inputs['cm_rotor'] = -0.3
         self.inputs['I_rotor'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
@@ -72,7 +72,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['brake_I'] = np.array([1e4, 5e3, 5e3])
 
         self.inputs['gear_ratio'] = 1.0
-        
+
         self.inputs['F_mb1'] = np.array([2409.750e3, -1716.429e3, 74.3529e3]).reshape((3,1))
         self.inputs['F_mb2'] = np.array([2409.750e3, -1716.429e3, 74.3529e3]).reshape((3,1))
         self.inputs['M_mb1'] = np.array([-1.83291e7, 6171.7324e3, 5785.82946e3]).reshape((3,1))
@@ -83,7 +83,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['hub_system_I'] = np.array([2409.750e3, -1716.429e3, 74.3529e3, 0.0, 0.0, 0.0])
         self.inputs['F_hub'] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3,1))
         self.inputs['M_hub'] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3,1))
-        
+
         self.inputs['lss_E'] = self.inputs['hss_E'] = self.inputs['bedplate_E'] = 210e9
         self.inputs['lss_G'] = self.inputs['hss_G'] = self.inputs['bedplate_G'] = 80.8e9
         self.inputs['lss_rho'] = self.inputs['hss_rho'] = self.inputs['bedplate_rho'] = 7850.
@@ -94,11 +94,11 @@ class TestDirectStructure(unittest.TestCase):
         self.opt['gamma_n'] = 1.0
 
     def compute_layout(self, direct=True):
-        myobj = lay.DirectLayout(n_points=npts) if direct else lay.GearedLayout()
+        myobj = lay.DirectLayout() if direct else lay.GearedLayout()
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         for k in self.outputs.keys():
             self.inputs[k] = self.outputs[k]
-        
+
     def testBaseF_BaseM(self):
         self.inputs['tilt'] = 0.0
         self.inputs['F_mb1'] = np.zeros(3).reshape((3,1))
@@ -106,7 +106,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
         self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, modeling_options=self.opt, n_dlcs=1)
+        myobj = ds.Nose_Stator_Bedplate_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
         npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
@@ -139,7 +139,7 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 2*self.inputs['F_mb2'][:2])
         npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity+2*50e2)
-        
+
     def testBaseF_BaseM_withTilt(self):
         self.inputs['tilt'] = 5.0
         self.inputs['F_mb1'] = np.zeros(3).reshape((3,1))
@@ -147,14 +147,14 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
         self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, modeling_options=self.opt, n_dlcs=1)
+        myobj = ds.Nose_Stator_Bedplate_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
         npt.assert_almost_equal(self.outputs['base_M'][-1], 0.0)
         F0 = self.outputs['base_F']
         M0 = self.outputs['base_M']
-        
+
         self.inputs['other_mass'] += 500e3
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
@@ -180,7 +180,7 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][1], 2*self.inputs['F_mb2'][1])
 
-        
+
     def testBaseF_BaseM_Downwind(self):
         self.inputs['tilt'] = 0.0
         self.discrete_inputs['upwind'] = False
@@ -189,7 +189,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
         self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, modeling_options=self.opt, n_dlcs=1)
+        myobj = ds.Nose_Stator_Bedplate_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0)
         npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
@@ -222,8 +222,8 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 2*self.inputs['F_mb2'][:2])
         npt.assert_almost_equal(self.outputs['base_F'][2], F0[2]-500e3*gravity+2*50e2)
-        
-        
+
+
     def testBaseF_BaseM_withTilt_Downwind(self):
         self.inputs['tilt'] = 5.0
         self.discrete_inputs['upwind'] = False
@@ -232,14 +232,14 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['M_mb1'] = np.zeros(3).reshape((3,1))
         self.inputs['M_mb2'] = np.zeros(3).reshape((3,1))
         self.compute_layout()
-        myobj = ds.Nose_Stator_Bedplate_Frame(n_points=npts, modeling_options=self.opt, n_dlcs=1)
+        myobj = ds.Nose_Stator_Bedplate_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs['base_M'][0], 0.0)
         npt.assert_almost_equal(self.outputs['base_M'][-1], 0.0)
         F0 = self.outputs['base_F']
         M0 = self.outputs['base_M']
-        
+
         self.inputs['other_mass'] += 500e3
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2], 0.0, decimal=2)
@@ -264,8 +264,8 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_mb2'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][1], 2*self.inputs['F_mb2'][1])
-        
-        
+
+
     def testBaseF_BaseM_Geared(self):
         self.inputs['tilt'] = 0.0
         self.inputs['F_mb1']       = np.zeros(3).reshape((3,1))
@@ -302,8 +302,8 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][:2,0], 4*self.inputs['F_mb1'][:2,0], decimal=1)
         npt.assert_almost_equal(self.outputs['base_F'][2,0], F0[2]-500e3*gravity+4*50e2, decimal=0)
-        
-        
+
+
     def testBaseF_BaseM_withTilt_Geared(self):
         self.inputs['tilt'] = 5.0
         self.inputs['F_mb1']       = np.zeros(3).reshape((3,1))
@@ -339,10 +339,10 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['F_mb1'] = self.inputs['F_mb2'] = self.inputs['F_generator'] = self.inputs['F_torq'] = np.array([30e2, 40e2, 50e2]).reshape((3,1))
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs['base_F'][1,0], 4*self.inputs['F_mb1'][1,0], decimal=1)
-        
-        
 
-        
+
+
+
     def testRunRotatingDirect_noTilt(self):
         self.inputs['tilt'] = 0.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
@@ -375,7 +375,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['M_torq'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
 
 
-        
+
     def testRunRotatingDirect_withTilt(self):
         self.inputs['tilt'] = 5.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
@@ -407,7 +407,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[1], g[-1]*1+2*g[1]+M0[1], decimal=1) #*1=*L_h1
         npt.assert_almost_equal(self.outputs['M_mb2'].flatten()[2], -g[1]*1+2*g[2], decimal=1) #*1=*L_h1
         npt.assert_almost_equal(self.outputs['M_torq'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
-        
+
     def testRunRotatingGeared_noTilt(self):
         self.inputs['tilt'] = 0.0
         self.inputs['gear_ratio'] = 50.0
@@ -441,7 +441,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['M_torq'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
 
 
-        
+
     def testRunRotatingGeared_withTilt(self):
         self.inputs['tilt'] = 5.0
         self.inputs['gear_ratio'] = 50.0
@@ -476,8 +476,8 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['M_torq'].flatten(), np.r_[2*g[0], 0.0, 0.0], decimal=2)
 
 
-        
-        
+
+
     def testHSS_noTilt(self):
         self.inputs['tilt'] = 0.0
         self.inputs['gear_ratio'] = 50.0
@@ -503,7 +503,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['M_generator'].flatten(), np.r_[2*g[0]/50.0, M0[1], 0.0], decimal=2)
 
 
-        
+
     def testHSS_withTilt(self):
         self.inputs['tilt'] = 5.0
         self.inputs['gear_ratio'] = 50.0
@@ -529,7 +529,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['F_generator'].flatten(), F0, decimal=2)
         npt.assert_almost_equal(self.outputs['M_generator'].flatten(), np.r_[2*g[0]/50.0, M0[1], 0.0], decimal=2)
 
-        
+
     def testShaftTheoryLSS(self):
         # https://www.engineersedge.com/calculators/torsional-stress-calculator.htm
         self.inputs['tilt'] = 0.0
@@ -554,7 +554,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['lss_axial_stress'], 0.0, decimal=4)
         npt.assert_almost_equal(self.outputs['lss_shear_stress'].flatten(), np.r_[np.zeros(3), sigma], decimal=4)
 
-        
+
     def testShaftTheoryHSS(self):
         # https://www.engineersedge.com/calculators/torsional-stress-calculator.htm
         self.inputs['tilt'] = 0.0
@@ -583,7 +583,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs['hss_bending_stress'], 0.0, decimal=4)
         npt.assert_almost_equal(self.outputs['hss_shear_stress'].flatten(), sigma*np.ones(2), decimal=4)
 
-        
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestDirectStructure))
