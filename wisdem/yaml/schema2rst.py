@@ -52,17 +52,17 @@ def get_description_string(indict):
         outstr += wrapper.fill(indict['description'])
         
     if 'default' in indict.keys():
-        outstr += '\n'+myindent + '_Default_ = '+str(indict['default'])
+        outstr += '\n\n'+myindent + '*Default* = '+str(indict['default'])
         
     if 'minimum' in indict.keys():
-        outstr += '\n'+myindent + '_Minimum_ = '+str(indict['minimum'])
+        outstr += '\n\n'+myindent + '*Minimum* = '+str(indict['minimum'])
     elif  (indict['type'] == 'array' and 'minimum' in indict['items'].keys()):
-        outstr += '\n'+myindent + '_Minimum_ = '+str(indict['items']['minimum'])
+        outstr += '\n\n'+myindent + '*Minimum* = '+str(indict['items']['minimum'])
         
     if 'maximum' in indict.keys():
-        outstr += myindent + '_Maximum_ = '+str(indict['maximum'])+'\n'
+        outstr += myindent + '*Maximum* = '+str(indict['maximum'])+'\n'
     elif  (indict['type'] == 'array' and 'maximum' in indict['items'].keys()):
-        outstr += '\n'+myindent + '_Maximum_ = '+str(indict['items']['maximum'])
+        outstr += '\n\n'+myindent + '*Maximum* = '+str(indict['items']['maximum'])
         
     outstr += '\n'
     return outstr
@@ -92,14 +92,14 @@ class Schema2RST(object):
         self.f.write('\n')
         self.f.write('\n')
         self.f.write(name+'\n')
-        self.f.write(rsthdr[idepth]*40+'\n')
+        if idepth > 0: self.f.write(rsthdr[idepth-1]*40+'\n')
         self.f.write('\n')
         for k in rv.keys():
             print(k)
             if 'type' in rv[k]:
                 if rv[k]['type'] == 'object' and 'properties' in rv[k].keys():
                     self.write_loop(rv[k]['properties'], idepth+1, k)
-                elif rv[k]['type'] in ['number','integer','string','array']:
+                elif rv[k]['type'].lower() in ['number','integer','string','array','boolean']:
                     self.f.write(':code:`'+k+'` : '+get_type_string( rv[k] )+'\n')
                     self.f.write( get_description_string( rv[k] )+'\n')
 

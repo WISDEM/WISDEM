@@ -8,16 +8,16 @@ The Wind-plant Integrated System Design and Engineering Model (WISDEM) includes 
 
 License
 -------
-WISDEM is licensed under Apache v 2.0 :ref:`license`. 
+WISDEM is licensed under `Apache Version 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_.
 
 Disclaimer
 ----------
-This software is provided as-is and without warranty. There are no guarantees it is bug free or provides the correct answers, even if it is used for the intended purpose. By using this software and as a condition of the Apache license, you agree to not hold any WISDEM developer liable for damages.  
+This software is provided as-is and without warranty. There are no guarantees it is bug free or provides the correct answers, even if it is used for the intended purpose. By using this software and as a condition of the Apache license, you agree to not hold any WISDEM developer liable for damages.
 
 Important Links
 ---------------
 
-- `Source Code Repository <https://github.com/WISDEM/WISDEM/tree/develop>`_ 
+- `Source Code Repository <https://github.com/WISDEM/WISDEM/tree/develop>`_
 - `OpenMDAO <https://openmdao.org/>`_
 
 Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
@@ -35,11 +35,12 @@ Using WISDEM
    how_wisdem_works
    first_steps
    what_wisdem_can_do
+   inputs
    examples
    modules
    publications
-   
-   
+
+
 Other Useful Docs
 =================
 
@@ -49,7 +50,7 @@ Other Useful Docs
    known_issues
    how_to_contribute_code
    how_to_write_docs
-   
+
 Indices and Tables
 ==================
 
