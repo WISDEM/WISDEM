@@ -1,3 +1,6 @@
+.. This images is a placeholder, feel free to replace.  Would like to include an image on the landing page that captures the breadth of the tool. -EMG
+.. figure:: /images/wisdem/WISDEM_Overview.*
+
 WISDEM Documentation
 ====================
 
@@ -20,13 +23,13 @@ Important Links
 - `Source Code Repository <https://github.com/WISDEM/WISDEM/tree/develop>`_
 - `OpenMDAO <https://openmdao.org/>`_
 
-Author: `NREL WISDEM Team <mailto:systems.engineering+WISDEM_Docs@nrel.gov>`_
+Feedback
+---------------
 
-.. This images is a placeholder, feel free to replace.  Would like to include an image on the landing page that captures the breadth of the tool. -EMG
-.. figure:: /images/wisdem/WISDEM_Overview.*
+For software issues please use the `Github Issues Tracker <https://github.com/WISDEM/WISDEM/issues>`_.  For functionality and theory related questions and comments please use the NWTC forum for `Systems Engineering Software Questions <https://wind.nrel.gov/forum/wind/viewtopic.php?f=34&t=1002>`_.
 
-Using WISDEM
-============
+Documentation Outline
+------------------------------
 
 .. toctree::
    :maxdepth: 2
@@ -39,14 +42,6 @@ Using WISDEM
    examples
    modules
    publications
-
-
-Other Useful Docs
-=================
-
-.. toctree::
-   :maxdepth: 2
-
    known_issues
    how_to_contribute_code
    how_to_write_docs

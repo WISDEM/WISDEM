@@ -53,7 +53,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda create -y --name wisdem-env python=3.7
         conda activate wisdem-env
 
-2.  Use conda to install the build dependencies, but then install WISDEM from source.  Not the differences between Windows and Mac/Linux build systems
+2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems:
 
         conda install -y wisdem git jupyter
         conda remove --force wisdem
