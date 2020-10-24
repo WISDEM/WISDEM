@@ -4,7 +4,7 @@ import validation
 mywidth  = 70
 myindent = ' '*4
 wrapper = textwrap.TextWrapper(initial_indent=myindent, subsequent_indent=myindent, width=mywidth)
-rsthdr = ['*','#','=','-','^']
+rsthdr = ['*','#','=','-','^','~','%']
         
 def get_type_string(indict):
     outstr = ''
@@ -88,21 +88,37 @@ class Schema2RST(object):
         if 'description' in self.yaml.keys():
             self.f.write(self.yaml['description']+'\n')
 
-    def write_loop(self, rv, idepth, name):
+    def write_loop(self, rv, idepth, name, desc=None):
         self.f.write('\n')
         self.f.write('\n')
         self.f.write(name+'\n')
-        if idepth > 0: self.f.write(rsthdr[idepth-1]*40+'\n')
+        print(idepth)
+        if idepth > 0: self.f.write(rsthdr[idepth-1]*40+'\n\n')
         self.f.write('\n')
+        if not desc is None: self.f.write(desc+'\n')
         for k in rv.keys():
             print(k)
             if 'type' in rv[k]:
                 if rv[k]['type'] == 'object' and 'properties' in rv[k].keys():
-                    self.write_loop(rv[k]['properties'], idepth+1, k)
-                elif rv[k]['type'].lower() in ['number','integer','string','array','boolean']:
+                    k_desc = None if not 'description' in rv[k] else rv[k]['description']
+                    self.write_loop(rv[k]['properties'], idepth+1, k, k_desc)
+
+                elif rv[k]['type'].lower() in ['number','integer','string','boolean']:
                     self.f.write(':code:`'+k+'` : '+get_type_string( rv[k] )+'\n')
                     self.f.write( get_description_string( rv[k] )+'\n')
 
+                elif (rv[k]['type'].lower() == 'array' and
+                      'type' in rv[k]['items'] and
+                      rv[k]['items']['type'] == 'object' and
+                      'properties' in rv[k]['items'].keys() ):
+                    k_desc = None if not 'description' in rv[k]['items'] else rv[k]['items']['description']
+                    self.write_loop(rv[k]['items']['properties'], idepth+1, k, k_desc)
+
+                elif (rv[k]['type'].lower() == 'array'):
+                      #rv[k]['items']['type'] in ['number','integer','string','boolean']):
+                    self.f.write(':code:`'+k+'` : '+get_type_string( rv[k] )+'\n')
+                    self.f.write( get_description_string( rv[k] )+'\n')
+            
 if __name__ == '__main__':
     for ifile in ['geometry_schema.yaml','modeling_schema.yaml','analysis_schema.yaml']:
         myobj = Schema2RST(ifile)
