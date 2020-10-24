@@ -227,7 +227,7 @@ class RunFrame3DD(ExplicitComponent):
         EIxy_cs -= x_ec_cs * y_ec_cs * EA
 
         # get rotation angle
-        alpha = 0.5*np.arctan2(2*EIxy_cs, EIyy_cs-EIxx_cs)
+        alpha = 0.5*np.arctan(2*EIxy_cs / (EIyy_cs-EIxx_cs))
 
         # get moments and positions in principal axes
         EI11 = EIxx_cs - EIxy_cs*np.tan(alpha)
