@@ -355,7 +355,7 @@ class TestGearedLayout(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         rho = self.inputs['lss_rho']
-        m_bedplate = rho*(2*1.5*.05+4.725*.05)*6.95
+        m_bedplate = 2*rho*(2*1.5*.05+4.725*.05)*6.95
         self.assertAlmostEqual(self.outputs['bedplate_mass'], m_bedplate)
         npt.assert_almost_equal(self.outputs['bedplate_cm'], np.r_[-(2-0.5*6.95), 0.0, 0.5*4.725+.05])
 
