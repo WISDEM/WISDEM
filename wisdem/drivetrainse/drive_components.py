@@ -259,7 +259,7 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rated_torque', 0.0, units='N*m')
         self.add_input('lss_rpm', np.zeros(n_pc), units='rpm')
-        self.add_input('gearbox_efficiency', val=0.0)
+        self.add_input('gearbox_efficiency', val=1.0)
         self.add_input('generator_mass_user', 0.0, units='kg')
         self.add_input('generator_efficiency_user', val=np.zeros((n_pc, 2)) )
 
