@@ -4,6 +4,26 @@ Drivetrain Component Theory
 
 This section describes the theory behind the sizing and estimation of mass properties for all of the hub and nacelle components.  Unless otherwise noted, the moment of inertia expressions are about the component center of mass.
 
+Hub
+=============
+The hub is designed as the combination of a main flange and a spherical shell.
+
+Spinner
+=============
+
+The spinner is the aerodynamic cone that wraps around the hub.
+
+Pitch System
+=============
+
+The pitch system mass is an empirical estimation based on the blade mass and blade root bending moment.  To find the mass in kilograms, :math:`m_{pitch}=0.22 m_{blade} n_{blade} + 12.6 |M_{root}| \rho / \sigma` where :math:`|M_{root}|` is the magnitude of the blade root bending moment (in Newton-meters), :math:`\rho` is the density of the pitch bearing material, and :math:`\sigma` is the yield stress.
+
+The pitch system moment of inertia assumes that the mass is distributed as a solid ring at the hub diameter, so the moment of inertia about the hub center for axial and transverse values is,
+
+.. math::
+   I_0 &= m R_{hub}^2 / 2 \\
+   I_1 &= I_0 / 2
+
 Main Bearing
 =============
 
@@ -196,7 +216,7 @@ The ellipse is defined in the x-z plane, with the centerline, outer curve, and i
    z_{out} (\theta) &= (H_{bedplate} + D_{nose}/2) \sin (\theta) \\
    z_{in} (\theta)  &= (H_{bedplate} - D_{nose}/2) \sin (\theta)
 
-Where :math:`\theta` is the parametric angle, :math:`L_{bedplate}` is the major axis, and :math:`H_{bedplate}` is the minor axis. The effective cross sectional diameter and area is approximated by,
+Where :math:`\theta` is the parametric angle that varies from :math:`[0,\pi/2]` for standard upwind configurations or :math:`[\pi,\pi/2]` for downwind, :math:`L_{bedplate}` is the major axis, and :math:`H_{bedplate}` is the minor axis. The effective cross sectional diameter and area is approximated by,
 
 .. math::
    D_{bedplate} (\theta)  &= \sqrt{(x_{out}-x_{in})^2 + (z_{out}-z_{in})^2}\\
