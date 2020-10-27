@@ -16,7 +16,4 @@ DrivetrainSE
 
     intro
     components
-    generator
     structural
-    source
-    

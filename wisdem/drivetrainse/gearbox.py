@@ -9,7 +9,7 @@ Kr = 0.4
 
 def V_planetary(U, B, K):
     sunU = 0.5*U - 1.0
-    V = 1./U + 1./U/B + 1./B/(0.5*U-1.0) + sunU + sunU**2 + K*(U-1.)**2/B + K*(U-1.)**2/B/sunU
+    V = 1./U + 1./U/B + 1./B/sunU + sunU + sunU**2 + K*(U-1.)**2/B + K*(U-1.)**2/B/sunU
     return V
 #-----------------------------------
 
@@ -47,8 +47,14 @@ def volumeEPP(x, n_planets, torque, Kr1=Kr):
 
 class Gearbox(om.ExplicitComponent):
     """
-    Gearbox class is used to represent the high speed shaft and mechanical brake components of a wind turbine drivetrain.
-    Approach computes the gearbox weight based on a surface durability criteria.
+    The gearbox design follows the general approach of the previous DriveSE implementation, however 
+    with code improvements, the results will likely be different than prior versions.  The gearbox is 
+    assumed to have 3 stages, with the user specifying a configuration code of either "EEP" or "EPP", 
+    with the "E" representing epicyclic (planetary) gear stages and "P" representing parallel gear stages.  
+    For the epicyclic stages, the user also has to specify the number of planets, so the EEP input would 
+    require something like [3, 3, 0] and EPP would require [3, 0, 0].  The user also specifies the overall 
+    target gear ratio, and then DrivetrainSE conducts a mass minimization of the three stage ratios that 
+    meet the target and minimize the overall mass.
     
     Parameters
     ----------

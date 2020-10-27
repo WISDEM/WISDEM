@@ -7,7 +7,11 @@ import wisdem.commonse.utilities as util
 
 class MainBearing(om.ExplicitComponent):
     """
-    MainBearings class is used to represent the main bearing components of a wind turbine drivetrain.
+    MainBearings class is used to represent the main bearing components of a wind turbine drivetrain. 
+    This is a simple, regression-based sizing tool for the main bearings.  The same function is called once 
+    for configurations with one main bearing or twice for configurations with two.  It handles Compact Aligning 
+    Roller Bearings (CARB), Cylindrical Roller Bearings (CRB), Spherical Roller Bearings (SRB), and 
+    Tapered Roller Bearings (TRB). 
     
     Parameters
     ----------
@@ -78,7 +82,7 @@ class MainBearing(om.ExplicitComponent):
             raise ValueError('Bearing type must be CARB / CRB / SRB / TRB')
             
         # add housing weight, but pg 23 of report says factor is 2.92 whereas this is 2.963
-        mass += mass*(8000.0/2700.0)  
+        mass *= (1 + 80.0/27.0)
 
         # Consider the bearings a torus for MoI (https://en.wikipedia.org/wiki/List_of_moments_of_inertia)
         D_bearing = inputs['D_bearing'] if inputs['D_bearing'] > 0.0 else face_width
@@ -94,8 +98,12 @@ class MainBearing(om.ExplicitComponent):
 
 class Brake(om.ExplicitComponent):
     """
-    The HighSpeedShaft class is used to represent the high speed shaft and
-    mechanical brake components of a wind turbine drivetrain.
+    The brake attaches to the high speed shaft for geared configurations or directly on the 
+    low speed shaft for direct drive configurations.  It is regression based, but also allows 
+    for a user override of the total mass value.
+
+    Compute brake mass in the form of :math:`mass = k*torque`.
+    Value of :math:`k` was updated in 2020 to be 0.00122.
     
     Parameters
     ----------
@@ -541,7 +549,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         rating      = float(inputs['machine_rating'])
         coeff       = float(inputs['hvac_mass_coeff'])
         H_bedplate  = float(inputs['H_bedplate'])
-        D_bedplate  = float(inputs['D_top'])
+        L_bedplate  = float(inputs['D_top'])
         R_generator = float(inputs['R_generator'])
         m_bedplate  = float(inputs['bedplate_mass'])
         I_bedplate  = inputs['bedplate_I']
@@ -550,13 +558,13 @@ class MiscNacelleComponents(om.ExplicitComponent):
         rho_fiberglass = float(inputs['rho_fiberglass'])
 
         # For the nacelle cover, imagine a box from the bedplate to the hub in length and around the generator in width, height, with 10% margin in each dim
-        L_cover  = 1.1 * (overhang + 0.5*D_bedplate)
+        L_cover  = 1.1 * (overhang + 0.5*L_bedplate)
         W_cover  = 1.1 * 2*R_generator
         H_cover  = 1.1 * (R_generator + np.maximum(R_generator,H_bedplate))
         A_cover  = 2*(L_cover*W_cover + L_cover*H_cover + H_cover*W_cover)
         t_cover  = 0.04 # 5cm thick walls?
         m_cover  = A_cover * t_cover * rho_fiberglass
-        cm_cover = np.array([0.5*L_cover-0.5*D_bedplate, 0.0, 0.5*H_cover])
+        cm_cover = np.array([0.5*L_cover-0.5*L_bedplate, 0.0, 0.5*H_cover])
         I_cover  = m_cover*np.array([H_cover**2 + W_cover**2 - (H_cover-t_cover)**2 - (W_cover-t_cover)**2,
                                      H_cover**2 + L_cover**2 - (H_cover-t_cover)**2 - (L_cover-t_cover)**2,
                                      W_cover**2 + L_cover**2 - (W_cover-t_cover)**2 - (L_cover-t_cover)**2]) / 12.

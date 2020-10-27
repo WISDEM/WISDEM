@@ -309,15 +309,15 @@ class DirectLayout(Layout):
         A_bed   = np.pi * (r_bed_o**2 - r_bed_i**2)
 
         # This finds the central angle (rad2) given the parametric angle (rad)
-        rad2 = np.arctan( (L_bedplate + 0.5*D_top) / (H_bedplate + 0.5*D_nose[0]) * np.tan(np.diff(rad)) )
+        rad2 = np.arctan( L_bedplate / H_bedplate * np.tan(rad) )
 
         # arc length from eccentricity of the centroidal ellipse using incomplete elliptic integral of the second kind
         if L_bedplate >= H_bedplate:
             ecc = np.sqrt(1 - (H_bedplate/L_bedplate)**2)
-            arc = L_bedplate*np.abs(ellipeinc(rad2,ecc))
+            arc = L_bedplate*np.diff(ellipeinc(rad2,ecc))
         else:
             ecc = np.sqrt(1 - (L_bedplate/H_bedplate)**2)
-            arc = H_bedplate*np.abs(ellipeinc(rad2,ecc))
+            arc = H_bedplate*np.diff(ellipeinc(rad2,ecc))
 
         # Mass and MoI properties
         x_c_sec = util.nodal2sectional( x_c )[0]
@@ -536,14 +536,17 @@ class GearedLayout(Layout):
         outputs['H_bedplate'] = H_bedplate
         bed_h_web = H_bedplate - 2*bed_t_flange - 0.05 # Leave some extra room for plate?
 
+        yoff        = 0.25*D_top
         myI         = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
         m_bedplate  = myI.Area * L_bedplate * bedplate_rho
         cg_bedplate = np.r_[Cup*(L_overhang - 0.5*L_bedplate), 0.0, myI.CG] # from tower top
-        I_bedplate  = bedplate_rho*L_bedplate*np.r_[myI.Jxx, myI.Iyy, myI.Izz] + m_bedplate*L_bedplate**2/12.*np.r_[0., 1., 1.]
+        I_bedplate  = (bedplate_rho*L_bedplate*np.r_[myI.Jxx, myI.Iyy, myI.Izz] +
+                       m_bedplate*L_bedplate**2/12.*np.r_[0., 1., 1.] +
+                       m_bedplate*yoff**2*np.r_[1., 0., 1.])
         outputs['bedplate_web_height'] = bed_h_web
-        outputs['bedplate_mass'] = m_bedplate
+        outputs['bedplate_mass'] = 2*m_bedplate
         outputs['bedplate_cm']   = cg_bedplate
-        outputs['bedplate_I']    = np.r_[I_bedplate, np.zeros(3)]
+        outputs['bedplate_I']    = 2*np.r_[I_bedplate, np.zeros(3)]
 
         # ------- Constraints ----------------
         outputs['constr_length'] = L_drive*np.cos(tilt) - L_overhang - 0.5*D_top # Should be > 0
