@@ -212,6 +212,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             foundation_ivc = self.add_subsystem('foundation', om.IndepVarComp())
             foundation_ivc.add_output('height',     val=0.0, units='m',     desc='Foundation height in respect to the ground level.')
 
+        if modeling_options['flags']['floating_platform']:
+            self.add_subsystem('floating',  Floating(floating_init_options   = modeling_options['floating']))
+
         # Control inputs
         if modeling_options['flags']['control']:
             ctrl_ivc = self.add_subsystem('control', om.IndepVarComp())
@@ -251,7 +254,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output('G_soil',       val=140e6,       units='N/m**2',     desc='Shear stress of soil')
             env_ivc.add_output('nu_soil',      val=0.4,                             desc='Poisson ratio of soil')
 
-        if modeling_options['flags']['bos']:
+        if modeling_options['flags']['bos'] and modeling_options['flags']['floating_platform'] == False:
             bos_ivc = self.add_subsystem('bos', om.IndepVarComp())
             bos_ivc.add_output('plant_turbine_spacing', 7, desc='Distance between turbines in rotor diameters')
             bos_ivc.add_output('plant_row_spacing', 7, desc='Distance between turbine rows in rotor diameters')
@@ -259,7 +262,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc.add_output('decommissioning_pct', 0.15)
             bos_ivc.add_output('distance_to_substation', 50.0, units='km')
             bos_ivc.add_output('distance_to_interconnection', 5.0, units='km')
-            if modeling_options['offshore']:
+            if modeling_options['flags']['monopile'] == True:
                 bos_ivc.add_output('site_distance', 40.0, units='km')
                 bos_ivc.add_output('distance_to_landfall', 40.0, units='km')
                 bos_ivc.add_output('port_cost_per_month', 2e6, units='USD/mo')
@@ -1172,23 +1175,33 @@ class Floating(om.Group):
         self.options.declare('floating_init_options')
 
     def setup(self):
-        floating_init_options = self.options['floating_init_options']
+        floating_init_options   = self.options['floating_init_options']
+        n_joints                = floating_init_options['joints']['n_joints']
+        n_members               = floating_init_options['members']['n_members']
+        name_members            = floating_init_options['name_members']
+        members_n_grid          = floating_init_options['members_n_grid']
 
-        ivc = self.add_subsystem('floating_indep_vars', om.IndepVarComp(), promotes=['*'])
+        ivc = self.add_subsystem('floating_joints', om.IndepVarComp())
+        ivc.add_output('location',   np.array([n_joints, 3]), units='m')
 
-        ivc.add_output('radius_to_offset_column', 0.0, units='m')
-        ivc.add_discrete_output('number_of_offset_columns', 0)
-        ivc.add_output('fairlead_location', 0.0)
-        ivc.add_output('fairlead_offset_from_shell', 0.0, units='m')
-        ivc.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
-        ivc.add_discrete_output('loading', 'hydrostatic')
-        ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
-        ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
+        for i in range(n_members):
+            ivc = self.add_subsystem('floating_member_' + name_members[i], om.IndepVarComp())
+            ivc.add_output('outer_diameter',   np.array([n_joints, 3]), units='m')
 
-        self.add_subsystem('main_column',   Column(options=floating_init_options['column']['main']))
-        self.add_subsystem('offset_column', Column(options=floating_init_options['column']['offset']))
-        self.add_subsystem('tower',         Tower(options=floating_init_options['tower']))
-        self.add_subsystem('mooring',       Mooring(options=floating_init_options['mooring']))
+
+        # ivc.add_output('radius_to_offset_column', 0.0, units='m')
+        # ivc.add_discrete_output('number_of_offset_columns', 0)
+        # ivc.add_output('fairlead_location', 0.0)
+        # ivc.add_output('fairlead_offset_from_shell', 0.0, units='m')
+        # ivc.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
+        # ivc.add_discrete_output('loading', 'hydrostatic')
+        # ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
+        # ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
+
+        # self.add_subsystem('main_column',   Column(options=floating_init_options['column']['main']))
+        # self.add_subsystem('offset_column', Column(options=floating_init_options['column']['offset']))
+        # self.add_subsystem('tower',         Tower(options=floating_init_options['tower']))
+        # self.add_subsystem('mooring',       Mooring(options=floating_init_options['mooring']))
 
 class Column(om.Group):
     def initialize(self):

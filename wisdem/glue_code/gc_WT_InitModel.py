@@ -5,6 +5,11 @@ from wisdem.commonse.csystem import DirectionVector
 
 def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
+    
+    if modeling_options['flags']['monopile'] or modeling_options['flags']['floating_platform']:
+        offshore = True
+    else:
+        offshore = False
 
     # These are the required components
     assembly        = wt_init['assembly']
@@ -16,7 +21,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Now all of the optional components
     if modeling_options['flags']['environment']:
         environment     = wt_init['environment']
-        wt_opt = assign_environment_values(wt_opt, environment, modeling_options['offshore'])
+        wt_opt = assign_environment_values(wt_opt, environment, offshore)
     else:
         environment = {}
 
@@ -70,9 +75,9 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     else:
         monopile = {}
 
-    if modeling_options['flags']['floating']:
-        floating = wt_init['components']['floating']
-        wt_opt   = assign_floating_values(wt_opt, modeling_options, floating)
+    if modeling_options['flags']['floating_platform']:
+        floating_platform = wt_init['components']['floating_platform']
+        wt_opt   = assign_floating_values(wt_opt, modeling_options, floating_platform)
     else:
         floating = {}
 
@@ -84,7 +89,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
 
     if modeling_options['flags']['bos']:
         bos           = wt_init['bos']
-        wt_opt = assign_bos_values(wt_opt, bos, modeling_options['offshore'])
+        wt_opt = assign_bos_values(wt_opt, bos, offshore)
     else:
         costs = {}
 
@@ -818,16 +823,16 @@ def assign_floating_values(wt_opt, modeling_options, floating):
 
 def assign_control_values(wt_opt, modeling_options, control):
     # Controller parameters
-    wt_opt['control.rated_power']   = control['rated_power']
-    wt_opt['control.V_in']          = control['Vin']
-    wt_opt['control.V_out']         = control['Vout']
-    wt_opt['control.minOmega']      = control['minOmega']
-    wt_opt['control.maxOmega']      = control['maxOmega']
-    wt_opt['control.rated_TSR']     = control['tsr']
-    wt_opt['control.rated_pitch']   = control['pitch']
-    wt_opt['control.max_TS']        = control['maxTS']
-    wt_opt['control.max_pitch_rate']= control['max_pitch_rate']
-    wt_opt['control.max_torque_rate']= control['max_torque_rate']
+    wt_opt['control.rated_power']   = control['supervisory']['rated_power']
+    wt_opt['control.V_in']          = control['supervisory']['Vin']
+    wt_opt['control.V_out']         = control['supervisory']['Vout']
+    wt_opt['control.minOmega']      = control['torque']['VS_minspd']
+    wt_opt['control.maxOmega']      = control['torque']['VS_maxspd']
+    wt_opt['control.rated_TSR']     = control['torque']['tsr']
+    wt_opt['control.rated_pitch']   = control['pitch']['min_pitch']
+    wt_opt['control.max_TS']        = control['supervisory']['maxTS']
+    wt_opt['control.max_pitch_rate']= control['pitch']['max_pitch_rate']
+    wt_opt['control.max_torque_rate']= control['torque']['max_torque_rate']
 
     return wt_opt
 

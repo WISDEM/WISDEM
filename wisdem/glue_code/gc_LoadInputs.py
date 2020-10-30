@@ -44,9 +44,6 @@ class WindTurbineOntologyPython(object):
             if not 'GeneratorSE' in self.modeling_options: self.modeling_options['GeneratorSE'] = {}
             self.modeling_options['GeneratorSE']['type'] = self.wt_init['components']['nacelle']['generator']['generator_type'].lower()
 
-        # Offshore flag
-        self.modeling_options['offshore'] = 'water_depth' in self.wt_init['environment'] and self.wt_init['environment']['water_depth'] > 0.0
-
         # Put in some logic about what needs to be in there
         flags = self.modeling_options['flags']
 
@@ -67,28 +64,30 @@ class WindTurbineOntologyPython(object):
             raise ValueError('Tower analysis is requested but no environment input found')
         if flags['monopile'] and not flags['environment']:
             raise ValueError('Monopile analysis is requested but no environment input found')
-        if flags['floating'] and not flags['environment']:
+        if flags['floating_platform'] and not flags['environment']:
             raise ValueError('Floating analysis is requested but no environment input found')
-        if flags['environment'] and not (flags['blade'] or flags['tower'] or flags['monopile'] or flags['floating']):
+        if flags['environment'] and not (flags['blade'] or flags['tower'] or flags['monopile'] or flags['floating_platform']):
             print('WARNING: Environment provided but no related component found found')
 
         # Tower, monopile and foundation
-        if flags['tower'] and not flags['foundation']:
-            raise ValueError('Tower analysis is requested but no foundation is found')
+        if flags['tower'] and not flags['foundation'] and not flags['monopile'] and not flags['floating_platform']:
+            raise ValueError('Tower analysis is requested but no foundation, no monopile, and no floating are found')
         if flags['monopile'] and not flags['foundation']:
             raise ValueError('Monopile analysis is requested but no foundation is found')
         if flags['foundation'] and not (flags['tower'] or flags['monopile']):
-            print('WARNING: Foundation provided but no tower/monipile found or TowerSE deactivated')
+            print('WARNING: Foundation provided but no tower/monopile found or TowerSE deactivated')
+            
 
         # Foundation and floating/monopile
-        if flags['floating'] and flags['foundation']:
+        if flags['floating_platform'] and flags['foundation']:
             raise ValueError('Cannot have both floating and foundation components')
-        if flags['floating'] and flags['monopile']:
+        if flags['floating_platform'] and flags['monopile']:
             raise ValueError('Cannot have both floating and monopile components')
 
-        # Offshore flag
-        if not self.modeling_options['offshore'] and (flags['monopile'] or flags['floating']):
-            raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
+        # Water depth check
+        if 'water_depth' in self.wt_init['environment']:
+            if self.wt_init['environment']['water_depth'] <= 0.0 and (flags['monopile'] or flags['floating_platform']):
+                raise ValueError('Water depth must be > 0 to do monopile or floating analysis')
 
 
     def set_openmdao_vectors(self):
@@ -165,8 +164,55 @@ class WindTurbineOntologyPython(object):
             self.modeling_options['monopile']['n_height']  = len(self.wt_init['components']['monopile']['outer_shape_bem']['outer_diameter']['grid'])
             self.modeling_options['monopile']['n_layers']  = len(self.wt_init['components']['monopile']['internal_structure_2d_fem']['layers'])
 
-        # FloatingSE
+        # Floating platform
         self.modeling_options['floating'] = {}
+        n_joints  = len(self.wt_init['components']['floating_platform']['joints'])
+        self.modeling_options['floating']['joints'] = {}
+        self.modeling_options['floating']['joints']['n_joints']     = n_joints
+        self.modeling_options['floating']['joints']['name']         = [''] * n_joints
+        self.modeling_options['floating']['joints']['transition']   = False * n_joints
+        self.modeling_options['floating']['joints']['cylindrical']  = False * n_joints
+        for i in range(n_joints):
+            self.modeling_options['floating']['joints']['name'][i] = self.wt_init['components']['floating_platform']['joints'][i]['name']
+
+
+        n_members = len(self.wt_init['components']['floating_platform']['members'])
+        self.modeling_options['floating']['members']                = {}
+        self.modeling_options['floating']['members']['n_members']   = n_members
+        self.modeling_options['floating']['members']['name']        = [''] * n_members
+        self.modeling_options['floating']['members']['joint1']      = [''] * n_members
+        self.modeling_options['floating']['members']['joint2']      = [''] * n_members
+        self.modeling_options['floating']['members']['outer_shape'] = [''] * n_members
+        self.modeling_options['floating']['members']['n_layers']    = np.zeros(n_members, dtype = int)
+        self.modeling_options['floating']['members']['n_ballast']   = np.zeros(n_members, dtype = int)
+        for i in range(n_members):
+            self.modeling_options['floating']['members']['name'][i] = self.wt_init['components']['floating_platform']['members'][i]['name']
+            self.modeling_options['floating']['members']['joint1'][i] = self.wt_init['components']['floating_platform']['members'][i]['joint1']
+            self.modeling_options['floating']['members']['joint2'][i] = self.wt_init['components']['floating_platform']['members'][i]['joint2']
+            self.modeling_options['floating']['members']['outer_shape'][i] = self.wt_init['components']['floating_platform']['members'][i]['outer_shape']['shape']
+
+            n_layers = len(self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['layers'])
+            self.modeling_options['floating']['members']['n_layers'][i]  = n_layers
+            n_ballast = len(self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['ballast'])
+            self.modeling_options['floating']['members']['n_ballast'][i] = n_ballast
+            grid = []
+            grid = np.unique(np.hstack([self.wt_init['components']['floating_platform']['members'][i]['outer_shape']['outer_diameter']['grid'], self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['bulkhead']['thickness']['grid']]))
+            self.modeling_options['floating']['members']['layer_mat_member_' + self.modeling_options['floating']['members']['name'][i]] = [''] * n_layers
+            for j in range(n_layers):
+                self.modeling_options['floating']['members']['layer_mat_member_' + self.modeling_options['floating']['members']['name'][i]][j] = self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['layers'][j]['material']
+                grid = np.unique(np.hstack([grid, self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['layers'][j]['thickness']['grid']]))
+            self.modeling_options['floating']['members']['ballast_flag_member_' + self.modeling_options['floating']['members']['name'][i]] = False * n_ballast
+            self.modeling_options['floating']['members']['ballast_mat_member_' + self.modeling_options['floating']['members']['name'][i]] = [''] * n_ballast
+            for k in range(n_ballast):
+                self.modeling_options['floating']['members']['ballast_flag_member_' + self.modeling_options['floating']['members']['name'][i]] = self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['ballast'][k]['variable_flag']
+                if self.modeling_options['floating']['members']['ballast_flag_member_' + self.modeling_options['floating']['members']['name'][i]] == False:
+                    self.modeling_options['floating']['members']['ballast_mat_member_' + self.modeling_options['floating']['members']['name'][i]][k] = self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['ballast'][k]['material']
+                grid = np.unique(np.hstack([grid, self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['ballast'][k]['grid']]))
+            self.modeling_options['floating']['members']['grid_member_' + self.modeling_options['floating']['members']['name'][i]] = grid
+
+
+
+            
 
         # Assembly
         self.modeling_options['assembly'] = {}
