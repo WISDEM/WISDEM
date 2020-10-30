@@ -1178,60 +1178,21 @@ class Floating(om.Group):
         floating_init_options   = self.options['floating_init_options']
         n_joints                = floating_init_options['joints']['n_joints']
         n_members               = floating_init_options['members']['n_members']
-        name_members            = floating_init_options['name_members']
-        members_n_grid          = floating_init_options['members_n_grid']
 
         ivc = self.add_subsystem('floating_joints', om.IndepVarComp())
-        ivc.add_output('location',   np.array([n_joints, 3]), units='m')
+        ivc.add_output('location',   val = np.zeros((n_joints, 3)), units='m')
 
         for i in range(n_members):
-            ivc = self.add_subsystem('floating_member_' + name_members[i], om.IndepVarComp())
-            ivc.add_output('outer_diameter',   np.array([n_joints, 3]), units='m')
-
-
-        # ivc.add_output('radius_to_offset_column', 0.0, units='m')
-        # ivc.add_discrete_output('number_of_offset_columns', 0)
-        # ivc.add_output('fairlead_location', 0.0)
-        # ivc.add_output('fairlead_offset_from_shell', 0.0, units='m')
-        # ivc.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
-        # ivc.add_discrete_output('loading', 'hydrostatic')
-        # ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
-        # ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
-
-        # self.add_subsystem('main_column',   Column(options=floating_init_options['column']['main']))
-        # self.add_subsystem('offset_column', Column(options=floating_init_options['column']['offset']))
-        # self.add_subsystem('tower',         Tower(options=floating_init_options['tower']))
-        # self.add_subsystem('mooring',       Mooring(options=floating_init_options['mooring']))
-
-class Column(om.Group):
-    def initialize(self):
-        self.options.declare('column_init_options')
-
-    def setup(self):
-        column_init_options = self.options['column_init_options']
-
-        ivc = self.add_subsystem('column_indep_vars', om.IndepVarComp(), promotes=['*'])
-        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the column axis.')
-        ivc.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the columnn structure.')
-        ivc.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the column structure.')
-        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the column structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the column sections.')
-        ivc.add_output('freeboard', 0.0, units='m') # Have to add here because cannot promote ivc from Column before needed by tower.  Grr
-        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of column')
-
-        ivc.add_output('stiffener_web_height', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_web_thickness', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_flange_width', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_flange_thickness', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_spacing', np.zeros(n_sect), units='m')
-        ivc.add_output('bulkhead_thickness', np.zeros(n_height), units='m')
-        ivc.add_output('permanent_ballast_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_diameter', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_location', 0.0, units='m')
-
-        self.add_subsystem('compute_monopile_grid',
-            Compute_Grid(init_options=column_init_options),
-            promotes=['*'])
+            name_member = floating_init_options['members']['name'][i]
+            ivc         = self.add_subsystem('floating_member_' + name_member, om.IndepVarComp())
+            n_grid      = len(floating_init_options['members']['grid_member_' + name_member])
+            n_layers    = floating_init_options['members']['n_layers'][i]
+            n_ballasts  = floating_init_options['members']['n_ballasts'][i]
+            ivc.add_output('grid',               val = np.zeros(n_grid))
+            ivc.add_output('outer_diameter',     val = np.zeros(n_grid),           units='m')
+            ivc.add_output('bulkhead_thickness', val = np.zeros(n_grid),           units='m')
+            ivc.add_output('layer_thickness',    val = np.zeros((n_layers, n_grid)),  units='m')
+            ivc.add_output('ballast_volume',     val = np.zeros(n_ballasts),        units='m')
 
 class Mooring(om.Group):
     def initialize(self):

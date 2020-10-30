@@ -434,12 +434,12 @@ class WT_RNTA(om.Group):
             if modeling_options['Analysis_Flags']['ServoSE']:
                 self.connect('sse.gust.V_gust',               'towerse.wind.Uref')
             self.connect('assembly.hub_height',           'towerse.wind_reference_height')  # TODO- environment
-            self.connect('foundation.height',             'towerse.wind_z0') # TODO- environment
             self.connect('env.rho_air',                   'towerse.rho_air')
             self.connect('env.mu_air',                    'towerse.mu_air')                    
             self.connect('env.shear_exp',                 'towerse.shearExp')                    
             self.connect('assembly.hub_height',           'towerse.hub_height')
-            self.connect('foundation.height',             'towerse.foundation_height')
+            if modeling_options['flags']['foundation']:
+                self.connect('foundation.height',             ['towerse.wind_z0','towerse.foundation_height']) # TODO- environment
             self.connect('tower.diameter',                'towerse.tower_outer_diameter_in')
             self.connect('tower.height',                  'towerse.tower_height')
             self.connect('tower.s',                       'towerse.tower_s')
@@ -553,8 +553,8 @@ class WindPark(om.Group):
         opt_options     = self.options['opt_options']
 
         self.add_subsystem('wt',        WT_RNTA(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
-        if modeling_options['flags']['bos']:
-            if modeling_options['offshore']:
+        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
+            if modeling_options['flags']['monopile'] == True:
                 self.add_subsystem('orbit',     Orbit())
             else:
                 self.add_subsystem('landbosse', LandBOSSE())
@@ -566,8 +566,8 @@ class WindPark(om.Group):
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # BOS inputs
-        if modeling_options['flags']['bos']:
-            if modeling_options['offshore']:
+        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
+            if modeling_options['flags']['monopile'] == True:
                 # Inputs into ORBIT
                 self.connect('control.rated_power',                   'orbit.turbine_rating')
                 self.connect('env.water_depth',                       'orbit.site_depth')
@@ -628,8 +628,8 @@ class WindPark(om.Group):
             self.connect('sse.AEP',             'financese.turbine_aep')
 
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
-        if modeling_options['flags']['bos']:
-            if 'offshore' in modeling_options and modeling_options['offshore']:
+        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
+            if modeling_options['flags']['monopile'] == True:
                 self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
             else:
                 self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
