@@ -687,7 +687,8 @@ def assign_floating_values(wt_opt, modeling_options, floating):
         grid_member = floating_init_options['members']['grid_member_' + floating_init_options['members']['name'][i]]
         wt_opt['floating.floating_member_' + name_member + '.grid'] = grid_member
         wt_opt['floating.floating_member_' + name_member + '.outer_diameter'] = np.interp(grid_member, floating['members'][i]['outer_shape']['outer_diameter']['grid'],floating['members'][i]['outer_shape']['outer_diameter']['values'])
-        wt_opt['floating.floating_member_' + name_member + '.bulkhead_thickness'] = np.interp(grid_member, floating['members'][i]['internal_structure']['bulkhead']['thickness']['grid'],floating['members'][i]['internal_structure']['bulkhead']['thickness']['values'])
+        if 'bulkhead' in floating['members'][i]['internal_structure']:
+            wt_opt['floating.floating_member_' + name_member + '.bulkhead_thickness'] = np.interp(grid_member, floating['members'][i]['internal_structure']['bulkhead']['thickness']['grid'],floating['members'][i]['internal_structure']['bulkhead']['thickness']['values'])
         n_layers = floating_init_options['members']['n_layers'][i]
         for j in range(n_layers):
             wt_opt['floating.floating_member_' + name_member + '.layer_thickness'][j,:] = np.interp(grid_member, floating['members'][i]['internal_structure']['layers'][j]['thickness']['grid'],floating['members'][i]['internal_structure']['layers'][j]['thickness']['values'])
@@ -695,6 +696,9 @@ def assign_floating_values(wt_opt, modeling_options, floating):
         for j in range(n_ballasts):
             if floating_init_options['members']['ballast_flag_member_' + name_member][j] == False:
                 wt_opt['floating.floating_member_' + name_member + '.ballast_volume'][j] = floating['members'][i]['internal_structure']['ballasts'][j]['volume']
+        if floating_init_options['members']['n_axial_joints'][i] > 0:
+            for j in range(floating_init_options['members']['n_axial_joints'][i]):
+                wt_opt['floating.floating_member_' + name_member + '.grid_axial_joints'][j] = floating['members'][i]['axial_joints'][j]['grid']
 
 
     return wt_opt

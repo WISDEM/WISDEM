@@ -174,6 +174,8 @@ class WindTurbineOntologyPython(object):
         self.modeling_options['floating']['joints']['cylindrical']  = [False] * n_joints
         for i in range(n_joints):
             self.modeling_options['floating']['joints']['name'][i] = self.wt_init['components']['floating_platform']['joints'][i]['name']
+            self.modeling_options['floating']['joints']['transition'][i] = self.wt_init['components']['floating_platform']['joints'][i]['transition']
+            self.modeling_options['floating']['joints']['cylindrical'][i] = self.wt_init['components']['floating_platform']['joints'][i]['cylindrical']
 
 
         n_members = len(self.wt_init['components']['floating_platform']['members'])
@@ -183,8 +185,9 @@ class WindTurbineOntologyPython(object):
         self.modeling_options['floating']['members']['joint1']      = [''] * n_members
         self.modeling_options['floating']['members']['joint2']      = [''] * n_members
         self.modeling_options['floating']['members']['outer_shape'] = [''] * n_members
-        self.modeling_options['floating']['members']['n_layers']    = np.zeros(n_members, dtype = int)
-        self.modeling_options['floating']['members']['n_ballasts']  = np.zeros(n_members, dtype = int)
+        self.modeling_options['floating']['members']['n_layers']        = np.zeros(n_members, dtype = int)
+        self.modeling_options['floating']['members']['n_ballasts']      = np.zeros(n_members, dtype = int)
+        self.modeling_options['floating']['members']['n_axial_joints']  = np.zeros(n_members, dtype = int)
         for i in range(n_members):
             self.modeling_options['floating']['members']['name'][i] = self.wt_init['components']['floating_platform']['members'][i]['name']
             self.modeling_options['floating']['members']['joint1'][i] = self.wt_init['components']['floating_platform']['members'][i]['joint1']
@@ -193,10 +196,16 @@ class WindTurbineOntologyPython(object):
 
             n_layers = len(self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['layers'])
             self.modeling_options['floating']['members']['n_layers'][i]  = n_layers
-            n_ballasts = len(self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['ballasts'])
+            if 'ballasts' in self.wt_init['components']['floating_platform']['members'][i]['internal_structure']:
+                n_ballasts = len(self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['ballasts'])
+            else:
+                n_ballasts = 0
             self.modeling_options['floating']['members']['n_ballasts'][i] = n_ballasts
             grid = []
-            grid = np.unique(np.hstack([self.wt_init['components']['floating_platform']['members'][i]['outer_shape']['outer_diameter']['grid'], self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['bulkhead']['thickness']['grid']]))
+            if 'bulkhead' in self.wt_init['components']['floating_platform']['members'][i]['internal_structure']:
+                grid = np.unique(np.hstack([self.wt_init['components']['floating_platform']['members'][i]['outer_shape']['outer_diameter']['grid'], self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['bulkhead']['thickness']['grid']]))
+            else:
+                grid = self.wt_init['components']['floating_platform']['members'][i]['outer_shape']['outer_diameter']['grid']
             self.modeling_options['floating']['members']['layer_mat_member_' + self.modeling_options['floating']['members']['name'][i]] = [''] * n_layers
             for j in range(n_layers):
                 self.modeling_options['floating']['members']['layer_mat_member_' + self.modeling_options['floating']['members']['name'][i]][j] = self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['layers'][j]['material']
@@ -208,11 +217,17 @@ class WindTurbineOntologyPython(object):
                 if self.modeling_options['floating']['members']['ballast_flag_member_' + self.modeling_options['floating']['members']['name'][i]][k] == False:
                     self.modeling_options['floating']['members']['ballast_mat_member_' + self.modeling_options['floating']['members']['name'][i]][k] = self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['ballasts'][k]['material']
                 grid = np.unique(np.hstack([grid, self.wt_init['components']['floating_platform']['members'][i]['internal_structure']['ballasts'][k]['grid']]))
+            if 'axial_joints' in self.wt_init['components']['floating_platform']['members'][i]:
+                n_axial_joints = len(self.wt_init['components']['floating_platform']['members'][i]['axial_joints'])
+                self.modeling_options['floating']['members']['n_axial_joints'][i] = n_axial_joints
+                self.modeling_options['floating']['members']['axial_joint_name_member_' + self.modeling_options['floating']['members']['name'][i]] = [''] * n_axial_joints
+                for m in range(n_axial_joints):
+                    self.modeling_options['floating']['members']['axial_joint_name_member_' + self.modeling_options['floating']['members']['name'][i]] = self.wt_init['components']['floating_platform']['members'][i]['axial_joints'][m]['name']
+                    grid = np.unique(np.hstack([grid, self.wt_init['components']['floating_platform']['members'][i]['axial_joints'][m]['grid']]))
+            else:
+                self.modeling_options['floating']['members']['n_axial_joints'][i] = 0
             self.modeling_options['floating']['members']['grid_member_' + self.modeling_options['floating']['members']['name'][i]] = grid
 
-
-
-            
 
         # Assembly
         self.modeling_options['assembly'] = {}

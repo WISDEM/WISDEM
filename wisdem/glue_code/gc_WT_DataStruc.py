@@ -1188,11 +1188,13 @@ class Floating(om.Group):
             n_grid      = len(floating_init_options['members']['grid_member_' + name_member])
             n_layers    = floating_init_options['members']['n_layers'][i]
             n_ballasts  = floating_init_options['members']['n_ballasts'][i]
+            n_axial_joints = floating_init_options['members']['n_axial_joints'][i]
             ivc.add_output('grid',               val = np.zeros(n_grid))
             ivc.add_output('outer_diameter',     val = np.zeros(n_grid),           units='m')
             ivc.add_output('bulkhead_thickness', val = np.zeros(n_grid),           units='m')
             ivc.add_output('layer_thickness',    val = np.zeros((n_layers, n_grid)),  units='m')
-            ivc.add_output('ballast_volume',     val = np.zeros(n_ballasts),        units='m')
+            ivc.add_output('ballast_volume',     val = np.zeros(n_ballasts),        units='m**3')
+            ivc.add_output('grid_axial_joints',  val = np.zeros(n_axial_joints))
 
 class Mooring(om.Group):
     def initialize(self):
