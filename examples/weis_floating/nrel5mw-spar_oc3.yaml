@@ -639,8 +639,6 @@ control:
         Vout: 25.0
         maxTS: 80.
         rated_power: 5.e+6
-        minOmega: 0.72256
-        maxOmega: 1.26711
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
         PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
@@ -655,7 +653,7 @@ control:
         VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
         VS_minspd: 0.72256                # Minimum rotor speed [rad/s], {default = 0 rad/s}
-        # VS_maxspd: 2.00000                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_maxspd: 1.26711                # Minimum rotor speed [rad/s], {default = 0 rad/s}
     setpoint_smooth:
         ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
         ss_pcgain: .01                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
