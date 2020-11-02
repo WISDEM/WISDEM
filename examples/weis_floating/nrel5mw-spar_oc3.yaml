@@ -1,4 +1,4 @@
-name: 5MW
+name: 5MW with OC3 semisubmersible
 comments: NREL 5MW Offshore Reference Wind Turbine, modified for a more realisitic manufacturable blade with constant width spar caps, trailing edge reinforcement, and leading edge foam that wraps around the full LE w/o a gap -EMG
 
 components:
@@ -278,25 +278,130 @@ components:
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
                 z:
-                    grid: &grid_tower [0., 0.167, 0.333, 0.5 , 0.6667, 0.833, 1.]
-                    values: [0. , 14.6, 29.2, 43.8, 58.4, 73. , 87.6]
+                    grid: &grid_tower [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+                    values: [10.0, 17.76, 25.52, 33.28, 41.04, 48.8 , 56.56, 64.32, 72.08, 79.84, 87.6 ]
             outer_diameter:
                 grid: *grid_tower
-                values: [6.   , 5.645, 5.29 , 4.935, 4.58 , 4.225, 3.87]
+                values: [6.5 , 6.24, 5.97, 5.71, 5.45, 5.18, 4.92, 4.66, 4.4 , 4.13, 3.87]
             drag_coefficient:
                 grid: [0.0, 1.0]
                 values: [1.0, 1.0]
         internal_structure_2d_fem:
-            outfitting_factor: 1.07
+            outfitting_factor: 1.083
             reference_axis: *ref_axis_tower
             layers:
                 - name: tower_wall
                   material: steel
                   thickness:
                     grid: *grid_tower
-                    values: [0.027, 0.0254, 0.0238, 0.0222, 0.0206, 0.019, 0.019]
-    foundation:
-        height: 0.
+                    values: [0.027 , 0.0262, 0.0254, 0.0246, 0.0238, 0.023 , 0.0222, 0.0214, 0.0206, 0.0198, 0.019]
+    floating_platform:
+        joints:
+            - name: spar_keel
+              location: [0.0, 0.0, -120.0]
+
+            - name: spar_freeboard
+              location: [0.0, 0.0, 10.0]
+              transition: True
+        members:
+            - name: spar
+              joint1: spar_keel
+              joint2: spar_freeboard
+              outer_shape:
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 0.8308, 0.8923, 1.0]
+                    values: [9.4, 9.4, 6.5, 6.5]
+              internal_structure:
+                layers:
+                    - name: spar_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.05, 0.05]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 0.1, 0.5, 0.8308, 1.0]
+                        values: [0.1, 0.05, 0.05, 0.05, 0.05]
+                ballasts:
+                    - variable_flag: False
+                      material: slurry
+                      volume: 1e3
+                      grid: [0.0, 0.1]
+                    - variable_flag: True
+                      grid: [0.1, 0.5]
+
+    mooring:
+        nodes:
+            - name: line1_anchor
+              node_type: fixed
+              location: [853.87, 0.0, -320.0]
+              anchor_type: drag_embedment
+
+            - name: line2_anchor
+              node_type: fixed
+              location: [-426.94, 739.47, -320.0]
+              anchor_type: drag_embedment
+
+            - name: line3_anchor
+              node_type: fixed
+              location: [-426.94, -739.47, -320.0]
+              anchor_type: drag_embedment
+
+            - name: line1_vessel
+              node_type: vessel
+              location: [5.2, 0.0, -70.0]
+              fairlead_type: rigid
+
+            - name: line2_vessel
+              node_type: vessel
+              location: [-2.6, 4.5, -70.0]
+              fairlead_type: rigid
+
+            - name: line3_vessel
+              node_type: vessel
+              location: [-2.6, -4.5, -70.0]
+              fairlead_type: rigid
+
+        lines:
+            - name: line1
+              node1: line1_anchor
+              node2: line1_vessel
+              line_type: main
+              unstretched_length: 902.2
+
+            - name: line2
+              node1: line2_anchor
+              node2: line2_vessel
+              line_type: main
+              unstretched_length: 902.2
+
+            - name: line3
+              node1: line3_anchor
+              node2: line3_vessel
+              line_type: main
+              unstretched_length: 902.2
+
+        line_types:
+            - name: main
+              diameter: 0.09
+              mass_density: 77.7066
+              stiffness: 384.243e+6
+              breaking_load: 1.e+8
+              cost: 100.0
+              transverse_added_mass: 1.0
+              tangential_added_mass: 0.0
+              transverse_drag: 1.6
+              tangential_drag: 0.1
+
+        anchor_types:
+            - name: drag_embedment
+              mass: 1.e+3
+              cost: 1.e+4
+              max_vertical_load: 0.0
+              max_lateral_load: 1.e+5
+
 airfoils:
    -  aerodynamic_center: 0.275
       polars:
@@ -550,7 +655,7 @@ control:
         VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
         VS_minspd: 0.72256                # Minimum rotor speed [rad/s], {default = 0 rad/s}
-        VS_maxspd: 2.00000                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        # VS_maxspd: 2.00000                # Minimum rotor speed [rad/s], {default = 0 rad/s}
     setpoint_smooth:
         ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
         ss_pcgain: .01                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
@@ -563,12 +668,12 @@ environment:
     air_dyn_viscosity: 1.81e-5
     weib_shape_parameter: 2.
     air_speed_sound: 340.
-    shear_exp: 0.2
+    shear_exp: 0.11
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
-    #water_depth: 0.0
-    significant_wave_height: 0.0
-    significant_wave_period: 0.0
+    water_depth: 30. #320.0
+    significant_wave_height: 9.14
+    significant_wave_period: 13.6
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
 

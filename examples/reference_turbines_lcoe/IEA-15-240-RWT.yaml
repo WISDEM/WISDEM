@@ -856,7 +856,6 @@ materials:
       alpha: 0.0
       orth: 0
       unit_cost: 3.63
-
 assembly:
     turbine_class: I
     turbulence_class: B
@@ -864,29 +863,34 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
 control:
-    rated_power: 15.e+6
-    Vin: 3.0
-    Vout: 25.0
-    minOmega: 0.52
-    maxOmega: 0.8
-    tsr: 9.0
-    pitch: 0.
-    maxTS: 95.
-    IPC: false
-    max_pitch_rate: 0.03490658503988659 # 2 deg/s
-    max_torque_rate: 1500000.
-    # Controller parameters
-    PC_zeta: 1.0                      # Pitch controller desired damping ratio [-]
-    PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
-    VS_zeta: 1.0                      # Torque controller desired damping ratio [-]
-    VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
-    max_pitch: 1.57                   # Maximum pitch angle [rad], {default = 90 degrees}
-    min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
-    vs_minspd: 0                      # Minimum rotor speed [rad/s], {default = 0 rad/s}
-    ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
-    ss_pcgain: .001                   # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
-    ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
-
+    supervisory:
+        Vin: 3.0
+        Vout: 25.0
+        maxTS: 95.
+        rated_power: 15.e+6
+        minOmega: 0.52
+        maxOmega: 0.8
+    pitch:
+        PC_zeta: 1.0                      # Pitch controller desired damping ratio [-]
+        PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
+        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+        max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
+        max_pitch_rate: 0.03490658503988659 # 2 deg/s
+        min_pitch: 0.                     # Minimum pitch angle [rad], {default = 0 degrees}
+    torque:
+        control_type: tsr_tracking
+        tsr: 9.0
+        VS_zeta: 1.0                      # Torque controller desired damping ratio [-]
+        VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
+        max_torque_rate: 1500000.
+        VS_minspd: 0.0                    # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_maxspd: 2.00000                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+    setpoint_smooth:
+        ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
+        ss_pcgain: .001                   # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
+    shutdown:
+        limit_type: gen_speed
+        limit_value: 2.0
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5

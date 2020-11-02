@@ -553,8 +553,8 @@ class WindPark(om.Group):
         opt_options     = self.options['opt_options']
 
         self.add_subsystem('wt',        WT_RNTA(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
-        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
-            if modeling_options['flags']['monopile'] == True:
+        if modeling_options['Analysis_Flags']['BOS']:
+            if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
                 self.add_subsystem('orbit',     Orbit())
             else:
                 self.add_subsystem('landbosse', LandBOSSE())
@@ -566,8 +566,8 @@ class WindPark(om.Group):
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # BOS inputs
-        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
-            if modeling_options['flags']['monopile'] == True:
+        if modeling_options['Analysis_Flags']['BOS']:
+            if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
                 # Inputs into ORBIT
                 self.connect('control.rated_power',                   'orbit.turbine_rating')
                 self.connect('env.water_depth',                       'orbit.site_depth')
@@ -576,13 +576,16 @@ class WindPark(om.Group):
                 self.connect('assembly.hub_height',                   'orbit.hub_height')
                 self.connect('assembly.rotor_diameter',               'orbit.turbine_rotor_diameter')     
                 self.connect('towerse.tower_mass',                    'orbit.tower_mass')
-                self.connect('towerse.monopile_mass',                 'orbit.monopile_mass')
-                self.connect('towerse.monopile_length',               'orbit.monopile_length')
-                self.connect('monopile.transition_piece_mass',        'orbit.transition_piece_mass')
+                if modeling_options['flags']['monopile'] == True:
+                    self.connect('towerse.monopile_mass',                 'orbit.monopile_mass')
+                    self.connect('towerse.monopile_length',               'orbit.monopile_length')
+                    self.connect('monopile.transition_piece_mass',        'orbit.transition_piece_mass')
+                    self.connect('monopile.diameter',                     'orbit.monopile_diameter', src_indices=[0])
+                else:
+                    print('Orbit is not yet supporting floating substructures. Fix glue_code.py')
                 self.connect('elastic.precomp.blade_mass',            'orbit.blade_mass')
                 self.connect('tcc.turbine_cost_kW',                   'orbit.turbine_capex')
                 self.connect('drivese.nacelle_mass',                  'orbit.nacelle_mass')
-                self.connect('monopile.diameter',                     'orbit.monopile_diameter', src_indices=[0])
                 self.connect('wt_class.V_mean',                       'orbit.site_mean_windspeed')
                 self.connect('sse.powercurve.rated_V',                'orbit.turbine_rated_windspeed')
                 self.connect('bos.plant_turbine_spacing',             'orbit.plant_turbine_spacing')
@@ -628,8 +631,8 @@ class WindPark(om.Group):
             self.connect('sse.AEP',             'financese.turbine_aep')
 
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
-        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
-            if modeling_options['flags']['monopile'] == True:
+        if modeling_options['Analysis_Flags']['BOS']:
+            if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
                 self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
             else:
                 self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')

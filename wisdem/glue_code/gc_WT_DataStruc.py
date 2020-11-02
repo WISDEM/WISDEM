@@ -214,6 +214,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         if modeling_options['flags']['floating_platform']:
             self.add_subsystem('floating',  Floating(floating_init_options   = modeling_options['floating']))
+            self.add_subsystem('mooring',   Mooring(mooring_init_options     = modeling_options['mooring']))
 
         # Control inputs
         if modeling_options['flags']['control']:
@@ -254,7 +255,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output('G_soil',       val=140e6,       units='N/m**2',     desc='Shear stress of soil')
             env_ivc.add_output('nu_soil',      val=0.4,                             desc='Poisson ratio of soil')
 
-        if modeling_options['flags']['bos'] and modeling_options['flags']['floating_platform'] == False:
+        if modeling_options['flags']['bos']:
             bos_ivc = self.add_subsystem('bos', om.IndepVarComp())
             bos_ivc.add_output('plant_turbine_spacing', 7, desc='Distance between turbines in rotor diameters')
             bos_ivc.add_output('plant_row_spacing', 7, desc='Distance between turbine rows in rotor diameters')
@@ -262,7 +263,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc.add_output('decommissioning_pct', 0.15)
             bos_ivc.add_output('distance_to_substation', 50.0, units='km')
             bos_ivc.add_output('distance_to_interconnection', 5.0, units='km')
-            if modeling_options['flags']['monopile'] == True:
+            if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
                 bos_ivc.add_output('site_distance', 40.0, units='km')
                 bos_ivc.add_output('distance_to_landfall', 40.0, units='km')
                 bos_ivc.add_output('port_cost_per_month', 2e6, units='USD/mo')
@@ -1203,18 +1204,28 @@ class Mooring(om.Group):
     def setup(self):
         mooring_init_options = self.options['mooring_init_options']
 
-        ivc = self.add_subsystem('mooring_indep_vars', om.IndepVarComp(), promotes=['*'])
-        ivc.add_output('mooring_line_length', 0.0, units='m')
-        ivc.add_output('anchor_radius', 0.0, units='m')
-        ivc.add_output('mooring_diameter', 0.0, units='m')
-        ivc.add_output('number_of_mooring_connections', 0)
-        ivc.add_output('mooring_lines_per_connection', 0)
-        ivc.add_discrete_output('mooring_type', 'chain')
-        ivc.add_discrete_output('anchor_type', 'SUCTIONPILE')
-        ivc.add_output('max_offset', 0.0, units='m')
-        ivc.add_output('operational_heel', 0.0, units='deg')
-        ivc.add_output('mooring_cost_factor', 0.0)
-        ivc.add_output('max_survival_heel', 0.0, units='deg')
+        n_nodes         = mooring_init_options['n_nodes']       
+        n_lines         = mooring_init_options['n_lines']       
+        n_line_types    = mooring_init_options['n_line_types']  
+        n_anchor_types  = mooring_init_options['n_anchor_types']
+
+        ivc = self.add_subsystem('mooring', om.IndepVarComp(), promotes=['*'])
+        
+        ivc.add_output('nodes_location',            val = np.zeros((n_nodes, 3)),   units='m')
+        ivc.add_output('unstretched_length',        val = np.zeros(n_lines),        units='m')
+        ivc.add_output('line_diameter',             val = np.zeros(n_line_types),   units='m')
+        ivc.add_output('line_mass_density',         val = np.zeros(n_line_types),   units='kg/m')
+        ivc.add_output('line_stiffness',            val = np.zeros(n_line_types),   units='N')
+        ivc.add_output('line_breaking_load',        val = np.zeros(n_line_types),   units='N')
+        ivc.add_output('line_cost',                 val = np.zeros(n_line_types),   units='USD/m')
+        ivc.add_output('line_transverse_added_mass',val = np.zeros(n_line_types),   units='kg/m')
+        ivc.add_output('line_tangential_added_mass',val = np.zeros(n_line_types),   units='kg/m')
+        ivc.add_output('line_transverse_drag',      val = np.zeros(n_line_types))
+        ivc.add_output('line_tangential_drag',      val = np.zeros(n_line_types))
+        ivc.add_output('anchor_mass',               val = np.zeros(n_anchor_types), units = 'kg')
+        ivc.add_output('anchor_cost',               val = np.zeros(n_anchor_types), units = 'USD')
+        ivc.add_output('anchor_max_vertical_load',  val = np.zeros(n_anchor_types), units = 'N')
+        ivc.add_output('anchor_max_lateral_load',   val = np.zeros(n_anchor_types), units = 'N')
 
 class ComputeMaterialsProperties(om.ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material

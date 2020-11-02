@@ -76,10 +76,10 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
         monopile = {}
 
     if modeling_options['flags']['floating_platform']:
-        floating_platform = wt_init['components']['floating_platform']
-        wt_opt   = assign_floating_values(wt_opt, modeling_options, floating_platform)
-    else:
-        floating = {}
+        floating_platform   = wt_init['components']['floating_platform']
+        wt_opt              = assign_floating_values(wt_opt, modeling_options, floating_platform)
+        mooring             = wt_init['components']['mooring']
+        wt_opt              = assign_mooring_values(wt_opt, modeling_options, mooring)
 
     if modeling_options['flags']['foundation']:
         foundation      = wt_init['components']['foundation']
@@ -427,7 +427,6 @@ def assign_hub_values(wt_opt, hub):
 
     return wt_opt
 
-
 def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     # Common direct and geared
     wt_opt['nacelle.uptilt']                    = nacelle['drivetrain']['uptilt_angle']
@@ -593,7 +592,6 @@ def assign_generator_values(wt_opt, modeling_options, nacelle):
 
     return wt_opt
 
-
 def assign_tower_values(wt_opt, modeling_options, tower):
     # Function to assign values to the openmdao component Tower
     n_height        = modeling_options['tower']['n_height'] # Number of points along tower height
@@ -700,6 +698,37 @@ def assign_floating_values(wt_opt, modeling_options, floating):
             for j in range(floating_init_options['members']['n_axial_joints'][i]):
                 wt_opt['floating.floating_member_' + name_member + '.grid_axial_joints'][j] = floating['members'][i]['axial_joints'][j]['grid']
 
+
+    return wt_opt
+
+def assign_mooring_values(wt_opt, modeling_options, mooring):
+    # Mooring system parameters
+    mooring_init_options   = modeling_options['mooring']
+
+    n_nodes         = mooring_init_options['n_nodes']       
+    n_lines         = mooring_init_options['n_lines']       
+    n_line_types    = mooring_init_options['n_line_types']  
+    n_anchor_types  = mooring_init_options['n_anchor_types']
+
+    for i in range(n_nodes):
+        wt_opt['mooring.nodes_location'][i,:] = mooring['nodes'][i]['location']
+    for i in range(n_lines):
+        wt_opt['mooring.unstretched_length'][i] = mooring['lines'][i]['unstretched_length']
+    for i in range(n_line_types):
+        wt_opt['mooring.line_diameter'][i]      = mooring['line_types'][i]['diameter']
+        wt_opt['mooring.line_mass_density'][i]  = mooring['line_types'][i]['mass_density']
+        wt_opt['mooring.line_stiffness'][i]     = mooring['line_types'][i]['stiffness']
+        wt_opt['mooring.line_breaking_load'][i] = mooring['line_types'][i]['breaking_load']
+        wt_opt['mooring.line_cost'][i]          = mooring['line_types'][i]['cost']
+        wt_opt['mooring.line_transverse_added_mass'][i] = mooring['line_types'][i]['transverse_added_mass']
+        wt_opt['mooring.line_tangential_added_mass'][i] = mooring['line_types'][i]['tangential_added_mass']
+        wt_opt['mooring.line_transverse_drag'][i] = mooring['line_types'][i]['transverse_drag']
+        wt_opt['mooring.line_tangential_drag'][i] = mooring['line_types'][i]['tangential_drag']
+    for i in range(n_anchor_types):
+        wt_opt['mooring.anchor_mass'][i] = mooring['anchor_types'][i]['mass']
+        wt_opt['mooring.anchor_cost'][i] = mooring['anchor_types'][i]['cost']
+        wt_opt['mooring.anchor_max_vertical_load'][i]   = mooring['anchor_types'][i]['max_vertical_load']
+        wt_opt['mooring.anchor_max_lateral_load'][i]    = mooring['anchor_types'][i]['max_lateral_load']
 
     return wt_opt
 

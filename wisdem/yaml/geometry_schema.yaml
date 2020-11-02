@@ -1587,12 +1587,15 @@ properties:
                                 anchor_type:
                                     type: string
                                     description: Name of anchor type from anchor_type list
+                                    default: none
                                 fairlead_type:
                                     type: string
                                     enum:
                                         - rigid
                                         - actuated
                                         - ball
+                                        - none
+                                    default: none
                                 node_mass:
                                     type: number
                                     units: kilogram
@@ -2446,6 +2449,12 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 5
+                    VS_maxspd:
+                        type: number
+                        description: Maximum rotor speed. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad/s
+                        minimum: 0
+                        default: 10.
 
             setpoint_smooth:
                 type: object
