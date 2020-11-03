@@ -224,98 +224,60 @@ properties:
             hub:
                 type: object
                 properties:
-                    diameter:
-                        type: number
-                        description: Diameter of the hub
-                        unit: meter
-                        minimum: 1.0
-                        maximum: 20.0
-                    flange_t2shell_t:
-                        type: number
-                        description: Ratio of flange thickness to shell thickness
-                        unit: meter
-                        minimum: 1.0
-                        maximum: 10.0
-                    flange_OD2hub_D:
-                        type: number
-                        description: Ratio of flange outer diameter to hub diameter
-                        unit: meter
-                        minimum: 0.0
-                        maximum: 1.0
-                    flange_ID2OD:
-                        type: number
-                        description: Ratio of flange inner diameter to flange outer diameter
-                        unit: meter
-                        minimum: 0.0
-                        maximum: 1.0
-                    hub_blade_spacing_margin:
-                        type: number
-                        description: Safety factor applied on hub circumference. This factor determines the extra material needed between blade cutouts/holes in the hub to provide enough load carrying material. Good values are usually 1.15/1.2
-                        unit: meter
-                        minimum: 1.0
-                        maximum: 2.0
-                    hub_stress_concentration:
-                        type: number
-                        description: Stress concentration factor. Stress concentration occurs at all fillets, notches, lifting lugs, hatches and are accounted for by assigning a stress concentration factor
-                        unit: meter
-                        minimum: 1.0
-                        maximum: 10.0
-                    n_front_brackets:
-                        type: integer
-                        description: Number of front spinner brackets
-                        unit: none
-                        minimum: 1
-                        maximum: 100
-                    n_rear_brackets:
-                        type: integer
-                        description: Number of rear spinner brackets
-                        unit: none
-                        minimum: 1
-                        maximum: 100
-                    clearance_hub_spinner:
-                        type: number
-                        description: Clearance between spinner and hub
-                        unit: meter
-                        minimum: 0.0
-                        maximum: 1.0
-                    spin_hole_incr:
-                        type: number
-                        description: Ratio between access hole diameter in the spinner and blade root diameter, typically 1.2
-                        unit: meter
-                        minimum: 1.0
-                        maximum: 10.0
-                    pitch_system_scaling_factor:
-                        type: number
-                        description: Scaling factor to tune the total mass (0.54 is recommended for modern designs)
-                        unit: meter
-                        minimum: 0.0
-                        maximum: 1.0
-                    spinner_gust_ws:
-                        type: number
-                        description: Extreme gust wind speed
-                        unit: meter
-                        minimum: 10.0
-                        maximum: 150.0
-                    cone_angle:
-                        type: number
-                        description: Rotor precone angle, defined positive for both upwind and downwind rotors.
-                        unit: rad
-                        minimum: 0
-                        maximum: 0.2
-                    drag_coefficient:
-                        type: number
-                        description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
-                        unit: none
-                        minimum: 0
-                        maximum: 2.
-                    hub_material:
-                        type: string
-                        description: Material name identifier
-                        default: cast_iron
-                    spinner_material:
-                        type: string
-                        description: Material name identifier
-                        default: carbon
+                    outer_shape_bem:
+                        type: object
+                        required:
+                            - diameter
+                            - cone_angle
+                            - drag_coefficient
+                        properties:
+                            diameter:
+                                type: number
+                                description: Diameter of the hub measured at the blade root positions.
+                                unit: meter
+                                minimum: 0.
+                                maximum: 10.
+                            cone_angle:
+                                type: number
+                                description: Rotor precone angle, defined positive for both upwind and downwind rotors.
+                                unit: rad
+                                minimum: 0
+                                maximum: 0.2
+                            drag_coefficient:
+                                type: number
+                                description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
+                                unit: none
+                                minimum: 0
+                                maximum: 2.
+                    elastic_properties_mb:
+                        type: object
+                        required:
+                            - system_mass
+                            - system_inertia
+                        properties:
+                            system_mass:
+                                type: number
+                                description: Mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, ....
+                                unit: kg
+                                minimum: 0
+                            system_inertia:
+                                type: array
+                                description: Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.
+                                items:
+                                    type: number
+                                    unit: kgm2
+                                    minItems: 6
+                                    maxItems: 6
+                                    uniqueItems: false
+                            system_center_mass:
+                                type: array
+                                description: Center of mass of the hub system. Work in progress.
+                                items:
+                                    type: number
+                                    unit: m
+                                    minItems: 3
+                                    maxItems: 3
+                                    uniqueItems: false
             nacelle:
                 type: object
                 properties:
@@ -955,7 +917,6 @@ properties:
                           minimum: 0.0
                           maximum: 100.0
                           description: Permanent magnet cost
-
             tower:
                 type: object
                 required:
@@ -1096,7 +1057,7 @@ properties:
                         minimum: 0.0
                         maximum: 50.0
                         default: 0.0
-                    outer_shape_bem:
+                    outer_shape:
                         type: object
                         required:
                             - reference_axis
@@ -1137,13 +1098,15 @@ properties:
                     internal_structure_2d_fem:
                         type: object
                         required:
-                            - outfitting_factor
                             - reference_axis
                             - layers
+                        optional:
+                            - outfitting_factor
                         properties:
                             outfitting_factor:
                                 type: number
                                 description: Scaling factor for the tower mass to account for auxiliary structures, such as elevator, ladders, cables, platforms, etc
+                                default: 1.0
                                 unit: none
                                 minimum: 1
                                 maximum: 2
@@ -1187,41 +1150,598 @@ properties:
                         unit: meter
                         minimum: -1000
                         maximum: 100
-            floating:
+            floating_platform:
+                description: Ontology definition for floating platforms (substructures) suitable for use with the WEIS co-design analysis tool
                 type: object
-            RNA:
-                type: object
+                required:
+                    - joints
+                    - members
+                optional:
+                    - rigid_bodies
                 properties:
-                    elastic_properties_mb:
-                        type: object
-                        required:
-                            - mass
-                            - inertia
-                            - center_mass
-                        properties:
-                            mass:
-                                type: number
-                                description: Mass of the rotor nacelle assembly.
-                                unit: kg
-                                minimum: 0
-                            inertia:
-                                type: array
-                                description: Inertia of the rotor nacelle assembly, expressed in the yaw coordinate system.
-                                items:
+                    joints:
+                        type: array
+                        items:
+                            type: object
+                            required:
+                                - name
+                                - location
+                            optional:
+                                - reactions
+                                - transition
+                                - cylindrical
+                            properties:
+                                name:
+                                    description: Unique name of the joint (node)
+                                    type: string
+                                location:
+                                    description: Coordinates (x,y,z or r,θ,z) of the joint in the global coordinate system.
+                                    type: array
+                                    items:
+                                        type: number
+                                        minItems: 3
+                                        maxItems: 3
+                                        unit: m
+                                transition:
+                                    description: Whether the transition piece and turbine tower attach at this node
+                                    type: boolean
+                                    default: False
+                                cylindrical:
+                                    description: Whether to use cylindrical coordinates (r,θ,z), with (r,θ) lying in the x/y-plane, instead of Cartesian coordinates.
+                                    type: boolean
+                                    default: False
+                                reactions:
+                                    # TODO: How to do carabiner type joints that only support tension and not compression?
+                                    type: object
+                                    description: If this joint is compliant is certain DOFs, then specify which are compliant (True) in the member/element coordinate system).  If not specified, default is all entries are False (completely rigid).  For instance, a ball joint would be Rx=Ry=Rz=False, Rxx=Ryy=Rzz=True
+                                    required:
+                                        - Rx
+                                        - Ry
+                                        - Rz
+                                        - Rxx
+                                        - Ryy
+                                        - Rzz
+                                    optional:
+                                        - Euler
+                                    properties:
+                                        Rx: &rxn_loc
+                                            type: boolean
+                                            default: False
+                                        Ry: *rxn_loc
+                                        Rz: *rxn_loc
+                                        Rxx: *rxn_loc
+                                        Ryy: *rxn_loc
+                                        Rzz: *rxn_loc
+                                        Euler:
+                                            description: Euler angles [alpha, beta, gamma] that describe the rotation of the Reaction coordinate system relative to the global coordinate system α is a rotation around the z axis, β is a rotation around the x' axis, γ is a rotation around the z" axis.
+                                            type: array
+                                            items:
+                                                type: number
+                                                minItems: 3
+                                                maxItems: 3
+                    members:
+                        type: array
+                        items:
+                            type: object
+                            required:
+                                - name
+                                - joint1
+                                - joint2
+                                - outer_shape
+                                - internal_structure
+                            optional:
+                                # TODO: Move these to the modeling file?
+                                - hydrodynamic_approach
+                                - Ca
+                                - Cp
+                                - Cd
+                            properties:
+                                name:
+                                    description: Name of the member
+                                    type: string
+                                joint1: &jointid
+                                    type: string
+                                    description: Name of joint/node connection
+                                joint2: *jointid
+                                outer_shape:
+                                    type: object
+                                    required:
+                                        - shape
+                                    if:
+                                        # If shape == circular, then we need to specify the outer diameter
+                                        properties:
+                                            shape:
+                                                const: circular
+                                    then:
+                                        required:
+                                            - outer_diameter
+                                    else:
+                                        if:
+                                            # If shape == polygonal, then we need to specify the side lengths
+                                            properties:
+                                                shape:
+                                                    const: polygonal
+                                        then:
+                                            required:
+                                                - side_lengths1
+                                                - side_lengths2
+                                            optional:
+                                                - rotation
+                                                - angles
+                                    properties:
+                                        shape:
+                                            type: string
+                                            description: Specifies cross-sectional shape of the member.  If circular, then the outer_diameter field is required.  If polygonal, then the side_lengths, angles, and rotation fields are required
+                                            enum:
+                                                - circular
+                                                - polygonal
+                                        outer_diameter:
+                                            description: Gridded values describing diameter at non-dimensional axis from joint1 to joint2
+                                            type: object
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/length"
+                                        side_lengths1: &sl
+                                            description: Polygon side lengths at joint1
+                                            type: array
+                                            items:
+                                                type: number
+                                                minItems: 3
+                                                unit: m
+                                                minimum: 0
+                                        side_lengths2: *sl
+                                            # description: Polygon side lengths at joint2
+                                        angles:
+                                            description: Polygon angles with the ordering such that angle[i] is between side_length[i] and side_length[i+1]
+                                            type: array
+                                            items:
+                                                type: number
+                                                minItems: 3
+                                                unit: rad
+                                                minimum: 0
+                                        rotation:
+                                            type: number
+                                            description: Angle between principle axes of the cross-section and the member coordinate system.  Essentially the rotation of the member if both joints were placed on the global x-y axis with the first side length along the z-axis
+                                            unit: rad
+                                internal_structure:
+                                    type: object
+                                    required:
+                                        - layers
+                                    optional:
+                                        - outfitting_factor
+                                        - ring_stiffeners
+                                        - longitudinal_stiffeners
+                                        - bulkhead
+                                        - ballast
+                                    properties:
+                                        outfitting_factor:
+                                            type: number
+                                            description: Scaling factor for the member mass to account for auxiliary structures, such as elevator, ladders, cables, platforms, fasteners, etc
+                                            unit: none
+                                            minimum: 1.0
+                                            default: 1.0
+                                        layers:
+                                            type: array
+                                            description: Material layer properties
+                                            items:
+                                                type: object
+                                                required:
+                                                    - name
+                                                    - material
+                                                    - thickness
+                                                properties:
+                                                    name:
+                                                        type: string
+                                                        description: structural component identifier
+                                                    material: &material
+                                                        type: string
+                                                        description: material identifier
+                                                    thickness:
+                                                        description: Gridded values describing thickness along non-dimensional axis from joint1 to joint2
+                                                        type: object
+                                                        required:
+                                                            - grid
+                                                            - values
+                                                        properties:
+                                                            grid:
+                                                                $ref: "#/definitions/distributed_data/grid_nd"
+                                                            values:
+                                                                $ref: "#/definitions/distributed_data/length"
+                                        ring_stiffeners: &stiffener
+                                            type: array
+                                            items:
+                                                type: object
+                                                required:
+                                                    - material
+                                                    - flange_height
+                                                    - flange_width
+                                                    - web_height
+                                                    - web_thickness
+                                                    - locations
+                                                properties:
+                                                    material: *material
+                                                    flange_height:
+                                                        type: number
+                                                        unit: m
+                                                        minimum: 0
+                                                    flange_width:
+                                                        type: number
+                                                        unit: m
+                                                        minimum: 0
+                                                    web_height:
+                                                        type: number
+                                                        unit: m
+                                                        minimum: 0
+                                                    web_thickness:
+                                                        type: number
+                                                        unit: m
+                                                        minimum: 0
+                                                    locations:
+                                                        description: Non-dimensional grid from 0..1 (joint1-joint2) the specifies the stiffener locations
+                                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                        longitudinal_stiffeners: *stiffener # "Grid" here will have to mean something different
+                                        bulkhead:
+                                            type: object
+                                            required:
+                                                - material
+                                                - thickness
+                                            properties:
+                                                material: *material
+                                                thickness:
+                                                    type: object
+                                                    description: thickness of the bulkhead at non-dimensional locations of the member [0..1]
+                                                    required:
+                                                        - grid
+                                                        - values
+                                                    properties:
+                                                        grid:
+                                                            $ref: "#/definitions/distributed_data/grid_nd"
+                                                        values:
+                                                            $ref: "#/definitions/distributed_data/length"
+                                        ballast:
+                                            type: array
+                                            description: Different types of permanent and/or variable ballast
+                                            items:
+                                                type: object
+                                                required:
+                                                    - variable_flag
+                                                    - grid
+                                                if:
+                                                    # If permanent ballast, then need to specify total volume
+                                                    properties:
+                                                        variable_flag:
+                                                            const: False
+                                                then:
+                                                    required:
+                                                        - material
+                                                        - volume
+                                                properties:
+                                                    variable_flag:
+                                                        type: boolean
+                                                        description: If true, then this ballast is variable and adjusted by control system.  If false, then considered permanent
+                                                    material: *material
+                                                    grid:
+                                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                                    volume:
+                                                        type: number
+                                                        description: Total volume of ballast (permanent ballast only)
+                                                        unit: m^3
+                                                        minimum: 0
+                                axial_joints:
+                                    description: Define joints along non-dimensional axis of this member
+                                    type: array
+                                    items:
+                                        type: object
+                                        required:
+                                            - grid
+                                            - name
+                                        properties:
+                                            name:
+                                                type: string
+                                                description: Unique name of joint
+                                            grid:
+                                                type: number
+                                                minimum: 0.0
+                                                maximum: 1.0
+                                                description: Non-dimensional value along member axis
+                                hydrodynamic_approach: &hydro
+                                    # TODO: Move these to the modeling file?
+                                    description: How should this member be modeled?
+                                    type: string
+                                    default: strip
+                                    enum:
+                                        - strip
+                                        - potential
+                                        - both
+                                Ca: &ca
+                                    # TODO: Move these to the modeling file?
+                                    description: Added mass coefficient
                                     type: number
-                                    unit: kgm2
-                                    minItems: 6
-                                    maxItems: 6
-                                    uniqueItems: false
-                            center_mass:
-                                type: array
-                                description: Center of mass of the rotor nacelle assembly, expressed in the yaw coordinate system.
-                                items:
+                                    default: 0.0
+                                Cp: &cp
+                                    # TODO: Move these to the modeling file?
+                                    description: Pressure coefficient
                                     type: number
-                                    unit: m
-                                    minItems: 3
-                                    maxItems: 3
-                                    uniqueItems: false
+                                    default: 0.0
+                                Cd: &cd
+                                    # TODO: Move these to the modeling file?
+                                    description: Drag coefficient
+                                    type: number
+                                    default: 0.0
+                    rigid_bodies:
+                        type: array
+                        descriptions: Additional point masses at joints with user-customized properties
+                        items:
+                            type: object
+                            required:
+                                - joint1
+                                - mass
+                                - cost
+                                - cm_offset
+                                - moments_of_inertia
+                            optional:
+                                - hydrodynamic_approach
+                                - Ca
+                                - Cp
+                                - Cd
+                            properties:
+                                joint1: *jointid
+                                mass:
+                                    description: Mass of this rigid body
+                                    unit: kg
+                                    type: number
+                                    minimum: 0
+                                cost:
+                                    description: Cost of this rigid body
+                                    unit: USD
+                                    type: number
+                                    minimum: 0
+                                cm_offset:
+                                    description: Offset from joint location to center of mass (CM) of body in dx, dy, dz
+                                    type: array
+                                    items:
+                                        type: number
+                                        unit: m
+                                        maxItems: 3
+                                        minItems: 3
+                                moments_of_inertia:
+                                    description: Moments of inertia around body CM in Ixx, Iyy, Izz
+                                    type: array
+                                    items:
+                                        type: number
+                                        unit: kg*m^2
+                                        maxItems: 3
+                                        minItems: 3
+                                        minimum: 0
+                                hydrodynamic_approach: *hydro
+                                Ca: *ca
+                                Cp: *cp
+                                Cd: *cd
+            mooring:
+                # Will insert mooring schema that we agreed to here or will keep as separate file
+                description: Ontology definition for mooring systems suitable for use with the WEIS co-design analysis tool
+                type: object
+                required:
+                    - nodes
+                    - lines
+                    - line_types
+                    - anchor_types
+                properties:
+                    nodes:
+                        type: array
+                        description: List of nodes in the mooring system
+                        items:
+                            type: object
+                            required:
+                                - name
+                                - node_type
+                                - location
+                            optional:
+                                - node_mass
+                                - node_volume
+                                - drag_area
+                                - added_mass
+                                - anchor_type
+                                - fairlead_type
+                            if:
+                                # If node_type == fixed, then we need to specify the anchor_type
+                                properties:
+                                    node_type:
+                                        const: fixed
+                            then:
+                                required:
+                                    - anchor_type
+                            else:
+                                if:
+                                    # If node_type == vessel, then we need to specify the fairlead_type
+                                    properties:
+                                        node_type:
+                                            const: vessel
+                                then:
+                                    required:
+                                        - fairlead_type
+                            properties:
+                                name:
+                                    type: string
+                                    description: Name or ID of this node for use in line segment
+                                node_type:
+                                    type: string
+                                    enum:
+                                        - fixed
+                                        - connection
+                                        - vessel
+                                location:
+                                    type: array # I don't think we need to define x, y, and z explicitely
+                                    description: – Coordinates x, y, and z of the connection (relative to inertial reference frame if Fixed or Connect, relative to platform reference frame if Vessel). In the case of Connect nodes, it is simply an initial guess for position before MoorDyn calculates the equilibrium initial position.
+                                    items:
+                                        type: number
+                                        unit: meter
+                                        minItems: 3
+                                        maxItems: 3
+                                anchor_type:
+                                    type: string
+                                    description: Name of anchor type from anchor_type list
+                                fairlead_type:
+                                    type: string
+                                    enum:
+                                        - rigid
+                                        - actuated
+                                        - ball
+                                node_mass:
+                                    type: number
+                                    units: kilogram
+                                    description: Clump weight mass
+                                    minimum: 0.0
+                                node_volume:
+                                    type: number
+                                    units: meter^3
+                                    description: Floater volume
+                                    minimum: 0.0
+                                drag_area:
+                                    type: number
+                                    units: meter^2
+                                    description: Product of drag coefficient and projected area (assumed constant in all directions) to calculate a drag force for the node
+                                    minimum: 0.0
+                                added_mass:
+                                    type: number
+                                    description: Added mass coefficient used along with node volume to calculate added mass on node
+                    lines:
+                        type: array
+                        description: List of all mooring line properties in the mooring system
+                        items:
+                            type: object
+                            required:
+                                - name
+                                - line_type
+                                - unstretched_length
+                                - node1
+                                - node2
+                            properties:
+                                name:
+                                    type: string
+                                    description: ID of this line
+                                line_type:
+                                    type: string
+                                    description: Reference to line type database # PB: is this a material? if so I'd call it simply material #GB: I tried to get the group to just add mooring line types to the materials database, but they pushed back.  Mooring line properties from manufacturers and for analysis are usually reported per unit length.  Both Matt Hall and Jason really like the current MoorDyn/MAP input file and don't want to change that on the users.
+                                unstretched_length:
+                                    type: number
+                                    units: meter
+                                    description: length of line segment prior to tensioning
+                                    minimum: 0.0
+                                node1:
+                                    type: string
+                                    description: node id of first line connection
+                                node2:
+                                    type: string
+                                    description: node id of second line connection
+                    line_types:
+                        type: array
+                        description: List of mooring line properties used in the system
+                        items:
+                            type: object
+                            required:
+                                - name
+                                - diameter
+                                - mass_density
+                                - stiffness
+                                - breaking_load
+                                - cost
+                                - transverse_added_mass # Optional? Ask MattH    <<< I'm not sure if these should be optional or required... will think/discuss more.
+                                - tangential_added_mass # Optional? Ask MattH
+                                - transverse_drag # Optional? Ask MattH
+                                - tangential_drag # Optional? Ask MattH
+                            optional:
+                                - damping
+                            properties:
+                                name:
+                                    type: string
+                                    description: Name of material or line type to be referenced by line segments
+                                diameter:
+                                    type: number
+                                    units: meter
+                                    description: the volume-equivalent diameter of the line – the diameter of a cylinder having the same displacement per unit length
+                                    minimum: 0.0
+                                mass_density:
+                                    type: number
+                                    unit: kilogram/meter
+                                    description: mass per unit length (in air)
+                                    minimum: 0.0
+                                stiffness:
+                                    type: number
+                                    unit: Newton
+                                    description: axial line stiffness, product of elasticity modulus and cross-sectional area
+                                    minimum: 0.0
+                                cost:
+                                    type: number
+                                    unit: USD/meter
+                                    description: cost per unit length
+                                    minimum: 0.0
+                                breaking_load:
+                                    type: number
+                                    unit: Newton
+                                    description: line break tension
+                                    minimum: 0.0
+                                damping:
+                                    type: number
+                                    unit: Newton * second
+                                    description: internal damping (BA)
+                                transverse_added_mass:
+                                    type: number
+                                    description: transverse added mass coefficient (with respect to line displacement)
+                                    minimum: 0.0
+                                tangential_added_mass:
+                                    type: number
+                                    description: tangential added mass coefficient (with respect to line displacement)
+                                    minimum: 0.0
+                                transverse_drag:
+                                    type: number
+                                    description: transverse drag coefficient (with respect to frontal area, d*l)
+                                    minimum: 0.0
+                                tangential_drag:
+                                    type: number
+                                    description: tangential drag coefficient (with respect to surface area, π*d*l)
+                                    minimum: 0.0
+                    anchor_types:
+                        type: array
+                        description: List of anchor properties used in the system
+                        items:
+                            type: object
+                            required:
+                                - name
+                                - mass
+                                - cost
+                                - max_lateral_load
+                                - max_vertical_load
+                            properties:
+                                name:
+                                    type: string
+                                    description: Name of anchor to be referenced by anchor_id in Nodes section
+                                mass:
+                                    type: number
+                                    unit: kilogram
+                                    description: mass of the anchor
+                                    minimum: 0.0
+                                cost:
+                                    type: number
+                                    unit: USD
+                                    description: cost of the anchor
+                                    minimum: 0.0
+                                max_lateral_load:
+                                    type: number
+                                    unit: Newton
+                                    description: Maximum lateral load (parallel to the sea floor) that the anchor can support
+                                    minimum: 0.0
+                                max_vertical_load:
+                                    type: number
+                                    unit: Newton
+                                    description: Maximum vertical load (perpendicular to the sea floor) that the anchor can support
+                                    minimum: 0.0
+
     airfoils:
         type: array
         description: Database of airfoils
@@ -1589,150 +2109,688 @@ properties:
                 type: string
                 default: geared
                 description: String characterizing the drivetrain configuration
-                enum: [geared, Geared, GEARED, PM_Direct_Drive, Direct, Direct_Drive, direct, direct_drive, pm_direct_drive, DIRECT, DIRECT_DRIVE, PM_DIRECT_DRIVE]
             rotor_orientation:
                 type: string
                 default: Upwind
                 description: Orientation of the horizontal-axis rotor. The options are "Upwind" and "Downwind"
-                enum: [Upwind, Downwind]
             number_of_blades:
                 type: integer
                 default: 3
                 description: Number of blades of the rotor
                 unit: none
-                minimum: 1
+                minimum: 0
                 maximum: 10
+    actuators:
+        type: object
+        required:
+            - pitch
+            - generator
+        optional:
+            # in avrSWAP, but not used as much
+            - yaw   # rate
+            # not currently in OpenFAST/avrSWAP
+            - tower_TMD
+            - hull_TMD
+            - active_tension
+            - passive_weather_vane  # not sure what this is, project?
+            - passive_buoy_can
+            - hss_brake
+        properties:
+            pitch:
+                type: object
+                required:
+                    - pitch_act_bw
+                    - max_pitch_rate
+                    - fine_pitch         # maybe take out and put in control part
+                    - max_pitch         # DZ to Pietro: what if some things we can easily set to defaults, like this
+                    - min_pitch         # not sure this is required, seems extra
+                properties:
+                    fine_pitch:         # DZ: changed from pitch, might want to go in pitch control
+                        type: number
+                        description: Optimal pitch angle of the wind turbine. As default, it is maintained constant in region II.
+                        unit: rad
+                        minimum: -10
+                        maximum: 10
+                    max_pitch_rate:
+                        type: number
+                        description: Maximum pitch rate of the rotor blades.
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 0.2
+                    pitch_act_bw:
+                        type: number
+                        description: Bandwidth of 2nd order LPF representing pitch actuators
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 100
+                    max_pitch:
+                        type: number
+                        description: Maximum pitch angle, where the default is 90 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad
+                        minimum: 0
+                        maximum: 2.
+                    min_pitch:
+                        type: number
+                        description: Minimum pitch angle, where the default is 0 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad
+                        minimum: -0.5
+                        maximum: 1.
+            generator:
+                type: object
+                required:
+                    - rated_power
+                    - max_torque_rate
+                    - max_gen_speed
+                properties:
+                    rated_power:
+                        type: number
+                        description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
+                        unit: W
+                        minimum: 0
+                    max_gen_speed:
+                        type: number
+                        description: Maximum generator speed of the wind turbine.
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 10
+                    max_torque_rate:
+                        type: number
+                        description: Maximum torque rate of the wind turbine generator.
+                        unit: Nm/s
+                        minimum: 1000
+                        maximum: 100000000
+
+            tower_TMD:
+                type: object
+                # required:
+                # properties:
+            hull_TMD:
+                type: object
+                # required:
+                # properties:
+            active_tension:
+                type: object
+                # required:
+                # properties:
+            passive_weather_vane:
+                type: object
+                # required:
+                # properties:
+            passive_buoy_can:
+                type: object
+                # required:
+                # properties:
+            hss_brake:
+                type: object
+                required:
+                    - start_time
+                    - duration
+                    - torque
+                properties:
+                    start_time:
+                        type: number
+                        minimum: 0
+                        unit: seconds
+                        description: Time in simulation that brake is activated, THSSBrDp in OpenFAST
+                    duration:
+                        type: number
+                        minimum: 0
+                        unit: seconds
+                        description: Time for HSS-brake to reach full deployment once initiated (sec), HSSBrDT in OpenFAST
+                    torque:
+                        type: number
+                        minimum: 0
+                        unit: N-m
+                        description: Fully deployed HSS-brake torque, HSSBrTqF in OpenFAST
     control:
         type: object
         required:
-            - rated_power
-            - Vin
-            - Vout
-            - tsr
+            - supervisory
             - pitch
-            - maxTS
-            - max_pitch_rate
-            - max_torque_rate
+            - torque
+        optional:
+            - setpoint_smooth
+            - shutdown     # might need to be required?
+            - yaw
+            - power_control
+            - freq_avoidance
+            - soft_cut_out
+            - user_defined_mods
+            - user_defined_OL
+            - user_dylib
+            - user_simulink
+            - user_defined_SS_1
+            - user_defined_SS_2
+            - user_defined_SS_3
+            - user_defined_SS_4
+            - user_defined_SS_5
+            - user_defined_TF_1
+            - user_defined_TF_2
+            - user_defined_TF_3
+            - user_defined_TF_4
+            - user_defined_TF_5
+            - user_defined_OL_1
+            - user_defined_OL_2
+            - user_defined_OL_3
+            - user_defined_OL_4
+            - user_defined_OL_5
         properties:
-            rated_power:
-                type: number
-                description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
-                unit: W
-                minimum: 0
-            Vin:
-                type: number
-                description: Cut-in wind speed of the wind turbine.
-                unit: m/s
-                minimum: 0
-                maximum: 10
-            Vout:
-                type: number
-                description: Cut-out wind speed of the wind turbine.
-                unit: m/s
-                minimum: 0
-                maximum: 50
-            minOmega:
-                type: number
-                description: Minimum rotor speed of the wind turbine.
-                unit: rad/s
-                minimum: 0
-                maximum: 2
-            maxOmega:
-                type: number
-                description: Maximum rotor speed of the wind turbine.
-                unit: rad/s
-                minimum: 0
-                maximum: 10
-            tsr:
-                type: number
-                description: Rated tip speed ratio of the wind turbine. As default, it is maintained constant in region II.
-                unit: none
-                minimum: 0
-                maximum: 15
+            supervisory:
+                type: object
+                required:
+                    - Vin
+                    - Vout
+                    - maxTS
+                properties:
+                    Vin:
+                        type: number
+                        description: Cut-in wind speed of the wind turbine.
+                        unit: m/s
+                        minimum: 0
+                        maximum: 10
+                    Vout:
+                        type: number
+                        description: Cut-out wind speed of the wind turbine.
+                        unit: m/s
+                        minimum: 0
+                        maximum: 50
+                    maxTS:
+                        type: number
+                        description: Maximum allowable blade tip speed.
+                        unit: m/s
+                        minimum: 60
+                        maximum: 120
+
             pitch:
-                type: number
-                description: Rated pitch angle of the wind turbine. As default, it is maintained constant in region II.
-                unit: rad
-                minimum: -10
-                maximum: 10
-            maxTS:
-                type: number
-                description: Maximum allowable blade tip speed.
-                unit: m/s
-                minimum: 60
-                maximum: 120
-            max_pitch_rate:
-                type: number
-                description: Maximum pitch rate of the rotor blades.
-                unit: rad/s
-                minimum: 0
-                maximum: 0.2
-            max_torque_rate:
-                type: number
-                description: Maximum torque rate of the wind turbine generator.
-                unit: Nm/s
-                minimum: 1000
-                maximum: 10000000
-            PC_zeta:
-                type: number
-                description: Pitch controller desired damping ratio. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: none
-                minimum: 0
-                maximum: 5
-            PC_omega:
-                type: number
-                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: rad/s
-                minimum: 0
-                maximum: 5
-            VS_zeta:
-                type: number
-                description: Torque controller desired damping ratio. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: none
-                minimum: 0
-                maximum: 5
-            VS_omega:
-                type: number
-                description: Torque controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: rad/s
-                minimum: 0
-                maximum: 5
-            max_pitch:
-                type: number
-                description: Maximum pitch angle, where the default is 90 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: rad
-                minimum: 0
-                maximum: 2.
-            min_pitch:
-                type: number
-                description: Minimum pitch angle, where the default is 0 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: rad
-                minimum: -0.5
-                maximum: 1.
-            vs_minspd:
-                type: number
-                description: Minimum rotor speed. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: rad/s
-                minimum: 0
-                maximum: 5
-            ss_vsgain:
-                type: number
-                description: Torque controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: none
-                minimum: 0
-                maximum: 1
-            ss_pcgain:
-                type: number
-                description: Pitch controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: none
-                minimum: 0
-                maximum: 1
-            ps_percent:
-                type: number
-                description: Percent peak shaving. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: none
-                minimum: 0
-                maximum: 1
+                type: object
+                required:
+                    - PC_omega
+                    - PC_zeta
+                optional:
+                    - ps_percent
+                    - fl_feedback
+                    - OL_BP  # open loop placeholder
+                    - IPC
+                properties:
+                    PC_omega:
+                        type: number
+                        description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 5
+
+                    PC_zeta:
+                        type: number
+                        description: Pitch controller desired damping ratio. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: none
+                        minimum: 0
+                        maximum: 5
+
+                    ps_percent:
+                        type: number
+                        description: Percent peak shaving. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: none
+                        minimum: 0
+                        maximum: 1
+
+                    fl_feedback:
+                        type: object
+                        description: Platform velocity feedback using nacelle IMU
+                        required:
+                            - gain
+                        optional:
+                            - filter
+                        properties:
+                            gain:
+                                type: number
+                                description: Platform velocity feedback gain used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                unit: seconds
+                            filter:
+                                $ref: "#/definitions/filter"
+                                description: Nacelle IMU filter, used to remove tower natural frequency.  Usally a LPF or Notch Filter
+
+                    twr_feedback:
+                        type: object
+                        description: Tower velocity feedback using nacelle IMU
+                        required:
+                            - gain
+                        optional:
+                            - filter
+                        properties:
+                            gain:
+                                type: number
+                                description: Tower velocity feedback gain used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                unit: seconds
+                            filter:
+                                $ref: "#/definitions/filter"
+                                description: Nacelle IMU filter, used to remove noise or amplify tower load.  Usally a HPF or Inverted Notch Filter
+                    IPC:
+                        type: object
+                        description: Individual pitch control (IPC) using the mulitblade coordinate (MBC) transform
+                        required:
+                            - IPC_gain_1P
+                        optional:
+                            - IPC_gain_2P
+                            - IPC_phase_1P
+                            - IPC_phase_2P
+                            - IPC_filt_1P
+                            - IPC_filt_2P
+                        properties:
+                            IPC_gain_1P:
+                                type: number
+                                description: Integral gain of 1P feedback
+                                unit: rad/Nm
+                                minimum: 0
+                            IPC_gain_2P:
+                                type: number
+                                description: Integral gain of 2P feedback
+                                unit: rad/Nm
+                                minimum: 0
+                            IPC_phase_1P:
+                                type: number
+                                description: Phase lag of 1P IPC feedback
+                                unit: rad
+                                minimum: -3.14
+                                maximum: 3.14
+                            IPC_phase_2P:
+                                type: number
+                                description: Phase lag of 2P IPC feedback
+                                unit: rad
+                                minimum: -3.14
+                                maximum: 3.14
+                            IPC_filt_1P:
+                                $ref: "#/definitions/filter"
+                                description: Filter between tilt/yaw load and tilt/yaw pitch, usually a notch to reduce 3P, 6P frequency.
+                            IPC_filt_2P:
+                                $ref: "#/definitions/filter"
+                                description: Filter between tilt/yaw load and tilt/yaw pitch, usually a notch to reduce 3P, 6P frequency.
+
+            torque:
+                type: object
+                required:
+                    - control_type
+                    - tsr
+                    - VS_zeta
+                    - VS_omega      # DZ: I'm not sure how "required" these are or where the line is around "strongly encouraged"
+                    - VS_minspd
+                properties:
+                    control_type:
+                        type: string
+                        description:  Type of torque control used.
+                        enum:
+                            - tsr_tracking
+                            - legacy
+                            - pi_transitions
+                    tsr:
+                        type: number
+                        description: Rated tip speed ratio of the wind turbine. As default, it is maintained constant in region II.
+                        unit: none
+                        minimum: 0
+                        maximum: 15
+                    VS_zeta:
+                        type: number
+                        description: Torque controller desired damping ratio. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: none
+                        minimum: 0
+                        maximum: 5
+                    VS_omega:
+                        type: number
+                        description: Torque controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 5
+                    VS_minspd:
+                        type: number
+                        description: Minimum rotor speed. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 5
+
+            setpoint_smooth:
+                type: object
+                required:
+                    - ss_vsgain
+                    - ss_pcgain
+                properties:
+                    ss_vsgain:
+                        type: number
+                        description: Torque controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: none
+                        minimum: 0
+                        maximum: 1
+                    ss_pcgain:
+                        type: number
+                        description: Pitch controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: none
+                        minimum: 0
+                        maximum: 1
+
+            shutdown:
+                type: object
+                description: Turbine shutdown control, when a certain limit is reached
+                required:
+                    - limit_type
+                    - limit_value
+                optional:
+                    - pitch_rate
+                    - open_loop_pitch
+                    - open_loop_pwr
+                properties:
+                    limit_type:
+                        type: string
+                        description: What value is used to trigger shutdown procedure
+                        enum:
+                            - time
+                            - pitch
+                            - yaw
+                            - gen_speed
+                            - wind_speed
+                            - plt_pitch
+                            - nac_IMU
+                    limit_value:
+                        type: number
+                        description: When limit_type > limit_value, shutdown is initiated  # all the limit_types are greater than limits...but I suppose there could be less than limits
+                    pitch_rate:
+                        type: number
+                        description: Rate of pitch manuever to max_pitch. Default is 2 deg./s ?
+                        units: rad/s
+                        minimum: 0
+                        maximum: 0.2  # Technically, actuators/pitch/max_pitch_rate
+                    open_loop_pitch:
+                        type: object
+                        required:
+                            - time
+                            - pitch
+                        properties:
+                            time:
+                                $ref: "#/definitions/timeseries/time"
+                            pitch:
+                                $ref: "#/definitions/timeseries/value"
+                    open_loop_pwr:
+                        required:
+                            - time
+                            - power
+                        properties:
+                            time:
+                                $ref: "#/definitions/timeseries/time"
+                            power:
+                                $ref: "#/definitions/timeseries/value"
+
+            wind_speed_estimator:
+                type: object
+                description: Extended Kalman filter implementation of wind speed estimator
+                optional:
+                    - gen_process_noise
+                    - turb_intensity
+                    - turb_length_scale
+                properties:
+                    gen_process_noise:
+                        type: number
+                        description: Process noise for EKF generator speed state, Default = 1e-5
+                        minimum: 0
+                        maximum: 0.001
+                    turb_intensity:
+                        type: number
+                        description: Turbulence intensity defined in usual way, parameterizes EKF process noise for wind, Default = 0.14
+                        minimum: 0
+                        maximum: 0.5
+                    turb_length_scale:
+                        type: number
+                        description: Turbulence length scale, parameterizes EKF process noise for wind, Defulat = 3 * TurbineDiameter
+                        minimum: 0
+                        maximum: 1000
+
+            yaw:
+                type: object
+                description: Yaw control for changing wind direction or steady offset as implemented by ROSCO # there is a new method here, but using old one for now
+                required:
+                    - yaw_error_thresh
+                    - yaw_filt_fast
+                    - yaw_filt_slow
+                    - yaw_rate
+                properties:
+                    yaw_error_thresh:
+                        type: number
+                        description: Yaw error threshold, Turbine begins to yaw when it passes this
+                        unit: rad^2 s
+                        minimum: 0
+                    yaw_filt_fast:
+                        type: number
+                        description: Corner frequency for fast low pass filter, Default = 1.0 Hz
+                        unit: rad/s
+                        minimum: 0.000001
+                    yaw_filt_slow:
+                        type: number
+                        description: Corner frequency for slow low pass filter, Default = 1/60 Hz
+                        unit: rad/s
+                        minimum: 0.000000001
+                    yaw_rate:
+                        type: number
+                        description: Yaw rate when changing yaw
+                        unit: rad/s
+                        minimum: 0
+
+            power_control:
+                type: object
+                required:
+                    - method
+                optional:
+                    - OL_R
+                    - reference_control
+                properties:
+                    method:
+                        type: string
+                        description: Method used to control power output, generator speed only for now.
+                        enum:
+                            - gen_speed
+                    OL_R:
+                        description: Open loop power reference, for soft start-up, etc.
+                        $ref: "#/definitions/timeseries"
+                    reference_control:
+                        type: object
+                        description: Control power reference R
+                        required:
+                            - method
+                        optional:
+                            - const_gen_est
+                            - const_gen_lim
+                            - const_gen_gain
+                            - const_plt_est
+                            - const_plt_lim
+                            - const_plt_gain
+                        properties:
+                            method:
+                                type: string
+                                description: Method of controlling power reference R
+                                enum:
+                                    - constrained_ref_control
+                                    - open_loop_opt
+                            const_gen_lim:
+                                type: number
+                                description: Generator speed limit to start de-rating
+                                unit: rad/s
+                                minimum: 0
+                            const_gen_gain:
+                                type: number
+                                description: Gain for de-rating when gen speed > lim
+                                minimum: 0
+                                unit: (rad/s)^-1
+                            const_gen_est:
+                                type: number
+                                description: Generator speed transient estimation gain
+                                unit: (rad/m)
+                                minimum: 0
+                            const_plt_lim:
+                                type: number
+                                description: Platform pitch limit to start de-rating
+                                minimum: 0
+                                unit: rad
+                            const_plt_gain:
+                                type: number
+                                description: Gain for de-rating when plt pitch > lim
+                                minimum: 0
+                                unit: (rad)^-1
+                            const_plt_est:
+                                type: number
+                                description: Platform pitch transient estimation gain
+                                minimum: 0
+                                unit: (rad)/(m/s)
+
+            freq_avoidance:
+                type: object
+                description: Changes generator speed setpoint to avoid turbine natural frequencies
+                required:
+                    - list_of_freqs
+                optional:
+                    - avoidance_param
+                properties:
+                    list_of_freqs:
+                        type: array
+                        description: List of frequencies to avoid
+                        items:
+                            type: number
+                            unit: rad/s
+                            minItems: 1
+                            uniqueItems: true
+                    avoidance_param:
+                        type: array
+                        description: Buffer speed around frequencies to avoid
+                        items:
+                            type: number
+                            unit: rad/s
+                            minItems: 1
+                            uniqueItems: false
+
+            soft_cut_out:
+                type: object
+                description: Upper limit of power reference at high wind speeds (lookup table)
+                required:
+                    - wind_speeds
+                    - power_reference
+                properties:
+                    wind_speeds:
+                        type: array
+                        description: List of wind speeds
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            uniqueItems: true
+                    power_reference:
+                        type: array
+                        description: List of power reference at wind_speeds, number of elements should be same
+                        items:
+                            type: number
+                            unit: (-)
+                            minItems: 1
+                            uniqueItems: false
+
+            user_defined_SS_1: &uss
+                type: object
+                description: User defined state-space linear controllers within ROSCO, only 1 for now
+                required:
+                    - sensors
+                    - actuators
+                    - control_model
+                optional:
+                    - activator
+                properties:
+                    sensors:
+                        type: array
+                        description: List of sensors used as control inputs, could be any OpenFAST output(?)  # DZ: within ROSCO, probably not...needs to be in avrSWAP
+                        items:
+                            sensor:
+                                $ref: "#/definitions/sensor"
+                    actuators:
+                        type: array
+                        description: List of actuators used as control outputs
+                        items:
+                            actuator:
+                                $ref: "#/definitions/actuator"
+                    control_model:
+                        type: object
+                        description: Linear model of controller in state-space form # MIMO harder to clearly define in transfer function form
+                        $ref: "#/definitions/state_space"
+                    activator:
+                        $ref: "#/definitions/activator"
+            user_defined_SS_2: *uss
+            user_defined_SS_3: *uss
+            user_defined_SS_4: *uss
+            user_defined_SS_5: *uss
+            user_defined_TF_1: &u_tf
+                type: object
+                description: User defined transfer function linear controllers within ROSCO, only 1 for now
+                required:
+                    - sensor
+                    - actuator
+                    - control_model
+                optional:
+                    - activator
+                properties:
+                    sensor:
+                        $ref: "#/definitions/sensor"
+                    actuator:
+                        $ref: "#/definitions/actuator"
+                    control_model:
+                        type: object
+                        description: Linear model of controller in transfer function form, SISO only # MIMO harder to clearly define in transfer function form
+                        $ref: "#/definitions/filter/filt_def/user_defined"
+                    activator:
+                        $ref: "#/definitions/activator"
+            user_defined_TF_2: *u_tf
+            user_defined_TF_3: *u_tf
+            user_defined_TF_4: *u_tf
+            user_defined_TF_5: *u_tf
+            user_defined_OL_1: &u_ol
+                type: object
+                desctiption: User defined open loop signal to a defined actuator, only 1 for now
+                required:
+                    - actuator
+                    - timeseries
+                optional:
+                    - optimize
+                properties:
+                    actuator:
+                        $ref: "#/definitions/actuator"
+                    timeseries:
+                        $ref: "#/definitions/timeseries"
+            user_defined_OL_2: *u_ol
+            user_defined_OL_3: *u_ol
+            user_defined_OL_4: *u_ol
+            user_defined_OL_5: *u_ol
+            user_dylib:
+                type: object
+                description: User defined dynamic library. # Not sure how to define parameters/input
+                required:
+                    - dylib
+                optional:
+                    - dylib_input
+                properties:
+                    dylib:
+                        type: string
+                        description: Dynamic library file path & name
+                    dylib_input:
+                        type: string
+                        description: Dynamic library file input
+
+            user_simulink:
+                type: object
+                description: User defined simulink model
+                required:
+                    - simulink_model
+                    - matlab_path
+                optional:
+                    - sim_param_file
+                properties:
+                    simulink_model:
+                        type: string
+                        description: Path to simulink model
+                    matlab_path:
+                        type: string
+                        description: Path to matlab executable
+                    sim_param_file:
+                        type: string
+                        description: Path to matlab script with simulation parameters
     environment:
         type: object
         required:
@@ -1741,13 +2799,23 @@ properties:
             - air_speed_sound
             - shear_exp
         optional:
+            - gravity
             - weib_shape_parameter
             - water_density
             - water_dyn_viscosity
             - water_depth
             - soil_shear_modulus
             - soil_poisson
+            - air_pressure
+            - air_vapor_pressure
         properties:
+            gravity:
+                type: number
+                description: Gravitational acceleration
+                unit: m/s/s
+                minimum: 0
+                maximum: 100.0
+                default: 9.80665
             air_density:
                 type: number
                 description: Density of air.
@@ -1762,6 +2830,20 @@ properties:
                 minimum: 0
                 maximum: 2.e-5
                 default: 1.81e-5
+            air_pressure:
+                type: number
+                description: Atmospheric pressure of air
+                unit: kg/(ms^2)
+                minimum: 0
+                maximum: 1e6
+                default: 1.035e5
+            air_vapor_pressure:
+                type: number
+                description: Vapor pressure of fluid
+                unit: kg/(ms^2)
+                minimum: 0
+                maximum: 1e6
+                default: 1.7e3
             weib_shape_parameter:
                 type: number
                 description: Shape factor of the Weibull wind distribution.
@@ -1820,6 +2902,7 @@ properties:
                 default: 0.4
     bos:
         type: object
+        default: {}
         required:
             - plant_turbine_spacing
             - plant_row_spacing
@@ -2151,6 +3234,10 @@ properties:
                 maximum: 1e6
                 default: 12e3
 definitions:
+
+
+
+
     distributed_data:
         grid_nd:
             type: array
@@ -2810,3 +3897,199 @@ definitions:
                                 minItems: 21
                                 maxItems: 21
                                 uniqueItems: false
+
+    actuator:
+        type: string
+        description: Actuator used as control output
+        enum:
+            - pitch
+            - torque   #called generator above, keep consistent?
+            - tower_TMD
+            - hull_TMD
+            - active_tension
+            - passive_weather_vane
+            - passive_buoy_can
+    sensor:
+        type: string
+        description: Sensor used as control input, could be any OpenFAST output (in Simluink), enumerating avrSWAP now  # DZ: within ROSCO, probably not...needs to be in avrSWAP
+        enum:
+            - gen_speed
+            - nac_IMU
+            - wind_speed_estimate
+            - gust_measure
+            - RootMyc1
+            - RootMyc2
+            - RootMyc3
+            - RootMyT   # MBC of above
+            - RootMyY   # MBC of above
+            - azimuth
+            - YawBrTAxp
+            - YawBrTAyp
+            - RootMxc1
+            - RootMxc2
+            - RootMxc3
+            - LSSTipMya
+            - LSSTipMza
+            - LSSTipMxa
+            - LSSTipMys
+            - LSSTipMzs
+            - YawBrMyn
+            - YawBrMzn
+            - NcIMURAxs  # avrSWAP names don't always match OpenFAST output names
+            - NcIMURAzs
+            # No platform info from avrSWAP, will they be added?
+    filter:
+        type: object
+        description: Linear filter, could be a LPF, HPF, NF, INF, or user_defined
+        required:
+            - filt_type
+            - filt_def
+        filt_type:
+            type: string
+            description: Type of filter used, could be a LPF, HPF, NF, INF, or user_defined
+            enum:
+                - LPF
+                - HPF
+                - NF
+                - INF
+                - user_defined
+        filt_def:
+            LPF:
+                type: object
+                description: Low pass filter
+                required:
+                    - omega
+                    - order
+                optional:
+                    - damping
+            HPF:
+            NF:
+            INF:
+            user_defined:
+                type: object
+                description: User defined filter
+                required:
+                    - num
+                    - den
+                optional:
+                    - dt
+                num:
+                    type: array
+                    description: Numerator coefficients of linear filter
+                    items:
+                        type: number
+                        unit: none
+                        minItems: 0
+                        uniqueItems: false
+                den:
+                    type: array
+                    description: Numerator coefficients of linear filter
+                    items:
+                        type: number
+                        unit: none
+                        minItems: 1
+                        uniqueItems: false
+                dt:
+                    type: number
+                    description: Sampling rate of filter, -1 for continuous   # DZ: will probably convert all to dt of simulation... not sure how to handle this
+                    minimum: -1
+
+    state_space:
+        type: object
+        description: Linear state space model
+        required:
+            - ss_A
+            - ss_B
+            - ss_C
+            - ss_D
+        ss_A:
+            type: array
+            description: A matrix of linear state space model, flattened with n_states^2 elements
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+        ss_B:
+            type: array
+            description: B matrix of linear state space model, flattened with n_states x n_inputs elements
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+        ss_C:
+            type: array
+            description: C matrix of linear state space model, flattened with n_outputs x n_states elements
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+        ss_D:
+            type: array
+            description: D matrix of linear state space model, flattened with n_outputs x n_inputs elements
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+        # DZ: might be a good idea to check the number of states
+        ss_dt:
+            type: number
+            description: Sampling rate of filter, -1 for continuous   # DZ: will probably convert all to dt of simulation... not sure how to handle this
+            minimum: -1
+
+    timeseries:
+        type: object
+        description: Array of time, value pairs  # DZ: can we check that the number of elements are equal?
+        required:
+            - time
+            - value
+        optional:
+            - filename
+        time:
+            type: array
+            description: Time in timeseries
+            items:
+                type: number
+                unit: seconds
+                minItems: 1
+                uniqueItems: true   # probably?
+        value:
+            type: array
+            description: Value in timeseries
+            items:
+                type: number
+                unit: none  #any
+                minItems: 1
+                uniqueItems: false
+                # can we check that number of elements are equal?
+        filename:
+            type: string
+            description: Name of file with timeseries data
+
+    activator:
+        type: object
+        description: Gain used to enable/disable control elements, can be used partially
+        required:
+            - wind_speeds
+            - act_gain
+        wind_speeds:
+            type: array
+            description: Array of wind speed breakpoints for activators
+            items:
+                type: number
+                unit: m/s
+                minItems: 1
+                uniqueItems: true
+        act_gain:
+            type: array
+            description: Array of gains from 0 to 1, enabling/disabling control element
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+                minimum: 0
+                maximum: 1

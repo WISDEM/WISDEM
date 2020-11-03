@@ -818,16 +818,16 @@ def assign_floating_values(wt_opt, modeling_options, floating):
 
 def assign_control_values(wt_opt, modeling_options, control):
     # Controller parameters
-    wt_opt['control.rated_power']   = control['rated_power']
-    wt_opt['control.V_in']          = control['Vin']
-    wt_opt['control.V_out']         = control['Vout']
-    wt_opt['control.minOmega']      = control['minOmega']
-    wt_opt['control.maxOmega']      = control['maxOmega']
-    wt_opt['control.rated_TSR']     = control['tsr']
-    wt_opt['control.rated_pitch']   = control['pitch']
-    wt_opt['control.max_TS']        = control['maxTS']
-    wt_opt['control.max_pitch_rate']= control['max_pitch_rate']
-    wt_opt['control.max_torque_rate']= control['max_torque_rate']
+    wt_opt['control.rated_power']   = control['supervisory']['rated_power']
+    wt_opt['control.V_in']          = control['supervisory']['Vin']
+    wt_opt['control.V_out']         = control['supervisory']['Vout']
+    wt_opt['control.minOmega']      = control['torque']['VS_minspd']
+    wt_opt['control.maxOmega']      = control['torque']['VS_maxspd']
+    wt_opt['control.rated_TSR']     = control['torque']['tsr']
+    wt_opt['control.rated_pitch']   = control['pitch']['min_pitch']
+    wt_opt['control.max_TS']        = control['supervisory']['maxTS']
+    wt_opt['control.max_pitch_rate']= control['pitch']['max_pitch_rate']
+    wt_opt['control.max_torque_rate']= control['torque']['max_torque_rate']
 
     return wt_opt
 
