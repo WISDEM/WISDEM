@@ -13,9 +13,10 @@ from copy import deepcopy
 import pandas as pd
 import pytest
 
+from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import extract_library_specs
-from wisdem.orbit.core._defaults import process_times as pt
+from wisdem.orbit.core.library import extract_library_specs
+from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import ArrayCableInstallation
 
 base_config = extract_library_specs("config", "array_cable_install")
@@ -112,7 +113,7 @@ def test_separate_speed_kwargs():
     assert new_bury > base_bury
 
 
-def test_kwargs_for_export_install():
+def test_kwargs_for_array_install():
 
     sim = ArrayCableInstallation(base_config)
     sim.run()
@@ -147,6 +148,61 @@ def test_kwargs_for_export_install():
         new_sim = ArrayCableInstallation(base_config, **kwargs)
         new_sim.run()
         new_time = new_sim.total_phase_time
+
+        if new_time > baseline:
+            pass
+
+        else:
+            failed.append(kw)
+
+    if failed:
+        raise Exception(f"ExpInstall: '{failed}' not affecting results.")
+
+    else:
+        assert True
+
+
+def test_kwargs_for_array_install_in_ProjectManager():
+
+    base = deepcopy(base_config)
+    base["install_phases"] = ["ArrayCableInstallation"]
+
+    project = ProjectManager(base)
+    project.run_project()
+    baseline = project.phase_times["ArrayCableInstallation"]
+
+    keywords = [
+        "cable_load_time",
+        "site_position_time",
+        "cable_prep_time",
+        "cable_lower_time",
+        "cable_pull_in_time",
+        "cable_termination_time",
+    ]
+
+    failed = []
+
+    for kw in keywords:
+
+        default = pt[kw]
+
+        if "speed" in kw:
+            _new = default - 0.05
+
+            if _new <= 0:
+                raise Exception(f"'{kw}' is less than 0.")
+
+            processes = {kw: _new}
+
+        else:
+            processes = {kw: default + 2}
+
+        new_config = deepcopy(base)
+        new_config["processes"] = processes
+
+        new_project = ProjectManager(new_config)
+        new_project.run_project()
+        new_time = new_project.phase_times["ArrayCableInstallation"]
 
         if new_time > baseline:
             pass

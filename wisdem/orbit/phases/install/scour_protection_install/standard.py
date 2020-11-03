@@ -12,7 +12,7 @@ import simpy
 from marmot import process
 
 from wisdem.orbit.core import Vessel
-from wisdem.orbit.core._defaults import process_times as pt
+from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import InstallPhase
 from wisdem.orbit.core.exceptions import CargoMassExceeded, InsufficientAmount
 
@@ -55,7 +55,6 @@ class ScourProtectionInstallation(InstallPhase):
 
         config = self.initialize_library(config, **kwargs)
         self.config = self.validate_config(config)
-        self.extract_defaults()
 
         self.setup_simulation(**kwargs)
 

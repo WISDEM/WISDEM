@@ -6,12 +6,15 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
+from copy import deepcopy
+
 import pandas as pd
 import pytest
 
+from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import extract_library_specs
-from wisdem.orbit.core._defaults import process_times as pt
+from wisdem.orbit.core.library import extract_library_specs
+from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import OffshoreSubstationInstallation
 
 config_single = extract_library_specs("config", "oss_install")
@@ -119,6 +122,65 @@ def test_kwargs():
         new_sim = OffshoreSubstationInstallation(config_single, **kwargs)
         new_sim.run()
         new_time = new_sim.total_phase_time
+
+        if new_time > baseline:
+            pass
+
+        else:
+            failed.append(kw)
+
+    if failed:
+        raise Exception(f"'{failed}' not affecting results.")
+
+    else:
+        assert True
+
+
+def test_kwargs_in_ProjectManager():
+
+    base = deepcopy(config_single)
+    base["install_phases"] = ["OffshoreSubstationInstallation"]
+
+    project = ProjectManager(base)
+    project.run_project()
+    baseline = project.phase_times["OffshoreSubstationInstallation"]
+
+    keywords = [
+        "mono_embed_len",
+        "mono_drive_rate",
+        "mono_fasten_time",
+        "mono_release_time",
+        "tp_bolt_time",
+        "site_position_time",
+        "crane_reequip_time",
+        "rov_survey_time",
+        "topside_fasten_time",
+        "topside_release_time",
+    ]
+
+    failed = []
+
+    for kw in keywords:
+
+        default = pt[kw]
+
+        if kw == "mono_drive_rate":
+            _new = default - 2
+
+            if _new <= 0:
+                raise Exception(f"'{kw}' is less than 0.")
+
+            processes = {kw: _new}
+
+        else:
+            processes = {kw: default + 2}
+
+        new_config = deepcopy(base)
+        new_config["processes"] = processes
+
+        new_project = ProjectManager(new_config)
+        new_project.run_project()
+        new_time = new_project.phase_times["OffshoreSubstationInstallation"]
 
         if new_time > baseline:
             pass

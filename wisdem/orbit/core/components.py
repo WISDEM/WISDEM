@@ -7,7 +7,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 import simpy
 
-from wisdem.orbit.core._defaults import process_times as pt
+from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.core.exceptions import (
     ItemNotFound,
     CargoMassExceeded,

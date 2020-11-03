@@ -10,7 +10,6 @@ from copy import deepcopy
 
 import pytest
 
-from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.phases.design import ProjectDevelopment
 
 base = {
@@ -37,20 +36,12 @@ def test_run():
     dev.run()
 
 
-def test_defaults():
+def test_defaults_found():
 
     for k, _ in base["project_development"].items():
 
-        _config = deepcopy(base)
-        _config["project_development"].pop(k)
+        new = deepcopy(base)
+        new["project_development"].pop(k)
 
-        dev = ProjectDevelopment(_config, library_path=pytest.library)
+        dev = ProjectDevelopment(new)
         dev.run()
-
-        defaults = extract_library_specs("defaults", "project")
-
-        _split = k.split("_")
-        n = "_".join(_split[:-1])
-        t = _split[-1]
-        val = dev._outputs[n][t]
-        assert val == defaults[k]

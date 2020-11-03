@@ -10,6 +10,7 @@ from math import pi, log
 
 from scipy.optimize import fsolve
 
+from wisdem.orbit.core.defaults import common_costs
 from wisdem.orbit.phases.design import DesignPhase
 
 
@@ -70,7 +71,6 @@ class MonopileDesign(DesignPhase):
 
         config = self.initialize_library(config, **kwargs)
         self.config = self.validate_config(config)
-        self.extract_defaults()
         self._outputs = {}
 
     def run(self):
@@ -316,7 +316,7 @@ class MonopileDesign(DesignPhase):
         _key = "monopile_steel_cost"
 
         try:
-            cost = _design.get(_key, self.defaults[_key])
+            cost = _design.get(_key, common_costs[_key])
 
         except KeyError:
             raise Exception("Cost of monopile steel not found.")
@@ -333,7 +333,7 @@ class MonopileDesign(DesignPhase):
         _key = "tp_steel_cost"
 
         try:
-            cost = _design.get(_key, self.defaults[_key])
+            cost = _design.get(_key, common_costs[_key])
 
         except KeyError:
             raise Exception("Cost of transition piece steel not found.")
