@@ -585,7 +585,7 @@ class WindPark(om.Group):
                     self.connect('mooring.n_lines',                       'orbit.num_mooring_lines')
                     self.connect('mooring.line_mass',                     'orbit.mooring_line_mass', src_indices=[0])
                     self.connect('mooring.line_diameter',                 'orbit.mooring_line_diameter', src_indices=[0])
-                    self.connect('mooring_unstretched_length',            'orbit.mooring_line_length', src_indices=[0])
+                    self.connect('mooring.unstretched_length',            'orbit.mooring_line_length', src_indices=[0])
                     self.connect('mooring.anchor_mass',                   'orbit.anchor_mass')
                 self.connect('elastic.precomp.blade_mass',            'orbit.blade_mass')
                 self.connect('tcc.turbine_cost_kW',                   'orbit.turbine_capex')

@@ -1180,8 +1180,8 @@ class Floating(om.Group):
         n_joints                = floating_init_options['joints']['n_joints']
         n_members               = floating_init_options['members']['n_members']
 
-        ivc = self.add_subsystem('floating_joints', om.IndepVarComp())
-        ivc.add_output('location',   val = np.zeros((n_joints, 3)), units='m')
+        jivc = self.add_subsystem('floating_joints', om.IndepVarComp())
+        jivc.add_output('location',   val = np.zeros((n_joints, 3)), units='m')
 
         for i in range(n_members):
             name_member = floating_init_options['members']['name'][i]
@@ -1210,8 +1210,8 @@ class Mooring(om.Group):
         n_anchor_types  = mooring_init_options['n_anchor_types']
 
         ivc = self.add_subsystem('mooring', om.IndepVarComp(), promotes=['*'])
-        
-        ivc.add_discrete_output('nodes_name',       val = ['']*n_nodes)
+
+        ivc.add_discrete_output('node_names',       val = ['']*n_nodes)
         ivc.add_output('nodes_location',            val = np.zeros((n_nodes, 3)),   units='m')
         ivc.add_discrete_output('line_id',          val = ['']*n_lines)
         ivc.add_output('unstretched_length',        val = np.zeros(n_lines),        units='m')
@@ -1249,10 +1249,10 @@ class MooringMassProps(om.ExplicitComponent):
         self.add_input('line_mass_density',   val = np.zeros(n_line_types),   units='kg/m')
         self.add_input('line_cost_rate',      val = np.zeros(n_line_types),   units='USD/m')
 
-        self.add_output('line_mass',          val = np.zeros(n_line_types),   units='kg/m')
-        self.add_output('mooring_mass',       val = np.zeros(n_line_types),   units='kg/m')
-        self.add_output('line_cost',          val = np.zeros(n_line_types),   units='USD/m')
-        self.add_output('mooring_cost',       val = np.zeros(n_line_types),   units='USD/m')
+        self.add_output('line_mass',          val = np.zeros(n_lines),   units='kg')
+        self.add_output('mooring_mass',       val = 0.0,   units='kg')
+        self.add_output('line_cost',          val = np.zeros(n_lines),   units='USD')
+        self.add_output('mooring_cost',       val = 0.0,   units='USD')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         mooring_init_options = self.options['mooring_init_options']
