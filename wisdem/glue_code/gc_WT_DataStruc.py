@@ -1211,22 +1211,66 @@ class Mooring(om.Group):
 
         ivc = self.add_subsystem('mooring', om.IndepVarComp(), promotes=['*'])
         
+        ivc.add_discrete_output('nodes_name',       val = ['']*n_nodes)
         ivc.add_output('nodes_location',            val = np.zeros((n_nodes, 3)),   units='m')
+        ivc.add_discrete_output('line_id',          val = ['']*n_lines)
         ivc.add_output('unstretched_length',        val = np.zeros(n_lines),        units='m')
+        ivc.add_discrete_output('n_lines',          val = n_lines)
+        ivc.add_discrete_output('line_names',       val = ['']*n_line_types)
         ivc.add_output('line_diameter',             val = np.zeros(n_line_types),   units='m')
         ivc.add_output('line_mass_density',         val = np.zeros(n_line_types),   units='kg/m')
         ivc.add_output('line_stiffness',            val = np.zeros(n_line_types),   units='N')
         ivc.add_output('line_breaking_load',        val = np.zeros(n_line_types),   units='N')
-        ivc.add_output('line_cost',                 val = np.zeros(n_line_types),   units='USD/m')
+        ivc.add_output('line_cost_rate',            val = np.zeros(n_line_types),   units='USD/m')
         ivc.add_output('line_transverse_added_mass',val = np.zeros(n_line_types),   units='kg/m')
         ivc.add_output('line_tangential_added_mass',val = np.zeros(n_line_types),   units='kg/m')
         ivc.add_output('line_transverse_drag',      val = np.zeros(n_line_types))
         ivc.add_output('line_tangential_drag',      val = np.zeros(n_line_types))
+        ivc.add_discrete_output('anchor_names',     val = ['']*n_anchor_types)
         ivc.add_output('anchor_mass',               val = np.zeros(n_anchor_types), units = 'kg')
         ivc.add_output('anchor_cost',               val = np.zeros(n_anchor_types), units = 'USD')
         ivc.add_output('anchor_max_vertical_load',  val = np.zeros(n_anchor_types), units = 'N')
         ivc.add_output('anchor_max_lateral_load',   val = np.zeros(n_anchor_types), units = 'N')
 
+        self.add_subsystem('moormass', MooringMassProps(mooring_init_options = mooring_init_options), promotes=['*'])
+
+class MooringMassProps(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare('mooring_init_options')
+
+    def setup(self):
+        mooring_init_options = self.options['mooring_init_options']
+        n_lines         = mooring_init_options['n_lines']       
+        n_line_types    = mooring_init_options['n_line_types']  
+        
+        self.add_discrete_input('line_id',    val = ['']*n_lines)
+        self.add_input('unstretched_length',  val = np.zeros(n_lines),        units='m')
+        self.add_discrete_input('line_names', val = ['']*n_line_types)
+        self.add_input('line_mass_density',   val = np.zeros(n_line_types),   units='kg/m')
+        self.add_input('line_cost_rate',      val = np.zeros(n_line_types),   units='USD/m')
+
+        self.add_output('line_mass',          val = np.zeros(n_line_types),   units='kg/m')
+        self.add_output('mooring_mass',       val = np.zeros(n_line_types),   units='kg/m')
+        self.add_output('line_cost',          val = np.zeros(n_line_types),   units='USD/m')
+        self.add_output('mooring_cost',       val = np.zeros(n_line_types),   units='USD/m')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        mooring_init_options = self.options['mooring_init_options']
+        n_lines         = mooring_init_options['n_lines']       
+        
+        line_mass = np.zeros(n_lines)
+        line_cost = np.zeros(n_lines)
+        for ii, iname in enumerate(discrete_inputs['line_names']):
+            for jj, jname in enumerate(discrete_inputs['line_id']):
+                if jname == iname:
+                    line_mass[jj] = inputs['line_mass_density'][ii] * inputs['unstretched_length'][jj]
+                    line_cost[jj] = inputs['line_cost_rate'][   ii] * inputs['unstretched_length'][jj]
+        
+        outputs['line_mass'] = line_mass
+        outputs['line_cost'] = line_cost
+        outputs['mooring_mass'] = line_mass.sum()
+        outputs['mooring_cost'] = line_cost.sum()
+        
 class ComputeMaterialsProperties(om.ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
 

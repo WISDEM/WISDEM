@@ -712,9 +712,12 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
 
     for i in range(n_nodes):
         wt_opt['mooring.nodes_location'][i,:] = mooring['nodes'][i]['location']
+        wt_opt['mooring.nodes_name'][i]       = mooring['nodes'][i]['name']
     for i in range(n_lines):
         wt_opt['mooring.unstretched_length'][i] = mooring['lines'][i]['unstretched_length']
+        wt_opt['mooring.line_id'][i]            = mooring['lines'][i]['name']
     for i in range(n_line_types):
+        wt_opt['mooring.line_name'][i]          = mooring['line_types'][i]['name']
         wt_opt['mooring.line_diameter'][i]      = mooring['line_types'][i]['diameter']
         wt_opt['mooring.line_mass_density'][i]  = mooring['line_types'][i]['mass_density']
         wt_opt['mooring.line_stiffness'][i]     = mooring['line_types'][i]['stiffness']
@@ -725,6 +728,7 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
         wt_opt['mooring.line_transverse_drag'][i] = mooring['line_types'][i]['transverse_drag']
         wt_opt['mooring.line_tangential_drag'][i] = mooring['line_types'][i]['tangential_drag']
     for i in range(n_anchor_types):
+        wt_opt['mooring.anchor_name'][i] = mooring['anchor_types'][i]['name']
         wt_opt['mooring.anchor_mass'][i] = mooring['anchor_types'][i]['mass']
         wt_opt['mooring.anchor_cost'][i] = mooring['anchor_types'][i]['cost']
         wt_opt['mooring.anchor_max_vertical_load'][i]   = mooring['anchor_types'][i]['max_vertical_load']

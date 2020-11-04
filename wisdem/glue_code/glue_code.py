@@ -6,7 +6,7 @@ from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
-from wisdem.orbit.api.wisdem.fixed import Orbit
+from wisdem.orbit.api.wisdem import Orbit
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
@@ -555,7 +555,7 @@ class WindPark(om.Group):
         self.add_subsystem('wt',        WT_RNTA(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         if modeling_options['Analysis_Flags']['BOS']:
             if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
-                self.add_subsystem('orbit',     Orbit())
+                self.add_subsystem('orbit',     Orbit(floating=modeling_options['flags']['floating_platform']))
             else:
                 self.add_subsystem('landbosse', LandBOSSE())
         self.add_subsystem('financese', PlantFinance(verbosity=modeling_options['general']['verbosity']))
@@ -582,7 +582,11 @@ class WindPark(om.Group):
                     self.connect('monopile.transition_piece_mass',        'orbit.transition_piece_mass')
                     self.connect('monopile.diameter',                     'orbit.monopile_diameter', src_indices=[0])
                 else:
-                    print('Orbit is not yet supporting floating substructures. Fix glue_code.py')
+                    self.connect('mooring.n_lines',                       'orbit.num_mooring_lines')
+                    self.connect('mooring.line_mass',                     'orbit.mooring_line_mass', src_indices=[0])
+                    self.connect('mooring.line_diameter',                 'orbit.mooring_line_diameter', src_indices=[0])
+                    self.connect('mooring_unstretched_length',            'orbit.mooring_line_length', src_indices=[0])
+                    self.connect('mooring.anchor_mass',                   'orbit.anchor_mass')
                 self.connect('elastic.precomp.blade_mass',            'orbit.blade_mass')
                 self.connect('tcc.turbine_cost_kW',                   'orbit.turbine_capex')
                 self.connect('drivese.nacelle_mass',                  'orbit.nacelle_mass')
