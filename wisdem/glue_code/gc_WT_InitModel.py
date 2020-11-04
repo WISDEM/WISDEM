@@ -94,9 +94,6 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     else:
         costs = {}
 
-    if 'elastic_properties_mb' in blade.keys() and modeling_options['Analysis_Flags']['DriveSE']:
-        wt_opt = assign_RNA_values(wt_opt, modeling_options, blade, RNA)
-
     return wt_opt
 
 def assign_blade_values(wt_opt, modeling_options, blade):
@@ -1114,82 +1111,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
     wt_opt['materials.waste']    = waste
 
     return wt_opt
-
-def assign_RNA_values(wt_opt, modeling_options, blade, RNA):
-
-    def _assembleI(I):
-        Ixx, Iyy, Izz, Ixy, Ixz, Iyz = I[0], I[1], I[2], I[3], I[4], I[5]
-        return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
-
-    def _unassembleI(I):
-        return np.array([I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]])
-
-    nd_span     = modeling_options['blade']['nd_span']
-    n_span      = len(nd_span)
-    ref_axis    = np.zeros((n_span,3))
-    ref_axis[:,0]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['x']['grid'], blade['outer_shape_bem']['reference_axis']['x']['values'])
-    ref_axis[:,1]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['y']['grid'], blade['outer_shape_bem']['reference_axis']['y']['values'])
-    ref_axis[:,2]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['z']['grid'], blade['outer_shape_bem']['reference_axis']['z']['values'])
-
-    blade_length = arc_length(ref_axis)[-1]
-
-    rhoA = np.zeros(n_span)
-    rhoA2interp = np.zeros(len(blade['elastic_properties_mb']['six_x_six']['inertia_matrix']['grid']))
-    for i in range(len(rhoA2interp)):
-        rhoA2interp[i] = blade['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'][i][0]
-    rhoA = np.interp(nd_span, blade['elastic_properties_mb']['six_x_six']['inertia_matrix']['grid'], rhoA2interp)
-
-    rb   = nd_span * blade_length
-    blade_mass = np.trapz(rhoA, rb)
-    rR   = rb + wt_opt['hub.diameter'] * 0.5
-    blade_moment_of_inertia = np.trapz(rhoA * rR**2., rR)
-    tilt = wt_opt['nacelle.uptilt'] * 180. / np.pi
-    n_blades = wt_opt['configuration.n_blades']
-    mass_all_blades = n_blades * blade_mass
-    Ibeam = n_blades * blade_moment_of_inertia
-    Ixx = Ibeam
-    Iyy = Ibeam/2.0  # azimuthal average for 2 blades, exact for 3+
-    Izz = Ibeam/2.0
-    Ixy = 0.0
-    Ixz = 0.0
-    Iyz = 0.0  # azimuthal average for 2 blades, exact for 3+
-    # rotate to yaw c.s.
-    I = DirectionVector(Ixx, Iyy, Izz).hubToYaw(tilt)  # because off-diagonal components are all zero
-    I_all_blades = np.array([I.x, I.y, I.z, Ixy, Ixz, Iyz])
-
-    nac_mass = wt_opt['nacelle.above_yaw_mass'] + wt_opt['nacelle.yaw_mass']
-    rotor_mass = mass_all_blades + wt_opt['hub.system_mass']
-
-
-    # rna I
-    blades_I = _assembleI(I_all_blades)
-    hub_I = _assembleI(wt_opt['hub.system_I'])
-    nac_I = _assembleI(wt_opt['nacelle.nacelle_I'])
-    rotor_I = blades_I + hub_I
-
-    R_hub = wt_opt['hub.system_cm']
-    rotor_I_TT = rotor_I + rotor_mass*(np.dot(R_hub, R_hub)*np.eye(3) - np.outer(R_hub, R_hub))
-
-    R_nac = wt_opt['nacelle.nacelle_cm']
-    nac_I_TT = nac_I + nac_mass*(np.dot(R_nac, R_nac)*np.eye(3) - np.outer(R_nac, R_nac))
-
-
-    wt_opt['drivese.rna_mass'] = rotor_mass + nac_mass
-    wt_opt['drivese.rna_I_TT'] = _unassembleI(rotor_I_TT + nac_I_TT)
-    wt_opt['drivese.rna_cm']   = (rotor_mass*np.array(R_hub) + nac_mass*np.array(R_nac))/(rotor_mass + nac_mass)
-
-    if not RNA == {}:
-        if abs(wt_opt['drivese.rna_mass'] - RNA['elastic_properties_mb']['mass']) > 1.e3:
-            print('The mass of the RNA system does not match the quantities specified in blade, hub, and nacelle. Please check the input yaml.')
-        if abs(sum(wt_opt['drivese.rna_I_TT']) - sum(RNA['elastic_properties_mb']['inertia'])) > 1.e5:
-            print('The inertia of the RNA system does not match the quantities specified in blade, hub, and nacelle. Please check the input yaml.')
-        if abs(sum(wt_opt['drivese.rna_cm']) - sum(RNA['elastic_properties_mb']['center_mass'])) > 1.e-1:
-            print('The center of mass of the RNA system does not match the quantities specified in blade, hub, and nacelle. Please check the input yaml.')
-
-
-    return wt_opt
-
-
 
 if __name__ == "__main__":
     pass
