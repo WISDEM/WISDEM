@@ -1562,14 +1562,11 @@ properties:
                             required:
                                 - name
                                 - node_type
-                                - location
                             optional:
                                 - node_mass
                                 - node_volume
                                 - drag_area
                                 - added_mass
-                                - anchor_type
-                                - fairlead_type
                             if:
                                 # If node_type == fixed, then we need to specify the anchor_type
                                 properties:
@@ -1578,6 +1575,7 @@ properties:
                             then:
                                 required:
                                     - anchor_type
+                                    - location
                             else:
                                 if:
                                     # If node_type == vessel, then we need to specify the fairlead_type
@@ -1587,6 +1585,10 @@ properties:
                                 then:
                                     required:
                                         - fairlead_type
+                                        - joint
+                                else:
+                                    required:
+                                        - location
                             properties:
                                 name:
                                     type: string
@@ -1605,6 +1607,10 @@ properties:
                                         unit: meter
                                         minItems: 3
                                         maxItems: 3
+                                joint:
+                                    type: string
+                                    description: For fairlead attachments, reference a joint name from the "joints" section or an "axial_joint" on a member
+                                    default: none
                                 anchor_type:
                                     type: string
                                     description: Name of anchor type from anchor_type list

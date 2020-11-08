@@ -1216,7 +1216,7 @@ class Mooring(om.Group):
         ivc.add_discrete_output('line_id',          val = ['']*n_lines)
         ivc.add_output('unstretched_length',        val = np.zeros(n_lines),        units='m')
         ivc.add_discrete_output('n_lines',          val = n_lines)
-        ivc.add_discrete_output('line_names',       val = ['']*n_line_types)
+        ivc.add_discrete_output('line_type_names',  val = ['']*n_line_types)
         ivc.add_output('line_diameter',             val = np.zeros(n_line_types),   units='m')
         ivc.add_output('line_mass_density',         val = np.zeros(n_line_types),   units='kg/m')
         ivc.add_output('line_stiffness',            val = np.zeros(n_line_types),   units='N')

@@ -332,6 +332,10 @@ components:
                     - variable_flag: True
                       grid: [0.1, 0.5]
 
+              axial_joints:
+                - name: fairlead
+                  grid: 0.38462 # Should be -70m
+
     mooring:
         nodes:
             - name: line1_anchor
@@ -351,17 +355,17 @@ components:
 
             - name: line1_vessel
               node_type: vessel
-              location: [5.2, 0.0, -70.0]
+              joint: fairlead
               fairlead_type: rigid
 
             - name: line2_vessel
               node_type: vessel
-              location: [-2.6, 4.5, -70.0]
+              joint: fairlead
               fairlead_type: rigid
 
             - name: line3_vessel
               node_type: vessel
-              location: [-2.6, -4.5, -70.0]
+              joint: fairlead
               fairlead_type: rigid
 
         lines:
@@ -387,8 +391,8 @@ components:
             - name: main
               diameter: 0.09
               mass_density: 77.7066
-              stiffness: 384.243e+6
-              breaking_load: 1.e+8
+              stiffness: 384.243e6
+              breaking_load: 1e8
               cost: 100.0
               transverse_added_mass: 1.0
               tangential_added_mass: 0.0
@@ -397,10 +401,10 @@ components:
 
         anchor_types:
             - name: drag_embedment
-              mass: 1.e+3
-              cost: 1.e+4
+              mass: 1e3
+              cost: 1e4
               max_vertical_load: 0.0
-              max_lateral_load: 1.e+5
+              max_lateral_load: 1e5
 
 airfoils:
    -  aerodynamic_center: 0.275
@@ -639,6 +643,8 @@ control:
         Vout: 25.0
         maxTS: 80.
         rated_power: 5.e+6
+        minOmega: 0.72256
+        maxOmega: 1.26711
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
         PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
@@ -653,7 +659,7 @@ control:
         VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
         VS_minspd: 0.72256                # Minimum rotor speed [rad/s], {default = 0 rad/s}
-        VS_maxspd: 1.26711                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_maxspd: 2.00000                # Minimum rotor speed [rad/s], {default = 0 rad/s}
     setpoint_smooth:
         ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
         ss_pcgain: .01                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
@@ -669,7 +675,7 @@ environment:
     shear_exp: 0.11
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
-    water_depth: 30. #320.0
+    water_depth: 320.0
     significant_wave_height: 9.14
     significant_wave_period: 13.6
     soil_shear_modulus: 140.e+6

@@ -393,6 +393,9 @@ components:
                 - name: col1_cross_pontoon
                   grid: 0.9103125
 
+                - name: col1_fairlead
+                  grid: 0.1875
+
             - name: column2
               joint1: col2_keel
               joint2: col2_freeboard
@@ -428,6 +431,9 @@ components:
                 - name: col2_cross_pontoon
                   grid: 0.9103125
 
+                - name: col2_fairlead
+                  grid: 0.1875
+
             - name: column3
               joint1: col3_keel
               joint2: col3_freeboard
@@ -462,6 +468,9 @@ components:
 
                 - name: col3_cross_pontoon
                   grid: 0.9103125
+
+                - name: col3_fairlead
+                  grid: 0.1875
 
             - name: delta_pontoon_lower12
               joint1: col1_lower_pontoon
@@ -579,15 +588,15 @@ components:
 
             - name: line1_vessel
               node_type: vessel
-              location: [-40.868, 0.0, -14.0]
+              joint: col1_fairlead
               fairlead_type: rigid
             - name: line2_vessel
               node_type: vessel
-              location: [20.434, 35.393, -14.0]
+              joint: col4_fairlead
               fairlead_type: rigid
             - name: line3_vessel
+              joint: col3_fairlead
               node_type: vessel
-              location: [20.434, -35.393, -14.0]
               fairlead_type: rigid
 
         lines:
@@ -611,8 +620,8 @@ components:
             - name: main
               diameter: 0.0766
               mass_density: 113.35
-              stiffness: 7.536e+8
-              breaking_load: 1.e+8
+              stiffness: 7.536e8
+              breaking_load: 1e8
               cost: 100.0
               transverse_added_mass: 0.8
               tangential_added_mass: 0.25
@@ -621,10 +630,10 @@ components:
 
         anchor_types:
             - name: drag_embedment
-              mass: 1.e+3
-              cost: 1.e+4
+              mass: 1e3
+              cost: 1e4
               max_vertical_load: 0.0
-              max_lateral_load: 1.e+5
+              max_lateral_load: 1e5
 
 airfoils:
    -  aerodynamic_center: 0.275
@@ -863,6 +872,8 @@ control:
         Vout: 25.0
         maxTS: 80.
         rated_power: 5.e+6
+        minOmega: 0.72256
+        maxOmega: 1.26711
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
         PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
@@ -877,7 +888,6 @@ control:
         VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
         VS_minspd: 0.72256                # Minimum rotor speed [rad/s], {default = 0 rad/s}
-        VS_maxspd: 1.26711                # Maximum rotor speed [rad/s], {default = 0 rad/s}
     setpoint_smooth:
         ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
         ss_pcgain: .01                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
@@ -893,7 +903,7 @@ environment:
     shear_exp: 0.11
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
-    water_depth: 30. #200.0
+    water_depth: 200.0
     significant_wave_height: 9.14
     significant_wave_period: 13.6
     soil_shear_modulus: 140.e+6
