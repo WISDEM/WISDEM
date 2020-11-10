@@ -307,18 +307,13 @@ def rotateI(I, th, axis='z'):
     ct = np.cos(th)
     st = np.sin(th)
     if axis in ['z','Z',2]:
-        R = np.matrix([[ct,-st,0],[st,ct,0],[0,0,1]])
+        R = np.asmatrix(np.array( [[ct,-st,0],[st,ct,0],[0,0,1]] )) 
     elif axis in ['y','Y',1]:
-        R = np.matrix([[ct,0,st],[0,1,0],[-st,0,ct]])
+        R = np.asmatrix(np.array( [[ct,0,st],[0,1,0],[-st,0,ct]] ))
     elif axis in ['x','X',0]:
-        R = np.matrix([[1,0,0],[0,ct,-st],[0,st,ct]])
+        R = np.asmatrix(np.array( [[1,0,0],[0,ct,-st],[0,st,ct]] ))
     else:
         raise ValueError('Axis must be either x/y/z or 0/1/2')
-
-    if I.size == 6:
-        Imat = assembleI(I)
-    else:
-        Imat = I.copy()
 
     Iout = unassembleI( R*Imat*R.T )
 
