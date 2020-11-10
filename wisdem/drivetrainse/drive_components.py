@@ -265,7 +265,12 @@ class GeneratorSimple(om.ExplicitComponent):
 
         self.add_output('R_generator', val=0.0, units='m')
         self.add_output('generator_mass', val=0.0, units='kg')
+        self.add_output('stator_mass', val=0.0, units='kg')
+        self.add_output('generator_rotor_mass', val=0.0, units='kg')
+        self.add_output('generator_stator_mass', val=0.0, units='kg')
         self.add_output('generator_efficiency', val=np.zeros(n_pc) )
+        self.add_output('generator_rotor_I', val=np.zeros(3), units='kg*m**2')
+        self.add_output('generator_stator_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
 
@@ -287,6 +292,7 @@ class GeneratorSimple(om.ExplicitComponent):
                 massExp   = 0.9223
                 mass = (massCoeff * rating ** massExp)
         outputs['generator_mass'] = mass
+        outputs['generator_rotor_mass'] = outputs['generator_stator_mass'] = 0.5*mass
         
         # calculate mass properties
         length = 1.8 * 0.015 * D_rotor
@@ -297,6 +303,7 @@ class GeneratorSimple(om.ExplicitComponent):
         I[0] = 0.5*R_generator**2
         I[1:] = (1./12.)*(3*R_generator**2 + length**2)
         outputs['generator_I'] = mass*I
+        outputs['generator_rotor_I'] = outputs['generator_stator_I'] = 0.5*mass*I
 
         # Efficiency performance- borrowed and adapted from servose
         # Note: Have to use lss_rpm no matter what here because servose interpolation based on lss shaft rpm
@@ -831,8 +838,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac
         outputs['nacelle_I']    = util.unassembleI(I_nac)
-        outputs['other_mass']   = (inputs['hss_mass'] + inputs['hvac_mass'] + inputs['platforms_mass'] +
-                                   inputs['yaw_mass'] + inputs['cover_mass'] + inputs['converter_mass'] + inputs['transformer_mass'])
+        outputs['other_mass']   = (inputs['hvac_mass'] + inputs['platforms_mass'] + inputs['cover_mass'] + 
+                                   inputs['yaw_mass'] + inputs['converter_mass'] + inputs['transformer_mass'])
         outputs['mean_bearing_mass'] = 0.5*(inputs['mb1_mass'] + inputs['mb2_mass'])
         outputs['total_bedplate_mass'] = inputs['nose_mass'] + inputs['bedplate_mass']
 

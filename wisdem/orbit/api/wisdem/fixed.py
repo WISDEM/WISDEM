@@ -1,4 +1,4 @@
-b'''WISDEM Monopile API'''
+'''WISDEM Monopile API'''
 
 __author__ = ['Jake Nunemaker']
 __copyright__ = 'Copyright 2020, National Renewable Energy Laboratory'

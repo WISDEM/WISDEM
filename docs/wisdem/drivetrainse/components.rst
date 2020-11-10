@@ -1,5 +1,5 @@
 ****************************
-Drivetrain Component Theory
+Drivetrain Components
 ****************************
 
 This section describes the theory behind the sizing and estimation of mass properties for all of the hub and nacelle components.  Unless otherwise noted, the moment of inertia expressions are about the component center of mass.
@@ -24,8 +24,9 @@ The pitch system moment of inertia assumes that the mass is distributed as a sol
    I_0 &= m R_{hub}^2 / 2 \\
    I_1 &= I_0 / 2
 
-Main Bearing
-=============
+
+Main Bearing(s)
+=================
 
 This is a simple, regression-based sizing tool for the main bearings.  The same function is called once for configurations with one main bearing or twice for configurations with two.  It handles Compact Aligning Roller Bearings (CARB), Cylindrical Roller Bearings (CRB), Spherical Roller Bearings (SRB), and Tapered Roller Bearings (TRB).  The face width, mass, and maximum allowable deflection angle of these bearing types are,
 
@@ -189,7 +190,14 @@ For geared layouts, the bedplate consists of twin I-beams that run along the bot
    A_I  &= 2 w_f t_f + h_w t_w \\
    m_{bedplate} &= 2 \rho A_I L_{bedplate}
 
-Where :math:`w_f` and :math:`t_f` are the flange width and thickness and :math:`h_w` and :math:`t_w` are the web height and thickness.  The factor of two on the mass equation is to account for the twin I-beams.
+Where :math:`w_f` and :math:`t_f` are the flange width and thickness and :math:`h_w` and :math:`t_w` are the web height and thickness, illustrated in n:numref:`fig_ibeam_cross`.  The factor of two on the mass equation is to account for the twin I-beams.
+
+.. _fig_ibeam_cross:
+.. figure::  /images/drivetrainse/Ibeam_cross.*
+    :width: 35%
+    :align: center
+
+    I-beam cross section and dimension nomenclature.
 
 The moment of inertia for the geared bedplate is taken from standard expressions for I-beam of a finite length with a coordinate system of :math:`x` along the axial length, :math:`y` consistent with a right-hand coordinate system when :math:`z` is pointed up (from the base flange to the top flange),
 
@@ -267,3 +275,17 @@ The yaw system is approximated by assuming that the main mass contributions are 
 Where :math:`D_{rotor}` is the rotor diameter in meters, :math:`D_{tt}` is the tower-top diameter, and :math:`\rho` is the density of steel.  The friction plate mass calculation is derived from assuming that the surface width is 10% of the tower top diameter and the thickness is 0.1% of the rotor diameter.
 
 Since the yaw system is at the tower top coordinate system origin, it is assumed to not contribute to the nacelle moment of inertia calculation.
+
+Nacelle and RNA mass summary
+=============================
+
+To aid in the tower structural analysis, the total mass and moment of inertia of the nacelle is summed about a coordinate system center at the tower top.  This is a straightforward summation of the mass, and a mass-weighted average of the component center of mass.  For the component moments of inertia, which are given about the component center of mass, the inertia tensor was first rotated through the driveshaft tilt, and then the parallel axis theorem was applied to move from the component center of mass to the tower top coordinate system.  These operations can be expressed as,
+
+.. math::
+   m_{nac}  &= \sum_i m_i\\
+   \vec{r}_{nac} &= \frac{1}{m_{nac}} \sum_i m_i \vec{r}_i\\
+   I_{nac} &= \sum_i \left[ R(\gamma) I_i R^T(\gamma) + m_i \left( \vec{r}_i \cdot \vec{r}_i E_3 - \vec{r}_i \otimes \vec{r}_i \right)\right]
+
+Where :math:`m_i` is the component mass, :math:`\vec{r}_i` is the vector from the tower top coordinate system origin to the component center of mass, :math:`I_i` is the component moment of inertia tensor, :math:`R(\gamma)` is the 3-D rotation matrix about the y-axis for the tilt angle, :math:`E_3` is the 3x3 identity matrix, :math:`\cdot` denotes the inner (dot) product, and :math:`\otimes` denotes the outer product.
+
+   

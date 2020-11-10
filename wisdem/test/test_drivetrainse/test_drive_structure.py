@@ -58,18 +58,25 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['cm_stator'] = -0.3
         self.inputs['I_stator'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
 
-        self.inputs['m_rotor'] = 100e3
+        self.inputs['generator_rotor_mass'] = 100e3
         self.inputs['cm_rotor'] = -0.3
-        self.inputs['I_rotor'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
+        self.inputs['generator_rotor_I'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
+
+        self.inputs['generator_stator_mass'] = 100e3
+        self.inputs['cm_rotor'] = -0.3
+        self.inputs['generator_stator_I'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
 
         self.inputs['generator_mass'] = 200e3
         self.inputs['generator_I'] = np.array([2e6, 1e6, 1e6, 0.0, 0.0, 0.0])
 
         self.inputs['gearbox_mass'] = 100e3
-        self.inputs['gearbox_I'] = np.array([1e6, 5e5, 5e5, 0.0, 0.0, 0.0])
+        self.inputs['gearbox_I'] = np.array([1e6, 5e5, 5e5])
 
         self.inputs['brake_mass'] = 10e3
         self.inputs['brake_I'] = np.array([1e4, 5e3, 5e3])
+
+        self.inputs['carrier_mass'] = 10e3
+        self.inputs['carrier_I'] = np.array([1e4, 5e3, 5e3])
 
         self.inputs['gear_ratio'] = 1.0
 
@@ -535,9 +542,11 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['tilt'] = 0.0
         self.inputs['F_hub'] = np.zeros(3).reshape((3,1))
         self.inputs['M_hub'] = np.array([1e5, 0.0, 0.0]).reshape((3,1))
-        self.inputs['m_rotor'] = 0.0
+        self.inputs['brake_mass'] = 0.0
+        self.inputs['brake_I'] = np.zeros(3)
+        self.inputs['generator_rotor_mass'] = 0.0
         self.inputs['cm_rotor'] = 0.0
-        self.inputs['I_rotor'] = np.zeros(6)
+        self.inputs['generator_rotor_I'] = np.zeros(6)
         self.inputs['hub_system_mass'] = 0.0
         self.inputs['hub_system_cm'] = 0.0
         self.inputs['hub_system_I'] = np.zeros(6)

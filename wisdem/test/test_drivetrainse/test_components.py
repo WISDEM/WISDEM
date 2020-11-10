@@ -249,7 +249,7 @@ class TestComponents(unittest.TestCase):
                 inputs[k+'_cm'] = [3.0]
                 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['other_mass'], 1e3*7)
+        self.assertEqual(outputs['other_mass'], 1e3*6)
         self.assertEqual(outputs['nacelle_mass'], 1e3*len(components))
         npt.assert_equal(outputs['nacelle_cm'], np.r_[-3.0, 0.0, 0.0])
         npt.assert_equal(outputs['nacelle_I'], 1e3*len(components)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
@@ -258,14 +258,14 @@ class TestComponents(unittest.TestCase):
         for k in cm3:
             inputs[k+'_cm'] *= -1.0
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['other_mass'], 1e3*7)
+        self.assertEqual(outputs['other_mass'], 1e3*6)
         self.assertEqual(outputs['nacelle_mass'], 1e3*len(components))
         npt.assert_equal(outputs['nacelle_cm'], np.r_[3.0, 0.0, 0.0])
         npt.assert_equal(outputs['nacelle_I'], 1e3*len(components)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs['uptower'] = False
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['other_mass'], 1e3*7)
+        self.assertEqual(outputs['other_mass'], 1e3*6)
         self.assertEqual(outputs['nacelle_mass'], 1e3*(len(components)-2))
         npt.assert_equal(outputs['nacelle_cm'], np.r_[3.0, 0.0, 0.0])
         npt.assert_equal(outputs['nacelle_I'], 1e3*(len(components)-2)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
@@ -295,7 +295,7 @@ class TestComponents(unittest.TestCase):
                 inputs[k+'_cm'] = [3.0]
                 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['other_mass'], 1e3*7)
+        self.assertEqual(outputs['other_mass'], 1e3*6)
         self.assertEqual(outputs['nacelle_mass'], 1e3*len(components))
         npt.assert_almost_equal(outputs['nacelle_cm'], np.r_[-3.0*np.cos(tr), 0.0, 3.0*np.sin(tr)])
         #npt.assert_equal(outputs['nacelle_I'], 1e3*len(components)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
@@ -304,14 +304,14 @@ class TestComponents(unittest.TestCase):
         for k in cm3:
             inputs[k+'_cm'][0] *= -1.0
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['other_mass'], 1e3*7)
+        self.assertEqual(outputs['other_mass'], 1e3*6)
         self.assertEqual(outputs['nacelle_mass'], 1e3*len(components))
         npt.assert_almost_equal(outputs['nacelle_cm'], np.r_[3.0*np.cos(tr), 0.0, 3.0*np.sin(tr)])
         #npt.assert_equal(outputs['nacelle_I'], 1e3*len(components)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs['uptower'] = False
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['other_mass'], 1e3*7)
+        self.assertEqual(outputs['other_mass'], 1e3*6)
         self.assertEqual(outputs['nacelle_mass'], 1e3*(len(components)-2))
         npt.assert_almost_equal(outputs['nacelle_cm'], np.r_[3.0*np.cos(tr), 0.0, 3.0*np.sin(tr)])
 
