@@ -33,6 +33,11 @@ class TestAny(unittest.TestCase):
         pp  = util.get_modal_coefficients(x, y)
         npt.assert_almost_equal(p[2:]/p[2:].sum(), pp)
 
+    def testRotateI(self):
+        I  = np.arange(6)+1
+        th = np.deg2rad(45)
+        Irot = util.rotateI(I, th, axis='z')
+        npt.assert_almost_equal(Irot, np.array([-2.5, 5.5, 3, -0.5, -0.5*np.sqrt(2), 5.5*np.sqrt(2)]) )
         
 def suite():
     suite = unittest.TestSuite()
