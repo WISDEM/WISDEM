@@ -27,6 +27,7 @@ from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 import warnings
 import os
+import multiprocessing as mp
 #from wisdem.ccblade.Polar import Polar
 import multiprocessing as mp
 from wisdem.commonse.mpi_tools import MPI
@@ -367,34 +368,30 @@ class CCAirfoil(object):
 
         self.unsteady = unsteady
 
-
-    def af_flap_coords(self, xfoil_path, delta_flap=12.0, xc_hinge=0.8, yt_hinge=0.5,numNodes=250, multi_run=False, MPI_run=False):
+    def af_flap_coords(self, xfoil_path, delta_flap=12.0, xc_hinge=0.8, yt_hinge=0.5, numNodes=250, multi_run=False, MPI_run=False):
         #This function is used to create and run xfoil to get airfoil coordinates for a given flap deflection
         # Set Needed parameter values
-        AFName=self.AFName  
-        df=str(delta_flap) # Flap deflection angle in deg
-        numNodes   = str(numNodes) #number of panels to use (will be number of points in profile)
-        dist_param = "0.5" #TE/LE panel density ratio
-        
+        AFName = self.AFName
+        df = str(delta_flap)  # Flap deflection angle in deg
+        numNodes = str(numNodes)  # number of panels to use (will be number of points in profile)
+        dist_param = "0.5"  # TE/LE panel density ratio
         # Set filenames
         if multi_run or MPI_run:
             pid = mp.current_process().pid
-            CoordsFlnmAF = 'profilecoords_p{}.dat'.format(pid) # Temporary file name for coordinates...will be deleted at the end
+            # Temporary file name for coordinates...will be deleted at the end
+            CoordsFlnmAF = 'profilecoords_p{}.dat'.format(pid)
             saveFlnmAF = '{}_{}_Airfoil_p{}.txt'.format(AFName, df, pid)
             saveFlnmPolar = 'Polar_p{}.txt'.format(pid)
             xfoilFlnm = 'xfoil_input_p{}.txt'.format(pid)
-        # if MPI_run:
-        #     rank = MPI.COMM_WORLD.Get_rank()
-        #     LoadFlnmAF = 'airfoil_r{}.txt'.format(rank) # This is a temporary file that will be deleted after it is no longer needed
-        #     saveFlnmPolar = 'Polar_r{}.txt'.format(rank) # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
-        #     xfoilFlnm  = 'xfoil_input_r{}.txt'.format(rank) # Xfoil run script that will be deleted after it is no longer needed
+            NUL_fname = 'NUL_{}'.format(pid)
         else:
-            CoordsFlnmAF = 'profilecoords.dat' # Temporary file name for coordinates...will be deleted at the end
+            CoordsFlnmAF = 'profilecoords.dat'  # Temporary file name for coordinates...will be deleted at the end
             saveFlnmPolar = 'Polar.txt'
             saveFlnmAF = '{}_{}_Airfoil.txt'.format(AFName, df)
             xfoilFlnm = 'xfoil_input.txt'  # Xfoil run script that will be deleted after it is no longer needed
+            NUL_fname = 'NUL'
 
-        
+
         # Cleaning up old files to prevent replacement issues
         if os.path.exists(saveFlnmAF):
             os.remove(saveFlnmAF)
@@ -402,62 +399,65 @@ class CCAirfoil(object):
             os.remove(CoordsFlnmAF)
         if os.path.exists(xfoilFlnm):
             os.remove(xfoilFlnm)
+        if os.path.exists(NUL_fname):
+            os.remove(NUL_fname)
 
         # Saving origional profile data temporatily to a txt file so xfoil can load it in
-        dat=np.array([self.x,self.y])
-        np.savetxt(CoordsFlnmAF, dat.T, fmt=['%f','%f'])
-        
+        dat = np.array([self.x, self.y])
+        np.savetxt(CoordsFlnmAF, dat.T, fmt=['%f', '%f'])
+
         # %% Writes the Xfoil run script to read in coordinates, create flap, re-pannel, and save coordinates to a .txt file
-        # Create the airfoil with flap 
-        fid = open(xfoilFlnm,"w")
-        fid.write("PLOP \n G \n\n") # turn off graphics
-        fid.write("LOAD \n") 
-        fid.write( CoordsFlnmAF + "\n") # name of file where coordinates are stored
-        fid.write( AFName + "\n") # name given to airfoil geometry (internal to xfoil)
-        fid.write("GDES \n") # enter geometric change options
-        fid.write("FLAP \n") # add in flap
-        fid.write(str(xc_hinge) + "\n") # specify x/c location of flap hinge
-        fid.write("999\n") # to specify y/t instead of actual distance
-        fid.write(str(yt_hinge) + "\n") # specify y/t value for flap hinge point
-        fid.write(df + "\n") # set flap deflection in deg
+        # Create the airfoil with flap
+        fid = open(xfoilFlnm, "w")
+        fid.write("PLOP \n G \n\n")  # turn off graphics
+        fid.write("LOAD \n")
+        fid.write(CoordsFlnmAF + "\n")  # name of file where coordinates are stored
+        fid.write(AFName + "\n")  # name given to airfoil geometry (internal to xfoil)
+        fid.write("GDES \n")  # enter geometric change options
+        fid.write("FLAP \n")  # add in flap
+        fid.write(str(xc_hinge) + "\n")  # specify x/c location of flap hinge
+        fid.write("999\n")  # to specify y/t instead of actual distance
+        fid.write(str(yt_hinge) + "\n")  # specify y/t value for flap hinge point
+        fid.write(df + "\n")  # set flap deflection in deg
         fid.write("NAME \n")
-        fid.write(AFName + "_" + df + "\n") # name new airfoil
-        fid.write("EXEC \n \n") # move airfoil from buffer into current airfoil
-        
+        fid.write(AFName + "_" + df + "\n")  # name new airfoil
+        fid.write("EXEC \n \n")  # move airfoil from buffer into current airfoil
+
         # Re-panel with specified number of panes and LE/TE panel density ratio (to possibly smooth out points)
         fid.write("PPAR\n")
-        fid.write("N \n" )
+        fid.write("N \n")
         fid.write(numNodes + "\n")
         fid.write("T \n")
-        fid.write( dist_param + "\n")
+        fid.write(dist_param + "\n")
         fid.write("\n\n")
-        
+
         # Save airfoil coordinates with designation flap deflection
         fid.write("PSAV \n")
-        fid.write( saveFlnmAF + " \n \n") #the extra \n may not be needed
-        
+        fid.write(saveFlnmAF + " \n \n")  # the extra \n may not be needed
+
         # Quit xfoil and close xfoil script file
         fid.write("QUIT \n")
         fid.close()
-        
+
         # Run the XFoil calling command
-        os.system(xfoil_path + " < " + xfoilFlnm + " > NUL") # <<< runs XFoil !
-        
+        os.system(xfoil_path + " < " + xfoilFlnm + " > " + NUL_fname)  # <<< runs XFoil !
+
         # Load in saved airfoil coordinates (with flap) from xfoil and save to instance variables
         flap_coords = np.loadtxt(saveFlnmAF)
-        self.af_flap_xcoords = flap_coords[:,0]
-        self.af_flap_ycoords = flap_coords[:,1]
-        #self.flap_coords_flnm = saveFlnmAF # Not really needed unless you keep the files and want to load them later
-        self.ctrl = delta_flap # bem: the way that this function is called in rotor_geometry_yaml, this instance is not going to be used when calculating polars
-        
+        self.af_flap_xcoords = flap_coords[:, 0]
+        self.af_flap_ycoords = flap_coords[:, 1]
+        self.ctrl = delta_flap  # bem: the way that this function is called in rotor_geometry_yaml, this instance is not going to be used when calculating polars
+
         # Delete uneeded txt files script file
         if os.path.exists(CoordsFlnmAF):
             os.remove(CoordsFlnmAF)
         if os.path.exists(xfoilFlnm):
-            os.remove(xfoilFlnm)        
+            os.remove(xfoilFlnm)
         if os.path.exists(saveFlnmAF):
-             os.remove(saveFlnmAF)
-        
+            os.remove(saveFlnmAF)
+        if os.path.exists(NUL_fname):
+            os.remove(NUL_fname)
+
 # ------------------
 #  Main Class: CCBlade
 # ------------------
