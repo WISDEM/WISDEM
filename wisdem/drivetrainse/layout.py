@@ -487,7 +487,7 @@ class GearedLayout(Layout):
         # Length of lss and drivetrain length
         delta   = 0.1 # separation between MB2 and gearbox attachment
         L_lss   = L_12 + L_h1 + delta
-        L_drive = L_lss + L_gearbox + delta + L_hss + L_generator
+        L_drive = L_lss + L_gearbox + L_hss + L_generator
         ds      = 0.5*np.ones(2)
         s_drive = np.cumsum(np.r_[0.0, L_generator*ds, L_hss*ds, L_gearbox*ds, delta, L_12*ds, L_h1*ds])
         L_drive = s_drive[-1] - s_drive[0]

@@ -107,6 +107,8 @@ class Gearbox(om.ExplicitComponent):
         self.add_output('gearbox_I', np.zeros(3), units='kg*m**2')
         self.add_output('L_gearbox', 0.0, units='m')
         self.add_output('D_gearbox', 0.0, units='m')
+        self.add_output('carrier_mass', 0.0, units='kg')
+        self.add_output('carrier_I', np.zeros(3), units='kg*m**2')
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         if self.options['direct_drive']:
@@ -209,7 +211,9 @@ class Gearbox(om.ExplicitComponent):
         # Store outputs
         outputs['stage_ratios'] = ratio_stage
         outputs['gearbox_mass'] = m_gearbox
-        outputs['gearbox_I'] = I*m_gearbox
-        outputs['D_gearbox'] = 2*R_gearbox
-        outputs['L_gearbox'] = L_gearbox
+        outputs['gearbox_I']    = I*m_gearbox
+        outputs['D_gearbox']    = 2*R_gearbox
+        outputs['L_gearbox']    = L_gearbox
+        outputs['carrier_mass'] = m_shrink_disc + m_carrier
+        outputs['carrier_I']    = outputs['carrier_mass'] * I[0]*np.array([1.0, 0.5, 0.5]) # Solid disk
 

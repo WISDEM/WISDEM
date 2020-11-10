@@ -195,7 +195,7 @@ class TestOC3Mass(unittest.TestCase):
         ansys_Iyy    = 2178400000.0 + m_top*(0.25*3.2**2.0 + (10-ansys_cg)**2)
         ansys_Izz    = 32297000.0 + 0.5*m_top*3.2**2.0
         ansys_I      = np.array([ansys_Ixx, ansys_Iyy, ansys_Izz, 0.0, 0.0, 0.0])
-
+        print(1e-3*ansys_m_shell, 1e-3*ansys_m_bulk)
         npt.assert_allclose(ansys_m_bulk, prob['main.bulkhead_mass'].sum(), rtol=0.03) # ANSYS uses R_od, we use R_id, top cover seems unaccounted for
         npt.assert_allclose(ansys_m_shell, prob['main.cyl_mass.mass'].sum(), rtol=0.01)
         npt.assert_allclose(ansys_m_stiff, prob['main.stiffener_mass'].sum(), rtol=0.01)

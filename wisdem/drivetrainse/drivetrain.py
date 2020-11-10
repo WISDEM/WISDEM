@@ -179,7 +179,7 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('rpm', dc.RPM_Input(n_pc=n_pc), promotes=['*'])
         if dogen:
             gentype = self.options['modeling_options']['GeneratorSE']['type']
-            self.add_subsystem('generator', Generator(design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque'])
+            self.add_subsystem('generator', Generator(design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque',('rotor_mass','generator_rotor_mass'),('rotor_I','generator_rotor_I'),('stator_mass','generator_stator_mass'),('stator_I','generator_stator_I')])
             
             self.add_subsystem('eff', DriveEfficiency(n_pc=n_pc), promotes=['*'])
         else:
@@ -237,10 +237,6 @@ class DrivetrainSE(om.Group):
                 self.connect('torq_rotation', 'generator.theta_sh')
                 self.connect('stator_deflection', 'generator.y_bd')
                 self.connect('stator_rotation', 'generator.theta_bd')
-                self.connect('generator.rotor_mass','m_rotor')
-                self.connect('generator.rotor_I','I_rotor')
-                self.connect('generator.stator_mass','m_stator')
-                self.connect('generator.stator_I','I_stator')
 
                 self.linear_solver = lbgs = om.LinearBlockGS()
                 self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()

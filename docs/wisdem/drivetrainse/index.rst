@@ -15,5 +15,6 @@ DrivetrainSE
     :maxdepth: 2
 
     intro
+    layout
     components
     structural

@@ -2,23 +2,19 @@
 Drivetrain Model Introduction
 ******************************
 
-Introduction
-------------
+The Drivetrain Systems Engineering (DrivertainSE) module is a set of models for sizing wind turbine drivetrain components as part of the larger WISDEM design and analysis tool. Wind turbine drivetrains physically connect the rotor to the tower and serve as a load-path from one to the other.  The drivetarin is also responsible for converting the aerodynamic torque of the rotor into electrical power that can be fed to the grid. Therefore, the drivetrain model interacts with the rotor and tower designs and it is important in looking at the overall design of a wind turbine to consider the coupling that exists between these three primary subsystem.  DrivetrainSE provides the capability to take in the aerodynamic loads and rotor properties and to estimate the mass properties and dimensions for all major components; the overall nacelle properties can then be used in subsequent tower design and analysis or as part of a system-level optimization of the wind turbine.  In addition, the resulting mass and dimension estimates can then be used to feed into a turbine capital cost model as well as a balance of station cost model that considers cost of assembly and installation of a wind turbine so that a full wind plant system level cost analysis could be performed.
 
-The Drivetrain Systems Engineering (DriveSE) model is a set of models for sizing wind turbine drivetrain components that is designed for use as part of a larger wind turbine design and analysis tool.  A previous similar tool was developed in the late 1990's :cite:`harrison_cost_1993`.  This model, known as the Sunderland model, used semi-empirical formulations were developed for all major wind turbine components in order to provide the mass of each which could be then converted into cost for an overall turbine capital cost estimate. These semi-empirical formulations were based on a collected industry database that is not representative of today's multi-megawatt (MW) size wind turbines. Thus, a need exists to develop an accurate drivetrain sizing tool that can be used for dimensioning drivetrain components as part of a case study on drivetrain design or, more importantly, as part of a larger wind turbine and system study.
+DrivetrainSE uses a slightly different approach to the prior instances of DriveSE and HubSE, although some of the component sizing remains the same. Instead of analytical derivations of the forces and moments on the various elements and closed form expressions for sizing the components, we instead rely on Frame3DD to conduct the analysis and enable the use of optimization with stress constraints to ensure a valid design.  This proves to be an easier long-term approach to maintain correct code.
 
-Wind turbine drivetrains physically connect the rotor to the tower and serve as a load-path from one to the other.  The drivetarin is also responsible for converting the aerodynamic torque of the rotor into electrical power that can be fed to the grid. Therefore, the drivetrain model interacts with the rotor and tower designs and it is important in looking at the overall design of a wind turbine to consider the coupling that exists between these three primary subsystem.  DriveSE provides the capability to take in the aerodynamic loads and rotor properties and to estimate the mass properties and dimensions for all major components; the overall nacelle properties can then be used in subsequent tower design and analysis or as part of a system-level optimization of the wind turbine.  In addition, the resulting mass and dimension estimates can then be used to feed into a turbine capital cost model as well as a balance of station cost model that considers cost of assembly and installation of a wind turbine so that a full wind plant system level cost analysis could be performed.  Thus, while DriveSE can be used to do drivetrain specific analysis as illustrated in \citep{DriveStudy}, the model set can also be used as part of larger wind turbine and plant system level studies :cite:`tip_speed_2014`.
-
-DriveSE uses a more rigorous set of physics-based analyses than was used in the Sunderland model to estimate the size of a subset of the major load-bearing components (the low speed shaft, main bearing(s), gearbox and bedplate) and parametric formulations representative of current wind turbine technology for the remaining components (the hub and yaw system).  The high-speed side of the drivetrain including the high speed shaft and coupling, mechanical brake, generator and other auxiliary components are not modeled and an existing set of models based on the Sunderland Model and other more recently developed models :cite:`DriveWPACT`.  The only exception is the transformer which was not included in previous models.  A simple model of the transformer based on industry data is included since uptower transformers are relatively common to modern wind turbines and, as a heavy component, have a significant impact on the overall mass properties of the nacelle assembly.
-
-Features
+DrivetrainSE features the following capabilities:
 
 * Upwind or downwind rotor configuration
 * Direct-drive and geared
-* Lots of generator models
-* Sizing using physical constraints and utilization factors from structural analysis for optimization
+* Electromagnetic design of multiple generator technologies, including synchronous and induction generators.
+* Up-tower or down-tower electronics
+* Sizing of drivetrain components via structural analysis
 
-Components included
+DrivetrainSE includes sizing for the following components:
 
 * Hub
 * Spinner
@@ -36,18 +32,4 @@ Components included
 * Nacelle cover
 * Yaw system
 
-Layout
-
-* Direct drive
-* Geared
-
-Generator
-
-* All types, defaults and status?
-
-Nacelle and RNA mass summary
-
-* I rotation through tilt from hub-aligned coordinate system to tower-aligned coordinate system
-* Parallel axis theorem to tower top from CoM
-
-Inputs
+Some of these components are sized with very simple, empirical- or regression-based approximations.  Others involve more detailed structural analysis, cast as utilization constraints, that are meant to be included in an optimization.
