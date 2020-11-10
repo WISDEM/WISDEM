@@ -278,5 +278,14 @@ Since the yaw system is at the tower top coordinate system origin, it is assumed
 
 Nacelle and RNA mass summary
 =============================
-* I rotation through tilt from hub-aligned coordinate system to tower-aligned coordinate system
-* Parallel axis theorem to tower top from CoM
+
+To aid in the tower structural analysis, the total mass and moment of inertia of the nacelle is summed about a coordinate system center at the tower top.  This is a straightforward summation of the mass, and a mass-weighted average of the component center of mass.  For the component moments of inertia, which are given about the component center of mass, the inertia tensor was first rotated through the driveshaft tilt, and then the parallel axis theorem was applied to move from the component center of mass to the tower top coordinate system.  These operations can be expressed as,
+
+.. math::
+   m_{nac}  &= \sum_i m_i\\
+   \vec{r}_{nac} &= \frac{1}{m_{nac}} \sum_i m_i \vec{r}_i\\
+   I_{nac} &= \sum_i \left[ R(\gamma) I_i R^T(\gamma) + m_i \left( \vec{r}_i \cdot \vec{r}_i E_3 - \vec{r}_i \otimes \vec{r}_i \right)\right]
+
+Where :math:`m_i` is the component mass, :math:`\vec{r}_i` is the vector from the tower top coordinate system origin to the component center of mass, :math:`I_i` is the component moment of inertia tensor, :math:`R(\gamma)` is the 3-D rotation matrix about the y-axis for the tilt angle, :math:`E_3` is the 3x3 identity matrix, :math:`\cdot` denotes the inner (dot) product, and :math:`\otimes` denotes the outer product.
+
+   
