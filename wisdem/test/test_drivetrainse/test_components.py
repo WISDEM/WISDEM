@@ -99,7 +99,6 @@ class TestComponents(unittest.TestCase):
         inputs['lss_rpm']        = x = np.linspace(0.1, 10.0, 20)
         inputs['generator_mass_user'] = 0.0
         inputs['generator_efficiency_user'] = 0.0
-        inputs['gearbox_efficiency'] = 0.9
         myobj.compute(inputs, outputs)
         self.assertEqual(outputs['R_generator'], 1.5)
         m = 37.68*10e3
@@ -109,7 +108,6 @@ class TestComponents(unittest.TestCase):
         eff = 1.0 - ( 0.01007/x*x[-1] + 0.02 + 0.06899*x/x[-1])
         eff = np.maximum(1e-3, eff)
         npt.assert_almost_equal(outputs['generator_efficiency'], eff)
-        npt.assert_almost_equal(outputs['drivetrain_efficiency'], np.c_[x, 0.9*eff])
         
         myobj = dc.GeneratorSimple(direct_drive=False)
         myobj.compute(inputs, outputs)
@@ -121,13 +119,11 @@ class TestComponents(unittest.TestCase):
         eff = 1.0 - (0.01289/x*x[-1] + 0.0851 + 0.0*x/x[-1])
         eff = np.maximum(1e-3, eff)
         npt.assert_almost_equal(outputs['generator_efficiency'], eff)
-        npt.assert_almost_equal(outputs['drivetrain_efficiency'], np.c_[x, 0.9*eff])
 
         eff = np.linspace(0.5, 1.0, 20)
         inputs['generator_efficiency_user'] = np.c_[x, eff]
         myobj.compute(inputs, outputs)
         npt.assert_almost_equal(outputs['generator_efficiency'], eff)
-        npt.assert_almost_equal(outputs['drivetrain_efficiency'], np.c_[x, eff])
         
     def testElectronics(self):
         inputs = {}
