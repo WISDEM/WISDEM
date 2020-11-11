@@ -91,7 +91,9 @@ class TestServo(unittest.TestCase):
         prob.set_val('control_maxTS', 90., units='m/s')
         prob.set_val('tsr_operational', 10.)
         prob.set_val('control_pitch', 0.0, units='deg')
-        prob.set_val('drivetrain_efficiency', 0.975**2)
+        prob.set_val('gearbox_efficiency', 0.975)
+        prob.set_val('generator_efficiency', 0.975*np.ones(n_pc))
+        prob.set_val('lss_rpm', np.linspace(0.1, 100, n_pc))
         prob.set_val('drivetrainType', 'GEARED')
 
         prob.set_val('Rhub', 1., units='m')
@@ -326,7 +328,9 @@ class TestServo(unittest.TestCase):
         prob.set_val('control_maxTS', 90., units='m/s')
         prob.set_val('tsr_operational', 10.)
         prob.set_val('control_pitch', 0.0, units='deg')
-        prob.set_val('drivetrain_efficiency', 0.975**2)
+        prob.set_val('gearbox_efficiency', 0.975)
+        prob.set_val('generator_efficiency', 0.975*np.ones(n_pc))
+        prob.set_val('lss_rpm', np.linspace(0.1, 100, n_pc))
         prob.set_val('drivetrainType', 'GEARED')
 
         prob.set_val('Rhub', 1., units='m')

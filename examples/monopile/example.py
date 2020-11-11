@@ -74,7 +74,9 @@ if opt_flag:
     prob.driver.options['optimizer'] = 'SLSQP'
 
     # Add objective
-    prob.model.add_objective('tower_mass', scaler=1e-6)
+    #prob.model.add_objective('tower_mass', scaler=1e-6) # Only tower
+    #prob.model.add_objective('monopile_mass', scaler=1e-6) # Only monopile
+    prob.model.add_objective('structural_mass', scaler=1e-6) # Both
 
     # Add design variables, in this case the tower diameter and wall thicknesses
     prob.model.add_design_var('monopile_outer_diameter_in', lower=3.87, upper=max_diam)

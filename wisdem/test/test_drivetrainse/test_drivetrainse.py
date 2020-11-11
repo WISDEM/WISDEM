@@ -251,7 +251,6 @@ class TestGroup(unittest.TestCase):
         prob['gear_configuration'] = 'eep'
         #prob['shaft_factor'] = 'normal'
         prob['gear_ratio'] = 90.0
-        prob['gearbox_efficiency'] = 0.955
 
         prob['generator.rho_Fe']         = 7700.0
         prob['generator.rho_Fes']        = 7850.0

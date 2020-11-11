@@ -8,23 +8,6 @@ import wisdem.drivetrainse.layout as lay
 import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
 
-#----------------------------------------------------------------------------------------------
-class DriveEfficiency(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare('n_pc', default=20)
-
-    def setup(self):
-        n_pc  = self.options['n_pc']
-        self.add_input('gearbox_efficiency', val=1.0)
-        self.add_input('generator_efficiency', val=np.zeros(n_pc))
-        self.add_input('lss_rpm', val=np.zeros(n_pc), units ='rpm')
-        self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
-
-    def compute(self, inputs, outputs):
-        # Note: Have to use lss_rpm no matter what here because servose interpolation based on lss shaft rpm
-        outputs['drivetrain_efficiency'] = np.c_[inputs['lss_rpm'],
-                                                 inputs['gearbox_efficiency']*inputs['generator_efficiency']]
-#----------------------------------------------------------------------------------------------
 
 class DriveMaterials(om.ExplicitComponent):
     '''
@@ -180,8 +163,6 @@ class DrivetrainSE(om.Group):
         if dogen:
             gentype = self.options['modeling_options']['GeneratorSE']['type']
             self.add_subsystem('generator', Generator(design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque',('rotor_mass','generator_rotor_mass'),('rotor_I','generator_rotor_I'),('stator_mass','generator_stator_mass'),('stator_I','generator_stator_I')])
-            
-            self.add_subsystem('eff', DriveEfficiency(n_pc=n_pc), promotes=['*'])
         else:
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=['*'])
 

@@ -133,8 +133,8 @@ class RunFrame3DD(ExplicitComponent):
         self.n_freq = n_freq = blade_init_options['n_freq']
 
         # Locations of airfoils in global c.s.
-        self.add_input('x_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth x-coordinate system (from LE to TE)')
-        self.add_input('y_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth y-coordinate system (from PS to SS)')
+        self.add_input('x_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth x-coordinate system (prebend)')
+        self.add_input('y_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth y-coordinate system (sweep)')
         self.add_input('z_az',     val=np.zeros(n_span), units='m',      desc='location of blade in azimuth z-coordinate system (from root to tip)')
         self.add_input('theta',    val=np.zeros(n_span),   units='deg',    desc='structural twist')
         
