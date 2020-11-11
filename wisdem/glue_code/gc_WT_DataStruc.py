@@ -1197,6 +1197,69 @@ class Floating(om.Group):
             ivc.add_output('ballast_volume',     val = np.zeros(n_ballasts),        units='m**3')
             ivc.add_output('grid_axial_joints',  val = np.zeros(n_axial_joints))
 
+        self.add_subsystem('alljoints', CombineJoints(floating_init_options=floating_init_options), promotes=['*'])
+
+class CombineJoints(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare('floating_init_options')
+
+    def setup(self):
+        floating_init_options = self.options['floating_init_options']
+        n_joints              = floating_init_options['joints']['n_joints']
+        n_members             = floating_init_options['members']['n_members']
+
+        self.add_input('location',   val = np.zeros((n_joints, 3)), units='m')
+
+        n_joint_tot = n_joints
+        for i in range(n_members):
+            iname = floating_init_options['members']['name'][i]
+            i_axial_joints = floating_init_options['members']['n_axial_joints'][i]
+            self.add_input(iname+':grid_axial_joints', val = np.zeros(i_axial_joints))
+            n_joint_tot += i_axial_joints
+
+        self.add_output('joints_xyz',   val = np.zeros((n_joint_tot, 3)), units='m')
+        self.add_discrete_output('joints_name2idx', val={})
+            
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        # Unpack options
+        floating_init_options = self.options['floating_init_options']
+        n_joints              = floating_init_options['joints']['n_joints']
+        n_members             = floating_init_options['members']['n_members']
+
+        # Unpack inputs
+        locations = inputs['locations']
+        joints_xyz = np.zeros( outputs['joints_xyz'].shape )
+
+        # Handle cylindrical coordinate joints
+        icyl = floating_init_options['joints']['cylindrical']
+        locations_xyz           = locations.copy()
+        locations_xyz[icyl,0]   = locations[icyl,0]*np.cos( locations[icyl,1] )
+        locations_xyz[icyl,1]   = locations[icyl,0]*np.sin( locations[icyl,1] )
+        joints_xyz[:n_joints,:] = locations_xyz.copy()
+        
+        # Create initial name-to-index mapping
+        name2idx = dict( zip( floating_init_options['joints']['name'], range(n_joints) ) )
+        count = n_joints
+
+        # Now add axial joints
+        for k in range(n_members):
+            joint1xyz = locations_xyz[ name2idx[ floating_init_options['members']['joint1'][k] ], :]
+            joint2xyz = locations_xyz[ name2idx[ floating_init_options['members']['joint2'][k] ], :]
+            dxyz = joint2xyz - joint1xyz
+            
+            iname = floating_init_options['members']['name'][k]
+            i_axial_joints = floating_init_options['members']['n_axial_joints'][k]
+            i_axial_joint_names = floating_init_options['members']['axial_joint_name_member_' + iname]
+            for a in range(i_axial_joints):
+                joints_xyz[count,:] = joint1xyz + inputs[iname+':grid_axial_joints'][a]*dxyz
+                name2idx[i_axial_joint_names] = count
+                count += 1
+
+        # Store outputs
+        outputs['joints_xyz']       = joints_xyz
+        outputs['joints_names2idx'] = name2idx
+        
+                
 class Mooring(om.Group):
     def initialize(self):
         self.options.declare('mooring_init_options')

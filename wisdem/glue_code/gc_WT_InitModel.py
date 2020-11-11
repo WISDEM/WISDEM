@@ -1,7 +1,5 @@
 import numpy as np
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
-from wisdem.commonse.utilities import arc_length
-from wisdem.commonse.csystem import DirectionVector
 
 def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
