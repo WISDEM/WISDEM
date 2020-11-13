@@ -1333,7 +1333,6 @@ class PMSG_Disc(GeneratorBase):
         #print('pmsg_disc: F_a4_ls2, Fa4arg, lamb, len_s, a ', F_a4_ls2, Fa4arg, lamb, len_s, a)
         #if np.isnan(F_a4_ls2):
         #    sys.stderr.write('*** pmsg_discSE error: F_a4_ls2 is nan\n')
-        #    sys.exit()
             
         #C_2 = np.cosh(x1) * np.sin(x1) + np.sinh(x1) * np.cos(x1)
         C_3 = np.sinh(x1) * np.sin(x1)
