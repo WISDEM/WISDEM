@@ -20,7 +20,6 @@
 
 from __future__ import print_function
 
-import sys
 from ctypes import *
 import os
 import six
@@ -416,7 +415,7 @@ class pyMAP(object):
             print(self.status.value)
             self.end( )
             libexec.map_plot_array_free( array )        
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         arr = [array[j] for j in range(length)]        
         libexec.map_plot_array_free( array )        
         return arr 
@@ -429,7 +428,7 @@ class pyMAP(object):
             print(self.status.value)
             self.end( )
             libexec.map_plot_array_free( array )        
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         arr = [array[j] for j in range(length)]        
         libexec.map_plot_array_free( array )        
         return arr 
@@ -443,7 +442,7 @@ class pyMAP(object):
             print(self.status.value)
             self.end( )
             libexec.map_plot_array_free( array )        
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         arr = [array[j] for j in range(length)]        
         libexec.map_plot_array_free( array )        
         return arr 
@@ -544,7 +543,7 @@ class pyMAP(object):
         if self.ierr.value != 0 :
             print(self.status.value)
             self.end( )
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         return self.val
 
 
@@ -553,7 +552,7 @@ class pyMAP(object):
         if self.ierr.value != 0 :
             print(self.status.value)
             self.end( )
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         return self.val
 
 
@@ -562,7 +561,7 @@ class pyMAP(object):
         if self.ierr.value != 0 :
             print(self.status.value)
             self.end( )
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         return self.val
 
 
@@ -571,7 +570,7 @@ class pyMAP(object):
         if self.ierr.value != 0 :
             print(self.status.value)
             self.end( )
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         return self.val
 
 
@@ -580,7 +579,7 @@ class pyMAP(object):
         if self.ierr.value != 0 :
             print(self.status.value)
             self.end( )
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         return self.val
 
 
@@ -589,7 +588,7 @@ class pyMAP(object):
         if self.ierr.value != 0 :
             print(self.status.value)
             self.end( )
-            sys.exit('MAP terminated premature.')
+            raise RuntimeError('MAP terminated premature.')
         return self.val
 
     def linear( self, epsilon ) :
@@ -611,7 +610,7 @@ class pyMAP(object):
         if self.ierr.value != 0 :
            print(self.status.value)
            self.end( )
-           sys.exit('MAP terminated premature.')
+           raise RuntimeError('MAP terminated premature.')
         arr = [[array[j][i] for i in range(6)] for j in range(6)]
         libexec.map_free_linearize_matrix(array)        
         return arr
@@ -622,7 +621,7 @@ class pyMAP(object):
         if self.ierr.value != 0 :
             print(self.status.value)
             self.end( )
-            sys.exit('MAP terminated premature.')    
+            raise RuntimeError('MAP terminated premature.')    
 
     def read_file( self, fileName ):
         f           = open(fileName, 'r')

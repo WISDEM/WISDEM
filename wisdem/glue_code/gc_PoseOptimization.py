@@ -67,7 +67,7 @@ class PoseOptimization(object):
             try:
                 from openmdao.api import pyOptSparseDriver
             except:
-                exit('You requested the optimization solver CONMIN, but you have not installed the pyOptSparseDriver. Please do so and rerun.')
+                raise ImportError('You requested the optimization solver CONMIN, but you have not installed the pyOptSparseDriver. Please do so and rerun.')
             wt_opt.driver = pyOptSparseDriver()
             wt_opt.driver.options['optimizer'] = self.opt['driver']['solver']
             wt_opt.driver.opt_settings['ITMAX']= self.opt['driver']['max_iter']
@@ -76,12 +76,12 @@ class PoseOptimization(object):
             try:
                 from openmdao.api import pyOptSparseDriver
             except:
-                exit('You requested the optimization solver SNOPT, but you have not installed the pyOptSparseDriver. Please do so and rerun.')
+                raise ImportError('You requested the optimization solver SNOPT, but you have not installed the pyOptSparseDriver. Please do so and rerun.')
             wt_opt.driver = pyOptSparseDriver()
             try:
                 wt_opt.driver.options['optimizer']                       = self.opt['driver']['solver']
             except:
-                exit('You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun.')
+                raise ImportError('You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun.')
             wt_opt.driver.opt_settings['Major optimality tolerance']  = float(self.opt['driver']['tol'])
             wt_opt.driver.opt_settings['Major iterations limit']      = int(self.opt['driver']['max_major_iter'])
             wt_opt.driver.opt_settings['Iterations limit']            = int(self.opt['driver']['max_minor_iter'])
@@ -97,7 +97,7 @@ class PoseOptimization(object):
                 wt_opt.driver.hotstart_file = self.opt['driver']['hotstart_file']
 
         else:
-            exit('The optimizer ' + self.opt['driver']['solver'] + 'is not yet supported!')
+            raise ValueError('The optimizer ' + self.opt['driver']['solver'] + 'is not yet supported!')
         
         return wt_opt
 
@@ -123,7 +123,7 @@ class PoseOptimization(object):
             else:
                 wt_opt.model.add_objective('ccblade.CP', ref = -1.)
         else:
-            exit('The merit figure ' + self.opt['merit_figure'] + ' is not supported.')
+            raise ValueError('The merit figure ' + self.opt['merit_figure'] + ' is not supported.')
                 
         return wt_opt
 
@@ -243,7 +243,7 @@ class PoseOptimization(object):
             elif blade_constraints['rail_transport']['4_axle']:
                 wt_opt.model.add_constraint('elastic.rail.constr_LV_4axle_horiz', upper= 1.0)
             else:
-                exit('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
+                raise ValueError('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
 
         if self.opt['constraints']['blade']['moment_coefficient']['flag']:
             wt_opt.model.add_constraint('ccblade.CM', lower= self.opt['constraints']['blade']['moment_coefficient']['min'], upper= self.opt['constraints']['blade']['moment_coefficient']['max'])

@@ -676,7 +676,6 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         # axat.legend()
         # plt.show()
         # print(np.flip(s_interp_rt))
-        # exit()
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
     # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.
@@ -896,7 +895,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     web_start_nd[j,i] = inputs['web_start_nd_yaml'][j,i]
                     web_end_nd[j,i]   = inputs['web_end_nd_yaml'][j,i]
                 else:
-                    exit('Blade web ' + web_name[j] + ' not described correctly. Please check the yaml input file.')
+                    raise ValueError('Blade web ' + web_name[j] + ' not described correctly. Please check the yaml input file.')
 
             # Loop through the layers and compute non-dimensional start and end positions along the profile for the different layer definitions
             for j in range(self.n_layers):
@@ -985,7 +984,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     layer_end_nd[j,i] = LE_loc - 1.e-6
                     layer_start_nd[j,i] = layer_end_nd[int(discrete_inputs['index_layer_start'][j]),i]
                 else:
-                    exit('Blade layer ' + str(layer_name[j]) + ' not described correctly. Please check the yaml input file.')
+                    raise ValueError('Blade layer ' + str(layer_name[j]) + ' not described correctly. Please check the yaml input file.')
 
         # Assign openmdao outputs
         outputs['web_rotation']   = web_rotation
@@ -1272,7 +1271,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                 density_resin = inputs['rho'][i]
                 id_resin = i
         if density_resin==0.:
-            exit('Error: a material named resin must be defined in the input yaml')
+            raise ValueError('Error: a material named resin must be defined in the input yaml')
 
         fvf   = np.zeros(self.n_mat)
         fwf   = np.zeros(self.n_mat)
@@ -1285,7 +1284,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                 fvf[i]  = (inputs['rho'][i] - density_resin) / (inputs['rho_fiber'][i] - density_resin)
                 if inputs['fvf_from_yaml'][i] > 0.:
                     if abs(fvf[i] - inputs['fvf_from_yaml'][i]) > 1e-3:
-                        exit('Error: the fvf of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['fvf_from_yaml'][i] * 100) + '%, but this value is not compatible to the other values provided. Given the fiber, laminate and resin densities, it should instead be equal to ' + str(fvf[i]*100.) + '%.')
+                        raise ValueError('Error: the fvf of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['fvf_from_yaml'][i] * 100) + '%, but this value is not compatible to the other values provided. Given the fiber, laminate and resin densities, it should instead be equal to ' + str(fvf[i]*100.) + '%.')
                     else:
                         outputs['fvf'] = inputs['fvf_from_yaml']
                 else:
@@ -1295,7 +1294,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                 fwf[i]  = inputs['rho_fiber'][i] * outputs['fvf'][i] / (density_resin + ((inputs['rho_fiber'][i] - density_resin) * outputs['fvf'][i]))
                 if inputs['fwf_from_yaml'][i] > 0.:
                     if abs(fwf[i] - inputs['fwf_from_yaml'][i]) > 1e-3:
-                        exit('Error: the fwf of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['fwf_from_yaml'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fwf[i]*100.) + '%')
+                        raise ValueError('Error: the fwf of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['fwf_from_yaml'][i] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(fwf[i]*100.) + '%')
                     else:
                         outputs['fwf'] = inputs['fwf_from_yaml']
                 else:
@@ -1305,7 +1304,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                 ply_t[i] = inputs['rho_area_dry'][i] / inputs['rho'][i] / outputs['fwf'][i]
                 if inputs['ply_t_from_yaml'][i] > 0.:
                     if abs(ply_t[i] - inputs['ply_t_from_yaml'][i]) > 1.e-4:
-                        exit('Error: the ply_t of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['ply_t_from_yaml'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm. Alternatively, adjust the aerial density to ' + str(outputs['ply_t'][i] * inputs['rho'][i] * outputs['fwf'][i]) + ' kg/m2.')
+                        raise ValueError('Error: the ply_t of composite ' + discrete_inputs['name'][i] + ' specified in the yaml is equal to '+ str(inputs['ply_t_from_yaml'][i]) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(ply_t[i]) + 'm. Alternatively, adjust the aerial density to ' + str(outputs['ply_t'][i] * inputs['rho'][i] * outputs['fwf'][i]) + ' kg/m2.')
                     else:
                         outputs['ply_t'] = inputs['ply_t_from_yaml']
                 else:
