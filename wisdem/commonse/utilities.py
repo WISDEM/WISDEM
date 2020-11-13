@@ -31,7 +31,7 @@ def get_modal_coefficients(x, y, deg=6):
     
     return p6
     
-def get_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
+def get_xy_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     # Number of frequencies and modes
     nfreq = len(freqs)
     
