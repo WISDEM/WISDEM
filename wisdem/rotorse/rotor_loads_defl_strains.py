@@ -316,7 +316,8 @@ class RunFrame3DD(ExplicitComponent):
         lump    = 0 # 0= consistent mass matrix, 1= lumped mass matrix
         tol     = 1e-9 # frequency convergence tolerance
         shift   = 0.0 # frequency shift-factor for rigid body modes, make 0 for pos.def. [K]
-        blade.enableDynamics(self.n_freq, Mmethod, lump, tol, shift)
+        # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes
+        blade.enableDynamics(2*self.n_freq, Mmethod, lump, tol, shift)
         # ----------------------------
 
         # ------ load case 1, blade 1 ------------
@@ -358,8 +359,13 @@ class RunFrame3DD(ExplicitComponent):
         dz = displacements.dz[iCase,:]
         
         # Mode shapes and frequencies
-        freq_x, freq_y, mshapes_x, mshapes_y = util.get_mode_shapes(r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
-
+        n_freq2 = int(self.n_freq/2)
+        freq_x, freq_y, mshapes_x, mshapes_y = util.get_xy_mode_shapes(r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
+        freq_x = freq_x[:n_freq2]
+        freq_y = freq_y[:n_freq2]
+        mshapes_x = mshapes_x[:n_freq2,:]
+        mshapes_y = mshapes_y[:n_freq2,:]
+        
         # shear and bending, one per element (convert from local to global c.s.)
         Fz = np.r_[-forces.Nx[iCase,0],  forces.Nx[iCase, 1::2]]
         Vy = np.r_[-forces.Vy[iCase,0],  forces.Vy[iCase, 1::2]]
@@ -396,7 +402,7 @@ class RunFrame3DD(ExplicitComponent):
         # Store outputs
         outputs['root_F'] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
         outputs['root_M'] = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
-        outputs['freqs'] = modal.freq
+        outputs['freqs'] = modal.freq[:self.n_freq]
         outputs['edge_mode_shapes'] = mshapes_y
         outputs['flap_mode_shapes'] = mshapes_x
         # Dense numpy command that interleaves and alternates flap and edge modes
