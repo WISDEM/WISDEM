@@ -178,7 +178,6 @@ properties:
                         default: 1e-9
     loading:
         type: object
-        default: {}
         description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only or nacelle-only analysis
         properties:
             mass:
