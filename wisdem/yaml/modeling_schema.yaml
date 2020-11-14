@@ -25,11 +25,7 @@ properties:
             RotorSE:
                 type: boolean
                 default: False
-                description: Whether or not to run RotorSE
-            ServoSE:
-                type: boolean
-                default: False
-                description: Whether or not to run ServoSE
+                description: Whether or not to run RotorSE and ServoSE
             DriveSE:
                 type: boolean
                 description: Whether or not to run DriveSE
