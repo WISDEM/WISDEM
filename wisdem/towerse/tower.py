@@ -323,7 +323,7 @@ class MonopileFoundation(om.ExplicitComponent):
         self.add_input('suctionpile_depth', 0.0, units='m')
         self.add_input('suctionpile_depth_diam_ratio', 0.0)
         self.add_input('foundation_height', 0.0, units='m')
-        self.add_input('diameter', 0.0, units='m', src_indices=[0])
+        self.add_input('diameter', 0.0, units='m')
 
         self.add_output('z_start', 0.0, units='m')
         
@@ -1153,7 +1153,7 @@ class TowerLeanSE(om.Group):
             
         
         # If doing fixed bottom monopile, we add an additional point for the pile (even for gravity foundations)
-        self.add_subsystem('predisc', MonopileFoundation(monopile=monopile), promotes=['*', ('diameter', 'tower_outer_diameter')])
+        self.add_subsystem('predisc', MonopileFoundation(monopile=monopile), promotes=['*', ('diameter', 'monopile_base_diameter')])
             
         # Promote all but foundation_height so that we can override
         self.add_subsystem('geometry', CylinderDiscretization(nPoints=n_height), promotes=['z_param','z_full','d_full','t_full',('section_height', 'tower_section_height'), ('diameter', 'tower_outer_diameter'), ('wall_thickness', 'tower_wall_thickness')])
@@ -1185,8 +1185,9 @@ class TowerLeanSE(om.Group):
         self.connect('cm.center_of_mass', 'tm.cylinder_center_of_mass')
         self.connect('cm.section_center_of_mass','tm.cylinder_section_center_of_mass')
         self.connect('cm.I_base','tm.cylinder_I_base')
+        self.connect('tower_outer_diameter','monopile_base_diameter',src_indices=[0])
 
-        
+
 class TowerSE(om.Group):
     """
     This is the main TowerSE group that performs analysis of the tower.
