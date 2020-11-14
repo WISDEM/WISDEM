@@ -6,35 +6,40 @@ class PoseOptimization(object):
     def __init__(self, modeling_options, analysis_options):
         self.modeling    = modeling_options
         self.opt         = analysis_options
-        self.blade_opt   = self.opt['optimization_variables']['blade']
-        self.tower_opt   = self.opt['optimization_variables']['tower']
-        self.control_opt = self.opt['optimization_variables']['control']
 
         
     def get_number_design_variables(self):
         # Determine the number of design variables
         n_DV = 0
+
+        blade_opt   = self.opt['optimization_variables']['blade']
+        tower_opt   = self.opt['optimization_variables']['tower']
+        mono_opt    = self.opt['optimization_variables']['monopile']
         
-        if self.blade_opt['aero_shape']['twist']['flag']:
-            n_DV += self.blade_opt['aero_shape']['twist']['n_opt'] - 2
-        if self.blade_opt['aero_shape']['chord']['flag']:
-            n_DV += self.blade_opt['aero_shape']['chord']['n_opt'] - 3
-        if self.blade_opt['aero_shape']['af_positions']['flag']:
-            n_DV += self.modeling['blade']['n_af_span'] - self.blade_opt['aero_shape']['af_positions']['af_start'] - 1
-        if self.blade_opt['structure']['spar_cap_ss']['flag']:
-            n_DV += self.blade_opt['structure']['spar_cap_ss']['n_opt'] - 2
-        if self.blade_opt['structure']['spar_cap_ps']['flag'] and not self.blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
-            n_DV += self.blade_opt['structure']['spar_cap_ps']['n_opt'] - 2
+        if blade_opt['aero_shape']['twist']['flag']:
+            n_DV += blade_opt['aero_shape']['twist']['n_opt'] - 2
+        if blade_opt['aero_shape']['chord']['flag']:
+            n_DV += blade_opt['aero_shape']['chord']['n_opt'] - 3
+        if blade_opt['aero_shape']['af_positions']['flag']:
+            n_DV += self.modeling['blade']['n_af_span'] - blade_opt['aero_shape']['af_positions']['af_start'] - 1
+        if blade_opt['structure']['spar_cap_ss']['flag']:
+            n_DV += blade_opt['structure']['spar_cap_ss']['n_opt'] - 2
+        if blade_opt['structure']['spar_cap_ps']['flag'] and not blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
+            n_DV += blade_opt['structure']['spar_cap_ps']['n_opt'] - 2
         if self.opt['optimization_variables']['control']['tsr']['flag']:
             n_DV += 1
         if self.opt['optimization_variables']['control']['servo']['pitch_control']['flag']:
             n_DV += 2
         if self.opt['optimization_variables']['control']['servo']['torque_control']['flag']:
             n_DV += 2
-        if self.tower_opt['outer_diameter']['flag']:
+        if tower_opt['outer_diameter']['flag']:
             n_DV += self.modeling['tower']['n_height']
-        if self.tower_opt['layer_thickness']['flag']:
+        if tower_opt['layer_thickness']['flag']:
             n_DV += (self.modeling['tower']['n_height'] - 1) * self.modeling['tower']['n_layers']
+        if mono_opt['outer_diameter']['flag']:
+            n_DV += self.modeling['monopile']['n_height']
+        if mono_opt['layer_thickness']['flag']:
+            n_DV += (self.modeling['monopile']['n_height'] - 1) * self.modeling['monopile']['n_layers']
 
         if self.opt['driver']['form'] == 'central':
             n_DV *= 2
@@ -143,19 +148,23 @@ class PoseOptimization(object):
     def set_design_variables(self, wt_opt, wt_init):
 
         # Set optimization design variables.
+        blade_opt    = self.opt['optimization_variables']['blade']
+        tower_opt    = self.opt['optimization_variables']['tower']
+        monopile_opt = self.opt['optimization_variables']['monopile']
+        control_opt  = self.opt['optimization_variables']['control']
 
-        if self.blade_opt['aero_shape']['twist']['flag']:
-            indices        = range(2, self.blade_opt['aero_shape']['twist']['n_opt'])
+        if blade_opt['aero_shape']['twist']['flag']:
+            indices        = range(2, blade_opt['aero_shape']['twist']['n_opt'])
             wt_opt.model.add_design_var('blade.opt_var.twist_opt_gain', indices = indices, lower=0., upper=1.)
 
-        chord_options = self.blade_opt['aero_shape']['chord']
+        chord_options = blade_opt['aero_shape']['chord']
         if chord_options['flag']:
             indices  = range(3, chord_options['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=chord_options['min_gain'], upper=chord_options['max_gain'])
 
-        if self.blade_opt['aero_shape']['af_positions']['flag']:
+        if blade_opt['aero_shape']['af_positions']['flag']:
             n_af = self.modeling['blade']['n_af_span']
-            indices  = range(self.blade_opt['aero_shape']['af_positions']['af_start'],n_af - 1)
+            indices  = range(blade_opt['aero_shape']['af_positions']['af_start'],n_af - 1)
             af_pos_init = wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']
             step_size = self._get_step_size()
             lb_af    = np.zeros(n_af)
@@ -168,78 +177,85 @@ class PoseOptimization(object):
             lb_af[-1] = ub_af[-1] = 1.
             wt_opt.model.add_design_var('blade.opt_var.af_position', indices = indices, lower=lb_af[indices], upper=ub_af[indices])
 
-        spar_cap_ss_options = self.blade_opt['structure']['spar_cap_ss']
+        spar_cap_ss_options = blade_opt['structure']['spar_cap_ss']
         if spar_cap_ss_options['flag']:
             indices  = range(1,spar_cap_ss_options['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ss_opt_gain', indices = indices, lower=spar_cap_ss_options['min_gain'], upper=spar_cap_ss_options['max_gain'])
 
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.
-        spar_cap_ps_options = self.blade_opt['structure']['spar_cap_ps']
+        spar_cap_ps_options = blade_opt['structure']['spar_cap_ps']
         if spar_cap_ps_options['flag'] and not spar_cap_ps_options['equal_to_suction']:
             indices  = range(1, spar_cap_ps_options['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=spar_cap_ps_options['min_gain'], upper=spar_cap_ps_options['max_gain'])
 
-        if self.tower_opt['outer_diameter']['flag']:
-            wt_opt.model.add_design_var('tower.diameter', lower=self.tower_opt['outer_diameter']['lower_bound'], upper=self.tower_opt['outer_diameter']['upper_bound'], ref=5.)
+        if tower_opt['outer_diameter']['flag']:
+            wt_opt.model.add_design_var('tower.diameter', lower=tower_opt['outer_diameter']['lower_bound'], upper=tower_opt['outer_diameter']['upper_bound'], ref=5.)
 
-        if self.tower_opt['layer_thickness']['flag']:
-            wt_opt.model.add_design_var('tower.layer_thickness', lower=self.tower_opt['layer_thickness']['lower_bound'], upper=self.tower_opt['layer_thickness']['upper_bound'], ref=1e-2)
+        if tower_opt['layer_thickness']['flag']:
+            wt_opt.model.add_design_var('tower.layer_thickness', lower=tower_opt['layer_thickness']['lower_bound'], upper=tower_opt['layer_thickness']['upper_bound'], ref=1e-2)
+
+        if monopile_opt['outer_diameter']['flag']:
+            wt_opt.model.add_design_var('monopile.diameter', lower=monopile_opt['outer_diameter']['lower_bound'], upper=monopile_opt['outer_diameter']['upper_bound'], ref=5.)
+
+        if monopile_opt['layer_thickness']['flag']:
+            wt_opt.model.add_design_var('monopile.layer_thickness', lower=monopile_opt['layer_thickness']['lower_bound'], upper=monopile_opt['layer_thickness']['upper_bound'], ref=1e-2)
 
         # -- Control --
-        if self.control_opt['tsr']['flag']:
-            wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=self.control_opt['tsr']['min_gain'],
-                                                                upper=self.control_opt['tsr']['max_gain'])
-        if self.control_opt['servo']['pitch_control']['flag']:
-            wt_opt.model.add_design_var('control.PC_omega', lower=self.control_opt['servo']['pitch_control']['omega_min'],
-                                                            upper=self.control_opt['servo']['pitch_control']['omega_max'])
-            wt_opt.model.add_design_var('control.PC_zeta', lower=self.control_opt['servo']['pitch_control']['zeta_min'],
-                                                           upper=self.control_opt['servo']['pitch_control']['zeta_max'])
-        if self.control_opt['servo']['torque_control']['flag']:
-            wt_opt.model.add_design_var('control.VS_omega', lower=self.control_opt['servo']['torque_control']['omega_min'],
-                                                            upper=self.control_opt['servo']['torque_control']['omega_max'])
-            wt_opt.model.add_design_var('control.VS_zeta', lower=self.control_opt['servo']['torque_control']['zeta_min'],
-                                                           upper=self.control_opt['servo']['torque_control']['zeta_max'])
+        if control_opt['tsr']['flag']:
+            wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=control_opt['tsr']['min_gain'],
+                                                                upper=control_opt['tsr']['max_gain'])
+        if control_opt['servo']['pitch_control']['flag']:
+            wt_opt.model.add_design_var('control.PC_omega', lower=control_opt['servo']['pitch_control']['omega_min'],
+                                                            upper=control_opt['servo']['pitch_control']['omega_max'])
+            wt_opt.model.add_design_var('control.PC_zeta', lower=control_opt['servo']['pitch_control']['zeta_min'],
+                                                           upper=control_opt['servo']['pitch_control']['zeta_max'])
+        if control_opt['servo']['torque_control']['flag']:
+            wt_opt.model.add_design_var('control.VS_omega', lower=control_opt['servo']['torque_control']['omega_min'],
+                                                            upper=control_opt['servo']['torque_control']['omega_max'])
+            wt_opt.model.add_design_var('control.VS_zeta', lower=control_opt['servo']['torque_control']['zeta_min'],
+                                                           upper=control_opt['servo']['torque_control']['zeta_max'])
         
         return wt_opt
 
     
     def set_constraints(self, wt_opt):
+        blade_opt   = self.opt['optimization_variables']['blade']
 
         # Set non-linear constraints
         blade_constraints = self.opt['constraints']['blade']
         if blade_constraints['strains_spar_cap_ss']['flag']:
-            if self.blade_opt['structure']['spar_cap_ss']['flag']:
+            if blade_opt['structure']['spar_cap_ss']['flag']:
                 wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
             else:
                 print('WARNING: the strains of the suction-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['strains_spar_cap_ps']['flag']:
-            if self.blade_opt['structure']['spar_cap_ps']['flag'] or self.blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
+            if blade_opt['structure']['spar_cap_ps']['flag'] or blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
                 wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.0)
             else:
                 print('WARNING: the strains of the pressure-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['stall']['flag']:
-            if self.blade_opt['aero_shape']['twist']['flag']:
+            if blade_opt['aero_shape']['twist']['flag']:
                 wt_opt.model.add_constraint('stall_check.no_stall_constraint', upper= 1.0)
             else:
                 print('WARNING: the margin to stall is set to be constrained, but twist is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['tip_deflection']['flag']:
-            if self.blade_opt['structure']['spar_cap_ss']['flag'] or self.blade_opt['structure']['spar_cap_ps']['flag']:
+            if blade_opt['structure']['spar_cap_ss']['flag'] or blade_opt['structure']['spar_cap_ps']['flag']:
                 wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= blade_constraints['tip_deflection']['ratio'])
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['chord']['flag']:
-            if self.blade_opt['aero_shape']['chord']['flag']:
+            if blade_opt['aero_shape']['chord']['flag']:
                 wt_opt.model.add_constraint('blade.pa.max_chord_constr', upper= 1.0)
             else:
                 print('WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['frequency']['flap_above_3P']:
-            if self.blade_opt['structure']['spar_cap_ss']['flag'] or self.blade_opt['structure']['spar_cap_ps']['flag']:
+            if blade_opt['structure']['spar_cap_ss']['flag'] or blade_opt['structure']['spar_cap_ps']['flag']:
                 wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
             else:
                 print('WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
@@ -280,40 +296,42 @@ class PoseOptimization(object):
         if self.opt['constraints']['blade']['match_L_D']['flag_D']:
             wt_opt.model.add_constraint('ccblade.D_n_opt', lower = target_D-eps_L, upper = target_D+eps_L)
 
+        # Tower and monopile contraints
         tower_constraints = self.opt['constraints']['tower']
-        if tower_constraints['height_constraint']['flag']:
+        monopile_constraints = self.opt['constraints']['monopile']
+        if tower_constraints['height_constraint']['flag'] or monopile_constraints['height_constraint']['flag']:
             wt_opt.model.add_constraint('towerse.height_constraint',
                 lower=tower_constraints['height_constraint']['lower_bound'],
                 upper=tower_constraints['height_constraint']['upper_bound'])
 
-        if tower_constraints['stress']['flag']:
+        if tower_constraints['stress']['flag'] or monopile_constraints['stress']['flag']:
             for k in range(self.modeling['tower']['nLC']):
                 kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
                 wt_opt.model.add_constraint('towerse.post'+kstr+'.stress', upper=1.0)
 
-        if tower_constraints['global_buckling']['flag']:
+        if tower_constraints['global_buckling']['flag'] or monopile_constraints['global_buckling']['flag']:
             for k in range(self.modeling['tower']['nLC']):
                 kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
                 wt_opt.model.add_constraint('towerse.post'+kstr+'.global_buckling', upper=1.0)
 
-        if tower_constraints['shell_buckling']['flag']:
+        if tower_constraints['shell_buckling']['flag'] or monopile_constraints['shell_buckling']['flag']:
             for k in range(self.modeling['tower']['nLC']):
                 kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
                 wt_opt.model.add_constraint('towerse.post'+kstr+'.shell_buckling', upper=1.0)
 
-        if tower_constraints['d_to_t']['flag']:
+        if tower_constraints['d_to_t']['flag'] or monopile_constraints['d_to_t']['flag']:
             wt_opt.model.add_constraint('towerse.constr_d_to_t',
                                         lower=tower_constraints['d_to_t']['lower_bound'],
                                         upper=tower_constraints['d_to_t']['upper_bound'])
 
-        if tower_constraints['taper']['flag']:
+        if tower_constraints['taper']['flag'] or monopile_constraints['taper']['flag']:
             wt_opt.model.add_constraint('towerse.constr_taper',
                                         lower=tower_constraints['taper']['lower_bound'])
 
-        if tower_constraints['slope']['flag']:
+        if tower_constraints['slope']['flag'] or monopile_constraints['slope']['flag']:
             wt_opt.model.add_constraint('towerse.slope', upper=1.0)
 
-        if tower_constraints['frequency_1']['flag']:
+        if tower_constraints['frequency_1']['flag'] or monopile_constraints['frequency_1']['flag']:
             for k in range(self.modeling['tower']['nLC']):
                 kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
                 wt_opt.model.add_constraint('towerse.post'+kstr+'.structural_frequencies', indices=[0],
@@ -343,21 +361,22 @@ class PoseOptimization(object):
 
 
     def set_initial(self, wt_opt, wt_init):
+        blade_opt   = self.opt['optimization_variables']['blade']
 
         if self.modeling['flags']['blade']:
-            wt_opt['blade.opt_var.s_opt_twist']   = np.linspace(0., 1., self.blade_opt['aero_shape']['twist']['n_opt'])
-            if self.blade_opt['aero_shape']['twist']['flag']:
+            wt_opt['blade.opt_var.s_opt_twist']   = np.linspace(0., 1., blade_opt['aero_shape']['twist']['n_opt'])
+            if blade_opt['aero_shape']['twist']['flag']:
                 init_twist_opt = np.interp(wt_opt['blade.opt_var.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
-                lb_twist = np.array(self.blade_opt['aero_shape']['twist']['lower_bound'])
-                ub_twist = np.array(self.blade_opt['aero_shape']['twist']['upper_bound'])
+                lb_twist = np.array(blade_opt['aero_shape']['twist']['lower_bound'])
+                ub_twist = np.array(blade_opt['aero_shape']['twist']['upper_bound'])
                 wt_opt['blade.opt_var.twist_opt_gain']    = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
                 if max(wt_opt['blade.opt_var.twist_opt_gain']) > 1. or min(wt_opt['blade.opt_var.twist_opt_gain']) < 0.:
                     print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
 
             blade_constraints = self.opt['constraints']['blade']
-            wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., self.blade_opt['aero_shape']['chord']['n_opt'])
-            wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ss']['n_opt'])
-            wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ps']['n_opt'])
+            wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., blade_opt['aero_shape']['chord']['n_opt'])
+            wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., blade_opt['structure']['spar_cap_ss']['n_opt'])
+            wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt['structure']['spar_cap_ps']['n_opt'])
             wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
             wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
             wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi

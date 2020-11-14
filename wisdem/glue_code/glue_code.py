@@ -565,7 +565,7 @@ class WindPark(om.Group):
             self.add_subsystem('financese', PlantFinance(verbosity=modeling_options['general']['verbosity']))
             self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
         
-        if opt_options['opt_flag']:
+        if opt_options['opt_flag'] and opt_options['recorder']['flag']:
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # BOS inputs
