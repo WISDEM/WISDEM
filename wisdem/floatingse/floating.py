@@ -31,7 +31,7 @@ class FloatingSE(om.Group):
         
         self.add_subsystem('tow', TowerLeanSE(modeling_options=self.options['modeling_options']),
                            promotes=['tower_s','tower_height','tower_outer_diameter_in','tower_layer_thickness','tower_outfitting_factor',
-                                     'max_taper','min_d_to_t','rna_mass','rna_cg','rna_I',
+                                     'rna_mass','rna_cg','rna_I',
                                      'tower_mass','tower_I_base','hub_height','material_names',
                                      'labor_cost_rate','painting_cost_rate','unit_cost_mat','rho_mat','E_mat','G_mat','sigma_y_mat',
                                      ('transition_piece_height', 'main_freeboard'), ('foundation_height', 'main_freeboard')])
@@ -41,7 +41,7 @@ class FloatingSE(om.Group):
         column_promotes = ['E_mat','G_mat','sigma_y_mat','rho_air','mu_air','rho_water','mu_water','rho_mat',
                            'shearExp','yaw','Uc','water_depth',
                            'hsig_wave','Tsig_wave','cd_usr','cm','loading','beta_wind','beta_wave',
-                           'max_draft','max_taper','min_d_to_t','material_names',
+                           'max_draft','material_names',
                            'permanent_ballast_density','outfitting_factor','ballast_cost_rate',
                            'unit_cost_mat','labor_cost_rate','painting_cost_rate','outfitting_cost_rate',
                            'Uref', 'zref', 'wind_z0']

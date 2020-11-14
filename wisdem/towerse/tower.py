@@ -11,14 +11,14 @@ import numpy as np
 import openmdao.api as om
 import copy
 
-from wisdem.commonse.WindWaveDrag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
+from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
 
 from wisdem.commonse.environment import LinearWaves, TowerSoil, PowerWind, LogWind
 from wisdem.commonse.cross_sections import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
 from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ, get_nfull, RIGID
 
-import wisdem.commonse.UtilizationSupplement as Util
+import wisdem.commonse.utilization_constraints as util_con
 
 
 def find_nearest(array, value):
@@ -1034,16 +1034,16 @@ class TowerPostFrame(om.ExplicitComponent):
         outputs['top_deflection'] = inputs['top_deflection_in']
         
         # von mises stress
-        outputs['stress'] = Util.vonMisesStressUtilization(axial_stress, hoop_stress, shear_stress, gamma_f*gamma_m*gamma_n, sigma_y)
+        outputs['stress'] = util_con.vonMisesStressUtilization(axial_stress, hoop_stress, shear_stress, gamma_f*gamma_m*gamma_n, sigma_y)
 
         # shell buckling
-        outputs['shell_buckling'] = Util.shellBucklingEurocode(d, t, axial_stress, hoop_stress,
+        outputs['shell_buckling'] = util_con.shellBucklingEurocode(d, t, axial_stress, hoop_stress,
                                                                 shear_stress, L_reinforced, E, sigma_y, gamma_f, gamma_b)
 
         # global buckling
         tower_height = inputs['z_full'][-1] - inputs['z_full'][0]
         M = np.sqrt(inputs['Mxx']**2 + inputs['Myy']**2)
-        outputs['global_buckling'] = Util.bucklingGL(d, t, inputs['Fz'], M, tower_height, E, sigma_y, gamma_f, gamma_b)
+        outputs['global_buckling'] = util_con.bucklingGL(d, t, inputs['Fz'], M, tower_height, E, sigma_y, gamma_f, gamma_b)
 
         # fatigue
         N_DEL = 365.0*24.0*3600.0*inputs['life'] * np.ones(len(t))
@@ -1052,7 +1052,7 @@ class TowerPostFrame(om.ExplicitComponent):
         #if any(inputs['M_DEL']):
         #    M_DEL = np.interp(z_section, inputs['z_DEL'], inputs['M_DEL'])
 
-        #    outputs['damage'] = Util.fatigue(M_DEL, N_DEL, d, inputs['t'], inputs['m_SN'],
+        #    outputs['damage'] = util_con.fatigue(M_DEL, N_DEL, d, inputs['t'], inputs['m_SN'],
         #                                      inputs['DC'], gamma_fatigue, stress_factor=1.0, weld_factor=True)
 
     def compute_distprop(self, outputs, z_in, d_in, thk_in, E_in, G_in, rho_in):
@@ -1167,7 +1167,8 @@ class TowerLeanSE(om.Group):
                                                                          'tower_cost','gravity_foundation_mass','foundation_height',
                                                                          'transition_piece_mass','transition_piece_cost','transition_piece_height',
                                                                          'monopile_mass','monopile_cost','monopile_length','structural_mass','structural_cost'])
-        self.add_subsystem('gc', Util.GeometricConstraints(nPoints=n_height), promotes=['min_d_to_t','max_taper','constr_taper','constr_d_to_t','slope',('d', 'tower_outer_diameter'),('t', 'tower_wall_thickness')])
+        self.add_subsystem('gc', util_con.GeometricConstraints(nPoints=n_height),
+                           promotes=['constr_taper','constr_d_to_t','slope',('d', 'tower_outer_diameter'),('t', 'tower_wall_thickness')])
         
         self.add_subsystem('turb', TurbineMass(), promotes=['turbine_mass','monopile_mass',
                                                             'tower_mass','tower_center_of_mass','tower_I_base',

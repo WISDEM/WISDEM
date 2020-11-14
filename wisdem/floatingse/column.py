@@ -5,8 +5,9 @@ import copy
 from wisdem.commonse.utilities import nodal2sectional, sectional2nodal, assembleI, unassembleI, sectionalInterp
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.UtilizationSupplement import shellBuckling_withStiffeners, GeometricConstraints
-from wisdem.commonse import gravity, eps, AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
+from wisdem.commonse.utilization_constraints import shellBuckling_withStiffeners, GeometricConstraints
+from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
+from wisdem.commonse import gravity, eps
 from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, get_nfull
 from wisdem.commonse.environment import PowerWind, LinearWaves
 
@@ -1548,7 +1549,7 @@ class Column(om.Group):
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_subsystem('yaml', DiscretizationYAML(n_height=n_height, n_layers=n_layers, n_mat=n_mat), promotes=['*'])
             
-        self.add_subsystem('gc', GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=['max_taper','min_d_to_t','constr_taper','constr_d_to_t'])
+        self.add_subsystem('gc', GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=['constr_taper','constr_d_to_t'])
 
         self.add_subsystem('cyl_geom', CylinderDiscretization(nPoints=n_height), promotes=['section_height','diameter','wall_thickness',
                                                                                            'foundation_height','d_full','t_full'])

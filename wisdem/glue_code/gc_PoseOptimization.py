@@ -107,16 +107,28 @@ class PoseOptimization(object):
         # Set merit figure. Each objective has its own scaling.
         if self.opt['merit_figure'] == 'AEP':
             wt_opt.model.add_objective('sse.AEP', ref = -1.e6)
+
         elif self.opt['merit_figure'] == 'blade_mass':
             wt_opt.model.add_objective('elastic.precomp.blade_mass', ref = 1.e4)
+
         elif self.opt['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', ref = 0.1)
+
         elif self.opt['merit_figure'] == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons.tip_deflection_ratio')
+
         elif self.opt['merit_figure'] == 'tower_mass':
-            wt_opt.model.add_objective('towerse.tower_mass')
+            wt_opt.model.add_objective('towerse.tower_mass', scaler=1e-6)
+
+        elif self.opt['merit_figure'] == 'mononpile_mass':
+            wt_opt.model.add_objective('towerse.mononpile_mass', ref=1.e6)
+
+        elif self.opt['merit_figure'] == 'structural_mass':
+            wt_opt.model.add_objective('towerse.structural_mass', ref=1.e6)
+
         elif self.opt['merit_figure'] == 'tower_cost':
-            wt_opt.model.add_objective('tcc.tower_cost')
+            wt_opt.model.add_objective('tcc.tower_cost', ref=1.e6)
+
         elif self.opt['merit_figure'] == 'Cp':
             if self.modeling['flags']['blade']:
                 wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
@@ -275,25 +287,36 @@ class PoseOptimization(object):
                 upper=tower_constraints['height_constraint']['upper_bound'])
 
         if tower_constraints['stress']['flag']:
-            wt_opt.model.add_constraint('towerse.post.stress', upper=1.0)
+            for k in range(self.modeling['tower']['nLC']):
+                kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
+                wt_opt.model.add_constraint('towerse.post'+kstr+'.stress', upper=1.0)
 
         if tower_constraints['global_buckling']['flag']:
-            wt_opt.model.add_constraint('towerse.post.global_buckling', upper=1.0)
+            for k in range(self.modeling['tower']['nLC']):
+                kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
+                wt_opt.model.add_constraint('towerse.post'+kstr+'.global_buckling', upper=1.0)
 
         if tower_constraints['shell_buckling']['flag']:
-            wt_opt.model.add_constraint('towerse.post.shell_buckling', upper=1.0)
+            for k in range(self.modeling['tower']['nLC']):
+                kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
+                wt_opt.model.add_constraint('towerse.post'+kstr+'.shell_buckling', upper=1.0)
 
-        if tower_constraints['constr_d_to_t']['flag']:
-            wt_opt.model.add_constraint('towerse.constr_d_to_t', upper=0.0)
+        if tower_constraints['d_to_t']['flag']:
+            wt_opt.model.add_constraint('towerse.constr_d_to_t',
+                                        lower=tower_constraints['d_to_t']['lower_bound'],
+                                        upper=tower_constraints['d_to_t']['upper_bound'])
 
-        if tower_constraints['constr_taper']['flag']:
-            wt_opt.model.add_constraint('towerse.constr_taper', lower=0.0)
+        if tower_constraints['taper']['flag']:
+            wt_opt.model.add_constraint('towerse.constr_taper',
+                                        lower=tower_constraints['taper']['lower_bound'])
 
         if tower_constraints['slope']['flag']:
             wt_opt.model.add_constraint('towerse.slope', upper=1.0)
 
         if tower_constraints['frequency_1']['flag']:
-            wt_opt.model.add_constraint('towerse.tower.f1',
+            for k in range(self.modeling['tower']['nLC']):
+                kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
+                wt_opt.model.add_constraint('towerse.post'+kstr+'.structural_frequencies', indices=[0],
                 lower=tower_constraints['frequency_1']['lower_bound'],
                 upper=tower_constraints['frequency_1']['upper_bound'])
 
@@ -320,23 +343,24 @@ class PoseOptimization(object):
 
 
     def set_initial(self, wt_opt, wt_init):
-        
-        wt_opt['blade.opt_var.s_opt_twist']   = np.linspace(0., 1., self.blade_opt['aero_shape']['twist']['n_opt'])
-        if self.blade_opt['aero_shape']['twist']['flag']:
-            init_twist_opt = np.interp(wt_opt['blade.opt_var.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
-            lb_twist = np.array(self.blade_opt['aero_shape']['twist']['lower_bound'])
-            ub_twist = np.array(self.blade_opt['aero_shape']['twist']['upper_bound'])
-            wt_opt['blade.opt_var.twist_opt_gain']    = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
-            if max(wt_opt['blade.opt_var.twist_opt_gain']) > 1. or min(wt_opt['blade.opt_var.twist_opt_gain']) < 0.:
-                print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
 
-        blade_constraints = self.opt['constraints']['blade']
-        wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., self.blade_opt['aero_shape']['chord']['n_opt'])
-        wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ss']['n_opt'])
-        wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ps']['n_opt'])
-        wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
-        wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
-        wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
+        if self.modeling['flags']['blade']:
+            wt_opt['blade.opt_var.s_opt_twist']   = np.linspace(0., 1., self.blade_opt['aero_shape']['twist']['n_opt'])
+            if self.blade_opt['aero_shape']['twist']['flag']:
+                init_twist_opt = np.interp(wt_opt['blade.opt_var.s_opt_twist'], wt_init['components']['blade']['outer_shape_bem']['twist']['grid'], wt_init['components']['blade']['outer_shape_bem']['twist']['values'])
+                lb_twist = np.array(self.blade_opt['aero_shape']['twist']['lower_bound'])
+                ub_twist = np.array(self.blade_opt['aero_shape']['twist']['upper_bound'])
+                wt_opt['blade.opt_var.twist_opt_gain']    = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
+                if max(wt_opt['blade.opt_var.twist_opt_gain']) > 1. or min(wt_opt['blade.opt_var.twist_opt_gain']) < 0.:
+                    print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
+
+            blade_constraints = self.opt['constraints']['blade']
+            wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., self.blade_opt['aero_shape']['chord']['n_opt'])
+            wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ss']['n_opt'])
+            wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ps']['n_opt'])
+            wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
+            wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
+            wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
         
         return wt_opt
 

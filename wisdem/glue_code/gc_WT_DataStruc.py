@@ -306,7 +306,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output('crane_cost',                    units='USD', val=12e3)
 
         # Assembly setup
-        self.add_subsystem('assembly',      WT_Assembly(blade_init_options   = modeling_options['blade']))
+        self.add_subsystem('assembly',      WT_Assembly(modeling_options = modeling_options))
         if modeling_options['flags']['blade']:
             self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
         if modeling_options['flags']['hub']:
@@ -1348,26 +1348,37 @@ class Materials(om.Group):
 class WT_Assembly(om.ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
     def initialize(self):
-        self.options.declare('blade_init_options')
+        self.options.declare('modeling_options')
 
     def setup(self):
-        n_span             = self.options['blade_init_options']['n_span']
+        modeling_options = self.options['modeling_options']
 
+        if modeling_options['flags']['blade']:
+            n_span = modeling_options['blade']['n_span']
+        else:
+            n_span = 0
+            
         self.add_input('blade_ref_axis',        val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
-        self.add_input('hub_radius',            val=0.0, units='m',         desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
-        self.add_input('monopile_height',       val=0.0,    units='m',      desc='Scalar of the monopile height computed along its axis from monopile base.')
-        self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed along its axis from tower base.')
-        self.add_input('foundation_height',     val=0.0,    units='m',      desc='Scalar of the foundation height computed along its axis.')
-        self.add_input('distance_tt_hub',       val=0.0,    units='m',      desc='Vertical distance from tower top to hub center.')
-
         self.add_output('r_blade',              val=np.zeros(n_span), units='m',      desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
         self.add_output('rotor_radius',         val=0.0,    units='m',      desc='Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
         self.add_output('rotor_diameter',       val=0.0,    units='m',      desc='Scalar of the rotor diameter, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
+
+        self.add_input('hub_radius',            val=0.0, units='m',         desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
+            
+        self.add_input('monopile_height',       val=0.0,    units='m',      desc='Scalar of the monopile height computed along its axis from monopile base.')
+            
+        self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed along its axis from tower base.')
+        self.add_input('foundation_height',     val=0.0,    units='m',      desc='Scalar of the foundation height computed along its axis.')
+
+        self.add_input('distance_tt_hub',       val=0.0,    units='m',      desc='Vertical distance from tower top to hub center.')
         self.add_output('hub_height',           val=0.0,    units='m',      desc='Height of the hub in the global reference system, i.e. distance rotor center to ground.')
 
     def compute(self, inputs, outputs):
+        modeling_options = self.options['modeling_options']
 
-        outputs['r_blade']        = inputs['blade_ref_axis'][:,2] + inputs['hub_radius']
-        outputs['rotor_radius']   = outputs['r_blade'][-1]
+        if modeling_options['flags']['blade']:
+            outputs['r_blade']        = inputs['blade_ref_axis'][:,2] + inputs['hub_radius']
+            outputs['rotor_radius']   = outputs['r_blade'][-1]
+            
         outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
         outputs['hub_height']     = inputs['monopile_height'] + inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
