@@ -22,7 +22,7 @@ install:
   # Create environment and install dependences dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - conda activate test-environment
-  - conda install -q --yes compilers matplotlib pytest pytest-cov coveralls pip openmdao jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy geopy
+  - conda install -q --yes compilers matplotlib pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy geopy
   - pip install simpy marmot-agents
 
   # Install WISDEM
