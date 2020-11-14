@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import wisdem.commonse.UtilizationSupplement as util
+import wisdem.commonse.utilization_constraints as util
 
 from wisdem.commonse import gravity as g
 myones = np.ones((100,))

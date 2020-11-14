@@ -3,7 +3,7 @@ import numpy.testing as npt
 import unittest
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
-import wisdem.commonse.WindWaveDrag as wwd
+import wisdem.commonse.wind_wave_drag as wwd
 
 
 npts = 100

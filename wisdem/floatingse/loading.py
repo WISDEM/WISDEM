@@ -4,10 +4,10 @@ import openmdao.api as om
 from wisdem.commonse.utilities import nodal2sectional
 
 from wisdem.commonse import gravity, eps, NFREQ
-import wisdem.commonse.UtilizationSupplement as util
+import wisdem.commonse.utilization_constraints as util
 from wisdem.commonse.utilities import get_modal_coefficients
 import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.WindWaveDrag import CylinderWindDrag
+from wisdem.commonse.wind_wave_drag import CylinderWindDrag
 from wisdem.commonse.environment import PowerWind
 from wisdem.commonse.vertical_cylinder import get_nfull, RIGID
 from wisdem.commonse.cross_sections import Tube

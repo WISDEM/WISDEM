@@ -660,8 +660,6 @@ class TestGroup(unittest.TestCase):
         prob['painting_cost_rate'] = 20.0
         prob['outfitting_cost_rate'] = 300.0
         prob['loading'] = 'hydrostatic'
-        prob['max_taper'] = 0.4
-        prob['min_d_to_t'] = 120.0
         prob['shearExp'] = 0.1
         prob['beta_wind'] = 0.0
         prob['cd_usr'] = -1.0

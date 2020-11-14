@@ -176,8 +176,6 @@ prob['max_offset']       = 100.0 # Max surge/sway offset [m]
 prob['operational_heel'] = 10.0 # Max heel (pitching) angle [deg]
 
 # Design constraints
-prob['max_taper']              = 0.2  # For manufacturability of rolling steel
-prob['min_d_to_t'] = 80.0 # For weld-ability
 prob['connection_ratio_max']         = 0.25 # For welding pontoons to columns
 
 # API 2U flag
