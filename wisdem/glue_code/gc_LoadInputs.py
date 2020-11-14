@@ -51,9 +51,14 @@ class WindTurbineOntologyPython(object):
         flags = self.modeling_options['flags']
 
         # Even if the block is in the inputs, the user can turn off via modeling options
-        if flags['bos']: flags['bos'] = self.modeling_options['Analysis_Flags']['BOS']
-        if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE']
+        if flags['bos']:   flags['bos']   = self.modeling_options['Analysis_Flags']['BOS']
+        if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE'] or self.modeling_options['Analysis_Flags']['ServoSE']
         if flags['tower']: flags['tower'] = self.modeling_options['Analysis_Flags']['TowerSE']
+        if flags['hub']:   flags['hub']   = self.modeling_options['Analysis_Flags']['DriveSE']
+        if flags['nacelle']: flags['nacelle'] = self.modeling_options['Analysis_Flags']['DriveSE']
+        if flags['generator']: flags['generator'] = self.modeling_options['Analysis_Flags']['DriveSE']
+        flags['hub'] = flags['nacelle'] = (flags['hub'] or flags['nacelle']) # Hub and nacelle have to go together
+        
         # Blades and airfoils
         if flags['blade'] and not flags['airfoils']:
             raise ValueError('Blades/rotor analysis is requested but no airfoils are found')
@@ -218,7 +223,7 @@ class WindTurbineOntologyPython(object):
 
     def write_ontology(self, wt_opt, fname_output):
 
-        if self.modeling_options['flags']['hub']:
+        if self.modeling_options['flags']['blade']:
             # Update blade outer shape
             self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = wt_opt['blade.opt_var.af_position'].tolist()
             self.wt_init['components']['blade']['outer_shape_bem']['chord']['grid']                 = wt_opt['blade.outer_shape_bem.s'].tolist()
@@ -318,154 +323,153 @@ class WindTurbineOntologyPython(object):
                 I.append(Ii.tolist())
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'] = I
 
-        if self.modeling_options['Analysis_Flags']['DriveSE']:
-            if self.modeling_options['flags']['hub']:
-                # Update hub
-                self.wt_init['components']['hub']['cone_angle']                  = float(wt_opt['hub.cone'])
-                self.wt_init['components']['hub']['flange_t2shell_t']            = float(wt_opt['hub.flange_t2shell_t'])
-                self.wt_init['components']['hub']['flange_OD2hub_D']             = float(wt_opt['hub.flange_OD2hub_D'])
-                self.wt_init['components']['hub']['flange_ID2OD']                = float(wt_opt['hub.flange_ID2flange_OD'])
-                self.wt_init['components']['hub']['hub_blade_spacing_margin']    = float(wt_opt['hub.hub_in2out_circ'])
-                self.wt_init['components']['hub']['hub_stress_concentration']    = float(wt_opt['hub.hub_stress_concentration'])
-                self.wt_init['components']['hub']['n_front_brackets']            = int(wt_opt['hub.n_front_brackets'])
-                self.wt_init['components']['hub']['n_rear_brackets']             = int(wt_opt['hub.n_rear_brackets'])
-                self.wt_init['components']['hub']['clearance_hub_spinner']       = float(wt_opt['hub.clearance_hub_spinner'])
-                self.wt_init['components']['hub']['spin_hole_incr']              = float(wt_opt['hub.spin_hole_incr'])
-                self.wt_init['components']['hub']['pitch_system_scaling_factor'] = float(wt_opt['hub.pitch_system_scaling_factor'])
-                self.wt_init['components']['hub']['spinner_gust_ws']             = float(wt_opt['hub.spinner_gust_ws'])
+        if self.modeling_options['flags']['hub']:
+            # Update hub
+            self.wt_init['components']['hub']['cone_angle']                  = float(wt_opt['hub.cone'])
+            self.wt_init['components']['hub']['flange_t2shell_t']            = float(wt_opt['hub.flange_t2shell_t'])
+            self.wt_init['components']['hub']['flange_OD2hub_D']             = float(wt_opt['hub.flange_OD2hub_D'])
+            self.wt_init['components']['hub']['flange_ID2OD']                = float(wt_opt['hub.flange_ID2flange_OD'])
+            self.wt_init['components']['hub']['hub_blade_spacing_margin']    = float(wt_opt['hub.hub_in2out_circ'])
+            self.wt_init['components']['hub']['hub_stress_concentration']    = float(wt_opt['hub.hub_stress_concentration'])
+            self.wt_init['components']['hub']['n_front_brackets']            = int(wt_opt['hub.n_front_brackets'])
+            self.wt_init['components']['hub']['n_rear_brackets']             = int(wt_opt['hub.n_rear_brackets'])
+            self.wt_init['components']['hub']['clearance_hub_spinner']       = float(wt_opt['hub.clearance_hub_spinner'])
+            self.wt_init['components']['hub']['spin_hole_incr']              = float(wt_opt['hub.spin_hole_incr'])
+            self.wt_init['components']['hub']['pitch_system_scaling_factor'] = float(wt_opt['hub.pitch_system_scaling_factor'])
+            self.wt_init['components']['hub']['spinner_gust_ws']             = float(wt_opt['hub.spinner_gust_ws'])
 
-            if self.modeling_options['flags']['nacelle']:
-                # Common direct and geared
-                self.wt_init['components']['nacelle']['drivetrain']['uptilt']                    = float(wt_opt['nacelle.uptilt'])
-                self.wt_init['components']['nacelle']['drivetrain']['distance_tt_hub']           = float(wt_opt['nacelle.distance_tt_hub'])
-                self.wt_init['components']['nacelle']['drivetrain']['overhang']                  = float(wt_opt['nacelle.overhang'])
-                self.wt_init['components']['nacelle']['drivetrain']['distance_hub_mb']           = float(wt_opt['nacelle.distance_hub2mb'])
-                self.wt_init['components']['nacelle']['drivetrain']['distance_mb_mb']            = float(wt_opt['nacelle.distance_mb2mb'])
-                self.wt_init['components']['nacelle']['drivetrain']['generator_length']          = float(wt_opt['nacelle.L_generator'])
-                s_lss  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.lss_diameter'])).tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']['grid']      = s_lss
-                self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']['values']    = wt_opt['nacelle.lss_diameter'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']['grid']= s_lss
-                self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']['values']= wt_opt['nacelle.lss_wall_thickness'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['gear_ratio']                = float(wt_opt['nacelle.gear_ratio'])
-                self.wt_init['components']['nacelle']['drivetrain']['gearbox_efficiency']        = float(wt_opt['nacelle.gearbox_efficiency'])
-                self.wt_init['components']['nacelle']['drivetrain']['mb1Type']                   = wt_opt['nacelle.mb1Type']
-                self.wt_init['components']['nacelle']['drivetrain']['mb2Type']                   = wt_opt['nacelle.mb2Type']
-                self.wt_init['components']['nacelle']['drivetrain']['uptower']                   = wt_opt['nacelle.uptower']
-                self.wt_init['components']['nacelle']['drivetrain']['lss_material']              = wt_opt['nacelle.lss_material']
-                self.wt_init['components']['nacelle']['drivetrain']['bedplate_material']         = wt_opt['nacelle.bedplate_material']
+        if self.modeling_options['flags']['nacelle']:
+            # Common direct and geared
+            self.wt_init['components']['nacelle']['drivetrain']['uptilt']                    = float(wt_opt['nacelle.uptilt'])
+            self.wt_init['components']['nacelle']['drivetrain']['distance_tt_hub']           = float(wt_opt['nacelle.distance_tt_hub'])
+            self.wt_init['components']['nacelle']['drivetrain']['overhang']                  = float(wt_opt['nacelle.overhang'])
+            self.wt_init['components']['nacelle']['drivetrain']['distance_hub_mb']           = float(wt_opt['nacelle.distance_hub2mb'])
+            self.wt_init['components']['nacelle']['drivetrain']['distance_mb_mb']            = float(wt_opt['nacelle.distance_mb2mb'])
+            self.wt_init['components']['nacelle']['drivetrain']['generator_length']          = float(wt_opt['nacelle.L_generator'])
+            s_lss  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.lss_diameter'])).tolist()
+            self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']['grid']      = s_lss
+            self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']['values']    = wt_opt['nacelle.lss_diameter'].tolist()
+            self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']['grid']= s_lss
+            self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']['values']= wt_opt['nacelle.lss_wall_thickness'].tolist()
+            self.wt_init['components']['nacelle']['drivetrain']['gear_ratio']                = float(wt_opt['nacelle.gear_ratio'])
+            self.wt_init['components']['nacelle']['drivetrain']['gearbox_efficiency']        = float(wt_opt['nacelle.gearbox_efficiency'])
+            self.wt_init['components']['nacelle']['drivetrain']['mb1Type']                   = wt_opt['nacelle.mb1Type']
+            self.wt_init['components']['nacelle']['drivetrain']['mb2Type']                   = wt_opt['nacelle.mb2Type']
+            self.wt_init['components']['nacelle']['drivetrain']['uptower']                   = wt_opt['nacelle.uptower']
+            self.wt_init['components']['nacelle']['drivetrain']['lss_material']              = wt_opt['nacelle.lss_material']
+            self.wt_init['components']['nacelle']['drivetrain']['bedplate_material']         = wt_opt['nacelle.bedplate_material']
 
-                if self.modeling_options['drivetrainse']['direct']:
-                    # Direct only
-                    s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_diameter'])).tolist()
-                    s_bed  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness'])).tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['access_diameter']           = float(wt_opt['nacelle.access_diameter'])
-                    self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']['grid']     = s_nose
-                    self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']['values']   = wt_opt['nacelle.nose_diameter'].tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']['grid'] = s_nose
-                    self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']['values'] = wt_opt['nacelle.nose_wall_thickness'].tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']['grid'] = s_bed
-                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']['values']   = wt_opt['nacelle.bedplate_wall_thickness'].tolist()
-                else:
-                    # Geared only
-                    s_hss  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.hss_diameter'])).tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['hss_length']                = float(wt_opt['nacelle.hss_length'])
-                    self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']['grid']      = s_hss
-                    self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']['values']    = wt_opt['nacelle.hss_diameter'].tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']['grid'] = s_hss
-                    self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']['values']= wt_opt['nacelle.hss_wall_thickness'].tolist()
-                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_width']     = float(wt_opt['nacelle.bedplate_flange_width'])
-                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_thickness'] = float(wt_opt['nacelle.bedplate_flange_thickness'])
-                    self.wt_init['components']['nacelle']['drivetrain']['bedplate_web_thickness']    = float(wt_opt['nacelle.bedplate_web_thickness'])
-                    self.wt_init['components']['nacelle']['drivetrain']['gear_configuration']        = wt_opt['nacelle.gear_configuration']
-                    self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers']
-                    self.wt_init['components']['nacelle']['drivetrain']['hss_material']              = wt_opt['nacelle.hss_material']
+            if self.modeling_options['drivetrainse']['direct']:
+                # Direct only
+                s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_diameter'])).tolist()
+                s_bed  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness'])).tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['access_diameter']           = float(wt_opt['nacelle.access_diameter'])
+                self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']['grid']     = s_nose
+                self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']['values']   = wt_opt['nacelle.nose_diameter'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']['grid'] = s_nose
+                self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']['values'] = wt_opt['nacelle.nose_wall_thickness'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']['grid'] = s_bed
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']['values']   = wt_opt['nacelle.bedplate_wall_thickness'].tolist()
+            else:
+                # Geared only
+                s_hss  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.hss_diameter'])).tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['hss_length']                = float(wt_opt['nacelle.hss_length'])
+                self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']['grid']      = s_hss
+                self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']['values']    = wt_opt['nacelle.hss_diameter'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']['grid'] = s_hss
+                self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']['values']= wt_opt['nacelle.hss_wall_thickness'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_width']     = float(wt_opt['nacelle.bedplate_flange_width'])
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_thickness'] = float(wt_opt['nacelle.bedplate_flange_thickness'])
+                self.wt_init['components']['nacelle']['drivetrain']['bedplate_web_thickness']    = float(wt_opt['nacelle.bedplate_web_thickness'])
+                self.wt_init['components']['nacelle']['drivetrain']['gear_configuration']        = wt_opt['nacelle.gear_configuration']
+                self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers']
+                self.wt_init['components']['nacelle']['drivetrain']['hss_material']              = wt_opt['nacelle.hss_material']
 
 
-            if self.modeling_options['flags']['generator']:
+        if self.modeling_options['flags']['generator']:
 
-                self.wt_init['components']['nacelle']['generator']['B_r']         = float(wt_opt['generator.B_r'])
-                self.wt_init['components']['nacelle']['generator']['P_Fe0e']      = float(wt_opt['generator.P_Fe0e'])
-                self.wt_init['components']['nacelle']['generator']['P_Fe0h']      = float(wt_opt['generator.P_Fe0h'])
-                self.wt_init['components']['nacelle']['generator']['S_N']         = float(wt_opt['generator.S_N'])
-                self.wt_init['components']['nacelle']['generator']['alpha_p']     = float(wt_opt['generator.alpha_p'])
-                self.wt_init['components']['nacelle']['generator']['b_r_tau_r']   = float(wt_opt['generator.b_r_tau_r'])
-                self.wt_init['components']['nacelle']['generator']['b_ro']        = float(wt_opt['generator.b_ro'])
-                self.wt_init['components']['nacelle']['generator']['b_s_tau_s']   = float(wt_opt['generator.b_s_tau_s'])
-                self.wt_init['components']['nacelle']['generator']['b_so']        = float(wt_opt['generator.b_so'])
-                self.wt_init['components']['nacelle']['generator']['cofi']        = float(wt_opt['generator.cofi'])
-                self.wt_init['components']['nacelle']['generator']['freq']        = float(wt_opt['generator.freq'])
-                self.wt_init['components']['nacelle']['generator']['h_i']         = float(wt_opt['generator.h_i'])
-                self.wt_init['components']['nacelle']['generator']['h_sy0']       = float(wt_opt['generator.h_sy0'])
-                self.wt_init['components']['nacelle']['generator']['h_w']         = float(wt_opt['generator.h_w'])
-                self.wt_init['components']['nacelle']['generator']['k_fes']       = float(wt_opt['generator.k_fes'])
-                self.wt_init['components']['nacelle']['generator']['k_fillr']     = float(wt_opt['generator.k_fillr'])
-                self.wt_init['components']['nacelle']['generator']['k_fills']     = float(wt_opt['generator.k_fills'])
-                self.wt_init['components']['nacelle']['generator']['k_s']         = float(wt_opt['generator.k_s'])
-                self.wt_init['components']['nacelle']['generator']['m']           = float(wt_opt['generator.m'] )
-                self.wt_init['components']['nacelle']['generator']['mu_0']        = float(wt_opt['generator.mu_0'])
-                self.wt_init['components']['nacelle']['generator']['mu_r']        = float(wt_opt['generator.mu_r'])
-                self.wt_init['components']['nacelle']['generator']['p']           = float(wt_opt['generator.p'] )
-                self.wt_init['components']['nacelle']['generator']['phi']         = float(wt_opt['generator.phi'])
-                self.wt_init['components']['nacelle']['generator']['q1']          = float(wt_opt['generator.q1'])
-                self.wt_init['components']['nacelle']['generator']['q2']          = float(wt_opt['generator.q2'])
-                self.wt_init['components']['nacelle']['generator']['ratio_mw2pp'] = float(wt_opt['generator.ratio_mw2pp'])
-                self.wt_init['components']['nacelle']['generator']['resist_Cu']   = float(wt_opt['generator.resist_Cu'])
-                self.wt_init['components']['nacelle']['generator']['sigma']       = float(wt_opt['generator.sigma'])
-                self.wt_init['components']['nacelle']['generator']['y_tau_p']     = float(wt_opt['generator.y_tau_p'])
-                self.wt_init['components']['nacelle']['generator']['y_tau_pr']    = float(wt_opt['generator.y_tau_pr'])
+            self.wt_init['components']['nacelle']['generator']['B_r']         = float(wt_opt['generator.B_r'])
+            self.wt_init['components']['nacelle']['generator']['P_Fe0e']      = float(wt_opt['generator.P_Fe0e'])
+            self.wt_init['components']['nacelle']['generator']['P_Fe0h']      = float(wt_opt['generator.P_Fe0h'])
+            self.wt_init['components']['nacelle']['generator']['S_N']         = float(wt_opt['generator.S_N'])
+            self.wt_init['components']['nacelle']['generator']['alpha_p']     = float(wt_opt['generator.alpha_p'])
+            self.wt_init['components']['nacelle']['generator']['b_r_tau_r']   = float(wt_opt['generator.b_r_tau_r'])
+            self.wt_init['components']['nacelle']['generator']['b_ro']        = float(wt_opt['generator.b_ro'])
+            self.wt_init['components']['nacelle']['generator']['b_s_tau_s']   = float(wt_opt['generator.b_s_tau_s'])
+            self.wt_init['components']['nacelle']['generator']['b_so']        = float(wt_opt['generator.b_so'])
+            self.wt_init['components']['nacelle']['generator']['cofi']        = float(wt_opt['generator.cofi'])
+            self.wt_init['components']['nacelle']['generator']['freq']        = float(wt_opt['generator.freq'])
+            self.wt_init['components']['nacelle']['generator']['h_i']         = float(wt_opt['generator.h_i'])
+            self.wt_init['components']['nacelle']['generator']['h_sy0']       = float(wt_opt['generator.h_sy0'])
+            self.wt_init['components']['nacelle']['generator']['h_w']         = float(wt_opt['generator.h_w'])
+            self.wt_init['components']['nacelle']['generator']['k_fes']       = float(wt_opt['generator.k_fes'])
+            self.wt_init['components']['nacelle']['generator']['k_fillr']     = float(wt_opt['generator.k_fillr'])
+            self.wt_init['components']['nacelle']['generator']['k_fills']     = float(wt_opt['generator.k_fills'])
+            self.wt_init['components']['nacelle']['generator']['k_s']         = float(wt_opt['generator.k_s'])
+            self.wt_init['components']['nacelle']['generator']['m']           = float(wt_opt['generator.m'] )
+            self.wt_init['components']['nacelle']['generator']['mu_0']        = float(wt_opt['generator.mu_0'])
+            self.wt_init['components']['nacelle']['generator']['mu_r']        = float(wt_opt['generator.mu_r'])
+            self.wt_init['components']['nacelle']['generator']['p']           = float(wt_opt['generator.p'] )
+            self.wt_init['components']['nacelle']['generator']['phi']         = float(wt_opt['generator.phi'])
+            self.wt_init['components']['nacelle']['generator']['q1']          = float(wt_opt['generator.q1'])
+            self.wt_init['components']['nacelle']['generator']['q2']          = float(wt_opt['generator.q2'])
+            self.wt_init['components']['nacelle']['generator']['ratio_mw2pp'] = float(wt_opt['generator.ratio_mw2pp'])
+            self.wt_init['components']['nacelle']['generator']['resist_Cu']   = float(wt_opt['generator.resist_Cu'])
+            self.wt_init['components']['nacelle']['generator']['sigma']       = float(wt_opt['generator.sigma'])
+            self.wt_init['components']['nacelle']['generator']['y_tau_p']     = float(wt_opt['generator.y_tau_p'])
+            self.wt_init['components']['nacelle']['generator']['y_tau_pr']    = float(wt_opt['generator.y_tau_pr'])
 
-                self.wt_init['components']['nacelle']['generator']['I_0']         = float(wt_opt['generator.I_0'])
-                self.wt_init['components']['nacelle']['generator']['d_r']         = float(wt_opt['generator.d_r'])
-                self.wt_init['components']['nacelle']['generator']['h_m']         = float(wt_opt['generator.h_m'])
-                self.wt_init['components']['nacelle']['generator']['h_0']         = float(wt_opt['generator.h_0'])
-                self.wt_init['components']['nacelle']['generator']['h_s']         = float(wt_opt['generator.h_s'])
-                self.wt_init['components']['nacelle']['generator']['len_s']       = float(wt_opt['generator.len_s'])
-                self.wt_init['components']['nacelle']['generator']['n_r']         = float(wt_opt['generator.n_r'])
-                self.wt_init['components']['nacelle']['generator']['rad_ag']      = float(wt_opt['generator.rad_ag'])
-                self.wt_init['components']['nacelle']['generator']['t_wr']        = float(wt_opt['generator.t_wr'])
+            self.wt_init['components']['nacelle']['generator']['I_0']         = float(wt_opt['generator.I_0'])
+            self.wt_init['components']['nacelle']['generator']['d_r']         = float(wt_opt['generator.d_r'])
+            self.wt_init['components']['nacelle']['generator']['h_m']         = float(wt_opt['generator.h_m'])
+            self.wt_init['components']['nacelle']['generator']['h_0']         = float(wt_opt['generator.h_0'])
+            self.wt_init['components']['nacelle']['generator']['h_s']         = float(wt_opt['generator.h_s'])
+            self.wt_init['components']['nacelle']['generator']['len_s']       = float(wt_opt['generator.len_s'])
+            self.wt_init['components']['nacelle']['generator']['n_r']         = float(wt_opt['generator.n_r'])
+            self.wt_init['components']['nacelle']['generator']['rad_ag']      = float(wt_opt['generator.rad_ag'])
+            self.wt_init['components']['nacelle']['generator']['t_wr']        = float(wt_opt['generator.t_wr'])
 
-                self.wt_init['components']['nacelle']['generator']['n_s']         = float(wt_opt['generator.n_s'])
-                self.wt_init['components']['nacelle']['generator']['b_st']        = float(wt_opt['generator.b_st'])
-                self.wt_init['components']['nacelle']['generator']['d_s']         = float(wt_opt['generator.d_s'])
-                self.wt_init['components']['nacelle']['generator']['t_ws']        = float(wt_opt['generator.t_ws'])
+            self.wt_init['components']['nacelle']['generator']['n_s']         = float(wt_opt['generator.n_s'])
+            self.wt_init['components']['nacelle']['generator']['b_st']        = float(wt_opt['generator.b_st'])
+            self.wt_init['components']['nacelle']['generator']['d_s']         = float(wt_opt['generator.d_s'])
+            self.wt_init['components']['nacelle']['generator']['t_ws']        = float(wt_opt['generator.t_ws'])
 
-                self.wt_init['components']['nacelle']['generator']['rho_Copper']  = float(wt_opt['generator.rho_Copper'])
-                self.wt_init['components']['nacelle']['generator']['rho_Fe']      = float(wt_opt['generator.rho_Fe'])
-                self.wt_init['components']['nacelle']['generator']['rho_Fes']     = float(wt_opt['generator.rho_Fes'])
-                self.wt_init['components']['nacelle']['generator']['rho_PM']      = float(wt_opt['generator.rho_PM'])
+            self.wt_init['components']['nacelle']['generator']['rho_Copper']  = float(wt_opt['generator.rho_Copper'])
+            self.wt_init['components']['nacelle']['generator']['rho_Fe']      = float(wt_opt['generator.rho_Fe'])
+            self.wt_init['components']['nacelle']['generator']['rho_Fes']     = float(wt_opt['generator.rho_Fes'])
+            self.wt_init['components']['nacelle']['generator']['rho_PM']      = float(wt_opt['generator.rho_PM'])
 
-                self.wt_init['components']['nacelle']['generator']['C_Cu']        = float(wt_opt['generator.C_Cu'])
-                self.wt_init['components']['nacelle']['generator']['C_Fe']        = float(wt_opt['generator.C_Fe'])
-                self.wt_init['components']['nacelle']['generator']['C_Fes']       = float(wt_opt['generator.C_Fes'])
-                self.wt_init['components']['nacelle']['generator']['C_PM']        = float(wt_opt['generator.C_PM'])
+            self.wt_init['components']['nacelle']['generator']['C_Cu']        = float(wt_opt['generator.C_Cu'])
+            self.wt_init['components']['nacelle']['generator']['C_Fe']        = float(wt_opt['generator.C_Fe'])
+            self.wt_init['components']['nacelle']['generator']['C_Fes']       = float(wt_opt['generator.C_Fes'])
+            self.wt_init['components']['nacelle']['generator']['C_PM']        = float(wt_opt['generator.C_PM'])
 
-                if self.modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
-                    self.wt_init['components']['nacelle']['generator']['N_c']           = float(wt_opt['generator.N_c'])
-                    self.wt_init['components']['nacelle']['generator']['b']             = float(wt_opt['generator.b'] )
-                    self.wt_init['components']['nacelle']['generator']['c']             = float(wt_opt['generator.c'] )
-                    self.wt_init['components']['nacelle']['generator']['E_p']           = float(wt_opt['generator.E_p'])
-                    self.wt_init['components']['nacelle']['generator']['h_yr']          = float(wt_opt['generator.h_yr'])
-                    self.wt_init['components']['nacelle']['generator']['h_ys']          = float(wt_opt['generator.h_ys'])
-                    self.wt_init['components']['nacelle']['generator']['h_sr']          = float(wt_opt['generator.h_sr'])
-                    self.wt_init['components']['nacelle']['generator']['h_ss']          = float(wt_opt['generator.h_ss'])
-                    self.wt_init['components']['nacelle']['generator']['t_r']           = float(wt_opt['generator.t_r'])
-                    self.wt_init['components']['nacelle']['generator']['t_s']           = float(wt_opt['generator.t_s'])
+            if self.modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
+                self.wt_init['components']['nacelle']['generator']['N_c']           = float(wt_opt['generator.N_c'])
+                self.wt_init['components']['nacelle']['generator']['b']             = float(wt_opt['generator.b'] )
+                self.wt_init['components']['nacelle']['generator']['c']             = float(wt_opt['generator.c'] )
+                self.wt_init['components']['nacelle']['generator']['E_p']           = float(wt_opt['generator.E_p'])
+                self.wt_init['components']['nacelle']['generator']['h_yr']          = float(wt_opt['generator.h_yr'])
+                self.wt_init['components']['nacelle']['generator']['h_ys']          = float(wt_opt['generator.h_ys'])
+                self.wt_init['components']['nacelle']['generator']['h_sr']          = float(wt_opt['generator.h_sr'])
+                self.wt_init['components']['nacelle']['generator']['h_ss']          = float(wt_opt['generator.h_ss'])
+                self.wt_init['components']['nacelle']['generator']['t_r']           = float(wt_opt['generator.t_r'])
+                self.wt_init['components']['nacelle']['generator']['t_s']           = float(wt_opt['generator.t_s'])
 
-                    self.wt_init['components']['nacelle']['generator']['u_allow_pcent'] = float(wt_opt['generator.u_allow_pcent'])
-                    self.wt_init['components']['nacelle']['generator']['y_allow_pcent'] = float(wt_opt['generator.y_allow_pcent'])
-                    self.wt_init['components']['nacelle']['generator']['z_allow_deg']   = float(wt_opt['generator.z_allow_deg'])
-                    self.wt_init['components']['nacelle']['generator']['B_tmax']        = float(wt_opt['generator.B_tmax'])
+                self.wt_init['components']['nacelle']['generator']['u_allow_pcent'] = float(wt_opt['generator.u_allow_pcent'])
+                self.wt_init['components']['nacelle']['generator']['y_allow_pcent'] = float(wt_opt['generator.y_allow_pcent'])
+                self.wt_init['components']['nacelle']['generator']['z_allow_deg']   = float(wt_opt['generator.z_allow_deg'])
+                self.wt_init['components']['nacelle']['generator']['B_tmax']        = float(wt_opt['generator.B_tmax'])
 
-                if self.modeling_options['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
-                    self.wt_init['components']['nacelle']['generator']['tau_p']         = float(wt_opt['generator.tau_p'])
-                    self.wt_init['components']['nacelle']['generator']['h_ys']          = float(wt_opt['generator.h_ys'])
-                    self.wt_init['components']['nacelle']['generator']['h_yr']          = float(wt_opt['generator.h_yr'])
-                    self.wt_init['components']['nacelle']['generator']['b_arm']         = float(wt_opt['generator.b_arm'])
+            if self.modeling_options['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
+                self.wt_init['components']['nacelle']['generator']['tau_p']         = float(wt_opt['generator.tau_p'])
+                self.wt_init['components']['nacelle']['generator']['h_ys']          = float(wt_opt['generator.h_ys'])
+                self.wt_init['components']['nacelle']['generator']['h_yr']          = float(wt_opt['generator.h_yr'])
+                self.wt_init['components']['nacelle']['generator']['b_arm']         = float(wt_opt['generator.b_arm'])
 
-                elif self.modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
-                    self.wt_init['components']['nacelle']['generator']['B_symax']       = float(wt_opt['generator.B_symax'])
-                    self.wt_init['components']['nacelle']['generator']['S_Nmax']        = float(wt_opt['generator.S_Nmax'])
+            elif self.modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
+                self.wt_init['components']['nacelle']['generator']['B_symax']       = float(wt_opt['generator.B_symax'])
+                self.wt_init['components']['nacelle']['generator']['S_Nmax']        = float(wt_opt['generator.S_Nmax'])
 
         # Update tower
         if self.modeling_options['flags']['tower']:

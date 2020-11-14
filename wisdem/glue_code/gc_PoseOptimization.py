@@ -118,7 +118,7 @@ class PoseOptimization(object):
         elif self.opt['merit_figure'] == 'tower_cost':
             wt_opt.model.add_objective('tcc.tower_cost')
         elif self.opt['merit_figure'] == 'Cp':
-            if self.modeling['Analysis_Flags']['ServoSE']:
+            if self.modeling['flags']['blade']:
                 wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
             else:
                 wt_opt.model.add_objective('ccblade.CP', ref = -1.)

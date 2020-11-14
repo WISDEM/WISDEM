@@ -37,11 +37,11 @@ class WT_RNTA(om.Group):
         self.add_subsystem('ccblade',   CCBladeTwist(modeling_options = modeling_options, opt_options = opt_options)) # Run standalong CCBlade and possibly determine optimal twist from user-defined margin to stall
         self.add_subsystem('wt_class',  TurbineClass())
         self.add_subsystem('elastic',   RotorElasticity(modeling_options = modeling_options, opt_options = opt_options))
-        if modeling_options['Analysis_Flags']['ServoSE']:
+        if modeling_options['flags']['blade']:
             self.add_subsystem('sse',       ServoSE(modeling_options = modeling_options)) # Aero analysis
         self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
         self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
-        if modeling_options['Analysis_Flags']['DriveSE']:
+        if modeling_options['flags']['nacelle']:
             self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1))
         if modeling_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
@@ -85,7 +85,7 @@ class WT_RNTA(om.Group):
         #self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
         self.connect('blade.pa.chord_param',            'elastic.chord')
         self.connect('blade.pa.chord_param',           ['rlds.chord'])
-        if modeling_options['Analysis_Flags']['ServoSE']:
+        if modeling_options['flags']['blade']:
             self.connect('blade.pa.twist_param',           'sse.theta')
             self.connect('blade.pa.chord_param',           'sse.chord')
 
@@ -134,7 +134,7 @@ class WT_RNTA(om.Group):
 
         # Connection from ra to rs for the rated conditions
         # self.connect('sse.powercurve.rated_V',        'rlds.aero_rated.V_load')
-        if modeling_options['Analysis_Flags']['ServoSE']:
+        if modeling_options['flags']['blade']:
             self.connect('sse.powercurve.rated_V',        'sse.gust.V_hub')
             self.connect('sse.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
             self.connect('env.shear_exp',                ['sse.powercurve.shearExp', 'rlds.aero_gust.shearExp']) 
@@ -142,7 +142,7 @@ class WT_RNTA(om.Group):
             self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.tot_loads_gust.aeroloads_pitch'])
 
         # Connections to ServoSE
-        if modeling_options['Analysis_Flags']['ServoSE']:
+        if modeling_options['flags']['blade']:
             self.connect('control.V_in' ,                  'sse.v_min')
             self.connect('control.V_out' ,                 'sse.v_max')
             self.connect('control.rated_power' ,           'sse.rated_power')
@@ -153,7 +153,7 @@ class WT_RNTA(om.Group):
             self.connect('control.rated_pitch' ,           'sse.control_pitch')
             self.connect('configuration.gearbox_type' ,    'sse.drivetrainType')
             self.connect('nacelle.gearbox_efficiency',     'sse.powercurve.gearbox_efficiency')
-            if modeling_options['Analysis_Flags']['DriveSE']:
+            if modeling_options['flags']['nacelle']:
                 self.connect('drivese.lss_rpm',              'sse.powercurve.lss_rpm')
                 self.connect('drivese.generator_efficiency', 'sse.powercurve.generator_efficiency')
             self.connect('assembly.r_blade',               'sse.r')
@@ -188,7 +188,7 @@ class WT_RNTA(om.Group):
         self.connect('blade.interp_airfoils.cl_interp','stall_check.airfoils_cl')
         self.connect('blade.interp_airfoils.cd_interp','stall_check.airfoils_cd')
         self.connect('blade.interp_airfoils.cm_interp','stall_check.airfoils_cm')
-        if modeling_options['Analysis_Flags']['ServoSE']:
+        if modeling_options['flags']['blade']:
             self.connect('sse.powercurve.aoa_regII',   'stall_check.aoa_along_span')
         else:
             self.connect('ccblade.alpha',  'stall_check.aoa_along_span')
@@ -244,7 +244,7 @@ class WT_RNTA(om.Group):
         # self.connect('materials.rho',           'rotorse.rc.rho')
 
         # Connections to DriveSE
-        if modeling_options['Analysis_Flags']['DriveSE']:
+        if modeling_options['flags']['nacelle']:
             self.connect('hub.diameter'                    , 'drivese.hub_diameter')
             self.connect('hub.hub_in2out_circ'             , 'drivese.hub_in2out_circ')
             self.connect('hub.flange_t2shell_t'            , 'drivese.flange_t2shell_t')
@@ -426,13 +426,13 @@ class WT_RNTA(om.Group):
 
 
         # Connections to TowerSE
-        if modeling_options['Analysis_Flags']['DriveSE'] and modeling_options['flags']['tower']:
+        if modeling_options['flags']['nacelle'] and modeling_options['flags']['tower']:
             self.connect('drivese.base_F',                'towerse.pre.rna_F')
             self.connect('drivese.base_M',                'towerse.pre.rna_M')
             self.connect('drivese.rna_I_TT',             'towerse.rna_I')
             self.connect('drivese.rna_cm',               'towerse.rna_cg')
             self.connect('drivese.rna_mass',             'towerse.rna_mass')
-            if modeling_options['Analysis_Flags']['ServoSE']:
+            if modeling_options['flags']['blade']:
                 self.connect('sse.gust.V_gust',               'towerse.wind.Uref')
             self.connect('assembly.hub_height',           'towerse.wind_reference_height')  # TODO- environment
             self.connect('foundation.height',             'towerse.wind_z0') # TODO- environment
@@ -496,7 +496,7 @@ class WT_RNTA(om.Group):
         self.connect('elastic.precomp.blade_mass',      'tcc.blade_mass')
         self.connect('elastic.precomp.total_blade_cost','tcc.blade_cost_external')
 
-        if modeling_options['Analysis_Flags']['DriveSE']:
+        if modeling_options['flags']['nacelle']:
             self.connect('drivese.hub_mass',            'tcc.hub_mass')
             self.connect('drivese.pitch_mass',          'tcc.pitch_system_mass')
             self.connect('drivese.spinner_mass',        'tcc.spinner_mass')
@@ -609,7 +609,7 @@ class WindPark(om.Group):
                 self.connect('env.shear_exp',                   'landbosse.wind_shear_exponent')
                 self.connect('assembly.rotor_diameter',         'landbosse.rotor_diameter_m')
                 self.connect('configuration.n_blades',          'landbosse.number_of_blades')
-                if modeling_options['Analysis_Flags']['ServoSE']:
+                if modeling_options['flags']['blade']:
                     self.connect('sse.powercurve.rated_T',          'landbosse.rated_thrust_N')
                 self.connect('towerse.tower_mass',              'landbosse.tower_mass')
                 self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
@@ -625,7 +625,7 @@ class WindPark(om.Group):
                 self.connect('bos.interconnect_voltage',        'landbosse.interconnect_voltage_kV')
             
         # Inputs to plantfinancese from wt group
-        if modeling_options['Analysis_Flags']['ServoSE']:
+        if modeling_options['flags']['blade']:
             self.connect('sse.AEP',             'financese.turbine_aep')
 
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
@@ -647,7 +647,7 @@ class WindPark(om.Group):
         self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
 
         # Connections to outputs to screen
-        if modeling_options['Analysis_Flags']['ServoSE']:
+        if modeling_options['flags']['blade']:
             self.connect('sse.AEP',                 'outputs_2_screen.aep')
             self.connect('financese.lcoe',          'outputs_2_screen.lcoe')
         self.connect('elastic.precomp.blade_mass',  'outputs_2_screen.blade_mass')
