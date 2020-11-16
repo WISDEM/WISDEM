@@ -460,8 +460,6 @@ class TestTowerSE(unittest.TestCase):
         prob['rho_air'] = 1.225
         prob['mu_air'] = 1.7934e-5
         prob['shearExp'] = 0.2
-        prob['min_d_to_t'] = 120.0
-        prob['max_taper'] = 0.2
         prob['wind.Uref'] = 15.0
         prob['pre.rna_F'] = 1e3*np.array([2., 3., 4.,])
         prob['pre.rna_M'] = 1e4*np.array([2., 3., 4.,])
@@ -565,8 +563,6 @@ class TestTowerSE(unittest.TestCase):
         prob['beta_wind'] = prob['beta_wave'] = 0.0
         prob['hsig_wave'] = 0.0
         prob['Tsig_wave'] = 1e3
-        prob['min_d_to_t'] = 120.0
-        prob['max_taper'] = 0.2
         prob['wind.Uref'] = 15.0
         prob['pre.rna_F'] = 1e3*np.array([2., 3., 4.,])
         prob['pre.rna_M'] = 1e4*np.array([2., 3., 4.,])
@@ -677,8 +673,6 @@ class TestTowerSE(unittest.TestCase):
         prob['beta_wind'] = prob['beta_wave'] = 0.0
         prob['hsig_wave'] = 0.0
         prob['Tsig_wave'] = 1e3
-        prob['min_d_to_t'] = 120.0
-        prob['max_taper'] = 0.2
         prob['wind.Uref'] = 15.0
         prob['pre.rna_F'] = 1e3*np.array([2., 3., 4.,])
         prob['pre.rna_M'] = 1e4*np.array([2., 3., 4.,])
@@ -756,8 +750,6 @@ class TestTowerSE(unittest.TestCase):
         prob['wind.Uref'] = 0.0 #20.00138038
         prob['pre.rna_F'] = np.zeros(3) #np.array([3569257.70891496, -22787.83765441, -404483.54819059])
         prob['pre.rna_M'] = np.zeros(3) #np.array([68746553.1515807, 16045443.38557568, 1811078.988995])
-        prob['min_d_to_t'] = 120.0
-        prob['max_taper']  = 0.2
 
         # # --- run ---
         prob.run_model()
@@ -849,11 +841,6 @@ class TestTowerSE(unittest.TestCase):
         life = 20.0
         # ---------------
 
-        # --- constraints ---
-        min_d_to_t   = 120.0
-        max_taper    = 0.2
-        # ---------------
-
         self.modeling_options['tower']['n_height'] = len(d_param)
         self.modeling_options['tower']['n_layers'] = 1
         self.modeling_options['tower']['nLC'] = 2
@@ -918,11 +905,6 @@ class TestTowerSE(unittest.TestCase):
         prob['life'] = life
         # ---------------
 
-        # --- constraints ---
-        prob['min_d_to_t'] = min_d_to_t
-        prob['max_taper'] = max_taper
-        # ---------------
-
         # # --- loading case 1: max Thrust ---
         prob['wind1.Uref'] = wind_Uref1
 
@@ -945,8 +927,8 @@ class TestTowerSE(unittest.TestCase):
         
         npt.assert_almost_equal(prob['tower_mass'], [370541.14008246])
         npt.assert_almost_equal(prob['tower_center_of_mass'], [38.78441074])
-        npt.assert_almost_equal(prob['constr_d_to_t'], [-0.40192308, -0.34386447])
-        npt.assert_almost_equal(prob['constr_taper'], [0.6225   , 0.5841945])
+        npt.assert_almost_equal(prob['constr_d_to_t'], [168.23076923, 161.26373626])
+        npt.assert_almost_equal(prob['constr_taper'], [0.8225, 0.78419453])
         npt.assert_almost_equal(prob['wind1.Uref'], [11.73732])
         npt.assert_almost_equal(prob['tower1.f1'], [0.33214436],5)
         npt.assert_almost_equal(prob['post1.top_deflection'], [0.69728181])

@@ -1,0 +1,55 @@
+general:
+    folder_output: outputs
+    fname_output: refturb_output
+optimization_variables:
+
+  tower:
+    outer_diameter:
+      flag: True
+      lower_bound: 3.87
+      upper_bound: 8.0
+    layer_thickness:
+      flag: True
+      lower_bound: 4e-3
+      upper_bound: 2e-1
+
+merit_figure: tower_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+
+constraints:
+  tower:
+    height_constraint:
+      flag: False
+      lower_bound: 1.e-2
+      upper_bound: 1.e-2
+    stress:
+      flag: True
+    global_buckling:
+      flag: True
+    shell_buckling:
+      flag: True
+    d_to_t:
+      flag: True
+      lower_bound: 120.0
+      upper_bound: 2000.0
+    taper:
+      flag: True
+      lower_bound: 0.2
+    slope:
+      flag: True
+    frequency_1:
+      flag: True
+      lower_bound: 0.13
+      upper_bound: 0.40
+
+driver:
+    tol: 1.e-3            # Optimality tolerance
+    max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
+    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
+    max_iter: 100         # Maximum number of iterations (SLSQP)
+    solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    step_size: 1.e-6      # Step size for finite differencing
+    form: forward         # Finite differencing mode, either forward or central
+
+recorder:
+    flag: False              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

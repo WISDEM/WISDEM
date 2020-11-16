@@ -4,7 +4,7 @@ import openmdao.api as om
 from wisdem.commonse import gravity, eps, NFREQ
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
+from wisdem.commonse.utilization_constraints import hoopStressEurocode, hoopStress
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 

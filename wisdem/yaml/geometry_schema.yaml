@@ -1953,13 +1953,6 @@ properties:
                 default: 0.0
     costs:
         type: object
-        required:
-            - wake_loss_factor
-            - fixed_charge_rate
-            - opex_per_kW
-            - turbine_number
-        optional:
-            - bos_per_kW
         properties:
             wake_loss_factor:
                 type: number

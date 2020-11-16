@@ -77,12 +77,13 @@ if opt_flag:
     prob.model.add_constraint('post2.stress', upper=1.0)
     prob.model.add_constraint('post2.global_buckling', upper=1.0)
     prob.model.add_constraint('post2.shell_buckling', upper=1.0)
-    prob.model.add_constraint('constr_d_to_t', upper=0.0)
-    prob.model.add_constraint('constr_taper', lower=0.0)
+    prob.model.add_constraint('constr_d_to_t', lower=120.0, upper=500.0)
+    prob.model.add_constraint('constr_taper', lower=0.2)
     prob.model.add_constraint('slope', upper=1.0)
     prob.model.add_constraint('tower1.f1', lower=0.13, upper=0.40)
     prob.model.add_constraint('tower2.f1', lower=0.13, upper=0.40)
     # ---
+
 
 # Set up the OpenMDAO problem
 prob.setup()
@@ -162,11 +163,6 @@ Myy2 = -2522475.34625363
 Mzz2 = 147301.97023764
 prob['pre2.rna_F'] = np.array([Fx2, Fy2, Fz2])
 prob['pre2.rna_M'] = np.array([Mxx2, Myy2, Mzz2])
-# ---------------
-
-# --- constraints ---
-prob['min_d_to_t'] = 120.0
-prob['max_taper'] = 0.2
 # ---------------
 
 # run the analysis or optimization

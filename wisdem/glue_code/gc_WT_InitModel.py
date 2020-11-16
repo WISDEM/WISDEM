@@ -613,6 +613,16 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
     wt_opt['tower.outfitting_factor'] = tower['internal_structure_2d_fem']['outfitting_factor']
 
+    if 'loading' in modeling_options:
+        wt_opt['towerse.rna_mass'] = modeling_options['loading']['mass']
+        wt_opt['towerse.rna_cg']   = modeling_options['loading']['center_of_mass']
+        wt_opt['towerse.rna_I']    = modeling_options['loading']['moment_of_inertia']
+        for k in range(modeling_options['tower']['nLC']):
+            kstr = '' if modeling_options['tower']['nLC'] == 0 else str(k+1)
+            wt_opt['towerse.pre'+kstr+'.rna_F'] = modeling_options['loading']['loads'][k]['force']
+            wt_opt['towerse.pre'+kstr+'.rna_M'] = modeling_options['loading']['loads'][k]['moment']
+            wt_opt['towerse.wind'+kstr+'.Uref'] = modeling_options['loading']['loads'][k]['velocity']
+
     return wt_opt
 
 def assign_monopile_values(wt_opt, modeling_options, monopile):

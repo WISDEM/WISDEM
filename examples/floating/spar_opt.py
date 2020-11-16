@@ -102,8 +102,8 @@ if opt_flag:
     #prob.model.add_constraint('wave_height_fairlead_ratio', upper=1.0)
 
     # Ensure that the radius doesn't change dramatically over a section
-    prob.model.add_constraint('main.constr_taper', lower=0.0)
-    prob.model.add_constraint('main.constr_d_to_t', upper=0.0)
+    prob.model.add_constraint('main.constr_taper', lower=0.2)
+    prob.model.add_constraint('main.constr_d_to_t', lower=80.0)
 
     # Ensure max mooring line tension is less than X% of MBL: 60% for intact mooring, 80% for damanged
     #prob.model.add_constraint('axial_unity', lower=0.0, upper=1.0)
@@ -207,8 +207,6 @@ prob['max_offset']       = 100.0 # Max surge/sway offset [m]
 prob['operational_heel'] = 10.0 # Max heel (pitching) angle [deg]
 
 # Design constraints
-prob['max_taper']              = 0.2  # For manufacturability of rolling steel
-prob['min_d_to_t'] = 80.0 # For weld-ability
 prob['connection_ratio_max']         = 0.25 # For welding pontoons to columns
 
 # API 2U flag

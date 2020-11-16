@@ -25,124 +25,126 @@ class WT_RNTA(om.Group):
     def setup(self):
         modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
-        n_span           = modeling_options['blade']['n_span']
 
-        self.linear_solver = lbgs = om.LinearBlockGS()
-        self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-        nlbgs.options['maxiter'] = 2
-        nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
+        if modeling_options['flags']['blade'] and modeling_options['flags']['nacelle']:
+            self.linear_solver = lbgs = om.LinearBlockGS()
+            self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+            nlbgs.options['maxiter'] = 2
+            nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
         
         # Analysis components
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
-        self.add_subsystem('ccblade',   CCBladeTwist(modeling_options = modeling_options, opt_options = opt_options)) # Run standalong CCBlade and possibly determine optimal twist from user-defined margin to stall
-        self.add_subsystem('wt_class',  TurbineClass())
-        self.add_subsystem('elastic',   RotorElasticity(modeling_options = modeling_options, opt_options = opt_options))
         if modeling_options['flags']['blade']:
+            self.add_subsystem('ccblade',   CCBladeTwist(modeling_options = modeling_options, opt_options = opt_options)) # Run standalong CCBlade and possibly determine optimal twist from user-defined margin to stall
+            self.add_subsystem('wt_class',  TurbineClass())
+            self.add_subsystem('elastic',   RotorElasticity(modeling_options = modeling_options, opt_options = opt_options))
             self.add_subsystem('sse',       ServoSE(modeling_options = modeling_options)) # Aero analysis
-        self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
-        self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
+            self.add_subsystem('stall_check', NoStallConstraint(modeling_options = modeling_options))
+            self.add_subsystem('rlds',      RotorLoadsDeflStrains(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         if modeling_options['flags']['nacelle']:
             self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1))
         if modeling_options['flags']['tower']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
+        if modeling_options['flags']['blade'] and modeling_options['flags']['tower']:
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
         self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['general']['verbosity']))
 
-        # Conncetions to ccblade
-        self.connect('blade.pa.chord_param',            'ccblade.chord')
-        self.connect('blade.pa.twist_param',            'ccblade.twist')
-        self.connect('blade.opt_var.s_opt_chord',       'ccblade.s_opt_chord')
-        self.connect('blade.opt_var.s_opt_twist',       'ccblade.s_opt_twist')
-        self.connect('assembly.r_blade',                'ccblade.r')
-        self.connect('assembly.rotor_radius',           'ccblade.Rtip')
-        self.connect('hub.radius',                      'ccblade.Rhub')
-        self.connect('blade.interp_airfoils.r_thick_interp', 'ccblade.rthick')
-        self.connect('airfoils.aoa',                    'ccblade.airfoils_aoa')
-        self.connect('airfoils.Re',                     'ccblade.airfoils_Re')
-        self.connect('blade.interp_airfoils.cl_interp', 'ccblade.airfoils_cl')
-        self.connect('blade.interp_airfoils.cd_interp', 'ccblade.airfoils_cd')
-        self.connect('blade.interp_airfoils.cm_interp', 'ccblade.airfoils_cm')
-        self.connect('assembly.hub_height',             'ccblade.hub_height')
-        self.connect('hub.cone',                        'ccblade.precone')
-        self.connect('nacelle.uptilt',                  'ccblade.tilt')
-        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
-        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurveTip', src_indices=[(-1, 0)])
-        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweep', src_indices=[(i, 1) for i in np.arange(n_span)])
-        self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweepTip', src_indices=[(-1, 1)])
-        self.connect('configuration.n_blades',          'ccblade.nBlades')
-        if modeling_options['flags']['control']:
-            self.connect('control.rated_pitch' ,            'ccblade.pitch')
-        self.connect('pc.tsr_opt',                      'ccblade.tsr')
-        self.connect('env.rho_air',                     'ccblade.rho')
-        self.connect('env.mu_air',                      'ccblade.mu')
-        self.connect('env.shear_exp',                   'ccblade.shearExp') 
-
-        # Connections to wind turbine class
-        self.connect('configuration.ws_class' , 'wt_class.turbine_class')
-
-        # Connections from blade aero parametrization to other modules
-        self.connect('blade.pa.twist_param',           ['elastic.theta','rlds.theta'])
-        #self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
-        self.connect('blade.pa.chord_param',            'elastic.chord')
-        self.connect('blade.pa.chord_param',           ['rlds.chord'])
         if modeling_options['flags']['blade']:
-            self.connect('blade.pa.twist_param',           'sse.theta')
-            self.connect('blade.pa.chord_param',           'sse.chord')
+            n_span  = modeling_options['blade']['n_span']
+            
+            # Conncetions to ccblade
+            self.connect('blade.pa.chord_param',            'ccblade.chord')
+            self.connect('blade.pa.twist_param',            'ccblade.twist')
+            self.connect('blade.opt_var.s_opt_chord',       'ccblade.s_opt_chord')
+            self.connect('blade.opt_var.s_opt_twist',       'ccblade.s_opt_twist')
+            self.connect('assembly.r_blade',                'ccblade.r')
+            self.connect('assembly.rotor_radius',           'ccblade.Rtip')
+            self.connect('hub.radius',                      'ccblade.Rhub')
+            self.connect('blade.interp_airfoils.r_thick_interp', 'ccblade.rthick')
+            self.connect('airfoils.aoa',                    'ccblade.airfoils_aoa')
+            self.connect('airfoils.Re',                     'ccblade.airfoils_Re')
+            self.connect('blade.interp_airfoils.cl_interp', 'ccblade.airfoils_cl')
+            self.connect('blade.interp_airfoils.cd_interp', 'ccblade.airfoils_cd')
+            self.connect('blade.interp_airfoils.cm_interp', 'ccblade.airfoils_cm')
+            self.connect('assembly.hub_height',             'ccblade.hub_height')
+            self.connect('hub.cone',                        'ccblade.precone')
+            self.connect('nacelle.uptilt',                  'ccblade.tilt')
+            self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
+            self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.precurveTip', src_indices=[(-1, 0)])
+            self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweep', src_indices=[(i, 1) for i in np.arange(n_span)])
+            self.connect('blade.outer_shape_bem.ref_axis',  'ccblade.presweepTip', src_indices=[(-1, 1)])
+            self.connect('configuration.n_blades',          'ccblade.nBlades')
+            if modeling_options['flags']['control']:
+                self.connect('control.rated_pitch' ,            'ccblade.pitch')
+            self.connect('pc.tsr_opt',                      'ccblade.tsr')
+            self.connect('env.rho_air',                     'ccblade.rho')
+            self.connect('env.mu_air',                      'ccblade.mu')
+            self.connect('env.shear_exp',                   'ccblade.shearExp') 
+
+            # Connections to wind turbine class
+            self.connect('configuration.ws_class' , 'wt_class.turbine_class')
+
+            # Connections from blade aero parametrization to other modules
+            self.connect('blade.pa.twist_param',           ['elastic.theta','rlds.theta'])
+            #self.connect('blade.pa.twist_param',            'rlds.tip_pos.theta_tip',   src_indices=[-1])
+            self.connect('blade.pa.chord_param',            'elastic.chord')
+            self.connect('blade.pa.chord_param',           ['rlds.chord'])
+            if modeling_options['flags']['blade']:
+                self.connect('blade.pa.twist_param',           'sse.theta')
+                self.connect('blade.pa.chord_param',           'sse.chord')
 
 
-        # Connections from blade struct parametrization to rotor elasticity
-        self.connect('blade.ps.layer_thickness_param', 'elastic.precomp.layer_thickness')
+            # Connections from blade struct parametrization to rotor elasticity
+            self.connect('blade.ps.layer_thickness_param', 'elastic.precomp.layer_thickness')
 
-        # Connections to rotor elastic and frequency analysis
-        self.connect('nacelle.uptilt',                                  'elastic.precomp.uptilt')
-        self.connect('configuration.n_blades',                          'elastic.precomp.n_blades')
-        self.connect('assembly.r_blade',                                'elastic.r')
-        self.connect('blade.outer_shape_bem.pitch_axis',                'elastic.precomp.pitch_axis')
-        self.connect('blade.interp_airfoils.coord_xy_interp',           'elastic.precomp.coord_xy_interp')
-        self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'elastic.precomp.layer_start_nd')
-        self.connect('blade.internal_structure_2d_fem.layer_end_nd',    'elastic.precomp.layer_end_nd')
-        self.connect('blade.internal_structure_2d_fem.layer_web',       'elastic.precomp.layer_web')
-        self.connect('blade.internal_structure_2d_fem.definition_layer','elastic.precomp.definition_layer')
-        self.connect('blade.internal_structure_2d_fem.web_start_nd',    'elastic.precomp.web_start_nd')
-        self.connect('blade.internal_structure_2d_fem.web_end_nd',      'elastic.precomp.web_end_nd')
-        self.connect('materials.name',  'elastic.precomp.mat_name')
-        self.connect('materials.orth',  'elastic.precomp.orth')
-        self.connect('materials.E',     'elastic.precomp.E')
-        self.connect('materials.G',     'elastic.precomp.G')
-        self.connect('materials.nu',    'elastic.precomp.nu')
-        self.connect('materials.rho',   'elastic.precomp.rho')
-        self.connect('materials.component_id',  'elastic.precomp.component_id')
-        self.connect('materials.unit_cost',     'elastic.precomp.unit_cost')
-        self.connect('materials.waste',         'elastic.precomp.waste')
-        self.connect('materials.rho_fiber',     'elastic.precomp.rho_fiber')
-        self.connect('materials.rho_area_dry',  'elastic.precomp.rho_area_dry')
-        self.connect('materials.ply_t',         'elastic.precomp.ply_t')
-        self.connect('materials.fvf',           'elastic.precomp.fvf')
-        self.connect('materials.fwf',           'elastic.precomp.fwf')
-        self.connect('materials.roll_mass',     'elastic.precomp.roll_mass')
+            # Connections to rotor elastic and frequency analysis
+            self.connect('nacelle.uptilt',                                  'elastic.precomp.uptilt')
+            self.connect('configuration.n_blades',                          'elastic.precomp.n_blades')
+            self.connect('assembly.r_blade',                                'elastic.r')
+            self.connect('blade.outer_shape_bem.pitch_axis',                'elastic.precomp.pitch_axis')
+            self.connect('blade.interp_airfoils.coord_xy_interp',           'elastic.precomp.coord_xy_interp')
+            self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'elastic.precomp.layer_start_nd')
+            self.connect('blade.internal_structure_2d_fem.layer_end_nd',    'elastic.precomp.layer_end_nd')
+            self.connect('blade.internal_structure_2d_fem.layer_web',       'elastic.precomp.layer_web')
+            self.connect('blade.internal_structure_2d_fem.definition_layer','elastic.precomp.definition_layer')
+            self.connect('blade.internal_structure_2d_fem.web_start_nd',    'elastic.precomp.web_start_nd')
+            self.connect('blade.internal_structure_2d_fem.web_end_nd',      'elastic.precomp.web_end_nd')
+            self.connect('materials.name',  'elastic.precomp.mat_name')
+            self.connect('materials.orth',  'elastic.precomp.orth')
+            self.connect('materials.E',     'elastic.precomp.E')
+            self.connect('materials.G',     'elastic.precomp.G')
+            self.connect('materials.nu',    'elastic.precomp.nu')
+            self.connect('materials.rho',   'elastic.precomp.rho')
+            self.connect('materials.component_id',  'elastic.precomp.component_id')
+            self.connect('materials.unit_cost',     'elastic.precomp.unit_cost')
+            self.connect('materials.waste',         'elastic.precomp.waste')
+            self.connect('materials.rho_fiber',     'elastic.precomp.rho_fiber')
+            self.connect('materials.rho_area_dry',  'elastic.precomp.rho_area_dry')
+            self.connect('materials.ply_t',         'elastic.precomp.ply_t')
+            self.connect('materials.fvf',           'elastic.precomp.fvf')
+            self.connect('materials.fwf',           'elastic.precomp.fwf')
+            self.connect('materials.roll_mass',     'elastic.precomp.roll_mass')
 
-        # Conncetions to rail transport module
-        if opt_options['constraints']['blade']['rail_transport']['flag']:
-            self.connect('blade.outer_shape_bem.pitch_axis',        'elastic.rail.pitch_axis')
-            self.connect('blade.outer_shape_bem.ref_axis',          'elastic.rail.blade_ref_axis')
-            self.connect('blade.interp_airfoils.coord_xy_dim',      'elastic.rail.coord_xy_dim')
-            self.connect('blade.interp_airfoils.coord_xy_interp',   'elastic.rail.coord_xy_interp')
+            # Conncetions to rail transport module
+            if opt_options['constraints']['blade']['rail_transport']['flag']:
+                self.connect('blade.outer_shape_bem.pitch_axis',        'elastic.rail.pitch_axis')
+                self.connect('blade.outer_shape_bem.ref_axis',          'elastic.rail.blade_ref_axis')
+                self.connect('blade.interp_airfoils.coord_xy_dim',      'elastic.rail.coord_xy_dim')
+                self.connect('blade.interp_airfoils.coord_xy_interp',   'elastic.rail.coord_xy_interp')
 
-        # Connections from blade struct parametrization to rotor load anlysis
-        self.connect('blade.ps.s_opt_spar_cap_ss',   'rlds.constr.s_opt_spar_cap_ss')
-        self.connect('blade.ps.s_opt_spar_cap_ps',   'rlds.constr.s_opt_spar_cap_ps')
+            # Connections from blade struct parametrization to rotor load anlysis
+            self.connect('blade.ps.s_opt_spar_cap_ss',   'rlds.constr.s_opt_spar_cap_ss')
+            self.connect('blade.ps.s_opt_spar_cap_ps',   'rlds.constr.s_opt_spar_cap_ps')
 
-        # Connection from ra to rs for the rated conditions
-        # self.connect('sse.powercurve.rated_V',        'rlds.aero_rated.V_load')
-        if modeling_options['flags']['blade']:
+            # Connection from ra to rs for the rated conditions
+            # self.connect('sse.powercurve.rated_V',        'rlds.aero_rated.V_load')
             self.connect('sse.powercurve.rated_V',        'sse.gust.V_hub')
             self.connect('sse.gust.V_gust',              ['rlds.aero_gust.V_load', 'rlds.aero_hub_loads.V_load'])
             self.connect('env.shear_exp',                ['sse.powercurve.shearExp', 'rlds.aero_gust.shearExp']) 
             self.connect('sse.powercurve.rated_Omega',   ['rlds.Omega_load', 'rlds.tot_loads_gust.aeroloads_Omega', 'rlds.constr.rated_Omega'])
             self.connect('sse.powercurve.rated_pitch',   ['rlds.pitch_load', 'rlds.tot_loads_gust.aeroloads_pitch'])
 
-        # Connections to ServoSE
-        if modeling_options['flags']['blade']:
+            # Connections to ServoSE
             self.connect('control.V_in' ,                  'sse.v_min')
             self.connect('control.V_out' ,                 'sse.v_max')
             self.connect('control.rated_power' ,           'sse.rated_power')
@@ -182,66 +184,66 @@ class WT_RNTA(om.Group):
             self.connect('wt_class.V_mean',                 'sse.gust.V_mean')
             self.connect('configuration.turb_class',        'sse.gust.turbulence_class')
 
-        # Connections to the stall check
-        self.connect('blade.outer_shape_bem.s',        'stall_check.s')
-        self.connect('airfoils.aoa',                   'stall_check.airfoils_aoa')
-        self.connect('blade.interp_airfoils.cl_interp','stall_check.airfoils_cl')
-        self.connect('blade.interp_airfoils.cd_interp','stall_check.airfoils_cd')
-        self.connect('blade.interp_airfoils.cm_interp','stall_check.airfoils_cm')
-        if modeling_options['flags']['blade']:
-            self.connect('sse.powercurve.aoa_regII',   'stall_check.aoa_along_span')
-        else:
-            self.connect('ccblade.alpha',  'stall_check.aoa_along_span')
+            # Connections to the stall check
+            self.connect('blade.outer_shape_bem.s',        'stall_check.s')
+            self.connect('airfoils.aoa',                   'stall_check.airfoils_aoa')
+            self.connect('blade.interp_airfoils.cl_interp','stall_check.airfoils_cl')
+            self.connect('blade.interp_airfoils.cd_interp','stall_check.airfoils_cd')
+            self.connect('blade.interp_airfoils.cm_interp','stall_check.airfoils_cm')
+            if modeling_options['flags']['blade']:
+                self.connect('sse.powercurve.aoa_regII',   'stall_check.aoa_along_span')
+            else:
+                self.connect('ccblade.alpha',  'stall_check.aoa_along_span')
 
-        # Connections to rotor load analysis
-        self.connect('blade.interp_airfoils.cl_interp','rlds.airfoils_cl')
-        self.connect('blade.interp_airfoils.cd_interp','rlds.airfoils_cd')
-        self.connect('blade.interp_airfoils.cm_interp','rlds.airfoils_cm')
-        self.connect('airfoils.aoa',              'rlds.airfoils_aoa')
-        self.connect('airfoils.Re',               'rlds.airfoils_Re')
-        self.connect('assembly.rotor_radius',     'rlds.Rtip')
-        self.connect('hub.radius',                'rlds.Rhub')
-        self.connect('env.rho_air',               'rlds.rho')
-        self.connect('env.mu_air',                'rlds.mu')
-        self.connect('env.shear_exp',             'rlds.aero_hub_loads.shearExp')
-        self.connect('assembly.hub_height',       'rlds.hub_height')
-        self.connect('configuration.n_blades',    'rlds.nBlades')
-        self.connect('assembly.r_blade',          'rlds.r')
-        self.connect('hub.cone',                  'rlds.precone')
-        self.connect('nacelle.uptilt',            'rlds.tilt')
+            # Connections to rotor load analysis
+            self.connect('blade.interp_airfoils.cl_interp','rlds.airfoils_cl')
+            self.connect('blade.interp_airfoils.cd_interp','rlds.airfoils_cd')
+            self.connect('blade.interp_airfoils.cm_interp','rlds.airfoils_cm')
+            self.connect('airfoils.aoa',              'rlds.airfoils_aoa')
+            self.connect('airfoils.Re',               'rlds.airfoils_Re')
+            self.connect('assembly.rotor_radius',     'rlds.Rtip')
+            self.connect('hub.radius',                'rlds.Rhub')
+            self.connect('env.rho_air',               'rlds.rho')
+            self.connect('env.mu_air',                'rlds.mu')
+            self.connect('env.shear_exp',             'rlds.aero_hub_loads.shearExp')
+            self.connect('assembly.hub_height',       'rlds.hub_height')
+            self.connect('configuration.n_blades',    'rlds.nBlades')
+            self.connect('assembly.r_blade',          'rlds.r')
+            self.connect('hub.cone',                  'rlds.precone')
+            self.connect('nacelle.uptilt',            'rlds.tilt')
 
-        self.connect('elastic.A',    'rlds.A')
-        self.connect('elastic.EA',   'rlds.EA')
-        self.connect('elastic.EIxx', 'rlds.EIxx')
-        self.connect('elastic.EIyy', 'rlds.EIyy')
-        self.connect('elastic.EIxy', 'rlds.EIxy')
-        self.connect('elastic.GJ',   'rlds.GJ')
-        self.connect('elastic.rhoA', 'rlds.rhoA')
-        self.connect('elastic.rhoJ', 'rlds.rhoJ')
-        self.connect('elastic.x_ec', 'rlds.x_ec')
-        self.connect('elastic.y_ec', 'rlds.y_ec')
-        self.connect('elastic.precomp.xu_strain_spar', 'rlds.xu_strain_spar')
-        self.connect('elastic.precomp.xl_strain_spar', 'rlds.xl_strain_spar')
-        self.connect('elastic.precomp.yu_strain_spar', 'rlds.yu_strain_spar')
-        self.connect('elastic.precomp.yl_strain_spar', 'rlds.yl_strain_spar')
-        self.connect('elastic.precomp.xu_strain_te',   'rlds.xu_strain_te')
-        self.connect('elastic.precomp.xl_strain_te',   'rlds.xl_strain_te')
-        self.connect('elastic.precomp.yu_strain_te',   'rlds.yu_strain_te')
-        self.connect('elastic.precomp.yl_strain_te',   'rlds.yl_strain_te')
-        self.connect('blade.outer_shape_bem.s','rlds.constr.s')
+            self.connect('elastic.A',    'rlds.A')
+            self.connect('elastic.EA',   'rlds.EA')
+            self.connect('elastic.EIxx', 'rlds.EIxx')
+            self.connect('elastic.EIyy', 'rlds.EIyy')
+            self.connect('elastic.EIxy', 'rlds.EIxy')
+            self.connect('elastic.GJ',   'rlds.GJ')
+            self.connect('elastic.rhoA', 'rlds.rhoA')
+            self.connect('elastic.rhoJ', 'rlds.rhoJ')
+            self.connect('elastic.x_ec', 'rlds.x_ec')
+            self.connect('elastic.y_ec', 'rlds.y_ec')
+            self.connect('elastic.precomp.xu_strain_spar', 'rlds.xu_strain_spar')
+            self.connect('elastic.precomp.xl_strain_spar', 'rlds.xl_strain_spar')
+            self.connect('elastic.precomp.yu_strain_spar', 'rlds.yu_strain_spar')
+            self.connect('elastic.precomp.yl_strain_spar', 'rlds.yl_strain_spar')
+            self.connect('elastic.precomp.xu_strain_te',   'rlds.xu_strain_te')
+            self.connect('elastic.precomp.xl_strain_te',   'rlds.xl_strain_te')
+            self.connect('elastic.precomp.yu_strain_te',   'rlds.yu_strain_te')
+            self.connect('elastic.precomp.yl_strain_te',   'rlds.yl_strain_te')
+            self.connect('blade.outer_shape_bem.s','rlds.constr.s')
 
-        # Connections to rotorse-rc
-        # self.connect('blade.length',                                    'rotorse.rc.blade_length')
-        # self.connect('blade.outer_shape_bem.s',                         'rotorse.rc.s')
-        # self.connect('blade.outer_shape_bem.pitch_axis',                'rotorse.rc.pitch_axis')
-        # self.connect('blade.interp_airfoils.coord_xy_interp',           'rotorse.rc.coord_xy_interp')
-        # self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'rotorse.rc.layer_start_nd')
-        # self.connect('blade.internal_structure_2d_fem.layer_end_nd',    'rotorse.rc.layer_end_nd')
-        # self.connect('blade.internal_structure_2d_fem.layer_web',       'rotorse.rc.layer_web')
-        # self.connect('blade.internal_structure_2d_fem.web_start_nd',    'rotorse.rc.web_start_nd')
-        # self.connect('blade.internal_structure_2d_fem.web_end_nd',      'rotorse.rc.web_end_nd')
-        # self.connect('materials.name',          'rotorse.rc.mat_name')
-        # self.connect('materials.rho',           'rotorse.rc.rho')
+            # Connections to rotorse-rc
+            # self.connect('blade.length',                                    'rotorse.rc.blade_length')
+            # self.connect('blade.outer_shape_bem.s',                         'rotorse.rc.s')
+            # self.connect('blade.outer_shape_bem.pitch_axis',                'rotorse.rc.pitch_axis')
+            # self.connect('blade.interp_airfoils.coord_xy_interp',           'rotorse.rc.coord_xy_interp')
+            # self.connect('blade.internal_structure_2d_fem.layer_start_nd',  'rotorse.rc.layer_start_nd')
+            # self.connect('blade.internal_structure_2d_fem.layer_end_nd',    'rotorse.rc.layer_end_nd')
+            # self.connect('blade.internal_structure_2d_fem.layer_web',       'rotorse.rc.layer_web')
+            # self.connect('blade.internal_structure_2d_fem.web_start_nd',    'rotorse.rc.web_start_nd')
+            # self.connect('blade.internal_structure_2d_fem.web_end_nd',      'rotorse.rc.web_end_nd')
+            # self.connect('materials.name',          'rotorse.rc.mat_name')
+            # self.connect('materials.rho',           'rotorse.rc.rho')
 
         # Connections to DriveSE
         if modeling_options['flags']['nacelle']:
@@ -426,12 +428,13 @@ class WT_RNTA(om.Group):
 
 
         # Connections to TowerSE
-        if modeling_options['flags']['nacelle'] and modeling_options['flags']['tower']:
-            self.connect('drivese.base_F',                'towerse.pre.rna_F')
-            self.connect('drivese.base_M',                'towerse.pre.rna_M')
-            self.connect('drivese.rna_I_TT',             'towerse.rna_I')
-            self.connect('drivese.rna_cm',               'towerse.rna_cg')
-            self.connect('drivese.rna_mass',             'towerse.rna_mass')
+        if modeling_options['flags']['tower']:
+            if modeling_options['flags']['nacelle']:
+                self.connect('drivese.base_F',                'towerse.pre.rna_F')
+                self.connect('drivese.base_M',                'towerse.pre.rna_M')
+                self.connect('drivese.rna_I_TT',             'towerse.rna_I')
+                self.connect('drivese.rna_cm',               'towerse.rna_cg')
+                self.connect('drivese.rna_mass',             'towerse.rna_mass')
             if modeling_options['flags']['blade']:
                 self.connect('sse.gust.V_gust',               'towerse.wind.Uref')
             self.connect('assembly.hub_height',           'towerse.wind_reference_height')  # TODO- environment
@@ -474,11 +477,8 @@ class WT_RNTA(om.Group):
                 self.connect('monopile.suctionpile_depth',       'towerse.suctionpile_depth')
                 self.connect('monopile.suctionpile_depth_diam_ratio', 'towerse.suctionpile_depth_diam_ratio')
 
-        #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
-        #self.connect('max_taper_ratio',         'max_taper') # TODO- 
-        #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
         # Connections to turbine constraints
-        if modeling_options['flags']['tower']:
+        if modeling_options['flags']['blade'] and modeling_options['flags']['tower']:
             self.connect('configuration.rotor_orientation', 'tcons.rotor_orientation')
             self.connect('rlds.tip_pos.tip_deflection',     'tcons.tip_deflection')
             self.connect('assembly.rotor_radius',           'tcons.Rtip')
@@ -493,8 +493,9 @@ class WT_RNTA(om.Group):
         self.connect('configuration.n_blades',      'tcc.blade_number')
         if modeling_options['flags']['control']:
             self.connect('control.rated_power',         'tcc.machine_rating')
-        self.connect('elastic.precomp.blade_mass',      'tcc.blade_mass')
-        self.connect('elastic.precomp.total_blade_cost','tcc.blade_cost_external')
+        if modeling_options['flags']['blade']:
+            self.connect('elastic.precomp.blade_mass',      'tcc.blade_mass')
+            self.connect('elastic.precomp.total_blade_cost','tcc.blade_cost_external')
 
         if modeling_options['flags']['nacelle']:
             self.connect('drivese.hub_mass',            'tcc.hub_mass')
@@ -559,11 +560,12 @@ class WindPark(om.Group):
                 self.add_subsystem('orbit',     Orbit())
             else:
                 self.add_subsystem('landbosse', LandBOSSE())
-        self.add_subsystem('financese', PlantFinance(verbosity=modeling_options['general']['verbosity']))
-            
-        # Post-processing
-        self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
-        if opt_options['opt_flag']:
+
+        if modeling_options['flags']['blade']:
+            self.add_subsystem('financese', PlantFinance(verbosity=modeling_options['general']['verbosity']))
+            self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
+        
+        if opt_options['opt_flag'] and opt_options['recorder']['flag']:
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # BOS inputs
@@ -627,28 +629,28 @@ class WindPark(om.Group):
         # Inputs to plantfinancese from wt group
         if modeling_options['flags']['blade']:
             self.connect('sse.AEP',             'financese.turbine_aep')
-
-        self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
-        if modeling_options['flags']['bos']:
-            if 'offshore' in modeling_options and modeling_options['offshore']:
-                self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
-            else:
-                self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
-        else:
-            self.connect('costs.bos_per_kW',  'financese.bos_per_kW')
+            self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
             
-        # Inputs to plantfinancese from input yaml
-        if modeling_options['flags']['control']:
-            self.connect('control.rated_power',     'financese.machine_rating')
-        self.connect('costs.turbine_number',    'financese.turbine_number')
-        self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
-        self.connect('costs.offset_tcc_per_kW', 'financese.offset_tcc_per_kW')
-        self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
-        self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
+            if modeling_options['flags']['bos']:
+                if 'offshore' in modeling_options and modeling_options['offshore']:
+                    self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
+                else:
+                    self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
+            else:
+                self.connect('costs.bos_per_kW',  'financese.bos_per_kW')
+
+            # Inputs to plantfinancese from input yaml
+            if modeling_options['flags']['control']:
+                self.connect('control.rated_power',     'financese.machine_rating')
+            self.connect('costs.turbine_number',    'financese.turbine_number')
+            self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
+            self.connect('costs.offset_tcc_per_kW', 'financese.offset_tcc_per_kW')
+            self.connect('costs.wake_loss_factor',  'financese.wake_loss_factor')
+            self.connect('costs.fixed_charge_rate', 'financese.fixed_charge_rate')
 
         # Connections to outputs to screen
         if modeling_options['flags']['blade']:
             self.connect('sse.AEP',                 'outputs_2_screen.aep')
             self.connect('financese.lcoe',          'outputs_2_screen.lcoe')
-        self.connect('elastic.precomp.blade_mass',  'outputs_2_screen.blade_mass')
-        self.connect('rlds.tip_pos.tip_deflection', 'outputs_2_screen.tip_deflection')
+            self.connect('elastic.precomp.blade_mass',  'outputs_2_screen.blade_mass')
+            self.connect('rlds.tip_pos.tip_deflection', 'outputs_2_screen.tip_deflection')
