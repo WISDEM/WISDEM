@@ -1,7 +1,7 @@
 import numpy as np
-import time, os, warnings
+import time
+import os
 import matplotlib.pyplot as plt
-import math
 from scipy.optimize import brentq
 from openmdao.api import ExplicitComponent
 
@@ -164,7 +164,7 @@ class blade_bom(object):
         #         density_resin = self.materials[i]['rho']
         #         id_resin = i
         # if density_resin==0.:
-        #     exit('Error: a material named resin must be defined in the input yaml')
+        #     raise ValueError('Error: a material named resin must be defined in the input yaml')
         
         
         # for i in range(n_mat):
@@ -183,15 +183,15 @@ class blade_bom(object):
         #             mat_dictionary[name]['fvf']  = (mat_dictionary[name]['density'] - density_resin) / (mat_dictionary[name]['fiber_density'] - density_resin) * 100. # [%] Fiber volume fraction                    
         #             if 'fvf' in self.materials[i]:
         #                 if abs(self.materials[i]['fvf']*100. - mat_dictionary[name]['fvf']) > 1e-3:
-        #                     exit('Error: the fvf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fvf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['fvf']) + '%')
+        #                     raise ValueError('Error: the fvf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fvf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['fvf']) + '%')
         #             mat_dictionary[name]['fwf']  = mat_dictionary[name]['fiber_density'] * mat_dictionary[name]['fvf'] / 100. / (density_resin + ((mat_dictionary[name]['fiber_density'] - density_resin) * mat_dictionary[name]['fvf'] / 100.)) * 100.
         #             if 'fwf' in self.materials[i]:
         #                 if abs(self.materials[i]['fwf']*100. - mat_dictionary[name]['fwf']) > 1e-3:
-        #                     exit('Error: the fwf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fwf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['fwf']) + '%')
+        #                     raise ValueError('Error: the fwf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fwf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['fwf']) + '%')
         #             mat_dictionary[name]['ply_t']= mat_dictionary[name]['area_density_dry'] / mat_dictionary[name]['density'] / (mat_dictionary[name]['fwf'] / 100.)
         #             if 'ply_t' in self.materials[i]:
         #                 if abs(self.materials[i]['ply_t'] - mat_dictionary[name]['ply_t']) > 1e-3:
-        #                     exit('Error: the ply_t of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['ply_t']) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['ply_t']) + 'm')
+        #                     raise ValueError('Error: the ply_t of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['ply_t']) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['ply_t']) + 'm')
         #             if self.materials[i]['component_id'] > 3: # The material does not need to be cut@station
         #                 mat_dictionary[name]['cut@station'] = 'N'
         #             else:
@@ -219,11 +219,11 @@ class blade_bom(object):
         #             te_reinf_mat_id= mat_dictionary[name]['id']        # Assigning the material to the le reinf
                 
         #         # except:
-        #             # exit('ERROR: The material ' + name + ' does not have its properties fully defined. Please set them in the first lines of blade_bom.py in RotorSE')
+        #             # raise ValueError('ERROR: The material ' + name + ' does not have its properties fully defined. Please set them in the first lines of blade_bom.py in RotorSE')
 
         
         # print(mat_dictionary)
-        # exit()
+        # raise ValueError()
         # Width and thickness of the flanges
         blade_specs                                        = {}
         blade_specs['flange_width_inboard_LETE']           = 0.10         # [m] Width of the flanges of the outer surface until 70% of blade span
@@ -771,7 +771,7 @@ class blade_bom(object):
         # Resin and hardener
         matrix                                             = {}
         if mat_dictionary['resin']['unit_cost'] == 0.:
-            exit('WARNING: The resin cost is not defined in the input yaml.')
+            print('WARNING: The resin cost is not defined in the input yaml.')
         matrix['resin_unit_cost']                          = mat_dictionary['resin']['unit_cost']         # $/kg
         matrix['hardener_unit_cost']                       = mat_dictionary['resin']['unit_cost']         # $/kg
         matrix['mix_ratio']                                = 0.3          # Mix ratio by mass

@@ -186,7 +186,7 @@ properties:
                                     omega_max: *omega_max
                                     zeta_min: *zeta_min
                                     zeta_max: *zeta_max
-            tower:
+            tower: &towdv
                 type: object
                 default: {}
                 properties:
@@ -226,7 +226,7 @@ properties:
                                 default: 5.0
                                 unit: m
                             upper_bound: *sbound
-
+            monopile: *towdv
     constraints:
         # GB: These all need gammas or safety factors
         type: object
@@ -332,7 +332,7 @@ properties:
                             flag_L: *flag
                             flag_D: *flag
                             filename: *filepath
-            tower:
+            tower: &towcon
                 type: object
                 default: {}
                 properties:
@@ -348,13 +348,38 @@ properties:
                                 maximum: 10.0
                                 default: 1e-2
                                 unit: m
-                            upper_bound: *hbound                            
+                            upper_bound: *hbound
                     stress: *flagonly
                     global_buckling: *flagonly
                     shell_buckling: *flagonly
                     weldability: *flagonly
                     manufacturability: *flagonly
                     slope: *flagonly
+                    d_to_t:
+                        type: object
+                        description: Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &dtbound
+                                type: number
+                                minimum: 1.0
+                                maximum: 2000.0
+                                default: 50.0
+                                unit: none
+                            upper_bound: *dtbound
+                    taper:
+                        type: object
+                        description: Enforcing a max allowable frustum taper ratio per section
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &tapbound
+                                type: number
+                                minimum: 0.001
+                                maximum: 1.0
+                                default: 0.5
+                                unit: none
                     frequency_1:
                         type: object
                         description: Targeted range for tower first frequency constraint
@@ -367,6 +392,7 @@ properties:
                                 minimum: 0.01
                                 maximum: 1.0
                             upper_bound: *fminmax
+            monopile: *towcon
             control:
                 type: object
                 default: {}
@@ -388,7 +414,7 @@ properties:
         type: string
         description: Objective function / merit figure for optimization
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, blade_tip_deflection, My_std, flp1_std]
+        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, blade_tip_deflection, My_std, flp1_std]
 
     driver:
         type: object
@@ -441,4 +467,3 @@ properties:
                 type: string
                 description: OpenMDAO recorder output SQL database file
                 default: log_opt.sql
-

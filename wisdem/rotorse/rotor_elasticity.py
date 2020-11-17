@@ -356,7 +356,7 @@ class RunPreComp(ExplicitComponent):
                                 # ss_start_nd_arc.append(sec['start_nd_arc']['values'][i])
                                 ss_end_nd_arc_temp = float(spline_arc2xnd(inputs['layer_start_nd'][idx_sec,i]))
                                 if ss_end_nd_arc_temp > 1 or ss_end_nd_arc_temp < 0:
-                                    exit('Error in the definition of material ' + layer_name[idx_sec] + '. It cannot fit in the section number ' + str(i) + ' at span location ' + str(inputs['r'][i]/inputs['r'][-1]*100.) + ' %.')
+                                    raise ValueError('Error in the definition of material ' + layer_name[idx_sec] + '. It cannot fit in the section number ' + str(i) + ' at span location ' + str(inputs['r'][i]/inputs['r'][-1]*100.) + ' %.')
                                 if ss_end_nd_arc_temp == profile_i_rot[0,0] and profile_i_rot[0,0] != 1.:
                                     ss_end_nd_arc_temp = 1.
                                 ss_end_nd_arc.append(ss_end_nd_arc_temp)
@@ -402,8 +402,7 @@ class RunPreComp(ExplicitComponent):
 
             # generate the Precomp composite stacks for chordwise regions
             if np.min([ss_start_nd_arc, ss_end_nd_arc]) < 0 or np.max([ss_start_nd_arc, ss_end_nd_arc]) > 1:
-                print('Error in the layer definition at station number ' + str(i))
-                exit()
+                raise ValueError('Error in the layer definition at station number ' + str(i))
             upperCS[i], region_loc_ss = region_stacking(i, ss_idx, ss_start_nd_arc, ss_end_nd_arc, layer_name, inputs['layer_thickness'][:,i], inputs['fiber_orientation'][:,i], layer_mat, material_dict, materials, region_loc_ss)
             lowerCS[i], region_loc_ps = region_stacking(i, ps_idx, ps_start_nd_arc, ps_end_nd_arc, layer_name, inputs['layer_thickness'][:,i], inputs['fiber_orientation'][:,i], layer_mat, material_dict, materials, region_loc_ps)
             if len(web_idx)>0 or flatback:

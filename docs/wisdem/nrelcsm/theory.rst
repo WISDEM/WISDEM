@@ -42,12 +42,12 @@ To obtain the blade mass in kilograms and cost in USD from the rotor diameter in
    b   &= (see below)\\
    k_c &= 14.6
 
-Where :math:`D_{rotor}` is the rotor diameter and :math:`k_c` is determined by:
+Where :math:`D_{rotor}` is the rotor diameter and :math:`b` is determined by:
 
-* If turbine class I and blade DOES have carbon fiber spar caps, :math:`k_c=2.47`
-* If turbine class I and blade DOES NOT have carbon fiber spar caps, :math:`k_c=2.54`
-* If turbine class II+ and blade DOES have carbon fiber spar caps, :math:`k_c=2.44`
-* If turbine class II+ and blade DOES NOT have carbon fiber spar caps, :math:`k_c=2.50`
+* If turbine class I and blade DOES have carbon fiber spar caps, :math:`b=2.47`
+* If turbine class I and blade DOES NOT have carbon fiber spar caps, :math:`b=2.54`
+* If turbine class II+ and blade DOES have carbon fiber spar caps, :math:`b=2.44`
+* If turbine class II+ and blade DOES NOT have carbon fiber spar caps, :math:`b=2.50`
 * User override of exponent value
 
 For variable names access to override the default values see the :ref:`csmsource`.

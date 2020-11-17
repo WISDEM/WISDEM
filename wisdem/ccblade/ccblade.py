@@ -609,7 +609,6 @@ class CCBlade(object):
             #                                      cl, cd, self.B, Vx, Vy, **self.bemoptions)
 
             #     print(a)
-            #     #exit()
         
         return fzero, a, ap, cl, cd
 
@@ -748,7 +747,7 @@ class CCBlade(object):
                 # Np, Tp
                 if cn==0. or W==0. or chord==0.:
                     print(phi, rotating, r, chord, theta, af, Vx, Vy)
-                    exit()
+                    raise ValueError()
                 dNp_dx = Np*(1.0/cn*dcn_dx + 2.0/W*dW_dx + 1.0/chord*dchord_dx)
                 dTp_dx = Tp*(1.0/ct*dct_dx + 2.0/W*dW_dx + 1.0/chord*dchord_dx)
 

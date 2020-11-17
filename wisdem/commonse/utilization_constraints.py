@@ -61,8 +61,6 @@ class GeometricConstraints(om.ExplicitComponent):
         
         self.add_input('d', np.zeros(nPoints), units='m')
         self.add_input('t', np.zeros(nPoints-1), units='m')
-        self.add_input('min_d_to_t', 120.0)
-        self.add_input('max_taper', 0.4)
 
         self.add_output('constr_d_to_t', np.zeros(nPoints-1))
         self.add_output('constr_taper', np.zeros(nPoints-1))
@@ -76,8 +74,6 @@ class GeometricConstraints(om.ExplicitComponent):
         # Unpack inputs
         d          = inputs['d']
         t          = inputs['t']
-        min_d_to_t = inputs['min_d_to_t']
-        max_taper  = inputs['max_taper']
         diamFlag   = self.options['diamFlag']
 
         # Check if the input was radii instead of diameters and convert if necessary
@@ -86,8 +82,8 @@ class GeometricConstraints(om.ExplicitComponent):
         dave,_  = nodal2sectional(d)
         d_ratio = d[1:]/d[:-1]
 
-        outputs['constr_d_to_t'] = 1.0 - (dave/t)/min_d_to_t
-        outputs['constr_taper']  = np.minimum(d_ratio, 1.0/d_ratio) - max_taper
+        outputs['constr_d_to_t'] = dave / t
+        outputs['constr_taper']  = np.minimum(d_ratio, 1.0/d_ratio)
         outputs['slope']         = d_ratio
 
     # def compute_partials(self, inputs, J):

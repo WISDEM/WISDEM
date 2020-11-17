@@ -455,7 +455,6 @@ class CCBladeTwist(ExplicitComponent):
             # plt.ylabel('Eff (-)')
             # plt.legend(loc='upper left')
             # plt.show()
-            # exit()
 
             get_twist = CCBlade(inputs['r'], inputs['chord'], np.zeros_like(inputs['chord']), af, inputs['Rhub'], inputs['Rtip'], discrete_inputs['nBlades'], inputs['rho'], inputs['mu'], inputs['precone'], inputs['tilt'], inputs['yaw'], inputs['shearExp'], inputs['hub_height'], discrete_inputs['nSector'], inputs['precurve'], inputs['precurveTip'],inputs['presweep'], inputs['presweepTip'], discrete_inputs['tiploss'], discrete_inputs['hubloss'],discrete_inputs['wakerotation'], discrete_inputs['usecd'])        
             

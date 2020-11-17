@@ -33,6 +33,23 @@ class TestAny(unittest.TestCase):
         pp  = util.get_modal_coefficients(x, y)
         npt.assert_almost_equal(p[2:]/p[2:].sum(), pp)
 
+    def testGetXYModes(self):
+        r = np.linspace(0,1,20)
+        n = 10
+        n2 = int(n/2)
+        dx = dy = dz = np.tile(np.r_[r**2 + 10.], (n,1))
+        freqs = np.arange(n)
+        xm = np.zeros(n)
+        ym = np.zeros(n)
+        zm = np.zeros(n)
+        xm[0] = xm[3] = xm[6] = xm[9] = 1
+        ym[1] = ym[4] = ym[7] = 1
+        zm[2] = zm[5] = zm[8] = 1
+
+        freq_x, freq_y, _, _ = util.get_xy_mode_shapes(r, freqs, dx, dy, dz, xm, ym, zm)
+        npt.assert_array_equal(freq_x, np.r_[0, 3, 6, 9, np.zeros(n2-4)])
+        npt.assert_array_equal(freq_y, np.r_[1, 4, 7, np.zeros(n2-3)])
+        
     def testRotateI(self):
         I  = np.arange(6)+1
         th = np.deg2rad(45)

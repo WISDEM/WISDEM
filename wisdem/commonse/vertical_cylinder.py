@@ -4,7 +4,7 @@ import openmdao.api as om
 from wisdem.commonse import gravity, eps, NFREQ
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.UtilizationSupplement import hoopStressEurocode, hoopStress
+from wisdem.commonse.utilization_constraints import hoopStressEurocode, hoopStress
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
@@ -545,7 +545,8 @@ class CylinderFrame3DD(om.ExplicitComponent):
         Mmethod = 1
         lump = 0
         shift = 0.0
-        cylinder.enableDynamics(NFREQ, Mmethod, lump, frame3dd_opt['tol'], shift)
+        # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes
+        cylinder.enableDynamics(2*NFREQ, Mmethod, lump, frame3dd_opt['tol'], shift)
         # ----------------------------
 
         # ------ static load case 1 ------------
@@ -592,15 +593,16 @@ class CylinderFrame3DD(om.ExplicitComponent):
         # natural frequncies
         outputs['f1']    = modal.freq[0]
         outputs['f2']    = modal.freq[1]
-        outputs['freqs'] = modal.freq
+        outputs['freqs'] = modal.freq[:NFREQ]
 
         # Get all mode shapes in batch
-        freq_x, freq_y, mshapes_x, mshapes_y = util.get_mode_shapes(z, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
-        outputs['x_mode_freqs']  = freq_x
-        outputs['y_mode_freqs']  = freq_y
-        outputs['x_mode_shapes'] = mshapes_x
-        outputs['y_mode_shapes'] = mshapes_y
-
+        NFREQ2 = int(NFREQ/2)
+        freq_x, freq_y, mshapes_x, mshapes_y = util.get_xy_mode_shapes(z, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf)
+        outputs['x_mode_freqs']  = freq_x[:NFREQ2]
+        outputs['y_mode_freqs']  = freq_y[:NFREQ2]
+        outputs['x_mode_shapes'] = mshapes_x[:NFREQ2,:]
+        outputs['y_mode_shapes'] = mshapes_y[:NFREQ2,:]
+        
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs['top_deflection'] = displacements.dx[iCase, n-1]  # in yaw-aligned direction
 

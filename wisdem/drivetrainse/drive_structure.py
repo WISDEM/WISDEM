@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 
 import wisdem.pyframe3dd.pyframe3dd as frame3dd
-import wisdem.commonse.UtilizationSupplement as Util
+from wisdem.commonse.utilization_constraints import vonMisesStressUtilization
 from wisdem.commonse.cross_sections import Tube, IBeam
 from wisdem.commonse.utilities import nodal2sectional
 from wisdem.commonse import gravity
@@ -320,10 +320,10 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             outputs['lss_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
             hoop = np.zeros(F.shape)
 
-            outputs['constr_lss_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['lss_axial_stress'][:,k],
-                                                                                 hoop,
-                                                                                 outputs['lss_shear_stress'][:,k],
-                                                                                 gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs['constr_lss_vonmises'][:,k] = vonMisesStressUtilization(outputs['lss_axial_stress'][:,k],
+                                                                            hoop,
+                                                                            outputs['lss_shear_stress'][:,k],
+                                                                            gamma_f*gamma_m*gamma_n, sigma_y)
         outputs['torq_deflection'] = rotor_gearbox_deflection.max()
         outputs['torq_rotation']   = rotor_gearbox_rotation.max()
 
@@ -530,10 +530,10 @@ class HSS_Frame(om.ExplicitComponent):
             outputs['hss_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
             hoop = np.zeros(F.shape)
 
-            outputs['constr_hss_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['hss_axial_stress'][:,k],
-                                                                                 hoop,
-                                                                                 outputs['hss_shear_stress'][:,k],
-                                                                                 gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs['constr_hss_vonmises'][:,k] = vonMisesStressUtilization(outputs['hss_axial_stress'][:,k],
+                                                                            hoop,
+                                                                            outputs['hss_shear_stress'][:,k],
+                                                                            gamma_f*gamma_m*gamma_n, sigma_y)
 
 
 
@@ -894,10 +894,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             #Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
             outputs['bedplate_nose_bending_stress'][:(inose-1),k] = Bending_stress_outer
 
-            outputs['constr_bedplate_nose_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],
-                                                                                  outputs['bedplate_nose_bending_stress'][:,k],
-                                                                                  outputs['bedplate_nose_shear_stress'][:,k],
-                                                                                  gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs['constr_bedplate_nose_vonmises'][:,k] = vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],
+                                                                                      outputs['bedplate_nose_bending_stress'][:,k],
+                                                                                      outputs['bedplate_nose_shear_stress'][:,k],
+                                                                                      gamma_f*gamma_m*gamma_n, sigma_y)
 
         # Evaluate bearing limits
         outputs['constr_mb1_defl'] = outputs['mb1_rotation'] / inputs['mb1_max_defl_ang']
@@ -1237,10 +1237,10 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             outputs['bedplate_shear_stress'][:,k] = (2.0*(np.abs(Vy)/Asy+np.abs(Vz)/Asz) + np.abs(Mxx)/C)[:(2*n-2)]
             hoop = np.zeros(2*n-2)
 
-            outputs['constr_bedplate_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['bedplate_axial_stress'][:,k],
-                                                                                      hoop,
-                                                                                      outputs['bedplate_shear_stress'][:,k],
-                                                                                      gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs['constr_bedplate_vonmises'][:,k] = vonMisesStressUtilization(outputs['bedplate_axial_stress'][:,k],
+                                                                                 hoop,
+                                                                                 outputs['bedplate_shear_stress'][:,k],
+                                                                                 gamma_f*gamma_m*gamma_n, sigma_y)
 
         # Evaluate bearing limits
         outputs['constr_mb1_defl'] = outputs['mb1_rotation'] / inputs['mb1_max_defl_ang']

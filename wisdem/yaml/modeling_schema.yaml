@@ -10,26 +10,22 @@ title: WISDEM wind turbine modeling options schema
 description: Scehma that describes the modeling options for WISDEM
 type: object
 properties:
-    general: 
+    general:
         type: object
         default: {}
-        properties: 
-            verbosity: 
+        properties:
+            verbosity:
                 type: boolean
                 default: False
-                description: Prints additional outputs to screen (and to a file log in the future)            
+                description: Prints additional outputs to screen (and to a file log in the future)
     Analysis_Flags:
         type: object
         default: {}
-        properties: 
+        properties:
             RotorSE:
                 type: boolean
                 default: False
-                description: Whether or not to run RotorSE
-            ServoSE:
-                type: boolean
-                default: False
-                description: Whether or not to run ServoSE
+                description: Whether or not to run RotorSE and ServoSE
             DriveSE:
                 type: boolean
                 description: Whether or not to run DriveSE
@@ -41,7 +37,7 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
-    rotorse:            
+    rotorse:
         type: object
         default: {}
         properties:
@@ -104,8 +100,8 @@ properties:
                         maximum: 5.0
                         default: 1.5
                         unit: none
-                        
-    towerse:            
+
+    towerse:
         type: object
         default: {}
         properties:
@@ -160,7 +156,7 @@ properties:
                 type: object
                 description: Set of Frame3DD options used for tower analysis
                 default: {}
-                properties:                              
+                properties:
                     shear:
                         type: boolean
                         default: True
@@ -180,3 +176,57 @@ properties:
                         minimum: 1e-12
                         maximum: 1e-1
                         default: 1e-9
+    loading:
+        type: object
+        description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only or nacelle-only analysis
+        properties:
+            mass:
+                type: number
+                default: 0.0
+                units: kilogram
+            center_of_mass:
+                type: array
+                default: [0.0, 0.0, 0.0]
+                items:
+                    type: number
+                    unit: meter
+                    minItems: 3
+                    maxItems: 3
+                    uniqueItems: false
+            moment_of_inertia:
+                type: array
+                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                items:
+                    type: number
+                    unit: kg*m^2
+                    minItems: 6
+                    maxItems: 6
+                    uniqueItems: false
+            loads:
+                type: array
+                items:
+                    type: object
+                    properties:
+                        force:
+                            type: array
+                            default: [0.0, 0.0, 0.0]
+                            items:
+                                type: number
+                                unit: Newton
+                                minItems: 3
+                                maxItems: 3
+                                uniqueItems: false
+                        moment:
+                            type: array
+                            default: [0.0, 0.0, 0.0]
+                            items:
+                                type: number
+                                unit: N*m
+                                minItems: 3
+                                maxItems: 3
+                                uniqueItems: false
+                        velocity:
+                            type: number
+                            description: Applied wind reference velocity
+                            default: 0.0
+                            unit: meter

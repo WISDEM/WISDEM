@@ -31,7 +31,7 @@ def get_modal_coefficients(x, y, deg=6):
     
     return p6
     
-def get_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
+def get_xy_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     # Number of frequencies and modes
     nfreq = len(freqs)
     
@@ -61,8 +61,6 @@ def get_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
             mshapes_y[iy,:] = ypolys[m,:]
             freq_y[   iy  ] = freqs[m]
             iy += 1
-        else:
-            print('Warning: Unknown mode shape')
 
     return freq_x, freq_y, mshapes_x, mshapes_y
 

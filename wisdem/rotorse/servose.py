@@ -615,7 +615,7 @@ def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetra
             linear = 0.07
             quadratic = 0.0
         else:
-            exit('The drivetrain model is not supported! Please check servose.py')
+            raise ValueError('The drivetrain model is not supported! Please check servose.py')
         
         Pbar0 = aeroPower / ratedPower
 
