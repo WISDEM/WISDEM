@@ -540,9 +540,9 @@ class NoStallConstraint(ExplicitComponent):
         for i in range(i_min, self.n_span):
             outputs['no_stall_constraint'][i] = (inputs['aoa_along_span'][i] + inputs['stall_margin']) / outputs['stall_angle_along_span'][i]
         
-            if verbosity == True:
-                if outputs['no_stall_constraint'][i] > 1:
-                    print('Blade is stalling at span location %.2f %%' % (inputs['s'][i]*100.))
+            # if verbosity == True:
+            #     if outputs['no_stall_constraint'][i] > 1:
+            #         print('Blade is violating the minimum margin to stall at span location %.2f %%' % (inputs['s'][i]*100.))
 
 class AEP(ExplicitComponent):
     def initialize(self):
