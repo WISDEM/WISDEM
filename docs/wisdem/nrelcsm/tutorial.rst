@@ -1,4 +1,4 @@
-.. _tutorial-label:
+.. _nrelcsm_tutorial-label:
 
 --------
 Tutorial
@@ -46,10 +46,10 @@ We can then print out an exhaustive listing of the inputs and outputs to each su
 The final lines highlight the mass breakdown summaries:
 
 >>>  turbine
->>>    hub_system_mass      [47855.49446548]   kg   
->>>    rotor_mass           [95109.93575675]   kg   
->>>    nacelle_mass         [165460.38774975]  kg   
->>>    turbine_mass         [442906.80408368]  kg   
+>>>    hub_system_mass      [47855.49446548]   kg
+>>>    rotor_mass           [95109.93575675]   kg
+>>>    nacelle_mass         [165460.38774975]  kg
+>>>    turbine_mass         [442906.80408368]  kg
 
 See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass.py>`_.
 
@@ -90,11 +90,11 @@ Then we can again print out an exhaustive listing of the inputs and outputs:
 The final screen output is:
 
 >>>    turbine_c
->>>      turbine_mass_tcc                       [434686.14646457]   kg    
->>>      turbine_cost                           [3543676.12253719]  USD   
+>>>      turbine_mass_tcc                       [434686.14646457]   kg
+>>>      turbine_cost                           [3543676.12253719]  USD
 >>>      turbine_cost_kW                        [708.73522451]      USD/kW
 
-See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass_and_cost.py>`_.
+See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass_and_cost.py>`__.
 
 
 Turbine Component Costs Using the NREL_CSM (2015)
@@ -142,7 +142,7 @@ A formatted tabular output is printed to the screen:
 >>> Spinner cost            10.800 k USD        mass 973.000 kg
 >>> ---------------------------------------------------------------------
 >>> Rotor cost              1053.437 k USD      mass 95109.936 kg
->>> 
+>>>
 >>> LSS cost                244.771 k USD       mass 20568.963 kg
 >>> Main bearing cost       10.104 k USD        mass 2245.416 kg
 >>> Gearbox cost            560.741 k USD       mass 43468.321 kg
@@ -159,7 +159,7 @@ A formatted tabular output is printed to the screen:
 >>> Converter cost          0.000 k USD         mass 0.000 kg
 >>> ---------------------------------------------------------------------
 >>> Nacelle cost            1961.463 k USD      mass 157239.730 kg
->>> 
+>>>
 >>> Tower cost              528.776 k USD       mass 182336.481 kg
 >>> ---------------------------------------------------------------------
 >>> ---------------------------------------------------------------------
@@ -174,7 +174,7 @@ We can also print out an exhaustive listing of the inputs and outputs to each su
     :start-after: # 5 ---
     :end-before: # 5 ---
 
-See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/costs.py>`_.
+See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/costs.py>`__.
 
 
 
@@ -202,7 +202,7 @@ The CSM model initialization is abbreviated here because some of the variables w
     :start-after: # 2 ---
     :end-before: # 2 ---
 
-Note that the `turbine_class` variable has been set to `-1` to allow us to override the `blade_mass_exp` value as described in the :ref:`source` documentation.  Also, two variables are jointly assigned to local Python variables for use in the AEP estimation. 
+Note that the `turbine_class` variable has been set to `-1` to allow us to override the `blade_mass_exp` value as described in the :ref:`csmsource` documentation.  Also, two variables are jointly assigned to local Python variables for use in the AEP estimation.
 The AEP model requires a number of other inputs to define the turbine power curve.  To keep things simple, we focus on a single turbine, and ignore many of the other losses and options:
 
 .. literalinclude:: /../examples/nrel_csm/parametric.py
@@ -233,12 +233,7 @@ To store for later postprocessing, we save everything into a large csv-file.  Fl
     :start-after: # 7 ---
     :end-before: # 7 ---
 
-See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/parametric.py>`_.
+See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/parametric.py>`__.
 
-.. only:: html
-
-    :bib:`Bibliography`
-
-.. bibliography:: references.bib
-    :style: unsrt
-
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

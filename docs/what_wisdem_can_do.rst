@@ -53,7 +53,7 @@ This is not an exhaustive list and WISDEM's capabilities have changed over the y
     * - Tower
       - 6 design variables
       - Tower diameters and wall thicknesses
-      - `Paper <https://www.nrel.gov/docs/fy18osti/70642.pdf>`_
+      - `Report <https://www.nrel.gov/docs/fy18osti/70642.pdf>`_
 
     * - Generator/drivetrain
       - 7 design variables

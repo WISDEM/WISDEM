@@ -216,12 +216,12 @@ The following example performs the same method as in the :ref:`command-line vers
 For direct access to the underlying data in a grid format (if not already a grid, it is interpolated to a grid first), use the :py:meth:`createDataGrid <Airfoil.createDataGrid>` method as follows:
 
 .. literalinclude:: ../../../examples/airfoilprep/example.py
-    :start-after: # extract 
+    :start-after: # extract
     :end-before: # ------
 
 
 Finally, writing AeroDyn formatted files is straightforward.
 
 .. literalinclude:: ../../../examples/airfoilprep/example.py
-    :start-after: 
+    :start-after: # write
     :end-before: # ------

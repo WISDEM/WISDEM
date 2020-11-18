@@ -52,7 +52,7 @@ shear = True            # 1: include shear deformation
 geom  = True            # 1: include geometric stiffness
 dx    = 20.0            # x-axis increment for internal forces
 other = pyframe3dd.Options(shear, geom, dx)
-# -----------------------------------
+# 3 -----------------------------------
 
 
 # 4 ------ initialize frame3dd object

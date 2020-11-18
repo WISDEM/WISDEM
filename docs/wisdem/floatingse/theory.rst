@@ -154,7 +154,7 @@ reactions, internal element forces, natural frequencies, and modal
 shapes using direct stiffness and mass assembly :cite:`frame3dd`. The WISDEM toolkit
 developed a python interface, `pyFrame3DD <http://www.github.com/WISDEM/pyFrame3DD>`_, to avoid the use of
 intermediate input and output text files. The integration of all loads
-happens within `Frame3DD <http://frame3dd.sourceforge.net>`_, where the whole floating turbine load path,
+happens within Frame3DD, where the whole floating turbine load path,
 from the rotor to the keel of the substructure, is modeled with
 Timoshenko frame elements :cite:`timoshenko`.
 
@@ -183,7 +183,7 @@ to reflect the true mass of the whole section, including ballast, to
 ensure that gravity loads are captured correctly.
 
 For the tubular cross sections, the critical properties needed by
-`Frame3DD <http://frame3dd.sourceforge.net>`_ given user inputs of diameter, :math:`d`, and tube (or wall)
+Frame3DD given user inputs of diameter, :math:`d`, and tube (or wall)
 thickness, :math:`t`, are,
 
 .. math::
@@ -215,7 +215,7 @@ Loads
 ~~~~~
 
 All of the loads described above are integrated together within
-`Frame3DD <http://frame3dd.sourceforge.net>`_. These loads include,
+Frame3DD. These loads include,
 
 -  Rotor-nacelle-assembly loads (thrust, moments, etc)
 
@@ -373,7 +373,7 @@ fit is used instead,
 
 .. math:: MBL = 1000 \max\left(1.0, -5445.3 + 176972.7 d\right)
 
-	  
+
 .. _static-label:
 
 Hydrostatic Stability
@@ -414,7 +414,7 @@ is aligned with the :math:`x`-axis. Since the rotor yaw is assumed to be
 :math:`0^{\circ}`, the surge forces on the turbine include the rotor
 thrust and the wind and wave drag on the tower and substructure. The
 final surge force over the whole structure is taken from the
-:math:`x`-direction reaction force of the reaction node in `Frame3DD <http://frame3dd.sourceforge.net>`_.
+:math:`x`-direction reaction force of the reaction node in Frame3DD.
 
 The restoring force is calculated as the smallest possible restoring
 force after a displacement in any angular direction in the mooring
@@ -447,7 +447,7 @@ stable in pitch.
 
 Similar to the surge force calculation, the total pitching moment is
 determined from the reaction moment at the boundary condition in the
-`Frame3DD <http://frame3dd.sourceforge.net>`_ analysis. The pitching moment has contributions from the wind
+Frame3DD analysis. The pitching moment has contributions from the wind
 and wave loads on the structure, the rotor forces and torques, the
 buoyancy forces on the submerged substructure, and the off-center weight
 of components (e.g. the RNA).
@@ -474,7 +474,7 @@ to the direction.
 
     Static stability of floating offshore wind turbine in neutral position.
 
-       
+
 .. _fig_metaB:
 .. figure::  /images/floatingse/metacenterB.*
     :height: 500px
@@ -589,7 +589,7 @@ mass are currently ignored. The column quantities are calculated as,
 
 .. math::
 
-   A_{11} = A_{22} = \rho V;\quad A_{33} = 
+   A_{11} = A_{22} = \rho V;\quad A_{33} =
      \left(\frac{1}{2}\right)\frac{8}{3} \rho \max \left[ R^3(z)\right] ; \quad A_{44} =
      A_{55} = \pi\rho\int\left(z-z_{cb}\right)R^2(z)dz;\quad A_{66} = 0.0;
 
@@ -624,11 +624,5 @@ factor).
 References
 ----------
 
-.. only:: html
-
-    :bib:`Bibliography`
-
-.. bibliography:: references.bib
-   :cited:
-   :style: unsrt
-
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

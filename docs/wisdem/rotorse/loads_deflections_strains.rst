@@ -75,5 +75,5 @@ where the negative sign accounts for the fact that the strain is compressive in 
 Bibliography
 ============
 
-.. bibliography:: references.bib
-    :style: unsrt
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

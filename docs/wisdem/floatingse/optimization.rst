@@ -134,7 +134,7 @@ physics, there are many constraints that must be applied for an
 optimization to close. The constraints capture both physical
 limitations, such as column buckling, but also inject industry
 standards, guidelines, and lessons learned from engineering experience
-into the optimization. As described in Section :ref:`intro-label`, this is a
+into the optimization. As described in the Introduction, this is a
 critically important element in building a MDAO framework for conceptual
 design that yields feasible results worth interrogating further with
 higher-fidelity tools. The constraints used in the substructure design
@@ -348,7 +348,7 @@ Example
 
     Example of optimized spar.
 
-       
+
 .. _fig_exopt-semi:
 .. figure::  /images/floatingse/semi-mass2.*
     :width: 40%

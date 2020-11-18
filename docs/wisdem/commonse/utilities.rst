@@ -21,16 +21,3 @@ These are summarized in the below table
     smooth_min
     smooth_abs
     CubicSplineSegment
-
-
-.. currentmodule:: wisdem.commonse.xcel_wrapper
-Excel Wrapper
-==============
-
-.. autosummary::
-    :toctree: generated
-
-    ExcelWrapper
-
-Example code for using the xcel_wrapper is included in the xcel_wrapper.py file.
-A path to the user's workbook will need to be specified for its use.

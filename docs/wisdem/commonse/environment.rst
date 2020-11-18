@@ -8,14 +8,6 @@ Environment contains shared wind, wave, and soil models.
 Wind
 ====
 
-All wind models currently inherit from :class:`WindBase`:
-
-.. literalinclude:: ../../../wisdem/commonse/environment.py
-    :language: python
-    :start-after: WindBase(Component)
-    :end-before: missing_deriv
-    :prepend: class WindBase(Component):
-
 This module defines a wind speed profile at locations `z`, all wind speeds below `z_0` are 0.
 The parameters `Uref` and `zref` allow for scaling of a profile shape.
 Specific implementations of this base component include :class:`PowerWind` and :class:`LogWind`.
@@ -37,15 +29,6 @@ The logarithmic profile is of the form
 
 Wave
 ====
-
-All wind models currently inherit from :class:`WaveBase`:
-
-.. literalinclude:: ../../../wisdem/commonse/environment.py
-    :language: python
-    :start-after: WaveBase(Component)
-    :end-before: missing_deriv
-    :prepend: class WaveBase(Component):
-
 
 Hydrodynamic speed distributions are estimated using linear wave theory (:class:`LinearWaves`). According to linear wave theory, the maximum horizontal velocity of a wave is given as
 
@@ -70,15 +53,6 @@ and the corresponding maximum acceleration is
 Soil
 ====
 
-All wind models currently inherit from :class:`SoilBase`:
-
-.. literalinclude:: ../../../wisdem/commonse/environment.py
-    :language: python
-    :start-after: SoilBase(Component)
-    :end-before: missing_deriv
-    :prepend: class SoilBase(Component):
-
-
 The soil is assumed to not contribute any inertial or applied forces and only affects the stiffness of the foundation.
 The user may specify directions which are considered rigid.
 For the other directions, effective spring constants are estimated based on the soil properties (:class:`TowerSoil`).
@@ -95,7 +69,5 @@ where h is the depth of the foundation below the soil.
 .. class:: SoilBase
 .. class:: TowerSoil
 
-
-:bib:`Bibliography`
 
 .. [1] Suresh C Arya, Michael O’Neil, and George Pincus. Design of Structures and Foundations for Vibrating Machines. BPR cumulative. Gulf Publishing Co, June 1979.

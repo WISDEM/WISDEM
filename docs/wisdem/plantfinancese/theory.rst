@@ -8,5 +8,5 @@ The NREL Cost and Scaling Model provides a simple cost and sizing tool to estima
 The models here extract the financial calculators from the model as stand-alone modules.
 
 
-.. bibliography:: references.bib
-    :style: unsrt
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

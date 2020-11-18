@@ -5,56 +5,18 @@
 
 Module Documentation
 --------------------
-
-Two classes are provided in the module: :ref:`Polar <airfoilprep.Polar>` and :ref:`Airfoil <airfoilprep.Airfoil>`.
-Generally, the Polar class is not needed for direct usage except for its constructor.
-All objects in this module are **immutable**.
-In other words, calling ``Airfoil.correct3D()`` creates a new modified airfoil object rather than editing the existing object.
-
-.. only:: latex
-
-    This PDF version of the documentation only provides an summary of the classes and methods.  Further details are found in the HTML version of this documentation, complete with hyperlinks to the source code.
+Two classes are provided in the module: :ref:`Polar <polar-class-label>` and :ref:`Airfoil <airfoil-class-label>`. Generally, the Polar class is not needed for direct usage except for its constructor. All objects in this module are **immutable**. In other words, calling ``Airfoil.correct3D()`` creates a new modified airfoil object rather than editing the existing object.
 
 .. _polar-class-label:
 
 Polar Class
 ^^^^^^^^^^^
-A Polar object is meant to represent the variation in lift, drag, and pitching moment coefficient with angle of attack at a fixed Reynolds number.
-Generally, the methods of this class do not need to be used directly (other than the constructor), but rather are used by the :class:`Airfoil <airfoilprep.Airfoil>` class.
+A Polar object is meant to represent the variation in lift, drag, and pitching moment coefficient with angle of attack at a fixed Reynolds number. Generally, the methods of this class do not need to be used directly (other than the constructor), but rather are used by the :class:`Airfoil <wisdem.airfoilprep.airfoilprep.Airfoil>` class.
 
 
-.. rubric:: Class Summary:
+.. module:: wisdem.airfoilprep.airfoilprep
 
-.. only:: latex
-
-    .. autoclass:: Polar
-        :members:
-
-
-.. only:: html
-
-    .. autoclass:: Polar
-
-        .. rubric:: Methods
-        .. autosummary::
-            :nosignatures:
-
-            ~Polar.correction3D
-            ~Polar.extrapolate
-            ~Polar.blend
-            ~Polar.unsteadyparam
-
-
-.. autogenerate
-    .. autosummary::
-        :toctree: generated
-
-        ~Polar.unsteadyparam
-        ~Polar.blend
-        ~Polar.correction3D
-        ~Polar.extrapolate
-
-
+.. autoclass:: wisdem.airfoilprep.airfoilprep.Polar
 
 .. _airfoil-class-label:
 
@@ -69,54 +31,9 @@ This class also adds methods to read and write AeroDyn airfoil files directly.
 
 
 
-.. rubric:: Class Summary:
 
-.. only:: latex
-
-    .. autoclass:: Airfoil
-        :members:
+.. autoclass:: wisdem.airfoilprep.airfoilprep.Airfoil
 
 
-.. only:: html
-
-    .. autoclass:: Airfoil
-
-        .. rubric:: Methods
-        .. autosummary::
-            :nosignatures:
-
-            ~Airfoil.initFromAerodynFile
-            ~Airfoil.correction3D
-            ~Airfoil.extrapolate
-            ~Airfoil.blend
-            ~Airfoil.getPolar
-            ~Airfoil.interpToCommonAlpha
-            ~Airfoil.createDataGrid
-            ~Airfoil.writeToAerodynFile
-
-
-.. autogenerate
-    .. autosummary::
-        :toctree: generated
-
-        ~Airfoil.initFromAerodynFile
-        ~Airfoil.blend
-        ~Airfoil.correction3D
-        ~Airfoil.extrapolate
-        ~Airfoil.getPolar
-        ~Airfoil.writeToAerodynFile
-        ~Airfoil.interpToCommonAlpha
-        ~Airfoil.createDataGrid
-
-
-
-.. role:: bib
-   :class: bib
-
-.. only:: html
-
-    :bib:`Bibliography`
-
-
-
-.. bibliography:: references.bib
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames
