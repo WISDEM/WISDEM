@@ -1062,8 +1062,8 @@ def assign_material_values(wt_opt, modeling_options, materials):
                 G[i,:]  = np.ones(3) * materials[i]['G']
             elif 'nu' in materials[i]:
                 G[i,:]  = np.ones(3) * materials[i]['E']/(2*(1+materials[i]['nu'])) # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
-                warning_shear_modulus_isotropic = 'WARNING: NO shear modulus, G, was provided for material "%s". The code assumes 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
-                print(warning_shear_modulus_isotropic)
+                # warning_shear_modulus_isotropic = 'WARNING: NO shear modulus, G, was provided for material "%s". The code assumes 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
+                # print(warning_shear_modulus_isotropic)
             if 'Xt' in materials[i]:
                 Xt[i,:] = np.ones(3) * materials[i]['Xt']
             if 'Xc' in materials[i]:
