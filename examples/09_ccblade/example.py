@@ -45,14 +45,14 @@ afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
 
 # load all airfoils
 airfoil_types = [0]*8
-airfoil_types[0] = afinit('../5MW_airfoil_files/Cylinder1.dat')
-airfoil_types[1] = afinit('../5MW_airfoil_files/Cylinder2.dat')
-airfoil_types[2] = afinit('../5MW_airfoil_files/DU40_A17.dat')
-airfoil_types[3] = afinit('../5MW_airfoil_files/DU35_A17.dat')
-airfoil_types[4] = afinit('../5MW_airfoil_files/DU30_A17.dat')
-airfoil_types[5] = afinit('../5MW_airfoil_files/DU25_A17.dat')
-airfoil_types[6] = afinit('../5MW_airfoil_files/DU21_A17.dat')
-airfoil_types[7] = afinit('../5MW_airfoil_files/NACA64_A17.dat')
+airfoil_types[0] = afinit('../_airfoil_files/Cylinder1.dat')
+airfoil_types[1] = afinit('../_airfoil_files/Cylinder2.dat')
+airfoil_types[2] = afinit('../_airfoil_files/DU40_A17.dat')
+airfoil_types[3] = afinit('../_airfoil_files/DU35_A17.dat')
+airfoil_types[4] = afinit('../_airfoil_files/DU30_A17.dat')
+airfoil_types[5] = afinit('../_airfoil_files/DU25_A17.dat')
+airfoil_types[6] = afinit('../_airfoil_files/DU21_A17.dat')
+airfoil_types[7] = afinit('../_airfoil_files/NACA64_A17.dat')
 
 # place at appropriate radial stations
 af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
