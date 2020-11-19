@@ -6,7 +6,7 @@ from wisdem.glue_code.runWISDEM import run_wisdem
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 fname_wt_input         = mydir + os.sep + 'nrel5mw_monopile.yaml'
 fname_modeling_options = mydir + os.sep + 'modeling_options.yaml'
-fname_analysis_options = mydir + os.sep + 'analysis_options.yaml'
+fname_analysis_options = mydir + os.sep + 'analysis_options_monopile.yaml'
 
 wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
@@ -39,4 +39,3 @@ print('Tower base moments2 (Nm) =', wt_opt['towerse.tower2.base_M'])
 print('stress2 =', wt_opt['towerse.post2.stress'])
 print('GL buckling =', wt_opt['towerse.post2.global_buckling'])
 print('Shell buckling =', wt_opt['towerse.post2.shell_buckling'])
-

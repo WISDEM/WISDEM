@@ -17,7 +17,9 @@ class TestExamples(unittest.TestCase):
             try:
                 if 'design_compare.py' not in str(f):
                     # Go to location due to relative path use for airfoil files
-                    print(f)
+                    print('\n\n')
+                    print('NOW RUNNING:',f)
+                    print()
                     basepath = os.path.dirname(os.path.realpath(f))
                     os.chdir(basepath)
 
@@ -31,7 +33,7 @@ class TestExamples(unittest.TestCase):
                     spec.loader.exec_module(mod)
             except:
                 self.assertTrue(False)
- 
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestExamples))
