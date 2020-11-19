@@ -19,7 +19,7 @@ from PySide2.QtWidgets import (  # type: ignore
     QMessageBox,
 )
 
-from wisdem.glue_code.run_wisdem import run_wisdem
+from wisdem.glue_code.runWISDEM import run_wisdem
 
 
 class FocusQLineEdit(QLineEdit):

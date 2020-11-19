@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import sys
-from wisdem.glue_code.run_wisdem      import run_wisdem
+from wisdem.glue_code.runWISDEM       import run_wisdem
 from wisdem.inputs                    import load_yaml
 from wisdem.inputs.gui                import run as guirun
 
