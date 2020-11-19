@@ -42,7 +42,7 @@ class TestNREL5MW(unittest.TestCase):
         mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-        basepath = path.join(path.dirname(path.realpath(__file__)), '../../../examples/5MW_airfoil_files')
+        basepath = path.join(path.dirname(path.realpath(__file__)), '../../../examples/_airfoil_files')
 
         # load all airfoils
         airfoil_types = [0]*8
