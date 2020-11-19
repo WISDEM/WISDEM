@@ -19,7 +19,7 @@ from PySide2.QtWidgets import (  # type: ignore
     QMessageBox,
 )
 
-from wisdem.glue_code import runWISDEM
+from wisdem.glue_code.run_wisdem import run_wisdem
 
 
 class FocusQLineEdit(QLineEdit):
@@ -532,7 +532,7 @@ class FormAndMenuWindow(QMainWindow):
         self.status_label.setText("Running WISDEM")
 
         try:
-            wt_opt, modeling_options, analysis_options = runWISDEM.run_wisdem(
+            wt_opt, modeling_options, analysis_options = run_wisdem(
                 self.geometry_filename, self.modeling_filename, self.analysis_filename
             )
         except Exception as err:
