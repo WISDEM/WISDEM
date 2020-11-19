@@ -14,7 +14,6 @@ Plant_FinanceSE
 .. toctree::
 
     intro
-    tutorial
     documentation
     theory
 
