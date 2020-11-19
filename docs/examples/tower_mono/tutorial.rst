@@ -2,8 +2,8 @@
 
 .. currentmodule:: wisdem.towerse.tower
 
-Tutorial
---------
+5. Tower and Monopile Example
+------------------------------
 
 In this example we show how to perform simulation and optimization of a land-based tower.
 This example is contained in the ``WISDEM/examples/tower/tower_direct.py`` file.

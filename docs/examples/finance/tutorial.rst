@@ -1,7 +1,8 @@
-.. _tutorial-label:
+.. _finance_tutorial-label:
 
-Tutorial
---------
+--------------------------------
+8. Plant Finance Example
+--------------------------------
 
 Simple plant finance tutorial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,9 +1,9 @@
-.. _tutorial-label:
+.. _ccblade_tutorial-label:
 
 .. currentmodule:: wisdem.ccblade
 
-Tutorial
---------
+9. CCBlade Examples
+--------------------
 
 Three examples are shown below.
 The first is a complete setup for the :ref:`NREL 5-MW model <5MW-example>`, the second shows how to model blade :ref:`precurvature <curvature-example>`, and the final shows how to get the provided :ref:`analytic gradients <gradient-example>`.

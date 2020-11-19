@@ -7,7 +7,7 @@ All of these case studies below can be found in the `examples` directory.  For t
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    examples/nrelcsm/tutorial
@@ -17,7 +17,7 @@ All of these case studies below can be found in the `examples` directory.  For t
    examples/tower_mono/tutorial
    examples/generator/tutorial
    examples/floating/tutorial
-   examples/ccblade/tutorial
    examples/finance/tutorial
+   examples/ccblade/tutorial
    examples/airfoilprep/tutorial
    examples/pyframe3dd/tutorial

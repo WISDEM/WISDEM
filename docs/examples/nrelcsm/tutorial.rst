@@ -1,8 +1,8 @@
 .. _nrelcsm_tutorial-label:
 
---------
-Tutorial
---------
+----------------------------------------
+1. NREL Cost and Scaling Model Example
+----------------------------------------
 
 .. contents:: List of Examples
 

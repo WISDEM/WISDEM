@@ -1,5 +1,5 @@
-Tutorial
---------
+10. Airfoil Polar Preparation Example
+---------------------------------------
 
 .. currentmodule:: wisdem.airfoilprep
 
