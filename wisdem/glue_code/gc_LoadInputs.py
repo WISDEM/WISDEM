@@ -1,5 +1,5 @@
 import numpy as np
-import wisdem.yaml as sch
+import wisdem.inputs as sch
 
 
 class WindTurbineOntologyPython(object):
