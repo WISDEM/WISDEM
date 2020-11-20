@@ -1,4 +1,4 @@
-10. Airfoil Polar Preparation Example
+11. Airfoil Polar Preparation Example
 ---------------------------------------
 
 .. currentmodule:: wisdem.airfoilprep

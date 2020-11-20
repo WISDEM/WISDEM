@@ -1,5 +1,5 @@
 ------------------------------------
-9. Floating Platform Examples
+6. Drivetrain Model Example
 ------------------------------------
 
 This is a placeholder file

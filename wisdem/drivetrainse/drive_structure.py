@@ -900,8 +900,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
                                                                                       gamma_f*gamma_m*gamma_n, sigma_y)
 
         # Evaluate bearing limits
-        outputs['constr_mb1_defl'] = outputs['mb1_rotation'] / inputs['mb1_max_defl_ang']
-        outputs['constr_mb2_defl'] = outputs['mb2_rotation'] / inputs['mb2_max_defl_ang']
+        outputs['constr_mb1_defl'] = np.abs( outputs['mb1_rotation'] / inputs['mb1_max_defl_ang'] )
+        outputs['constr_mb2_defl'] = np.abs( outputs['mb2_rotation'] / inputs['mb2_max_defl_ang'] )
         outputs['stator_deflection'] = stator_deflection.max()
         outputs['stator_rotation']   = stator_rotation.max()
 

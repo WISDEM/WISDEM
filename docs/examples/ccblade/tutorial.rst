@@ -2,7 +2,7 @@
 
 .. currentmodule:: wisdem.ccblade
 
-9. CCBlade Examples
+10. CCBlade Examples
 --------------------
 
 Three examples are shown below.

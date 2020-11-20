@@ -513,7 +513,7 @@ class WT_RNTA(om.Group):
             self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
             self.connect('drivese.hvac_mass',           'tcc.hvac_mass')
             self.connect('drivese.cover_mass',          'tcc.cover_mass')
-            self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
+            self.connect('drivese.platform_mass',       'tcc.platforms_mass')
             
             if modeling_options['flags']['generator']:
                 self.connect('drivese.generator_cost',  'tcc.generator_cost_external')

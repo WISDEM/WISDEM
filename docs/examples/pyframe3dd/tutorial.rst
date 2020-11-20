@@ -1,12 +1,13 @@
 .. _pyframe3dd-tutorial-label:
 
 
-11. pyFrame3DD Example
+12. pyFrame3DD Example
 ========================
 
 This document walks through the pyFrame3dd usage that matches the `Pyramid Frame (B) example <http://frame3dd.sourceforge.net/>`_ provided by Frame3DD.
 
 .. contents:: pyFrame3dd Analysis Steps
+   :depth: 2
 
 Geometry
 --------
