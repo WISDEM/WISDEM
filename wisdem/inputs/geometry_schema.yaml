@@ -1576,6 +1576,8 @@ properties:
             - drivetrain
             - rotor_orientation
             - number_of_blades
+            - rotor_diameter
+            - hub_height
         properties:
             turbine_class:
                 type: string
@@ -1602,6 +1604,20 @@ properties:
                 unit: none
                 minimum: 1
                 maximum: 10
+            rotor_diameter:
+                type: number
+                default: 0
+                description: Diameter of the rotor, defined as two times the blade length plus the hub diameter
+                unit: m
+                minimum: 0
+                maximum: 1000
+            hub_height:
+                type: number
+                default: 0
+                description: Height of the hub center over the ground (land-based) or the mean sea level (offshore)
+                unit: m
+                minimum: 0
+                maximum: 1000
     control:
         type: object
         required:

@@ -592,7 +592,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
                             tower['outer_shape_bem']['reference_axis']['y']['grid'],
                             tower['outer_shape_bem']['reference_axis']['z']['grid']] )
 
-    wt_opt['tower.s'] = svec
+    # wt_opt['tower.s'] = svec
     wt_opt['tower.diameter']   = np.interp(svec, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
 
     wt_opt['tower.ref_axis'][:,0]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
@@ -842,10 +842,12 @@ def assign_configuration_values(wt_opt, assembly):
     wt_opt['configuration.rotor_orientation'] = assembly['rotor_orientation'].lower()
     wt_opt['configuration.upwind']            = wt_opt['configuration.rotor_orientation'] == 'upwind'
     wt_opt['configuration.n_blades']          = int(assembly['number_of_blades'])
+    wt_opt['configuration.rotor_diameter']    = assembly['rotor_diameter']
+    wt_opt['configuration.hub_height']        = assembly['hub_height']
 
     # Checks for errors
     if int(assembly['number_of_blades']) - assembly['number_of_blades'] != 0:
-        print('ERROR: the number of blades must be an integer')
+        raise Exception('ERROR: the number of blades must be an integer')
 
     return wt_opt
 

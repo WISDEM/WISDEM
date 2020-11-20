@@ -473,17 +473,17 @@ class WindTurbineOntologyPython(object):
 
         # Update tower
         if self.modeling_options['flags']['tower']:
-            self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['tower.s'].tolist()
+            self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['tower_grid.s'].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['tower.diameter'].tolist()
-            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['tower.s'].tolist()
-            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['tower.s'].tolist()
-            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['tower.s'].tolist()
+            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['tower_grid.s'].tolist()
+            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['tower_grid.s'].tolist()
+            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['tower_grid.s'].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['tower.ref_axis'][:,0].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['tower.ref_axis'][:,1].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['tower.ref_axis'][:,2].tolist()
             self.wt_init['components']['tower']['internal_structure_2d_fem']['outfitting_factor']     = float( wt_opt['tower.outfitting_factor'] )
             for i in range(self.modeling_options['tower']['n_layers']):
-                self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower.s'].tolist()
+                self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower_grid.s'].tolist()
                 self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = np.hstack((wt_opt['tower.layer_thickness'][i,:], wt_opt['tower.layer_thickness'][i,-1])).tolist()
 
         # Update monopile
@@ -509,6 +509,10 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['RNA']['elastic_properties_mb']['mass']        = float(wt_opt['drivese.rna_mass'])
             self.wt_init['components']['RNA']['elastic_properties_mb']['inertia']     = wt_opt['drivese.rna_I_TT'].tolist()
             self.wt_init['components']['RNA']['elastic_properties_mb']['center_mass'] = wt_opt['drivese.rna_cm'].tolist()
+
+        # Update rotor diameter and hub height
+        self.wt_init['assembly']['rotor_diameter'] = float(wt_opt['assembly.rotor_diameter'])
+        self.wt_init['assembly']['hub_height']     = float(wt_opt['assembly.hub_height'])
 
         # Write yaml with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
